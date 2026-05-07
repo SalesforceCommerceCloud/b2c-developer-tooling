@@ -8,7 +8,6 @@ import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   createScapiSchemasClient,
   getApiErrorMessage,
-  toOrganizationId,
   type ScapiSchemasClient,
 } from '@salesforce/b2c-tooling-sdk/clients';
 import {t} from '../../i18n/index.js';
@@ -25,23 +24,6 @@ export function formatApiError(error: unknown, response: Response): string {
  * Provides common flags and helper methods for interacting with the SCAPI Schemas API.
  */
 export abstract class ScapiSchemasCommand<T extends typeof Command> extends OAuthCommand<T> {
-  /**
-   * Get the organization ID from resolved config.
-   * @throws Error if tenant ID is not provided through any source
-   */
-  protected getOrganizationId(): string {
-    const {tenantId} = this.resolvedConfig.values;
-    if (!tenantId) {
-      this.error(
-        t(
-          'error.tenantIdRequired',
-          'tenant-id is required. Provide via --tenant-id flag, SFCC_TENANT_ID env var, or tenant-id in dw.json.',
-        ),
-      );
-    }
-    return toOrganizationId(tenantId);
-  }
-
   /**
    * Get the SCAPI Schemas client, ensuring short code and tenant ID are configured.
    */

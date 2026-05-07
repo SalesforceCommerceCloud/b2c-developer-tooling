@@ -371,34 +371,36 @@ b2c setup skills [SKILLSET]
 
 | Argument   | Description                              | Default                |
 | ---------- | ---------------------------------------- | ---------------------- |
-| `SKILLSET` | Skill set to install: `b2c` or `b2c-cli` | Prompted interactively |
+| `SKILLSET` | Skill set to install: `b2c`, `b2c-cli`, `storefront-next`, or `cap-dev` | Prompted interactively |
 
 ### Flags
 
-| Flag             | Description                                                                   | Default     |
-| ---------------- | ----------------------------------------------------------------------------- | ----------- |
-| `--list`, `-l`   | List available skills without installing                                      | `false`     |
-| `--skill`        | Install specific skill(s) (can be repeated)                                   |             |
-| `--ide`          | Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, manual | Auto-detect |
-| `--global`, `-g` | Install to user home directory (global scope)                                 | `false`     |
-| `--update`, `-u` | Update existing skills (overwrite)                                            | `false`     |
-| `--version`      | Specific release version                                                      | `latest`    |
-| `--force`        | Skip confirmation prompts (non-interactive)                                   | `false`     |
-| `--json`         | Output results as JSON                                                        | `false`     |
+| Flag                  | Description                                                                                    | Default     |
+| --------------------- | ---------------------------------------------------------------------------------------------- | ----------- |
+| `--list`, `-l`        | List available skills without installing                                                       | `false`     |
+| `--skill`             | Install specific skill(s) (can be repeated)                                                    |             |
+| `--ide`               | Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, agentforce-vibes, manual | Auto-detect |
+| `--directory`, `-d`   | Custom installation directory (overrides IDE default path)                                     |             |
+| `--global`, `-g`      | Install to user home directory (global scope)                                                  | `false`     |
+| `--update`, `-u`      | Update existing skills (overwrite)                                                             | `false`     |
+| `--version`           | Specific release version                                                                       | `latest`    |
+| `--force`             | Skip confirmation prompts (non-interactive)                                                    | `false`     |
+| `--json`              | Output results as JSON                                                                         | `false`     |
 
 ### Supported IDEs
 
-| IDE Value     | IDE Name                 | Project Path        | Global Path                   |
-| ------------- | ------------------------ | ------------------- | ----------------------------- |
-| `claude-code` | Claude Code              | `.claude/skills/`   | `~/.claude/skills/`           |
-| `cursor`      | Cursor                   | `.cursor/skills/`   | `~/.cursor/skills/`           |
-| `windsurf`    | Windsurf                 | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
-| `vscode`      | VS Code / GitHub Copilot | `.github/skills/`   | `~/.copilot/skills/`          |
-| `codex`       | OpenAI Codex CLI         | `.codex/skills/`    | `~/.codex/skills/`            |
-| `opencode`    | OpenCode                 | `.opencode/skills/` | `~/.config/opencode/skills/`  |
-| `manual`      | Manual                   | `.claude/skills/`   | `~/.claude/skills/`           |
+| IDE Value          | IDE Name                 | Project Path          | Global Path                                         |
+| ------------------ | ------------------------ | --------------------- | --------------------------------------------------- |
+| `claude-code`      | Claude Code              | `.claude/skills/`     | `~/.claude/skills/`                                 |
+| `cursor`           | Cursor                   | `.cursor/skills/`     | `~/.cursor/skills/`                                 |
+| `windsurf`         | Windsurf                 | `.windsurf/skills/`   | `~/.codeium/windsurf/skills/`                       |
+| `vscode`           | VS Code / GitHub Copilot | `.github/skills/`     | `~/.copilot/skills/`                                |
+| `codex`            | OpenAI Codex CLI         | `.codex/skills/`      | `~/.codex/skills/`                                  |
+| `opencode`         | OpenCode                 | `.opencode/skills/`   | `~/.config/opencode/skills/`                        |
+| `agentforce-vibes` | Agentforce Vibes         | `.a4drules/skills/`   | `~/Library/Application Support/Code/User/globalStorage` (macOS) |
+| `manual`           | Manual                   | `.agents/skills/`     | `~/.agents/skills/`                                 |
 
-Use `manual` when you want to install to the Claude Code paths without marketplace recommendations.
+Use `agentforce-vibes` for Salesforce Agentforce for VS Code. Use `manual` for generic installation with a custom `--directory` path.
 
 ### Examples
 
@@ -409,6 +411,7 @@ b2c setup skills
 # List available skills in a skillset
 b2c setup skills b2c --list
 b2c setup skills b2c-cli --list
+b2c setup skills storefront-next --list
 
 # Install b2c skills to Cursor (project scope)
 b2c setup skills b2c --ide cursor
@@ -421,6 +424,12 @@ b2c setup skills b2c --ide cursor --ide windsurf
 
 # Install specific skills only
 b2c setup skills b2c-cli --skill b2c-code --skill b2c-webdav --ide cursor
+
+# Install to Agentforce Vibes (.a4drules/skills/)
+b2c setup skills b2c --ide agentforce-vibes
+
+# Install to a custom directory
+b2c setup skills b2c --ide manual --directory ./my-skills
 
 # Update existing skills
 b2c setup skills b2c --ide cursor --update
@@ -439,7 +448,7 @@ b2c setup skills b2c --list --json
 
 When run without `--force`, the command provides an interactive experience:
 
-1. Prompts you to select skill set(s) (if not provided as argument) - you can select both `b2c` and `b2c-cli`
+1. Prompts you to select skill set(s) (if not provided as argument) - you can select multiple sets
 2. Downloads skills from the latest release (or specified version)
 3. Auto-detects installed IDEs
 4. Prompts you to select target IDEs
@@ -457,6 +466,7 @@ For Claude Code users, we recommend using the plugin marketplace for automatic u
 claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 claude plugin install b2c-cli
 claude plugin install b2c
+claude plugin install storefront-next
 ```
 
 The marketplace provides:
@@ -465,14 +475,16 @@ The marketplace provides:
 - Centralized plugin management
 - Version tracking
 
-Use `--ide manual` if you prefer manual installation to the same paths.
+Use `--ide manual` if you prefer manual installation, or `--ide agentforce-vibes` to install to the `.a4drules/skills/` directory used by Salesforce Agentforce for VS Code.
 
 ### Skill Sets
 
-| Skill Set | Description                                     |
-| --------- | ----------------------------------------------- |
-| `b2c`     | B2C Commerce development patterns and practices |
-| `b2c-cli` | B2C CLI commands and operations                 |
+| Skill Set          | Description                                                    |
+| ------------------ | -------------------------------------------------------------- |
+| `b2c`              | B2C Commerce development patterns and practices                |
+| `b2c-cli`          | B2C CLI commands and operations                                |
+| `storefront-next`  | Storefront Next development — routing, components, deployment  |
+| `cap-dev`          | Commerce App Package scaffolding, validation, and submission   |
 
 ### Output
 

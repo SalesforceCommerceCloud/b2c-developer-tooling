@@ -19,27 +19,50 @@ jobs:
       actions: write
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          token: ${{ secrets.CHANGESETS_TOKEN }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
           node-version: 22
           cache: 'pnpm'
+
+      - name: Configure git push credentials
+        run: git remote set-url origin https://x-access-token:${{ secrets.CHANGESETS_TOKEN }}@github.com/${{ github.repository }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Create Release PR
         id: changesets
-        uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba # v1.5.3
+        uses: changesets/action@6a0a831ff30acef54f2c6aa1cbbc1096b066edaf # v1.7.0
         with:
-          version: pnpm changeset version
+          version: pnpm run version
           title: 'Next Release: changelog and version packages'
           commit: 'chore: version packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger checks on PR branch
+        if: steps.changesets.outputs.pullRequestNumber
+        run: |
+          PR_BRANCH=$(gh pr view ${{ steps.changesets.outputs.pullRequestNumber }} --json headRefName -q '.headRefName')
+          git remote set-url origin https://x-access-token:${{ secrets.CHANGESETS_TOKEN }}@github.com/${{ github.repository }}
+          git fetch origin "$PR_BRANCH"
+          git checkout "$PR_BRANCH"
+          git commit --allow-empty -m "chore: trigger CI checks"
+          git push origin "$PR_BRANCH"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add release label to PR
+        if: steps.changesets.outputs.pullRequestNumber
+        run: gh pr edit ${{ steps.changesets.outputs.pullRequestNumber }} --add-label release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

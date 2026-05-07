@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata xmlns="http://www.demandware.com/xml/impex/metadata/2006-10-31">
+    <!-- Custom fields on Basket -->
+    <type-extension type-id="Basket">
+        <custom-attribute-definitions>
+            <attribute-definition attribute-id="commerceTaxApp_TaxDetails">
+                <display-name xml:lang="x-default">Tax Details</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+            <attribute-definition attribute-id="commerceTaxApp_federal_tax_amount">
+                <display-name xml:lang="x-default">Tax Details</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+            <attribute-definition attribute-id="commerceTaxApp_state_tax_amount">
+                <display-name xml:lang="x-default">Tax Details</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+        </custom-attribute-definitions>
+    </type-extension>
+    <type-extension type-id="SitePreferences">
+        <custom-attribute-definitions>
+            <attribute-definition attribute-id="ATEnable">
+                <display-name xml:lang="x-default">Enable Avatax</display-name>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>true</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="ATEnableAddressValidation">
+                <display-name xml:lang="x-default">Enable Address Validation</display-name>
+                <description xml:lang="x-default">AvaTax only sends United States and Canadian addresses for validation</description>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>true</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="ATEnableTesting">
+                <display-name xml:lang="x-default">Enable Test Pipelines / Controllers</display-name>
+                <description xml:lang="x-default">Set this as Yes for voiding, modifying the transactions</description>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>true</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="AtCommitTransaction">
+                <display-name xml:lang="x-default">On successful payment commit transaction to AvaTax</display-name>
+                <description xml:lang="x-default">Default 'No'. If 'Yes', successful orders will be marked Committed while posting to AvaTax.</description>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>false</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="AtCompanyCode">
+                <display-name xml:lang="x-default">Avatax Company Code</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="AtDefaultShippingMethodTaxCode">
+                <display-name xml:lang="x-default">Avatax Default Shipping Method Tax Code (Tax)</display-name>
+                <description xml:lang="x-default">If left blank the Default Value FR will be used</description>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+                <default-value>FR</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="AtDocumentCommitAllowed">
+                <display-name xml:lang="x-default">Save transactions to AvaTax</display-name>
+                <description xml:lang="x-default">Default 'Yes'. Transactions are being saved at Avatax. When set to 'No', transactions are not saved at AvaTax, and features such as voiding, modifying the transactions are not available on the storefront.</description>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>true</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="ATCustomCustomerCode">
+                <display-name xml:lang="x-default">Custom attribute for customer code</display-name>
+                <description xml:lang="x-default">This field is mandatory if "Use another attribute from 'Profile' System object" option is selected as customer code. Enter only the attribute name. e.g. taxID. If it is a custom attribute of Profile object, add 'custom' accessor. e.g. custom.customattr</description>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ATCustomerCode">
+                <display-name xml:lang="x-default">Customer Code</display-name>
+                <description xml:lang="x-default">Customer code to be used from authenticated customers for transactions posted to AvaTax.</description>
+                <type>enum-of-string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <value-definitions>
+                    <value-definition default="true">
+                        <display xml:lang="x-default">Customer number</display>
+                        <value>customer_number</value>
+                    </value-definition>
+                    <value-definition>
+                        <display xml:lang="x-default">Customer Email ID</display>
+                        <value>customer_email</value>
+                    </value-definition>
+                    <value-definition>
+                        <display xml:lang="x-default">Use another attribute from 'Profile' System object</display>
+                        <value>custom_attribute</value>
+                    </value-definition>
+                </value-definitions>
+            </attribute-definition>
+            <attribute-definition attribute-id="AtShipFromCity">
+                <display-name xml:lang="x-default">Avatax ShipFrom City</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+                <field-length>0</field-length>
+                <field-height>0</field-height>
+            </attribute-definition>
+            <attribute-definition attribute-id="AtShipFromCountryCode">
+                <display-name xml:lang="x-default">Avatax ShipFrom Country Code</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+                <field-length>0</field-length>
+                <field-height>0</field-height>
+            </attribute-definition>
+            <attribute-definition attribute-id="AtShipFromLine1">
+                <display-name xml:lang="x-default">AvaTax ShipFrom address line 1</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="AtShipFromLine2">
+                <display-name xml:lang="x-default">AvaTax ShipFrom address line 2</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="AtShipFromLine3">
+                <display-name xml:lang="x-default">AvaTax ShipFrom address line 3</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="AtShipFromLocationCode">
+                <display-name xml:lang="x-default">AvaTax ShipFrom location code</display-name>
+                <description xml:lang="x-default">Created in your AvaTax account</description>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="AtShipFromStateCode">
+                <display-name xml:lang="x-default">Avatax ShipFrom StateCode</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+                <field-length>0</field-length>
+                <field-height>0</field-height>
+            </attribute-definition>
+            <attribute-definition attribute-id="AtShipFromZipCode">
+                <display-name xml:lang="x-default">Avatax ShipFrom ZipCode</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+                <field-length>0</field-length>
+                <field-height>0</field-height>
+            </attribute-definition>
+        </custom-attribute-definitions>
+        <group-definitions>
+            <attribute-group group-id="AvaTax">
+                <display-name xml:lang="x-default">AvaTax</display-name>
+                <attribute attribute-id="ATEnable"/>
+                <attribute attribute-id="ATEnableAddressValidation"/>
+                <attribute attribute-id="ATEnableTesting"/>
+                <attribute attribute-id="AtDocumentCommitAllowed"/>
+                <attribute attribute-id="AtCommitTransaction"/>
+                <attribute attribute-id="AtCompanyCode"/>
+                <attribute attribute-id="ATCustomerCode"/>
+                <attribute attribute-id="ATCustomCustomerCode"/>
+                <attribute attribute-id="AtDefaultShippingMethodTaxCode"/>
+                <attribute attribute-id="AtShipFromLocationCode"/>
+                <attribute attribute-id="AtShipFromLine1"/>
+                <attribute attribute-id="AtShipFromLine2"/>
+                <attribute attribute-id="AtShipFromLine3"/>
+                <attribute attribute-id="AtShipFromCity"/>
+                <attribute attribute-id="AtShipFromStateCode"/>
+                <attribute attribute-id="AtShipFromZipCode"/>
+                <attribute attribute-id="AtShipFromCountryCode"/>
+            </attribute-group>
+        </group-definitions>
+    </type-extension>
+</metadata>

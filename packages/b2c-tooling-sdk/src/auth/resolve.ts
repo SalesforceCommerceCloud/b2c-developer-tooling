@@ -182,6 +182,8 @@ export function resolveAuthStrategy(
             clientId: credentials.clientId,
             scopes: credentials.scopes,
             accountManagerHost: credentials.accountManagerHost,
+            redirectUri: credentials.redirectUri,
+            openBrowser: credentials.openBrowser,
           });
         }
         break;

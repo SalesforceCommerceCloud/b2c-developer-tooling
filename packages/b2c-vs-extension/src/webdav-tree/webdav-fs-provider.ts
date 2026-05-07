@@ -22,6 +22,9 @@ export const WEBDAV_ROOTS: {key: string; path: string}[] = [
   {key: 'Securitylogs', path: 'Securitylogs'},
 ];
 
+/** Roots that require an ID sub-path before WebDAV PROPFIND is valid. */
+export const VIRTUAL_ROOTS = new Set(['Catalogs', 'Libraries']);
+
 const CACHE_TTL_MS = 30_000;
 
 const MIME_BY_EXT: Record<string, string> = {
@@ -230,7 +233,7 @@ export class WebDavFileSystemProvider implements vscode.FileSystemProvider {
       const contentType = MIME_BY_EXT[ext];
       await instance.webdav.put(webdavPath, Buffer.from(content), contentType);
       this.clearCache(webdavPath);
-      this.fireDid(vscode.FileChangeType.Changed, uri);
+      this.fireDidChange(vscode.FileChangeType.Changed, uri);
     } catch (err) {
       if (err instanceof vscode.FileSystemError) throw err;
       throw mapHttpError(err, uri);
@@ -247,7 +250,7 @@ export class WebDavFileSystemProvider implements vscode.FileSystemProvider {
     try {
       await instance.webdav.mkcol(webdavPath);
       this.clearCache(webdavPath);
-      this.fireDid(vscode.FileChangeType.Created, uri);
+      this.fireDidChange(vscode.FileChangeType.Created, uri);
     } catch (err) {
       if (err instanceof vscode.FileSystemError) throw err;
       throw mapHttpError(err, uri);
@@ -264,7 +267,7 @@ export class WebDavFileSystemProvider implements vscode.FileSystemProvider {
     try {
       await instance.webdav.delete(webdavPath);
       this.clearCache(webdavPath);
-      this.fireDid(vscode.FileChangeType.Deleted, uri);
+      this.fireDidChange(vscode.FileChangeType.Deleted, uri);
     } catch (err) {
       if (err instanceof vscode.FileSystemError) throw err;
       throw mapHttpError(err, uri);
@@ -292,7 +295,8 @@ export class WebDavFileSystemProvider implements vscode.FileSystemProvider {
     }
   }
 
-  private fireDid(type: vscode.FileChangeType, uri: vscode.Uri): void {
+  /** Fire a file-change event so tree views and other listeners refresh. */
+  fireDidChange(type: vscode.FileChangeType, uri: vscode.Uri): void {
     this._onDidChangeFile.fire([{type, uri}]);
   }
 }

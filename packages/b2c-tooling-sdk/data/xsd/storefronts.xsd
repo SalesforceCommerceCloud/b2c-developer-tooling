@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsd:schema
+        xmlns="http://www.demandware.com/xml/impex/storefronts/2026-02-23"
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+        targetNamespace="http://www.demandware.com/xml/impex/storefronts/2026-02-23"
+        elementFormDefault="qualified"
+        attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+
+    <!-- top-level element -->
+    <xsd:element name="storefronts">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="storefront" type="complexType.Storefront" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- fake top level elements to allow JAXB subsection parsing -->
+    <xsd:element name="storefront" type="complexType.Storefront"/>
+
+    <!-- Storefront -->
+    <xsd:complexType name="complexType.Storefront" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="ecom-site" type="simpleType.Generic.String.48" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="storefront-type" type="simpleType.StorefrontType" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="associated-sites" type="complexType.AssociatedSites" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="user-id" type="simpleType.Generic.String.48" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="org-slug" type="simpleType.Generic.String.64" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="mrt-site" type="simpleType.Generic.String.64" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="scm-repo" type="simpleType.Generic.String.512" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="scm-target" type="simpleType.Generic.String.64" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+        <xsd:attribute name="storefront-name" type="simpleType.Generic.NonEmptyString.64" use="required"/>
+        <xsd:attribute name="mode" type="simpleType.ImportMode"/>
+    </xsd:complexType>
+
+    <!-- Associated Sites -->
+    <xsd:complexType name="complexType.AssociatedSites" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="ecom-site" type="simpleType.Generic.NonEmptyString.48" minOccurs="0" maxOccurs="100"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- Storefront Type enumeration -->
+    <xsd:simpleType name="simpleType.StorefrontType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="composable"/>
+            <xsd:enumeration value="headless"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- Import Mode -->
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- simple generic types -->
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string"/>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.48">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0"/>
+            <xsd:maxLength value="48"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.64">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0"/>
+            <xsd:maxLength value="64"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.512">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0"/>
+            <xsd:maxLength value="512"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.48">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1"/>
+            <xsd:maxLength value="48"/>
+            <xsd:pattern value="\S|(\S(.*)\S)"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.64">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1"/>
+            <xsd:maxLength value="64"/>
+            <xsd:pattern value="\S|(\S(.*)\S)"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

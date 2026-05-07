@@ -1,6 +1,6 @@
 ---
 name: b2c-custom-job-steps
-description: Create custom job steps for B2C Commerce batch processing. Use when writing scheduled tasks, data sync jobs, import/export scripts, or any server-side batch processing code. Covers steptypes.json, chunk-oriented processing, and task-oriented execution. For running existing jobs, use b2c-job instead.
+description: Create custom job steps for B2C Commerce batch processing. Use this skill whenever the user needs to write a batch job, data export script, scheduled cleanup task, or any server-side processing that runs on a schedule. Also use when they ask about steptypes.json, chunk-oriented vs task-oriented job steps, read/process/write patterns, or how to get a custom job to appear in Business Manager — even if they just say "I need a script that runs nightly" or "batch process orders".
 ---
 
 # Custom Job Steps Skill

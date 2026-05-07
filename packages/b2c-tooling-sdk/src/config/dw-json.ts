@@ -75,10 +75,18 @@ export interface DwJsonConfig {
   sandboxApiHost?: string;
   /** Default ODS realm for sandbox operations */
   realm?: string;
+  /** Whether to auto-start code upload/sync in IDE extensions */
+  autoUpload?: boolean;
   /** Cartridge names to include in deploy/watch (string with colon/comma separators, or array) */
   cartridges?: string | string[];
   /** Default content library ID for content export/list commands */
   contentLibrary?: string;
+  /** Catalog IDs for WebDAV browsing */
+  catalogs?: string[];
+  /** Library IDs for WebDAV browsing */
+  libraries?: string[];
+  /** JSON dot-paths for asset extraction during content library parsing (defaults to ['image.path']) */
+  assetQuery?: string[];
   /** Optional CIP analytics host override */
   cipHost?: string;
   /** Path to PKCS12 certificate file for mTLS (two-factor auth) */
@@ -87,6 +95,40 @@ export interface DwJsonConfig {
   certificatePassphrase?: string;
   /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
   selfSigned?: boolean;
+  /** Path to JWT certificate file (cert.pem) for JWT authentication */
+  jwtCertPath?: string;
+  /** Path to JWT private key file (key.pem) for JWT authentication */
+  jwtKeyPath?: string;
+  /** Optional passphrase for encrypted JWT private key */
+  jwtPassphrase?: string;
+  /**
+   * Safety configuration for this instance.
+   *
+   * @example
+   * ```json
+   * {
+   *   "safety": {
+   *     "level": "NO_UPDATE",
+   *     "confirm": true,
+   *     "rules": [
+   *       { "job": "sfcc-site-archive-export", "action": "allow" },
+   *       { "command": "sandbox:*", "action": "confirm" }
+   *     ]
+   *   }
+   * }
+   * ```
+   */
+  safety?: {
+    level?: string;
+    confirm?: boolean;
+    rules?: Array<{
+      method?: string;
+      path?: string;
+      job?: string;
+      command?: string;
+      action: string;
+    }>;
+  };
 }
 
 /**
@@ -193,16 +235,13 @@ function selectConfig(json: DwJsonMultiConfig, instanceName?: string): DwJsonCon
   }
 
   // Find active config
-  if (json.active === false) {
-    // Root is inactive, look for active in configs
-    const activeConfig = json.configs.find((c) => c.active === true);
-    if (activeConfig) {
-      logger.trace(
-        {selection: 'active', instanceName: activeConfig.name},
-        `[DwJsonSource] Selected config "${activeConfig.name}" by active flag`,
-      );
-      return activeConfig;
-    }
+  const activeConfig = json.configs.find((c) => c.active === true);
+  if (activeConfig) {
+    logger.trace(
+      {selection: 'active', instanceName: activeConfig.name},
+      `[DwJsonSource] Selected config "${activeConfig.name}" by active flag`,
+    );
+    return activeConfig;
   }
 
   // Default to root config

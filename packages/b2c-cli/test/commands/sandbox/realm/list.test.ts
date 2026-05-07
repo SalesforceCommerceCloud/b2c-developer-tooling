@@ -54,31 +54,12 @@ describe('sandbox realm list', () => {
   it('discovers realms from /me when no realm argument is provided', async () => {
     const command = await setupCommand({json: true}, {});
 
-    const getStub = sinon.stub();
-
-    getStub.callsFake(async (url: string, options: any) => {
-      if (url === '/me') {
-        return {
-          data: {
-            data: {
-              realms: ['zzza', 'zzzb'],
-            },
-          },
-        };
-      }
-
-      if (url === '/realms/{realm}/configuration') {
-        const realmId = options.params.path.realm;
-        return {
-          data: {
-            data: {
-              enabled: realmId === 'zzza',
-            },
-          },
-        };
-      }
-
-      throw new Error(`Unexpected URL: ${url}`);
+    const getStub = sinon.stub().resolves({
+      data: {
+        data: {
+          realms: ['zzza', 'zzzb'],
+        },
+      },
     });
 
     stubOdsClient(command, {GET: getStub});
@@ -87,28 +68,14 @@ describe('sandbox realm list', () => {
 
     expect(result.realms).to.have.lengthOf(2);
     expect(result.realms[0].realmId).to.equal('zzza');
-    expect(result.realms[0].configuration?.enabled).to.equal(true);
     expect(result.realms[1].realmId).to.equal('zzzb');
-    expect(result.realms[1].configuration?.enabled).to.equal(false);
+    expect(getStub.calledOnceWithExactly('/me', {})).to.be.true;
   });
 
-  it('fetches configuration for a specific realm when argument is provided', async () => {
+  it('returns specific realm when argument is provided', async () => {
     const command = await setupCommand({json: true}, {realm: 'zzzz'});
 
-    const getStub = sinon.stub().callsFake(async (url: string, options: any) => {
-      if (url === '/realms/{realm}/configuration') {
-        expect(options).to.have.nested.property('params.path.realm', 'zzzz');
-        return {
-          data: {
-            data: {
-              enabled: true,
-            },
-          },
-        };
-      }
-
-      throw new Error(`Unexpected URL: ${url}`);
-    });
+    const getStub = sinon.stub();
 
     stubOdsClient(command, {GET: getStub});
 
@@ -116,6 +83,6 @@ describe('sandbox realm list', () => {
 
     expect(result.realms).to.have.lengthOf(1);
     expect(result.realms[0].realmId).to.equal('zzzz');
-    expect(result.realms[0].configuration?.enabled).to.equal(true);
+    expect(getStub.called).to.be.false;
   });
 });

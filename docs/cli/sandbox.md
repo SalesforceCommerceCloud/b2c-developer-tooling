@@ -7,12 +7,12 @@ description: Commands for creating, managing, starting, stopping, and deleting O
 Commands for managing On-Demand Sandboxes.
 
 ::: tip Alias
-These commands were previously available as `b2c ods <command>`. The `ods` prefix still works as a backward-compatible alias.
+These commands were previously available as `b2c ods <command>`. The `ods` prefix is still accepted as a backward-compatible alias for every command in this topic (e.g., `b2c ods list`, `b2c ods create`, `b2c ods alias create`).
 :::
 
 ## Sandbox ID Formats
 
-Commands that operate on a specific sandbox (`get`, `update`, `start`, `stop`, `restart`, `delete`) accept two ID formats:
+Commands that operate on a specific sandbox (`get`, `update`, `start`, `stop`, `restart`, `delete`, `operations list`, `operations get`) accept two ID formats:
 
 | Format | Example | Description |
 |--------|---------|-------------|
@@ -149,6 +149,7 @@ b2c sandbox create --realm <REALM>
 | `--ttl` | Time to live in hours (0 for infinite) | `24` |
 | `--profile` | Resource profile (medium, large, xlarge, xxlarge) | `medium` |
 | `--auto-scheduled` | Enable automatic start/stop scheduling | `false` |
+| `--emails` | Comma-separated list of notification email addresses | |
 | `--wait`, `-w` | Wait for sandbox to reach started or failed state | `false` |
 | `--poll-interval` | Polling interval in seconds when using --wait | `10` |
 | `--timeout` | Maximum wait time in seconds (0 for no timeout) | `600` |
@@ -176,6 +177,9 @@ b2c sandbox create --realm abcd --wait
 
 # Create with auto-scheduling enabled
 b2c sandbox create --realm abcd --auto-scheduled
+
+# Create with notification emails
+b2c sandbox create --realm abcd --emails dev@example.com,ops@example.com
 
 # Create without automatic permissions
 b2c sandbox create --realm abcd --no-set-permissions
@@ -295,6 +299,44 @@ Displays information about:
 
 ---
 
+## b2c sandbox ips
+
+List inbound and outbound IP addresses for ODS sandboxes. Use this to allowlist B2C Commerce traffic in firewalls or third-party services.
+
+### Usage
+
+```bash
+b2c sandbox ips [--realm <REALM>]
+```
+
+### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--realm`, `-r` | Realm ID (four-letter ID) to scope IP details to a specific realm | All realms |
+
+### Examples
+
+```bash
+# List IPs across all realms
+b2c sandbox ips
+
+# Output as JSON
+b2c sandbox ips --json
+
+# Scope to a specific realm
+b2c sandbox ips --realm zzzz
+
+# Realm-scoped JSON output
+b2c sandbox ips -r zzzz --json
+```
+
+### Output
+
+Prints inbound and outbound IP addresses, plus per-sandbox IPs when available. With `--json`, returns the raw `SystemInfoResponse` payload.
+
+---
+
 ## b2c sandbox start
 
 Start a stopped on-demand sandbox.
@@ -388,6 +430,106 @@ b2c sandbox restart zzzv_123 --json
 
 ---
 
+## b2c sandbox operations list {#b2c-sandbox-operations-list}
+
+List past and current **operations** on a sandbox (for example start, stop, restart, reset, create, delete, upgrade). This maps to the ODS API `GET /sandboxes/{sandboxId}/operations` endpoint.
+
+To **request** a lifecycle operation (`start`, `stop`, `restart`, `reset`), use `b2c sandbox start|stop|restart|reset` instead; those commands call `POST /sandboxes/{sandboxId}/operations`.
+
+### Usage
+
+```bash
+b2c sandbox operations list <SANDBOXID>
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+
+### Flags
+
+| Flag | Short | Description | Default |
+|------|-------|-------------|---------|
+| `--from` | | Earliest operation time (ISO 8601). If omitted, the API defaults to roughly the last 30 days. | |
+| `--to` | | Latest operation time (ISO 8601). If omitted, the API defaults to now. | |
+| `--operation-state` | | Filter by lifecycle state: `pending`, `running`, or `finished` | |
+| `--status` | | Filter finished operations by outcome: `success` or `failure` | |
+| `--operation` | | Filter by operation type: `start`, `stop`, `restart`, `reset`, `create`, `delete`, `upgrade` | |
+| `--sort-order` | | Sort order: `asc` or `desc` | |
+| `--sort-by` | | Sort field: `created`, `operation_state`, `status`, or `operation` | |
+| `--page` | | Page index (0-based) | |
+| `--per-page` | | Page size (API default is typically 20) | |
+| `--columns`, `-c` | | Columns to display (comma-separated); see **Available columns** below | |
+| `--extended`, `-x` | | Include extended columns (for example `operationBy`) | `false` |
+
+### Available columns
+
+`id`, `operation`, `operationState`, `status`, `sandboxState`, `createdAt`, `operationBy` (extended)
+
+**Default columns:** `operation`, `operationState`, `status`, `sandboxState`, `createdAt`, `id`
+
+### Examples
+
+```bash
+# List recent operations for a sandbox
+b2c sandbox operations list zzzv-123
+
+# Only finished operations
+b2c sandbox operations list zzzv-123 --operation-state finished
+
+# Date range and paging
+b2c sandbox operations list zzzv-123 --from 2025-01-01 --to 2025-12-31 --page 0 --per-page 50
+
+# Custom columns
+b2c sandbox operations list zzzv-123 --columns operation,operationState,status,createdAt
+
+# Full API response (includes paging metadata when present)
+b2c sandbox operations list zzzv-123 --json
+```
+
+### Output
+
+When not using `--json`, the command prints a one-line paging summary when metadata is present, then a table of operations. Use `--json` to inspect `metadata` (page, totals) and the raw `data` array.
+
+---
+
+## b2c sandbox operations get {#b2c-sandbox-operations-get}
+
+Return details for a **single** sandbox operation by its operation UUID (maps to `GET /sandboxes/{sandboxId}/operations/{operationId}`). Use the operation `id` from `b2c sandbox operations list` or from the JSON output of `b2c sandbox start|stop|restart|reset` when using `--json`.
+
+### Usage
+
+```bash
+b2c sandbox operations get <SANDBOXID> <OPERATIONID>
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| `OPERATIONID` | Operation UUID | Yes |
+
+### Examples
+
+```bash
+# Show operation details (human-readable)
+b2c sandbox operations get zzzv-123 550e8400-e29b-41d4-a716-446655440000
+
+# Operation as JSON (sandbox operation model only)
+b2c sandbox operations get zzzv-123 550e8400-e29b-41d4-a716-446655440000 --json
+```
+
+### Output
+
+When not using `--json`, the command prints a short **Operation Details** block including operation type, state, outcome, sandbox state, created time, and who ran the operation when available.
+
+With `--json`, the command returns the **operation object** (not the full API envelope), consistent with `b2c sandbox get`.
+
+---
+
 ## b2c sandbox delete
 
 Delete an on-demand sandbox.
@@ -409,6 +551,9 @@ b2c sandbox delete <SANDBOXID>
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--force`, `-f` | Skip confirmation prompt | `false` |
+| `--wait`, `-w` | Wait for the sandbox to be fully deleted before returning | `false` |
+| `--poll-interval` | Polling interval in seconds when using `--wait` | `10` |
+| `--timeout` | Maximum time to wait in seconds when using `--wait` (0 for no timeout) | `600` |
 
 ### Examples
 
@@ -421,12 +566,16 @@ b2c sandbox delete zzzv-123
 
 # Delete without confirmation
 b2c sandbox delete zzzv_123 --force
+
+# Delete and wait for completion
+b2c sandbox delete zzzv_123 --force --wait
 ```
 
 ### Notes
 
 - The command will prompt for confirmation unless `--force` is used
 - Deleted sandboxes cannot be recovered
+- Use `--wait` to block until the sandbox is fully removed
 
 ---
 
@@ -483,7 +632,7 @@ b2c sandbox reset zzzv-123 --json
 
 ## b2c sandbox update
 
-Update a sandbox's TTL, scheduling, tags, or notification emails.
+Update a sandbox's TTL, scheduling, resource profile, tags, or notification emails.
 
 ### Usage
 
@@ -503,8 +652,11 @@ b2c sandbox update <SANDBOXID> [FLAGS]
 |------|-------------|
 | `--ttl` | Number of hours to add to sandbox lifetime (0 or less for infinite). Must adhere to the maximum TTL configuration together with previous extensions. |
 | `--auto-scheduled` / `--no-auto-scheduled` | Enable or disable automatic start/stop scheduling |
+| `--resource-profile` | Resource profile (`medium`, `large`, `xlarge`, `xxlarge`) |
 | `--tags` | Comma-separated list of tags |
 | `--emails` | Comma-separated list of notification email addresses |
+| `--start-scheduler` | Start schedule JSON (or `"null"` to remove existing scheduler) |
+| `--stop-scheduler` | Stop schedule JSON (or `"null"` to remove existing scheduler) |
 
 At least one flag is required.
 
@@ -526,11 +678,17 @@ b2c sandbox update zzzv-123 --no-auto-scheduled
 # Set tags
 b2c sandbox update zzzv-123 --tags ci,nightly
 
+# Update resource profile
+b2c sandbox update zzzv-123 --resource-profile large
+
 # Set notification emails
 b2c sandbox update zzzv-123 --emails dev@example.com,qa@example.com
 
+# Enable automatic scheduling and set scheduler values
+b2c sandbox update zzzv-123 --auto-scheduled --start-scheduler '{"weekdays":["MONDAY"],"time":"08:00:00Z"}' --stop-scheduler "null"
+
 # Combine multiple updates
-b2c sandbox update zzzv-123 --ttl 48 --tags ci,nightly
+b2c sandbox update zzzv-123 --ttl 48 --resource-profile xlarge --tags ci,nightly
 
 # Output as JSON
 b2c sandbox update zzzv-123 --ttl 48 --json
@@ -540,6 +698,8 @@ b2c sandbox update zzzv-123 --ttl 48 --json
 
 - The `--ttl` value is added to the existing sandbox lifetime, not an absolute value. Together with previous extensions, it must adhere to the realm's maximum TTL configuration.
 - Setting `--ttl` to 0 or less gives the sandbox an infinite lifetime (subject to realm configuration).
+- `--auto-scheduled` controls whether automatic start/stop behavior is enabled for the sandbox.
+- `--start-scheduler` and `--stop-scheduler` define scheduler values, but scheduler automation is effective only when `--auto-scheduled` is enabled.
 
 ---
 
@@ -593,6 +753,79 @@ If detailed usage data is present (granular history, profiles, etc.), the comman
 
 ---
 
+## b2c sandbox settings
+
+Show effective OCAPI and WebDAV settings for a specific sandbox.
+
+### Usage
+
+```bash
+b2c sandbox settings <SANDBOXID>
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+
+### Examples
+
+```bash
+# Show settings summary for a sandbox
+b2c sandbox settings zzzz-001
+
+# Output full settings payload as JSON
+b2c sandbox settings zzzz-001 --json
+```
+
+### Output
+
+When not using `--json`, the command prints:
+
+- Number of OCAPI client entries
+- Number of WebDAV client entries
+- A short per-client breakdown for each settings type
+
+---
+
+## b2c sandbox storage
+
+Show filesystem storage usage for a specific sandbox.
+
+### Usage
+
+```bash
+b2c sandbox storage <SANDBOXID>
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+
+### Examples
+
+```bash
+# Show storage table for a sandbox
+b2c sandbox storage zzzz-001
+
+# Output raw storage response as JSON
+b2c sandbox storage zzzz-001 --json
+```
+
+### Output
+
+When not using `--json`, the command prints a table with one row per filesystem:
+
+- Filesystem name
+- Total space (MB)
+- Used space (MB)
+- Used percentage
+
+---
+
 ## Sandbox Aliases
 
 Sandbox aliases let you access a sandbox via a custom hostname instead of the default instance hostname.
@@ -601,6 +834,7 @@ Alias commands are available both under the `sandbox` topic and the legacy `ods`
 
 - `b2c sandbox alias create`
 - `b2c sandbox alias list`
+- `b2c sandbox alias get`
 - `b2c sandbox alias delete`
 
 ### b2c sandbox alias create
@@ -694,6 +928,39 @@ When listing multiple aliases without `--json`, the command prints a table with:
 - Status
 - Whether the alias is unique
 - DNS verification record (if any)
+
+For **one alias** by ID, you can also use **`b2c sandbox alias get`** (same API as `list --alias-id`).
+
+### b2c sandbox alias get {#b2c-sandbox-alias-get}
+
+Get details for a **single** hostname alias (ODS API `GET /sandboxes/{sandboxId}/aliases/{sandboxAliasId}`). This is equivalent to `b2c sandbox alias list <SANDBOXID> --alias-id <ALIASID>` but uses positional arguments only.
+
+#### Usage
+
+```bash
+b2c sandbox alias get <SANDBOXID> <ALIASID>
+```
+
+#### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `SANDBOXID` | Sandbox ID (UUID or realm-instance, e.g., `zzzv-123`) | Yes |
+| `ALIASID` | Alias UUID | Yes |
+
+#### Examples
+
+```bash
+# Human-readable details
+b2c sandbox alias get zzzv-123 some-alias-uuid
+
+# Alias object as JSON (same shape as list/get for a single alias)
+b2c sandbox alias get zzzv-123 some-alias-uuid --json
+```
+
+#### Output
+
+When not using `--json`, the command prints an **Alias Details** section (hostname, status, uniqueness, DNS TXT verification, registration URL when present, optional cookie hint). With `--json`, it returns the **alias object** only.
 
 ### b2c sandbox alias delete
 
@@ -954,56 +1221,86 @@ For the complete response including all metadata, use the `--json` flag.
 
 ## Realm-Level Commands
 
-Realm commands operate at the **realm** level rather than on an individual sandbox. They are available as both `realm` topic commands and as `sandbox realm` subcommands:
+Realm commands operate at the **realm** level rather than on an individual sandbox. Use them under the existing sandbox topics:
 
-- `b2c realm list` (`b2c sandbox realm list`)
-- `b2c realm get` (`b2c sandbox realm get`)
-- `b2c realm update` (`b2c sandbox realm update`)
-- `b2c realm usage` (`b2c sandbox realm usage`)
+- `b2c sandbox realm list` (or `b2c ods realm list`)
+- `b2c sandbox realm configuration` (or `b2c ods realm configuration`)
+- `b2c sandbox realm get` (or `b2c ods realm get`)
+- `b2c sandbox realm update` (or `b2c ods realm update`)
+- `b2c sandbox realm usage` (or `b2c ods realm usage`)
+- `b2c sandbox realm usages` (or `b2c ods realm usages`)
 
 ### Required Access for Realm Commands
 
-To run `b2c realm` commands, your user or API client must have **realm‑level access** in Account Manager (typically a role ending in `_sbx` for sandbox management).
+To run `b2c sandbox realm` (or `b2c ods realm`) commands, your user or API client must have **realm‑level access** in Account Manager (typically a role ending in `_sbx` for sandbox management).
 
-### b2c realm list
+### b2c sandbox realm list
 
 List realms eligible for sandbox management.
 
 #### Usage
 
 ```bash
-b2c realm list [REALM]
+b2c sandbox realm list [REALM]
 ```
 
 #### Arguments
 
 | Argument | Description | Required |
 |----------|-------------|----------|
-| `REALM` | Specific realm ID (four-letter ID) to get details for | No |
+| `REALM` | Optional realm ID filter (four-letter ID) | No |
 
 #### Examples
 
 ```bash
 # List all realms you can manage
-b2c realm list
+b2c sandbox realm list
 
 # List a single realm
-b2c realm list zzzz
+b2c sandbox realm list zzzz
 
 # JSON output
-b2c realm list --json
+b2c sandbox realm list --json
 ```
 
-When `REALM` is omitted, the command discovers realms from the `/me` endpoint and then fetches configuration for each.
+When `REALM` is omitted, the command discovers realms from the `/me` endpoint.
 
-### b2c realm get
+### b2c sandbox realm configuration
+
+Get sandbox configuration for a specific realm.
+
+#### Usage
+
+```bash
+b2c sandbox realm configuration <REALM>
+```
+
+#### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `REALM` | Realm ID (four-letter ID) | Yes |
+
+#### Examples
+
+```bash
+# Get realm sandbox configuration
+b2c sandbox realm configuration zzzz
+
+# JSON output
+b2c sandbox realm configuration zzzz --json
+```
+
+When not using `--json`, the command prints configuration details such as emails, sandbox limits, TTL values, and start/stop schedulers.
+
+### b2c sandbox realm get
 
 Get detailed information about a specific realm, including configuration.
 
 #### Usage
 
 ```bash
-b2c realm get <REALM>
+b2c sandbox realm get <REALM>
 ```
 
 #### Arguments
@@ -1016,10 +1313,10 @@ b2c realm get <REALM>
 
 ```bash
 # Get realm details
-b2c realm get zzzz
+b2c sandbox realm get zzzz
 
 # JSON output (includes configuration and account details when available)
-b2c realm get zzzz --json
+b2c sandbox realm get zzzz --json
 ```
 
 #### Output
@@ -1036,14 +1333,14 @@ The command prints:
   - Whether local users are allowed
   - Start/stop scheduler definitions (as JSON) when present
 
-### b2c realm update
+### b2c sandbox realm update
 
 Update realm‑level sandbox configuration for TTL and start/stop schedulers.
 
 #### Usage
 
 ```bash
-b2c realm update <REALM> [FLAGS]
+b2c sandbox realm update <REALM> [FLAGS]
 ```
 
 #### Arguments
@@ -1060,6 +1357,8 @@ b2c realm update <REALM> [FLAGS]
 | `--default-sandbox-ttl` | Default sandbox TTL in hours when no TTL is specified at creation |
 | `--start-scheduler` | Start schedule JSON for sandboxes in this realm (use `"null"` to remove) |
 | `--stop-scheduler` | Stop schedule JSON for sandboxes in this realm (use `"null"` to remove) |
+| `--emails` | Comma-separated list of realm notification email addresses |
+| `--local-users-allowed` / `--no-local-users-allowed` | Enable or disable local users in realm sandbox configuration |
 
 The scheduler flags expect a JSON value or the literal string `"null"`:
 
@@ -1072,27 +1371,30 @@ The scheduler flags expect a JSON value or the literal string `"null"`:
 
 ```bash
 # Set max TTL to unlimited and default TTL to 24 hours
-b2c realm update zzzz --max-sandbox-ttl 0 --default-sandbox-ttl 24
+b2c sandbox realm update zzzz --max-sandbox-ttl 0 --default-sandbox-ttl 24
 
 # Configure weekday start/stop schedules
-b2c realm update zzzz \
+b2c sandbox realm update zzzz \
   --start-scheduler '{"weekdays":["MONDAY","TUESDAY"],"time":"08:00:00Z"}' \
   --stop-scheduler '{"weekdays":["MONDAY","TUESDAY"],"time":"19:00:00Z"}'
 
 # Remove an existing stop scheduler
-b2c realm update zzzz --stop-scheduler "null"
+b2c sandbox realm update zzzz --stop-scheduler "null"
+
+# Update realm emails and local user setting
+b2c sandbox realm update zzzz --emails dev@example.com,ops@example.com --local-users-allowed
 ```
 
 If no update flags are provided, the command fails with a helpful error explaining which flags can be used.
 
-### b2c realm usage
+### b2c sandbox realm usage
 
 Show usage information for a realm across all sandboxes in that realm.
 
 #### Usage
 
 ```bash
-b2c realm usage <REALM> [FLAGS]
+b2c sandbox realm usage <REALM> [FLAGS]
 ```
 
 #### Arguments
@@ -1114,13 +1416,13 @@ b2c realm usage <REALM> [FLAGS]
 
 ```bash
 # Realm usage for a recent window
-b2c realm usage zzzz
+b2c sandbox realm usage zzzz
 
 # Realm usage for a specific range
-b2c realm usage zzzz --from 2024-01-01 --to 2024-01-31
+b2c sandbox realm usage zzzz --from 2024-01-01 --to 2024-01-31
 
 # Daily granularity with full JSON response
-b2c realm usage zzzz --granularity daily --detailed-report --json
+b2c sandbox realm usage zzzz --granularity daily --detailed-report --json
 ```
 
 When not using `--json`, the command prints a summary including:
@@ -1131,4 +1433,47 @@ When not using `--json`, the command prints a summary including:
 - Minutes up by profile (if present)
 
 If detailed usage is available, it prints a hint to re-run with `--json` for the full structure. If no usage data is returned for the requested period, it prints a friendly message instead of failing.
+
+### b2c sandbox realm usages
+
+Show usage information for multiple realms in one request.
+
+#### Usage
+
+```bash
+b2c sandbox realm usages [FLAGS]
+```
+
+#### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--realm` | Realm IDs to include (repeat flag or provide comma-separated values) |
+| `--from` | Earliest date to include in usage (ISO 8601) |
+| `--to` | Latest date to include in usage (ISO 8601) |
+| `--detailed-report` | Include detailed usage information in the response |
+
+If `--realm` is omitted, the command auto-discovers realms from `/me` and queries usage for all discovered realms.
+
+#### Examples
+
+```bash
+# Usage for all realms available to the current user
+b2c sandbox realm usages
+
+# Usage for two specific realms
+b2c sandbox realm usages --realm zzzz --realm yyyy
+
+# Usage for comma-separated realms and date range
+b2c sandbox realm usages --realm zzzz,yyyy --from 2024-01-01 --to 2024-01-31
+
+# Detailed report in JSON
+b2c sandbox realm usages --detailed-report --json
+```
+
+When not using `--json`, the command prints one row per realm with summary metrics such as:
+
+- Active / created / deleted sandbox counts
+- Minutes up / minutes down
+- Sandbox seconds
 

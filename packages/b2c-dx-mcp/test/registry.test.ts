@@ -85,8 +85,8 @@ describe('registry', () => {
 
       const toolNames = registry.SCAPI.map((t) => t.name);
       expect(toolNames).to.include('scapi_schemas_list');
-      expect(toolNames).to.include('scapi_custom_apis_status');
-      expect(toolNames).to.include('scapi_custom_api_scaffold');
+      expect(toolNames).to.include('scapi_custom_apis_get_status');
+      expect(toolNames).to.include('scapi_custom_api_generate_scaffold');
     });
 
     it('should create STOREFRONTNEXT tools', () => {
@@ -97,8 +97,8 @@ describe('registry', () => {
       expect(registry.STOREFRONTNEXT.length).to.be.greaterThan(0);
 
       const toolNames = registry.STOREFRONTNEXT.map((t) => t.name);
-      expect(toolNames).to.include('storefront_next_development_guidelines');
-      expect(toolNames).to.include('storefront_next_page_designer_decorator');
+      expect(toolNames).to.include('sfnext_get_guidelines');
+      expect(toolNames).to.include('sfnext_add_page_designer_decorator');
       // mrt_bundle_push should also appear in STOREFRONTNEXT (multi-toolset)
       expect(toolNames).to.include('mrt_bundle_push');
     });
@@ -170,7 +170,7 @@ describe('registry', () => {
 
       expect(server.registeredTools).to.include('cartridge_deploy');
       // Should not include tools exclusive to other toolsets
-      expect(server.registeredTools).to.not.include('scapi_custom_apis_status');
+      expect(server.registeredTools).to.not.include('scapi_custom_apis_get_status');
     });
 
     it('should register tools from multiple toolsets', async () => {
@@ -205,7 +205,7 @@ describe('registry', () => {
       expect(server.registeredTools).to.include('cartridge_deploy');
       expect(server.registeredTools).to.include('mrt_bundle_push');
       expect(server.registeredTools).to.include('scapi_schemas_list');
-      expect(server.registeredTools).to.include('storefront_next_development_guidelines');
+      expect(server.registeredTools).to.include('sfnext_get_guidelines');
     });
 
     it('should register individual tools via --tools flag', async () => {
@@ -227,7 +227,7 @@ describe('registry', () => {
       const server = createMockServer();
       const flags: StartupFlags = {
         toolsets: ['CARTRIDGES'],
-        tools: ['scapi_custom_apis_status'],
+        tools: ['scapi_custom_apis_get_status'],
         allowNonGaTools: true,
       };
 
@@ -237,7 +237,7 @@ describe('registry', () => {
       // Should include all CARTRIDGES tools
       expect(server.registeredTools).to.include('cartridge_deploy');
       // Should also include the individual SCAPI tool
-      expect(server.registeredTools).to.include('scapi_custom_apis_status');
+      expect(server.registeredTools).to.include('scapi_custom_apis_get_status');
       // Should not include other SCAPI tools not in CARTRIDGES
       expect(server.registeredTools).to.not.include('scapi_schemas_list');
     });
@@ -303,8 +303,8 @@ describe('registry', () => {
 
       // Auto-discovery always includes BASE_TOOLSET (SCAPI), even if no project type detected
       expect(server.registeredTools).to.include('scapi_schemas_list');
-      expect(server.registeredTools).to.include('scapi_custom_apis_status');
-      expect(server.registeredTools).to.include('scapi_custom_api_scaffold');
+      expect(server.registeredTools).to.include('scapi_custom_apis_get_status');
+      expect(server.registeredTools).to.include('scapi_custom_api_generate_scaffold');
     });
 
     it('should trigger auto-discovery when all individual tools are invalid', async () => {
@@ -320,23 +320,26 @@ describe('registry', () => {
 
       // Auto-discovery always includes BASE_TOOLSET (SCAPI), even if no project type detected
       expect(server.registeredTools).to.include('scapi_schemas_list');
-      expect(server.registeredTools).to.include('scapi_custom_apis_status');
-      expect(server.registeredTools).to.include('scapi_custom_api_scaffold');
+      expect(server.registeredTools).to.include('scapi_custom_apis_get_status');
+      expect(server.registeredTools).to.include('scapi_custom_api_generate_scaffold');
     });
 
     it('should skip non-GA tools when allowNonGaTools is false', async () => {
       const server = createMockServer();
       const flags: StartupFlags = {
-        toolsets: ['CARTRIDGES'],
+        toolsets: ['STOREFRONTNEXT'],
         allowNonGaTools: false,
       };
 
       const loadServices = createMockLoadServicesWrapper();
       await registerToolsets(flags, server, loadServices);
 
-      // All current CARTRIDGES tools are non-GA (isGA: false)
-      // So none should be registered
-      expect(server.registeredTools).to.have.lengthOf(0);
+      // STOREFRONTNEXT-only tools are non-GA (isGA: false), so they should be skipped.
+      // Multi-toolset GA tools (mrt_bundle_push, scapi_*) that appear in STOREFRONTNEXT are still registered.
+      const sfnextOnlyTools = ['sfnext_get_guidelines', 'sfnext_add_page_designer_decorator'];
+      for (const toolName of sfnextOnlyTools) {
+        expect(server.registeredTools).to.not.include(toolName);
+      }
     });
 
     it('should register GA tools even when allowNonGaTools is false', async () => {
@@ -349,9 +352,17 @@ describe('registry', () => {
       const loadServices = createMockLoadServicesWrapper();
       await registerToolsets(flags, server, loadServices);
 
-      // Currently all tools are non-GA placeholders
-      // This test documents expected behavior for when GA tools exist
-      // When GA tools are added, this test should be updated to verify they are registered
+      // GA tools from CARTRIDGES, MRT, SCAPI, PWAV3 should be registered
+      expect(server.registeredTools).to.include('cartridge_deploy');
+      expect(server.registeredTools).to.include('mrt_bundle_push');
+      expect(server.registeredTools).to.include('scapi_schemas_list');
+      expect(server.registeredTools).to.include('scapi_custom_apis_get_status');
+      expect(server.registeredTools).to.include('scapi_custom_api_generate_scaffold');
+      expect(server.registeredTools).to.include('pwakit_get_guidelines');
+
+      // STOREFRONTNEXT-only tools should NOT be registered (still non-GA)
+      expect(server.registeredTools).to.not.include('sfnext_get_guidelines');
+      expect(server.registeredTools).to.not.include('sfnext_add_page_designer_decorator');
     });
 
     describe('auto-discovery', () => {

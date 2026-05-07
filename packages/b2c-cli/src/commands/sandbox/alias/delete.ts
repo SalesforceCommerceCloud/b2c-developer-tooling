@@ -48,6 +48,9 @@ export default class SandboxAliasDelete extends OdsCommand<typeof SandboxAliasDe
   };
 
   async run(): Promise<{success: boolean; message: string}> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete sandbox alias');
+
     const {sandboxId, aliasId} = this.args;
     const {force} = this.flags;
 

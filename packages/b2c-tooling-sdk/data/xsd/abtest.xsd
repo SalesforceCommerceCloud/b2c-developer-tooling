@@ -170,6 +170,7 @@
             <xsd:element name="slot-configuration" type="ABTestSegmentSlotConfiguration" minOccurs="0" maxOccurs="unbounded" />
             <xsd:element name="sorting-rule" type="ABTestSegmentSortingRule" minOccurs="0" maxOccurs="unbounded" />
             <xsd:element name="keyword-search-sorting-rule" type="ABTestSegmentKeywordSearchSortingRule" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="preference" type="ABTestSegmentPreference" minOccurs="0" maxOccurs="unbounded" />
         </xsd:sequence>
     </xsd:complexType>
 
@@ -197,6 +198,11 @@
         <xsd:attribute name="rule-id" type="Generic.NonEmptyString.256" use="required" />
         <xsd:attribute name="keyword-group-id" type="Generic.String.40" use="optional" />
         <xsd:attribute name="rule-context" type="Context" use="optional" default="site" />
+    </xsd:complexType>
+
+    <xsd:complexType name="ABTestSegmentPreference" mixed="false">
+        <xsd:attribute name="preference-name" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="preference-value" type="PreferenceValue" use="required" />
     </xsd:complexType>
 
     <xsd:complexType name="Notification">
@@ -253,6 +259,13 @@
             <xsd:minLength value="1" />
             <xsd:maxLength value="256" />
             <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="PreferenceValue">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="ENABLED" />
+            <xsd:enumeration value="DISABLED" />
         </xsd:restriction>
     </xsd:simpleType>
 

@@ -3,12 +3,49 @@
 [![CI](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/actions/workflows/ci.yml/badge.svg)](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/actions/workflows/ci.yml)
 
 > [!NOTE]
-> This project is currently in **Developer Preview**. Not all features are implemented, and the API may change in future releases. Please provide feedback via GitHub issues and Unofficial Slack.
+> This project is **Generally Available (GA)**. Please provide feedback via GitHub issues.
 
 Salesforce B2C Commerce Command Line Tools.
 
 > [!TIP]
 > **Just looking for the B2C CLI or MCP install instructions?** Visit the documentation site at [https://salesforcecommercecloud.github.io/b2c-developer-tooling/](https://salesforcecommercecloud.github.io/b2c-developer-tooling/) for the latest install guide and CLI reference.
+
+## Agent Skills & Plugins
+
+Install B2C Commerce agent skills and plugins in your AI-powered editor. Three plugins are available: `b2c-cli` (CLI operations), `b2c` (development patterns), and `b2c-dx-mcp` (MCP server — Claude Code only).
+
+- **Claude Code**: run these commands in chat:
+
+    ```
+    /plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+    /plugin install b2c-cli@b2c-developer-tooling
+    /plugin install b2c@b2c-developer-tooling
+    /plugin install b2c-dx-mcp@b2c-developer-tooling
+    ```
+
+- **VS Code (GitHub Copilot)**: Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) → **Chat: Install Plugin From Source** → enter the repo `SalesforceCommerceCloud/b2c-developer-tooling`.
+
+- **GitHub Copilot CLI**:
+
+    ```
+    copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+    copilot plugin install b2c-cli@b2c-developer-tooling
+    copilot plugin install b2c@b2c-developer-tooling
+    ```
+
+- **Cursor**: add the marketplace from this repo URL in Cursor Settings → Plugins, then install `b2c-cli` / `b2c`.
+
+- **Codex CLI**: run `/plugins` and add from this repo (GitHub URL).
+
+- **Gemini CLI**: `gemini extensions install https://github.com/SalesforceCommerceCloud/b2c-developer-tooling`
+
+- **Any supported IDE (file-copy install via CLI)**:
+
+    ```
+    npx @salesforce/b2c-cli setup skills
+    ```
+
+For Windsurf, OpenCode, Agentforce Vibes, manual installs, and the full install matrix, see [docs/guide/agent-skills](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills).
 
 ## Packages
 

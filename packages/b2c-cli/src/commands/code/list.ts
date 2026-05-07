@@ -47,6 +47,8 @@ export default class CodeList extends InstanceCommand<typeof CodeList> {
     '<%= config.bin %> <%= command.id %> --json',
   ];
 
+  static hiddenAliases = ['code:list'];
+
   async run(): Promise<CodeVersionResult> {
     this.requireOAuthCredentials();
 

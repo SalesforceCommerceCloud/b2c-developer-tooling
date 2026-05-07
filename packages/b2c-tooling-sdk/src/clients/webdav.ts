@@ -286,7 +286,15 @@ export class WebDavClient {
     const response = await this.request(path, {method: 'PUT', headers, body: content});
 
     if (!response.ok) {
-      throw new HTTPError(`PUT failed: ${response.status} ${response.statusText}`, response, 'PUT');
+      const hints: Record<number, string> = {
+        413: '(sandbox may be stopped or unavailable)',
+      };
+      const hint = hints[response.status];
+      throw new HTTPError(
+        `PUT failed: ${response.status} ${response.statusText}${hint ? ` ${hint}` : ''}`,
+        response,
+        'PUT',
+      );
     }
   }
 
@@ -364,6 +372,56 @@ export class WebDavClient {
 
     const xml = await response.text();
     return await this.parsePropfindResponse(xml);
+  }
+
+  /**
+   * Copies a file or directory.
+   *
+   * @param source - Source path relative to /webdav/Sites/
+   * @param destination - Destination path relative to /webdav/Sites/
+   * @param overwrite - Whether to overwrite if destination exists (default: true)
+   *
+   * @example
+   * await client.copy('Cartridges/v1/cartridge', 'Cartridges/v2/cartridge');
+   */
+  async copy(source: string, destination: string, overwrite = true): Promise<void> {
+    const destUrl = this.buildUrl(destination);
+    const response = await this.request(source, {
+      method: 'COPY',
+      headers: {
+        Destination: new URL(destUrl).pathname,
+        Overwrite: overwrite ? 'T' : 'F',
+      },
+    });
+
+    if (!response.ok) {
+      throw new HTTPError(`COPY failed: ${response.status} ${response.statusText}`, response, 'COPY');
+    }
+  }
+
+  /**
+   * Moves (renames) a file or directory.
+   *
+   * @param source - Source path relative to /webdav/Sites/
+   * @param destination - Destination path relative to /webdav/Sites/
+   * @param overwrite - Whether to overwrite if destination exists (default: true)
+   *
+   * @example
+   * await client.move('Cartridges/v1/old-name', 'Cartridges/v1/new-name');
+   */
+  async move(source: string, destination: string, overwrite = true): Promise<void> {
+    const destUrl = this.buildUrl(destination);
+    const response = await this.request(source, {
+      method: 'MOVE',
+      headers: {
+        Destination: new URL(destUrl).pathname,
+        Overwrite: overwrite ? 'T' : 'F',
+      },
+    });
+
+    if (!response.ok) {
+      throw new HTTPError(`MOVE failed: ${response.status} ${response.statusText}`, response, 'MOVE');
+    }
   }
 
   /**

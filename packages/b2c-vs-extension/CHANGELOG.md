@@ -1,5 +1,158 @@
 # Change Log
 
+## 0.5.0
+
+### Minor Changes
+
+- [#382](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/382) [`4f30de7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f30de783a049e33a121ec80a2cbd1c455f5d4e8) - Add Code Sync feature: file watcher with automatic upload to instance, deploy command, cartridge tree view with download/upload/site path management, and code version management. Includes status bar toggle, per-instance state persistence, and `autoUpload` dw.json support. Move API Browser to separate SCAPI sidebar. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`4f30de7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f30de783a049e33a121ec80a2cbd1c455f5d4e8)]:
+  - @salesforce/b2c-tooling-sdk@1.8.0
+
+## 0.4.4
+
+### Patch Changes
+
+- Updated dependencies [[`cb66b56`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cb66b563d5d5ca6a0f584d9007629ba392cb3424)]:
+  - @salesforce/b2c-tooling-sdk@1.7.0
+
+## 0.4.3
+
+### Patch Changes
+
+- [`63bcb49`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/63bcb4907585bea7ea41a6be483e7078a2cf5113) - Activate extension on startup so the instance selector status bar appears without needing to open the B2C sidebar first (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`485ef63`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/485ef63b901d91f7b08c56366d1f1756a03f60dc)]:
+  - @salesforce/b2c-tooling-sdk@1.6.1
+
+## 0.4.2
+
+### Patch Changes
+
+- Updated dependencies [[`1dc1ee5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1dc1ee55642f0d478d260867d538f02e32057d7e)]:
+  - @salesforce/b2c-tooling-sdk@1.6.0
+
+## 0.4.1
+
+### Patch Changes
+
+- [`bad9034`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bad903469353654a4b3cdbafecf2cbce5a863ea1) - Improved CAP skill with better guidance and UX refinements (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`1b07a5d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b07a5d400a3c684c391940bbd44c0dfa80d5dc9) - Fix OAuth redirect URI trailing slash mismatch that caused authentication failures in VS Code (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.4.0
+
+### Minor Changes
+
+- [#370](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/370) [`ee735bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee735bb0acac89999114c80679b4766216bf463a) - Add `cap` command topic for Commerce App Package (CAP) management. (Thanks [@clavery](https://github.com/clavery)!)
+
+  New commands:
+  - `b2c cap validate` — validates CAP structure, manifest, and cartridge rules locally
+  - `b2c cap package` — packages a CAP directory into a distributable `.zip`
+  - `b2c cap install` — installs a CAP on an instance via WebDAV + `sfcc-install-commerce-app` job
+  - `b2c cap uninstall` — uninstalls a CAP via `sfcc-uninstall-commerce-app` job
+
+  New SDK exports in `@salesforce/b2c-tooling-sdk/operations/cap`: `validateCap`, `commerceAppInstall`, `commerceAppUninstall`, `commerceAppPackage`.
+
+  The VS Code extension gains CAP directory detection (badge decoration) and an "Install Commerce App (CAP)" context menu action.
+
+### Patch Changes
+
+- Updated dependencies [[`ee735bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee735bb0acac89999114c80679b4766216bf463a), [`ee735bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee735bb0acac89999114c80679b4766216bf463a)]:
+  - @salesforce/b2c-tooling-sdk@1.5.0
+
+## 0.3.4
+
+### Patch Changes
+
+- Updated dependencies [[`59dd584`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/59dd584479cc024fa6eed365c7c91f64dc4110be), [`3dedc05`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3dedc05ade10f6d748b4168daef0e4c2fdaf1501), [`c4309db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c4309db94c8c61b25692775557c6c9ab0f627859)]:
+  - @salesforce/b2c-tooling-sdk@1.4.0
+
+## 0.3.3
+
+### Patch Changes
+
+- Updated dependencies [[`1b0b4ce`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b0b4ce2af63862438c0dae74df2efb35262139a)]:
+  - @salesforce/b2c-tooling-sdk@1.3.2
+
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [[`30de66b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/30de66bf59c250c5382a7427ba475049c68566cd)]:
+  - @salesforce/b2c-tooling-sdk@1.3.1
+
+## 0.3.1
+
+### Patch Changes
+
+- Updated dependencies [[`c04bbcb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c04bbcbb179d733bedc42f4d0eee2dff2256789e)]:
+  - @salesforce/b2c-tooling-sdk@1.3.0
+
+## 0.3.0
+
+### Minor Changes
+
+- [`464b9db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/464b9dbc3cf498e585d81ba5eb7ed0f17ff60a46) - Add B2C Commerce script debugger with SDAPI 2.0 DAP adapter (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`464b9db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/464b9dbc3cf498e585d81ba5eb7ed0f17ff60a46), [`e6c6226`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e6c6226c256b8d181917cc8c66fa4d7bf992e106)]:
+  - @salesforce/b2c-tooling-sdk@1.2.0
+
+## 0.2.11
+
+### Patch Changes
+
+- Updated dependencies [[`6880a84`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6880a846aacd029a1eb510023aa76f4b844ec26e)]:
+  - @salesforce/b2c-tooling-sdk@1.1.0
+
+## 0.2.10
+
+### Patch Changes
+
+- Updated dependencies [[`e597e61`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e597e6131b9965e88ef75954a935695fa7f6d70f)]:
+  - @salesforce/b2c-tooling-sdk@1.0.1
+
+## 0.2.9
+
+### Patch Changes
+
+- Updated dependencies [[`7ad490a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ad490a508b7f993292bd8a326f7a6c49c92d70c), [`c24e920`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c24e9204a5f253b773c43c0b30c064c7f4dec34a)]:
+  - @salesforce/b2c-tooling-sdk@1.0.0
+
+## 0.2.8
+
+### Patch Changes
+
+- [#285](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/285) [`cb74ce4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cb74ce4c78a91cc49556f464be5124981a24c3ea) - Add `openBrowser` and `redirectUri` options to OAuth strategy creation, allowing callers to customize how the browser is opened and which redirect URI is used during implicit auth. The VS Code extension now uses `vscode.env.openExternal` and `vscode.env.asExternalUri` so implicit OAuth works in Codespaces and other remote environments. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`b5d07fd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b5d07fd1d1086ee92b735d73502997bcad97dc7e), [`cb74ce4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cb74ce4c78a91cc49556f464be5124981a24c3ea), [`c10ddad`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c10ddadf7277c93196c956b73af694f4f065a149), [`b7f78ca`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b7f78ca6d2468e274b911c4fd1fc7c03a9e6b4fb)]:
+  - @salesforce/b2c-tooling-sdk@0.13.0
+
+## 0.2.7
+
+### Patch Changes
+
+- Updated dependencies [[`f7229b4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f7229b4372bb23d8e107db75f722575c33f4a007)]:
+  - @salesforce/b2c-tooling-sdk@0.12.0
+
+## 0.2.6
+
+### Patch Changes
+
+- Updated dependencies [[`8c31081`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8c31081b47e57e6a21e62425e6f19da036fc3e34), [`e4b5094`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4b5094d9c1c2a60e1214bc236ce7ed84c5d158b)]:
+  - @salesforce/b2c-tooling-sdk@0.11.0
+
+## 0.2.5
+
+### Patch Changes
+
+- Updated dependencies [[`b30e427`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b30e427f25807840dbcceef6c0005e2d9fd1be53), [`e919e50`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e919e502a7a0a6102c4039d003da0d90ab3673dc), [`caa568e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/caa568e9de3e8c9d3f2e7b17e5f96c1a0ae3ca73)]:
+  - @salesforce/b2c-tooling-sdk@0.10.0
+
 ## 0.2.4
 
 ### Patch Changes

@@ -7,20 +7,24 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
+import {registerSafeCommand} from '../safety.js';
 import {type WebDavFileSystemProvider, webdavPathToUri} from './webdav-fs-provider.js';
+import type {WebDavMappingsProvider} from './webdav-mappings.js';
 import type {WebDavTreeDataProvider, WebDavTreeItem} from './webdav-tree-provider.js';
 
 export function registerWebDavCommands(
   _context: vscode.ExtensionContext,
   configProvider: B2CExtensionConfig,
   treeProvider: WebDavTreeDataProvider,
+  treeView: vscode.TreeView<WebDavTreeItem>,
   fsProvider: WebDavFileSystemProvider,
+  mappingsProvider: WebDavMappingsProvider,
 ): vscode.Disposable[] {
-  const refresh = vscode.commands.registerCommand('b2c-dx.webdav.refresh', () => {
+  const refresh = registerSafeCommand('b2c-dx.webdav.refresh', () => {
     configProvider.reset();
   });
 
-  const newFolder = vscode.commands.registerCommand('b2c-dx.webdav.newFolder', async (node: WebDavTreeItem) => {
+  const newFolder = registerSafeCommand('b2c-dx.webdav.newFolder', async (node: WebDavTreeItem) => {
     if (!node) return;
 
     const name = await vscode.window.showInputBox({
@@ -50,7 +54,7 @@ export function registerWebDavCommands(
     );
   });
 
-  const uploadFile = vscode.commands.registerCommand('b2c-dx.webdav.uploadFile', async (node: WebDavTreeItem) => {
+  const uploadFile = registerSafeCommand('b2c-dx.webdav.uploadFile', async (node: WebDavTreeItem) => {
     if (!node) return;
 
     const uris = await vscode.window.showOpenDialog({
@@ -82,7 +86,7 @@ export function registerWebDavCommands(
     );
   });
 
-  const deleteItem = vscode.commands.registerCommand('b2c-dx.webdav.delete', async (node: WebDavTreeItem) => {
+  const deleteItem = registerSafeCommand('b2c-dx.webdav.delete', async (node: WebDavTreeItem) => {
     if (!node) return;
 
     const detail = node.isCollection
@@ -109,7 +113,7 @@ export function registerWebDavCommands(
     );
   });
 
-  const download = vscode.commands.registerCommand('b2c-dx.webdav.download', async (node: WebDavTreeItem) => {
+  const download = registerSafeCommand('b2c-dx.webdav.download', async (node: WebDavTreeItem) => {
     if (!node) return;
 
     const defaultUri = vscode.workspace.workspaceFolders?.[0]?.uri
@@ -136,13 +140,13 @@ export function registerWebDavCommands(
     );
   });
 
-  const openFile = vscode.commands.registerCommand('b2c-dx.webdav.openFile', async (node: WebDavTreeItem) => {
+  const openFile = registerSafeCommand('b2c-dx.webdav.openFile', async (node: WebDavTreeItem) => {
     if (!node) return;
     const uri = webdavPathToUri(node.webdavPath);
     await vscode.commands.executeCommand('vscode.open', uri);
   });
 
-  const newFile = vscode.commands.registerCommand('b2c-dx.webdav.newFile', async (node: WebDavTreeItem) => {
+  const newFile = registerSafeCommand('b2c-dx.webdav.newFile', async (node: WebDavTreeItem) => {
     if (!node) return;
 
     const name = await vscode.window.showInputBox({
@@ -174,7 +178,7 @@ export function registerWebDavCommands(
     );
   });
 
-  const mountWorkspace = vscode.commands.registerCommand('b2c-dx.webdav.mountWorkspace', (node: WebDavTreeItem) => {
+  const mountWorkspace = registerSafeCommand('b2c-dx.webdav.mountWorkspace', (node: WebDavTreeItem) => {
     if (!node) return;
     const uri = webdavPathToUri(node.webdavPath);
     vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders?.length ?? 0, 0, {
@@ -183,5 +187,134 @@ export function registerWebDavCommands(
     });
   });
 
-  return [refresh, newFolder, newFile, uploadFile, deleteItem, download, openFile, mountWorkspace];
+  const addCatalog = registerSafeCommand('b2c-dx.webdav.addCatalog', async () => {
+    const instance = configProvider.getInstance();
+
+    // Try OCAPI discovery first
+    let catalogChoices: string[] | undefined;
+    if (instance) {
+      try {
+        const {data} = await instance.ocapi.GET('/catalogs', {
+          params: {query: {select: '(**)', count: 200}},
+        });
+        catalogChoices = (data?.data?.map((c) => c.id).filter(Boolean) as string[]) ?? [];
+      } catch {
+        // OCAPI not available (no OAuth) — fall through to input box
+      }
+    }
+
+    let id: string | undefined;
+    if (catalogChoices?.length) {
+      const existing = new Set(mappingsProvider.getCatalogIds());
+      const available = catalogChoices.filter((c) => !existing.has(c));
+      if (available.length) {
+        id = await vscode.window.showQuickPick(available, {
+          title: 'Add Catalog',
+          placeHolder: 'Select a catalog to add',
+        });
+      }
+    }
+
+    // Fall back to manual entry if no quick pick or cancelled
+    if (!id) {
+      id = await vscode.window.showInputBox({
+        title: 'Add Catalog',
+        prompt: 'Enter the catalog ID',
+        placeHolder: 'e.g., storefront-catalog-en',
+        validateInput: (value: string) => {
+          if (!value.trim()) return 'Enter a catalog ID';
+          return null;
+        },
+      });
+    }
+
+    if (id) {
+      mappingsProvider.addCatalog(id.trim());
+    }
+  });
+
+  const removeCatalog = registerSafeCommand('b2c-dx.webdav.removeCatalog', (node: WebDavTreeItem) => {
+    if (!node || node.nodeType !== 'catalog-mapping') return;
+    mappingsProvider.removeCatalog(node.fileName);
+  });
+
+  const addLibrary = registerSafeCommand('b2c-dx.webdav.addLibrary', async () => {
+    const id = await vscode.window.showInputBox({
+      title: 'Add Library',
+      prompt: 'Enter the library ID',
+      placeHolder: 'e.g., SharedLibrary',
+      validateInput: (value: string) => {
+        if (!value.trim()) return 'Enter a library ID';
+        return null;
+      },
+    });
+    if (!id) return;
+
+    mappingsProvider.addLibrary(id.trim());
+  });
+
+  const removeLibrary = registerSafeCommand('b2c-dx.webdav.removeLibrary', (node: WebDavTreeItem) => {
+    if (!node || node.nodeType !== 'library-mapping') return;
+    mappingsProvider.removeLibrary(node.fileName);
+  });
+
+  const revealLibrary = registerSafeCommand('b2c-dx.webdav.revealLibrary', async (libraryId: string) => {
+    if (!libraryId) return;
+
+    // Ensure library is in mappings
+    if (!mappingsProvider.getLibraryIds().includes(libraryId)) {
+      mappingsProvider.addLibrary(libraryId);
+    }
+
+    // Reveal the library-mapping node in the WebDAV tree
+    const item = treeProvider.findItem('library-mapping', `Libraries/${libraryId}`);
+    if (item) {
+      try {
+        await treeView.reveal(item, {focus: true, select: true, expand: true});
+      } catch {
+        // reveal can fail if the tree hasn't rendered yet; fall back to focus
+        await vscode.commands.executeCommand('b2cWebdavExplorer.focus');
+      }
+    }
+  });
+
+  const revealPath = registerSafeCommand('b2c-dx.webdav.revealPath', async (webdavPath: string) => {
+    if (!webdavPath) return;
+
+    // Ensure the parent library is in mappings if this is a Libraries path
+    const segments = webdavPath.split('/');
+    if (segments[0] === 'Libraries' && segments.length >= 2) {
+      const libraryId = segments[1];
+      if (!mappingsProvider.getLibraryIds().includes(libraryId)) {
+        mappingsProvider.addLibrary(libraryId);
+      }
+    }
+
+    // Determine node type from the path
+    const item = treeProvider.findItem('file', webdavPath);
+    if (item) {
+      try {
+        await treeView.reveal(item, {focus: true, select: true});
+      } catch {
+        await vscode.commands.executeCommand('b2cWebdavExplorer.focus');
+      }
+    }
+  });
+
+  return [
+    refresh,
+    newFolder,
+    newFile,
+    uploadFile,
+    deleteItem,
+    download,
+    openFile,
+    mountWorkspace,
+    addCatalog,
+    removeCatalog,
+    addLibrary,
+    removeLibrary,
+    revealLibrary,
+    revealPath,
+  ];
 }

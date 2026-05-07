@@ -4,6 +4,5 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export * from './data-store.js';
-export * from './middleware.js';
-export {type ProxyConfig} from '../utils/configure-proxying.js';
+export * from '../data-store/index.js';
+export * from './express.js';

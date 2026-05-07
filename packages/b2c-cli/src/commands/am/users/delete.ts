@@ -35,6 +35,9 @@ export default class UserDelete extends AmCommand<typeof UserDelete> {
   };
 
   async run(): Promise<void> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete user');
+
     const {login} = this.args;
     const {purge} = this.flags;
 

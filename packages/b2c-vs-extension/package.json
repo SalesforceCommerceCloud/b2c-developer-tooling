@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "B2C DX VSCE",
   "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.2.4",
+  "version": "0.5.0",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -18,16 +18,16 @@
     "vscode": "^1.105.1"
   },
   "activationEvents": [
+    "onStartupFinished",
     "onView:b2cWebdavExplorer",
     "onView:b2cContentExplorer",
     "onFileSystem:b2c-webdav",
     "onFileSystem:b2c-content",
-    "onCommand:b2c-dx.openUI",
-    "onCommand:b2c-dx.promptAgent",
-    "onCommand:b2c-dx.listWebDav",
     "onView:b2cApiBrowser",
     "onView:b2cSandboxExplorer",
-    "onCommand:b2c-dx.scaffold.generate"
+    "onView:b2cCartridgeExplorer",
+    "onDebugResolve:b2c-script",
+    "workspaceContains:**/commerce-app.json"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -64,6 +64,11 @@
           "default": true,
           "description": "Enable the API Browser for exploring SCAPI schemas."
         },
+        "b2c-dx.features.cap": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Commerce App Package (CAP) commands and file decorations."
+        },
         "b2c-dx.logLevel": {
           "type": "string",
           "default": "info",
@@ -83,6 +88,11 @@
           "minimum": 2,
           "maximum": 300,
           "description": "Seconds between polls during sandbox state transitions."
+        },
+        "b2c-dx.features.codeSync": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Code Sync (watch and deploy cartridges)."
         }
       }
     },
@@ -97,7 +107,12 @@
         {
           "id": "b2c-dx",
           "title": "B2C-DX",
-          "icon": "media/b2c-icon.svg"
+          "icon": "$(remote-explorer)"
+        },
+        {
+          "id": "b2c-dx-scapi",
+          "title": "B2C-DX: SCAPI",
+          "icon": "$(symbol-interface)"
         },
         {
           "id": "b2c-dx-sandboxes",
@@ -121,10 +136,18 @@
           "contextualTitle": "B2C-DX"
         },
         {
-          "id": "b2cApiBrowser",
-          "name": "API Browser",
+          "id": "b2cCartridgeExplorer",
+          "name": "Cartridges",
           "icon": "media/b2c-icon.svg",
           "contextualTitle": "B2C-DX"
+        }
+      ],
+      "b2c-dx-scapi": [
+        {
+          "id": "b2cApiBrowser",
+          "name": "API Browser",
+          "icon": "$(symbol-interface)",
+          "contextualTitle": "B2C-DX: SCAPI"
         }
       ],
       "b2c-dx-sandboxes": [
@@ -151,6 +174,47 @@
       {
         "view": "b2cSandboxExplorer",
         "contents": "No sandbox realms configured.\n\nSet \"realm\" in dw.json or add a realm manually.\n\n[Add Realm](command:b2c-dx.sandbox.addRealm)"
+      },
+      {
+        "view": "b2cCartridgeExplorer",
+        "contents": "No cartridges found.\n\nCartridges are identified by .project files in the workspace.\n\n[Refresh](command:b2c-dx.codeSync.refreshCartridges)"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "b2c-script",
+        "label": "B2C Script Debugger",
+        "languages": [
+          "javascript"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "properties": {
+              "cartridgePath": {
+                "type": "string",
+                "description": "Path to cartridges directory (auto-detected from workspace by default)"
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "b2c-script",
+            "request": "launch",
+            "name": "B2C Script Debugger"
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "B2C Script Debugger",
+            "description": "Debug B2C Commerce server-side scripts",
+            "body": {
+              "type": "b2c-script",
+              "request": "launch",
+              "name": "B2C Script Debugger"
+            }
+          }
+        ]
       }
     ],
     "commands": [
@@ -247,6 +311,18 @@
         "category": "B2C DX - Sandboxes"
       },
       {
+        "command": "b2c-dx.sandbox.clone",
+        "title": "Clone Sandbox",
+        "icon": "$(copy)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
+        "command": "b2c-dx.sandbox.viewCloneDetails",
+        "title": "View Clone Details",
+        "icon": "$(git-branch)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
         "command": "b2c-dx.instance.inspect",
         "title": "B2C Instance Config",
         "category": "B2C DX"
@@ -314,6 +390,36 @@
         "command": "b2c-dx.webdav.mountWorkspace",
         "title": "Open as Workspace Folder",
         "icon": "$(root-folder-opened)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.addCatalog",
+        "title": "Add Catalog",
+        "icon": "$(add)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.removeCatalog",
+        "title": "Remove Catalog",
+        "icon": "$(remove)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.addLibrary",
+        "title": "Add Library",
+        "icon": "$(add)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.removeLibrary",
+        "title": "Remove Library",
+        "icon": "$(remove)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.content.browseWebdav",
+        "title": "Browse in WebDAV",
+        "icon": "$(folder-opened)",
         "category": "B2C DX"
       },
       {
@@ -385,6 +491,96 @@
         "command": "b2c-dx.resetProjectRoot",
         "title": "Reset B2C Commerce Root to Auto-Detect",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.cap.install",
+        "title": "Install Commerce App (CAP)",
+        "icon": "$(cloud-upload)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.codeSync.toggle",
+        "title": "Toggle Code Sync",
+        "icon": "$(sync)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.codeSync.start",
+        "title": "Start Code Sync",
+        "icon": "$(sync)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.codeSync.stop",
+        "title": "Stop Code Sync",
+        "icon": "$(debug-stop)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.codeSync.deploy",
+        "title": "Deploy Cartridges",
+        "icon": "$(cloud-upload)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.codeSync.refreshCartridges",
+        "title": "Refresh Cartridges",
+        "icon": "$(refresh)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.codeSync.uploadCartridge",
+        "title": "Upload Cartridge",
+        "icon": "$(cloud-upload)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.codeSync.uploadToInstance",
+        "title": "Upload to Instance",
+        "icon": "$(cloud-upload)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.codeSync.downloadCartridge",
+        "title": "Download from Instance",
+        "icon": "$(cloud-download)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.codeSync.diffCartridge",
+        "title": "Compare with Instance",
+        "icon": "$(diff)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.codeSync.addToSitePath",
+        "title": "Add to Site Cartridge Path",
+        "icon": "$(add)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.codeSync.removeFromSitePath",
+        "title": "Remove from Site Cartridge Path",
+        "icon": "$(remove)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.codeSync.listCodeVersions",
+        "title": "Code Versions",
+        "icon": "$(list-unordered)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.codeSync.createCodeVersion",
+        "title": "Create Code Version",
+        "icon": "$(add)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.codeSync.activateCodeVersion",
+        "title": "Activate Code Version",
+        "icon": "$(check)",
+        "category": "B2C DX - Code Sync"
       }
     ],
     "menus": {
@@ -428,22 +624,67 @@
           "command": "b2c-dx.sandbox.addRealm",
           "when": "view == b2cSandboxExplorer",
           "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.codeSync.refreshCartridges",
+          "when": "view == b2cCartridgeExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.codeSync.deploy",
+          "when": "view == b2cCartridgeExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.codeSync.listCodeVersions",
+          "when": "view == b2cCartridgeExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.codeSync.createCodeVersion",
+          "when": "view == b2cCartridgeExplorer",
+          "group": "1_versions"
+        },
+        {
+          "command": "b2c-dx.codeSync.activateCodeVersion",
+          "when": "view == b2cCartridgeExplorer",
+          "group": "1_versions"
         }
       ],
       "view/item/context": [
         {
+          "command": "b2c-dx.webdav.addCatalog",
+          "when": "view == b2cWebdavExplorer && viewItem == virtual-root-catalogs",
+          "group": "0_add@0"
+        },
+        {
+          "command": "b2c-dx.webdav.addLibrary",
+          "when": "view == b2cWebdavExplorer && viewItem == virtual-root-libraries",
+          "group": "0_add@0"
+        },
+        {
+          "command": "b2c-dx.webdav.removeCatalog",
+          "when": "view == b2cWebdavExplorer && viewItem == catalog-mapping",
+          "group": "2_manage@1"
+        },
+        {
+          "command": "b2c-dx.webdav.removeLibrary",
+          "when": "view == b2cWebdavExplorer && viewItem == library-mapping",
+          "group": "2_manage@1"
+        },
+        {
           "command": "b2c-dx.webdav.newFile",
-          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|directory)$/",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|catalog-mapping|library-mapping|directory)$/",
           "group": "1_modification@0"
         },
         {
           "command": "b2c-dx.webdav.newFolder",
-          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|directory)$/",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|catalog-mapping|library-mapping|directory)$/",
           "group": "1_modification@1"
         },
         {
           "command": "b2c-dx.webdav.uploadFile",
-          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|directory)$/",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|catalog-mapping|library-mapping|directory)$/",
           "group": "1_modification@2"
         },
         {
@@ -463,7 +704,7 @@
         },
         {
           "command": "b2c-dx.webdav.mountWorkspace",
-          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|directory)$/",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(root|catalog-mapping|library-mapping|directory)$/",
           "group": "3_workspace@1"
         },
         {
@@ -487,6 +728,11 @@
           "group": "2_manage@1"
         },
         {
+          "command": "b2c-dx.content.browseWebdav",
+          "when": "view == b2cContentExplorer && viewItem =~ /^(library|static)$/",
+          "group": "3_webdav@1"
+        },
+        {
           "command": "b2c-dx.sandbox.create",
           "when": "view == b2cSandboxExplorer && viewItem == realm",
           "group": "1_realm@1"
@@ -503,33 +749,63 @@
         },
         {
           "command": "b2c-dx.sandbox.openBM",
-          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-/",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-(?!cloning|settingup)/",
           "group": "1_info@2"
         },
         {
           "command": "b2c-dx.sandbox.start",
-          "when": "view == b2cSandboxExplorer && viewItem == sandbox-stopped",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-stopped(-cloned)?$/",
           "group": "2_lifecycle@1"
         },
         {
           "command": "b2c-dx.sandbox.stop",
-          "when": "view == b2cSandboxExplorer && viewItem == sandbox-started",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-started(-cloned)?$/",
           "group": "2_lifecycle@2"
         },
         {
           "command": "b2c-dx.sandbox.restart",
-          "when": "view == b2cSandboxExplorer && viewItem == sandbox-started",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-started(-cloned)?$/",
           "group": "2_lifecycle@3"
         },
         {
           "command": "b2c-dx.sandbox.extendExpiration",
-          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-/",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-(?!cloning|settingup)/",
           "group": "2_lifecycle@4"
         },
         {
+          "command": "b2c-dx.sandbox.clone",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-(started|stopped)(-cloned)?$/",
+          "group": "2_lifecycle@5"
+        },
+        {
+          "command": "b2c-dx.sandbox.viewCloneDetails",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-.*-cloned$/",
+          "group": "1_info@3"
+        },
+        {
           "command": "b2c-dx.sandbox.delete",
-          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-/",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-(?!cloning|settingup)/",
           "group": "3_destructive@1"
+        },
+        {
+          "command": "b2c-dx.codeSync.uploadCartridge",
+          "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
+          "group": "1_upload@1"
+        },
+        {
+          "command": "b2c-dx.codeSync.downloadCartridge",
+          "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
+          "group": "2_instance@1"
+        },
+        {
+          "command": "b2c-dx.codeSync.addToSitePath",
+          "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
+          "group": "3_sitepath@1"
+        },
+        {
+          "command": "b2c-dx.codeSync.removeFromSitePath",
+          "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
+          "group": "3_sitepath@2"
         }
       ],
       "file/newFile": [
@@ -546,6 +822,11 @@
           "group": "navigation"
         },
         {
+          "command": "b2c-dx.codeSync.uploadToInstance",
+          "when": "b2c-dx.codeSyncAvailable && resourceScheme == file",
+          "group": "7_modification@8"
+        },
+        {
           "submenu": "b2c-dx.submenu",
           "when": "explorerResourceIsFolder",
           "group": "7_modification@9"
@@ -558,6 +839,11 @@
       ],
       "b2c-dx.submenu": [
         {
+          "command": "b2c-dx.codeSync.deploy",
+          "when": "explorerResourceIsFolder && b2c-dx.codeSyncAvailable",
+          "group": "0_code"
+        },
+        {
           "command": "b2c-dx.scaffold.generate",
           "when": "explorerResourceIsFolder",
           "group": "1_scaffold"
@@ -566,6 +852,11 @@
           "command": "b2c-dx.content.import",
           "when": "explorerResourceIsFolder",
           "group": "2_import"
+        },
+        {
+          "command": "b2c-dx.cap.install",
+          "when": "explorerResourceIsFolder && resource in b2c-dx.capDirectories",
+          "group": "3_cap"
         }
       ],
       "commandPalette": [
@@ -603,6 +894,26 @@
         },
         {
           "command": "b2c-dx.sandbox.extendExpiration",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.clone",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.viewCloneDetails",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.removeCatalog",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.webdav.removeLibrary",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.content.browseWebdav",
           "when": "false"
         },
         {
@@ -655,6 +966,38 @@
         },
         {
           "command": "b2c-dx.setProjectRoot",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.cap.install",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.codeSync.uploadCartridge",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.codeSync.uploadToInstance",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.codeSync.refreshCartridges",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.codeSync.downloadCartridge",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.codeSync.diffCartridge",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.codeSync.addToSitePath",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.codeSync.removeFromSitePath",
           "when": "false"
         }
       ]

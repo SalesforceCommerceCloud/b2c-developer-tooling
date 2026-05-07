@@ -39,7 +39,7 @@ describe('tools/pwav3/pwa-kit-development-guidelines', () => {
   describe('tool metadata', () => {
     it('should have correct tool name', () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      expect(tool.name).to.equal('pwakit_development_guidelines');
+      expect(tool.name).to.equal('pwakit_get_guidelines');
     });
 
     it('should have concise, action-oriented description', () => {
@@ -87,9 +87,9 @@ describe('tools/pwav3/pwa-kit-development-guidelines', () => {
       expect(tool.toolsets).to.have.lengthOf(1);
     });
 
-    it('should not be GA (generally available)', () => {
+    it('should be GA (generally available)', () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      expect(tool.isGA).to.be.false;
+      expect(tool.isGA).to.be.true;
     });
 
     it('should not require B2C instance', () => {

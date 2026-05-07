@@ -163,6 +163,14 @@
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
+            <xsd:element name="content-variant-assignments" type="complexType.Content.ContentVariantAssignments" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The content-variant-assignments can only be set for default content. Each default content can have
+                        multiple variant content assigned in a specific order.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
             <xsd:element name="sitemap-included-flag" type="sharedType.SiteSpecificBoolean" minOccurs="0" maxOccurs="unbounded" nillable="true">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -252,6 +260,31 @@
         <xsd:attribute name="object-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
         <xsd:attribute name="lookup-mode" type="simpleType.AssignedObjectLookupMode" />
         <xsd:attribute name="object-type" type="simpleType.AssignedObjectType" use="required" />
+    </xsd:complexType>
+
+    <!-- ContentVariantAssignment -->
+    <xsd:complexType name="complexType.Content.ContentVariantAssignments" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>
+                These assignments represent variant content linked to a default content. Each default content can have
+                multiple variant content in a specific order.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="content-variant-assignment" type="complexType.Content.ContentVariantAssignment" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Content.ContentVariantAssignment" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>
+                Represents a variant content assignment with position for ordering.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:all>
+            <xsd:element name="position" type="xsd:double" minOccurs="0" maxOccurs="1" />
+        </xsd:all>
+        <xsd:attribute name="content-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
     </xsd:complexType>
 
     <xsd:simpleType name="simpleType.AssignedObjectType">

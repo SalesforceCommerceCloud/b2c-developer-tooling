@@ -10,12 +10,17 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {B2CExtensionConfig} from './config-provider.js';
+import {registerCap} from './cap/index.js';
+import {registerJobLogViewer} from './job-log-viewer.js';
 import {registerContentTree} from './content-tree/index.js';
 import {registerLogs} from './logs/index.js';
 import {initializePlugins} from './plugins.js';
+import {registerSafety} from './safety.js';
 import {registerSandboxTree} from './sandbox-tree/index.js';
 import {registerScaffold} from './scaffold/index.js';
 import {registerApiBrowser} from './api-browser/index.js';
+import {registerDebugger} from './debugger/index.js';
+import {registerCodeSync} from './code-sync/index.js';
 import {registerWebDavTree} from './webdav-tree/index.js';
 
 function getWebviewContent(context: vscode.ExtensionContext): string {
@@ -136,9 +141,13 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   // before the first resolveConfig() call. Failures are non-fatal.
   await initializePlugins();
 
+  registerJobLogViewer(context);
+
   const configProvider = new B2CExtensionConfig(log, context.workspaceState);
   context.subscriptions.push(configProvider);
   await configProvider.ensureResolved();
+
+  registerSafety(context, configProvider);
 
   const disposable = vscode.commands.registerCommand('b2c-dx.openUI', () => {
     vscode.window.showInformationMessage('B2C DX: Opening Page Designer Assistant.');
@@ -395,6 +404,14 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   if (settings.get<boolean>('features.apiBrowser', true)) {
     registerApiBrowser(context, configProvider, log);
   }
+  if (settings.get<boolean>('features.cap', true)) {
+    registerCap(context, configProvider, log);
+  }
+  if (settings.get<boolean>('features.codeSync', true)) {
+    registerCodeSync(context, configProvider, log);
+  }
+
+  registerDebugger(context, configProvider);
 
   // React to configuration changes
   const configChangeListener = vscode.workspace.onDidChangeConfiguration((e) => {

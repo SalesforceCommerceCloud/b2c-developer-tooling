@@ -1,6 +1,6 @@
 ---
 name: b2c-hooks
-description: Implement hooks using HookMgr and extension points in B2C Commerce. Use when extending OCAPI/SCAPI behavior, handling system events like order calculation, or registering custom hook implementations. Covers hooks.json, dw.ocapi hooks, and custom extension points.
+description: Implement hooks with HookMgr, hooks.json registration, and system extension points for order, basket, and API lifecycle events. Use this skill whenever the user needs to register a hook implementation, extend OCAPI/SCAPI behavior with before/after hooks, customize order calculation or payment authorization, or create custom extension points. Also use when debugging hook registration or Status return values -- even if they just say 'run code when an order is placed' or 'intercept the basket API'.
 ---
 
 # B2C Commerce Hooks

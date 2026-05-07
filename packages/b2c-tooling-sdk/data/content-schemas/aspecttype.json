@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "name": {"$ref":"common.json#/definitions/name"},
+    "description": {"$ref":"common.json#/definitions/description"},
+    "arch_type": {
+      "$ref": "common.json#/definitions/arch_type"
+    },
+    "attribute_definitions": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "$ref": "attributedefinition.json#/definitions/string" },
+          { "$ref": "attributedefinition.json#/definitions/integer" },
+          { "$ref": "attributedefinition.json#/definitions/product" },
+          { "$ref": "attributedefinition.json#/definitions/category" },
+          { "$ref": "attributedefinition.json#/definitions/page" },
+          { "$ref": "attributedefinition.json#/definitions/enum_of_integer" },
+          { "$ref": "attributedefinition.json#/definitions/enum_of_string" }
+        ]
+      }
+    },
+    "supported_object_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["category", "product"]
+      },
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "name",
+    "attribute_definitions",
+    "supported_object_types"
+  ],
+  "additionalProperties": false
+}

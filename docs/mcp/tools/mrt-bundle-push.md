@@ -19,30 +19,55 @@ The `mrt_bundle_push` tool bundles a pre-built project and uploads it to Managed
 
 This tool is shared across the MRT, PWAV3, and STOREFRONTNEXT toolsets.
 
-## Authentication
+## Credentials and Setup
 
-Requires Managed Runtime (MRT) credentials.
+This tool reads MRT credentials from the same sources as the CLI.
 
-**Required:**
-- `project` - MRT project slug
-- `api-key` - MRT API key
+### What you must configure
 
-**Required when `deploy: true`:**
-- `environment` - Target environment (e.g., staging, production)
+| Logical value | Required | Flag | Environment variable | `dw.json` field | Other source |
+| ------------- | -------- | ---- | -------------------- | --------------- | ------------ |
+| MRT project slug | Yes | `--project` | `MRT_PROJECT` | `mrtProject` | - |
+| MRT API key | Yes | `--api-key` | `MRT_API_KEY` | `mrtApiKey` | `api_key` in `~/.mobify` |
+| MRT environment | Only when `deploy: true` | `--environment` | `MRT_ENVIRONMENT` | `mrtEnvironment` | - |
+| MRT cloud origin | No | `--cloud-origin` | `MRT_CLOUD_ORIGIN` | `mrtCloudOrigin` | Uses `~/.mobify--{hostname}` with `--cloud-origin` |
 
-**Optional:**
-- `cloud-origin` - Overrides MRT API endpoint and uses `~/.mobify--{hostname}` instead of `~/.mobify`
+**When the same value is set in multiple places, resolution order is:** Flags → Environment variables → Config files (`dw.json`, `~/.mobify`)
 
-**Configuration priority:** Flags → Environment variables → `~/.mobify` config file
+For normal setup, prefer project-level `dw.json` (and `.env` when needed). Use flags or MCP client `env` for temporary overrides.
 
-See [MRT Credentials](../configuration#mrt-credentials-mobify) for complete setup instructions including flags, environment variables, and the `~/.mobify` file format. See [Authentication Setup](../../guide/authentication#managed-runtime-api-key) for how to get your API key.
+See [MRT Credentials](../configuration#mrt-credentials) for complete setup details. See [Authentication Setup](../../guide/authentication#managed-runtime-api-key) for how to get your API key.
+
+### Setup examples
+
+**Using `dw.json` (recommended)** - Add MRT fields to your project's `dw.json`. No changes to `mcp.json` are required:
+
+```json
+{
+  "mrtProject": "my-project",
+  "mrtEnvironment": "staging",
+  "mrtApiKey": "your-api-key"
+}
+```
+
+**Using `.env` file** - Place in your project root:
+
+```bash
+MRT_API_KEY=your-api-key
+MRT_PROJECT=my-project
+MRT_ENVIRONMENT=staging
+```
+
+See [Environment Variables Reference](../configuration#environment-variables-reference) for all supported MRT variables (including optional `MRT_CLOUD_ORIGIN`).
+
+**Using MCP client `env` object or flags** - Best for overrides or CI. See [Configuration](../configuration#environment-variables-reference) for variable names and [Configuration Priority](../configuration#configuration-priority) for resolution order.
 
 ## Parameters
 
 Defaults for `buildDirectory`, `ssrOnly`, and `ssrShared` are chosen by detected project type (Storefront Next, PWA Kit v3, or generic). Explicit parameters override the project-type defaults.
 
 | Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
+| --------- | ---- | -------- | ------- | ----------- |
 | `buildDirectory` | string | No | `build` | Path to build directory containing the built project files. Can be absolute or relative to the project directory. |
 | `message` | string | No | None | Deployment message to include with the bundle push. Useful for tracking deployments. |
 | `ssrOnly` | string | No | Varies by project type | Glob patterns for server-only files (SSR), comma-separated or JSON array. These files are only included in the server bundle. |

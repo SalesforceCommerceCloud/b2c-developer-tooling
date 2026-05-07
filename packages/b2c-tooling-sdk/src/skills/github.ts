@@ -4,46 +4,123 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {execFile} from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import {promisify} from 'node:util';
 import JSZip from 'jszip';
-import type {CachedArtifact, DownloadSkillsOptions, ReleaseInfo, SkillSet} from './types.js';
+import type {CachedArtifact, DownloadSkillsOptions, ReleaseInfo, SkillSet, SkillSourceConfig} from './types.js';
+import {getSkillSource} from './sources.js';
 import {getLogger} from '../logging/logger.js';
 
-const GITHUB_REPO = 'SalesforceCommerceCloud/b2c-developer-tooling';
+const execFileAsync = promisify(execFile);
+
 const GITHUB_API_BASE = 'https://api.github.com';
 const GITHUB_DOWNLOAD_BASE = 'https://github.com';
+const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com';
+const LATEST_VERSION_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
-/**
- * Asset filename patterns for skill archives.
- */
-const ASSET_NAMES: Record<SkillSet, string> = {
-  b2c: 'b2c-skills.zip',
-  'b2c-cli': 'b2c-cli-skills.zip',
-};
+function buildDownloadUrl(repo: string, tag: string, assetName: string): string {
+  return `${GITHUB_DOWNLOAD_BASE}/${repo}/releases/download/${tag}/${assetName}`;
+}
 
-/**
- * Build direct download URL for a release asset.
- * These URLs don't require API calls and avoid rate limiting.
- *
- * @param version - 'latest' or specific version tag
- * @param assetName - Name of the asset file
- * @returns Direct download URL
- */
-function getDirectDownloadUrl(version: string, assetName: string): string {
-  if (version === 'latest') {
-    return `${GITHUB_DOWNLOAD_BASE}/${GITHUB_REPO}/releases/latest/download/${assetName}`;
+function getLatestVersionCachePath(): string {
+  return path.join(getCacheDir(), '.latest-version.json');
+}
+
+function readLatestVersionCache(): string | null {
+  try {
+    const p = getLatestVersionCachePath();
+    if (!fs.existsSync(p)) return null;
+    const entry = JSON.parse(fs.readFileSync(p, 'utf-8')) as {version: string; resolvedAt: string};
+    const age = Date.now() - new Date(entry.resolvedAt).getTime();
+    if (age > LATEST_VERSION_CACHE_TTL_MS) return null;
+    return entry.version;
+  } catch {
+    return null;
   }
-  const tag = version.startsWith('v') ? version : `v${version}`;
-  return `${GITHUB_DOWNLOAD_BASE}/${GITHUB_REPO}/releases/download/${tag}/${assetName}`;
+}
+
+function writeLatestVersionCache(version: string): void {
+  try {
+    const p = getLatestVersionCachePath();
+    fs.mkdirSync(path.dirname(p), {recursive: true});
+    fs.writeFileSync(p, JSON.stringify({version, resolvedAt: new Date().toISOString()}));
+  } catch {
+    // Caching is best-effort
+  }
+}
+
+function clearLatestVersionCache(): void {
+  try {
+    const p = getLatestVersionCachePath();
+    if (fs.existsSync(p)) fs.unlinkSync(p);
+  } catch {
+    // Best-effort
+  }
+}
+
+function isRateLimited(response: Response): boolean {
+  if (response.status !== 403 && response.status !== 429) return false;
+  const remaining = response.headers.get('x-ratelimit-remaining');
+  return remaining === '0' || response.status === 429;
+}
+
+/**
+ * Resolve the version of the most recent skills release from the b2c-developer-tooling repo.
+ */
+async function resolveLatestVersion(source: SkillSourceConfig): Promise<string> {
+  const logger = getLogger();
+
+  const cached = readLatestVersionCache();
+  if (cached) {
+    logger.debug({version: cached}, 'Using cached latest version');
+    return cached;
+  }
+
+  try {
+    const releases = await listReleases(30);
+    if (releases.length > 0) {
+      const version = releases[0].version;
+      writeLatestVersionCache(version);
+      return version;
+    }
+    logger.warn('GitHub API returned no releases with skills artifacts; falling back to main branch');
+  } catch (err) {
+    const isRateLimit = err instanceof Error && /rate.?limit|403|429/i.test(err.message);
+    if (isRateLimit) {
+      logger.warn(
+        {err: (err as Error).message},
+        'GitHub API rate-limited; falling back to main branch for version resolution',
+      );
+    } else {
+      logger.warn(
+        {err: (err as Error).message},
+        'GitHub API unavailable; falling back to main branch for version resolution',
+      );
+    }
+  }
+
+  const rawUrl = `${GITHUB_RAW_BASE}/${source.repo}/main/skills/package.json`;
+  logger.debug({url: rawUrl}, 'Fetching version from raw.githubusercontent.com');
+  const response = await fetch(rawUrl, {headers: {'User-Agent': 'b2c-cli'}});
+  if (!response.ok) {
+    throw new Error(
+      `Unable to resolve latest skills version: raw fetch failed with ${response.status} ${response.statusText}`,
+    );
+  }
+  const data = (await response.json()) as {version?: string};
+  if (!data.version) {
+    throw new Error('Unable to resolve latest skills version: skills/package.json has no version field');
+  }
+  writeLatestVersionCache(data.version);
+  return data.version;
 }
 
 /**
  * Get the cache directory for skills.
  * Uses XDG_CACHE_HOME on Linux, ~/.cache otherwise.
- *
- * @returns Absolute path to cache directory
  */
 export function getCacheDir(): string {
   const xdgCache = process.env.XDG_CACHE_HOME;
@@ -51,40 +128,50 @@ export function getCacheDir(): string {
   return path.join(baseCache, 'b2c-cli', 'skills');
 }
 
-/**
- * Parse GitHub API release response into ReleaseInfo.
- */
 function parseRelease(release: {
   tag_name: string;
   published_at: string;
   assets: Array<{name: string; browser_download_url: string}>;
 }): ReleaseInfo {
-  const b2cAsset = release.assets.find((a) => a.name === ASSET_NAMES['b2c']);
-  const b2cCliAsset = release.assets.find((a) => a.name === ASSET_NAMES['b2c-cli']);
+  const b2cSource = getSkillSource('b2c');
+  const b2cCliSource = getSkillSource('b2c-cli');
+  const sfNextSource = getSkillSource('storefront-next');
+
+  const b2cAsset = release.assets.find((a) => a.name === b2cSource.assetName);
+  const b2cCliAsset = release.assets.find((a) => a.name === b2cCliSource.assetName);
+  const sfNextAsset = release.assets.find((a) => a.name === sfNextSource.assetName);
+
+  const versionMatch = release.tag_name.match(/@(\d+\.\d+\.\d+.*)$/);
+  const version = versionMatch ? versionMatch[1] : release.tag_name.replace(/^v/, '');
 
   return {
     tagName: release.tag_name,
-    version: release.tag_name.replace(/^v/, ''),
+    version,
     publishedAt: release.published_at,
     b2cSkillsAssetUrl: b2cAsset?.browser_download_url ?? null,
     b2cCliSkillsAssetUrl: b2cCliAsset?.browser_download_url ?? null,
+    storefrontNextSkillsAssetUrl: sfNextAsset?.browser_download_url ?? null,
   };
 }
 
 /**
  * Fetch release information from GitHub API.
- *
- * @param version - 'latest' or specific version (e.g., 'v0.1.0')
- * @returns Release information
- * @throws Error if release not found or API request fails
  */
 export async function getRelease(version: string = 'latest'): Promise<ReleaseInfo> {
   const logger = getLogger();
-  const endpoint =
-    version === 'latest'
-      ? `${GITHUB_API_BASE}/repos/${GITHUB_REPO}/releases/latest`
-      : `${GITHUB_API_BASE}/repos/${GITHUB_REPO}/releases/tags/${version.startsWith('v') ? version : `v${version}`}`;
+  const source = getSkillSource('b2c');
 
+  let tag: string;
+  if (version === 'latest') {
+    const resolved = await resolveLatestVersion(source);
+    tag = source.tagPattern!(resolved);
+  } else if (/^b2c-agent-plugins@/.test(version) || version.includes('@')) {
+    tag = version;
+  } else {
+    tag = source.tagPattern!(version);
+  }
+
+  const endpoint = `${GITHUB_API_BASE}/repos/${source.repo}/releases/tags/${encodeURIComponent(tag)}`;
   logger.debug({endpoint}, 'Fetching release info');
 
   const response = await fetch(endpoint, {
@@ -95,8 +182,12 @@ export async function getRelease(version: string = 'latest'): Promise<ReleaseInf
   });
 
   if (!response.ok) {
+    clearLatestVersionCache();
     if (response.status === 404) {
-      throw new Error(`Release not found: ${version}`);
+      throw new Error(`Release not found: ${tag}`);
+    }
+    if (isRateLimited(response)) {
+      throw new Error(`GitHub API rate-limited while fetching release ${tag}`);
     }
     throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
   }
@@ -112,13 +203,11 @@ export async function getRelease(version: string = 'latest'): Promise<ReleaseInf
 
 /**
  * List available releases with skills artifacts.
- *
- * @param limit - Maximum number of releases to return (default: 10)
- * @returns Array of release information
  */
 export async function listReleases(limit: number = 10): Promise<ReleaseInfo[]> {
   const logger = getLogger();
-  const endpoint = `${GITHUB_API_BASE}/repos/${GITHUB_REPO}/releases?per_page=${limit}`;
+  const source = getSkillSource('b2c');
+  const endpoint = `${GITHUB_API_BASE}/repos/${source.repo}/releases?per_page=${limit}`;
 
   logger.debug({endpoint}, 'Listing releases');
 
@@ -139,16 +228,14 @@ export async function listReleases(limit: number = 10): Promise<ReleaseInfo[]> {
     assets: Array<{name: string; browser_download_url: string}>;
   }>;
 
-  // Only return releases that have at least one skills artifact
-  return data.map(parseRelease).filter((r) => r.b2cSkillsAssetUrl || r.b2cCliSkillsAssetUrl);
+  return data
+    .filter((r) => r.tag_name.startsWith('b2c-agent-plugins@'))
+    .map(parseRelease)
+    .filter((r) => r.b2cSkillsAssetUrl || r.b2cCliSkillsAssetUrl || r.storefrontNextSkillsAssetUrl);
 }
 
 /**
  * Get cached artifact metadata if available.
- *
- * @param version - Release version
- * @param skillSet - Skill set to check
- * @returns Cached artifact info or null if not cached
  */
 export function getCachedArtifact(version: string, skillSet: SkillSet): CachedArtifact | null {
   const cacheDir = getCacheDir();
@@ -167,92 +254,54 @@ export function getCachedArtifact(version: string, skillSet: SkillSet): CachedAr
 }
 
 /**
- * Extract version tag from a GitHub release download URL.
- * URLs follow pattern: .../releases/download/{tag}/...
- *
- * @param url - The final URL after redirects
- * @returns Version tag or null if not found
+ * Download and extract a release-artifact skill set (b2c or b2c-cli).
  */
-function extractVersionFromUrl(url: string): string | null {
-  const match = url.match(/\/releases\/download\/([^/]+)\//);
-  return match ? match[1] : null;
-}
-
-/**
- * Download and extract skills artifact.
- * Uses direct download URLs to avoid GitHub API rate limits.
- *
- * @param skillSet - Which skill set to download ('b2c' or 'b2c-cli')
- * @param options - Download options
- * @returns Path to extracted skills directory
- * @throws Error if download fails or artifact not available
- */
-export async function downloadSkillsArtifact(skillSet: SkillSet, options: DownloadSkillsOptions = {}): Promise<string> {
+async function downloadReleaseArtifact(
+  source: SkillSourceConfig,
+  options: DownloadSkillsOptions = {},
+): Promise<string> {
   const logger = getLogger();
   const {version = 'latest', forceDownload = false} = options;
-  const assetName = ASSET_NAMES[skillSet];
 
-  // For specific versions, check cache first (before any network calls)
-  if (version !== 'latest' && !forceDownload) {
-    const versionTag = version.startsWith('v') ? version : `v${version}`;
-    const cached = getCachedArtifact(versionTag, skillSet);
+  const resolvedVersion = version === 'latest' ? await resolveLatestVersion(source) : version.replace(/^v/, '');
+  const tag = source.tagPattern!(resolvedVersion);
+
+  if (!forceDownload) {
+    const cached = getCachedArtifact(resolvedVersion, source.id);
     if (cached && fs.existsSync(cached.path)) {
-      logger.debug({version: versionTag, skillSet, path: cached.path}, 'Using cached skills');
+      logger.debug({version: resolvedVersion, skillSet: source.id, path: cached.path}, 'Using cached skills');
       return cached.path;
     }
   }
 
-  // Build direct download URL (avoids API rate limits)
-  const downloadUrl = getDirectDownloadUrl(version, assetName);
-  logger.debug({url: downloadUrl, skillSet}, 'Downloading skills artifact');
+  const downloadUrl = buildDownloadUrl(source.repo, tag, source.assetName!);
+  logger.debug({url: downloadUrl, skillSet: source.id}, 'Downloading skills artifact');
 
-  // Download artifact - GitHub will redirect to the actual file
   const response = await fetch(downloadUrl, {
-    headers: {
-      'User-Agent': 'b2c-cli',
-    },
+    headers: {'User-Agent': 'b2c-cli'},
     redirect: 'follow',
   });
 
   if (!response.ok) {
+    clearLatestVersionCache();
     if (response.status === 404) {
-      throw new Error(
-        `Skills artifact '${assetName}' not found for ${version === 'latest' ? 'latest release' : `version ${version}`}`,
-      );
+      throw new Error(`Skills artifact '${source.assetName}' not found for release ${tag}`);
     }
     throw new Error(`Failed to download skills: ${response.status} ${response.statusText}`);
   }
 
-  // Extract actual version from the final URL (after redirects)
-  const actualVersion = extractVersionFromUrl(response.url) || version;
-
-  // Check cache for the resolved version (for 'latest' which we now know the real tag)
-  // Only use cache if we actually resolved a real version — if actualVersion is still
-  // 'latest' (e.g., redirect URL didn't contain the tag), we must re-extract since
-  // we can't tell if the cached 'latest' is stale.
-  if (version === 'latest' && actualVersion !== 'latest' && !forceDownload) {
-    const cached = getCachedArtifact(actualVersion, skillSet);
-    if (cached && fs.existsSync(cached.path)) {
-      logger.debug({version: actualVersion, skillSet, path: cached.path}, 'Using cached skills (resolved latest)');
-      return cached.path;
-    }
-  }
-
   const zipBuffer = Buffer.from(await response.arrayBuffer());
-  logger.debug({size: zipBuffer.length, version: actualVersion}, 'Downloaded skills archive');
+  logger.debug({size: zipBuffer.length, version: resolvedVersion}, 'Downloaded skills archive');
 
-  // Extract to cache directory
   const cacheDir = options.cacheDir || getCacheDir();
-  const extractDir = path.join(cacheDir, actualVersion, skillSet);
+  const extractDir = path.join(cacheDir, resolvedVersion, source.id);
 
-  // Clean existing extraction if present
   if (fs.existsSync(extractDir)) {
     await fs.promises.rm(extractDir, {recursive: true});
   }
 
   await fs.promises.mkdir(extractDir, {recursive: true});
 
-  // Extract zip contents
   const zip = await JSZip.loadAsync(zipBuffer);
   let extractedCount = 0;
 
@@ -264,11 +313,8 @@ export async function downloadSkillsArtifact(skillSet: SkillSet, options: Downlo
 
     const targetPath = path.join(extractDir, relativePath);
     const targetDir = path.dirname(targetPath);
-
-    // Ensure parent directory exists
     await fs.promises.mkdir(targetDir, {recursive: true});
 
-    // Write file
     const content = await zipEntry.async('nodebuffer');
     await fs.promises.writeFile(targetPath, content);
     extractedCount++;
@@ -276,9 +322,8 @@ export async function downloadSkillsArtifact(skillSet: SkillSet, options: Downlo
 
   logger.debug({extractDir, fileCount: extractedCount}, 'Extracted skills');
 
-  // Write cache manifest
   const manifest: CachedArtifact = {
-    version: actualVersion,
+    version: resolvedVersion,
     path: extractDir,
     downloadedAt: new Date().toISOString(),
   };
@@ -288,9 +333,202 @@ export async function downloadSkillsArtifact(skillSet: SkillSet, options: Downlo
 }
 
 /**
- * Clear the skills cache.
+ * Resolve a git ref to a commit SHA via the GitHub API.
+ */
+async function resolveCommitSha(repo: string, ref: string): Promise<string> {
+  const response = await fetch(`${GITHUB_API_BASE}/repos/${repo}/commits/${encodeURIComponent(ref)}`, {
+    headers: {'User-Agent': 'b2c-cli', Accept: 'application/vnd.github.v3.sha'},
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to resolve ref '${ref}' for ${repo}: ${response.status} ${response.statusText}`);
+  }
+  return (await response.text()).trim();
+}
+
+interface GitHubContentsEntry {
+  name: string;
+  path: string;
+  type: 'file' | 'dir';
+  download_url: string | null;
+}
+
+/**
+ * Recursively fetch directory contents from the GitHub Contents API and write to disk.
+ */
+async function fetchContentsRecursive(repo: string, repoPath: string, ref: string, destDir: string): Promise<number> {
+  const logger = getLogger();
+  const endpoint = `${GITHUB_API_BASE}/repos/${repo}/contents/${encodeURIComponent(repoPath)}?ref=${encodeURIComponent(ref)}`;
+
+  const response = await fetch(endpoint, {
+    headers: {Accept: 'application/vnd.github.v3+json', 'User-Agent': 'b2c-cli'},
+  });
+
+  if (!response.ok) {
+    if (isRateLimited(response)) {
+      throw Object.assign(new Error('GitHub API rate-limited'), {rateLimited: true});
+    }
+    throw new Error(`GitHub Contents API error for ${repoPath}: ${response.status} ${response.statusText}`);
+  }
+
+  const entries = (await response.json()) as GitHubContentsEntry[];
+  let fileCount = 0;
+
+  await fs.promises.mkdir(destDir, {recursive: true});
+
+  for (const entry of entries) {
+    const targetPath = path.join(destDir, entry.name);
+
+    if (entry.type === 'dir') {
+      fileCount += await fetchContentsRecursive(repo, entry.path, ref, targetPath);
+    } else if (entry.type === 'file' && entry.download_url) {
+      const fileResponse = await fetch(entry.download_url, {headers: {'User-Agent': 'b2c-cli'}});
+      if (!fileResponse.ok) {
+        logger.warn({path: entry.path}, 'Failed to download file, skipping');
+        continue;
+      }
+      const content = Buffer.from(await fileResponse.arrayBuffer());
+      await fs.promises.writeFile(targetPath, content);
+      fileCount++;
+    }
+  }
+
+  return fileCount;
+}
+
+/**
+ * Recursively copy a directory tree.
+ */
+async function copyDirRecursive(src: string, dest: string): Promise<void> {
+  await fs.promises.mkdir(dest, {recursive: true});
+  const entries = await fs.promises.readdir(src, {withFileTypes: true});
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      await copyDirRecursive(srcPath, destPath);
+    } else if (entry.isFile()) {
+      await fs.promises.copyFile(srcPath, destPath);
+    }
+  }
+}
+
+/**
+ * Fallback: use sparse git checkout to fetch only the skills subtree.
+ */
+async function fetchViaSparseCheckout(repo: string, ref: string, skillsPath: string, destDir: string): Promise<void> {
+  const logger = getLogger();
+  const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'b2c-skills-'));
+
+  try {
+    const repoUrl = `${GITHUB_DOWNLOAD_BASE}/${repo}.git`;
+    logger.debug({repoUrl, skillsPath}, 'Falling back to sparse git checkout');
+
+    await execFileAsync('git', [
+      'clone',
+      '--no-checkout',
+      '--depth',
+      '1',
+      '--filter=blob:none',
+      '--sparse',
+      repoUrl,
+      tmpDir,
+    ]);
+    await execFileAsync('git', ['-C', tmpDir, 'sparse-checkout', 'set', skillsPath]);
+    await execFileAsync('git', ['-C', tmpDir, 'checkout']);
+
+    const skillsSrc = path.join(tmpDir, skillsPath);
+    if (!fs.existsSync(skillsSrc)) {
+      throw new Error(`Skills path '${skillsPath}' not found in repo ${repo}`);
+    }
+
+    await copyDirRecursive(skillsSrc, destDir);
+  } finally {
+    await fs.promises.rm(tmpDir, {recursive: true, force: true});
+  }
+}
+
+/**
+ * Download skills from a repo-contents source (e.g., commerce-apps).
+ * Primary: GitHub Contents API. Fallback: sparse git checkout.
+ */
+async function downloadRepoContents(source: SkillSourceConfig, options: DownloadSkillsOptions = {}): Promise<string> {
+  const logger = getLogger();
+  const ref = options.version || source.ref || 'main';
+  const forceDownload = options.forceDownload ?? false;
+  const skillsPath = source.skillsPath || '.claude/skills';
+
+  const commitSha = await resolveCommitSha(source.repo, ref);
+  const cacheKey = `${ref}-${commitSha.slice(0, 8)}`;
+
+  if (!forceDownload) {
+    const cached = getCachedArtifact(cacheKey, source.id);
+    if (cached && fs.existsSync(cached.path)) {
+      logger.debug({cacheKey, skillSet: source.id, path: cached.path}, 'Using cached skills');
+      return cached.path;
+    }
+  }
+
+  const cacheDir = options.cacheDir || getCacheDir();
+  const extractDir = path.join(cacheDir, cacheKey, source.id);
+  const skillsDestDir = path.join(extractDir, 'skills');
+
+  if (fs.existsSync(extractDir)) {
+    await fs.promises.rm(extractDir, {recursive: true});
+  }
+
+  await fs.promises.mkdir(skillsDestDir, {recursive: true});
+
+  try {
+    logger.debug({repo: source.repo, skillsPath, ref}, 'Fetching skills via Contents API');
+    const fileCount = await fetchContentsRecursive(source.repo, skillsPath, ref, skillsDestDir);
+    logger.debug({extractDir, fileCount}, 'Fetched skills via Contents API');
+  } catch (err) {
+    const isRateLimit = err instanceof Error && 'rateLimited' in err;
+    if (isRateLimit) {
+      logger.warn('Contents API rate-limited; falling back to sparse git checkout');
+    } else {
+      logger.warn({err: (err as Error).message}, 'Contents API failed; falling back to sparse git checkout');
+    }
+
+    if (fs.existsSync(skillsDestDir)) {
+      await fs.promises.rm(skillsDestDir, {recursive: true});
+    }
+    await fs.promises.mkdir(skillsDestDir, {recursive: true});
+
+    await fetchViaSparseCheckout(source.repo, ref, skillsPath, skillsDestDir);
+  }
+
+  const manifest: CachedArtifact = {
+    version: cacheKey,
+    path: extractDir,
+    downloadedAt: new Date().toISOString(),
+    commitSha,
+  };
+  await fs.promises.writeFile(path.join(extractDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
+
+  return extractDir;
+}
+
+/**
+ * Download and extract skills artifact.
+ * Dispatches to the appropriate download strategy based on the skill source type.
  *
- * @param version - Optional specific version to clear (default: all)
+ * @param skillSet - Which skill set to download
+ * @param options - Download options
+ * @returns Path to extracted skills directory
+ */
+export async function downloadSkillsArtifact(skillSet: SkillSet, options: DownloadSkillsOptions = {}): Promise<string> {
+  const source = getSkillSource(skillSet);
+
+  if (source.type === 'release-artifact') {
+    return downloadReleaseArtifact(source, options);
+  }
+
+  return downloadRepoContents(source, options);
+}
+
+/**
+ * Clear the skills cache.
  */
 export async function clearCache(version?: string): Promise<void> {
   const cacheDir = getCacheDir();

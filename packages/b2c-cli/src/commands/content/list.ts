@@ -98,7 +98,7 @@ export default class ContentList extends JobCommand<typeof ContentList> {
       this.requireOAuthCredentials();
     }
 
-    const waitOptions = flags.timeout ? {timeout: flags.timeout * 1000} : undefined;
+    const waitOptions = flags.timeout ? {timeoutSeconds: flags.timeout} : undefined;
 
     const instance = flags['library-file'] ? (null as unknown as typeof this.instance) : this.instance;
 

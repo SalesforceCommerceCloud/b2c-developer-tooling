@@ -43,6 +43,9 @@ export default class EcdnMrtRulesRulesDelete extends EcdnZoneCommand<typeof Ecdn
   };
 
   async run(): Promise<DeleteOutput> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete MRT rule');
+
     this.requireOAuthCredentials();
 
     const zoneId = await this.resolveZoneId();

@@ -11,6 +11,32 @@
  */
 export const en = {
   commands: {
+    auth: {
+      token: {
+        description: 'Get an OAuth access token',
+      },
+      login: {
+        description: 'Log in via browser and save session (stateful auth)',
+        success: 'Login succeeded. Session saved for stateful auth.',
+      },
+      logout: {
+        description: 'Clear stored session (stateful auth)',
+        success: 'Logged out. Stored session cleared.',
+      },
+      client: {
+        description: 'Authenticate an API client and save session',
+        success: 'Authentication succeeded.',
+        failed: 'Authentication failed: {{error}}',
+        renew: {
+          description: 'Renew the client authentication token',
+          success: 'Authentication renewal succeeded.',
+          failed: 'Authentication renewal failed: {{error}}',
+        },
+        token: {
+          description: 'Return the current authentication token (stateful)',
+        },
+      },
+    },
     sites: {
       list: {
         description: 'List sites on a B2C Commerce instance',
@@ -71,7 +97,7 @@ export const en = {
         deleting: 'Deleting code version {{codeVersion}} from {{hostname}}...',
         deleted: 'Code version {{codeVersion}} deleted successfully',
         failed: 'Failed to delete code version: {{message}}',
-        confirm: 'Are you sure you want to delete code version "{{codeVersion}}" on {{hostname}}? (y/n)',
+        confirm: 'Are you sure you want to delete code version "{{codeVersion}}" on {{hostname}}?',
         cancelled: 'Deletion cancelled',
       },
       deploy: {
@@ -79,9 +105,29 @@ export const en = {
         deploying: 'Deploying {{path}} to {{hostname}} ({{version}})',
         noCodeVersion: 'No code version specified, discovering active code version...',
         noActiveVersion: 'No active code version found. Specify one with --code-version.',
+        archiving: 'Creating cartridge archive...',
+        uploading: 'Uploading archive...',
+        unzipping: 'Unzipping on server...',
+        cleanup: 'Cleaning up...',
         summary: 'Deployed {{count}} cartridge(s) to {{codeVersion}}',
         reloaded: 'Code version reloaded',
         failed: 'Deployment failed: {{message}}',
+      },
+      download: {
+        description: 'Download cartridge code from a B2C Commerce instance',
+        downloading: 'Downloading code version "{{version}}" from {{hostname}}...',
+        noCodeVersion: 'No code version specified, discovering active code version...',
+        noActiveVersion: 'No active code version found. Specify one with --code-version.',
+        noLocalCartridges: 'No local cartridges found in {{path}} for mirror mode',
+        oauthRequired:
+          'No code version specified. OAuth credentials are required to auto-discover the active code version.',
+        skipped: 'Download skipped: {{reason}}',
+        zipping: 'Archiving code version',
+        downloadingZip: 'Downloading cartridges',
+        cleanup: 'Cleaning up',
+        extracting: 'Extracting cartridges',
+        summary: 'Downloaded {{count}} cartridge(s) from version "{{codeVersion}}"',
+        failed: 'Download failed: {{message}}',
       },
       watch: {
         description: 'Watch cartridges and upload changes to an instance',
@@ -133,14 +179,16 @@ export const en = {
           'Note: For Claude Code, we recommend using the plugin marketplace for automatic updates:\n' +
           '  claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling\n' +
           '  claude plugin install b2c-cli\n' +
-          '  claude plugin install b2c\n\n' +
+          '  claude plugin install b2c\n' +
+          '  claude plugin install storefront-next\n\n' +
           'Use --ide manual for manual installation to the same paths.',
         preview: 'Installing {{count}} skills to {{ides}} ({{scope}})',
         cancelled: 'Installation cancelled.',
         installed: 'Successfully installed {{count}} skill(s):',
         skippedCount: 'Skipped {{count}} skill(s):',
         errorsCount: 'Failed to install {{count}} skill(s):',
-        skillsetRequired: 'Skillset argument required in non-interactive mode. Specify b2c or b2c-cli.',
+        skillsetRequired:
+          'Skillset argument required in non-interactive mode. Specify b2c, b2c-cli, storefront-next, or cap-dev.',
         selectSkillset: 'Select skill set(s) to install:',
         noSkillsetsSelected: 'No skill sets selected.',
         selectIdes: 'Select target IDEs:',
@@ -173,6 +221,33 @@ export const en = {
           success: 'CORS preferences for site {{siteId}} deleted successfully.',
           error: 'Failed to delete CORS preferences: {{message}}',
         },
+      },
+    },
+    replications: {
+      list: {
+        description: 'List granular replication processes',
+        error: 'Failed to list replication processes: {{message}}',
+        total: '\nTotal: {{total}} processes',
+      },
+      get: {
+        description: 'Get granular replication process details',
+        error: 'Failed to get replication process: {{message}}',
+      },
+      publish: {
+        description: 'Queue an item for granular replication (publish to production)',
+        'no-entity': 'Must specify --product-id, --price-table-id, or --content-id',
+        'site-required': '--site-id required for private content assets',
+        'library-required': '--library-id required for shared content assets',
+        success: 'Item queued for publishing. Process ID: {{id}}',
+        error: 'Failed to queue item for publishing: {{message}}',
+      },
+      wait: {
+        description: 'Wait for a granular replication process to complete',
+        checking: 'Status: {{status}}',
+        completed: 'Process completed successfully',
+        failed: 'Process failed',
+        timeout: 'Timeout waiting for process to complete',
+        error: 'Failed to get process status: {{message}}',
       },
     },
     scaffold: {

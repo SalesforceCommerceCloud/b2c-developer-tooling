@@ -226,6 +226,7 @@ describe('operations/code/deploy', () => {
       expect(result.cartridges).to.have.lengthOf(1);
       expect(result.cartridges[0].name).to.equal('my_cartridge');
       expect(result.codeVersion).to.equal('v1');
+      expect(result.activated).to.be.false;
       expect(result.reloaded).to.be.false;
     });
 
@@ -261,6 +262,7 @@ describe('operations/code/deploy', () => {
 
       const result = await findAndDeployCartridges(mockInstance, tempDir, {reload: true, delete: false});
 
+      expect(result.activated).to.be.true;
       expect(result.reloaded).to.be.true;
     });
 

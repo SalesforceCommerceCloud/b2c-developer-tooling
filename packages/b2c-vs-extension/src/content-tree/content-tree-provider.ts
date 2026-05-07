@@ -142,7 +142,8 @@ export class ContentTreeDataProvider implements vscode.TreeDataProvider<ContentT
       return [];
     }
 
-    // Auto-add configured library if list is empty
+    // Auto-add configured library if list is empty.
+    // Prefer explicit contentLibrary, fall back to libraries[0] from config.
     const libraries = this.configProvider.getLibraries();
     if (libraries.length === 0) {
       const contentLibrary = this.configProvider.getContentLibrary();
@@ -171,6 +172,7 @@ export class ContentTreeDataProvider implements vscode.TreeDataProvider<ContentT
           async () => {
             const result = await fetchContentLibrary(instance, element.libraryId, {
               isSiteLibrary: element.isSiteLibrary,
+              assetQuery: this.configProvider.getAssetQuery(),
             });
             return result.library;
           },

@@ -1,6 +1,6 @@
 ---
 name: b2c-slas-auth-patterns
-description: Implement advanced SLAS authentication patterns in B2C Commerce. Use when implementing passwordless login (email OTP, SMS OTP, passkeys), session bridging between PWA and SFRA, hybrid authentication, token refresh, or trusted system authentication. Covers authentication flows, token management, and JWT validation.
+description: Implement SLAS authentication patterns in B2C Commerce including passwordless login (email OTP, SMS OTP, passkeys), session bridging between PWA Kit/Storefront Next and SFRA, hybrid authentication (B2C 25.3+), token refresh flows, trusted system on behalf of (TSOB), and JWT validation. Use this skill whenever the user asks about shopper authentication beyond basic login, token exchange flows, passwordless or biometric auth, keeping sessions alive across storefronts, handling 409 Conflict errors on token endpoints, refreshing shopper tokens, or validating JWTs — even if they don't mention SLAS by name.
 ---
 
 # B2C SLAS Authentication Patterns
@@ -148,227 +148,15 @@ async function sendOTPSMS(phoneNumber, otp) {
 
 ## Passkeys (FIDO2/WebAuthn)
 
-Enable biometric authentication using passkeys.
+Enable biometric authentication using FIDO2/WebAuthn passkeys. Registration requires prior identity verification via OTP. The flow involves starting registration with SLAS, creating a credential via the browser WebAuthn API, then completing registration. Authentication follows a similar start/authenticate/finish pattern.
 
-**Important:** Passkey registration requires **prior identity verification via OTP**. Users must first verify their email before registering a passkey.
-
-### Registration Flow (3 Steps)
-
-```javascript
-// Step 1: Verify identity via OTP first
-// Use the Email OTP flow above to verify the user
-
-// Step 2: Start passkey registration (requires valid access token)
-async function startPasskeyRegistration(accessToken) {
-    const response = await fetch(
-        `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/webauthn/register/start`,
-        {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                channel_id: siteId
-            })
-        }
-    );
-    return response.json();
-}
-
-// Step 3: Create credential using WebAuthn API
-async function createPasskey(options) {
-    const credential = await navigator.credentials.create({
-        publicKey: {
-            challenge: base64ToBuffer(options.challenge),
-            rp: { name: options.rp_name, id: options.rp_id },
-            user: {
-                id: base64ToBuffer(options.user_id),
-                name: options.user_name,
-                displayName: options.user_display_name
-            },
-            pubKeyCredParams: options.pub_key_cred_params,
-            authenticatorSelection: {
-                authenticatorAttachment: 'platform',
-                userVerification: 'required'
-            }
-        }
-    });
-    return credential;
-}
-
-// Step 4: Complete registration with SLAS
-async function finishPasskeyRegistration(accessToken, credential) {
-    const response = await fetch(
-        `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/webauthn/register/finish`,
-        {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                channel_id: siteId,
-                credential_id: bufferToBase64(credential.rawId),
-                client_data_json: bufferToBase64(credential.response.clientDataJSON),
-                attestation_object: bufferToBase64(credential.response.attestationObject)
-            })
-        }
-    );
-    return response.json();
-}
-```
-
-### Authentication Flow
-
-```javascript
-// Step 1: Get authentication options
-async function startPasskeyAuth() {
-    const response = await fetch(
-        `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/webauthn/authenticate/start`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ channel_id: siteId })
-        }
-    );
-    return response.json();
-}
-
-// Step 2: Get credential using WebAuthn API
-async function authenticateWithPasskey(options) {
-    const assertion = await navigator.credentials.get({
-        publicKey: {
-            challenge: base64ToBuffer(options.challenge),
-            rpId: options.rp_id,
-            allowCredentials: options.allow_credentials.map(c => ({
-                type: 'public-key',
-                id: base64ToBuffer(c.id)
-            })),
-            userVerification: 'required'
-        }
-    });
-    return assertion;
-}
-
-// Step 3: Complete authentication and get tokens
-async function finishPasskeyAuth(assertion) {
-    const response = await fetch(
-        `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/webauthn/authenticate/finish`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                credential_id: bufferToBase64(assertion.rawId),
-                client_data_json: bufferToBase64(assertion.response.clientDataJSON),
-                authenticator_data: bufferToBase64(assertion.response.authenticatorData),
-                signature: bufferToBase64(assertion.response.signature),
-                channel_id: siteId
-            })
-        }
-    );
-    return response.json();
-}
-```
+See [references/PASSKEYS.md](references/PASSKEYS.md) for full registration and authentication code examples.
 
 ## Session Bridge
 
-Maintain session continuity between PWA Kit and SFRA storefronts.
+Maintain session continuity between PWA Kit and SFRA storefronts using signed bridge tokens (`dwsgst` for guest, `dwsrst` for registered). Supports both PWA-to-SFRA and SFRA-to-PWA directions. Note that DWSID is deprecated for registered shoppers.
 
-### Token Types
-
-Session bridge uses signed tokens generated from SFRA script APIs:
-
-- `dwsgst` - Guest session token (from `Session.generateGuestSessionSignature()`)
-- `dwsrst` - Registered session token (from `Session.generateRegisteredSessionSignature()`)
-
-**Note:** DWSID is deprecated for registered shoppers.
-
-### PWA to SFRA Bridge
-
-```javascript
-// In PWA Kit: Get session bridge tokens
-async function getSessionBridgeTokens(accessToken) {
-    const response = await fetch(
-        `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/session-bridge/token`,
-        {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: new URLSearchParams({
-                channel_id: siteId,
-                login_id: customerId
-            })
-        }
-    );
-
-    // Returns: { dwsgst, dwsrst }
-    return response.json();
-}
-
-// Redirect to SFRA with tokens
-function redirectToSFRA(dwsgst, dwsrst) {
-    const sfraUrl = new URL('https://sfra.yoursite.com/');
-    sfraUrl.searchParams.set('dwsgst', dwsgst);
-    if (dwsrst) {
-        sfraUrl.searchParams.set('dwsrst', dwsrst);
-    }
-    window.location.href = sfraUrl.toString();
-}
-```
-
-### SFRA to PWA Bridge
-
-```javascript
-// In SFRA controller: Generate bridge tokens
-var Session = require('dw/system/Session');
-
-function bridgeToPWA() {
-    var dwsgst = Session.generateGuestSessionSignature();
-    var dwsrst = customer.authenticated ?
-        Session.generateRegisteredSessionSignature() : null;
-
-    response.redirect(
-        'https://pwa.yoursite.com/callback' +
-        '?dwsgst=' + dwsgst +
-        (dwsrst ? '&dwsrst=' + dwsrst : '')
-    );
-}
-```
-
-### PWA Kit Callback Handler
-
-```javascript
-// In PWA Kit: Handle bridge callback
-async function handleBridgeCallback(searchParams) {
-    const dwsgst = searchParams.get('dwsgst');
-    const dwsrst = searchParams.get('dwsrst');
-
-    // Exchange bridge tokens for access token
-    // Use hint=sb-guest for guest, hint=sb-user for registered
-    const hint = dwsrst ? 'sb-user' : 'sb-guest';
-
-    const response = await fetch(
-        `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/${orgId}/oauth2/session-bridge/token`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                grant_type: 'session_bridge',
-                hint: hint,
-                channel_id: siteId,
-                dwsgst: dwsgst,
-                ...(dwsrst && { dwsrst: dwsrst })
-            })
-        }
-    );
-
-    const tokens = await response.json();
-    // Store tokens and establish session
-}
-```
+See [references/SESSION-BRIDGE.md](references/SESSION-BRIDGE.md) for full implementation details including token generation, redirect patterns, callback handlers, and error handling.
 
 ## Hybrid Authentication (B2C 25.3+)
 
@@ -590,5 +378,6 @@ async function validateToken(accessToken) {
 
 ## Detailed References
 
+- [Passkeys (FIDO2/WebAuthn)](references/PASSKEYS.md) - Registration and authentication code examples
 - [Session Bridge Flows](references/SESSION-BRIDGE.md) - Detailed session bridge implementation
 - [Token Lifecycle](references/TOKEN-LIFECYCLE.md) - Token expiry and refresh patterns

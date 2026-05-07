@@ -134,9 +134,10 @@ b2c docs schema [query]
 
 ### Flags
 
-| Flag           | Description                | Default |
-| -------------- | -------------------------- | ------- |
-| `--list`, `-l` | List all available schemas | `false` |
+| Flag           | Description                                                    | Default |
+| -------------- | -------------------------------------------------------------- | ------- |
+| `--list`, `-l` | List all available schemas                                     | `false` |
+| `--path`, `-p` | Print the filesystem path to the schema instead of its content | `false` |
 
 ### Examples
 
@@ -152,11 +153,22 @@ b2c docs schema --list
 
 # JSON output
 b2c docs schema catalog --json
+
+# Get the filesystem path to a schema
+b2c docs schema catalog --path
 ```
 
 ### Output
 
-Without `--json`, the command writes schema XML directly to stdout. With `--list`, it prints available schema IDs and a total count.
+Without `--json`, the command writes schema XML directly to stdout. With `--path`, it prints the resolved filesystem path (useful for passing to XML validation tools). With `--list`, it prints available schema IDs and a total count.
+
+### Validating XML with xmllint
+
+Use the `--path` flag to pass schema paths directly to `xmllint` for XML validation (requires installation of `xmllint`):
+
+```bash
+xmllint --schema "$(b2c docs schema catalog --path)" catalog.xml --noout
+```
 
 ---
 

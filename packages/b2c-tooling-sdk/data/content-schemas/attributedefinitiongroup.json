@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  
+  "type":"object",
+  
+  "properties": {
+    "id": {"$ref":"common.json#/definitions/id"},
+    "name": {"$ref":"common.json#/definitions/name"},
+    "description": {"$ref":"common.json#/definitions/description"},
+    "attribute_definitions": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "$ref": "attributedefinition.json#/definitions/string" },
+          { "$ref": "attributedefinition.json#/definitions/text" },
+          { "$ref": "attributedefinition.json#/definitions/markup" },
+          { "$ref": "attributedefinition.json#/definitions/integer" },
+          { "$ref": "attributedefinition.json#/definitions/boolean" },
+          { "$ref": "attributedefinition.json#/definitions/product" },
+          { "$ref": "attributedefinition.json#/definitions/category" },
+          { "$ref": "attributedefinition.json#/definitions/file" },
+          { "$ref": "attributedefinition.json#/definitions/page" },
+          { "$ref": "attributedefinition.json#/definitions/image" },
+          { "$ref": "attributedefinition.json#/definitions/url" },
+          { "$ref": "attributedefinition.json#/definitions/enum_of_integer" },
+          { "$ref": "attributedefinition.json#/definitions/enum_of_string" },
+          { "$ref": "attributedefinition.json#/definitions/custom" },
+          { "$ref": "attributedefinition.json#/definitions/cms_record" }
+        ]
+      }
+    }
+  },
+  "required": ["id","attribute_definitions"],
+  "additionalProperties": false
+}

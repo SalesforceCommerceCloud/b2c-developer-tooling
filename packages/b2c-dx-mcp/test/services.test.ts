@@ -215,7 +215,10 @@ describe('services', () => {
       const config = createMockResolvedConfig({projectDirectory: projectDir});
       const services = new Services({resolvedConfig: config});
 
-      expect(services.resolveWithProjectDirectory('subdir')).to.equal('/path/to/project/subdir');
+      // Use path.resolve so the expectation matches the production code on both
+      // POSIX (/path/to/project/subdir) and Windows (where path.resolve on a
+      // rooted POSIX-style path produces a drive-prefixed, backslash-separated path).
+      expect(services.resolveWithProjectDirectory('subdir')).to.equal(path.resolve(projectDir, 'subdir'));
     });
   });
 

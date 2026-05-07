@@ -629,7 +629,7 @@ function handleAutoMode(args: PageDesignerDecoratorInput, workspaceRoot: string)
  */
 export function createPageDesignerDecoratorTool(loadServices: () => Promise<Services> | Services): McpTool {
   return {
-    name: 'storefront_next_page_designer_decorator',
+    name: 'sfnext_add_page_designer_decorator',
 
     description:
       'Adds Page Designer decorators (@Component, @AttributeDefinition, @RegionDefinition) to React components. ' +

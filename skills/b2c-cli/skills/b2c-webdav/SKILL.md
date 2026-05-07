@@ -1,6 +1,6 @@
 ---
 name: b2c-webdav
-description: List, upload, download, and manage files on B2C Commerce instances via WebDAV with the b2c cli. Always reference when using the CLI to upload or download files via WebDAV, manage IMPEX directories, create remote directories, or zip/unzip remote files. For log exploration and tailing, use b2c-logs instead.
+description: List, upload, download, and manage files on B2C Commerce instances via WebDAV. Use this skill whenever the user needs to upload files to IMPEX directories, download exports from an instance, list remote files, create or delete directories, or zip/unzip files on the server. Also use when managing file transfers to sandboxes or browsing instance file systems -- even if they just say 'upload a file to the instance' or 'check what's in the IMPEX folder'.
 ---
 
 # B2C WebDAV Skill

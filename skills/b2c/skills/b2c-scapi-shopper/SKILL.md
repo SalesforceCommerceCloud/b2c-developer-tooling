@@ -1,6 +1,6 @@
 ---
 name: b2c-scapi-shopper
-description: Consume standard Shopper Commerce APIs (SCAPI) for headless storefronts. Use when building PWA/composable commerce, accessing products, search, baskets, orders, or customer data via SCAPI. Covers authentication with SLAS, checkout flows, performance optimization, and Shopper Context API.
+description: Call Shopper Commerce APIs (SCAPI) from headless storefronts and composable commerce apps. Use this skill whenever the user is building with PWA Kit, Storefront Next (SFNext), or a headless frontend and needs to search products, manage baskets, submit orders, access customer data, or set shopper context. Also use when they ask about Shopper API authentication, checkout flows from a frontend app, or performance optimization for API calls — even if they just say "search products from my PWA" or "build a headless checkout".
 ---
 
 # Shopper Commerce APIs (SCAPI)

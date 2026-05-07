@@ -14,6 +14,7 @@ import * as path from 'node:path';
 import JSZip from 'jszip';
 import {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
+import {addDirectoryToZip} from '../util/zip.js';
 import {waitForJob, JobExecutionError, getJobLog, type JobExecution, type WaitForJobOptions} from './run.js';
 
 const IMPORT_JOB_ID = 'sfcc-site-archive-import';
@@ -25,6 +26,8 @@ const EXPORT_JOB_ID = 'sfcc-site-archive-export';
 export interface SiteArchiveImportOptions {
   /** Keep archive on instance after import (default: false) */
   keepArchive?: boolean;
+  /** Whether to wait for job completion (default: true) */
+  wait?: boolean;
   /** Wait options for job completion */
   waitOptions?: WaitForJobOptions;
 }
@@ -98,7 +101,7 @@ export async function siteArchiveImport(
   options: SiteArchiveImportOptions & {archiveName?: string} = {},
 ): Promise<SiteArchiveImportResult> {
   const logger = getLogger();
-  const {keepArchive = false, waitOptions, archiveName} = options;
+  const {keepArchive = false, wait = true, waitOptions, archiveName} = options;
 
   let zipFilename: string;
   let needsUpload = true;
@@ -174,8 +177,11 @@ export async function siteArchiveImport(
     body: {file_name: zipFilename} as unknown as string,
   });
 
-  if (error || !data) {
-    // Try with parameters format as fallback
+  if (
+    error?.fault?.type === 'UnknownPropertyException' &&
+    (error.fault.arguments as Record<string, unknown>)?.document === 'job_execution_request'
+  ) {
+    // Retry with parameters format (internal/support users)
     logger.warn('Retrying with parameters format for internal users');
 
     const {data: retryData, error: retryError} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
@@ -186,42 +192,46 @@ export async function siteArchiveImport(
     });
 
     if (retryError || !retryData) {
-      throw new Error(retryError?.fault?.message ?? error?.fault?.message ?? 'Failed to execute import job');
+      throw new Error(retryError?.fault?.message ?? 'Failed to execute import job');
     }
 
     execution = retryData;
+  } else if (error || !data) {
+    throw new Error(error?.fault?.message ?? 'Failed to execute import job');
   } else {
     execution = data;
   }
 
   logger.debug({jobId: IMPORT_JOB_ID, executionId: execution.id}, `Import job started: ${execution.id}`);
 
-  // Wait for completion
-  try {
-    execution = await waitForJob(instance, IMPORT_JOB_ID, execution.id!, waitOptions);
-  } catch (error) {
-    if (error instanceof JobExecutionError) {
-      // Try to get log file
-      try {
-        const log = await getJobLog(instance, error.execution);
-        logger.error({jobId: IMPORT_JOB_ID, logFile: error.execution.log_file_path, log}, `Job log:\n${log}`);
-      } catch {
-        logger.error({jobId: IMPORT_JOB_ID}, 'Could not retrieve job log');
+  if (wait) {
+    // Wait for completion
+    try {
+      execution = await waitForJob(instance, IMPORT_JOB_ID, execution.id!, waitOptions);
+    } catch (error) {
+      if (error instanceof JobExecutionError) {
+        // Try to get log file
+        try {
+          const log = await getJobLog(instance, error.execution);
+          logger.error({jobId: IMPORT_JOB_ID, logFile: error.execution.log_file_path, log}, `Job log:\n${log}`);
+        } catch {
+          logger.error({jobId: IMPORT_JOB_ID}, 'Could not retrieve job log');
+        }
       }
+      throw error;
     }
-    throw error;
-  }
 
-  // Clean up archive if not keeping
-  if (!keepArchive && needsUpload) {
-    await instance.webdav.delete(uploadPath);
-    logger.debug({path: uploadPath}, `Archive deleted: ${uploadPath}`);
+    // Clean up archive if not keeping
+    if (!keepArchive && needsUpload) {
+      await instance.webdav.delete(uploadPath);
+      logger.debug({path: uploadPath}, `Archive deleted: ${uploadPath}`);
+    }
   }
 
   return {
     execution,
     archiveFilename: zipFilename,
-    archiveKept: keepArchive,
+    archiveKept: wait ? keepArchive : true,
   };
 }
 
@@ -239,25 +249,6 @@ async function createArchiveFromDirectory(dirPath: string, archiveDirName: strin
     compression: 'DEFLATE',
     compressionOptions: {level: 9},
   });
-}
-
-/**
- * Recursively adds directory contents to a JSZip folder.
- */
-async function addDirectoryToZip(zipFolder: JSZip, dirPath: string): Promise<void> {
-  const entries = await fs.promises.readdir(dirPath, {withFileTypes: true});
-
-  for (const entry of entries) {
-    const fullPath = path.join(dirPath, entry.name);
-
-    if (entry.isDirectory()) {
-      const subFolder = zipFolder.folder(entry.name)!;
-      await addDirectoryToZip(subFolder, fullPath);
-    } else if (entry.isFile()) {
-      const content = await fs.promises.readFile(fullPath);
-      zipFolder.file(entry.name, content);
-    }
-  }
 }
 
 /**
@@ -302,6 +293,7 @@ export interface ExportSitesConfiguration {
   all?: boolean;
   cache_settings?: boolean;
   campaigns_and_promotions?: boolean;
+  commerce_feature_states?: boolean;
   content?: boolean;
   coupons?: boolean;
   custom_objects?: boolean;
@@ -447,7 +439,7 @@ export async function siteArchiveExport(
   let execution: JobExecution;
 
   // Execute export job - try export_file format first
-  try {
+  {
     const {data, error} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
       params: {path: {job_id: EXPORT_JOB_ID}},
       body: {
@@ -456,30 +448,33 @@ export async function siteArchiveExport(
       } as unknown as string,
     });
 
-    if (error || !data) {
+    if (
+      error?.fault?.type === 'UnknownPropertyException' &&
+      (error.fault.arguments as Record<string, unknown>)?.document === 'job_execution_request'
+    ) {
+      // Retry with parameters format (internal/support users)
+      logger.warn('Retrying with parameters format for internal users');
+
+      const {data: retryData, error: retryError} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
+        params: {path: {job_id: EXPORT_JOB_ID}},
+        body: {
+          parameters: [
+            {name: 'ExportFile', value: zipFilename},
+            {name: 'DataUnits', value: JSON.stringify(dataUnits)},
+          ],
+        } as unknown as string,
+      });
+
+      if (retryError || !retryData) {
+        throw new Error(retryError?.fault?.message ?? 'Failed to execute export job');
+      }
+
+      execution = retryData;
+    } else if (error || !data) {
       throw new Error(error?.fault?.message ?? 'Failed to execute export job');
+    } else {
+      execution = data;
     }
-
-    execution = data;
-  } catch {
-    // Try parameters format for internal users
-    logger.warn('Retrying with parameters format for internal users');
-
-    const {data, error} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
-      params: {path: {job_id: EXPORT_JOB_ID}},
-      body: {
-        parameters: [
-          {name: 'ExportFile', value: zipFilename},
-          {name: 'DataUnits', value: JSON.stringify(dataUnits)},
-        ],
-      } as unknown as string,
-    });
-
-    if (error || !data) {
-      throw new Error(error?.fault?.message ?? 'Failed to execute export job');
-    }
-
-    execution = data;
   }
 
   logger.debug({jobId: EXPORT_JOB_ID, executionId: execution.id}, `Export job started: ${execution.id}`);

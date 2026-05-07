@@ -78,6 +78,7 @@
             <xsd:enumeration value="name" />
             <xsd:enumeration value="property" />
             <xsd:enumeration value="title" />
+            <xsd:enumeration value="jsonld" />
         </xsd:restriction>
     </xsd:simpleType>
  

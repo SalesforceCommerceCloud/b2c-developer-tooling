@@ -41,19 +41,19 @@ page-designer-decorator/
 
 ```bash
 # By component name (automatically finds the file)
-storefront_next_page_designer_decorator({
+sfnext_add_page_designer_decorator({
   component: "ProductItem",
   autoMode: true
 })
 
 # Interactive mode
-storefront_next_page_designer_decorator({
+sfnext_add_page_designer_decorator({
   component: "ProductTile",
   conversationContext: { step: "analyze" }
 })
 
 # With custom search paths (for unusual locations)
-storefront_next_page_designer_decorator({
+sfnext_add_page_designer_decorator({
   component: "ProductItem",
   searchPaths: ["packages/retail/src", "app/features"],
   autoMode: true
@@ -64,7 +64,7 @@ storefront_next_page_designer_decorator({
 
 ```bash
 # If you prefer to specify the exact path
-storefront_next_page_designer_decorator({
+sfnext_add_page_designer_decorator({
   component: "src/components/ProductItem.tsx",
   autoMode: true
 })

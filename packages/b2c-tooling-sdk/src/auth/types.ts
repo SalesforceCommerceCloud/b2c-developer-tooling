@@ -51,6 +51,10 @@ export interface OAuthAuthConfig {
   clientSecret?: string;
   scopes?: string[];
   accountManagerHost?: string;
+  /** Override redirect URI for implicit OAuth flow (e.g., for port forwarding in remote environments) */
+  redirectUri?: string;
+  /** Custom browser opener for implicit OAuth flow. Receives the authorization URL. */
+  openBrowser?: (url: string) => Promise<void>;
 }
 
 /**
@@ -103,14 +107,15 @@ export interface DecodedJWT {
 /**
  * Available authentication methods.
  * - 'client-credentials': OAuth client credentials flow (requires clientId + clientSecret)
+ * - 'jwt': OAuth JWT Bearer flow (requires clientId + JWT certificate/key pair)
  * - 'implicit': Interactive browser-based OAuth (requires clientId only)
  * - 'basic': Username/password (access key) authentication
  * - 'api-key': API key authentication (for MRT, etc.)
  */
-export type AuthMethod = 'client-credentials' | 'implicit' | 'basic' | 'api-key';
+export type AuthMethod = 'client-credentials' | 'jwt' | 'implicit' | 'basic' | 'api-key';
 
 /** All available auth methods in default priority order */
-export const ALL_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'implicit', 'basic', 'api-key'];
+export const ALL_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'jwt', 'implicit', 'basic', 'api-key'];
 
 /**
  * Configuration for resolving an auth strategy.
@@ -133,4 +138,8 @@ export interface AuthCredentials {
   apiKey?: string;
   /** Header name for API key (defaults to Authorization with Bearer prefix) */
   apiKeyHeaderName?: string;
+  /** Override redirect URI for implicit OAuth flow (e.g., for port forwarding in remote environments) */
+  redirectUri?: string;
+  /** Custom browser opener for implicit OAuth flow. Receives the authorization URL. */
+  openBrowser?: (url: string) => Promise<void>;
 }

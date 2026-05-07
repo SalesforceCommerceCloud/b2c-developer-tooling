@@ -47,3 +47,32 @@ export const createApp = (): Express => {
     // Cleans up any remaining headers and sets any remaining values
     app.use(createMRTCleanUpMiddleware());
 ```
+
+## Development data-store usage
+
+Use the `data-store` subpath with Node's `dev-data-store` condition to load the pseudo local data-store implementation:
+
+```bash
+node --conditions dev-data-store your-app.js
+```
+
+```ts
+import {DataStore} from '@salesforce/mrt-utilities/data-store';
+
+const store = DataStore.getDataStore();
+const entry = await store.getEntry('custom-global-preferences');
+```
+
+Configure local values with environment variables:
+
+- `MRT_DATA_STORE_DEFAULTS`: JSON map of key to object value
+- `MRT_DATA_STORE_WARN_ON_MISSING`: set to `false` to suppress missing-key warnings
+
+Example:
+
+```bash
+export MRT_DATA_STORE_DEFAULTS='{"custom-global-preferences":{"featureFlag":true}}'
+export MRT_DATA_STORE_WARN_ON_MISSING=true
+```
+
+By default, missing keys still throw `DataStoreNotFoundError` in development (matching production semantics).

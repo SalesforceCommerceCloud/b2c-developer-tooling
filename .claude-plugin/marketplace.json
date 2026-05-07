@@ -16,7 +16,8 @@
       "license": "Apache-2.0",
       "source": "./skills/b2c-cli",
       "category": "productivity",
-      "strict": false
+      "strict": false,
+      "version": "1.2.0"
     },
     {
       "name": "b2c",
@@ -27,17 +28,60 @@
       "license": "Apache-2.0",
       "source": "./skills/b2c",
       "category": "productivity",
-      "strict": false
+      "strict": false,
+      "version": "1.2.0"
     },
     {
-      "name": "b2c-experimental",
-      "description": "Experimental B2C Commerce skills including scaffold templates. Not installed by default.",
+      "name": "b2c-dx-mcp",
+      "description": "MCP server for AI-assisted Salesforce B2C Commerce development with project-aware tooling for common workflows.",
       "author": {
         "name": "Salesforce"
       },
       "license": "Apache-2.0",
-      "source": "./skills/b2c-experimental",
+      "source": "./plugins/b2c-dx-mcp",
       "category": "productivity",
+      "strict": false
+    },
+    {
+      "name": "storefront-next",
+      "description": "Storefront Next development skills for building React 19 storefronts on Salesforce B2C Commerce.",
+      "author": {
+        "name": "Salesforce"
+      },
+      "license": "Apache-2.0",
+      "source": "./skills/storefront-next",
+      "category": "productivity",
+      "strict": false,
+      "version": "1.2.0"
+    },
+    {
+      "name": "cap-dev",
+      "description": "Skills for scaffolding, packaging, validating, and submitting Commerce App Packages (CAPs) for Salesforce Commerce Cloud.",
+      "author": {
+        "name": "Salesforce"
+      },
+      "homepage": "https://github.com/SalesforceCommerceCloud/commerce-apps",
+      "repository": "https://github.com/SalesforceCommerceCloud/commerce-apps",
+      "license": "Apache-2.0",
+      "source": {
+        "source": "git-subdir",
+        "url": "SalesforceCommerceCloud/commerce-apps",
+        "path": ".claude",
+        "ref": "feature/codex-copilot-plugin-docs"
+      },
+      "category": "productivity",
+      "keywords": [
+        "salesforce",
+        "commerce-apps",
+        "commerce-cloud",
+        "cap",
+        "impex"
+      ],
+      "interface": {
+        "displayName": "Commerce Apps Dev",
+        "shortDescription": "Scaffold, validate, package, and submit Commerce App Packages.",
+        "longDescription": "Skills for building Salesforce Commerce Cloud app packages — scaffold new apps (UI-only, backend-only, or fullstack), generate IMPEX configurations for services, custom objects, and site preferences, validate packages against registry requirements, and submit pull requests to the commerce-apps registry."
+      },
       "strict": false
     }
   ]

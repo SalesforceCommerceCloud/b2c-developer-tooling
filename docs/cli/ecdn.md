@@ -62,18 +62,18 @@ b2c ecdn zones list --tenant-id zzxy_prd
 
 ### b2c ecdn zones create
 
-Create a new storefront zone.
+Create a new storefront CDN zone.
 
 ```bash
-b2c ecdn zones create --tenant-id zzxy_prd --storefront-hostname www.example.com --origin-hostname origin.example.com
+b2c ecdn zones create --tenant-id zzxy_prd --domain-name example.com
+b2c ecdn zones create --tenant-id zzxy_prd --domain-name store.example.com --json
 ```
 
 #### Flags
 
 | Flag | Description | Required |
 |------|-------------|----------|
-| `--storefront-hostname` | Customer-facing hostname | Yes |
-| `--origin-hostname` | Origin server hostname | Yes |
+| `--domain-name`, `-d` | Domain name for the storefront zone | Yes |
 
 ---
 
@@ -81,46 +81,25 @@ b2c ecdn zones create --tenant-id zzxy_prd --storefront-hostname www.example.com
 
 ### b2c ecdn cache purge
 
-Purge cached content from the CDN.
+Purge cached content from the CDN by path or cache tag. At least one of `--path` or `--tag` must be supplied.
 
 ```bash
-# Purge by path
-b2c ecdn cache purge --zone my-zone --path /products --path /categories
+# Purge a single path (format: hostname/path)
+b2c ecdn cache purge --zone my-zone --path "www.example.com/products"
 
-# Purge by cache tag
-b2c ecdn cache purge --zone my-zone --tag product-123
+# Purge by cache tag (repeatable)
+b2c ecdn cache purge --zone my-zone --tag product-123 --tag category-456
 
-# Purge everything
-b2c ecdn cache purge --zone my-zone --purge-everything
+# Wildcard path purge
+b2c ecdn cache purge --zone my-zone --path "www.example.com/dw/image/v2/realm_instance/*" --json
 ```
 
 #### Flags
 
 | Flag | Description |
 |------|-------------|
-| `--path` | Path to purge (can be repeated) |
-| `--tag` | Cache tag to purge (can be repeated) |
-| `--host` | Host for path purging |
-| `--purge-everything` | Purge all cached content |
-
-At least one purge method must be specified.
-
----
-
-### b2c ecdn cache ocapi-toggle
-
-Toggle OCAPI caching page rule.
-
-```bash
-b2c ecdn cache ocapi-toggle --zone my-zone --enabled
-b2c ecdn cache ocapi-toggle --zone my-zone --no-enabled
-```
-
-#### Flags
-
-| Flag | Description |
-|------|-------------|
-| `--enabled` | Enable or disable OCAPI caching |
+| `--path`, `-p` | Path to purge in `hostname/path` format |
+| `--tag`, `-t` | Cache tag to purge (repeatable) |
 
 ---
 
@@ -151,16 +130,6 @@ b2c ecdn certificates add --zone my-zone --hostname www.example.com --certificat
 | `--hostname` | Custom hostname | Yes |
 | `--certificate-file` | Path to certificate PEM file | Yes |
 | `--private-key-file` | Path to private key PEM file | Yes |
-
----
-
-### b2c ecdn certificates get
-
-Get certificate details.
-
-```bash
-b2c ecdn certificates get --zone my-zone --certificate-id abc123
-```
 
 ---
 
@@ -207,33 +176,36 @@ b2c ecdn security get --zone my-zone
 #### Output
 
 Displays settings including:
-- SSL mode
-- Always use HTTPS
-- Minimum TLS version
-- TLS 1.3 status
-- Automatic HTTPS rewrites
-- Opportunistic encryption
+- Security level
+- Always-use-HTTPS state
+- TLS 1.3 state
+- WAF (OWASP) state
+- HSTS configuration (enabled, include subdomains, max age, preload)
 
 ---
 
 ### b2c ecdn security update
 
-Update security settings.
+Update security settings for a zone. Provide only the flags you want to change.
 
 ```bash
-b2c ecdn security update --zone my-zone --ssl-mode full --min-tls-version 1.2 --always-use-https
+b2c ecdn security update --zone my-zone --security-level medium
+b2c ecdn security update --zone my-zone --always-use-https
+b2c ecdn security update --zone my-zone --tls13 --waf
 ```
 
 #### Flags
 
 | Flag | Description | Options |
 |------|-------------|---------|
-| `--ssl-mode` | SSL/TLS mode | `off`, `flexible`, `full`, `strict` |
-| `--min-tls-version` | Minimum TLS version | `1.0`, `1.1`, `1.2`, `1.3` |
-| `--always-use-https` / `--no-always-use-https` | Force HTTPS | - |
-| `--tls-1-3` / `--no-tls-1-3` | Enable TLS 1.3 | - |
-| `--automatic-https-rewrites` / `--no-automatic-https-rewrites` | Rewrite HTTP links | - |
-| `--opportunistic-encryption` / `--no-opportunistic-encryption` | Enable opportunistic encryption | - |
+| `--security-level` | Zone security level | `off`, `essentially_off`, `low`, `medium`, `high`, `under_attack` |
+| `--always-use-https` / `--no-always-use-https` | Redirect all HTTP requests to HTTPS | — |
+| `--tls13` / `--no-tls13` | Enable TLS 1.3 | — |
+| `--waf` / `--no-waf` | Enable WAF (OWASP) protection | — |
+| `--hsts-enabled` / `--no-hsts-enabled` | Enable HSTS | — |
+| `--hsts-include-subdomains` / `--no-hsts-include-subdomains` | Include subdomains in HSTS | — |
+| `--hsts-max-age` | HSTS max age in seconds | integer |
+| `--hsts-preload` / `--no-hsts-preload` | Enable HSTS preload | — |
 
 ---
 
@@ -251,28 +223,25 @@ b2c ecdn speed get --zone my-zone
 
 ### b2c ecdn speed update
 
-Update speed optimization settings.
+Update speed optimization settings. Each flag accepts a string value (typically `on`/`off`); omitted flags default to `off` in the request body.
 
 ```bash
-b2c ecdn speed update --zone my-zone --browser-cache-ttl 14400 --auto-minify-html --auto-minify-css --auto-minify-js
+b2c ecdn speed update --zone my-zone --brotli on
+b2c ecdn speed update --zone my-zone --http3 on --early-hints on
+b2c ecdn speed update --zone my-zone --polish lossy --webp on
 ```
 
 #### Flags
 
-| Flag | Description |
-|------|-------------|
-| `--browser-cache-ttl` | Browser cache TTL in seconds |
-| `--auto-minify-html` / `--no-auto-minify-html` | Auto-minify HTML |
-| `--auto-minify-css` / `--no-auto-minify-css` | Auto-minify CSS |
-| `--auto-minify-js` / `--no-auto-minify-js` | Auto-minify JavaScript |
-| `--brotli` / `--no-brotli` | Enable Brotli compression |
-| `--early-hints` / `--no-early-hints` | Enable Early Hints |
-| `--h2-prioritization` / `--no-h2-prioritization` | HTTP/2 prioritization |
-| `--image-resizing` / `--no-image-resizing` | Enable image resizing |
-| `--mirage` / `--no-mirage` | Enable Mirage |
-| `--polish` | Polish mode (`off`, `lossless`, `lossy`) |
-| `--prefetch-preload` / `--no-prefetch-preload` | Prefetch preload |
-| `--rocket-loader` / `--no-rocket-loader` | Rocket Loader |
+| Flag | Description | Options |
+|------|-------------|---------|
+| `--brotli` | Brotli compression | `on`, `off` |
+| `--http2-prioritization` | HTTP/2 prioritization | `on`, `off` |
+| `--http2-to-origin` | HTTP/2 to origin | `on`, `off` |
+| `--http3` | HTTP/3 | `on`, `off` |
+| `--early-hints` | Early hints | `on`, `off` |
+| `--webp` | WebP image format support | `on`, `off` |
+| `--polish` | Image polish level | `off`, `lossless`, `lossy` |
 
 ---
 
@@ -410,142 +379,6 @@ b2c ecdn waf migrate --zone my-zone
 
 ---
 
-## Custom Firewall Rules
-
-### b2c ecdn firewall list
-
-List custom firewall rules.
-
-```bash
-b2c ecdn firewall list --zone my-zone
-```
-
----
-
-### b2c ecdn firewall create
-
-Create a custom firewall rule.
-
-```bash
-b2c ecdn firewall create --zone my-zone --description "Block bad bots" --action block --filter '(cf.client.bot)'
-```
-
-#### Flags
-
-| Flag | Description | Required |
-|------|-------------|----------|
-| `--description` | Rule description | Yes |
-| `--action` | Rule action (`block`, `challenge`, `js_challenge`, `managed_challenge`, `allow`, `log`, `bypass`) | Yes |
-| `--filter` | Firewall filter expression | Yes |
-| `--paused` | Create rule in paused state | No |
-| `--priority` | Rule priority | No |
-
----
-
-### b2c ecdn firewall get
-
-Get a firewall rule.
-
-```bash
-b2c ecdn firewall get --zone my-zone --rule-id abc123
-```
-
----
-
-### b2c ecdn firewall update
-
-Update a firewall rule.
-
-```bash
-b2c ecdn firewall update --zone my-zone --rule-id abc123 --action challenge
-```
-
----
-
-### b2c ecdn firewall delete
-
-Delete a firewall rule.
-
-```bash
-b2c ecdn firewall delete --zone my-zone --rule-id abc123
-```
-
----
-
-### b2c ecdn firewall reorder
-
-Reorder firewall rules.
-
-```bash
-b2c ecdn firewall reorder --zone my-zone --rule-ids id1,id2,id3
-```
-
----
-
-## Rate Limiting
-
-### b2c ecdn rate-limit list
-
-List rate limiting rules.
-
-```bash
-b2c ecdn rate-limit list --zone my-zone
-```
-
----
-
-### b2c ecdn rate-limit create
-
-Create a rate limiting rule.
-
-```bash
-b2c ecdn rate-limit create --zone my-zone --description "API rate limit" --threshold 100 --period 60 --action block --match-url '/api/*'
-```
-
-#### Flags
-
-| Flag | Description | Required |
-|------|-------------|----------|
-| `--description` | Rule description | Yes |
-| `--threshold` | Request threshold | Yes |
-| `--period` | Period in seconds | Yes |
-| `--action` | Action (`block`, `challenge`, `js_challenge`, `managed_challenge`, `log`, `simulate`) | Yes |
-| `--match-url` | URL pattern to match | Yes |
-| `--match-methods` | HTTP methods (comma-separated) | No |
-| `--timeout` | Block timeout in seconds | No |
-
----
-
-### b2c ecdn rate-limit get
-
-Get a rate limiting rule.
-
-```bash
-b2c ecdn rate-limit get --zone my-zone --rule-id abc123
-```
-
----
-
-### b2c ecdn rate-limit update
-
-Update a rate limiting rule.
-
-```bash
-b2c ecdn rate-limit update --zone my-zone --rule-id abc123 --threshold 200
-```
-
----
-
-### b2c ecdn rate-limit delete
-
-Delete a rate limiting rule.
-
-```bash
-b2c ecdn rate-limit delete --zone my-zone --rule-id abc123
-```
-
----
-
 ## Logpush
 
 ### b2c ecdn logpush ownership
@@ -573,19 +406,23 @@ b2c ecdn logpush jobs list --zone my-zone
 Create a Logpush job.
 
 ```bash
-b2c ecdn logpush jobs create --zone my-zone --name "HTTP logs" --destination-path 's3://my-bucket/logs?region=us-east-1' --log-type http_requests --log-fields ClientRequestHost,ClientRequestMethod
+b2c ecdn logpush jobs create --zone my-zone \
+  --name "HTTP logs" \
+  --destination-path 's3://my-bucket/logs/{DATE}?region=us-east-1' \
+  --log-type http_requests \
+  --log-fields ClientRequestHost,ClientRequestMethod
 ```
 
 #### Flags
 
 | Flag | Description | Required |
 |------|-------------|----------|
-| `--name` | Job name | Yes |
-| `--destination-path` | Log destination path | Yes |
-| `--log-type` | Type of logs (`http_requests`, `firewall_events`, `nel_reports`, `dns_logs`) | Yes |
-| `--log-fields` | Comma-separated log fields | No |
-| `--filter` | JSON filter expression | No |
-| `--enabled` | Enable job on creation | No |
+| `--name` | Job name (immutable after creation) | Yes |
+| `--destination-path` | Destination path, e.g. `s3://bucket/path/{DATE}?region=us-east-1` | Yes |
+| `--log-type` | Type of logs: `http_requests`, `firewall_events`, `page_shield_events` | Yes |
+| `--log-fields` | Comma-separated list of log fields to include | Yes |
+| `--filter` | JSON filter expression for log selection | No |
+| `--ownership-token` | Ownership challenge token for destination verification | No |
 
 ---
 

@@ -47,7 +47,7 @@ GitHub Actions for automating Salesforce B2C Commerce operations with the [`@sal
     client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
     server: ${{ vars.SFCC_SERVER }}
     code-version: ${{ vars.SFCC_CODE_VERSION }}
-    reload: true
+    activate: true
     cartridges: 'app_storefront_base,app_custom'
 ```
 

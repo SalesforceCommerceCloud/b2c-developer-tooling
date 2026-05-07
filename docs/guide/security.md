@@ -64,6 +64,12 @@ When adding a new dependency that requires build scripts:
 
 This project uses [NPM trusted publishers](https://docs.npmjs.com/trusted-publishers) for package publication. Instead of storing long-lived npm tokens, packages are published via GitHub Actions using short-lived OIDC tokens that cannot be extracted or reused.
 
+## Operational Security: Safety Mode
+
+The CLI includes a **Safety Mode** feature that prevents accidental or unwanted destructive operations via HTTP middleware and command-level checks. Safety mode supports configurable levels, per-instance and global rules, and interactive confirmation.
+
+See the **[Safety Mode](/guide/safety)** guide for full documentation.
+
 ## Best Practices
 
 ### For Contributors
@@ -78,3 +84,4 @@ This project uses [NPM trusted publishers](https://docs.npmjs.com/trusted-publis
 - Keep the CLI updated to receive security patches
 - Review the `pnpm-workspace.yaml` settings if you fork or modify this project
 - Consider using similar protections in your own projects
+- **Use Safety Mode** when running CLI in automated environments or providing it as a tool to AI agents

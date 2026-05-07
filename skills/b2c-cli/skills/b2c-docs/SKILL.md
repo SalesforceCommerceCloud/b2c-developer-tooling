@@ -1,6 +1,6 @@
 ---
 name: b2c-docs
-description: Search and read B2C Commerce (SFCC/Demandware) Script API documentation and XSD schemas with the b2c cli. Always reference when using the CLI to search or read Script API documentation, look up dw.* classes, or browse XSD schemas. Also use when writing B2C scripts, answering "how do I" questions about URLs/products/orders, or verifying class methods and properties.
+description: Search and read B2C Commerce Script API documentation and XSD schemas using the b2c CLI. Use this skill whenever the user needs to look up class methods, understand API signatures, find available properties on commerce objects (baskets, orders, products, customers), or check XML schema formats for imports. Also use when writing server-side scripts and needing API reference — even if they just say "what methods does Basket have" or "what fields can I import for products".
 ---
 
 # B2C Docs Skill
@@ -72,8 +72,11 @@ b2c docs schema order
 # List all available schemas
 b2c docs schema --list
 
-# Output as JSON
-b2c docs schema catalog --json
+# Print the filesystem path to the schema file
+b2c docs schema catalog --path
+
+# Validate an XML file against a schema using xmllint
+xmllint --schema "$(b2c docs schema catalog --path)" my-catalog.xml --noout
 ```
 
 ## Common Classes

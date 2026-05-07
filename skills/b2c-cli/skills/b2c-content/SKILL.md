@@ -1,11 +1,11 @@
 ---
 name: b2c-content
-description: Export and list Page Designer pages from B2C Commerce content libraries. Always reference when using the CLI to export or list Page Designer content, discover page IDs, or work with content library assets.
+description: Export, list, and validate Page Designer content from B2C Commerce libraries. Use this skill whenever the user needs to export Page Designer pages or components, list pages in a content library, validate page JSON or metadefinitions, discover page IDs, migrate content between instances, or work with library XML offline. Also use when extracting content for review or building content deployment pipelines -- even if they just say 'export the homepage' or 'what pages are in the shared library'.
 ---
 
 # B2C Content Skill
 
-Use the `b2c` CLI to export and list Page Designer content from Salesforce B2C Commerce content libraries.
+Use the `b2c` CLI to export, list, and validate Page Designer content from Salesforce B2C Commerce content libraries.
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli content export homepage`).
 
@@ -104,9 +104,38 @@ b2c content export homepage
 b2c content list --type page
 ```
 
+### Validate Metadefinitions
+
+```bash
+# validate a single metadefinition file
+b2c content validate cartridge/experience/pages/storePage.json
+
+# validate all metadefinitions in a directory recursively
+b2c content validate cartridge/experience/
+
+# validate with a glob pattern
+b2c content validate 'cartridge/experience/**/*.json'
+
+# explicitly specify the schema type
+b2c content validate --type componenttype mycomponent.json
+
+# JSON output for CI/scripting
+b2c content validate cartridge/experience/ --json
+```
+
+Schema types are auto-detected from file paths (`experience/pages/` → pagetype, `experience/components/` → componenttype) and from JSON content. Use `--type` to override.
+
 ### More Commands
 
 See `b2c content --help` for a full list of available commands and options in the `content` topic.
+
+## Troubleshooting
+
+- **"Library is required"** -- Set `--library` flag or configure `content-library` in `dw.json`.
+- **Authentication errors** -- OAuth credentials are required for remote operations. Run `b2c auth:login` first. The `--library-file` flag bypasses authentication for offline/local use.
+- **Library not found** -- Verify the library ID matches exactly. For site-private libraries, add `--site-library`.
+- **No content found** -- Check that the page/content IDs exist. Use `b2c content list` to discover available IDs.
+- **Timeout errors** -- Large libraries may exceed the default timeout. Use `--timeout <seconds>` to increase it.
 
 ## Related Skills
 

@@ -381,6 +381,32 @@ describe('sandbox create', () => {
       expect(requestBody.stopScheduler).to.deep.equal(stopSchedule);
     });
 
+    it('should include emails in POST body', async () => {
+      const command = setupCreateCommand();
+
+      (command as any).flags = {
+        realm: 'abcd',
+        ttl: 24,
+        profile: 'medium',
+        wait: false,
+        'set-permissions': false,
+        emails: 'dev@example.com,ops@example.com',
+      };
+
+      let requestBody: any;
+      stubOdsClient(command, {
+        async POST(_url: string, options: any) {
+          requestBody = options.body;
+          return {
+            data: {data: {id: 'sb-1', state: 'creating'}},
+          };
+        },
+      });
+
+      await runSilent(() => command.run());
+      expect(requestBody.emails).to.deep.equal(['dev@example.com', 'ops@example.com']);
+    });
+
     it('should throw on invalid JSON for scheduler flags', async () => {
       const command = setupCreateCommand();
 

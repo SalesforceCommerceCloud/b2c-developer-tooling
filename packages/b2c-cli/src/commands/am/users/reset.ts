@@ -28,6 +28,9 @@ export default class UserReset extends AmCommand<typeof UserReset> {
   ];
 
   async run(): Promise<void> {
+    // Prevent password reset in safe mode
+    this.assertDestructiveOperationAllowed('reset user password');
+
     const {login} = this.args;
 
     this.log(t('commands.user.reset.fetching', 'Fetching user {{login}}...', {login}));

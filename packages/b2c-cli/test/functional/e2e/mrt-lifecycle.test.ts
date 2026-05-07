@@ -8,6 +8,13 @@ import {expect} from 'chai';
 import {parseJSONOutput, runCLI, runCLIWithRetry, TIMEOUTS} from './test-utils.js';
 
 /**
+ * MRT member list/get JSON uses `user` for the member's email per APIProjectMember;
+ */
+function mrtMemberEmail(member: {user?: string; email?: string}): string | undefined {
+  return member.user ?? member.email;
+}
+
+/**
  * E2E Tests for MRT (Managed Runtime) Lifecycle
  *
  * Tests MRT operations including:
@@ -32,13 +39,14 @@ describe('MRT Lifecycle E2E Tests', function () {
     ...(process.env.MRT_CLOUD_ORIGIN ? {MRT_CLOUD_ORIGIN: process.env.MRT_CLOUD_ORIGIN} : {}),
   };
 
-  let projectSlug: string;
-  let hasProject = false;
+  // Use a dedicated test project to avoid affecting other MRT resources
+  const projectSlug = process.env.MRT_PROJECT || 'b2c-cli';
+  const hasProject = true;
 
   before(async function () {
     // Check required environment variables for MRT
-    // Either MRT_API_KEY as env var OR ~/.mobify file must exist
-    const hasMrtApiKey = Boolean(process.env.MRT_API_KEY);
+    // Either MRT_API_KEY / SFCC_MRT_API_KEY as env var OR ~/.mobify file must exist
+    const hasMrtApiKey = Boolean(process.env.MRT_API_KEY || process.env.SFCC_MRT_API_KEY);
 
     if (!hasMrtApiKey) {
       // Try to check if ~/.mobify exists (CLI will auto-detect it)
@@ -60,32 +68,7 @@ describe('MRT Lifecycle E2E Tests', function () {
       }
     }
 
-    // Try to get a project from environment or discover one
-    if (process.env.MRT_PROJECT) {
-      projectSlug = process.env.MRT_PROJECT;
-      hasProject = true;
-      console.log(`✓ Using MRT project from env: ${projectSlug}`);
-    } else {
-      // Try to discover a project
-      try {
-        const result = await runCLI(['mrt', 'project', 'list', '--json'], {
-          timeout: TIMEOUTS.DEFAULT,
-          env: MRT_TEST_ENV,
-        });
-        if (result.exitCode === 0) {
-          const response = parseJSONOutput(result);
-          if (response.projects && response.projects.length > 0) {
-            projectSlug = response.projects[0].slug;
-            hasProject = true;
-            console.log(`✓ Discovered MRT project: ${projectSlug}`);
-          } else {
-            console.log('⚠ No MRT projects found, some tests will be skipped');
-          }
-        }
-      } catch {
-        console.log('⚠ Could not discover MRT project, some tests will be skipped');
-      }
-    }
+    console.log(`✓ Using MRT project: ${projectSlug}`);
   });
 
   describe('Step 1: User Profile', () => {
@@ -224,8 +207,9 @@ describe('MRT Lifecycle E2E Tests', function () {
       expect(response.members).to.be.an('array');
 
       if (response.members.length > 0) {
-        expect(response.members[0]).to.have.property('email');
-        expect(response.members[0]).to.have.property('role');
+        const first = response.members[0];
+        expect(mrtMemberEmail(first), 'member should include user (email)').to.be.a('string').and.not.empty;
+        expect(first).to.have.property('role');
       }
     });
 
@@ -248,7 +232,11 @@ describe('MRT Lifecycle E2E Tests', function () {
         this.skip();
       }
 
-      const memberEmail = listResponse.members[0].email;
+      const memberEmail = mrtMemberEmail(listResponse.members[0]);
+      if (!memberEmail) {
+        console.log('  ⚠ Member has no user/email field, skipping test');
+        this.skip();
+      }
 
       const result = await runCLIWithRetry(
         ['mrt', 'project', 'member', 'get', memberEmail, '--project', projectSlug, '--json'],
@@ -258,8 +246,8 @@ describe('MRT Lifecycle E2E Tests', function () {
       expect(result.exitCode, `Member get command failed: ${result.stderr}`).to.equal(0);
 
       const response = parseJSONOutput(result);
-      // Response is a flat object, not nested under "member"
-      expect(response).to.have.property('email').that.equals(memberEmail);
+      // API returns `user` (email), not top-level `email`
+      expect(mrtMemberEmail(response)).to.equal(memberEmail);
       expect(response).to.have.property('role');
     });
   });

@@ -3,28 +3,11 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import * as readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {deleteNotification} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
-
-/**
- * Prompt for confirmation.
- */
-async function confirm(message: string): Promise<boolean> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  return new Promise((resolve) => {
-    rl.question(`${message} (y/N): `, (answer) => {
-      rl.close();
-      resolve(answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes');
-    });
-  });
-}
+import {confirm} from '../../../../prompts.js';
 
 /**
  * Delete a notification from an MRT project.
@@ -59,6 +42,9 @@ export default class MrtNotificationDelete extends MrtCommand<typeof MrtNotifica
   };
 
   async run(): Promise<{id: string; deleted: boolean}> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete notification');
+
     this.requireMrtCredentials();
 
     const {id} = this.args;

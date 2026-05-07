@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-01-10T22:14:13.492Z",
+  "generatedAt": "2026-04-21T18:00:00.000Z",
   "entries": [
     {
       "id": "abtest",
@@ -25,6 +25,10 @@
     {
       "id": "catalog",
       "filePath": "catalog.xsd"
+    },
+    {
+      "id": "commercefeaturestate",
+      "filePath": "commercefeaturestate.xsd"
     },
     {
       "id": "coupon",
@@ -205,6 +209,10 @@
     {
       "id": "store",
       "filePath": "store.xsd"
+    },
+    {
+      "id": "storefronts",
+      "filePath": "storefronts.xsd"
     },
     {
       "id": "tax",

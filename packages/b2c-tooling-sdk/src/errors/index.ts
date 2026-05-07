@@ -9,3 +9,13 @@
  * @module errors
  */
 export {HTTPError} from './http-error.js';
+export {JobExecutionError} from '../operations/jobs/run.js';
+export {SafetyBlockedError} from '../safety/safety-middleware.js';
+export {MetaDefinitionDetectionError} from '../operations/content/validate.js';
+export {SandboxNotFoundError} from '../operations/ods/sandbox-lookup.js';
+export {
+  SandboxPollingTimeoutError,
+  SandboxPollingError,
+  SandboxTerminalStateError,
+} from '../operations/ods/wait-for-sandbox.js';
+export {ClonePollingTimeoutError, ClonePollingError, CloneFailedError} from '../operations/ods/wait-for-clone.js';

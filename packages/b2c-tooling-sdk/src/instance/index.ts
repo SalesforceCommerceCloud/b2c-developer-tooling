@@ -184,6 +184,8 @@ export class B2CInstance {
       clientSecret: this.auth.oauth.clientSecret,
       scopes: this.auth.oauth.scopes,
       accountManagerHost: this.auth.oauth.accountManagerHost,
+      redirectUri: this.auth.oauth.redirectUri,
+      openBrowser: this.auth.oauth.openBrowser,
     };
 
     // Filter to only OAuth methods (client-credentials, implicit)

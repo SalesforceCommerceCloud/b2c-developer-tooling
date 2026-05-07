@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  
+  "type":"object",
+  
+  "definitions": {
+    "time_period": {
+      "type": "object",
+      "properties": {
+        "valid_from": {
+          "format": "date-time"
+        },
+        "valid_to": {
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "customer_group_id_listing": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "locale_id_listing": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "campaign_qualifier": {
+      "type": "object",
+      "properties": {
+        "campaign_id": {
+          "type": "string"
+        },
+        "promotion_id": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "aspect_attribute_qualifiers": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/aspect_attribute_qualifier" }
+    },
+    "aspect_attribute_qualifier": {
+      "type": "object",
+      "properties": {
+        "id": {"$ref":"common.json#/definitions/id"},
+        "values": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {}
+        }
+      },
+      "required": ["id", "values"],
+      "additionalProperties": false
+    }
+  },
+  
+  "properties": {
+    "schedule": {"$ref": "#/definitions/time_period"},
+    "customer_group_ids": {"$ref": "#/definitions/customer_group_id_listing"},
+    "locale_ids": {"$ref": "#/definitions/locale_id_listing"},
+    "campaign_qualifier": {"$ref": "#/definitions/campaign_qualifier"},
+    "aspect_attribute_qualifiers" : {"$ref": "#/definitions/aspect_attribute_qualifiers"}
+  },
+  "additionalProperties": false
+}

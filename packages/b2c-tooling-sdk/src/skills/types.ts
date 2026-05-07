@@ -7,12 +7,34 @@
 /**
  * Supported IDE types for skill installation.
  */
-export type IdeType = 'claude-code' | 'cursor' | 'windsurf' | 'vscode' | 'codex' | 'opencode' | 'manual';
+export type IdeType =
+  | 'claude-code'
+  | 'cursor'
+  | 'windsurf'
+  | 'vscode'
+  | 'codex'
+  | 'opencode'
+  | 'agentforce-vibes'
+  | 'manual';
 
 /**
  * Skill set categories matching the plugins directory structure.
  */
-export type SkillSet = 'b2c' | 'b2c-cli';
+export type SkillSet = 'b2c' | 'b2c-cli' | 'cap-dev' | 'storefront-next';
+
+/**
+ * Configuration for a skill source — defines how to fetch skills from a particular repository.
+ */
+export interface SkillSourceConfig {
+  id: SkillSet;
+  displayName: string;
+  type: 'release-artifact' | 'repo-contents';
+  repo: string;
+  assetName?: string;
+  tagPattern?: (version: string) => string;
+  ref?: string;
+  skillsPath?: string;
+}
 
 /**
  * IDE path configuration for skill installation.
@@ -70,6 +92,8 @@ export interface ReleaseInfo {
   b2cSkillsAssetUrl: string | null;
   /** Download URL for b2c-cli-skills.zip asset, or null if not present */
   b2cCliSkillsAssetUrl: string | null;
+  /** Download URL for storefront-next-skills.zip asset, or null if not present */
+  storefrontNextSkillsAssetUrl: string | null;
 }
 
 /**
@@ -98,6 +122,8 @@ export interface InstallSkillsOptions {
   update: boolean;
   /** Project root for project-level installations */
   projectRoot?: string;
+  /** Custom directory override (used instead of IDE-specific project path) */
+  directory?: string;
 }
 
 /**
@@ -149,4 +175,6 @@ export interface CachedArtifact {
   path: string;
   /** ISO date string when artifact was downloaded */
   downloadedAt: string;
+  /** For repo-contents sources: the resolved commit SHA */
+  commitSha?: string;
 }

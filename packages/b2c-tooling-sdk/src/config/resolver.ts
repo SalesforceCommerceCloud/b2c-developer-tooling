@@ -14,7 +14,12 @@
 import type {AuthCredentials} from '../auth/types.js';
 import type {B2CInstance} from '../instance/index.js';
 import {getLogger} from '../logging/logger.js';
-import {mergeConfigsWithProtection, getPopulatedFields, createInstanceFromConfig} from './mapping.js';
+import {
+  mergeConfigsWithProtection,
+  getPopulatedFields,
+  createInstanceFromConfig,
+  normalizeOriginUrl,
+} from './mapping.js';
 import {DwJsonSource, MobifySource, PackageJsonSource} from './sources/index.js';
 import type {
   ConfigLoadResult,
@@ -172,6 +177,15 @@ export class ConfigResolver {
     // CLI-provided options always take precedence over accumulated values.
     const enrichedOptions: ResolveConfigOptions = {...options};
 
+    // Seed enriched options from overrides (CLI flags) so that all sources—including
+    // the first one—can see CLI-provided values like accountManagerHost.
+    if (!enrichedOptions.accountManagerHost && overrides.accountManagerHost) {
+      enrichedOptions.accountManagerHost = overrides.accountManagerHost;
+    }
+    if (!enrichedOptions.cloudOrigin && overrides.mrtOrigin) {
+      enrichedOptions.cloudOrigin = normalizeOriginUrl(overrides.mrtOrigin);
+    }
+
     // Load from each source in order, merging results
     // Earlier sources have higher priority - later sources only fill in missing values
     for (const source of this.sources) {
@@ -278,7 +292,7 @@ export class ConfigResolver {
           );
 
           // Enrich options with accumulated config values for subsequent sources.
-          // Only set if not already provided via CLI options.
+          // Only set if not already provided via CLI options or overrides.
           if (!enrichedOptions.accountManagerHost && baseConfig.accountManagerHost) {
             enrichedOptions.accountManagerHost = baseConfig.accountManagerHost;
           }
@@ -296,6 +310,10 @@ export class ConfigResolver {
     const {config, warnings: mergeWarnings} = mergeConfigsWithProtection(overrides, baseConfig, {
       hostnameProtection: options.hostnameProtection,
     });
+
+    // Normalize mrtOrigin to ensure it always has an https:// prefix.
+    // Users may provide a bare hostname (e.g., "cloud.mobify.com") or a full URL.
+    config.mrtOrigin = normalizeOriginUrl(config.mrtOrigin);
 
     // Combine source warnings with merge warnings
     const warnings = [...sourceWarnings, ...mergeWarnings];

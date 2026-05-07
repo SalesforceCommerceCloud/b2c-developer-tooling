@@ -196,7 +196,7 @@ import { Card } from '@/components/ui/card';
 
 ## 🔍 Get Detailed Guidelines
 
-Use the `storefront_next_development_guidelines` MCP tool with specific sections:
+Use the `sfnext_get_guidelines` MCP tool with specific sections:
 
 ```json
 {

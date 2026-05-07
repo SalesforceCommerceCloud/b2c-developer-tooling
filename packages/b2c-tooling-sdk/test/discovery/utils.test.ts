@@ -97,7 +97,10 @@ describe('discovery/utils', () => {
 
       const result = await glob('**/*.js', {cwd: tempDir});
 
-      expect(result).to.include('src/index.js');
+      // glob returns platform-native separators (backslashes on Windows), so
+      // assert against the normalized POSIX form so the expectation is portable.
+      const normalized = result.map((p) => p.split(path.sep).join('/'));
+      expect(normalized).to.include('src/index.js');
     });
 
     it('ignores node_modules', async () => {
@@ -108,8 +111,9 @@ describe('discovery/utils', () => {
 
       const result = await glob('**/*.js', {cwd: tempDir});
 
-      expect(result).to.include('app.js');
-      expect(result).to.not.include('node_modules/pkg/index.js');
+      const normalized = result.map((p) => p.split(path.sep).join('/'));
+      expect(normalized).to.include('app.js');
+      expect(normalized).to.not.include('node_modules/pkg/index.js');
     });
 
     it('returns empty array when no matches', async () => {

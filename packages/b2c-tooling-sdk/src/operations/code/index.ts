@@ -29,6 +29,10 @@
  * - {@link deleteCartridges} - Low-level cartridge deletion
  * - {@link watchCartridges} - Watch and sync file changes
  *
+ * ## Download
+ *
+ * - {@link downloadCartridges} - Download cartridges from an instance
+ *
  * ## Usage
  *
  * ```typescript
@@ -79,7 +83,15 @@ export type {CodeVersion, CodeVersionResult} from './versions.js';
 
 // Deployment
 export {findAndDeployCartridges, uploadCartridges, deleteCartridges} from './deploy.js';
-export type {DeployOptions, DeployResult} from './deploy.js';
+export type {DeployOptions, DeployResult, UploadOptions, UploadProgressInfo} from './deploy.js';
+
+// Download
+export {downloadCartridges, downloadSingleCartridge} from './download.js';
+export type {DownloadOptions, DownloadProgressInfo, DownloadResult} from './download.js';
+
+// File upload pipeline
+export {uploadFiles, fileToCartridgePath} from './upload-files.js';
+export type {FileChange, UploadFilesOptions} from './upload-files.js';
 
 // Watch
 export {watchCartridges} from './watch.js';

@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags, ux} from '@oclif/core';
-import {checkbox, confirm} from '@inquirer/prompts';
+import {checkbox, confirm, input} from '@inquirer/prompts';
 import {BaseCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   type IdeType,
@@ -12,10 +12,13 @@ import {
   type SkillMetadata,
   type InstallSkillsResult,
   ALL_IDE_TYPES,
+  ALL_SKILL_SETS,
+  SKILL_SOURCES,
   detectInstalledIdes,
   downloadSkillsArtifact,
   scanSkills,
   installSkills,
+  isSkillInstalled,
   getIdeDisplayName,
   getIdeDocsUrl,
   findSkillsByName,
@@ -59,8 +62,8 @@ interface SetupSkillsResponse {
 export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
   static args = {
     skillset: Args.string({
-      description: 'Skill set to install: b2c or b2c-cli',
-      options: ['b2c', 'b2c-cli'],
+      description: 'Skill set to install: b2c, b2c-cli, storefront-next, or cap-dev',
+      options: ALL_SKILL_SETS,
     }),
   };
 
@@ -74,9 +77,13 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
   static examples = [
     '<%= config.bin %> <%= command.id %> b2c',
     '<%= config.bin %> <%= command.id %> b2c-cli --ide cursor --global',
+    '<%= config.bin %> <%= command.id %> storefront-next --ide cursor',
+    '<%= config.bin %> <%= command.id %> cap-dev --ide claude-code --global',
     '<%= config.bin %> <%= command.id %> b2c --list',
     '<%= config.bin %> <%= command.id %> b2c-cli --skill b2c-code --skill b2c-webdav --ide cursor',
     '<%= config.bin %> <%= command.id %> b2c --global --update --force',
+    '<%= config.bin %> <%= command.id %> b2c --ide agentforce-vibes',
+    '<%= config.bin %> <%= command.id %> b2c --ide manual --directory ./my-skills',
   ];
 
   static flags = {
@@ -91,9 +98,13 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       multiple: true,
     }),
     ide: Flags.string({
-      description: 'Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, manual',
+      description: 'Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, agentforce-vibes, manual',
       options: ALL_IDE_TYPES,
       multiple: true,
+    }),
+    directory: Flags.string({
+      char: 'd',
+      description: 'Custom installation directory (overrides IDE default path)',
     }),
     global: Flags.boolean({
       char: 'g',
@@ -123,16 +134,16 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       this.error(
         t(
           'commands.setup.skills.skillsetRequired',
-          'Skillset argument required in non-interactive mode. Specify b2c or b2c-cli.',
+          'Skillset argument required in non-interactive mode. Specify b2c, b2c-cli, storefront-next, or cap-dev.',
         ),
       );
     } else {
       skillsets = await checkbox({
         message: t('commands.setup.skills.selectSkillset', 'Select skill set(s) to install:'),
-        choices: [
-          {name: 'b2c - B2C Commerce development patterns', value: 'b2c' as SkillSet},
-          {name: 'b2c-cli - B2C CLI commands and operations', value: 'b2c-cli' as SkillSet},
-        ],
+        choices: ALL_SKILL_SETS.map((id) => ({
+          name: `${id} - ${SKILL_SOURCES[id].displayName}`,
+          value: id,
+        })),
       });
       if (skillsets.length === 0) {
         ux.stdout(t('commands.setup.skills.noSkillsetsSelected', 'No skill sets selected.'));
@@ -141,11 +152,23 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
     }
 
     // Download and scan skills
-    this.log(
-      t('commands.setup.skills.downloading', 'Downloading skills from release {{version}}...', {
-        version: this.flags.version || 'latest',
-      }),
-    );
+    const hasReleaseArtifacts = skillsets.some((s) => SKILL_SOURCES[s].type === 'release-artifact');
+    const hasRepoContents = skillsets.some((s) => SKILL_SOURCES[s].type === 'repo-contents');
+    if (hasReleaseArtifacts && hasRepoContents) {
+      this.log(t('commands.setup.skills.downloading', 'Downloading skills...'));
+    } else if (hasRepoContents) {
+      this.log(
+        t('commands.setup.skills.downloadingRepo', 'Downloading skills from repository ({{ref}})...', {
+          ref: this.flags.version || 'main',
+        }),
+      );
+    } else {
+      this.log(
+        t('commands.setup.skills.downloadingRelease', 'Downloading skills from release {{version}}...', {
+          version: this.flags.version || 'latest',
+        }),
+      );
+    }
 
     // Download skills for all skillsets in parallel
     const downloadResults = await Promise.all(
@@ -218,12 +241,15 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
         return {};
       }
 
+      // Always include 'manual' as an option in the IDE list
+      const ideChoices: IdeType[] = detectedIdes.includes('manual') ? detectedIdes : [...detectedIdes, 'manual'];
+
       // Non-interactive: use all detected IDEs; Interactive: let user select
       targetIdes = this.flags.force
         ? detectedIdes
         : await checkbox({
             message: t('commands.setup.skills.selectIdes', 'Select target IDEs:'),
-            choices: detectedIdes.map((ide) => ({
+            choices: ideChoices.map((ide) => ({
               name: getIdeDisplayName(ide),
               value: ide,
             })),
@@ -244,7 +270,8 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
           'Note: For Claude Code, we recommend using the plugin marketplace for automatic updates:\n' +
             '  claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling\n' +
             '  claude plugin install b2c-cli\n' +
-            '  claude plugin install b2c\n\n' +
+            '  claude plugin install b2c\n' +
+            '  claude plugin install storefront-next\n\n' +
             'Use --ide manual for manual installation to the same paths.',
         ),
       );
@@ -264,8 +291,17 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       }
     }
 
+    // Prompt for manual installation directory
+    let directory = this.flags.directory;
+    if (targetIdes.includes('manual') && !directory && !this.flags.force) {
+      directory = await input({
+        message: t('commands.setup.skills.manualDirectory', 'Installation directory:'),
+        default: '.agents/skills',
+      });
+    }
+
     // Show installation preview
-    const scope = this.flags.global ? 'global (user home)' : 'project';
+    const scope = directory ? `directory: ${directory}` : this.flags.global ? 'global (user home)' : 'project';
     ux.stdout('');
     ux.stdout(
       t('commands.setup.skills.preview', 'Installing {{count}} skills to {{ides}} ({{scope}})', {
@@ -287,6 +323,34 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       }
     }
 
+    // Detect already-installed skills and prompt to upgrade (unless --update or --force set)
+    let update = this.flags.update;
+    if (!update && !this.flags.force) {
+      const existingCount = skillsToInstall.reduce((count, skill) => {
+        return (
+          count +
+          targetIdes.filter((ide) =>
+            isSkillInstalled(skill.name, ide, {
+              global: this.flags.global,
+              projectRoot: process.cwd(),
+              directory,
+            }),
+          ).length
+        );
+      }, 0);
+
+      if (existingCount > 0) {
+        update = await confirm({
+          message: t(
+            'commands.setup.skills.confirmUpgrade',
+            '{{count}} skill(s) are already installed. Overwrite with the new version?',
+            {count: existingCount},
+          ),
+          default: true,
+        });
+      }
+    }
+
     // Install skills for all skillsets in parallel
     const installPromises = skillsets
       .map((skillset) => {
@@ -295,8 +359,9 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
         return installSkills(skillsForSet, skillsDirs[skillset], {
           ides: targetIdes,
           global: this.flags.global,
-          update: this.flags.update,
+          update,
           projectRoot: process.cwd(),
+          directory,
         });
       })
       .filter((p): p is Promise<InstallSkillsResult> => p !== null);

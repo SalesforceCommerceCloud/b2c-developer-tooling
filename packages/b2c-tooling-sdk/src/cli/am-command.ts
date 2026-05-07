@@ -9,7 +9,9 @@ import {createAccountManagerClient} from '../clients/am-api.js';
 import type {AccountManagerClient} from '../clients/am-api.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {ImplicitOAuthStrategy} from '../auth/oauth-implicit.js';
-import {DEFAULT_PUBLIC_CLIENT_ID} from '../defaults.js';
+import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
+import {StatefulOAuthStrategy} from '../auth/stateful-oauth-strategy.js';
+import {getDefaultPublicClientId} from '../defaults.js';
 
 /** Account Manager role: User Administrator */
 const AM_USER_ADMIN = 'User Administrator';
@@ -54,18 +56,21 @@ const AUTH_ERROR_PATTERNS = [
  */
 export abstract class AmCommand<T extends typeof Command> extends OAuthCommand<T> {
   protected override getDefaultClientId(): string {
-    return DEFAULT_PUBLIC_CLIENT_ID;
+    return getDefaultPublicClientId(this.accountManagerHost);
   }
 
   private _accountManagerClient?: AccountManagerClient;
-  private _authStrategy?: OAuthStrategy | ImplicitOAuthStrategy;
+  private _authStrategy?: OAuthStrategy | JwtOAuthStrategy | ImplicitOAuthStrategy | StatefulOAuthStrategy;
 
   /**
    * Gets the auth method type that was used, based on the stored strategy.
    */
-  protected get authMethodUsed(): 'implicit' | 'client-credentials' | undefined {
+  protected get authMethodUsed(): 'implicit' | 'client-credentials' | 'jwt' | 'stateful' | undefined {
     if (!this._authStrategy) return undefined;
-    return this._authStrategy instanceof ImplicitOAuthStrategy ? 'implicit' : 'client-credentials';
+    if (this._authStrategy instanceof ImplicitOAuthStrategy) return 'implicit';
+    if (this._authStrategy instanceof StatefulOAuthStrategy) return 'stateful';
+    if (this._authStrategy instanceof JwtOAuthStrategy) return 'jwt';
+    return 'client-credentials';
   }
 
   /**
@@ -122,9 +127,9 @@ export abstract class AmCommand<T extends typeof Command> extends OAuthCommand<T
 
     if (!subtopic) return undefined;
 
-    // Try to get current JWT roles for client-credentials (avoid triggering browser login for implicit)
+    // Try to get current JWT roles for client-credentials / stateful (avoid triggering browser for implicit)
     let rolesInfo = '';
-    if (authMethod === 'client-credentials' && this._authStrategy) {
+    if ((authMethod === 'client-credentials' || authMethod === 'stateful') && this._authStrategy) {
       try {
         // getJWT() is async but we only want cached token info — use synchronous check
         // The token should already be cached if we got far enough to receive an auth error
@@ -134,7 +139,7 @@ export abstract class AmCommand<T extends typeof Command> extends OAuthCommand<T
       }
     }
 
-    if (authMethod === 'client-credentials') {
+    if (authMethod === 'client-credentials' || authMethod === 'stateful') {
       return this.getClientCredentialsSuggestion(subtopic, rolesInfo);
     }
 

@@ -18,3 +18,5 @@ dw.json
 
 export/
 cartridges/
+!src/commands/**/cartridges/
+!test/commands/**/cartridges/

@@ -31,6 +31,7 @@ export {
   BasicAuthStrategy,
   OAuthStrategy,
   ImplicitOAuthStrategy,
+  JwtOAuthStrategy,
   ApiKeyStrategy,
   decodeJWT,
   resolveAuthStrategy,
@@ -43,6 +44,7 @@ export type {
   DecodedJWT,
   OAuthConfig,
   ImplicitOAuthConfig,
+  JwtOAuthConfig,
   AuthConfig,
   BasicAuthConfig,
   OAuthAuthConfig,
@@ -71,6 +73,7 @@ export {
   createAccountManagerApiClientsClient,
   createAccountManagerOrgsClient,
   createCdnZonesClient,
+  createGranularReplicationsClient,
   createCipClient,
   toOrganizationId,
   normalizeTenantId,
@@ -156,6 +159,19 @@ export type {
   ZonesEnvelope,
   CdnZonesPaths,
   CdnZonesComponents,
+  GranularReplicationsClient,
+  GranularReplicationsClientConfig,
+  GranularReplicationsError,
+  GranularReplicationsResponse,
+  ProductItem,
+  PriceTableItem,
+  ContentAssetItemPrivate,
+  ContentAssetItemShared,
+  PublishProcessResponse,
+  PublishProcessListResponse,
+  PublishIdResponse,
+  GranularReplicationsPaths,
+  GranularReplicationsComponents,
   CipClient,
   CipClientConfig,
   CipColumn,
@@ -220,6 +236,7 @@ export type {
   JobExecutionParameter,
   ExecuteJobOptions,
   WaitForJobOptions,
+  WaitForJobPollInfo,
   SearchJobExecutionsOptions,
   JobExecutionSearchResult,
   SiteArchiveImportOptions,
@@ -314,14 +331,72 @@ export {
   revokeRole,
 } from './operations/users/index.js';
 
+// Operations - CAP (Commerce App Packages)
+export {
+  validateCap,
+  commerceAppInstall,
+  commerceAppUninstall,
+  commerceAppPackage,
+  discoverLocalApps,
+  listInstalledApps,
+  parseCommerceFeatureStatesXml,
+  readManifest,
+  pullCommerceApps,
+} from './operations/cap/index.js';
+export type {
+  CapValidationResult,
+  CommerceAppManifest,
+  CommerceAppInstallOptions,
+  CommerceAppInstallResult,
+  CommerceAppUninstallOptions,
+  CommerceAppUninstallResult,
+  CommerceAppPackageOptions,
+  CommerceAppPackageResult,
+  CommerceFeatureState,
+  LocalCommerceApp,
+  ListInstalledAppsOptions,
+  ListInstalledAppsResult,
+  PullCommerceAppsOptions,
+  PullCommerceAppsResult,
+  PulledApp,
+  PullSource,
+} from './operations/cap/index.js';
+
 // Operations - Roles
 export {getRole, listRoles} from './operations/roles/index.js';
 
 // Operations - Organizations
 export {getOrg, getOrgByName, listOrgs} from './operations/orgs/index.js';
 
+// Safety - Protection against destructive operations
+export {
+  getSafetyLevel,
+  describeSafetyLevel,
+  checkSafetyViolation,
+  checkLevelViolation,
+  SafetyBlockedError,
+  SafetyConfirmationRequired,
+  SafetyGuard,
+  extractJobIdFromPath,
+  maxSafetyLevel,
+  isValidSafetyLevel,
+  parseSafetyLevelString,
+  resolveEffectiveSafetyConfig,
+  loadGlobalSafetyConfig,
+  isValidSafetyAction,
+  VALID_SAFETY_ACTIONS,
+  withSafetyConfirmation,
+} from './safety/index.js';
+export type {SafetyLevel, SafetyConfig, SafetyConfigFragment} from './safety/index.js';
+export type {SafetyAction, SafetyRule, SafetyOperation, SafetyEvaluation, ConfirmHandler} from './safety/index.js';
+
 // Defaults
-export {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST, DEFAULT_PUBLIC_CLIENT_ID} from './defaults.js';
+export {
+  DEFAULT_ACCOUNT_MANAGER_HOST,
+  DEFAULT_ODS_HOST,
+  DEFAULT_PUBLIC_CLIENT_ID,
+  getDefaultPublicClientId,
+} from './defaults.js';
 
 // Version info
 export {SDK_NAME, SDK_VERSION, SDK_USER_AGENT} from './version.js';

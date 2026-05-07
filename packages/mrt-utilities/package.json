@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/mrt-utilities",
-  "version": "0.1.0",
+  "version": "0.1.6",
   "description": "Middleware and utilities to simulate a deployed Managed Runtime environment",
   "type": "module",
   "author": "Salesforce",
@@ -38,6 +38,38 @@
       "require": {
         "types": "./dist/cjs/middleware/index.d.ts",
         "default": "./dist/cjs/middleware/index.js"
+      }
+    },
+    "./middleware/express": {
+      "development": "./src/middleware/express.ts",
+      "import": {
+        "types": "./dist/esm/middleware/express.d.ts",
+        "default": "./dist/esm/middleware/express.js"
+      },
+      "require": {
+        "types": "./dist/cjs/middleware/express.d.ts",
+        "default": "./dist/cjs/middleware/express.js"
+      }
+    },
+    "./data-store": {
+      "dev-data-store": {
+        "import": {
+          "types": "./dist/esm/data-store/development.d.ts",
+          "default": "./dist/esm/data-store/development.js"
+        },
+        "require": {
+          "types": "./dist/cjs/data-store/development.d.ts",
+          "default": "./dist/cjs/data-store/development.js"
+        }
+      },
+      "development": "./src/data-store/index.ts",
+      "import": {
+        "types": "./dist/esm/data-store/index.d.ts",
+        "default": "./dist/esm/data-store/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/data-store/index.d.ts",
+        "default": "./dist/cjs/data-store/index.js"
       }
     },
     "./metrics": {
@@ -78,8 +110,11 @@
     "format:check": "prettier --check .",
     "pretest": "tsc --noEmit -p test",
     "test": "c8 mocha --forbid-only \"test/**/*.test.ts\"",
+    "test:ci": "c8 mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:agent": "mocha --forbid-only --reporter min \"test/**/*.test.ts\"",
-    "test:watch": "mocha --watch \"test/**/*.test.ts\""
+    "test:watch": "mocha --watch \"test/**/*.test.ts\"",
+    "prepack": "node scripts/strip-dev-exports.cjs",
+    "postpack": "git checkout package.json"
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch": "3.952.0",
@@ -91,7 +126,7 @@
     "http-proxy-middleware": "3.0.5",
     "mime-types": "3.0.1",
     "negotiator": "1.0.0",
-    "qs": "6.14.0",
+    "qs": "6.14.1",
     "set-cookie-parser": "2.7.1"
   },
   "devDependencies": {
@@ -115,6 +150,7 @@
     "eslint-plugin-header": "catalog:",
     "eslint-plugin-prettier": "catalog:",
     "express": "5.1.0",
+    "express4": "npm:express@4.21.2",
     "mocha": "catalog:",
     "prettier": "catalog:",
     "shx": "catalog:",
@@ -124,7 +160,7 @@
     "typescript-eslint": "catalog:"
   },
   "peerDependencies": {
-    "express": "5.1.0"
+    "express": "^4.0.0 || ^5.0.0"
   },
   "engines": {
     "node": ">=22.16.0"

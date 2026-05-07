@@ -64,6 +64,7 @@ In addition to [global flags](./index#global-flags):
 |------|-------------|---------|
 | `--wait`, `-w` | Wait for job to complete | `false` |
 | `--timeout`, `-t` | Timeout in seconds when waiting | No timeout |
+| `--poll-interval` | Polling interval in seconds when using `--wait` | `3` |
 | `--param`, `-P` | Job parameter in format "name=value" (repeatable) | |
 | `--body`, `-B` | Raw JSON request body (for system jobs with non-standard schemas) | |
 | `--no-wait-running` | Do not wait for running job to finish before starting | `false` |

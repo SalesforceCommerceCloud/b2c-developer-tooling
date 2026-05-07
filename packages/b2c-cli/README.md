@@ -2,9 +2,6 @@
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
 
-> [!NOTE]
-> This project is currently in **Developer Preview**. Not all features are implemented, and the API may change in future releases. Please provide feedback via GitHub issues.
-
 A command-line interface for Salesforce Agentforce Commerce (formerly Commerce Cloud) B2C instances and platform services.
 
 ## Installation
@@ -286,6 +283,3 @@ Full documentation is available at: https://salesforcecommercecloud.github.io/b2
 
 This project is licensed under the Apache License 2.0. See [LICENSE.txt](../../LICENSE.txt) for full details.
 
-## Disclaimer
-
-This project is currently in **Developer Preview** and is provided "as-is" without warranty of any kind. It is not yet generally available (GA) and should not be used in production environments. Features, APIs, and functionality may change without notice in future releases.

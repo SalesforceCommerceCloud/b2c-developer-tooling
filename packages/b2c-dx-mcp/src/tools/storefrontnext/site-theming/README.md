@@ -49,7 +49,7 @@ Content files (in `packages/b2c-dx-mcp/content/site-theming/`):
 ```json
 // First call - get guidelines and questions
 {
-  "name": "storefront_next_site_theming",
+  "name": "sfnext_configure_theme",
   "arguments": {
     "conversationContext": {
       "collectedAnswers": {"colors": [], "fonts": []}
@@ -59,7 +59,7 @@ Content files (in `packages/b2c-dx-mcp/content/site-theming/`):
 
 // Validation call - after constructing colorMapping
 {
-  "name": "storefront_next_site_theming",
+  "name": "sfnext_configure_theme",
   "arguments": {
     "conversationContext": {
       "collectedAnswers": {

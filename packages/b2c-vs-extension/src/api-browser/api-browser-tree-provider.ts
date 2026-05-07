@@ -127,7 +127,8 @@ export class ApiBrowserTreeDataProvider implements vscode.TreeDataProvider<ApiBr
       const schemas = await vscode.window.withProgress(
         {location: {viewId: 'b2cApiBrowser'}, title: 'Loading SCAPI schemas...'},
         async () => {
-          const oauthStrategy = config.createOAuth();
+          const oauthOptions = await this.configProvider.getImplicitAuthOptions();
+          const oauthStrategy = config.createOAuth(oauthOptions);
           const schemasClient = createScapiSchemasClient({shortCode, tenantId}, oauthStrategy);
           const orgId = toOrganizationId(tenantId);
           const {data, error, response} = await schemasClient.GET('/organizations/{organizationId}/schemas', {

@@ -78,6 +78,14 @@ describe('setup inspect', () => {
       expect(SetupInspect.flags).to.have.property('unmask');
     });
 
+    it('should have account-manager-host flag', () => {
+      expect(SetupInspect.flags).to.have.property('account-manager-host');
+    });
+
+    it('should have cloud-origin flag', () => {
+      expect(SetupInspect.flags).to.have.property('cloud-origin');
+    });
+
     it('should have setup:config alias', () => {
       expect(SetupInspect.aliases).to.include('setup:config');
     });

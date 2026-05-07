@@ -27,6 +27,9 @@ export default class ClientDelete extends AmCommand<typeof ClientDelete> {
   static examples = ['<%= config.bin %> <%= command.id %> <api-client-id>'];
 
   async run(): Promise<void> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete API client');
+
     const apiClientId = this.args['api-client-id'];
 
     this.log(t('commands.client.delete.deleting', 'Deleting API client {{id}}...', {id: apiClientId}));

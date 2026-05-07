@@ -16,9 +16,9 @@ For detailed setup instructions including Account Manager API client creation, r
 
 OAuth is required for API operations (code list/activate/delete, jobs, sites, SCAPI commands, SLAS, ODS) and can also be used for WebDAV file operations when basic auth credentials are not provided.
 
-#### Client Credentials (Recommended)
+#### Client Credentials
 
-OAuth client credentials is the recommended method for production and CI/CD use:
+OAuth client credentials uses a client ID and secret for non-interactive authentication:
 
 ```bash
 b2c code deploy \
@@ -26,6 +26,20 @@ b2c code deploy \
   --client-id your-client-id \
   --client-secret your-client-secret
 ```
+
+#### JWT Bearer
+
+JWT Bearer uses certificate-based authentication for enhanced security without storing client secrets:
+
+```bash
+b2c code deploy \
+  --server abcd-123.dx.commercecloud.salesforce.com \
+  --client-id your-client-id \
+  --jwt-cert ./cert.pem \
+  --jwt-key ./key.pem
+```
+
+See [JWT Authentication](./authentication#jwt-authentication-certificate-based) for setup instructions.
 
 #### Implicit Flow
 
@@ -65,11 +79,16 @@ You can configure the CLI using environment variables:
 | `SFCC_CODE_VERSION`           | Code version for deployments                                   |
 | `SFCC_CLIENT_ID`              | OAuth client ID                                                |
 | `SFCC_CLIENT_SECRET`          | OAuth client secret                                            |
+| `SFCC_JWT_CERT`               | Path to JWT certificate file (cert.pem) for JWT Bearer auth    |
+| `SFCC_JWT_KEY`                | Path to JWT private key file (key.pem) for JWT Bearer auth     |
+| `SFCC_JWT_PASSPHRASE`         | Passphrase for encrypted JWT private key                       |
 | `SFCC_OAUTH_SCOPES`           | OAuth scopes to request                                        |
 | `SFCC_AUTH_METHODS`           | Comma-separated list of allowed auth methods                   |
 | `SFCC_SHORTCODE`              | SCAPI short code                                               |
 | `SFCC_TENANT_ID`              | Organization/tenant ID for SCAPI                               |
 | `SFCC_ACCOUNT_MANAGER_HOST`   | Account Manager hostname for OAuth                             |
+| `SFCC_REDIRECT_URI`           | Override redirect URI for implicit OAuth flow (e.g., when behind a proxy) |
+| `SFCC_OAUTH_LOCAL_PORT`       | Local port for the implicit OAuth redirect server (default: `8080`) |
 | `SFCC_USERNAME`               | Basic auth username                                            |
 | `SFCC_PASSWORD`               | Basic auth password                                            |
 | `SFCC_CERTIFICATE`            | Path to PKCS12 certificate for two-factor auth (mTLS)          |
@@ -82,6 +101,9 @@ You can configure the CLI using environment variables:
 | `MRT_PROJECT`                 | MRT project slug (`SFCC_MRT_PROJECT` also supported)           |
 | `MRT_ENVIRONMENT`             | MRT environment name (`SFCC_MRT_ENVIRONMENT`, `MRT_TARGET` also supported) |
 | `MRT_CLOUD_ORIGIN`            | MRT API origin URL override (`SFCC_MRT_CLOUD_ORIGIN` also supported) |
+| `SFCC_SAFETY_LEVEL`           | Safety mode: `NONE`, `NO_DELETE`, `NO_UPDATE`, `READ_ONLY` (see [Safety Mode](/guide/safety)) |
+| `SFCC_SAFETY_CONFIRM`         | Enable confirmation mode for safety: `true` or `1` (see [Safety Mode](/guide/safety#confirmation-mode)) |
+| `SFCC_SAFETY_CONFIG`          | Path to global safety config file (see [Safety Mode](/guide/safety#global-safety-config)) |
 
 ## .env File
 
@@ -119,6 +141,18 @@ Both camelCase and kebab-case are accepted for all field names in `dw.json`. For
 }
 ```
 
+Or with JWT Bearer authentication:
+
+```json
+{
+  "hostname": "abcd-123.dx.commercecloud.salesforce.com",
+  "code-version": "version1",
+  "client-id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "jwt-cert-path": "./cert.pem",
+  "jwt-key-path": "./key.pem"
+}
+```
+
 ### Multiple Instances
 
 For projects that work with multiple instances, use the `configs` array:
@@ -146,6 +180,8 @@ For projects that work with multiple instances, use the `configs` array:
   ]
 }
 ```
+
+Each instance can have its own `safety` configuration for per-instance operational safety. See [Safety Mode](/guide/safety#per-instance-configuration) for details.
 
 Use the `-i` or `--instance` flag to select a specific configuration:
 
@@ -212,6 +248,9 @@ For the full command reference with all flags, see [Setup Commands](/cli/setup).
 | `code-version`           | Code version for deployments                                                                                                        |
 | `client-id`              | OAuth client ID                                                                                                                     |
 | `client-secret`          | OAuth client secret                                                                                                                 |
+| `jwt-cert-path`          | Path to JWT certificate file (cert.pem) for JWT Bearer authentication. Also accepts `jwtCertPath`.                                  |
+| `jwt-key-path`           | Path to JWT private key file (key.pem) for JWT Bearer authentication. Also accepts `jwtKeyPath`.                                    |
+| `jwt-passphrase`         | Passphrase for encrypted JWT private key. Also accepts `jwtPassphrase`.                                                             |
 | `username`               | Basic auth username (WebDAV)                                                                                                        |
 | `password`               | Basic auth access key (WebDAV)                                                                                                      |
 | `oauth-scopes`           | OAuth scopes (array of strings)                                                                                                     |
@@ -317,7 +356,8 @@ Plugins can add custom configuration sources like secret managers or environment
 
 To prevent mixing credentials from different sources, certain fields are treated as atomic groups:
 
-- **OAuth**: `clientId` and `clientSecret`
+- **OAuth Client Credentials**: `clientId` and `clientSecret`
+- **OAuth JWT Bearer**: `clientId`, `jwtCertPath`, `jwtKeyPath`, and `jwtPassphrase`
 - **Basic Auth**: `username` and `password`
 
 If any field in a group is set by a higher-priority source, all fields in that group from lower-priority sources are ignored. This ensures credential pairs always come from the same source.
@@ -361,6 +401,7 @@ For platform-level commands (Sandbox, SLAS, and Account Manager), the CLI includ
 ### Available Auth Methods
 
 - `client-credentials` - OAuth 2.0 client credentials flow (requires client ID and secret). Used for SCAPI/OCAPI and WebDAV.
+- `jwt` - OAuth 2.0 JWT Bearer flow (requires client ID, certificate, and private key). Used for SCAPI/OCAPI and WebDAV. More secure than client credentials.
 - `implicit` - OAuth 2.0 implicit flow (requires client ID only, opens browser for login). Used for SCAPI/OCAPI and WebDAV.
 - `basic` - Basic authentication with username and access key. Used for WebDAV operations only.
 - `api-key` - API key authentication. Used for MRT commands only.

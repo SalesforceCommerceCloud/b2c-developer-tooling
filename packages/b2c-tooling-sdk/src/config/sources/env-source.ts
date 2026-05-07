@@ -20,6 +20,10 @@ import {getLogger} from '../../logging/logger.js';
  * Mapping of SFCC_* environment variable names to NormalizedConfig field names.
  */
 const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
+  // sfcc-ci legacy aliases — listed first so canonical names below take precedence
+  SFCC_OAUTH_CLIENT_ID: 'clientId',
+  SFCC_OAUTH_CLIENT_SECRET: 'clientSecret',
+  SFCC_LOGIN_URL: 'accountManagerHost',
   SFCC_SERVER: 'hostname',
   SFCC_WEBDAV_SERVER: 'webdavHostname',
   SFCC_CODE_VERSION: 'codeVersion',
@@ -34,9 +38,16 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_SHORTCODE: 'shortCode',
   SFCC_TENANT_ID: 'tenantId',
   SFCC_CARTRIDGES: 'cartridges',
+  SFCC_CATALOGS: 'catalogs',
+  SFCC_LIBRARIES: 'libraries',
+  SFCC_ASSET_QUERY: 'assetQuery',
   SFCC_AUTH_METHODS: 'authMethods',
   SFCC_ACCOUNT_MANAGER_HOST: 'accountManagerHost',
   SFCC_SANDBOX_API_HOST: 'sandboxApiHost',
+  // JWT Bearer auth env vars
+  SFCC_JWT_CERT: 'jwtCertPath',
+  SFCC_JWT_KEY: 'jwtKeyPath',
+  SFCC_JWT_PASSPHRASE: 'jwtPassphrase',
   // MRT env vars — MRT_* listed first as fallback, SFCC_MRT_* listed second to take precedence
   MRT_API_KEY: 'mrtApiKey',
   SFCC_MRT_API_KEY: 'mrtApiKey',
@@ -49,7 +60,14 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
 };
 
 /** Fields that should be parsed as comma-separated arrays. */
-const ARRAY_FIELDS = new Set<keyof NormalizedConfig>(['scopes', 'authMethods', 'cartridges']);
+const ARRAY_FIELDS = new Set<keyof NormalizedConfig>([
+  'scopes',
+  'authMethods',
+  'cartridges',
+  'catalogs',
+  'libraries',
+  'assetQuery',
+]);
 
 /** Fields that should be parsed as booleans. */
 const BOOLEAN_FIELDS = new Set<keyof NormalizedConfig>(['selfSigned']);

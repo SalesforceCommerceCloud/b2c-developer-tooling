@@ -34,3 +34,25 @@ export const DEFAULT_ODS_HOST = 'admin.dx.commercecloud.salesforce.com';
  * commands (Account Manager, Sandbox, SLAS) that support public client tokens.
  */
 export const DEFAULT_PUBLIC_CLIENT_ID = '7eee11e3-375b-498f-a087-e450a330d202';
+
+/**
+ * Host-specific overrides for the default public client ID.
+ * Some Account Manager instances require a different public client registration.
+ */
+const HOST_CLIENT_ID_OVERRIDES: Record<string, string> = {
+  'account-pod5.demandware.net': 'c44527fe-66ff-4455-9eec-7287b2c66485',
+};
+
+/**
+ * Returns the default public client ID for the given Account Manager host.
+ * Falls back to {@link DEFAULT_PUBLIC_CLIENT_ID} for hosts without an override.
+ *
+ * @param accountManagerHost - The Account Manager hostname
+ * @returns The appropriate public client ID for that host
+ */
+export function getDefaultPublicClientId(accountManagerHost?: string): string {
+  if (accountManagerHost && accountManagerHost in HOST_CLIENT_ID_OVERRIDES) {
+    return HOST_CLIENT_ID_OVERRIDES[accountManagerHost];
+  }
+  return DEFAULT_PUBLIC_CLIENT_ID;
+}

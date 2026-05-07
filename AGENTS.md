@@ -92,6 +92,7 @@ The header is enforced by eslint via `eslint-plugin-header`. The canonical defin
 ## Documentation
 
 - Update docs in `./docs/` folder and relevant skills in `./skills/b2c-cli/skills/` when updating or adding CLI commands.
+- When adding new SDK modules, update `docs/typedoc.json` entry points to include the new module's barrel file so API docs are generated.
 
 See [documentation skill](./.claude/skills/documentation/SKILL.md) for details on updating user guides, CLI reference, and API docs.
 
@@ -178,14 +179,14 @@ Changeset guidelines:
 - a pull request can have multiple changesets; separate files for separate changes
 - Only list directly-changed packages in changeset frontmatter — do not include dependent packages (they get auto-bumped)
 - Select the appropriate semver bump: `patch` (bug fixes) or `minor` (new features)
-- This is a pre-1.0 preview release, so there are no `major` breaking change bumps yet
+- Use `major` for breaking changes that require consumers to update their code
 - Good changesets explain:
   - WHAT the change is
   - WHY the change was made
   - HOW a consumer should update their code
 - Good changesets are brief and user-focused (not contributor); they are generally 1 line or two; The content of the changeset is used in CHANGELOG and release notes. You do not need to list internal implementation details or all details of commands; just the high level summary for users.
 
-Valid changeset packages: `@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`, `@salesforce/mrt-utilities`, `b2c-vs-extension`, `@salesforce/b2c-dx-docs`
+Valid changeset packages: `@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`, `@salesforce/mrt-utilities`, `b2c-vs-extension`, `@salesforce/b2c-dx-docs`, `@salesforce/b2c-agent-plugins`
 
 Create a changeset file directly in `.changeset/` with a unique filename (e.g., `descriptive-change-name.md`):
 
@@ -200,3 +201,4 @@ Description of the change explaining WHAT, WHY, and HOW to update
 
 - Include only the packages that were directly modified
 - For doc-only changes, target `@salesforce/b2c-dx-docs` instead of the CLI/SDK/MCP packages
+- For changes to agent skills/plugins in `skills/` (adding or updating skill content, adding a new plugin), target `@salesforce/b2c-agent-plugins`

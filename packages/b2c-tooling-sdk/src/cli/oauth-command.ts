@@ -10,15 +10,23 @@ import type {AuthMethod} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {ImplicitOAuthStrategy} from '../auth/oauth-implicit.js';
+import {StatefulOAuthStrategy} from '../auth/stateful-oauth-strategy.js';
+import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
+import {getStoredSession, isStatefulTokenValid} from '../auth/stateful-store.js';
 import {t} from '../i18n/index.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
-import {normalizeTenantId} from '../clients/custom-apis.js';
+import {normalizeTenantId, toOrganizationId} from '../clients/custom-apis.js';
 
 /**
  * Default OAuth authentication methods array used by getOAuthStrategy.
  * Extracted from getOAuthStrategy() to ensure getDefaultAuthMethods() returns the same array.
+ *
+ * Priority order:
+ * 1. client-credentials (requires clientId + clientSecret)
+ * 2. jwt (requires clientId + jwtCertPath + jwtKeyPath)
+ * 3. implicit (requires clientId, browser-based)
  */
-const DEFAULT_OAUTH_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'implicit'];
+const DEFAULT_OAUTH_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'jwt', 'implicit'];
 
 /**
  * Base command for operations requiring OAuth authentication.
@@ -31,16 +39,25 @@ const DEFAULT_OAUTH_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'implici
  * For B2C instance specific operations, use InstanceCommand instead.
  */
 export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand<T> {
+  private readonly _rawArgv: string[];
+
+  constructor(argv: string[], config: ConstructorParameters<typeof Command>[1]) {
+    super(argv, config);
+    this._rawArgv = [...argv];
+  }
+
   static baseFlags = {
     ...BaseCommand.baseFlags,
     'client-id': Flags.string({
       description: 'Client ID for OAuth',
       env: 'SFCC_CLIENT_ID',
+      default: async () => process.env.SFCC_OAUTH_CLIENT_ID || undefined,
       helpGroup: 'AUTH',
     }),
     'client-secret': Flags.string({
       description: 'Client Secret for OAuth',
       env: 'SFCC_CLIENT_SECRET',
+      default: async () => process.env.SFCC_OAUTH_CLIENT_SECRET || undefined,
       helpGroup: 'AUTH',
     }),
     'auth-scope': Flags.string({
@@ -81,6 +98,22 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     'account-manager-host': Flags.string({
       description: `Account Manager hostname for OAuth (default: ${DEFAULT_ACCOUNT_MANAGER_HOST})`,
       env: 'SFCC_ACCOUNT_MANAGER_HOST',
+      default: async () => process.env.SFCC_LOGIN_URL || undefined,
+      helpGroup: 'AUTH',
+    }),
+    'jwt-cert': Flags.string({
+      description: 'Path to JWT certificate file (cert.pem) for JWT Bearer authentication',
+      env: 'SFCC_JWT_CERT',
+      helpGroup: 'AUTH',
+    }),
+    'jwt-key': Flags.string({
+      description: 'Path to JWT private key file (key.pem) for JWT Bearer authentication',
+      env: 'SFCC_JWT_KEY',
+      helpGroup: 'AUTH',
+    }),
+    'jwt-passphrase': Flags.string({
+      description: 'Passphrase for encrypted JWT private key',
+      env: 'SFCC_JWT_PASSPHRASE',
       helpGroup: 'AUTH',
     }),
   };
@@ -127,10 +160,53 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    *
    * @throws Error if no allowed method has the required credentials configured
    */
-  protected getOAuthStrategy(): OAuthStrategy | ImplicitOAuthStrategy {
+  protected getOAuthStrategy(): OAuthStrategy | JwtOAuthStrategy | ImplicitOAuthStrategy | StatefulOAuthStrategy {
     const config = this.resolvedConfig.values;
     const accountManagerHost = this.accountManagerHost;
-    // Use getDefaultAuthMethods() to get default array, allowing subclasses to override
+    const requiredScopes = config.scopes ?? [];
+
+    const statefulSession = getStoredSession();
+    const explicitAuthFlags = this.detectExplicitAuthFlags();
+    const configuredClientId = config.clientId;
+    const validSession =
+      statefulSession !== null && isStatefulTokenValid(statefulSession, requiredScopes, undefined, configuredClientId);
+
+    // Use stateful auth only when the session is valid and no explicit auth flags override it
+    if (validSession && explicitAuthFlags.length === 0) {
+      this.logger.debug('[Auth] Using stateful session');
+      return new StatefulOAuthStrategy(statefulSession, {
+        accountManagerHost,
+        scopes: requiredScopes,
+      });
+    }
+
+    // Warn when an invalid stored session exists or explicit auth flags override a valid one
+    if (statefulSession) {
+      if (validSession && explicitAuthFlags.length > 0) {
+        this.warn(
+          t(
+            'warning.statefulTokenOverridden',
+            '[StatefulAuth] Valid token found in stored session. ' +
+              `However, switching to stateless auth due to presence of ${explicitAuthFlags.join(', ')}. ` +
+              'Remove these flags to use the stored session.',
+          ),
+        );
+      } else if (!validSession) {
+        const renewable = statefulSession.renewBase !== null && statefulSession.renewBase !== undefined;
+        this.warn(
+          t(
+            renewable ? 'warning.statefulTokenExpired' : 'warning.statefulTokenExpiredNoRenew',
+            '[StatefulAuth] [sfcc-ci compatibility] Stored token is expired or invalid for the given request. ' +
+              (renewable
+                ? 'Run `b2c auth client renew` to refresh it. '
+                : 'Run `b2c auth client` or `b2c auth login` to re-authenticate. ') +
+              'Falling back to stateless auth.',
+          ),
+        );
+      }
+    }
+
+    // Fall back to stateless auth
     const allowedMethods = config.authMethods || this.getDefaultAuthMethods();
     const defaultClientId = this.getDefaultClientId();
 
@@ -144,6 +220,30 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
               scopes: config.scopes,
               accountManagerHost,
             });
+          }
+          break;
+
+        case 'jwt':
+          // JWT Bearer authentication - requires client ID and cert/key pair
+          if (config.clientId && config.jwtCertPath && config.jwtKeyPath) {
+            try {
+              this.logger.debug('[Auth] Using JWT Bearer authentication');
+              return new JwtOAuthStrategy({
+                clientId: config.clientId,
+                certPath: config.jwtCertPath,
+                keyPath: config.jwtKeyPath,
+                passphrase: config.jwtPassphrase,
+                accountManagerHost,
+                scopes: config.scopes,
+              });
+            } catch (error) {
+              // JWT config is present but invalid (corrupted files, wrong passphrase, etc.)
+              // Log warning and fall through to next auth method
+              const message = error instanceof Error ? error.message : String(error);
+              this.logger.warn(
+                `[Auth] JWT authentication configured but invalid: ${message}. Trying next auth method.`,
+              );
+            }
           }
           break;
 
@@ -179,12 +279,32 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   }
 
   /**
+   * Detects explicit CLI flags that indicate intent to use stateless auth.
+   * Only flags that mandate a specific auth flow are considered:
+   * - --client-secret: indicates client-credentials flow
+   * - --jwt-cert / --jwt-key: indicates JWT Bearer flow
+   * - --user-auth: indicates browser-based implicit flow
+   * - --auth-methods: explicit auth method selection
+   *
+   * Contextual flags (--client-id, --auth-scope, --short-code, --tenant-id,
+   * --account-manager-host) are NOT included because they are handled by
+   * isStatefulTokenValid (clientId/scope matching) or don't affect auth flow.
+   */
+  private detectExplicitAuthFlags(): string[] {
+    const rawArgs = this._rawArgv;
+    const statelessFlags = ['--client-secret', '--jwt-cert', '--jwt-key', '--user-auth', '--auth-methods'];
+    return statelessFlags.filter((flag) => rawArgs.some((arg) => arg === flag || arg.startsWith(`${flag}=`)));
+  }
+
+  /**
    * Check if OAuth credentials are available.
    * Returns true if clientId is configured (with or without clientSecret),
    * or if a default client ID is available for implicit flows.
    */
   protected hasOAuthCredentials(): boolean {
-    return this.resolvedConfig.hasOAuthConfig() || this.getDefaultClientId() !== undefined;
+    return (
+      this.resolvedConfig.hasOAuthConfig() || this.getDefaultClientId() !== undefined || getStoredSession() !== null
+    );
   }
 
   /**
@@ -224,5 +344,12 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       );
     }
     return normalizeTenantId(tenantId);
+  }
+
+  /**
+   * Organization ID (`f_ecom_*`) for API path parameters from the resolved tenant.
+   */
+  protected getOrganizationId(): string {
+    return toOrganizationId(this.requireTenantId());
   }
 }

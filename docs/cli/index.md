@@ -27,6 +27,32 @@ These flags are available on all commands that interact with B2C instances:
 | `--username`, `-u` | `SFCC_USERNAME`      | Username for Basic Auth            |
 | `--password`, `-p` | `SFCC_PASSWORD`      | Password/access key for Basic Auth |
 
+### Safety Mode
+
+Safety Mode provides protection against accidental or unwanted destructive operations. This is particularly important when using the CLI in automated environments, CI/CD pipelines, or as a tool for AI agents.
+
+| Environment Variable   | Values | Description |
+| ---------------------- | ------ | ----------- |
+| `SFCC_SAFETY_LEVEL` | `NONE` (default) | No restrictions |
+| | `NO_DELETE` | Block DELETE operations |
+| | `NO_UPDATE` | Block DELETE and destructive operations (reset, stop, restart) |
+| | `READ_ONLY` | Block all write operations (GET only) |
+
+**Example:**
+```bash
+# Prevent deletions in CI/CD
+export SFCC_SAFETY_LEVEL=NO_DELETE
+b2c sandbox create --realm test  # ✅ Allowed
+b2c sandbox delete test-id       # ❌ Blocked
+
+# Read-only mode for reporting
+export SFCC_SAFETY_LEVEL=READ_ONLY
+b2c sandbox list                 # ✅ Allowed
+b2c sandbox create --realm test  # ❌ Blocked
+```
+
+Safety Mode operates at the HTTP layer and cannot be bypassed by command-line flags. See the [Safety Mode](/guide/safety) guide for detailed information.
+
 ### Other Environment Variables
 
 | Environment Variable         | Description                             |
@@ -37,10 +63,13 @@ These flags are available on all commands that interact with B2C instances:
 
 ### Instance Operations
 
-- [Code Commands](./code) - Deploy cartridges and manage code versions
+- [Code Commands](./code) - Deploy, download, and manage code versions
 - [Job Commands](./jobs) - Execute and monitor jobs, import/export site archives
 - [Sites Commands](./sites) - List and manage sites
 - [WebDAV Commands](./webdav) - File operations on instance WebDAV
+- [Logs Commands](./logs) - Tail and retrieve instance logs
+- [Content Commands](./content) - Export Page Designer content from a site
+- [BM Roles Commands](./bm-roles) - Manage Business Manager roles and permissions
 
 ### Services
 
@@ -48,11 +77,16 @@ These flags are available on all commands that interact with B2C instances:
 - [MRT Commands](./mrt) - Manage Managed Runtime (MRT) projects and deployments
 - [SLAS Commands](./slas) - Manage Shopper Login and Access Service (SLAS) API clients
 - [CIP Commands](./cip) - Run CIP SQL queries and curated analytics reports
+- [eCDN Commands](./ecdn) - Manage eCDN zones, certificates, WAF, Page Shield, and edge configuration
 - [Custom APIs](./custom-apis) - SCAPI Custom API endpoint status
+- [SCAPI Schemas](./scapi-schemas) - Browse and retrieve SCAPI OpenAPI schemas
+- [Granular Replications](./replications) - Trigger and monitor SCAPI granular replications
+- [CAP Commands](./cap) - Manage Commerce App Packages
 
 ### Development
 
 - [Scaffold Commands](./scaffold) - Generate cartridges, controllers, hooks, and more from templates
+- [Debug Command](./debug) - Start a DAP adapter for IDE-driven script debugging
 
 ### Account Management
 
@@ -65,10 +99,11 @@ All Account Manager commands are under the `am` topic:
 - `b2c am orgs ...` - Organization management commands
 - `b2c am clients ...` - API client management (list, get, create, update, delete, password)
 
-### Utilities
+### Setup & Utilities
 
-- [Docs Commands](./docs) - Search/read Script API docs and XSD schemas, and download docs from an instance
+- [Setup Commands](./setup) - Configure instances, install IDE integrations, and install agent skills
 - [Auth Commands](./auth) - Authentication and token management
+- [Docs Commands](./docs) - Search/read Script API docs and XSD schemas, and download docs from an instance
 - [Logging](./logging) - Log levels, output formats, and environment variables
 
 ## Getting Help

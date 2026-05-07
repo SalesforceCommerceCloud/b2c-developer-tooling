@@ -44,8 +44,8 @@ jobs:
     environment: e2e-dev
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
       - name: Check for required secrets and vars
@@ -74,9 +74,7 @@ jobs:
             echo "  - SFCC_MRT_CLOUD_ORIGIN (var): ${SFCC_MRT_CLOUD_ORIGIN:+✓}" >> $GITHUB_STEP_SUMMARY
           fi
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.17.1
+        uses: pnpm/action-setup@v5
 
       - name: Get pnpm store directory
         shell: bash
@@ -84,13 +82,13 @@ jobs:
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - name: Setup pnpm cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-            
+
       - name: Install dependencies
         if: steps.check-secrets.outputs.has-secrets == 'true'
         run: pnpm install --frozen-lockfile
@@ -123,7 +121,7 @@ jobs:
           pnpm run test:e2e:ci && pnpm run lint
 
       - name: E2E Test Report
-        uses: dorny/test-reporter@fe45e9537387dac839af0d33ba56eed8e24189e8  # v2.3.0
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2  # v3.0.0
         if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
         with:
           name: E2E Test Results (Node ${{ matrix.node-version }})
@@ -132,7 +130,7 @@ jobs:
 
       - name: Upload E2E Test Results
         if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-test-results-node-${{ matrix.node-version }}-${{ github.run_number }}
           path: packages/b2c-cli/test-results.json
@@ -140,7 +138,7 @@ jobs:
 
       - name: Notify on Failure
         if: failure() && github.event_name == 'schedule' && steps.check-secrets.outputs.has-secrets == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const issue = {
@@ -167,26 +165,101 @@ jobs:
               github.rest.issues.create(issue);
             }
 
+  e2e-tests-windows:
+    name: e2e-tests (windows)
+    # Advisory rollout: Windows E2E coverage is new; surface failures without
+    # blocking Linux E2E while remaining Windows-specific test issues are
+    # addressed in follow-up PRs. Remove once Windows E2E is green.
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22.x]
+    runs-on: windows-latest
+    environment: e2e-dev
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check for required secrets and vars
+        id: check-secrets
+        env:
+          SFCC_CLIENT_ID: ${{ vars.SFCC_CLIENT_ID }}
+          SFCC_CLIENT_SECRET: ${{ secrets.SFCC_CLIENT_SECRET }}
+          TEST_REALM: ${{ vars.TEST_REALM }}
+          SFCC_ACCOUNT_MANAGER_HOST: ${{ vars.SFCC_ACCOUNT_MANAGER_HOST }}
+          SFCC_SANDBOX_API_HOST: ${{ vars.SFCC_SANDBOX_API_HOST }}
+          SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
+        run: |
+          if [ -n "$SFCC_CLIENT_ID" ] && [ -n "$SFCC_CLIENT_SECRET" ] && [ -n "$TEST_REALM" ] && [ -n "$SFCC_ACCOUNT_MANAGER_HOST" ] && [ -n "$SFCC_SANDBOX_API_HOST" ] && [ -n "$SFCC_SHORTCODE" ]; then
+            echo "has-secrets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-secrets=false" >> "$GITHUB_OUTPUT"
+            echo "Windows E2E tests skipped - missing required variables" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Setup Windows machine
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        uses: ./.github/actions/setup-windows
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Build package
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        run: pnpm -r run build
+      - name: Run E2E Tests
+        if: steps.check-secrets.outputs.has-secrets == 'true'
+        id: e2e-test
+        working-directory: packages/b2c-cli
+        env:
+          SFCC_CLIENT_ID: ${{ inputs.sfcc_client_id || vars.SFCC_CLIENT_ID }}
+          SFCC_CLIENT_SECRET: ${{ inputs.sfcc_client_secret || secrets.SFCC_CLIENT_SECRET }}
+          SFCC_ACCOUNT_MANAGER_HOST: ${{ inputs.sfcc_account_manager_host || vars.SFCC_ACCOUNT_MANAGER_HOST }}
+          SFCC_SANDBOX_API_HOST: ${{ inputs.sfcc_sandbox_api_host || vars.SFCC_SANDBOX_API_HOST }}
+          TEST_REALM: ${{ inputs.test_realm || vars.TEST_REALM }}
+          SFCC_SHORTCODE: ${{ vars.SFCC_SHORTCODE }}
+          SFCC_EXTRA_HEADERS: ${{ secrets.SFCC_EXTRA_HEADERS }}
+          SFCC_MRT_CLOUD_ORIGIN: ${{ vars.SFCC_MRT_CLOUD_ORIGIN }}
+          SFCC_MRT_API_KEY: ${{ secrets.SFCC_MRT_API_KEY }}
+          NODE_ENV: test
+          SFCC_LOG_LEVEL: silent
+        run: |
+          echo "Running Windows E2E tests with realm: $TEST_REALM"
+          echo "Node version: $(node --version)"
+          pnpm run test:e2e:ci && pnpm run lint
+      - name: E2E Test Report
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2  # v3.0.0
+        if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
+        with:
+          name: E2E Test Results (Windows Node ${{ matrix.node-version }})
+          path: 'packages/b2c-cli/test-results.json'
+          reporter: mocha-json
+      - name: Upload E2E Test Results
+        if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.check-secrets.outputs.has-secrets == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-test-results-windows-node-${{ matrix.node-version }}-${{ github.run_number }}
+          path: packages/b2c-cli/test-results.json
+          retention-days: 30
+
   mcp-e2e-tests:
     name: MCP E2E
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '22.x'
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.17.1
+        uses: pnpm/action-setup@v5
       - name: Get pnpm store directory
         id: pnpm-store
         shell: bash
         run: |
           echo "store_path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
       - name: Setup pnpm cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ steps.pnpm-store.outputs.store_path }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}

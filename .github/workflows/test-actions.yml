@@ -23,7 +23,7 @@ jobs:
     name: 'Setup (latest)'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Run setup action
         id: setup
@@ -49,7 +49,7 @@ jobs:
     name: 'Setup (nightly)'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Run setup action with nightly
         uses: ./actions/setup
@@ -64,7 +64,7 @@ jobs:
     name: 'Root action'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Run root action with command
         id: root
@@ -83,7 +83,7 @@ jobs:
     name: 'Root action (setup only)'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Run root action without command
         id: root
@@ -103,7 +103,7 @@ jobs:
     name: 'Setup + Run'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup
         uses: ./actions/setup
@@ -124,7 +124,7 @@ jobs:
     name: 'Code Deploy (help)'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup
         uses: ./actions/setup
@@ -139,7 +139,7 @@ jobs:
     name: 'MRT Deploy (help)'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup
         uses: ./actions/setup
@@ -154,7 +154,7 @@ jobs:
     name: 'Job Run (help)'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup
         uses: ./actions/setup
@@ -169,7 +169,7 @@ jobs:
     name: 'Data Import (help)'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup
         uses: ./actions/setup
@@ -184,7 +184,7 @@ jobs:
     name: 'WebDAV Upload (help)'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup
         uses: ./actions/setup

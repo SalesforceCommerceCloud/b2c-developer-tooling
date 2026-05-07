@@ -1,5 +1,239 @@
 # @salesforce/b2c-cli
 
+## 1.8.1
+
+### Patch Changes
+
+- Updated dependencies [[`4f30de7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f30de783a049e33a121ec80a2cbd1c455f5d4e8)]:
+  - @salesforce/b2c-tooling-sdk@1.8.0
+
+## 1.8.0
+
+### Minor Changes
+
+- [#377](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/377) [`cb66b56`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cb66b563d5d5ca6a0f584d9007629ba392cb3424) - Add `storefront-next` skill set to `b2c setup skills`. Install Storefront Next development skills with `b2c setup skills storefront-next`, or via the plugin marketplace with `claude plugin install storefront-next`. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`cb66b56`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cb66b563d5d5ca6a0f584d9007629ba392cb3424)]:
+  - @salesforce/b2c-tooling-sdk@1.7.0
+
+## 1.7.1
+
+### Patch Changes
+
+- Updated dependencies [[`485ef63`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/485ef63b901d91f7b08c56366d1f1756a03f60dc)]:
+  - @salesforce/b2c-tooling-sdk@1.6.1
+
+## 1.7.0
+
+### Minor Changes
+
+- [#373](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/373) [`1dc1ee5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1dc1ee55642f0d478d260867d538f02e32057d7e) - Add support for Commerce Apps (CAP) development skills via `b2c setup skills cap-dev`. Introduces a skill source registry to support external skill repositories alongside existing release-artifact sources. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`1dc1ee5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1dc1ee55642f0d478d260867d538f02e32057d7e)]:
+  - @salesforce/b2c-tooling-sdk@1.6.0
+
+## 1.6.0
+
+### Minor Changes
+
+- [#370](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/370) [`ee735bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee735bb0acac89999114c80679b4766216bf463a) - Add `cap` command topic for Commerce App Package (CAP) management. (Thanks [@clavery](https://github.com/clavery)!)
+
+  New commands:
+  - `b2c cap validate` — validates CAP structure, manifest, and cartridge rules locally
+  - `b2c cap package` — packages a CAP directory into a distributable `.zip`
+  - `b2c cap install` — installs a CAP on an instance via WebDAV + `sfcc-install-commerce-app` job
+  - `b2c cap uninstall` — uninstalls a CAP via `sfcc-uninstall-commerce-app` job
+
+  New SDK exports in `@salesforce/b2c-tooling-sdk/operations/cap`: `validateCap`, `commerceAppInstall`, `commerceAppUninstall`, `commerceAppPackage`.
+
+  The VS Code extension gains CAP directory detection (badge decoration) and an "Install Commerce App (CAP)" context menu action.
+
+- [#370](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/370) [`ee735bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee735bb0acac89999114c80679b4766216bf463a) - Add `cap list`, `cap tasks`, and `cap pull` commands for managing installed Commerce Apps (Thanks [@clavery](https://github.com/clavery)!)
+  - `cap list` exports and parses `commerce_feature_states` to show installed features with type, source, status, and version
+  - `cap tasks` displays configuration tasks for an installed app with clickable Business Manager links
+  - `cap pull` downloads and extracts installed app source packages for cartridge deployment or Storefront Next development
+  - Standardize all cap commands to use `--site-id` flag (with `--site` as alias)
+  - `cap uninstall` no longer requires `--domain` — looks it up automatically from the feature state
+  - `cap install` now keeps the archive on the instance by default (use `--clean-archive` to remove)
+
+### Patch Changes
+
+- Updated dependencies [[`ee735bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee735bb0acac89999114c80679b4766216bf463a), [`ee735bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee735bb0acac89999114c80679b4766216bf463a)]:
+  - @salesforce/b2c-tooling-sdk@1.5.0
+
+## 1.5.0
+
+### Minor Changes
+
+- [#366](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/366) [`59dd584`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/59dd584479cc024fa6eed365c7c91f64dc4110be) - Add `b2c code download` command to download cartridge code from a B2C Commerce instance, with support for cartridge filtering, mirror mode, and progress reporting (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#355](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/355) [`3dedc05`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3dedc05ade10f6d748b4168daef0e4c2fdaf1501) - `b2c setup skills` now prompts to overwrite already-installed skills in interactive mode instead of silently skipping them with a "use --update to overwrite" message. The existing `--update` and `--force` flags still work non-interactively. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#355](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/355) [`3dedc05`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3dedc05ade10f6d748b4168daef0e4c2fdaf1501) - Refine b2c CLI skills (`scapi-schemas`, `scapi-custom`, `slas`, `ecdn`, `cip`, `users-roles`) to show config-first idiomatic usage. Examples now assume values like `tenantId`, `shortCode`, and `clientId` are resolved from `dw.json` / `SFCC_*` env vars, with flags shown only as overrides. This prevents coding agents from prompting users for values that are already configured. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#365](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/365) [`c4309db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c4309db94c8c61b25692775557c6c9ab0f627859) - Broaden skills-plugin install support and improve the installation docs. (Thanks [@clavery](https://github.com/clavery)!)
+  - Add a Codex plugin marketplace so the three plugins (`b2c-cli`, `b2c`, `b2c-dx-mcp`) can be installed directly from Codex CLI's plugin directory.
+  - Add a new `b2c-onboarding` skill (in the `b2c` plugin) that walks new developers through CLI verify, `dw.json` setup, sandbox connect, and first cartridge deploy, then hands off to the topic-specific skill for the user's goal.
+  - Add per-plugin READMEs with install instructions for each supported client.
+  - Document Copilot CLI + VS Code Copilot install paths and the Codex marketplace install path.
+  - Remove the `b2c-experimental` plugin from the public marketplace.
+
+- Updated dependencies [[`59dd584`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/59dd584479cc024fa6eed365c7c91f64dc4110be), [`3dedc05`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3dedc05ade10f6d748b4168daef0e4c2fdaf1501), [`c4309db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c4309db94c8c61b25692775557c6c9ab0f627859)]:
+  - @salesforce/b2c-tooling-sdk@1.4.0
+
+## 1.4.0
+
+### Minor Changes
+
+- [#308](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/308) [`d5c9125`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d5c91252922145309cc973441dc65962d46f5fa9) - Add `b2c mrt env var push` command. Reads a local `.env` file, computes a diff against the current remote MRT environment variables, and pushes new or changed variables in a single batch request (with per-variable fallback). Supports `--file`, `--exclude-prefix`, and `--yes` flags. (Thanks [@vmarta](https://github.com/vmarta)!)
+
+### Patch Changes
+
+- [`52d7a6d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/52d7a6dd12e3ba53ae3cf729ddf71a7f225f7b6e) - Fix inaccurate flags and commands in CLI skill documentation for job, ecdn, am, and users-roles skills (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`1b0b4ce`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b0b4ce2af63862438c0dae74df2efb35262139a) - Add `--wait` / `--no-wait` flag to `b2c job import` command. Import waits for completion by default (preserving existing behavior); use `--no-wait` to return immediately after the job starts. Also adds `--poll-interval` flag for controlling poll frequency. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`1b0b4ce`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b0b4ce2af63862438c0dae74df2efb35262139a)]:
+  - @salesforce/b2c-tooling-sdk@1.3.2
+
+## 1.3.2
+
+### Patch Changes
+
+- Updated dependencies [[`30de66b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/30de66bf59c250c5382a7427ba475049c68566cd)]:
+  - @salesforce/b2c-tooling-sdk@1.3.1
+
+## 1.3.1
+
+### Patch Changes
+
+- [`7333370`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7333370a750978a27d552b144914d8adc46a9097) - Improved skill trigger descriptions across all 37 B2C skills for better Claude Code skill invocation. Expanded eval sets from 5 to 10 queries per skill with realistic, organic test prompts. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.3.0
+
+### Minor Changes
+
+- [#337](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/337) [`c04bbcb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c04bbcbb179d733bedc42f4d0eee2dff2256789e) - Add Agentforce Vibes (`--ide agentforce-vibes`) as a supported IDE target for `setup skills`, installing to `.a4drules/skills/`. Add `--directory` flag for custom installation paths. Change `manual` default directory to `.agents/skills/`. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`c04bbcb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c04bbcbb179d733bedc42f4d0eee2dff2256789e)]:
+  - @salesforce/b2c-tooling-sdk@1.3.0
+
+## 1.2.0
+
+### Minor Changes
+
+- [`464b9db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/464b9dbc3cf498e585d81ba5eb7ed0f17ff60a46) - Add B2C Commerce script debugger with SDAPI 2.0 DAP adapter (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`464b9db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/464b9dbc3cf498e585d81ba5eb7ed0f17ff60a46), [`e6c6226`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e6c6226c256b8d181917cc8c66fa4d7bf992e106)]:
+  - @salesforce/b2c-tooling-sdk@1.2.0
+
+## 1.1.0
+
+### Minor Changes
+
+- [#315](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/315) [`6771d7a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6771d7a8c2db7db259bf00d8d4d0d6393aa14fe6) - Add ODS sandbox management enhancements, including sandbox storage and settings commands, multi-realm usage reporting, and dedicated realm configuration support. (Thanks [@charithaT07](https://github.com/charithaT07)!)
+
+  Keep sandbox realm workflows under `b2c sandbox realm` / `b2c ods realm` by removing top-level `b2c realm` aliases.
+
+- [#318](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/318) [`6880a84`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6880a846aacd029a1eb510023aa76f4b844ec26e) - Added per-instance safety configuration with rule-based actions (allow/block/confirm) and interactive confirmation mode. Safety can now be configured in `dw.json` with granular rules for HTTP paths, job IDs, and CLI commands. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`6880a84`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6880a846aacd029a1eb510023aa76f4b844ec26e)]:
+  - @salesforce/b2c-tooling-sdk@1.1.0
+
+## 1.0.1
+
+### Patch Changes
+
+- [`e597e61`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e597e6131b9965e88ef75954a935695fa7f6d70f) - Add `--activate` flag to `code deploy` for activating a code version after deploy without the toggle behavior of `--reload`. Both `--activate` and `--reload` now error on failure instead of silently continuing. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`e597e61`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e597e6131b9965e88ef75954a935695fa7f6d70f)]:
+  - @salesforce/b2c-tooling-sdk@1.0.1
+
+## 1.0.0
+
+### Major Changes
+
+- [#303](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/303) [`c24e920`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c24e9204a5f253b773c43c0b30c064c7f4dec34a) - Release v1.0 — B2C CLI is now Generally Available. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Minor Changes
+
+- [#305](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/305) [`7ad490a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ad490a508b7f993292bd8a326f7a6c49c92d70c) - Add `--wait` flag to `mrt bundle deploy` to poll until deployment completes, and align all SDK wait functions (`waitForJob`, `waitForEnv`) to a consistent pattern with structured `onPoll` callbacks, seconds-based options, and injectable `sleep` for testing. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`7ad490a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ad490a508b7f993292bd8a326f7a6c49c92d70c), [`c24e920`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c24e9204a5f253b773c43c0b30c064c7f4dec34a)]:
+  - @salesforce/b2c-tooling-sdk@1.0.0
+
+## 0.11.0
+
+### Minor Changes
+
+- [#293](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/293) [`b5d07fd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b5d07fd1d1086ee92b735d73502997bcad97dc7e) - Add Business Manager role management commands (`bm roles`) for instance-level access role CRUD, user assignment, and permissions via OCAPI Data API (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#286](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/286) [`5a6ab56`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5a6ab56a2842065b7f1815539bc5a70911826e9c) - Add `mrt save-credentials` command to save MRT API credentials to the ~/.mobify file (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#295](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/295) [`b7f78ca`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b7f78ca6d2468e274b911c4fd1fc7c03a9e6b4fb) - Add site cartridge path management commands (`sites cartridges list|add|remove|set`) with `--bm` flag for Business Manager support and automatic fallback to site archive import when OCAPI permissions are unavailable (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#292](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/292) [`c10ddad`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c10ddadf7277c93196c956b73af694f4f065a149) - Use a host-specific default public client ID for account-pod5.demandware.net Account Manager (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`b5d07fd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b5d07fd1d1086ee92b735d73502997bcad97dc7e), [`cb74ce4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cb74ce4c78a91cc49556f464be5124981a24c3ea), [`c10ddad`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c10ddadf7277c93196c956b73af694f4f065a149), [`b7f78ca`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b7f78ca6d2468e274b911c4fd1fc7c03a9e6b4fb)]:
+  - @salesforce/b2c-tooling-sdk@0.13.0
+
+## 0.10.1
+
+### Patch Changes
+
+- Updated dependencies [[`f7229b4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f7229b4372bb23d8e107db75f722575c33f4a007)]:
+  - @salesforce/b2c-tooling-sdk@0.12.0
+
+## 0.10.0
+
+### Minor Changes
+
+- [#278](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/278) [`8c31081`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8c31081b47e57e6a21e62425e6f19da036fc3e34) - Add `content validate` command to validate Page Designer metadefinition JSON files against bundled schemas. Supports auto-detection of schema types from file paths and content, or explicit `--type` flag. Includes glob pattern support for validating multiple files. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`8c31081`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8c31081b47e57e6a21e62425e6f19da036fc3e34), [`e4b5094`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4b5094d9c1c2a60e1214bc236ce7ed84c5d158b)]:
+  - @salesforce/b2c-tooling-sdk@0.11.0
+
+## 0.9.0
+
+### Minor Changes
+
+- [#167](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/167) [`caa568e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/caa568e9de3e8c9d3f2e7b17e5f96c1a0ae3ca73) - Introduces stateful authentication: `auth login` (browser/implicit), `auth logout`, `auth client` (client_credentials/password), `auth client renew`, and `auth client token`. Sessions are stored as a JSON file in the CLI data directory; when a valid session exists, all OAuth commands use it automatically without requiring credentials on every invocation. (Thanks [@amit-kumar8-sf](https://github.com/amit-kumar8-sf)!)
+
+  **Note:** Sessions are not shared with `sfcc-ci`. Re-authenticate with `b2c auth login` or `b2c auth client` after upgrading. Existing stateless auth (env vars, `dw.json`) is unaffected.
+
+### Patch Changes
+
+- [`b30e427`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b30e427f25807840dbcceef6c0005e2d9fd1be53) - Add `--path` flag to `b2c docs schema` to print the filesystem path to a schema file instead of its content, enabling use with tools like `xmllint` for XML validation. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#272](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/272) [`e919e50`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e919e502a7a0a6102c4039d003da0d90ab3673dc) - Added sfcc-ci migration guide with command mappings and CI/CD migration instructions. Added backward-compatible sfcc-ci command aliases (`client:auth`, `code:deploy`, `code:list`, `code:activate`, `job:run`, etc.) and environment variable aliases (`SFCC_OAUTH_CLIENT_ID`, `SFCC_OAUTH_CLIENT_SECRET`, `SFCC_LOGIN_URL`). (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`b30e427`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b30e427f25807840dbcceef6c0005e2d9fd1be53), [`e919e50`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e919e502a7a0a6102c4039d003da0d90ab3673dc), [`caa568e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/caa568e9de3e8c9d3f2e7b17e5f96c1a0ae3ca73)]:
+  - @salesforce/b2c-tooling-sdk@0.10.0
+
+## 0.8.0
+
+### Minor Changes
+
+- [#268](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/268) [`0c4e288`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/0c4e288ff2609a13983ef883f5675e69ac7cc452) - Add `job log` command to retrieve and display job execution logs. Supports fetching logs for a specific execution or automatically finding the most recent (or most recent failed) execution with a log file. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.7.4
 
 ### Patch Changes

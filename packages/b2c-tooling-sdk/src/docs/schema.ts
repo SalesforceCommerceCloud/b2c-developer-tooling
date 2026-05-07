@@ -55,7 +55,7 @@ export function listSchemas(): SchemaEntry[] {
 /**
  * Read a schema by its exact ID.
  */
-export function readSchema(id: string): {entry: SchemaEntry; content: string} | null {
+export function readSchema(id: string): {entry: SchemaEntry; content: string; path: string} | null {
   const index = loadIndex();
   const entry = index.entries.find((e) => e.id === id);
 
@@ -66,14 +66,14 @@ export function readSchema(id: string): {entry: SchemaEntry; content: string} | 
   const filePath = path.join(XSD_DATA_DIR, entry.filePath);
   const content = fs.readFileSync(filePath, 'utf-8');
 
-  return {entry, content};
+  return {entry, content, path: filePath};
 }
 
 /**
  * Find a schema by fuzzy query and return its content.
  * Returns the best match or null if no match found.
  */
-export function readSchemaByQuery(query: string): {entry: SchemaEntry; content: string} | null {
+export function readSchemaByQuery(query: string): {entry: SchemaEntry; content: string; path: string} | null {
   // First try exact match
   const exactMatch = readSchema(query);
   if (exactMatch) {
@@ -92,7 +92,7 @@ export function readSchemaByQuery(query: string): {entry: SchemaEntry; content: 
   const filePath = path.join(XSD_DATA_DIR, bestMatch.item.filePath);
   const content = fs.readFileSync(filePath, 'utf-8');
 
-  return {entry: bestMatch.item, content};
+  return {entry: bestMatch.item, content, path: filePath};
 }
 
 /**

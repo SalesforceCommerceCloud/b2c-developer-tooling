@@ -4,10 +4,10 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import * as readline from 'node:readline';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {resetApiKey, type ApiKeyResult} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
+import {confirm} from '../../../prompts.js';
 
 /**
  * Reset the current user's API key.
@@ -41,10 +41,10 @@ export default class MrtUserApiKey extends MrtCommand<typeof MrtUserApiKey> {
     const {yes} = this.flags;
 
     if (!yes && !this.jsonEnabled()) {
-      const confirmed = await this.confirm(
+      const confirmed = await confirm(
         t(
           'commands.mrt.user.api-key.confirm',
-          'Warning: This will invalidate your current API key.\nAre you sure you want to reset your API key? (yes/no): ',
+          'Warning: This will invalidate your current API key.\nAre you sure you want to reset your API key?',
         ),
       );
       if (!confirmed) {
@@ -73,19 +73,5 @@ export default class MrtUserApiKey extends MrtCommand<typeof MrtUserApiKey> {
     }
 
     return result;
-  }
-
-  private async confirm(message: string): Promise<boolean> {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-
-    return new Promise((resolve) => {
-      rl.question(message, (answer) => {
-        rl.close();
-        resolve(answer.toLowerCase() === 'yes' || answer.toLowerCase() === 'y');
-      });
-    });
   }
 }

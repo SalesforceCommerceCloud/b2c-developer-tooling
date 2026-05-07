@@ -296,7 +296,7 @@ export function createScapiSchemasListTool(loadServices: () => Promise<Services>
   return createToolAdapter<SchemasListInput, SchemaGetOutput | SchemasListOutput>(
     {
       name: 'scapi_schemas_list',
-      description: `List or fetch SCAPI schema metadata and OpenAPI specs for standard SCAPI (Shop/Admin/Shopper) and custom APIs (apiFamily: "custom"). For endpoint registration status, use scapi_custom_apis_status.
+      description: `List or fetch SCAPI schema metadata and OpenAPI specs for standard SCAPI (Shop/Admin/Shopper) and custom APIs (apiFamily: "custom"). For endpoint registration status, use scapi_custom_apis_get_status.
 
 **Modes:**
 - **List (discovery):** Omit includeSchemas or any identifier. Returns metadata: schemas[], total, availableApiFamilies/Names/Versions.
@@ -306,7 +306,7 @@ export function createScapiSchemasListTool(loadServices: () => Promise<Services>
 
 **Requirements:** OAuth with sfcc.scapi-schemas scope.`,
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
-      isGA: false,
+      isGA: true,
       requiresInstance: false, // SCAPI uses OAuth directly, doesn't need B2CInstance (hostname)
       inputSchema: {
         apiFamily: z.string().optional().describe('API family (e.g., "checkout", "product", "custom").'),

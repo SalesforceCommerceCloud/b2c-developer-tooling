@@ -13,6 +13,8 @@
  */
 import type {AuthMethod, AuthStrategy} from '../auth/types.js';
 import type {B2CInstance} from '../instance/index.js';
+import type {SafetyLevel} from '../safety/safety-middleware.js';
+import type {SafetyRule} from '../safety/types.js';
 
 /**
  * A value that may be synchronous or a Promise.
@@ -57,6 +59,14 @@ export interface NormalizedConfig {
   /** Account Manager hostname for OAuth (default: account.demandware.com) */
   accountManagerHost?: string;
 
+  // Auth fields (JWT Bearer)
+  /** Path to JWT certificate file (cert.pem) for JWT authentication */
+  jwtCertPath?: string;
+  /** Path to JWT private key file (key.pem) for JWT authentication */
+  jwtKeyPath?: string;
+  /** Optional passphrase for encrypted JWT private key */
+  jwtPassphrase?: string;
+
   // SLAS Shopper
   /** SLAS client ID for shopper authentication */
   slasClientId?: string;
@@ -87,6 +97,10 @@ export interface NormalizedConfig {
   /** MRT API origin URL override */
   mrtOrigin?: string;
 
+  // Code upload
+  /** Whether to auto-start code upload/sync in IDE extensions */
+  autoUpload?: boolean;
+
   // Cartridges
   /** Cartridge names to include in deploy/watch operations */
   cartridges?: string[];
@@ -94,6 +108,19 @@ export interface NormalizedConfig {
   // Content
   /** Default content library ID for content export/list commands */
   contentLibrary?: string;
+
+  /** Catalog IDs for WebDAV browsing */
+  catalogs?: string[];
+
+  /** Library IDs for WebDAV browsing */
+  libraries?: string[];
+
+  /**
+   * JSON dot-paths for asset extraction from component data during
+   * content library parsing. Used by `content export` and the VS Code
+   * content library browser. Defaults to `['image.path']` when unset.
+   */
+  assetQuery?: string[];
 
   // CIP
   /** Optional CIP analytics host override */
@@ -114,6 +141,17 @@ export interface NormalizedConfig {
   certificatePassphrase?: string;
   /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
   selfSigned?: boolean;
+
+  // Safety
+  /** Safety configuration for this instance */
+  safety?: {
+    /** Safety level */
+    level?: SafetyLevel;
+    /** When true, level-blocked operations require confirmation instead of hard-blocking */
+    confirm?: boolean;
+    /** Ordered safety rules. First matching rule wins. */
+    rules?: SafetyRule[];
+  };
 }
 
 /**
@@ -326,6 +364,10 @@ export interface CreateOAuthOptions {
   allowedMethods?: AuthMethod[];
   /** Additional OAuth scopes to request beyond those in config */
   scopes?: string[];
+  /** Override redirect URI for implicit OAuth flow (e.g., for port forwarding in remote environments) */
+  redirectUri?: string;
+  /** Custom browser opener for implicit OAuth flow. Receives the authorization URL. */
+  openBrowser?: (url: string) => Promise<void>;
 }
 
 /**
@@ -422,9 +464,10 @@ export interface ResolvedB2CConfig {
 
   /**
    * Creates a B2CInstance from the resolved configuration.
+   * @param options - Options for implicit OAuth (redirectUri, openBrowser)
    * @throws Error if hostname is not configured
    */
-  createB2CInstance(): B2CInstance;
+  createB2CInstance(options?: Pick<CreateOAuthOptions, 'redirectUri' | 'openBrowser'>): B2CInstance;
 
   /**
    * Creates a Basic auth strategy.

@@ -1,6 +1,6 @@
 ---
 name: b2c-ordering
-description: Work with orders using OrderMgr API in B2C Commerce. Use when creating orders, managing order status, handling order failures, or implementing checkout flows. Covers order lifecycle, status transitions, async order processing, and order queries.
+description: Manage the order lifecycle in B2C Commerce including order creation, status transitions, failure handling, and checkout completion. Use this skill whenever the user needs to create an order from a basket, transition order status, handle failed or cancelled orders, implement payment authorization in checkout, or understand async order processing — even if they just say "my order is stuck" or "finish the checkout flow".
 ---
 
 # B2C Ordering

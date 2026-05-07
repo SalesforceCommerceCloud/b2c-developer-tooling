@@ -4,11 +4,11 @@ description: Set up Storefront Next development environments using the B2C CLI t
 
 # Storefront Next
 
-::: warning Pilot Preview
-Storefront Next is currently in pilot. Access to Storefront Next is limited to pilot customers. Features and configuration may change.
+::: warning Important
+Storefront Next is currently in a closed pilot. Access to Storefront Next is limited to pilot customers. Features and configuration may change.
 :::
 
-This guide walks through setting up the infrastructure for a Storefront Next project using the B2C CLI. The steps cover creating a sandbox, configuring SLAS authentication, setting up an MRT environment, configuring environment variables, and deploying. Not all steps are required — skip any that are already complete for your project.
+Set up Storefront Next development environments using the B2C CLI to create sandboxes, SLAS clients, MRT environments, and deploy.
 
 ## Prerequisites
 
@@ -114,6 +114,10 @@ b2c mrt env var set \
   COMMERCE_API_SLAS_SECRET=<SLAS_CLIENT_SECRET> \
   -p <PROJECT> -e <ENVIRONMENT>
 ```
+
+::: tip Push from a local `.env` file
+If you keep these values in a local `.env`, use [`b2c mrt env var push`](/cli/mrt#b2c-mrt-env-var-push) instead. It diffs the local file against the remote environment, shows what would change, and prompts before applying.
+:::
 
 ### Variable Reference
 

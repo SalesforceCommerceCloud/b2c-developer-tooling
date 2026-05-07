@@ -65,6 +65,9 @@ export default class SandboxReset extends OdsCommand<typeof SandboxReset> {
   };
 
   async run(): Promise<SandboxOperationModel> {
+    // Prevent reset in safe mode
+    this.assertDestructiveOperationAllowed('reset sandbox');
+
     const sandboxId = await this.resolveSandboxId(this.args.sandboxId);
     const {wait, 'poll-interval': pollInterval, timeout, force} = this.flags;
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<commerce-feature-states xmlns="http://www.demandware.com/xml/impex/commercefeaturestate/2026-03-06">
+    <commerce-feature-state site-id="Sites-SiteGenesis" feature-name="avalara-tax">
+        <feature-type>ISV_APP</feature-type>
+        <feature-source>AppRegistry</feature-source>
+        <feature-domain>tax</feature-domain>
+        <install-status>INSTALLED</install-status>
+        <config-status>NOT_CONFIGURED</config-status>
+        <feature-version-id>0.2.7</feature-version-id>
+        <installed-at>2026-03-24T16:35:02.000Z</installed-at>
+        <config-tasks>[{"name":"Verify Avalara Service Profile","description":"Confirm the Avalara service profile is configured correctly in Operations &gt; Services &gt; Profiles.","link":"/on/demandware.store/Sites-Site/default/ServiceProfile-DisplayAll","taskNumber":"1"},{"name":"Verify Avalara Service Credentials","description":"Confirm the Avalara service credentials are configured correctly in Operations &gt; Services &gt; Credentials.","link":"/on/demandware.store/Sites-Site/default/ServiceCredential-DisplayAll","taskNumber":"2"},{"name":"Verify Avalara Service Definition","description":"Confirm the Avalara service definition is configured correctly in Operations &gt; Services.","link":"/on/demandware.store/Sites-Site/default/Service-DisplayAll","taskNumber":"3"},{"name":"Verify Custom Site Preferences","description":"Confirm Avalara custom site preferences (e.g. AvaTax preference group) in Merchant Tools &gt; Site Preferences.","link":"/on/demandware.store/Sites-Site/default/ViewApplication-BM?SelectedMenuItem=site-prefs_custom_prefs#/?preference#site_preference_group_attributes!id!AvaTax","taskNumber":"4"}]</config-tasks>
+        <installation-metadata>{"jobId":"sfcc-install-commerce-app","jobExecutionId":"210","logFilePath":"/Sites/LOGS/jobs/sfcc-install-commerce-app/Job-sfcc-install-commerce-app-4db8124510b43bcedeaad79a0f.log","foldersAdded":{"site_cartridges":["int_avatax"],"bm_cartridges":["bm_avatax"]},"impexUninstallData":"[{\"path\":\"services.xml\",\"content\":\"&lt;?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?&gt;\\n&lt;services xmlns=\\\"http://www.demandware.com/xml/impex/services/2014-09-26\\\"&gt;\\n    &lt;service-credential service-credential-id=\\\"credentials.avatax.rest\\\" mode=\\\"delete\\\"/&gt;\\n    &lt;service-profile service-profile-id=\\\"profile.avatax.rest\\\" mode=\\\"delete\\\"/&gt;\\n    &lt;service service-id=\\\"avatax.rest.all\\\" mode=\\\"delete\\\"&gt;\\n        &lt;service-type&gt;GENERIC&lt;/service-type&gt;\\n    &lt;/service&gt;\\n&lt;/services&gt;\\n\"}]"}</installation-metadata>
+    </commerce-feature-state>
+</commerce-feature-states>

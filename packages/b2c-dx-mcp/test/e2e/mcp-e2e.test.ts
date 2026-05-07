@@ -97,12 +97,15 @@ describe('MCP Server E2E', function () {
 
     it('filters tools by individual tool name', async () => {
       const client = new McpE2EClient({
-        args: ['--tools', 'scapi_schemas_list,scapi_custom_apis_status', '--allow-non-ga-tools'],
+        args: ['--tools', 'scapi_schemas_list,scapi_custom_apis_get_status', '--allow-non-ga-tools'],
       });
       await client.start();
       const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
       expect(result.tools).to.have.lengthOf(2);
-      expect(result.tools.map((t) => t.name).sort()).to.deep.equal(['scapi_custom_apis_status', 'scapi_schemas_list']);
+      expect(result.tools.map((t) => t.name).sort()).to.deep.equal([
+        'scapi_custom_apis_get_status',
+        'scapi_schemas_list',
+      ]);
       await client.stop();
     });
 
@@ -171,12 +174,12 @@ describe('MCP Server E2E', function () {
 
     it('returns proper error for invalid input when required param missing', async () => {
       const client = new McpE2EClient({
-        args: ['--tools', 'storefront_next_page_designer_decorator', '--allow-non-ga-tools'],
+        args: ['--tools', 'sfnext_add_page_designer_decorator', '--allow-non-ga-tools'],
       });
       await client.start();
       try {
         await client.call('tools/call', {
-          name: 'storefront_next_page_designer_decorator',
+          name: 'sfnext_add_page_designer_decorator',
           arguments: {}, // missing required componentName etc.
         });
         // May throw or return content with error
@@ -204,7 +207,7 @@ describe('MCP Server E2E', function () {
       await client.start();
       const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
       const names = result.tools.map((t) => t.name);
-      expect(names.some((n) => n.includes('storefront_next') || n.includes('scapi'))).to.be.true;
+      expect(names.some((n) => n.includes('sfnext') || n.includes('scapi'))).to.be.true;
       await client.stop();
     });
 

@@ -68,15 +68,14 @@ export default class JobWait extends JobCommand<typeof JobWait> {
 
     try {
       const execution = await this.operations.waitForJob(this.instance, jobId, executionId, {
-        timeout: timeout ? timeout * 1000 : undefined,
-        pollInterval: pollInterval * 1000,
-        onProgress: (exec, elapsed) => {
+        timeoutSeconds: timeout,
+        pollIntervalSeconds: pollInterval,
+        onPoll: (info) => {
           if (!this.jsonEnabled()) {
-            const elapsedSec = Math.floor(elapsed / 1000);
             this.log(
               t('commands.job.wait.progress', '  Status: {{status}} ({{elapsed}}s elapsed)', {
-                status: exec.execution_status,
-                elapsed: elapsedSec.toString(),
+                status: info.status,
+                elapsed: String(info.elapsedSeconds),
               }),
             );
           }

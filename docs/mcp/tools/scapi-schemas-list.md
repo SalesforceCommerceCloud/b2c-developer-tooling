@@ -13,7 +13,7 @@ The `scapi_schemas_list` tool provides two modes of operation.
 1. **List (Discovery)**: Browse available schemas without fetching full OpenAPI specs.
 2. **Fetch**: Retrieve complete OpenAPI schema for a specific API.
 
-This tool works with both standard SCAPI (Shop, Admin, Shopper APIs) and custom APIs. For endpoint registration status, use [`scapi_custom_apis_status`](./scapi-custom-apis-status) instead.
+This tool works with both standard SCAPI (Shop, Admin, Shopper APIs) and custom APIs. For endpoint registration status, use [`scapi_custom_apis_get_status`](./scapi-custom-apis-get-status) instead.
 
 ## Authentication
 
@@ -48,12 +48,6 @@ Omit `includeSchemas` or any identifier to browse available schemas:
 - `availableApiNames` - List of available API names
 - `availableApiVersions` - List of available API versions
 
-**Example prompts:**
-- ✅ "Use the MCP tool to list all available SCAPI schemas."
-- ✅ "Use the MCP tool to show me what checkout APIs exist." → `apiFamily: "checkout"`
-- ✅ "Use the MCP tool to discover SCAPI product endpoints." → `apiFamily: "product"`
-- ✅ "Use the MCP tool to list custom API definitions." → `apiFamily: "custom"`
-
 ### Fetch Mode
 
 Set `includeSchemas: true` and provide all three identifiers (`apiFamily`, `apiName`, `apiVersion`) to fetch a complete OpenAPI schema:
@@ -61,11 +55,6 @@ Set `includeSchemas: true` and provide all three identifiers (`apiFamily`, `apiN
 **Returns:**
 - Full OpenAPI schema specification
 - Use `expandAll: true` to get the complete schema without collapsing
-
-**Example prompts:**
-- ✅ "Use the MCP tool to get the OpenAPI schema for shopper-baskets v1." → `apiFamily: "shopper"`, `apiName: "shopper-baskets"`, `apiVersion: "v1"`, `includeSchemas: true`
-- ✅ "Use the MCP tool to show me the full OpenAPI spec for shopper-products v1." → `includeSchemas: true`, `expandAll: true`
-- ✅ "Use the MCP tool to show me the loyalty-points custom API schema." → `apiFamily: "custom"`, `apiName: "loyalty-points"`, `apiVersion: "v1"`, `includeSchemas: true`
 
 ## Usage Examples
 
@@ -81,6 +70,10 @@ Filter by API family:
 
 ```
 Use the MCP tool to show me what checkout APIs exist.
+```
+
+```
+Use the MCP tool to discover SCAPI product endpoints.
 ```
 
 ### Custom API Discovery
@@ -154,13 +147,13 @@ Use the MCP tool to show me the full OpenAPI spec for shopper-products v1.
 
 - Part of the [SCAPI](../toolsets#scapi), [PWAV3](../toolsets#pwav3), and [STOREFRONTNEXT](../toolsets#storefrontnext) toolsets
 - Always enabled (base toolset)
-- For endpoint registration status, use [`scapi_custom_apis_status`](./scapi-custom-apis-status)
+- For endpoint registration status, use [`scapi_custom_apis_get_status`](./scapi-custom-apis-get-status)
 
 ## See Also
 
 - [SCAPI Toolset](../toolsets#scapi) - Overview of SCAPI discovery tools
-- [scapi_custom_apis_status](./scapi-custom-apis-status) - Check custom API endpoint registration status
-- [scapi_custom_api_scaffold](./scapi-custom-api-scaffold) - Generate a new custom API in a cartridge
+- [scapi_custom_apis_get_status](./scapi-custom-apis-get-status) - Check custom API endpoint registration status
+- [scapi_custom_api_generate_scaffold](./scapi-custom-api-generate-scaffold) - Generate a new custom API in a cartridge
 - [Authentication Setup](../../guide/authentication#scapi-authentication) - Set up SCAPI authentication with required roles and scopes
 - [Configuration](../configuration) - Configure OAuth credentials
 - [CLI Reference](../../cli/scapi-schemas) - Equivalent CLI commands: `b2c scapi schemas list` and `b2c scapi schemas get`

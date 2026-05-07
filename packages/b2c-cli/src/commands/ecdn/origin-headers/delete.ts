@@ -32,6 +32,9 @@ export default class EcdnOriginHeadersDelete extends EcdnZoneCommand<typeof Ecdn
   };
 
   async run(): Promise<DeleteOutput> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete origin header modification');
+
     this.requireOAuthCredentials();
 
     const zoneId = await this.resolveZoneId();

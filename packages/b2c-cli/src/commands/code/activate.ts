@@ -37,6 +37,8 @@ export default class CodeActivate extends InstanceCommand<typeof CodeActivate> {
     }),
   };
 
+  static hiddenAliases = ['code:activate'];
+
   async run(): Promise<void> {
     this.requireOAuthCredentials();
 

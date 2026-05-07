@@ -99,6 +99,10 @@ You **don't need** a changeset for:
 
 5. Commit the generated `.changeset/*.md` file with your PR
 
+## Release Process
+
+When changesets are merged to `main`, an automated PR is created that bumps versions and updates changelogs. This release PR requires approval from the B2C Developer Experience team before it can be merged. Once merged, packages are published automatically.
+
 ## Notes
 
 - Changesets are optional - maintainers can add them later if needed

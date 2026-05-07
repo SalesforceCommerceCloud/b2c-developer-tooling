@@ -534,6 +534,49 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
  * ```
  */
 /**
+ * Safety middleware using SafetyGuard.
+ */
+import type {SafetyGuard} from '../safety/safety-guard.js';
+import {extractJobIdFromPath} from '../safety/safety-guard.js';
+
+/**
+ * Creates safety middleware that evaluates HTTP requests against a SafetyGuard.
+ *
+ * This middleware intercepts HTTP requests BEFORE they are sent. It evaluates
+ * each request against the guard's rules and level, throwing:
+ * - {@link SafetyBlockedError} for blocked operations
+ * - {@link SafetyConfirmationRequired} for operations needing confirmation
+ *
+ * Callers that want confirmation support should wrap their SDK calls with
+ * {@link withSafetyConfirmation}. Otherwise, both error types propagate as errors.
+ *
+ * @param guard - The SafetyGuard instance
+ * @returns Middleware that evaluates operations against safety rules
+ *
+ * @example
+ * ```typescript
+ * const guard = new SafetyGuard({ level: 'NO_DELETE' });
+ * const client = createOdsClient(config, auth);
+ * client.use(createSafetyMiddleware(guard));
+ * ```
+ */
+export function createSafetyMiddleware(guard: SafetyGuard): Middleware {
+  return {
+    async onRequest({request}) {
+      const path = new URL(request.url, 'http://dummy').pathname;
+      guard.assert({
+        type: 'http',
+        method: request.method,
+        url: request.url,
+        path,
+        jobId: extractJobIdFromPath(path),
+      });
+      return request;
+    },
+  };
+}
+
+/**
  * Configuration for User-Agent middleware.
  */
 export interface UserAgentConfig {

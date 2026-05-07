@@ -79,6 +79,7 @@ export type {
   DeleteEnvOptions,
   GetEnvOptions,
   WaitForEnvOptions,
+  WaitForEnvPollInfo,
   ListEnvsOptions,
   ListEnvsResult,
   UpdateEnvOptions,

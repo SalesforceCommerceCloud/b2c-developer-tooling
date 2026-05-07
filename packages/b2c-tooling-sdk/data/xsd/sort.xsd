@@ -20,6 +20,7 @@
                 <xsd:element name="sorting-options" type="SortingOptions" minOccurs="0" maxOccurs="1" />
                 <xsd:element name="keyword-search-sorting-rule-assignment" type="KeywordSearchSortingRuleAssignment" minOccurs="0" maxOccurs="unbounded" />
                 <xsd:element name="keyword-search-sorting-rule-campaign-assignment" type="KeywordSearchSortingRuleCampaignAssignment" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="boostable-attribute" type="BoostableAttribute" minOccurs="0" maxOccurs="100" />
                 <xsd:element name="boost-bury-rule" type="BoostBuryRule" minOccurs="0" maxOccurs="1000" />
             </xsd:sequence>
         </xsd:complexType>
@@ -33,6 +34,7 @@
     <xsd:element name="sorting-options" type="SortingOptions" />
     <xsd:element name="keyword-search-sorting-rule-assignment" type="KeywordSearchSortingRuleAssignment" />
     <xsd:element name="keyword-search-sorting-rule-campaign-assignment" type="KeywordSearchSortingRuleCampaignAssignment" />
+    <xsd:element name="boostable-attribute" type="BoostableAttribute" />
     <xsd:element name="boost-bury-rule" type="BoostBuryRule" />
 
     <xsd:complexType name="DynamicAttribute">
@@ -266,6 +268,12 @@
         </xsd:restriction>
     </xsd:simpleType>
 
+    <xsd:complexType name="BoostableAttribute">
+        <xsd:attribute name="attribute-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="system" type="xsd:boolean" use="required" />
+        <xsd:attribute name="mode" type="ImportMode" use="optional" />
+    </xsd:complexType>
+
     <xsd:complexType name="BoostBuryRule">
         <xsd:sequence>
             <xsd:element name="description" type="Generic.String.4000" minOccurs="0" maxOccurs="1" />
@@ -275,6 +283,7 @@
         <xsd:attribute name="rule-id" type="Generic.NonEmptyString.256" use="required" />
         <xsd:attribute name="active-flag" type="xsd:boolean" use="required" />
         <xsd:attribute name="factor" type="xsd:int" use="required" />
+        <xsd:attribute name="target-logical-operator" type="BoostBuryRuleTargetLogicalOperator" use="optional" default="AND" />
         <xsd:attribute name="mode" type="ImportMode" use="optional" />
     </xsd:complexType>
 
@@ -285,13 +294,34 @@
 
     <xsd:complexType name="BoostBuryTarget">
         <xsd:attribute name="attribute-name" type="Generic.NonEmptyString.256" use="required" />
-        <xsd:attribute name="attribute-value" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="attribute-value" type="Generic.NonEmptyString.256" use="optional" />
+        <xsd:attribute name="operator" type="BoostBuryTargetOperator" use="optional"/>
     </xsd:complexType>
+
+    <xsd:simpleType name="BoostBuryTargetOperator">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="is equal" />
+            <xsd:enumeration value="is not equal" />
+            <xsd:enumeration value="contains" />
+            <xsd:enumeration value="starts with" />
+            <xsd:enumeration value="is greater than" />
+            <xsd:enumeration value="is less than" />
+            <xsd:enumeration value="is defined" />
+            <xsd:enumeration value="is not defined" />
+        </xsd:restriction>
+    </xsd:simpleType>
 
     <xsd:simpleType name="BoostBuryQualifierType">
         <xsd:restriction base="xsd:string">
             <xsd:enumeration value="Category Scope" />
             <xsd:enumeration value="Search Term Scope" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="BoostBuryRuleTargetLogicalOperator">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="AND" />
+            <xsd:enumeration value="OR" />
         </xsd:restriction>
     </xsd:simpleType>
 

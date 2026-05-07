@@ -30,3 +30,8 @@ docs/api/
 .env
 .config/wt.toml
 .b2c/
+
+# Eval project has its own git repo for isolation from the main project
+skills/eval/project/.git
+# Eval results
+skills/eval/results-*.json

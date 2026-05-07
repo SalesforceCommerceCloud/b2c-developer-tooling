@@ -17,7 +17,7 @@ headerPlugin.rules.header.meta.schema = false;
 export default [
   includeIgnoreFile(gitignorePath),
   {
-    ignores: ['**/*.generated.ts'],
+    ignores: ['**/*.generated.ts', 'test/fixtures/**'],
   },
   ...tseslint.configs.recommended,
   prettierPlugin,

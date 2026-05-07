@@ -1,5 +1,142 @@
 # @salesforce/b2c-dx-mcp
 
+## 1.0.14
+
+### Patch Changes
+
+- Updated dependencies [[`4f30de7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f30de783a049e33a121ec80a2cbd1c455f5d4e8)]:
+  - @salesforce/b2c-tooling-sdk@1.8.0
+
+## 1.0.13
+
+### Patch Changes
+
+- Updated dependencies [[`cb66b56`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cb66b563d5d5ca6a0f584d9007629ba392cb3424)]:
+  - @salesforce/b2c-tooling-sdk@1.7.0
+
+## 1.0.12
+
+### Patch Changes
+
+- Updated dependencies [[`485ef63`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/485ef63b901d91f7b08c56366d1f1756a03f60dc)]:
+  - @salesforce/b2c-tooling-sdk@1.6.1
+
+## 1.0.11
+
+### Patch Changes
+
+- Updated dependencies [[`1dc1ee5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1dc1ee55642f0d478d260867d538f02e32057d7e)]:
+  - @salesforce/b2c-tooling-sdk@1.6.0
+
+## 1.0.10
+
+### Patch Changes
+
+- Updated dependencies [[`ee735bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee735bb0acac89999114c80679b4766216bf463a), [`ee735bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee735bb0acac89999114c80679b4766216bf463a)]:
+  - @salesforce/b2c-tooling-sdk@1.5.0
+
+## 1.0.9
+
+### Patch Changes
+
+- Updated dependencies [[`59dd584`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/59dd584479cc024fa6eed365c7c91f64dc4110be), [`3dedc05`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3dedc05ade10f6d748b4168daef0e4c2fdaf1501), [`c4309db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c4309db94c8c61b25692775557c6c9ab0f627859)]:
+  - @salesforce/b2c-tooling-sdk@1.4.0
+
+## 1.0.8
+
+### Patch Changes
+
+- Updated dependencies [[`1b0b4ce`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1b0b4ce2af63862438c0dae74df2efb35262139a)]:
+  - @salesforce/b2c-tooling-sdk@1.3.2
+
+## 1.0.7
+
+### Patch Changes
+
+- Updated dependencies [[`30de66b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/30de66bf59c250c5382a7427ba475049c68566cd)]:
+  - @salesforce/b2c-tooling-sdk@1.3.1
+
+## 1.0.6
+
+### Patch Changes
+
+- Updated dependencies [[`c04bbcb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c04bbcbb179d733bedc42f4d0eee2dff2256789e)]:
+  - @salesforce/b2c-tooling-sdk@1.3.0
+
+## 1.0.5
+
+### Patch Changes
+
+- Updated dependencies [[`464b9db`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/464b9dbc3cf498e585d81ba5eb7ed0f17ff60a46), [`e6c6226`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e6c6226c256b8d181917cc8c66fa4d7bf992e106)]:
+  - @salesforce/b2c-tooling-sdk@1.2.0
+
+## 1.0.4
+
+### Patch Changes
+
+- Updated dependencies [[`6880a84`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6880a846aacd029a1eb510023aa76f4b844ec26e)]:
+  - @salesforce/b2c-tooling-sdk@1.1.0
+
+## 1.0.3
+
+### Patch Changes
+
+- Updated dependencies [[`e597e61`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e597e6131b9965e88ef75954a935695fa7f6d70f)]:
+  - @salesforce/b2c-tooling-sdk@1.0.1
+
+## 1.0.2
+
+### Patch Changes
+
+- Updated dependencies [[`7ad490a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ad490a508b7f993292bd8a326f7a6c49c92d70c), [`c24e920`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c24e9204a5f253b773c43c0b30c064c7f4dec34a)]:
+  - @salesforce/b2c-tooling-sdk@1.0.0
+
+## 1.0.1
+
+### Patch Changes
+
+- Updated dependencies [[`b5d07fd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b5d07fd1d1086ee92b735d73502997bcad97dc7e), [`cb74ce4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cb74ce4c78a91cc49556f464be5124981a24c3ea), [`c10ddad`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c10ddadf7277c93196c956b73af694f4f065a149), [`b7f78ca`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b7f78ca6d2468e274b911c4fd1fc7c03a9e6b4fb)]:
+  - @salesforce/b2c-tooling-sdk@0.13.0
+
+## 1.0.0
+
+### Major Changes
+
+- [#289](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/289) [`7287490`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7287490d6ec4e3597822d0ee0e4d6775ae656845) - Document MCP server GA availability updates. CARTRIDGES, MRT, SCAPI, and PWAV3 tools are generally available and no longer require `--allow-non-ga-tools`; STOREFRONTNEXT tools remain in preview. (Thanks [@yhsieh1](https://github.com/yhsieh1)!)
+
+## 0.5.4
+
+### Patch Changes
+
+- [#283](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/283) [`fb5ac83`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/fb5ac83b43db0666e8e17f62516eb04aac962c2d) - Fix marketplace schema validation for the `b2c-dx-mcp` plugin by adding the required `source` field (Thanks [@yhsieh1](https://github.com/yhsieh1)!)
+
+## 0.5.3
+
+### Patch Changes
+
+- Updated dependencies [[`f7229b4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f7229b4372bb23d8e107db75f722575c33f4a007)]:
+  - @salesforce/b2c-tooling-sdk@0.12.0
+
+## 0.5.2
+
+### Patch Changes
+
+- Updated dependencies [[`8c31081`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8c31081b47e57e6a21e62425e6f19da036fc3e34), [`e4b5094`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4b5094d9c1c2a60e1214bc236ce7ed84c5d158b)]:
+  - @salesforce/b2c-tooling-sdk@0.11.0
+
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [[`b30e427`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b30e427f25807840dbcceef6c0005e2d9fd1be53), [`e919e50`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e919e502a7a0a6102c4039d003da0d90ab3673dc), [`caa568e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/caa568e9de3e8c9d3f2e7b17e5f96c1a0ae3ca73)]:
+  - @salesforce/b2c-tooling-sdk@0.10.0
+
+## 0.5.0
+
+### Minor Changes
+
+- [#270](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/270) [`bf35222`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bf352223881dccba4ba07c62bdf4d50a2832c835) - Rename MCP tools for clearer, action-oriented naming. scapi_custom_api_scaffold → scapi_custom_api_generate_scaffold. sfnext_map_tokens_to_theme → sfnext_match_tokens_to_theme. (Thanks [@yhsieh1](https://github.com/yhsieh1)!)
+
 ## 0.4.14
 
 ### Patch Changes

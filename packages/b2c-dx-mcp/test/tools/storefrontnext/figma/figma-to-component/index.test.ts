@@ -126,14 +126,16 @@ describe('Figma To Component Workflow (figma/)', () => {
 
       expect(response).to.include('`mcp__figma__get_design_context`');
       expect(response).to.include('`mcp__figma__get_screenshot`');
-      expect(response).to.include('`generate_component`');
-      expect(response).to.include('`map_tokens_to_theme`');
+      expect(response).to.include('`sfnext_analyze_component`');
+      expect(response).to.include('`sfnext_match_tokens_to_theme`');
     });
 
     it('should include the do-not-stop instruction', () => {
       const response = generateWorkflowResponse('https://figma.com/design/abc123/MyDesign?node-id=1-2');
 
-      expect(response).to.include('DO NOT STOP until you have called generate_component AND map_tokens_to_theme');
+      expect(response).to.include(
+        'DO NOT STOP until you have called sfnext_analyze_component AND sfnext_match_tokens_to_theme',
+      );
     });
 
     it('should include image export approval instruction (user must confirm before exporting)', () => {

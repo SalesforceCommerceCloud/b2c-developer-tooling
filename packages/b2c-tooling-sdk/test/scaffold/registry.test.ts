@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
+import path from 'node:path';
 import {createScaffoldRegistry, ScaffoldRegistry, SCAFFOLDS_DATA_DIR} from '../../src/scaffold/index.js';
 
 describe('scaffold/registry', () => {
@@ -125,7 +126,9 @@ describe('scaffold/registry', () => {
   describe('SCAFFOLDS_DATA_DIR', () => {
     it('should be a valid path', () => {
       expect(SCAFFOLDS_DATA_DIR).to.be.a('string');
-      expect(SCAFFOLDS_DATA_DIR).to.include('data/scaffolds');
+      // Use path.join so the assertion works on both POSIX (data/scaffolds)
+      // and Windows (data\scaffolds) where path.join uses native separators.
+      expect(SCAFFOLDS_DATA_DIR).to.include(path.join('data', 'scaffolds'));
     });
   });
 });

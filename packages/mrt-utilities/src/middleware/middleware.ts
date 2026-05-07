@@ -34,13 +34,7 @@ const CACHING_PATH_BASE = `${MOBIFY_PATH}/caching`;
 const BUNDLE_PATH_BASE = `${MOBIFY_PATH}/bundle`;
 const proxyBasePath = PROXY_PATH_BASE;
 const bundleBasePath = BUNDLE_PATH_BASE;
-const X_HEADERS_TO_REMOVE_ORIGIN = [
-  'x-api-key',
-  'x-apigateway-event',
-  'x-apigateway-context',
-  'x-mobify-access-key',
-  'x-sfdc-access-control',
-];
+const X_HEADERS_TO_REMOVE_ORIGIN = ['x-api-key', 'x-apigateway-event', 'x-apigateway-context', 'x-mobify-access-key'];
 export const X_MOBIFY_REQUEST_CLASS = 'x-mobify-request-class';
 export const X_MOBIFY_QUERYSTRING = 'x-mobify-querystring';
 export const X_MOBIFY_REQUEST_PROCESSOR_LOCAL = 'x-mobify-rp-local';
@@ -272,7 +266,7 @@ export const createMRTRequestProcessorMiddleware = (
     req.headers[X_MOBIFY_REQUEST_PROCESSOR_LOCAL] = 'true'; // Mark the request as processed by the request processor
   };
 
-  const ssrRequestProcessorMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+  const ssrRequestProcessorMiddleware = (req: Request, res: Response, next: NextFunction) => {
     // If the path is /, we enforce that the only methods
     // allowed are GET, HEAD or OPTIONS. This is a restriction
     // imposed by API Gateway: we enforce it here so that the
@@ -282,17 +276,21 @@ export const createMRTRequestProcessorMiddleware = (
       return;
     }
 
-    // Apply custom query parameter parsing.
-    await processIncomingRequest(req, res);
+    // Apply custom query parameter parsing and forward errors via next()
+    processIncomingRequest(req, res)
+      .then(() => {
+        // Strip out API Gateway headers from the incoming request. We
+        // do that now so that the rest of the code don't have to deal
+        // with these headers, which can be large and may be accidentally
+        // forwarded to other servers.
+        cleanUpHeaders(req, false);
 
-    // Strip out API Gateway headers from the incoming request. We
-    // do that now so that the rest of the code don't have to deal
-    // with these headers, which can be large and may be accidentally
-    // forwarded to other servers.
-    cleanUpHeaders(req, false);
-
-    // Hand off to the next middleware
-    next();
+        // Hand off to the next middleware
+        next();
+      })
+      .catch((err) => {
+        next(err);
+      });
   };
 
   return ssrRequestProcessorMiddleware;

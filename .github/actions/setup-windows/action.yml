@@ -1,0 +1,40 @@
+name: setup-windows
+description: 'Set up a Windows CI runner for the B2C developer tooling monorepo (Node, pnpm, dependency install, pnpm-store cache).'
+
+# Mirrors the SalesforceCommerceCloud/pwa-kit `setup_windows` composite action.
+# Windows runs everything under Git Bash (`shell: bash`) so the inline `env VAR=value ...`
+# style used in the package.json test scripts keeps working on windows-latest.
+
+inputs:
+  node-version:
+    description: 'Node.js version to install (matches `actions/setup-node` input).'
+    required: false
+    default: '22.x'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js ${{ inputs.node-version }}
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v5
+
+    - name: Get pnpm store directory
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+    - name: Setup pnpm cache
+      uses: actions/cache@v5
+      with:
+        path: ${{ env.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile

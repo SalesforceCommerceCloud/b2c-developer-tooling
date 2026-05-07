@@ -37,6 +37,9 @@ export default class SlasClientDelete extends SlasClientCommand<typeof SlasClien
   };
 
   async run(): Promise<DeleteOutput> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete SLAS client');
+
     this.requireOAuthCredentials();
 
     const tenantId = this.requireTenantId();

@@ -4,7 +4,7 @@ MCP tools for Storefront Next development with React Server Components.
 
 ## Tools
 
-### `storefront_next_development_guidelines`
+### `sfnext_get_guidelines`
 
 **ESSENTIAL FIRST STEP** for Storefront Next development. Returns critical architecture rules, coding standards, and best practices. Use this tool FIRST before writing any Storefront Next code to understand non-negotiable patterns for React Server Components, data loading, and framework constraints.
 
@@ -52,12 +52,12 @@ MCP tools for Storefront Next development with React Server Components.
 ```json
 // Default - returns comprehensive guidelines (quick-reference + data-fetching + components + testing)
 {
-  "name": "storefront_next_development_guidelines"
+  "name": "sfnext_get_guidelines"
 }
 
 // Single section
 {
-  "name": "storefront_next_development_guidelines",
+  "name": "sfnext_get_guidelines",
   "arguments": {
     "sections": ["data-fetching"]
   }
@@ -65,7 +65,7 @@ MCP tools for Storefront Next development with React Server Components.
 
 // Multiple related sections
 {
-  "name": "storefront_next_development_guidelines",
+  "name": "sfnext_get_guidelines",
   "arguments": {
     "sections": ["data-fetching", "components", "performance"]
   }
@@ -73,14 +73,14 @@ MCP tools for Storefront Next development with React Server Components.
 
 // All sections
 {
-  "name": "storefront_next_development_guidelines",
+  "name": "sfnext_get_guidelines",
   "arguments": {
     "sections": ["quick-reference", "data-fetching", "state-management", "auth", "config", "i18n", "components", "styling", "page-designer", "performance", "testing", "extensions", "pitfalls"]
   }
 }
 ```
 
-### `storefront_next_page_designer_decorator`
+### `sfnext_add_page_designer_decorator`
 
 Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefinition`) to existing React components for Storefront Next.
 
@@ -108,7 +108,7 @@ Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefi
 ```json
 // Auto mode (quick setup)
 {
-  "name": "storefront_next_page_designer_decorator",
+  "name": "sfnext_add_page_designer_decorator",
   "arguments": {
     "component": "ProductCard",
     "autoMode": true
@@ -117,7 +117,7 @@ Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefi
 
 // Interactive mode (step-by-step)
 {
-  "name": "storefront_next_page_designer_decorator",
+  "name": "sfnext_add_page_designer_decorator",
   "arguments": {
     "component": "Hero",
     "conversationContext": {
@@ -127,7 +127,7 @@ Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefi
 }
 ```
 
-### `storefront_next_site_theming`
+### `sfnext_configure_theme`
 
 **MANDATORY** before implementing any theming changes. Provides theming guidelines, questions, and automatic color contrast validation. Call this tool FIRST when the user requests theming (even if colors/fonts are provided). Never implement without calling it first.
 
@@ -154,7 +154,7 @@ Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefi
 ```json
 // First call - get guidelines and questions
 {
-  "name": "storefront_next_site_theming",
+  "name": "sfnext_configure_theme",
   "arguments": {
     "conversationContext": {
       "collectedAnswers": {"colors": [], "fonts": []}
@@ -164,7 +164,7 @@ Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefi
 
 // Validation call - after constructing colorMapping (colorMapping alone triggers validation)
 {
-  "name": "storefront_next_site_theming",
+  "name": "sfnext_configure_theme",
   "arguments": {
     "conversationContext": {
       "collectedAnswers": {
@@ -184,7 +184,7 @@ Add Page Designer decorators (`@Component`, `@AttributeDefinition`, `@RegionDefi
 
 ### Architecture
 
-#### `storefront_next_development_guidelines`
+#### `sfnext_get_guidelines`
 
 The tool loads content from markdown files in the `content/` directory:
 
@@ -217,7 +217,7 @@ Each section markdown file includes:
 ✅ **Always Current**: Content loaded from markdown files (easy to update)  
 ✅ **Comprehensive Default**: Returns key sections by default for immediate value
 
-#### `storefront_next_page_designer_decorator`
+#### `sfnext_add_page_designer_decorator`
 
 The tool uses a rule-based architecture with TypeScript template literals for generating Page Designer decorators:
 
@@ -255,7 +255,7 @@ Component discovery uses the project directory resolved from `--project-director
 
 **See also**: [Detailed documentation](./page-designer-decorator/README.md) for complete usage guide, architecture details, and examples.
 
-#### `storefront_next_site_theming`
+#### `sfnext_configure_theme`
 
 The tool loads theming guidance from markdown files in `content/site-theming/` and runs automatic WCAG contrast validation when `colorMapping` is provided:
 

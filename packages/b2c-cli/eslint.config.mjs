@@ -34,9 +34,7 @@ export default [
       header: headerPlugin,
     },
     linterOptions: {
-      // Downgrade to warn - import/namespace behaves inconsistently across environments
-      // when parsing CJS modules like marked-terminal
-      reportUnusedDisableDirectives: 'warn',
+      reportUnusedDisableDirectives: 'error',
     },
     rules: {
       'header/header': ['error', 'block', copyrightHeader],
@@ -77,7 +75,7 @@ export default [
     },
   },
   {
-    files: ['src/commands/setup/**/*.ts', 'src/commands/slas/**/*.ts'],
+    files: ['src/commands/setup/**/*.ts', 'src/commands/slas/**/*.ts', 'src/commands/debug/**/*.ts'],
     rules: {
       // ESLint import resolver doesn't understand conditional exports (development condition)
       // but Node.js resolves them correctly at runtime

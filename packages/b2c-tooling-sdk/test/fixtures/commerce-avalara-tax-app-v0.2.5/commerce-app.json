@@ -1,0 +1,13 @@
+{
+  "id": "avalara-tax",
+  "name": "Avalara Tax",
+  "description": "Automated tax compliance solution by Avalara",
+  "domain": "tax",
+  "version": "0.2.5",
+  "publisher": {
+    "name": "Avalara",
+    "url": "https://developer.avalara.com/",
+    "support": "https://developer.avalara.com/"
+  },
+  "dependencies": {}
+}

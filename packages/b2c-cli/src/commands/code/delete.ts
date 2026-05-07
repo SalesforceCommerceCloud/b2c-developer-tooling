@@ -3,28 +3,11 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import * as readline from 'node:readline';
 import {Args, Flags} from '@oclif/core';
 import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {deleteCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {t, withDocs} from '../../i18n/index.js';
-
-/**
- * Simple confirmation prompt.
- */
-async function confirm(message: string): Promise<boolean> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stderr,
-  });
-
-  return new Promise((resolve) => {
-    rl.question(`${message} `, (answer) => {
-      rl.close();
-      resolve(answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes');
-    });
-  });
-}
+import {confirm} from '../../prompts.js';
 
 export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
   static args = {
@@ -54,12 +37,17 @@ export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
     }),
   };
 
+  static hiddenAliases = ['code:delete'];
+
   protected operations = {
     confirm,
     deleteCodeVersion,
   };
 
   async run(): Promise<void> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete code version');
+
     this.requireOAuthCredentials();
 
     const codeVersion = this.args.codeVersion;
@@ -70,7 +58,7 @@ export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
       const confirmed = await this.operations.confirm(
         t(
           'commands.code.delete.confirm',
-          'Are you sure you want to delete code version "{{codeVersion}}" on {{hostname}}? (y/n)',
+          'Are you sure you want to delete code version "{{codeVersion}}" on {{hostname}}?',
           {codeVersion, hostname},
         ),
       );

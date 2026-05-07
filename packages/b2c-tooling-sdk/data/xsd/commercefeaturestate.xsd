@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns="http://www.demandware.com/xml/impex/commercefeaturestate/2026-03-06"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="http://www.demandware.com/xml/impex/commercefeaturestate/2026-03-06"
+    elementFormDefault="qualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- root element -->
+    <xsd:element name="commerce-feature-states" type="complexType.CommerceFeatureStates" />
+
+    <xsd:complexType name="complexType.CommerceFeatureStates" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="commerce-feature-state" type="complexType.CommerceFeatureState" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CommerceFeatureState" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="feature-type" type="simpleType.FeatureType" />
+            <xsd:element name="feature-source" type="simpleType.Generic.String.64" />
+            <xsd:element name="feature-domain" type="simpleType.Generic.String.128" />
+            <xsd:element name="install-status" type="simpleType.InstallStatus" />
+            <xsd:element name="config-status" type="simpleType.ConfigStatus" />
+            <xsd:element name="feature-version-id" type="simpleType.Generic.String.128" minOccurs="0" />
+            <xsd:element name="installed-at" type="xsd:dateTime" minOccurs="0" />
+            <xsd:element name="uninstalled-at" type="xsd:dateTime" minOccurs="0" />
+            <xsd:element name="configured-at" type="xsd:dateTime" minOccurs="0" />
+            <xsd:element name="unconfigured-at" type="xsd:dateTime" minOccurs="0" />
+            <xsd:element name="config-tasks" type="simpleType.Generic.String" minOccurs="0" />
+            <xsd:element name="installation-metadata" type="simpleType.Generic.String" minOccurs="0" />
+        </xsd:sequence>
+        <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="feature-name" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- Enum Types -->
+
+    <xsd:simpleType name="simpleType.FeatureType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="NATIVE_APP" />
+            <xsd:enumeration value="ISV_APP" />
+            <xsd:enumeration value="NATIVE_FEATURE" />
+            <xsd:enumeration value="CUSTOM_FEATURE" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- Intentionally exclude INSTALLING and UNINSTALLING to prevent intermediate states from being
+    imported/exported. -->
+    <xsd:simpleType name="simpleType.InstallStatus">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="INSTALLED" />
+            <xsd:enumeration value="INSTALL_FAILED" />
+            <xsd:enumeration value="N_A" />
+            <xsd:enumeration value="UNINSTALLED" />
+            <xsd:enumeration value="UNINSTALL_FAILED" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.ConfigStatus">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="NOT_CONFIGURED" />
+            <xsd:enumeration value="CONFIGURING" />
+            <xsd:enumeration value="CONFIGURED" />
+            <xsd:enumeration value="CONFIGURATION_FAILED" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- Generic String Types -->
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.64">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:maxLength value="64" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.128">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:maxLength value="128" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

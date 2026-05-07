@@ -16,12 +16,22 @@ import type {
   AuthMiddlewareHookOptions,
   AuthMiddlewareHookResult,
 } from './hooks.js';
-import {setLanguage} from '../i18n/index.js';
+import {setLanguage, t} from '../i18n/index.js';
 import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
-import {createExtraParamsMiddleware, type ExtraParamsConfig} from '../clients/middleware.js';
+import {createExtraParamsMiddleware, createSafetyMiddleware, type ExtraParamsConfig} from '../clients/middleware.js';
+import {
+  getSafetyLevel,
+  describeSafetyLevel,
+  resolveEffectiveSafetyConfig,
+  loadGlobalSafetyConfig,
+} from '../safety/index.js';
+import {SafetyGuard} from '../safety/safety-guard.js';
+import type {SafetyEvaluation} from '../safety/types.js';
+import {confirm as safetyConfirm} from '../ux/confirm.js';
 import {globalConfigSourceRegistry} from '../config/config-source-registry.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
+import {initializeStatefulStore} from '../auth/stateful-store.js';
 import {setUserAgent} from '../clients/user-agent.js';
 import {createTelemetry, Telemetry, type TelemetryAttributes} from '../telemetry/index.js';
 
@@ -127,6 +137,9 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   protected resolvedConfig!: ResolvedB2CConfig;
   protected logger!: Logger;
 
+  /** Safety guard for evaluating operations against safety rules and levels. */
+  protected safetyGuard: SafetyGuard = new SafetyGuard({level: 'NONE'});
+
   /** Telemetry instance for tracking command events */
   protected telemetry?: Telemetry;
 
@@ -152,6 +165,12 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
     this.configureLogging();
 
+    // Initialize stateful auth store with oclif's data directory so session
+    // files are stored alongside other CLI data (e.g. ~/Library/Application Support/@salesforce/b2c-cli).
+    // Tests may override the path via B2C_TEST_DATA_DIR to isolate the auth-session.json
+    // file (e.g. per mocha worker) so they don't race on the developer's real session file.
+    initializeStatefulStore(process.env.B2C_TEST_DATA_DIR ?? this.config.dataDir);
+
     // Set CLI User-Agent (CLI name/version only, without @salesforce/ prefix)
     // This must happen before any API clients are created
     setUserAgent(`${this.config.name.replace(/^@salesforce\//, '')}/${this.config.version}`);
@@ -159,6 +178,15 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // Register extra params middleware (from --extra-query, --extra-body, --extra-headers flags)
     // This must happen before any API clients are created
     this.registerExtraParamsMiddleware();
+
+    // Initialize safety guard with env-var-only config (before config resolution).
+    // The guard is updated with the full config after loadConfiguration().
+    this.safetyGuard = new SafetyGuard({level: getSafetyLevel('NONE')});
+
+    // Register safety middleware FIRST (before any other middleware)
+    // The middleware reads this.safetyGuard lazily via closure, so it picks up
+    // the full config after initializeSafetyGuard() runs.
+    this.registerSafetyMiddleware();
 
     // Collect middleware from plugins before any API clients are created
     await this.collectPluginHttpMiddleware();
@@ -173,6 +201,13 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     await this.initTelemetryFromConfig();
 
     this.resolvedConfig = await this.loadConfiguration();
+
+    // Update safety guard with config-provided safety settings (merges env + config)
+    this.initializeSafetyGuard();
+
+    // Evaluate command-level safety rules for every command.
+    // This enforces rules like { command: "code:deploy", action: "block" } generically.
+    await this.evaluateCommandSafety();
 
     this.addTelemetryContext();
   }
@@ -564,7 +599,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     }
 
     // Use oclif's error() for proper exit code and display
-    this.error(err.message, {exit: exitCode});
+    return this.error(err.message, {exit: exitCode});
   }
 
   /**
@@ -583,6 +618,63 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
   public baseCommandTest(): void {
     this.logger.info('BaseCommand initialized');
+  }
+
+  /**
+   * Check if destructive operations are allowed based on safety level.
+   * Provides early, user-friendly error messages before HTTP requests are attempted.
+   *
+   * This is a command-level check that complements the HTTP middleware safety guard.
+   * While the middleware provides unbypassable protection, this method offers better
+   * error messages and early detection.
+   *
+   * Destructive operations include:
+   * - Deleting resources (sandboxes, users, API clients, etc.)
+   * - Resetting or wiping data
+   * - Force operations that overwrite data
+   * - Revoking access or permissions
+   *
+   * NOTE: This is optional - the HTTP middleware will catch any operations that bypass
+   * this check. Use this method for better UX when you know an operation is destructive.
+   *
+   * @param operationDescription - Description of the operation (e.g., "delete sandbox", "reset user password")
+   * @throws Error if safety level blocks the operation
+   *
+   * @example
+   * ```typescript
+   * async run() {
+   *   this.assertDestructiveOperationAllowed('delete sandbox');
+   *   // ... proceed with deletion
+   * }
+   * ```
+   */
+  protected assertDestructiveOperationAllowed(operationDescription?: string): void {
+    const evaluation = this.safetyGuard.evaluate({
+      type: 'command',
+      commandId: this.id,
+    });
+
+    if (evaluation.action === 'allow') {
+      return;
+    }
+
+    const operation = operationDescription || t('base.destructiveOperation', 'this destructive operation');
+
+    // For both 'block' and 'confirm' at the assertion level, we block.
+    // Commands that want to support confirmation should call confirmOrBlock() separately.
+    const safetyLevel = this.safetyGuard.config.level;
+    return this.error(
+      t(
+        'base.safetyModeBlocked',
+        'Cannot {{operation}}: blocked by your safety configuration (level: {{safetyLevel}}).\n\n{{description}}\n\nTo change this, update the "safety" section in your dw.json or the SFCC_SAFETY_LEVEL environment variable.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/safety',
+        {
+          operation,
+          safetyLevel,
+          description: describeSafetyLevel(safetyLevel),
+        },
+      ),
+      {exit: 1},
+    );
   }
 
   /**
@@ -627,6 +719,93 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     }
 
     return config;
+  }
+
+  /**
+   * Register safety middleware that evaluates all HTTP requests against the SafetyGuard.
+   *
+   * The middleware reads `this.safetyGuard` lazily (via arrow function closure), so it
+   * picks up the full config after `initializeSafetyGuard()` runs. This allows the
+   * middleware to be registered early in init() before config resolution completes.
+   */
+  private registerSafetyMiddleware(): void {
+    globalMiddlewareRegistry.register({
+      name: 'cli-safety-guard',
+      getMiddleware: () => {
+        // Skip if no safety restrictions are configured
+        if (this.safetyGuard.config.level === 'NONE' && !this.safetyGuard.config.rules?.length) {
+          return undefined;
+        }
+        return createSafetyMiddleware(this.safetyGuard);
+      },
+    });
+  }
+
+  /**
+   * Update the safety guard with config-provided safety settings.
+   * Called after loadConfiguration() to merge env vars, global safety config,
+   * and per-instance dw.json config.
+   */
+  private initializeSafetyGuard(): void {
+    const globalSafety = loadGlobalSafetyConfig(this.config.configDir);
+    const config = resolveEffectiveSafetyConfig(this.resolvedConfig.values.safety, globalSafety);
+    this.safetyGuard = new SafetyGuard(config);
+
+    if (config.level !== 'NONE' || config.rules?.length || config.confirm) {
+      this.logger.debug(
+        {level: config.level, confirm: config.confirm, ruleCount: config.rules?.length ?? 0},
+        'Safety mode active',
+      );
+    }
+  }
+
+  /**
+   * Evaluate command-level safety rules for the current command.
+   *
+   * This runs at the end of init() so every command is evaluated against
+   * command rules (e.g., `{ command: "code:deploy", action: "block" }`).
+   * If no command rule matches, this is a no-op — level-based blocking
+   * is handled by the HTTP middleware and assertDestructiveOperationAllowed().
+   */
+  private async evaluateCommandSafety(): Promise<void> {
+    const evaluation = this.safetyGuard.evaluate({
+      type: 'command',
+      commandId: this.id,
+    });
+
+    if (evaluation.action === 'block' && evaluation.rule) {
+      this.error(evaluation.reason, {exit: 1});
+    }
+    if (evaluation.action === 'confirm' && evaluation.rule) {
+      await this.confirmOrBlock(evaluation);
+    }
+  }
+
+  /**
+   * Require interactive confirmation for a safety-guarded operation.
+   *
+   * If stdin is a TTY, prompts the user. Otherwise, blocks with an error message.
+   * The error message clearly indicates the block is from the user's own safety configuration.
+   *
+   * @param evaluation - The safety evaluation that triggered confirmation
+   * @throws Error if confirmation is denied or not possible
+   */
+  protected async confirmOrBlock(evaluation: SafetyEvaluation): Promise<void> {
+    if (!process.stdin.isTTY) {
+      this.error(
+        `Your safety configuration requires confirmation for this operation, ` +
+          `but no interactive session is available.\n\n  ${evaluation.reason}\n\n` +
+          `To change this, update the "safety" section in your dw.json or the SFCC_SAFETY_CONFIRM environment variable.`,
+        {exit: 1},
+      );
+    }
+
+    const confirmed = await safetyConfirm(
+      `Your safety configuration requires confirmation for this operation:\n  ${evaluation.reason}\n  Proceed?`,
+    );
+    if (!confirmed) {
+      this.error('Operation cancelled.', {exit: 1});
+    }
   }
 
   /**

@@ -39,6 +39,9 @@ export default class EcdnPageShieldPoliciesDelete extends EcdnZoneCommand<typeof
   };
 
   async run(): Promise<DeleteOutput> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete Page Shield policy');
+
     this.requireOAuthCredentials();
 
     const zoneId = await this.resolveZoneId();

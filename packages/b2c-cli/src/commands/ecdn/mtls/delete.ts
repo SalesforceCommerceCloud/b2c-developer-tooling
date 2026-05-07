@@ -39,6 +39,9 @@ export default class EcdnMtlsDelete extends EcdnCommand<typeof EcdnMtlsDelete> {
   };
 
   async run(): Promise<DeleteOutput> {
+    // Prevent deletion in safe mode
+    this.assertDestructiveOperationAllowed('delete mTLS certificate');
+
     this.requireOAuthCredentials();
 
     const mtlsCertificateId = this.flags['certificate-id'];

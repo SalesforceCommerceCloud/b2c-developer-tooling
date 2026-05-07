@@ -12,13 +12,14 @@ import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
 import type {ContentFileSystemProvider} from './content-fs-provider.js';
 import type {ContentTreeDataProvider, ContentTreeItem} from './content-tree-provider.js';
+import {openJobLog} from '../job-log-viewer.js';
+import {registerSafeCommand} from '../safety.js';
 
 async function showJobError(err: unknown, instance: B2CInstance, label: string): Promise<void> {
   if (err instanceof JobExecutionError && err.execution.is_log_file_existing) {
     try {
       const log = await getJobLog(instance, err.execution);
-      const doc = await vscode.workspace.openTextDocument({content: log, language: 'log'});
-      await vscode.window.showTextDocument(doc);
+      await openJobLog(err.execution.id ?? 'job', log);
     } catch {
       // Fall through to generic error
     }
@@ -33,13 +34,13 @@ export function registerContentCommands(
   treeProvider: ContentTreeDataProvider,
   _fsProvider: ContentFileSystemProvider,
 ): vscode.Disposable[] {
-  const refresh = vscode.commands.registerCommand('b2c-dx.content.refresh', () => {
+  const refresh = registerSafeCommand('b2c-dx.content.refresh', () => {
     configProvider.clearCache();
     configProvider.reset();
     treeProvider.refresh();
   });
 
-  const addLibrary = vscode.commands.registerCommand('b2c-dx.content.addLibrary', async () => {
+  const addLibrary = registerSafeCommand('b2c-dx.content.addLibrary', async () => {
     const id = await vscode.window.showInputBox({
       title: 'Add Content Library',
       prompt: 'Enter the library ID (or site ID for site-private libraries)',
@@ -62,7 +63,7 @@ export function registerContentCommands(
     treeProvider.refresh();
   });
 
-  const removeLibrary = vscode.commands.registerCommand('b2c-dx.content.removeLibrary', (node: ContentTreeItem) => {
+  const removeLibrary = registerSafeCommand('b2c-dx.content.removeLibrary', (node: ContentTreeItem) => {
     if (!node || node.nodeType !== 'library') return;
     configProvider.removeLibrary(node.libraryId);
     treeProvider.refresh();
@@ -111,6 +112,7 @@ export function registerContentCommands(
           return exportContent(instance, contentIds, libraryId, outputPath, {
             isSiteLibrary,
             offline,
+            assetQuery: configProvider.getAssetQuery(),
             onAssetProgress: (_asset, index, total) => {
               progress.report({
                 message: `Downloading asset ${index + 1}/${total}`,
@@ -154,7 +156,7 @@ export function registerContentCommands(
     }
   }
 
-  const exportCmd = vscode.commands.registerCommand(
+  const exportCmd = registerSafeCommand(
     'b2c-dx.content.export',
     async (node: ContentTreeItem, selectedNodes?: ContentTreeItem[]) => {
       const nodes = selectedNodes?.length ? selectedNodes : node ? [node] : [];
@@ -163,7 +165,7 @@ export function registerContentCommands(
     },
   );
 
-  const exportNoAssets = vscode.commands.registerCommand(
+  const exportNoAssets = registerSafeCommand(
     'b2c-dx.content.exportNoAssets',
     async (node: ContentTreeItem, selectedNodes?: ContentTreeItem[]) => {
       const nodes = selectedNodes?.length ? selectedNodes : node ? [node] : [];
@@ -172,7 +174,7 @@ export function registerContentCommands(
     },
   );
 
-  const exportAssets = vscode.commands.registerCommand(
+  const exportAssets = registerSafeCommand(
     'b2c-dx.content.exportAssets',
     async (node: ContentTreeItem, selectedNodes?: ContentTreeItem[]) => {
       const nodes = selectedNodes?.length ? selectedNodes : node ? [node] : [];
@@ -181,7 +183,7 @@ export function registerContentCommands(
     },
   );
 
-  const filter = vscode.commands.registerCommand('b2c-dx.content.filter', async () => {
+  const filter = registerSafeCommand('b2c-dx.content.filter', async () => {
     const current = treeProvider.getFilter();
     const value = await vscode.window.showInputBox({
       title: 'Filter Content',
@@ -193,11 +195,11 @@ export function registerContentCommands(
     treeProvider.setFilter(value || undefined);
   });
 
-  const clearFilter = vscode.commands.registerCommand('b2c-dx.content.clearFilter', () => {
+  const clearFilter = registerSafeCommand('b2c-dx.content.clearFilter', () => {
     treeProvider.setFilter(undefined);
   });
 
-  const importCmd = vscode.commands.registerCommand('b2c-dx.content.import', async (uri?: vscode.Uri) => {
+  const importCmd = registerSafeCommand('b2c-dx.content.import', async (uri?: vscode.Uri) => {
     const instance = configProvider.getInstance();
     if (!instance) {
       vscode.window.showErrorMessage('No B2C Commerce instance configured.');
@@ -236,5 +238,29 @@ export function registerContentCommands(
     vscode.window.showInformationMessage('Site archive imported successfully.');
   });
 
-  return [refresh, addLibrary, removeLibrary, exportCmd, exportNoAssets, exportAssets, filter, clearFilter, importCmd];
+  const browseWebdav = registerSafeCommand('b2c-dx.content.browseWebdav', async (node: ContentTreeItem) => {
+    if (!node) return;
+
+    if (node.nodeType === 'library') {
+      await vscode.commands.executeCommand('b2c-dx.webdav.revealLibrary', node.libraryId);
+    } else if (node.nodeType === 'static') {
+      // Static assets have a webdav path: Libraries/{libraryId}/default/{path}
+      const cleanPath = node.contentId.startsWith('/') ? node.contentId.slice(1) : node.contentId;
+      const webdavPath = `Libraries/${node.libraryId}/default/${cleanPath}`;
+      await vscode.commands.executeCommand('b2c-dx.webdav.revealPath', webdavPath);
+    }
+  });
+
+  return [
+    refresh,
+    addLibrary,
+    removeLibrary,
+    exportCmd,
+    exportNoAssets,
+    exportAssets,
+    filter,
+    clearFilter,
+    importCmd,
+    browseWebdav,
+  ];
 }

@@ -1,6 +1,6 @@
 ---
 name: b2c-controllers
-description: Create storefront controllers in SFRA or classic B2C Commerce patterns. Use when building pages, handling form submissions, creating AJAX endpoints, or working with server.get/server.post, res.render, res.json, and middleware chains. Also covers URLUtils for URL generation.
+description: Create storefront controllers using SFRA or classic patterns with server.get/post, middleware chains, and res.render/json. Use this skill whenever the user needs to build a page route, handle form submissions, create AJAX endpoints, extend or override existing controllers, or add middleware to a request pipeline. Also use when debugging route registration or response rendering -- even if they just say 'new page endpoint' or 'handle a POST request'.
 ---
 
 # Controllers Skill

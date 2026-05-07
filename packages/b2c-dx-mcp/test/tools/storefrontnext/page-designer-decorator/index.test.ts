@@ -138,7 +138,7 @@ describe('tools/storefrontnext/page-designer-decorator', () => {
   describe('tool metadata', () => {
     it('should have correct tool name', () => {
       const tool = createPageDesignerDecoratorTool(getServices);
-      expect(tool.name).to.equal('storefront_next_page_designer_decorator');
+      expect(tool.name).to.equal('sfnext_add_page_designer_decorator');
     });
 
     it('should have comprehensive description', () => {

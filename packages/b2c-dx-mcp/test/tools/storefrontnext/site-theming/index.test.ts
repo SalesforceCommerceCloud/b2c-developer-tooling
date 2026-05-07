@@ -53,7 +53,7 @@ describe('tools/storefrontnext/site-theming', () => {
   describe('tool metadata', () => {
     it('should have correct structure', () => {
       const tool = createSiteThemingTool(createMockLoadServices(services));
-      expect(tool).to.have.property('name', 'storefront_next_site_theming');
+      expect(tool).to.have.property('name', 'sfnext_configure_theme');
       expect(tool.description).to.include('theming guidelines');
       expect(tool).to.have.property('inputSchema');
       expect(tool).to.have.property('handler');

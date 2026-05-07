@@ -8,7 +8,7 @@ The official actions handle CLI installation, credential configuration, and Node
 
 The actions are available from the `SalesforceCommerceCloud/b2c-developer-tooling` repository and support:
 
-- **Code deployment** — deploy cartridges with reload
+- **Code deployment** — deploy and activate cartridges
 - **Data import** — import site archives in a single step
 - **MRT deployment** — push and deploy MRT storefront bundles
 - **Job execution** — run B2C jobs with wait and timeout
@@ -80,7 +80,7 @@ jobs:
       - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v1
         with:
           code-version: ${{ steps.version.outputs.code-version }}
-          reload: true
+          activate: true
 ```
 
 The **setup** step installs the CLI and configures credentials for all subsequent steps. Everything after that — your build, version calculation, and deploy — can focus on your project's needs.
@@ -169,7 +169,7 @@ Deploy cartridges with typed inputs.
 | Input | Default | Description |
 |-------|---------|-------------|
 | `cartridge-path` | `.` | Path to cartridge source directory |
-| `reload` | `true` | Activate code version after deploy |
+| `activate` | `false` | Activate code version after deploy |
 | `code-version` | — | Code version (overrides env) |
 | `cartridges` | — | Comma-separated cartridges to include |
 | `exclude-cartridges` | — | Comma-separated cartridges to exclude |

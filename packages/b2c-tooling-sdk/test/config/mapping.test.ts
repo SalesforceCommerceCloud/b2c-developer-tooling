@@ -4,7 +4,12 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
-import {kebabToCamelCase, normalizeConfigKeys, CONFIG_KEY_ALIASES} from '../../src/config/mapping.js';
+import {
+  kebabToCamelCase,
+  normalizeConfigKeys,
+  normalizeOriginUrl,
+  CONFIG_KEY_ALIASES,
+} from '../../src/config/mapping.js';
 
 describe('config/mapping', () => {
   describe('kebabToCamelCase', () => {
@@ -140,6 +145,44 @@ describe('config/mapping', () => {
       expect(normalizeConfigKeys({})).to.deep.equal({});
     });
 
+    it('normalizes cloudOrigin bare hostname to full URL via alias', () => {
+      const result = normalizeConfigKeys({
+        cloudOrigin: 'cloud-staging.mobify.com',
+      });
+      // normalizeConfigKeys only does key aliasing, not value normalization
+      expect(result.mrtOrigin).to.equal('cloud-staging.mobify.com');
+    });
+  });
+
+  describe('normalizeOriginUrl', () => {
+    it('returns undefined for undefined input', () => {
+      expect(normalizeOriginUrl(undefined)).to.be.undefined;
+    });
+
+    it('returns undefined for empty string', () => {
+      expect(normalizeOriginUrl('')).to.be.undefined;
+    });
+
+    it('adds https:// to bare hostname', () => {
+      expect(normalizeOriginUrl('cloud.mobify.com')).to.equal('https://cloud.mobify.com');
+    });
+
+    it('preserves existing https:// prefix', () => {
+      expect(normalizeOriginUrl('https://cloud.mobify.com')).to.equal('https://cloud.mobify.com');
+    });
+
+    it('preserves existing http:// prefix', () => {
+      expect(normalizeOriginUrl('http://localhost:3000')).to.equal('http://localhost:3000');
+    });
+
+    it('strips trailing slashes', () => {
+      expect(normalizeOriginUrl('https://cloud.mobify.com/')).to.equal('https://cloud.mobify.com');
+      expect(normalizeOriginUrl('cloud.mobify.com/')).to.equal('https://cloud.mobify.com');
+    });
+  });
+
+  // Additional normalizeConfigKeys tests (continued from the block above)
+  describe('normalizeConfigKeys (values)', () => {
     it('preserves non-string values', () => {
       const result = normalizeConfigKeys({
         'oauth-scopes': ['mail', 'roles'],
