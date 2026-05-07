@@ -14,8 +14,6 @@ import {
 import {t, withDocs} from '../../i18n/index.js';
 
 export default class JobRun extends JobCommand<typeof JobRun> {
-  static hiddenAliases = ['job:run'];
-
   static args = {
     jobId: Args.string({
       description: 'Job ID to execute',
@@ -75,6 +73,8 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       default: true,
     }),
   };
+
+  static hiddenAliases = ['job:run'];
 
   protected operations = {
     executeJob,

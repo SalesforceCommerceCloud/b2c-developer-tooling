@@ -22,8 +22,6 @@ export default class SitesCartridgesList extends InstanceCommand<typeof SitesCar
     '<%= config.bin %> sites cartridges list --site-id RefArch --json',
   ];
 
-  static hiddenAliases = ['sites:cartridge:list'];
-
   static flags = {
     'site-id': Flags.string({
       description: t('flags.siteId.description', 'Site ID (e.g. RefArch)'),
@@ -34,6 +32,8 @@ export default class SitesCartridgesList extends InstanceCommand<typeof SitesCar
       exclusive: ['site-id'],
     }),
   };
+
+  static hiddenAliases = ['sites:cartridge:list'];
 
   async run(): Promise<CartridgePathResult> {
     this.requireOAuthCredentials();

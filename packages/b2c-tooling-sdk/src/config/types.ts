@@ -59,6 +59,14 @@ export interface NormalizedConfig {
   /** Account Manager hostname for OAuth (default: account.demandware.com) */
   accountManagerHost?: string;
 
+  // Auth fields (JWT Bearer)
+  /** Path to JWT certificate file (cert.pem) for JWT authentication */
+  jwtCertPath?: string;
+  /** Path to JWT private key file (key.pem) for JWT authentication */
+  jwtKeyPath?: string;
+  /** Optional passphrase for encrypted JWT private key */
+  jwtPassphrase?: string;
+
   // SLAS Shopper
   /** SLAS client ID for shopper authentication */
   slasClientId?: string;
@@ -106,6 +114,13 @@ export interface NormalizedConfig {
 
   /** Library IDs for WebDAV browsing */
   libraries?: string[];
+
+  /**
+   * JSON dot-paths for asset extraction from component data during
+   * content library parsing. Used by `content export` and the VS Code
+   * content library browser. Defaults to `['image.path']` when unset.
+   */
+  assetQuery?: string[];
 
   // CIP
   /** Optional CIP analytics host override */

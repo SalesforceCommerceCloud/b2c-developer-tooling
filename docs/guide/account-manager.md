@@ -97,10 +97,9 @@ b2c am users list --user-auth
 
 1. In [Account Manager](https://account.demandware.com), create a dedicated API client.
 2. Set a strong password (client secret) and save it securely.
-3. Set **Token Endpoint Auth Method** to `client_secret_post`.
-4. Under **Roles**, add **User Administrator** (for user/role management).
-5. Under **Allowed Scopes**, add: `mail roles tenantFilter openid`.
-6. Set **Default Scopes** to: `mail roles tenantFilter openid`.
+3. Under **Roles**, add **User Administrator** (for user/role management).
+4. Under **Allowed Scopes**, add: `mail roles tenantFilter openid`.
+5. Set **Default Scopes** to: `mail roles tenantFilter openid`.
 
 Then configure your CI/CD environment:
 

@@ -311,6 +311,18 @@
         "category": "B2C DX - Sandboxes"
       },
       {
+        "command": "b2c-dx.sandbox.clone",
+        "title": "Clone Sandbox",
+        "icon": "$(copy)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
+        "command": "b2c-dx.sandbox.viewCloneDetails",
+        "title": "View Clone Details",
+        "icon": "$(git-branch)",
+        "category": "B2C DX - Sandboxes"
+      },
+      {
         "command": "b2c-dx.instance.inspect",
         "title": "B2C Instance Config",
         "category": "B2C DX"
@@ -737,32 +749,42 @@
         },
         {
           "command": "b2c-dx.sandbox.openBM",
-          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-/",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-(?!cloning|settingup)/",
           "group": "1_info@2"
         },
         {
           "command": "b2c-dx.sandbox.start",
-          "when": "view == b2cSandboxExplorer && viewItem == sandbox-stopped",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-stopped(-cloned)?$/",
           "group": "2_lifecycle@1"
         },
         {
           "command": "b2c-dx.sandbox.stop",
-          "when": "view == b2cSandboxExplorer && viewItem == sandbox-started",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-started(-cloned)?$/",
           "group": "2_lifecycle@2"
         },
         {
           "command": "b2c-dx.sandbox.restart",
-          "when": "view == b2cSandboxExplorer && viewItem == sandbox-started",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-started(-cloned)?$/",
           "group": "2_lifecycle@3"
         },
         {
           "command": "b2c-dx.sandbox.extendExpiration",
-          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-/",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-(?!cloning|settingup)/",
           "group": "2_lifecycle@4"
         },
         {
+          "command": "b2c-dx.sandbox.clone",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-(started|stopped)(-cloned)?$/",
+          "group": "2_lifecycle@5"
+        },
+        {
+          "command": "b2c-dx.sandbox.viewCloneDetails",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-.*-cloned$/",
+          "group": "1_info@3"
+        },
+        {
           "command": "b2c-dx.sandbox.delete",
-          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-/",
+          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-(?!cloning|settingup)/",
           "group": "3_destructive@1"
         },
         {
@@ -872,6 +894,14 @@
         },
         {
           "command": "b2c-dx.sandbox.extendExpiration",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.clone",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.sandbox.viewCloneDetails",
           "when": "false"
         },
         {

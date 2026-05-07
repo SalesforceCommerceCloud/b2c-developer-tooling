@@ -25,8 +25,6 @@ interface AuthClientTokenOutput {
  * Mirrors sfcc-ci `client:auth:token` command behavior.
  */
 export default class AuthClientToken extends BaseCommand<typeof AuthClientToken> {
-  static hiddenAliases = ['client:auth:token'];
-
   static description = t(
     'commands.auth.client.token.description',
     'Return the current authentication token (stateful)',
@@ -35,6 +33,8 @@ export default class AuthClientToken extends BaseCommand<typeof AuthClientToken>
   static enableJsonFlag = true;
 
   static examples = ['<%= config.bin %> <%= command.id %>', '<%= config.bin %> <%= command.id %> --json'];
+
+  static hiddenAliases = ['client:auth:token'];
 
   async run(): Promise<AuthClientTokenOutput> {
     this.logger.debug('[StatefulAuth] Reading stored session from stateful store');

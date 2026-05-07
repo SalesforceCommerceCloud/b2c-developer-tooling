@@ -16,8 +16,6 @@ import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {t, withDocs} from '../../i18n/index.js';
 
 export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
-  static hiddenAliases = ['code:deploy'];
-
   static args = {
     ...CartridgeCommand.baseArgs,
   };
@@ -60,6 +58,8 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       default: false,
     }),
   };
+
+  static hiddenAliases = ['code:deploy'];
 
   protected operations = {
     uploadCartridges,

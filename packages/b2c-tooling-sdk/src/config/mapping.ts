@@ -161,6 +161,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     contentLibrary: json.contentLibrary,
     catalogs: json.catalogs,
     libraries: json.libraries,
+    assetQuery: json.assetQuery,
     cipHost: json.cipHost,
     instanceName: json.name,
     authMethods: json.authMethods,
@@ -173,6 +174,10 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     certificate: json.certificate,
     certificatePassphrase: json.certificatePassphrase,
     selfSigned: json.selfSigned,
+    // JWT Bearer auth options
+    jwtCertPath: json.jwtCertPath,
+    jwtKeyPath: json.jwtKeyPath,
+    jwtPassphrase: json.jwtPassphrase,
     // Safety
     safety: mapDwJsonSafety(json.safety),
   };
@@ -287,6 +292,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   if (config.libraries !== undefined) {
     result.libraries = config.libraries;
   }
+  if (config.assetQuery !== undefined) {
+    result.assetQuery = config.assetQuery;
+  }
   if (config.cipHost !== undefined) {
     result.cipHost = config.cipHost;
   }
@@ -307,6 +315,15 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.selfSigned !== undefined) {
     result.selfSigned = config.selfSigned;
+  }
+  if (config.jwtCertPath !== undefined) {
+    result.jwtCertPath = config.jwtCertPath;
+  }
+  if (config.jwtKeyPath !== undefined) {
+    result.jwtKeyPath = config.jwtKeyPath;
+  }
+  if (config.jwtPassphrase !== undefined) {
+    result.jwtPassphrase = config.jwtPassphrase;
   }
   if (config.safety !== undefined) {
     result.safety = {
@@ -429,6 +446,7 @@ export function mergeConfigsWithProtection(
       contentLibrary: overrides.contentLibrary ?? base.contentLibrary,
       catalogs: overrides.catalogs ?? base.catalogs,
       libraries: overrides.libraries ?? base.libraries,
+      assetQuery: overrides.assetQuery ?? base.assetQuery,
       cipHost: overrides.cipHost ?? base.cipHost,
       sandboxApiHost: overrides.sandboxApiHost ?? base.sandboxApiHost,
       realm: overrides.realm ?? base.realm,
@@ -443,6 +461,10 @@ export function mergeConfigsWithProtection(
       certificate: overrides.certificate ?? base.certificate,
       certificatePassphrase: overrides.certificatePassphrase ?? base.certificatePassphrase,
       selfSigned: overrides.selfSigned ?? base.selfSigned,
+      // JWT Bearer auth options
+      jwtCertPath: overrides.jwtCertPath ?? base.jwtCertPath,
+      jwtKeyPath: overrides.jwtKeyPath ?? base.jwtKeyPath,
+      jwtPassphrase: overrides.jwtPassphrase ?? base.jwtPassphrase,
       // Safety
       safety: overrides.safety ?? base.safety,
     },

@@ -59,6 +59,11 @@ export default class MrtSaveCredentials extends BaseCommand<typeof MrtSaveCreden
     }),
   };
 
+  /** Wraps shared confirm for testability. */
+  protected async confirm(message: string): Promise<boolean> {
+    return confirm(message);
+  }
+
   async run(): Promise<MobifyConfigFile> {
     const {user, 'api-key': apiKey, 'cloud-origin': cloudOrigin, 'credentials-file': credentialsFile, yes} = this.flags;
 
@@ -96,11 +101,6 @@ export default class MrtSaveCredentials extends BaseCommand<typeof MrtSaveCreden
     this.log(t('commands.mrt.save-credentials.success', 'Credentials saved to {{path}}', {path: mobifyPath}));
 
     return credentials;
-  }
-
-  /** Wraps shared confirm for testability. */
-  protected async confirm(message: string): Promise<boolean> {
-    return confirm(message);
   }
 
   private getMobifyPath(cloudOrigin?: string): string {

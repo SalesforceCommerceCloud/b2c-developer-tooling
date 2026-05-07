@@ -85,6 +85,8 @@ export interface DwJsonConfig {
   catalogs?: string[];
   /** Library IDs for WebDAV browsing */
   libraries?: string[];
+  /** JSON dot-paths for asset extraction during content library parsing (defaults to ['image.path']) */
+  assetQuery?: string[];
   /** Optional CIP analytics host override */
   cipHost?: string;
   /** Path to PKCS12 certificate file for mTLS (two-factor auth) */
@@ -93,6 +95,12 @@ export interface DwJsonConfig {
   certificatePassphrase?: string;
   /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
   selfSigned?: boolean;
+  /** Path to JWT certificate file (cert.pem) for JWT authentication */
+  jwtCertPath?: string;
+  /** Path to JWT private key file (key.pem) for JWT authentication */
+  jwtKeyPath?: string;
+  /** Optional passphrase for encrypted JWT private key */
+  jwtPassphrase?: string;
   /**
    * Safety configuration for this instance.
    *
