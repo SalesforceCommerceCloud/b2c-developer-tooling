@@ -43,6 +43,6 @@ Or run **B2C DX - Getting Started: Verify B2C CLI Installation** from the Comman
 
 - **Command not found after `npm install -g`** — your global npm prefix isn't on PATH. Run `npm config get prefix` and add `<prefix>/bin` to PATH.
 - **EACCES on install** — use a Node version manager (`nvm`, `fnm`, `volta`) instead of `sudo npm`. Avoid `sudo`.
-- **Old version behaves oddly** — `npm install -g @salesforce/b2c-cli@latest` to pin to current.
+- **Old version behaves oddly** — run **B2C DX - Getting Started: Update B2C CLI to Latest** (or `npm install -g @salesforce/b2c-cli@latest`) to pin to the latest published release. The walkthrough's *Verify CLI* action queries the npm registry once every 6 hours and surfaces an "Update CLI" prompt automatically when a newer version is available.
 
 [Full installation guide on the docs site](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/installation.html)

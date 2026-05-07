@@ -591,6 +591,11 @@
         "category": "B2C DX - Getting Started"
       },
       {
+        "command": "b2c-dx.cli.update",
+        "title": "Update B2C CLI to Latest",
+        "category": "B2C DX - Getting Started"
+      },
+      {
         "command": "b2c-dx.walkthrough.chooseCredentialStorage",
         "title": "Choose Credential Storage (Keychain / pass / dw.json)",
         "category": "B2C DX - Getting Started"
@@ -659,7 +664,7 @@
           {
             "id": "install-cli",
             "title": "Phase 1 · Install the B2C CLI",
-            "description": "**Optional.** The B2C CLI powers deploys, log tailing, and sandbox commands from the terminal. Skip if you'll only use the VS Code views.\n\n```\nnpm install -g @salesforce/b2c-cli\n```\n\nor `brew install salesforcecommercecloud/tools/b2c-cli`. Requires Node.js 22+.\n\n[Verify installation](command:b2c-dx.cli.verify)",
+            "description": "**Optional.** The B2C CLI powers deploys, log tailing, and sandbox commands from the terminal. Skip if you'll only use the VS Code views.\n\n```\nnpm install -g @salesforce/b2c-cli\n```\n\nor `brew install salesforcecommercecloud/tools/b2c-cli`. Requires Node.js 22+.\n\n[Verify installation](command:b2c-dx.cli.verify) · [Update to latest](command:b2c-dx.cli.update)",
             "media": {
               "markdown": "media/walkthrough/install-cli.md"
             },

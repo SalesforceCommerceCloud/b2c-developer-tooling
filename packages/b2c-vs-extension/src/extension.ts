@@ -8,6 +8,7 @@ import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
 import * as cp from 'child_process';
 import * as fs from 'fs';
+import * as https from 'https';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {B2CExtensionConfig} from './config-provider.js';
@@ -121,19 +122,104 @@ function applyLogLevel(log: vscode.OutputChannel): void {
 interface CliDetectionResult {
   installed: boolean;
   version?: string;
+  latestVersion?: string;
+  isOutdated?: boolean;
 }
 
-function detectB2cCli(): Promise<CliDetectionResult> {
-  return new Promise((resolve) => {
+/** Extracts a `1.2.3` (with optional `-pre.4` etc.) tail from any string. */
+function parseSemver(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const match = raw.match(/(\d+\.\d+\.\d+(?:[-+][\w.]+)?)/);
+  return match ? match[1] : undefined;
+}
+
+function compareSemver(a: string, b: string): number {
+  // Compare numeric major.minor.patch only; treat any pre-release as
+  // older-than-stable (mirrors npm's behaviour for "is there a newer release").
+  const norm = (v: string) =>
+    v
+      .split(/[-+]/)[0]
+      .split('.')
+      .map((n) => parseInt(n, 10) || 0);
+  const [aA, aB] = [norm(a), norm(b)];
+  for (let i = 0; i < 3; i++) {
+    if ((aA[i] ?? 0) !== (aB[i] ?? 0)) return (aA[i] ?? 0) - (aB[i] ?? 0);
+  }
+  // Numeric parts equal — anything with a pre-release tag is older than a clean one.
+  const aPre = a.includes('-');
+  const bPre = b.includes('-');
+  if (aPre !== bPre) return aPre ? -1 : 1;
+  return 0;
+}
+
+const NPM_REGISTRY_URL = 'https://registry.npmjs.org/@salesforce%2Fb2c-cli/latest';
+const LATEST_CACHE_KEY = 'b2c-dx.cli.latestVersionCache';
+const LATEST_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
+
+interface LatestCache {
+  version: string;
+  fetchedAt: number;
+}
+
+async function fetchLatestCliVersion(context: vscode.ExtensionContext): Promise<string | undefined> {
+  const cached = context.globalState.get<LatestCache>(LATEST_CACHE_KEY);
+  if (cached && Date.now() - cached.fetchedAt < LATEST_CACHE_TTL_MS) {
+    return cached.version;
+  }
+  try {
+    const fetched = await new Promise<string | undefined>((resolve) => {
+      const req = https.get(NPM_REGISTRY_URL, {timeout: 4000}, (res) => {
+        if (res.statusCode !== 200) {
+          res.resume();
+          resolve(undefined);
+          return;
+        }
+        let body = '';
+        res.setEncoding('utf-8');
+        res.on('data', (chunk) => (body += chunk));
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(body);
+            const v = typeof parsed.version === 'string' ? parsed.version : undefined;
+            resolve(v);
+          } catch {
+            resolve(undefined);
+          }
+        });
+      });
+      req.on('timeout', () => {
+        req.destroy();
+        resolve(undefined);
+      });
+      req.on('error', () => resolve(undefined));
+    });
+    if (fetched) {
+      await context.globalState.update(LATEST_CACHE_KEY, {version: fetched, fetchedAt: Date.now()});
+    }
+    return fetched;
+  } catch {
+    return undefined;
+  }
+}
+
+async function detectB2cCli(context?: vscode.ExtensionContext): Promise<CliDetectionResult> {
+  const local = await new Promise<CliDetectionResult>((resolve) => {
     cp.execFile('b2c', ['--version'], {timeout: 5000}, (err, stdout) => {
       if (err) {
         resolve({installed: false});
         return;
       }
-      const version = stdout.toString().trim();
-      resolve({installed: true, version: version || 'unknown'});
+      const versionRaw = stdout.toString().trim();
+      resolve({installed: true, version: versionRaw || 'unknown'});
     });
   });
+  if (!local.installed || !context) return local;
+  const latest = await fetchLatestCliVersion(context);
+  if (!latest) return local;
+  const localSem = parseSemver(local.version);
+  if (!localSem) return {...local, latestVersion: latest};
+  const isOutdated = compareSemver(localSem, latest) < 0;
+  return {...local, latestVersion: latest, isOutdated};
 }
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -205,16 +291,17 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     }),
   );
 
-  // "Verify CLI" — runs `b2c --version` and reports back. Also flips the
-  // b2c-dx.cliInstalled context key, which auto-completes the install-cli
-  // walkthrough step.
+  // "Verify CLI" — runs `b2c --version`, queries npm for the latest, and
+  // reports back. Flips two context keys:
+  //   b2c-dx.cliInstalled  — auto-completes the install-cli walkthrough step.
+  //   b2c-dx.cliOutdated   — surfaces the "Update CLI" action when true.
   context.subscriptions.push(
     vscode.commands.registerCommand('b2c-dx.cli.verify', async () => {
-      const result = await detectB2cCli();
+      const result = await detectB2cCli(context);
       await vscode.commands.executeCommand('setContext', 'b2c-dx.cliInstalled', result.installed);
-      if (result.installed) {
-        vscode.window.showInformationMessage(`B2C CLI detected: ${result.version}`);
-      } else {
+      await vscode.commands.executeCommand('setContext', 'b2c-dx.cliOutdated', !!result.isOutdated);
+
+      if (!result.installed) {
         const action = await vscode.window.showWarningMessage(
           'B2C CLI not found on PATH. Install with `npm install -g @salesforce/b2c-cli` or `brew install salesforcecommercecloud/tools/b2c-cli`.',
           'Open Install Guide',
@@ -224,7 +311,55 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
             vscode.Uri.parse('https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/installation.html'),
           );
         }
+        return;
       }
+
+      if (result.isOutdated && result.latestVersion) {
+        const action = await vscode.window.showInformationMessage(
+          `B2C CLI ${result.version} detected — newer version ${result.latestVersion} available.`,
+          'Update now',
+          'Copy update command',
+          'Later',
+        );
+        if (action === 'Update now') {
+          await vscode.commands.executeCommand('b2c-dx.cli.update');
+        } else if (action === 'Copy update command') {
+          await vscode.env.clipboard.writeText('npm install -g @salesforce/b2c-cli@latest');
+          vscode.window.showInformationMessage('Update command copied to clipboard.');
+        }
+        return;
+      }
+
+      const suffix = result.latestVersion ? ` (latest)` : '';
+      vscode.window.showInformationMessage(`B2C CLI detected: ${result.version}${suffix}`);
+    }),
+  );
+
+  // "Update CLI" — opens a terminal preloaded with the npm update command.
+  // We never auto-execute: a global npm install can prompt for credentials
+  // or hit privilege errors, so the user runs it themselves.
+  context.subscriptions.push(
+    vscode.commands.registerCommand('b2c-dx.cli.update', async () => {
+      const cmd = 'npm install -g @salesforce/b2c-cli@latest';
+      const choice = await vscode.window.showInformationMessage(
+        'Update the B2C CLI to the latest version? This runs an npm global install — you may be prompted for permissions.',
+        {modal: true},
+        'Run in terminal',
+        'Copy command',
+        'Cancel',
+      );
+      if (!choice || choice === 'Cancel') return;
+      if (choice === 'Run in terminal') {
+        const term = vscode.window.createTerminal({name: 'B2C DX — CLI update'});
+        term.show();
+        // Don't auto-execute — user presses Enter so they see the command first.
+        term.sendText(cmd, false);
+      } else {
+        await vscode.env.clipboard.writeText(cmd);
+        vscode.window.showInformationMessage('Update command copied to clipboard.');
+      }
+      // Invalidate the cached "latest" so the next verify makes a fresh check.
+      await context.globalState.update(LATEST_CACHE_KEY, undefined);
     }),
   );
 
@@ -277,7 +412,10 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   );
 
   // Initialize the cliInstalled context key once (best-effort, non-blocking).
-  void detectB2cCli().then((r) => vscode.commands.executeCommand('setContext', 'b2c-dx.cliInstalled', r.installed));
+  void detectB2cCli(context).then((r) => {
+    void vscode.commands.executeCommand('setContext', 'b2c-dx.cliInstalled', r.installed);
+    void vscode.commands.executeCommand('setContext', 'b2c-dx.cliOutdated', !!r.isOutdated);
+  });
 
   registerJobLogViewer(context);
 

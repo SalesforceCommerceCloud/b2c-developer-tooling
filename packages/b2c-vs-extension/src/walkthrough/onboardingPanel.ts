@@ -337,7 +337,7 @@ export class OnboardingPanel {
 
     <section class="gate-hero">
       <span class="eyebrow">Welcome · Tailor your path</span>
-      <h1>Pick your starting role.</h1>
+      <h1>Pick your starting role</h1>
       <p class="lede">Different roles need different things first. Choose one for a tailored deep-dive, or follow the universal five-phase flow shown on the left.</p>
     </section>
 
@@ -459,7 +459,7 @@ const PANEL_CSS = `
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
-  --sidebar-width: 264px;
+  --sidebar-width: 308px;
   --content-max: 920px;
   --brand-blue: #0176D3;
   --brand-blue-deep: #014486;
@@ -469,6 +469,13 @@ const PANEL_CSS = `
   --brand-green-bright: #2FA86A;
   --brand-green-soft: rgba(26, 135, 84, 0.12);
   --brand-green-hairline: rgba(26, 135, 84, 0.40);
+  /* Status palette for the sidebar checklist:
+     done = green, in-progress = amber/yellow, idle/locked/skipped = neutral grey. */
+  --status-amber: #C77700;
+  --status-amber-bright: #E58A0F;
+  --status-amber-soft: rgba(199, 119, 0, 0.14);
+  --status-grey: rgba(127, 127, 127, 0.45);
+  --status-grey-soft: rgba(127, 127, 127, 0.18);
   --surface-card: var(--vscode-editorWidget-background, var(--vscode-editor-background));
   --surface-elevated: var(--vscode-sideBar-background, var(--vscode-editor-background));
   --hairline: var(--vscode-panel-border, var(--vscode-editorGroup-border, rgba(128,128,128,0.25)));
@@ -857,35 +864,42 @@ button.secondary:hover {
   color: var(--brand-green);
   z-index: 1;
 }
-.persona-arrow {
+/* Scoped under .persona-card so we beat the generic button.ghost rules
+   (same fix that the gate-cta pill needed). The pill renders large and
+   bright so it reads as "the action" at a glance. */
+.persona-card .persona-arrow,
+.persona-card span.persona-arrow {
   position: absolute;
-  right: 22px;
+  right: 20px;
   bottom: 16px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 14px;
+  padding: 9px 18px;
   border-radius: 999px;
   background: var(--brand-blue);
-  color: #fff;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  box-shadow: 0 4px 10px rgba(1, 118, 211, 0.30);
+  color: #FFFFFF;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 0 6px 14px rgba(1, 118, 211, 0.32), 0 1px 2px rgba(1, 118, 211, 0.30);
   transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
-  z-index: 1;
+  z-index: 2;
+  pointer-events: none; /* card receives the click */
 }
-.persona-arrow svg { color: #fff; }
+.persona-card .persona-arrow > span { color: #FFFFFF; }
+.persona-card .persona-arrow svg { color: #FFFFFF; stroke: #FFFFFF; }
 .persona-card:hover .persona-arrow {
-  transform: translateX(3px);
-  box-shadow: 0 6px 14px rgba(1, 118, 211, 0.40);
+  transform: translateX(4px);
+  box-shadow: 0 8px 18px rgba(1, 118, 211, 0.42), 0 1px 2px rgba(1, 118, 211, 0.30);
 }
 .persona-card.is-recommended .persona-arrow {
   background: var(--brand-green);
-  box-shadow: 0 4px 10px rgba(26, 135, 84, 0.30);
+  box-shadow: 0 6px 14px rgba(26, 135, 84, 0.32), 0 1px 2px rgba(26, 135, 84, 0.30);
 }
 .persona-card.is-recommended:hover .persona-arrow {
-  box-shadow: 0 6px 14px rgba(26, 135, 84, 0.40);
+  box-shadow: 0 8px 18px rgba(26, 135, 84, 0.42), 0 1px 2px rgba(26, 135, 84, 0.30);
 }
 .persona-new-pill {
   position: absolute;
@@ -960,21 +974,35 @@ button.secondary:hover {
 .dashboard-hero {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  /* Vertically centre the progress block against the eyebrow + headline pair. */
+  align-items: center;
   gap: 32px;
   margin-bottom: 28px;
   flex-wrap: wrap;
 }
 .dashboard-hero h1 {
-  font-size: 1.7rem;
+  /* Refined enterprise serif-grotesk pairing: prefer Salesforce Sans →
+     IBM Plex Sans → Source Sans 3 (humanist sans, used by Stripe / Shopify)
+     before the system-ui fallbacks, so SCAPI / OCAPI sit cleanly without
+     the chunky display weight from the previous Inter/SF-Pro stack. */
+  font-family:
+    'Salesforce Sans', 'IBM Plex Sans', 'Source Sans 3', 'Source Sans Pro',
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+  font-size: 1.75rem;
   font-weight: 600;
+  font-style: normal;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
   margin: 0;
-  max-width: 560px;
+  max-width: 620px;
+  color: var(--vscode-foreground);
 }
 .progress-block {
-  flex: 1;
-  min-width: 240px;
-  max-width: 340px;
+  flex: 0 0 auto;
+  align-self: center;
+  width: 320px;
+  max-width: 100%;
 }
 .progress-meta {
   display: flex;
@@ -1068,40 +1096,56 @@ button.secondary:hover {
   font-size: 11px;
   font-weight: 600;
   margin-top: 1px;
-  background: var(--vscode-badge-background, var(--brand-blue-soft));
-  color: var(--vscode-badge-foreground, var(--brand-blue));
-  border: 1px solid var(--hairline);
+  /* Default = "available" / not-yet-touched: greyed disabled-looking dot. */
+  background: var(--status-grey-soft);
+  color: var(--vscode-descriptionForeground);
+  border: 1px solid var(--status-grey);
 }
 .step-item[data-status="done"] .status {
-  background: var(--brand-blue);
+  background: var(--brand-green);
   color: #fff;
-  border-color: var(--brand-blue);
+  border-color: var(--brand-green);
+  box-shadow: 0 0 0 2px var(--brand-green-soft);
 }
 .step-item[data-status="in-progress"] .status {
-  background: #fff;
-  color: var(--brand-blue);
-  border-color: var(--brand-blue);
+  background: var(--status-amber);
+  color: #fff;
+  border-color: var(--status-amber);
+  box-shadow: 0 0 0 2px var(--status-amber-soft);
 }
 .step-item[data-status="skipped"] .status {
-  background: transparent;
+  background: var(--status-grey-soft);
   color: var(--vscode-descriptionForeground);
+  border-color: var(--status-grey);
+  border-style: dashed;
 }
 .step-item[data-status="locked"] .status {
   background: transparent;
   color: var(--vscode-descriptionForeground);
+  border-color: var(--status-grey);
   border-style: dashed;
 }
 .step-item.locked { cursor: not-allowed; opacity: 0.55; }
 .step-item.locked:hover { background: transparent; }
 .step-item.locked .label { color: var(--vscode-descriptionForeground); }
-.step-item .label { font-size: 0.92rem; line-height: 1.35; min-width: 0; }
-.step-item .label .title { font-weight: 500; }
+/* Lighter type weight: the previous 500 read as bold at small sizes. */
+.step-item .label {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  min-width: 0;
+  font-weight: 400;
+  letter-spacing: 0.005em;
+}
+.step-item .label .title { font-weight: 450; color: var(--vscode-foreground); }
+.step-item.active .label .title { font-weight: 600; }
+.step-item[data-status="done"] .label .title { color: var(--vscode-descriptionForeground); }
 .step-item .label small {
   display: block;
   color: var(--vscode-descriptionForeground);
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   margin-top: 2px;
   font-weight: 400;
+  letter-spacing: 0.02em;
 }
 
 /* ─── Step card ─────────────────────────────────────── */
@@ -1184,10 +1228,25 @@ button.secondary:hover {
 }
 .step-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
-.step-actions button { min-height: 34px; }
+.step-actions button { min-height: 36px; padding: 7px 16px; font-weight: 600; }
+/* Scoped under .step-actions so we beat the generic button.ghost rule:
+   inside the Quick-actions panel a "secondary" button needs to read on
+   the brand-blue-soft tint, not vanish into it. */
+.step-actions button.ghost,
+.step-actions button.ghost:hover,
+.step-actions button.ghost:focus-visible {
+  background: var(--surface-card);
+  color: var(--brand-blue);
+  border: 1px solid var(--brand-blue-hairline);
+}
+.step-actions button.ghost:hover {
+  background: var(--brand-blue-soft);
+  border-color: var(--brand-blue);
+  color: var(--brand-blue-deep);
+}
 .step-card__body {
   margin-top: 22px;
   padding-top: 22px;
@@ -1409,7 +1468,9 @@ const PANEL_JS = `
     gate.hidden = true;
     dashboard.hidden = false;
     personaLabel.textContent = state.persona.label;
-    personaTagline.textContent = state.persona.tagline;
+    // Headers don't carry trailing punctuation — strip a single period if
+    // the persona definition's tagline ends with one.
+    personaTagline.textContent = state.persona.tagline.replace(/\.$/, '');
     renderStepList(state.steps, state.activeStepId);
 
     const activeIdx = state.steps.findIndex((s) => s.id === state.activeStepId);
@@ -1475,7 +1536,7 @@ const PANEL_JS = `
         newPill,
       ].join('');
       card.querySelector('h3').textContent = p.label;
-      card.querySelector('.tagline').textContent = p.tagline;
+      card.querySelector('.tagline').textContent = p.tagline.replace(/\.$/, '');
       card.querySelector('.desc').textContent = p.description;
       card.querySelector('.persona-meta').textContent =
         p.stepCount + ' phases · ~' + p.estimatedMinutes + ' min';

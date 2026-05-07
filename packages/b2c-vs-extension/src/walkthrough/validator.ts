@@ -272,6 +272,7 @@ async function validateCommands(packageJson: PackageJsonConfig, result: Validati
     'b2c-dx.walkthrough.createDwJson',
     'b2c-dx.walkthrough.markAllDone',
     'b2c-dx.cli.verify',
+    'b2c-dx.cli.update',
     'b2c-dx.walkthrough.chooseCredentialStorage',
   ];
 

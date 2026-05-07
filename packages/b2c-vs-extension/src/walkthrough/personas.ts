@@ -116,7 +116,10 @@ export const STEP_CATALOG: Record<string, StepDefinition> = {
     title: 'Install the B2C CLI',
     summary: 'Optional, but unlocks deploys, log tailing, and sandbox commands from the terminal.',
     markdown: 'media/walkthrough/install-cli.md',
-    actions: [{label: 'Verify CLI', command: 'b2c-dx.cli.verify', primary: true}],
+    actions: [
+      {label: 'Verify CLI', command: 'b2c-dx.cli.verify', primary: true},
+      {label: 'Update CLI', command: 'b2c-dx.cli.update'},
+    ],
   },
   'ai-skills': {
     id: 'ai-skills',
