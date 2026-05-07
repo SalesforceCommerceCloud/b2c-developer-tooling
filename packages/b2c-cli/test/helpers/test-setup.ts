@@ -35,6 +35,41 @@ export async function runSilent<T>(fn: () => Promise<T>): Promise<T> {
   return result as T;
 }
 
+/**
+ * Assert that the given async operation rejects, optionally with an error
+ * message that matches a substring or regex. Replaces the verbose
+ * `try { await x; expect.fail(...) } catch { expect(...).to.include(...) }`
+ * pattern, which can silently absorb the wrong error type.
+ *
+ * @example
+ *   await expectError(() => command.run(), /No SQL provided/);
+ *   await expectError(() => command.run(), 'No SQL provided');
+ *
+ * Returns the caught error so callers can make additional assertions on it.
+ */
+export async function expectError(fn: () => Promise<unknown>, match?: RegExp | string): Promise<Error> {
+  let caught: unknown;
+  try {
+    await fn();
+  } catch (error) {
+    caught = error;
+  }
+  if (caught === undefined) {
+    throw new Error('Expected the async operation to reject, but it resolved.');
+  }
+  const err = caught instanceof Error ? caught : new Error(String(caught));
+  if (match !== undefined) {
+    if (typeof match === 'string') {
+      if (!err.message.includes(match)) {
+        throw new Error(`Expected error message to include "${match}" but got: ${err.message}`);
+      }
+    } else if (!match.test(err.message)) {
+      throw new Error(`Expected error message to match ${match} but got: ${err.message}`);
+    }
+  }
+  return err;
+}
+
 export function createIsolatedEnvHooks(): {
   beforeEach: () => void;
   afterEach: () => void;
