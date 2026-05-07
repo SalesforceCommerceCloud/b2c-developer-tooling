@@ -35,11 +35,6 @@ export default class ScapiCorsSet extends ScapiCorsCommand<typeof ScapiCorsSet> 
 
   static flags = {
     ...ScapiCorsCommand.baseFlags,
-    'site-id': Flags.string({
-      char: 's',
-      description: t('flags.siteId.description', 'The site ID to configure CORS preferences for'),
-      env: 'SFCC_SITE_ID',
-    }),
     // Overrides the OAuth --client-id base flag. The same client ID is used for both
     // OAuth authentication (must have sfcc.cors-preferences.rw scope) and as the CORS
     // body target — per the CORS Preferences API spec, these are the same client.
