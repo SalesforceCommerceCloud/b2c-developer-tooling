@@ -6,6 +6,7 @@
 import {DwJsonSource} from '@salesforce/b2c-tooling-sdk/config';
 import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
+import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
@@ -117,6 +118,24 @@ function applyLogLevel(log: vscode.OutputChannel): void {
   }
 }
 
+interface CliDetectionResult {
+  installed: boolean;
+  version?: string;
+}
+
+function detectB2cCli(): Promise<CliDetectionResult> {
+  return new Promise((resolve) => {
+    cp.execFile('b2c', ['--version'], {timeout: 5000}, (err, stdout) => {
+      if (err) {
+        resolve({installed: false});
+        return;
+      }
+      const version = stdout.toString().trim();
+      resolve({installed: true, version: version || 'unknown'});
+    });
+  });
+}
+
 export async function activate(context: vscode.ExtensionContext) {
   const log = vscode.window.createOutputChannel('B2C DX');
 
@@ -186,11 +205,118 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     }),
   );
 
+  // "Verify CLI" — runs `b2c --version` and reports back. Also flips the
+  // b2c-dx.cliInstalled context key, which auto-completes the install-cli
+  // walkthrough step.
+  context.subscriptions.push(
+    vscode.commands.registerCommand('b2c-dx.cli.verify', async () => {
+      const result = await detectB2cCli();
+      await vscode.commands.executeCommand('setContext', 'b2c-dx.cliInstalled', result.installed);
+      if (result.installed) {
+        vscode.window.showInformationMessage(`B2C CLI detected: ${result.version}`);
+      } else {
+        const action = await vscode.window.showWarningMessage(
+          'B2C CLI not found on PATH. Install with `npm install -g @salesforce/b2c-cli` or `brew install salesforcecommercecloud/tools/b2c-cli`.',
+          'Open Install Guide',
+        );
+        if (action === 'Open Install Guide') {
+          await vscode.env.openExternal(
+            vscode.Uri.parse('https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/installation.html'),
+          );
+        }
+      }
+    }),
+  );
+
+  // "Mark all as done" — fires a single onCommand event that every walkthrough
+  // step lists in its completionEvents, ticking the entire walkthrough at once.
+  context.subscriptions.push(
+    vscode.commands.registerCommand('b2c-dx.walkthrough.markAllDone', async () => {
+      // Re-open the walkthrough so the user sees the freshly-ticked steps.
+      await vscode.commands.executeCommand(
+        'workbench.action.openWalkthrough',
+        'Salesforce.b2c-vs-extension#b2c-dx.gettingStarted',
+        false,
+      );
+      vscode.window.showInformationMessage('B2C DX: Getting Started marked as complete.');
+    }),
+  );
+
+  // Theme toggle — flips between the user's preferred light + dark themes.
+  // Persists the last-seen pair so a developer who customised their theme
+  // keeps that customisation across toggles. Falls back to VS Code's stock
+  // "Default Light Modern" / "Default Dark Modern" until each side has been
+  // observed at least once.
+  const THEME_LIGHT_KEY = 'b2c-dx.theme.preferredLight';
+  const THEME_DARK_KEY = 'b2c-dx.theme.preferredDark';
+  context.subscriptions.push(
+    vscode.commands.registerCommand('b2c-dx.theme.toggle', async () => {
+      const config = vscode.workspace.getConfiguration('workbench');
+      const currentTheme = config.get<string>('colorTheme') ?? '';
+      const kind = vscode.window.activeColorTheme.kind;
+      const isDarkLike = kind === vscode.ColorThemeKind.Dark || kind === vscode.ColorThemeKind.HighContrast;
+
+      // Remember whichever side we're leaving so the next toggle restores it.
+      if (isDarkLike) {
+        await context.globalState.update(THEME_DARK_KEY, currentTheme);
+      } else {
+        await context.globalState.update(THEME_LIGHT_KEY, currentTheme);
+      }
+
+      const target = isDarkLike
+        ? (context.globalState.get<string>(THEME_LIGHT_KEY) ?? 'Default Light Modern')
+        : (context.globalState.get<string>(THEME_DARK_KEY) ?? 'Default Dark Modern');
+
+      try {
+        await config.update('colorTheme', target, vscode.ConfigurationTarget.Global);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        vscode.window.showErrorMessage(`B2C DX: Could not switch theme — ${message}`);
+      }
+    }),
+  );
+
+  // Initialize the cliInstalled context key once (best-effort, non-blocking).
+  void detectB2cCli().then((r) => vscode.commands.executeCommand('setContext', 'b2c-dx.cliInstalled', r.installed));
+
   registerJobLogViewer(context);
 
   const configProvider = new B2CExtensionConfig(log, context.workspaceState);
   context.subscriptions.push(configProvider);
   await configProvider.ensureResolved();
+
+  // Walkthrough context keys: drive auto-completion of the native walkthrough
+  // steps. dwJsonExists tracks the per-workspace dw.json file; instanceConnected
+  // mirrors whether the config provider successfully resolved a config.
+  const updateInstanceConnectedContext = () => {
+    const connected = !!configProvider.getConfig();
+    void vscode.commands.executeCommand('setContext', 'b2c-dx.instanceConnected', connected);
+  };
+  updateInstanceConnectedContext();
+  configProvider.onDidReset(() => updateInstanceConnectedContext());
+
+  const updateDwJsonContext = async () => {
+    const folders = vscode.workspace.workspaceFolders ?? [];
+    let exists = false;
+    for (const folder of folders) {
+      try {
+        await vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, 'dw.json'));
+        exists = true;
+        break;
+      } catch {
+        // not in this folder
+      }
+    }
+    await vscode.commands.executeCommand('setContext', 'b2c-dx.dwJsonExists', exists);
+  };
+  void updateDwJsonContext();
+  const dwJsonWatcher = vscode.workspace.createFileSystemWatcher('**/dw.json');
+  context.subscriptions.push(
+    dwJsonWatcher,
+    dwJsonWatcher.onDidCreate(() => void updateDwJsonContext()),
+    dwJsonWatcher.onDidDelete(() => void updateDwJsonContext()),
+    vscode.workspace.onDidChangeWorkspaceFolders(() => void updateDwJsonContext()),
+  );
 
   const disposable = vscode.commands.registerCommand('b2c-dx.openUI', () => {
     vscode.window.showInformationMessage('B2C DX: Opening Page Designer Assistant.');

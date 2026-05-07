@@ -28,13 +28,16 @@ interface WalkthroughConfig {
   [key: string]: unknown;
 }
 
+type ThemedImage = {light?: string; dark?: string; hc?: string; hcLight?: string};
+
 interface StepConfig {
   id?: string;
   title?: string;
   description?: string;
   media?: {
     markdown?: string;
-    image?: string;
+    image?: string | ThemedImage;
+    svg?: string;
     altText?: string;
     [key: string]: unknown;
   };
@@ -178,17 +181,35 @@ async function validateStep(
     }
 
     if (step.media.image) {
-      const imagePath = path.join(extensionPath, step.media.image);
-      try {
-        await fs.access(imagePath);
-        result.info.push(`✓ Step "${stepId}": image file exists`);
+      const imagePaths =
+        typeof step.media.image === 'string'
+          ? [step.media.image]
+          : Object.values(step.media.image).filter((v): v is string => typeof v === 'string');
+      for (const rel of imagePaths) {
+        const imagePath = path.join(extensionPath, rel);
+        try {
+          await fs.access(imagePath);
+          result.info.push(`✓ Step "${stepId}": image file exists (${rel})`);
+        } catch {
+          result.warnings.push(`Step "${stepId}": image file not found: ${rel}`);
+        }
+      }
+      if (!step.media.altText) {
+        result.warnings.push(`Step "${stepId}": image has no altText (accessibility issue)`);
+      }
+    }
 
-        // Check if alt text is provided
+    if (step.media.svg) {
+      const svgPath = path.join(extensionPath, step.media.svg);
+      try {
+        await fs.access(svgPath);
+        result.info.push(`✓ Step "${stepId}": svg file exists`);
         if (!step.media.altText) {
-          result.warnings.push(`Step "${stepId}": image has no altText (accessibility issue)`);
+          result.warnings.push(`Step "${stepId}": svg has no altText (accessibility issue)`);
         }
       } catch {
-        result.warnings.push(`Step "${stepId}": image file not found: ${step.media.image}`);
+        result.errors.push(`Step "${stepId}": svg file not found: ${step.media.svg}`);
+        result.valid = false;
       }
     }
   }
@@ -246,7 +267,13 @@ async function validateCommands(packageJson: PackageJsonConfig, result: Validati
   const commands = packageJson.contributes?.commands || [];
   const commandIds = commands.map((cmd) => cmd.id);
 
-  const expectedCommands = ['b2c-dx.walkthrough.open', 'b2c-dx.walkthrough.createDwJson'];
+  const expectedCommands = [
+    'b2c-dx.walkthrough.open',
+    'b2c-dx.walkthrough.createDwJson',
+    'b2c-dx.walkthrough.markAllDone',
+    'b2c-dx.cli.verify',
+    'b2c-dx.walkthrough.chooseCredentialStorage',
+  ];
 
   for (const expectedCommand of expectedCommands) {
     if (commandIds.includes(expectedCommand)) {

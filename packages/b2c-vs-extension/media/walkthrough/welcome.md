@@ -1,34 +1,21 @@
-# Welcome to B2C Commerce Development! 🚀
+# Welcome to B2C Commerce on VS Code
 
-The **B2C DX Extension** transforms VS Code into a complete B2C Commerce development environment.
+Five focused steps and you're deployed.
 
-## What You'll Learn
+## What you'll set up
 
-In the next 30 minutes, you'll learn how to:
+1. **Install the B2C CLI** *(optional — skip if you'll only use the views)*
+2. **Configure your instance** — drop a `dw.json` at your workspace root
+3. **Connect & authenticate** — verify the extension can talk to your sandbox
+4. **Deploy your first cartridge** — push code to your active code version
+5. **Generate from a scaffold** — boilerplate for new cartridges, controllers, pages
 
-- ✅ **Connect** to your B2C Commerce instance
-- ✅ **Browse** remote files with WebDAV
-- ✅ **Deploy** cartridges to your instance
-- ✅ **Manage** development sandboxes
-- ✅ **Automate** deployments with Code Sync
+## Pick a starting point
 
-## Key Features
+Different roles need different things first. Open the **role-based deep-dive guide** for a tailored walkthrough — Storefront, API/Integration, DevOps/Release, or AI-augmented developer.
 
-### 🌐 WebDAV Browser
-Browse and edit cartridges, catalogs, and libraries directly on your remote instance.
+The five-step path is the same for everyone. The deep-dive layers in the role-specific bits.
 
-### 📦 Cartridge Management
-Automatically detect local cartridges and deploy them with one click.
+## Already set up?
 
-### 🔧 Sandbox Explorer
-Create, start, stop, and manage development sandboxes without leaving VS Code.
-
-### 🔄 Code Sync
-Watch mode automatically uploads changes as you save files.
-
-### 🔍 API Browser
-Explore SCAPI OpenAPI schemas with interactive Swagger UI.
-
----
-
-**Ready to get started?** Use the **Next** button below, or pick a step from the sidebar on the left.
+Use **Mark all steps as done** in the last step (or the Command Palette command **B2C DX - Getting Started: Mark Getting Started as Done**) to tick everything at once.

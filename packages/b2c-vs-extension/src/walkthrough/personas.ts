@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export type PersonaId = 'frontend-sfra' | 'backend-ocapi-scapi' | 'devops-sandbox' | 'studio-migrator';
+export type PersonaId = 'storefront' | 'api-integration' | 'devops-release' | 'ai-augmented';
 
 export interface StepDefinition {
   id: string;
@@ -49,10 +49,11 @@ export const STEP_CATALOG: Record<string, StepDefinition> = {
   'configure-dw-json': {
     id: 'configure-dw-json',
     title: 'Connect to Your B2C Instance',
-    summary: 'Create a dw.json file with your sandbox credentials.',
+    summary: 'Pick secure storage (Keychain / pass) or a dw.json file.',
     markdown: 'media/walkthrough/dw-json-setup.md',
     actions: [
-      {label: 'Create dw.json', command: 'b2c-dx.walkthrough.createDwJson', primary: true},
+      {label: 'Choose credential storage', command: 'b2c-dx.walkthrough.chooseCredentialStorage', primary: true},
+      {label: 'Create dw.json', command: 'b2c-dx.walkthrough.createDwJson'},
       {label: 'Open dw.json', command: 'workbench.action.quickOpen', args: ['dw.json']},
     ],
   },
@@ -110,16 +111,32 @@ export const STEP_CATALOG: Record<string, StepDefinition> = {
     summary: 'Where to go next.',
     markdown: 'media/walkthrough/next-steps.md',
   },
+  'install-cli': {
+    id: 'install-cli',
+    title: 'Install the B2C CLI',
+    summary: 'Optional, but unlocks deploys, log tailing, and sandbox commands from the terminal.',
+    markdown: 'media/walkthrough/install-cli.md',
+    actions: [{label: 'Verify CLI', command: 'b2c-dx.cli.verify', primary: true}],
+  },
+  'ai-skills': {
+    id: 'ai-skills',
+    title: 'Set Up Agent Skills & MCP',
+    summary:
+      'Pair the extension with Claude Code, Cursor, or Copilot using the documented MCP server and Agent Skills.',
+    markdown: 'media/walkthrough/ai-skills.md',
+  },
 };
 
 export const PERSONAS: Record<PersonaId, PersonaDefinition> = {
-  'frontend-sfra': {
-    id: 'frontend-sfra',
-    label: 'Frontend / SFRA developer',
-    tagline: 'Build storefront templates, controllers, and ISML.',
-    description: 'Focused on cartridges, local development, and fast iteration. Skips deep sandbox lifecycle topics.',
+  storefront: {
+    id: 'storefront',
+    label: 'Storefront developer',
+    tagline: 'Build SFRA / PWA Kit templates, controllers, and ISML.',
+    description:
+      'Cartridge authoring, fast iteration with Code Sync, and WebDAV. If you used UX Studio or Prophet before, this is your closest map.',
     stepIds: [
       'welcome',
+      'install-cli',
       'configure-dw-json',
       'setup-cartridges',
       'deploy-code',
@@ -128,13 +145,14 @@ export const PERSONAS: Record<PersonaId, PersonaDefinition> = {
       'next-steps',
     ],
   },
-  'backend-ocapi-scapi': {
-    id: 'backend-ocapi-scapi',
-    label: 'Backend / API integrator',
-    tagline: 'Work with SCAPI, OCAPI, and server-side logic.',
+  'api-integration': {
+    id: 'api-integration',
+    label: 'API / integration developer',
+    tagline: 'Work with SCAPI, OCAPI, jobs, and hooks.',
     description: 'OAuth setup and the API Browser are first-class; Code Sync is optional.',
     stepIds: [
       'welcome',
+      'install-cli',
       'configure-dw-json',
       'setup-oauth',
       'explore-webdav',
@@ -143,27 +161,35 @@ export const PERSONAS: Record<PersonaId, PersonaDefinition> = {
       'next-steps',
     ],
   },
-  'devops-sandbox': {
-    id: 'devops-sandbox',
-    label: 'DevOps / sandbox admin',
-    tagline: 'Manage sandbox lifecycle and code versions.',
+  'devops-release': {
+    id: 'devops-release',
+    label: 'DevOps / release engineer',
+    tagline: 'Manage sandbox lifecycle, code versions, and CAPs.',
     description: 'OAuth + Sandbox Explorer front and center. Less time on cartridge authoring.',
-    stepIds: ['welcome', 'configure-dw-json', 'setup-oauth', 'manage-sandboxes', 'deploy-code', 'next-steps'],
-  },
-  'studio-migrator': {
-    id: 'studio-migrator',
-    label: 'Migrating from UX Studio / Prophet',
-    tagline: 'Map familiar Studio concepts onto the VS Code extension.',
-    description: 'Full walkthrough with extra emphasis on WebDAV and Code Sync as the Prophet/Studio replacements.',
     stepIds: [
       'welcome',
+      'install-cli',
       'configure-dw-json',
       'setup-oauth',
-      'explore-webdav',
+      'manage-sandboxes',
+      'deploy-code',
+      'next-steps',
+    ],
+  },
+  'ai-augmented': {
+    id: 'ai-augmented',
+    label: 'AI-augmented developer',
+    tagline: 'Pair Cursor / Claude Code / Copilot with this extension.',
+    description:
+      'Same setup as a storefront developer, plus the documented MCP server and Agent Skills so your AI tools share context with the extension.',
+    stepIds: [
+      'welcome',
+      'install-cli',
+      'configure-dw-json',
+      'ai-skills',
       'setup-cartridges',
       'deploy-code',
       'enable-code-sync',
-      'manage-sandboxes',
       'next-steps',
     ],
   },

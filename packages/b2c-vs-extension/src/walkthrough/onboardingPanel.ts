@@ -30,6 +30,9 @@ interface PersonaView {
   label: string;
   tagline: string;
   description: string;
+  stepCount: number;
+  estimatedMinutes: number;
+  recommended?: boolean;
 }
 
 interface StepView {
@@ -211,11 +214,16 @@ export class OnboardingPanel {
   }
 
   private async buildViewState(): Promise<ViewState> {
+    // Average step ≈ 3.5 min. The "ai-augmented" persona gets a `recommended`
+    // flag so the gate highlights it as the new path.
     const personas: PersonaView[] = listPersonas().map((p) => ({
       id: p.id,
       label: p.label,
       tagline: p.tagline,
       description: p.description,
+      stepCount: p.stepIds.length,
+      estimatedMinutes: Math.max(15, Math.round((p.stepIds.length * 3.5) / 5) * 5),
+      recommended: p.id === 'ai-augmented',
     }));
     const personaId = this.store.getPersona();
     const personaDef = getPersona(personaId);
@@ -236,13 +244,16 @@ export class OnboardingPanel {
       }
       return step;
     });
+    const activePersonaView = personas.find((p) => p.id === personaDef.id) ?? {
+      id: personaDef.id,
+      label: personaDef.label,
+      tagline: personaDef.tagline,
+      description: personaDef.description,
+      stepCount: personaDef.stepIds.length,
+      estimatedMinutes: Math.max(15, Math.round((personaDef.stepIds.length * 3.5) / 5) * 5),
+    };
     return {
-      persona: {
-        id: personaDef.id,
-        label: personaDef.label,
-        tagline: personaDef.tagline,
-        description: personaDef.description,
-      },
+      persona: activePersonaView,
       personas,
       steps,
       activeStepId: this.activeStepId,
@@ -277,7 +288,6 @@ export class OnboardingPanel {
     const webview = this.panel.webview;
     const nonce = makeNonce();
     const cspSource = webview.cspSource;
-    const mediaRoot = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media')));
     const csp = [
       `default-src 'none'`,
       `img-src ${cspSource} https: data:`,
@@ -295,68 +305,134 @@ export class OnboardingPanel {
   <style>${PANEL_CSS}</style>
 </head>
 <body>
+  <header class="brand-bar" role="banner">
+    <div class="brand">
+      <span class="brand-mark" aria-label="B2C DX">
+        <span class="brand-mark__b2c">B2C</span><span class="brand-mark__dx">DX</span>
+      </span>
+      <span class="brand-divider" aria-hidden="true"></span>
+      <span class="brand-tag">Get Started</span>
+    </div>
+    <div class="brand-actions">
+      <button class="ghost icon-only" id="btn-theme-toggle" title="Toggle light / dark theme" aria-label="Toggle light or dark theme">
+        <span class="theme-glyph" aria-hidden="true">◐</span>
+      </button>
+      <button class="ghost" id="btn-mark-all-done" title="Mark every step as complete">Mark all done</button>
+      <button class="ghost" id="btn-change-persona">Change role</button>
+      <button class="ghost" id="btn-reset">Reset</button>
+    </div>
+  </header>
+
   <div id="persona-gate" hidden>
-    <header class="gate-header">
-      <h1>Welcome to B2C DX</h1>
-      <p class="muted">Pick the role that best describes how you'll use the extension. We'll tailor the walkthrough to what you actually need — you can change this anytime.</p>
-    </header>
-    <div id="persona-cards" class="persona-grid"></div>
+    <div class="gate-corner" aria-hidden="true">
+      <span class="phase-chip"><span class="phase-dot"></span>PHASE 0 / 5</span>
+      <svg class="gate-rings" viewBox="0 0 160 160" aria-hidden="true">
+        <g fill="none">
+          <circle cx="80" cy="80" r="78" class="gate-ring solid"/>
+          <circle cx="80" cy="80" r="60" class="gate-ring dashed"/>
+          <circle cx="80" cy="80" r="42" class="gate-ring solid"/>
+        </g>
+      </svg>
+    </div>
+
+    <section class="gate-hero">
+      <span class="eyebrow">Welcome · Tailor your path</span>
+      <h1>Pick your starting role.</h1>
+      <p class="lede">Different roles need different things first. Choose one for a tailored deep-dive, or follow the universal five-phase flow shown on the left.</p>
+    </section>
+
+    <section class="stat-strip" aria-label="Onboarding statistics">
+      <div class="stat">
+        <span class="stat-value">4</span>
+        <span class="stat-label">Roles</span>
+      </div>
+      <span class="stat-divider" aria-hidden="true"></span>
+      <div class="stat">
+        <span class="stat-value">5</span>
+        <span class="stat-label">Phases</span>
+      </div>
+      <span class="stat-divider" aria-hidden="true"></span>
+      <div class="stat">
+        <span class="stat-value">~30<small>min</small></span>
+        <span class="stat-label">Avg time</span>
+      </div>
+      <span class="stat-divider" aria-hidden="true"></span>
+      <div class="stat">
+        <span class="stat-value stat-check">✓</span>
+        <span class="stat-label">Doc-backed</span>
+      </div>
+    </section>
+
+    <div id="persona-cards" class="persona-grid" role="list"></div>
+
+    <section class="gate-cta" aria-label="Call to action">
+      <div class="gate-cta__copy">
+        <strong>Ready to begin?</strong>
+        <span>Pick a role above to launch the deep-dive panel.</span>
+      </div>
+      <button class="ghost cta-pill" id="btn-cta-mark-all-done">Already set up? Mark all done →</button>
+    </section>
   </div>
 
   <div id="dashboard" hidden>
-    <header class="dashboard-header">
+    <section class="dashboard-hero">
       <div>
-        <div class="eyebrow" id="persona-label"></div>
+        <span class="eyebrow" id="persona-label"></span>
         <h1 id="persona-tagline"></h1>
       </div>
-      <div class="header-actions">
-        <button class="secondary" id="btn-change-persona">Change role</button>
-        <button class="secondary" id="btn-reset">Reset walkthrough</button>
+      <div class="progress-block" aria-live="polite">
+        <div class="progress-meta">
+          <span id="progress-counter"></span>
+          <span class="muted" id="progress-percent"></span>
+        </div>
+        <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
       </div>
-    </header>
-
-    <div class="progress-row">
-      <div class="progress-meta">
-        <span id="progress-counter"></span>
-        <span class="muted" id="progress-percent"></span>
-      </div>
-      <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
-    </div>
+    </section>
 
     <div class="layout">
       <aside class="sidebar" aria-label="Steps">
+        <div class="sidebar-title">Walkthrough</div>
         <ol id="step-list" class="step-list"></ol>
       </aside>
       <main class="content">
-        <nav class="step-topnav" aria-label="Step navigation">
-          <button class="nav-btn" id="btn-prev-top" aria-label="Previous step">
+        <article class="step-card">
+          <div class="step-card__rail" aria-hidden="true"></div>
+          <header class="step-card__header">
+            <div class="step-number" id="step-number" aria-hidden="true"></div>
+            <div class="step-card__title-block">
+              <span class="step-position muted" id="step-position"></span>
+              <h2 id="step-title"></h2>
+              <p id="step-summary"></p>
+            </div>
+          </header>
+          <section class="step-card__actions" id="step-actions-wrap" hidden>
+            <span class="step-card__section-label">Quick actions</span>
+            <div id="step-actions" class="step-actions"></div>
+          </section>
+          <section class="step-card__body">
+            <div id="step-body" class="markdown-body"></div>
+          </section>
+        </article>
+
+        <nav class="step-nav" aria-label="Step navigation">
+          <button class="nav-btn" id="btn-prev" aria-label="Previous step">
             <span class="nav-chevron">‹</span>
             <span class="nav-text"><small>Previous</small><span id="prev-title"></span></span>
           </button>
-          <button class="nav-btn next" id="btn-next-top" aria-label="Next step">
+          <div class="nav-spacer">
+            <button class="link-btn" id="btn-skip">Skip this step</button>
+            <span class="kbd-hint muted">Tip: <kbd>Alt</kbd>+<kbd>→</kbd> / <kbd>Alt</kbd>+<kbd>←</kbd></span>
+          </div>
+          <button class="nav-btn next primary" id="btn-next" aria-label="Next step">
             <span class="nav-text right"><small>Next</small><span id="next-title"></span></span>
             <span class="nav-chevron">›</span>
           </button>
         </nav>
-        <section class="step-header">
-          <h2 id="step-title"></h2>
-          <p id="step-summary" class="muted"></p>
-          <div id="step-actions" class="step-actions"></div>
-        </section>
-        <article id="step-body" class="markdown-body"></article>
-        <footer class="content-footer">
-          <button class="secondary" id="btn-prev">← Previous</button>
-          <div class="footer-center">
-            <button class="link-btn" id="btn-skip">Skip this step</button>
-          </div>
-          <button id="btn-next">Next →</button>
-        </footer>
-        <p class="kbd-hint muted">Tip: use <kbd>Alt</kbd>+<kbd>→</kbd> / <kbd>Alt</kbd>+<kbd>←</kbd> to navigate.</p>
+        <button class="link-btn" id="btn-prev-top" hidden></button>
+        <button class="link-btn" id="btn-next-top" hidden></button>
       </main>
     </div>
   </div>
-
-  <img class="corner-logo" src="${mediaRoot}/b2c-icon.svg" alt="" />
 
   <script nonce="${nonce}">${PANEL_JS}</script>
 </body>
@@ -380,210 +456,546 @@ function makeNonce(): string {
 const PANEL_CSS = `
 :root {
   color-scheme: light dark;
-  --gap: 16px;
-  --radius: 6px;
-  --sidebar-width: 280px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --sidebar-width: 264px;
+  --content-max: 920px;
+  --brand-blue: #0176D3;
+  --brand-blue-deep: #014486;
+  --brand-blue-soft: rgba(1, 118, 211, 0.10);
+  --brand-blue-hairline: rgba(1, 118, 211, 0.28);
+  --brand-green: #1A8754;
+  --brand-green-bright: #2FA86A;
+  --brand-green-soft: rgba(26, 135, 84, 0.12);
+  --brand-green-hairline: rgba(26, 135, 84, 0.40);
+  --surface-card: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+  --surface-elevated: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  --hairline: var(--vscode-panel-border, var(--vscode-editorGroup-border, rgba(128,128,128,0.25)));
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 14px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
 }
 * { box-sizing: border-box; }
 body {
   margin: 0;
   font-family: var(--vscode-font-family);
   color: var(--vscode-foreground);
-  background: var(--vscode-editor-background);
-  padding: 24px 32px;
+  /* Layered page gradient: a soft brand-blue radial wash at the top-left,
+     plus a faint diagonal gradient that fades into the editor background.
+     Reads as a polished hero surface in light mode and stays subtle in dark
+     mode because the brand-blue tints sit at low alpha against any base. */
+  background:
+    radial-gradient(ellipse 1200px 600px at 8% -10%, var(--brand-blue-soft), transparent 60%),
+    radial-gradient(ellipse 900px 500px at 110% 0%, rgba(26, 135, 84, 0.06), transparent 55%),
+    linear-gradient(180deg, var(--vscode-editor-background) 0%, var(--vscode-editor-background) 100%);
+  background-attachment: fixed;
+  padding: 0;
+  min-height: 100vh;
 }
-h1 { font-size: 1.6rem; margin: 0 0 4px; }
-h2 { font-size: 1.2rem; margin: 0 0 4px; }
+h1, h2, h3 { letter-spacing: -0.01em; }
 .muted { color: var(--vscode-descriptionForeground); margin: 0; }
 .eyebrow {
+  display: inline-block;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.72rem;
-  color: var(--vscode-descriptionForeground);
-  margin-bottom: 6px;
-}
-button {
-  background: var(--vscode-button-background);
-  color: var(--vscode-button-foreground);
-  border: none;
-  border-radius: var(--radius);
-  padding: 6px 14px;
-  font: inherit;
-  cursor: pointer;
-}
-button:hover { background: var(--vscode-button-hoverBackground); }
-button.secondary {
-  background: var(--vscode-button-secondaryBackground);
-  color: var(--vscode-button-secondaryForeground);
-}
-button.secondary:hover { background: var(--vscode-button-secondaryHoverBackground); }
-#persona-gate {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 56px 16px 32px;
-}
-.gate-header {
-  text-align: center;
-  margin-bottom: 40px;
-}
-.gate-header h1 {
-  font-size: 2rem;
+  letter-spacing: 0.12em;
+  font-size: 0.7rem;
   font-weight: 600;
-  margin: 0 0 12px;
-  letter-spacing: -0.01em;
+  color: var(--brand-blue);
+  margin-bottom: 8px;
 }
-.gate-header p {
-  max-width: 620px;
+
+/* ─── Brand bar ─────────────────────────────────────── */
+.brand-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 32px;
+  /* Translucent so the body's soft page gradient shows through. */
+  background: color-mix(in srgb, var(--vscode-editor-background) 80%, transparent);
+  border-bottom: 1px solid var(--hairline);
+  backdrop-filter: saturate(180%) blur(8px);
+}
+.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.brand-mark {
+  font-family: 'Inter', 'SF Pro Display', 'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-weight: 800;
+  font-size: 1.55rem;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.brand-mark__b2c {
+  color: var(--brand-blue);
+  background: linear-gradient(135deg, #1B96FF 0%, var(--brand-blue) 50%, var(--brand-blue-deep) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  padding-right: 6px;
+}
+.brand-mark__dx {
+  color: var(--brand-blue);
+  font-style: italic;
+  font-weight: 700;
+  position: relative;
+}
+.brand-mark__dx::before {
+  content: "·";
+  color: var(--brand-blue);
+  margin-right: 6px;
+  font-style: normal;
+  font-weight: 700;
+}
+.brand-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--hairline);
+  margin: 0 4px;
+}
+.brand-tag {
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--vscode-descriptionForeground);
+}
+.brand-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+button.icon-only {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+}
+button.icon-only .theme-glyph {
+  font-size: 1.05rem;
+  line-height: 1;
+  display: inline-block;
+  transition: transform 200ms ease;
+}
+button.icon-only:hover .theme-glyph { transform: rotate(20deg); }
+button {
+  background: var(--brand-blue);
+  color: #fff;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 7px 14px;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, transform 80ms ease, box-shadow 120ms ease;
+}
+button:hover { background: var(--brand-blue-deep); }
+button:active { transform: translateY(1px); }
+button:focus-visible {
+  outline: 2px solid var(--brand-blue);
+  outline-offset: 2px;
+}
+button.ghost {
+  background: transparent;
+  color: var(--vscode-foreground);
+  border-color: var(--hairline);
+}
+button.ghost:hover {
+  background: var(--brand-blue-soft);
+  border-color: var(--brand-blue-hairline);
+  color: var(--brand-blue);
+}
+button.secondary {
+  background: var(--vscode-button-secondaryBackground, transparent);
+  color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+  border-color: var(--hairline);
+}
+button.secondary:hover {
+  background: var(--vscode-button-secondaryHoverBackground, var(--brand-blue-soft));
+}
+
+/* ─── Persona gate ─────────────────────────────────── */
+#persona-gate {
+  position: relative;
+  max-width: 1080px;
   margin: 0 auto;
-  font-size: 0.95rem;
-  line-height: 1.55;
+  padding: 64px 40px 56px;
 }
+
+/* Top-right corner: phase chip + concentric rings */
+.gate-corner {
+  position: absolute;
+  top: 56px;
+  right: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 18px;
+  pointer-events: none;
+  z-index: 1;
+}
+.phase-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--surface-card);
+  border: 1px solid var(--brand-blue-hairline);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--vscode-foreground);
+}
+.phase-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brand-green);
+  box-shadow: 0 0 0 3px var(--brand-green-soft);
+}
+.gate-rings {
+  width: 160px;
+  height: 160px;
+  opacity: 0.55;
+}
+.gate-ring { stroke: var(--brand-blue-hairline); stroke-width: 1; }
+.gate-ring.dashed { stroke-dasharray: 2 6; }
+
+.gate-hero {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  margin: 24px auto 32px;
+  max-width: 760px;
+}
+.gate-hero .eyebrow {
+  margin-bottom: 14px;
+}
+.gate-hero h1 {
+  font-family: 'Inter','SF Pro Display','Segoe UI Variable Display','Segoe UI',system-ui,-apple-system,sans-serif;
+  font-size: 3.25rem;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  margin: 0 0 16px;
+}
+.gate-hero .lede {
+  max-width: 640px;
+  margin: 0 auto;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Stat strip — enterprise trust signal */
+.stat-strip {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+  align-items: center;
+  gap: 0;
+  margin: 0 auto 36px;
+  max-width: 720px;
+  padding: 22px 12px;
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.stat-value {
+  font-family: 'Inter','SF Pro Display','Segoe UI Variable Display','Segoe UI',system-ui,-apple-system,sans-serif;
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--vscode-foreground);
+}
+.stat-value small {
+  font-size: 0.55em;
+  font-weight: 700;
+  margin-left: 2px;
+  color: var(--vscode-descriptionForeground);
+}
+.stat-value.stat-check { color: var(--brand-green); }
+.stat-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--vscode-descriptionForeground);
+}
+.stat-divider {
+  width: 1px;
+  height: 36px;
+  background: var(--hairline);
+}
+@media (max-width: 720px) {
+  .stat-strip { grid-template-columns: 1fr 1fr; gap: 18px 0; }
+  .stat-divider { display: none; }
+}
+
+/* Role cards */
 .persona-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 20px;
+  margin-bottom: 32px;
 }
 @media (max-width: 720px) { .persona-grid { grid-template-columns: 1fr; } }
 .persona-card {
+  position: relative;
   color: var(--vscode-foreground);
-  background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-panel-border, var(--vscode-editorGroup-border));
-  border-radius: 8px;
-  padding: 22px 22px 24px;
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  padding: 24px 28px 64px;
   display: grid;
-  grid-template-columns: 48px 1fr;
-  column-gap: 16px;
+  grid-template-columns: 56px 1fr;
+  column-gap: 20px;
   row-gap: 6px;
   align-items: start;
   cursor: pointer;
   user-select: none;
-  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+.persona-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--brand-blue-soft) 0%, transparent 55%);
+  opacity: 0;
+  transition: opacity 160ms ease;
+  pointer-events: none;
 }
 .persona-card:hover {
-  /* Subtle lift + stronger border. Do NOT change background — that was
-     washing out the text color on light themes. */
-  border-color: var(--vscode-focusBorder);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
+  border-color: var(--brand-blue-hairline);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
+.persona-card:hover::before { opacity: 1; }
+.persona-card:hover .persona-arrow { transform: translateX(3px); }
 .persona-card:focus-visible {
-  outline: 2px solid var(--vscode-focusBorder);
-  outline-offset: 2px;
+  outline: 2px solid var(--brand-blue);
+  outline-offset: 3px;
 }
-.persona-card:active {
-  transform: translateY(0);
-  box-shadow: none;
+.persona-card.is-recommended {
+  border-color: var(--brand-green-hairline);
 }
+.persona-card.is-recommended::before {
+  background: linear-gradient(135deg, var(--brand-green-soft) 0%, transparent 55%);
+}
+.persona-card.is-recommended:hover { border-color: var(--brand-green-hairline); }
+
 .persona-avatar {
   grid-row: 1 / span 3;
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
-  background: var(--vscode-textLink-foreground, #0078d4);
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1B96FF, var(--brand-blue) 60%, var(--brand-blue-deep));
   color: #fff;
   display: grid;
   place-items: center;
-  font-weight: 600;
-  font-size: 1rem;
+  font-weight: 700;
+  font-size: 1.05rem;
   letter-spacing: 0.02em;
+  box-shadow: 0 4px 12px rgba(1, 118, 211, 0.25);
+  position: relative;
+  z-index: 1;
   flex-shrink: 0;
+}
+.persona-avatar svg {
+  width: 28px;
+  height: 28px;
+  color: #fff;
+}
+.persona-card.is-recommended .persona-avatar {
+  background: linear-gradient(135deg, var(--brand-green-bright), var(--brand-green));
+  box-shadow: 0 4px 12px rgba(26, 135, 84, 0.30);
 }
 .persona-card h3 {
   margin: 0;
-  font-size: 1.02rem;
-  font-weight: 600;
-  color: var(--vscode-foreground);
+  font-size: 1.10rem;
+  font-weight: 700;
   line-height: 1.3;
+  position: relative;
+  z-index: 1;
 }
 .persona-card .tagline {
-  color: var(--vscode-descriptionForeground);
-  font-size: 0.88rem;
+  color: var(--brand-blue);
+  font-size: 0.86rem;
+  font-weight: 500;
   margin: 0;
   line-height: 1.4;
+  position: relative;
+  z-index: 1;
 }
+.persona-card.is-recommended .tagline { color: var(--brand-green); }
 .persona-card .desc {
   color: var(--vscode-foreground);
-  opacity: 0.85;
-  font-size: 0.87rem;
-  line-height: 1.5;
-  margin: 8px 0 0;
+  opacity: 0.78;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  margin: 10px 0 0;
   grid-column: 2;
+  position: relative;
+  z-index: 1;
+}
+.persona-meta {
+  position: absolute;
+  left: 28px;
+  bottom: 26px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brand-green);
+  z-index: 1;
+}
+.persona-arrow {
+  position: absolute;
+  right: 22px;
+  bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--brand-blue);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 10px rgba(1, 118, 211, 0.30);
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  z-index: 1;
+}
+.persona-arrow svg { color: #fff; }
+.persona-card:hover .persona-arrow {
+  transform: translateX(3px);
+  box-shadow: 0 6px 14px rgba(1, 118, 211, 0.40);
+}
+.persona-card.is-recommended .persona-arrow {
+  background: var(--brand-green);
+  box-shadow: 0 4px 10px rgba(26, 135, 84, 0.30);
+}
+.persona-card.is-recommended:hover .persona-arrow {
+  box-shadow: 0 6px 14px rgba(26, 135, 84, 0.40);
+}
+.persona-new-pill {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  background: var(--brand-green-soft);
+  color: var(--brand-green);
+  border: 1px solid var(--brand-green-hairline);
+  z-index: 1;
 }
 
-.dashboard-header {
+/* Bottom CTA strip */
+.gate-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 28px;
+  border-radius: 16px;
+  background: linear-gradient(90deg, var(--brand-blue), var(--brand-blue-deep));
+  color: #fff;
+  flex-wrap: wrap;
+  box-shadow: 0 6px 20px rgba(1, 118, 211, 0.20);
+}
+.gate-cta__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.gate-cta__copy strong {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.gate-cta__copy span {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+/* Scoped under .gate-cta to win against the generic button.ghost:hover
+   rule above, which would otherwise force the label back to brand-blue
+   on a brand-blue background. */
+.gate-cta .cta-pill,
+.gate-cta button.ghost.cta-pill {
+  background: rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-weight: 600;
+  font-size: 0.86rem;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+}
+.gate-cta .cta-pill:hover,
+.gate-cta button.ghost.cta-pill:hover,
+.gate-cta button.ghost.cta-pill:focus-visible {
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.85);
+  color: #FFFFFF;
+}
+
+/* ─── Dashboard ─────────────────────────────────────── */
+#dashboard {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 32px 32px 48px;
+}
+.dashboard-hero {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  gap: var(--gap);
-  margin-bottom: 16px;
+  gap: 32px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
 }
-.header-actions { display: flex; gap: 8px; }
-
-.progress-row { margin-bottom: 24px; }
+.dashboard-hero h1 {
+  font-size: 1.7rem;
+  font-weight: 600;
+  margin: 0;
+  max-width: 560px;
+}
+.progress-block {
+  flex: 1;
+  min-width: 240px;
+  max-width: 340px;
+}
 .progress-meta {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: 0.85rem;
-  margin-bottom: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin-bottom: 8px;
 }
 .progress-track {
-  height: 6px;
+  height: 8px;
   border-radius: 999px;
-  background: var(--vscode-progressBar-background, rgba(127,127,127,0.25));
+  background: var(--brand-blue-soft);
   overflow: hidden;
+  border: 1px solid var(--brand-blue-hairline);
 }
 .progress-fill {
   height: 100%;
   width: 0%;
-  background: var(--vscode-textLink-foreground, #0078d4);
-  transition: width 200ms ease;
-}
-
-.step-topnav {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-.nav-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  background: var(--vscode-editorWidget-background);
-  color: var(--vscode-foreground);
-  border: 1px solid var(--vscode-panel-border, var(--vscode-editorGroup-border));
-  border-radius: var(--radius);
-  cursor: pointer;
-  max-width: 45%;
-  text-align: left;
-  min-height: 44px;
-}
-.nav-btn:hover:not([disabled]) {
-  border-color: var(--vscode-focusBorder);
-  background: var(--vscode-list-hoverBackground);
-}
-.nav-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
-.nav-btn.next { margin-left: auto; }
-.nav-btn .nav-text { display: flex; flex-direction: column; min-width: 0; }
-.nav-btn .nav-text.right { text-align: right; }
-.nav-btn .nav-text small {
-  color: var(--vscode-descriptionForeground);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-.nav-btn .nav-text span:not(small) {
-  font-size: 0.92rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.nav-btn .nav-chevron {
-  font-size: 1.4rem;
-  line-height: 1;
-  color: var(--vscode-descriptionForeground);
+  background: linear-gradient(90deg, #1B96FF, var(--brand-blue) 60%, var(--brand-blue-deep));
+  transition: width 240ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .layout {
@@ -594,121 +1006,358 @@ button.secondary:hover { background: var(--vscode-button-secondaryHoverBackgroun
 }
 @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
 
-.sidebar { position: sticky; top: 24px; }
+/* ─── Sidebar ───────────────────────────────────────── */
+.sidebar {
+  position: sticky;
+  top: 80px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+.sidebar-title {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--vscode-descriptionForeground);
+  padding: 0 6px 10px;
+}
 .step-list {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 .step-item {
+  position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
   padding: 10px 12px;
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   border: 1px solid transparent;
   color: var(--vscode-foreground);
+  transition: background 120ms ease, color 120ms ease;
 }
-.step-item:hover { background: var(--vscode-list-hoverBackground); }
+.step-item:hover { background: var(--brand-blue-soft); }
 .step-item.active {
-  background: var(--vscode-list-activeSelectionBackground);
-  color: var(--vscode-list-activeSelectionForeground);
-  border-color: var(--vscode-focusBorder);
+  background: var(--brand-blue-soft);
+  border-color: var(--brand-blue-hairline);
+}
+.step-item.active::before {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  background: var(--brand-blue);
+  border-radius: 0 3px 3px 0;
 }
 .step-item .status {
   flex: 0 0 auto;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   font-size: 11px;
-  margin-top: 2px;
-  background: var(--vscode-badge-background);
-  color: var(--vscode-badge-foreground);
+  font-weight: 600;
+  margin-top: 1px;
+  background: var(--vscode-badge-background, var(--brand-blue-soft));
+  color: var(--vscode-badge-foreground, var(--brand-blue));
+  border: 1px solid var(--hairline);
 }
-.step-item[data-status="done"] .status { background: var(--vscode-testing-iconPassed, #3fb950); color: #fff; }
-.step-item[data-status="in-progress"] .status { background: var(--vscode-progressBar-background, #0078d4); color: #fff; }
-.step-item[data-status="skipped"] .status { background: var(--vscode-descriptionForeground); color: var(--vscode-editor-background); }
-.step-item[data-status="locked"] .status { background: transparent; }
-.step-item.locked {
-  cursor: not-allowed;
-  opacity: 0.5;
+.step-item[data-status="done"] .status {
+  background: var(--brand-blue);
+  color: #fff;
+  border-color: var(--brand-blue);
 }
+.step-item[data-status="in-progress"] .status {
+  background: #fff;
+  color: var(--brand-blue);
+  border-color: var(--brand-blue);
+}
+.step-item[data-status="skipped"] .status {
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+}
+.step-item[data-status="locked"] .status {
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  border-style: dashed;
+}
+.step-item.locked { cursor: not-allowed; opacity: 0.55; }
 .step-item.locked:hover { background: transparent; }
 .step-item.locked .label { color: var(--vscode-descriptionForeground); }
-.step-item .label { font-size: 0.92rem; line-height: 1.35; }
-.step-item .label small { display: block; color: var(--vscode-descriptionForeground); font-size: 0.78rem; margin-top: 2px; }
+.step-item .label { font-size: 0.92rem; line-height: 1.35; min-width: 0; }
+.step-item .label .title { font-weight: 500; }
+.step-item .label small {
+  display: block;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.74rem;
+  margin-top: 2px;
+  font-weight: 400;
+}
 
+/* ─── Step card ─────────────────────────────────────── */
 .content { min-width: 0; }
-.step-header { margin-bottom: 12px; }
-.step-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-.content-footer {
+.step-card {
+  position: relative;
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.step-card__rail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #1B96FF, var(--brand-blue) 50%, var(--brand-blue-deep));
+}
+.step-card__header {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 6px;
+}
+.step-number {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1B96FF, var(--brand-blue) 60%, var(--brand-blue-deep));
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  box-shadow: var(--shadow-sm);
+}
+.step-card__title-block { min-width: 0; }
+.step-position {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: var(--brand-blue);
+  margin: 0 0 4px;
+  display: block;
+}
+.step-card__title-block h2 {
+  margin: 0 0 6px;
+  font-size: 1.45rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.step-card__title-block p {
+  margin: 0;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.step-card__actions {
+  margin-top: 22px;
+  padding: 14px 16px;
+  background: var(--brand-blue-soft);
+  border: 1px solid var(--brand-blue-hairline);
+  border-radius: var(--radius-md);
+}
+.step-card__section-label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: var(--brand-blue-deep);
+  margin-bottom: 10px;
+}
+.step-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.step-actions button { min-height: 34px; }
+.step-card__body {
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid var(--hairline);
+}
+
+/* ─── Markdown body ─────────────────────────────────── */
+.markdown-body {
+  line-height: 1.65;
+  font-size: 0.95rem;
+  max-width: 720px;
+}
+.markdown-body > *:first-child { margin-top: 0; }
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+  margin-top: 1.6em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.markdown-body h1 { font-size: 1.25rem; }
+.markdown-body h2 {
+  font-size: 1.1rem;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--hairline);
+}
+.markdown-body h3 { font-size: 1rem; color: var(--brand-blue-deep); }
+.markdown-body p { margin: 0 0 0.9em; }
+.markdown-body code {
+  background: var(--brand-blue-soft);
+  color: var(--brand-blue-deep);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.86em;
+  border: 1px solid var(--brand-blue-hairline);
+}
+.markdown-body pre {
+  background: var(--vscode-textCodeBlock-background, rgba(127,127,127,0.10));
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  border: 1px solid var(--hairline);
+  margin: 0 0 1em;
+}
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+  border: none;
+  color: var(--vscode-foreground);
+  font-size: 0.86em;
+}
+.markdown-body a { color: var(--brand-blue); text-decoration: none; border-bottom: 1px solid var(--brand-blue-hairline); }
+.markdown-body a:hover { color: var(--brand-blue-deep); border-bottom-color: var(--brand-blue); }
+.markdown-body hr { border: none; border-top: 1px solid var(--hairline); margin: 24px 0; }
+.markdown-body ul, .markdown-body ol { padding-left: 1.4em; }
+.markdown-body li { margin: 0.25em 0; }
+.markdown-body blockquote {
+  margin: 0 0 1em;
+  padding: 10px 16px;
+  border-left: 3px solid var(--brand-blue);
+  background: var(--brand-blue-soft);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--vscode-foreground);
+}
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0 0 1em;
+  font-size: 0.9em;
+}
+.markdown-body th, .markdown-body td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--hairline);
+}
+.markdown-body th {
+  background: var(--brand-blue-soft);
+  color: var(--brand-blue-deep);
+  font-weight: 600;
+}
+.markdown-body strong { font-weight: 600; }
+
+/* ─── Bottom nav ───────────────────────────────────── */
+.step-nav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+.nav-btn {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 32px;
-  padding-top: 20px;
-  border-top: 1px solid var(--vscode-panel-border, var(--vscode-editorGroup-border));
+  padding: 12px 16px;
+  background: var(--surface-card);
+  color: var(--vscode-foreground);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  min-height: 56px;
+  width: 100%;
+  font-weight: 500;
 }
-.content-footer button { min-height: 36px; padding: 8px 18px; }
-.content-footer .footer-center { flex: 1; text-align: center; }
-.content-footer #btn-next { font-weight: 600; }
+.nav-btn:hover:not([disabled]) {
+  border-color: var(--brand-blue-hairline);
+  background: var(--brand-blue-soft);
+  color: var(--vscode-foreground);
+}
+.nav-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+.nav-btn.next { justify-content: flex-end; }
+.nav-btn.next.primary {
+  background: var(--brand-blue);
+  color: #fff;
+  border-color: var(--brand-blue);
+}
+.nav-btn.next.primary:hover:not([disabled]) {
+  background: var(--brand-blue-deep);
+  color: #fff;
+}
+.nav-btn .nav-text { display: flex; flex-direction: column; min-width: 0; }
+.nav-btn .nav-text.right { text-align: right; }
+.nav-btn .nav-text small {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.nav-btn .nav-text span:not(small) {
+  font-size: 0.92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nav-btn .nav-chevron {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.nav-spacer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
 .link-btn {
   background: transparent;
-  color: var(--vscode-textLink-foreground);
+  color: var(--brand-blue);
   border: none;
-  padding: 6px 10px;
+  padding: 4px 10px;
   cursor: pointer;
-  text-decoration: underline;
+  font-weight: 500;
+  font-size: 0.88rem;
+  border-radius: 4px;
 }
-.link-btn:hover { background: transparent; color: var(--vscode-textLink-activeForeground); }
-.kbd-hint { text-align: center; margin-top: 12px; font-size: 0.8rem; }
+.link-btn:hover { background: var(--brand-blue-soft); color: var(--brand-blue-deep); }
+.kbd-hint { font-size: 0.75rem; }
 .kbd-hint kbd {
-  background: var(--vscode-keybindingLabel-background, rgba(127,127,127,0.2));
-  border: 1px solid var(--vscode-keybindingLabel-border, rgba(127,127,127,0.35));
+  background: var(--vscode-keybindingLabel-background, rgba(127,127,127,0.18));
+  border: 1px solid var(--vscode-keybindingLabel-border, rgba(127,127,127,0.3));
   border-radius: 3px;
   padding: 1px 5px;
   font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
 }
-
-.markdown-body { line-height: 1.6; font-size: 0.95rem; }
-.markdown-body h1, .markdown-body h2, .markdown-body h3 { margin-top: 1.4em; }
-.markdown-body h1 { font-size: 1.25rem; }
-.markdown-body h2 { font-size: 1.1rem; }
-.markdown-body h3 { font-size: 1rem; }
-.markdown-body code {
-  background: var(--vscode-textBlockQuote-background, rgba(127,127,127,0.12));
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 0.9em;
-}
-.markdown-body pre {
-  background: var(--vscode-textCodeBlock-background, rgba(127,127,127,0.12));
-  padding: 12px 14px;
-  border-radius: var(--radius);
-  overflow-x: auto;
-}
-.markdown-body pre code { background: transparent; padding: 0; }
-.markdown-body a { color: var(--vscode-textLink-foreground); }
-.markdown-body a:hover { color: var(--vscode-textLink-activeForeground); }
-.markdown-body hr { border: none; border-top: 1px solid var(--vscode-panel-border, var(--vscode-editorGroup-border)); margin: 24px 0; }
-.markdown-body ul, .markdown-body ol { padding-left: 1.4em; }
-
-.corner-logo {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  width: 48px;
-  height: 48px;
-  opacity: 0.35;
-  pointer-events: none;
+@media (max-width: 720px) {
+  .step-nav { grid-template-columns: 1fr; }
+  .nav-btn { width: 100%; }
 }
 `;
 
@@ -721,10 +1370,14 @@ const PANEL_JS = `
   const personaLabel = document.getElementById('persona-label');
   const personaTagline = document.getElementById('persona-tagline');
   const stepList = document.getElementById('step-list');
+  const stepNumber = document.getElementById('step-number');
+  const stepPosition = document.getElementById('step-position');
   const stepTitle = document.getElementById('step-title');
   const stepSummary = document.getElementById('step-summary');
   const stepActions = document.getElementById('step-actions');
+  const stepActionsWrap = document.getElementById('step-actions-wrap');
   const stepBody = document.getElementById('step-body');
+  const stepCard = document.querySelector('.step-card');
   const btnPrev = document.getElementById('btn-prev');
   const btnNext = document.getElementById('btn-next');
   const btnPrevTop = document.getElementById('btn-prev-top');
@@ -737,6 +1390,9 @@ const PANEL_JS = `
   const btnSkip = document.getElementById('btn-skip');
   const btnChangePersona = document.getElementById('btn-change-persona');
   const btnReset = document.getElementById('btn-reset');
+  const btnMarkAllDone = document.getElementById('btn-mark-all-done');
+  const btnThemeToggle = document.getElementById('btn-theme-toggle');
+  const btnCtaMarkAllDone = document.getElementById('btn-cta-mark-all-done');
 
   let currentState = null;
 
@@ -776,36 +1432,53 @@ const PANEL_JS = `
   }
 
   function renderNav(prev, next) {
-    const prevLabel = prev ? prev.title : 'Start of walkthrough';
-    const nextLabel = next ? next.title : 'Finish';
-    prevTitleEl.textContent = prevLabel;
-    nextTitleEl.textContent = nextLabel;
+    prevTitleEl.textContent = prev ? prev.title : 'Start of walkthrough';
+    nextTitleEl.textContent = next ? next.title : 'Finish walkthrough';
     btnPrev.disabled = !prev;
-    btnPrevTop.disabled = !prev;
-    btnNext.textContent = next ? 'Next: ' + next.title + ' →' : 'Finish ✓';
+    if (btnPrevTop) btnPrevTop.disabled = !prev;
   }
+
+  // Per-persona icon SVGs. Stroke uses currentColor so the avatar tile's
+  // foreground (white inside the gradient square) drives them.
+  const PERSONA_ICONS = {
+    'storefront':
+      '<svg viewBox="0 0 28 24" width="28" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="0" y="0" width="28" height="22" rx="2.5"/><line x1="0" y1="6" x2="28" y2="6"/><circle cx="3.5" cy="3" r="0.9" fill="currentColor" stroke="none"/><circle cx="6.5" cy="3" r="0.9" fill="currentColor" stroke="none"/></svg>',
+    'api-integration':
+      '<svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 0 C 7 0 6 2 6 6 V 11 C 6 14 4 14 0 14 C 4 14 6 14 6 17 V 22 C 6 26 7 28 11 28"/><path d="M17 0 C 21 0 22 2 22 6 V 11 C 22 14 24 14 28 14 C 24 14 22 14 22 17 V 22 C 22 26 21 28 17 28"/></svg>',
+    'devops-release':
+      '<svg viewBox="0 0 28 30" width="26" height="28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 0 C 18 4 22 12 22 18 L 22 26 L 14 30 L 6 26 L 6 18 C 6 12 10 4 14 0 Z"/><circle cx="14" cy="14" r="3"/><path d="M6 22 L 2 26 L 6 30"/><path d="M22 22 L 26 26 L 22 30"/></svg>',
+    'ai-augmented':
+      '<svg viewBox="0 0 26 26" width="26" height="26"><path d="M13 0 L16.5 10 L26 13 L16.5 16 L13 26 L9.5 16 L0 13 L9.5 10 Z" fill="currentColor"/><circle cx="22" cy="3" r="1.6" fill="currentColor"/><circle cx="3" cy="22" r="1.4" fill="currentColor" opacity="0.85"/></svg>',
+  };
 
   function renderPersonaGate(personas) {
     personaCards.innerHTML = '';
     personas.forEach((p) => {
-      // Use a div + role="button" rather than a <button> so we don't inherit
-      // VS Code's global button color/hover/focus rules (which were making the
-      // card background flip to --vscode-button-background and hide the text).
       const card = document.createElement('div');
-      card.className = 'persona-card';
+      card.className = 'persona-card' + (p.recommended ? ' is-recommended' : '');
       card.setAttribute('role', 'button');
       card.setAttribute('tabindex', '0');
       card.setAttribute('aria-label', p.label);
+      const newPill = p.recommended ? '<span class="persona-new-pill">NEW</span>' : '';
+      // Generic fallback icon (a small square cluster) for any persona that
+      // doesn't have a dedicated SVG yet — still icon-based, never letters.
+      const fallbackIcon =
+        '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>';
+      const iconHtml = PERSONA_ICONS[p.id] || fallbackIcon;
       card.innerHTML = [
-        '<span class="persona-avatar" aria-hidden="true"></span>',
+        '<span class="persona-avatar" aria-hidden="true">' + iconHtml + '</span>',
         '<h3></h3>',
         '<p class="tagline"></p>',
         '<p class="desc"></p>',
+        '<span class="persona-meta"></span>',
+        '<span class="persona-arrow" aria-hidden="true"><span>Start</span><svg width="14" height="14" viewBox="0 0 22 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="0" y1="7" x2="18" y2="7"/><polyline points="13 2 18 7 13 12"/></svg></span>',
+        newPill,
       ].join('');
-      card.querySelector('.persona-avatar').textContent = personaInitials(p.label);
       card.querySelector('h3').textContent = p.label;
       card.querySelector('.tagline').textContent = p.tagline;
       card.querySelector('.desc').textContent = p.description;
+      card.querySelector('.persona-meta').textContent =
+        p.stepCount + ' phases · ~' + p.estimatedMinutes + ' min';
       const select = () => post({type: 'selectPersona', personaId: p.id});
       card.addEventListener('click', select);
       card.addEventListener('keydown', (e) => {
@@ -816,16 +1489,6 @@ const PANEL_JS = `
       });
       personaCards.appendChild(card);
     });
-  }
-
-  function personaInitials(label) {
-    // "Frontend / SFRA developer" -> "FS"; "DevOps / sandbox admin" -> "DS"; etc.
-    const tokens = label.split(/[\s/]+/).filter(Boolean);
-    const letters = tokens
-      .filter((t) => /^[A-Za-z]/.test(t))
-      .slice(0, 2)
-      .map((t) => t.charAt(0).toUpperCase());
-    return letters.join('') || '?';
   }
 
   function renderStepList(steps, activeId) {
@@ -882,27 +1545,39 @@ const PANEL_JS = `
 
   function renderActiveStep(step, idx, total) {
     if (!step) {
+      stepNumber.textContent = '';
+      stepPosition.textContent = '';
       stepTitle.textContent = '';
       stepSummary.textContent = '';
       stepActions.innerHTML = '';
+      stepActionsWrap.hidden = true;
       stepBody.innerHTML = '';
       return;
     }
+    stepNumber.textContent = String(idx + 1);
+    stepPosition.textContent = 'Step ' + (idx + 1) + ' of ' + total;
     stepTitle.textContent = step.title;
     stepSummary.textContent = step.summary;
     stepBody.innerHTML = step.html;
     stepActions.innerHTML = '';
-    step.actions.forEach((action) => {
-      const btn = document.createElement('button');
-      if (!action.primary) btn.className = 'secondary';
-      btn.textContent = action.label;
-      btn.addEventListener('click', () =>
-        post({type: 'runAction', command: action.command, args: action.args, stepId: step.id}),
-      );
-      stepActions.appendChild(btn);
-    });
-    // Scroll content back to top when switching steps.
-    stepBody.scrollIntoView({behavior: 'instant', block: 'start'});
+    if (step.actions && step.actions.length > 0) {
+      stepActionsWrap.hidden = false;
+      step.actions.forEach((action) => {
+        const btn = document.createElement('button');
+        if (!action.primary) btn.className = 'ghost';
+        btn.textContent = action.label;
+        btn.addEventListener('click', () =>
+          post({type: 'runAction', command: action.command, args: action.args, stepId: step.id}),
+        );
+        stepActions.appendChild(btn);
+      });
+    } else {
+      stepActionsWrap.hidden = true;
+    }
+    // Scroll the card (not the body) so step-header stays visible after navigation.
+    if (stepCard && typeof stepCard.scrollIntoView === 'function') {
+      stepCard.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
   }
 
   // Intercept clicks on any link inside the content area. We NEVER let the
@@ -923,10 +1598,23 @@ const PANEL_JS = `
   });
   btnPrev.addEventListener('click', () => post({type: 'goPrev'}));
   btnNext.addEventListener('click', () => post({type: 'goNext'}));
-  btnPrevTop.addEventListener('click', () => post({type: 'goPrev'}));
-  btnNextTop.addEventListener('click', () => post({type: 'goNext'}));
+  if (btnPrevTop) btnPrevTop.addEventListener('click', () => post({type: 'goPrev'}));
+  if (btnNextTop) btnNextTop.addEventListener('click', () => post({type: 'goNext'}));
   btnChangePersona.addEventListener('click', () => post({type: 'changePersona'}));
   btnReset.addEventListener('click', () => post({type: 'reset'}));
+  if (btnMarkAllDone) {
+    btnMarkAllDone.addEventListener('click', () =>
+      post({type: 'runAction', command: 'b2c-dx.walkthrough.markAllDone'}),
+    );
+  }
+  if (btnThemeToggle) {
+    btnThemeToggle.addEventListener('click', () => post({type: 'runAction', command: 'b2c-dx.theme.toggle'}));
+  }
+  if (btnCtaMarkAllDone) {
+    btnCtaMarkAllDone.addEventListener('click', () =>
+      post({type: 'runAction', command: 'b2c-dx.walkthrough.markAllDone'}),
+    );
+  }
 
   // Keyboard navigation: Alt+← / Alt+→ (and the usual PageUp/Down pattern).
   document.addEventListener('keydown', (e) => {

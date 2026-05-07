@@ -180,6 +180,21 @@ suite('Walkthrough Commands Test Suite', () => {
       const commands = await vscode.commands.getCommands();
       assert.ok(commands.includes('b2c-dx.walkthrough.open'), 'Walkthrough open command should be available');
       assert.ok(commands.includes('b2c-dx.walkthrough.createDwJson'), 'Create dw.json command should be available');
+      assert.ok(commands.includes('b2c-dx.walkthrough.markAllDone'), 'Mark all done command should be available');
+      assert.ok(commands.includes('b2c-dx.cli.verify'), 'CLI verify command should be available');
+    });
+  });
+
+  suite('Personas', () => {
+    test('should expose the four current personas', async () => {
+      // Lazy import to avoid a hard module load before activation.
+      const personas = await import('../personas.js');
+      const ids = personas.listPersonas().map((p) => p.id);
+      assert.deepStrictEqual(
+        ids.sort(),
+        ['ai-augmented', 'api-integration', 'devops-release', 'storefront'],
+        'Persona ids should match the documented set',
+      );
     });
   });
 });
