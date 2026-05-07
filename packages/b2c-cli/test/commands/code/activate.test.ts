@@ -8,7 +8,7 @@ import {expect} from 'chai';
 import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
 import CodeActivate from '../../../src/commands/code/activate.js';
-import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
+import {createIsolatedConfigHooks, createTestCommand, expectError} from '../../helpers/test-setup.js';
 
 describe('code activate', () => {
   const hooks = createIsolatedConfigHooks();
@@ -39,8 +39,11 @@ describe('code activate', () => {
 
     await command.run();
 
-    expect(patchStub.calledOnce).to.equal(true);
-    expect(patchStub.getCall(0).args[0]).to.equal('/code_versions/{code_version_id}');
+    expect(patchStub.calledOnce).to.be.true;
+    const [path, options] = patchStub.firstCall.args;
+    expect(path).to.equal('/code_versions/{code_version_id}');
+    expect(options?.params?.path).to.deep.equal({code_version_id: 'v1'});
+    expect(options?.body).to.deep.equal({active: true});
   });
 
   it('errors when no code version is provided for activate mode', async () => {
@@ -51,14 +54,10 @@ describe('code activate', () => {
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
-    try {
-      await command.run();
-      expect.fail('Should have thrown');
-    } catch {
-      // expected
-    }
+    await expectError(() => command.run());
 
-    expect(errorStub.calledOnce).to.equal(true);
+    expect(errorStub.calledOnce).to.be.true;
+    expect(errorStub.firstCall.args[0]).to.match(/code version/i);
   });
 
   it('reloads the active code version when --reload is set and no arg is provided', async () => {
@@ -90,8 +89,11 @@ describe('code activate', () => {
 
     await command.run();
 
-    expect(getStub.calledOnce).to.equal(true);
+    expect(getStub.calledOnce).to.be.true;
     expect(patchStub.callCount).to.equal(2);
+    // Reload toggles to alternate then back to active.
+    const calledIds = patchStub.getCalls().map((c) => c.args[1]?.params?.path?.code_version_id);
+    expect(calledIds).to.deep.equal(['v2', 'v1']);
   });
 
   it('calls command.error when reload fails with an error message', async () => {
@@ -102,9 +104,13 @@ describe('code activate', () => {
 
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
 
+    // Reload toggles active → alternate → active, so we need at least two versions.
     const getStub = sinon.stub().resolves({
       data: {
-        data: [{id: 'v1', active: true}],
+        data: [
+          {id: 'v1', active: true},
+          {id: 'v2', active: false},
+        ],
       },
       error: undefined,
     });
@@ -120,13 +126,10 @@ describe('code activate', () => {
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
-    try {
-      await command.run();
-      expect.fail('Should have thrown');
-    } catch {
-      // expected
-    }
+    await expectError(() => command.run());
 
-    expect(errorStub.calledOnce).to.equal(true);
+    expect(errorStub.calledOnce).to.be.true;
+    expect(errorStub.firstCall.args[0]).to.include('Failed to reload code version');
+    expect(patchStub.called).to.be.true;
   });
 });

@@ -40,7 +40,7 @@ describe('generate-component', () => {
 
       const result = generateComponentRecommendation(mockInput);
 
-      expect(result).to.be.ok;
+      expect(result).to.be.a('string').and.to.have.lengthOf.greaterThan(0);
       expect(result).to.include('CREATE');
     });
   });
@@ -140,8 +140,9 @@ describe('generate-component', () => {
         '{}',
       );
 
-      expect(differences.styling.some((d) => d.description.includes('inline styles'))).to.equal(true);
-      expect(differences.styling.some((d) => d.severity === 'moderate')).to.equal(true);
+      const inlineStylesDiff = differences.styling.find((d) => d.description.includes('inline styles'));
+      expect(inlineStylesDiff, 'expected an "inline styles" styling difference').to.not.be.undefined;
+      expect(inlineStylesDiff!.severity).to.equal('moderate');
     });
 
     it('detects different root element as structural difference', () => {
@@ -154,8 +155,9 @@ describe('generate-component', () => {
         '{}',
       );
 
-      expect(differences.structural.some((d) => d.description.includes('Different root element'))).to.equal(true);
-      expect(differences.structural.some((d) => !d.isBackwardCompatible)).to.equal(true);
+      const rootDiff = differences.structural.find((d) => d.description.includes('Different root element'));
+      expect(rootDiff, 'expected a "Different root element" structural difference').to.not.be.undefined;
+      expect(rootDiff!.isBackwardCompatible).to.be.false;
     });
 
     it('detects client directive change as behavioral difference', () => {
@@ -168,8 +170,9 @@ describe('generate-component', () => {
         '{}',
       );
 
-      expect(differences.behavioral.some((d) => d.description.includes('client-side rendering'))).to.equal(true);
-      expect(differences.behavioral.some((d) => d.severity === 'major')).to.equal(true);
+      const clientDiff = differences.behavioral.find((d) => d.description.includes('client-side rendering'));
+      expect(clientDiff, 'expected a "client-side rendering" behavioral difference').to.not.be.undefined;
+      expect(clientDiff!.severity).to.equal('major');
     });
 
     it('detects new React hooks as behavioral difference', () => {
@@ -182,7 +185,8 @@ describe('generate-component', () => {
         '{}',
       );
 
-      expect(differences.behavioral.some((d) => d.description.includes('useState'))).to.equal(true);
+      const useStateDiff = differences.behavioral.find((d) => d.description.includes('useState'));
+      expect(useStateDiff, 'expected a "useState" behavioral difference').to.not.be.undefined;
     });
 
     it('detects when existing component is client-side but Figma design could be RSC', () => {
@@ -195,8 +199,9 @@ describe('generate-component', () => {
         '{}',
       );
 
-      expect(differences.behavioral.some((d) => d.description.includes('could be RSC'))).to.equal(true);
-      expect(differences.behavioral.some((d) => d.severity === 'major')).to.equal(true);
+      const rscDiff = differences.behavioral.find((d) => d.description.includes('could be RSC'));
+      expect(rscDiff, 'expected a "could be RSC" behavioral difference').to.not.be.undefined;
+      expect(rscDiff!.severity).to.equal('major');
     });
 
     it('detects new event handlers as behavioral difference', () => {
@@ -209,8 +214,9 @@ describe('generate-component', () => {
         '{}',
       );
 
-      expect(differences.behavioral.some((d) => d.description.includes('event handlers'))).to.equal(true);
-      expect(differences.behavioral.some((d) => d.severity === 'moderate')).to.equal(true);
+      const eventDiff = differences.behavioral.find((d) => d.description.includes('event handlers'));
+      expect(eventDiff, 'expected an "event handlers" behavioral difference').to.not.be.undefined;
+      expect(eventDiff!.severity).to.equal('moderate');
     });
 
     it('detects when Figma design requires additional prop interfaces', () => {
@@ -223,8 +229,9 @@ describe('generate-component', () => {
         '{}',
       );
 
-      expect(differences.props.some((d) => d.description.includes('additional props'))).to.equal(true);
-      expect(differences.props.some((d) => d.isBackwardCompatible)).to.equal(true);
+      const additionalPropsDiff = differences.props.find((d) => d.description.includes('additional props'));
+      expect(additionalPropsDiff, 'expected an "additional props" props difference').to.not.be.undefined;
+      expect(additionalPropsDiff!.isBackwardCompatible).to.be.true;
     });
   });
 

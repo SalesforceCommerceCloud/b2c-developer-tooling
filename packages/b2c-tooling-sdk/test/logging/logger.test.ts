@@ -28,7 +28,6 @@ describe('logging/logger', () => {
   describe('createLogger', () => {
     it('creates logger with default options', () => {
       const logger = createLogger();
-      expect(logger).to.exist;
       expect(logger.info).to.be.a('function');
       expect(logger.debug).to.be.a('function');
       expect(logger.warn).to.be.a('function');
@@ -37,37 +36,31 @@ describe('logging/logger', () => {
 
     it('creates logger with custom level', () => {
       const logger = createLogger({level: 'debug'});
-      expect(logger).to.exist;
       expect(logger.info).to.be.a('function');
     });
 
     it('creates logger with json output', () => {
       const logger = createLogger({json: true});
-      expect(logger).to.exist;
       expect(logger.info).to.be.a('function');
     });
 
     it('creates logger with colorize disabled', () => {
       const logger = createLogger({colorize: false});
-      expect(logger).to.exist;
       expect(logger.info).to.be.a('function');
     });
 
     it('creates logger with baseContext', () => {
       const logger = createLogger({baseContext: {app: 'test'}});
-      expect(logger).to.exist;
       expect(logger.info).to.be.a('function');
     });
 
     it('creates logger with custom file descriptor', () => {
       const logger = createLogger({fd: 1}); // stdout
-      expect(logger).to.exist;
       expect(logger.info).to.be.a('function');
     });
 
     it('creates logger with redaction disabled', () => {
       const logger = createLogger({redact: false});
-      expect(logger).to.exist;
       expect(logger.info).to.be.a('function');
     });
 
@@ -80,7 +73,6 @@ describe('logging/logger', () => {
         redact: true,
         baseContext: {env: 'test'},
       });
-      expect(logger).to.exist;
       expect(logger.info).to.be.a('function');
     });
   });
@@ -89,7 +81,6 @@ describe('logging/logger', () => {
     it('configures global logger options', () => {
       configureLogger({level: 'debug'});
       const logger = getLogger();
-      expect(logger).to.exist;
       expect(logger.info).to.be.a('function');
     });
 
@@ -97,7 +88,6 @@ describe('logging/logger', () => {
       configureLogger({level: 'info'});
       configureLogger({json: true});
       const logger = getLogger();
-      expect(logger).to.exist;
       expect(logger.info).to.be.a('function');
     });
 
@@ -106,8 +96,6 @@ describe('logging/logger', () => {
       const logger1 = getLogger();
       configureLogger({level: 'warn'});
       const logger2 = getLogger();
-      expect(logger1).to.exist;
-      expect(logger2).to.exist;
       expect(logger1.info).to.be.a('function');
       expect(logger2.info).to.be.a('function');
     });
@@ -117,7 +105,6 @@ describe('logging/logger', () => {
     it('returns logger with default options when not configured', () => {
       resetLogger();
       const logger = getLogger();
-      expect(logger).to.exist;
       expect(logger.info).to.be.a('function');
     });
 
@@ -133,8 +120,6 @@ describe('logging/logger', () => {
       const logger1 = getLogger();
       resetLogger();
       const logger2 = getLogger();
-      expect(logger1).to.exist;
-      expect(logger2).to.exist;
       expect(logger1.info).to.be.a('function');
       expect(logger2.info).to.be.a('function');
     });
@@ -146,7 +131,6 @@ describe('logging/logger', () => {
       getLogger(); // Create logger
       resetLogger();
       const logger = getLogger();
-      expect(logger).to.exist;
       expect(logger.info).to.be.a('function');
     });
 
@@ -154,7 +138,6 @@ describe('logging/logger', () => {
       configureLogger({level: 'debug', json: true});
       resetLogger();
       const logger = getLogger();
-      expect(logger).to.exist;
       expect(logger.info).to.be.a('function');
     });
   });
@@ -162,7 +145,6 @@ describe('logging/logger', () => {
   describe('createSilentLogger', () => {
     it('creates logger with silent level', () => {
       const logger = createSilentLogger();
-      expect(logger).to.exist;
       expect(logger.info).to.be.a('function');
     });
 

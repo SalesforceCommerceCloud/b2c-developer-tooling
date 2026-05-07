@@ -7,6 +7,7 @@ import {Flags, Errors} from '@oclif/core';
 import {AmCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {AccountManagerApiClient, APIClientCollection} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
+import {amPageSizeFlag} from '../../../utils/am/flags.js';
 
 /** Format date as MM/DD/YYYY HH:MM:SS with zero-padding for equal column width. */
 function formatDateEqualLength(value: Date | number | string): string {
@@ -75,10 +76,7 @@ export default class ClientList extends AmCommand<typeof ClientList> {
   ];
 
   static flags = {
-    size: Flags.integer({
-      char: 's',
-      description: 'Page size (default: 20, min: 1, max: 4000)',
-    }),
+    size: amPageSizeFlag,
     page: Flags.integer({
       description: 'Page number (zero-based index, default: 0, min: 0)',
     }),

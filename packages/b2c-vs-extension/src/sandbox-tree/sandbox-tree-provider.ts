@@ -104,6 +104,8 @@ export class SandboxTreeDataProvider implements vscode.TreeDataProvider<SandboxT
   private _onDidChangeTreeData = new vscode.EventEmitter<SandboxTreeNode | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
   private pollingTimers = new Map<string, ReturnType<typeof setInterval>>();
+  /** Inner stop-check timers per realm, scheduled via setTimeout in each interval tick. */
+  private pollingStopChecks = new Map<string, ReturnType<typeof setTimeout>>();
   /** Sandbox IDs currently acting as a clone source (tracked client-side while Clone Sandbox is in flight). */
   private activeCloneSources = new Set<string>();
 
@@ -146,16 +148,25 @@ export class SandboxTreeDataProvider implements vscode.TreeDataProvider<SandboxT
 
     const startTime = Date.now();
     const pollIntervalMs = getPollIntervalMs();
-    const timer = setInterval(async () => {
+    const timer = setInterval(() => {
       if (Date.now() - startTime > MAX_POLL_DURATION_MS) {
         this.stopPollingRealm(realm);
         return;
       }
       this.refreshRealm(realm);
 
-      // Check if all sandboxes have reached stable states
-      // Give the tree a moment to fetch, then check cache
-      setTimeout(() => {
+      // Skip scheduling another stop-check if one is already pending for this
+      // realm — otherwise short poll intervals (< 3s) cause stop-checks to stack
+      // and concurrent `getCachedSandboxes`/`stopPollingRealm` calls to race.
+      if (this.pollingStopChecks.has(realm)) return;
+
+      // Check if all sandboxes have reached stable states. Give the tree a
+      // moment to fetch, then check cache.
+      const stopCheck = setTimeout(() => {
+        this.pollingStopChecks.delete(realm);
+        // The interval may have been cleared while we were sleeping.
+        if (!this.pollingTimers.has(realm)) return;
+
         const sandboxes = this.configProvider.getCachedSandboxes(realm);
         if (!sandboxes) return; // still loading
         const hasTransitional = sandboxes.some((s) => TRANSITIONAL_STATES.has((s.state ?? '').toLowerCase()));
@@ -170,6 +181,7 @@ export class SandboxTreeDataProvider implements vscode.TreeDataProvider<SandboxT
           this.stopPollingRealm(realm);
         }
       }, 3000);
+      this.pollingStopChecks.set(realm, stopCheck);
     }, pollIntervalMs);
 
     this.pollingTimers.set(realm, timer);
@@ -181,6 +193,11 @@ export class SandboxTreeDataProvider implements vscode.TreeDataProvider<SandboxT
       clearInterval(timer);
       this.pollingTimers.delete(realm);
     }
+    const stopCheck = this.pollingStopChecks.get(realm);
+    if (stopCheck) {
+      clearTimeout(stopCheck);
+      this.pollingStopChecks.delete(realm);
+    }
   }
 
   stopAllPolling(): void {
@@ -188,6 +205,10 @@ export class SandboxTreeDataProvider implements vscode.TreeDataProvider<SandboxT
       clearInterval(timer);
     }
     this.pollingTimers.clear();
+    for (const stopCheck of this.pollingStopChecks.values()) {
+      clearTimeout(stopCheck);
+    }
+    this.pollingStopChecks.clear();
   }
 
   getTreeItem(element: SandboxTreeNode): vscode.TreeItem {

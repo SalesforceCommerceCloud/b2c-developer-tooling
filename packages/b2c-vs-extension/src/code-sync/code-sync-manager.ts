@@ -148,13 +148,23 @@ export class CodeSyncManager implements vscode.Disposable {
       this.debounceTimer = undefined;
     }
 
-    // Dispose all file watchers
+    // Dispose all file watchers first so no new changes accumulate while we drain.
     for (const w of this.fileWatchers) {
       w.dispose();
     }
     this.fileWatchers = [];
 
-    // Clear pending state
+    // Drain any pending uploads/deletes accumulated since the last debounce tick
+    // (or queued while a previous processChanges() loop was running). Without
+    // this drain, a save right before stop would be silently dropped.
+    if (this.pendingUploads.size > 0 || this.pendingDeletes.size > 0) {
+      try {
+        await this.processChanges();
+      } catch (error) {
+        this.log(`[Stop] Error draining pending changes: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
     this.pendingUploads.clear();
     this.pendingDeletes.clear();
     this.isProcessing = false;
@@ -270,7 +280,11 @@ export class CodeSyncManager implements vscode.Disposable {
 
   dispose(): void {
     if (this.watching) {
-      this.stopWatch().catch(() => {});
+      this.stopWatch().catch((error: unknown) => {
+        // Best-effort: extension is unloading; log to the channel so failures
+        // are visible if the user has it open.
+        this.log(`[Dispose] stopWatch failed: ${error instanceof Error ? error.message : String(error)}`);
+      });
     }
     this.statusBar.dispose();
     this.outputChannel.dispose();
