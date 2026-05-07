@@ -47,19 +47,9 @@
 
         <div class="spacer"></div>
 
-        <label class="toolbar-inline-field" for="fetchSize">
-          <span class="toolbar-inline-label">Retrieval Size</span>
-          <select id="fetchSize" class="select">
-            <option value="100">100 rows</option>
-            <option value="500">500 rows</option>
-            <option value="1000" selected>1,000 rows</option>
-            <option value="5000">5,000 rows</option>
-          </select>
-        </label>
-
         <button type="button" id="loadTablesBtn" class="btn btn-primary">
           <span class="ic ic-refresh" data-role="icon"></span>
-          <span data-role="label">Load Entities</span>
+          <span data-role="label">Reload Entities</span>
         </button>
 
         <div class="view-toggle qb-view-toggle">
@@ -84,7 +74,7 @@
             <div class="empty">
               <div class="empty-icon"><span class="ic ic-inbox"></span></div>
               <div class="empty-title">No entities loaded</div>
-              <div class="empty-hint">Click Load Entities to discover entities.</div>
+              <div class="empty-hint">Click Reload Entities to refresh.</div>
             </div>
           </div>
         </div>
@@ -149,12 +139,6 @@
                       <span class="kw">FROM</span> <span class="clause-heading">Source Entity</span>
                     </div>
                     <div class="clause-desc">The CIP data warehouse entity to query.</div>
-                  </div>
-                  <div class="clause-actions">
-                    <button class="btn-ghost" id="changeFromBtn" disabled>
-                      <span class="ic ic-refresh"></span>
-                      <span>Change Entity</span>
-                    </button>
                   </div>
                 </div>
                 <div class="clause-body">
@@ -349,7 +333,6 @@
         connHostWrap: document.getElementById('connHostWrap'),
         connHost: document.getElementById('connHost'),
         configureBtn: document.getElementById('configureBtn'),
-        fetchSize: document.getElementById('fetchSize'),
         loadTablesBtn: document.getElementById('loadTablesBtn'),
         runQueryBtn: document.getElementById('runQueryBtnBottom'),
         builderViewBtn: document.getElementById('builderViewBtn'),
@@ -367,7 +350,6 @@
         fromContainer: document.getElementById('fromContainer'),
         selectAllFieldsBtn: document.getElementById('selectAllFieldsBtn'),
         clearFieldsBtn: document.getElementById('clearFieldsBtn'),
-        changeFromBtn: document.getElementById('changeFromBtn'),
         addFilterBtn: document.getElementById('addFilterBtn'),
         filtersContainer: document.getElementById('filtersContainer'),
         logicToggle: document.getElementById('logicToggle'),
@@ -418,16 +400,19 @@
         el.loadTablesBtn.disabled = !connected;
         if (!connected) el.runQueryBtn.disabled = true;
       }
+      // Flag set when the user clicks Load Tables without being configured. After the
+      // configure flow completes and a tenantId arrives via connectionState, we auto-trigger
+      // the load so the user doesn't have to click the button a second time.
+      let pendingLoadAfterConfigure = false;
+
+      // Track whether tables have been loaded this session so we only auto-load once.
+      let tablesEverLoaded = false;
+
       renderConnection();
 
       el.configureBtn.addEventListener('click', () => {
         vscode.postMessage({command: 'configureConnection'});
       });
-
-      // Flag set when the user clicks Load Tables without being configured. After the
-      // configure flow completes and a tenantId arrives via connectionState, we auto-trigger
-      // the load so the user doesn't have to click the button a second time.
-      let pendingLoadAfterConfigure = false;
 
       el.loadTablesBtn.addEventListener('click', () => {
         if (!currentConnection || !currentConnection.tenantId) {
@@ -464,7 +449,7 @@
             icon.classList.remove('spinner');
             icon.classList.add('ic', 'ic-refresh');
           }
-          if (label) label.textContent = 'Load Entities';
+          if (label) label.textContent = 'Reload Entities';
         }
       }
 
@@ -492,6 +477,17 @@
         el.tableList.appendChild(empty);
         // Reset count badge to an em-dash so stale counts don't linger.
         el.tableCount.textContent = '—';
+      }
+
+      function autoLoadTablesIfNeeded() {
+        if (tablesEverLoaded) return;
+        if (!currentConnection || currentConnection.status !== 'connected') return;
+        if (!currentConnection.tenantId) return;
+        tablesEverLoaded = true;
+        setLoadTablesBusy(true);
+        renderTablesLoadingState();
+        setStatusHtml('loading', '<span class="spinner"></span> Loading entities...');
+        vscode.postMessage({command: 'loadTables'});
       }
 
       el.tableSearch.addEventListener('input', () => renderTableList());
@@ -541,11 +537,6 @@
         renderSelectedFields();
         renderFieldList();
         updateQueryPreview();
-      });
-
-      el.changeFromBtn.addEventListener('click', () => {
-        el.tableSearch.focus();
-        el.tableSearch.select();
       });
 
       el.addFilterBtn.addEventListener('click', () => {
@@ -673,7 +664,7 @@
           empty.innerHTML =
             '<div class="empty-icon"><span class="ic ic-inbox"></span></div>' +
             '<div class="empty-title">No entities loaded</div>' +
-            '<div class="empty-hint">Click Load Entities to try again.</div>';
+            '<div class="empty-hint">Click Reload Entities to try again.</div>';
           el.tableList.appendChild(empty);
           return;
         }
@@ -853,7 +844,6 @@
       }
 
       function renderFromClause() {
-        el.changeFromBtn.disabled = state.tables.length === 0;
         el.fromContainer.replaceChildren();
         if (!state.currentTable) {
           const placeholder = document.createElement('span');
@@ -1116,7 +1106,7 @@
 
         vscode.postMessage({
           command: 'executeRawQuery',
-          params: {sql: sql, fetchSize: el.fetchSize.value},
+          params: {sql: sql, fetchSize: 1000},
         });
       }
 
@@ -1200,14 +1190,12 @@
           case 'connectionState':
             currentConnection = message.connection || currentConnection;
             renderConnection();
+            // Auto-load on first connection (covers configure flow and reconnects).
+            autoLoadTablesIfNeeded();
             // If the user clicked Load Tables while unconfigured, auto-trigger the load
             // as soon as configuration completes with a valid tenantId.
             if (pendingLoadAfterConfigure && currentConnection && currentConnection.tenantId) {
               pendingLoadAfterConfigure = false;
-              setLoadTablesBusy(true);
-              renderTablesLoadingState();
-              setStatusHtml('loading', '<span class="spinner"></span> Loading entities...');
-              vscode.postMessage({command: 'loadTables'});
             }
             break;
 
@@ -1240,7 +1228,7 @@
               empty.innerHTML =
                 '<div class="empty-icon"><span class="ic ic-inbox"></span></div>' +
                 '<div class="empty-title">No entities loaded</div>' +
-                '<div class="empty-hint">Click Load Entities to try again.</div>';
+                '<div class="empty-hint">Click Reload Entities to try again.</div>';
               el.tableList.appendChild(empty);
             }
             break;
