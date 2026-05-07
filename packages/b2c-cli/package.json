@@ -147,6 +147,12 @@
       "mrt:org": {
         "description": "List organizations and view B2C Commerce instance connections\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#organization-commands"
       },
+      "mrt:org:member": {
+        "description": "Manage organization-level members and their permissions\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#organization-member-commands"
+      },
+      "mrt:org:cert": {
+        "description": "Manage custom domain certificates for organization environments\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#organization-certificate-commands"
+      },
       "mrt:project": {
         "description": "Create, update, delete, and configure MRT projects\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-commands"
       },
