@@ -4,9 +4,9 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {confirm as promptConfirm} from '@inquirer/prompts';
 import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {deleteBmUser} from '@salesforce/b2c-tooling-sdk/operations/bm-users';
+import {confirm} from '@salesforce/b2c-tooling-sdk/ux';
 import {t} from '../../../i18n/index.js';
 
 interface DeleteResult {
@@ -48,10 +48,9 @@ export default class BmUsersDelete extends InstanceCommand<typeof BmUsersDelete>
     const hostname = this.resolvedConfig.values.hostname!;
 
     if (!force && !this.jsonEnabled()) {
-      const answer = await promptConfirm({
-        message: t('commands.bm.users.delete.confirm', 'Delete user {{login}} from {{hostname}}?', {login, hostname}),
-        default: false,
-      });
+      const answer = await confirm(
+        t('commands.bm.users.delete.confirm', 'Delete user {{login}} from {{hostname}}?', {login, hostname}),
+      );
       if (!answer) {
         this.log(t('commands.bm.users.delete.cancelled', 'Cancelled.'));
         return {success: false, login, hostname};

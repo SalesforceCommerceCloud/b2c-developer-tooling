@@ -4,8 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {confirm as promptConfirm} from '@inquirer/prompts';
 import {deleteBmUserAccessKey} from '@salesforce/b2c-tooling-sdk/operations/bm-users';
+import {confirm} from '@salesforce/b2c-tooling-sdk/ux';
 import {BmUserAuthCommand} from '../../../utils/bm/user-auth-command.js';
 import {resolveLoginOrWhoami} from '../../../utils/bm/resolve-login.js';
 import {t} from '../../../i18n/index.js';
@@ -60,14 +60,13 @@ export default class BmAccessKeyDelete extends BmUserAuthCommand<typeof BmAccess
     const login = await resolveLoginOrWhoami(this.instance, this.args.login);
 
     if (!force && !this.jsonEnabled()) {
-      const answer = await promptConfirm({
-        message: t(
-          'commands.bm.accessKey.delete.confirm',
-          'Delete the {{scope}} access key for {{login}} on {{hostname}}?',
-          {login, scope, hostname},
-        ),
-        default: false,
-      });
+      const answer = await confirm(
+        t('commands.bm.accessKey.delete.confirm', 'Delete the {{scope}} access key for {{login}} on {{hostname}}?', {
+          login,
+          scope,
+          hostname,
+        }),
+      );
       if (!answer) {
         this.log(t('commands.bm.accessKey.delete.cancelled', 'Cancelled.'));
         return {success: false, login, scope, hostname};
