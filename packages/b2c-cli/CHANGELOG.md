@@ -1,5 +1,45 @@
 # @salesforce/b2c-cli
 
+## 1.9.0
+
+### Minor Changes
+
+- [#395](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/395) [`b947888`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b947888ed07073ae2c4c79fe9cc00bd893b81bbe) - Add `b2c debug cli` command for interactive terminal-based script debugging. Includes a REPL with commands for breakpoints, stepping, variable inspection, and expression evaluation. Use `--rpc` for JSONL-over-stdio mode suitable for headless scripts and agents. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#399](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/399) [`6be308a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6be308a4f8f24dd433bfa557a98038c7392d149c) - Support `assetQuery` as a first-class config field. Set it in `dw.json` (per-instance), in `package.json` under `b2c`, or via `SFCC_ASSET_QUERY` to control which JSON dot-paths are extracted as assets during content library parsing. The VS Code Content Libraries tree and `b2c content export` both honor it automatically; the `--asset-query` flag still wins when provided, and the fallback remains `["image.path"]`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#408](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/408) [`a26226c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a26226c8d755bc3d93462418cb94ddc0f1083a29) - Added `b2c bm users` command topic for managing instance-level Business Manager users via the OCAPI Data API: `list`, `get`, `search`, `whoami`, `update`, and `delete`. Also added `b2c bm users access-keys` (`get`, `create`, `set`, `delete`) for provisioning and rotating WebDAV/OCAPI/SCAPI access keys for externally-managed (AM/SSO) users. The SDK now exposes a matching `@salesforce/b2c-tooling-sdk/operations/bm-users` module. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#408](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/408) [`a26226c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a26226c8d755bc3d93462418cb94ddc0f1083a29) - Added `--columns` and `--extended` flags to all list and search commands for consistent column selection across the CLI. Roughly 30 commands that previously had no column-customization support — including `bm roles list`, `webdav ls`, `cap list`, `code list`, `content list`, `docs search`, `job search`, `logs list`, `sites list`, `slas client list`, all `mrt` list commands, plus several `setup` and `scaffold` commands — now accept `-c id,name,...` to pick columns and `-x` to include extended fields (e.g. `webdav ls --extended` exposes the previously-hidden `modified` and `contentType` columns). (Thanks [@clavery](https://github.com/clavery)!)
+
+  The SDK now exposes shared `columnFlagsFor()` / `selectColumns()` helpers (replacing 22 duplicated implementations) and a `printFieldsBlock()` helper for rendering "label / value" detail blocks.
+
+- [#405](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/405) [`b1600fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b1600fa014f9bd23c93488155b37ac2cc5c91fd2) - Refresh the MRT admin API schema and add new commands: (Thanks [@clavery](https://github.com/clavery)!)
+  - `b2c mrt env clone` — clone an environment from an existing source, optionally copying redirects, environment variables, and B2C target info
+  - `b2c mrt bundle delete` — delete one or more bundles (uses bulk-delete when more than one ID is supplied)
+  - `b2c mrt org member list|add|get|update|remove` — manage organization-level members
+  - `b2c mrt org cert list|get|create|delete|restart-validation` — manage custom domain certificates referenced by environments
+
+- [#328](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/328) [`31e136b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/31e136b2cd3affd6ecfb53c949aa4374c82561ad) - ODS CLI: **`b2c sandbox create`** adds **`--emails`** for notification addresses; **`b2c sandbox update`** adds **`--start-scheduler`**, **`--stop-scheduler`**, **`--clear-start-scheduler`**, and **`--clear-stop-scheduler`**; **`b2c realm update`** adds **`--emails`**, **`--start-scheduler`**, **`--stop-scheduler`**, **`--clear-start-scheduler`**, and **`--clear-stop-scheduler`**. (Thanks [@charithaT07](https://github.com/charithaT07)!)
+
+  Sandbox API: **`b2c sandbox operations list`** and **`b2c sandbox operations get`** (inspect lifecycle operations); **`b2c sandbox alias get`** (get one alias by ID, same endpoint as **`alias list --alias-id`**).
+
+  User guide updated for scheduling flags, sandbox operations, and **`b2c sandbox alias get`**.
+
+### Patch Changes
+
+- [#407](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/407) [`f1a4ac0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f1a4ac0f9ccd8034e6e26ab1598f52516ecf471d) - CLI cleanup and correctness fixes: (Thanks [@clavery](https://github.com/clavery)!)
+  - `b2c cip query`, `cip describe`, `cip tables`, and `cip report *` now stream output through oclif's `ux.stdout` instead of writing directly to `process.stdout`. This restores the `--json` flag and makes output capturable by tests and CI.
+  - Long-running commands (`code:watch`, `logs:tail`, `mrt:tail-logs`) now deregister their SIGINT/SIGTERM handlers when finished, so re-invocations no longer stack handlers on the same process.
+  - Hook and signal-handler errors that were previously swallowed (`job:run` afterOperation hooks, `logs:tail` stop, `setup:ide:prophet` console fallbacks) now log at debug instead of disappearing.
+  - AM list commands (`am clients|roles|users list`) share a single `amPageSizeFlag` definition.
+  - Removed deprecated `LocalSourceResult` re-export.
+
+- [`3cefda3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3cefda324bce7a22183245162303df236f70be7d) - `b2c debug --help` now deep-links to the Debug command reference page on the docs site. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`b947888`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b947888ed07073ae2c4c79fe9cc00bd893b81bbe), [`6be308a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6be308a4f8f24dd433bfa557a98038c7392d149c), [`f1a4ac0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f1a4ac0f9ccd8034e6e26ab1598f52516ecf471d), [`a26226c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a26226c8d755bc3d93462418cb94ddc0f1083a29), [`a26226c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a26226c8d755bc3d93462418cb94ddc0f1083a29), [`51aed02`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/51aed020426f1ce3869b3d260d9af796db8a19e7), [`b53d75e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b53d75e196a6808b4fc9cac249c4495da2471846), [`b1600fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b1600fa014f9bd23c93488155b37ac2cc5c91fd2)]:
+  - @salesforce/b2c-tooling-sdk@1.9.0
+
 ## 1.8.1
 
 ### Patch Changes

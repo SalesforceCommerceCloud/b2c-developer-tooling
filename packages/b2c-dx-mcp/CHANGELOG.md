@@ -1,5 +1,20 @@
 # @salesforce/b2c-dx-mcp
 
+## 1.1.0
+
+### Minor Changes
+
+- [#395](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/395) [`b947888`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b947888ed07073ae2c4c79fe9cc00bd893b81bbe) - Add script debugger MCP tools to the CARTRIDGES and STOREFRONTNEXT toolsets. Includes `debug_start_session`, `debug_end_session`, `debug_list_sessions`, `debug_set_breakpoints`, `debug_wait_for_stop`, `debug_get_stack`, `debug_get_variables`, `debug_evaluate`, `debug_continue`, `debug_step_over`, `debug_step_into`, `debug_step_out`, and `debug_capture_at_breakpoint`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#395](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/395) [`b947888`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b947888ed07073ae2c4c79fe9cc00bd893b81bbe) - Add `ServerContext` for persistent server-scoped state across MCP tool invocations. Enables stateful tools (debug sessions, log watches) while preserving per-call config reloading for existing tools. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#407](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/407) [`f1a4ac0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f1a4ac0f9ccd8034e6e26ab1598f52516ecf471d) - - Telemetry send failures are no longer silently swallowed; they now log at debug level so deployment-monitoring drift is visible behind the `--debug` flag. (Thanks [@clavery](https://github.com/clavery)!)
+  - `registerToolsets()` throws a clear error if invoked more than once for the same server instance (instead of producing a cryptic duplicate-tool error from the SDK).
+- Updated dependencies [[`b947888`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b947888ed07073ae2c4c79fe9cc00bd893b81bbe), [`6be308a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6be308a4f8f24dd433bfa557a98038c7392d149c), [`f1a4ac0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f1a4ac0f9ccd8034e6e26ab1598f52516ecf471d), [`a26226c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a26226c8d755bc3d93462418cb94ddc0f1083a29), [`a26226c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a26226c8d755bc3d93462418cb94ddc0f1083a29), [`51aed02`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/51aed020426f1ce3869b3d260d9af796db8a19e7), [`b53d75e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b53d75e196a6808b4fc9cac249c4495da2471846), [`b1600fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b1600fa014f9bd23c93488155b37ac2cc5c91fd2)]:
+  - @salesforce/b2c-tooling-sdk@1.9.0
+
 ## 1.0.14
 
 ### Patch Changes
