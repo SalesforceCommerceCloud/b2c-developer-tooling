@@ -268,7 +268,7 @@ For the full command reference with all flags, see [Setup Commands](/cli/setup).
 | `certificate`            | Path to PKCS12 certificate for two-factor auth (mTLS)                                                                               |
 | `certificate-passphrase` | Passphrase for the certificate. Also accepts `passphrase`.                                                                          |
 | `self-signed`            | Allow self-signed server certificates. Also accepts `selfsigned`.                                                                   |
-| `api-backend`            | API backend for operations: `ocapi`, `scapi`, or `auto` (default). Auto prefers SCAPI when `shortCode` and `tenant-id` are set.    |
+| `api-backend`            | API backend for `job`, `code`, `bm users`, and `bm roles` commands: `ocapi`, `scapi`, or `auto` (default). Auto prefers SCAPI when `shortCode` and `tenant-id` are set, falling back to OCAPI on missing scopes. |
 
 ### Two-Factor Authentication (mTLS)
 

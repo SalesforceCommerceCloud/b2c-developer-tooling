@@ -106,6 +106,20 @@ b2c code activate --reload
 b2c code delete <version-name>
 ```
 
+### API Backend Selection
+
+`code list`, `code activate`, and `code delete` support both OCAPI and SCAPI. Auto mode (default) prefers SCAPI when `shortCode` and `tenantId` are configured.
+
+```bash
+# force SCAPI (requires sfcc.scripts.rw scope)
+b2c code list --api-backend scapi
+
+# force OCAPI
+b2c code list --api-backend ocapi
+```
+
+`code activate --reload` always uses OCAPI (no SCAPI cache-rebuild equivalent). `code deploy`, `code download`, `code watch` always use WebDAV.
+
 ### More Commands
 
 See `b2c code --help` for a full list of available commands and options in the `code` topic.
