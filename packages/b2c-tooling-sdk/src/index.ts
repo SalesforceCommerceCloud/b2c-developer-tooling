@@ -218,6 +218,24 @@ export type {
   ScapiScriptsBackendConfig,
 } from './operations/code/index.js';
 
+// Users (BM) backend abstraction
+export {
+  createUsersBackend,
+  FallbackUsersBackend,
+  OcapiUsersBackend,
+  ScapiUsersBackend,
+} from './operations/bm-users/index.js';
+export type {
+  UsersBackend,
+  UsersBackendConfig,
+  UserInfo,
+  ListUsersResult,
+  ListUsersOptions,
+  CreateUserInput,
+  UpdateUserChanges,
+  ScapiUsersBackendConfig,
+} from './operations/bm-users/index.js';
+
 // Operations - Jobs
 export {
   executeJob,

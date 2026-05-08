@@ -61,7 +61,8 @@ export type HttpClientType =
   | 'am-apiclients-api'
   | 'am-orgs-api'
   | 'scapi-jobs'
-  | 'scapi-scripts';
+  | 'scapi-scripts'
+  | 'scapi-merchant-users';
 
 /**
  * Middleware interface compatible with openapi-fetch.

@@ -336,6 +336,21 @@ export type {
   components as ScapiJobsComponents,
 } from './scapi-jobs.js';
 
+// SCAPI Merchant Users
+export {
+  createScapiMerchantUsersClient,
+  SCAPI_MERCHANT_USERS_READ_SCOPES,
+  SCAPI_MERCHANT_USERS_RW_SCOPES,
+} from './scapi-merchant-users.js';
+export type {
+  ScapiMerchantUsersClient,
+  ScapiMerchantUsersClientConfig,
+  ScapiMerchantUsersError,
+  ScapiMerchantUsersResponse,
+  paths as ScapiMerchantUsersPaths,
+  components as ScapiMerchantUsersComponents,
+} from './scapi-merchant-users.js';
+
 // SCAPI Scripts (code versions)
 export {createScapiScriptsClient, SCAPI_SCRIPTS_READ_SCOPES, SCAPI_SCRIPTS_RW_SCOPES} from './scapi-scripts.js';
 export type {
