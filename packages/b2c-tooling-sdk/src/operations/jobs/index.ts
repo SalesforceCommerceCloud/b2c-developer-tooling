@@ -90,6 +90,14 @@ export type {
   JobExecutionSearchResult,
 } from './run.js';
 
+// Backend abstraction
+export {createJobsBackend, waitForJobExecution, FallbackJobsBackend} from './backend.js';
+export type {JobsBackendConfig, ApiBackendPreference} from './backend.js';
+export {OcapiJobsBackend} from './ocapi-backend.js';
+export {ScapiJobsBackend} from './scapi-backend.js';
+export type {ScapiJobsBackendConfig} from './scapi-backend.js';
+export type {JobsBackend, JobExecutionResult, JobStepExecutionResult, JobExecutionSearchResults} from './types.js';
+
 // Site archive import/export
 export {
   siteArchiveImport,

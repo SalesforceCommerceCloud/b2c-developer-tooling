@@ -5,7 +5,11 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {waitForJob, JobExecutionError, type JobExecution} from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import {
+  waitForJobExecution,
+  JobExecutionError,
+  type JobExecutionResult,
+} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t, withDocs} from '../../i18n/index.js';
 
 export default class JobWait extends JobCommand<typeof JobWait> {
@@ -49,15 +53,14 @@ export default class JobWait extends JobCommand<typeof JobWait> {
     }),
   };
 
-  protected operations = {
-    waitForJob,
-  };
-
-  async run(): Promise<JobExecution> {
+  async run(): Promise<JobExecutionResult> {
     this.requireOAuthCredentials();
 
     const {jobId, executionId} = this.args;
     const {timeout, 'poll-interval': pollInterval, 'show-log': showLog} = this.flags;
+
+    const backend = this.createJobsBackend();
+    this.logger.debug(`Using ${backend.name} backend for job wait`);
 
     this.log(
       t('commands.job.wait.waiting', 'Waiting for job {{jobId}} execution {{executionId}}...', {
@@ -67,7 +70,7 @@ export default class JobWait extends JobCommand<typeof JobWait> {
     );
 
     try {
-      const execution = await this.operations.waitForJob(this.instance, jobId, executionId, {
+      const execution = await waitForJobExecution(backend, jobId, executionId, {
         timeoutSeconds: timeout,
         pollIntervalSeconds: pollInterval,
         onPoll: (info) => {
@@ -85,7 +88,7 @@ export default class JobWait extends JobCommand<typeof JobWait> {
       const durationSec = execution.duration ? (execution.duration / 1000).toFixed(1) : 'N/A';
       this.log(
         t('commands.job.wait.completed', 'Job completed: {{status}} (duration: {{duration}}s)', {
-          status: execution.exit_status?.code || execution.execution_status,
+          status: execution.exitStatus?.code || execution.executionStatus,
           duration: durationSec,
         }),
       );

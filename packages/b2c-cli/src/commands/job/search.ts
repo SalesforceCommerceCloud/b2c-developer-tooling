@@ -4,36 +4,32 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags, ux} from '@oclif/core';
-import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
-import {
-  searchJobExecutions,
-  type JobExecutionSearchResult,
-  type JobExecution,
-} from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import {JobCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {type JobExecutionResult, type JobExecutionSearchResults} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t, withDocs} from '../../i18n/index.js';
 
-const COLUMNS: Record<string, ColumnDef<JobExecution>> = {
+const COLUMNS: Record<string, ColumnDef<JobExecutionResult>> = {
   id: {
     header: 'Execution ID',
     get: (e) => e.id ?? '-',
   },
   jobId: {
     header: 'Job ID',
-    get: (e) => e.job_id ?? '-',
+    get: (e) => e.jobId ?? '-',
   },
   status: {
     header: 'Status',
-    get: (e) => e.exit_status?.code || e.execution_status || '-',
+    get: (e) => e.exitStatus?.code || e.executionStatus || '-',
   },
   startTime: {
     header: 'Start Time',
-    get: (e) => (e.start_time ? new Date(e.start_time).toISOString().replace('T', ' ').slice(0, 19) : '-'),
+    get: (e) => (e.startTime ? new Date(e.startTime).toISOString().replace('T', ' ').slice(0, 19) : '-'),
   },
 };
 
 const DEFAULT_COLUMNS = ['id', 'jobId', 'status', 'startTime'];
 
-export default class JobSearch extends InstanceCommand<typeof JobSearch> {
+export default class JobSearch extends JobCommand<typeof JobSearch> {
   static description = withDocs(
     t('commands.job.search.description', 'Search for job executions on a B2C Commerce instance'),
     '/cli/jobs.html#b2c-job-search',
@@ -50,7 +46,7 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
   ];
 
   static flags = {
-    ...InstanceCommand.baseFlags,
+    ...JobCommand.baseFlags,
     'job-id': Flags.string({
       char: 'j',
       description: 'Filter by job ID',
@@ -82,14 +78,13 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
     }),
   };
 
-  protected operations = {
-    searchJobExecutions,
-  };
-
-  async run(): Promise<JobExecutionSearchResult> {
+  async run(): Promise<JobExecutionSearchResults> {
     this.requireOAuthCredentials();
 
     const {'job-id': jobId, status, count, start, 'sort-by': sortBy, 'sort-order': sortOrder} = this.flags;
+
+    const backend = this.createJobsBackend();
+    this.logger.debug(`Using ${backend.name} backend for job search`);
 
     this.log(
       t('commands.job.search.searching', 'Searching job executions on {{hostname}}...', {
@@ -97,7 +92,7 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
       }),
     );
 
-    const results = await this.operations.searchJobExecutions(this.instance, {
+    const results = await backend.searchJobExecutions({
       jobId,
       status,
       count,
@@ -106,12 +101,10 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
       sortOrder: sortOrder as 'asc' | 'desc',
     });
 
-    // JSON output handled by oclif
     if (this.jsonEnabled()) {
       return results;
     }
 
-    // Human-readable output
     if (results.total === 0) {
       ux.stdout(t('commands.job.search.noResults', 'No job executions found.'));
       return results;

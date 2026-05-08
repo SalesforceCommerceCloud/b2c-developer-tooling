@@ -101,6 +101,12 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       allowNo: true,
       helpGroup: 'AUTH',
     }),
+    'api-backend': Flags.option({
+      description: 'API backend for operations (auto detects SCAPI availability)',
+      options: ['ocapi', 'scapi', 'auto'] as const,
+      env: 'SFCC_API_BACKEND',
+      helpGroup: 'INSTANCE',
+    })(),
   };
 
   private _instance?: B2CInstance;

@@ -22,45 +22,54 @@ describe('job search', () => {
     return createTestCommand(JobSearch, hooks.getConfig(), flags, args);
   }
 
+  function createMockBackend() {
+    return {
+      name: 'ocapi' as const,
+      executeJob: sinon.stub(),
+      getJobExecution: sinon.stub(),
+      searchJobExecutions: sinon.stub(),
+      deleteJobExecution: sinon.stub(),
+      getJobLog: sinon.stub(),
+    };
+  }
+
   function stubCommon(command: any) {
-    const instance = {config: {hostname: 'example.com'}};
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
-    sinon.stub(command, 'instance').get(() => instance);
+    sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
-    return instance;
+    const backend = createMockBackend();
+    sinon.stub(command, 'createJobsBackend').returns(backend);
+    return backend;
   }
 
   it('returns results in json mode', async () => {
     const command: any = await createCommand({json: true}, {});
-    const instance = stubCommon(command);
+    const backend = stubCommon(command);
     sinon.stub(command, 'jsonEnabled').returns(true);
 
-    const searchStub = sinon.stub().resolves({total: 1, hits: [{id: 'e1'}]});
-    command.operations = {...command.operations, searchJobExecutions: searchStub};
+    backend.searchJobExecutions.resolves({total: 1, hits: [{id: 'e1'}]});
     const uxStub = sinon.stub(ux, 'stdout');
 
     const result = await command.run();
 
-    expect(searchStub.calledOnce).to.equal(true);
-    expect(searchStub.getCall(0).args[0]).to.equal(instance);
+    expect(backend.searchJobExecutions.calledOnce).to.equal(true);
     expect(uxStub.called).to.equal(false);
     expect(result.total).to.equal(1);
   });
 
   it('prints no results in non-json mode', async () => {
     const command: any = await createCommand({}, {});
-    const instance = stubCommon(command);
+    const backend = stubCommon(command);
     sinon.stub(command, 'jsonEnabled').returns(false);
 
-    const searchStub = sinon.stub().resolves({total: 0, hits: []});
-    command.operations = {...command.operations, searchJobExecutions: searchStub};
+    backend.searchJobExecutions.resolves({total: 0, hits: []});
     const uxStub = sinon.stub(ux, 'stdout');
 
     const result = await command.run();
 
     expect(result.total).to.equal(0);
     expect(uxStub.calledOnce).to.equal(true);
-    expect(searchStub.getCall(0).args[0]).to.equal(instance);
+    expect(backend.searchJobExecutions.calledOnce).to.equal(true);
   });
 });

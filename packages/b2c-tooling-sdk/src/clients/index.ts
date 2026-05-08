@@ -325,6 +325,17 @@ export type {
   components as GranularReplicationsComponents,
 } from './granular-replications.js';
 
+// SCAPI Jobs
+export {createScapiJobsClient, SCAPI_JOBS_READ_SCOPES, SCAPI_JOBS_RW_SCOPES} from './scapi-jobs.js';
+export type {
+  ScapiJobsClient,
+  ScapiJobsClientConfig,
+  ScapiJobsError,
+  ScapiJobsResponse,
+  paths as ScapiJobsPaths,
+  components as ScapiJobsComponents,
+} from './scapi-jobs.js';
+
 export {getApiErrorMessage} from './error-utils.js';
 
 export {createTlsDispatcher} from './tls-dispatcher.js';

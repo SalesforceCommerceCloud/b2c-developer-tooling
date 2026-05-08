@@ -4,22 +4,17 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {
-  searchJobExecutions,
-  getJobExecution,
-  getJobLog,
-  type JobExecution,
-} from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {type JobExecutionResult} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t, withDocs} from '../../i18n/index.js';
 import {highlightLogText} from '../../utils/logs/index.js';
 
 interface JobLogResult {
-  execution: JobExecution;
+  execution: JobExecutionResult;
   log: string;
 }
 
-export default class JobLog extends InstanceCommand<typeof JobLog> {
+export default class JobLog extends JobCommand<typeof JobLog> {
   static args = {
     jobId: Args.string({
       description: 'Job ID',
@@ -46,7 +41,7 @@ export default class JobLog extends InstanceCommand<typeof JobLog> {
   ];
 
   static flags = {
-    ...InstanceCommand.baseFlags,
+    ...JobCommand.baseFlags,
     failed: Flags.boolean({
       description: 'Find the most recent failed execution with a log',
       default: false,
@@ -57,19 +52,16 @@ export default class JobLog extends InstanceCommand<typeof JobLog> {
     }),
   };
 
-  protected operations = {
-    searchJobExecutions,
-    getJobExecution,
-    getJobLog,
-  };
-
   async run(): Promise<JobLogResult> {
     this.requireOAuthCredentials();
 
     const {jobId, executionId} = this.args;
     const {failed} = this.flags;
 
-    let execution: JobExecution;
+    const backend = this.createJobsBackend();
+    this.logger.debug(`Using ${backend.name} backend for job log`);
+
+    let execution: JobExecutionResult;
 
     if (executionId) {
       this.log(
@@ -78,7 +70,7 @@ export default class JobLog extends InstanceCommand<typeof JobLog> {
           executionId,
         }),
       );
-      execution = await this.operations.getJobExecution(this.instance, jobId, executionId);
+      execution = await backend.getJobExecution(jobId, executionId);
     } else {
       this.log(
         failed
@@ -92,7 +84,7 @@ export default class JobLog extends InstanceCommand<typeof JobLog> {
             }),
       );
 
-      const results = await this.operations.searchJobExecutions(this.instance, {
+      const results = await backend.searchJobExecutions({
         jobId,
         status: failed ? ['ERROR'] : undefined,
         count: 10,
@@ -100,7 +92,7 @@ export default class JobLog extends InstanceCommand<typeof JobLog> {
         sortOrder: 'desc',
       });
 
-      const match = results.hits.find((hit) => hit.is_log_file_existing);
+      const match = results.hits.find((hit) => hit.isLogFileExisting);
       if (!match) {
         const msg = failed
           ? t(
@@ -117,18 +109,18 @@ export default class JobLog extends InstanceCommand<typeof JobLog> {
       execution = match;
     }
 
-    if (!execution.is_log_file_existing) {
+    if (!execution.isLogFileExisting) {
       this.error(t('commands.job.log.noLogFile', 'No log file exists for this execution'));
     }
 
     this.log(
       t('commands.job.log.foundExecution', 'Found execution {{executionId}} ({{status}})', {
         executionId: execution.id ?? 'unknown',
-        status: execution.exit_status?.code || execution.execution_status || 'unknown',
+        status: execution.exitStatus?.code || execution.executionStatus || 'unknown',
       }),
     );
 
-    const log = await this.operations.getJobLog(this.instance, execution);
+    const log = await backend.getJobLog(execution);
 
     if (!this.jsonEnabled()) {
       const useColor = !this.flags['no-color'] && process.stdout.isTTY;

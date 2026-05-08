@@ -184,6 +184,34 @@ b2c job search --sort-by start_time --sort-order desc
 b2c job search --json
 ```
 
+### Delete Job Executions
+
+```bash
+# delete a job execution record (requires SCAPI)
+b2c job execution delete my-job abc123-def456
+```
+
+### API Backend Selection
+
+Job commands support both OCAPI and SCAPI backends. By default, SCAPI is preferred when `shortCode` and `tenantId` are configured.
+
+```bash
+# force SCAPI backend
+b2c job run my-job --api-backend scapi
+
+# force OCAPI backend
+b2c job run my-job --api-backend ocapi
+
+# auto-detect (default) - prefers SCAPI when configured, falls back to OCAPI
+b2c job run my-job --api-backend auto
+```
+
+Set via dw.json: `"api-backend": "scapi"` or env: `SFCC_API_BACKEND=scapi`.
+
+**SCAPI scopes**: `sfcc.jobs.rw` (recommended) for full access, or `sfcc.jobs` for read-only (search, wait, log).
+
+> **Note:** `job import` and `job export` currently always use OCAPI regardless of `--api-backend`.
+
 ### Wait for Job Completion
 
 ```bash

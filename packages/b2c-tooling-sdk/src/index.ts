@@ -215,6 +215,12 @@ export {
   siteArchiveImport,
   siteArchiveExport,
   siteArchiveExportToPath,
+  // Backend abstraction
+  createJobsBackend,
+  waitForJobExecution,
+  FallbackJobsBackend,
+  OcapiJobsBackend,
+  ScapiJobsBackend,
 } from './operations/jobs/index.js';
 export type {
   JobExecution,
@@ -226,6 +232,14 @@ export type {
   WaitForJobPollInfo,
   SearchJobExecutionsOptions,
   JobExecutionSearchResult,
+  // Backend abstraction types
+  JobsBackend,
+  JobsBackendConfig,
+  ApiBackendPreference,
+  JobExecutionResult,
+  JobStepExecutionResult,
+  JobExecutionSearchResults,
+  ScapiJobsBackendConfig,
   SiteArchiveImportOptions,
   SiteArchiveImportResult,
   SiteArchiveExportOptions,

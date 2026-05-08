@@ -112,6 +112,8 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
     certificate: flags.certificate as string | undefined,
     certificatePassphrase: flags.passphrase as string | undefined,
     selfSigned: (flags.selfsigned as boolean) || !(flags.verify as boolean),
+    // API backend
+    apiBackend: flags['api-backend'] as NormalizedConfig['apiBackend'],
     // Include OAuth flags (instance operations often need OAuth too)
     ...extractOAuthFlags(flags),
   };

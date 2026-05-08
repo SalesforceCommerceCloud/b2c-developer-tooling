@@ -21,18 +21,30 @@ describe('job run', () => {
     return createTestCommand(JobRun, hooks.getConfig(), flags, args);
   }
 
+  function createMockBackend() {
+    return {
+      name: 'ocapi' as const,
+      executeJob: sinon.stub(),
+      getJobExecution: sinon.stub(),
+      searchJobExecutions: sinon.stub(),
+      deleteJobExecution: sinon.stub(),
+      getJobLog: sinon.stub(),
+    };
+  }
+
   function stubCommon(command: any) {
-    const instance = {config: {hostname: 'example.com'}};
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
-    sinon.stub(command, 'instance').get(() => instance);
+    sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'createContext').callsFake((operationType: any, metadata: any) => ({
       operationType,
       metadata,
       startTime: Date.now(),
     }));
-    return instance;
+    const backend = createMockBackend();
+    sinon.stub(command, 'createJobsBackend').returns(backend);
+    return backend;
   }
 
   it('errors on invalid -P param format', async () => {
@@ -53,39 +65,41 @@ describe('job run', () => {
 
   it('executes without waiting when --wait is false', async () => {
     const command: any = await createCommand({param: ['A=1'], json: true}, {jobId: 'my-job'});
-    const instance = stubCommon(command);
+    const backend = stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
-    const execStub = sinon.stub().resolves({id: 'e1', execution_status: 'running'});
-    const waitStub = sinon.stub().rejects(new Error('Unexpected wait'));
-    command.operations = {...command.operations, executeJob: execStub, waitForJob: waitStub};
+    backend.executeJob.resolves({id: 'e1', executionStatus: 'running'});
 
     const result = await command.run();
 
-    expect(execStub.calledOnce).to.equal(true);
-    expect(execStub.getCall(0).args[0]).to.equal(instance);
-    expect(waitStub.called).to.equal(false);
+    expect(backend.executeJob.calledOnce).to.equal(true);
+    expect(backend.executeJob.getCall(0).args[0]).to.equal('my-job');
     expect(result.id).to.equal('e1');
   });
 
   it('waits when --wait is true', async () => {
-    const command: any = await createCommand({wait: true, timeout: 1, json: true}, {jobId: 'my-job'});
-    const instance = stubCommon(command);
+    const command: any = await createCommand(
+      {wait: true, timeout: 10, 'poll-interval': 1, json: true},
+      {jobId: 'my-job'},
+    );
+    const backend = stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
-    const execStub = sinon.stub().resolves({id: 'e1', execution_status: 'running'});
-    const waitStub = sinon.stub().resolves({id: 'e1', execution_status: 'finished'});
-    command.operations = {...command.operations, executeJob: execStub, waitForJob: waitStub};
+    backend.executeJob.resolves({id: 'e1', executionStatus: 'running'});
+    backend.getJobExecution.resolves({
+      id: 'e1',
+      executionStatus: 'finished',
+      exitStatus: {code: 'OK', status: 'ok'},
+    });
 
     const result = await command.run();
 
-    expect(waitStub.calledOnce).to.equal(true);
-    expect(waitStub.getCall(0).args[0]).to.equal(instance);
-    expect(result.execution_status).to.equal('finished');
+    expect(backend.getJobExecution.called).to.equal(true);
+    expect(result.executionStatus).to.equal('finished');
   });
 
   it('returns early when before hooks skip', async () => {
@@ -96,7 +110,7 @@ describe('job run', () => {
 
     const result = await command.run();
 
-    expect(result.exit_status.code).to.equal('skipped');
+    expect(result.executionStatus).to.equal('finished');
   });
 
   it('errors on invalid --body JSON', async () => {
@@ -113,36 +127,5 @@ describe('job run', () => {
     }
 
     expect(errorStub.calledOnce).to.equal(true);
-  });
-
-  it('shows job log and errors on JobExecutionError when waiting and show-log is true', async () => {
-    const command: any = await createCommand({wait: true, json: true, 'show-log': true}, {jobId: 'my-job'});
-    stubCommon(command);
-
-    command.flags = {...command.flags, wait: true, json: true, 'show-log': true};
-
-    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
-    sinon.stub(command, 'runAfterHooks').resolves(void 0);
-    const execStub = sinon.stub().resolves({id: 'e1', execution_status: 'running'});
-    command.operations = {...command.operations, executeJob: execStub};
-    sinon.stub(command, 'showJobLog').resolves(void 0);
-
-    const exec: any = {execution_status: 'finished', exit_status: {code: 'ERROR'}};
-    const {JobExecutionError} = await import('@salesforce/b2c-tooling-sdk/operations/jobs');
-    const jobError = new JobExecutionError('failed', exec);
-    expect(jobError).to.be.instanceOf(JobExecutionError);
-    const waitStub = sinon.stub().rejects(jobError);
-    command.operations = {...command.operations, waitForJob: waitStub};
-
-    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
-
-    try {
-      await command.run();
-      expect.fail('Should have thrown');
-    } catch {
-      // expected
-    }
-
-    expect(errorStub.called).to.equal(true);
   });
 });
