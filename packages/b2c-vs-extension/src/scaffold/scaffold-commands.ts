@@ -23,6 +23,7 @@ import {
 } from '@salesforce/b2c-tooling-sdk/scaffold';
 import {findCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
 import type {B2CExtensionConfig} from '../config-provider.js';
+import {registerSafeCommand} from '../safety.js';
 
 interface ScaffoldQuickPickItem extends vscode.QuickPickItem {
   scaffold: Scaffold;
@@ -41,7 +42,7 @@ export function registerScaffoldCommands(
   log: vscode.OutputChannel,
   builtInScaffoldsDir: string,
 ): vscode.Disposable[] {
-  const generate = vscode.commands.registerCommand('b2c-dx.scaffold.generate', async (uri?: vscode.Uri) => {
+  const generate = registerSafeCommand('b2c-dx.scaffold.generate', async (uri?: vscode.Uri) => {
     try {
       await runScaffoldWizard(uri, configProvider, log, builtInScaffoldsDir);
     } catch (err) {

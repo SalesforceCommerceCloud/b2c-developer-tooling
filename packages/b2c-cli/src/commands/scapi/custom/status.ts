@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Command, Flags, ux} from '@oclif/core';
-import {OAuthCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  OAuthCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   createCustomApisClient,
   getApiErrorMessage,
@@ -187,15 +193,7 @@ export default class ScapiCustomStatus extends ScapiCustomCommand<typeof ScapiCu
       description: 'Group output by field (type or site)',
       options: ['type', 'site'],
     }),
-    columns: Flags.string({
-      char: 'c',
-      description: `Columns to display (comma-separated). Available: ${Object.keys(COLUMNS).join(', ')}`,
-    }),
-    extended: Flags.boolean({
-      char: 'x',
-      description: 'Show all columns including extended fields',
-      default: false,
-    }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<CustomApiStatusResponse> {
@@ -286,33 +284,6 @@ export default class ScapiCustomStatus extends ScapiCustomCommand<typeof ScapiCu
   }
 
   /**
-   * Determines which columns to display based on flags.
-   */
-  private getSelectedColumns(): string[] {
-    const columnsFlag = this.flags.columns;
-    const extended = this.flags.extended;
-
-    if (columnsFlag) {
-      // User specified explicit columns
-      const requested = columnsFlag.split(',').map((c) => c.trim());
-      const valid = tableRenderer.validateColumnKeys(requested);
-      if (valid.length === 0) {
-        this.warn(`No valid columns specified. Available: ${tableRenderer.getColumnKeys().join(', ')}`);
-        return DEFAULT_COLUMNS;
-      }
-      return valid;
-    }
-
-    if (extended) {
-      // Show all columns
-      return tableRenderer.getColumnKeys();
-    }
-
-    // Default columns (non-extended)
-    return DEFAULT_COLUMNS;
-  }
-
-  /**
    * Groups endpoints by a key function.
    */
   private groupEndpointsBy(
@@ -333,7 +304,7 @@ export default class ScapiCustomStatus extends ScapiCustomCommand<typeof ScapiCu
    * Renders endpoints, optionally grouped by type or site.
    */
   private renderEndpoints(endpoints: RolledUpEndpoint[], groupBy?: 'site' | 'type'): void {
-    const columns = this.getSelectedColumns();
+    const columns = selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this));
 
     if (!groupBy) {
       // No grouping - render flat table

@@ -15,7 +15,7 @@ Commands for managing Managed Runtime (MRT) projects, environments, and bundles 
 | `mrt project member` | `list`, `add`, `get`, `update`, `remove` | Manage project members |
 | `mrt project notification` | `list`, `create`, `get`, `update`, `delete` | Manage deployment notifications |
 | `mrt env` | `list`, `create`, `get`, `update`, `delete`, `invalidate`, `b2c` | Manage environments |
-| `mrt env var` | `list`, `set`, `delete` | Manage environment variables |
+| `mrt env var` | `list`, `set`, `push`, `delete` | Manage environment variables |
 | `mrt env redirect` | `list`, `create`, `delete`, `clone` | Manage URL redirects |
 | `mrt env access-control` | `list` | Manage access control headers |
 | `mrt bundle` | `deploy`, `list`, `history`, `download` | Manage bundles and deployments |
@@ -112,25 +112,27 @@ b2c mrt project create my-storefront --name "My Storefront" --organization my-or
 Get details of an MRT project.
 
 ```bash
-b2c mrt project get --project my-storefront
-b2c mrt project get -p my-storefront --json
+b2c mrt project get my-storefront
+b2c mrt project get my-storefront --json
 ```
 
 ### b2c mrt project update
 
-Update an MRT project.
+Update an MRT project. The project slug is provided as a positional argument; at least one of `--name`, `--url`, or `--region` must be supplied.
 
 ```bash
-b2c mrt project update --project my-storefront --name "Updated Name"
+b2c mrt project update my-storefront --name "Updated Name"
+b2c mrt project update my-storefront --region us-east-1
+b2c mrt project update my-storefront --url https://www.example.com
 ```
 
 ### b2c mrt project delete
 
-Delete an MRT project.
+Delete an MRT project. The project slug is provided as a positional argument.
 
 ```bash
-b2c mrt project delete --project my-storefront
-b2c mrt project delete -p my-storefront --force
+b2c mrt project delete my-storefront
+b2c mrt project delete my-storefront --force
 ```
 
 ---
@@ -148,14 +150,21 @@ b2c mrt project member list -p my-storefront --json
 
 ### b2c mrt project member add
 
-Add a member to an MRT project.
+Add a member to an MRT project. The role is provided as an integer.
 
 ```bash
-b2c mrt project member add user@example.com --project my-storefront --role admin
-b2c mrt project member add user@example.com -p my-storefront --role developer
+b2c mrt project member add user@example.com --project my-storefront --role 0
+b2c mrt project member add user@example.com -p my-storefront --role 1
 ```
 
-**Roles:** `admin`, `developer`, `viewer`
+**Roles:**
+
+| Value | Role |
+|-------|------|
+| `0` | Admin |
+| `1` | Developer |
+| `2` | Marketer |
+| `3` | Read Only |
 
 ### b2c mrt project member get
 
@@ -167,10 +176,10 @@ b2c mrt project member get user@example.com --project my-storefront
 
 ### b2c mrt project member update
 
-Update a project member's role.
+Update a project member's role. See the role table under [b2c mrt project member add](#b2c-mrt-project-member-add).
 
 ```bash
-b2c mrt project member update user@example.com --project my-storefront --role viewer
+b2c mrt project member update user@example.com --project my-storefront --role 3
 ```
 
 ### b2c mrt project member remove
@@ -314,16 +323,45 @@ b2c mrt env delete staging --project my-storefront
 b2c mrt env delete old-env -p my-storefront --force
 ```
 
+### b2c mrt env clone
+
+Clone an environment from an existing source environment. The new target receives the source's configuration (excluding proxies and the production flag) and is automatically deployed with the source target's current bundle (if any). Optionally clones redirects, environment variables, and B2C target info.
+
+The source environment is the one selected by `--environment` / `-e` (or `MRT_ENVIRONMENT` / `mrtEnvironment` in `dw.json`). The positional argument is the **new** environment's slug.
+
+```bash
+# Clone the configured environment into a new slug
+b2c mrt env clone staging-copy -p my-storefront -e staging
+
+# Clone with redirects and environment variables
+b2c mrt env clone qa -p my-storefront -e staging --clone-redirects --clone-env-vars
+
+# Clone using a custom domain certificate
+b2c mrt env clone qa -p my-storefront -e staging \
+  --external-hostname qa.example.com --certificate-id 123 --wait
+```
+
+| Flag | Description |
+|------|-------------|
+| `--environment`, `-e` | Source environment slug (defaults to `mrtEnvironment` / `MRT_ENVIRONMENT`) |
+| `--external-hostname` | Full external hostname (required for non-MRT-managed certificates) |
+| `--external-domain` | External domain for Universal PWA SSR |
+| `--certificate-id` | Certificate ID for custom domain (use `b2c mrt org cert list` to find) |
+| `--clone-redirects` | Clone redirects from the source environment |
+| `--clone-env-vars` | Clone environment variables from the source environment |
+| `--clone-b2c-info` | Clone B2C target info from the source environment |
+| `--wait`, `-w` | Wait for the new environment to reach a terminal state |
+
 ### b2c mrt env invalidate
 
-Invalidate CDN cache for an environment.
+Invalidate CDN cache for an environment. The `--pattern` flag is required and accepts a path pattern (use `/*` to invalidate everything).
 
 ```bash
 # Invalidate all cached content
-b2c mrt env invalidate -p my-storefront -e production
+b2c mrt env invalidate -p my-storefront -e production --pattern "/*"
 
-# Invalidate specific paths
-b2c mrt env invalidate -p my-storefront -e production --path "/products/*" --path "/categories/*"
+# Invalidate a specific path
+b2c mrt env invalidate -p my-storefront -e production --pattern "/products/*"
 ```
 
 ### b2c mrt env b2c
@@ -369,6 +407,31 @@ b2c mrt env var set API_KEY=secret DEBUG=true -p my-storefront -e staging
 b2c mrt env var set "MESSAGE=hello world" -p my-storefront -e production
 ```
 
+### b2c mrt env var push
+
+Push variables from a local `.env` file to the environment. Diffs the local file against the remote state, prints a summary (added / updated / unchanged / remote-only), and prompts for confirmation before applying. Remote-only variables are **not** deleted.
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--file`, `-f` | Path to the `.env` file to push | `.env` |
+| `--exclude-prefix` | Exclude variables whose keys start with this prefix (repeatable) | `MRT_` |
+| `--yes`, `-y` | Skip confirmation prompt | `false` |
+
+```bash
+# Push variables from ./.env, with confirmation prompt
+b2c mrt env var push -p my-storefront -e production
+
+# Push from a custom file, skipping the confirmation prompt
+b2c mrt env var push -p my-storefront -e staging --file config/.env --yes
+
+# Exclude additional prefixes (MRT_ is always excluded by default)
+b2c mrt env var push -p my-storefront -e staging --exclude-prefix INTERNAL_
+```
+
+::: tip
+The `MRT_` prefix is excluded by default because those variables (`MRT_PROJECT`, `MRT_ENVIRONMENT`, `MRT_API_KEY`) configure the CLI itself rather than the environment.
+:::
+
 ### b2c mrt env var delete
 
 Delete an environment variable.
@@ -394,30 +457,40 @@ b2c mrt env redirect list -p my-storefront -e production --limit 50
 
 Create a URL redirect.
 
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--from` | Source path (required) | — |
+| `--to` | Destination path (required) | — |
+| `--status` | HTTP status code (`301` or `302`) | `301` |
+| `--forward-querystring` | Forward query string parameters | `false` |
+| `--forward-wildcard` | Forward the wildcard portion of the path | `false` |
+
 ```bash
+# Permanent redirect (default — 301)
 b2c mrt env redirect create -p my-storefront -e production \
   --from "/old-path" --to "/new-path"
 
-# Permanent redirect (301)
+# Temporary redirect
 b2c mrt env redirect create -p my-storefront -e production \
-  --from "/legacy/*" --to "/modern/$1" --permanent
+  --from "/legacy/*" --to "/modern/$1" --status 302 --forward-wildcard
 ```
 
 ### b2c mrt env redirect delete
 
-Delete a URL redirect.
+Delete a URL redirect by its source path.
 
 ```bash
-b2c mrt env redirect delete abc-123 -p my-storefront -e production
+b2c mrt env redirect delete "/old-path" -p my-storefront -e production
+b2c mrt env redirect delete "/old-path" -p my-storefront -e production --force
 ```
 
 ### b2c mrt env redirect clone
 
-Clone redirects from one environment to another.
+Clone redirects from one environment to another within the same project.
 
 ```bash
-b2c mrt env redirect clone -p my-storefront \
-  --source staging --target production
+b2c mrt env redirect clone -p my-storefront --from staging --to production
+b2c mrt env redirect clone -p my-storefront --from staging --to production --force
 ```
 
 ---
@@ -508,6 +581,105 @@ b2c mrt bundle download 12345 -p my-storefront -o ./artifacts/bundle.tgz
 b2c mrt bundle download 12345 -p my-storefront --url-only
 ```
 
+### b2c mrt bundle delete
+
+Delete one or more bundles. Bundles are deleted asynchronously by the server and only project admins can run this command. With more than one bundle ID the CLI uses the bulk-delete endpoint and reports any rejected bundles (e.g. bundles in use by an active deployment).
+
+```bash
+# Delete a single bundle
+b2c mrt bundle delete 12345 -p my-storefront
+
+# Delete several at once
+b2c mrt bundle delete 12345 12346 12347 -p my-storefront
+
+# Skip the confirmation prompt
+b2c mrt bundle delete 12345 -p my-storefront --force
+```
+
+---
+
+## Organization Member Commands
+
+Organization members are distinct from project members: they hold a role at the organization level and can optionally be granted permission to view all projects and manage custom domain certificates.
+
+### b2c mrt org member list
+
+```bash
+b2c mrt org member list --org my-org
+b2c mrt org member list --org my-org --search alice
+```
+
+### b2c mrt org member add
+
+Roles: `owner` or `member`.
+
+```bash
+b2c mrt org member add alice@example.com --org my-org --role member
+b2c mrt org member add bob@example.com --org my-org --role owner --view-all-projects
+```
+
+### b2c mrt org member get
+
+```bash
+b2c mrt org member get alice@example.com --org my-org
+```
+
+### b2c mrt org member update
+
+```bash
+b2c mrt org member update alice@example.com --org my-org --view-all-projects
+b2c mrt org member update alice@example.com --org my-org --no-cert-permission
+```
+
+### b2c mrt org member remove
+
+```bash
+b2c mrt org member remove alice@example.com --org my-org
+```
+
+---
+
+## Organization Certificate Commands
+
+Manage custom domain certificates for environments that use a non-MRT-managed hostname. Certificates are organization-scoped; reference a certificate from `env create`, `env update`, or `env clone` via `--certificate-id`.
+
+### b2c mrt org cert list
+
+```bash
+b2c mrt org cert list --org my-org
+b2c mrt org cert list --org my-org --custom-only
+```
+
+### b2c mrt org cert get
+
+Returns the validation record (the DNS entry the customer must add to validate the certificate).
+
+```bash
+b2c mrt org cert get 123 --org my-org
+```
+
+### b2c mrt org cert create
+
+```bash
+b2c mrt org cert create shop.example.com --org my-org
+```
+
+The output includes the validation record. Add it to your DNS to complete validation.
+
+### b2c mrt org cert delete
+
+```bash
+b2c mrt org cert delete 123 --org my-org
+```
+
+### b2c mrt org cert restart-validation
+
+Restart validation for a certificate that has not yet been validated. The response includes a fresh validation record.
+
+```bash
+b2c mrt org cert restart-validation 123 --org my-org
+```
+
 ---
 
 ## Tail Logs
@@ -586,22 +758,27 @@ b2c mrt user profile --json
 
 ### b2c mrt user api-key
 
-Reset your MRT API key.
+Reset your MRT API key. **The current key is invalidated immediately** — running this command without `--yes` prompts for confirmation. The new key is printed once; copy it and update any saved credentials.
 
 ```bash
-b2c mrt user api-key --reset
+b2c mrt user api-key
+b2c mrt user api-key --yes
+b2c mrt user api-key --json
 ```
 
 ### b2c mrt user email-prefs
 
-View or update email preferences.
+View or update email notification preferences. With no flags the command prints the current preferences; pass `--node-deprecation` to enable Node.js deprecation notifications, or `--no-node-deprecation` to disable them.
 
 ```bash
 # View current preferences
 b2c mrt user email-prefs
 
-# Update preferences
-b2c mrt user email-prefs --marketing --no-notifications
+# Enable Node.js deprecation notifications
+b2c mrt user email-prefs --node-deprecation
+
+# Disable them
+b2c mrt user email-prefs --no-node-deprecation
 ```
 
 ---
@@ -637,7 +814,6 @@ b2c mrt bundle deploy -p my-storefront -e qa
 ### Invalidate Cache After Content Update
 
 ```bash
-# Invalidate specific paths
-b2c mrt env invalidate -p my-storefront -e production \
-  --path "/products/*" --path "/categories/*"
+# Invalidate a specific path pattern
+b2c mrt env invalidate -p my-storefront -e production --pattern "/products/*"
 ```

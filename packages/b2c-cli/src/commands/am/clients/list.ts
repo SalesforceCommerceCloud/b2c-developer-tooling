@@ -4,9 +4,10 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags, Errors} from '@oclif/core';
-import {AmCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {AmCommand, TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {AccountManagerApiClient, APIClientCollection} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
+import {amPageSizeFlag} from '../../../utils/am/flags.js';
 
 /** Format date as MM/DD/YYYY HH:MM:SS with zero-padding for equal column width. */
 function formatDateEqualLength(value: Date | number | string): string {
@@ -75,22 +76,11 @@ export default class ClientList extends AmCommand<typeof ClientList> {
   ];
 
   static flags = {
-    size: Flags.integer({
-      char: 's',
-      description: 'Page size (default: 20, min: 1, max: 4000)',
-    }),
+    size: amPageSizeFlag,
     page: Flags.integer({
       description: 'Page number (zero-based index, default: 0, min: 0)',
     }),
-    columns: Flags.string({
-      char: 'c',
-      description: `Columns to display (comma-separated). Available: ${Object.keys(COLUMNS).join(', ')}`,
-    }),
-    extended: Flags.boolean({
-      char: 'x',
-      description: 'Show all columns including extended fields',
-      default: false,
-    }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<APIClientCollection> {
@@ -134,8 +124,7 @@ export default class ClientList extends AmCommand<typeof ClientList> {
       return result;
     }
 
-    const columns = this.getSelectedColumns();
-    tableRenderer.render(clients, columns);
+    tableRenderer.render(clients, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     if (clients.length === pageSize) {
       const nextPage = pageNumber + 1;
@@ -151,26 +140,5 @@ export default class ClientList extends AmCommand<typeof ClientList> {
     }
 
     return result;
-  }
-
-  private getSelectedColumns(): string[] {
-    const columnsFlag = this.flags.columns;
-    const extended = this.flags.extended;
-
-    if (columnsFlag) {
-      const requested = columnsFlag.split(',').map((c) => c.trim());
-      const valid = tableRenderer.validateColumnKeys(requested);
-      if (valid.length === 0) {
-        this.warn(`No valid columns specified. Available: ${tableRenderer.getColumnKeys().join(', ')}`);
-        return DEFAULT_COLUMNS;
-      }
-      return valid;
-    }
-
-    if (extended) {
-      return tableRenderer.getColumnKeys();
-    }
-
-    return DEFAULT_COLUMNS;
   }
 }

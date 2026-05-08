@@ -39,13 +39,20 @@ function logProphetDw(message, error) {
   var suffix = error && error.message ? ': ' + String(error.message) : '';
   var line = '[b2c setup ide prophet] ' + message + suffix;
 
+  // Best-effort logging: this script is loaded by external tools (Prophet) where
+  // console may be redirected or unavailable. A failure to log a log message is
+  // not actionable and must not interfere with returning the resolved config.
   try {
     console.error(line);
-  } catch (logError) {}
+  } catch (logError) {
+    /* ignore */
+  }
 
   try {
     console.log(line);
-  } catch (logError) {}
+  } catch (logError) {
+    /* ignore */
+  }
 }
 
 function loadDotEnv() {

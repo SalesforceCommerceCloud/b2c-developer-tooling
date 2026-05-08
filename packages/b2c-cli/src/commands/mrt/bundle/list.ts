@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  MrtCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {listBundles, type ListBundlesResult, type MrtBundle} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 
@@ -33,6 +39,8 @@ const COLUMNS: Record<string, ColumnDef<MrtBundle>> = {
 
 const DEFAULT_COLUMNS = ['id', 'message', 'status', 'user', 'created'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 /**
  * List bundles for an MRT project.
  */
@@ -58,6 +66,7 @@ export default class MrtBundleList extends MrtCommand<typeof MrtBundleList> {
     offset: Flags.integer({
       description: 'Offset for pagination',
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<ListBundlesResult> {
@@ -88,7 +97,10 @@ export default class MrtBundleList extends MrtCommand<typeof MrtBundleList> {
         this.log(t('commands.mrt.bundle.list.empty', 'No bundles found.'));
       } else {
         this.log(t('commands.mrt.bundle.list.count', 'Found {{count}} bundle(s):', {count: result.count}));
-        createTable(COLUMNS).render(result.bundles, DEFAULT_COLUMNS);
+        tableRenderer.render(
+          result.bundles,
+          selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
+        );
       }
     }
 

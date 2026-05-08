@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args} from '@oclif/core';
-import {WebDavCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  WebDavCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import type {PropfindEntry} from '@salesforce/b2c-tooling-sdk/clients';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -62,6 +68,8 @@ const COLUMNS: Record<string, ColumnDef<PropfindEntry>> = {
 
 const DEFAULT_COLUMNS = ['name', 'type', 'size'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 interface LsResult {
   path: string;
   count: number;
@@ -87,8 +95,14 @@ export default class WebDavLs extends WebDavCommand<typeof WebDavLs> {
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> src/instance',
     '<%= config.bin %> <%= command.id %> --root=cartridges',
+    '<%= config.bin %> <%= command.id %> --extended',
+    '<%= config.bin %> <%= command.id %> --columns name,size,modified',
     '<%= config.bin %> <%= command.id %> --root=logs --json',
   ];
+
+  static flags = {
+    ...columnFlagsFor(COLUMNS),
+  };
 
   async run(): Promise<LsResult> {
     this.ensureWebDavAuth();
@@ -121,7 +135,10 @@ export default class WebDavLs extends WebDavCommand<typeof WebDavLs> {
       return result;
     }
 
-    createTable(COLUMNS).render(filteredEntries, DEFAULT_COLUMNS);
+    tableRenderer.render(
+      filteredEntries,
+      selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
+    );
 
     return result;
   }

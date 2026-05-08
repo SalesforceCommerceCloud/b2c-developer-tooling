@@ -35,6 +35,20 @@ export function toCsv(columns: string[], rows: Array<Record<string, unknown>>): 
   return lines.join('\n');
 }
 
+/**
+ * Write CSV-formatted rows to stdout. Uses `ux.stdout` so that test helpers
+ * (`stubCommandConfigAndLogger`/`runSilent`) can capture or silence output —
+ * unlike a raw `process.stdout.write`, which bypasses oclif redirection.
+ */
+export function writeCsv(columns: string[], rows: Array<Record<string, unknown>>): void {
+  ux.stdout(toCsv(columns, rows));
+}
+
+/** Pretty-print a JSON output through `ux.stdout` for the same testability reasons as {@link writeCsv}. */
+export function writeJson(value: unknown): void {
+  ux.stdout(JSON.stringify(value, null, 2));
+}
+
 export function renderTable(columns: string[], rows: Array<Record<string, unknown>>): void {
   if (columns.length === 0) {
     ux.stdout('No columns returned.');

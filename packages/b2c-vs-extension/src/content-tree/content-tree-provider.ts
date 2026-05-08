@@ -172,6 +172,7 @@ export class ContentTreeDataProvider implements vscode.TreeDataProvider<ContentT
           async () => {
             const result = await fetchContentLibrary(instance, element.libraryId, {
               isSiteLibrary: element.isSiteLibrary,
+              assetQuery: this.configProvider.getAssetQuery(),
             });
             return result.library;
           },

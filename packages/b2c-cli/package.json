@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce B2C Commerce CLI",
-  "version": "1.8.1",
+  "version": "1.9.0",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -108,6 +108,12 @@
                 "description": "Get and set permissions for Business Manager roles"
               }
             }
+          },
+          "users": {
+            "description": "Manage and search instance-level Business Manager users"
+          },
+          "access-key": {
+            "description": "Manage access keys for externally-managed Business Manager users"
           }
         }
       },
@@ -147,6 +153,12 @@
       "mrt:org": {
         "description": "List organizations and view B2C Commerce instance connections\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#organization-commands"
       },
+      "mrt:org:member": {
+        "description": "Manage organization-level members and their permissions\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#organization-member-commands"
+      },
+      "mrt:org:cert": {
+        "description": "Manage custom domain certificates for organization environments\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#organization-certificate-commands"
+      },
       "mrt:project": {
         "description": "Create, update, delete, and configure MRT projects\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-commands"
       },
@@ -179,6 +191,9 @@
           },
           "realm": {
             "description": "Manage sandbox realms (alias for 'sandbox realm')"
+          },
+          "operations": {
+            "description": "List and inspect sandbox lifecycle operations (alias for 'sandbox operations')"
           }
         }
       },
@@ -334,7 +349,7 @@
     "test:ci": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:ci:win": "c8 --check-coverage=false env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:unit": "env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
-    "test:agent": "env OCLIF_TEST_ROOT=. mocha --forbid-only --reporter min --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
+    "test:agent": "env OCLIF_TEST_ROOT=. mocha --forbid-only --parallel --jobs 4 --reporter min --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
     "test:e2e": "env TEST_USE_SHARED_SANDBOX=true OCLIF_TEST_ROOT=. mocha --forbid-only --require test/functional/e2e/hooks.ts --node-option import=tsx --timeout 30000 --retries 2 --reporter spec \"test/functional/e2e/**/*.test.ts\"",
     "test:e2e:ci": "env TEST_USE_SHARED_SANDBOX=true OCLIF_TEST_ROOT=. mocha --forbid-only --require test/functional/e2e/hooks.ts --node-option import=tsx --timeout 30000 --retries 2 --reporter json --reporter-option output=test-results.json \"test/functional/e2e/**/*.test.ts\"",
     "test:e2e:auth": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/auth-token.test.ts\"",

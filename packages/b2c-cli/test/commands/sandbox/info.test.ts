@@ -9,7 +9,7 @@ import sinon from 'sinon';
 
 import SandboxInfo from '../../../src/commands/sandbox/info.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
-import {runSilent} from '../../helpers/test-setup.js';
+import {makeCommandThrowOnError, runSilent} from '../../helpers/test-setup.js';
 
 function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
   Object.defineProperty(command, 'config', {
@@ -38,12 +38,6 @@ function stubOdsClientGet(command: any, handler: (path: string) => Promise<any>)
     },
     configurable: true,
   });
-}
-
-function makeCommandThrowOnError(command: any): void {
-  command.error = (msg: string) => {
-    throw new Error(msg);
-  };
 }
 
 /**

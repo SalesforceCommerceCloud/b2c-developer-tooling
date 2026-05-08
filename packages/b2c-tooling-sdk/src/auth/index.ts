@@ -13,6 +13,7 @@
  *
  * - {@link BasicAuthStrategy} - Username/password authentication for WebDAV operations
  * - {@link OAuthStrategy} - OAuth 2.0 client credentials for OCAPI and platform APIs
+ * - {@link JwtOAuthStrategy} - OAuth 2.0 JWT Bearer (certificate-based authentication)
  * - {@link ImplicitOAuthStrategy} - Interactive browser-based OAuth for CLI/desktop apps
  * - {@link ApiKeyStrategy} - API key authentication for MRT services
  *
@@ -80,6 +81,8 @@ export {OAuthStrategy, decodeJWT} from './oauth.js';
 export type {OAuthConfig} from './oauth.js';
 export {ImplicitOAuthStrategy} from './oauth-implicit.js';
 export type {ImplicitOAuthConfig} from './oauth-implicit.js';
+export {JwtOAuthStrategy} from './oauth-jwt.js';
+export type {JwtOAuthConfig} from './oauth-jwt.js';
 export {ApiKeyStrategy} from './api-key.js';
 export {StatefulOAuthStrategy} from './stateful-oauth-strategy.js';
 export type {StatefulOAuthStrategyOptions} from './stateful-oauth-strategy.js';

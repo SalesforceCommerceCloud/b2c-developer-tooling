@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-tooling-sdk",
   "description": "Core tooling library for Salesforce B2C Commerce CLI",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "author": "Charles Lavery",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -165,6 +165,17 @@
       "require": {
         "types": "./dist/cjs/operations/bm-roles/index.d.ts",
         "default": "./dist/cjs/operations/bm-roles/index.js"
+      }
+    },
+    "./operations/bm-users": {
+      "development": "./src/operations/bm-users/index.ts",
+      "import": {
+        "types": "./dist/esm/operations/bm-users/index.d.ts",
+        "default": "./dist/esm/operations/bm-users/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/operations/bm-users/index.d.ts",
+        "default": "./dist/cjs/operations/bm-users/index.js"
       }
     },
     "./operations/sites": {
@@ -386,6 +397,17 @@
         "types": "./dist/cjs/operations/debug/index.d.ts",
         "default": "./dist/cjs/operations/debug/index.js"
       }
+    },
+    "./ux": {
+      "development": "./src/ux/index.ts",
+      "import": {
+        "types": "./dist/esm/ux/index.d.ts",
+        "default": "./dist/esm/ux/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/ux/index.d.ts",
+        "default": "./dist/cjs/ux/index.js"
+      }
     }
   },
   "main": "./dist/cjs/index.js",
@@ -411,7 +433,7 @@
     "test": "c8 mocha --forbid-only \"test/**/*.test.ts\"",
     "test:ci": "c8 mocha --forbid-only --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:unit": "mocha --forbid-only \"test/**/*.test.ts\"",
-    "test:agent": "mocha --forbid-only --reporter min \"test/**/*.test.ts\"",
+    "test:agent": "mocha --forbid-only --parallel --jobs 4 --reporter min \"test/**/*.test.ts\"",
     "test:watch": "mocha --watch \"test/**/*.test.ts\"",
     "coverage": "c8 report",
     "posttest": "pnpm run lint",

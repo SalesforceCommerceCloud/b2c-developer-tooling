@@ -62,6 +62,7 @@ export default class SandboxCreate extends OdsCommand<typeof SandboxCreate> {
     '<%= config.bin %> <%= command.id %> --realm abcd',
     '<%= config.bin %> <%= command.id %> --realm abcd --ttl 48',
     '<%= config.bin %> <%= command.id %> --realm abcd --profile large',
+    '<%= config.bin %> <%= command.id %> --realm abcd --emails dev@example.com,ops@example.com',
     '<%= config.bin %> <%= command.id %> --realm abcd --auto-scheduled',
     '<%= config.bin %> <%= command.id %> --realm abcd --wait',
     '<%= config.bin %> <%= command.id %> --realm abcd --wait --poll-interval 15',
@@ -86,6 +87,9 @@ export default class SandboxCreate extends OdsCommand<typeof SandboxCreate> {
     'auto-scheduled': Flags.boolean({
       description: 'Enable automatic start/stop scheduling',
       default: false,
+    }),
+    emails: Flags.string({
+      description: 'Comma-separated list of notification email addresses',
     }),
     wait: Flags.boolean({
       char: 'w',
@@ -131,6 +135,7 @@ export default class SandboxCreate extends OdsCommand<typeof SandboxCreate> {
     const profile = this.flags.profile as SandboxResourceProfile;
     const ttl = this.flags.ttl;
     const autoScheduled = this.flags['auto-scheduled'];
+    const emails = this.flags.emails;
     const wait = this.flags.wait;
     const pollInterval = this.flags['poll-interval'];
     const timeout = this.flags.timeout;
@@ -171,6 +176,7 @@ export default class SandboxCreate extends OdsCommand<typeof SandboxCreate> {
     const result = await this.odsClient.POST('/sandboxes', {
       body: {
         realm,
+        emails: emails ? emails.split(',').map((email) => email.trim()) : undefined,
         ttl,
         resourceProfile: profile,
         autoScheduled,

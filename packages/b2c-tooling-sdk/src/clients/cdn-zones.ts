@@ -16,6 +16,7 @@
 import createClient, {type Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import {OAuthStrategy} from '../auth/oauth.js';
+import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
 import type {paths, components} from './cdn-zones.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
@@ -219,8 +220,11 @@ export function createCdnZonesClient(
   const domainScopes = options?.readWrite ? CDN_ZONES_RW_SCOPES : CDN_ZONES_READ_SCOPES;
   const requiredScopes = config.scopes ?? [...domainScopes, buildTenantScope(config.tenantId)];
 
-  // If OAuth strategy, add required scopes; otherwise use as-is
-  const scopedAuth = auth instanceof OAuthStrategy ? auth.withAdditionalScopes(requiredScopes) : auth;
+  // If auth supports scopes, add required scopes; otherwise use as-is
+  const scopedAuth =
+    auth instanceof OAuthStrategy || auth instanceof JwtOAuthStrategy
+      ? auth.withAdditionalScopes(requiredScopes)
+      : auth;
 
   // Core middleware: auth first
   client.use(createAuthMiddleware(scopedAuth));

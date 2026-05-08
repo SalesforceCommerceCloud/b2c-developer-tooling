@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags, ux} from '@oclif/core';
-import {JobCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  JobCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {type JobExecutionResult, type JobExecutionSearchResults} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -28,6 +34,8 @@ const COLUMNS: Record<string, ColumnDef<JobExecutionResult>> = {
 };
 
 const DEFAULT_COLUMNS = ['id', 'jobId', 'status', 'startTime'];
+
+const tableRenderer = new TableRenderer(COLUMNS);
 
 export default class JobSearch extends JobCommand<typeof JobSearch> {
   static description = withDocs(
@@ -76,6 +84,7 @@ export default class JobSearch extends JobCommand<typeof JobSearch> {
       options: ['asc', 'desc'],
       default: 'desc',
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<JobExecutionSearchResults> {
@@ -117,7 +126,7 @@ export default class JobSearch extends JobCommand<typeof JobSearch> {
       }),
     );
 
-    createTable(COLUMNS).render(results.hits, DEFAULT_COLUMNS);
+    tableRenderer.render(results.hits, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     return results;
   }

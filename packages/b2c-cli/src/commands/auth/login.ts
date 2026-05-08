@@ -15,8 +15,6 @@ import {t, withDocs} from '../../i18n/index.js';
  * until it expires or you run auth:logout.
  */
 export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
-  static hiddenAliases = ['auth:login'];
-
   static args = {
     clientId: Args.string({
       description: 'Client ID for OAuth (falls back to SFCC_CLIENT_ID env var)',
@@ -47,6 +45,8 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
       helpGroup: 'AUTH',
     }),
   };
+
+  static hiddenAliases = ['auth:login'];
 
   protected override loadConfiguration() {
     const scopes = this.flags['auth-scope'] as string[] | undefined;

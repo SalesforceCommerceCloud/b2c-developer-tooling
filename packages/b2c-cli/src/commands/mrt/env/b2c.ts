@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  MrtCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   getB2CTargetInfo,
   setB2CTargetInfo,
@@ -27,6 +33,8 @@ const COLUMNS: Record<string, ColumnDef<InfoEntry>> = {
 };
 
 const DEFAULT_COLUMNS = ['field', 'value'];
+
+const tableRenderer = new TableRenderer(COLUMNS);
 
 /**
  * Get or update B2C Commerce info for a target/environment.
@@ -58,6 +66,7 @@ export default class MrtB2CTargetInfo extends MrtCommand<typeof MrtB2CTargetInfo
       description: 'Clear the sites list',
       default: false,
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<B2CTargetInfo> {
@@ -166,6 +175,6 @@ export default class MrtB2CTargetInfo extends MrtCommand<typeof MrtB2CTargetInfo
       {field: 'Instance ID', value: info.instance_id ?? '-'},
       {field: 'Sites', value: info.sites && info.sites.length > 0 ? info.sites.join(', ') : 'None'},
     ];
-    createTable(COLUMNS).render(entries, DEFAULT_COLUMNS);
+    tableRenderer.render(entries, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
   }
 }

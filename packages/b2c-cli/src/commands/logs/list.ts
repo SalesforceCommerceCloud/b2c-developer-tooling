@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags, ux} from '@oclif/core';
-import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  InstanceCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {listLogFiles, type LogFile} from '@salesforce/b2c-tooling-sdk/operations/logs';
 import {t} from '../../i18n/index.js';
 
@@ -43,6 +49,8 @@ const COLUMNS: Record<string, ColumnDef<LogFile>> = {
 
 const DEFAULT_COLUMNS = ['name', 'prefix', 'size', 'modified'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 interface LogsListResult {
   count: number;
   files: LogFile[];
@@ -78,6 +86,7 @@ export default class LogsList extends InstanceCommand<typeof LogsList> {
       options: ['asc', 'desc'],
       default: 'desc',
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<LogsListResult> {
@@ -108,7 +117,7 @@ export default class LogsList extends InstanceCommand<typeof LogsList> {
       return result;
     }
 
-    createTable(COLUMNS).render(files, DEFAULT_COLUMNS);
+    tableRenderer.render(files, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     return result;
   }

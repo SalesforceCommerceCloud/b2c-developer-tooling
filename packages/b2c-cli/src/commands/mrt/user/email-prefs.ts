@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  MrtCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   getEmailPreferences,
   updateEmailPreferences,
@@ -26,6 +32,8 @@ const COLUMNS: Record<string, ColumnDef<PrefsEntry>> = {
 };
 
 const DEFAULT_COLUMNS = ['field', 'value'];
+
+const tableRenderer = new TableRenderer(COLUMNS);
 
 /**
  * View or update email notification preferences.
@@ -50,6 +58,7 @@ export default class MrtUserEmailPrefs extends MrtCommand<typeof MrtUserEmailPre
       description: 'Enable/disable Node.js deprecation notifications',
       allowNo: true,
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<MrtEmailPreferences> {
@@ -109,6 +118,6 @@ export default class MrtUserEmailPrefs extends MrtCommand<typeof MrtUserEmailPre
         value: prefs.updated_at ? new Date(prefs.updated_at).toLocaleString() : '-',
       },
     ];
-    createTable(COLUMNS).render(entries, DEFAULT_COLUMNS);
+    tableRenderer.render(entries, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
   }
 }

@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Flags} from '@oclif/core';
-import {TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../../utils/ecdn/index.js';
 import {t, withDocs} from '../../../../i18n/index.js';
@@ -61,10 +60,7 @@ export default class EcdnWafGroupsList extends EcdnZoneCommand<typeof EcdnWafGro
 
   static flags = {
     ...EcdnZoneCommand.baseFlags,
-    columns: Flags.string({
-      char: 'c',
-      description: `Columns to display (comma-separated). Available: ${Object.keys(COLUMNS).join(', ')}`,
-    }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<ListOutput> {
@@ -115,10 +111,7 @@ export default class EcdnWafGroupsList extends EcdnZoneCommand<typeof EcdnWafGro
     );
     this.log('');
 
-    const columns = this.flags.columns
-      ? tableRenderer.validateColumnKeys(this.flags.columns.split(',').map((c) => c.trim()))
-      : DEFAULT_COLUMNS;
-    tableRenderer.render(groups, columns.length > 0 ? columns : DEFAULT_COLUMNS);
+    tableRenderer.render(groups, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     return output;
   }

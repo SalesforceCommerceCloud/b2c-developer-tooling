@@ -5,7 +5,13 @@
  */
 import {Flags} from '@oclif/core';
 import {ux} from '@oclif/core';
-import {JobCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  JobCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {fetchContentLibrary} from '@salesforce/b2c-tooling-sdk/operations/content';
 
 interface ContentListItem {
@@ -35,6 +41,8 @@ const COLUMNS: Record<string, ColumnDef<ContentListItem>> = {
 };
 
 const DEFAULT_COLUMNS = ['id', 'type', 'typeId', 'children'];
+
+const tableRenderer = new TableRenderer(COLUMNS);
 
 const TYPE_MAP: Record<string, string> = {
   page: 'PAGE',
@@ -80,6 +88,7 @@ export default class ContentList extends JobCommand<typeof ContentList> {
     timeout: Flags.integer({
       description: 'Job timeout in seconds',
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   protected operations = {
@@ -158,7 +167,7 @@ export default class ContentList extends JobCommand<typeof ContentList> {
       return {data: items};
     }
 
-    createTable(COLUMNS).render(items, DEFAULT_COLUMNS);
+    tableRenderer.render(items, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     return {data: items};
   }

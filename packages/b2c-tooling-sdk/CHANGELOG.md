@@ -1,5 +1,40 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.9.0
+
+### Minor Changes
+
+- [#395](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/395) [`b947888`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b947888ed07073ae2c4c79fe9cc00bd893b81bbe) - Add `resolveBreakpointPath` utility that normalizes user-provided file paths to SDAPI script paths. Accepts server paths, absolute/relative local paths, and cartridge-name-prefixed paths with helpful error messages on failure. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#399](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/399) [`6be308a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6be308a4f8f24dd433bfa557a98038c7392d149c) - Support `assetQuery` as a first-class config field. Set it in `dw.json` (per-instance), in `package.json` under `b2c`, or via `SFCC_ASSET_QUERY` to control which JSON dot-paths are extracted as assets during content library parsing. The VS Code Content Libraries tree and `b2c content export` both honor it automatically; the `--asset-query` flag still wins when provided, and the fallback remains `["image.path"]`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#408](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/408) [`a26226c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a26226c8d755bc3d93462418cb94ddc0f1083a29) - Added `b2c bm users` command topic for managing instance-level Business Manager users via the OCAPI Data API: `list`, `get`, `search`, `whoami`, `update`, and `delete`. Also added `b2c bm users access-keys` (`get`, `create`, `set`, `delete`) for provisioning and rotating WebDAV/OCAPI/SCAPI access keys for externally-managed (AM/SSO) users. The SDK now exposes a matching `@salesforce/b2c-tooling-sdk/operations/bm-users` module. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#408](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/408) [`a26226c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a26226c8d755bc3d93462418cb94ddc0f1083a29) - Added `--columns` and `--extended` flags to all list and search commands for consistent column selection across the CLI. Roughly 30 commands that previously had no column-customization support — including `bm roles list`, `webdav ls`, `cap list`, `code list`, `content list`, `docs search`, `job search`, `logs list`, `sites list`, `slas client list`, all `mrt` list commands, plus several `setup` and `scaffold` commands — now accept `-c id,name,...` to pick columns and `-x` to include extended fields (e.g. `webdav ls --extended` exposes the previously-hidden `modified` and `contentType` columns). (Thanks [@clavery](https://github.com/clavery)!)
+
+  The SDK now exposes shared `columnFlagsFor()` / `selectColumns()` helpers (replacing 22 duplicated implementations) and a `printFieldsBlock()` helper for rendering "label / value" detail blocks.
+
+- [#405](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/405) [`b1600fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b1600fa014f9bd23c93488155b37ac2cc5c91fd2) - Refresh the MRT admin API schema and add new commands: (Thanks [@clavery](https://github.com/clavery)!)
+  - `b2c mrt env clone` — clone an environment from an existing source, optionally copying redirects, environment variables, and B2C target info
+  - `b2c mrt bundle delete` — delete one or more bundles (uses bulk-delete when more than one ID is supplied)
+  - `b2c mrt org member list|add|get|update|remove` — manage organization-level members
+  - `b2c mrt org cert list|get|create|delete|restart-validation` — manage custom domain certificates referenced by environments
+
+### Patch Changes
+
+- [#407](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/407) [`f1a4ac0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f1a4ac0f9ccd8034e6e26ab1598f52516ecf471d) - Hardened auth and long-running operation paths: (Thanks [@clavery](https://github.com/clavery)!)
+  - Token store now writes atomically (temp file + rename) so concurrent CLI invocations cannot corrupt `auth-session.json`.
+  - `OAuthStrategy.getAccessToken()` coalesces concurrent refreshes onto a single in-flight request, preventing token-endpoint stampedes.
+  - Debug session cleans up its keepalive/poll timers if `connect()` fails after starting them.
+  - `downloadCartridges` and `deployCartridges` use try/finally around progress timers so an aborted or failing request can no longer leak intervals.
+  - New `@salesforce/b2c-tooling-sdk/ux` export surfaces the canonical `confirm()` prompt; CLI re-exports from here.
+  - New `auth/jwt-utils` consolidates JWT `exp`/`scope` decoding previously duplicated across three auth strategies.
+  - Better error message when the implicit-OAuth port is already in use (suggests `SFCC_OAUTH_LOCAL_PORT`).
+
+- [#392](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/392) [`51aed02`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/51aed020426f1ce3869b3d260d9af796db8a19e7) - Fix `active: true` on `configs[]` instances being ignored unless the root object also has `active: false` (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`b53d75e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b53d75e196a6808b4fc9cac249c4495da2471846) - Fix `bm users search` returning only `login` and `link` fields. The underlying SDK `searchBmUsers()` now sends `select=(**)` (matching `listBmUsers()`), so `--sort-by`, `--columns`, and the default table now work as expected. A new `select` option is also exposed for callers that want a narrower projection. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.8.0
 
 ### Minor Changes

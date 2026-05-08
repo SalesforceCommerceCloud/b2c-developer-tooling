@@ -14,8 +14,6 @@ import {
 import {t, withDocs} from '../../i18n/index.js';
 
 export default class JobRun extends JobCommand<typeof JobRun> {
-  static hiddenAliases = ['job:run'];
-
   static args = {
     jobId: Args.string({
       description: 'Job ID to execute',
@@ -75,6 +73,8 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       default: true,
     }),
   };
+
+  static hiddenAliases = ['job:run'];
 
   async run(): Promise<JobExecutionResult> {
     this.requireOAuthCredentials();
@@ -179,21 +179,17 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     return execution;
   }
 
-  private resolveBackend(rawBody: Record<string, unknown> | undefined): JobsBackend {
-    const preference = this.resolvedConfig.values.apiBackend ?? 'auto';
-    if (rawBody && preference === 'auto') {
-      this.logger.debug('Raw body provided with auto mode; using OCAPI backend');
-      return this.createJobsBackend();
-    }
-    return this.createJobsBackend();
-  }
-
   private handleExecutionError(error: unknown, context: B2COperationContext): never {
+    // Fire-and-forget: we're already on the error path and rethrow below; surface
+    // hook failures in the debug log so they aren't completely invisible, but
+    // don't shadow the original error.
     this.runAfterHooks(context, {
       success: false,
       error: error instanceof Error ? error : new Error(String(error)),
       duration: Date.now() - context.startTime,
-    }).catch(() => {});
+    }).catch((error_: unknown) => {
+      this.logger.debug({err: error_}, '[job:run] afterOperation hook failed');
+    });
 
     if (error instanceof Error) {
       this.error(t('commands.job.run.executionFailed', 'Failed to execute job: {{message}}', {message: error.message}));
@@ -243,6 +239,15 @@ export default class JobRun extends JobCommand<typeof JobRun> {
         value: p.slice(eqIndex + 1),
       };
     });
+  }
+
+  private resolveBackend(rawBody: Record<string, unknown> | undefined): JobsBackend {
+    const preference = this.resolvedConfig.values.apiBackend ?? 'auto';
+    if (rawBody && preference === 'auto') {
+      this.logger.debug('Raw body provided with auto mode; using OCAPI backend');
+      return this.createJobsBackend();
+    }
+    return this.createJobsBackend();
   }
 
   private async waitForJobCompletion(options: {

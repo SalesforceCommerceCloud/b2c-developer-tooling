@@ -1,5 +1,19 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.3.0
+
+### Minor Changes
+
+- [#408](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/408) [`a26226c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a26226c8d755bc3d93462418cb94ddc0f1083a29) - Added a new `b2c-bm-users-roles` skill covering all `b2c bm` instance commands — `bm roles`, `bm users`, `bm whoami`, and `bm access-key`. The existing `b2c-am` skill now defers to it for Business Manager content and stays focused on Account Manager (cross-instance) administration. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#395](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/395) [`b947888`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b947888ed07073ae2c4c79fe9cc00bd893b81bbe) - Add debug command documentation and b2c-debug agent skill covering interactive REPL, RPC mode, and DAP usage. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#394](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/394) [`5ae3691`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5ae369114e33f8b24d54f0c233dd71d50fbb92d4) - Improve skill trigger accuracy: rewrite b2c-scapi-admin and b2c-site-import-export descriptions, merge b2c-users-roles into b2c-am, fix weak eval prompts for b2c-job (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#405](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/405) [`b1600fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b1600fa014f9bd23c93488155b37ac2cc5c91fd2) - Document new MRT environment clone, bundle delete, organization member, and organization certificate commands in the `b2c-mrt` skill. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.2.0
 
 ### Minor Changes

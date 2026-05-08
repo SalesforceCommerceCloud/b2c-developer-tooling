@@ -27,13 +27,13 @@ For users who prefer the sfcc-ci workflow, the B2C CLI includes a compatibility 
 
 | sfcc-ci | b2c-cli |
 |---------|---------|
-| `sfcc-ci client:auth <id> <secret>` | `b2c client:auth --client-id <id> --client-secret <secret>` |
-| `sfcc-ci client:auth:renew` | `b2c client:auth:renew` |
-| `sfcc-ci client:auth:token` | `b2c client:auth:token` |
-| `sfcc-ci auth:login [client]` | `b2c auth:login [client]` |
-| `sfcc-ci auth:logout` | `b2c auth:logout` |
+| `sfcc-ci client:auth <id> <secret>` | `b2c auth client --client-id <id> --client-secret <secret>` |
+| `sfcc-ci client:auth:renew` | `b2c auth client renew` |
+| `sfcc-ci client:auth:token` | `b2c auth client token` |
+| `sfcc-ci auth:login [client]` | `b2c auth login [client]` |
+| `sfcc-ci auth:logout` | `b2c auth logout` |
 
-The colon-separated forms are aliases — the canonical commands are `b2c auth client`, `b2c auth login`, etc.
+The colon-separated forms (e.g., `b2c client:auth:renew`, `b2c auth:login`) are accepted as aliases for backwards compatibility, but the canonical syntax above is preferred.
 
 After authenticating, subsequent commands automatically use the stored token when it is valid. See [Auth Commands](/cli/auth) for full details.
 

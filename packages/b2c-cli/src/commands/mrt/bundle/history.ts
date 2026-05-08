@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  MrtCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   listDeployments,
   type ListDeploymentsResult,
@@ -41,6 +47,8 @@ const COLUMNS: Record<string, ColumnDef<MrtDeployment>> = {
 
 const DEFAULT_COLUMNS = ['bundleId', 'bundleMessage', 'status', 'type', 'created'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 /**
  * List deployment history for an MRT environment.
  */
@@ -66,6 +74,7 @@ export default class MrtBundleHistory extends MrtCommand<typeof MrtBundleHistory
     offset: Flags.integer({
       description: 'Offset for pagination',
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<ListDeploymentsResult> {
@@ -107,7 +116,10 @@ export default class MrtBundleHistory extends MrtCommand<typeof MrtBundleHistory
         this.log(t('commands.mrt.bundle.history.empty', 'No deployments found.'));
       } else {
         this.log(t('commands.mrt.bundle.history.count', 'Found {{count}} deployment(s):', {count: result.count}));
-        createTable(COLUMNS).render(result.deployments, DEFAULT_COLUMNS);
+        tableRenderer.render(
+          result.deployments,
+          selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
+        );
       }
     }
 

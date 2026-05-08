@@ -8,7 +8,7 @@ Full documentation: [https://salesforcecommercecloud.github.io/b2c-developer-too
 
 ## Installation
 
-**Prerequisites:** Node.js 22.0.0 or higher, MCP client (Cursor, Claude Code, GitHub Copilot, or compatible)
+**Prerequisites:** Node.js 22.16.0 or higher, MCP client (Cursor, Claude Code, GitHub Copilot, or compatible)
 
 **Cursor** (project-level configuration - recommended):
 
