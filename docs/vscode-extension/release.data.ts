@@ -23,8 +23,10 @@
  * release ships, this fallback is the expected state.
  *
  * Cache: writes the resolved data to `docs/.vitepress/cache/release-vscode.json`
- * to avoid re-hitting the API on repeat local builds. Delete that file (or
- * `pnpm run docs:build` from a clean cache) to force a refresh.
+ * with a 24-hour TTL so repeat local builds don't re-hit the API but a
+ * maintainer who cuts a release won't see a stale version on the very next
+ * local build. CI runners have no persisted cache, so each CI build hits the
+ * API once. Delete the cache file to force an immediate refresh.
  */
 
 import fs from 'node:fs';
@@ -40,6 +42,12 @@ export interface ReleaseData {
   releasePageUrl?: string;
   publishedAt?: string;
 }
+
+interface CachedReleaseData extends ReleaseData {
+  cachedAt: string;
+}
+
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 const REPO = 'SalesforceCommerceCloud/b2c-developer-tooling';
 const TAG_PREFIX = 'b2c-vs-extension@';
@@ -62,19 +70,22 @@ const CACHE_FILE = path.resolve(__dirname, '..', '.vitepress', 'cache', 'release
 
 function readCache(): ReleaseData | undefined {
   try {
-    if (fs.existsSync(CACHE_FILE)) {
-      return JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8')) as ReleaseData;
-    }
+    if (!fs.existsSync(CACHE_FILE)) return undefined;
+    const cached = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8')) as CachedReleaseData;
+    if (!cached.cachedAt) return undefined;
+    if (Date.now() - Date.parse(cached.cachedAt) > CACHE_TTL_MS) return undefined;
+    const {cachedAt: _cachedAt, ...data} = cached;
+    return data;
   } catch {
-    /* ignore */
+    return undefined;
   }
-  return undefined;
 }
 
 function writeCache(data: ReleaseData): void {
   try {
     fs.mkdirSync(path.dirname(CACHE_FILE), {recursive: true});
-    fs.writeFileSync(CACHE_FILE, JSON.stringify(data, null, 2));
+    const payload: CachedReleaseData = {...data, cachedAt: new Date().toISOString()};
+    fs.writeFileSync(CACHE_FILE, JSON.stringify(payload, null, 2));
   } catch {
     /* ignore */
   }

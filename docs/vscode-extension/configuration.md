@@ -66,8 +66,8 @@ The Sandbox Realm Explorer auto-polls a realm only when at least one sandbox is 
 
 In a multi-root workspace, the extension auto-detects the project root by walking up from the active editor (or the first workspace folder) looking for `dw.json` / `package.json` markers. Two commands let you override the auto-detected root:
 
-- **B2C DX: Use as B2C Commerce Root** — right-click any folder in the Explorer and select this command to pin it. The status bar shows a `$(pinned)` indicator while a pin is active.
-- **B2C DX: Reset B2C Commerce Root to Auto-Detect** — clears the pin and returns to auto-detection.
+- **B2C DX: Use as B2C Commerce Root** — only available on a workspace-root folder when more than one folder is open in the workspace. Right-click that folder in the Explorer and select the command to pin it. While a pin is active, the status bar shows a `$(pinned)` indicator.
+- **B2C DX: Reset B2C Commerce Root to Auto-Detect** — clears the pin and returns to auto-detection. Run from the Command Palette (this command has no Explorer context-menu entry).
 
 The pin is workspace-scoped (stored in workspace state). Pin a specific folder when you have multiple cartridge projects in a single workspace and want to keep CLI commands targeting one of them.
 

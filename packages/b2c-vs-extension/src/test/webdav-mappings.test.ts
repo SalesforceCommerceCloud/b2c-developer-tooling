@@ -8,73 +8,56 @@ import * as assert from 'assert';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {WebDavMappingsProvider} from '../webdav-tree/webdav-mappings.js';
 
-interface ResetEmitter {
-  fire(): void;
-}
-
-function makeStubConfig(values: Record<string, unknown>): {provider: B2CExtensionConfig; reset: ResetEmitter} {
-  let resetListener: (() => void) | undefined;
+function makeStubConfig(values: Record<string, unknown>): B2CExtensionConfig {
   const stub = {
     getConfig: () => ({values}),
-    onDidReset: (listener: () => void) => {
-      resetListener = listener;
-      return {dispose() {}};
-    },
+    onDidReset: (_listener: () => void) => ({dispose() {}}),
   };
-  return {
-    provider: stub as unknown as B2CExtensionConfig,
-    reset: {
-      fire() {
-        resetListener?.();
-      },
-    },
-  };
+  return stub as unknown as B2CExtensionConfig;
 }
 
 suite('WebDavMappingsProvider', () => {
   test('seedFromConfig dedupes contentLibrary against libraries', () => {
-    const {provider} = makeStubConfig({libraries: ['lib-a', 'lib-b'], contentLibrary: 'lib-a'});
-    const mappings = new WebDavMappingsProvider(provider);
+    const mappings = new WebDavMappingsProvider(
+      makeStubConfig({libraries: ['lib-a', 'lib-b'], contentLibrary: 'lib-a'}),
+    );
     mappings.seedFromConfig();
 
     assert.deepStrictEqual(mappings.getLibraryIds().sort(), ['lib-a', 'lib-b']);
   });
 
   test('seedFromConfig adds contentLibrary when not already in libraries', () => {
-    const {provider} = makeStubConfig({libraries: ['lib-a'], contentLibrary: 'lib-c'});
-    const mappings = new WebDavMappingsProvider(provider);
+    const mappings = new WebDavMappingsProvider(makeStubConfig({libraries: ['lib-a'], contentLibrary: 'lib-c'}));
     mappings.seedFromConfig();
 
     assert.deepStrictEqual(mappings.getLibraryIds().sort(), ['lib-a', 'lib-c']);
   });
 
   test('seedFromConfig copies catalogs verbatim', () => {
-    const {provider} = makeStubConfig({catalogs: ['cat-1', 'cat-2']});
-    const mappings = new WebDavMappingsProvider(provider);
+    const mappings = new WebDavMappingsProvider(makeStubConfig({catalogs: ['cat-1', 'cat-2']}));
     mappings.seedFromConfig();
 
     assert.deepStrictEqual(mappings.getCatalogIds(), ['cat-1', 'cat-2']);
   });
 
   test('getEffectiveContentLibrary prefers explicit contentLibrary over libraries[0]', () => {
-    const {provider} = makeStubConfig({libraries: ['lib-a', 'lib-b'], contentLibrary: 'lib-b'});
-    const mappings = new WebDavMappingsProvider(provider);
+    const mappings = new WebDavMappingsProvider(
+      makeStubConfig({libraries: ['lib-a', 'lib-b'], contentLibrary: 'lib-b'}),
+    );
     mappings.seedFromConfig();
 
     assert.strictEqual(mappings.getEffectiveContentLibrary(), 'lib-b');
   });
 
   test('getEffectiveContentLibrary falls back to libraries[0] when contentLibrary is unset', () => {
-    const {provider} = makeStubConfig({libraries: ['lib-a', 'lib-b']});
-    const mappings = new WebDavMappingsProvider(provider);
+    const mappings = new WebDavMappingsProvider(makeStubConfig({libraries: ['lib-a', 'lib-b']}));
     mappings.seedFromConfig();
 
     assert.strictEqual(mappings.getEffectiveContentLibrary(), 'lib-a');
   });
 
   test('addCatalog is a no-op when the id is already present', () => {
-    const {provider} = makeStubConfig({catalogs: ['cat-1']});
-    const mappings = new WebDavMappingsProvider(provider);
+    const mappings = new WebDavMappingsProvider(makeStubConfig({catalogs: ['cat-1']}));
     mappings.seedFromConfig();
 
     let fires = 0;
@@ -90,8 +73,7 @@ suite('WebDavMappingsProvider', () => {
   });
 
   test('removeCatalog is a no-op when the id is absent', () => {
-    const {provider} = makeStubConfig({catalogs: ['cat-1']});
-    const mappings = new WebDavMappingsProvider(provider);
+    const mappings = new WebDavMappingsProvider(makeStubConfig({catalogs: ['cat-1']}));
     mappings.seedFromConfig();
 
     let fires = 0;
@@ -106,8 +88,7 @@ suite('WebDavMappingsProvider', () => {
   });
 
   test('addLibrary / removeLibrary mirror catalog behavior', () => {
-    const {provider} = makeStubConfig({libraries: []});
-    const mappings = new WebDavMappingsProvider(provider);
+    const mappings = new WebDavMappingsProvider(makeStubConfig({libraries: []}));
     mappings.seedFromConfig();
 
     let fires = 0;

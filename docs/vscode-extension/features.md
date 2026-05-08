@@ -12,7 +12,7 @@ Browse and manage on-demand sandboxes (ODS) for one or more realms in a dedicate
 
 **Lifecycle commands** (palette + right-click): create, start, stop, restart, clone, view details, view clone details, extend expiration, open Business Manager, delete.
 
-**Cloned sandbox indicators** — clones are tagged in the tree (the source sandbox shows as `cloning` while a target is being set up; the target shows as `setting up` until it stabilizes). The display logic is identical to the CLI's: see `computeSandboxDisplay` in the package source for the precise rules.
+**Cloned sandbox indicators** — clones are tagged in the tree. While a clone is being set up, the source sandbox is shown as `cloning` and the new (target) sandbox is shown as `setting up`. Once the clone stabilizes, both rows display their actual states (`started`, `stopped`, etc.) and the cloned target keeps a visual marker so you can tell it apart from a freshly created sandbox.
 
 <!-- TODO(screenshot): sandbox-explorer.png — started + cloned sandbox in the tree -->
 ![Sandbox Realm Explorer](./images/sandbox-explorer.png)
@@ -59,15 +59,12 @@ A **Cartridges** tree view (under the **B2C-DX** activity-bar container) lists e
 
 **Title-bar actions**: **Refresh Cartridges**, **Deploy Cartridges**, **Code Versions** (list / create / activate).
 
-**Per-cartridge right-click actions**: **Upload Cartridge**, **Download from Instance**, **Compare with Instance** (diff view), **Add to Site Cartridge Path**, **Remove from Site Cartridge Path**.
+**Per-cartridge right-click actions**: **Upload Cartridge**, **Download from Instance**, **Add to Site Cartridge Path**, **Remove from Site Cartridge Path**.
 
 **Workspace toggles**: **Toggle Code Sync** / **Start Code Sync** / **Stop Code Sync** start a watcher that uploads on save. **Upload to Instance** is also available from the file Explorer's context menu when a code-sync session is active.
 
 <!-- TODO(screenshot): code-sync.png — Cartridges view with code-version dropdown -->
 ![Cartridge Code Sync](./images/code-sync.png)
-
-<!-- TODO(screenshot): code-sync-diff.png — Compare with Instance result -->
-![Code Sync diff](./images/code-sync-diff.png)
 
 ## SCAPI API Browser
 

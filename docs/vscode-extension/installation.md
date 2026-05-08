@@ -76,7 +76,7 @@ The extension reads B2C Commerce credentials and project settings using the **sa
 
 See the [Authentication Setup guide](../guide/authentication) for credential formats and OAuth scope requirements, and the [CLI Configuration guide](../guide/configuration) for the full list of supported config sources and precedence rules.
 
-For multi-root workspaces, right-click any folder in the Explorer and choose **Use as B2C Commerce Root** to pin which folder the extension treats as the project root. Pair with **Reset B2C Commerce Root to Auto-Detect** to clear the pin.
+For multi-root workspaces (more than one folder open), right-click a workspace-root folder in the Explorer and choose **Use as B2C Commerce Root** to pin which folder the extension treats as the project root. To clear the pin, run **B2C DX: Reset B2C Commerce Root to Auto-Detect** from the Command Palette.
 
 ## Next Steps
 
