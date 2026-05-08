@@ -7,5 +7,6 @@
   "b2c-dx.features.scaffold": true,
   "b2c-dx.features.apiBrowser": true,
   "b2c-dx.features.cap": true,
-  "b2c-dx.logLevel": "silent"
+  "b2c-dx.logLevel": "silent",
+  "b2c-dx.telemetry.enabled": false
 }

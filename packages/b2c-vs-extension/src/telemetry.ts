@@ -10,13 +10,33 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 
 const TELEMETRY_PROJECT = 'b2c-vs-extension';
+const SETTING_ENABLED = 'b2c-dx.telemetry.enabled';
 
 let instance: Telemetry | undefined;
+const usedCategories = new Set<FeatureCategory>();
 
 interface TelemetryPjson {
   version: string;
   telemetry?: {connectionString?: string};
 }
+
+/**
+ * Broad feature categories used to bucket usage events. Keep this list short
+ * — one event per session per category is the goal. Adding a new category
+ * should require explicit thought about cardinality.
+ */
+export type FeatureCategory =
+  | 'sandbox'
+  | 'webdav'
+  | 'content'
+  | 'codeSync'
+  | 'apiBrowser'
+  | 'debugger'
+  | 'scaffold'
+  | 'cap'
+  | 'pageDesigner'
+  | 'logs'
+  | 'instance';
 
 function readPjson(extensionPath: string): TelemetryPjson | undefined {
   try {
@@ -27,13 +47,13 @@ function readPjson(extensionPath: string): TelemetryPjson | undefined {
   }
 }
 
-/**
- * VS Code 1.86+ ships `vscode.env.isTelemetryEnabled` reflecting the user's
- * `telemetry.telemetryLevel` setting (off / crash / error / all). When the user
- * has telemetry off, return false regardless of our own opt-out logic.
- */
+/** VS Code 1.86+ telemetry-level signal. Falls back to true on older hosts. */
 function isVsCodeTelemetryEnabled(): boolean {
   return vscode.env.isTelemetryEnabled !== false;
+}
+
+function isExtensionTelemetryEnabled(): boolean {
+  return vscode.workspace.getConfiguration().get<boolean>(SETTING_ENABLED, true);
 }
 
 /**
@@ -41,55 +61,67 @@ function isVsCodeTelemetryEnabled(): boolean {
  *
  * Telemetry is enabled when ALL of the following are true:
  *   - VS Code's `telemetry.telemetryLevel` is not `off`.
+ *   - The `b2c-dx.telemetry.enabled` setting is not `false`.
  *   - Neither `SFCC_DISABLE_TELEMETRY` nor `SF_DISABLE_TELEMETRY` env vars are set to `true`.
  *   - A connection string is available (from `telemetry.connectionString` in
  *     this package's package.json, or from the `SFCC_APP_INSIGHTS_KEY` env var).
  *
- * Failure to initialize is non-fatal — the extension continues without telemetry.
- *
- * @param context VS Code extension context, used to locate package.json and persist the cliId.
- * @returns The shared {@link Telemetry} instance, or undefined if disabled.
+ * Initialization runs in the background and never blocks activation. The HTTP
+ * client used by Application Insights buffers events in memory and flushes via
+ * a background timer, so subsequent `sendEvent` calls are non-blocking too.
+ * Failure to initialize is silent — the extension continues without telemetry.
  */
-export async function initTelemetry(context: vscode.ExtensionContext): Promise<Telemetry | undefined> {
-  if (instance) return instance;
-  if (!isVsCodeTelemetryEnabled()) return undefined;
+export function initTelemetry(context: vscode.ExtensionContext): void {
+  if (instance) return;
+  if (!isVsCodeTelemetryEnabled()) return;
+  if (!isExtensionTelemetryEnabled()) return;
 
   const pjson = readPjson(context.extensionPath);
   const connectionString = Telemetry.getConnectionString(pjson?.telemetry?.connectionString);
-  if (!connectionString) return undefined;
+  if (!connectionString) return;
 
-  try {
-    instance = createTelemetry({
-      project: TELEMETRY_PROJECT,
-      appInsightsKey: connectionString,
-      version: pjson?.version,
-      // Persist the cliId in VS Code's globalStorage so a single anonymous id
-      // is reused across sessions. Falls back to a per-session random id if
-      // the directory is not writable.
-      dataDir: context.globalStorageUri.fsPath,
-      initialAttributes: {
-        host: vscode.env.appName,
-        hostVersion: vscode.version,
-        sessionId: vscode.env.sessionId,
-        machineId: vscode.env.machineId,
-        uiKind: vscode.env.uiKind === vscode.UIKind.Web ? 'web' : 'desktop',
-      },
-    });
-    await instance.start();
-  } catch {
-    instance = undefined;
-  }
-  return instance;
+  // Run start() in the background. Events sent before start() resolves are
+  // dropped — that's intentional and acceptable for a usage tracker.
+  const client = createTelemetry({
+    project: TELEMETRY_PROJECT,
+    appInsightsKey: connectionString,
+    version: pjson?.version,
+    dataDir: context.globalStorageUri.fsPath,
+    initialAttributes: {
+      host: vscode.env.appName,
+      uiKind: vscode.env.uiKind === vscode.UIKind.Web ? 'web' : 'desktop',
+    },
+  });
+
+  // Don't await — non-blocking by design.
+  void client.start().then(
+    () => {
+      instance = client;
+    },
+    () => {
+      // start() failed; leave instance undefined so subsequent calls no-op.
+    },
+  );
 }
 
-/** Return the shared telemetry instance, or undefined if disabled. */
-export function getTelemetry(): Telemetry | undefined {
-  return instance;
-}
-
-/** Send an event with shared attributes. No-ops when telemetry is disabled. */
+/**
+ * Send an event. Fire-and-forget — writes into the App Insights in-memory
+ * buffer, no HTTP I/O on the calling stack. No-ops when telemetry is disabled.
+ */
 export function sendEvent(eventName: string, attributes: TelemetryAttributes = {}): void {
   instance?.sendEvent(eventName, attributes);
+}
+
+/**
+ * Mark a feature category as used in this session. Sends one `FEATURE_USED`
+ * event per category per session — subsequent calls are no-ops. This gives us
+ * a low-cardinality "did the user touch feature X" signal without the noise
+ * of per-command tracking.
+ */
+export function markFeatureUsed(category: FeatureCategory): void {
+  if (usedCategories.has(category)) return;
+  usedCategories.add(category);
+  sendEvent('FEATURE_USED', {category});
 }
 
 /** Send an exception. No-ops when telemetry is disabled. */
@@ -100,6 +132,7 @@ export function sendException(error: Error, attributes: TelemetryAttributes = {}
 /**
  * Flush and stop telemetry. Call from the extension's `deactivate()` hook so
  * pending events reach the server before the extension host terminates.
+ * The SDK's stop() includes a small grace period for in-flight HTTP requests.
  */
 export async function disposeTelemetry(): Promise<void> {
   if (!instance) return;
@@ -109,36 +142,5 @@ export async function disposeTelemetry(): Promise<void> {
     // best-effort
   }
   instance = undefined;
-}
-
-/**
- * Wrap a command handler so each invocation emits a `COMMAND_INVOKED` event
- * (with success/failure outcome and duration) and exceptions are reported.
- * No-ops when telemetry is disabled.
- *
- * The wrapper preserves the handler's original return value and rethrows any
- * error so existing error handling (toasts, safety prompts) is unaffected.
- */
-// Matches vscode.commands.registerCommand's handler signature, which uses any[] for context-menu args.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function wrapCommandHandler<T extends (...args: any[]) => any>(commandId: string, handler: T): T {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const wrapped = async (...args: any[]) => {
-    const start = Date.now();
-    let outcome: 'success' | 'failure' = 'success';
-    try {
-      return await handler(...args);
-    } catch (err) {
-      outcome = 'failure';
-      if (err instanceof Error) sendException(err, {commandId});
-      throw err;
-    } finally {
-      sendEvent('COMMAND_INVOKED', {
-        commandId,
-        outcome,
-        durationMs: Date.now() - start,
-      });
-    }
-  };
-  return wrapped as unknown as T;
+  usedCategories.clear();
 }

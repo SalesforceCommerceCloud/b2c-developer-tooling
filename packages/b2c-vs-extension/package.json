@@ -96,6 +96,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable Code Sync (watch and deploy cartridges)."
+        },
+        "b2c-dx.telemetry.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Send anonymous usage telemetry (extension lifecycle and broad feature-category events). Honors VS Code's telemetry.telemetryLevel — disabling that disables this regardless of this setting."
         }
       }
     },

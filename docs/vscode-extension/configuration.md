@@ -11,7 +11,6 @@ This page covers:
 - [Connecting to a B2C Instance](#connecting-to-a-b2c-instance) — credentials per feature.
 - [Switching the Active Instance](#switching-the-active-instance) — single-workspace, multi-instance.
 - [Project Root Pinning](#project-root-pinning) — multi-root workspaces.
-- [Telemetry](#telemetry) — what we collect and how to opt out.
 - [Settings Reference](#settings-reference) — the `b2c-dx.*` toggles and verbosity controls.
 
 ## Connecting to a B2C Instance
@@ -76,24 +75,6 @@ In a multi-root workspace, the extension auto-detects the project root by walkin
 
 The pin is workspace-scoped (stored in workspace state).
 
-## Telemetry
-
-The extension reports anonymous usage data to help us prioritize fixes during the Developer Preview.
-
-**What we collect:** extension lifecycle events (`EXTENSION_ACTIVATED`, `EXTENSION_DEACTIVATED`, `ACTIVATION_FAILED`), command invocations (command ID, success/failure, duration), and exceptions. Each event includes anonymous session and machine identifiers, plus environment info (VS Code version, platform, architecture, Node.js version).
-
-**What we don't collect:** credentials, hostnames, sandbox IDs, file contents, command arguments, or any business data. String attributes have `$HOME` redacted to `~` before transmission.
-
-**Opt out** in any of the following ways — telemetry is disabled if **any** of them is true:
-
-| Source | Setting |
-| ------ | ------- |
-| VS Code `settings.json` | `"telemetry.telemetryLevel": "off"` (also disables when set to `crash` or `error`) |
-| Environment variable | `SFCC_DISABLE_TELEMETRY=true` |
-| Environment variable | `SF_DISABLE_TELEMETRY=true` (Salesforce CLI standard) |
-
-The extension respects VS Code's built-in `telemetry.telemetryLevel` first, so opting out of all VS Code telemetry automatically disables ours.
-
 ## Settings Reference
 
 These VS Code settings live under the `b2c-dx.*` namespace. **You usually don't need to change any of them** — they exist for niche cases like disabling a feature you don't use, or quieting the log channel for a bug report. To browse: **Settings** (Cmd+,) → search for `b2c-dx`.
@@ -115,12 +96,13 @@ Each feature is enabled by default. Set to `false` to skip its activation entire
 
 The B2C Script Debugger registers regardless of these toggles — it activates only when a `b2c-script` launch configuration is used.
 
-### Verbosity & polling
+### Verbosity, polling, telemetry
 
 | Setting | Default | Description |
 | ------- | ------- | ----------- |
 | `b2c-dx.logLevel` | `info` | Verbosity for the **B2C DX** output channel. Allowed: `trace`, `debug`, `info`, `warn`, `error`, `silent`. Applied immediately on change. Drop to `debug` or `trace` when filing a bug. |
 | `b2c-dx.sandbox.pollingInterval` | `10` | Seconds between polls while a sandbox is in a transitional state (`creating`, `starting`, `stopping`, `deleting`, `cloning`). Range: 2–300. Polling stops automatically once the realm settles. |
+| `b2c-dx.telemetry.enabled` | `true` | Send anonymous usage telemetry. Honors VS Code's `telemetry.telemetryLevel` — disabling that disables this regardless of this setting. |
 
 ### Complete defaults (copy-paste)
 
@@ -136,7 +118,8 @@ The B2C Script Debugger registers regardless of these toggles — it activates o
   "b2c-dx.features.apiBrowser": true,
   "b2c-dx.features.cap": true,
   "b2c-dx.logLevel": "info",
-  "b2c-dx.sandbox.pollingInterval": 10
+  "b2c-dx.sandbox.pollingInterval": 10,
+  "b2c-dx.telemetry.enabled": true
 }
 ```
 
