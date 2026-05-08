@@ -6,6 +6,7 @@
 import {Command} from '@oclif/core';
 import {InstanceCommand} from './instance-command.js';
 import {createUsersBackend, type UsersBackend} from '../operations/bm-users/index.js';
+import {createRolesBackend, type RolesBackend} from '../operations/bm-roles/index.js';
 
 /**
  * Base command for Business Manager (instance-level) operations.
@@ -21,6 +22,20 @@ export abstract class BmCommand<T extends typeof Command> extends InstanceComman
   protected createUsersBackend(): UsersBackend {
     const preference = this.resolvedConfig.values.apiBackend ?? 'auto';
     return createUsersBackend({
+      preference,
+      instance: this.instance,
+      shortCode: this.resolvedConfig.values.shortCode,
+      tenantId: this.resolvedConfig.values.tenantId,
+      auth: this.hasOAuthCredentials() ? this.getOAuthStrategy() : undefined,
+    });
+  }
+
+  /**
+   * Creates a Roles backend for `bm roles *` commands.
+   */
+  protected createRolesBackend(): RolesBackend {
+    const preference = this.resolvedConfig.values.apiBackend ?? 'auto';
+    return createRolesBackend({
       preference,
       instance: this.instance,
       shortCode: this.resolvedConfig.values.shortCode,

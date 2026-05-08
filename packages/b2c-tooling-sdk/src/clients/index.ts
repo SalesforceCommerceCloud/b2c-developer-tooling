@@ -336,6 +336,21 @@ export type {
   components as ScapiJobsComponents,
 } from './scapi-jobs.js';
 
+// SCAPI Merchant Roles
+export {
+  createScapiMerchantRolesClient,
+  SCAPI_MERCHANT_ROLES_READ_SCOPES,
+  SCAPI_MERCHANT_ROLES_RW_SCOPES,
+} from './scapi-merchant-roles.js';
+export type {
+  ScapiMerchantRolesClient,
+  ScapiMerchantRolesClientConfig,
+  ScapiMerchantRolesError,
+  ScapiMerchantRolesResponse,
+  paths as ScapiMerchantRolesPaths,
+  components as ScapiMerchantRolesComponents,
+} from './scapi-merchant-roles.js';
+
 // SCAPI Merchant Users
 export {
   createScapiMerchantUsersClient,

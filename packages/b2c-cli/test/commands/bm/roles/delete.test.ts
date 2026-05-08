@@ -21,36 +21,48 @@ describe('bm roles delete', () => {
     return createTestCommand(BmRolesDelete, hooks.getConfig(), flags, args);
   }
 
+  function createMockBackend() {
+    return {
+      name: 'ocapi' as const,
+      listRoles: sinon.stub(),
+      getRole: sinon.stub(),
+      createRole: sinon.stub(),
+      deleteRole: sinon.stub(),
+      getPermissions: sinon.stub(),
+      setPermissions: sinon.stub(),
+      grantRole: sinon.stub(),
+      revokeRole: sinon.stub(),
+    };
+  }
+
   function stubCommon(command: any, {jsonEnabled}: {jsonEnabled: boolean}) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));
     sinon.stub(command, 'jsonEnabled').returns(jsonEnabled);
+    const backend = createMockBackend();
+    sinon.stub(command, 'createRolesBackend').returns(backend);
+    return backend;
   }
 
   it('deletes role and returns result in JSON mode', async () => {
     const command: any = await createCommand({}, {role: 'TestRole'});
-    stubCommon(command, {jsonEnabled: true});
+    const backend = stubCommon(command, {jsonEnabled: true});
 
-    const ocapiDelete = sinon.stub().resolves({data: undefined, error: undefined});
-    sinon.stub(command, 'instance').get(() => ({ocapi: {DELETE: ocapiDelete}}));
+    backend.deleteRole.resolves();
 
     const result = await command.run();
     expect(result.success).to.equal(true);
     expect(result.role).to.equal('TestRole');
-    expect(ocapiDelete.calledOnce).to.equal(true);
+    expect(backend.deleteRole.calledOnce).to.equal(true);
   });
 
   it('throws on 403 for system roles', async () => {
     const command: any = await createCommand({}, {role: 'Administrator'});
-    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    const backend = stubCommon(command, {jsonEnabled: false});
+    sinon.stub(command, 'log').returns(void 0);
 
-    const ocapiDelete = sinon.stub().resolves({
-      data: undefined,
-      error: {fault: {message: 'Deletion not allowed'}},
-      response: {status: 403, statusText: 'Forbidden'},
-    });
-    sinon.stub(command, 'instance').get(() => ({ocapi: {DELETE: ocapiDelete}}));
+    backend.deleteRole.rejects(new Error('Failed to delete role Administrator: Deletion not allowed'));
 
     try {
       await command.run();
@@ -62,15 +74,10 @@ describe('bm roles delete', () => {
 
   it('throws on 404 for non-existent role', async () => {
     const command: any = await createCommand({}, {role: 'NoSuchRole'});
-    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    const backend = stubCommon(command, {jsonEnabled: false});
+    sinon.stub(command, 'log').returns(void 0);
 
-    const ocapiDelete = sinon.stub().resolves({
-      data: undefined,
-      error: {fault: {message: 'Role not found'}},
-      response: {status: 404, statusText: 'Not Found'},
-    });
-    sinon.stub(command, 'instance').get(() => ({ocapi: {DELETE: ocapiDelete}}));
+    backend.deleteRole.rejects(new Error('Failed to delete role NoSuchRole: Role not found'));
 
     try {
       await command.run();

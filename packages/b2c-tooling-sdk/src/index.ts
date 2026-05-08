@@ -236,6 +236,24 @@ export type {
   ScapiUsersBackendConfig,
 } from './operations/bm-users/index.js';
 
+// Roles (BM) backend abstraction
+export {
+  createRolesBackend,
+  FallbackRolesBackend,
+  OcapiRolesBackend,
+  ScapiRolesBackend,
+} from './operations/bm-roles/index.js';
+export type {
+  RolesBackend,
+  RolesBackendConfig,
+  RoleInfo,
+  RolePermissionsInfo,
+  ListRolesResult,
+  ListRolesOptions as ListBmRolesScopedOptions,
+  CreateRoleInput,
+  ScapiRolesBackendConfig,
+} from './operations/bm-roles/index.js';
+
 // Operations - Jobs
 export {
   executeJob,

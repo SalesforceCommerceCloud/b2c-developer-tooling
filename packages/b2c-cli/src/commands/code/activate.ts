@@ -92,7 +92,7 @@ export default class CodeActivate extends CodeCommand<typeof CodeActivate> {
       );
 
       try {
-        await backend.activateCodeVersion(codeVersion);
+        await backend.activateCodeVersion(codeVersion!);
         this.log(
           t('commands.code.activate.activated', 'Code version {{codeVersion}} activated successfully', {codeVersion}),
         );
