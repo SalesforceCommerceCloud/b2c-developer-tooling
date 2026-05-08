@@ -9,9 +9,10 @@ import type {JobsBackend, JobExecutionResult, JobExecutionSearchResults} from '.
 import type {ExecuteJobOptions, SearchJobExecutionsOptions, WaitForJobOptions, WaitForJobPollInfo} from './run.js';
 import {OcapiJobsBackend} from './ocapi-backend.js';
 import {ScapiJobsBackend} from './scapi-backend.js';
-import {getLogger} from '../../logging/logger.js';
+import {ScapiFallbackBackend} from '../../clients/scapi-fallback-backend.js';
+import {resolveScapiOrOcapi, type ApiBackendPreference} from '../../clients/scapi-backend-utils.js';
 
-export type ApiBackendPreference = 'ocapi' | 'scapi' | 'auto';
+export type {ApiBackendPreference};
 
 export interface JobsBackendConfig {
   preference: ApiBackendPreference;
@@ -22,7 +23,12 @@ export interface JobsBackendConfig {
 }
 
 export function createJobsBackend(config: JobsBackendConfig): JobsBackend {
-  const resolved = resolveBackend(config);
+  const hasScapiConfig = Boolean(config.shortCode && config.tenantId && config.auth);
+  const resolved = resolveScapiOrOcapi({
+    preference: config.preference,
+    hasScapiConfig,
+    domainName: 'Jobs',
+  });
 
   if (resolved === 'ocapi') {
     return new OcapiJobsBackend(config.instance);
@@ -44,35 +50,9 @@ export function createJobsBackend(config: JobsBackendConfig): JobsBackend {
   return new FallbackJobsBackend(scapiBackend, ocapiBackend);
 }
 
-function resolveBackend(config: JobsBackendConfig): 'ocapi' | 'scapi' {
-  if (config.preference === 'ocapi') return 'ocapi';
-  if (config.preference === 'scapi') {
-    if (!config.shortCode || !config.tenantId) {
-      throw new Error('SCAPI backend requires shortCode and tenantId configuration.');
-    }
-    if (!config.auth) {
-      throw new Error('SCAPI backend requires OAuth credentials.');
-    }
-    return 'scapi';
-  }
-
-  // Auto: prefer SCAPI when config available
-  if (config.shortCode && config.tenantId && config.auth) {
-    return 'scapi';
-  }
-  return 'ocapi';
-}
-
-export class FallbackJobsBackend implements JobsBackend {
-  private resolvedBackend?: JobsBackend;
-
-  constructor(
-    private scapiBackend: ScapiJobsBackend,
-    private ocapiBackend: OcapiJobsBackend,
-  ) {}
-
-  get name(): 'ocapi' | 'scapi' {
-    return (this.resolvedBackend?.name ?? 'scapi') as 'ocapi' | 'scapi';
+export class FallbackJobsBackend extends ScapiFallbackBackend<JobsBackend> implements JobsBackend {
+  constructor(scapiBackend: ScapiJobsBackend, ocapiBackend: OcapiJobsBackend) {
+    super(scapiBackend, ocapiBackend, 'jobs');
   }
 
   async executeJob(jobId: string, options?: ExecuteJobOptions): Promise<JobExecutionResult> {
@@ -94,30 +74,6 @@ export class FallbackJobsBackend implements JobsBackend {
   async getJobLog(execution: JobExecutionResult): Promise<string> {
     return this.withFallback((backend) => backend.getJobLog(execution));
   }
-
-  private async withFallback<T>(fn: (backend: JobsBackend) => Promise<T>): Promise<T> {
-    if (this.resolvedBackend) {
-      return fn(this.resolvedBackend);
-    }
-
-    try {
-      const result = await fn(this.scapiBackend);
-      this.resolvedBackend = this.scapiBackend;
-      return result;
-    } catch (error) {
-      if (isInvalidScopeError(error)) {
-        const logger = getLogger();
-        logger.info('SCAPI jobs scope unavailable, falling back to OCAPI');
-        this.resolvedBackend = this.ocapiBackend;
-        return fn(this.ocapiBackend);
-      }
-      throw error;
-    }
-  }
-}
-
-function isInvalidScopeError(error: unknown): boolean {
-  return error instanceof Error && error.message.includes('invalid_scope');
 }
 
 export async function waitForJobExecution(

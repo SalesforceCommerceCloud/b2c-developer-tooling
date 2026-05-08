@@ -336,6 +336,13 @@ export type {
   components as ScapiJobsComponents,
 } from './scapi-jobs.js';
 
+// SCAPI dual-backend utilities (shared across SCAPI/OCAPI domains)
+export {isInvalidScopeError, resolveScapiOrOcapi} from './scapi-backend-utils.js';
+export type {ApiBackendPreference, BackendBase, ResolveBackendOptions} from './scapi-backend-utils.js';
+export {ScapiFallbackBackend} from './scapi-fallback-backend.js';
+export {ScopeTierManager} from './scapi-scope-tier.js';
+export type {ScopeTier, ScopeTierManagerOptions} from './scapi-scope-tier.js';
+
 export {getApiErrorMessage} from './error-utils.js';
 
 export {createTlsDispatcher} from './tls-dispatcher.js';

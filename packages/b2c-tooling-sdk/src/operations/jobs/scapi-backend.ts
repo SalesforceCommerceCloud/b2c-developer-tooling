@@ -17,6 +17,7 @@ import {
   type JobStepExecution as ScapiJobStepExecution,
 } from '../../clients/scapi-jobs.js';
 import {buildTenantScope, toOrganizationId} from '../../clients/custom-apis.js';
+import {ScopeTierManager} from '../../clients/scapi-scope-tier.js';
 import {getLogger} from '../../logging/logger.js';
 
 function mapStepExecution(step: ScapiJobStepExecution): JobStepExecutionResult {
@@ -68,17 +69,21 @@ export interface ScapiJobsBackendConfig {
 export class ScapiJobsBackend implements JobsBackend {
   readonly name = 'scapi' as const;
 
-  private resolvedScopeTier?: 'rw' | 'read-only';
-  private rwClient?: ScapiJobsClient;
-  private readClient?: ScapiJobsClient;
   private organizationId: string;
+  private scopeTier: ScopeTierManager<ScapiJobsClient>;
 
   constructor(private config: ScapiJobsBackendConfig) {
     this.organizationId = toOrganizationId(config.tenantId);
+    this.scopeTier = new ScopeTierManager<ScapiJobsClient>({
+      buildClient: (scopes) => this.buildClient(scopes),
+      rwScopes: SCAPI_JOBS_RW_SCOPES,
+      readScopes: SCAPI_JOBS_READ_SCOPES,
+      domainName: 'Jobs',
+    });
   }
 
   async executeJob(jobId: string, options?: ExecuteJobOptions): Promise<JobExecutionResult> {
-    const client = await this.getClientForWrite();
+    const client = this.scopeTier.getClientForWrite();
     const {parameters = [], body: rawBody} = options ?? {};
 
     let requestBody: Record<string, unknown> | undefined;
@@ -119,7 +124,7 @@ export class ScapiJobsBackend implements JobsBackend {
   }
 
   async getJobExecution(jobId: string, executionId: string): Promise<JobExecutionResult> {
-    const client = await this.getClientForRead();
+    const client = this.scopeTier.getClientForRead();
 
     const {data, error} = await client.GET('/organizations/{organizationId}/jobs/{jobId}/executions/{executionId}', {
       params: {path: {organizationId: this.organizationId, jobId, executionId}},
@@ -135,7 +140,7 @@ export class ScapiJobsBackend implements JobsBackend {
   }
 
   async searchJobExecutions(options?: SearchJobExecutionsOptions): Promise<JobExecutionSearchResults> {
-    const client = await this.getClientForRead();
+    const client = this.scopeTier.getClientForRead();
     const {jobId, status, count = 25, start = 0, sortBy = 'start_time', sortOrder = 'desc'} = options ?? {};
 
     const queries: unknown[] = [];
@@ -182,7 +187,7 @@ export class ScapiJobsBackend implements JobsBackend {
   }
 
   async deleteJobExecution(jobId: string, executionId: string): Promise<void> {
-    const client = await this.getClientForWrite();
+    const client = this.scopeTier.getClientForWrite();
 
     const {error} = await client.DELETE('/organizations/{organizationId}/jobs/{jobId}/executions/{executionId}', {
       params: {path: {organizationId: this.organizationId, jobId, executionId}},
@@ -205,46 +210,6 @@ export class ScapiJobsBackend implements JobsBackend {
     const logPath = execution.logFilePath.replace(/^\/Sites\//, '');
     const content = await this.config.instance.webdav.get(logPath);
     return new TextDecoder().decode(content);
-  }
-
-  private async getClientForWrite(): Promise<ScapiJobsClient> {
-    if (this.resolvedScopeTier === 'rw' && this.rwClient) {
-      return this.rwClient;
-    }
-    if (this.resolvedScopeTier === 'read-only') {
-      throw new Error(
-        'SCAPI Jobs API requires the "sfcc.jobs.rw" scope to execute or delete jobs. ' +
-          'Add this scope to your API client in Account Manager.',
-      );
-    }
-    if (!this.rwClient) {
-      this.rwClient = this.buildClient(SCAPI_JOBS_RW_SCOPES);
-    }
-    this.resolvedScopeTier = 'rw';
-    return this.rwClient;
-  }
-
-  private async getClientForRead(): Promise<ScapiJobsClient> {
-    if (this.resolvedScopeTier && this.rwClient) {
-      return this.rwClient;
-    }
-    if (this.resolvedScopeTier === 'read-only' && this.readClient) {
-      return this.readClient;
-    }
-    if (!this.rwClient) {
-      this.rwClient = this.buildClient(SCAPI_JOBS_RW_SCOPES);
-    }
-    this.resolvedScopeTier = 'rw';
-    return this.rwClient;
-  }
-
-  /**
-   * Called when we detect an invalid_scope error on the rw client for a read operation.
-   * Downgrades to read-only scope.
-   */
-  downgradeToReadOnly(): void {
-    this.resolvedScopeTier = 'read-only';
-    this.readClient = this.buildClient(SCAPI_JOBS_READ_SCOPES);
   }
 
   private buildClient(scopes: string[]): ScapiJobsClient {
