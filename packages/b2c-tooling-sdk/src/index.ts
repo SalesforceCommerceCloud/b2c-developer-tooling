@@ -257,6 +257,7 @@ export {
   waitForJobExecution,
   OcapiJobsBackend,
   ScapiJobsBackend,
+  supportsDeleteJobExecution,
 } from './operations/jobs/index.js';
 export type {
   JobExecution,
@@ -270,6 +271,7 @@ export type {
   JobExecutionSearchResult,
   // Backend abstraction types
   JobsBackend,
+  DeletableJobsBackend,
   JobsBackendConfig,
   ApiBackendPreference,
   JobExecutionInfo,

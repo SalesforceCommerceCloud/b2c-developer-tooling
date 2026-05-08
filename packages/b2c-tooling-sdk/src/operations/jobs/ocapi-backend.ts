@@ -77,10 +77,6 @@ export class OcapiJobsBackend implements JobsBackend {
     };
   }
 
-  async deleteJobExecution(_jobId: string, _executionId: string): Promise<void> {
-    throw new Error('Delete job execution is not supported via OCAPI. Use --api-backend scapi.');
-  }
-
   async getJobLog(execution: JobExecutionInfo): Promise<string> {
     const ocapiExecution = execution._raw as JobExecution;
     if (ocapiExecution) {

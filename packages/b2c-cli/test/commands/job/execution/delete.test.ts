@@ -21,7 +21,8 @@ describe('job execution delete', () => {
     return createTestCommand(JobExecutionDelete, hooks.getConfig(), flags, args);
   }
 
-  function createMockBackend() {
+  function createScapiBackend() {
+    // SCAPI backend implements DeletableJobsBackend (has deleteJobExecution)
     return {
       name: 'scapi' as const,
       executeJob: sinon.stub(),
@@ -32,18 +33,28 @@ describe('job execution delete', () => {
     };
   }
 
-  function stubCommon(command: any) {
+  function createOcapiBackend() {
+    // OCAPI backend does NOT implement deleteJobExecution
+    return {
+      name: 'ocapi' as const,
+      executeJob: sinon.stub(),
+      getJobExecution: sinon.stub(),
+      searchJobExecutions: sinon.stub(),
+      getJobLog: sinon.stub(),
+    };
+  }
+
+  function stubCommon(command: any, backend: object) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));
-    const backend = createMockBackend();
     sinon.stub(command, 'createJobsBackend').returns(backend);
     return backend;
   }
 
-  it('deletes a job execution', async () => {
+  it('deletes a job execution when SCAPI backend is active', async () => {
     const command: any = await createCommand({}, {jobId: 'my-job', executionId: 'exec-1'});
-    const backend = stubCommon(command);
+    const backend = stubCommon(command, createScapiBackend()) as ReturnType<typeof createScapiBackend>;
     backend.deleteJobExecution.resolves();
 
     await runSilent(() => command.run());
@@ -53,18 +64,15 @@ describe('job execution delete', () => {
     expect(backend.deleteJobExecution.getCall(0).args[1]).to.equal('exec-1');
   });
 
-  it('throws when OCAPI backend does not support delete', async () => {
+  it('errors with a clear message when OCAPI backend is active (no delete capability)', async () => {
     const command: any = await createCommand({}, {jobId: 'my-job', executionId: 'exec-1'});
-    const backend = stubCommon(command);
-    backend.deleteJobExecution.rejects(
-      new Error('Delete job execution is not supported via OCAPI. Use --api-backend scapi.'),
-    );
+    stubCommon(command, createOcapiBackend());
 
     try {
       await command.run();
       expect.fail('should have thrown');
     } catch (error: any) {
-      expect(error.message).to.include('not supported via OCAPI');
+      expect(error.message).to.match(/SCAPI/i);
     }
   });
 });

@@ -30,9 +30,10 @@ function mapOcapiRole(ocapi: BmRole): RoleInfo {
     description: ocapi.description,
     userCount: ocapi.user_count,
     userManager: ocapi.user_manager,
-    // OCAPI permissions shape uses snake_case nested groups; the canonical
-    // type uses SCAPI's camelCase shape. We avoid converting the deep
-    // structure here (it's only exposed via the permissions endpoints).
+    // OCAPI returns permissions inline on the role when expanded, same as SCAPI.
+    // Map snake_case → camelCase to match the canonical RoleInfo shape so that
+    // callers see consistent data after a fallback from SCAPI to OCAPI.
+    permissions: ocapi.permissions ? mapOcapiPermissions(ocapi.permissions) : undefined,
     _raw: ocapi,
   };
 }

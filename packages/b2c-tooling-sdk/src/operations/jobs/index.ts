@@ -96,7 +96,14 @@ export type {JobsBackendConfig, ApiBackendPreference} from './backend.js';
 export {OcapiJobsBackend} from './ocapi-backend.js';
 export {ScapiJobsBackend} from './scapi-backend.js';
 export type {ScapiJobsBackendConfig} from './scapi-backend.js';
-export type {JobsBackend, JobExecutionInfo, JobStepExecutionResult, JobExecutionSearchResults} from './types.js';
+export {supportsDeleteJobExecution} from './types.js';
+export type {
+  JobsBackend,
+  DeletableJobsBackend,
+  JobExecutionInfo,
+  JobStepExecutionResult,
+  JobExecutionSearchResults,
+} from './types.js';
 
 // Site archive import/export
 export {

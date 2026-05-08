@@ -56,6 +56,22 @@ export interface JobsBackend {
   executeJob(jobId: string, options?: ExecuteJobOptions): Promise<JobExecutionInfo>;
   getJobExecution(jobId: string, executionId: string): Promise<JobExecutionInfo>;
   searchJobExecutions(options?: SearchJobExecutionsOptions): Promise<JobExecutionSearchResults>;
-  deleteJobExecution(jobId: string, executionId: string): Promise<void>;
   getJobLog(execution: JobExecutionInfo): Promise<string>;
+}
+
+/**
+ * Capability extension for backends that can delete job execution records.
+ * Only SCAPI exposes this — OCAPI's Data API has no equivalent endpoint.
+ *
+ * Use {@link supportsDeleteJobExecution} to narrow at runtime.
+ */
+export interface DeletableJobsBackend extends JobsBackend {
+  deleteJobExecution(jobId: string, executionId: string): Promise<void>;
+}
+
+/**
+ * Type guard: returns true if the backend supports deleting job executions.
+ */
+export function supportsDeleteJobExecution(backend: JobsBackend): backend is DeletableJobsBackend {
+  return typeof (backend as DeletableJobsBackend).deleteJobExecution === 'function';
 }

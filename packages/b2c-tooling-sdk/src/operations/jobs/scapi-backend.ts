@@ -5,7 +5,12 @@
  */
 import type {B2CInstance} from '../../instance/index.js';
 import type {AuthStrategy} from '../../auth/types.js';
-import type {JobsBackend, JobExecutionInfo, JobStepExecutionResult, JobExecutionSearchResults} from './types.js';
+import type {
+  DeletableJobsBackend,
+  JobExecutionInfo,
+  JobStepExecutionResult,
+  JobExecutionSearchResults,
+} from './types.js';
 import type {ExecuteJobOptions, SearchJobExecutionsOptions} from './run.js';
 import {
   createScapiJobsClient,
@@ -66,7 +71,7 @@ export interface ScapiJobsBackendConfig {
   instance: B2CInstance;
 }
 
-export class ScapiJobsBackend implements JobsBackend {
+export class ScapiJobsBackend implements DeletableJobsBackend {
   readonly name = 'scapi' as const;
 
   private organizationId: string;

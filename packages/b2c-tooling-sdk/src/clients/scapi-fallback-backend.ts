@@ -112,6 +112,19 @@ export function createFallbackBackend<T extends BackendBase>(scapi: T, ocapi: T,
       // We must look up the method by name on the resolved backend (not on the
       // SCAPI target we're proxying), since the OCAPI backend may have a
       // different implementation.
+      //
+      // If the method is missing from OCAPI (e.g., a SCAPI-only capability like
+      // delete), don't attempt a fallback — let SCAPI handle it directly.
+      // The caller should use the type-guard pattern (e.g. supportsDeleteJobExecution)
+      // to detect this before calling.
+      const ocapiHasMethod = typeof (ocapi as unknown as Record<string | symbol, unknown>)[prop] === 'function';
+      if (!ocapiHasMethod) {
+        return (...args: unknown[]) => {
+          const fn = (scapi as unknown as Record<string | symbol, unknown>)[prop];
+          return (fn as (...a: unknown[]) => Promise<unknown>).apply(scapi, args);
+        };
+      }
+
       return (...args: unknown[]) =>
         withFallback(state, (backend) => {
           const fn = (backend as unknown as Record<string | symbol, unknown>)[prop];

@@ -5,6 +5,7 @@
  */
 import {Args} from '@oclif/core';
 import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {supportsDeleteJobExecution} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t, withDocs} from '../../../i18n/index.js';
 
 export default class JobExecutionDelete extends JobCommand<typeof JobExecutionDelete> {
@@ -40,6 +41,16 @@ export default class JobExecutionDelete extends JobCommand<typeof JobExecutionDe
 
     const backend = this.createJobsBackend();
     this.logger.debug(`Using ${backend.name} backend for execution delete`);
+
+    if (!supportsDeleteJobExecution(backend)) {
+      this.error(
+        t(
+          'commands.job.execution.delete.notSupported',
+          'Deleting job executions requires SCAPI. The active backend ({{backend}}) does not support it. Use --api-backend scapi or configure SCAPI credentials.',
+          {backend: backend.name},
+        ),
+      );
+    }
 
     this.log(
       t('commands.job.execution.delete.deleting', 'Deleting execution {{executionId}} for job {{jobId}}...', {

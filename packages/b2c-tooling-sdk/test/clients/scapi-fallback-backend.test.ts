@@ -166,4 +166,45 @@ describe('createFallbackBackend', () => {
       expect(backend.customProp).to.equal('scapi-value');
     });
   });
+
+  describe('SCAPI-only methods (capability extension)', () => {
+    interface ExtendedBackend extends TestBackend {
+      scapiOnlyMethod(): Promise<string>;
+    }
+
+    it('routes SCAPI-only methods directly to SCAPI without attempting fallback', async () => {
+      let scapiCalls = 0;
+      const scapi: ExtendedBackend = {
+        ...makeBackend('scapi', {}),
+        scapiOnlyMethod: async () => {
+          scapiCalls++;
+          return 'scapi-only-result';
+        },
+      };
+      const ocapi = makeBackend('ocapi', {}); // no scapiOnlyMethod
+
+      const backend = createFallbackBackend<ExtendedBackend>(scapi, ocapi as ExtendedBackend, 'test');
+      expect(await backend.scapiOnlyMethod()).to.equal('scapi-only-result');
+      expect(scapiCalls).to.equal(1);
+    });
+
+    it('does not fall back on invalid_scope for SCAPI-only methods', async () => {
+      const scapi: ExtendedBackend = {
+        ...makeBackend('scapi', {}),
+        scapiOnlyMethod: async () => {
+          throw invalidScopeError();
+        },
+      };
+      const ocapi = makeBackend('ocapi', {}); // no scapiOnlyMethod
+
+      const backend = createFallbackBackend<ExtendedBackend>(scapi, ocapi as ExtendedBackend, 'test');
+      try {
+        await backend.scapiOnlyMethod();
+        expect.fail('should have thrown');
+      } catch (e) {
+        // Should be the original invalid_scope error, not a "method not found" error
+        expect((e as Error).message).to.include('invalid_scope');
+      }
+    });
+  });
 });
