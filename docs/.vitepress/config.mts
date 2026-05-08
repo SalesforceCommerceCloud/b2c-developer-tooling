@@ -77,6 +77,15 @@ const guidesSidebar = [
     ],
   },
   {
+    text: 'VS Code Extension',
+    items: [
+      {text: 'Overview', link: '/vscode-extension/'},
+      {text: 'Installation', link: '/vscode-extension/installation'},
+      {text: 'Configuration', link: '/vscode-extension/configuration'},
+      {text: 'Features', link: '/vscode-extension/features'},
+    ],
+  },
+  {
     text: 'MCP Server',
     items: [
       {text: 'Overview', link: '/mcp/'},
@@ -84,15 +93,6 @@ const guidesSidebar = [
       {text: 'MCP Configuration', link: '/mcp/configuration'},
       {text: 'Toolsets & Tools', link: '/mcp/toolsets'},
       {text: 'Figma Tools Setup', link: '/mcp/figma-tools-setup'},
-    ],
-  },
-  {
-    text: 'VS Code Extension',
-    items: [
-      {text: 'Overview', link: '/vscode-extension/'},
-      {text: 'Installation', link: '/vscode-extension/installation'},
-      {text: 'Configuration', link: '/vscode-extension/configuration'},
-      {text: 'Features', link: '/vscode-extension/features'},
     ],
   },
   {
@@ -272,8 +272,8 @@ export default defineConfig({
     nav: [
       {text: 'Guides', link: '/guide/'},
       {text: 'Skills', link: '/guide/agent-skills'},
-      {text: 'MCP', link: '/mcp/'},
       {text: 'VS Code', link: '/vscode-extension/'},
+      {text: 'MCP', link: '/mcp/'},
       {text: 'Reference', link: '/cli/'},
       {text: 'SDK', link: '/api/'},
       {
