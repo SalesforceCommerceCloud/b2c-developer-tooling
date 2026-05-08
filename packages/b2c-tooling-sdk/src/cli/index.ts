@@ -97,6 +97,7 @@ export {OAuthCommand} from './oauth-command.js';
 export {InstanceCommand} from './instance-command.js';
 export {CartridgeCommand} from './cartridge-command.js';
 export {JobCommand} from './job-command.js';
+export {CodeCommand} from './code-command.js';
 export {MrtCommand} from './mrt-command.js';
 export {OdsCommand} from './ods-command.js';
 export {AmCommand} from './am-command.js';

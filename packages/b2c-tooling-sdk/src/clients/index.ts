@@ -336,6 +336,17 @@ export type {
   components as ScapiJobsComponents,
 } from './scapi-jobs.js';
 
+// SCAPI Scripts (code versions)
+export {createScapiScriptsClient, SCAPI_SCRIPTS_READ_SCOPES, SCAPI_SCRIPTS_RW_SCOPES} from './scapi-scripts.js';
+export type {
+  ScapiScriptsClient,
+  ScapiScriptsClientConfig,
+  ScapiScriptsError,
+  ScapiScriptsResponse,
+  paths as ScapiScriptsPaths,
+  components as ScapiScriptsComponents,
+} from './scapi-scripts.js';
+
 // SCAPI dual-backend utilities (shared across SCAPI/OCAPI domains)
 export {isInvalidScopeError, resolveScapiOrOcapi} from './scapi-backend-utils.js';
 export type {ApiBackendPreference, BackendBase, ResolveBackendOptions} from './scapi-backend-utils.js';

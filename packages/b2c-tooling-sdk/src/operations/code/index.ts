@@ -81,6 +81,14 @@ export {
 } from './versions.js';
 export type {CodeVersion, CodeVersionResult} from './versions.js';
 
+// Scripts (code versions) backend abstraction — supports OCAPI + SCAPI
+export {createScriptsBackend, FallbackScriptsBackend} from './scripts-backend.js';
+export type {ScriptsBackendConfig} from './scripts-backend.js';
+export {OcapiScriptsBackend} from './ocapi-scripts-backend.js';
+export {ScapiScriptsBackend} from './scapi-scripts-backend.js';
+export type {ScapiScriptsBackendConfig} from './scapi-scripts-backend.js';
+export type {ScriptsBackend, CodeVersionInfo} from './scripts-types.js';
+
 // Deployment
 export {findAndDeployCartridges, uploadCartridges, deleteCartridges} from './deploy.js';
 export type {DeployOptions, DeployResult, UploadOptions, UploadProgressInfo} from './deploy.js';

@@ -204,6 +204,20 @@ export type {
   WatchResult,
 } from './operations/code/index.js';
 
+// Scripts (code versions) backend abstraction
+export {
+  createScriptsBackend,
+  FallbackScriptsBackend,
+  OcapiScriptsBackend,
+  ScapiScriptsBackend,
+} from './operations/code/index.js';
+export type {
+  ScriptsBackend,
+  ScriptsBackendConfig,
+  CodeVersionInfo,
+  ScapiScriptsBackendConfig,
+} from './operations/code/index.js';
+
 // Operations - Jobs
 export {
   executeJob,

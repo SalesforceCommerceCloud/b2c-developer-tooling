@@ -4,11 +4,10 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {activateCodeVersion, reloadCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {CodeCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {t, withDocs} from '../../i18n/index.js';
 
-export default class CodeActivate extends InstanceCommand<typeof CodeActivate> {
+export default class CodeActivate extends CodeCommand<typeof CodeActivate> {
   static args = {
     codeVersion: Args.string({
       description: 'Code version ID to activate',
@@ -29,10 +28,10 @@ export default class CodeActivate extends InstanceCommand<typeof CodeActivate> {
   ];
 
   static flags = {
-    ...InstanceCommand.baseFlags,
+    ...CodeCommand.baseFlags,
     reload: Flags.boolean({
       char: 'r',
-      description: 'Reload the code version (toggle activation to force reload)',
+      description: 'Reload the code version (OCAPI only — forces a code cache reload via toggle)',
       default: false,
     }),
   };
@@ -45,11 +44,21 @@ export default class CodeActivate extends InstanceCommand<typeof CodeActivate> {
     const codeVersionArg = this.args.codeVersion;
     const hostname = this.resolvedConfig.values.hostname!;
 
-    // Get code version from arg, flag, or config
     const codeVersion = codeVersionArg ?? this.resolvedConfig.values.codeVersion;
 
+    if (!this.flags.reload && !codeVersion) {
+      this.error(
+        t(
+          'commands.code.activate.versionRequired',
+          'Code version is required. Provide as argument or use --code-version flag.',
+        ),
+      );
+    }
+
+    const backend = this.createScriptsBackend();
+    this.logger.debug(`Using ${backend.name} backend for code activate`);
+
     if (this.flags.reload) {
-      // Reload mode - re-activate the code version
       this.log(
         t('commands.code.activate.reloading', 'Reloading code version{{version}} on {{hostname}}...', {
           hostname,
@@ -58,7 +67,7 @@ export default class CodeActivate extends InstanceCommand<typeof CodeActivate> {
       );
 
       try {
-        await reloadCodeVersion(this.instance, codeVersion);
+        await backend.reloadCodeVersion(codeVersion);
         this.log(
           t('commands.code.activate.reloaded', 'Code version{{version}} reloaded successfully', {
             version: codeVersion ? ` ${codeVersion}` : '',
@@ -75,16 +84,6 @@ export default class CodeActivate extends InstanceCommand<typeof CodeActivate> {
         throw error;
       }
     } else {
-      // Activate mode - just activate the code version
-      if (!codeVersion) {
-        this.error(
-          t(
-            'commands.code.activate.versionRequired',
-            'Code version is required. Provide as argument or use --code-version flag.',
-          ),
-        );
-      }
-
       this.log(
         t('commands.code.activate.activating', 'Activating code version {{codeVersion}} on {{hostname}}...', {
           hostname,
@@ -93,7 +92,7 @@ export default class CodeActivate extends InstanceCommand<typeof CodeActivate> {
       );
 
       try {
-        await activateCodeVersion(this.instance, codeVersion);
+        await backend.activateCodeVersion(codeVersion);
         this.log(
           t('commands.code.activate.activated', 'Code version {{codeVersion}} activated successfully', {codeVersion}),
         );
