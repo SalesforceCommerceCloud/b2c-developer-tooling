@@ -22,11 +22,11 @@ hero:
       text: Agent Skills
       link: /guide/agent-skills
     - theme: alt
-      text: MCP Server
+      text: MCP
       link: /mcp/
     - theme: alt
-      text: Reference
-      link: /cli/
+      text: VS Code
+      link: /vscode-extension/
 
 features:
   - icon:
