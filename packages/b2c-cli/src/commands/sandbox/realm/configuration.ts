@@ -71,8 +71,8 @@ export default class SandboxRealmConfiguration extends OdsCommand<typeof Sandbox
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cfg = configuration as any;
 
-    console.log('Realm Configuration');
-    console.log('───────────────────');
+    this.log('Realm Configuration');
+    this.log('───────────────────');
 
     const maxTtlRaw = cfg.sandbox?.sandboxTTL?.maximum as number | undefined;
     const maxTtlDisplay = maxTtlRaw === undefined ? undefined : maxTtlRaw >= 2_147_483_647 ? '0' : String(maxTtlRaw);
@@ -98,16 +98,16 @@ export default class SandboxRealmConfiguration extends OdsCommand<typeof Sandbox
 
     for (const [label, value] of rows) {
       if (value !== undefined) {
-        console.log(`${label}: ${value}`);
+        this.log(`${label}: ${value}`);
       }
     }
 
     if (cfg.sandbox?.startScheduler) {
-      console.log(`Start Scheduler: ${JSON.stringify(cfg.sandbox.startScheduler)}`);
+      this.log(`Start Scheduler: ${JSON.stringify(cfg.sandbox.startScheduler)}`);
     }
 
     if (cfg.sandbox?.stopScheduler) {
-      console.log(`Stop Scheduler: ${JSON.stringify(cfg.sandbox.stopScheduler)}`);
+      this.log(`Stop Scheduler: ${JSON.stringify(cfg.sandbox.stopScheduler)}`);
     }
   }
 }

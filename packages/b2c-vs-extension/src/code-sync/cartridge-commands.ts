@@ -100,7 +100,9 @@ function createDownloadCartridgeCommand(
 }
 
 // ---------------------------------------------------------------------------
-// Diff with Instance (TODO: disabled — needs optimization for large cartridges)
+// Diff with Instance — intentionally stubbed. The naive implementation
+// downloaded the full cartridge to compare; that's too slow for typical
+// cartridge sizes. Re-enable once a streaming/manifest-based diff exists.
 // ---------------------------------------------------------------------------
 
 function createDiffCartridgeCommand(

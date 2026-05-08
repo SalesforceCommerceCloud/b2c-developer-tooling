@@ -92,8 +92,8 @@ export default class SandboxRealmUsages extends OdsCommand<typeof SandboxRealmUs
   }
 
   private printUsage(items: MultiRealmUsageModel[]): void {
-    console.log('Realm  Active  Created  Deleted  Minutes Up  Minutes Down  Sandbox Seconds');
-    console.log('─────  ──────  ───────  ───────  ──────────  ────────────  ───────────────');
+    this.log('Realm  Active  Created  Deleted  Minutes Up  Minutes Down  Sandbox Seconds');
+    this.log('─────  ──────  ───────  ───────  ──────────  ────────────  ───────────────');
 
     for (const item of items) {
       const usage = item.realmUsage;
@@ -107,10 +107,10 @@ export default class SandboxRealmUsages extends OdsCommand<typeof SandboxRealmUs
         String(usage?.sandboxSeconds ?? '-').padStart(15),
       ];
 
-      console.log(row.join('  '));
+      this.log(row.join('  '));
 
       if (item.error) {
-        console.log(`  ! ${item.error}`);
+        this.log(`  ! ${item.error}`);
       }
     }
   }

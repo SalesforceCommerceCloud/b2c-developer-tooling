@@ -76,13 +76,16 @@ function renderTemplate(
     .join(',\n    ');
   const firstRegionId = regions[0]?.id ?? '';
 
+  // Order matters: `${pageName}Data` must be replaced before `${pageName}`,
+  // otherwise the broader `${pageName}` rule strips the placeholder boundary
+  // and the `Data` suffix is left orphaned (e.g. produces `'Foo'Data`).
   return template
+    .replace(/\$\{pageName\}Data/g, `${pageId}Data`)
     .replace(/\$\{pageName\}/g, quoted(pageName || ''))
     .replace(/\$\{pageDescription\}/g, quoted(pageDescription || ''))
     .replace(/\$\{supportedAspectTypes\}/g, aspectsStr)
     .replace('__REGIONS__', regionsBlock)
     .replace(/\$\{pageId\}/g, pageId)
-    .replace(/\$\{pageName\}Data/g, `${pageId}Data`)
     .replace(/\$\{regions\[0\]\.id\}/g, firstRegionId);
 }
 

@@ -289,14 +289,48 @@ export async function loadFullDwJson(
 }
 
 /**
- * Save a dw.json configuration to disk.
+ * Per-path serializer for dw.json mutations. Ensures that concurrent calls to
+ * addInstance/removeInstance/setActiveInstance from within the same Node process
+ * read-modify-write atomically against each other (e.g. when a CLI command spawns
+ * parallel work that all touches dw.json).
+ *
+ * Multi-process coordination is out of scope; the writes themselves are atomic
+ * via tmp-file + rename so a crash mid-write won't corrupt the existing file.
+ */
+const DW_JSON_LOCKS = new Map<string, Promise<unknown>>();
+
+async function withDwJsonLock<T>(filePath: string, fn: () => Promise<T>): Promise<T> {
+  const key = path.resolve(filePath);
+  const previous = DW_JSON_LOCKS.get(key) ?? Promise.resolve();
+  const next = previous.then(fn, fn);
+  DW_JSON_LOCKS.set(
+    key,
+    next.finally(() => {
+      // Only clear if no newer task chained on; otherwise keep the chain alive.
+      if (DW_JSON_LOCKS.get(key) === next) DW_JSON_LOCKS.delete(key);
+    }),
+  );
+  return next;
+}
+
+/**
+ * Save a dw.json configuration to disk atomically (tmp file + rename).
  *
  * @param config - The configuration to save
  * @param filePath - Path to save to
  */
 export async function saveDwJson(config: DwJsonMultiConfig, filePath: string): Promise<void> {
   const content = JSON.stringify(config, null, 2) + '\n';
-  await fsp.writeFile(filePath, content, 'utf8');
+  const dir = path.dirname(filePath);
+  const tmpPath = path.join(dir, `.${path.basename(filePath)}.${process.pid}.${Date.now()}.tmp`);
+  await fsp.writeFile(tmpPath, content, 'utf8');
+  try {
+    await fsp.rename(tmpPath, filePath);
+  } catch (err) {
+    // Rename failed — clean up the orphan tmp file before bubbling the error.
+    await fsp.unlink(tmpPath).catch(() => {});
+    throw err;
+  }
 }
 
 /**
@@ -327,59 +361,61 @@ export async function addInstance(instance: DwJsonConfig, options: AddInstanceOp
   const dwJsonPath =
     options.path ?? path.join(options.projectDirectory || options.workingDirectory || process.cwd(), 'dw.json');
 
-  let existing: DwJsonMultiConfig = {};
-  try {
-    const content = await fsp.readFile(dwJsonPath, 'utf8');
-    existing = JSON.parse(content) as DwJsonMultiConfig;
-  } catch (error) {
-    // File doesn't exist - start with empty config
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-      throw error;
+  await withDwJsonLock(dwJsonPath, async () => {
+    let existing: DwJsonMultiConfig = {};
+    try {
+      const content = await fsp.readFile(dwJsonPath, 'utf8');
+      existing = JSON.parse(content) as DwJsonMultiConfig;
+    } catch (error) {
+      // File doesn't exist - start with empty config
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        throw error;
+      }
     }
-  }
 
-  // Check if instance name already exists
-  const instanceName = instance.name;
-  if (!instanceName) {
-    throw new Error('Instance must have a name');
-  }
-
-  // Check root config
-  if (existing.name === instanceName) {
-    throw new Error(`Instance "${instanceName}" already exists`);
-  }
-
-  // Check configs array
-  if (existing.configs?.some((c) => c.name === instanceName)) {
-    throw new Error(`Instance "${instanceName}" already exists`);
-  }
-
-  // Handle setActive - clear other active flags
-  if (options.setActive) {
-    instance.active = true;
-    // Clear active on root if it has it
-    if (existing.active !== undefined) {
-      existing.active = false;
+    // Check if instance name already exists
+    const instanceName = instance.name;
+    if (!instanceName) {
+      throw new Error('Instance must have a name');
     }
-    // Clear active on all other configs
-    if (existing.configs) {
-      for (const c of existing.configs) {
-        if (c.active !== undefined) {
-          c.active = false;
+
+    // Check root config
+    if (existing.name === instanceName) {
+      throw new Error(`Instance "${instanceName}" already exists`);
+    }
+
+    // Check configs array
+    if (existing.configs?.some((c) => c.name === instanceName)) {
+      throw new Error(`Instance "${instanceName}" already exists`);
+    }
+
+    // Handle setActive - clear other active flags
+    if (options.setActive) {
+      instance.active = true;
+      // Clear active on root if it has it
+      if (existing.active !== undefined) {
+        existing.active = false;
+      }
+      // Clear active on all other configs
+      if (existing.configs) {
+        for (const c of existing.configs) {
+          if (c.active !== undefined) {
+            c.active = false;
+          }
         }
       }
     }
-  }
 
-  // Initialize configs array if needed
-  if (!existing.configs) {
-    existing.configs = [];
-  }
+    // Initialize configs array if needed
+    if (!existing.configs) {
+      existing.configs = [];
+    }
 
-  // Add the new instance
-  existing.configs.push(instance);
+    // Add the new instance
+    existing.configs.push(instance);
 
-  await saveDwJson(existing, dwJsonPath);
+    await saveDwJson(existing, dwJsonPath);
+  });
 }
 
 /**
@@ -405,31 +441,33 @@ export async function removeInstance(name: string, options: RemoveInstanceOption
   const dwJsonPath =
     options.path ?? path.join(options.projectDirectory || options.workingDirectory || process.cwd(), 'dw.json');
 
-  let content: string;
-  try {
-    content = await fsp.readFile(dwJsonPath, 'utf8');
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      throw new Error('No dw.json file found');
+  await withDwJsonLock(dwJsonPath, async () => {
+    let content: string;
+    try {
+      content = await fsp.readFile(dwJsonPath, 'utf8');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new Error('No dw.json file found');
+      }
+      throw error;
     }
-    throw error;
-  }
 
-  const existing = JSON.parse(content) as DwJsonMultiConfig;
+    const existing = JSON.parse(content) as DwJsonMultiConfig;
 
-  // Check if trying to remove root config
-  if (existing.name === name) {
-    throw new Error(`Cannot remove root instance "${name}". Edit dw.json manually to remove root config.`);
-  }
+    // Check if trying to remove root config
+    if (existing.name === name) {
+      throw new Error(`Cannot remove root instance "${name}". Edit dw.json manually to remove root config.`);
+    }
 
-  // Find and remove from configs array
-  if (!existing.configs || !existing.configs.some((c) => c.name === name)) {
-    throw new Error(`Instance "${name}" not found`);
-  }
+    // Find and remove from configs array
+    if (!existing.configs || !existing.configs.some((c) => c.name === name)) {
+      throw new Error(`Instance "${name}" not found`);
+    }
 
-  existing.configs = existing.configs.filter((c) => c.name !== name);
+    existing.configs = existing.configs.filter((c) => c.name !== name);
 
-  await saveDwJson(existing, dwJsonPath);
+    await saveDwJson(existing, dwJsonPath);
+  });
 }
 
 /**
@@ -455,46 +493,48 @@ export async function setActiveInstance(name: string, options: SetActiveInstance
   const dwJsonPath =
     options.path ?? path.join(options.projectDirectory || options.workingDirectory || process.cwd(), 'dw.json');
 
-  let content: string;
-  try {
-    content = await fsp.readFile(dwJsonPath, 'utf8');
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      throw new Error('No dw.json file found');
+  await withDwJsonLock(dwJsonPath, async () => {
+    let content: string;
+    try {
+      content = await fsp.readFile(dwJsonPath, 'utf8');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new Error('No dw.json file found');
+      }
+      throw error;
     }
-    throw error;
-  }
 
-  const existing = JSON.parse(content) as DwJsonMultiConfig;
+    const existing = JSON.parse(content) as DwJsonMultiConfig;
 
-  // Find the target instance
-  let found = false;
+    // Find the target instance
+    let found = false;
 
-  // Check root config
-  if (existing.name === name) {
-    found = true;
-    existing.active = true;
-  } else if (existing.active !== undefined) {
-    existing.active = false;
-  }
+    // Check root config
+    if (existing.name === name) {
+      found = true;
+      existing.active = true;
+    } else if (existing.active !== undefined) {
+      existing.active = false;
+    }
 
-  // Check and update configs array
-  if (existing.configs) {
-    for (const c of existing.configs) {
-      if (c.name === name) {
-        found = true;
-        c.active = true;
-      } else if (c.active !== undefined) {
-        c.active = false;
+    // Check and update configs array
+    if (existing.configs) {
+      for (const c of existing.configs) {
+        if (c.name === name) {
+          found = true;
+          c.active = true;
+        } else if (c.active !== undefined) {
+          c.active = false;
+        }
       }
     }
-  }
 
-  if (!found) {
-    throw new Error(`Instance "${name}" not found`);
-  }
+    if (!found) {
+      throw new Error(`Instance "${name}" not found`);
+    }
 
-  await saveDwJson(existing, dwJsonPath);
+    await saveDwJson(existing, dwJsonPath);
+  });
 }
 
 /**

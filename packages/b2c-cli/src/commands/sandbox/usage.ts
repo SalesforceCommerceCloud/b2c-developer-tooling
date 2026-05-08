@@ -94,9 +94,9 @@ export default class SandboxUsage extends OdsCommand<typeof SandboxUsage> {
   }
 
   private printSandboxUsageSummary(usage: SandboxUsageModel): void {
-    console.log('Sandbox Usage Summary');
+    this.log('Sandbox Usage Summary');
 
-    console.log('─────────────────────');
+    this.log('─────────────────────');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const anyUsage = usage as any;
@@ -113,17 +113,17 @@ export default class SandboxUsage extends OdsCommand<typeof SandboxUsage> {
       if (value !== undefined) {
         hasSummaryMetric = true;
 
-        console.log(`${label}: ${value}`);
+        this.log(`${label}: ${value}`);
       }
     }
 
     if (anyUsage.minutesUpByProfile && anyUsage.minutesUpByProfile.length > 0) {
-      console.log();
+      this.log('');
 
-      console.log('Minutes up by profile:');
+      this.log('Minutes up by profile:');
       for (const item of anyUsage.minutesUpByProfile) {
         if (item.profile && item.minutes !== undefined) {
-          console.log(`  ${item.profile}: ${item.minutes} minutes`);
+          this.log(`  ${item.profile}: ${item.minutes} minutes`);
         }
       }
     }
@@ -137,13 +137,13 @@ export default class SandboxUsage extends OdsCommand<typeof SandboxUsage> {
       !hasDetailedData &&
       !(anyUsage.minutesUpByProfile && anyUsage.minutesUpByProfile.length > 0)
     ) {
-      console.log(
+      this.log(
         t('commands.sandbox.usage.emptyPeriod', 'No usage data was returned for this sandbox in the requested period.'),
       );
     } else if (hasDetailedData) {
-      console.log();
+      this.log('');
 
-      console.log(
+      this.log(
         t(
           'commands.sandbox.usage.detailedHint',
           'Detailed usage data is available; re-run with --json to see full details.',

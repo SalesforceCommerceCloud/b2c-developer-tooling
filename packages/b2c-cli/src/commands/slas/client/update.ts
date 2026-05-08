@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
+import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {
   SlasClientCommand,
   type Client,
@@ -11,7 +12,6 @@ import {
   type ClientOutput,
   normalizeClientResponse,
   printClientDetails,
-  formatApiError,
 } from '../../../utils/slas/client.js';
 import {t, withDocs} from '../../../i18n/index.js';
 
@@ -111,7 +111,7 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
     if (getError) {
       this.error(
         t('commands.slas.client.update.fetchError', 'Failed to fetch SLAS client: {{message}}', {
-          message: formatApiError(getError, getResponse),
+          message: getApiErrorMessage(getError, getResponse),
         }),
       );
     }
@@ -145,7 +145,7 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
     if (error) {
       this.error(
         t('commands.slas.client.update.error', 'Failed to update SLAS client: {{message}}', {
-          message: formatApiError(error, response),
+          message: getApiErrorMessage(error, response),
         }),
       );
     }
