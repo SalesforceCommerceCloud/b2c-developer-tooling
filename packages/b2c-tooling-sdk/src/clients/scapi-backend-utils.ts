@@ -12,6 +12,7 @@
  *
  * @module clients/scapi-backend-utils
  */
+import type {AuthStrategy} from '../auth/types.js';
 
 /**
  * User-facing API backend preference.
@@ -29,6 +30,21 @@ export type ApiBackendPreference = 'ocapi' | 'scapi' | 'auto';
  */
 export interface BackendBase {
   readonly name: 'ocapi' | 'scapi';
+}
+
+/**
+ * Returns a copy of `auth` with `additionalScopes` merged in, or the original
+ * `auth` if the strategy doesn't support scope merging (e.g., basic/api-key
+ * auth, or a stored-session strategy where scopes were fixed at acquisition).
+ *
+ * Centralized so SCAPI client factories don't have to keep extending an
+ * `instanceof` chain as new OAuth strategy types are added.
+ */
+export function withScopes(auth: AuthStrategy, additionalScopes: string[]): AuthStrategy {
+  if (typeof auth.withAdditionalScopes === 'function') {
+    return auth.withAdditionalScopes(additionalScopes);
+  }
+  return auth;
 }
 
 /**

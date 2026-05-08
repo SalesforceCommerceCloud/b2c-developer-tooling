@@ -67,7 +67,7 @@ export {
 export type {BmRole, BmRoles, BmRolePermissions, ListBmRolesOptions, GetBmRoleOptions} from './roles.js';
 
 // Roles backend abstraction — supports OCAPI + SCAPI
-export {createRolesBackend, FallbackRolesBackend} from './backend.js';
+export {createRolesBackend} from './backend.js';
 export type {RolesBackendConfig} from './backend.js';
 export {OcapiRolesBackend} from './ocapi-backend.js';
 export {ScapiRolesBackend} from './scapi-backend.js';

@@ -39,6 +39,8 @@ export interface ScapiRolesBackendConfig {
   shortCode: string;
   tenantId: string;
   auth: AuthStrategy;
+  /** Unused by Roles; accepted for compatibility with the dual-backend factory. */
+  instance?: unknown;
 }
 
 export class ScapiRolesBackend implements RolesBackend {

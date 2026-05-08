@@ -11,10 +11,10 @@ import {
   selectColumns,
   type ColumnDef,
 } from '@salesforce/b2c-tooling-sdk/cli';
-import {type JobExecutionResult, type JobExecutionSearchResults} from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import {type JobExecutionInfo, type JobExecutionSearchResults} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t, withDocs} from '../../i18n/index.js';
 
-const COLUMNS: Record<string, ColumnDef<JobExecutionResult>> = {
+const COLUMNS: Record<string, ColumnDef<JobExecutionInfo>> = {
   id: {
     header: 'Execution ID',
     get: (e) => e.id ?? '-',

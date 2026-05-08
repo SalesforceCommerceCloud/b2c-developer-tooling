@@ -3,75 +3,50 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import type {B2CInstance} from '../../instance/index.js';
-import type {AuthStrategy} from '../../auth/types.js';
-import type {ScriptsBackend, CodeVersionInfo} from './scripts-types.js';
+import type {ScriptsBackend} from './scripts-types.js';
 import {OcapiScriptsBackend} from './ocapi-scripts-backend.js';
 import {ScapiScriptsBackend} from './scapi-scripts-backend.js';
-import {ScapiFallbackBackend} from '../../clients/scapi-fallback-backend.js';
-import {resolveScapiOrOcapi, type ApiBackendPreference} from '../../clients/scapi-backend-utils.js';
+import {createDualBackend, type DualBackendConfig} from '../../clients/dual-backend-factory.js';
 
-export interface ScriptsBackendConfig {
-  preference: ApiBackendPreference;
-  instance: B2CInstance;
-  shortCode?: string;
-  tenantId?: string;
-  auth?: AuthStrategy;
-}
+export type ScriptsBackendConfig = DualBackendConfig;
 
 export function createScriptsBackend(config: ScriptsBackendConfig): ScriptsBackend {
-  const hasScapiConfig = Boolean(config.shortCode && config.tenantId && config.auth);
-  const resolved = resolveScapiOrOcapi({
-    preference: config.preference,
-    hasScapiConfig,
+  return createDualBackend<ScriptsBackend>(config, {
     domainName: 'Scripts',
+    Scapi: ScapiScriptsBackend,
+    Ocapi: OcapiScriptsBackend,
   });
-
-  if (resolved === 'ocapi') {
-    return new OcapiScriptsBackend(config.instance);
-  }
-
-  const scapiBackend = new ScapiScriptsBackend({
-    shortCode: config.shortCode!,
-    tenantId: config.tenantId!,
-    auth: config.auth!,
-  });
-
-  if (config.preference === 'scapi') {
-    return scapiBackend;
-  }
-
-  // Auto mode: wrap with fallback
-  const ocapiBackend = new OcapiScriptsBackend(config.instance);
-  return new FallbackScriptsBackend(scapiBackend, ocapiBackend);
 }
 
-export class FallbackScriptsBackend extends ScapiFallbackBackend<ScriptsBackend> implements ScriptsBackend {
-  constructor(scapiBackend: ScapiScriptsBackend, ocapiBackend: OcapiScriptsBackend) {
-    super(scapiBackend, ocapiBackend, 'scripts');
+/**
+ * Reloads (re-activates) a code version using a toggle-activate technique.
+ *
+ * Activates an alternate version, then re-activates the target. This forces
+ * the instance to reload the code (rebuild caches, re-register custom APIs,
+ * etc.). Works on top of any `ScriptsBackend` since it only uses
+ * list+activate primitives.
+ *
+ * @param backend - Scripts backend (OCAPI, SCAPI, or fallback)
+ * @param codeVersionId - Code version to reload (defaults to current active)
+ * @throws Error if no alternate code version is available for toggling
+ */
+export async function reloadCodeVersion(backend: ScriptsBackend, codeVersionId?: string): Promise<void> {
+  const versions = await backend.listCodeVersions();
+  const activeVersion = versions.find((v) => v.active);
+  const targetVersion = codeVersionId ?? activeVersion?.id;
+
+  if (!targetVersion) {
+    throw new Error('No code version specified and no active version found');
   }
 
-  async listCodeVersions(): Promise<CodeVersionInfo[]> {
-    return this.withFallback((b) => b.listCodeVersions());
+  // If the target is already active, toggle through an alternate first.
+  if (activeVersion?.id === targetVersion) {
+    const alternateVersion = versions.find((v) => v.id !== targetVersion);
+    if (!alternateVersion) {
+      throw new Error('Cannot reload: no alternate code version available for toggle');
+    }
+    await backend.activateCodeVersion(alternateVersion.id);
   }
 
-  async getActiveCodeVersion(): Promise<CodeVersionInfo | undefined> {
-    return this.withFallback((b) => b.getActiveCodeVersion());
-  }
-
-  async activateCodeVersion(codeVersionId: string): Promise<void> {
-    return this.withFallback((b) => b.activateCodeVersion(codeVersionId));
-  }
-
-  async deleteCodeVersion(codeVersionId: string): Promise<void> {
-    return this.withFallback((b) => b.deleteCodeVersion(codeVersionId));
-  }
-
-  async createCodeVersion(codeVersionId: string): Promise<void> {
-    return this.withFallback((b) => b.createCodeVersion(codeVersionId));
-  }
-
-  async reloadCodeVersion(codeVersionId?: string): Promise<void> {
-    return this.withFallback((b) => b.reloadCodeVersion(codeVersionId));
-  }
+  await backend.activateCodeVersion(targetVersion);
 }

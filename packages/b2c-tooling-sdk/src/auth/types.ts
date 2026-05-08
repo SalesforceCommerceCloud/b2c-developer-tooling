@@ -31,6 +31,18 @@ export interface AuthStrategy {
    * Used by middleware to retry requests after receiving a 401 response.
    */
   invalidateToken?(): void;
+
+  /**
+   * Optional: Returns a copy of this strategy with the given scopes merged into
+   * its requested scope set. SCAPI client factories use this to ensure the
+   * domain scope (e.g., `sfcc.jobs.rw`) and the tenant scope are present.
+   *
+   * Implemented by `OAuthStrategy` and `JwtOAuthStrategy`. Strategies that
+   * obtain tokens by other means (basic, api-key, implicit-via-stored-session)
+   * may not implement this; callers should treat them as "scopes already
+   * established at construction time."
+   */
+  withAdditionalScopes?(additionalScopes: string[]): AuthStrategy;
 }
 
 /**

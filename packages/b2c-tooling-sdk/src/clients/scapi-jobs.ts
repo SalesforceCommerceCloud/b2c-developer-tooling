@@ -3,12 +3,10 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import createClient, {type Client} from 'openapi-fetch';
+import type {Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './scapi-jobs.generated.js';
-import {createAuthMiddleware, createLoggingMiddleware, createRateLimitMiddleware} from './middleware.js';
-import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
-import {OAuthStrategy} from '../auth/oauth.js';
+import {buildScapiClient, type ScapiClientConfig} from './scapi-client-factory.js';
 import {buildTenantScope, toOrganizationId, normalizeTenantId} from './custom-apis.js';
 
 export {toOrganizationId, normalizeTenantId, buildTenantScope};
@@ -28,31 +26,17 @@ export type JobExecutionSearchResult = components['schemas']['JobExecutionSearch
 export const SCAPI_JOBS_READ_SCOPES = ['sfcc.jobs'];
 export const SCAPI_JOBS_RW_SCOPES = ['sfcc.jobs.rw'];
 
-export interface ScapiJobsClientConfig {
-  shortCode: string;
-  tenantId: string;
-  scopes?: string[];
-  middlewareRegistry?: MiddlewareRegistry;
-}
+export type ScapiJobsClientConfig = ScapiClientConfig;
 
 export function createScapiJobsClient(config: ScapiJobsClientConfig, auth: AuthStrategy): ScapiJobsClient {
-  const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
-
-  const client = createClient<paths>({
-    baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/operation/jobs/v1`,
-  });
-
-  const requiredScopes = config.scopes ?? [...SCAPI_JOBS_RW_SCOPES, buildTenantScope(config.tenantId)];
-  const scopedAuth = auth instanceof OAuthStrategy ? auth.withAdditionalScopes(requiredScopes) : auth;
-
-  client.use(createAuthMiddleware(scopedAuth));
-
-  for (const middleware of registry.getMiddleware('scapi-jobs')) {
-    client.use(middleware);
-  }
-
-  client.use(createRateLimitMiddleware({prefix: 'SCAPI-JOBS'}));
-  client.use(createLoggingMiddleware('SCAPI-JOBS'));
-
-  return client;
+  return buildScapiClient<paths>(
+    {
+      pathSegment: 'operation/jobs/v1',
+      domainKey: 'scapi-jobs',
+      defaultScopes: SCAPI_JOBS_RW_SCOPES,
+      logPrefix: 'SCAPI-JOBS',
+    },
+    config,
+    auth,
+  );
 }

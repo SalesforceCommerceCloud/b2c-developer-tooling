@@ -205,12 +205,7 @@ export type {
 } from './operations/code/index.js';
 
 // Scripts (code versions) backend abstraction
-export {
-  createScriptsBackend,
-  FallbackScriptsBackend,
-  OcapiScriptsBackend,
-  ScapiScriptsBackend,
-} from './operations/code/index.js';
+export {createScriptsBackend, OcapiScriptsBackend, ScapiScriptsBackend} from './operations/code/index.js';
 export type {
   ScriptsBackend,
   ScriptsBackendConfig,
@@ -219,12 +214,7 @@ export type {
 } from './operations/code/index.js';
 
 // Users (BM) backend abstraction
-export {
-  createUsersBackend,
-  FallbackUsersBackend,
-  OcapiUsersBackend,
-  ScapiUsersBackend,
-} from './operations/bm-users/index.js';
+export {createUsersBackend, OcapiUsersBackend, ScapiUsersBackend} from './operations/bm-users/index.js';
 export type {
   UsersBackend,
   UsersBackendConfig,
@@ -237,12 +227,7 @@ export type {
 } from './operations/bm-users/index.js';
 
 // Roles (BM) backend abstraction
-export {
-  createRolesBackend,
-  FallbackRolesBackend,
-  OcapiRolesBackend,
-  ScapiRolesBackend,
-} from './operations/bm-roles/index.js';
+export {createRolesBackend, OcapiRolesBackend, ScapiRolesBackend} from './operations/bm-roles/index.js';
 export type {
   RolesBackend,
   RolesBackendConfig,
@@ -270,7 +255,6 @@ export {
   // Backend abstraction
   createJobsBackend,
   waitForJobExecution,
-  FallbackJobsBackend,
   OcapiJobsBackend,
   ScapiJobsBackend,
 } from './operations/jobs/index.js';
@@ -288,7 +272,7 @@ export type {
   JobsBackend,
   JobsBackendConfig,
   ApiBackendPreference,
-  JobExecutionResult,
+  JobExecutionInfo,
   JobStepExecutionResult,
   JobExecutionSearchResults,
   ScapiJobsBackendConfig,

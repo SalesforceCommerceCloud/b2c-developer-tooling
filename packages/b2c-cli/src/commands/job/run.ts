@@ -9,7 +9,7 @@ import {
   waitForJobExecution,
   JobExecutionError,
   type JobsBackend,
-  type JobExecutionResult,
+  type JobExecutionInfo,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -76,7 +76,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
 
   static hiddenAliases = ['job:run'];
 
-  async run(): Promise<JobExecutionResult> {
+  async run(): Promise<JobExecutionInfo> {
     this.requireOAuthCredentials();
 
     const {jobId} = this.args;
@@ -103,9 +103,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     const parameters = this.parseParameters(param || []);
     const rawBody = body ? this.parseBody(body) : undefined;
 
-    // When --body is used with auto mode, force OCAPI since raw bodies use OCAPI format
-    const backend = this.resolveBackend(rawBody);
-
+    const backend = this.createJobsBackend();
     this.logger.debug(`Using ${backend.name} backend for job operations`);
 
     // Create lifecycle context
@@ -129,7 +127,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
         id: '',
         jobId,
         executionStatus: 'finished',
-      } as unknown as JobExecutionResult;
+      } as unknown as JobExecutionInfo;
     }
 
     this.log(
@@ -139,7 +137,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       }),
     );
 
-    let execution: JobExecutionResult;
+    let execution: JobExecutionInfo;
     try {
       execution = await backend.executeJob(jobId, {
         parameters: rawBody ? undefined : parameters,
@@ -241,15 +239,6 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     });
   }
 
-  private resolveBackend(rawBody: Record<string, unknown> | undefined): JobsBackend {
-    const preference = this.resolvedConfig.values.apiBackend ?? 'auto';
-    if (rawBody && preference === 'auto') {
-      this.logger.debug('Raw body provided with auto mode; using OCAPI backend');
-      return this.createJobsBackend();
-    }
-    return this.createJobsBackend();
-  }
-
   private async waitForJobCompletion(options: {
     backend: JobsBackend;
     jobId: string;
@@ -258,7 +247,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     pollInterval: number | undefined;
     showLog: boolean;
     context: B2COperationContext;
-  }): Promise<JobExecutionResult> {
+  }): Promise<JobExecutionInfo> {
     const {backend, jobId, executionId, timeout, pollInterval, showLog, context} = options;
     this.log(t('commands.job.run.waiting', 'Waiting for job to complete...'));
 

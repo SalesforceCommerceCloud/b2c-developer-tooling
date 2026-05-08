@@ -48,6 +48,8 @@ export interface ScapiUsersBackendConfig {
   shortCode: string;
   tenantId: string;
   auth: AuthStrategy;
+  /** Unused by Users; accepted for compatibility with the dual-backend factory. */
+  instance?: unknown;
 }
 
 export class ScapiUsersBackend implements UsersBackend {

@@ -36,6 +36,8 @@ export interface ScapiScriptsBackendConfig {
   shortCode: string;
   tenantId: string;
   auth: AuthStrategy;
+  /** Unused by Scripts; accepted for compatibility with the dual-backend factory. */
+  instance?: unknown;
 }
 
 export class ScapiScriptsBackend implements ScriptsBackend {
@@ -104,10 +106,6 @@ export class ScapiScriptsBackend implements ScriptsBackend {
     if (error) {
       throw new Error(toErrorMessage(error, `Failed to create code version ${codeVersionId}`));
     }
-  }
-
-  async reloadCodeVersion(_codeVersionId?: string): Promise<void> {
-    throw new Error('Reloading code versions is not supported via SCAPI. Use --api-backend ocapi to reload.');
   }
 
   private buildClient(scopes: string[]): ScapiScriptsClient {

@@ -16,17 +16,7 @@ import {createScriptsBackend, type ScriptsBackend} from '../operations/code/inde
  * back to OCAPI on `invalid_scope`.
  */
 export abstract class CodeCommand<T extends typeof Command> extends InstanceCommand<T> {
-  /**
-   * Creates a Scripts backend based on the resolved configuration.
-   */
   protected createScriptsBackend(): ScriptsBackend {
-    const preference = this.resolvedConfig.values.apiBackend ?? 'auto';
-    return createScriptsBackend({
-      preference,
-      instance: this.instance,
-      shortCode: this.resolvedConfig.values.shortCode,
-      tenantId: this.resolvedConfig.values.tenantId,
-      auth: this.hasOAuthCredentials() ? this.getOAuthStrategy() : undefined,
-    });
+    return this.createBackend(createScriptsBackend);
   }
 }

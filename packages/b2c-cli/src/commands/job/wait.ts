@@ -8,7 +8,7 @@ import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   waitForJobExecution,
   JobExecutionError,
-  type JobExecutionResult,
+  type JobExecutionInfo,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -53,7 +53,7 @@ export default class JobWait extends JobCommand<typeof JobWait> {
     }),
   };
 
-  async run(): Promise<JobExecutionResult> {
+  async run(): Promise<JobExecutionInfo> {
     this.requireOAuthCredentials();
 
     const {jobId, executionId} = this.args;

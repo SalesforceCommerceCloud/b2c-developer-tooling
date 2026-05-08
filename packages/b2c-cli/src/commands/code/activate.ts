@@ -5,6 +5,7 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {CodeCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {reloadCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {t, withDocs} from '../../i18n/index.js';
 
 export default class CodeActivate extends CodeCommand<typeof CodeActivate> {
@@ -67,7 +68,7 @@ export default class CodeActivate extends CodeCommand<typeof CodeActivate> {
       );
 
       try {
-        await backend.reloadCodeVersion(codeVersion);
+        await reloadCodeVersion(backend, codeVersion);
         this.log(
           t('commands.code.activate.reloaded', 'Code version{{version}} reloaded successfully', {
             version: codeVersion ? ` ${codeVersion}` : '',

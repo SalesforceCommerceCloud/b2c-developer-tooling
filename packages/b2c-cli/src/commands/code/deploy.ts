@@ -10,6 +10,7 @@ import {
   getActiveCodeVersion,
   activateCodeVersion,
   reloadCodeVersion,
+  OcapiScriptsBackend,
   type DeployResult,
 } from '@salesforce/b2c-tooling-sdk/operations/code';
 import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
@@ -203,7 +204,7 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
           await this.operations.activateCodeVersion(this.instance, version);
           activated = true;
         } else if (this.flags.reload) {
-          await this.operations.reloadCodeVersion(this.instance, version);
+          await this.operations.reloadCodeVersion(new OcapiScriptsBackend(this.instance), version);
           activated = true;
           reloaded = true;
         }

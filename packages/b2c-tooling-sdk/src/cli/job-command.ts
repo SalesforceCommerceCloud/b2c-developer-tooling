@@ -6,7 +6,7 @@
 import {Command} from '@oclif/core';
 import {InstanceCommand} from './instance-command.js';
 import {getJobLog, getJobErrorMessage, type JobExecution} from '../operations/jobs/index.js';
-import {createJobsBackend, type JobsBackend, type JobExecutionResult} from '../operations/jobs/index.js';
+import {createJobsBackend, type JobsBackend, type JobExecutionInfo} from '../operations/jobs/index.js';
 import {t} from '../i18n/index.js';
 
 /**
@@ -24,35 +24,23 @@ import {t} from '../i18n/index.js';
  * }
  */
 export abstract class JobCommand<T extends typeof Command> extends InstanceCommand<T> {
-  /**
-   * Creates a jobs backend based on the resolved configuration.
-   * In auto mode (default), prefers SCAPI when shortCode+tenantId are configured,
-   * falling back to OCAPI if SCAPI scopes are unavailable.
-   */
   protected createJobsBackend(): JobsBackend {
-    const preference = this.resolvedConfig.values.apiBackend ?? 'auto';
-    return createJobsBackend({
-      preference,
-      instance: this.instance,
-      shortCode: this.resolvedConfig.values.shortCode,
-      tenantId: this.resolvedConfig.values.tenantId,
-      auth: this.hasOAuthCredentials() ? this.getOAuthStrategy() : undefined,
-    });
+    return this.createBackend(createJobsBackend);
   }
 
   /**
    * Display a job's log file content and error message if available.
-   * Accepts both canonical JobExecutionResult and legacy OCAPI JobExecution.
+   * Accepts both canonical JobExecutionInfo and legacy OCAPI JobExecution.
    * Outputs to stderr since this is typically shown for failed jobs.
    */
-  protected async showJobLog(execution: JobExecutionResult | JobExecution): Promise<void> {
+  protected async showJobLog(execution: JobExecutionInfo | JobExecution): Promise<void> {
     if (isCanonicalExecution(execution)) {
       return this.showCanonicalJobLog(execution);
     }
     return this.showOcapiJobLog(execution);
   }
 
-  private async showCanonicalJobLog(execution: JobExecutionResult): Promise<void> {
+  private async showCanonicalJobLog(execution: JobExecutionInfo): Promise<void> {
     const errorMessage = getCanonicalJobErrorMessage(execution);
 
     if (!execution.isLogFileExisting) {
@@ -110,11 +98,11 @@ export abstract class JobCommand<T extends typeof Command> extends InstanceComma
   }
 }
 
-function isCanonicalExecution(execution: JobExecutionResult | JobExecution): execution is JobExecutionResult {
+function isCanonicalExecution(execution: JobExecutionInfo | JobExecution): execution is JobExecutionInfo {
   return 'executionStatus' in execution;
 }
 
-function getCanonicalJobErrorMessage(execution: JobExecutionResult): string | undefined {
+function getCanonicalJobErrorMessage(execution: JobExecutionInfo): string | undefined {
   if (!execution.stepExecutions || execution.stepExecutions.length === 0) {
     return undefined;
   }

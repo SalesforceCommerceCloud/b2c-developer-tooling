@@ -35,10 +35,9 @@ export interface CodeVersionInfo {
 /**
  * Backend contract for code-version operations.
  *
- * `reloadCodeVersion` is OCAPI-only — the SCAPI backend's implementation
- * throws to advertise that. In auto mode the fallback wrapper will fall
- * through to OCAPI on the first call (since reload requires the OCAPI cache
- * rebuild semantics).
+ * Reload is implemented as a backend-agnostic helper (`reloadCodeVersion`
+ * in the operations module) since it's just `activate(alternate) +
+ * activate(target)` on top of these primitives.
  */
 export interface ScriptsBackend extends BackendBase {
   listCodeVersions(): Promise<CodeVersionInfo[]>;
@@ -46,9 +45,4 @@ export interface ScriptsBackend extends BackendBase {
   activateCodeVersion(codeVersionId: string): Promise<void>;
   deleteCodeVersion(codeVersionId: string): Promise<void>;
   createCodeVersion(codeVersionId: string): Promise<void>;
-  /**
-   * Re-activates the current code version to force a code cache reload.
-   * Implemented only by the OCAPI backend.
-   */
-  reloadCodeVersion(codeVersionId?: string): Promise<void>;
 }

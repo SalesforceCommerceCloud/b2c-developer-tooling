@@ -378,9 +378,13 @@ export type {
 } from './scapi-scripts.js';
 
 // SCAPI dual-backend utilities (shared across SCAPI/OCAPI domains)
-export {isInvalidScopeError, resolveScapiOrOcapi} from './scapi-backend-utils.js';
+export {isInvalidScopeError, resolveScapiOrOcapi, withScopes} from './scapi-backend-utils.js';
 export type {ApiBackendPreference, BackendBase, ResolveBackendOptions} from './scapi-backend-utils.js';
-export {ScapiFallbackBackend} from './scapi-fallback-backend.js';
+export {createFallbackBackend} from './scapi-fallback-backend.js';
+export {createDualBackend} from './dual-backend-factory.js';
+export type {DualBackendConfig, DualBackendCtors, ScapiBackendCtorConfig} from './dual-backend-factory.js';
+export {buildScapiClient} from './scapi-client-factory.js';
+export type {BuildScapiClientOptions, ScapiClientConfig} from './scapi-client-factory.js';
 export {ScopeTierManager} from './scapi-scope-tier.js';
 export type {ScopeTier, ScopeTierManagerOptions} from './scapi-scope-tier.js';
 

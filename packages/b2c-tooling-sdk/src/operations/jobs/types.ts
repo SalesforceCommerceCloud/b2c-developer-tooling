@@ -7,7 +7,7 @@ import type {ExecuteJobOptions, WaitForJobOptions, SearchJobExecutionsOptions} f
 
 export type {ExecuteJobOptions, WaitForJobOptions, SearchJobExecutionsOptions};
 
-export interface JobExecutionResult {
+export interface JobExecutionInfo {
   id: string;
   jobId: string;
   executionStatus:
@@ -48,14 +48,14 @@ export interface JobExecutionSearchResults {
   total: number;
   limit: number;
   offset: number;
-  hits: JobExecutionResult[];
+  hits: JobExecutionInfo[];
 }
 
 export interface JobsBackend {
   readonly name: 'ocapi' | 'scapi';
-  executeJob(jobId: string, options?: ExecuteJobOptions): Promise<JobExecutionResult>;
-  getJobExecution(jobId: string, executionId: string): Promise<JobExecutionResult>;
+  executeJob(jobId: string, options?: ExecuteJobOptions): Promise<JobExecutionInfo>;
+  getJobExecution(jobId: string, executionId: string): Promise<JobExecutionInfo>;
   searchJobExecutions(options?: SearchJobExecutionsOptions): Promise<JobExecutionSearchResults>;
   deleteJobExecution(jobId: string, executionId: string): Promise<void>;
-  getJobLog(execution: JobExecutionResult): Promise<string>;
+  getJobLog(execution: JobExecutionInfo): Promise<string>;
 }

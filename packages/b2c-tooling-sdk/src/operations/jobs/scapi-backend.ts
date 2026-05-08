@@ -5,7 +5,7 @@
  */
 import type {B2CInstance} from '../../instance/index.js';
 import type {AuthStrategy} from '../../auth/types.js';
-import type {JobsBackend, JobExecutionResult, JobStepExecutionResult, JobExecutionSearchResults} from './types.js';
+import type {JobsBackend, JobExecutionInfo, JobStepExecutionResult, JobExecutionSearchResults} from './types.js';
 import type {ExecuteJobOptions, SearchJobExecutionsOptions} from './run.js';
 import {
   createScapiJobsClient,
@@ -36,11 +36,11 @@ function mapStepExecution(step: ScapiJobStepExecution): JobStepExecutionResult {
   };
 }
 
-function mapScapiExecution(scapi: ScapiJobExecution): JobExecutionResult {
+function mapScapiExecution(scapi: ScapiJobExecution): JobExecutionInfo {
   return {
     id: scapi.id,
     jobId: scapi.jobId,
-    executionStatus: (scapi.executionStatus ?? 'unknown') as JobExecutionResult['executionStatus'],
+    executionStatus: (scapi.executionStatus ?? 'unknown') as JobExecutionInfo['executionStatus'],
     exitStatus: scapi.exitStatus
       ? {
           code: scapi.exitStatus.code ?? '',
@@ -82,7 +82,7 @@ export class ScapiJobsBackend implements JobsBackend {
     });
   }
 
-  async executeJob(jobId: string, options?: ExecuteJobOptions): Promise<JobExecutionResult> {
+  async executeJob(jobId: string, options?: ExecuteJobOptions): Promise<JobExecutionInfo> {
     const client = this.scopeTier.getClientForWrite();
     const {parameters = [], body: rawBody} = options ?? {};
 
@@ -123,7 +123,7 @@ export class ScapiJobsBackend implements JobsBackend {
     return mapScapiExecution(data);
   }
 
-  async getJobExecution(jobId: string, executionId: string): Promise<JobExecutionResult> {
+  async getJobExecution(jobId: string, executionId: string): Promise<JobExecutionInfo> {
     const client = this.scopeTier.getClientForRead();
 
     const {data, error} = await client.GET('/organizations/{organizationId}/jobs/{jobId}/executions/{executionId}', {
@@ -200,7 +200,7 @@ export class ScapiJobsBackend implements JobsBackend {
     }
   }
 
-  async getJobLog(execution: JobExecutionResult): Promise<string> {
+  async getJobLog(execution: JobExecutionInfo): Promise<string> {
     if (!execution.logFilePath) {
       throw new Error('No log file path available');
     }
@@ -221,7 +221,7 @@ export class ScapiJobsBackend implements JobsBackend {
     return createScapiJobsClient(clientConfig, this.config.auth);
   }
 
-  private async findRunningExecution(jobId: string): Promise<JobExecutionResult | undefined> {
+  private async findRunningExecution(jobId: string): Promise<JobExecutionInfo | undefined> {
     const results = await this.searchJobExecutions({
       jobId,
       status: ['RUNNING', 'PENDING'],

@@ -29,7 +29,6 @@ describe('code activate', () => {
       activateCodeVersion: sinon.stub(),
       deleteCodeVersion: sinon.stub(),
       createCodeVersion: sinon.stub(),
-      reloadCodeVersion: sinon.stub(),
     };
   }
 
@@ -70,18 +69,25 @@ describe('code activate', () => {
   it('reloads the active code version when --reload is set and no arg is provided', async () => {
     const command: any = await createCommand({reload: true}, {});
     const backend = stubCommon(command);
-    backend.reloadCodeVersion.resolves();
+    // reloadCodeVersion is now backend-agnostic: list+activate(alt)+activate(target)
+    backend.listCodeVersions.resolves([
+      {id: 'v1', active: true},
+      {id: 'v2', active: false},
+    ]);
+    backend.activateCodeVersion.resolves();
 
     await command.run();
 
-    expect(backend.reloadCodeVersion.calledOnce).to.be.true;
-    expect(backend.reloadCodeVersion.firstCall.args[0]).to.equal(undefined);
+    // Called twice: alternate then target
+    expect(backend.activateCodeVersion.callCount).to.equal(2);
+    expect(backend.activateCodeVersion.getCall(0).args[0]).to.equal('v2');
+    expect(backend.activateCodeVersion.getCall(1).args[0]).to.equal('v1');
   });
 
   it('calls command.error when reload fails with an error message', async () => {
     const command: any = await createCommand({reload: true}, {codeVersion: 'v1'});
     const backend = stubCommon(command);
-    backend.reloadCodeVersion.rejects(new Error('boom'));
+    backend.listCodeVersions.rejects(new Error('boom'));
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 

@@ -5,12 +5,12 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {type JobExecutionResult} from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import {type JobExecutionInfo} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t, withDocs} from '../../i18n/index.js';
 import {highlightLogText} from '../../utils/logs/index.js';
 
 interface JobLogResult {
-  execution: JobExecutionResult;
+  execution: JobExecutionInfo;
   log: string;
 }
 
@@ -61,7 +61,7 @@ export default class JobLog extends JobCommand<typeof JobLog> {
     const backend = this.createJobsBackend();
     this.logger.debug(`Using ${backend.name} backend for job log`);
 
-    let execution: JobExecutionResult;
+    let execution: JobExecutionInfo;
 
     if (executionId) {
       this.log(

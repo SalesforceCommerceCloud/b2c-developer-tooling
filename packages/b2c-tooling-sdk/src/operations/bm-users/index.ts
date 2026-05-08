@@ -77,7 +77,7 @@ export type {
 } from './users.js';
 
 // Users backend abstraction — supports OCAPI + SCAPI
-export {createUsersBackend, FallbackUsersBackend} from './backend.js';
+export {createUsersBackend} from './backend.js';
 export type {UsersBackendConfig} from './backend.js';
 export {OcapiUsersBackend} from './ocapi-backend.js';
 export {ScapiUsersBackend} from './scapi-backend.js';

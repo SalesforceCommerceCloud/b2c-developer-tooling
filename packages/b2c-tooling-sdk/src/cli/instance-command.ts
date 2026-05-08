@@ -191,6 +191,30 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
   }
 
   /**
+   * Creates a SCAPI/OCAPI dual backend by passing the resolved configuration
+   * (apiBackend preference, instance, shortCode, tenantId, OAuth) to the
+   * supplied factory. Each backend domain (jobs, scripts, users, roles)
+   * exports its own factory; this helper supplies the same plumbing for all.
+   *
+   * @example
+   * ```ts
+   * const backend = this.createBackend(createJobsBackend);
+   * await backend.executeJob('my-job');
+   * ```
+   */
+  protected createBackend<T>(
+    factory: (config: import('../clients/dual-backend-factory.js').DualBackendConfig) => T,
+  ): T {
+    return factory({
+      preference: this.resolvedConfig.values.apiBackend ?? 'auto',
+      instance: this.instance,
+      shortCode: this.resolvedConfig.values.shortCode,
+      tenantId: this.resolvedConfig.values.tenantId,
+      auth: this.hasOAuthCredentials() ? this.getOAuthStrategy() : undefined,
+    });
+  }
+
+  /**
    * Gets the B2CInstance for this command.
    *
    * The instance is lazily created from the resolved configuration.

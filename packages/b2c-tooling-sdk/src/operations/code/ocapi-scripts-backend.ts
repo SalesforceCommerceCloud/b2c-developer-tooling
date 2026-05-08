@@ -12,7 +12,6 @@ import {
   activateCodeVersion as ocapiActivateCodeVersion,
   deleteCodeVersion as ocapiDeleteCodeVersion,
   createCodeVersion as ocapiCreateCodeVersion,
-  reloadCodeVersion as ocapiReloadCodeVersion,
 } from './versions.js';
 
 function mapOcapiCodeVersion(ocapi: OcapiCodeVersion): CodeVersionInfo {
@@ -55,9 +54,5 @@ export class OcapiScriptsBackend implements ScriptsBackend {
 
   async createCodeVersion(codeVersionId: string): Promise<void> {
     await ocapiCreateCodeVersion(this.instance, codeVersionId);
-  }
-
-  async reloadCodeVersion(codeVersionId?: string): Promise<void> {
-    await ocapiReloadCodeVersion(this.instance, codeVersionId);
   }
 }

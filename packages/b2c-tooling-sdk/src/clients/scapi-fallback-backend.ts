@@ -6,10 +6,11 @@
 /**
  * Generic fallback wrapper for SCAPI/OCAPI dual backends.
  *
- * Each domain (jobs, scripts, users, roles) gets a thin subclass that
- * delegates each interface method through `withFallback`. The wrapper itself
- * holds no domain knowledge — it only implements the "try SCAPI first; on
- * `invalid_scope`, fall back to OCAPI; cache the choice" behavior.
+ * Builds a Proxy that implements the same interface as the underlying
+ * backends. Each method call routes through {@link withFallback}: try SCAPI
+ * first; on `invalid_scope`, fall back to OCAPI and cache the choice for the
+ * lifetime of the wrapper. The `name` property reflects the currently-active
+ * backend ('scapi' before the first call resolves, then whichever survived).
  *
  * @module clients/scapi-fallback-backend
  */
@@ -17,59 +18,94 @@ import {getLogger} from '../logging/logger.js';
 import {isInvalidScopeError, type BackendBase} from './scapi-backend-utils.js';
 
 /**
- * Base class for `Fallback*Backend` implementations. Subclasses implement
- * the domain interface (e.g., `JobsBackend`) by delegating each method to
- * `withFallback`.
+ * Internal state shared by all method invocations on a Proxy. Holds the
+ * resolved backend so that once SCAPI succeeds (or we've fallen back to
+ * OCAPI), subsequent calls skip the SCAPI attempt.
+ */
+interface FallbackState<T extends BackendBase> {
+  scapi: T;
+  ocapi: T;
+  domainName: string;
+  resolved?: T;
+}
+
+/**
+ * Wraps a SCAPI call with automatic OCAPI fallback on `invalid_scope`.
+ *
+ * Standalone helper so the Proxy traps and any future direct callers share
+ * one definition.
+ */
+async function withFallback<T extends BackendBase, R>(
+  state: FallbackState<T>,
+  fn: (backend: T) => Promise<R>,
+): Promise<R> {
+  if (state.resolved) {
+    return fn(state.resolved);
+  }
+
+  try {
+    const result = await fn(state.scapi);
+    state.resolved = state.scapi;
+    return result;
+  } catch (error) {
+    if (isInvalidScopeError(error)) {
+      getLogger().info(`SCAPI ${state.domainName} scope unavailable, falling back to OCAPI`);
+      state.resolved = state.ocapi;
+      return fn(state.ocapi);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Creates a fallback wrapper over `scapi` and `ocapi` backends.
+ *
+ * The returned object presents the same interface as `T`. Method calls are
+ * intercepted: the first call tries SCAPI; on `invalid_scope` it falls back
+ * to OCAPI. The choice is cached for the wrapper's lifetime.
+ *
+ * @param scapi - Primary (SCAPI) backend implementation
+ * @param ocapi - Fallback (OCAPI) backend implementation
+ * @param domainName - Used in fallback log messages, e.g. `'jobs'`
+ * @returns A Proxy over `scapi` whose methods route through fallback logic
  *
  * @example
  * ```ts
- * class FallbackJobsBackend extends ScapiFallbackBackend<JobsBackend> implements JobsBackend {
- *   async executeJob(jobId: string, options?: ExecuteJobOptions) {
- *     return this.withFallback((b) => b.executeJob(jobId, options));
- *   }
- *   // ... one delegating method per interface method
- * }
+ * const backend = createFallbackBackend(scapiJobs, ocapiJobs, 'jobs');
+ * await backend.executeJob('my-job'); // tries SCAPI, may fall back to OCAPI
  * ```
  */
-export abstract class ScapiFallbackBackend<T extends BackendBase> {
-  protected resolvedBackend?: T;
+export function createFallbackBackend<T extends BackendBase>(scapi: T, ocapi: T, domainName: string): T {
+  const state: FallbackState<T> = {scapi, ocapi, domainName};
 
-  constructor(
-    protected scapiBackend: T,
-    protected ocapiBackend: T,
-    /** Used in fallback log messages, e.g. `'jobs'`, `'scripts'`. */
-    protected domainName: string,
-  ) {}
-
-  /**
-   * Reports the backend that served the last successful call. Defaults to
-   * `'scapi'` before the first call, since that's what we'd try first.
-   */
-  get name(): 'ocapi' | 'scapi' {
-    return this.resolvedBackend?.name ?? this.scapiBackend.name;
-  }
-
-  /**
-   * Runs `fn` against the resolved backend, or against SCAPI first with
-   * automatic OCAPI fallback on `invalid_scope`. The choice is cached: once
-   * a backend has succeeded (or fallen back), all subsequent calls go to it.
-   */
-  protected async withFallback<R>(fn: (backend: T) => Promise<R>): Promise<R> {
-    if (this.resolvedBackend) {
-      return fn(this.resolvedBackend);
-    }
-
-    try {
-      const result = await fn(this.scapiBackend);
-      this.resolvedBackend = this.scapiBackend;
-      return result;
-    } catch (error) {
-      if (isInvalidScopeError(error)) {
-        getLogger().info(`SCAPI ${this.domainName} scope unavailable, falling back to OCAPI`);
-        this.resolvedBackend = this.ocapiBackend;
-        return fn(this.ocapiBackend);
+  return new Proxy(scapi, {
+    get(target, prop, receiver) {
+      // Special property: `name` reflects whichever backend has handled requests so far.
+      if (prop === 'name') {
+        return (state.resolved ?? scapi).name;
       }
-      throw error;
-    }
-  }
+
+      const value = Reflect.get(target, prop, receiver);
+
+      // Non-functions (constants, getters): return as-is from the SCAPI backend.
+      // Wrappers don't currently expose any non-method state besides `name`,
+      // but this keeps the Proxy transparent for property access.
+      if (typeof value !== 'function') {
+        return value;
+      }
+
+      // For each method, return a wrapper that routes the call through fallback.
+      // We must look up the method by name on the resolved backend (not on the
+      // SCAPI target we're proxying), since the OCAPI backend may have a
+      // different implementation.
+      return (...args: unknown[]) =>
+        withFallback(state, (backend) => {
+          const fn = (backend as unknown as Record<string | symbol, unknown>)[prop];
+          if (typeof fn !== 'function') {
+            throw new TypeError(`Method ${String(prop)} is not a function on ${backend.name} backend`);
+          }
+          return (fn as (...a: unknown[]) => Promise<unknown>).apply(backend, args);
+        });
+    },
+  }) as T;
 }
