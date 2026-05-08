@@ -10,7 +10,7 @@ renameNotice:
 hero:
   name: Agentic B2C Developer Toolkit
   text: ""
-  tagline: CLI, Agent Skills, MCP Server, and IDE extensions for Salesforce Agentforce Commerce — everything you and your coding agent need to build, deploy, and operate B2C Commerce together.
+  tagline: CLI, Agent Skills, MCP Server, and the B2C DX VS Code Extension for Salesforce Agentforce Commerce — everything you and your coding agent need to build, deploy, and operate B2C Commerce together.
   image:
     src: /hero-collage.png
     alt: Agentic B2C Developer Toolkit — CLI, Agentforce Vibes, and Claude Code
@@ -53,6 +53,14 @@ features:
     details: A focused set of MCP tools that complement the CLI for agent-driven workflows. Pairs naturally with skills.
     link: /mcp/
     linkText: MCP Server
+  - icon:
+      src: /icons/cli.svg
+      width: 48
+      height: 48
+    title: VS Code Extension (Developer Preview)
+    details: B2C DX activity-bar containers for sandbox lifecycle, cartridge code sync, WebDAV, content libraries, SCAPI, and a B2C script debugger — all driven by the same dw.json the CLI uses.
+    link: /vscode-extension/
+    linkText: VS Code Extension
 ---
 
 ## Install the CLI

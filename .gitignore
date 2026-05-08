@@ -27,6 +27,7 @@ docs/.vitepress/cache
 docs/api/
 
 *dw.json*
+!packages/b2c-vs-extension/src/test/fixtures/**/dw.json
 .env
 .config/wt.toml
 .b2c/

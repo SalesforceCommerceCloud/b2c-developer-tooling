@@ -87,6 +87,15 @@ const guidesSidebar = [
     ],
   },
   {
+    text: 'VS Code Extension',
+    items: [
+      {text: 'Overview', link: '/vscode-extension/'},
+      {text: 'Installation', link: '/vscode-extension/installation'},
+      {text: 'Configuration', link: '/vscode-extension/configuration'},
+      {text: 'Features', link: '/vscode-extension/features'},
+    ],
+  },
+  {
     text: 'Extending',
     items: [
       {text: 'Custom Plugins', link: '/guide/extending'},
@@ -197,7 +206,7 @@ document.addEventListener('click', (e) => {
 
 export default defineConfig({
   title: 'B2C Developer Toolkit',
-  description: 'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and IDE extensions for Salesforce B2C Commerce',
+  description: 'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and the B2C DX VS Code Extension for Salesforce B2C Commerce',
   base: basePath,
 
   head: [['script', {}, versionSwitchScript]],
@@ -264,6 +273,7 @@ export default defineConfig({
       {text: 'Guides', link: '/guide/'},
       {text: 'Skills', link: '/guide/agent-skills'},
       {text: 'MCP', link: '/mcp/'},
+      {text: 'VS Code', link: '/vscode-extension/'},
       {text: 'Reference', link: '/cli/'},
       {text: 'SDK', link: '/api/'},
       {
@@ -280,6 +290,7 @@ export default defineConfig({
     sidebar: {
       '/mcp/tools/': referenceSidebar,
       '/mcp/': guidesSidebar,
+      '/vscode-extension/': guidesSidebar,
       '/cli/': referenceSidebar,
       '/guide/': guidesSidebar,
       '/api/': [
