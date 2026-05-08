@@ -15,6 +15,7 @@ import {createSafetyMiddleware, globalMiddlewareRegistry} from '@salesforce/b2c-
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from './config-provider.js';
+import {wrapCommandHandler} from './telemetry.js';
 
 const PROVIDER_NAME = 'vscode-safety-guard';
 
@@ -99,6 +100,7 @@ export function runWithSafety<T>(operation: () => Promise<T>, detail?: string): 
 // Matches vscode.commands.registerCommand's own signature, which uses any[] for context-menu args.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function registerSafeCommand(commandId: string, handler: (...args: any[]) => any): vscode.Disposable {
+  const tracedHandler = wrapCommandHandler(commandId, handler);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return vscode.commands.registerCommand(commandId, async (...args: any[]) => {
     try {
@@ -117,13 +119,13 @@ export function registerSafeCommand(commandId: string, handler: (...args: any[])
         if (choice !== 'Proceed') return undefined;
         const release = currentGuard.temporarilyAllow(err.evaluation.operation);
         try {
-          return await handler(...args);
+          return await tracedHandler(...args);
         } finally {
           release();
         }
       }
       throw err;
     }
-    return handler(...args);
+    return tracedHandler(...args);
   });
 }

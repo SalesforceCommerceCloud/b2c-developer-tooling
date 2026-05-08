@@ -4,11 +4,19 @@ description: B2C DX VS Code Extension feature tour — sandbox explorer, code sy
 
 # Features
 
-A guided tour of what the extension can do. All commands are reachable from the Command Palette under the **B2C DX** category — this page focuses on what each feature is *for* and the actions you can only reach through tree-view right-clicks.
+A guided tour of what the extension can do. Each feature lists exactly which `dw.json` fields it needs in a **Requires** callout. All commands are reachable from the Command Palette under the **B2C DX** category — this page focuses on what each feature is *for* and the actions you can only reach through tree-view right-clicks.
+
+**Jump to:** [Sandbox Realm Explorer](#sandbox-realm-explorer) · [WebDAV Browser](#webdav-browser) · [Content Libraries](#content-libraries) · [Cartridge Code Sync](#cartridge-code-sync) · [SCAPI API Browser](#scapi-api-browser) · [B2C Script Debugger](#b2c-script-debugger) · [Scaffold & CAP install](#scaffold-cap-install) · [Page Designer Assistant](#page-designer-assistant) · [Log Tailing](#log-tailing) · [Active Instance Status Bar](#active-instance-status-bar) · [B2C CLI Plugin Support](#b2c-cli-plugin-support)
+
+For credential setup, see [Connecting to a B2C Instance](./configuration#connecting-to-a-b2c-instance) and the CLI's [Authentication Setup guide](../guide/authentication).
 
 ## Sandbox Realm Explorer
 
-Browse and manage on-demand sandboxes (ODS) for one or more realms in a dedicated activity-bar container (**B2C-DX Sandboxes**). The tree groups sandboxes by realm, and each row carries a state-derived context value (`sandbox-started`, `sandbox-stopped`, `sandbox-cloning`, `sandbox-settingup-cloned`, etc.) so the right-click menu only offers actions that make sense for the current state.
+Browse and manage on-demand sandboxes (ODS) for one or more realms in a dedicated activity-bar container (**B2C-DX Sandboxes**). The tree groups sandboxes by realm, and each row carries a state-derived context value so the right-click menu only offers actions that make sense for the current state.
+
+::: tip Requires
+Account Manager **OAuth** with the `Sandbox API User` role on a tenant filter for the realm(s) you want to manage. The extension uses the CLI's built-in browser login by default — no API client config needed for interactive use. For headless sessions, set `client-id` and `client-secret` in `dw.json`.
+:::
 
 **Lifecycle commands** (palette + right-click): create, start, stop, restart, clone, view details, view clone details, extend expiration, open Business Manager, delete.
 
@@ -20,11 +28,15 @@ Browse and manage on-demand sandboxes (ODS) for one or more realms in a dedicate
 <!-- TODO(screenshot): replace ./images/sandbox-context-menu.svg with ./images/sandbox-context-menu.png — right-click context menu over a started sandbox -->
 ![Sandbox context menu](./images/sandbox-context-menu.svg)
 
-Polling cadence is controlled by [`b2c-dx.sandbox.pollingInterval`](./configuration#sandbox-polling-interval).
+Polling cadence is controlled by [`b2c-dx.sandbox.pollingInterval`](./configuration#settings-reference).
 
 ## WebDAV Browser
 
 A tree of WebDAV catalogs and libraries plus a registered file-system provider (`b2c-webdav://`) so you can mount a remote folder as a workspace folder.
+
+::: tip Requires
+**WebDAV access** — `hostname` plus either `username` + `password` (Basic auth, recommended) or `client-id` + `client-secret` (OAuth). The `password` is your **WebDAV access key** generated in Business Manager → Access Keys, not your Business Manager login password.
+:::
 
 **Tree-only actions** (right-click on a catalog, library, or directory):
 
@@ -43,6 +55,10 @@ A tree of WebDAV catalogs and libraries plus a registered file-system provider (
 
 A focused view for Page Designer pages and components stored in your content libraries — filtered, exportable, and importable without leaving the editor.
 
+::: tip Requires
+Same as [WebDAV Browser](#webdav-browser). Plus a `contentLibrary` (or one entry in `libraries`) in `dw.json` to seed the tree.
+:::
+
 **Tree-only actions**:
 
 - **Export / Export without Assets / Export Assets Only** — three single-click exports for any page, content asset, or component.
@@ -57,6 +73,10 @@ A focused view for Page Designer pages and components stored in your content lib
 
 A **Cartridges** tree view (under the **B2C-DX** activity-bar container) lists every cartridge detected in your workspace. From there you can watch, deploy, and manage code versions per-cartridge — no all-or-nothing sync.
 
+::: tip Requires
+**WebDAV access** for transfer (same as the [WebDAV Browser](#webdav-browser)). Code-version operations (list / create / activate) additionally require **OCAPI** access — `client-id` + `client-secret` configured against the instance's OCAPI permissions.
+:::
+
 **Title-bar actions**: **Refresh Cartridges**, **Deploy Cartridges**, **Code Versions** (list / create / activate).
 
 **Per-cartridge right-click actions**: **Upload Cartridge**, **Download from Instance**, **Add to Site Cartridge Path**, **Remove from Site Cartridge Path**.
@@ -68,7 +88,11 @@ A **Cartridges** tree view (under the **B2C-DX** activity-bar container) lists e
 
 ## SCAPI API Browser
 
-Browse SCAPI OpenAPI schemas for your instance and open a Swagger UI panel for any endpoint. Requires OAuth credentials (`clientId`, `clientSecret`) and `shortCode` in `dw.json` — see the [Authentication Setup guide](../guide/authentication).
+Browse SCAPI OpenAPI schemas for your instance and open a Swagger UI panel for any endpoint.
+
+::: tip Requires
+Account Manager OAuth client with `client-id`, `client-secret`, `short-code`, and `tenant-id` in `dw.json`. The CLI auto-requests the `sfcc.scapi-schemas` and `SALESFORCE_COMMERCE_API:<tenant_id>` scopes — see the CLI's [SCAPI Schemas authentication](../cli/scapi-schemas#authentication).
+:::
 
 The view lives in its own activity-bar container (**B2C-DX: SCAPI**). Use **Refresh** to reload schemas after changing instances, and **Open API Documentation** to launch the Swagger UI panel.
 
@@ -77,7 +101,11 @@ The view lives in its own activity-bar container (**B2C-DX: SCAPI**). Use **Refr
 
 ## B2C Script Debugger
 
-Registered as debug type `b2c-script`. Add a launch configuration to `.vscode/launch.json` to step through server-side B2C scripts:
+Registered as debug type `b2c-script`. Add a launch configuration to `.vscode/launch.json` to step through server-side B2C scripts.
+
+::: tip Requires
+**WebDAV access** to download cartridge sources for source-mapping (same as the [WebDAV Browser](#webdav-browser)). The Script Debugger also requires the instance's debugger to be reachable on the configured `hostname`.
+:::
 
 ```jsonc
 {
@@ -99,6 +127,10 @@ Registered as debug type `b2c-script`. Add a launch configuration to `.vscode/la
 
 ## Scaffold & CAP install
 
+::: tip Requires
+**Scaffold** is local-only — no credentials. **CAP install** uses the same WebDAV access as the [WebDAV Browser](#webdav-browser) plus, depending on the app, OAuth client credentials.
+:::
+
 **Scaffold** (`b2c-dx.scaffold.generate`) — quick-pick over the SDK's scaffold templates; appears in the **File → New File...** picker and as **New from Scaffold...** when you right-click a folder in the Explorer.
 
 **CAP install** (`b2c-dx.cap.install`) — appears on the right-click menu of a folder in the Explorer when the folder contains a `commerce-app.json`. Activation is also wired to `workspaceContains:**/commerce-app.json` so the extension auto-activates when you open a CAP project.
@@ -108,6 +140,10 @@ Registered as debug type `b2c-script`. Add a launch configuration to `.vscode/la
 
 ## Page Designer Assistant
 
+::: tip Requires
+None — local file generation only.
+:::
+
 `b2c-dx.openUI` opens a guided webview UI for scaffolding a Storefront Next page (PageType + Region definitions). The generated `.tsx` file is written to your workspace's `routes/` folder when one exists, or to a path you pick when the workspace has no routes folder.
 
 <!-- TODO(screenshot): replace ./images/page-designer-assistant.svg with ./images/page-designer-assistant.png -->
@@ -115,7 +151,11 @@ Registered as debug type `b2c-script`. Add a launch configuration to `.vscode/la
 
 ## Log Tailing
 
-**Start Tailing Logs** / **Stop Tailing Logs** stream B2C log files into the editor (instance-side error/warn/info logs from `error-*.log`, `warn-*.log`, etc.). Output goes to a dedicated VS Code output channel; use [`b2c-dx.logLevel`](./configuration#log-level) to control extension log verbosity separately.
+::: tip Requires
+**WebDAV access** (same as the [WebDAV Browser](#webdav-browser)). Logs are read from `Logs/` over WebDAV.
+:::
+
+**Start Tailing Logs** / **Stop Tailing Logs** stream B2C log files into the editor (instance-side error/warn/info logs from `error-*.log`, `warn-*.log`, etc.). Output goes to a dedicated VS Code output channel; use [`b2c-dx.logLevel`](./configuration#settings-reference) to control extension log verbosity separately.
 
 ## Active Instance Status Bar
 

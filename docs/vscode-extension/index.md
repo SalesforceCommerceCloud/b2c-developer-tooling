@@ -55,5 +55,5 @@ A guided webview UI for scaffolding Storefront Next page files with PageType and
 ## Next Steps
 
 - [Installation](./installation) — download and install the `.vsix`.
-- [Configuration](./configuration) — feature toggles, log level, polling interval.
-- [Features](./features) — full feature tour, including SCAPI API Browser, scaffold, CAP install, log tailing, and B2C CLI plugin support.
+- [Connecting to a B2C Instance](./configuration#connecting-to-a-b2c-instance) — credentials each feature needs.
+- [Features](./features) — full feature tour with per-feature credential callouts.

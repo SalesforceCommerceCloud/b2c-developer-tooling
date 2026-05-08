@@ -66,17 +66,14 @@ After install, reload the window. The **B2C-DX**, **B2C-DX: SCAPI**, and **B2C-D
 - **VS Code** ^1.105.1 (or a compatible Cursor / VS Codium build).
 - **B2C CLI** installed and on `PATH` for the workflows that shell out (some scaffold and CAP commands). Install via `npm install -g @salesforce/b2c-cli` — see the [CLI Installation guide](../guide/installation).
 
-## Configuration & wiring
+## Connect to your instance
 
-The extension reads B2C Commerce credentials and project settings using the **same configuration system as the CLI**:
+The extension reads B2C Commerce credentials from the same sources as the CLI: `dw.json`, `SFCC_*` environment variables, and the active-instance pointer. **Each feature needs different fields** — see [Connecting to a B2C Instance](./configuration#connecting-to-a-b2c-instance) for a per-feature requirements table and an example `dw.json`.
 
-- A `dw.json` file in your workspace root (or any parent directory).
-- `SFCC_*` environment variables (e.g. `SFCC_SERVER`, `SFCC_CLIENT_ID`).
-- The "active instance" selected via `b2c setup instance set-active` or via the **Switch Active Instance** command in the extension.
+Quick pointers:
 
-See the [Authentication Setup guide](../guide/authentication) for credential formats and OAuth scope requirements, and the [CLI Configuration guide](../guide/configuration) for the full list of supported config sources and precedence rules.
-
-For multi-root workspaces (more than one folder open), right-click a workspace-root folder in the Explorer and choose **Use as B2C Commerce Root** to pin which folder the extension treats as the project root. To clear the pin, run **B2C DX: Reset B2C Commerce Root to Auto-Detect** from the Command Palette.
+- [Authentication Setup](../guide/authentication) — Account Manager API clients, WebDAV access keys, OAuth scopes.
+- [CLI Configuration](../guide/configuration) — full `dw.json` field reference and precedence rules.
 
 ## Next Steps
 

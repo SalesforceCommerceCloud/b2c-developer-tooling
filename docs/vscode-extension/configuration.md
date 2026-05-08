@@ -1,66 +1,71 @@
 ---
-description: Configure the B2C DX VS Code Extension — feature toggles, log level, sandbox polling, and project root pinning.
+description: Connect the B2C DX VS Code Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference.
 ---
 
 # Configuration
 
-The extension reads B2C Commerce credentials from the same sources as the [B2C CLI](../guide/configuration) (`dw.json`, `SFCC_*` environment variables, `~/.dw.json`, etc.). This page covers the **VS Code-specific** settings under the `b2c-dx.*` namespace, configurable via **Settings** (Cmd+,) → search for `b2c-dx`, or directly in `settings.json`.
+The extension reuses the [B2C CLI](../guide/configuration)'s configuration system, so anything that works with `b2c` works here — `dw.json`, `SFCC_*` environment variables, and active-instance selection.
+
+This page covers:
+
+- [Connecting to a B2C Instance](#connecting-to-a-b2c-instance) — credentials per feature.
+- [Switching the Active Instance](#switching-the-active-instance) — single-workspace, multi-instance.
+- [Project Root Pinning](#project-root-pinning) — multi-root workspaces.
+- [Telemetry](#telemetry) — what we collect and how to opt out.
+- [Settings Reference](#settings-reference) — the `b2c-dx.*` toggles and verbosity controls.
+
+## Connecting to a B2C Instance
+
+The extension needs different credentials depending on which feature you use. **A `dw.json` at your workspace root is the recommended setup** — populate the fields each feature needs, and the extension picks them up automatically.
+
+### Per-feature requirements
+
+Each feature documents its own requirements in [Features](./features). The summary:
+
+| Feature | Required `dw.json` fields |
+| ------- | ------------------------- |
+| **Sandbox Realm Explorer** | OAuth (browser login by default; `client-id` + `client-secret` for headless). `Sandbox API User` role with a tenant filter. |
+| **WebDAV Browser** | `hostname`, `username`, `password` (WebDAV access key). OAuth (`client-id` + `client-secret`) also accepted. |
+| **Content Libraries** | Same as WebDAV. Optionally `contentLibrary` (or `libraries`) to seed the tree. |
+| **Cartridge Code Sync** | WebDAV for transfer **and** OCAPI (`client-id` + `client-secret`) for code-version operations. |
+| **SCAPI API Browser** | `client-id`, `client-secret`, `short-code`, `tenant-id`. |
+| **B2C Script Debugger** | WebDAV (for source-mapping). |
+| **Log Tailing** | WebDAV (logs are read from `Logs/`). |
+| **CAP install** | WebDAV; some apps additionally require OAuth client credentials. |
+| **Scaffold**, **Page Designer Assistant** | None — local-only. |
+
+### Example `dw.json`
+
+```jsonc
+{
+  // WebDAV (Code Sync, WebDAV Browser, Content Libraries, Log Tailing, Debugger)
+  "hostname": "abcd-001.dx.commercecloud.salesforce.com",
+  "username": "your-bm-username",
+  "password": "your-webdav-access-key",
+  "code-version": "version1",
+
+  // OCAPI / OAuth (Sandbox API, Code Versions, CAP)
+  "client-id": "...",
+  "client-secret": "...",
+
+  // SCAPI (API Browser)
+  "short-code": "...",
+  "tenant-id": "...",
+
+  // Optional — content tree seed
+  "contentLibrary": "your-library-id"
+}
+```
+
+You can also set any of these via `SFCC_*` environment variables (`SFCC_SERVER`, `SFCC_USERNAME`, `SFCC_CLIENT_ID`, `SFCC_TENANT_ID`, etc.). See the [CLI Configuration guide](../guide/configuration) for the complete list and precedence rules, and the [Authentication Setup guide](../guide/authentication) for OAuth scope requirements and Account Manager API client setup.
 
 <!-- TODO(screenshot): replace ./images/settings.svg with ./images/settings.png — Settings UI filtered to b2c-dx -->
-![B2C DX settings](./images/settings.svg)
 
-## Feature Toggles
+## Switching the Active Instance
 
-Each feature is enabled by default. Disable any toggle to hide its tree views, commands, and context-menu entries — useful when you want a leaner UI or are debugging activation issues.
+When `dw.json` defines multiple named instances (the recommended pattern for working across dev / staging / sandbox), click the cloud icon in the status bar to run **B2C DX: Switch Active Instance** — a quick-pick over the configured instances. Selecting a new one updates the underlying `dw.json` active-instance pointer and refreshes every view.
 
-| Setting | Default | What it controls |
-| ------- | ------- | ---------------- |
-| `b2c-dx.features.sandboxExplorer` | `true` | Sandbox Realm Explorer view + lifecycle commands |
-| `b2c-dx.features.webdavBrowser` | `true` | WebDAV Browser tree + `b2c-webdav://` filesystem provider |
-| `b2c-dx.features.contentLibraries` | `true` | Content Libraries tree + export/import commands |
-| `b2c-dx.features.codeSync` | `true` | Cartridges view, watch/deploy, code-version commands |
-| `b2c-dx.features.logTailing` | `true` | Log tail commands + B2C DX log output channel |
-| `b2c-dx.features.scaffold` | `true` | "New from Scaffold..." command and file/newFile menu entry |
-| `b2c-dx.features.apiBrowser` | `true` | SCAPI API Browser view + Swagger UI panel |
-| `b2c-dx.features.cap` | `true` | Commerce App Package install command + file decorations |
-
-```jsonc
-// .vscode/settings.json
-{
-  "b2c-dx.features.sandboxExplorer": true,
-  "b2c-dx.features.codeSync": true,
-  "b2c-dx.features.apiBrowser": false
-}
-```
-
-The B2C Script Debugger registers regardless of these toggles — it activates only when a `b2c-script` launch configuration is used.
-
-## Log Level
-
-| Setting | Default | Description |
-| ------- | ------- | ----------- |
-| `b2c-dx.logLevel` | `info` | Verbosity for the **B2C DX** output channel |
-
-Allowed values: `trace`, `debug`, `info`, `warn`, `error`, `silent`. The setting is applied immediately on change — no reload needed.
-
-<!-- TODO(screenshot): replace ./images/output-channel.svg with ./images/output-channel.png — B2C DX output channel showing log stream -->
-![B2C DX output channel](./images/output-channel.svg)
-
-The output channel surfaces SDK logs (request/response summaries, safety-mode evaluations, polling events) plus extension lifecycle events. Drop to `debug` or `trace` when filing a bug report.
-
-## Sandbox Polling Interval
-
-| Setting | Default | Range | Description |
-| ------- | ------- | ----- | ----------- |
-| `b2c-dx.sandbox.pollingInterval` | `10` | 2–300 | Seconds between polls while a sandbox is in a transitional state |
-
-The Sandbox Realm Explorer auto-polls a realm only when at least one sandbox is in a transitional state (`creating`, `starting`, `stopping`, `deleting`, `cloning`). Once the realm is fully settled, polling stops.
-
-```jsonc
-{
-  "b2c-dx.sandbox.pollingInterval": 5
-}
-```
+The same pointer is shared with the CLI: switching here is equivalent to running `b2c setup instance set-active <name>`.
 
 ## Project Root Pinning
 
@@ -69,9 +74,74 @@ In a multi-root workspace, the extension auto-detects the project root by walkin
 - **B2C DX: Use as B2C Commerce Root** — only available on a workspace-root folder when more than one folder is open in the workspace. Right-click that folder in the Explorer and select the command to pin it. While a pin is active, the status bar shows a `$(pinned)` indicator.
 - **B2C DX: Reset B2C Commerce Root to Auto-Detect** — clears the pin and returns to auto-detection. Run from the Command Palette (this command has no Explorer context-menu entry).
 
-The pin is workspace-scoped (stored in workspace state). Pin a specific folder when you have multiple cartridge projects in a single workspace and want to keep CLI commands targeting one of them.
+The pin is workspace-scoped (stored in workspace state).
+
+## Telemetry
+
+The extension reports anonymous usage data to help us prioritize fixes during the Developer Preview.
+
+**What we collect:** extension lifecycle events (`EXTENSION_ACTIVATED`, `EXTENSION_DEACTIVATED`, `ACTIVATION_FAILED`), command invocations (command ID, success/failure, duration), and exceptions. Each event includes anonymous session and machine identifiers, plus environment info (VS Code version, platform, architecture, Node.js version).
+
+**What we don't collect:** credentials, hostnames, sandbox IDs, file contents, command arguments, or any business data. String attributes have `$HOME` redacted to `~` before transmission.
+
+**Opt out** in any of the following ways — telemetry is disabled if **any** of them is true:
+
+| Source | Setting |
+| ------ | ------- |
+| VS Code `settings.json` | `"telemetry.telemetryLevel": "off"` (also disables when set to `crash` or `error`) |
+| Environment variable | `SFCC_DISABLE_TELEMETRY=true` |
+| Environment variable | `SF_DISABLE_TELEMETRY=true` (Salesforce CLI standard) |
+
+The extension respects VS Code's built-in `telemetry.telemetryLevel` first, so opting out of all VS Code telemetry automatically disables ours.
+
+## Settings Reference
+
+These VS Code settings live under the `b2c-dx.*` namespace. **You usually don't need to change any of them** — they exist for niche cases like disabling a feature you don't use, or quieting the log channel for a bug report. To browse: **Settings** (Cmd+,) → search for `b2c-dx`.
+
+### Feature toggles
+
+Each feature is enabled by default. Set to `false` to skip its activation entirely (no tree views, no commands, no context-menu entries). Useful for trimming the UI, isolating activation issues, or running in a project where a feature isn't applicable.
+
+| Setting | Default |
+| ------- | ------- |
+| `b2c-dx.features.sandboxExplorer` | `true` |
+| `b2c-dx.features.webdavBrowser` | `true` |
+| `b2c-dx.features.contentLibraries` | `true` |
+| `b2c-dx.features.codeSync` | `true` |
+| `b2c-dx.features.logTailing` | `true` |
+| `b2c-dx.features.scaffold` | `true` |
+| `b2c-dx.features.apiBrowser` | `true` |
+| `b2c-dx.features.cap` | `true` |
+
+The B2C Script Debugger registers regardless of these toggles — it activates only when a `b2c-script` launch configuration is used.
+
+### Verbosity & polling
+
+| Setting | Default | Description |
+| ------- | ------- | ----------- |
+| `b2c-dx.logLevel` | `info` | Verbosity for the **B2C DX** output channel. Allowed: `trace`, `debug`, `info`, `warn`, `error`, `silent`. Applied immediately on change. Drop to `debug` or `trace` when filing a bug. |
+| `b2c-dx.sandbox.pollingInterval` | `10` | Seconds between polls while a sandbox is in a transitional state (`creating`, `starting`, `stopping`, `deleting`, `cloning`). Range: 2–300. Polling stops automatically once the realm settles. |
+
+### Complete defaults (copy-paste)
+
+```jsonc
+// .vscode/settings.json
+{
+  "b2c-dx.features.sandboxExplorer": true,
+  "b2c-dx.features.webdavBrowser": true,
+  "b2c-dx.features.contentLibraries": true,
+  "b2c-dx.features.codeSync": true,
+  "b2c-dx.features.logTailing": true,
+  "b2c-dx.features.scaffold": true,
+  "b2c-dx.features.apiBrowser": true,
+  "b2c-dx.features.cap": true,
+  "b2c-dx.logLevel": "info",
+  "b2c-dx.sandbox.pollingInterval": 10
+}
+```
 
 ## Next Steps
 
-- [Features](./features) — full feature tour.
-- [Authentication Setup](../guide/authentication) — credential formats, OAuth scopes, MRT API keys.
+- [Features](./features) — full feature tour with per-feature credential callouts.
+- [Authentication Setup](../guide/authentication) — Account Manager API clients, WebDAV access keys, OAuth scopes.
+- [CLI Configuration](../guide/configuration) — full `dw.json` reference and precedence rules.
