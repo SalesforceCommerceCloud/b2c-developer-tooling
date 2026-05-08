@@ -7,7 +7,16 @@
 import {expect} from 'chai';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {getHostname, getSandboxId, parseJSONOutput, runCLI, runCLIWithRetry, TIMEOUTS, toString} from './test-utils.js';
+import {
+  getErrorDetails,
+  getHostname,
+  getSandboxId,
+  parseJSONOutput,
+  runCLI,
+  runCLIWithRetry,
+  TIMEOUTS,
+  toString,
+} from './test-utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -474,9 +483,15 @@ describe('Sandbox Lifecycle E2E Tests', function () {
       });
 
       it('should fetch realm usage in JSON format', async function () {
-        const result = await runCLIWithRetry(['sandbox', 'realm', 'usage', realmId!, '--json'], {verbose: true});
+        // Realm usage can take >30s against the unified API; use a higher timeout
+        // than TIMEOUTS.DEFAULT to avoid execa killing the process mid-flight.
+        this.timeout(180_000);
+        const result = await runCLIWithRetry(['sandbox', 'realm', 'usage', realmId!, '--json'], {
+          timeout: 120_000,
+          verbose: true,
+        });
 
-        expect(result.exitCode, `Realm usage failed: ${toString(result.stderr)}`).to.equal(0);
+        expect(result.exitCode, `Realm usage failed:\n${getErrorDetails(result)}`).to.equal(0);
 
         const response = parseJSONOutput(result);
         expect(response, 'Realm usage response should be a valid object').to.be.an('object');
