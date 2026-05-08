@@ -30,8 +30,8 @@ No published release was found. Browse the [GitHub releases page]({{ release.fal
 
 </div>
 
-<!-- TODO(screenshot): release-assets.png — GitHub release page asset list showing the .vsix -->
-![GitHub release assets](./images/release-assets.png)
+<!-- TODO(screenshot): replace ./images/release-assets.svg with ./images/release-assets.png — GitHub release page asset list showing the .vsix -->
+![GitHub release assets](./images/release-assets.svg)
 
 ## Install from VSIX
 
@@ -56,8 +56,8 @@ cursor --install-extension b2c-vs-extension-X.Y.Z.vsix
 
 :::
 
-<!-- TODO(screenshot): install-vsix.png — "Install from VSIX..." command palette entry -->
-![Install from VSIX](./images/install-vsix.png)
+<!-- TODO(screenshot): replace ./images/install-vsix.svg with ./images/install-vsix.png — "Install from VSIX..." command palette entry -->
+![Install from VSIX](./images/install-vsix.svg)
 
 After install, reload the window. The **B2C-DX**, **B2C-DX: SCAPI**, and **B2C-DX Sandboxes** activity-bar containers appear once at least one B2C view is opened or a `commerce-app.json` file is detected in the workspace.
 

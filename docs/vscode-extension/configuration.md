@@ -6,8 +6,8 @@ description: Configure the B2C DX VS Code Extension — feature toggles, log lev
 
 The extension reads B2C Commerce credentials from the same sources as the [B2C CLI](../guide/configuration) (`dw.json`, `SFCC_*` environment variables, `~/.dw.json`, etc.). This page covers the **VS Code-specific** settings under the `b2c-dx.*` namespace, configurable via **Settings** (Cmd+,) → search for `b2c-dx`, or directly in `settings.json`.
 
-<!-- TODO(screenshot): settings.png — Settings UI filtered to b2c-dx -->
-![B2C DX settings](./images/settings.png)
+<!-- TODO(screenshot): replace ./images/settings.svg with ./images/settings.png — Settings UI filtered to b2c-dx -->
+![B2C DX settings](./images/settings.svg)
 
 ## Feature Toggles
 
@@ -43,8 +43,8 @@ The B2C Script Debugger registers regardless of these toggles — it activates o
 
 Allowed values: `trace`, `debug`, `info`, `warn`, `error`, `silent`. The setting is applied immediately on change — no reload needed.
 
-<!-- TODO(screenshot): output-channel.png — B2C DX output channel showing log stream -->
-![B2C DX output channel](./images/output-channel.png)
+<!-- TODO(screenshot): replace ./images/output-channel.svg with ./images/output-channel.png — B2C DX output channel showing log stream -->
+![B2C DX output channel](./images/output-channel.svg)
 
 The output channel surfaces SDK logs (request/response summaries, safety-mode evaluations, polling events) plus extension lifecycle events. Drop to `debug` or `trace` when filing a bug report.
 

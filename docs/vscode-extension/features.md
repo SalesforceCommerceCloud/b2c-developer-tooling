@@ -14,11 +14,11 @@ Browse and manage on-demand sandboxes (ODS) for one or more realms in a dedicate
 
 **Cloned sandbox indicators** — clones are tagged in the tree. While a clone is being set up, the source sandbox is shown as `cloning` and the new (target) sandbox is shown as `setting up`. Once the clone stabilizes, both rows display their actual states (`started`, `stopped`, etc.) and the cloned target keeps a visual marker so you can tell it apart from a freshly created sandbox.
 
-<!-- TODO(screenshot): sandbox-explorer.png — started + cloned sandbox in the tree -->
-![Sandbox Realm Explorer](./images/sandbox-explorer.png)
+<!-- TODO(screenshot): replace ./images/sandbox-explorer.svg with ./images/sandbox-explorer.png — started + cloned sandbox in the tree -->
+![Sandbox Realm Explorer](./images/sandbox-explorer.svg)
 
-<!-- TODO(screenshot): sandbox-context-menu.png — right-click context menu over a started sandbox -->
-![Sandbox context menu](./images/sandbox-context-menu.png)
+<!-- TODO(screenshot): replace ./images/sandbox-context-menu.svg with ./images/sandbox-context-menu.png — right-click context menu over a started sandbox -->
+![Sandbox context menu](./images/sandbox-context-menu.svg)
 
 Polling cadence is controlled by [`b2c-dx.sandbox.pollingInterval`](./configuration#sandbox-polling-interval).
 
@@ -33,11 +33,11 @@ A tree of WebDAV catalogs and libraries plus a registered file-system provider (
 - **Drag & drop** — drag files from your local Explorer into a WebDAV directory to upload.
 - **Add Catalog / Add Library** — register additional virtual roots for browsing.
 
-<!-- TODO(screenshot): webdav-browser.png — catalogs and libraries expanded -->
-![WebDAV Browser](./images/webdav-browser.png)
+<!-- TODO(screenshot): replace ./images/webdav-browser.svg with ./images/webdav-browser.png — catalogs and libraries expanded -->
+![WebDAV Browser](./images/webdav-browser.svg)
 
-<!-- TODO(screenshot): webdav-mounted.png — "Open as Workspace Folder" result -->
-![WebDAV mounted as workspace folder](./images/webdav-mounted.png)
+<!-- TODO(screenshot): replace ./images/webdav-mounted.svg with ./images/webdav-mounted.png — "Open as Workspace Folder" result -->
+![WebDAV mounted as workspace folder](./images/webdav-mounted.svg)
 
 ## Content Libraries
 
@@ -50,8 +50,8 @@ A focused view for Page Designer pages and components stored in your content lib
 - **Browse in WebDAV** — jump from a library entry to the corresponding WebDAV path.
 - **Import Site Archive** — right-click a folder in the Explorer to import it as a site archive.
 
-<!-- TODO(screenshot): content-libraries.png — content tree with the export context menu -->
-![Content Libraries](./images/content-libraries.png)
+<!-- TODO(screenshot): replace ./images/content-libraries.svg with ./images/content-libraries.png — content tree with the export context menu -->
+![Content Libraries](./images/content-libraries.svg)
 
 ## Cartridge Code Sync
 
@@ -63,8 +63,8 @@ A **Cartridges** tree view (under the **B2C-DX** activity-bar container) lists e
 
 **Workspace toggles**: **Toggle Code Sync** / **Start Code Sync** / **Stop Code Sync** start a watcher that uploads on save. **Upload to Instance** is also available from the file Explorer's context menu when a code-sync session is active.
 
-<!-- TODO(screenshot): code-sync.png — Cartridges view with code-version dropdown -->
-![Cartridge Code Sync](./images/code-sync.png)
+<!-- TODO(screenshot): replace ./images/code-sync.svg with ./images/code-sync.png — Cartridges view with code-version dropdown -->
+![Cartridge Code Sync](./images/code-sync.svg)
 
 ## SCAPI API Browser
 
@@ -72,8 +72,8 @@ Browse SCAPI OpenAPI schemas for your instance and open a Swagger UI panel for a
 
 The view lives in its own activity-bar container (**B2C-DX: SCAPI**). Use **Refresh** to reload schemas after changing instances, and **Open API Documentation** to launch the Swagger UI panel.
 
-<!-- TODO(screenshot): api-browser.png — Swagger UI panel -->
-![SCAPI API Browser](./images/api-browser.png)
+<!-- TODO(screenshot): replace ./images/api-browser.svg with ./images/api-browser.png — Swagger UI panel -->
+![SCAPI API Browser](./images/api-browser.svg)
 
 ## B2C Script Debugger
 
@@ -94,8 +94,8 @@ Registered as debug type `b2c-script`. Add a launch configuration to `.vscode/la
 
 `cartridgePath` is auto-detected from the workspace; override it explicitly only if the cartridges live outside the workspace root.
 
-<!-- TODO(screenshot): script-debugger.png — paused on a breakpoint -->
-![B2C Script Debugger](./images/script-debugger.png)
+<!-- TODO(screenshot): replace ./images/script-debugger.svg with ./images/script-debugger.png — paused on a breakpoint -->
+![B2C Script Debugger](./images/script-debugger.svg)
 
 ## Scaffold & CAP install
 
@@ -103,15 +103,15 @@ Registered as debug type `b2c-script`. Add a launch configuration to `.vscode/la
 
 **CAP install** (`b2c-dx.cap.install`) — appears on the right-click menu of a folder in the Explorer when the folder contains a `commerce-app.json`. Activation is also wired to `workspaceContains:**/commerce-app.json` so the extension auto-activates when you open a CAP project.
 
-<!-- TODO(screenshot): scaffold-picker.png — "New from Scaffold..." quick-pick -->
-![Scaffold quick-pick](./images/scaffold-picker.png)
+<!-- TODO(screenshot): replace ./images/scaffold-picker.svg with ./images/scaffold-picker.png — "New from Scaffold..." quick-pick -->
+![Scaffold quick-pick](./images/scaffold-picker.svg)
 
 ## Page Designer Assistant
 
 `b2c-dx.openUI` opens a guided webview UI for scaffolding a Storefront Next page (PageType + Region definitions). The generated `.tsx` file is written to your workspace's `routes/` folder when one exists, or to a path you pick when the workspace has no routes folder.
 
-<!-- TODO(screenshot): page-designer-assistant.png -->
-![Page Designer Assistant](./images/page-designer-assistant.png)
+<!-- TODO(screenshot): replace ./images/page-designer-assistant.svg with ./images/page-designer-assistant.png -->
+![Page Designer Assistant](./images/page-designer-assistant.svg)
 
 ## Log Tailing
 
