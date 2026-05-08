@@ -64,6 +64,20 @@ async function withFallback<T extends BackendBase, R>(
  * intercepted: the first call tries SCAPI; on `invalid_scope` it falls back
  * to OCAPI. The choice is cached for the wrapper's lifetime.
  *
+ * **Contract:**
+ * - Both `scapi` and `ocapi` must implement `T`. TypeScript enforces this
+ *   at the call site since both are typed as `T`.
+ * - Only methods of `T` are routed through the fallback logic. The `name`
+ *   getter is special-cased to reflect the resolved backend.
+ * - **Non-method properties** are returned from the SCAPI target only and
+ *   are not switched on fallback. By convention, backends should be method
+ *   bags — any state beyond `name` should be encapsulated, not exposed.
+ * - **Concurrency:** if two calls race before resolution, both may attempt
+ *   SCAPI. This is benign for read operations (idempotent retries) and
+ *   acceptable for writes (both either succeed or fail with the same
+ *   error). Each Proxy instance has its own state, so this concerns only
+ *   shared use of a single wrapper.
+ *
  * @param scapi - Primary (SCAPI) backend implementation
  * @param ocapi - Fallback (OCAPI) backend implementation
  * @param domainName - Used in fallback log messages, e.g. `'jobs'`
@@ -71,7 +85,7 @@ async function withFallback<T extends BackendBase, R>(
  *
  * @example
  * ```ts
- * const backend = createFallbackBackend(scapiJobs, ocapiJobs, 'jobs');
+ * const backend = createFallbackBackend<JobsBackend>(scapiJobs, ocapiJobs, 'jobs');
  * await backend.executeJob('my-job'); // tries SCAPI, may fall back to OCAPI
  * ```
  */
