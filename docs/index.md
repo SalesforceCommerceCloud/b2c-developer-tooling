@@ -63,6 +63,10 @@ features:
     linkText: VS Code Extension
 ---
 
+<script setup>
+import {data as vsxRelease} from './vscode-extension/release.data.ts';
+</script>
+
 ## Install the CLI
 
 ::: code-group
@@ -124,4 +128,29 @@ npx @salesforce/b2c-cli setup skills
 ```
 
 :::
+
+## Install the VS Code Extension <Badge type="warning" text="Developer Preview" />
+
+The extension is not yet published to the VS Code Marketplace — install the latest pre-built `.vsix` from GitHub releases.
+
+<div v-if="!vsxRelease.unavailable" class="b2c-vsx-install">
+  <p>
+    Latest release: <strong>{{ vsxRelease.version }}</strong>
+    <span> · </span>
+    <a :href="vsxRelease.vsixDownloadUrl">Download {{ vsxRelease.vsixAssetName }}</a>
+    <span> · </span>
+    <a :href="vsxRelease.releasePageUrl">Release notes</a>
+  </p>
+  <p>Then install with:</p>
+  <pre><code>code --install-extension {{ vsxRelease.vsixAssetName }}
+# or, in Cursor:
+cursor --install-extension {{ vsxRelease.vsixAssetName }}</code></pre>
+</div>
+<div v-else>
+
+Browse the [GitHub releases page]({{ vsxRelease.fallbackUrl }}) for `b2c-vs-extension@*` tags and install the `.vsix` via `code --install-extension <file>.vsix`.
+
+</div>
+
+Detailed setup: [Installation](/vscode-extension/installation) · [Configuration](/vscode-extension/configuration) · [Features](/vscode-extension/features)
 
