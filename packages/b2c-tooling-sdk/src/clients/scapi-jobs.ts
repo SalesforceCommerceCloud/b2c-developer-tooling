@@ -8,6 +8,7 @@ import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './scapi-jobs.generated.js';
 import {buildScapiClient, type ScapiClientConfig} from './scapi-client-factory.js';
 import {buildTenantScope, toOrganizationId, normalizeTenantId} from './custom-apis.js';
+import type {ScopeCascade} from './middleware.js';
 
 export {toOrganizationId, normalizeTenantId, buildTenantScope};
 
@@ -23,8 +24,18 @@ export type ExecutionStatus = components['schemas']['ExecutionStatus'];
 export type ExitStatus = components['schemas']['ExitStatus'];
 export type JobExecutionSearchResult = components['schemas']['JobExecutionSearchResult'];
 
-export const SCAPI_JOBS_READ_SCOPES = ['sfcc.jobs'];
-export const SCAPI_JOBS_RW_SCOPES = ['sfcc.jobs.rw'];
+/**
+ * Per-operation scope cascade for SCAPI Jobs.
+ *
+ * Reads accept either rw or ro; writes require rw. The auth middleware tries
+ * each candidate against AM in order, caches the first that survives, and
+ * lets a broader cached token satisfy a later narrower request without an
+ * extra round trip.
+ */
+export const SCAPI_JOBS_CASCADE: ScopeCascade = {
+  read: [['sfcc.jobs.rw'], ['sfcc.jobs']],
+  write: [['sfcc.jobs.rw']],
+};
 
 export type ScapiJobsClientConfig = ScapiClientConfig;
 
@@ -33,7 +44,7 @@ export function createScapiJobsClient(config: ScapiJobsClientConfig, auth: AuthS
     {
       pathSegment: 'operation/jobs/v1',
       domainKey: 'scapi-jobs',
-      defaultScopes: SCAPI_JOBS_RW_SCOPES,
+      scopeCascade: SCAPI_JOBS_CASCADE,
       logPrefix: 'SCAPI-JOBS',
     },
     config,

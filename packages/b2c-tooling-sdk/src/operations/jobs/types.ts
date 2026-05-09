@@ -7,6 +7,12 @@ import type {ExecuteJobOptions, WaitForJobOptions, SearchJobExecutionsOptions} f
 
 export type {ExecuteJobOptions, WaitForJobOptions, SearchJobExecutionsOptions};
 
+/**
+ * Canonical, backend-agnostic job execution shape (camelCase).
+ *
+ * SCAPI ops return this directly; OCAPI ops return raw snake_case which the
+ * caller maps via {@link mapOcapiExecution}.
+ */
 export interface JobExecutionInfo {
   id: string;
   jobId: string;
@@ -49,29 +55,4 @@ export interface JobExecutionSearchResults {
   limit: number;
   offset: number;
   hits: JobExecutionInfo[];
-}
-
-export interface JobsBackend {
-  readonly name: 'ocapi' | 'scapi';
-  executeJob(jobId: string, options?: ExecuteJobOptions): Promise<JobExecutionInfo>;
-  getJobExecution(jobId: string, executionId: string): Promise<JobExecutionInfo>;
-  searchJobExecutions(options?: SearchJobExecutionsOptions): Promise<JobExecutionSearchResults>;
-  getJobLog(execution: JobExecutionInfo): Promise<string>;
-}
-
-/**
- * Capability extension for backends that can delete job execution records.
- * Only SCAPI exposes this — OCAPI's Data API has no equivalent endpoint.
- *
- * Use {@link supportsDeleteJobExecution} to narrow at runtime.
- */
-export interface DeletableJobsBackend extends JobsBackend {
-  deleteJobExecution(jobId: string, executionId: string): Promise<void>;
-}
-
-/**
- * Type guard: returns true if the backend supports deleting job executions.
- */
-export function supportsDeleteJobExecution(backend: JobsBackend): backend is DeletableJobsBackend {
-  return typeof (backend as DeletableJobsBackend).deleteJobExecution === 'function';
 }

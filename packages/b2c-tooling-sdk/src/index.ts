@@ -252,12 +252,14 @@ export {
   siteArchiveImport,
   siteArchiveExport,
   siteArchiveExportToPath,
-  // Backend abstraction
-  createJobsBackend,
+  // Canonical surface (SCAPI free functions + canonical helpers)
+  scapiExecuteJob,
+  scapiGetJobExecution,
+  scapiSearchJobExecutions,
+  scapiDeleteJobExecution,
+  scapiGetJobLog,
   waitForJobExecution,
-  OcapiJobsBackend,
-  ScapiJobsBackend,
-  supportsDeleteJobExecution,
+  CanonicalJobExecutionError,
 } from './operations/jobs/index.js';
 export type {
   JobExecution,
@@ -269,15 +271,12 @@ export type {
   WaitForJobPollInfo,
   SearchJobExecutionsOptions,
   JobExecutionSearchResult,
-  // Backend abstraction types
-  JobsBackend,
-  DeletableJobsBackend,
-  JobsBackendConfig,
-  ApiBackendPreference,
+  // Canonical types
   JobExecutionInfo,
   JobStepExecutionResult,
   JobExecutionSearchResults,
-  ScapiJobsBackendConfig,
+  ExecuteJobScapiOptions,
+  SearchJobExecutionsScapiOptions,
   SiteArchiveImportOptions,
   SiteArchiveImportResult,
   SiteArchiveExportOptions,

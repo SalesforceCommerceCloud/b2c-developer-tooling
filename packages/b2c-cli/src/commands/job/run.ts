@@ -4,13 +4,18 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {JobCommand, type B2COperationContext} from '@salesforce/b2c-tooling-sdk/cli';
+import {JobCommand, BackendDispatcher, type B2COperationContext} from '@salesforce/b2c-tooling-sdk/cli';
 import {
+  executeJob as ocapiExecuteJob,
+  getJobExecution as ocapiGetJobExecution,
+  scapiExecuteJob,
+  scapiGetJobExecution,
+  mapOcapiExecution,
   waitForJobExecution,
-  JobExecutionError,
-  type JobsBackend,
+  CanonicalJobExecutionError,
   type JobExecutionInfo,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import type {ScapiJobsClient} from '@salesforce/b2c-tooling-sdk/clients';
 import {t, withDocs} from '../../i18n/index.js';
 
 export default class JobRun extends JobCommand<typeof JobRun> {
@@ -90,7 +95,6 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       'show-log': showLog,
     } = this.flags;
 
-    // Safety evaluation — check rules for this job before executing.
     const jobEvaluation = this.safetyGuard.evaluate({type: 'job', jobId});
     if (jobEvaluation.action === 'block') {
       this.error(jobEvaluation.reason, {exit: 1});
@@ -99,14 +103,12 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       await this.confirmOrBlock(jobEvaluation);
     }
 
-    // Parse parameters or body
     const parameters = this.parseParameters(param || []);
     const rawBody = body ? this.parseBody(body) : undefined;
 
-    const backend = this.createJobsBackend();
-    this.logger.debug(`Using ${backend.name} backend for job operations`);
+    const dispatcher = this.createJobsDispatcher();
+    const tenantId = this.resolvedConfig.values.tenantId;
 
-    // Create lifecycle context
     const context = this.createContext('job:run', {
       jobId,
       parameters: rawBody ? undefined : parameters,
@@ -115,7 +117,6 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       hostname: this.resolvedConfig.values.hostname,
     });
 
-    // Run beforeOperation hooks - check for skip
     const beforeResult = await this.runBeforeHooks(context);
     if (beforeResult.skip) {
       this.log(
@@ -137,16 +138,27 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       }),
     );
 
+    const ocapiOptions = {
+      parameters: rawBody ? undefined : parameters,
+      body: rawBody,
+      waitForRunning: !noWaitRunning,
+    };
+
     let execution: JobExecutionInfo;
     try {
-      execution = await backend.executeJob(jobId, {
-        parameters: rawBody ? undefined : parameters,
-        body: rawBody,
-        waitForRunning: !noWaitRunning,
+      execution = await dispatcher.run({
+        scapi: (client) =>
+          scapiExecuteJob(client, jobId, {
+            ...ocapiOptions,
+            tenantId: tenantId!,
+          }),
+        ocapi: async () => mapOcapiExecution(await ocapiExecuteJob(this.instance, jobId, ocapiOptions)),
       });
     } catch (error) {
       this.handleExecutionError(error, context);
     }
+
+    this.logger.debug(`Used ${dispatcher.active} backend for job execution`);
 
     this.log(
       t('commands.job.run.started', 'Job started: {{executionId}} (status: {{status}})', {
@@ -155,12 +167,11 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       }),
     );
 
-    // Wait for completion if requested
     if (wait) {
       execution = await this.waitForJobCompletion({
-        backend,
+        dispatcher,
         jobId,
-        executionId: execution.id!,
+        executionId: execution.id,
         timeout,
         pollInterval,
         showLog,
@@ -178,9 +189,6 @@ export default class JobRun extends JobCommand<typeof JobRun> {
   }
 
   private handleExecutionError(error: unknown, context: B2COperationContext): never {
-    // Fire-and-forget: we're already on the error path and rethrow below; surface
-    // hook failures in the debug log so they aren't completely invisible, but
-    // don't shadow the original error.
     this.runAfterHooks(context, {
       success: false,
       error: error instanceof Error ? error : new Error(String(error)),
@@ -200,16 +208,16 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       success: false,
       error: error instanceof Error ? error : new Error(String(error)),
       duration: Date.now() - context.startTime,
-      data: error instanceof JobExecutionError ? error.execution : undefined,
+      data: error instanceof CanonicalJobExecutionError ? error.execution : undefined,
     });
 
-    if (error instanceof JobExecutionError) {
+    if (error instanceof CanonicalJobExecutionError) {
       if (showLog) {
         await this.showJobLog(error.execution);
       }
       this.error(
         t('commands.job.run.jobFailed', 'Job failed: {{status}}', {
-          status: error.execution.exit_status?.code || 'ERROR',
+          status: error.execution.exitStatus?.code || 'ERROR',
         }),
       );
     }
@@ -240,7 +248,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
   }
 
   private async waitForJobCompletion(options: {
-    backend: JobsBackend;
+    dispatcher: BackendDispatcher<ScapiJobsClient>;
     jobId: string;
     executionId: string;
     timeout: number | undefined;
@@ -248,11 +256,18 @@ export default class JobRun extends JobCommand<typeof JobRun> {
     showLog: boolean;
     context: B2COperationContext;
   }): Promise<JobExecutionInfo> {
-    const {backend, jobId, executionId, timeout, pollInterval, showLog, context} = options;
+    const {dispatcher, jobId, executionId, timeout, pollInterval, showLog, context} = options;
+    const tenantId = this.resolvedConfig.values.tenantId;
     this.log(t('commands.job.run.waiting', 'Waiting for job to complete...'));
 
     try {
-      const execution = await waitForJobExecution(backend, jobId, executionId, {
+      const getExecution = (jid: string, eid: string) =>
+        dispatcher.run<JobExecutionInfo>({
+          scapi: (client) => scapiGetJobExecution(client, jid, eid, tenantId!),
+          ocapi: async () => mapOcapiExecution(await ocapiGetJobExecution(this.instance, jid, eid)),
+        });
+
+      const execution = await waitForJobExecution(getExecution, jobId, executionId, {
         timeoutSeconds: timeout,
         pollIntervalSeconds: pollInterval,
         onPoll: (info) => {

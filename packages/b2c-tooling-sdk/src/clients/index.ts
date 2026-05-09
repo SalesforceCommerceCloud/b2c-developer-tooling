@@ -326,7 +326,7 @@ export type {
 } from './granular-replications.js';
 
 // SCAPI Jobs
-export {createScapiJobsClient, SCAPI_JOBS_READ_SCOPES, SCAPI_JOBS_RW_SCOPES} from './scapi-jobs.js';
+export {createScapiJobsClient, SCAPI_JOBS_CASCADE} from './scapi-jobs.js';
 export type {
   ScapiJobsClient,
   ScapiJobsClientConfig,

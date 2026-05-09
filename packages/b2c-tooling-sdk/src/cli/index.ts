@@ -90,6 +90,12 @@
  * @module cli
  */
 
+// Backend dispatcher — re-exported from `compat/` for CLI ergonomics. The
+// canonical home is `@salesforce/b2c-tooling-sdk/compat`; CLI commands and
+// other interfaces (VSCode, MCP) can import from either location.
+export {BackendDispatcher} from '../compat/dispatcher.js';
+export type {ApiBackendPreference, ResolvedBackend, DispatchBranches} from '../compat/dispatcher.js';
+
 // Base command classes
 export {BaseCommand} from './base-command.js';
 export type {Flags, Args} from './base-command.js';

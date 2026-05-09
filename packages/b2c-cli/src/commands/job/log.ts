@@ -5,7 +5,15 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {type JobExecutionInfo} from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import {
+  getJobExecution as ocapiGetJobExecution,
+  searchJobExecutions as ocapiSearchJobExecutions,
+  scapiGetJobExecution,
+  scapiSearchJobExecutions,
+  mapOcapiExecution,
+  mapOcapiSearchResult,
+  type JobExecutionInfo,
+} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t, withDocs} from '../../i18n/index.js';
 import {highlightLogText} from '../../utils/logs/index.js';
 
@@ -58,8 +66,8 @@ export default class JobLog extends JobCommand<typeof JobLog> {
     const {jobId, executionId} = this.args;
     const {failed} = this.flags;
 
-    const backend = this.createJobsBackend();
-    this.logger.debug(`Using ${backend.name} backend for job log`);
+    const dispatcher = this.createJobsDispatcher();
+    const tenantId = this.resolvedConfig.values.tenantId;
 
     let execution: JobExecutionInfo;
 
@@ -70,7 +78,10 @@ export default class JobLog extends JobCommand<typeof JobLog> {
           executionId,
         }),
       );
-      execution = await backend.getJobExecution(jobId, executionId);
+      execution = await dispatcher.run({
+        scapi: (client) => scapiGetJobExecution(client, jobId, executionId, tenantId!),
+        ocapi: async () => mapOcapiExecution(await ocapiGetJobExecution(this.instance, jobId, executionId)),
+      });
     } else {
       this.log(
         failed
@@ -84,12 +95,17 @@ export default class JobLog extends JobCommand<typeof JobLog> {
             }),
       );
 
-      const results = await backend.searchJobExecutions({
+      const searchOptions = {
         jobId,
         status: failed ? ['ERROR'] : undefined,
         count: 10,
         sortBy: 'start_time',
-        sortOrder: 'desc',
+        sortOrder: 'desc' as const,
+      };
+
+      const results = await dispatcher.run({
+        scapi: (client) => scapiSearchJobExecutions(client, {...searchOptions, tenantId: tenantId!}),
+        ocapi: async () => mapOcapiSearchResult(await ocapiSearchJobExecutions(this.instance, searchOptions)),
       });
 
       const match = results.hits.find((hit) => hit.isLogFileExisting);
@@ -120,7 +136,12 @@ export default class JobLog extends JobCommand<typeof JobLog> {
       }),
     );
 
-    const log = await backend.getJobLog(execution);
+    if (!execution.logFilePath) {
+      this.error(t('commands.job.log.noLogFile', 'No log file exists for this execution'));
+    }
+    const webdavPath = execution.logFilePath.replace(/^\/Sites\//, '');
+    const content = await this.instance.webdav.get(webdavPath);
+    const log = new TextDecoder().decode(content);
 
     if (!this.jsonEnabled()) {
       const useColor = !this.flags['no-color'] && process.stdout.isTTY;

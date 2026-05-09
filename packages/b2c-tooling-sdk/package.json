@@ -255,6 +255,17 @@
         "default": "./dist/cjs/clients/index.js"
       }
     },
+    "./compat": {
+      "development": "./src/compat/index.ts",
+      "import": {
+        "types": "./dist/esm/compat/index.d.ts",
+        "default": "./dist/esm/compat/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/compat/index.d.ts",
+        "default": "./dist/cjs/compat/index.js"
+      }
+    },
     "./logging": {
       "development": "./src/logging/index.ts",
       "import": {

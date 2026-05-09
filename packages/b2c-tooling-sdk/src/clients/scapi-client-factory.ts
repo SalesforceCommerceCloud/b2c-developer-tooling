@@ -17,7 +17,13 @@
  */
 import createClient, {type Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
-import {createAuthMiddleware, createLoggingMiddleware, createRateLimitMiddleware} from './middleware.js';
+import {
+  createAuthMiddleware,
+  createLoggingMiddleware,
+  createRateLimitMiddleware,
+  createScapiAuthMiddleware,
+  type ScopeCascade,
+} from './middleware.js';
 import {globalMiddlewareRegistry, type HttpClientType, type MiddlewareRegistry} from './middleware-registry.js';
 import {buildTenantScope} from './custom-apis.js';
 import {withScopes} from './scapi-backend-utils.js';
@@ -33,10 +39,20 @@ export interface BuildScapiClientOptions {
    */
   domainKey: HttpClientType;
   /**
-   * Default scopes to request when the caller doesn't override `config.scopes`.
-   * Typically the rw scope; the tenant scope is added automatically.
+   * Per-operation scope cascade. When supplied, operations attach a
+   * `x-b2c-scope-mode` header (`'read'` or `'write'`) and the auth
+   * middleware walks the matching cascade until AM accepts one. Mutually
+   * exclusive with {@link defaultScopes}; new domains should prefer this.
    */
-  defaultScopes: string[];
+  scopeCascade?: ScopeCascade;
+  /**
+   * Legacy: a single scope set requested for every operation. Used by
+   * domains that still rely on `ScopeTierManager` to switch clients
+   * between rw and ro. Mutually exclusive with {@link scopeCascade}.
+   *
+   * @deprecated Use {@link scopeCascade} for new domains.
+   */
+  defaultScopes?: string[];
   /**
    * Logging/rate-limit prefix, e.g. `'SCAPI-JOBS'`. Used in log lines.
    */
@@ -89,14 +105,32 @@ export function buildScapiClient<P extends Record<string, any>>(
 ): Client<P> {
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
+  if (options.scopeCascade && options.defaultScopes) {
+    throw new Error(`[buildScapiClient] ${options.domainKey}: scopeCascade and defaultScopes are mutually exclusive.`);
+  }
+  if (!options.scopeCascade && !options.defaultScopes) {
+    throw new Error(`[buildScapiClient] ${options.domainKey}: must provide either scopeCascade or defaultScopes.`);
+  }
+
   const client = createClient<P>({
     baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/${options.pathSegment}`,
   });
 
-  const requiredScopes = config.scopes ?? [...options.defaultScopes, buildTenantScope(config.tenantId)];
-  const scopedAuth = withScopes(auth, requiredScopes);
-
-  client.use(createAuthMiddleware(scopedAuth));
+  if (options.scopeCascade) {
+    // Cascade-aware path: bake the tenant scope into the auth strategy as a
+    // "base scope" applied to every cascade attempt; the cascade itself only
+    // varies the domain (rw/ro) scope per operation.
+    const tenantBase = config.scopes ?? [buildTenantScope(config.tenantId)];
+    const scopedAuth = withScopes(auth, tenantBase);
+    client.use(createScapiAuthMiddleware(scopedAuth, options.scopeCascade));
+  } else {
+    // Legacy path: single static scope set requested for every operation.
+    // Used by domains still on ScopeTierManager (scripts/users/roles until
+    // they migrate to scopeCascade).
+    const requiredScopes = config.scopes ?? [...options.defaultScopes!, buildTenantScope(config.tenantId)];
+    const scopedAuth = withScopes(auth, requiredScopes);
+    client.use(createAuthMiddleware(scopedAuth));
+  }
 
   for (const middleware of registry.getMiddleware(options.domainKey)) {
     client.use(middleware);

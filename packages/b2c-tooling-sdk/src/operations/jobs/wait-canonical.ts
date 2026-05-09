@@ -3,26 +3,42 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import type {JobsBackend, JobExecutionInfo} from './types.js';
+/**
+ * Backend-agnostic poll loop over canonical {@link JobExecutionInfo}.
+ *
+ * Takes a `getExecution` callback so callers can supply either the SCAPI
+ * ops `getJobExecution` method or an OCAPI fetch wrapped in
+ * {@link mapOcapiExecution}. Decouples polling logic from any specific
+ * backend abstraction.
+ *
+ * @module operations/jobs/wait-canonical
+ */
 import type {WaitForJobOptions, WaitForJobPollInfo} from './run.js';
-import {OcapiJobsBackend} from './ocapi-backend.js';
-import {ScapiJobsBackend} from './scapi-backend.js';
-import {createDualBackend, type DualBackendConfig} from '../../clients/dual-backend-factory.js';
-import type {ApiBackendPreference} from '../../clients/scapi-backend-utils.js';
+import type {JobExecutionInfo} from './types.js';
 
-export type {ApiBackendPreference};
-export type JobsBackendConfig = DualBackendConfig;
-
-export function createJobsBackend(config: JobsBackendConfig): JobsBackend {
-  return createDualBackend<JobsBackend>(config, {
-    domainName: 'Jobs',
-    Scapi: ScapiJobsBackend,
-    Ocapi: OcapiJobsBackend,
-  });
+/**
+ * Thrown by {@link waitForJobExecution} when a job reaches a failure state.
+ * Carries the canonical {@link JobExecutionInfo} so callers can read fields
+ * (`exitStatus.code`, `logFilePath`, etc.) without knowing which backend
+ * served the response.
+ */
+export class CanonicalJobExecutionError extends Error {
+  constructor(
+    message: string,
+    public readonly execution: JobExecutionInfo,
+  ) {
+    super(message);
+    this.name = 'CanonicalJobExecutionError';
+  }
 }
 
+/**
+ * Polls `getExecution(jobId, executionId)` until the job reaches a terminal
+ * state, returning the final {@link JobExecutionInfo}. Throws
+ * {@link JobExecutionError} on failure or `Error` on timeout.
+ */
 export async function waitForJobExecution(
-  backend: JobsBackend,
+  getExecution: (jobId: string, executionId: string) => Promise<JobExecutionInfo>,
   jobId: string,
   executionId: string,
   options: WaitForJobOptions = {},
@@ -32,6 +48,7 @@ export async function waitForJobExecution(
   const startTime = Date.now();
   const pollIntervalMs = pollIntervalSeconds * 1000;
   const timeoutMs = timeoutSeconds * 1000;
+
   await sleepFn(pollIntervalMs);
 
   while (true) {
@@ -41,15 +58,13 @@ export async function waitForJobExecution(
       throw new Error(`Timeout waiting for job ${jobId} execution ${executionId}`);
     }
 
-    const execution = await backend.getJobExecution(jobId, executionId);
+    const execution = await getExecution(jobId, executionId);
     const currentStatus = execution.executionStatus;
-
     const pollInfo: WaitForJobPollInfo = {jobId, executionId, elapsedSeconds, status: currentStatus};
     onPoll?.(pollInfo);
 
     if (execution.executionStatus === 'aborted' || execution.exitStatus?.status === 'error') {
-      const {JobExecutionError} = await import('./run.js');
-      throw new JobExecutionError(`Job ${jobId} failed`, execution._raw as never);
+      throw new CanonicalJobExecutionError(`Job ${jobId} failed`, execution);
     }
 
     if (execution.executionStatus === 'finished') {

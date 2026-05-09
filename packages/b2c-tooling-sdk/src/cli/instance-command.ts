@@ -19,6 +19,7 @@ import {
   type B2COperationLifecycleHookOptions,
   type B2COperationLifecycleHookResult,
 } from './lifecycle.js';
+import {BackendDispatcher, type ApiBackendPreference} from '../compat/dispatcher.js';
 
 /**
  * Base command for B2C instance operations.
@@ -191,22 +192,46 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
   }
 
   /**
-   * Creates a SCAPI/OCAPI dual backend by passing the resolved configuration
-   * (apiBackend preference, instance, shortCode, tenantId, OAuth) to the
-   * supplied factory. Each backend domain (jobs, scripts, users, roles)
-   * exports its own factory; this helper supplies the same plumbing for all.
+   * Creates a per-command {@link BackendDispatcher} for routing operations
+   * to SCAPI or OCAPI based on the user's `--api-backend` preference.
    *
-   * @example
-   * ```ts
-   * const backend = this.createBackend(createJobsBackend);
-   * await backend.executeJob('my-job');
-   * ```
+   * Domain command bases (e.g., `JobCommand`) typically expose a thinner
+   * helper on top of this. SDK consumers don't use the dispatcher — they
+   * call SCAPI ops or OCAPI free functions directly.
+   *
+   * @param domainName - Used in fallback log lines, e.g. `'jobs'`.
+   * @param createScapi - Builds the SCAPI ops bundle. Should return
+   *   `undefined` when SCAPI is not configured.
+   */
+  protected createDispatcher<S>(domainName: string, createScapi: () => S | undefined): BackendDispatcher<S> {
+    return new BackendDispatcher<S>(this.apiBackendPreference, createScapi, domainName);
+  }
+
+  /** Resolved `--api-backend` preference (default `'auto'`). */
+  protected get apiBackendPreference(): ApiBackendPreference {
+    return this.resolvedConfig.values.apiBackend ?? 'auto';
+  }
+
+  /** True iff shortCode + tenantId + OAuth credentials are all available. */
+  protected hasScapiConfig(): boolean {
+    return Boolean(
+      this.resolvedConfig.values.shortCode && this.resolvedConfig.values.tenantId && this.hasOAuthCredentials(),
+    );
+  }
+
+  /**
+   * Legacy dual-backend factory bridge for domains (scripts, users, roles)
+   * that have not yet migrated to the dispatcher pattern. Will be removed
+   * once those domains move to SCAPI ops + dispatcher branches in CLI.
+   *
+   * @deprecated Use {@link createDispatcher} and call SCAPI ops / OCAPI
+   * functions directly from CLI commands.
    */
   protected createBackend<T>(
     factory: (config: import('../clients/dual-backend-factory.js').DualBackendConfig) => T,
   ): T {
     return factory({
-      preference: this.resolvedConfig.values.apiBackend ?? 'auto',
+      preference: this.apiBackendPreference,
       instance: this.instance,
       shortCode: this.resolvedConfig.values.shortCode,
       tenantId: this.resolvedConfig.values.tenantId,

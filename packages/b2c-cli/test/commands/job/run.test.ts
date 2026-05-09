@@ -10,6 +10,25 @@ import sinon from 'sinon';
 import JobRun from '../../../src/commands/job/run.js';
 import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
+/**
+ * The dispatcher's branch-routing behavior is unit-tested in
+ * b2c-tooling-sdk/test/compat/dispatcher.test.ts. Command tests stub
+ * `createJobsDispatcher` to return a fake whose `run()` returns a
+ * pre-programmed value — we test command-level orchestration without
+ * exercising the dispatcher internals.
+ */
+function makeDispatcherFake() {
+  const runner = sinon.stub();
+  return {
+    runner,
+    dispatcher: {
+      active: 'scapi' as const,
+      run: runner,
+      runScapiOnly: sinon.stub(),
+    },
+  };
+}
+
 describe('job run', () => {
   const hooks = createIsolatedConfigHooks();
 
@@ -21,20 +40,9 @@ describe('job run', () => {
     return createTestCommand(JobRun, hooks.getConfig(), flags, args);
   }
 
-  function createMockBackend() {
-    return {
-      name: 'ocapi' as const,
-      executeJob: sinon.stub(),
-      getJobExecution: sinon.stub(),
-      searchJobExecutions: sinon.stub(),
-      deleteJobExecution: sinon.stub(),
-      getJobLog: sinon.stub(),
-    };
-  }
-
   function stubCommon(command: any) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', tenantId: 'tenant_test'}}));
     sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'createContext').callsFake((operationType: any, metadata: any) => ({
@@ -42,9 +50,9 @@ describe('job run', () => {
       metadata,
       startTime: Date.now(),
     }));
-    const backend = createMockBackend();
-    sinon.stub(command, 'createJobsBackend').returns(backend);
-    return backend;
+    const fake = makeDispatcherFake();
+    sinon.stub(command, 'createJobsDispatcher').returns(fake.dispatcher);
+    return fake;
   }
 
   it('errors on invalid -P param format', async () => {
@@ -65,17 +73,16 @@ describe('job run', () => {
 
   it('executes without waiting when --wait is false', async () => {
     const command: any = await createCommand({param: ['A=1'], json: true}, {jobId: 'my-job'});
-    const backend = stubCommon(command);
+    const {runner} = stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
-    backend.executeJob.resolves({id: 'e1', executionStatus: 'running'});
+    runner.resolves({id: 'e1', jobId: 'my-job', executionStatus: 'running'});
 
     const result = await command.run();
 
-    expect(backend.executeJob.calledOnce).to.equal(true);
-    expect(backend.executeJob.getCall(0).args[0]).to.equal('my-job');
+    expect(runner.calledOnce).to.equal(true);
     expect(result.id).to.equal('e1');
   });
 
@@ -84,21 +91,23 @@ describe('job run', () => {
       {wait: true, timeout: 10, 'poll-interval': 1, json: true},
       {jobId: 'my-job'},
     );
-    const backend = stubCommon(command);
+    const {runner} = stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
-    backend.executeJob.resolves({id: 'e1', executionStatus: 'running'});
-    backend.getJobExecution.resolves({
+    // First run() call is executeJob; subsequent are getJobExecution polls.
+    runner.onFirstCall().resolves({id: 'e1', jobId: 'my-job', executionStatus: 'running'});
+    runner.onSecondCall().resolves({
       id: 'e1',
+      jobId: 'my-job',
       executionStatus: 'finished',
       exitStatus: {code: 'OK', status: 'ok'},
     });
 
     const result = await command.run();
 
-    expect(backend.getJobExecution.called).to.equal(true);
+    expect(runner.callCount).to.be.greaterThanOrEqual(2);
     expect(result.executionStatus).to.equal('finished');
   });
 

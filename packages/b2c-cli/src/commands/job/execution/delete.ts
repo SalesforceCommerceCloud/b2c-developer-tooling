@@ -5,7 +5,7 @@
  */
 import {Args} from '@oclif/core';
 import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {supportsDeleteJobExecution} from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import {scapiDeleteJobExecution} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t, withDocs} from '../../../i18n/index.js';
 
 export default class JobExecutionDelete extends JobCommand<typeof JobExecutionDelete> {
@@ -20,8 +20,13 @@ export default class JobExecutionDelete extends JobCommand<typeof JobExecutionDe
     }),
   };
 
+  // SCAPI-only: there is no OCAPI endpoint for deleting a job execution.
+  // The command requires SCAPI configuration regardless of `apiBackend`.
   static description = withDocs(
-    t('commands.job.execution.delete.description', 'Delete a job execution record (requires SCAPI)'),
+    t(
+      'commands.job.execution.delete.description',
+      'Delete a job execution record (SCAPI only — requires shortCode, tenantId, and OAuth credentials)',
+    ),
     '/cli/jobs.html#b2c-job-execution-delete',
   );
 
@@ -38,16 +43,23 @@ export default class JobExecutionDelete extends JobCommand<typeof JobExecutionDe
     this.requireOAuthCredentials();
 
     const {jobId, executionId} = this.args;
+    const tenantId = this.resolvedConfig.values.tenantId;
 
-    const backend = this.createJobsBackend();
-    this.logger.debug(`Using ${backend.name} backend for execution delete`);
-
-    if (!supportsDeleteJobExecution(backend)) {
+    if (this.apiBackendPreference === 'ocapi') {
       this.error(
         t(
-          'commands.job.execution.delete.notSupported',
-          'Deleting job executions requires SCAPI. The active backend ({{backend}}) does not support it. Use --api-backend scapi or configure SCAPI credentials.',
-          {backend: backend.name},
+          'commands.job.execution.delete.ocapiNotSupported',
+          'Deleting job executions is only available via SCAPI. Remove --api-backend ocapi or set apiBackend to auto/scapi.',
+        ),
+      );
+    }
+
+    const client = this.buildScapiJobsClient();
+    if (!client || !tenantId) {
+      this.error(
+        t(
+          'commands.job.execution.delete.scapiNotConfigured',
+          'Deleting job executions requires SCAPI. Configure shortCode, tenantId, and OAuth credentials.',
         ),
       );
     }
@@ -59,7 +71,7 @@ export default class JobExecutionDelete extends JobCommand<typeof JobExecutionDe
       }),
     );
 
-    await backend.deleteJobExecution(jobId, executionId);
+    await scapiDeleteJobExecution(client, jobId, executionId, tenantId);
 
     this.log(t('commands.job.execution.delete.deleted', 'Execution {{executionId}} deleted.', {executionId}));
   }

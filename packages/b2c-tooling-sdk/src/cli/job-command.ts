@@ -5,45 +5,70 @@
  */
 import {Command} from '@oclif/core';
 import {InstanceCommand} from './instance-command.js';
-import {getJobLog, getJobErrorMessage, type JobExecution} from '../operations/jobs/index.js';
-import {createJobsBackend, type JobsBackend, type JobExecutionInfo} from '../operations/jobs/index.js';
+import {BackendDispatcher} from '../compat/dispatcher.js';
+import {createScapiJobsClient, type ScapiJobsClient} from '../clients/scapi-jobs.js';
+import {mapOcapiExecution, type JobExecution, type JobExecutionInfo} from '../operations/jobs/index.js';
 import {t} from '../i18n/index.js';
 
 /**
  * Base command for job operations.
  *
- * Extends InstanceCommand with job-specific functionality like
- * displaying job logs on failure and creating backend-aware job clients.
+ * Provides:
+ * - {@link createJobsDispatcher} for routing operations to SCAPI or OCAPI
+ * - {@link buildScapiJobsClient} for SCAPI-only commands (e.g. delete) that
+ *   don't need the dispatcher's auto-fallback
+ * - {@link showJobLog} for retrieving and printing canonical job logs on failure
  *
  * @example
+ * ```ts
+ * import {scapiExecuteJob, mapOcapiExecution, executeJob as ocapiExecuteJob} from
+ *   '@salesforce/b2c-tooling-sdk/operations/jobs';
+ *
  * export default class MyJobCommand extends JobCommand<typeof MyJobCommand> {
- *   async run(): Promise<void> {
- *     const backend = this.createJobsBackend();
- *     const execution = await backend.executeJob('my-job');
+ *   async run() {
+ *     const dispatcher = this.createJobsDispatcher();
+ *     const exec = await dispatcher.run({
+ *       scapi: (client) => scapiExecuteJob(client, 'my-job', {tenantId: this.resolvedConfig.values.tenantId!}),
+ *       ocapi: async () => mapOcapiExecution(await ocapiExecuteJob(this.instance, 'my-job')),
+ *     });
  *   }
  * }
+ * ```
  */
 export abstract class JobCommand<T extends typeof Command> extends InstanceCommand<T> {
-  protected createJobsBackend(): JobsBackend {
-    return this.createBackend(createJobsBackend);
+  protected createJobsDispatcher(): BackendDispatcher<ScapiJobsClient> {
+    return this.createDispatcher('jobs', () => this.buildScapiJobsClient());
   }
 
   /**
-   * Display a job's log file content and error message if available.
-   * Accepts both canonical JobExecutionInfo and legacy OCAPI JobExecution.
-   * Outputs to stderr since this is typically shown for failed jobs.
+   * Builds a SCAPI Jobs client, or `undefined` if SCAPI is not configured.
+   * Used both as the dispatcher's SCAPI factory and directly by SCAPI-only
+   * commands (e.g. `job execution delete`) that don't use the dispatcher.
+   */
+  protected buildScapiJobsClient(): ScapiJobsClient | undefined {
+    if (!this.hasScapiConfig()) return undefined;
+    return createScapiJobsClient(
+      {
+        shortCode: this.resolvedConfig.values.shortCode!,
+        tenantId: this.resolvedConfig.values.tenantId!,
+      },
+      this.getOAuthStrategy(),
+    );
+  }
+
+  /**
+   * Display a job execution's log file content and error message if available.
+   *
+   * Accepts either canonical {@link JobExecutionInfo} (preferred) or raw
+   * OCAPI {@link JobExecution} (from the legacy {@link JobExecutionError}).
+   * Raw OCAPI is mapped to canonical at the entry point so the rest of the
+   * function works on a single shape.
    */
   protected async showJobLog(execution: JobExecutionInfo | JobExecution): Promise<void> {
-    if (isCanonicalExecution(execution)) {
-      return this.showCanonicalJobLog(execution);
-    }
-    return this.showOcapiJobLog(execution);
-  }
+    const canonical = isCanonical(execution) ? execution : mapOcapiExecution(execution);
+    const errorMessage = getCanonicalJobErrorMessage(canonical);
 
-  private async showCanonicalJobLog(execution: JobExecutionInfo): Promise<void> {
-    const errorMessage = getCanonicalJobErrorMessage(execution);
-
-    if (!execution.isLogFileExisting) {
+    if (!canonical.isLogFileExisting) {
       if (errorMessage) {
         this.logger.error({errorMessage}, errorMessage);
       }
@@ -51,9 +76,8 @@ export abstract class JobCommand<T extends typeof Command> extends InstanceComma
     }
 
     try {
-      const backend = this.createJobsBackend();
-      const log = await backend.getJobLog(execution);
-      const logFileName = execution.logFilePath?.split('/').pop() ?? 'job.log';
+      const log = await this.fetchCanonicalLog(canonical);
+      const logFileName = canonical.logFilePath?.split('/').pop() ?? 'job.log';
 
       const header = t('cli.job.logHeader', 'Job log ({{logFileName}}):', {logFileName});
       this.logger.error({log, errorMessage}, `${header}\n${log}`);
@@ -69,36 +93,20 @@ export abstract class JobCommand<T extends typeof Command> extends InstanceComma
     }
   }
 
-  private async showOcapiJobLog(execution: JobExecution): Promise<void> {
-    const errorMessage = getJobErrorMessage(execution);
-
-    if (!execution.is_log_file_existing) {
-      if (errorMessage) {
-        this.logger.error({errorMessage}, errorMessage);
-      }
-      return;
+  private async fetchCanonicalLog(execution: JobExecutionInfo): Promise<string> {
+    const logPath = execution.logFilePath;
+    if (!logPath) {
+      throw new Error('No log file path available');
     }
-
-    try {
-      const log = await getJobLog(this.instance, execution);
-      const logFileName = execution.log_file_path?.split('/').pop() ?? 'job.log';
-
-      const header = t('cli.job.logHeader', 'Job log ({{logFileName}}):', {logFileName});
-      this.logger.error({log, errorMessage}, `${header}\n${log}`);
-
-      if (errorMessage) {
-        this.logger.error(t('cli.job.errorMessage', 'Error: {{message}}', {message: errorMessage}));
-      }
-    } catch {
-      this.warn(t('cli.job.logFetchFailed', 'Could not retrieve job log'));
-      if (errorMessage) {
-        this.logger.error({errorMessage}, errorMessage);
-      }
-    }
+    // Both SCAPI and OCAPI return logFilePath under /Sites/LOGS/...; WebDAV
+    // base is /webdav/Sites, so the leading /Sites/ is stripped.
+    const webdavPath = logPath.replace(/^\/Sites\//, '');
+    const content = await this.instance.webdav.get(webdavPath);
+    return new TextDecoder().decode(content);
   }
 }
 
-function isCanonicalExecution(execution: JobExecutionInfo | JobExecution): execution is JobExecutionInfo {
+function isCanonical(execution: JobExecutionInfo | JobExecution): execution is JobExecutionInfo {
   return 'executionStatus' in execution;
 }
 

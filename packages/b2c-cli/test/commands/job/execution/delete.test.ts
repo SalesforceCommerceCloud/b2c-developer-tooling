@@ -21,52 +21,49 @@ describe('job execution delete', () => {
     return createTestCommand(JobExecutionDelete, hooks.getConfig(), flags, args);
   }
 
-  function createScapiBackend() {
-    // SCAPI backend implements DeletableJobsBackend (has deleteJobExecution)
-    return {
-      name: 'scapi' as const,
-      executeJob: sinon.stub(),
-      getJobExecution: sinon.stub(),
-      searchJobExecutions: sinon.stub(),
-      deleteJobExecution: sinon.stub(),
-      getJobLog: sinon.stub(),
-    };
-  }
-
-  function createOcapiBackend() {
-    // OCAPI backend does NOT implement deleteJobExecution
-    return {
-      name: 'ocapi' as const,
-      executeJob: sinon.stub(),
-      getJobExecution: sinon.stub(),
-      searchJobExecutions: sinon.stub(),
-      getJobLog: sinon.stub(),
-    };
-  }
-
-  function stubCommon(command: any, backend: object) {
+  function stubCommon(
+    command: any,
+    opts: {client?: unknown; tenantId?: string; preference?: 'auto' | 'ocapi' | 'scapi'} = {},
+  ) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', tenantId: opts.tenantId}}));
     sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));
-    sinon.stub(command, 'createJobsBackend').returns(backend);
-    return backend;
+    sinon.stub(command, 'apiBackendPreference').get(() => opts.preference ?? 'auto');
+    sinon.stub(command, 'buildScapiJobsClient').returns(opts.client);
   }
 
-  it('deletes a job execution when SCAPI backend is active', async () => {
+  it('calls scapiDeleteJobExecution when SCAPI is configured', async () => {
     const command: any = await createCommand({}, {jobId: 'my-job', executionId: 'exec-1'});
-    const backend = stubCommon(command, createScapiBackend()) as ReturnType<typeof createScapiBackend>;
-    backend.deleteJobExecution.resolves();
+    // Provide a fake client that responds with no error from the openapi-fetch shape.
+    const fakeClient = {
+      DELETE: sinon.stub().resolves({error: undefined, response: {status: 204}}),
+    };
+    stubCommon(command, {client: fakeClient, tenantId: 'tenant_test'});
 
     await runSilent(() => command.run());
 
-    expect(backend.deleteJobExecution.calledOnce).to.equal(true);
-    expect(backend.deleteJobExecution.getCall(0).args[0]).to.equal('my-job');
-    expect(backend.deleteJobExecution.getCall(0).args[1]).to.equal('exec-1');
+    expect(fakeClient.DELETE.calledOnce).to.equal(true);
+    const call = fakeClient.DELETE.getCall(0);
+    expect(call.args[0]).to.match(/executions\/\{executionId\}$/);
+    expect(call.args[1].params.path.jobId).to.equal('my-job');
+    expect(call.args[1].params.path.executionId).to.equal('exec-1');
   });
 
-  it('errors with a clear message when OCAPI backend is active (no delete capability)', async () => {
+  it('errors when --api-backend ocapi is set', async () => {
     const command: any = await createCommand({}, {jobId: 'my-job', executionId: 'exec-1'});
-    stubCommon(command, createOcapiBackend());
+    stubCommon(command, {client: {}, tenantId: 'tenant_test', preference: 'ocapi'});
+
+    try {
+      await command.run();
+      expect.fail('should have thrown');
+    } catch (error: any) {
+      expect(error.message).to.match(/SCAPI/i);
+    }
+  });
+
+  it('errors when SCAPI is not configured', async () => {
+    const command: any = await createCommand({}, {jobId: 'my-job', executionId: 'exec-1'});
+    stubCommon(command, {client: undefined});
 
     try {
       await command.run();

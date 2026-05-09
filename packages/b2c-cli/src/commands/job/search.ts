@@ -11,7 +11,13 @@ import {
   selectColumns,
   type ColumnDef,
 } from '@salesforce/b2c-tooling-sdk/cli';
-import {type JobExecutionInfo, type JobExecutionSearchResults} from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import {
+  searchJobExecutions as ocapiSearchJobExecutions,
+  scapiSearchJobExecutions,
+  mapOcapiSearchResult,
+  type JobExecutionInfo,
+  type JobExecutionSearchResults,
+} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t, withDocs} from '../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<JobExecutionInfo>> = {
@@ -92,8 +98,8 @@ export default class JobSearch extends JobCommand<typeof JobSearch> {
 
     const {'job-id': jobId, status, count, start, 'sort-by': sortBy, 'sort-order': sortOrder} = this.flags;
 
-    const backend = this.createJobsBackend();
-    this.logger.debug(`Using ${backend.name} backend for job search`);
+    const dispatcher = this.createJobsDispatcher();
+    const tenantId = this.resolvedConfig.values.tenantId;
 
     this.log(
       t('commands.job.search.searching', 'Searching job executions on {{hostname}}...', {
@@ -101,13 +107,11 @@ export default class JobSearch extends JobCommand<typeof JobSearch> {
       }),
     );
 
-    const results = await backend.searchJobExecutions({
-      jobId,
-      status,
-      count,
-      start,
-      sortBy,
-      sortOrder: sortOrder as 'asc' | 'desc',
+    const searchOptions = {jobId, status, count, start, sortBy, sortOrder: sortOrder as 'asc' | 'desc'};
+
+    const results = await dispatcher.run({
+      scapi: (client) => scapiSearchJobExecutions(client, {...searchOptions, tenantId: tenantId!}),
+      ocapi: async () => mapOcapiSearchResult(await ocapiSearchJobExecutions(this.instance, searchOptions)),
     });
 
     if (this.jsonEnabled()) {
