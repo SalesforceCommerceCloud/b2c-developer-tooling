@@ -30,24 +30,25 @@ export function registerCipAnalytics(
   statusBar.command = 'b2c-dx.cipAnalytics.configureConnection';
   const refreshStatusBar = () => {
     const c = connection.get();
+    const realmLabel = c.label || c.tenantId || 'Not configured';
     if (c.status === 'connected') {
-      // `plug` codicon = connected / wired up.
-      statusBar.text = `$(plug) CIP: ${c.tenantId} @ ${c.env}`;
-      statusBar.tooltip = `CIP Host Connected\nHost: ${c.host}\n${c.message ?? ''}\nClick to reconfigure`;
+      statusBar.text = `$(plug) CIP: ${realmLabel}`;
+      statusBar.tooltip = `CIP Connected · ${realmLabel}\nTenant: ${c.tenantId} · Env: ${c.env}\nHost: ${c.host}\n${c.message ?? ''}\nClick to switch realm`;
       statusBar.backgroundColor = undefined;
       statusBar.color = new vscode.ThemeColor('charts.green');
+      statusBar.command = 'b2c-dx.cipAnalytics.switchRealm';
     } else if (c.status === 'testing') {
-      statusBar.text = `$(sync~spin) Connecting to CIP host ${c.host}`;
+      statusBar.text = `$(sync~spin) CIP: Connecting…`;
       statusBar.tooltip = `Connecting to CIP host ${c.host}\nTenant: ${c.tenantId || '(not set)'}`;
       statusBar.backgroundColor = undefined;
       statusBar.color = undefined;
+      statusBar.command = undefined;
     } else {
-      const label = c.tenantId ? `${c.tenantId} (disconnected)` : 'Not configured';
-      // `debug-disconnect` codicon = broken plug; signals a disconnected state.
-      statusBar.text = `$(debug-disconnect) CIP: ${label}`;
-      statusBar.tooltip = `CIP Host Disconnected\n${c.message ?? 'Click to configure'}\nClick to configure`;
+      statusBar.text = `$(debug-disconnect) CIP: ${realmLabel}`;
+      statusBar.tooltip = `CIP Disconnected · ${realmLabel}\n${c.message ?? ''}\nClick to switch or configure realm`;
       statusBar.backgroundColor = undefined;
       statusBar.color = new vscode.ThemeColor('errorForeground');
+      statusBar.command = 'b2c-dx.cipAnalytics.switchRealm';
     }
     statusBar.show();
   };
@@ -55,7 +56,7 @@ export function registerCipAnalytics(
   context.subscriptions.push(statusBar, connection.onDidChange(refreshStatusBar));
 
   // Tree view
-  const treeProvider = new CipAnalyticsTreeDataProvider(configProvider, log);
+  const treeProvider = new CipAnalyticsTreeDataProvider(configProvider, connection, log);
   const treeView = vscode.window.createTreeView('b2cCipAnalytics', {
     treeDataProvider: treeProvider,
     showCollapseAll: true,
@@ -65,13 +66,14 @@ export function registerCipAnalytics(
   const webviewManager = new CipWebviewManager(context, configProvider, connection, log);
 
   // Commands
-  const refreshDisposable = vscode.commands.registerCommand('b2c-dx.cipAnalytics.refresh', () => {
+  const refreshDisposable = vscode.commands.registerCommand('b2c-dx.cipAnalytics.refresh', async () => {
+    await connection.resetToDefaults();
     treeProvider.refresh();
   });
 
   const openReportDisposable = vscode.commands.registerCommand(
     'b2c-dx.cipAnalytics.openReport',
-    async (report?: CipReportEntry) => {
+    async (report?: CipReportEntry, realmId?: string) => {
       if (!report) {
         const allReports = listCipReports();
         const items = allReports.map((r) => ({
@@ -94,31 +96,73 @@ export function registerCipAnalytics(
       }
 
       log.appendLine(`[CIP Analytics] Opening dashboard for report: ${report.name}`);
-      await webviewManager.openReport(report);
+      await webviewManager.openReport(report, realmId);
     },
   );
 
-  const browseTablesDisposable = vscode.commands.registerCommand('b2c-dx.cipAnalytics.browseTables', async () => {
-    log.appendLine('[CIP Analytics] Opening tables browser');
-    await webviewManager.openTablesBrowser();
-  });
-
-  const queryBuilderDisposable = vscode.commands.registerCommand('b2c-dx.cipAnalytics.queryBuilder', async () => {
-    log.appendLine('[CIP Analytics] Opening Query Builder');
-    await webviewManager.openQueryBuilder();
-  });
-
-  const configureDisposable = vscode.commands.registerCommand('b2c-dx.cipAnalytics.configureConnection', async () =>
-    configureConnectionFlow(connection),
+  const browseTablesDisposable = vscode.commands.registerCommand(
+    'b2c-dx.cipAnalytics.browseTables',
+    async (realmId?: string) => {
+      log.appendLine('[CIP Analytics] Opening tables browser');
+      await webviewManager.openTablesBrowser(realmId);
+    },
   );
 
-  const testDisposable = vscode.commands.registerCommand('b2c-dx.cipAnalytics.testConnection', async () => {
-    const host = connection.resolvedHost();
-    await vscode.window.withProgress(
-      {location: vscode.ProgressLocation.Notification, title: `Connecting to CIP host ${host}`},
-      () => connection.testConnection(),
-    );
-  });
+  const queryBuilderDisposable = vscode.commands.registerCommand(
+    'b2c-dx.cipAnalytics.queryBuilder',
+    async (realmId?: string) => {
+      log.appendLine('[CIP Analytics] Opening Query Builder');
+      await webviewManager.openQueryBuilder(realmId);
+    },
+  );
+
+  const configureDisposable = vscode.commands.registerCommand(
+    'b2c-dx.cipAnalytics.configureConnection',
+    async (arg?: string | {realmId?: string}, addNew?: boolean) => {
+      const realmId = typeof arg === 'string' ? arg : arg?.realmId;
+      if (addNew && realmId) {
+        await addConfigurationFlow(connection, realmId);
+      } else {
+        if (realmId) await connection.switchRealm(realmId);
+        await configureConnectionFlow(connection);
+      }
+    },
+  );
+
+  const testDisposable = vscode.commands.registerCommand(
+    'b2c-dx.cipAnalytics.testConnection',
+    async (arg?: string | {realmId?: string}) => {
+      const realmId = typeof arg === 'string' ? arg : arg?.realmId;
+      if (realmId) {
+        await connection.switchRealm(realmId);
+      }
+      const host = connection.resolvedHost();
+      const result = await vscode.window.withProgress(
+        {location: vscode.ProgressLocation.Notification, title: `Connecting to CIP host ${host}…`},
+        () => connection.testConnection(),
+      );
+      if (result.status === 'connected') {
+        vscode.window.showInformationMessage(`CIP connected: ${result.message ?? 'OK'}`);
+      } else {
+        vscode.window.showErrorMessage(`CIP connection failed: ${result.message ?? 'Unknown error'}`);
+      }
+    },
+  );
+
+  const switchRealmDisposable = vscode.commands.registerCommand(
+    'b2c-dx.cipAnalytics.switchRealm',
+    async () => switchRealmFlow(connection),
+  );
+
+  const addRealmDisposable = vscode.commands.registerCommand(
+    'b2c-dx.cipAnalytics.addRealm',
+    async () => addRealmFlow(connection),
+  );
+
+  const removeRealmDisposable = vscode.commands.registerCommand(
+    'b2c-dx.cipAnalytics.removeRealm',
+    async () => removeRealmFlow(connection),
+  );
 
   // Refresh tree when config changes
   configProvider.onDidReset(() => {
@@ -133,25 +177,29 @@ export function registerCipAnalytics(
     queryBuilderDisposable,
     configureDisposable,
     testDisposable,
+    switchRealmDisposable,
+    addRealmDisposable,
+    removeRealmDisposable,
   );
 
   log.appendLine('[CIP Analytics] Feature registered successfully');
 }
 
 /**
- * Multi-step QuickPick flow: tenant → environment → (optional) custom host → auto-test.
+ * Pick env/host for a new or existing connection. Returns {tenantId, env, host} or undefined if cancelled.
  */
-async function configureConnectionFlow(connection: CipConnectionService): Promise<void> {
-  const current = connection.get();
-
+async function pickConnectionDetails(
+  title: string,
+  defaults: {tenantId: string; env: CipEnv; host: string},
+): Promise<{tenantId: string; env: CipEnv; host: string} | undefined> {
   const tenantId = await vscode.window.showInputBox({
-    title: 'CIP Connection · Tenant ID',
-    prompt: 'Organization identifier (e.g., zzat_prd, zzat_sbx)',
-    value: current.tenantId,
+    title: `${title} · Tenant ID`,
+    prompt: 'Organization identifier (e.g., zzat_prd, bjmp_sbx001)',
+    value: defaults.tenantId,
     ignoreFocusOut: true,
     validateInput: (v) => (v.trim() ? undefined : 'Tenant ID is required'),
   });
-  if (tenantId === undefined) return;
+  if (tenantId === undefined) return undefined;
 
   const envPick = await vscode.window.showQuickPick(
     [
@@ -159,37 +207,177 @@ async function configureConnectionFlow(connection: CipConnectionService): Promis
       {label: 'Staging', description: DEFAULT_CIP_STAGING_HOST, env: 'staging' as CipEnv},
       {label: 'Custom', description: 'Enter your own CIP host', env: 'custom' as CipEnv},
     ],
-    {
-      title: 'CIP Connection · Environment',
-      placeHolder: 'Choose the CIP environment',
-      ignoreFocusOut: true,
-    },
+    {title: `${title} · Environment`, placeHolder: 'Choose the CIP environment', ignoreFocusOut: true},
   );
-  if (!envPick) return;
+  if (!envPick) return undefined;
 
   let host = '';
   if (envPick.env === 'custom') {
     const picked = await vscode.window.showInputBox({
-      title: 'CIP Connection · Custom Host',
+      title: `${title} · Custom Host`,
       prompt: 'CIP JDBC host (without scheme), e.g., jdbc.custom.analytics.example.com',
-      value: current.env === 'custom' ? current.host : '',
+      value: defaults.env === 'custom' ? defaults.host : '',
       ignoreFocusOut: true,
       validateInput: (v) => (v.trim() ? undefined : 'Host is required for custom environment'),
     });
-    if (picked === undefined) return;
+    if (picked === undefined) return undefined;
     host = picked.trim();
   }
+  return {tenantId: tenantId.trim(), env: envPick.env, host};
+}
 
-  await connection.update({tenantId: tenantId.trim(), env: envPick.env, host});
-
-  // Auto-test — users can always re-run via b2c-dx.cipAnalytics.testConnection
+/**
+ * Add a new connection to an existing realm group.
+ */
+async function addConfigurationFlow(connection: CipConnectionService, groupId: string): Promise<void> {
+  const current = connection.get();
+  const details = await pickConnectionDetails('New Connection', {tenantId: '', env: current.env, host: current.host});
+  if (!details) return;
+  const id = await connection.addRealm({
+    groupId,
+    label: details.tenantId,
+    tenantId: details.tenantId,
+    env: details.env,
+    host: details.host,
+  });
+  await connection.switchRealm(id);
   const result = await vscode.window.withProgress(
-    {location: vscode.ProgressLocation.Notification, title: `Connecting to CIP host ${connection.resolvedHost()}`},
+    {location: vscode.ProgressLocation.Notification, title: `Connecting to ${details.tenantId}…`},
     () => connection.testConnection(),
   );
   if (result.status === 'connected') {
-    vscode.window.showInformationMessage(`CIP connected: ${result.message ?? ''}`);
+    vscode.window.showInformationMessage(`Connected: ${result.message ?? 'OK'}`);
   } else {
-    vscode.window.showWarningMessage(`CIP not connected: ${result.message ?? 'unknown error'}`);
+    vscode.window.showErrorMessage(`Connection failed: ${result.message ?? 'Unknown error'}`);
   }
+}
+
+/**
+ * Edit the active realm configuration (tenant → environment → host → test).
+ */
+async function configureConnectionFlow(connection: CipConnectionService): Promise<void> {
+  const current = connection.get();
+  const details = await pickConnectionDetails('Configure Connection', {
+    tenantId: current.tenantId,
+    env: current.env,
+    host: current.host,
+  });
+  if (!details) return;
+
+  await connection.update({tenantId: details.tenantId, env: details.env, host: details.host});
+
+  const result = await vscode.window.withProgress(
+    {location: vscode.ProgressLocation.Notification, title: `Connecting to CIP host ${connection.resolvedHost()}…`},
+    () => connection.testConnection(),
+  );
+  if (result.status === 'connected') {
+    vscode.window.showInformationMessage(`CIP connected: ${result.message ?? 'OK'}`);
+  } else {
+    vscode.window.showErrorMessage(`CIP connection failed: ${result.message ?? 'Unknown error'}`);
+  }
+}
+
+/**
+ * Show a QuickPick of all saved realms; switch to the selected one and auto-test.
+ * Includes "Add new realm…" and "Remove realm…" items at the bottom.
+ */
+async function switchRealmFlow(connection: CipConnectionService): Promise<void> {
+  const realms = connection.getRealms();
+  const current = connection.get();
+
+  type RealmItem = vscode.QuickPickItem & {realmId?: string; action?: 'add' | 'remove' | 'configure'};
+
+  const items: RealmItem[] = realms.map((r) => ({
+    label: r.label || r.tenantId,
+    description: `${r.tenantId} · ${r.env}`,
+    detail: r.id === current.id ? '$(check) Active' : undefined,
+    realmId: r.id,
+  }));
+
+  items.push(
+    {label: '', kind: vscode.QuickPickItemKind.Separator} as RealmItem,
+    {label: '$(add) Add new realm…', action: 'add'},
+    {label: '$(edit) Edit active realm…', action: 'configure'},
+    {label: '$(trash) Remove a realm…', action: 'remove'},
+  );
+
+  const picked = await vscode.window.showQuickPick(items, {
+    title: 'CIP Analytics · Switch Realm',
+    placeHolder: realms.length === 0 ? 'No realms configured — add one' : 'Select a realm to connect',
+    matchOnDescription: true,
+  });
+  if (!picked) return;
+
+  if (picked.action === 'add') {
+    await addRealmFlow(connection);
+  } else if (picked.action === 'configure') {
+    await configureConnectionFlow(connection);
+  } else if (picked.action === 'remove') {
+    await removeRealmFlow(connection);
+  } else if (picked.realmId && picked.realmId !== current.id) {
+    await connection.switchRealm(picked.realmId);
+    const result = await vscode.window.withProgress(
+      {location: vscode.ProgressLocation.Notification, title: `Connecting to ${picked.label}…`},
+      () => connection.testConnection(),
+    );
+    if (result.status === 'connected') {
+      vscode.window.showInformationMessage(`Switched to realm "${picked.label}": ${result.message ?? ''}`);
+    } else {
+      vscode.window.showWarningMessage(`Realm "${picked.label}" not connected: ${result.message ?? 'unknown error'}`);
+    }
+  }
+}
+
+/**
+ * Add a new realm group — only asks for Realm ID (e.g. "bjmp", "zzat").
+ * The group acts as a container; add connections via Configure (⚙ button).
+ */
+async function addRealmFlow(connection: CipConnectionService): Promise<void> {
+  const label = await vscode.window.showInputBox({
+    title: 'Add Realm',
+    prompt: 'Enter the Realm ID (e.g. bjmp, zzat)',
+    ignoreFocusOut: true,
+    validateInput: (v) => (v.trim() ? undefined : 'Realm ID is required'),
+  });
+  if (label === undefined) return;
+
+  const trimmedLabel = label.trim();
+  await connection.addRealmGroup(trimmedLabel);
+
+  vscode.window.showInformationMessage(
+    `Realm "${trimmedLabel}" added. Expand it and use ⚙ Configure to add a connection.`,
+  );
+}
+
+/**
+ * Pick a realm to delete. Cannot delete the last remaining realm.
+ */
+async function removeRealmFlow(connection: CipConnectionService): Promise<void> {
+  const realms = connection.getRealms();
+  if (realms.length === 0) {
+    vscode.window.showInformationMessage('No realms to remove.');
+    return;
+  }
+
+  const items = realms.map((r) => ({
+    label: r.label || r.tenantId,
+    description: `${r.tenantId} · ${r.env}`,
+    realmId: r.id,
+  }));
+
+  const picked = await vscode.window.showQuickPick(items, {
+    title: 'CIP Analytics · Remove Realm',
+    placeHolder: 'Select a realm to remove',
+  });
+  if (!picked) return;
+
+  const confirm = await vscode.window.showWarningMessage(
+    `Remove realm "${picked.label}"?`,
+    {modal: true},
+    'Remove',
+  );
+  if (confirm !== 'Remove') return;
+
+  await connection.removeRealm(picked.realmId);
+  vscode.window.showInformationMessage(`Realm "${picked.label}" removed.`);
 }

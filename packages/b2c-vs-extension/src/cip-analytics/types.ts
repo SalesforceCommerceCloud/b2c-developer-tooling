@@ -5,6 +5,7 @@
  */
 import type {CipReportDefinition} from '@salesforce/b2c-tooling-sdk/operations/cip';
 import * as vscode from 'vscode';
+import type {CipRealm, CipRealmGroup, CipStatus} from './cip-connection-service.js';
 
 /**
  * Extension-specific report entry type. Aliased to the SDK's `CipReportDefinition` for now;
@@ -13,12 +14,81 @@ import * as vscode from 'vscode';
 export type CipReportEntry = CipReportDefinition;
 
 /**
- * Featured tree item for Query Builder - the highlighted primary entry point.
+ * Top-level tree item representing a realm group (e.g. "bjmp").
+ * Collapsible — children are tenant connections + "Add configuration" leaf.
+ */
+export class CipRealmTreeItem extends vscode.TreeItem {
+  readonly nodeType = 'realm' as const;
+  readonly realmId: string;
+
+  constructor(group: CipRealmGroup) {
+    super(group.label, vscode.TreeItemCollapsibleState.Collapsed);
+    this.realmId = group.id;
+    this.contextValue = 'cipRealm';
+    this.tooltip = new vscode.MarkdownString(`**${group.label}**\n\nExpand to see connections`);
+    this.iconPath = new vscode.ThemeIcon('server-environment');
+  }
+}
+
+/**
+ * Leaf node under a realm group that lets the user add a new connection.
+ */
+export class CipAddConfigTreeItem extends vscode.TreeItem {
+  readonly nodeType = 'addConfig' as const;
+  readonly realmId: string;
+
+  constructor(groupId: string) {
+    super('Add configuration…', vscode.TreeItemCollapsibleState.Collapsed);
+    this.realmId = groupId;
+    this.contextValue = 'cipAddConfig';
+    this.iconPath = new vscode.ThemeIcon('add');
+    this.tooltip = 'Add a new tenant connection (prod / staging / custom) to this realm';
+    this.command = {
+      command: 'b2c-dx.cipAnalytics.configureConnection',
+      title: 'Add Configuration',
+      arguments: [groupId, true],
+    };
+  }
+}
+
+/**
+ * Collapsible tenant node shown under a realm.
+ * Shows tenantId with connection status icon. Children are tools + reports.
+ */
+export class CipRealmInfoTreeItem extends vscode.TreeItem {
+  readonly nodeType = 'realmInfo' as const;
+  readonly realmId: string;
+
+  constructor(realm: CipRealm, status: CipStatus) {
+    super(realm.tenantId, vscode.TreeItemCollapsibleState.Expanded);
+    this.realmId = realm.id;
+    this.contextValue = 'cipRealmInfo';
+    this.description = `${realm.env} · ${realm.host}`;
+    this.tooltip = new vscode.MarkdownString(
+      `**${realm.tenantId}**  \nEnv: ${realm.env}  \nHost: ${realm.host}\n\n_Click pencil icon to edit_`,
+    );
+    // `testing.iconPassed` / `iconFailed` are the same theme tokens VS Code uses for
+    // pass/fail states in the testing UI — every built-in theme paints them as a
+    // crisp green / red. `charts.green` is unreliable: some themes leave it neutral
+    // grey, which is what produced the dark-grey "connected" dot users were seeing.
+    if (status === 'connected') {
+      this.iconPath = new vscode.ThemeIcon('pass-filled', new vscode.ThemeColor('testing.iconPassed'));
+    } else if (status === 'testing') {
+      this.iconPath = new vscode.ThemeIcon('sync~spin', new vscode.ThemeColor('charts.yellow'));
+    } else {
+      this.iconPath = new vscode.ThemeIcon('circle-outline', new vscode.ThemeColor('testing.iconFailed'));
+    }
+  }
+}
+
+
+/**
+ * Featured tree item for Query Builder - scoped to a realm.
  */
 export class CipQueryBuilderTreeItem extends vscode.TreeItem {
   readonly nodeType = 'queryBuilder' as const;
 
-  constructor() {
+  constructor(readonly realmId: string) {
     super('Query Builder', vscode.TreeItemCollapsibleState.None);
     this.contextValue = 'cipQueryBuilder';
     this.iconPath = new vscode.ThemeIcon('zap', new vscode.ThemeColor('charts.blue'));
@@ -27,17 +97,18 @@ export class CipQueryBuilderTreeItem extends vscode.TreeItem {
     this.command = {
       command: 'b2c-dx.cipAnalytics.queryBuilder',
       title: 'Open Query Builder',
+      arguments: [realmId],
     };
   }
 }
 
 /**
- * Featured tree item for Tables Browser.
+ * Featured tree item for Tables Browser - scoped to a realm.
  */
 export class CipTablesBrowserTreeItem extends vscode.TreeItem {
   readonly nodeType = 'tablesBrowser' as const;
 
-  constructor() {
+  constructor(readonly realmId: string) {
     super('Entity Browser', vscode.TreeItemCollapsibleState.None);
     this.contextValue = 'cipTablesBrowser';
     this.iconPath = new vscode.ThemeIcon('table');
@@ -46,12 +117,13 @@ export class CipTablesBrowserTreeItem extends vscode.TreeItem {
     this.command = {
       command: 'b2c-dx.cipAnalytics.browseTables',
       title: 'Browse Tables',
+      arguments: [realmId],
     };
   }
 }
 
 /**
- * Section header tree item for grouping featured tools vs reports.
+ * Section header tree item for grouping featured tools vs reports - scoped to a realm.
  */
 export class CipSectionTreeItem extends vscode.TreeItem {
   readonly nodeType = 'section' as const;
@@ -59,6 +131,7 @@ export class CipSectionTreeItem extends vscode.TreeItem {
   constructor(
     readonly section: 'tools' | 'reports',
     label: string,
+    readonly realmId: string,
     collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.Expanded,
   ) {
     super(label, collapsibleState);
@@ -103,6 +176,7 @@ export class CipCategoryTreeItem extends vscode.TreeItem {
   constructor(
     readonly category: string,
     readonly reportCount: number,
+    readonly realmId: string,
   ) {
     super(category, vscode.TreeItemCollapsibleState.Collapsed);
     this.contextValue = 'cipCategory';
@@ -119,23 +193,28 @@ export class CipCategoryTreeItem extends vscode.TreeItem {
 export class CipReportTreeItem extends vscode.TreeItem {
   readonly nodeType = 'report' as const;
 
-  constructor(readonly report: CipReportEntry) {
+  constructor(
+    readonly report: CipReportEntry,
+    readonly realmId: string,
+  ) {
     super(humanizeSlug(report.name), vscode.TreeItemCollapsibleState.None);
     this.contextValue = 'cipReport';
     this.iconPath = new vscode.ThemeIcon('graph');
     this.description = report.description;
     this.tooltip = `${humanizeSlug(report.name)} — ${report.description}`;
 
-    // Command executed when user double-clicks the report
     this.command = {
       command: 'b2c-dx.cipAnalytics.openReport',
       title: 'Open Report',
-      arguments: [report],
+      arguments: [report, realmId],
     };
   }
 }
 
 export type CipTreeNode =
+  | CipRealmTreeItem
+  | CipRealmInfoTreeItem
+  | CipAddConfigTreeItem
   | CipQueryBuilderTreeItem
   | CipTablesBrowserTreeItem
   | CipSectionTreeItem

@@ -302,6 +302,24 @@
         "category": "B2C-DX Analytics"
       },
       {
+        "command": "b2c-dx.cipAnalytics.switchRealm",
+        "title": "Switch Realm…",
+        "icon": "$(server)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.addRealm",
+        "title": "Add Realm…",
+        "icon": "$(add)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.removeRealm",
+        "title": "Remove Realm…",
+        "icon": "$(trash)",
+        "category": "B2C-DX Analytics"
+      },
+      {
         "command": "b2c-dx.sandbox.refresh",
         "title": "Refresh",
         "icon": "$(refresh)",
@@ -676,19 +694,14 @@
           "group": "navigation"
         },
         {
-          "command": "b2c-dx.cipAnalytics.configureConnection",
+          "command": "b2c-dx.cipAnalytics.switchRealm",
           "when": "view == b2cCipAnalytics",
-          "group": "navigation@1"
+          "group": "navigation@0"
         },
         {
-          "command": "b2c-dx.cipAnalytics.queryBuilder",
+          "command": "b2c-dx.cipAnalytics.addRealm",
           "when": "view == b2cCipAnalytics",
-          "group": "navigation@2"
-        },
-        {
-          "command": "b2c-dx.cipAnalytics.browseTables",
-          "when": "view == b2cCipAnalytics",
-          "group": "navigation@3"
+          "group": "navigation@0"
         },
         {
           "command": "b2c-dx.cipAnalytics.refresh",
@@ -717,6 +730,21 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "b2c-dx.cipAnalytics.removeRealm",
+          "when": "view == b2cCipAnalytics && viewItem == cipRealm",
+          "group": "2_realm@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.testConnection",
+          "when": "view == b2cCipAnalytics && viewItem == cipRealmInfo",
+          "group": "inline@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.configureConnection",
+          "when": "view == b2cCipAnalytics && viewItem == cipRealmInfo",
+          "group": "inline@1"
+        },
         {
           "command": "b2c-dx.webdav.addCatalog",
           "when": "view == b2cWebdavExplorer && viewItem == virtual-root-catalogs",

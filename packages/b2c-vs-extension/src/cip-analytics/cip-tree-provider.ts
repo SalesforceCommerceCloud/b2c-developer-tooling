@@ -6,9 +6,13 @@
 import {listCipReports} from '@salesforce/b2c-tooling-sdk/operations/cip';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
+import type {CipConnectionService} from './cip-connection-service.js';
 import {
+  CipAddConfigTreeItem,
   CipCategoryTreeItem,
   CipQueryBuilderTreeItem,
+  CipRealmInfoTreeItem,
+  CipRealmTreeItem,
   CipReportTreeItem,
   CipSectionTreeItem,
   CipTablesBrowserTreeItem,
@@ -16,9 +20,11 @@ import {
 } from './types.js';
 
 /**
- * Tree data provider for CIP Analytics reports.
- * Displays reports grouped by category (e.g., Sales Analytics, Product Analytics).
- * Follows the pattern from api-browser-tree-provider.ts and sandbox-tree-provider.ts.
+ * Tree data provider for CIP Analytics.
+ *
+ * Root level shows one node per saved realm. Each realm expands to reveal
+ * Query Builder, Entity Browser and Curated Reports as children — matching
+ * the existing UI but scoped per realm.
  */
 export class CipAnalyticsTreeDataProvider implements vscode.TreeDataProvider<CipTreeNode> {
   private _onDidChangeTreeData = new vscode.EventEmitter<CipTreeNode | undefined | void>();
@@ -26,13 +32,13 @@ export class CipAnalyticsTreeDataProvider implements vscode.TreeDataProvider<Cip
 
   constructor(
     private readonly configProvider: B2CExtensionConfig,
+    private readonly connection: CipConnectionService,
     private readonly log: vscode.OutputChannel,
-  ) {}
+  ) {
+    // Re-render realm status icons whenever connection state changes.
+    this.connection.onDidChange(() => this._onDidChangeTreeData.fire());
+  }
 
-  /**
-   * Refresh the tree view.
-   * Called when user clicks refresh button or config changes.
-   */
   refresh(): void {
     this.log.appendLine('[CIP Analytics] Tree refresh requested');
     this._onDidChangeTreeData.fire();
@@ -44,55 +50,56 @@ export class CipAnalyticsTreeDataProvider implements vscode.TreeDataProvider<Cip
 
   async getChildren(element?: CipTreeNode): Promise<CipTreeNode[]> {
     if (!element) {
-      // Root level - show featured tools + sections
       return this.getRootChildren();
+    }
+    if (element instanceof CipRealmTreeItem) {
+      return this.getRealmChildren(element);
+    }
+    if (element instanceof CipRealmInfoTreeItem) {
+      return this.getTenantChildren(element.realmId);
     }
     if (element instanceof CipSectionTreeItem) {
       return this.getSectionChildren(element);
     }
     if (element instanceof CipCategoryTreeItem) {
-      // Category level - show reports in this category
       return this.getCategoryChildren(element);
     }
     return [];
   }
 
-  /**
-   * Get root-level children: featured Query Builder + Tables Browser at top,
-   * then categorized reports section.
-   */
+  /** Root: one node per realm group. */
   private getRootChildren(): CipTreeNode[] {
     const config = this.configProvider.getConfig();
-    this.log.appendLine(`[CIP Analytics] Config resolved: ${config ? 'YES' : 'NO'}`);
-    if (config) {
-      this.log.appendLine(
-        `[CIP Analytics] Config values: clientId=${config.values.clientId ? 'SET' : 'NOT SET'}, hostname=${config.values.hostname}`,
-      );
-      this.log.appendLine(`[CIP Analytics] hasOAuthConfig() = ${config.hasOAuthConfig()}`);
-    }
     if (!config?.hasOAuthConfig()) {
-      this.log.appendLine('[CIP Analytics] No OAuth config - tree will be empty');
+      this.log.appendLine('[CIP Analytics] No OAuth config — tree will be empty');
       return [];
     }
+    return this.connection.getRealmGroups().map((g) => new CipRealmTreeItem(g));
+  }
 
-    const reports = listCipReports();
-    this.log.appendLine(`[CIP Analytics] Loaded ${reports.length} reports`);
+  /** Realm group children: one collapsible tenant node per connection + "Add configuration" leaf. */
+  private getRealmChildren(element: CipRealmTreeItem): CipTreeNode[] {
+    const {realmId: groupId} = element;
+    const connections = this.connection.getConnectionsForGroup(groupId);
+    const children: CipTreeNode[] = connections.map(
+      (r) => new CipRealmInfoTreeItem(r, this.connection.getRealmStatus(r.id)),
+    );
+    children.push(new CipAddConfigTreeItem(groupId));
+    return children;
+  }
 
-    // Featured tools at top (primary entry point)
+  /** Tenant node children: Query Builder + Entity Browser + Curated Reports. */
+  private getTenantChildren(realmId: string): CipTreeNode[] {
     return [
-      new CipQueryBuilderTreeItem(),
-      new CipTablesBrowserTreeItem(),
-      new CipSectionTreeItem('reports', 'Curated Reports'),
+      new CipQueryBuilderTreeItem(realmId),
+      new CipTablesBrowserTreeItem(realmId),
+      new CipSectionTreeItem('reports', 'Curated Reports', realmId),
     ];
   }
 
-  /**
-   * Get children for a section (e.g., Curated Reports section shows categories).
-   */
+  /** Curated Reports section children: categories. */
   private getSectionChildren(element: CipSectionTreeItem): CipTreeNode[] {
-    if (element.section !== 'reports') {
-      return [];
-    }
+    if (element.section !== 'reports') return [];
 
     const reports = listCipReports();
     const categoryCounts = new Map<string, number>();
@@ -102,17 +109,15 @@ export class CipAnalyticsTreeDataProvider implements vscode.TreeDataProvider<Cip
 
     return Array.from(categoryCounts.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([category, count]) => new CipCategoryTreeItem(category, count));
+      .map(([category, count]) => new CipCategoryTreeItem(category, count, element.realmId));
   }
 
-  /**
-   * Get children for a category (the reports in that category).
-   */
+  /** Category children: individual reports. */
   private getCategoryChildren(element: CipCategoryTreeItem): CipReportTreeItem[] {
     const reports = listCipReports();
     return reports
       .filter((r) => r.category === element.category)
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map((r) => new CipReportTreeItem(r));
+      .map((r) => new CipReportTreeItem(r, element.realmId));
   }
 }

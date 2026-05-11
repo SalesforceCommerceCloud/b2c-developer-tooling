@@ -83,10 +83,26 @@ export class CipWebviewManager {
   }
 
   /**
+   * Switch to a specific realm (if given) and auto-connect if not already connected.
+   * No-op if realmId is undefined or the realm is already active and connected.
+   */
+  private async ensureRealmActive(realmId?: string): Promise<void> {
+    if (!realmId) return;
+    const current = this.connection.get();
+    if (current.id !== realmId) {
+      await this.connection.switchRealm(realmId);
+    }
+    if (this.connection.get().status !== 'connected') {
+      await this.connection.testConnection();
+    }
+  }
+
+  /**
    * Open or reveal a webview panel for the given report.
    */
-  async openReport(report: CipReportDefinition): Promise<void> {
-    const columnKey = `cipAnalytics-${report.name}`;
+  async openReport(report: CipReportDefinition, realmId?: string): Promise<void> {
+    await this.ensureRealmActive(realmId);
+    const columnKey = `cipAnalytics-${realmId ?? 'default'}-${report.name}`;
 
     // If panel already exists, reveal it
     const existingPanel = this.panels.get(columnKey);
@@ -131,8 +147,9 @@ export class CipWebviewManager {
   /**
    * Open or reveal the tables browser webview.
    */
-  async openTablesBrowser(): Promise<void> {
-    const columnKey = 'cipAnalytics-tablesBrowser';
+  async openTablesBrowser(realmId?: string): Promise<void> {
+    await this.ensureRealmActive(realmId);
+    const columnKey = `cipAnalytics-tablesBrowser-${realmId ?? 'default'}`;
 
     // If panel already exists, reveal it
     const existingPanel = this.panels.get(columnKey);
@@ -177,8 +194,9 @@ export class CipWebviewManager {
   /**
    * Open or reveal the Query Builder webview (inspired by SOQL Builder).
    */
-  async openQueryBuilder(): Promise<void> {
-    const columnKey = 'cipAnalytics-queryBuilder';
+  async openQueryBuilder(realmId?: string): Promise<void> {
+    await this.ensureRealmActive(realmId);
+    const columnKey = `cipAnalytics-queryBuilder-${realmId ?? 'default'}`;
 
     const existingPanel = this.panels.get(columnKey);
     if (existingPanel) {
