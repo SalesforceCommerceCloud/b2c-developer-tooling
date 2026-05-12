@@ -353,8 +353,8 @@ A bare string is treated as a shared library; an object can mark a library as si
 {
   "b2c": {
     "libraries": [
-      "RefArch",
-      { "id": "homepage", "siteLibrary": true }
+      "RefArchSharedLibrary",
+      { "id": "SiteGenesis", "siteLibrary": true }
     ]
   }
 }
@@ -362,10 +362,10 @@ A bare string is treated as a shared library; an object can mark a library as si
 
 With this config:
 
-- `b2c content list --library homepage` calls the site-library API automatically (no need to pass `--site-library`).
-- `b2c content list --library RefArch` treats `RefArch` as a shared library.
+- `b2c content list --library SiteGenesis` calls the site-library API automatically (no need to pass `--site-library`); the library ID is the site ID.
+- `b2c content list --library RefArchSharedLibrary` treats `RefArchSharedLibrary` as a shared library.
 - `--site-library` / `--no-site-library` on the command line still wins over the config default.
-- The VS Code Content Libraries tree shows both entries on activation, with `homepage` marked `[site]`.
+- The VS Code Content Libraries tree shows both entries on activation, with `SiteGenesis` marked `[site]`.
 
 ### Resolution Priority
 

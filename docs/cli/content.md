@@ -103,9 +103,9 @@ export SFCC_CLIENT_ID=your-client-id
 export SFCC_CLIENT_SECRET=your-client-secret
 b2c content export homepage
 
-# With a libraries config entry (see below) marking "homepage" as site-private,
-# --site-library is inferred automatically:
-b2c content export homepage --library homepage
+# With a libraries config entry (see below) marking the site library as
+# site-private, --site-library is inferred automatically:
+b2c content export homepage --library SiteGenesis
 ```
 
 ### Configuring multiple libraries
@@ -116,8 +116,8 @@ Listing libraries under `b2c.libraries` in `package.json` (or `libraries` in `dw
 {
   "b2c": {
     "libraries": [
-      "RefArch",
-      { "id": "homepage", "siteLibrary": true }
+      "RefArchSharedLibrary",
+      { "id": "SiteGenesis", "siteLibrary": true }
     ]
   }
 }
@@ -126,14 +126,14 @@ Listing libraries under `b2c.libraries` in `package.json` (or `libraries` in `dw
 With this config:
 
 ```bash
-# Uses RefArch (first entry) as the default library
+# Uses RefArchSharedLibrary (first entry) as the default library
 b2c content export hero-banner
 
 # --site-library is inferred from the matching entry
-b2c content export homepage --library homepage
+b2c content export homepage --library SiteGenesis
 
 # Explicit flag still overrides the config
-b2c content export homepage --library homepage --no-site-library
+b2c content export homepage --library SiteGenesis --no-site-library
 ```
 
 ### Output
@@ -198,10 +198,10 @@ b2c content list --library SharedLibrary --tree
 # List from a site-private library
 b2c content list --library RefArch --site-library
 
-# With a libraries config entry marking "homepage" as site-private,
+# With a libraries config entry marking the site library as site-private,
 # --site-library is inferred automatically (see "b2c content export"
 # above for an example b2c.libraries config):
-b2c content list --library homepage
+b2c content list --library SiteGenesis
 
 # List from a local XML file
 b2c content list --library SharedLibrary --library-file ./library.xml
