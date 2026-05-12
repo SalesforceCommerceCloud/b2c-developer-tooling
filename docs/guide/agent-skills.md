@@ -51,10 +51,6 @@ npx @salesforce/b2c-cli setup skills
 
 :::
 
-::: tip Updating Copilot Skills in VS Code
-To update the extension marketplace for the latest skills, open the Extensions view sidebar, click **`···`** (the ellipsis menu), and select **Check for Extension Updates**.
-:::
-
 ## Available Plugins
 
 <table>
