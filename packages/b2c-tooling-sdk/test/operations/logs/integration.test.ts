@@ -58,6 +58,14 @@ describe('operations/logs integration', function () {
 
   beforeEach(function () {
     if (!hasInstance) {
+      // Fail loudly in CI: integration tests must not silently no-op when env is misconfigured.
+      if (process.env.CI) {
+        throw new Error(
+          'logs integration tests require a configured B2C instance. ' +
+            'Set SFCC_INSTANCE (and SFCC_CONFIG) env vars or provide a dw.json. ' +
+            'In CI, this is a hard failure rather than a skip.',
+        );
+      }
       this.skip();
     }
   });

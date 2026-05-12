@@ -165,6 +165,14 @@ describe('utils/slas/client', () => {
 
       printClientDetails(output);
       expect(stdoutStub.calledOnce).to.equal(true);
+      const text = stdoutStub.firstCall.args[0];
+      // The rendered output must show the client identity, channel, scopes,
+      // and redirect URI — these are the fields users rely on.
+      expect(text).to.include('client-1');
+      expect(text).to.include('Test Client');
+      expect(text).to.include('SiteA');
+      expect(text).to.include('sfcc.products');
+      expect(text).to.include('https://example.com/callback');
     });
 
     it('prints secret when showSecret is true', () => {

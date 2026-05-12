@@ -50,14 +50,32 @@ describe('operations/roles', () => {
       };
 
       server.use(
-        http.get(`${BASE_URL}/roles/bm-admin`, () => {
+        http.get(`${BASE_URL}/roles/bm-admin`, ({request}) => {
+          expect(request.headers.get('Authorization')).to.equal('Bearer test-token');
           return HttpResponse.json(mockRole);
         }),
       );
 
       const result = await getRole(client, 'bm-admin');
 
-      expect(result).to.deep.equal(mockRole);
+      expect(result.id).to.equal('bm-admin');
+      expect(result.roleEnumName).to.equal('ECOM_ADMIN');
+      expect(result.permissions).to.deep.equal(['permission1', 'permission2']);
+    });
+
+    it('should throw a not-found error when role missing', async () => {
+      server.use(
+        http.get(`${BASE_URL}/roles/missing`, () => {
+          return HttpResponse.json({error: {message: 'Not found'}}, {status: 404});
+        }),
+      );
+
+      try {
+        await getRole(client, 'missing');
+        expect.fail('Should have thrown');
+      } catch (error: unknown) {
+        expect((error as Error).message).to.include('Role missing not found');
+      }
     });
   });
 
@@ -75,6 +93,7 @@ describe('operations/roles', () => {
 
       server.use(
         http.get(`${BASE_URL}/roles`, ({request}) => {
+          expect(request.headers.get('Authorization')).to.equal('Bearer test-token');
           const url = new URL(request.url);
           expect(url.searchParams.get('size')).to.equal('20');
           expect(url.searchParams.get('page')).to.equal('0');
@@ -84,55 +103,37 @@ describe('operations/roles', () => {
 
       const result = await listRoles(client);
 
-      expect(result).to.deep.equal(mockRoles);
+      expect(result.content).to.have.lengthOf(1);
+      expect(result.content?.[0].id).to.equal('bm-admin');
     });
 
-    it('should list roles with pagination', async () => {
-      const mockRoles = {
-        content: [
-          {
-            id: 'bm-admin',
-            description: 'Business Manager Administrator',
-          },
-        ],
-      };
-
+    it('should forward custom pagination to the request', async () => {
       server.use(
         http.get(`${BASE_URL}/roles`, ({request}) => {
           const url = new URL(request.url);
           expect(url.searchParams.get('size')).to.equal('50');
           expect(url.searchParams.get('page')).to.equal('1');
-          return HttpResponse.json(mockRoles);
+          return HttpResponse.json({content: []});
         }),
       );
 
       const result = await listRoles(client, {size: 50, page: 1});
 
-      expect(result).to.deep.equal(mockRoles);
+      expect(result.content).to.deep.equal([]);
     });
 
-    it('should list roles with target type filter', async () => {
-      const mockRoles = {
-        content: [
-          {
-            id: 'bm-admin',
-            description: 'Business Manager Administrator',
-            targetType: 'User',
-          },
-        ],
-      };
-
+    it('should forward roleTargetType filter to the request', async () => {
       server.use(
         http.get(`${BASE_URL}/roles`, ({request}) => {
           const url = new URL(request.url);
           expect(url.searchParams.get('roleTargetType')).to.equal('User');
-          return HttpResponse.json(mockRoles);
+          return HttpResponse.json({content: []});
         }),
       );
 
       const result = await listRoles(client, {roleTargetType: 'User'});
 
-      expect(result).to.deep.equal(mockRoles);
+      expect(result.content).to.deep.equal([]);
     });
   });
 });

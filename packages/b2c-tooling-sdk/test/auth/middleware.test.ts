@@ -295,10 +295,11 @@ describe('auth/middleware', () => {
 
       await strategy.getTokenResponse();
 
-      // User-Agent headers should be set (the exact value depends on whether
-      // CLI has overridden it, but they should be present)
-      expect(capturedUserAgent).to.not.be.null;
-      expect(capturedSfdcUserAgent).to.not.be.null;
+      // User-Agent headers must follow the b2c-tooling-sdk/<version> or b2c-cli/<version> format
+      // (CLI may override; both forms start with `b2c-` and include a slash + version)
+      expect(capturedUserAgent).to.match(/^b2c-(?:cli|tooling-sdk)\/\d/);
+      expect(capturedSfdcUserAgent).to.match(/^b2c-(?:cli|tooling-sdk)\/\d/);
+      expect(capturedUserAgent).to.equal(capturedSfdcUserAgent);
     });
 
     it('applies custom auth middleware', async () => {

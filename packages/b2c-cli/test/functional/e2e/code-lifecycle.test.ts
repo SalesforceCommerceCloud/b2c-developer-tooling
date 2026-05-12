@@ -25,6 +25,7 @@ describe('Code Lifecycle E2E Tests', function () {
   let serverHostname: string;
   let codeVersionA: string;
   let codeVersionB: string;
+  let deletedVersionAId: string;
   let watchProcess: any;
   let ownSandboxId: null | string = null;
 
@@ -201,6 +202,9 @@ describe('Code Lifecycle E2E Tests', function () {
     it('should delete inactive version A', async function () {
       console.log(`Starting deletion of code version: ${codeVersionA}`);
 
+      // Capture the ID before clearing — Step 10 needs to verify this exact ID is gone.
+      deletedVersionAId = codeVersionA;
+
       const result = await runCLIWithRetry(
         ['code', 'delete', codeVersionA, '--server', serverHostname, '--force', '--json'],
         {
@@ -217,11 +221,13 @@ describe('Code Lifecycle E2E Tests', function () {
 
   describe('Step 10: Verify Code Version A Removed', function () {
     it('should not find deleted version A', async function () {
+      expect(deletedVersionAId, 'deletedVersionAId must be captured by Step 9').to.be.a('string').and.not.empty;
+
       const result = await runCLIWithRetry(['code', 'list', '--server', serverHostname, '--json']);
       const response = parseJSONOutput(result);
 
-      const found = response.data.find((v: any) => v.id === codeVersionA);
-      expect(found).to.not.exist;
+      const found = response.data.find((v: any) => v.id === deletedVersionAId);
+      expect(found, `Deleted code version '${deletedVersionAId}' should not appear in the listing`).to.not.exist;
     });
   });
 });

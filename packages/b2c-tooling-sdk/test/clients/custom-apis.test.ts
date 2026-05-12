@@ -240,7 +240,7 @@ describe('clients/custom-apis', () => {
       expect(response.status).to.equal(204);
     });
 
-    it('handles pagination for large endpoint lists', async () => {
+    it('forwards offset/limit query params and parses paged response', async () => {
       server.use(
         http.get(`${BASE_URL}/organizations/:organizationId/endpoints`, ({request}) => {
           const url = new URL(request.url);

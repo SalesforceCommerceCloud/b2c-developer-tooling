@@ -33,9 +33,14 @@ describe('commands/_test', () => {
 
     await command.run();
 
-    expect(logStub.calledWith('Using this.log() - goes through pino')).to.be.true;
-    expect(traceStub.calledWith('Trace level message')).to.be.true;
-    expect(infoStub.called).to.be.true;
+    // Structural assertions: each logger surface gets at least one non-empty
+    // string argument. The exact debug copy is not part of any contract.
+    const hadStringArg = (stub: sinon.SinonStub) =>
+      stub.getCalls().some((call) => typeof call.args[0] === 'string' && (call.args[0] as string).length > 0);
+
+    expect(hadStringArg(logStub), 'command.log called with non-empty string').to.equal(true);
+    expect(hadStringArg(traceStub), 'logger.trace called with non-empty string').to.equal(true);
+    expect(hadStringArg(infoStub), 'logger.info called with non-empty string').to.equal(true);
   });
 
   it('logs with context objects', async () => {
