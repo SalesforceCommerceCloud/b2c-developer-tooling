@@ -39,8 +39,7 @@
     <span id="connDetail" hidden></span>
 
     <main class="eb-page">
-      <!-- Toolbar: search (client-side filter of already-loaded entities) + Load/Refresh button.
-         The button's label adapts: "Load Entities" before the first load, "Refresh" after. -->
+      <!-- Toolbar: search (client-side filter of already-loaded entities) + reload button. -->
       <div class="eb-toolbar" id="searchBox">
         <div class="eb-search">
           <span class="ic ic-search" aria-hidden="true"></span>
@@ -48,7 +47,7 @@
         </div>
         <button type="button" class="btn btn-primary eb-load-btn" id="loadTablesBtn">
           <span class="ic ic-refresh" aria-hidden="true"></span>
-          <span data-role="label">Load Entities</span>
+          <span data-role="label">Reload Entities</span>
         </button>
       </div>
 
@@ -70,7 +69,7 @@
             <div class="eb-pane__empty" id="emptyState">
               <span class="ic ic-table" style="--cip-icon-size: 24px" aria-hidden="true"></span>
               <div><strong>No entities loaded yet</strong></div>
-              <div>Click <strong>Load Entities</strong> to fetch the entity list from your connected CIP tenant.</div>
+              <div>Click <strong>Reload Entities</strong> to fetch the entity list from your connected CIP tenant.</div>
             </div>
           </div>
         </section>
@@ -115,6 +114,25 @@
       let allTables = [];
       let selectedTable = null;
       let hasLoadedOnce = false;
+      let hasAutoLoadRequested = false;
+      let statusHideTimer = null;
+
+      function requestTablesLoad() {
+        if (!currentConnection || !currentConnection.tenantId) {
+          showStatus('error', 'Configure CIP connection first');
+          vscode.postMessage({command: 'configureConnection'});
+          return;
+        }
+        vscode.postMessage({command: 'loadTables'});
+      }
+
+      function autoLoadTablesIfConnected() {
+        if (hasAutoLoadRequested || hasLoadedOnce) return;
+        if ((currentConnection?.status ?? 'disconnected') !== 'connected') return;
+        if (!currentConnection?.tenantId) return;
+        hasAutoLoadRequested = true;
+        requestTablesLoad();
+      }
 
       function renderConnection() {
         const c = currentConnection || {};
@@ -146,18 +164,14 @@
         loadTablesBtn.disabled = status !== 'connected';
       }
       renderConnection();
+      autoLoadTablesIfConnected();
 
       configureBtn.addEventListener('click', () => {
         vscode.postMessage({command: 'configureConnection'});
       });
 
       loadTablesBtn.addEventListener('click', () => {
-        if (!currentConnection || !currentConnection.tenantId) {
-          showStatus('error', 'Configure CIP connection first');
-          vscode.postMessage({command: 'configureConnection'});
-          return;
-        }
-        vscode.postMessage({command: 'loadTables'});
+        requestTablesLoad();
       });
 
       searchInput.addEventListener('input', (e) => {
@@ -171,11 +185,27 @@
       }
 
       function showStatus(type, message) {
+        if (statusHideTimer) {
+          clearTimeout(statusHideTimer);
+          statusHideTimer = null;
+        }
         statusMessage.className = 'status-message ' + type;
         statusMessage.textContent = message;
+
+        if (type === 'success') {
+          statusHideTimer = setTimeout(() => {
+            statusMessage.className = 'status-message';
+            statusMessage.textContent = '';
+            statusHideTimer = null;
+          }, 2200);
+        }
       }
 
       function showStatusHtml(type, html) {
+        if (statusHideTimer) {
+          clearTimeout(statusHideTimer);
+          statusHideTimer = null;
+        }
         statusMessage.className = 'status-message ' + type;
         statusMessage.innerHTML = html;
       }
@@ -237,6 +267,7 @@
           case 'connectionState':
             currentConnection = message.connection || currentConnection;
             renderConnection();
+            autoLoadTablesIfConnected();
             break;
 
           case 'tablesLoading':
@@ -249,7 +280,7 @@
             hasLoadedOnce = true;
             showStatus('success', 'Loaded ' + message.tableCount + ' entities.');
             loadTablesBtn.disabled = (currentConnection?.status ?? 'disconnected') !== 'connected';
-            loadBtnLabel.textContent = 'Refresh';
+            loadBtnLabel.textContent = 'Reload Entities';
             searchInput.disabled = false;
             renderTablesList(allTables);
             break;

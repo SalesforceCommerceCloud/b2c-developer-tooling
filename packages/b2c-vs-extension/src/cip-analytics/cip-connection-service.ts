@@ -208,6 +208,36 @@ export class CipConnectionService implements vscode.Disposable {
     return realm.id;
   }
 
+  /** Remove a realm group and all connections within it. */
+  async removeRealmGroup(groupId: string): Promise<void> {
+    const exists = this.groups.some((g) => g.id === groupId);
+    if (!exists) return;
+
+    const removedRealmIds = new Set(this.realms.filter((r) => r.groupId === groupId).map((r) => r.id));
+
+    this.groups = this.groups.filter((g) => g.id !== groupId);
+    this.realms = this.realms.filter((r) => r.groupId !== groupId);
+    for (const realmId of removedRealmIds) {
+      this.realmStatusMap.delete(realmId);
+    }
+
+    await this.workspaceState.update(GROUPS_KEY, this.groups);
+    await this.persistRealms();
+
+    if (this.connection.groupId === groupId || removedRealmIds.has(this.connection.id)) {
+      const fallback = this.realms[0];
+      if (fallback) {
+        this.connection = {...fallback, status: 'disconnected', message: undefined};
+        await this.workspaceState.update(ACTIVE_REALM_KEY, fallback.id);
+      } else {
+        this.connection = makeBlankConnection();
+        await this.workspaceState.update(ACTIVE_REALM_KEY, undefined);
+      }
+    }
+
+    this._onDidChange.fire(this.get());
+  }
+
   /** Remove a saved realm by id. If it was active, falls back to the first remaining realm. */
   async removeRealm(id: string): Promise<void> {
     this.realms = this.realms.filter((r) => r.id !== id);

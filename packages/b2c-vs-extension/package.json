@@ -273,6 +273,12 @@
         "category": "B2C-DX Analytics"
       },
       {
+        "command": "b2c-dx.cipAnalytics.resetFromDwJson",
+        "title": "Reset from dw.json…",
+        "icon": "$(discard)",
+        "category": "B2C-DX Analytics"
+      },
+      {
         "command": "b2c-dx.cipAnalytics.openReport",
         "title": "Open Report",
         "category": "B2C-DX Analytics"
@@ -305,6 +311,12 @@
         "command": "b2c-dx.cipAnalytics.switchRealm",
         "title": "Switch Realm…",
         "icon": "$(server)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.switchConnection",
+        "title": "Switch Connection…",
+        "icon": "$(plug)",
         "category": "B2C-DX Analytics"
       },
       {
@@ -694,7 +706,7 @@
           "group": "navigation"
         },
         {
-          "command": "b2c-dx.cipAnalytics.switchRealm",
+          "command": "b2c-dx.cipAnalytics.removeRealm",
           "when": "view == b2cCipAnalytics",
           "group": "navigation@0"
         },
@@ -707,6 +719,11 @@
           "command": "b2c-dx.cipAnalytics.refresh",
           "when": "view == b2cCipAnalytics",
           "group": "navigation@4"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.resetFromDwJson",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@9"
         },
         {
           "command": "b2c-dx.codeSync.deploy",
@@ -730,6 +747,11 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "b2c-dx.cipAnalytics.switchConnection",
+          "when": "view == b2cCipAnalytics && viewItem == cipRealm",
+          "group": "inline@0"
+        },
         {
           "command": "b2c-dx.cipAnalytics.removeRealm",
           "when": "view == b2cCipAnalytics && viewItem == cipRealm",

@@ -17,6 +17,7 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import type {CipConnectionService} from './cip-connection-service.js';
+import type {CipQueryLibraryService} from './cip-query-library-service.js';
 
 type QueryResultData = {columns: string[]; rows: Array<Record<string, unknown>>};
 
@@ -43,10 +44,17 @@ export class CipWebviewManager {
 
   private readonly disposables: vscode.Disposable[] = [];
 
+  /** Tracks which open panels are Query Builder panels — only those care about library updates. */
+  private readonly queryBuilderPanels = new Set<vscode.WebviewPanel>();
+
+  /** Metadata/system table names returned by Avatica that are not tenant data entities. */
+  private static readonly NON_DATA_TABLES = new Set(['quota', 'tables', 'columns']);
+
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly configProvider: B2CExtensionConfig,
     private readonly connection: CipConnectionService,
+    private readonly queryLibrary: CipQueryLibraryService,
     private readonly log: vscode.OutputChannel,
   ) {
     // Forward connection status to every open panel so each can refresh its banner.
@@ -57,7 +65,26 @@ export class CipWebviewManager {
         }
       }),
     );
+    // Push library updates to every open Query Builder panel so save/delete from one
+    // window updates the dropdown in another.
+    this.disposables.push(
+      this.queryLibrary.onDidChange(() => {
+        for (const panel of this.queryBuilderPanels) {
+          this.sendSavedQueries(panel);
+        }
+      }),
+    );
     context.subscriptions.push(...this.disposables);
+  }
+
+  /** Send the current saved-query list (scoped to active tenant first) to a Query Builder panel. */
+  private sendSavedQueries(panel: vscode.WebviewPanel): void {
+    const conn = this.connection.get();
+    panel.webview.postMessage({
+      command: 'savedQueries',
+      queries: this.queryLibrary.list(),
+      activeTenantId: conn.tenantId || '',
+    });
   }
 
   private requireConnectedClient(): {client: CipClient; tenantId: string; host: string} | null {
@@ -83,8 +110,11 @@ export class CipWebviewManager {
   }
 
   /**
-   * Switch to a specific realm (if given) and auto-connect if not already connected.
-   * No-op if realmId is undefined or the realm is already active and connected.
+   * Switch realms synchronously (cheap — just updates state) and kick off the
+   * Avatica handshake in the background. We deliberately do NOT await
+   * `testConnection()` because it can take 2–5 seconds; webview panels open
+   * instantly and pick up the connect via the `connectionState` push instead
+   * of blocking the entire panel creation behind the network round-trip.
    */
   private async ensureRealmActive(realmId?: string): Promise<void> {
     if (!realmId) return;
@@ -93,7 +123,12 @@ export class CipWebviewManager {
       await this.connection.switchRealm(realmId);
     }
     if (this.connection.get().status !== 'connected') {
-      await this.connection.testConnection();
+      // Fire-and-forget: webview already renders a "Connecting…" pill and a
+      // "Loading entities…" placeholder while this resolves, so the user gets
+      // a responsive panel immediately.
+      void this.connection.testConnection().catch(() => {
+        /* errors surface via connectionState `disconnected` + message */
+      });
     }
   }
 
@@ -211,6 +246,7 @@ export class CipWebviewManager {
     });
 
     this.panels.set(columnKey, panel);
+    this.queryBuilderPanels.add(panel);
     panel.webview.html = this.getQueryBuilderContent(panel.webview);
 
     panel.webview.onDidReceiveMessage(
@@ -224,10 +260,14 @@ export class CipWebviewManager {
     panel.onDidDispose(
       () => {
         this.panels.delete(columnKey);
+        this.queryBuilderPanels.delete(panel);
       },
       null,
       this.context.subscriptions,
     );
+
+    // Seed the panel with the current library so the dropdown is populated immediately.
+    this.sendSavedQueries(panel);
 
     this.log.appendLine('[CIP Analytics] Opened Query Builder');
   }
@@ -321,11 +361,107 @@ export class CipWebviewManager {
         await this.exportToJson(message.params?.data);
         break;
       }
+      case 'listSavedQueries': {
+        this.sendSavedQueries(panel);
+        break;
+      }
+      case 'saveQuery': {
+        await this.saveQuery((message.params ?? {}) as Record<string, string>, panel);
+        break;
+      }
+      case 'updateQuery': {
+        await this.updateQuery((message.params ?? {}) as Record<string, string>, panel);
+        break;
+      }
+      case 'deleteQuery': {
+        await this.deleteQuery((message.params ?? {}) as Record<string, string>, panel);
+        break;
+      }
+      case 'showWarning': {
+        const warning = String(message.params?.message ?? '').trim();
+        if (warning.length > 0) {
+          void vscode.window.showWarningMessage(warning);
+        }
+        break;
+      }
+      case 'copyToClipboard': {
+        // Webview's navigator.clipboard.writeText() loses access once the panel
+        // blurs, so repeat copies fail silently. Routing through the extension
+        // host's clipboard API keeps the action reliable across consecutive clicks.
+        const text = String(message.params?.text ?? '');
+        if (text.length > 0) {
+          await vscode.env.clipboard.writeText(text);
+        }
+        break;
+      }
       case 'log': {
         this.log.appendLine(`[CIP Query Builder] ${message.params?.message ?? ''}`);
         break;
       }
     }
+  }
+
+  /**
+   * Persist a new saved query, tagged with the current tenant.
+   * If the panel posts an `id`, treat as an "save as" duplicate.
+   */
+  private async saveQuery(params: Record<string, string>, panel: vscode.WebviewPanel): Promise<void> {
+    const name = (params.name ?? '').trim();
+    const sql = (params.sql ?? '').trim();
+    if (!name || !sql) {
+      panel.webview.postMessage({command: 'savedQueryError', error: 'Name and SQL are required.'});
+      return;
+    }
+    const conn = this.connection.get();
+    if (!conn.tenantId) {
+      panel.webview.postMessage({command: 'savedQueryError', error: 'Connect to a CIP realm before saving.'});
+      return;
+    }
+    const entry = await this.queryLibrary.save({
+      name,
+      sql,
+      description: params.description,
+      tenantId: conn.tenantId,
+    });
+    this.log.appendLine(`[CIP Query Builder] Saved query "${entry.name}" (${entry.id})`);
+    panel.webview.postMessage({command: 'savedQuerySaved', query: entry});
+  }
+
+  /** Patch an existing saved query (rename / edit description / overwrite SQL). */
+  private async updateQuery(params: Record<string, string>, panel: vscode.WebviewPanel): Promise<void> {
+    const id = params.id;
+    if (!id) {
+      panel.webview.postMessage({command: 'savedQueryError', error: 'Missing query id.'});
+      return;
+    }
+    const patch: Record<string, string> = {};
+    if (typeof params.name === 'string') patch.name = params.name;
+    if (typeof params.sql === 'string') patch.sql = params.sql;
+    if (typeof params.description === 'string') patch.description = params.description;
+    const next = await this.queryLibrary.update(id, patch);
+    if (!next) {
+      panel.webview.postMessage({command: 'savedQueryError', error: 'Query not found.'});
+      return;
+    }
+    this.log.appendLine(`[CIP Query Builder] Updated query "${next.name}" (${next.id})`);
+    panel.webview.postMessage({command: 'savedQueryUpdated', query: next});
+  }
+
+  /** Delete a saved query after a native VS Code confirmation prompt. */
+  private async deleteQuery(params: Record<string, string>, panel: vscode.WebviewPanel): Promise<void> {
+    const id = params.id;
+    if (!id) return;
+    const entry = this.queryLibrary.get(id);
+    if (!entry) return;
+    const choice = await vscode.window.showWarningMessage(
+      `Delete saved query "${entry.name}"?`,
+      {modal: true, detail: 'This cannot be undone.'},
+      'Delete',
+    );
+    if (choice !== 'Delete') return;
+    await this.queryLibrary.delete(id);
+    this.log.appendLine(`[CIP Query Builder] Deleted query "${entry.name}" (${id})`);
+    panel.webview.postMessage({command: 'savedQueryDeleted', id});
   }
 
   /**
@@ -477,6 +613,8 @@ export class CipWebviewManager {
         };
         tableNames = raw.rows.map(extractName).filter((n) => n.length > 0);
       }
+
+      tableNames = tableNames.filter((name) => !CipWebviewManager.NON_DATA_TABLES.has(name.toLowerCase()));
 
       this.connection.markConnected(`${tableNames.length} tables available`);
       this.log.appendLine(

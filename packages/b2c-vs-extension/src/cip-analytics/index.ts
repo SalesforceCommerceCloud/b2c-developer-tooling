@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {CipAnalyticsTreeDataProvider} from './cip-tree-provider.js';
 import {CipConnectionService, type CipEnv} from './cip-connection-service.js';
+import {CipQueryLibraryService} from './cip-query-library-service.js';
 import {CipWebviewManager} from './cip-webview-manager.js';
 import type {CipReportEntry} from './types.js';
 
@@ -33,9 +34,9 @@ export function registerCipAnalytics(
     const realmLabel = c.label || c.tenantId || 'Not configured';
     if (c.status === 'connected') {
       statusBar.text = `$(plug) CIP: ${realmLabel}`;
-      statusBar.tooltip = `CIP Connected · ${realmLabel}\nTenant: ${c.tenantId} · Env: ${c.env}\nHost: ${c.host}\n${c.message ?? ''}\nClick to switch realm`;
+      statusBar.tooltip = `CIP Connected · ${realmLabel}\nTenant: ${c.tenantId} · Env: ${c.env}\nHost: ${c.host}\n${c.message ?? ''}\nClick to switch connection`;
       statusBar.backgroundColor = undefined;
-      statusBar.color = new vscode.ThemeColor('charts.green');
+      statusBar.color = new vscode.ThemeColor('statusBar.foreground');
       statusBar.command = 'b2c-dx.cipAnalytics.switchRealm';
     } else if (c.status === 'testing') {
       statusBar.text = `$(sync~spin) CIP: Connecting…`;
@@ -62,12 +63,20 @@ export function registerCipAnalytics(
     showCollapseAll: true,
   });
 
+  // Saved-query library (Query Builder → Save / Load).
+  const queryLibrary = new CipQueryLibraryService(context.workspaceState);
+  context.subscriptions.push(queryLibrary);
+
   // Webview manager
-  const webviewManager = new CipWebviewManager(context, configProvider, connection, log);
+  const webviewManager = new CipWebviewManager(context, configProvider, connection, queryLibrary, log);
 
   // Commands
   const refreshDisposable = vscode.commands.registerCommand('b2c-dx.cipAnalytics.refresh', async () => {
-    await connection.resetToDefaults();
+    treeProvider.refresh();
+  });
+
+  const resetFromDwDisposable = vscode.commands.registerCommand('b2c-dx.cipAnalytics.resetFromDwJson', async () => {
+    await resetFromDwJsonFlow(connection);
     treeProvider.refresh();
   });
 
@@ -154,6 +163,14 @@ export function registerCipAnalytics(
     async () => switchRealmFlow(connection),
   );
 
+  const switchConnectionDisposable = vscode.commands.registerCommand(
+    'b2c-dx.cipAnalytics.switchConnection',
+    async (arg?: string | {realmId?: string}) => {
+      const realmId = typeof arg === 'string' ? arg : arg?.realmId;
+      await switchConnectionFlow(connection, realmId);
+    },
+  );
+
   const addRealmDisposable = vscode.commands.registerCommand(
     'b2c-dx.cipAnalytics.addRealm',
     async () => addRealmFlow(connection),
@@ -161,7 +178,10 @@ export function registerCipAnalytics(
 
   const removeRealmDisposable = vscode.commands.registerCommand(
     'b2c-dx.cipAnalytics.removeRealm',
-    async () => removeRealmFlow(connection),
+    async (arg?: string | {realmId?: string}) => {
+      const realmId = typeof arg === 'string' ? arg : arg?.realmId;
+      await removeRealmFlow(connection, realmId);
+    },
   );
 
   // Refresh tree when config changes
@@ -178,8 +198,10 @@ export function registerCipAnalytics(
     configureDisposable,
     testDisposable,
     switchRealmDisposable,
+    switchConnectionDisposable,
     addRealmDisposable,
     removeRealmDisposable,
+    resetFromDwDisposable,
   );
 
   log.appendLine('[CIP Analytics] Feature registered successfully');
@@ -278,42 +300,80 @@ async function configureConnectionFlow(connection: CipConnectionService): Promis
 }
 
 /**
- * Show a QuickPick of all saved realms; switch to the selected one and auto-test.
- * Includes "Add new realm…" and "Remove realm…" items at the bottom.
+ * Show a QuickPick of realm groups first, then hand off to connection switching
+ * within the selected realm.
  */
 async function switchRealmFlow(connection: CipConnectionService): Promise<void> {
-  const realms = connection.getRealms();
+  const groups = connection.getRealmGroups();
+  const current = connection.get();
+
+  if (groups.length === 0) {
+    vscode.window.showInformationMessage('No realms configured — add one first.');
+    return;
+  }
+
+  const items = groups.map((g) => {
+    const count = connection.getConnectionsForGroup(g.id).length;
+    return {
+      label: g.label,
+      description: `${count} connection${count === 1 ? '' : 's'}`,
+      detail: g.id === current.groupId ? '$(check) Active realm' : undefined,
+      realmId: g.id,
+    };
+  });
+
+  const picked = await vscode.window.showQuickPick(items, {
+    title: 'CIP Analytics · Switch Realm',
+    placeHolder: 'Select a realm',
+    matchOnDescription: true,
+  });
+  if (!picked) return;
+
+  await switchConnectionFlow(connection, picked.realmId);
+}
+
+/**
+ * Show a QuickPick of saved tenant connections (optionally scoped to one realm group);
+ * switch to the selected one and auto-test. Includes add/edit/remove actions.
+ */
+async function switchConnectionFlow(connection: CipConnectionService, groupId?: string): Promise<void> {
+  const scoped = groupId ? connection.getConnectionsForGroup(groupId) : connection.getRealms();
+  const realms = [...scoped];
   const current = connection.get();
 
   type RealmItem = vscode.QuickPickItem & {realmId?: string; action?: 'add' | 'remove' | 'configure'};
 
   const items: RealmItem[] = realms.map((r) => ({
-    label: r.label || r.tenantId,
-    description: `${r.tenantId} · ${r.env}`,
+    label: r.tenantId,
+    description: `${r.label} · ${r.env}`,
     detail: r.id === current.id ? '$(check) Active' : undefined,
     realmId: r.id,
   }));
 
   items.push(
     {label: '', kind: vscode.QuickPickItemKind.Separator} as RealmItem,
-    {label: '$(add) Add new realm…', action: 'add'},
-    {label: '$(edit) Edit active realm…', action: 'configure'},
-    {label: '$(trash) Remove a realm…', action: 'remove'},
+    {label: '$(add) Add new connection…', action: 'add'},
+    {label: '$(edit) Edit a connection…', action: 'configure'},
+    {label: '$(trash) Remove a connection…', action: 'remove'},
   );
 
   const picked = await vscode.window.showQuickPick(items, {
-    title: 'CIP Analytics · Switch Realm',
-    placeHolder: realms.length === 0 ? 'No realms configured — add one' : 'Select a realm to connect',
+    title: groupId ? 'CIP Analytics · Switch Connection' : 'CIP Analytics · Switch Connection',
+    placeHolder: realms.length === 0 ? 'No connections configured — add one' : 'Select a tenant connection',
     matchOnDescription: true,
   });
   if (!picked) return;
 
   if (picked.action === 'add') {
-    await addRealmFlow(connection);
+    if (groupId) {
+      await addConfigurationFlow(connection, groupId);
+    } else {
+      await addRealmFlow(connection);
+    }
   } else if (picked.action === 'configure') {
-    await configureConnectionFlow(connection);
+    await editConnectionFlow(connection, groupId);
   } else if (picked.action === 'remove') {
-    await removeRealmFlow(connection);
+    await removeConnectionFlow(connection, groupId);
   } else if (picked.realmId && picked.realmId !== current.id) {
     await connection.switchRealm(picked.realmId);
     const result = await vscode.window.withProgress(
@@ -321,11 +381,42 @@ async function switchRealmFlow(connection: CipConnectionService): Promise<void> 
       () => connection.testConnection(),
     );
     if (result.status === 'connected') {
-      vscode.window.showInformationMessage(`Switched to realm "${picked.label}": ${result.message ?? ''}`);
+      vscode.window.showInformationMessage(`Switched to connection "${picked.label}": ${result.message ?? ''}`);
     } else {
-      vscode.window.showWarningMessage(`Realm "${picked.label}" not connected: ${result.message ?? 'unknown error'}`);
+      vscode.window.showWarningMessage(
+        `Connection "${picked.label}" not connected: ${result.message ?? 'unknown error'}`,
+      );
     }
   }
+}
+
+/**
+ * Pick a saved connection and run the configure flow for that specific target.
+ */
+async function editConnectionFlow(connection: CipConnectionService, groupId?: string): Promise<void> {
+  const realms = groupId ? connection.getConnectionsForGroup(groupId) : connection.getRealms();
+  if (realms.length === 0) {
+    vscode.window.showInformationMessage('No connections to edit.');
+    return;
+  }
+
+  const current = connection.get();
+  const items = realms.map((r) => ({
+    label: r.tenantId,
+    description: `${r.label} · ${r.env}`,
+    detail: r.id === current.id ? '$(check) Active' : undefined,
+    realmId: r.id,
+  }));
+
+  const picked = await vscode.window.showQuickPick(items, {
+    title: groupId ? 'CIP Analytics · Edit Connection' : 'CIP Analytics · Edit Connection',
+    placeHolder: 'Select a connection to edit',
+    matchOnDescription: true,
+  });
+  if (!picked) return;
+
+  await connection.switchRealm(picked.realmId);
+  await configureConnectionFlow(connection);
 }
 
 /**
@@ -350,34 +441,101 @@ async function addRealmFlow(connection: CipConnectionService): Promise<void> {
 }
 
 /**
- * Pick a realm to delete. Cannot delete the last remaining realm.
+ * Remove a realm group (and all connections under it).
  */
-async function removeRealmFlow(connection: CipConnectionService): Promise<void> {
-  const realms = connection.getRealms();
-  if (realms.length === 0) {
+async function removeRealmFlow(connection: CipConnectionService, groupId?: string): Promise<void> {
+  const groups = connection.getRealmGroups();
+  if (groups.length === 0) {
     vscode.window.showInformationMessage('No realms to remove.');
     return;
   }
 
+  let target = groups.find((g) => g.id === groupId);
+  if (!target) {
+    const active = connection.get();
+    const items = groups.map((g) => {
+      const count = connection.getConnectionsForGroup(g.id).length;
+      return {
+        label: g.label,
+        description: `${count} connection${count === 1 ? '' : 's'}`,
+        detail: g.id === active.groupId ? '$(check) Active realm' : undefined,
+        realmId: g.id,
+      };
+    });
+
+    const picked = await vscode.window.showQuickPick(items, {
+      title: 'CIP Analytics · Remove Realm',
+      placeHolder: 'Select a realm to remove',
+      matchOnDescription: true,
+    });
+    if (!picked) return;
+    target = groups.find((g) => g.id === picked.realmId);
+  }
+  if (!target) return;
+
+  const connectionCount = connection.getConnectionsForGroup(target.id).length;
+  const confirm = await vscode.window.showWarningMessage(
+    `Remove realm "${target.label}" and its ${connectionCount} connection${connectionCount === 1 ? '' : 's'}?`,
+    {modal: true},
+    'Remove',
+  );
+  if (confirm !== 'Remove') return;
+
+  await connection.removeRealmGroup(target.id);
+  vscode.window.showInformationMessage(`Realm "${target.label}" removed.`);
+}
+
+/**
+ * Destructive reset: replace stored realms/connections with dw.json-derived defaults.
+ */
+async function resetFromDwJsonFlow(connection: CipConnectionService): Promise<void> {
+  const currentGroups = connection.getRealmGroups();
+  const currentConnections = connection.getRealms();
+
+  const confirm = await vscode.window.showWarningMessage(
+    'Reset CIP realms from dw.json? This removes manually added realms and connections.',
+    {
+      modal: true,
+      detail: `Current saved realms: ${currentGroups.length}, connections: ${currentConnections.length}`,
+    },
+    'Reset',
+  );
+
+  if (confirm !== 'Reset') return;
+
+  await connection.resetToDefaults();
+  vscode.window.showInformationMessage('CIP realms reset from dw.json.');
+}
+
+/**
+ * Pick a connection to delete. Cannot delete the last remaining connection.
+ */
+async function removeConnectionFlow(connection: CipConnectionService, groupId?: string): Promise<void> {
+  const realms = groupId ? connection.getConnectionsForGroup(groupId) : connection.getRealms();
+  if (realms.length === 0) {
+    vscode.window.showInformationMessage('No connections to remove.');
+    return;
+  }
+
   const items = realms.map((r) => ({
-    label: r.label || r.tenantId,
-    description: `${r.tenantId} · ${r.env}`,
+    label: r.tenantId,
+    description: `${r.label} · ${r.env}`,
     realmId: r.id,
   }));
 
   const picked = await vscode.window.showQuickPick(items, {
-    title: 'CIP Analytics · Remove Realm',
-    placeHolder: 'Select a realm to remove',
+    title: groupId ? 'CIP Analytics · Remove Connection (Realm)' : 'CIP Analytics · Remove Connection',
+    placeHolder: 'Select a connection to remove',
   });
   if (!picked) return;
 
   const confirm = await vscode.window.showWarningMessage(
-    `Remove realm "${picked.label}"?`,
+    `Remove connection "${picked.label}"?`,
     {modal: true},
     'Remove',
   );
   if (confirm !== 'Remove') return;
 
   await connection.removeRealm(picked.realmId);
-  vscode.window.showInformationMessage(`Realm "${picked.label}" removed.`);
+  vscode.window.showInformationMessage(`Connection "${picked.label}" removed.`);
 }

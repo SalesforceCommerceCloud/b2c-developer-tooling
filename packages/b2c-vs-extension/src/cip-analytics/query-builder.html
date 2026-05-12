@@ -52,6 +52,25 @@
           <span data-role="label">Reload Entities</span>
         </button>
 
+        <!-- Saved-query library: dropdown trigger plus a Save action.
+             The menu is rendered inline below; visibility is toggled via .open. -->
+        <div class="saved-queries">
+          <button type="button" id="savedQueriesBtn" class="btn btn-secondary" aria-haspopup="true" aria-expanded="false">
+            <span class="ic ic-bookmark"></span>
+            <span>Saved Queries</span>
+            <span class="count-badge saved-queries__count" id="savedQueriesCount" hidden>0</span>
+            <span class="saved-queries__caret">▾</span>
+          </button>
+          <div class="saved-queries__menu" id="savedQueriesMenu" role="menu" hidden>
+            <div class="saved-queries__list" id="savedQueriesList"></div>
+          </div>
+        </div>
+
+        <button type="button" id="saveQueryBtn" class="btn btn-secondary" title="Save the current query">
+          <span class="ic ic-bookmark"></span>
+          <span>Save</span>
+        </button>
+
         <div class="view-toggle qb-view-toggle">
           <button id="builderViewBtn" class="active">Builder</button>
           <button id="editorViewBtn">SQL</button>
@@ -304,6 +323,43 @@
 
     <div id="statusBar" style="display: none"></div>
 
+    <!-- Save / Rename modal. Reused for both "Save Current Query" and "Rename" — the
+         submit handler reads `data-mode` to decide which command to post. -->
+    <div class="qb-modal" id="saveQueryModal" role="dialog" aria-modal="true" aria-labelledby="saveQueryModalTitle" hidden>
+      <div class="qb-modal__backdrop" data-close></div>
+      <div class="qb-modal__panel">
+        <div class="qb-modal__head">
+          <h2 class="qb-modal__title" id="saveQueryModalTitle">Save Query</h2>
+          <button type="button" class="qb-modal__close" data-close aria-label="Close">✕</button>
+        </div>
+        <form class="qb-modal__body" id="saveQueryForm" data-mode="save">
+          <div class="field">
+            <label class="label" for="saveQueryName">Name <span class="required">*</span></label>
+            <input type="text" id="saveQueryName" class="input" placeholder="e.g. Top SKUs last 7 days" maxlength="120" required />
+          </div>
+          <div class="field">
+            <label class="label" for="saveQueryDesc">Description</label>
+            <input type="text" id="saveQueryDesc" class="input" placeholder="Optional — short note about this query" maxlength="240" />
+          </div>
+          <div class="qb-modal__sql-preview">
+            <div class="qb-modal__sql-label">SQL</div>
+            <textarea
+              id="saveQuerySqlPreview"
+              class="qb-modal__sql-input"
+              spellcheck="false"
+              rows="6"
+              placeholder="SELECT * FROM ccdw_aggr_sales_summary LIMIT 10"
+            ></textarea>
+          </div>
+          <div class="qb-modal__error" id="saveQueryError" hidden></div>
+        </form>
+        <div class="qb-modal__foot">
+          <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+          <button type="submit" form="saveQueryForm" class="btn btn-primary" id="saveQuerySubmit">Save</button>
+        </div>
+      </div>
+    </div>
+
     <script nonce="__NONCE__">
       const vscode = acquireVsCodeApi();
 
@@ -367,6 +423,26 @@
         toggleResultsBtn: document.getElementById('toggleResultsBtn'),
         previewPanel: document.getElementById('previewPanel'),
         statusBar: document.getElementById('statusBar'),
+        // Saved-query library UI.
+        saveQueryBtn: document.getElementById('saveQueryBtn'),
+        savedQueriesBtn: document.getElementById('savedQueriesBtn'),
+        savedQueriesMenu: document.getElementById('savedQueriesMenu'),
+        savedQueriesList: document.getElementById('savedQueriesList'),
+        savedQueriesCount: document.getElementById('savedQueriesCount'),
+        saveQueryModal: document.getElementById('saveQueryModal'),
+        saveQueryForm: document.getElementById('saveQueryForm'),
+        saveQueryName: document.getElementById('saveQueryName'),
+        saveQueryDesc: document.getElementById('saveQueryDesc'),
+        saveQuerySqlPreview: document.getElementById('saveQuerySqlPreview'),
+        saveQuerySubmit: document.getElementById('saveQuerySubmit'),
+        saveQueryError: document.getElementById('saveQueryError'),
+        saveQueryModalTitle: document.getElementById('saveQueryModalTitle'),
+      };
+
+      // Saved-query library state. Mirror what the extension persists; updated via `savedQueries` messages.
+      const library = {
+        all: [],
+        activeTenantId: '',
       };
 
       function renderConnection() {
@@ -409,6 +485,20 @@
       let tablesEverLoaded = false;
 
       renderConnection();
+      // The initial __CONNECTION_JSON__ snapshot reflects the realm/state at HTML-render
+      // time. When the user opens the Query Builder from the sidebar with a realm
+      // already connected, no `connectionState` message arrives (the connect event fired
+      // before the panel was registered), so the auto-load handler in the message
+      // dispatch never runs. Trigger it once here so tables auto-populate on open.
+      autoLoadTablesIfNeeded();
+      // If a tenant is configured but we're not yet `connected`, the connect is in
+      // flight (kicked off by ensureRealmActive on the extension side). Show the
+      // "Loading entities…" placeholder immediately so the panel feels responsive
+      // — the actual fetch will start when `connectionState` arrives with status=connected.
+      if (currentConnection && currentConnection.tenantId && currentConnection.status !== 'connected') {
+        renderTablesLoadingState();
+        setStatusHtml('loading', '<span class="spinner"></span> Connecting...');
+      }
 
       el.configureBtn.addEventListener('click', () => {
         vscode.postMessage({command: 'configureConnection'});
@@ -563,6 +653,7 @@
       el.sqlEditor.addEventListener('input', () => {
         state.customSql = el.sqlEditor.value;
         if (state.currentView === 'editor') {
+          renderGeneratedSql(state.customSql);
           el.runQueryBtn.disabled = !state.customSql.trim();
         }
       });
@@ -579,31 +670,74 @@
         }
       });
 
+      // Copy via the extension host. `navigator.clipboard.writeText()` only works while the
+      // webview holds a transient user activation; after the first paste-and-blur, subsequent
+      // calls reject silently and the user has to hide/show the panel to "fix" it. Posting
+      // the SQL to the extension lets `vscode.env.clipboard.writeText()` do the work — that
+      // path doesn't depend on the webview's focus state, so repeat copies stay reliable.
       el.copySqlBtn.addEventListener('click', () => {
         const sql = state.currentView === 'editor' ? state.customSql : buildSql();
         if (!sql || sql.startsWith('--')) return;
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(sql).then(
-            () => {
-              const original = el.copySqlBtn.innerHTML;
-              el.copySqlBtn.innerHTML = '<span class="ic ic-check"></span><span>Copied</span>';
-              setTimeout(() => {
-                el.copySqlBtn.innerHTML = original;
-              }, 1400);
-            },
-            () => {},
-          );
-        }
+        vscode.postMessage({command: 'copyToClipboard', params: {text: sql}});
+        const original = el.copySqlBtn.innerHTML;
+        el.copySqlBtn.innerHTML = '<span class="ic ic-check"></span><span>Copied</span>';
+        setTimeout(() => {
+          el.copySqlBtn.innerHTML = original;
+        }, 1400);
       });
 
       function setStatus(type, message) {
+        el.statusBar.style.display = '';
         el.statusBar.className = 'footer ' + (type || '');
         el.statusBar.textContent = message;
       }
 
       function setStatusHtml(type, html) {
+        el.statusBar.style.display = '';
         el.statusBar.className = 'footer ' + (type || '');
         el.statusBar.innerHTML = html;
+      }
+
+      function setRunQueryBusy(busy) {
+        const btn = el.runQueryBtn;
+        if (!btn) return;
+        btn.classList.toggle('is-loading', !!busy);
+        btn.setAttribute('aria-busy', busy ? 'true' : 'false');
+        const icon = btn.querySelector('.ic, .spinner');
+        const label = btn.querySelector('span:last-child');
+        if (busy) {
+          if (icon) {
+            icon.className = 'spinner spinner--md';
+          }
+          if (label) {
+            label.textContent = 'Running…';
+          }
+        } else {
+          if (icon) {
+            icon.className = 'ic ic-play';
+          }
+          if (label) {
+            label.textContent = 'Run Query';
+          }
+        }
+      }
+
+      function renderQueryRunningState() {
+        el.resultsPanel.classList.add('visible');
+        el.toggleResultsBtn.disabled = true;
+        el.toggleResultsBtn.setAttribute('aria-expanded', 'true');
+        el.toggleResultsBtn.querySelector('[data-role="label"]').textContent = 'Hide Results';
+        el.resultsBadges.replaceChildren();
+        el.exportCsvBtn.disabled = true;
+        el.exportJsonBtn.disabled = true;
+
+        el.resultsBody.replaceChildren();
+        const loading = document.createElement('div');
+        loading.className = 'loading-panel';
+        loading.innerHTML =
+          '<span class="spinner spinner--lg"></span>' +
+          '<div class="loading-panel__title">Running query…</div>';
+        el.resultsBody.appendChild(loading);
       }
 
       function switchView(view) {
@@ -1083,9 +1217,30 @@
         return highlighted;
       }
 
+      function renderGeneratedSql(sql) {
+        const text = sql && sql.trim() ? sql : '-- Select an entity to generate query';
+        el.queryPreviewText.innerHTML = highlightSql(text);
+      }
+
       function updateQueryPreview() {
         const sql = buildSql();
-        el.queryPreviewText.innerHTML = highlightSql(sql);
+        renderGeneratedSql(sql);
+        // Keep the SQL panel text in sync with Builder changes so it always matches
+        // the Generated SQL section.
+        const hasQuery = sql && !sql.startsWith('--');
+        const nextSql = hasQuery ? sql : '';
+        el.sqlEditor.value = nextSql;
+        state.customSql = nextSql;
+        // Auto-reveal the SQL preview as soon as the builder has produced something
+        // meaningful (i.e. an entity has been selected). Previously the panel started
+        // `hidden` and only opened on Show SQL, so users picking a table + columns
+        // never saw the generated SQL update without an extra click.
+        if (sql && !sql.startsWith('--') && el.previewPanel.hidden) {
+          el.previewPanel.hidden = false;
+          el.toggleSqlBtn.setAttribute('aria-expanded', 'true');
+          const lbl = el.toggleSqlBtn.querySelector('[data-role="label"]');
+          if (lbl) lbl.textContent = 'Hide SQL';
+        }
       }
 
       function runQuery() {
@@ -1101,7 +1256,9 @@
           return;
         }
 
+        setRunQueryBusy(true);
         el.runQueryBtn.disabled = true;
+        renderQueryRunningState();
         setStatusHtml('loading', '<span class="spinner"></span> Executing query...');
 
         vscode.postMessage({
@@ -1124,12 +1281,6 @@
         countBadge.className = 'badge';
         countBadge.textContent = (data.rowCount || 0).toLocaleString() + ' rows';
         el.resultsBadges.appendChild(countBadge);
-        if (data.executionTime) {
-          const timeBadge = document.createElement('span');
-          timeBadge.className = 'badge neutral';
-          timeBadge.textContent = '⏱ ' + data.executionTime + 'ms';
-          el.resultsBadges.appendChild(timeBadge);
-        }
 
         if (!data.rows || data.rows.length === 0) {
           el.resultsBody.replaceChildren();
@@ -1260,10 +1411,13 @@
           }
 
           case 'queryExecuting':
+            setRunQueryBusy(true);
+            renderQueryRunningState();
             setStatusHtml('loading', '<span class="spinner"></span> Executing query...');
             break;
 
           case 'queryResult': {
+            setRunQueryBusy(false);
             const isConn = (currentConnection?.status ?? 'disconnected') === 'connected';
             el.runQueryBtn.disabled = !isConn;
             renderResults(message.data);
@@ -1275,13 +1429,233 @@
           }
 
           case 'queryError': {
+            setRunQueryBusy(false);
             const isConn = (currentConnection?.status ?? 'disconnected') === 'connected';
             el.runQueryBtn.disabled = !isConn;
+            el.toggleResultsBtn.disabled = false;
             setStatus('error', message.error);
+            break;
+          }
+
+          case 'savedQueries': {
+            library.all = Array.isArray(message.queries) ? message.queries : [];
+            library.activeTenantId = String(message.activeTenantId || '');
+            renderSavedQueriesMenu();
+            break;
+          }
+          case 'savedQuerySaved':
+          case 'savedQueryUpdated': {
+            // The library will also fire a fresh `savedQueries` push, but apply
+            // the success state immediately so the modal closes without a flicker.
+            closeSaveQueryModal();
+            setStatus('success', 'Saved.');
+            break;
+          }
+          case 'savedQueryDeleted': {
+            setStatus('success', 'Deleted.');
+            break;
+          }
+          case 'savedQueryError': {
+            showSaveQueryError(String(message.error || 'Could not save query.'));
             break;
           }
         }
       });
+
+      // === Saved-query library ============================================
+      // Renders the dropdown list, scoping queries to the active tenant first
+      // and grouping cross-tenant queries beneath a divider.
+      function renderSavedQueriesMenu() {
+        const list = el.savedQueriesList;
+        list.replaceChildren();
+
+        const total = library.all.length;
+        if (total === 0) {
+          el.savedQueriesCount.hidden = true;
+          const empty = document.createElement('div');
+          empty.className = 'saved-queries__empty';
+          empty.textContent = 'No saved queries yet — use Save to bookmark this query.';
+          list.appendChild(empty);
+          return;
+        }
+        el.savedQueriesCount.hidden = false;
+        el.savedQueriesCount.textContent = String(total);
+
+        const sameTenant = library.all.filter((q) => q.tenantId === library.activeTenantId);
+        const otherTenant = library.all.filter((q) => q.tenantId !== library.activeTenantId);
+
+        sameTenant.forEach((q) => list.appendChild(renderSavedQueryRow(q, false)));
+        if (otherTenant.length > 0) {
+          if (sameTenant.length > 0) {
+            const sep = document.createElement('div');
+            sep.className = 'saved-queries__sep';
+            sep.textContent = 'Other tenants';
+            list.appendChild(sep);
+          }
+          otherTenant.forEach((q) => list.appendChild(renderSavedQueryRow(q, true)));
+        }
+      }
+
+      function renderSavedQueryRow(q, dimmed) {
+        const row = document.createElement('div');
+        row.className = 'saved-queries__row' + (dimmed ? ' is-other' : '');
+        row.dataset.id = q.id;
+
+        const label = document.createElement('button');
+        label.type = 'button';
+        label.className = 'saved-queries__label';
+        label.title = q.description ? q.name + ' — ' + q.description : q.name;
+
+        const name = document.createElement('span');
+        name.className = 'saved-queries__name';
+        name.textContent = q.name;
+        label.appendChild(name);
+
+        const meta = document.createElement('span');
+        meta.className = 'saved-queries__meta';
+        const parts = [];
+        if (dimmed) parts.push(q.tenantId);
+        if (q.description) parts.push(q.description);
+        meta.textContent = parts.join(' · ');
+        if (parts.length) label.appendChild(meta);
+
+        label.addEventListener('click', () => loadSavedQuery(q));
+        row.appendChild(label);
+
+        const renameBtn = document.createElement('button');
+        renameBtn.type = 'button';
+        renameBtn.className = 'saved-queries__action';
+        renameBtn.title = 'Rename / edit';
+        renameBtn.textContent = '✎';
+        renameBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openSaveQueryModal({mode: 'rename', query: q});
+        });
+        row.appendChild(renameBtn);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'saved-queries__action saved-queries__action--danger';
+        deleteBtn.title = 'Delete';
+        deleteBtn.textContent = '✕';
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          vscode.postMessage({command: 'deleteQuery', params: {id: q.id}});
+        });
+        row.appendChild(deleteBtn);
+
+        return row;
+      }
+
+      // Loading always lands in SQL view — round-tripping back into the visual
+      // builder isn't lossless and would surprise users.
+      function loadSavedQuery(q) {
+        closeSavedQueriesMenu();
+        if (state.currentView !== 'editor') switchView('editor');
+        el.sqlEditor.value = q.sql;
+        state.customSql = q.sql;
+        const isConn = (currentConnection?.status ?? 'disconnected') === 'connected';
+        el.runQueryBtn.disabled = !(isConn && state.customSql.trim());
+        setStatus('success', 'Loaded "' + q.name + '" — review and run.');
+      }
+
+      function toggleSavedQueriesMenu() {
+        const open = !el.savedQueriesMenu.hidden;
+        if (open) closeSavedQueriesMenu();
+        else openSavedQueriesMenu();
+      }
+      function openSavedQueriesMenu() {
+        el.savedQueriesMenu.hidden = false;
+        el.savedQueriesBtn.setAttribute('aria-expanded', 'true');
+        document.addEventListener('click', onMenuOutsideClick, true);
+      }
+      function closeSavedQueriesMenu() {
+        el.savedQueriesMenu.hidden = true;
+        el.savedQueriesBtn.setAttribute('aria-expanded', 'false');
+        document.removeEventListener('click', onMenuOutsideClick, true);
+      }
+      function onMenuOutsideClick(e) {
+        if (!el.savedQueriesMenu.contains(e.target) && e.target !== el.savedQueriesBtn && !el.savedQueriesBtn.contains(e.target)) {
+          closeSavedQueriesMenu();
+        }
+      }
+
+      el.savedQueriesBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSavedQueriesMenu();
+      });
+
+      // === Save modal ====================================================
+      el.saveQueryBtn.addEventListener('click', () => {
+        const sql = state.currentView === 'editor' ? state.customSql : buildSql();
+        if (!sql || sql.startsWith('--')) {
+          const msg = 'Build or type a query before saving.';
+          setStatus('error', msg);
+          vscode.postMessage({command: 'showWarning', params: {message: msg}});
+          return;
+        }
+        openSaveQueryModal({mode: 'save', sql});
+      });
+
+      function openSaveQueryModal(opts) {
+        const mode = opts.mode || 'save';
+        const sql = mode === 'rename' ? opts.query.sql : (opts.sql || '');
+        el.saveQueryForm.dataset.mode = mode;
+        el.saveQueryForm.dataset.id = mode === 'rename' ? opts.query.id : '';
+        el.saveQueryModalTitle.textContent = mode === 'rename' ? 'Edit Saved Query' : 'Save Query';
+        el.saveQuerySubmit.textContent = mode === 'rename' ? 'Update' : 'Save';
+        el.saveQueryName.value = mode === 'rename' ? opts.query.name : suggestQueryName();
+        el.saveQueryDesc.value = mode === 'rename' ? (opts.query.description || '') : '';
+        el.saveQuerySqlPreview.value = sql;
+        el.saveQueryError.hidden = true;
+        el.saveQueryError.textContent = '';
+        el.saveQueryModal.hidden = false;
+        setTimeout(() => el.saveQueryName.focus(), 30);
+      }
+      function closeSaveQueryModal() {
+        el.saveQueryModal.hidden = true;
+      }
+      function showSaveQueryError(msg) {
+        el.saveQueryError.textContent = msg;
+        el.saveQueryError.hidden = false;
+      }
+
+      function suggestQueryName() {
+        if (state.currentTable) return state.currentTable;
+        const sql = state.customSql.trim();
+        const fromMatch = sql.match(/from\s+([\w."`]+)/i);
+        if (fromMatch) return fromMatch[1].replace(/[`"]/g, '');
+        return '';
+      }
+
+      el.saveQueryModal.addEventListener('click', (e) => {
+        if (e.target.dataset && e.target.dataset.close !== undefined) closeSaveQueryModal();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !el.saveQueryModal.hidden) closeSaveQueryModal();
+      });
+
+      el.saveQueryForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const mode = el.saveQueryForm.dataset.mode || 'save';
+        const id = el.saveQueryForm.dataset.id || '';
+        const name = el.saveQueryName.value.trim();
+        const description = el.saveQueryDesc.value.trim();
+        const sql = el.saveQuerySqlPreview.value || '';
+        if (!name) {
+          showSaveQueryError('Enter a name for this query.');
+          return;
+        }
+        if (mode === 'rename') {
+          vscode.postMessage({command: 'updateQuery', params: {id, name, description, sql}});
+        } else {
+          vscode.postMessage({command: 'saveQuery', params: {name, description, sql}});
+        }
+      });
+
+      // Ask for the initial library snapshot (the extension also seeds it on open,
+      // but a re-request on reload guarantees we recover from disconnects).
+      vscode.postMessage({command: 'listSavedQueries'});
 
       updateQueryPreview();
     </script>

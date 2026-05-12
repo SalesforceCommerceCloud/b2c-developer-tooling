@@ -38,7 +38,7 @@ export class CipAddConfigTreeItem extends vscode.TreeItem {
   readonly realmId: string;
 
   constructor(groupId: string) {
-    super('Add configuration…', vscode.TreeItemCollapsibleState.Collapsed);
+    super('Add configuration…', vscode.TreeItemCollapsibleState.None);
     this.realmId = groupId;
     this.contextValue = 'cipAddConfig';
     this.iconPath = new vscode.ThemeIcon('add');
@@ -67,12 +67,10 @@ export class CipRealmInfoTreeItem extends vscode.TreeItem {
     this.tooltip = new vscode.MarkdownString(
       `**${realm.tenantId}**  \nEnv: ${realm.env}  \nHost: ${realm.host}\n\n_Click pencil icon to edit_`,
     );
-    // `testing.iconPassed` / `iconFailed` are the same theme tokens VS Code uses for
-    // pass/fail states in the testing UI — every built-in theme paints them as a
-    // crisp green / red. `charts.green` is unreliable: some themes leave it neutral
-    // grey, which is what produced the dark-grey "connected" dot users were seeing.
+    // Use VS Code's semantic success-green token for connected state so the dot
+    // stays consistent with other success indicators across themes.
     if (status === 'connected') {
-      this.iconPath = new vscode.ThemeIcon('pass-filled', new vscode.ThemeColor('testing.iconPassed'));
+      this.iconPath = new vscode.ThemeIcon('circle-filled', new vscode.ThemeColor('testing.iconPassed'));
     } else if (status === 'testing') {
       this.iconPath = new vscode.ThemeIcon('sync~spin', new vscode.ThemeColor('charts.yellow'));
     } else {
