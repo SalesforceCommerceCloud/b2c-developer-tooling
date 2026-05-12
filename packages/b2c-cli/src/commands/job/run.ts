@@ -4,13 +4,18 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {JobCommand, type B2COperationContext} from '@salesforce/b2c-tooling-sdk/cli';
+import {JobCommand, BackendDispatcher, type B2COperationContext} from '@salesforce/b2c-tooling-sdk/cli';
 import {
-  executeJob,
-  waitForJob,
-  JobExecutionError,
-  type JobExecution,
+  executeJob as ocapiExecuteJob,
+  getJobExecution as ocapiGetJobExecution,
+  scapiExecuteJob,
+  scapiGetJobExecution,
+  mapOcapiExecution,
+  waitForJobExecution,
+  CanonicalJobExecutionError,
+  type JobExecutionInfo,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import type {ScapiJobsClient} from '@salesforce/b2c-tooling-sdk/clients';
 import {t, withDocs} from '../../i18n/index.js';
 
 export default class JobRun extends JobCommand<typeof JobRun> {
@@ -76,12 +81,7 @@ export default class JobRun extends JobCommand<typeof JobRun> {
 
   static hiddenAliases = ['job:run'];
 
-  protected operations = {
-    executeJob,
-    waitForJob,
-  };
-
-  async run(): Promise<JobExecution> {
+  async run(): Promise<JobExecutionInfo> {
     this.requireOAuthCredentials();
 
     const {jobId} = this.args;
@@ -95,8 +95,6 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       'show-log': showLog,
     } = this.flags;
 
-    // Safety evaluation — check rules for this job before executing.
-    // Command-level rules are already evaluated generically in BaseCommand.init().
     const jobEvaluation = this.safetyGuard.evaluate({type: 'job', jobId});
     if (jobEvaluation.action === 'block') {
       this.error(jobEvaluation.reason, {exit: 1});
@@ -105,11 +103,12 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       await this.confirmOrBlock(jobEvaluation);
     }
 
-    // Parse parameters or body
     const parameters = this.parseParameters(param || []);
     const rawBody = body ? this.parseBody(body) : undefined;
 
-    // Create lifecycle context
+    const dispatcher = this.createJobsDispatcher();
+    const tenantId = this.resolvedConfig.values.tenantId;
+
     const context = this.createContext('job:run', {
       jobId,
       parameters: rawBody ? undefined : parameters,
@@ -118,7 +117,6 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       hostname: this.resolvedConfig.values.hostname,
     });
 
-    // Run beforeOperation hooks - check for skip
     const beforeResult = await this.runBeforeHooks(context);
     if (beforeResult.skip) {
       this.log(
@@ -126,8 +124,11 @@ export default class JobRun extends JobCommand<typeof JobRun> {
           reason: beforeResult.skipReason || 'skipped by plugin',
         }),
       );
-      // Return a mock execution for JSON output
-      return {execution_status: 'finished', exit_status: {code: 'skipped'}} as unknown as JobExecution;
+      return {
+        id: '',
+        jobId,
+        executionStatus: 'finished',
+      } as unknown as JobExecutionInfo;
     }
 
     this.log(
@@ -137,36 +138,46 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       }),
     );
 
-    let execution: JobExecution;
+    const ocapiOptions = {
+      parameters: rawBody ? undefined : parameters,
+      body: rawBody,
+      waitForRunning: !noWaitRunning,
+    };
+
+    let execution: JobExecutionInfo;
     try {
-      execution = await this.operations.executeJob(this.instance, jobId, {
-        parameters: rawBody ? undefined : parameters,
-        body: rawBody,
-        waitForRunning: !noWaitRunning,
+      execution = await dispatcher.run({
+        scapi: (client) =>
+          scapiExecuteJob(client, jobId, {
+            ...ocapiOptions,
+            tenantId: tenantId!,
+          }),
+        ocapi: async () => mapOcapiExecution(await ocapiExecuteJob(this.instance, jobId, ocapiOptions)),
       });
     } catch (error) {
       this.handleExecutionError(error, context);
     }
 
+    this.logger.debug(`Used ${dispatcher.active} backend for job execution`);
+
     this.log(
       t('commands.job.run.started', 'Job started: {{executionId}} (status: {{status}})', {
         executionId: execution.id,
-        status: execution.execution_status,
+        status: execution.executionStatus,
       }),
     );
 
-    // Wait for completion if requested
     if (wait) {
       execution = await this.waitForJobCompletion({
+        dispatcher,
         jobId,
-        executionId: execution.id!,
+        executionId: execution.id,
         timeout,
         pollInterval,
         showLog,
         context,
       });
     } else {
-      // Not waiting - run afterOperation hooks with current state
       await this.runAfterHooks(context, {
         success: true,
         duration: Date.now() - context.startTime,
@@ -178,9 +189,6 @@ export default class JobRun extends JobCommand<typeof JobRun> {
   }
 
   private handleExecutionError(error: unknown, context: B2COperationContext): never {
-    // Fire-and-forget: we're already on the error path and rethrow below; surface
-    // hook failures in the debug log so they aren't completely invisible, but
-    // don't shadow the original error.
     this.runAfterHooks(context, {
       success: false,
       error: error instanceof Error ? error : new Error(String(error)),
@@ -196,21 +204,20 @@ export default class JobRun extends JobCommand<typeof JobRun> {
   }
 
   private async handleWaitError(error: unknown, showLog: boolean, context: B2COperationContext): Promise<never> {
-    // Run afterOperation hooks with failure
     await this.runAfterHooks(context, {
       success: false,
       error: error instanceof Error ? error : new Error(String(error)),
       duration: Date.now() - context.startTime,
-      data: error instanceof JobExecutionError ? error.execution : undefined,
+      data: error instanceof CanonicalJobExecutionError ? error.execution : undefined,
     });
 
-    if (error instanceof JobExecutionError) {
+    if (error instanceof CanonicalJobExecutionError) {
       if (showLog) {
         await this.showJobLog(error.execution);
       }
       this.error(
         t('commands.job.run.jobFailed', 'Job failed: {{status}}', {
-          status: error.execution.exit_status?.code || 'ERROR',
+          status: error.execution.exitStatus?.code || 'ERROR',
         }),
       );
     }
@@ -241,18 +248,26 @@ export default class JobRun extends JobCommand<typeof JobRun> {
   }
 
   private async waitForJobCompletion(options: {
+    dispatcher: BackendDispatcher<ScapiJobsClient>;
     jobId: string;
     executionId: string;
     timeout: number | undefined;
     pollInterval: number | undefined;
     showLog: boolean;
     context: B2COperationContext;
-  }): Promise<JobExecution> {
-    const {jobId, executionId, timeout, pollInterval, showLog, context} = options;
+  }): Promise<JobExecutionInfo> {
+    const {dispatcher, jobId, executionId, timeout, pollInterval, showLog, context} = options;
+    const tenantId = this.resolvedConfig.values.tenantId;
     this.log(t('commands.job.run.waiting', 'Waiting for job to complete...'));
 
     try {
-      const execution = await this.operations.waitForJob(this.instance, jobId, executionId, {
+      const getExecution = (jid: string, eid: string) =>
+        dispatcher.run<JobExecutionInfo>({
+          scapi: (client) => scapiGetJobExecution(client, jid, eid, tenantId!),
+          ocapi: async () => mapOcapiExecution(await ocapiGetJobExecution(this.instance, jid, eid)),
+        });
+
+      const execution = await waitForJobExecution(getExecution, jobId, executionId, {
         timeoutSeconds: timeout,
         pollIntervalSeconds: pollInterval,
         onPoll: (info) => {
@@ -270,12 +285,11 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       const durationSec = execution.duration ? (execution.duration / 1000).toFixed(1) : 'N/A';
       this.log(
         t('commands.job.run.completed', 'Job completed: {{status}} (duration: {{duration}}s)', {
-          status: execution.exit_status?.code || execution.execution_status,
+          status: execution.exitStatus?.code || execution.executionStatus,
           duration: durationSec,
         }),
       );
 
-      // Run afterOperation hooks with success
       await this.runAfterHooks(context, {
         success: true,
         duration: Date.now() - context.startTime,

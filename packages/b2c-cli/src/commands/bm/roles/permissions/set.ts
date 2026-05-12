@@ -5,11 +5,11 @@
  */
 import fs from 'node:fs';
 import {Args, Flags} from '@oclif/core';
-import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {setBmRolePermissions, type BmRolePermissions} from '@salesforce/b2c-tooling-sdk/operations/bm-roles';
+import {BmCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {type RolePermissionsInfo} from '@salesforce/b2c-tooling-sdk/operations/bm-roles';
 import {t} from '../../../../i18n/index.js';
 
-export default class BmRolesPermissionsSet extends InstanceCommand<typeof BmRolesPermissionsSet> {
+export default class BmRolesPermissionsSet extends BmCommand<typeof BmRolesPermissionsSet> {
   static args = {
     role: Args.string({
       description: 'Role ID (e.g. "Administrator")',
@@ -34,7 +34,7 @@ export default class BmRolesPermissionsSet extends InstanceCommand<typeof BmRole
     }),
   };
 
-  async run(): Promise<BmRolePermissions> {
+  async run(): Promise<RolePermissionsInfo> {
     this.requireOAuthCredentials();
 
     const {role: roleId} = this.args;
@@ -45,13 +45,16 @@ export default class BmRolesPermissionsSet extends InstanceCommand<typeof BmRole
       this.error(t('commands.bm.roles.permissions.set.fileNotFound', 'File not found: {{file}}', {file}));
     }
 
-    let permissions: BmRolePermissions;
+    let permissions: RolePermissionsInfo;
     try {
       const content = fs.readFileSync(file, 'utf8');
-      permissions = JSON.parse(content) as BmRolePermissions;
+      permissions = JSON.parse(content) as RolePermissionsInfo;
     } catch {
       this.error(t('commands.bm.roles.permissions.set.parseError', 'Failed to parse JSON from {{file}}', {file}));
     }
+
+    const backend = this.createRolesBackend();
+    this.logger.debug(`Using ${backend.name} backend for roles permissions set`);
 
     this.log(
       t(
@@ -61,7 +64,7 @@ export default class BmRolesPermissionsSet extends InstanceCommand<typeof BmRole
       ),
     );
 
-    const result = await setBmRolePermissions(this.instance, roleId, permissions);
+    const result = await backend.setPermissions(roleId, permissions);
 
     if (this.jsonEnabled()) {
       return result;

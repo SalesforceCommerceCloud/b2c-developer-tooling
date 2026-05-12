@@ -6,67 +6,16 @@
 /**
  * Job execution operations for B2C Commerce.
  *
- * This module provides functions for running and monitoring jobs
- * on B2C Commerce instances via OCAPI.
- *
- * ## Core Job Functions
- *
- * - {@link executeJob} - Start a job execution
- * - {@link getJobExecution} - Get the status of a job execution
- * - {@link waitForJob} - Wait for a job to complete
- * - {@link searchJobExecutions} - Search for job executions
- * - {@link findRunningJobExecution} - Find a running execution
- * - {@link getJobLog} - Retrieve job log file content
- *
- * ## System Jobs
- *
- * - {@link siteArchiveImport} - Import a site archive
- * - {@link siteArchiveExport} - Export a site archive
- * - {@link siteArchiveExportToPath} - Export and save to local path
- *
- * ## Usage
- *
- * ```typescript
- * import {
- *   executeJob,
- *   waitForJob,
- *   searchJobExecutions,
- *   siteArchiveImport,
- *   siteArchiveExport,
- * } from '@salesforce/b2c-tooling-sdk/operations/jobs';
- * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
- *
- * const config = resolveConfig();
- * const instance = config.createB2CInstance();
- *
- * // Run a custom job and wait for completion
- * const execution = await executeJob(instance, 'my-job-id');
- * const result = await waitForJob(instance, 'my-job-id', execution.id);
- *
- * // Search for recent job executions
- * const results = await searchJobExecutions(instance, {
- *   jobId: 'my-job-id',
- *   count: 10
- * });
- *
- * // Import a site archive
- * await siteArchiveImport(instance, './my-import-data');
- *
- * // Export site data
- * const exportResult = await siteArchiveExport(instance, {
- *   global_data: { meta_data: true }
- * });
- * ```
- *
- * ## Authentication
- *
- * Job operations require OAuth authentication with appropriate OCAPI permissions
- * for the /jobs and /job_execution_search resources.
+ * SDK consumers should call SCAPI ops directly via the free functions
+ * exported from `./scapi-ops` (or, for legacy code, the OCAPI free
+ * functions exported from `./run`). The CLI's `BackendDispatcher`
+ * arbitrates between them based on the user's `apiBackend` preference;
+ * that policy lives in the CLI layer.
  *
  * @module operations/jobs
  */
 
-// Core job execution
+// OCAPI ops (legacy — will be removed when OCAPI is deprecated)
 export {
   executeJob,
   getJobExecution,
@@ -90,7 +39,22 @@ export type {
   JobExecutionSearchResult,
 } from './run.js';
 
-// Site archive import/export
+// SCAPI ops + canonical types (primary surface)
+export {
+  executeJob as scapiExecuteJob,
+  getJobExecution as scapiGetJobExecution,
+  searchJobExecutions as scapiSearchJobExecutions,
+  deleteJobExecution as scapiDeleteJobExecution,
+  getJobLog as scapiGetJobLog,
+} from './scapi-ops.js';
+export type {ExecuteJobScapiOptions, SearchJobExecutionsScapiOptions} from './scapi-ops.js';
+export type {JobExecutionInfo, JobStepExecutionResult, JobExecutionSearchResults} from './types.js';
+
+// Backend-agnostic helpers
+export {waitForJobExecution, CanonicalJobExecutionError} from './wait-canonical.js';
+export {mapOcapiExecution, mapOcapiSearchResult} from './ocapi-mapping.js';
+
+// Site archive import/export (uses OCAPI WebDAV path)
 export {
   siteArchiveImport,
   siteArchiveExport,

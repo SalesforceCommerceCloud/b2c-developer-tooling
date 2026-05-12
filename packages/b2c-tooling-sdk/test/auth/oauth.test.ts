@@ -460,6 +460,149 @@ describe('auth/oauth', () => {
         expect(extended).to.be.instanceOf(OAuthStrategy);
       });
     });
+
+    describe('getAccessTokenForCascade', () => {
+      it('returns the first candidate that AM accepts', async () => {
+        const mockToken = createMockJWT({sub: 'test-client-cascade-1'});
+        let lastRequestedScope: string | null = null;
+
+        server.use(
+          http.post(AM_URL, async ({request}) => {
+            const body = await request.text();
+            const params = new URLSearchParams(body);
+            lastRequestedScope = params.get('scope');
+            // Reject anything containing the rw scope; accept the read-only
+            // candidate.
+            if (lastRequestedScope?.includes('sfcc.jobs.rw')) {
+              return HttpResponse.json({error: 'invalid_scope'}, {status: 400});
+            }
+            return HttpResponse.json({
+              access_token: mockToken,
+              expires_in: 1800,
+              scope: lastRequestedScope ?? '',
+            });
+          }),
+        );
+
+        const strategy = new OAuthStrategy({
+          clientId: 'test-client-cascade-1',
+          clientSecret: 'test-secret',
+        });
+
+        const token = await strategy.getAccessTokenForCascade([['sfcc.jobs.rw'], ['sfcc.jobs']]);
+
+        expect(token).to.equal(mockToken);
+        // Last successful AM call should have used the read-only candidate.
+        expect(lastRequestedScope).to.equal('sfcc.jobs');
+      });
+
+      it('returns a cached broader-scope token without hitting AM', async () => {
+        // Pre-warm: first call grants rw.
+        const rwToken = createMockJWT({sub: 'test-client-cascade-2'});
+        let amCallCount = 0;
+
+        server.use(
+          http.post(AM_URL, async () => {
+            amCallCount++;
+            return HttpResponse.json({
+              access_token: rwToken,
+              expires_in: 1800,
+              scope: 'sfcc.jobs.rw',
+            });
+          }),
+        );
+
+        const strategy = new OAuthStrategy({
+          clientId: 'test-client-cascade-2',
+          clientSecret: 'test-secret',
+        });
+
+        // First request: cascade tries rw, AM grants it. amCallCount = 1.
+        await strategy.getAccessTokenForCascade([['sfcc.jobs.rw']]);
+        expect(amCallCount).to.equal(1);
+
+        // Second request: read-only cascade. The cached rw token's scopes
+        // include 'sfcc.jobs.rw' — should it satisfy a request for ['sfcc.jobs']?
+        // Per design: the satisfies-check looks for tokens whose scopes ⊇
+        // the requested set. 'sfcc.jobs' is NOT in the rw token's scopes,
+        // so it does not satisfy. AM gets called again. This test confirms
+        // that hierarchical scope semantics are NOT inferred — caches are
+        // exact-set matches.
+        await strategy.getAccessTokenForCascade([['sfcc.jobs']]);
+        expect(amCallCount).to.equal(2);
+      });
+
+      it('reuses cached token when a candidate exactly matches', async () => {
+        const mockToken = createMockJWT({sub: 'test-client-cascade-3'});
+        let amCallCount = 0;
+
+        server.use(
+          http.post(AM_URL, async () => {
+            amCallCount++;
+            return HttpResponse.json({
+              access_token: mockToken,
+              expires_in: 1800,
+              scope: 'sfcc.jobs',
+            });
+          }),
+        );
+
+        const strategy = new OAuthStrategy({
+          clientId: 'test-client-cascade-3',
+          clientSecret: 'test-secret',
+        });
+
+        await strategy.getAccessTokenForCascade([['sfcc.jobs']]);
+        await strategy.getAccessTokenForCascade([['sfcc.jobs']]);
+
+        // Second call should hit cache.
+        expect(amCallCount).to.equal(1);
+      });
+
+      it('throws the last invalid_scope when all candidates fail', async () => {
+        server.use(
+          http.post(AM_URL, async () => {
+            return HttpResponse.json({error: 'invalid_scope'}, {status: 400});
+          }),
+        );
+
+        const strategy = new OAuthStrategy({
+          clientId: 'test-client-cascade-4',
+          clientSecret: 'test-secret',
+        });
+
+        try {
+          await strategy.getAccessTokenForCascade([['sfcc.jobs.rw'], ['sfcc.jobs']]);
+          expect.fail('should have thrown');
+        } catch (error) {
+          expect((error as Error).message).to.include('invalid_scope');
+        }
+      });
+
+      it('rethrows non-invalid_scope errors without trying further candidates', async () => {
+        let amCallCount = 0;
+        server.use(
+          http.post(AM_URL, async () => {
+            amCallCount++;
+            return HttpResponse.json({error: 'invalid_client'}, {status: 401});
+          }),
+        );
+
+        const strategy = new OAuthStrategy({
+          clientId: 'test-client-cascade-5',
+          clientSecret: 'test-secret',
+        });
+
+        try {
+          await strategy.getAccessTokenForCascade([['sfcc.jobs.rw'], ['sfcc.jobs']]);
+          expect.fail('should have thrown');
+        } catch {
+          // expected
+        }
+        // Should not have tried the second candidate.
+        expect(amCallCount).to.equal(1);
+      });
+    });
   });
 });
 

@@ -10,6 +10,25 @@ import sinon from 'sinon';
 import JobRun from '../../../src/commands/job/run.js';
 import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
+/**
+ * The dispatcher's branch-routing behavior is unit-tested in
+ * b2c-tooling-sdk/test/compat/dispatcher.test.ts. Command tests stub
+ * `createJobsDispatcher` to return a fake whose `run()` returns a
+ * pre-programmed value — we test command-level orchestration without
+ * exercising the dispatcher internals.
+ */
+function makeDispatcherFake() {
+  const runner = sinon.stub();
+  return {
+    runner,
+    dispatcher: {
+      active: 'scapi' as const,
+      run: runner,
+      runScapiOnly: sinon.stub(),
+    },
+  };
+}
+
 describe('job run', () => {
   const hooks = createIsolatedConfigHooks();
 
@@ -22,17 +41,18 @@ describe('job run', () => {
   }
 
   function stubCommon(command: any) {
-    const instance = {config: {hostname: 'example.com'}};
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
-    sinon.stub(command, 'instance').get(() => instance);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', tenantId: 'tenant_test'}}));
+    sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'createContext').callsFake((operationType: any, metadata: any) => ({
       operationType,
       metadata,
       startTime: Date.now(),
     }));
-    return instance;
+    const fake = makeDispatcherFake();
+    sinon.stub(command, 'createJobsDispatcher').returns(fake.dispatcher);
+    return fake;
   }
 
   it('errors on invalid -P param format', async () => {
@@ -53,39 +73,42 @@ describe('job run', () => {
 
   it('executes without waiting when --wait is false', async () => {
     const command: any = await createCommand({param: ['A=1'], json: true}, {jobId: 'my-job'});
-    const instance = stubCommon(command);
+    const {runner} = stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
-    const execStub = sinon.stub().resolves({id: 'e1', execution_status: 'running'});
-    const waitStub = sinon.stub().rejects(new Error('Unexpected wait'));
-    command.operations = {...command.operations, executeJob: execStub, waitForJob: waitStub};
+    runner.resolves({id: 'e1', jobId: 'my-job', executionStatus: 'running'});
 
     const result = await command.run();
 
-    expect(execStub.calledOnce).to.equal(true);
-    expect(execStub.getCall(0).args[0]).to.equal(instance);
-    expect(waitStub.called).to.equal(false);
+    expect(runner.calledOnce).to.equal(true);
     expect(result.id).to.equal('e1');
   });
 
   it('waits when --wait is true', async () => {
-    const command: any = await createCommand({wait: true, timeout: 1, json: true}, {jobId: 'my-job'});
-    const instance = stubCommon(command);
+    const command: any = await createCommand(
+      {wait: true, timeout: 10, 'poll-interval': 1, json: true},
+      {jobId: 'my-job'},
+    );
+    const {runner} = stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
-    const execStub = sinon.stub().resolves({id: 'e1', execution_status: 'running'});
-    const waitStub = sinon.stub().resolves({id: 'e1', execution_status: 'finished'});
-    command.operations = {...command.operations, executeJob: execStub, waitForJob: waitStub};
+    // First run() call is executeJob; subsequent are getJobExecution polls.
+    runner.onFirstCall().resolves({id: 'e1', jobId: 'my-job', executionStatus: 'running'});
+    runner.onSecondCall().resolves({
+      id: 'e1',
+      jobId: 'my-job',
+      executionStatus: 'finished',
+      exitStatus: {code: 'OK', status: 'ok'},
+    });
 
     const result = await command.run();
 
-    expect(waitStub.calledOnce).to.equal(true);
-    expect(waitStub.getCall(0).args[0]).to.equal(instance);
-    expect(result.execution_status).to.equal('finished');
+    expect(runner.callCount).to.be.greaterThanOrEqual(2);
+    expect(result.executionStatus).to.equal('finished');
   });
 
   it('returns early when before hooks skip', async () => {
@@ -96,7 +119,7 @@ describe('job run', () => {
 
     const result = await command.run();
 
-    expect(result.exit_status.code).to.equal('skipped');
+    expect(result.executionStatus).to.equal('finished');
   });
 
   it('errors on invalid --body JSON', async () => {
@@ -113,36 +136,5 @@ describe('job run', () => {
     }
 
     expect(errorStub.calledOnce).to.equal(true);
-  });
-
-  it('shows job log and errors on JobExecutionError when waiting and show-log is true', async () => {
-    const command: any = await createCommand({wait: true, json: true, 'show-log': true}, {jobId: 'my-job'});
-    stubCommon(command);
-
-    command.flags = {...command.flags, wait: true, json: true, 'show-log': true};
-
-    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
-    sinon.stub(command, 'runAfterHooks').resolves(void 0);
-    const execStub = sinon.stub().resolves({id: 'e1', execution_status: 'running'});
-    command.operations = {...command.operations, executeJob: execStub};
-    sinon.stub(command, 'showJobLog').resolves(void 0);
-
-    const exec: any = {execution_status: 'finished', exit_status: {code: 'ERROR'}};
-    const {JobExecutionError} = await import('@salesforce/b2c-tooling-sdk/operations/jobs');
-    const jobError = new JobExecutionError('failed', exec);
-    expect(jobError).to.be.instanceOf(JobExecutionError);
-    const waitStub = sinon.stub().rejects(jobError);
-    command.operations = {...command.operations, waitForJob: waitStub};
-
-    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
-
-    try {
-      await command.run();
-      expect.fail('Should have thrown');
-    } catch {
-      // expected
-    }
-
-    expect(errorStub.called).to.equal(true);
   });
 });

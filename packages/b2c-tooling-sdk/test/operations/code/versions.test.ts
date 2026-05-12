@@ -16,8 +16,9 @@ import {
   activateCodeVersion,
   createCodeVersion,
   deleteCodeVersion,
-  reloadCodeVersion,
 } from '../../../src/operations/code/versions.js';
+import {reloadCodeVersion} from '../../../src/operations/code/scripts-backend.js';
+import {OcapiScriptsBackend} from '../../../src/operations/code/ocapi-scripts-backend.js';
 
 const TEST_HOST = 'test.demandware.net';
 const BASE_URL = `https://${TEST_HOST}/s/-/dw/data/v25_6`;
@@ -258,7 +259,7 @@ describe('operations/code/versions', () => {
         }),
       );
 
-      await reloadCodeVersion(mockInstance, 'v2');
+      await reloadCodeVersion(new OcapiScriptsBackend(mockInstance), 'v2');
       // Success - no error thrown
     });
 
@@ -277,7 +278,7 @@ describe('operations/code/versions', () => {
         }),
       );
 
-      await reloadCodeVersion(mockInstance, 'v2');
+      await reloadCodeVersion(new OcapiScriptsBackend(mockInstance), 'v2');
       // Success - no error thrown
     });
 
@@ -291,7 +292,7 @@ describe('operations/code/versions', () => {
       );
 
       try {
-        await reloadCodeVersion(mockInstance, 'v1');
+        await reloadCodeVersion(new OcapiScriptsBackend(mockInstance), 'v1');
         expect.fail('Should have thrown error');
       } catch (error: any) {
         expect(error.message).to.include('no alternate code version available');
@@ -308,7 +309,7 @@ describe('operations/code/versions', () => {
       );
 
       try {
-        await reloadCodeVersion(mockInstance);
+        await reloadCodeVersion(new OcapiScriptsBackend(mockInstance));
         expect.fail('Should have thrown error');
       } catch (error: any) {
         expect(error.message).to.include('No code version specified');

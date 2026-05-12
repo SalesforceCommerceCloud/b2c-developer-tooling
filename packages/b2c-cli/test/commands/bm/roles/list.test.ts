@@ -21,49 +21,59 @@ describe('bm roles list', () => {
     return createTestCommand(BmRolesList, hooks.getConfig(), flags);
   }
 
+  function createMockBackend() {
+    return {
+      name: 'ocapi' as const,
+      listRoles: sinon.stub(),
+      getRole: sinon.stub(),
+      createRole: sinon.stub(),
+      deleteRole: sinon.stub(),
+      getPermissions: sinon.stub(),
+      setPermissions: sinon.stub(),
+      grantRole: sinon.stub(),
+      revokeRole: sinon.stub(),
+    };
+  }
+
   function stubCommon(command: any, {jsonEnabled}: {jsonEnabled: boolean}) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));
     sinon.stub(command, 'jsonEnabled').returns(jsonEnabled);
+    const backend = createMockBackend();
+    sinon.stub(command, 'createRolesBackend').returns(backend);
+    return backend;
   }
 
   it('returns data in JSON mode', async () => {
     const command: any = await createCommand();
-    stubCommon(command, {jsonEnabled: true});
+    const backend = stubCommon(command, {jsonEnabled: true});
 
-    const mockRoles = {count: 2, total: 2, data: [{id: 'Administrator'}, {id: 'Editor'}]};
-    const ocapiGet = sinon.stub().resolves({data: mockRoles, error: undefined});
-    sinon.stub(command, 'instance').get(() => ({ocapi: {GET: ocapiGet}}));
+    backend.listRoles.resolves({total: 2, start: 0, count: 2, hits: [{id: 'Administrator'}, {id: 'Editor'}]});
 
     const result = await command.run();
     expect(result.count).to.equal(2);
-    expect(result.data).to.have.length(2);
-    expect(ocapiGet.calledOnce).to.equal(true);
+    expect(result.hits).to.have.length(2);
+    expect(backend.listRoles.calledOnce).to.equal(true);
   });
 
   it('prints "no roles" message when empty in non-JSON mode', async () => {
     const command: any = await createCommand();
-    stubCommon(command, {jsonEnabled: false});
+    const backend = stubCommon(command, {jsonEnabled: false});
     sinon.stub(command, 'log').returns(void 0);
 
-    const ocapiGet = sinon.stub().resolves({data: {count: 0, total: 0, data: []}, error: undefined});
-    sinon.stub(command, 'instance').get(() => ({ocapi: {GET: ocapiGet}}));
+    backend.listRoles.resolves({total: 0, start: 0, count: 0, hits: []});
 
     const result = await command.run();
-    expect(result.count).to.equal(0);
+    expect(result.total).to.equal(0);
   });
 
-  it('throws when OCAPI returns error', async () => {
+  it('throws when backend returns error', async () => {
     const command: any = await createCommand();
-    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    const backend = stubCommon(command, {jsonEnabled: false});
+    sinon.stub(command, 'log').returns(void 0);
 
-    const ocapiGet = sinon.stub().resolves({
-      data: undefined,
-      error: {fault: {message: 'boom'}},
-      response: {status: 500, statusText: 'Error'},
-    });
-    sinon.stub(command, 'instance').get(() => ({ocapi: {GET: ocapiGet}}));
+    backend.listRoles.rejects(new Error('Failed to list roles: boom'));
 
     try {
       await command.run();

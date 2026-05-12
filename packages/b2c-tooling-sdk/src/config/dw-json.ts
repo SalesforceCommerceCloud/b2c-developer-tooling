@@ -95,6 +95,8 @@ export interface DwJsonConfig {
   certificatePassphrase?: string;
   /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
   selfSigned?: boolean;
+  /** API backend preference for operations that support both OCAPI and SCAPI */
+  apiBackend?: 'ocapi' | 'scapi' | 'auto';
   /** Path to JWT certificate file (cert.pem) for JWT authentication */
   jwtCertPath?: string;
   /** Path to JWT private key file (key.pem) for JWT authentication */

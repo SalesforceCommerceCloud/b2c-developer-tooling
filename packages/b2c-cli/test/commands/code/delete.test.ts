@@ -21,60 +21,63 @@ describe('code delete', () => {
     return createTestCommand(CodeDelete, hooks.getConfig(), flags, args);
   }
 
-  it('deletes without prompting when --force is set', async () => {
-    const command: any = await createCommand({force: true}, {codeVersion: 'v1'});
+  function createMockBackend() {
+    return {
+      name: 'ocapi' as const,
+      listCodeVersions: sinon.stub(),
+      getActiveCodeVersion: sinon.stub(),
+      activateCodeVersion: sinon.stub(),
+      deleteCodeVersion: sinon.stub(),
+      createCodeVersion: sinon.stub(),
+      reloadCodeVersion: sinon.stub(),
+    };
+  }
 
-    const instance = {config: {hostname: 'example.com'}};
-
+  function stubCommon(command: any) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
-    sinon.stub(command, 'instance').get(() => instance);
+    sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
+    const backend = createMockBackend();
+    sinon.stub(command, 'createScriptsBackend').returns(backend);
+    return backend;
+  }
 
-    const deleteStub = sinon.stub().resolves(void 0);
-    command.operations = {...command.operations, deleteCodeVersion: deleteStub};
+  it('deletes without prompting when --force is set', async () => {
+    const command: any = await createCommand({force: true}, {codeVersion: 'v1'});
+    const backend = stubCommon(command);
+    backend.deleteCodeVersion.resolves();
 
     await command.run();
-    expect(deleteStub.calledOnceWithExactly(instance, 'v1')).to.equal(true);
+
+    expect(backend.deleteCodeVersion.calledOnceWithExactly('v1')).to.equal(true);
   });
 
   it('does not delete when prompt is declined', async () => {
     const command: any = await createCommand({}, {codeVersion: 'v1'});
+    const backend = stubCommon(command);
+    backend.deleteCodeVersion.rejects(new Error('Unexpected delete'));
 
-    const instance = {config: {hostname: 'example.com'}};
-
-    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
-    sinon.stub(command, 'instance').get(() => instance);
-    sinon.stub(command, 'log').returns(void 0);
-
-    const deleteStub = sinon.stub().rejects(new Error('Unexpected delete'));
     const confirmStub = sinon.stub().resolves(false);
-    command.operations = {...command.operations, confirm: confirmStub, deleteCodeVersion: deleteStub};
+    command.operations = {...command.operations, confirm: confirmStub};
 
     await command.run();
 
     expect(confirmStub.calledOnce).to.equal(true);
-    expect(deleteStub.called).to.equal(false);
+    expect(backend.deleteCodeVersion.called).to.equal(false);
   });
 
   it('deletes when prompt is accepted', async () => {
     const command: any = await createCommand({}, {codeVersion: 'v1'});
+    const backend = stubCommon(command);
+    backend.deleteCodeVersion.resolves();
 
-    const instance = {config: {hostname: 'example.com'}};
-
-    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
-    sinon.stub(command, 'instance').get(() => instance);
-    sinon.stub(command, 'log').returns(void 0);
-
-    const deleteStub = sinon.stub().resolves(void 0);
     const confirmStub = sinon.stub().resolves(true);
-    command.operations = {...command.operations, confirm: confirmStub, deleteCodeVersion: deleteStub};
+    command.operations = {...command.operations, confirm: confirmStub};
 
     await command.run();
 
     expect(confirmStub.calledOnce).to.equal(true);
-    expect(deleteStub.calledOnceWithExactly(instance, 'v1')).to.equal(true);
+    expect(backend.deleteCodeVersion.calledOnceWithExactly('v1')).to.equal(true);
   });
 });
