@@ -53,7 +53,7 @@ In addition to [global flags](./index#global-flags):
 |------|-------------|---------|
 | `--library` | Library ID or site ID. Also configurable via `content-library` in dw.json. | |
 | `--output`, `-o` | Output directory | `content-<timestamp>` |
-| `--site-library` | Treat the library as a site-private library | `false` |
+| `--site-library` / `--no-site-library` | Treat the library as a site-private library. Defaults from a matching `libraries` config entry, otherwise `false` | from config |
 | `--asset-query`, `-q` | JSON dot-paths for static asset extraction (can be repeated) | `image.path` |
 | `--regex`, `-r` | Treat page IDs as regular expressions | `false` |
 | `--folder` | Filter by folder classification (can be repeated) | |
@@ -116,7 +116,7 @@ With `--json`, returns a structured result including the library tree, output pa
 
 ### Notes
 
-- The `--library` flag can be set in `dw.json` as `content-library` or in `package.json` under `b2c.contentLibrary` to avoid passing it every time
+- The `--library` flag can be set in `dw.json` as `content-library` or in `package.json` under `b2c.contentLibrary` to avoid passing it every time. You can also list libraries under `b2c.libraries` (mixed strings or `{id, siteLibrary?}` objects); when the resolved library matches an entry marked `siteLibrary: true`, `--site-library` defaults to true automatically. The CLI flag still wins when passed explicitly
 - Use `b2c content list` to discover available page IDs before exporting
 - You can export pages, content assets, or individual components by their content ID. When a component ID is specified, it is promoted to the root of the export with its full child tree
 - The `--asset-query` flag specifies JSON dot-notation paths within component data to extract static asset references. The default `image.path` covers the common Page Designer image component pattern
@@ -141,7 +141,7 @@ In addition to [global flags](./index#global-flags):
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--library` | Library ID or site ID. Also configurable via `content-library` in dw.json. | |
-| `--site-library` | Treat the library as a site-private library | `false` |
+| `--site-library` / `--no-site-library` | Treat the library as a site-private library. Defaults from a matching `libraries` config entry, otherwise `false` | from config |
 | `--library-file` | Use a local library XML file instead of fetching from instance | |
 | `--type` | Filter by node type: `page`, `content`, or `component` | |
 | `--components` | Include components in table output | `false` |

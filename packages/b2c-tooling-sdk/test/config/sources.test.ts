@@ -532,6 +532,38 @@ describe('config/sources', () => {
       expect(config.accountManagerHost).to.equal('account.demandware.com');
     });
 
+    it('loads libraries as a string array', async () => {
+      const packageJsonPath = path.join(tempDir, 'package.json');
+      fs.writeFileSync(
+        packageJsonPath,
+        JSON.stringify({
+          name: 'test-project',
+          b2c: {libraries: ['RefArch', 'OtherLib']},
+        }),
+      );
+
+      const resolver = new ConfigResolver();
+      const {config} = await resolver.resolve();
+
+      expect(config.libraries).to.deep.equal(['RefArch', 'OtherLib']);
+    });
+
+    it('loads libraries with site-library entries (mixed shapes allowed)', async () => {
+      const packageJsonPath = path.join(tempDir, 'package.json');
+      fs.writeFileSync(
+        packageJsonPath,
+        JSON.stringify({
+          name: 'test-project',
+          b2c: {libraries: ['RefArch', {id: 'homepage', siteLibrary: true}]},
+        }),
+      );
+
+      const resolver = new ConfigResolver();
+      const {config} = await resolver.resolve();
+
+      expect(config.libraries).to.deep.equal(['RefArch', {id: 'homepage', siteLibrary: true}]);
+    });
+
     it('ignores sensitive/instance-specific fields', async () => {
       const packageJsonPath = path.join(tempDir, 'package.json');
       fs.writeFileSync(
