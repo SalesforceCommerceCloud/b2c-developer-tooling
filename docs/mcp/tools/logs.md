@@ -119,6 +119,4 @@ No parameters.
 
 ## See also
 
-- [`b2c logs tail`](../../cli/logs/tail) — interactive CLI tail
-- [`b2c logs get`](../../cli/logs/get) — one-shot CLI fetch
-- [`b2c logs list`](../../cli/logs/list) — list log files from the CLI
+- [Logs CLI commands](/cli/logs) — `b2c logs tail` / `get` / `list`

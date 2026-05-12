@@ -86,6 +86,4 @@ No parameters.
 
 ## See also
 
-- [`b2c docs search`](../../cli/docs/search) — CLI search
-- [`b2c docs read`](../../cli/docs/read) — CLI read
-- [`b2c docs schema`](../../cli/docs/schema) — CLI XSD reader
+- [Docs CLI commands](/cli/docs) — `b2c docs search` / `read` / `schema`
