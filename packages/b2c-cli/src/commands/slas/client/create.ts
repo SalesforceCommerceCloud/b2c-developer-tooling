@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
+import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {randomUUID} from 'node:crypto';
 import {
   SlasClientCommand,
@@ -11,7 +12,6 @@ import {
   type ClientOutput,
   normalizeClientResponse,
   printClientDetails,
-  formatApiError,
 } from '../../../utils/slas/client.js';
 import {t, withDocs} from '../../../i18n/index.js';
 
@@ -182,7 +182,7 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
     if (error) {
       this.error(
         t('commands.slas.client.create.error', 'Failed to create/update SLAS client: {{message}}', {
-          message: formatApiError(error, response),
+          message: getApiErrorMessage(error, response),
         }),
       );
     }

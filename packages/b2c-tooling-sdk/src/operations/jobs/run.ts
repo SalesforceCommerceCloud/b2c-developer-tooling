@@ -127,10 +127,18 @@ export async function executeJob(
     body: body as unknown as string,
   });
 
-  // Handle JobAlreadyRunningException
+  // Handle JobAlreadyRunningException. The fault is reported as 400 with the
+  // exception name in the body; we check for it textually because the OCAPI
+  // error envelope is generic. If we can't read the body, fall through to the
+  // normal error path rather than silently treating it as "not the running case".
   if (response.status === 400) {
-    // Need to check fault type - read raw response
-    const errorBody = await response.text().catch(() => '');
+    let errorBody: string;
+    try {
+      errorBody = await response.text();
+    } catch (textErr) {
+      logger.debug({jobId, error: textErr}, 'Failed to read 400 response body for JobAlreadyRunning detection');
+      errorBody = '';
+    }
     if (errorBody.includes('JobAlreadyRunningException')) {
       if (waitForRunning) {
         logger.warn({jobId}, `Job ${jobId} already running, waiting for it to finish...`);

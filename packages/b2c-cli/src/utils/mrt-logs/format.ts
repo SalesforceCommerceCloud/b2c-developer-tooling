@@ -5,25 +5,9 @@
  */
 
 import type {MrtLogEntry} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {ANSI, LEVEL_COLORS} from '@salesforce/b2c-tooling-sdk/cli';
 
-/**
- * ANSI color codes for log levels.
- * Matches the color scheme from logs/format.ts for consistency.
- */
-const LEVEL_COLORS: Record<string, string> = {
-  ERROR: '\u001B[31m', // Red
-  FATAL: '\u001B[35m', // Magenta
-  WARN: '\u001B[33m', // Yellow
-  WARNING: '\u001B[33m', // Yellow
-  INFO: '\u001B[36m', // Cyan
-  DEBUG: '\u001B[90m', // Gray
-  TRACE: '\u001B[90m', // Gray
-};
-
-const RESET = '\u001B[0m';
-const DIM = '\u001B[2m';
-const BOLD = '\u001B[1m';
-const HIGHLIGHT = '\u001B[1;33m'; // Bold yellow for search matches
+const {RESET, DIM, BOLD, HIGHLIGHT} = ANSI;
 
 /**
  * Options for formatting an MRT log entry.

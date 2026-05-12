@@ -228,9 +228,13 @@ export const configureProxy = (
     followRedirects: false,
 
     onError: (err: Error, req: IncomingMessage, res: ServerResponse) => {
-      res.writeHead(500, {
-        'Content-Type': 'text/plain',
-      });
+      // headers may already be flushed if the upstream began streaming before erroring;
+      // calling writeHead twice throws ERR_HTTP_HEADERS_SENT and masks the original error.
+      if (!res.headersSent) {
+        res.writeHead(500, {
+          'Content-Type': 'text/plain',
+        });
+      }
       res.end(`Error in proxy request to ${req.url}: ${err}`);
     },
 

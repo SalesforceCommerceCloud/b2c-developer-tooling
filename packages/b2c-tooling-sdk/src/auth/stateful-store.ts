@@ -100,10 +100,9 @@ export function getStoredSession(): StatefulSession | null {
  */
 export function setStoredSession(session: StatefulSession): void {
   const filePath = getSessionFilePath();
-  const dir = join(filePath, '..');
-  if (!existsSync(dir)) {
-    mkdirSync(dir, {recursive: true});
-  }
+  // mkdirSync({recursive:true}) is idempotent and atomic — no exists-then-create
+  // TOCTOU window even under concurrent writers.
+  mkdirSync(join(filePath, '..'), {recursive: true});
   const data: StatefulSession = {
     clientId: session.clientId,
     accessToken: session.accessToken,
@@ -115,7 +114,17 @@ export function setStoredSession(session: StatefulSession): void {
   // crashed writer) never observes a partially written JSON document.
   const tmpPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
   writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf8');
-  renameSync(tmpPath, filePath);
+  try {
+    renameSync(tmpPath, filePath);
+  } catch (err) {
+    // Clean up orphan tmp on rename failure so we don't leak files in the data dir.
+    try {
+      unlinkSync(tmpPath);
+    } catch {
+      /* swallow — the rename error is the one that matters */
+    }
+    throw err;
+  }
 }
 
 /**
