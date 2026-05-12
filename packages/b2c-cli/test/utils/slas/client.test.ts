@@ -203,6 +203,32 @@ describe('utils/slas/client', () => {
       expect(text).not.to.include('my-secret');
     });
 
+    it('renders multiple redirect URIs one per line', () => {
+      const stdoutStub = sinon.stub(ux, 'stdout');
+      const output = {
+        clientId: 'client-1',
+        name: 'Test',
+        scopes: [],
+        channels: [],
+        redirectUri: 'http://a.example.com|http://b.example.com|http://c.example.com',
+        isPrivateClient: true,
+      };
+
+      printClientDetails(output, false);
+      const text = stdoutStub.firstCall.args[0] as string;
+      expect(text).to.include('Redirect URIs:');
+      expect(text).to.not.include('|');
+      const lines = text.split('\n');
+      const aLine = lines.find((l) => l.includes('http://a.example.com'));
+      const bLine = lines.find((l) => l.includes('http://b.example.com'));
+      const cLine = lines.find((l) => l.includes('http://c.example.com'));
+      expect(aLine, 'a on its own line').to.exist;
+      expect(bLine, 'b on its own line').to.exist;
+      expect(cLine, 'c on its own line').to.exist;
+      expect(aLine).to.not.include('http://b.example.com');
+      expect(bLine).to.not.include('http://c.example.com');
+    });
+
     it('prints callbackUri when present', () => {
       const stdoutStub = sinon.stub(ux, 'stdout');
       const output = {
@@ -219,6 +245,28 @@ describe('utils/slas/client', () => {
       expect(stdoutStub.calledOnce).to.equal(true);
       const text = stdoutStub.firstCall.args[0];
       expect(text).to.include('https://example.com/cb');
+    });
+
+    it('renders multiple callback URIs one per line', () => {
+      const stdoutStub = sinon.stub(ux, 'stdout');
+      const output = {
+        clientId: 'client-1',
+        name: 'Test',
+        scopes: [],
+        channels: [],
+        redirectUri: '',
+        isPrivateClient: true,
+        callbackUri: 'https://a.example.com/cb|https://b.example.com/cb|https://c.example.com/cb',
+      };
+
+      printClientDetails(output, false);
+      const text = stdoutStub.firstCall.args[0] as string;
+      expect(text).to.include('Callback URIs:');
+      expect(text).to.not.include('|');
+      const lines = text.split('\n');
+      expect(lines.find((l) => l.includes('https://a.example.com/cb'))).to.exist;
+      expect(lines.find((l) => l.includes('https://b.example.com/cb'))).to.exist;
+      expect(lines.find((l) => l.includes('https://c.example.com/cb'))).to.exist;
     });
   });
 });
