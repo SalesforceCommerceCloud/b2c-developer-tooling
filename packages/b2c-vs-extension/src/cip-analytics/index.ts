@@ -158,9 +158,8 @@ export function registerCipAnalytics(
     },
   );
 
-  const switchRealmDisposable = vscode.commands.registerCommand(
-    'b2c-dx.cipAnalytics.switchRealm',
-    async () => switchRealmFlow(connection),
+  const switchRealmDisposable = vscode.commands.registerCommand('b2c-dx.cipAnalytics.switchRealm', async () =>
+    switchRealmFlow(connection),
   );
 
   const switchConnectionDisposable = vscode.commands.registerCommand(
@@ -171,9 +170,8 @@ export function registerCipAnalytics(
     },
   );
 
-  const addRealmDisposable = vscode.commands.registerCommand(
-    'b2c-dx.cipAnalytics.addRealm',
-    async () => addRealmFlow(connection),
+  const addRealmDisposable = vscode.commands.registerCommand('b2c-dx.cipAnalytics.addRealm', async () =>
+    addRealmFlow(connection),
   );
 
   const removeRealmDisposable = vscode.commands.registerCommand(

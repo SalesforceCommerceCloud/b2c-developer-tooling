@@ -79,7 +79,6 @@ export class CipRealmInfoTreeItem extends vscode.TreeItem {
   }
 }
 
-
 /**
  * Featured tree item for Query Builder - scoped to a realm.
  */

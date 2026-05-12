@@ -138,7 +138,11 @@ export class CipConnectionService implements vscode.Disposable {
    * settings. On a hard refresh (`ignoreLegacy: true`) we skip the legacy key
    * entirely, making dw.json the sole source of truth.
    */
-  private deriveFromConfig(opts: {ignoreLegacy?: boolean} = {}): {groups: CipRealmGroup[]; realms: CipRealm[]; active: CipConnection} {
+  private deriveFromConfig(opts: {ignoreLegacy?: boolean} = {}): {
+    groups: CipRealmGroup[];
+    realms: CipRealm[];
+    active: CipConnection;
+  } {
     const legacy = opts.ignoreLegacy ? undefined : this.workspaceState.get<Partial<CipRealm>>(LEGACY_KEY);
     const config = this.configProvider.getConfig();
     const cfgTenant = (config?.values.tenantId ?? '').toString();
@@ -430,7 +434,14 @@ function resolveHost(realm: Pick<CipRealm, 'env' | 'host'>): string {
 }
 
 function realmFrom(conn: CipConnection): CipRealm {
-  return {id: conn.id, groupId: conn.groupId, label: conn.label, tenantId: conn.tenantId, env: conn.env, host: conn.host};
+  return {
+    id: conn.id,
+    groupId: conn.groupId,
+    label: conn.label,
+    tenantId: conn.tenantId,
+    env: conn.env,
+    host: conn.host,
+  };
 }
 
 function generateId(): string {
@@ -441,11 +452,17 @@ function generateId(): string {
  *  e.g. "bjmp_prd" → "bjmp", "acme_sbx001" → "acme", "myorg" → "myorg"
  */
 function labelFromTenantId(tenantId: string): string {
-  return (
-    tenantId.replace(/_(?:prd|prod|pr|sbx|sandbox|sb|stg|staging|st|dev|dv|uat|qa)\w*$/i, '') || tenantId
-  );
+  return tenantId.replace(/_(?:prd|prod|pr|sbx|sandbox|sb|stg|staging|st|dev|dv|uat|qa)\w*$/i, '') || tenantId;
 }
 
 function makeBlankConnection(): CipConnection {
-  return {id: generateId(), groupId: '', label: '', tenantId: '', env: 'prod', host: DEFAULT_CIP_HOST, status: 'disconnected'};
+  return {
+    id: generateId(),
+    groupId: '',
+    label: '',
+    tenantId: '',
+    env: 'prod',
+    host: DEFAULT_CIP_HOST,
+    status: 'disconnected',
+  };
 }
