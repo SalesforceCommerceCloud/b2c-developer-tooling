@@ -7,7 +7,7 @@ import {Args, Flags} from '@oclif/core';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../../i18n/index.js';
-import {confirm} from '@inquirer/prompts';
+import {confirm} from '@salesforce/b2c-tooling-sdk/ux';
 
 /**
  * Command to delete a sandbox alias.
@@ -58,10 +58,9 @@ export default class SandboxAliasDelete extends OdsCommand<typeof SandboxAliasDe
 
     // Confirmation prompt (skip if --force or --json)
     if (!force && !this.jsonEnabled()) {
-      const confirmed = await confirm({
-        message: t('commands.sandbox.alias.delete.confirm', 'Delete alias {{aliasId}}?', {aliasId}),
-        default: false,
-      });
+      const confirmed = await confirm(
+        t('commands.sandbox.alias.delete.confirm', 'Delete alias {{aliasId}}?', {aliasId}),
+      );
 
       if (!confirmed) {
         this.log(t('commands.sandbox.alias.delete.cancelled', 'Delete cancelled'));

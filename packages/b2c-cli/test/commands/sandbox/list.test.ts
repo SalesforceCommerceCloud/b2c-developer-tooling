@@ -8,7 +8,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import SandboxList, {COLUMNS} from '../../../src/commands/sandbox/list.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
-import {runSilent} from '../../helpers/test-setup.js';
+import {makeCommandThrowOnError, runSilent, stubOdsClient} from '../../helpers/test-setup.js';
 
 function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
   Object.defineProperty(command, 'config', {
@@ -30,19 +30,6 @@ function stubJsonEnabled(command: any, enabled: boolean): void {
   command.jsonEnabled = () => enabled;
 }
 
-function stubOdsClient(command: any, client: Partial<{GET: any; POST: any; PUT: any; DELETE: any}>): void {
-  Object.defineProperty(command, 'odsClient', {
-    value: client,
-    configurable: true,
-  });
-}
-
-function makeCommandThrowOnError(command: any): void {
-  command.error = (msg: string) => {
-    throw new Error(msg);
-  };
-}
-
 /**
  * Unit tests for ODS list command CLI logic.
  * Tests column selection, filter building, output formatting.
@@ -56,46 +43,6 @@ describe('sandbox list', () => {
   afterEach(() => {
     sinon.restore();
     restoreConfig();
-  });
-
-  describe('getSelectedColumns', () => {
-    it('should return default columns when no flags provided', () => {
-      const command = new SandboxList([], {} as any);
-      (command as any).flags = {};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.deep.equal(['realm', 'instance', 'state', 'profile', 'created', 'eol', 'id', 'isCloned']);
-    });
-
-    it('should return all columns when --extended flag is set', () => {
-      const command = new SandboxList([], {} as any);
-      (command as any).flags = {extended: true};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.include('realm');
-      expect(columns).to.include('hostname');
-      expect(columns).to.include('createdBy');
-      expect(columns).to.include('autoScheduled');
-      expect(columns).to.include('isCloned');
-    });
-
-    it('should return custom columns when --columns flag is set', () => {
-      const command = new SandboxList([], {} as any);
-      (command as any).flags = {columns: 'id,state,hostname'};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.deep.equal(['id', 'state', 'hostname']);
-    });
-
-    it('should ignore invalid column names', () => {
-      const command = new SandboxList([], {} as any);
-      (command as any).flags = {columns: 'id,invalid,state'};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.not.include('invalid');
-      expect(columns).to.include('id');
-      expect(columns).to.include('state');
-    });
   });
 
   describe('isCloned column formatting', () => {

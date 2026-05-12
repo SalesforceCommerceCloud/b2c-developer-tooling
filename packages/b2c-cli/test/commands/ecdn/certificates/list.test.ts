@@ -132,27 +132,4 @@ describe('ecdn certificates list', () => {
       expect(errorStub.calledOnce).to.equal(true);
     }
   });
-
-  it('shows all columns with --extended flag', async () => {
-    const command: any = await createCommand({'tenant-id': 'zzxy_prd', zone: 'my-zone', extended: true});
-
-    const columns = command.getSelectedColumns();
-
-    expect(columns).to.include('certificateId');
-    expect(columns).to.include('hosts');
-    expect(columns).to.include('status');
-    expect(columns).to.include('expiresOn');
-  });
-
-  it('supports custom columns with --columns flag', async () => {
-    const command: any = await createCommand({
-      'tenant-id': 'zzxy_prd',
-      zone: 'my-zone',
-      columns: 'certificateId,status',
-    });
-
-    const columns = command.getSelectedColumns();
-
-    expect(columns).to.deep.equal(['certificateId', 'status']);
-  });
 });

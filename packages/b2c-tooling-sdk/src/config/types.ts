@@ -115,6 +115,13 @@ export interface NormalizedConfig {
   /** Library IDs for WebDAV browsing */
   libraries?: string[];
 
+  /**
+   * JSON dot-paths for asset extraction from component data during
+   * content library parsing. Used by `content export` and the VS Code
+   * content library browser. Defaults to `['image.path']` when unset.
+   */
+  assetQuery?: string[];
+
   // CIP
   /** Optional CIP analytics host override */
   cipHost?: string;

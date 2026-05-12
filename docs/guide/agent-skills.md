@@ -27,10 +27,6 @@ Then enter:
   SalesforceCommerceCloud/b2c-developer-tooling
 ```
 
-::: tip Updating Copilot Skills in VS Code
-To update the extension marketplace for the latest skills, open the Extensions view sidebar, click **`···`** (the ellipsis menu), and select **Check for Extension Updates**.
-:::
-
 ```bash [Copilot CLI]
 copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 copilot plugin install b2c-cli@b2c-developer-tooling
@@ -144,6 +140,31 @@ codex plugin marketplace remove b2c-developer-tooling
 ```
 
 > **Note:** The `b2c-dx-mcp` plugin is available only for Claude Code. For other clients, install the MCP server directly — see [MCP Installation](/mcp/installation).
+
+## Copilot
+
+GitHub Copilot supports skills in both VS Code and the Copilot CLI.
+
+### Copilot (VS Code)
+
+In VS Code, open the Command Palette (Cmd/Ctrl+Shift+P) and run **Chat: Install Plugin from Source**, then enter:
+
+```
+SalesforceCommerceCloud/b2c-developer-tooling
+```
+
+::: tip Updating Copilot skills in VS Code
+To pull the latest skills, open the **Extensions** view, click the **`···`** menu, and select **Check for Extension Updates**.
+:::
+
+### Copilot CLI
+
+```bash
+copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+copilot plugin install b2c-cli@b2c-developer-tooling
+copilot plugin install b2c@b2c-developer-tooling
+copilot plugin install storefront-next@b2c-developer-tooling
+```
 
 ## B2C CLI
 

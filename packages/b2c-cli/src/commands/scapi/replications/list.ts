@@ -5,7 +5,7 @@
  */
 import {Flags, ux} from '@oclif/core';
 import {GranularReplicationsCommand} from '../../../utils/scapi/replications.js';
-import {TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   getApiErrorMessage,
   type PublishProcessListResponse,
@@ -68,15 +68,7 @@ export default class ReplicationsList extends GranularReplicationsCommand<typeof
       description: 'Result offset for pagination',
       default: 0,
     }),
-    columns: Flags.string({
-      char: 'c',
-      description: 'Columns to display (comma-separated)',
-    }),
-    extended: Flags.boolean({
-      char: 'x',
-      description: 'Show all columns',
-      default: false,
-    }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<PublishProcessListResponse> {
@@ -100,38 +92,11 @@ export default class ReplicationsList extends GranularReplicationsCommand<typeof
     if (this.jsonEnabled()) return result.data;
 
     const processes = result.data.data || [];
-    const columns = this.getSelectedColumns();
     ux.stdout('\n');
-    tableRenderer.render(processes, columns);
+    tableRenderer.render(processes, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     ux.stdout(t('commands.replications.list.total', '\nTotal: {{total}} processes', {total: result.data.total}) + '\n');
 
     return result.data;
-  }
-
-  /**
-   * Determines which columns to display based on flags.
-   */
-  private getSelectedColumns(): string[] {
-    const columnsFlag = this.flags.columns;
-    const extended = this.flags.extended;
-
-    if (columnsFlag) {
-      const requested = columnsFlag.split(',').map((c) => c.trim());
-      const valid = tableRenderer.validateColumnKeys(requested);
-      if (valid.length === 0) {
-        this.warn(`No valid columns specified. Available: ${tableRenderer.getColumnKeys().join(', ')}`);
-        return DEFAULT_COLUMNS;
-      }
-      return valid;
-    }
-
-    if (extended) {
-      // Show all columns
-      return Object.keys(COLUMNS);
-    }
-
-    // Show default columns
-    return DEFAULT_COLUMNS;
   }
 }

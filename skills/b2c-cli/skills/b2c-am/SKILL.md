@@ -1,6 +1,6 @@
 ---
 name: b2c-am
-description: Manage users, roles, API clients, and organizations across Account Manager and Business Manager using the b2c CLI. Use this skill whenever the user needs to create or delete users, grant or revoke roles (AM or BM), onboard or offboard developers, audit permissions, look up organizations, create or update API clients for CI/CD pipelines, or manage BM role permissions on an instance. Also use when the user asks about user administration, role assignments, or permission audits — even if they just say "add a new developer", "set up an API client", or "who has admin access".
+description: Manage Account Manager resources including API clients, users, roles, and organizations. Use this skill whenever the user needs to create or update API clients, onboard or offboard developers, assign Account Manager roles scoped to tenants, audit user permissions, look up organizations, or provision API clients for CI/CD pipelines. Also use when managing AM role assignments or querying Account Manager data — even if they just say "add a new developer" or "set up an API client". For instance-level Business Manager administration (BM roles, BM users, BM access keys, BM whoami), defer to the `b2c-cli:b2c-bm-users-roles` skill.
 ---
 
 # B2C Account Manager Skill
@@ -24,9 +24,8 @@ Account Manager commands work out of the box with no configuration. The CLI uses
 | AM Users & Roles | User Administrator | Account Administrator or User Administrator |
 | AM Organizations | Not supported -- use `--user-auth` | Account Administrator |
 | AM API Clients | Not supported -- use `--user-auth` | Account Administrator or API Administrator |
-| BM Roles | OCAPI permissions for `/roles` resource | OCAPI permissions for `/roles` resource |
 
-Organization and API client management are only available with user authentication.
+Organization and API client management are only available with user authentication. For Business Manager administration (BM roles, users, access keys, whoami), see the `b2c-cli:b2c-bm-users-roles` skill.
 
 ## API Clients
 
@@ -218,52 +217,16 @@ b2c am orgs get <org-id>
 b2c am orgs get "My Organization"
 ```
 
-## Business Manager Roles
+## Business Manager Administration
 
-BM role commands operate on a specific Commerce Cloud instance (via `--server` or config).
+BM-side resources (instance roles, instance users, access keys, whoami) live in the **`b2c-cli:b2c-bm-users-roles`** skill. Use it for:
 
-```bash
-# list BM roles on the configured instance
-b2c bm roles list
+- `b2c bm roles` — list/get/create/delete instance access roles, grant/revoke users, manage permissions
+- `b2c bm users` — list, get, search, update, and delete instance users via the OCAPI `/users` resource
+- `b2c bm whoami` — show the BM user the current OAuth token resolves to
+- `b2c bm access-key` — provision and rotate WebDAV/OCAPI/Storefront access keys for SSO-managed users
 
-# target a different instance
-b2c bm roles list --server my-sandbox.demandware.net
-
-# get role details (with user list)
-b2c bm roles get Administrator --expand users
-
-# create a custom role
-b2c bm roles create MyCustomRole --description "Custom role for content editors"
-
-# delete a custom role (system roles cannot be deleted)
-b2c bm roles delete MyCustomRole
-
-# grant a BM role to a user on the instance
-b2c bm roles grant user@example.com --role Administrator
-
-# revoke a BM role from a user
-b2c bm roles revoke user@example.com --role Administrator
-
-# all commands support --json for machine-readable output
-b2c bm roles list --json
-```
-
-### Business Manager Role Permissions
-
-Permissions use a file-based get/set workflow since the API replaces all permissions at once.
-
-```bash
-# view permission summary
-b2c bm roles permissions get Administrator
-
-# export permissions to a JSON file for editing
-b2c bm roles permissions get Administrator --output admin-perms.json
-
-# edit the file, then apply
-b2c bm roles permissions set Administrator --file admin-perms.json
-```
-
-The permissions JSON has four sections: `functional`, `module`, `locale`, and `webdav`. Each can be scoped to organization, site, or unscoped depending on type.
+Defer to that skill for BM examples and patterns. AM-side onboarding flows (creating an AM user, granting AM roles scoped to tenants) stay here.
 
 ## Common Workflows
 

@@ -115,6 +115,10 @@ b2c mrt env var set \
   -p <PROJECT> -e <ENVIRONMENT>
 ```
 
+::: tip Push from a local `.env` file
+If you keep these values in a local `.env`, use [`b2c mrt env var push`](/cli/mrt#b2c-mrt-env-var-push) instead. It diffs the local file against the remote environment, shows what would change, and prompts before applying.
+:::
+
 ### Variable Reference
 
 | Variable | Description |

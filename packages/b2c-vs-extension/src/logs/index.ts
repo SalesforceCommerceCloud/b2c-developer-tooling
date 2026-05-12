@@ -5,12 +5,13 @@
  */
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
+import {registerSafeCommand} from '../safety.js';
 import {LogTailManager} from './logs-tail.js';
 
 export function registerLogs(context: vscode.ExtensionContext, configProvider: B2CExtensionConfig): void {
   const logManager = new LogTailManager();
 
-  const startTail = vscode.commands.registerCommand('b2c-dx.logs.startTail', async () => {
+  const startTail = registerSafeCommand('b2c-dx.logs.startTail', async () => {
     const instance = configProvider.getInstance();
     if (!instance) {
       vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured. Configure dw.json first.');
@@ -19,7 +20,7 @@ export function registerLogs(context: vscode.ExtensionContext, configProvider: B
     await logManager.startTail(instance);
   });
 
-  const stopTail = vscode.commands.registerCommand('b2c-dx.logs.stopTail', async () => {
+  const stopTail = registerSafeCommand('b2c-dx.logs.stopTail', async () => {
     await logManager.stopTail();
   });
 

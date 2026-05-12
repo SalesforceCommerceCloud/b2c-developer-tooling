@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {OdsCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  OdsCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {getApiErrorMessage, type OdsComponents} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../../i18n/index.js';
 
@@ -113,15 +119,7 @@ export default class SandboxOperationsList extends OdsCommand<typeof SandboxOper
       description: 'Page size (default from API is 20)',
       min: 1,
     }),
-    columns: Flags.string({
-      char: 'c',
-      description: `Columns to display (comma-separated). Available: ${Object.keys(OPERATION_COLUMNS).join(', ')}`,
-    }),
-    extended: Flags.boolean({
-      char: 'x',
-      description: 'Include extended columns (e.g. operationBy)',
-      default: false,
-    }),
+    ...columnFlagsFor(OPERATION_COLUMNS),
   };
 
   async run(): Promise<SandboxOperationListResponse | undefined> {
@@ -178,7 +176,7 @@ export default class SandboxOperationsList extends OdsCommand<typeof SandboxOper
       }
     }
 
-    tableRenderer.render(operations, this.getSelectedColumns());
+    tableRenderer.render(operations, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     return payload;
   }
@@ -196,26 +194,5 @@ export default class SandboxOperationsList extends OdsCommand<typeof SandboxOper
     if (f.page !== undefined) q.page = f.page;
     if (f['per-page'] !== undefined) q.per_page = f['per-page'];
     return q;
-  }
-
-  private getSelectedColumns(): string[] {
-    const columnsFlag = this.flags.columns;
-    const extended = this.flags.extended;
-
-    if (columnsFlag) {
-      const requested = columnsFlag.split(',').map((c) => c.trim());
-      const valid = tableRenderer.validateColumnKeys(requested);
-      if (valid.length === 0) {
-        this.warn(`No valid columns specified. Available: ${tableRenderer.getColumnKeys().join(', ')}`);
-        return DEFAULT_COLUMNS;
-      }
-      return valid;
-    }
-
-    if (extended) {
-      return tableRenderer.getColumnKeys();
-    }
-
-    return DEFAULT_COLUMNS;
   }
 }

@@ -17,12 +17,6 @@ import {loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
 export {isRemoteSource, validateAgainstSource, type SourceResult} from '@salesforce/b2c-tooling-sdk/scaffold';
 
 /**
- * @deprecated Use SourceResult from '@salesforce/b2c-tooling-sdk/scaffold' instead.
- * This type alias is kept for backwards compatibility.
- */
-export type LocalSourceResult = SourceResult;
-
-/**
  * Resolves a local (non-remote) parameter source.
  * Delegates to SDK function.
  *

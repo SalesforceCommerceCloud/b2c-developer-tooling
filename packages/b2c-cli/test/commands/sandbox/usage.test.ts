@@ -12,14 +12,8 @@ import {
   createTestCommand,
   makeCommandThrowOnError,
   runSilent,
+  stubOdsClient,
 } from '../../helpers/test-setup.js';
-
-function stubOdsClient(command: any, client: Partial<{GET: any}>): void {
-  Object.defineProperty(command, 'odsClient', {
-    value: client,
-    configurable: true,
-  });
-}
 
 function stubOdsHost(command: any, host = 'admin.dx.test.com'): void {
   Object.defineProperty(command, 'odsHost', {

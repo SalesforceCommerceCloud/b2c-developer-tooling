@@ -256,11 +256,6 @@ b2c am users update <LOGIN> [FLAGS]
 |------|-------------|
 | `--first-name` | Update first name |
 | `--last-name` | Update last name |
-| `--display-name` | Update display name |
-| `--preferred-locale` | Update preferred locale |
-| `--business-phone` | Update business phone |
-| `--home-phone` | Update home phone |
-| `--mobile-phone` | Update mobile phone |
 | `--json` | Output results as JSON |
 
 #### Examples
@@ -269,11 +264,10 @@ b2c am users update <LOGIN> [FLAGS]
 # Update user's first name
 b2c am users update user@example.com --first-name Jane
 
-# Update multiple fields
+# Update both name fields
 b2c am users update user@example.com \
   --first-name Jane \
-  --last-name Smith \
-  --display-name "Jane Smith"
+  --last-name Smith
 
 # Output as JSON
 b2c am users update user@example.com --first-name Jane --json

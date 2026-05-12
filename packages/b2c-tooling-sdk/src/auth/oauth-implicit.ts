@@ -440,7 +440,11 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
 
       server.on('error', (err) => {
         logger.error({error: err.message, port: this.localPort}, '[Auth] Failed to start OAuth redirect server');
-        reject(new Error(`Failed to start OAuth redirect server: ${err.message}`));
+        const hint =
+          'code' in err && (err as NodeJS.ErrnoException).code === 'EADDRINUSE'
+            ? ` Port ${this.localPort} is in use; set SFCC_OAUTH_LOCAL_PORT or pass localPort to use a different port.`
+            : '';
+        reject(new Error(`Failed to start OAuth redirect server: ${err.message}.${hint}`));
       });
     });
   }

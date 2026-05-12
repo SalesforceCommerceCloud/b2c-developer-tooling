@@ -75,6 +75,7 @@ import {z, type ZodRawShape, type ZodObject, type ZodType} from 'zod';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {McpTool, ToolResult, Toolset} from '../utils/index.js';
 import type {Services, MrtConfig} from '../services.js';
+import type {ServerContext} from '../server-context.js';
 
 /**
  * Context provided to tool execute functions.
@@ -99,6 +100,12 @@ export interface ToolExecutionContext {
    * Services instance for file system access and other utilities.
    */
   services: Services;
+
+  /**
+   * Server-scoped persistent state (debug sessions, log watches, etc.).
+   * Created once at server startup and shared across all tool invocations.
+   */
+  serverContext?: ServerContext;
 }
 
 /**
@@ -255,6 +262,7 @@ function formatZodErrors(error: z.ZodError): string {
 export function createToolAdapter<TInput, TOutput>(
   options: ToolAdapterOptions<TInput, TOutput>,
   loadServices: () => Promise<Services> | Services,
+  serverContext?: ServerContext,
 ): McpTool {
   const {
     name,
@@ -322,6 +330,7 @@ export function createToolAdapter<TInput, TOutput>(
           b2cInstance,
           mrtConfig,
           services,
+          serverContext,
         };
         const output = await execute(args, context);
 

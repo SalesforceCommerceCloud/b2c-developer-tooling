@@ -1,0 +1,16 @@
+[
+  {"query": "debug this controller", "should_trigger": true},
+  {"query": "set a breakpoint on line 42 of Cart.js", "should_trigger": true},
+  {"query": "what's the value of basket at line 100", "should_trigger": true},
+  {"query": "step through the checkout code", "should_trigger": true},
+  {"query": "start a debug session on my sandbox", "should_trigger": true},
+  {"query": "inspect variables when the order is placed", "should_trigger": true},
+  {"query": "I need to debug why the payment hook fails", "should_trigger": true},
+  {"query": "how do I use the debugger from a script", "should_trigger": true},
+  {"query": "connect to the script debugger via RPC", "should_trigger": true},
+  {"query": "evaluate an expression in the halted thread", "should_trigger": true},
+  {"query": "deploy my cartridges to the sandbox", "should_trigger": false},
+  {"query": "check the error logs for failures", "should_trigger": false},
+  {"query": "create a new custom object type", "should_trigger": false},
+  {"query": "search for products using SCAPI", "should_trigger": false}
+]

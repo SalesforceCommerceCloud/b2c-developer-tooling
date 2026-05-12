@@ -3,9 +3,8 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Args, Flags, ux} from '@oclif/core';
-import cliui from 'cliui';
-import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {Args, Flags} from '@oclif/core';
+import {InstanceCommand, printFieldsBlock, type DetailSection} from '@salesforce/b2c-tooling-sdk/cli';
 import {getBmRole, type BmRole} from '@salesforce/b2c-tooling-sdk/operations/bm-roles';
 import {t} from '../../../i18n/index.js';
 
@@ -50,45 +49,31 @@ export default class BmRolesGet extends InstanceCommand<typeof BmRolesGet> {
       return role;
     }
 
-    this.printRoleDetails(role);
+    const sections: DetailSection[] = [];
+    if (role.users && role.users.length > 0) {
+      sections.push({
+        title: 'Assigned Users',
+        lines: role.users.map((user) => {
+          const login = user.login || '-';
+          const name = [user.first_name, user.last_name].filter(Boolean).join(' ');
+          return name ? `${login}  ${name}` : login;
+        }),
+      });
+    }
+
+    printFieldsBlock(
+      'Role Details',
+      [
+        ['ID', role.id],
+        ['Description', role.description],
+        ['User Count', role.user_count?.toString()],
+        ['User Manager', role.user_manager?.toString()],
+        ['Created', role.creation_date],
+        ['Last Modified', role.last_modified],
+      ],
+      {sections},
+    );
 
     return role;
-  }
-
-  private printRoleDetails(role: BmRole): void {
-    const ui = cliui({width: process.stdout.columns || 80});
-
-    ui.div({text: 'Role Details', padding: [1, 0, 0, 0]});
-    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-
-    const fields: [string, string | undefined][] = [
-      ['ID', role.id],
-      ['Description', role.description],
-      ['User Count', role.user_count?.toString()],
-      ['User Manager', role.user_manager?.toString()],
-      ['Created', role.creation_date],
-      ['Last Modified', role.last_modified],
-    ];
-
-    for (const [label, value] of fields) {
-      if (value !== undefined) {
-        ui.div({text: `${label}:`, width: 25, padding: [0, 2, 0, 0]}, {text: value, padding: [0, 0, 0, 0]});
-      }
-    }
-
-    if (role.users && role.users.length > 0) {
-      ui.div({text: '', padding: [1, 0, 0, 0]});
-      ui.div({text: 'Assigned Users', padding: [0, 0, 0, 0]});
-      ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-
-      for (const user of role.users) {
-        ui.div(
-          {text: user.login || '-', width: 40, padding: [0, 2, 0, 0]},
-          {text: [user.first_name, user.last_name].filter(Boolean).join(' ') || '', padding: [0, 0, 0, 0]},
-        );
-      }
-    }
-
-    ux.stdout(ui.toString());
   }
 }

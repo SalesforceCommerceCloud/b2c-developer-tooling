@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {BaseCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  BaseCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   createScaffoldRegistry,
   type Scaffold,
@@ -92,14 +98,7 @@ export default class ScaffoldList extends BaseCommand<typeof ScaffoldList> {
       description: 'Filter by source (built-in, user, project, plugin)',
       options: ['built-in', 'user', 'project', 'plugin'],
     }),
-    columns: Flags.string({
-      description: `Columns to display (comma-separated). Available: ${Object.keys(COLUMNS).join(', ')}`,
-    }),
-    extended: Flags.boolean({
-      char: 'x',
-      description: 'Show all columns including extended fields',
-      default: false,
-    }),
+    ...columnFlagsFor(COLUMNS, {columnsChar: false}),
   };
 
   async run(): Promise<ScaffoldListResponse> {
@@ -144,32 +143,8 @@ export default class ScaffoldList extends BaseCommand<typeof ScaffoldList> {
     this.log(t('commands.scaffold.list.foundScaffolds', 'Found {{count}} scaffold(s):', {count: scaffolds.length}));
     this.log('');
 
-    tableRenderer.render(scaffolds, this.getSelectedColumns());
+    tableRenderer.render(scaffolds, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     return response;
-  }
-
-  /**
-   * Determines which columns to display based on flags.
-   */
-  private getSelectedColumns(): string[] {
-    const columnsFlag = this.flags.columns;
-    const extended = this.flags.extended;
-
-    if (columnsFlag) {
-      const requested = columnsFlag.split(',').map((c) => c.trim());
-      const valid = tableRenderer.validateColumnKeys(requested);
-      if (valid.length === 0) {
-        this.warn(`No valid columns specified. Available: ${tableRenderer.getColumnKeys().join(', ')}`);
-        return DEFAULT_COLUMNS;
-      }
-      return valid;
-    }
-
-    if (extended) {
-      return tableRenderer.getColumnKeys();
-    }
-
-    return DEFAULT_COLUMNS;
   }
 }

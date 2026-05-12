@@ -84,8 +84,8 @@ For Account Manager operations that require user-level roles (organization and A
 For enhanced security, use JWT Bearer authentication instead of client secrets. This requires uploading a certificate to the API client and using the `--jwt-cert` and `--jwt-key` flags. See [JWT Authentication](#jwt-authentication-certificate-based) for setup instructions.
 :::
 
-::: warning
-For client credentials with secrets, only `client_secret_basic` is supported. `client_secret_post` isn't currently supported.
+::: info
+For client credentials with secrets, use `client_secret_basic` (the default). `client_secret_post` is not currently supported.
 :::
 
 ### Assigning Roles
@@ -422,6 +422,55 @@ For operations that interact with B2C Commerce instances (code deployment, jobs,
   "methods": ["get"]
 }
 ```
+
+**BM administration (`bm roles`, `bm users`, `bm whoami`, `bm access-key`):**
+
+```json
+{
+  "resource_id": "/roles",
+  "methods": ["get"]
+},
+{
+  "resource_id": "/roles/*",
+  "methods": ["get", "put", "delete"]
+},
+{
+  "resource_id": "/roles/*/users",
+  "methods": ["get"]
+},
+{
+  "resource_id": "/roles/*/users/*",
+  "methods": ["put", "delete"]
+},
+{
+  "resource_id": "/roles/*/permissions",
+  "methods": ["get", "put"]
+},
+{
+  "resource_id": "/users",
+  "methods": ["get"]
+},
+{
+  "resource_id": "/users/*",
+  "methods": ["get", "patch", "delete"]
+},
+{
+  "resource_id": "/users/this",
+  "methods": ["get"]
+},
+{
+  "resource_id": "/users/*/access_key/*",
+  "methods": ["get", "put", "patch", "delete"]
+},
+{
+  "resource_id": "/user_search",
+  "methods": ["post"]
+}
+```
+
+::: tip BM functional permissions
+`bm whoami` and the `bm access-key` family additionally require *a real BM user identity*. Service-client tokens cannot resolve to a BM user, so the CLI defaults these commands to browser-based user auth. Access-key writes also require the **Manage_Users_Access_Keys** BM functional permission on the user account performing the request — grant it via **Administration** > **Roles & Permissions** in Business Manager. See [BM Commands → Authentication](/cli/bm#authentication) for details.
+:::
 
 ## SCAPI Authentication
 

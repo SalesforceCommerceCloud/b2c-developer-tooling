@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import {Args, Flags} from '@oclif/core';
 import {withDocs} from '../../i18n/index.js';
 import {CipCommand} from '../../utils/cip/command.js';
-import {renderTable, toCsv, type CipOutputFormat} from '../../utils/cip/format.js';
+import {renderTable, writeCsv, writeJson, type CipOutputFormat} from '../../utils/cip/format.js';
 
 interface CipQueryCommandResult {
   columns: string[];
@@ -56,7 +56,7 @@ export default class CipQuery extends CipCommand<typeof CipQuery> {
     }
 
     if (this.flags.format === 'json') {
-      process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
+      writeJson(output);
       return output;
     }
 
@@ -66,7 +66,7 @@ export default class CipQuery extends CipCommand<typeof CipQuery> {
 
   private renderRows(columns: string[], rows: Array<Record<string, unknown>>, format: CipOutputFormat): void {
     if (format === 'csv') {
-      process.stdout.write(`${toCsv(columns, rows)}\n`);
+      writeCsv(columns, rows);
       return;
     }
 

@@ -9,7 +9,8 @@ import {createCdnZonesClient, type CdnZonesClient} from '@salesforce/b2c-tooling
 import {t} from '../../i18n/index.js';
 
 /**
- * Format API error for display.
+ * Format API error for display. Used by ECDN call sites that capture the error
+ * but not the response (the SDK's getApiErrorMessage requires both).
  */
 export function formatApiError(error: unknown): string {
   return typeof error === 'object' ? JSON.stringify(error) : String(error);
@@ -28,27 +29,8 @@ export abstract class EcdnCommand<T extends typeof Command> extends OAuthCommand
    */
   protected getCdnZonesClient(): CdnZonesClient {
     if (!this._cdnZonesClient) {
-      const {shortCode, tenantId} = this.resolvedConfig.values;
-
-      if (!shortCode) {
-        this.error(
-          t(
-            'error.shortCodeRequired',
-            'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
-          ),
-        );
-      }
-      if (!tenantId) {
-        this.error(
-          t(
-            'error.tenantIdRequired',
-            'tenant-id is required. Provide via --tenant-id flag, SFCC_TENANT_ID env var, or tenant-id in dw.json.',
-          ),
-        );
-      }
-
-      const oauthStrategy = this.getOAuthStrategy();
-      this._cdnZonesClient = createCdnZonesClient({shortCode, tenantId}, oauthStrategy);
+      const {shortCode, tenantId} = this.requireScapiCoordinates();
+      this._cdnZonesClient = createCdnZonesClient({shortCode, tenantId}, this.getOAuthStrategy());
     }
     return this._cdnZonesClient;
   }
@@ -58,28 +40,34 @@ export abstract class EcdnCommand<T extends typeof Command> extends OAuthCommand
    */
   protected getCdnZonesRwClient(): CdnZonesClient {
     if (!this._cdnZonesRwClient) {
-      const {shortCode, tenantId} = this.resolvedConfig.values;
-
-      if (!shortCode) {
-        this.error(
-          t(
-            'error.shortCodeRequired',
-            'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
-          ),
-        );
-      }
-      if (!tenantId) {
-        this.error(
-          t(
-            'error.tenantIdRequired',
-            'tenant-id is required. Provide via --tenant-id flag, SFCC_TENANT_ID env var, or tenant-id in dw.json.',
-          ),
-        );
-      }
-
-      const oauthStrategy = this.getOAuthStrategy();
-      this._cdnZonesRwClient = createCdnZonesClient({shortCode, tenantId}, oauthStrategy, {readWrite: true});
+      const {shortCode, tenantId} = this.requireScapiCoordinates();
+      this._cdnZonesRwClient = createCdnZonesClient({shortCode, tenantId}, this.getOAuthStrategy(), {readWrite: true});
     }
     return this._cdnZonesRwClient;
+  }
+
+  /**
+   * Resolves the SCAPI shortCode + tenantId, raising a uniform user-facing error
+   * if either is missing. Centralized so both client variants stay consistent.
+   */
+  private requireScapiCoordinates(): {shortCode: string; tenantId: string} {
+    const {shortCode, tenantId} = this.resolvedConfig.values;
+    if (!shortCode) {
+      this.error(
+        t(
+          'error.shortCodeRequired',
+          'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
+        ),
+      );
+    }
+    if (!tenantId) {
+      this.error(
+        t(
+          'error.tenantIdRequired',
+          'tenant-id is required. Provide via --tenant-id flag, SFCC_TENANT_ID env var, or tenant-id in dw.json.',
+        ),
+      );
+    }
+    return {shortCode, tenantId};
   }
 }

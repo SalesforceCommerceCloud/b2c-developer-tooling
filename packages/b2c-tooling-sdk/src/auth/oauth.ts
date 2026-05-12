@@ -11,6 +11,10 @@ import {globalAuthMiddlewareRegistry, applyAuthRequestMiddleware, applyAuthRespo
 // Module-level token cache to support multiple instances with same clientId
 const ACCESS_TOKEN_CACHE: Map<string, AccessTokenResponse> = new Map();
 
+// In-flight token requests, keyed by cacheKey, so concurrent callers coalesce
+// onto a single token-endpoint round trip instead of stampeding the server.
+const PENDING_TOKEN_REQUESTS: Map<string, Promise<AccessTokenResponse>> = new Map();
+
 export interface OAuthConfig {
   clientId: string;
   clientSecret: string;
@@ -163,10 +167,7 @@ export class OAuthStrategy implements AuthStrategy {
       return cached;
     }
 
-    // Get new token via client credentials
-    const tokenResponse = await this.clientCredentialsGrant();
-    setCachedOAuthToken(this.cacheKey, tokenResponse);
-    return tokenResponse;
+    return this.refreshTokenSingleflight();
   }
 
   /**
@@ -203,11 +204,31 @@ export class OAuthStrategy implements AuthStrategy {
       return cached.accessToken;
     }
 
-    // Get new token via client credentials
-    logger.debug('[OAuthStrategy] Requesting new access token');
-    const tokenResponse = await this.clientCredentialsGrant();
-    setCachedOAuthToken(this.cacheKey, tokenResponse);
+    const tokenResponse = await this.refreshTokenSingleflight();
     return tokenResponse.accessToken;
+  }
+
+  /**
+   * Returns a fresh token, coalescing concurrent callers onto a single in-flight
+   * token request keyed by cacheKey. Prevents stampeding the AM token endpoint
+   * when many requests trigger refresh at once.
+   */
+  private refreshTokenSingleflight(): Promise<AccessTokenResponse> {
+    const existing = PENDING_TOKEN_REQUESTS.get(this.cacheKey);
+    if (existing) {
+      getLogger().debug('[OAuthStrategy] Joining in-flight token request');
+      return existing;
+    }
+    const pending = (async () => {
+      getLogger().debug('[OAuthStrategy] Requesting new access token');
+      const tokenResponse = await this.clientCredentialsGrant();
+      setCachedOAuthToken(this.cacheKey, tokenResponse);
+      return tokenResponse;
+    })().finally(() => {
+      PENDING_TOKEN_REQUESTS.delete(this.cacheKey);
+    });
+    PENDING_TOKEN_REQUESTS.set(this.cacheKey, pending);
+    return pending;
   }
 
   /**

@@ -137,8 +137,11 @@ export class WebDavClient {
 
     for (const m of middleware) {
       if (m.onRequest) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const result = await m.onRequest(middlewareParams as any);
+        // openapi-fetch's MiddlewareCallbackParams has many internal fields we
+        // don't reproduce here; the cast is intentional and tightening the type
+        // would require pulling those into our own contract.
+        // @ts-expect-error — see comment above
+        const result = await m.onRequest(middlewareParams);
         if (result instanceof Request) {
           request = result;
           middlewareParams.request = request;
@@ -181,8 +184,9 @@ export class WebDavClient {
     };
     for (const m of middleware) {
       if (m.onResponse) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const result = await m.onResponse(responseParams as any);
+        // See note on the onRequest cast above; same rationale applies.
+        // @ts-expect-error — partial reimplementation of openapi-fetch's MiddlewareCallbackParams
+        const result = await m.onResponse(responseParams);
         if (result instanceof Response) {
           response = result;
           responseParams.response = response;

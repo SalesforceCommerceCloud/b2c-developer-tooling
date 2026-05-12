@@ -112,17 +112,4 @@ describe('ecdn page-shield notifications list', () => {
       expect(errorStub.calledOnce).to.equal(true);
     }
   });
-
-  it('shows extended columns', async () => {
-    const command: any = await createCommand({'tenant-id': 'zzxy_prd', extended: true});
-    const columns = command.getSelectedColumns();
-    expect(columns).to.include('createdAt');
-    expect(columns).to.include('zones');
-  });
-
-  it('supports custom columns', async () => {
-    const command: any = await createCommand({'tenant-id': 'zzxy_prd', columns: 'id,name'});
-    const columns = command.getSelectedColumns();
-    expect(columns).to.deep.equal(['id', 'name']);
-  });
 });

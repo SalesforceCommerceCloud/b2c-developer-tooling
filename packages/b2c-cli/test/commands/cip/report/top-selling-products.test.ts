@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import TopSellingProducts from '../../../../src/commands/cip/report/top-selling-products.js';
-import {createIsolatedConfigHooks, createTestCommand} from '../../../helpers/test-setup.js';
+import {createIsolatedConfigHooks, createTestCommand, runSilent} from '../../../helpers/test-setup.js';
 
 describe('cip report top-selling-products', () => {
   const hooks = createIsolatedConfigHooks();
@@ -33,9 +33,8 @@ describe('cip report top-selling-products', () => {
     });
 
     sinon.stub(command, 'validateCipAuthMethods').returns(void 0);
-    sinon.stub(process.stdout, 'write');
 
-    const result = await command.run();
+    const result = (await runSilent(() => command.run())) as any;
 
     expect(result.reportName).to.equal('top-selling-products');
     expect(result.sql).to.be.a('string');

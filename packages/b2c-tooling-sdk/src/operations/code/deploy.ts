@@ -195,21 +195,28 @@ export async function uploadCartridges(
   // Upload archive
   let stopProgress = startProgress('uploading');
   logger.debug({uploadPath}, 'Uploading archive...');
-  await webdav.put(uploadPath, buffer, 'application/zip');
-  stopProgress();
+  try {
+    await webdav.put(uploadPath, buffer, 'application/zip');
+  } finally {
+    stopProgress();
+  }
   logger.debug('Archive uploaded');
 
   // Unzip on server
   stopProgress = startProgress('unzipping');
   logger.debug('Unzipping archive on server...');
-  const response = await webdav.request(uploadPath, {
-    method: 'POST',
-    body: UNZIP_BODY,
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-  });
-  stopProgress();
+  let response: Response;
+  try {
+    response = await webdav.request(uploadPath, {
+      method: 'POST',
+      body: UNZIP_BODY,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+  } finally {
+    stopProgress();
+  }
 
   if (!response.ok) {
     const text = await response.text();

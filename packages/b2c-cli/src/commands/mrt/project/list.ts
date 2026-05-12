@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  MrtCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {listProjects, type ListProjectsResult, type MrtProject} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 
@@ -32,6 +38,8 @@ const COLUMNS: Record<string, ColumnDef<MrtProject>> = {
 };
 
 const DEFAULT_COLUMNS = ['name', 'slug', 'organization', 'region'];
+
+const tableRenderer = new TableRenderer(COLUMNS);
 
 /**
  * List MRT projects accessible to the authenticated user.
@@ -63,6 +71,7 @@ export default class MrtProjectList extends MrtCommand<typeof MrtProjectList> {
     offset: Flags.integer({
       description: 'Offset for pagination',
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<ListProjectsResult> {
@@ -87,7 +96,10 @@ export default class MrtProjectList extends MrtCommand<typeof MrtProjectList> {
         this.log(t('commands.mrt.project.list.empty', 'No projects found.'));
       } else {
         this.log(t('commands.mrt.project.list.count', 'Found {{count}} project(s):', {count: result.count}));
-        createTable(COLUMNS).render(result.projects, DEFAULT_COLUMNS);
+        tableRenderer.render(
+          result.projects,
+          selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
+        );
       }
     }
 

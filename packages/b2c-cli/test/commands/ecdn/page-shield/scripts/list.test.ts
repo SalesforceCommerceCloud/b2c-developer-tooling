@@ -137,23 +137,4 @@ describe('ecdn page-shield scripts list', () => {
       expect(errorStub.calledOnce).to.equal(true);
     }
   });
-
-  it('shows all columns with --extended flag', async () => {
-    const command: any = await createCommand({'tenant-id': 'zzxy_prd', zone: 'my-zone', extended: true});
-
-    const columns = command.getSelectedColumns();
-
-    expect(columns).to.include('id');
-    expect(columns).to.include('url');
-    expect(columns).to.include('malwareScore');
-    expect(columns).to.include('lastSeenAt');
-  });
-
-  it('supports custom columns with --columns flag', async () => {
-    const command: any = await createCommand({'tenant-id': 'zzxy_prd', zone: 'my-zone', columns: 'id,url,status'});
-
-    const columns = command.getSelectedColumns();
-
-    expect(columns).to.deep.equal(['id', 'url', 'status']);
-  });
 });
