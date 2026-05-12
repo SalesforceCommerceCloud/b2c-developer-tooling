@@ -143,20 +143,17 @@ export class ContentTreeDataProvider implements vscode.TreeDataProvider<ContentT
     }
 
     // Auto-seed configured libraries if the in-memory list is empty.
-    // Prefer the full `libraries` array (each entry can mark siteLibrary);
-    // fall back to a single contentLibrary as a shared library.
+    // Seed the union of `libraries` (each entry can mark siteLibrary) and
+    // the singular `contentLibrary` (as a shared library). addLibrary
+    // dedupes by id+siteLibrary, so listing the same id in both is a no-op.
     const libraries = this.configProvider.getLibraries();
     if (libraries.length === 0) {
-      const configured = this.configProvider.getConfiguredLibraries();
-      if (configured.length > 0) {
-        for (const entry of configured) {
-          this.configProvider.addLibrary(entry.id, entry.siteLibrary);
-        }
-      } else {
-        const contentLibrary = this.configProvider.getContentLibrary();
-        if (contentLibrary) {
-          this.configProvider.addLibrary(contentLibrary, false);
-        }
+      for (const entry of this.configProvider.getConfiguredLibraries()) {
+        this.configProvider.addLibrary(entry.id, entry.siteLibrary);
+      }
+      const contentLibrary = this.configProvider.getExplicitContentLibrary();
+      if (contentLibrary) {
+        this.configProvider.addLibrary(contentLibrary, false);
       }
     }
 

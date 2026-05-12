@@ -43,6 +43,16 @@ export class ContentConfigProvider {
   }
 
   /**
+   * The explicitly configured singular `contentLibrary` value (or undefined
+   * when only `libraries` is set). Use this when you need to distinguish an
+   * explicit `contentLibrary` from the `libraries[0]` fallback in
+   * {@link getContentLibrary}.
+   */
+  getExplicitContentLibrary(): string | undefined {
+    return this.configProvider.getConfig()?.values.contentLibrary;
+  }
+
+  /**
    * Configured library entries (from `libraries` config), normalized to
    * `{id, siteLibrary}` form. Returns an empty array when nothing is configured.
    */
