@@ -13,6 +13,7 @@ import type {Services} from './services.js';
 import type {ServerContext} from './server-context.js';
 import {createCartridgesTools} from './tools/cartridges/index.js';
 import {createDiagnosticsTools} from './tools/diagnostics/index.js';
+import {createDocsTools} from './tools/docs/index.js';
 import {createMrtTools} from './tools/mrt/index.js';
 import {createPwav3Tools} from './tools/pwav3/index.js';
 import {createScapiTools} from './tools/scapi/index.js';
@@ -87,6 +88,7 @@ export function createToolRegistry(
 ): ToolRegistry {
   const registry: ToolRegistry = {
     CARTRIDGES: [],
+    DIAGNOSTICS: [],
     MRT: [],
     PWAV3: [],
     SCAPI: [],
@@ -97,6 +99,7 @@ export function createToolRegistry(
   const allTools: McpTool[] = [
     ...createCartridgesTools(loadServices),
     ...createDiagnosticsTools(loadServices, serverContext),
+    ...createDocsTools(loadServices),
     ...createMrtTools(loadServices),
     ...createPwav3Tools(loadServices),
     ...createScapiTools(loadServices),
