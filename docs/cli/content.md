@@ -102,6 +102,38 @@ export SFCC_SERVER=my-sandbox.demandware.net
 export SFCC_CLIENT_ID=your-client-id
 export SFCC_CLIENT_SECRET=your-client-secret
 b2c content export homepage
+
+# With a libraries config entry (see below) marking "homepage" as site-private,
+# --site-library is inferred automatically:
+b2c content export homepage --library homepage
+```
+
+### Configuring multiple libraries
+
+Listing libraries under `b2c.libraries` in `package.json` (or `libraries` in `dw.json`) lets the CLI pick a default library and infer `--site-library` per entry. Bare strings are shared libraries; `{id, siteLibrary: true}` marks a site-private library. Both forms can be mixed:
+
+```json
+{
+  "b2c": {
+    "libraries": [
+      "RefArch",
+      { "id": "homepage", "siteLibrary": true }
+    ]
+  }
+}
+```
+
+With this config:
+
+```bash
+# Uses RefArch (first entry) as the default library
+b2c content export hero-banner
+
+# --site-library is inferred from the matching entry
+b2c content export homepage --library homepage
+
+# Explicit flag still overrides the config
+b2c content export homepage --library homepage --no-site-library
 ```
 
 ### Output
@@ -165,6 +197,11 @@ b2c content list --library SharedLibrary --tree
 
 # List from a site-private library
 b2c content list --library RefArch --site-library
+
+# With a libraries config entry marking "homepage" as site-private,
+# --site-library is inferred automatically (see "b2c content export"
+# above for an example b2c.libraries config):
+b2c content list --library homepage
 
 # List from a local XML file
 b2c content list --library SharedLibrary --library-file ./library.xml
