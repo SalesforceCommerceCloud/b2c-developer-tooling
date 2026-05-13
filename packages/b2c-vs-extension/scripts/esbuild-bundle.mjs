@@ -164,8 +164,15 @@ if (watchMode) {
   copySwaggerUiAssets();
 
   if (fs.existsSync(webviewUiSrc)) {
-    await esbuild.build(webviewBuildOptions);
-    console.log('[webview-ui] Built webview UI bundles into dist/webview-ui/');
+    try {
+      await esbuild.build(webviewBuildOptions);
+      console.log('[webview-ui] Built webview UI bundles into dist/webview-ui/');
+    } catch (err) {
+      // Surface a clean error so CI logs a single recognisable line instead of
+      // letting esbuild's stack ride out as the top-level rejection.
+      console.error('[webview-ui] Build failed:', err instanceof Error ? err.message : err);
+      process.exit(1);
+    }
   }
 
   if (result.metafile && process.env.ANALYZE_BUNDLE) {

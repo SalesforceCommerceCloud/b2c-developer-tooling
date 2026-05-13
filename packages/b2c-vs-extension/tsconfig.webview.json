@@ -1,16 +1,16 @@
 {
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "jsx": "react-jsx",
-    "rootDir": "src/webview-ui",
-    "outDir": "dist/webview-ui-types",
-    "noEmit": true,
-    "resolveJsonModule": true
-  },
-  "include": ["src/webview-ui/**/*"],
-  "exclude": []
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"target": "ES2022",
+		"lib": ["ES2022", "DOM", "DOM.Iterable"],
+		"jsx": "react-jsx",
+		"rootDir": "src/webview-ui",
+		"outDir": "dist/webview-ui-types",
+		"noEmit": true,
+		"resolveJsonModule": true
+	},
+	"include": ["src/webview-ui/**/*"],
+	"exclude": []
 }

@@ -1,11 +1,11 @@
 /*
  * Copyright (c) 2025, Salesforce, Inc.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Top-level Query Builder app. Holds the view layout (header, toolbar, sidebar,
- * builder/editor split, run bar, results panel) and wires reducer state to the
- * extension-host message bridge.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+// Top-level Query Builder app. Holds the view layout (header, toolbar, sidebar,
+// builder/editor split, run bar, results panel) and wires reducer state to the
+// extension-host message bridge.
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useReducer, useRef, useState} from 'react';
 import {ConnectionBar} from '../shared/components/ConnectionBar.js';
@@ -52,7 +52,6 @@ function getTypeClass(type: string): string {
 interface StatusState {
   kind: StatusKind;
   text?: string;
-  html?: string;
 }
 
 export function QueryBuilder() {
@@ -88,15 +87,20 @@ export function QueryBuilder() {
     [state.currentTable, state.selectedFields, state.filters, state.filterLogic, state.orderBy, state.limit],
   );
 
-  // Auto-reveal SQL panel as soon as builder has produced something meaningful.
-  // Mirrors the bug-fix added to the legacy webview.
+  // The Generated SQL preview should always show the SQL that would run if the
+  // user clicked Run Query *right now*. In Builder view that's the reducer
+  // output; in SQL view it's whatever the user has typed. This keeps the
+  // editor and the preview in lock-step in both directions.
+  const displaySql = state.currentView === 'editor' && state.customSql ? state.customSql : sql;
+
+  // Auto-reveal SQL panel as soon as we have something meaningful to preview.
   useEffect(() => {
-    // Intentionally only depends on `sql` so a user-closed panel doesn't
-    // bounce back open every time the SQL string updates.
-    if (sql && !sql.startsWith('--') && !showSql) {
+    // Intentionally only depends on `displaySql` so a user-closed panel
+    // doesn't bounce back open every time the SQL string updates.
+    if (displaySql && !displaySql.startsWith('--') && !showSql) {
       setShowSql(true);
     }
-  }, [sql]);
+  }, [displaySql]);
 
   // Keep the SQL editor live: every change to the builder (table, columns,
   // filters, sort, limit) flows straight into the SQL textarea — the same
@@ -117,7 +121,7 @@ export function QueryBuilder() {
     if (connection.status !== 'connected' || !connection.tenantId) return;
     tablesEverLoaded.current = true;
     setTablesLoading(true);
-    setStatus({kind: 'loading', html: '<span class="spinner"></span> Loading entities...'});
+    setStatus({kind: 'loading', text: 'Loading entities...'});
     postMessage({command: 'loadTables'});
   }, [connection.status, connection.tenantId]);
 
@@ -125,7 +129,7 @@ export function QueryBuilder() {
   useEffect(() => {
     if (connection.tenantId && connection.status !== 'connected' && !tablesEverLoaded.current) {
       setTablesLoading(true);
-      setStatus({kind: 'loading', html: '<span class="spinner"></span> Connecting...'});
+      setStatus({kind: 'loading', text: 'Connecting...'});
     }
   }, [connection.tenantId, connection.status]);
 
@@ -172,7 +176,7 @@ export function QueryBuilder() {
         break;
       case 'queryExecuting':
         setQueryRunning(true);
-        setStatus({kind: 'loading', html: '<span class="spinner"></span> Executing query...'});
+        setStatus({kind: 'loading', text: 'Executing query...'});
         break;
       case 'queryResult':
         setQueryRunning(false);
@@ -257,7 +261,7 @@ export function QueryBuilder() {
     }
     setTablesLoading(true);
     dispatch({type: 'setTables', tables: state.tables}); // no-op to keep current list during reload
-    setStatus({kind: 'loading', html: '<span class="spinner"></span> Loading entities...'});
+    setStatus({kind: 'loading', text: 'Loading entities...'});
     postMessage({command: 'loadTables'});
   };
 
@@ -296,7 +300,7 @@ export function QueryBuilder() {
     setQueryRunning(true);
     dispatch({type: 'setResults', data: null});
     setShowResults(true);
-    setStatus({kind: 'loading', html: '<span class="spinner"></span> Executing query...'});
+    setStatus({kind: 'loading', text: 'Executing query...'});
     postMessage({command: 'executeRawQuery', params: {sql: text, fetchSize: 1000}});
   }
 
@@ -504,7 +508,7 @@ export function QueryBuilder() {
             </div>
           </div>
 
-          <SqlPreview sql={sql} open={showSql} />
+          <SqlPreview sql={displaySql} open={showSql} />
 
           <div className="run-bar">
             <button
@@ -582,7 +586,7 @@ export function QueryBuilder() {
         </div>
       </div>
 
-      <StatusBar kind={status.kind} html={status.html} text={status.text} />
+      <StatusBar kind={status.kind} text={status.text} />
 
       <SaveQueryModal
         state={saveModal}

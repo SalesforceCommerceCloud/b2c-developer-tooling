@@ -1,11 +1,11 @@
 /*
  * Copyright (c) 2025, Salesforce, Inc.
- * SPDX-License-Identifier: Apache-2.0
- *
- * SQL preview block with a copy button. Visibility is controlled by the parent
- * (`open`) so the run-bar toggle stays beside the Run Query button — same as
- * the original layout.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+// SQL preview block with a copy button. Visibility is controlled by the parent
+// (`open`) so the run-bar toggle stays beside the Run Query button — same as
+// the original layout.
 import * as React from 'react';
 import {useMemo} from 'react';
 import {useClipboardCopy} from '../hooks/useClipboardCopy.js';
@@ -41,8 +41,10 @@ function escapeHtml(text: string): string {
 
 function highlightSql(sql: string): string {
   let out = escapeHtml(sql);
+  // Case-insensitive: the SQL editor accepts free-form input, so `select` /
+  // `Select` / `SELECT` should all light up the same way.
   for (const kw of KEYWORDS) {
-    const regex = new RegExp('\\b(' + kw + ')\\b', 'g');
+    const regex = new RegExp('\\b(' + kw + ')\\b', 'gi');
     out = out.replace(regex, '<span class="sql-keyword">$1</span>');
   }
   out = out.replace(/'([^']*)'/g, '<span class="sql-string">\'$1\'</span>');

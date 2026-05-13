@@ -5,6 +5,7 @@
  */
 import {createCipClient, DEFAULT_CIP_HOST, DEFAULT_CIP_STAGING_HOST} from '@salesforce/b2c-tooling-sdk/clients';
 import {listCipTables} from '@salesforce/b2c-tooling-sdk/operations/cip';
+import {randomUUID} from 'node:crypto';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 
@@ -244,7 +245,10 @@ export class CipConnectionService implements vscode.Disposable {
 
   /** Remove a saved realm by id. If it was active, falls back to the first remaining realm. */
   async removeRealm(id: string): Promise<void> {
+    const before = this.realms.length;
     this.realms = this.realms.filter((r) => r.id !== id);
+    if (this.realms.length === before) return;
+    this.realmStatusMap.delete(id);
     await this.persistRealms();
     if (this.connection.id === id) {
       const fallback = this.realms[0];
@@ -254,6 +258,11 @@ export class CipConnectionService implements vscode.Disposable {
         this.connection = makeBlankConnection();
         this._onDidChange.fire(this.get());
       }
+    } else {
+      // Always notify subscribers (tree, status bar) even when the active realm
+      // didn't change — a non-active realm went away and the sidebar needs to
+      // re-render to reflect it.
+      this._onDidChange.fire(this.get());
     }
   }
 
@@ -317,9 +326,14 @@ export class CipConnectionService implements vscode.Disposable {
     this.setStatus('testing', `Connecting to CIP host ${host}`);
 
     const TIMEOUT_MS = 15_000;
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`Connection timed out after ${TIMEOUT_MS / 1000}s`)), TIMEOUT_MS),
-    );
+    // Track the timer so we can clear it once the handshake settles. Without
+    // the clear, a fast-returning request still keeps the timer pending and
+    // its rejection runs later as a no-op against an already-resolved race —
+    // not user-visible, but pollutes the event loop.
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(`Connection timed out after ${TIMEOUT_MS / 1000}s`)), TIMEOUT_MS);
+    });
 
     try {
       const config = this.configProvider.getConfig();
@@ -334,6 +348,8 @@ export class CipConnectionService implements vscode.Disposable {
       const message = err instanceof Error ? err.message : String(err);
       this.log.appendLine(`[CIP Connection] FAILED · ${message}`);
       this.setStatus('disconnected', message);
+    } finally {
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
     }
     return this.get();
   }
@@ -445,7 +461,7 @@ function realmFrom(conn: CipConnection): CipRealm {
 }
 
 function generateId(): string {
-  return Math.random().toString(36).slice(2, 10);
+  return randomUUID();
 }
 
 /** Derive a short friendly label from a tenant ID by stripping common env suffixes.

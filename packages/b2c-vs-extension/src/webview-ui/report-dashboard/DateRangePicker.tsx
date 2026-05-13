@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2025, Salesforce, Inc.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Date-range presets ("Last Week", "Last Month", "Last 6 Months", "Custom").
- * Reused by report dashboards that declare both a `from` and `to` date param.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+// Date-range presets ("Last Week", "Last Month", "Last 6 Months", "Custom").
+// Reused by report dashboards that declare both a `from` and `to` date param.
 import * as React from 'react';
 import {useEffect, useState} from 'react';
 

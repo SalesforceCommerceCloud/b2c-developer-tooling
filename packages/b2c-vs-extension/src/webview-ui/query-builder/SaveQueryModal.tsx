@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2025, Salesforce, Inc.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Save / Edit modal. `mode` toggles between creating a new entry and renaming
- * an existing one — same form, different submit handler.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+// Save / Edit modal. `mode` toggles between creating a new entry and renaming
+// an existing one — same form, different submit handler.
 import * as React from 'react';
 import {useEffect, useState} from 'react';
 import {Modal} from '../shared/components/Modal.js';

@@ -30,6 +30,26 @@ interface WebviewMessage {
 }
 
 /**
+ * Serializable subset of {@link CipReportDefinition} that the host injects as
+ * `window.__REPORT__` for the Report Dashboard webview. Mirrors the
+ * `ReportContext` interface declared on the webview side.
+ */
+interface ReportContextSeed {
+  name: string;
+  description: string;
+  category: string;
+  displayName: string;
+  parameters: Array<{
+    name: string;
+    description: string;
+    type: 'string' | 'number' | 'boolean' | 'date';
+    required?: boolean;
+    min?: number;
+    max?: number;
+  }>;
+}
+
+/**
  * Manages CIP Analytics webview panels.
  * Inspired by SOQL Builder - provides visual query interface with parameter forms.
  */
@@ -105,6 +125,20 @@ export class CipWebviewManager {
     const host = this.connection.resolvedHost();
     const client = createCipClient({instance: conn.tenantId, host}, config.createOAuth());
     return {client, tenantId: conn.tenantId, host};
+  }
+
+  /**
+   * Route a clipboard write through the extension host. The webview's
+   * `navigator.clipboard.writeText()` only works while the panel holds a
+   * transient user-activation; after the first paste-and-blur subsequent
+   * calls reject silently. Using `vscode.env.clipboard` keeps repeat copies
+   * reliable regardless of the webview's focus state.
+   */
+  private async copyToClipboard(message: WebviewMessage): Promise<void> {
+    const text = String(message.params?.text ?? '');
+    if (text.length > 0) {
+      await vscode.env.clipboard.writeText(text);
+    }
   }
 
   /**
@@ -300,14 +334,7 @@ export class CipWebviewManager {
         break;
       }
       case 'copyToClipboard': {
-        // Same routing trick as the Query Builder: webview's
-        // navigator.clipboard.writeText() loses access once the panel blurs,
-        // so repeat copies fail silently. Routing through the extension
-        // host's clipboard API keeps the action reliable across consecutive clicks.
-        const text = String(message.params?.text ?? '');
-        if (text.length > 0) {
-          await vscode.env.clipboard.writeText(text);
-        }
+        await this.copyToClipboard(message);
         break;
       }
       case 'log': {
@@ -394,13 +421,7 @@ export class CipWebviewManager {
         break;
       }
       case 'copyToClipboard': {
-        // Webview's navigator.clipboard.writeText() loses access once the panel
-        // blurs, so repeat copies fail silently. Routing through the extension
-        // host's clipboard API keeps the action reliable across consecutive clicks.
-        const text = String(message.params?.text ?? '');
-        if (text.length > 0) {
-          await vscode.env.clipboard.writeText(text);
-        }
+        await this.copyToClipboard(message);
         break;
       }
       case 'log': {
@@ -510,7 +531,7 @@ export class CipWebviewManager {
         },
       });
     } catch (error) {
-      const errorMessage = this.formatConnectionError(error);
+      const errorMessage = CipWebviewManager.formatConnectionError(error);
       this.log.appendLine(`[CIP Query Builder] Query failed: ${errorMessage}`);
       this.connection.markDisconnected(errorMessage);
       panel.webview.postMessage({command: 'queryError', error: errorMessage});
@@ -518,9 +539,10 @@ export class CipWebviewManager {
   }
 
   /**
-   * Format connection error with helpful messages.
+   * Map a low-level connection error onto a user-actionable message.
+   * Pure (no `this`) so it can be unit-tested in isolation.
    */
-  private formatConnectionError(error: unknown): string {
+  static formatConnectionError(error: unknown): string {
     const msg = error instanceof Error ? error.message : String(error);
 
     // 429 from CIP usually means we fired too many handshakes in a short window.
@@ -636,7 +658,7 @@ export class CipWebviewManager {
         tableCount: tableNames.length,
       });
     } catch (error) {
-      const errorMessage = this.formatConnectionError(error);
+      const errorMessage = CipWebviewManager.formatConnectionError(error);
       this.log.appendLine(`[CIP Tables Browser] Failed to load tables: ${errorMessage}`);
       this.connection.markDisconnected(errorMessage);
       panel.webview.postMessage({command: 'tablesLoadError', error: errorMessage});
@@ -675,6 +697,19 @@ export class CipWebviewManager {
         .filter((c) => c.name.length > 0);
 
       if (columns.length === 0 && schema.columns.length > 0) {
+        // Defense-in-depth: only run the metadata-fallback SQL for
+        // identifier-shaped table names. The webview always sends a name from
+        // the previously-loaded list, but this handler is reachable from any
+        // caller that posts a `describeTable` message, so lock the input down
+        // to a SQL identifier before string-interpolating it.
+        if (!CipWebviewManager.isSafeTableIdentifier(tableName)) {
+          panel.webview.postMessage({
+            command: 'tableDescribeError',
+            tableName,
+            error: 'Invalid table name.',
+          });
+          return;
+        }
         this.log.appendLine(
           `[CIP Tables Browser] SDK returned ${schema.columns.length} columns but names were blank — re-querying metadata directly.`,
         );
@@ -707,7 +742,7 @@ export class CipWebviewManager {
 
       panel.webview.postMessage({command: 'tableDescribed', tableName, schema: {columns}});
     } catch (error) {
-      const errorMessage = this.formatConnectionError(error);
+      const errorMessage = CipWebviewManager.formatConnectionError(error);
       this.log.appendLine(`[CIP Tables Browser] Failed to describe table: ${errorMessage}`);
       this.connection.markDisconnected(errorMessage);
       panel.webview.postMessage({command: 'tableDescribeError', tableName, error: errorMessage});
@@ -880,7 +915,7 @@ export class CipWebviewManager {
         },
       });
     } catch (error) {
-      const errorMessage = this.formatConnectionError(error);
+      const errorMessage = CipWebviewManager.formatConnectionError(error);
       this.log.appendLine(`[CIP Analytics] Query failed: ${errorMessage}`);
       this.connection.markDisconnected(errorMessage);
       panel.webview.postMessage({command: 'queryError', error: errorMessage});
@@ -918,6 +953,16 @@ export class CipWebviewManager {
   }
 
   /**
+   * Whitelist for SQL table identifiers. Allows `name` or `schema.name`, each
+   * segment a standard `[A-Za-z_][A-Za-z0-9_]*` token. Used before
+   * interpolating a user-provided table name into the metadata-fallback SQL
+   * inside `describeTable`.
+   */
+  private static isSafeTableIdentifier(name: string): boolean {
+    return /^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?$/.test(name);
+  }
+
+  /**
    * Build the HTML shell that mounts a React webview UI bundle.
    *
    * Each panel is now a small React app under src/webview-ui/, bundled by
@@ -932,7 +977,7 @@ export class CipWebviewManager {
       bodyClass?: string;
       htmlClass?: string;
       entry: 'query-builder' | 'tables-browser' | 'report-dashboard';
-      reportContext?: {name: string; description: string; category: string; displayName: string; parameters: unknown[]};
+      reportContext?: ReportContextSeed;
     },
   ): string {
     const nonce = randomBytes(16).toString('hex');

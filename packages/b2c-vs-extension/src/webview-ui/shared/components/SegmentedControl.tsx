@@ -1,9 +1,9 @@
 /*
  * Copyright (c) 2025, Salesforce, Inc.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Used for both the AND/OR logic toggle and the Builder/SQL view switch.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+// Used for both the AND/OR logic toggle and the Builder/SQL view switch.
 import * as React from 'react';
 
 interface Props<T extends string> {

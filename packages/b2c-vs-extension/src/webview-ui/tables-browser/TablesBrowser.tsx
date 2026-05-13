@@ -1,11 +1,11 @@
 /*
  * Copyright (c) 2025, Salesforce, Inc.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Tables Browser app. Mirrors the layout and behavior of the legacy
- * tables-browser.html: search + reload toolbar, two-pane split, schema
- * detail with sticky header columns / types / nullable.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+// Tables Browser app. Mirrors the layout and behavior of the legacy
+// tables-browser.html: search + reload toolbar, two-pane split, schema
+// detail with sticky header columns / types / nullable.
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ConnectionBar} from '../shared/components/ConnectionBar.js';
@@ -45,6 +45,13 @@ export function TablesBrowser() {
   });
   const hasAutoLoadRequested = useRef(false);
   const hideTimer = useRef<number | null>(null);
+  // Schema state is read inside the inbound-message callback. Mirror it into a
+  // ref so the callback can stay stable across renders — without this, the ref
+  // change list `[schema.tableName]` rebuilds the listener after every schema
+  // update, briefly leaving an unsubscribed window where late-arriving messages
+  // (`tableDescribed`, `tableDescribeError`) could be missed.
+  const schemaTableNameRef = useRef<string | null>(null);
+  schemaTableNameRef.current = schema.tableName;
 
   const setStatusFor = (kind: StatusKind, text?: string, html?: string) => {
     if (hideTimer.current) {
@@ -74,50 +81,47 @@ export function TablesBrowser() {
     requestTablesLoad();
   }, [connection.status, connection.tenantId, hasLoadedOnce, requestTablesLoad]);
 
-  const onMessage = useCallback(
-    (msg: import('../shared/bridge/vscode.js').InboundMessage) => {
-      switch (msg.command) {
-        case 'connectionState':
-          setConnection(msg.connection);
-          break;
-        case 'tablesLoading':
-          setStatusFor('loading', undefined, '<span class="spinner"></span> Loading entities…');
-          break;
-        case 'tablesLoaded':
-          setAllTables(msg.tables || []);
-          setHasLoadedOnce(true);
-          setStatusFor('success', `Loaded ${msg.tableCount} entities.`);
-          break;
-        case 'tablesLoadError':
-          setStatusFor('error', msg.error);
-          break;
-        case 'tableDescribing':
-          setSchema({tableName: msg.tableName, columns: [], loading: true, error: null});
-          break;
-        case 'tableDescribed': {
-          const cols = (msg.schema?.columns || []) as ColumnInfo[];
-          setSchema({
-            tableName: msg.tableName ?? schema.tableName,
-            columns: cols,
-            loading: false,
-            error: null,
-          });
-          break;
-        }
-        case 'tableDescribeError':
-          setSchema({
-            tableName: msg.tableName ?? schema.tableName,
-            columns: [],
-            loading: false,
-            error: msg.error,
-          });
-          break;
-        default:
-          break;
+  const onMessage = useCallback((msg: import('../shared/bridge/vscode.js').InboundMessage) => {
+    switch (msg.command) {
+      case 'connectionState':
+        setConnection(msg.connection);
+        break;
+      case 'tablesLoading':
+        setStatusFor('loading', undefined, '<span class="spinner"></span> Loading entities…');
+        break;
+      case 'tablesLoaded':
+        setAllTables(msg.tables || []);
+        setHasLoadedOnce(true);
+        setStatusFor('success', `Loaded ${msg.tableCount} entities.`);
+        break;
+      case 'tablesLoadError':
+        setStatusFor('error', msg.error);
+        break;
+      case 'tableDescribing':
+        setSchema({tableName: msg.tableName, columns: [], loading: true, error: null});
+        break;
+      case 'tableDescribed': {
+        const cols = (msg.schema?.columns || []) as ColumnInfo[];
+        setSchema({
+          tableName: msg.tableName ?? schemaTableNameRef.current,
+          columns: cols,
+          loading: false,
+          error: null,
+        });
+        break;
       }
-    },
-    [schema.tableName],
-  );
+      case 'tableDescribeError':
+        setSchema({
+          tableName: msg.tableName ?? schemaTableNameRef.current,
+          columns: [],
+          loading: false,
+          error: msg.error,
+        });
+        break;
+      default:
+        break;
+    }
+  }, []);
   useInboundMessages(onMessage);
 
   const filteredTables = useMemo(() => {

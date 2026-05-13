@@ -1,11 +1,11 @@
 /*
  * Copyright (c) 2025, Salesforce, Inc.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Renders the dynamic parameter form for a curated CIP report. Field types
- * mirror the original report-dashboard.html generator (string/site/date/
- * boolean/number).
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+// Renders the dynamic parameter form for a curated CIP report. Field types
+// mirror the original report-dashboard.html generator (string/site/date/
+// boolean/number).
 import * as React from 'react';
 import {DateRangePicker, type DateRangeValue} from './DateRangePicker.js';
 import type {ReportParamDefinition} from './types.js';

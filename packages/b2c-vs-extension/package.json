@@ -998,6 +998,50 @@
       ],
       "commandPalette": [
         {
+          "command": "b2c-dx.cipAnalytics.refresh",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.resetFromDwJson",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.openReport",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.browseTables",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.queryBuilder",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.configureConnection",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.testConnection",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.switchRealm",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.switchConnection",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.addRealm",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.removeRealm",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
           "command": "b2c-dx.apiBrowser.openSwagger",
           "when": "false"
         },

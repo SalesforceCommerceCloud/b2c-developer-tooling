@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2025, Salesforce, Inc.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Reusable modal shell for save/edit dialogs. Mirrors the markup the existing
- * .qb-modal styles target so visual fidelity is preserved.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+// Reusable modal shell for save/edit dialogs. Mirrors the markup the existing
+// .qb-modal styles target so visual fidelity is preserved.
 import * as React from 'react';
 import {useEffect} from 'react';
 

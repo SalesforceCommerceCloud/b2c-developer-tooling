@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2025, Salesforce, Inc.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Read-only table used to render query results. Sortable headers are opt-in
- * (Report Dashboard uses them; Query Builder doesn't currently sort).
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+// Read-only table used to render query results. Sortable headers are opt-in
+// (Report Dashboard uses them; Query Builder doesn't currently sort).
 import * as React from 'react';
 import {useMemo, useState} from 'react';
 import {Icon} from './Icon.js';

@@ -1,11 +1,11 @@
 /*
  * Copyright (c) 2025, Salesforce, Inc.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Curated-report dashboard. Renders the parameter form, runs the query against
- * the host, displays results in a sortable table, and exposes CSV/JSON/Copy
- * exports.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+// Curated-report dashboard. Renders the parameter form, runs the query against
+// the host, displays results in a sortable table, and exposes CSV/JSON/Copy
+// exports.
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ConnectionBar} from '../shared/components/ConnectionBar.js';
@@ -117,14 +117,15 @@ function ReportDashboardInner({report}: {report: NonNullable<ReturnType<typeof g
   }, []);
   useInboundMessages(onMessage);
 
-  // Ask for sites when connection comes up — site-id reports need them to populate the dropdown.
+  // Ask for sites when connection comes up — site-id reports need them to
+  // populate the dropdown. We deliberately do NOT clear `siteOptions` on a
+  // transient disconnect; otherwise the user's already-selected site would
+  // disappear from the dropdown the moment the connection blips. New options
+  // arrive with the next `sitesLoaded`.
   useEffect(() => {
-    if (connection.status === 'connected') {
-      const needsSites = report.parameters.some((p) => p.name === 'siteId');
-      if (needsSites) postMessage({command: 'loadSites'});
-    } else {
-      setSiteOptions(null);
-    }
+    if (connection.status !== 'connected') return;
+    const needsSites = report.parameters.some((p) => p.name === 'siteId');
+    if (needsSites) postMessage({command: 'loadSites'});
   }, [connection.status, report.parameters]);
 
   // Cmd/Ctrl + Enter runs the report.

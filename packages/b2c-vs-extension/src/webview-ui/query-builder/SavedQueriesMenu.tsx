@@ -1,11 +1,11 @@
 /*
  * Copyright (c) 2025, Salesforce, Inc.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Toolbar dropdown listing the user's saved queries. Active-tenant entries
- * appear first; other tenants drop below a divider so they're still reachable
- * but visually de-emphasized.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+// Toolbar dropdown listing the user's saved queries. Active-tenant entries
+// appear first; other tenants drop below a divider so they're still reachable
+// but visually de-emphasized.
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 import {Icon} from '../shared/components/Icon.js';
