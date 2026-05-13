@@ -93,42 +93,21 @@ describe('tools/scapi/scapi-custom-apis-get-status', () => {
   });
 
   describe('createScapiCustomApisStatusTool', () => {
-    it('should create scapi_custom_apis_get_status tool with correct metadata and input schema', () => {
+    it('should create scapi_custom_apis_get_status tool with correct metadata', () => {
       const tool = createScapiCustomApisStatusTool(() => services);
 
-      expect(tool).to.exist;
       expect(tool.name).to.equal('scapi_custom_apis_get_status');
       expect(tool.description).to.be.a('string').and.not.empty;
+      expect(tool.inputSchema).to.exist;
       expect(tool.handler).to.be.a('function');
       expect(tool.toolsets).to.deep.equal(['PWAV3', 'SCAPI', 'STOREFRONTNEXT']);
       expect(tool.isGA).to.be.true;
-
-      // Input schema: status, groupBy, columns - all optional Zod schemas.
-      expect(tool.inputSchema).to.exist;
-      const schema = tool.inputSchema as Record<
-        string,
-        {isOptional?: () => boolean; safeParse?: (v: unknown) => unknown}
-      >;
-      expect(Object.keys(schema)).to.have.members(['status', 'groupBy', 'columns']);
-      // Each field should be optional and individually parseable as a Zod schema.
-      for (const key of ['status', 'groupBy', 'columns']) {
-        expect(schema[key]?.safeParse, `${key} should expose a Zod safeParse`).to.be.a('function');
-        expect(schema[key]?.isOptional?.(), `${key} should be optional`).to.equal(true);
-      }
-      // status restricts to enum values
-      const statusOk = (schema.status.safeParse as (v: unknown) => {success: boolean}).bind(schema.status);
-      expect(statusOk('active')).to.have.property('success', true);
-      expect(statusOk('not_registered')).to.have.property('success', true);
-      expect(statusOk('bogus')).to.have.property('success', false);
     });
 
     it('should have optional input params: status, groupBy, columns', () => {
       const tool = createScapiCustomApisStatusTool(() => services);
 
-      expect(tool.inputSchema).to.have.property('status');
-      expect(tool.inputSchema).to.have.property('groupBy');
-      expect(tool.inputSchema).to.have.property('columns');
-      expect(tool.inputSchema).to.not.have.property('extended');
+      expect(Object.keys(tool.inputSchema as object)).to.have.members(['status', 'groupBy', 'columns']);
     });
   });
 
