@@ -6,11 +6,19 @@ on:
       - main
     paths:
       - 'packages/b2c-vs-extension/**'
+      - 'packages/b2c-tooling-sdk/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/ci-vs-extension.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'packages/b2c-vs-extension/**'
+      - 'packages/b2c-tooling-sdk/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/ci-vs-extension.yml'
 
 permissions:
   contents: read
@@ -50,6 +58,14 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
+
+      - name: Cache VS Code test binary
+        uses: actions/cache@v5
+        with:
+          path: packages/b2c-vs-extension/.vscode-test
+          key: ${{ runner.os }}-vscode-test-${{ hashFiles('packages/b2c-vs-extension/.vscode-test.mjs', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-vscode-test-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
