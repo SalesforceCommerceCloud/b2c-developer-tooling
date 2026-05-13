@@ -26,7 +26,7 @@ describe('auth/oauth-implicit', () => {
 
   it('adds Authorization and x-dw-client-id headers on fetch', async () => {
     const clientId = 'implicit-client-headers';
-    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a']});
+    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a'], persistSession: false});
 
     (strategy as unknown as {implicitFlowLogin: () => Promise<TokenResponse>}).implicitFlowLogin = async () => ({
       accessToken: 'tok-1',
@@ -54,7 +54,7 @@ describe('auth/oauth-implicit', () => {
 
   it('retries once on 401 after invalidating the cached token', async () => {
     const clientId = 'implicit-client-401';
-    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a']});
+    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a'], persistSession: false});
 
     let tokenCalls = 0;
     (strategy as unknown as {implicitFlowLogin: () => Promise<TokenResponse>}).implicitFlowLogin = async () => {
@@ -107,7 +107,7 @@ describe('auth/oauth-implicit', () => {
 
   it('does not retry on initial 401 when no prior success', async () => {
     const clientId = 'implicit-client-no-retry';
-    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a']});
+    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a'], persistSession: false});
 
     let tokenCalls = 0;
     (strategy as unknown as {implicitFlowLogin: () => Promise<TokenResponse>}).implicitFlowLogin = async () => {
@@ -138,7 +138,7 @@ describe('auth/oauth-implicit', () => {
 
   it('reuses cached token when scopes and expiry are valid', async () => {
     const clientId = 'implicit-client-cache';
-    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a']});
+    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a'], persistSession: false});
 
     let tokenCalls = 0;
     (strategy as unknown as {implicitFlowLogin: () => Promise<TokenResponse>}).implicitFlowLogin = async () => {
@@ -161,7 +161,7 @@ describe('auth/oauth-implicit', () => {
 
   it('re-authenticates when cached token is missing required scopes', async () => {
     const clientId = 'implicit-client-scopes';
-    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a', 'b']});
+    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a', 'b'], persistSession: false});
 
     let tokenCalls = 0;
     (strategy as unknown as {implicitFlowLogin: () => Promise<TokenResponse>}).implicitFlowLogin = async () => {
@@ -185,7 +185,7 @@ describe('auth/oauth-implicit', () => {
 
   it('deduplicates concurrent token requests using pending auth mutex', async () => {
     const clientId = 'implicit-client-pending';
-    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a']});
+    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a'], persistSession: false});
 
     let resolveToken: ((t: TokenResponse) => void) | undefined;
     let tokenCalls = 0;

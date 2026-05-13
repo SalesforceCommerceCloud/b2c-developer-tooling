@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {ux} from '@oclif/core';
+import {Flags, ux} from '@oclif/core';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {getStoredSession, isStatefulTokenValid, decodeJWT} from '@salesforce/b2c-tooling-sdk/auth';
+import {findAuthSession, listAuthSessions, isAuthSessionTokenValid, decodeJWT} from '@salesforce/b2c-tooling-sdk/auth';
 import {t} from '../../../i18n/index.js';
 
 /**
@@ -15,76 +15,84 @@ interface AuthClientTokenOutput {
   accessToken: string;
   clientId: string;
   expires: string;
-  renewable: boolean;
   scopes: string[];
   user: null | string;
 }
 
 /**
- * Return the current authentication token from the stateful store.
- * Mirrors sfcc-ci `client:auth:token` command behavior.
+ * Return the stored authentication token. With multiple stored sessions
+ * (e.g. one from `auth client`, one from `auth login`), pass `--client-id`
+ * to disambiguate.
  */
 export default class AuthClientToken extends BaseCommand<typeof AuthClientToken> {
-  static description = t(
-    'commands.auth.client.token.description',
-    'Return the current authentication token (stateful)',
-  );
+  static description = t('commands.auth.client.token.description', 'Return the stored authentication token');
 
   static enableJsonFlag = true;
 
-  static examples = ['<%= config.bin %> <%= command.id %>', '<%= config.bin %> <%= command.id %> --json'];
+  static examples = [
+    '<%= config.bin %> <%= command.id %>',
+    '<%= config.bin %> <%= command.id %> --client-id <id>',
+    '<%= config.bin %> <%= command.id %> --json',
+  ];
+
+  static flags = {
+    'client-id': Flags.string({
+      description: 'Client ID for the stored session to read',
+      env: 'SFCC_CLIENT_ID',
+      helpGroup: 'AUTH',
+    }),
+  };
 
   static hiddenAliases = ['client:auth:token'];
 
   async run(): Promise<AuthClientTokenOutput> {
-    this.logger.debug('[StatefulAuth] Reading stored session from stateful store');
+    const requestedClientId = this.flags['client-id'];
+    let session = requestedClientId ? findAuthSession(requestedClientId) : null;
 
-    const session = getStoredSession();
+    if (!session && !requestedClientId) {
+      const all = listAuthSessions();
+      if (all.length === 1) {
+        session = all[0];
+      } else if (all.length > 1) {
+        this.error(
+          t('commands.auth.client.token.ambiguous', 'Multiple stored sessions found. Pass --client-id to choose one.'),
+        );
+      }
+    }
 
     if (!session?.accessToken) {
-      this.logger.debug('[StatefulAuth] No stored session found');
       this.error(
         t(
           'commands.auth.client.token.noToken',
-          'No authentication token found. Run `auth client` to authenticate first.',
+          'No authentication token found. Run `auth client` or `auth login` to authenticate first.',
         ),
       );
     }
 
-    this.logger.debug(
-      {clientId: session.clientId, user: session.user},
-      `[StatefulAuth] Found session for client: ${session.clientId}`,
-    );
-
-    // Decode JWT to extract metadata
     let expires = '';
-    let scopes: string[] = [];
+    let scopes: string[] = session.scopes ?? [];
     try {
       const decoded = decodeJWT(session.accessToken);
       const exp = decoded.payload.exp as number | undefined;
       if (typeof exp === 'number') {
         expires = new Date(exp * 1000).toISOString();
       }
-      const scope = decoded.payload.scope as string | string[] | undefined;
-      scopes = scope === null || scope === undefined ? [] : Array.isArray(scope) ? scope : scope.split(' ');
-      this.logger.debug({expires, scopes}, '[StatefulAuth] Decoded JWT claims');
-      this.logger.trace({jwt: decoded.payload}, '[StatefulAuth] JWT payload');
+      if (scopes.length === 0) {
+        const scope = decoded.payload.scope as string | string[] | undefined;
+        scopes = scope === null || scope === undefined ? [] : Array.isArray(scope) ? scope : scope.split(' ');
+      }
     } catch {
-      this.logger.debug('[StatefulAuth] Token is not a valid JWT; returning raw token');
+      // not a JWT; ignore
     }
 
-    const valid = isStatefulTokenValid(session);
-    const renewable = session.renewBase !== null && session.renewBase !== undefined && session.renewBase !== '';
-
-    this.logger.debug({valid, renewable}, `[StatefulAuth] Token valid: ${valid}, renewable: ${renewable}`);
+    const valid = isAuthSessionTokenValid(session);
 
     const output: AuthClientTokenOutput = {
       accessToken: session.accessToken,
       clientId: session.clientId,
       expires,
-      renewable,
       scopes,
-      user: session.user ?? null,
+      user: session.sub ?? null,
     };
 
     if (this.jsonEnabled()) {
@@ -92,14 +100,13 @@ export default class AuthClientToken extends BaseCommand<typeof AuthClientToken>
         this.warn(
           t(
             'commands.auth.client.token.expired',
-            'Token is expired or invalid. Run `auth client renew` or `auth client` to refresh.',
+            'Token is expired or invalid. Run `auth client` or `auth login` to re-authenticate.',
           ),
         );
       }
       return output;
     }
 
-    // In normal mode, output just the raw token to stdout (matches sfcc-ci behavior)
     ux.stdout(session.accessToken);
 
     return output;

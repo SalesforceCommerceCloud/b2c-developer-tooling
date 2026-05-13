@@ -157,7 +157,13 @@ export interface NormalizedConfig {
 /**
  * Warning codes for configuration resolution.
  */
-export type ConfigWarningCode = 'HOSTNAME_MISMATCH' | 'DEPRECATED_FIELD' | 'MISSING_REQUIRED' | 'SOURCE_ERROR';
+export type ConfigWarningCode =
+  | 'HOSTNAME_MISMATCH'
+  | 'CLIENT_ID_MISMATCH'
+  | 'SLAS_CLIENT_ID_MISMATCH'
+  | 'DEPRECATED_FIELD'
+  | 'MISSING_REQUIRED'
+  | 'SOURCE_ERROR';
 
 /**
  * A warning generated during configuration resolution.
@@ -211,6 +217,14 @@ export interface ResolveConfigOptions {
   workingDirectory?: string;
   /** Whether to apply hostname mismatch protection (default: true) */
   hostnameProtection?: boolean;
+  /**
+   * Whether to apply OAuth clientId mismatch protection (default: true).
+   * When the override clientId differs from the base config's clientId, the
+   * stored clientSecret is dropped — a secret bound to a different client
+   * would silently steer auth into client-credentials with credentials that
+   * never validate. Same protection applies to slasClientId / slasClientSecret.
+   */
+  clientIdProtection?: boolean;
   /** Cloud origin for ~/.mobify lookup (MRT) */
   cloudOrigin?: string;
   /** Path to custom MRT credentials file (overrides default ~/.mobify) */

@@ -236,13 +236,15 @@ export class B2CExtensionConfig implements vscode.Disposable {
   }
 
   /**
-   * Returns CreateOAuthOptions with VS Code-specific overrides for implicit auth:
+   * Returns CreateOAuthOptions with VS Code-specific overrides for browser-based
+   * user authentication (PKCE — and the legacy implicit flow):
    * - Uses `vscode.env.openExternal` to open the browser on the client (works in Codespaces/remote)
    * - Uses `vscode.env.asExternalUri` to resolve the redirect URI for port forwarding
    *
-   * Merge with any additional options before passing to `config.createOAuth()`.
+   * Merge with any additional options before passing to `config.createOAuth()`
+   * or `config.createB2CInstance()`.
    */
-  async getImplicitAuthOptions(): Promise<CreateOAuthOptions> {
+  async getUserAuthOptions(): Promise<CreateOAuthOptions> {
     const localPort = parseInt(process.env.SFCC_OAUTH_LOCAL_PORT || '', 10) || 8080;
     const localUri = vscode.Uri.parse(`http://localhost:${localPort}`);
     const externalUri = await vscode.env.asExternalUri(localUri);
@@ -253,6 +255,14 @@ export class B2CExtensionConfig implements vscode.Disposable {
         await vscode.env.openExternal(vscode.Uri.parse(url));
       },
     };
+  }
+
+  /**
+   * @deprecated Use {@link getUserAuthOptions}. Retained for callsite stability;
+   * the returned options work for both PKCE and legacy implicit flows.
+   */
+  async getImplicitAuthOptions(): Promise<CreateOAuthOptions> {
+    return this.getUserAuthOptions();
   }
 
   dispose(): void {

@@ -10,6 +10,7 @@ import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './t
 import {getLogger} from '../logging/logger.js';
 import {decodeJWT} from './oauth.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
+import {findAuthSession, saveAuthSession, type AuthSession} from './session-store.js';
 
 const DEFAULT_LOCAL_PORT = 8080;
 
@@ -47,6 +48,13 @@ export interface ImplicitOAuthConfig {
    * doesn't work (e.g., VS Code remote/Codespaces where `vscode.env.openExternal` is needed).
    */
   openBrowser?: (url: string) => Promise<void>;
+  /**
+   * Persist the access token to the unified auth-session store between CLI
+   * invocations. The implicit flow returns no refresh token, so when the
+   * stored token expires the user is prompted again.
+   * Defaults to `true`.
+   */
+  persistSession?: boolean;
 }
 
 /**
@@ -114,12 +122,16 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
   private accountManagerHost: string;
   private localPort: number;
   private redirectUri: string;
+  private persistSession: boolean;
   private _hasHadSuccess = false;
+  private _sub = '';
+  private _hydrated = false;
 
   constructor(private config: ImplicitOAuthConfig) {
     this.accountManagerHost = config.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST;
     this.localPort = config.localPort || parseInt(process.env.SFCC_OAUTH_LOCAL_PORT || '', 10) || DEFAULT_LOCAL_PORT;
     this.redirectUri = config.redirectUri || process.env.SFCC_REDIRECT_URI || `http://localhost:${this.localPort}`;
+    this.persistSession = config.persistSession !== false;
 
     const logger = getLogger();
     logger.debug(
@@ -128,10 +140,71 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
         accountManagerHost: this.accountManagerHost,
         port: this.localPort,
         redirectUri: this.redirectUri,
+        persistSession: this.persistSession,
       },
       '[Auth] ImplicitOAuthStrategy initialized',
     );
     logger.trace({scopes: this.config.scopes}, '[Auth] Configured scopes');
+  }
+
+  /**
+   * Load any persisted implicit session for this clientId. Idempotent.
+   * Skips PKCE-flow records (different shape, different flow tag).
+   */
+  private hydrate(): void {
+    if (!this.persistSession || this._hydrated) return;
+    this._hydrated = true;
+    try {
+      const stored = findAuthSession(this.config.clientId);
+      if (!stored || stored.flow !== 'implicit') return;
+      this._sub = stored.sub ?? '';
+      if (!ACCESS_TOKEN_CACHE.has(this.config.clientId) && stored.accessToken) {
+        const expires = stored.expiresAt ? new Date(stored.expiresAt) : new Date(0);
+        ACCESS_TOKEN_CACHE.set(this.config.clientId, {
+          accessToken: stored.accessToken,
+          expires,
+          scopes: stored.scopes ?? [],
+        });
+      }
+      getLogger().debug(
+        {clientId: this.config.clientId, sub: this._sub},
+        '[Auth] Hydrated implicit session from store',
+      );
+    } catch (error) {
+      getLogger().debug({err: error}, '[Auth] Implicit store hydration failed');
+    }
+  }
+
+  /**
+   * Persist the current access token. Implicit flow has no refresh token.
+   */
+  private persistTokens(tokenResponse: AccessTokenResponse): void {
+    if (!this.persistSession) return;
+    let sub = this._sub;
+    try {
+      const decoded = decodeJWT(tokenResponse.accessToken);
+      if (typeof decoded.payload.sub === 'string' && decoded.payload.sub.length > 0) {
+        sub = decoded.payload.sub;
+      }
+    } catch {
+      // ignore
+    }
+    this._sub = sub;
+    const record: AuthSession = {
+      clientId: this.config.clientId,
+      flow: 'implicit',
+      accessToken: tokenResponse.accessToken,
+      refreshToken: null,
+      sub,
+      expiresAt: tokenResponse.expires.toISOString(),
+      scopes: tokenResponse.scopes,
+      accountManagerHost: this.accountManagerHost,
+    };
+    try {
+      saveAuthSession(record);
+    } catch (error) {
+      getLogger().debug({err: error}, '[Auth] Failed to persist implicit session');
+    }
   }
 
   async fetch(url: string, init: FetchInit = {}): Promise<Response> {
@@ -195,6 +268,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
    */
   async getTokenResponse(): Promise<AccessTokenResponse> {
     const logger = getLogger();
+    this.hydrate();
     const cached = ACCESS_TOKEN_CACHE.get(this.config.clientId);
 
     if (cached) {
@@ -211,6 +285,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
     // Get new token via implicit flow
     const tokenResponse = await this.implicitFlowLogin();
     ACCESS_TOKEN_CACHE.set(this.config.clientId, tokenResponse);
+    this.persistTokens(tokenResponse);
     return tokenResponse;
   }
 
@@ -227,6 +302,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
    */
   private async getAccessToken(): Promise<string> {
     const logger = getLogger();
+    this.hydrate();
     const clientId = this.config.clientId;
     const cached = ACCESS_TOKEN_CACHE.get(clientId);
 
@@ -283,6 +359,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
     try {
       const tokenResponse = await authPromise;
       ACCESS_TOKEN_CACHE.set(clientId, tokenResponse);
+      this.persistTokens(tokenResponse);
       logger.debug(
         {expiresAt: tokenResponse.expires.toISOString(), scopes: tokenResponse.scopes},
         '[Auth] New token cached',

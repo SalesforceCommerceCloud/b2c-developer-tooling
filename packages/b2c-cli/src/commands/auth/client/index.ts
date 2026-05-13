@@ -5,27 +5,26 @@
  */
 import {Flags} from '@oclif/core';
 import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
-import {setStoredSession, decodeJWT} from '@salesforce/b2c-tooling-sdk/auth';
+import {saveAuthSession, decodeJWT} from '@salesforce/b2c-tooling-sdk/auth';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
 
 /**
  * Authenticate an API client (client_credentials or password grant) and persist the session.
- * Mirrors sfcc-ci `client:auth` command behavior. Uses the same stateful store so tokens
- * are shared with sfcc-ci, b2c auth:login, and subsequent CLI commands.
  *
  * Grant type is auto-detected based on credentials provided:
  *   - client_credentials: when only --client-id + --client-secret are given
  *   - password: when --user + --user-password are also provided
  *
- * Use --renew to enable automatic token renewal for later use with `auth client renew`.
+ * Only the access token is persisted — the client secret is NEVER stored.
+ * When the access token expires, re-run this command with the same credentials
+ * to obtain a new one. There is no automatic refresh.
  */
 export default class AuthClient extends BaseCommand<typeof AuthClient> {
   static description = t('commands.auth.client.description', 'Authenticate an API client and save session');
 
   static examples = [
     '<%= config.bin %> <%= command.id %> --client-id <id> --client-secret <secret>',
-    '<%= config.bin %> <%= command.id %> --client-id <id> --client-secret <secret> --renew',
     '<%= config.bin %> <%= command.id %> --client-id <id> --client-secret <secret> --user <email> --user-password <pwd>',
     '<%= config.bin %> <%= command.id %> --client-id <id> --client-secret <secret> --grant-type client_credentials',
   ];
@@ -56,11 +55,6 @@ export default class AuthClient extends BaseCommand<typeof AuthClient> {
       multipleNonGreedy: true,
       delimiter: ',',
       helpGroup: 'AUTH',
-    }),
-    renew: Flags.boolean({
-      char: 'r',
-      description: 'Enable automatic token renewal (stores credentials for later refresh)',
-      default: false,
     }),
     'grant-type': Flags.string({
       char: 't',
@@ -108,7 +102,6 @@ export default class AuthClient extends BaseCommand<typeof AuthClient> {
     const user = this.flags.user;
     const userPassword = this.flags['user-password'];
     const grantType = this.resolveGrantType(this.flags['grant-type'], user);
-    const autoRenew = this.flags.renew;
 
     if (grantType === 'password' && (!user || !userPassword)) {
       this.error(
@@ -184,16 +177,18 @@ export default class AuthClient extends BaseCommand<typeof AuthClient> {
       // not a JWT; ignore
     }
 
-    setStoredSession({
+    saveAuthSession({
       clientId,
+      flow: 'client-credentials',
       accessToken: data.access_token,
-      refreshToken: data.refresh_token ?? null,
-      renewBase: autoRenew ? credentials : null,
-      user: this.extractUser(data.id_token),
+      refreshToken: null,
+      sub: this.extractUser(data.id_token),
+      expiresAt: new Date(Date.now() + (data.expires_in ?? 0) * 1000).toISOString(),
+      scopes: data.scope ? data.scope.split(' ') : (scopes ?? []),
+      accountManagerHost,
     });
 
-    const renewMsg = autoRenew ? ' Auto-renewal enabled.' : '';
-    this.log(t('commands.auth.client.success', 'Authentication succeeded.{{renewMsg}}', {renewMsg}));
+    this.log(t('commands.auth.client.success', 'Authentication succeeded.'));
   }
 
   private extractUser(idToken: string | undefined): null | string {

@@ -28,7 +28,7 @@ For users who prefer the sfcc-ci workflow, the B2C CLI includes a compatibility 
 | sfcc-ci | b2c-cli |
 |---------|---------|
 | `sfcc-ci client:auth <id> <secret>` | `b2c auth client --client-id <id> --client-secret <secret>` |
-| `sfcc-ci client:auth:renew` | `b2c auth client renew` |
+| `sfcc-ci client:auth:renew` | _no equivalent_ — re-run `b2c auth client <id> <secret>` (the CLI does not persist the client secret) |
 | `sfcc-ci client:auth:token` | `b2c auth client token` |
 | `sfcc-ci auth:login [client]` | `b2c auth login [client]` |
 | `sfcc-ci auth:logout` | `b2c auth logout` |

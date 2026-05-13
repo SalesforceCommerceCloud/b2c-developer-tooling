@@ -9,6 +9,7 @@ import {createAccountManagerClient} from '../clients/am-api.js';
 import type {AccountManagerClient} from '../clients/am-api.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {ImplicitOAuthStrategy} from '../auth/oauth-implicit.js';
+import {PkceOAuthStrategy} from '../auth/oauth-pkce.js';
 import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
 import {StatefulOAuthStrategy} from '../auth/stateful-oauth-strategy.js';
 import {getDefaultPublicClientId} from '../defaults.js';
@@ -60,13 +61,19 @@ export abstract class AmCommand<T extends typeof Command> extends OAuthCommand<T
   }
 
   private _accountManagerClient?: AccountManagerClient;
-  private _authStrategy?: OAuthStrategy | JwtOAuthStrategy | ImplicitOAuthStrategy | StatefulOAuthStrategy;
+  private _authStrategy?:
+    | OAuthStrategy
+    | JwtOAuthStrategy
+    | ImplicitOAuthStrategy
+    | PkceOAuthStrategy
+    | StatefulOAuthStrategy;
 
   /**
    * Gets the auth method type that was used, based on the stored strategy.
    */
-  protected get authMethodUsed(): 'implicit' | 'client-credentials' | 'jwt' | 'stateful' | undefined {
+  protected get authMethodUsed(): 'user' | 'implicit' | 'client-credentials' | 'jwt' | 'stateful' | undefined {
     if (!this._authStrategy) return undefined;
+    if (this._authStrategy instanceof PkceOAuthStrategy) return 'user';
     if (this._authStrategy instanceof ImplicitOAuthStrategy) return 'implicit';
     if (this._authStrategy instanceof StatefulOAuthStrategy) return 'stateful';
     if (this._authStrategy instanceof JwtOAuthStrategy) return 'jwt';
@@ -143,7 +150,7 @@ export abstract class AmCommand<T extends typeof Command> extends OAuthCommand<T
       return this.getClientCredentialsSuggestion(subtopic, rolesInfo);
     }
 
-    if (authMethod === 'implicit') {
+    if (authMethod === 'user' || authMethod === 'implicit') {
       return this.getImplicitSuggestion(subtopic);
     }
 

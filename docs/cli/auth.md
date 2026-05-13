@@ -10,8 +10,8 @@ Commands for authentication and token management.
 
 The CLI supports **stateful auth** (session stored on disk) in addition to **stateless auth** (client credentials or one-off implicit flow):
 
-- **Stateful (browser)**: After you run `b2c auth login`, your token is stored on disk in the CLI data directory. Subsequent commands (e.g. `b2c auth token`, `b2c am orgs list`) use this token when it is present and valid. If the token is missing or expired, the CLI falls back to stateless auth.
-- **Stateful (client credentials)**: Use `b2c auth client` to authenticate with client ID and secret (or user/password) for non-interactive/automation use. Supports auto-renewal with `--renew`.
+- **Stateful (browser)**: After you run `b2c auth login`, your access token *and* a long-lived refresh token are stored on disk in the CLI data directory. Subsequent commands silently refresh the access token without re-prompting. If both tokens are missing/expired, the CLI falls back to stateless auth.
+- **Stateful (client credentials)**: Use `b2c auth client` to authenticate with client ID and secret (or user/password) for non-interactive/automation use. Only the access token is persisted — the client secret is never stored. When the access token expires, re-run `b2c auth client` with the same credentials. There is no automatic refresh.
 - **Stateless**: You provide `--client-id` (and optionally `--client-secret`) per run or via environment/config; no session is persisted.
 
 The stored session is used only when the token is valid and no explicit stateless auth flags are provided. The CLI falls back to stateless auth when the stored token is expired/invalid, or when `--client-secret`, `--user-auth`, or `--auth-methods` are passed on the command line. In both cases a warning is shown explaining why stateful auth was skipped. Note that `--client-id` alone does not force stateless; the stored session is used if the client ID matches. To opt out of stateful auth entirely, run `b2c auth logout` to clear the stored session.
@@ -20,7 +20,7 @@ Use **auth:logout** to clear the stored session and return to stateless-only beh
 
 ## b2c auth login
 
-Log in via browser (implicit OAuth) and save the session for stateful auth.
+Log in via browser (Authorization Code + PKCE) and save the session for stateful auth. The access token is silently refreshed via the persisted refresh token; you only see a browser prompt when the refresh token also expires (typically after 24 hours of disuse).
 
 ### Usage
 
@@ -51,7 +51,7 @@ b2c auth logout
 
 ## b2c auth client
 
-Authenticate an API client using client credentials or resource owner password credentials and save the session for stateful auth. Compatible with the [sfcc-ci `client:auth`](https://github.com/SalesforceCommerceCloud/sfcc-ci) workflow.
+Authenticate an API client using client credentials or resource owner password credentials and save the **access token** for stateful auth. The client secret is **never** persisted: when the access token expires, re-run this command with the same credentials. There is no automatic refresh for client_credentials sessions — for refresh-capable user authentication, use `b2c auth login` (PKCE) instead.
 
 This is the non-interactive alternative to `auth login` — ideal for CI/CD pipelines and automation.
 
@@ -60,9 +60,6 @@ This is the non-interactive alternative to `auth login` — ideal for CI/CD pipe
 ```bash
 # Client credentials grant (client ID + secret)
 b2c auth client --client-id <id> --client-secret <secret>
-
-# With auto-renewal enabled
-b2c auth client --client-id <id> --client-secret <secret> --renew
 
 # Resource owner password credentials grant (+ user credentials)
 b2c auth client --client-id <id> --client-secret <secret> --user <email> --user-password <pwd>
@@ -77,7 +74,6 @@ b2c auth client --client-id <id> --client-secret <secret> --grant-type client_cr
 |------|---------------------|-------------|
 | `--client-id` | `SFCC_CLIENT_ID` | Client ID (required) |
 | `--client-secret` | `SFCC_CLIENT_SECRET` | Client secret (required) |
-| `--renew` / `-r` | | Enable auto-renewal (stores credentials for `auth client renew`) |
 | `--grant-type` / `-t` | | Force grant type: `client_credentials` or `password` |
 | `--user` | `SFCC_OAUTH_USER_NAME` | Username for password grant |
 | `--user-password` | `SFCC_OAUTH_USER_PASSWORD` | Password for password grant |
@@ -98,34 +94,9 @@ export SFCC_CLIENT_ID=my-client
 export SFCC_CLIENT_SECRET=my-secret
 b2c auth client
 
-# Authenticate with auto-renewal for long-running scripts
-b2c auth client --client-id <id> --client-secret <secret> --renew
-
 # Authenticate with user credentials
 b2c auth client --client-id <id> --client-secret <secret> \
   --user admin@example.com --user-password secret123
-```
-
-## b2c auth client renew
-
-Renew the authentication token using stored credentials. Requires initial authentication with `--renew` flag.
-
-Uses `refresh_token` grant when a refresh token is stored, otherwise falls back to `client_credentials` grant.
-
-### Usage
-
-```bash
-b2c auth client renew
-```
-
-### Example
-
-```bash
-# Initial auth with --renew
-b2c auth client --client-id <id> --client-secret <secret> --renew
-
-# Later, renew the token without re-entering credentials
-b2c auth client renew
 ```
 
 ## b2c auth client token

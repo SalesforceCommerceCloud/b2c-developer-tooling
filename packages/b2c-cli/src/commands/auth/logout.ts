@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {clearStoredSession} from '@salesforce/b2c-tooling-sdk/auth';
+import {clearAllAuthSessions} from '@salesforce/b2c-tooling-sdk/auth';
 import {t, withDocs} from '../../i18n/index.js';
 
 /**
@@ -23,7 +23,7 @@ export default class AuthLogout extends BaseCommand<typeof AuthLogout> {
   static hiddenAliases = ['auth:logout'];
 
   async run(): Promise<void> {
-    clearStoredSession();
+    clearAllAuthSessions();
     this.log(t('commands.auth.logout.success', 'Logged out. Stored session cleared.'));
   }
 }

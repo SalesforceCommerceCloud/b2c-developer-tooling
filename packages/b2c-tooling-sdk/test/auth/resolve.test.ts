@@ -11,6 +11,7 @@ import {
   BasicAuthStrategy,
   ImplicitOAuthStrategy,
   OAuthStrategy,
+  PkceOAuthStrategy,
   checkAvailableAuthMethods,
   resolveAuthStrategy,
 } from '@salesforce/b2c-tooling-sdk/auth';
@@ -26,11 +27,12 @@ describe('auth/resolve', () => {
       expect(result.available).to.include('client-credentials');
     });
 
-    it('returns implicit when only clientId is provided', () => {
+    it('returns user (PKCE) and implicit when only clientId is provided', () => {
       const result = checkAvailableAuthMethods({
         clientId: 'test-client',
       });
 
+      expect(result.available).to.include('user');
       expect(result.available).to.include('implicit');
       expect(result.available).to.not.include('client-credentials');
     });
@@ -64,7 +66,7 @@ describe('auth/resolve', () => {
     });
 
     it('returns unavailable with reason when clientId is missing', () => {
-      const result = checkAvailableAuthMethods({}, ['client-credentials', 'implicit']);
+      const result = checkAvailableAuthMethods({}, ['client-credentials', 'user']);
 
       expect(result.unavailable).to.have.length(2);
       expect(result.unavailable[0].reason).to.equal('clientId is required');
@@ -106,8 +108,9 @@ describe('auth/resolve', () => {
         apiKey: 'test-key',
       });
 
-      expect(result.available).to.have.length(4);
+      expect(result.available).to.have.length(5);
       expect(result.available).to.include('client-credentials');
+      expect(result.available).to.include('user');
       expect(result.available).to.include('implicit');
       expect(result.available).to.include('basic');
       expect(result.available).to.include('api-key');
@@ -125,11 +128,23 @@ describe('auth/resolve', () => {
       expect(strategy).to.be.instanceOf(OAuthStrategy);
     });
 
-    it('returns ImplicitOAuthStrategy when only clientId is provided', () => {
+    it('returns PkceOAuthStrategy when only clientId is provided', () => {
       const strategy = resolveAuthStrategy({
         clientId: 'test-client',
         scopes: ['scope-a'],
       });
+
+      expect(strategy).to.be.instanceOf(PkceOAuthStrategy);
+    });
+
+    it('returns ImplicitOAuthStrategy when implicit is explicitly selected', () => {
+      const strategy = resolveAuthStrategy(
+        {
+          clientId: 'test-client',
+          scopes: ['scope-a'],
+        },
+        {allowedMethods: ['implicit']},
+      );
 
       expect(strategy).to.be.instanceOf(ImplicitOAuthStrategy);
     });

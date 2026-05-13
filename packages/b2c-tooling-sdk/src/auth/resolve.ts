@@ -31,6 +31,7 @@ import type {AuthStrategy, AuthMethod, AuthCredentials} from './types.js';
 import {ALL_AUTH_METHODS} from './types.js';
 import {OAuthStrategy} from './oauth.js';
 import {ImplicitOAuthStrategy} from './oauth-implicit.js';
+import {PkceOAuthStrategy} from './oauth-pkce.js';
 import {BasicAuthStrategy} from './basic.js';
 import {ApiKeyStrategy} from './api-key.js';
 
@@ -94,6 +95,7 @@ export function checkAvailableAuthMethods(
         }
         break;
 
+      case 'user':
       case 'implicit':
         if (credentials.clientId) {
           available.push(method);
@@ -172,6 +174,18 @@ export function resolveAuthStrategy(
             clientSecret: credentials.clientSecret,
             scopes: credentials.scopes,
             accountManagerHost: credentials.accountManagerHost,
+          });
+        }
+        break;
+
+      case 'user':
+        if (credentials.clientId) {
+          return new PkceOAuthStrategy({
+            clientId: credentials.clientId,
+            scopes: credentials.scopes,
+            accountManagerHost: credentials.accountManagerHost,
+            redirectUri: credentials.redirectUri,
+            openBrowser: credentials.openBrowser,
           });
         }
         break;

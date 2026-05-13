@@ -108,14 +108,15 @@ export interface DecodedJWT {
  * Available authentication methods.
  * - 'client-credentials': OAuth client credentials flow (requires clientId + clientSecret)
  * - 'jwt': OAuth JWT Bearer flow (requires clientId + JWT certificate/key pair)
- * - 'implicit': Interactive browser-based OAuth (requires clientId only)
+ * - 'user': Interactive browser-based user authentication (Authorization Code + PKCE; requires clientId only)
+ * - 'implicit': Legacy interactive browser-based OAuth implicit flow (deprecated; kept for compatibility)
  * - 'basic': Username/password (access key) authentication
  * - 'api-key': API key authentication (for MRT, etc.)
  */
-export type AuthMethod = 'client-credentials' | 'jwt' | 'implicit' | 'basic' | 'api-key';
+export type AuthMethod = 'client-credentials' | 'jwt' | 'user' | 'implicit' | 'basic' | 'api-key';
 
 /** All available auth methods in default priority order */
-export const ALL_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'jwt', 'implicit', 'basic', 'api-key'];
+export const ALL_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'jwt', 'user', 'implicit', 'basic', 'api-key'];
 
 /**
  * Configuration for resolving an auth strategy.

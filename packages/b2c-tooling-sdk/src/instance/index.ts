@@ -156,7 +156,7 @@ export class B2CInstance {
    */
   private getWebDavAuthStrategy(): AuthStrategy {
     // For WebDAV, default priority is basic first, then OAuth methods
-    const webdavMethods = this.auth.authMethods || (['basic', 'client-credentials', 'implicit'] as AuthMethod[]);
+    const webdavMethods = this.auth.authMethods || (['basic', 'client-credentials', 'user'] as AuthMethod[]);
 
     // If basic auth is allowed and configured, use it directly
     if (webdavMethods.includes('basic') && this.auth.basic) {
@@ -188,9 +188,10 @@ export class B2CInstance {
       openBrowser: this.auth.oauth.openBrowser,
     };
 
-    // Filter to only OAuth methods (client-credentials, implicit)
-    const oauthMethods = (this.auth.authMethods || (['client-credentials', 'implicit'] as AuthMethod[])).filter(
-      (m): m is 'client-credentials' | 'implicit' => m === 'client-credentials' || m === 'implicit',
+    // Filter to only OAuth methods (client-credentials, user, implicit)
+    const oauthMethods = (this.auth.authMethods || (['client-credentials', 'user'] as AuthMethod[])).filter(
+      (m): m is 'client-credentials' | 'user' | 'implicit' =>
+        m === 'client-credentials' || m === 'user' || m === 'implicit',
     );
 
     if (oauthMethods.length === 0) {

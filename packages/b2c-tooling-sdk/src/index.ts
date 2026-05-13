@@ -31,6 +31,7 @@ export {
   BasicAuthStrategy,
   OAuthStrategy,
   ImplicitOAuthStrategy,
+  PkceOAuthStrategy,
   JwtOAuthStrategy,
   ApiKeyStrategy,
   decodeJWT,
@@ -44,6 +45,7 @@ export type {
   DecodedJWT,
   OAuthConfig,
   ImplicitOAuthConfig,
+  PkceOAuthConfig,
   JwtOAuthConfig,
   AuthConfig,
   BasicAuthConfig,
@@ -384,6 +386,7 @@ export {
   DEFAULT_ACCOUNT_MANAGER_HOST,
   DEFAULT_ODS_HOST,
   DEFAULT_PUBLIC_CLIENT_ID,
+  LEGACY_IMPLICIT_PUBLIC_CLIENT_ID,
   getDefaultPublicClientId,
 } from './defaults.js';
 

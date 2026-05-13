@@ -5,14 +5,14 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
-import {ImplicitOAuthStrategy, setStoredSession, decodeJWT} from '@salesforce/b2c-tooling-sdk/auth';
+import {PkceOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
 
 /**
- * Log in via browser (implicit OAuth) and persist the session for stateful auth.
- * Uses the same storage as sfcc-ci; when valid, subsequent commands use this token
- * until it expires or you run auth:logout.
+ * Log in via browser (Authorization Code + PKCE) and persist the session for
+ * stateful auth. Uses the same storage as sfcc-ci; when valid, subsequent
+ * commands use this token until it expires or you run auth:logout.
  */
 export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
   static args = {
@@ -74,31 +74,15 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
     const accountManagerHost = this.resolvedConfig.values.accountManagerHost ?? DEFAULT_ACCOUNT_MANAGER_HOST;
     const scopes = this.resolvedConfig.values.scopes;
 
-    const strategy = new ImplicitOAuthStrategy({
+    const strategy = new PkceOAuthStrategy({
       clientId,
       scopes,
       accountManagerHost,
     });
 
-    const tokenResponse = await strategy.getTokenResponse();
-
-    let user: null | string = null;
-    try {
-      const decoded = decodeJWT(tokenResponse.accessToken);
-      if (typeof decoded.payload.sub === 'string') {
-        user = decoded.payload.sub;
-      }
-    } catch {
-      // ignore
-    }
-
-    setStoredSession({
-      clientId,
-      accessToken: tokenResponse.accessToken,
-      refreshToken: null,
-      renewBase: null,
-      user,
-    });
+    // PkceOAuthStrategy persists the session (with refresh token) to the
+    // unified auth-session store on its own.
+    await strategy.getTokenResponse();
 
     this.log(t('commands.auth.login.success', 'Login succeeded. Session saved for stateful auth.'));
   }

@@ -8,7 +8,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import {clearStoredSession, getStoredSession, resetStatefulStoreForTesting} from '@salesforce/b2c-tooling-sdk/auth';
+import {clearAllAuthSessions, findAuthSession, resetAuthSessionStoreForTesting} from '@salesforce/b2c-tooling-sdk/auth';
 import AuthClient from '../../../../src/commands/auth/client/index.js';
 import {stubCommandConfigAndLogger, makeCommandThrowOnError} from '../../../helpers/test-setup.js';
 
@@ -34,8 +34,8 @@ describe('auth client', () => {
   afterEach(() => {
     sinon.restore();
     server.resetHandlers();
-    clearStoredSession();
-    resetStatefulStoreForTesting();
+    clearAllAuthSessions();
+    resetAuthSessionStoreForTesting();
   });
 
   after(() => {
@@ -113,7 +113,7 @@ describe('auth client', () => {
   });
 
   describe('client_credentials grant', () => {
-    it('should authenticate and store session', async () => {
+    it('should authenticate and store the access token (no client secret persisted)', async () => {
       const command = createCommand({});
 
       server.use(
@@ -127,30 +127,13 @@ describe('auth client', () => {
 
       await command.run();
 
-      const session = getStoredSession();
+      const session = findAuthSession('test-client-id');
       expect(session).to.not.be.null;
       expect(session!.accessToken).to.equal('new-access-token');
-      expect(session!.renewBase).to.be.null;
-    });
-
-    it('should store renewBase when --renew flag is set', async () => {
-      const command = createCommand({renew: true});
-
-      server.use(
-        http.post(TOKEN_URL, () => {
-          return HttpResponse.json({
-            access_token: 'new-access-token',
-            expires_in: 1800,
-          });
-        }),
-      );
-
-      await command.run();
-
-      const session = getStoredSession();
-      expect(session).to.not.be.null;
-      expect(session!.renewBase).to.not.be.null;
-      expect(session!.renewBase).to.be.a('string');
+      expect(session!.flow).to.equal('client-credentials');
+      expect(session!.refreshToken).to.equal(null);
+      // Critical: client secret must NEVER be persisted
+      expect(JSON.stringify(session)).to.not.include('test-client-secret');
     });
 
     it('should extract user from id_token', async () => {
@@ -168,27 +151,29 @@ describe('auth client', () => {
 
       await command.run();
 
-      const session = getStoredSession();
-      expect(session!.user).to.equal('admin@example.com');
+      const session = findAuthSession('test-client-id');
+      expect(session!.sub).to.equal('admin@example.com');
     });
 
-    it('should store refresh_token when returned', async () => {
-      const command = createCommand({renew: true});
+    it('should not persist refresh_token even when returned by the server', async () => {
+      const command = createCommand({});
 
       server.use(
         http.post(TOKEN_URL, () => {
           return HttpResponse.json({
             access_token: 'new-access-token',
             expires_in: 1800,
-            refresh_token: 'new-refresh-token',
+            refresh_token: 'should-be-discarded',
           });
         }),
       );
 
       await command.run();
 
-      const session = getStoredSession();
-      expect(session!.refreshToken).to.equal('new-refresh-token');
+      const session = findAuthSession('test-client-id');
+      // client_credentials sessions never carry a refresh token; the user
+      // re-runs `auth client <id> <secret>` to obtain a fresh access token.
+      expect(session!.refreshToken).to.equal(null);
     });
   });
 

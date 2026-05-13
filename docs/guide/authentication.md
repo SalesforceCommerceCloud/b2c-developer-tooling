@@ -52,13 +52,13 @@ The CLI supports five authentication methods:
 
 **JWT Bearer** uses a public/private certificate pair for secure authentication without storing client secrets. This is ideal for production environments and CI/CD where you want stronger security. See [JWT Authentication](#jwt-authentication-certificate-based) for details.
 
-**Stateful User Auth** uses `b2c auth login` to open a browser for interactive login once, then stores the session on disk. Subsequent commands automatically use the stored token when it is present and valid, without re-opening the browser. Clear the session with `b2c auth logout`. See [Auth Commands](/cli/auth#b2c-auth-login) for details.
+**Stateful User Auth** uses `b2c auth login` to open a browser for interactive login once (Authorization Code + PKCE). The CLI persists both the access token *and* a long-lived refresh token, so subsequent commands silently refresh expired access tokens without re-opening the browser. Clear the session with `b2c auth logout`. See [Auth Commands](/cli/auth#b2c-auth-login) for details.
 
-**Stateful Client Auth** uses `b2c auth client` to authenticate once with client credentials (or user/password), store the session, and reuse it across subsequent commands without passing credentials each time. Mirrors the [sfcc-ci](https://github.com/SalesforceCommerceCloud/sfcc-ci) `client:auth` workflow. Use `--renew` to enable automatic token renewal via `b2c auth client renew`. See [Auth Commands](/cli/auth#b2c-auth-client) for details.
+**Stateful Client Auth** uses `b2c auth client` to authenticate once with client credentials (or user/password) and store the **access token** for reuse across subsequent commands. The client secret is never persisted, and there is no automatic refresh — when the access token expires, re-run `b2c auth client` with the same credentials. For refresh-capable user authentication, use `b2c auth login` instead. See [Auth Commands](/cli/auth#b2c-auth-client) for details.
 
 ::: warning Stateful vs Stateless Precedence
 The stored session is used only when the token is valid **and** no explicit auth flags are provided. The CLI falls back to stateless auth when:
-- The stored token is **expired or invalid** — a warning suggests `b2c auth client renew` (if renewable) or `b2c auth client` / `b2c auth login` to re-authenticate.
+- The stored token is **expired or invalid** — a warning suggests re-running `b2c auth client <id> <secret>` (for client-credentials sessions) or `b2c auth login` (for user sessions).
 - **Explicit stateless auth flags** are passed (`--client-secret`, `--user-auth`, or `--auth-methods`) — a warning lists the flags that triggered the override. Remove them to use the stored session. Note that `--client-id` alone does not force stateless; the stored session is used if the client ID matches.
 
 To opt out of stateful auth entirely, run `b2c auth logout` to clear the stored session. The CLI will then use stateless auth exclusively.
