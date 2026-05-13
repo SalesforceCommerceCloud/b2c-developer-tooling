@@ -10,7 +10,6 @@ This page covers:
 
 - [Connecting to a B2C Instance](#connecting-to-a-b2c-instance) — credentials per feature.
 - [Switching the Active Instance](#switching-the-active-instance) — single-workspace, multi-instance.
-- [Project Root Pinning](#project-root-pinning) — multi-root workspaces.
 - [Settings Reference](#settings-reference) — the `b2c-dx.*` toggles and verbosity controls.
 
 ## Connecting to a B2C Instance
@@ -19,7 +18,7 @@ The extension needs different credentials depending on which feature you use. **
 
 ### Per-feature requirements
 
-Each feature documents its own requirements in [Features](./features). The summary:
+A summary by feature:
 
 | Feature | Required `dw.json` fields |
 | ------- | ------------------------- |
@@ -65,15 +64,6 @@ You can also set any of these via `SFCC_*` environment variables (`SFCC_SERVER`,
 When `dw.json` defines multiple named instances (the recommended pattern for working across dev / staging / sandbox), click the cloud icon in the status bar to run **B2C DX: Switch Active Instance** — a quick-pick over the configured instances. Selecting a new one updates the underlying `dw.json` active-instance pointer and refreshes every view.
 
 The same pointer is shared with the CLI: switching here is equivalent to running `b2c setup instance set-active <name>`.
-
-## Project Root Pinning
-
-In a multi-root workspace, the extension auto-detects the project root by walking up from the active editor (or the first workspace folder) looking for `dw.json` / `package.json` markers. Two commands let you override the auto-detected root:
-
-- **B2C DX: Use as B2C Commerce Root** — only available on a workspace-root folder when more than one folder is open in the workspace. Right-click that folder in the Explorer and select the command to pin it. While a pin is active, the status bar shows a `$(pinned)` indicator.
-- **B2C DX: Reset B2C Commerce Root to Auto-Detect** — clears the pin and returns to auto-detection. Run from the Command Palette (this command has no Explorer context-menu entry).
-
-The pin is workspace-scoped (stored in workspace state).
 
 ## Settings Reference
 
@@ -125,6 +115,6 @@ The B2C Script Debugger registers regardless of these toggles — it activates o
 
 ## Next Steps
 
-- [Features](./features) — full feature tour with per-feature credential callouts.
+- [Overview](./) — what the extension can do.
 - [Authentication Setup](../guide/authentication) — Account Manager API clients, WebDAV access keys, OAuth scopes.
 - [CLI Configuration](../guide/configuration) — full `dw.json` reference and precedence rules.

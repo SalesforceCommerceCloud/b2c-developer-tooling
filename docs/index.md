@@ -152,5 +152,5 @@ Browse the [GitHub releases page]({{ vsxRelease.fallbackUrl }}) for `b2c-vs-exte
 
 </div>
 
-Detailed setup: [Installation](/vscode-extension/installation) · [Configuration](/vscode-extension/configuration) · [Features](/vscode-extension/features)
+Detailed setup: [Installation](/vscode-extension/installation) · [Configuration](/vscode-extension/configuration)
 

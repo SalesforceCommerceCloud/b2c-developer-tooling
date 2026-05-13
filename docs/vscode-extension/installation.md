@@ -8,74 +8,70 @@ import {data as release} from './release.data.ts';
 
 # Installation
 
-::: warning Not on the Marketplace
-The B2C DX VS Code Extension is **not** published to the VS Code or Open VSX marketplaces yet. Install from the pre-built `.vsix` artifact attached to each GitHub release.
+::: warning Not on the Marketplace yet
+The extension isn't on the VS Code or Open VSX marketplaces yet. For now, grab the latest build from GitHub and install it manually — it only takes a minute.
 :::
 
-## Download
+## Get the latest build
 
 <div v-if="!release.unavailable">
 
-The latest release is **{{ release.version }}** (published {{ new Date(release.publishedAt).toLocaleDateString(undefined, {dateStyle: 'medium'}) }}).
+Latest version: **{{ release.version }}** (released {{ new Date(release.publishedAt).toLocaleDateString(undefined, {dateStyle: 'medium'}) }}).
 
 <p>
   <a :href="release.vsixDownloadUrl" class="vp-button">Download {{ release.vsixAssetName }}</a>
-  <a :href="release.releasePageUrl" style="margin-left: 0.75rem">View release notes</a>
+  <a :href="release.releasePageUrl" style="margin-left: 0.75rem">See what's new</a>
 </p>
 
 </div>
 <div v-else>
 
-No published release was found. Browse the [GitHub releases page]({{ release.fallbackUrl }}) for `b2c-vs-extension@*` tags — releases are filtered by tag prefix.
+We couldn't find a published build right now. Head over to the [releases page]({{ release.fallbackUrl }}) and grab the latest `b2c-vs-extension@*` tag.
 
 </div>
 
-<!-- TODO(screenshot): replace ./images/release-assets.svg with ./images/release-assets.png — GitHub release page asset list showing the .vsix -->
-![GitHub release assets](./images/release-assets.svg)
+## Install it
 
-## Install from VSIX
-
-After downloading the `.vsix`, install it via the command line or the VS Code UI.
+Once you've got the file, install it from the command line or from the Extensions view in VS Code.
 
 ::: code-group
 
-```bash [VS Code (CLI)]
+```bash [VS Code]
 code --install-extension b2c-vs-extension-X.Y.Z.vsix
 ```
 
-```bash [Cursor (CLI)]
+```bash [Cursor]
 cursor --install-extension b2c-vs-extension-X.Y.Z.vsix
 ```
 
-```text [VS Code (UI)]
+```text [Extensions view]
 1. Open the Extensions view (Cmd+Shift+X / Ctrl+Shift+X)
 2. Click the "..." menu in the view header
 3. Choose "Install from VSIX..."
-4. Select the downloaded .vsix file
+4. Pick the file you just downloaded
 ```
 
 :::
 
 <!-- TODO(screenshot): replace ./images/install-vsix.svg with ./images/install-vsix.png — "Install from VSIX..." command palette entry -->
-![Install from VSIX](./images/install-vsix.svg)
+![Install from VSIX](./images/install-vsix.png)
 
-After install, reload the window. The **B2C-DX**, **B2C-DX: SCAPI**, and **B2C-DX Sandboxes** activity-bar containers appear once at least one B2C view is opened or a `commerce-app.json` file is detected in the workspace.
+Reload the window when prompted. You'll see new **B2C-DX**, **B2C-DX: SCAPI**, and **B2C-DX Sandboxes** icons in the activity bar.
 
-## Prerequisites
+## Before you start
 
-- **VS Code** ^1.105.1 (or a compatible Cursor / VS Codium build).
-- **B2C CLI** installed and on `PATH` for the workflows that shell out (some scaffold and CAP commands). Install via `npm install -g @salesforce/b2c-cli` — see the [CLI Installation guide](../guide/installation).
+A few things to have ready:
 
-## Connect to your instance
+- **VS Code 1.105 or newer** (Cursor and VS Codium work too).
+- **The B2C CLI** installed — `npm install -g @salesforce/b2c-cli`. The extension uses it under the hood for some workflows. See the [CLI Installation guide](../guide/installation) for other install options.
 
-The extension reads B2C Commerce credentials from the same sources as the CLI: `dw.json`, `SFCC_*` environment variables, and the active-instance pointer. **Each feature needs different fields** — see [Connecting to a B2C Instance](./configuration#connecting-to-a-b2c-instance) for a per-feature requirements table and an example `dw.json`.
+## Connect to your sandbox
 
-Quick pointers:
+The extension uses the same connection your CLI already uses, so most of the time there's nothing more to set up. Different features need different credentials though — see [Connecting to your sandbox](./configuration#connecting-to-a-b2c-instance) for what each one needs and a copy-paste example.
 
-- [Authentication Setup](../guide/authentication) — Account Manager API clients, WebDAV access keys, OAuth scopes.
-- [CLI Configuration](../guide/configuration) — full `dw.json` field reference and precedence rules.
+New here? The [Authentication Setup guide](../guide/authentication) walks through getting your credentials in the first place.
 
 ## Next Steps
 
-- [Configuration](./configuration) — feature toggles, log level, sandbox polling interval.
-- [Features](./features) — full feature tour.
+- [Overview](./) — what the extension can do.
+- [Connecting to your sandbox](./configuration#connecting-to-a-b2c-instance) — what each feature needs.

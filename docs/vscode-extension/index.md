@@ -1,5 +1,5 @@
 ---
-description: B2C DX VS Code Extension — sandbox management, cartridge code sync, WebDAV browser, content libraries, SCAPI API browser, script debugger, and Page Designer Assistant.
+description: B2C DX VS Code Extension — sandbox management, cartridge code sync, WebDAV browser, content libraries, SCAPI API browser, script debugger, and project scaffolding.
 ---
 
 # B2C DX VS Code Extension
@@ -10,49 +10,61 @@ The B2C DX VS Code Extension is in **active development**. Features may change, 
 Please file issues and feature requests on the [GitHub repository](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/issues).
 :::
 
-The B2C DX VS Code Extension brings the [B2C CLI](../guide/) and the [B2C Tooling SDK](../api/) into VS Code as a set of dedicated activity-bar containers, tree views, commands, and a debugger. It uses the same `dw.json` / `SFCC_*` environment configuration the CLI uses, so any project that already works with `b2c` works with the extension — no extra setup.
+Manage your B2C Commerce sandboxes, sync cartridges, browse content libraries and SCAPI schemas, debug server-side scripts, and scaffold new projects — all from inside VS Code. If your project already works with the [B2C CLI](../guide/), the extension picks up the same connection automatically.
 
-![B2C DX activity bar](./images/overview.png)
+[![B2C DX activity bar](./images/overview.png)](./images/overview.png)
 
 ## Highlights
 
 ### Sandbox Realm Explorer
 
-Browse, create, start, stop, restart, clone, and delete on-demand sandboxes (ODS) without leaving VS Code. Cloned sandboxes are tagged in the tree, and the sandbox lifecycle states (`cloning`, `setting up`, `started`, `stopped`, `failed`) drive both the icons and the right-click menu actions you see.
+Spin up, start, stop, clone, and clean up your on-demand sandboxes from a tree view. Cloned sandboxes are clearly marked, and the right-click menu only shows actions that make sense for the sandbox's current state.
 
-<!-- TODO(screenshot): replace ./images/sandbox-explorer.svg with ./images/sandbox-explorer.png -->
-![Sandbox Realm Explorer](./images/sandbox-explorer.svg)
+[![Sandbox Realm Explorer](./images/sandbox-explorer.png)](./images/sandbox-explorer.png)
 
-### Cartridge Code Sync
+### Library Explorer
 
-Watch your workspace, deploy cartridges to a sandbox, diff local files against the active code version, and manage code versions (list, create, activate) from a tree view. Per-cartridge upload/download avoids the all-or-nothing sync of older tools.
+Find Page Designer pages and components fast, with one-click export (with assets, without assets, or assets only), live editing of component XML, and round-trip imports of site archives. The library tree is filterable when you have hundreds of pages.
 
-<!-- TODO(screenshot): replace ./images/code-sync.svg with ./images/code-sync.png -->
-![Cartridge Code Sync](./images/code-sync.svg)
-
-### WebDAV & Content Libraries Browser
-
-A first-class file-system view of WebDAV catalogs and libraries (mountable as a workspace folder via the `b2c-webdav://` scheme) plus a content-library tree for Page Designer pages and components, with single-click export (with assets, without assets, or assets only).
-
-<!-- TODO(screenshot): replace ./images/webdav-browser.svg with ./images/webdav-browser.png -->
-![WebDAV Browser](./images/webdav-browser.svg)
+[![Library Explorer](./images/library-explorer.png)](./images/library-explorer.png)
 
 ### B2C Script Debugger
 
-Debug server-side B2C scripts directly from VS Code. Registered as a debug type (`b2c-script`) — add a launch configuration and breakpoint server-side cartridge code as you'd debug any Node project.
+Step through anything that runs server-side: cartridge controllers, jobs, custom scripts, SCAPI hooks, and Custom APIs. Set breakpoints, drop log points, watch variables, and step in and out — the full debugger experience you'd expect from any other Node project.
 
-<!-- TODO(screenshot): replace ./images/script-debugger.svg with ./images/script-debugger.png -->
-![B2C Script Debugger](./images/script-debugger.svg)
+[![B2C Script Debugger](./images/script-debugger.png)](./images/script-debugger.png)
 
-### Page Designer Assistant
+### Cartridge Management and Code Watch/Upload
 
-A guided webview UI for scaffolding Storefront Next page files with PageType and Region definitions — useful when you're starting a new page and don't want to look up the boilerplate.
+Edit cartridges locally and have changes show up on your sandbox automatically. Deploy on demand, diff against the active code version, and manage code versions without leaving the editor.
 
-<!-- TODO(screenshot): replace ./images/page-designer-assistant.svg with ./images/page-designer-assistant.png -->
-![Page Designer Assistant](./images/page-designer-assistant.svg)
+### SCAPI API Explorer
+
+Explore every SCAPI API your instance exposes and try requests against them in a built-in Swagger UI. Authentication is handled for you using the same credentials your CLI already has.
+
+[![SCAPI API Explorer](./images/api-browser.png)](./images/api-browser.png)
+
+### WebDAV Browser
+
+Browse your sandbox's catalogs, libraries, and IMPEX folders right inside VS Code. Open remote files like local ones, drag-and-drop to upload, or mount a remote folder as a workspace folder.
+
+### Scaffolding
+
+Generate new cartridges, controllers, hooks, jobs, and other boilerplate from a curated set of templates. Available from **File → New File...** or by right-clicking a folder in the Explorer.
+
+### Log Tailing
+
+Stream live `error-*.log`, `warn-*.log`, and `info-*.log` files from your sandbox into a VS Code output channel. Use **Start Tailing Logs** to begin and **Stop Tailing Logs** to end.
+
+### Active Instance Status Bar
+
+The bottom-left of the window shows your active instance — the name, the hostname, and a pin icon if you've locked a particular folder as the project root. Click it to switch instances; every view updates instantly.
+
+### B2C CLI Plugin Support
+
+The extension runs the [B2C CLI](../guide/) under the hood, so any plugin you've installed via `b2c plugins install` automatically applies here too. Add a plugin that introduces a new config source, a custom sandbox command, or middleware, and the extension picks it up the next time the workspace loads — no separate plugin registry. (The MCP server works the same way; see the [MCP plugins note](../mcp/#plugins).)
 
 ## Next Steps
 
-- [Installation](./installation) — download and install the `.vsix`.
-- [Connecting to a B2C Instance](./configuration#connecting-to-a-b2c-instance) — credentials each feature needs.
-- [Features](./features) — full feature tour with per-feature credential callouts.
+- [Installation](./installation) — download and install the extension.
+- [Connecting to your sandbox](./configuration#connecting-to-a-b2c-instance) — what each feature needs.
