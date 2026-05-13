@@ -805,13 +805,13 @@ describe('rewriteProxyRequestHeaders tests', () => {
       },
     },
     {
-      name: 'overwrites User-Agent when preserveUserAgent is undefined (default)',
+      name: 'preserves User-Agent when preserveUserAgent is undefined (default is true)',
       targetHost: 'www.customer.com',
       input: {
         'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X)',
       },
       expected: {
-        'user-agent': 'Amazon CloudFront',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X)',
       },
     },
     {
@@ -901,8 +901,8 @@ describe('hostnameMatchesTransformationList', () => {
   });
 
   it('returns true when hostname ends with a suffix', () => {
-    expect(hostnameMatchesTransformationList('api.commercecloud.salesforce.com', ['.commercecloud.salesforce.com']))
-      .to.be.true;
+    expect(hostnameMatchesTransformationList('api.commercecloud.salesforce.com', ['.commercecloud.salesforce.com'])).to
+      .be.true;
   });
 
   it('returns true with multiple suffixes', () => {

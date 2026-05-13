@@ -770,14 +770,9 @@ export const X_HEADERS_TO_REMOVE_PROXY: string[] = ['x-mobify-access-key'];
 
 const X_SFDC_ACCESS_CONTROL = 'x-sfdc-access-control';
 
-export const DEFAULT_ACCESS_CONTROL_FORWARDING_HOSTNAMES: string[] = [
-  '.commercecloud.salesforce.com',
-];
+export const DEFAULT_ACCESS_CONTROL_FORWARDING_HOSTNAMES: string[] = ['.commercecloud.salesforce.com'];
 
-export const hostnameMatchesTransformationList = (
-  hostname: string,
-  hostnameSuffixes?: string[] | null,
-): boolean => {
+export const hostnameMatchesTransformationList = (hostname: string, hostnameSuffixes?: string[] | null): boolean => {
   if (!hostnameSuffixes || hostnameSuffixes.length === 0) {
     return false;
   }
@@ -891,7 +886,7 @@ export const rewriteProxyRequestHeaders = ({
   targetHost,
   logging = false,
   accessControlHeaderForwardingHostnames,
-  preserveUserAgent = false,
+  preserveUserAgent = true,
 }: RewriteProxyRequestHeadersParams): AWSHeaders | HTTPHeaders | IncomingHttpHeaders => {
   if (!headers) {
     return {};
