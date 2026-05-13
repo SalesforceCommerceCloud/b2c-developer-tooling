@@ -2328,8 +2328,8 @@ body.cip-query-builder {
   display: none;
   flex-direction: column;
   border-top: 2px solid var(--cip-accent);
-  max-height: 50vh;
-  min-height: 200px;
+  max-height: 38vh;
+  min-height: 160px;
   background-color: var(--vscode-editor-background);
   overflow: hidden;
 }
@@ -3431,6 +3431,15 @@ body.cip-entity-browser > header {
   flex-direction: column;
   gap: 14px;
   overflow: auto;
+}
+
+/* Save / Edit form lives inside the modal body. Without its own column-gap,
+ * the Name / Description / SQL fields would collapse to zero spacing because
+ * the body's `gap` only applies between *its* direct children (the form). */
+.qb-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .qb-modal__sql-preview {

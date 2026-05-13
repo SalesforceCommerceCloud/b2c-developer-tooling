@@ -11,9 +11,7 @@ import {
 } from '@salesforce/b2c-tooling-sdk/operations/cip';
 import {createCipClient, type CipClient} from '@salesforce/b2c-tooling-sdk/clients';
 import {randomBytes} from 'node:crypto';
-import * as fs from 'node:fs';
 import * as os from 'node:os';
-import * as path from 'node:path';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import type {CipConnectionService} from './cip-connection-service.js';
@@ -150,7 +148,7 @@ export class CipWebviewManager {
     const panel = vscode.window.createWebviewPanel('cipAnalyticsDashboard', report.name, vscode.ViewColumn.One, {
       enableScripts: true,
       retainContextWhenHidden: true,
-      localResourceRoots: [this.cipAnalyticsUri],
+      localResourceRoots: this.localResourceRoots,
     });
 
     this.panels.set(columnKey, panel);
@@ -197,7 +195,7 @@ export class CipWebviewManager {
     const panel = vscode.window.createWebviewPanel('cipTablesBrowser', 'CIP Entity Browser', vscode.ViewColumn.One, {
       enableScripts: true,
       retainContextWhenHidden: true,
-      localResourceRoots: [this.cipAnalyticsUri],
+      localResourceRoots: this.localResourceRoots,
     });
 
     this.panels.set(columnKey, panel);
@@ -242,7 +240,7 @@ export class CipWebviewManager {
     const panel = vscode.window.createWebviewPanel('cipQueryBuilder', 'CIP Query Builder', vscode.ViewColumn.One, {
       enableScripts: true,
       retainContextWhenHidden: true,
-      localResourceRoots: [this.cipAnalyticsUri],
+      localResourceRoots: this.localResourceRoots,
     });
 
     this.panels.set(columnKey, panel);
@@ -299,6 +297,17 @@ export class CipWebviewManager {
       }
       case 'configureConnection': {
         await vscode.commands.executeCommand('b2c-dx.cipAnalytics.configureConnection');
+        break;
+      }
+      case 'copyToClipboard': {
+        // Same routing trick as the Query Builder: webview's
+        // navigator.clipboard.writeText() loses access once the panel blurs,
+        // so repeat copies fail silently. Routing through the extension
+        // host's clipboard API keeps the action reliable across consecutive clicks.
+        const text = String(message.params?.text ?? '');
+        if (text.length > 0) {
+          await vscode.env.clipboard.writeText(text);
+        }
         break;
       }
       case 'log': {
@@ -878,9 +887,19 @@ export class CipWebviewManager {
     }
   }
 
-  /** Uri to the cip-analytics source folder, used as the sole localResourceRoots entry. */
+  /** Uri to the cip-analytics source folder (templates + shared CSS). */
   private get cipAnalyticsUri(): vscode.Uri {
     return vscode.Uri.joinPath(this.context.extensionUri, 'src', 'cip-analytics');
+  }
+
+  /** Uri to the bundled React webview UI assets (esbuild output). */
+  private get webviewUiUri(): vscode.Uri {
+    return vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'webview-ui');
+  }
+
+  /** Resource roots a CIP Analytics webview is allowed to load assets from. */
+  private get localResourceRoots(): vscode.Uri[] {
+    return [this.cipAnalyticsUri, this.webviewUiUri];
   }
 
   /** Escapes a string for safe embedding in HTML text content. */
@@ -899,141 +918,91 @@ export class CipWebviewManager {
   }
 
   /**
-   * Load an HTML template, substitute tokens, and inject the Content-Security-Policy nonce
-   * plus the webview-resolved URI for the shared stylesheet.
+   * Build the HTML shell that mounts a React webview UI bundle.
+   *
+   * Each panel is now a small React app under src/webview-ui/, bundled by
+   * esbuild into dist/webview-ui/<entry>.js. The HTML returned here is a tiny
+   * shell that wires up the CSP nonce, the shared stylesheet, the initial
+   * connection state, and any panel-specific bootstrap data.
    */
-  private renderTemplate(webview: vscode.Webview, templateName: string, replacements: Record<string, string>): string {
-    const templatePath = path.join(this.context.extensionPath, 'src', 'cip-analytics', templateName);
-    let html = fs.readFileSync(templatePath, 'utf-8');
-
+  private renderReactShell(
+    webview: vscode.Webview,
+    options: {
+      title: string;
+      bodyClass?: string;
+      htmlClass?: string;
+      entry: 'query-builder' | 'tables-browser' | 'report-dashboard';
+      reportContext?: {name: string; description: string; category: string; displayName: string; parameters: unknown[]};
+    },
+  ): string {
     const nonce = randomBytes(16).toString('hex');
     const stylesUri = webview.asWebviewUri(vscode.Uri.joinPath(this.cipAnalyticsUri, 'cip-styles.css')).toString();
+    const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.webviewUiUri, `${options.entry}.js`)).toString();
     const conn = this.connection.get();
-
-    const all: Record<string, string> = {
-      __NONCE__: nonce,
-      __CSP_SOURCE__: webview.cspSource,
-      __STYLES_URI__: stylesUri,
-      // Snapshot of the shared connection for the initial banner render.
-      __CONNECTION_JSON__: JSON.stringify(conn),
-      ...replacements,
-    };
-
-    for (const [token, value] of Object.entries(all)) {
-      html = html.replaceAll(token, value);
-    }
-    return html;
+    const cspSource = webview.cspSource;
+    const htmlClass = options.htmlClass ? ` class="${CipWebviewManager.escapeAttr(options.htmlClass)}"` : '';
+    const bodyClass = options.bodyClass ? ` class="${CipWebviewManager.escapeAttr(options.bodyClass)}"` : '';
+    const reportSeed = options.reportContext ? `window.__REPORT__ = ${JSON.stringify(options.reportContext)};` : '';
+    return [
+      '<!doctype html>',
+      `<html lang="en"${htmlClass}>`,
+      '  <head>',
+      '    <meta charset="UTF-8" />',
+      '    <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
+      `    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src ${cspSource}; img-src ${cspSource} data:; font-src ${cspSource};" />`,
+      `    <title>${CipWebviewManager.escapeHtml(options.title)}</title>`,
+      `    <link rel="stylesheet" href="${stylesUri}" />`,
+      '  </head>',
+      `  <body${bodyClass}>`,
+      '    <div id="root"></div>',
+      `    <script nonce="${nonce}">window.__INITIAL_CONNECTION__ = ${JSON.stringify(conn)};${reportSeed}</script>`,
+      `    <script type="module" nonce="${nonce}" src="${scriptUri}"></script>`,
+      '  </body>',
+      '</html>',
+    ].join('\n');
   }
 
   private getReportDashboardContent(webview: vscode.Webview, report: CipReportDefinition): string {
-    const hasDateRange =
-      report.parameters.some((p) => p.name === 'from' && p.type === 'date') &&
-      report.parameters.some((p) => p.name === 'to' && p.type === 'date');
-
-    const dateRangeWidget = hasDateRange
-      ? `
-        <div class="field full date-range-field">
-          <label class="label">Date Range <span class="required">*</span></label>
-          <div class="date-range-presets">
-            <button type="button" class="btn btn-secondary date-preset-btn" data-preset="last-week">Last Week</button>
-            <button type="button" class="btn btn-secondary date-preset-btn" data-preset="last-month">Last Month</button>
-            <button type="button" class="btn btn-secondary date-preset-btn" data-preset="last-6-months">Last 6 Months</button>
-            <button type="button" class="btn btn-secondary date-preset-btn" data-preset="custom">Custom</button>
-          </div>
-          <div class="date-range-custom date-range-custom--hidden" id="dateRangeCustom">
-            <div class="date-range-custom__fields">
-              <div class="field">
-                <label class="label" for="from">From <span class="required">*</span></label>
-                <input type="date" id="from" name="from" class="input" />
-              </div>
-              <div class="field">
-                <label class="label" for="to">To <span class="required">*</span></label>
-                <input type="date" id="to" name="to" class="input" />
-              </div>
-            </div>
-          </div>
-          <input type="hidden" id="fromHidden" name="from" />
-          <input type="hidden" id="toHidden" name="to" />
-        </div>
-      `
-      : '';
-
-    const parameterFields =
-      report.parameters
-        .filter((p) => !(hasDateRange && (p.name === 'from' || p.name === 'to')))
-        .map((param) => {
-          const nameAttr = CipWebviewManager.escapeAttr(param.name);
-          const descAttr = CipWebviewManager.escapeAttr(param.description);
-          const descText = CipWebviewManager.escapeHtml(param.description);
-          const labelText = param.name
-            .replace(/([A-Z])/g, ' $1')
-            .trim()
-            .split(' ')
-            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-            .join(' ')
-            .replace(/\bId\b/g, 'ID');
-          const nameText = CipWebviewManager.escapeHtml(labelText);
-          const required = param.required ? 'required' : '';
-
-          let inputHtml = '';
-          let fieldModifier = '';
-          if (param.type === 'string' && param.name === 'siteId') {
-            fieldModifier = ' full';
-            inputHtml = `<select id="${nameAttr}" name="${nameAttr}" ${required} class="select site-id-select"><option value="" disabled selected>— Configure connection to load sites —</option></select>`;
-          } else if (param.type === 'string') {
-            fieldModifier = ' full';
-            inputHtml = `<input type="text" id="${nameAttr}" name="${nameAttr}" ${required} class="input" placeholder="${descAttr}" />`;
-          } else if (param.type === 'date') {
-            fieldModifier = ' field--date';
-            inputHtml = `<input type="date" id="${nameAttr}" name="${nameAttr}" ${required} class="input" />`;
-          } else if (param.type === 'boolean') {
-            inputHtml = `
-              <select id="${nameAttr}" name="${nameAttr}" ${required} class="select">
-                <option value="">— Select —</option>
-                <option value="true">True</option>
-                <option value="false">False</option>
-              </select>
-            `;
-          } else if (param.type === 'number') {
-            const min = param.min !== undefined ? String(param.min) : '';
-            const max = param.max !== undefined ? String(param.max) : '';
-            inputHtml = `<input type="number" id="${nameAttr}" name="${nameAttr}" min="${min}" max="${max}" ${required} class="input" placeholder="${descAttr}" />`;
-          } else {
-            inputHtml = `<input type="text" id="${nameAttr}" name="${nameAttr}" ${required} class="input" placeholder="${descAttr}" />`;
-          }
-
-          return `
-            <div class="field${fieldModifier}">
-              <label class="label" for="${nameAttr}">
-                ${nameText}${param.required ? ' <span class="required">*</span>' : ''}
-              </label>
-              <span class="hint">${descText}</span>
-              ${inputHtml}
-            </div>
-          `;
-        })
-        .join('') + dateRangeWidget;
-
+    // The React app renders the parameter form from the injected report context.
+    // Pass only serializable fields; CipReportDefinition includes `buildSql`, a function.
     const displayName = report.name
       .split('-')
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ');
-
-    return this.renderTemplate(webview, 'report-dashboard.html', {
-      __REPORT_NAME__: CipWebviewManager.escapeHtml(displayName),
-      __REPORT_NAME_ESC__: CipWebviewManager.escapeHtml(displayName),
-      __REPORT_NAME_JSON__: JSON.stringify(report.name),
-      __REPORT_CATEGORY__: CipWebviewManager.escapeHtml(report.category),
-      __REPORT_DESCRIPTION__: CipWebviewManager.escapeHtml(report.description),
-      __PARAMETER_FIELDS__: parameterFields,
+    return this.renderReactShell(webview, {
+      title: displayName,
+      entry: 'report-dashboard',
+      reportContext: {
+        name: report.name,
+        description: report.description,
+        category: report.category,
+        displayName,
+        parameters: report.parameters.map((p) => ({
+          name: p.name,
+          description: p.description,
+          type: p.type,
+          required: p.required,
+          min: p.min,
+          max: p.max,
+        })),
+      },
     });
   }
 
   private getTablesBrowserContent(webview: vscode.Webview): string {
-    return this.renderTemplate(webview, 'tables-browser.html', {});
+    return this.renderReactShell(webview, {
+      title: 'CIP Entity Browser',
+      bodyClass: 'cip-entity-browser',
+      entry: 'tables-browser',
+    });
   }
 
   private getQueryBuilderContent(webview: vscode.Webview): string {
-    return this.renderTemplate(webview, 'query-builder.html', {});
+    return this.renderReactShell(webview, {
+      title: 'CIP Query Builder',
+      htmlClass: 'cip-query-builder',
+      bodyClass: 'cip-query-builder',
+      entry: 'query-builder',
+    });
   }
 }
