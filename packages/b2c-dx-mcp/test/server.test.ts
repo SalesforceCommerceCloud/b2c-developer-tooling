@@ -130,28 +130,81 @@ describe('B2CDxMcpServer', () => {
       });
     });
 
-    it('should register a tool without throwing', () => {
-      expect(() => {
-        server.addTool('test_tool', 'A test tool', {}, simpleHandler);
-      }).to.not.throw();
+    /**
+     * Captures the configs passed to `registerTool` by `addTool`.
+     * The base McpServer keeps registered tools in a private `_registeredTools`
+     * map; intercepting `registerTool` is a stable seam used elsewhere in this
+     * file and avoids touching SDK internals.
+     */
+    function captureRegisteredTools(srv: B2CDxMcpServer): Map<
+      string,
+      {
+        config: {description?: string; inputSchema?: unknown};
+        handler: (args: Record<string, unknown>, extra: unknown) => Promise<unknown>;
+      }
+    > {
+      const captured = new Map<
+        string,
+        {
+          config: {description?: string; inputSchema?: unknown};
+          handler: (args: Record<string, unknown>, extra: unknown) => Promise<unknown>;
+        }
+      >();
+      const original = srv.registerTool.bind(srv);
+      srv.registerTool = (name, config, handler) => {
+        captured.set(name, {
+          config: config as {description?: string; inputSchema?: unknown},
+          handler: handler as (args: Record<string, unknown>, extra: unknown) => Promise<unknown>,
+        });
+        return original(name, config as never, handler as never);
+      };
+      return captured;
+    }
+
+    it('should register a tool that is callable via the server tool registry', async () => {
+      const captured = captureRegisteredTools(server);
+      server.addTool('test_tool', 'A test tool', {}, simpleHandler);
+
+      const entry = captured.get('test_tool');
+      expect(entry, 'test_tool should be registered').to.exist;
+      expect(entry!.config.description).to.equal('A test tool');
+      expect(entry!.handler).to.be.a('function');
+
+      // The wrapped handler must be callable and forward to the user's handler.
+      const result = (await entry!.handler({}, {})) as {content: Array<{text: string; type: string}>};
+      expect(result.content[0]).to.deep.include({type: 'text', text: 'ok'});
     });
 
-    it('should register multiple tools', () => {
-      expect(() => {
-        server.addTool('tool_one', 'First tool', {}, toolOneHandler);
-        server.addTool('tool_two', 'Second tool', {}, toolTwoHandler);
-      }).to.not.throw();
+    it('should register multiple tools independently', async () => {
+      const captured = captureRegisteredTools(server);
+      server.addTool('tool_one', 'First tool', {}, toolOneHandler);
+      server.addTool('tool_two', 'Second tool', {}, toolTwoHandler);
+
+      expect([...captured.keys()]).to.have.members(['tool_one', 'tool_two']);
+      expect(captured.get('tool_one')!.config.description).to.equal('First tool');
+      expect(captured.get('tool_two')!.config.description).to.equal('Second tool');
+
+      const r1 = (await captured.get('tool_one')!.handler({}, {})) as {content: Array<{text: string}>};
+      const r2 = (await captured.get('tool_two')!.handler({}, {})) as {content: Array<{text: string}>};
+      expect(r1.content[0].text).to.equal('one');
+      expect(r2.content[0].text).to.equal('two');
     });
 
-    it('should accept tools with input schema', () => {
-      // Use Zod schema (ZodRawShape format)
+    it('should propagate the input schema to the registered tool', () => {
+      const captured = captureRegisteredTools(server);
       const inputSchema = {
         name: z.string().describe('Name parameter'),
         count: z.number().optional().describe('Count parameter'),
       };
-      expect(() => {
-        server.addTool('parameterized_tool', 'A tool with parameters', inputSchema, paramHandler);
-      }).to.not.throw();
+      server.addTool('parameterized_tool', 'A tool with parameters', inputSchema, paramHandler);
+
+      const entry = captured.get('parameterized_tool');
+      expect(entry, 'parameterized_tool should be registered').to.exist;
+      expect(entry!.config.description).to.equal('A tool with parameters');
+      // Schema must be the exact ZodRawShape we passed (same keys, same instances).
+      expect(entry!.config.inputSchema).to.equal(inputSchema);
+      const schema = entry!.config.inputSchema as Record<string, unknown>;
+      expect(Object.keys(schema)).to.have.members(['name', 'count']);
     });
   });
 
@@ -552,13 +605,26 @@ describe('B2CDxMcpServer', () => {
     it('should handle undefined telemetry gracefully in all operations', async () => {
       const server = new B2CDxMcpServer({name: 'test-server', version: '1.0.0'}, {telemetry: undefined});
 
-      // All operations should work without throwing
-      expect(() => {
-        server.addTool('test', 'Test', {}, successHandler);
-      }).to.not.throw();
+      // Capture the wrapped handler so we can invoke it directly.
+      let wrappedHandler:
+        | ((args: Record<string, unknown>, extra: unknown) => Promise<{content: Array<{text: string}>}>)
+        | null = null;
+      const originalRegisterTool = server.registerTool.bind(server);
+      server.registerTool = (name, config, h) => {
+        wrappedHandler = h as typeof wrappedHandler;
+        return originalRegisterTool(name, config, h);
+      };
 
+      server.addTool('test', 'Test', {}, successHandler);
+
+      // The wrapped handler must run the underlying handler and return the
+      // expected result even with no telemetry attached.
+      expect(wrappedHandler, 'wrapped handler should have been captured').to.not.equal(null);
+      const result = await wrappedHandler!({}, {});
+      expect(result.content[0]).to.deep.include({type: 'text', text: 'success'});
+
+      // connect() must also succeed and report connected state.
       const transport = new MockTransport();
-      // Connect should succeed without throwing
       await server.connect(transport);
       expect(server.isConnected()).to.be.true;
     });
@@ -594,45 +660,40 @@ describe('B2CDxMcpServer', () => {
       });
     });
 
-    it('should handle multiple sequential connects', async () => {
+    it('should reject a second connect with Already connected and emit a SERVER_STATUS error', async () => {
       const mockTelemetry = new MockTelemetry();
       const server = new B2CDxMcpServer(
         {name: 'test-server', version: '1.0.0'},
         {telemetry: mockTelemetry as unknown as Telemetry},
       );
 
-      // First connect
+      // First connect succeeds and emits SERVER_STATUS=started.
       const transport1 = new MockTransport();
       await server.connect(transport1);
-      expect(mockTelemetry.events.filter((e) => e.name === 'SERVER_STATUS')).to.have.lengthOf(1);
 
-      // Subsequent connect attempts may be prevented by MCP SDK (throws error)
-      // or may succeed (if MockTransport doesn't enforce the restriction)
-      // In either case, verify that telemetry continues to work
+      const firstStatusEvents = mockTelemetry.events.filter((e) => e.name === 'SERVER_STATUS');
+      expect(firstStatusEvents).to.have.lengthOf(1);
+      expect(firstStatusEvents[0].attributes.status).to.equal('started');
+
+      // The MCP SDK Protocol.connect throws "Already connected to a transport..."
+      // when a second transport is supplied — this is the deterministic branch.
       const transport2 = new MockTransport();
-      let connectSucceeded = false;
+      let caught: Error | undefined;
       try {
         await server.connect(transport2);
-        connectSucceeded = true;
       } catch (error) {
-        // Expected error if MCP SDK prevents multiple connects
-        expect(error).to.be.instanceOf(Error);
-        expect((error as Error).message).to.include('Already connected');
+        caught = error as Error;
       }
+      expect(caught, 'second connect must throw').to.be.instanceOf(Error);
+      expect(caught!.message).to.include('Already connected');
 
-      // Verify telemetry recorded events for both connect attempts
+      // The server.connect catch block must emit a SERVER_STATUS error event
+      // carrying the SDK error message.
       const statusEvents = mockTelemetry.events.filter((e) => e.name === 'SERVER_STATUS');
-      expect(statusEvents).to.have.lengthOf.at.least(2);
-
-      if (connectSucceeded) {
-        // If second connect succeeded, last event should be 'started'
-        const lastEvent = statusEvents.at(-1);
-        expect(lastEvent?.attributes.status).to.equal('started');
-      } else {
-        // If second connect failed, last event should be 'error'
-        const lastEvent = statusEvents.at(-1);
-        expect(lastEvent?.attributes.status).to.equal('error');
-      }
+      expect(statusEvents).to.have.lengthOf(2);
+      const lastEvent = statusEvents.at(-1);
+      expect(lastEvent?.attributes.status).to.equal('error');
+      expect(lastEvent?.attributes.errorMessage).to.include('Already connected');
     });
   });
 });

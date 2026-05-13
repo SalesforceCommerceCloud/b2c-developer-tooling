@@ -294,7 +294,7 @@ describe('clients/slas-admin', () => {
       expect((data as any)?.total).to.equal(0);
     });
 
-    it('handles pagination parameters', async () => {
+    it('forwards limit/offset query params across multiple pages', async () => {
       const shortCode = 'kv7kzm78';
       const baseUrl = `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth-admin/v1`;
 

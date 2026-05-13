@@ -51,16 +51,17 @@ describe('operations/orgs', () => {
       };
 
       server.use(
-        http.get(`${BASE_URL}/organizations/org-123`, () => {
+        http.get(`${BASE_URL}/organizations/org-123`, ({request}) => {
+          expect(request.headers.get('Authorization')).to.equal('Bearer test-token');
           return HttpResponse.json(mockOrg);
         }),
       );
 
       const result = await getOrg(client, 'org-123');
 
-      expect(result).to.deep.equal(mockOrg);
       expect(result.id).to.equal('org-123');
       expect(result.name).to.equal('Test Organization');
+      expect(result.realms).to.deep.equal(['realm1', 'realm2']);
     });
 
     it('should throw error when organization not found', async () => {
@@ -143,6 +144,7 @@ describe('operations/orgs', () => {
 
       server.use(
         http.get(`${BASE_URL}/organizations`, ({request}) => {
+          expect(request.headers.get('Authorization')).to.equal('Bearer test-token');
           const url = new URL(request.url);
           expect(url.searchParams.get('size')).to.equal('25');
           expect(url.searchParams.get('page')).to.equal('0');
@@ -152,7 +154,9 @@ describe('operations/orgs', () => {
 
       const result = await listOrgs(client);
 
-      expect(result).to.deep.equal(mockOrgs);
+      expect(result.content).to.have.lengthOf(1);
+      expect(result.content[0].id).to.equal('org-1');
+      expect(result.totalElements).to.equal(1);
     });
 
     it('should list organizations with pagination', async () => {
@@ -186,7 +190,10 @@ describe('operations/orgs', () => {
 
       const result = await listOrgs(client, {size: 50, page: 1});
 
-      expect(result).to.deep.equal(mockOrgs);
+      expect(result.size).to.equal(50);
+      expect(result.number).to.equal(1);
+      expect(result.totalElements).to.equal(50);
+      expect(result.content).to.have.lengthOf(1);
     });
 
     it('should list all organizations when all flag is set', async () => {

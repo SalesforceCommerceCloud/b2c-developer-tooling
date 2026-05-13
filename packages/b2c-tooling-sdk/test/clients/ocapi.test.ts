@@ -279,12 +279,14 @@ describe('clients/ocapi', () => {
       expect(error).to.have.nested.property('fault.arguments');
     });
 
-    it('handles large result sets with count and total', async () => {
+    it('forwards start/count query params and parses paged response', async () => {
       const hostname = 'test.demandware.net';
       const baseUrl = `https://${hostname}/s/-/dw/data/v25_6`;
+      let capturedAuth: string | null = null;
 
       server.use(
         http.get(`${baseUrl}/products`, ({request}) => {
+          capturedAuth = request.headers.get('Authorization');
           const url = new URL(request.url);
           const start = Number.parseInt(url.searchParams.get('start') || '0');
           const count = Number.parseInt(url.searchParams.get('count') || '25');
@@ -309,11 +311,15 @@ describe('clients/ocapi', () => {
         },
       });
 
-      expect((data as any)?.total).to.equal(1000);
-      expect((data as any)?.count).to.equal(25);
+      // Authorization header is propagated through middleware
+      expect(capturedAuth).to.equal('Bearer test-token');
+      // Forwarded query params land on the request and the parsed body reflects them
       expect((data as any)?.start).to.equal(50);
+      expect((data as any)?.count).to.equal(25);
+      // Body shape is parsed correctly: produces 25 items starting at index 50
       expect((data as any)?.data).to.have.length(25);
       expect((data as any)?.data?.[0]?.id).to.equal('product-51');
+      expect((data as any)?.data?.[24]?.id).to.equal('product-75');
     });
   });
 });
