@@ -1,5 +1,11 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.3.1
+
+### Patch Changes
+
+- [`ac0da1b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ac0da1b42699613e6d7c22503676641df3a31201) - Exclude per-skill `evals/` directories from the released skills zip artifacts so end users don't receive eval fixtures. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.3.0
 
 ### Minor Changes
