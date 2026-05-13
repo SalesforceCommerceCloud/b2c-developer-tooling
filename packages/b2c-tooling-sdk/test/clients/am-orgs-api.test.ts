@@ -36,20 +36,6 @@ describe('Account Manager Organizations API Client', () => {
     client = createAccountManagerOrgsClient({hostname: TEST_HOST}, mockAuth);
   });
 
-  describe('client creation', () => {
-    it('should create client with default host', () => {
-      const auth = new MockAuthStrategy();
-      const client = createAccountManagerOrgsClient({}, auth);
-      expect(client).to.exist;
-    });
-
-    it('should create client with custom host', () => {
-      const auth = new MockAuthStrategy();
-      const client = createAccountManagerOrgsClient({hostname: 'custom.host.com'}, auth);
-      expect(client).to.exist;
-    });
-  });
-
   describe('getOrg', () => {
     it('should get organization by ID', async () => {
       const mockOrg = {

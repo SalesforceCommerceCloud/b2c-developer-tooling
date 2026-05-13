@@ -483,12 +483,12 @@ describe('McpServerCommand', () => {
       sandbox.restore();
     });
 
-    it('should combine MRT and instance flags', async () => {
+    it('should combine MRT and instance flags into the resolved config values', async () => {
       // Stub init to set up flags
       sandbox.stub(command, 'init').resolves();
       (command as unknown as {flags: Record<string, unknown>}).flags = {
         'api-key': 'test-mrt-key',
-        server: 'test-server',
+        server: 'test-server.demandware.net',
         username: 'test-user',
       };
 
@@ -499,11 +499,17 @@ describe('McpServerCommand', () => {
       });
 
       // Call loadConfiguration via protected access
-      const config = await (command as unknown as {loadConfiguration(): Promise<unknown>}).loadConfiguration();
+      const config = await (
+        command as unknown as {loadConfiguration(): Promise<{values: Record<string, unknown>}>}
+      ).loadConfiguration();
 
-      // Verify config was loaded (should return a ResolvedB2CConfig object)
-      expect(config).to.exist;
-      expect(config).to.have.property('values');
+      // Each flag must surface in config.values under its normalized key:
+      //   --server   -> hostname
+      //   --username -> username
+      //   --api-key  -> mrtApiKey
+      expect(config.values.hostname).to.equal('test-server.demandware.net');
+      expect(config.values.username).to.equal('test-user');
+      expect(config.values.mrtApiKey).to.equal('test-mrt-key');
     });
   });
 

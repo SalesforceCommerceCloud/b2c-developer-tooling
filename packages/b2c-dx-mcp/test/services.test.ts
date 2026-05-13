@@ -123,18 +123,43 @@ describe('services', () => {
   });
 
   describe('getCustomApisClient', () => {
-    it('should create Custom APIs client with valid config', () => {
+    it('should create a Custom APIs client wired to createOAuth and the right base URL', async () => {
       const config = createMockResolvedConfig({
         shortCode: 'test-shortcode',
         tenantId: 'test_tenant',
       });
       stub(config, 'hasOAuthConfig').returns(true);
-      stub(config, 'createOAuth').returns(mockOAuthStrategy);
+      const createOAuthStub = stub(config, 'createOAuth').returns(mockOAuthStrategy);
 
       const services = new Services({resolvedConfig: config});
       const client = services.getCustomApisClient();
 
-      expect(client).to.exist;
+      // Client construction must consult the resolved config's OAuth factory
+      // (rather than e.g. constructing a strategy from raw values directly).
+      expect(createOAuthStub.calledOnce, 'createOAuth must be invoked exactly once').to.be.true;
+      expect(createOAuthStub.firstCall.args).to.deep.equal([]);
+
+      // Client must expose the openapi-fetch shape.
+      expect(client.GET).to.be.a('function');
+      expect(client.use).to.be.a('function');
+
+      // Capture the resolved request URL via middleware to verify the base URL
+      // is built from the configured shortCode and points at the Custom APIs path.
+      const capturedUrls: string[] = [];
+      client.use({
+        async onRequest({request}) {
+          capturedUrls.push(request.url);
+          // Short-circuit so we don't actually hit the network.
+          return new Response('{}', {status: 200, headers: {'content-type': 'application/json'}});
+        },
+      });
+      await client.GET('/organizations/{organizationId}/endpoints', {
+        params: {path: {organizationId: 'f_ecom_test_tenant'}},
+      });
+      expect(capturedUrls).to.have.lengthOf(1);
+      expect(capturedUrls[0]).to.match(
+        /^https:\/\/test-shortcode\.api\.commercecloud\.salesforce\.com\/dx\/custom-apis\/v1\//,
+      );
     });
 
     it('should throw error when shortCode is missing', () => {
@@ -257,18 +282,37 @@ describe('services', () => {
   });
 
   describe('getScapiSchemasClient', () => {
-    it('should create SCAPI Schemas client with valid config', () => {
+    it('should create a SCAPI Schemas client wired to createOAuth and the right base URL', async () => {
       const config = createMockResolvedConfig({
         shortCode: 'test-shortcode',
         tenantId: 'test_tenant',
       });
       stub(config, 'hasOAuthConfig').returns(true);
-      stub(config, 'createOAuth').returns(mockOAuthStrategy);
+      const createOAuthStub = stub(config, 'createOAuth').returns(mockOAuthStrategy);
 
       const services = new Services({resolvedConfig: config});
       const client = services.getScapiSchemasClient();
 
-      expect(client).to.exist;
+      expect(createOAuthStub.calledOnce, 'createOAuth must be invoked exactly once').to.be.true;
+      expect(createOAuthStub.firstCall.args).to.deep.equal([]);
+
+      expect(client.GET).to.be.a('function');
+      expect(client.use).to.be.a('function');
+
+      const capturedUrls: string[] = [];
+      client.use({
+        async onRequest({request}) {
+          capturedUrls.push(request.url);
+          return new Response('{}', {status: 200, headers: {'content-type': 'application/json'}});
+        },
+      });
+      await client.GET('/organizations/{organizationId}/schemas', {
+        params: {path: {organizationId: 'f_ecom_test_tenant'}},
+      });
+      expect(capturedUrls).to.have.lengthOf(1);
+      expect(capturedUrls[0]).to.match(
+        /^https:\/\/test-shortcode\.api\.commercecloud\.salesforce\.com\/dx\/scapi-schemas\/v1\//,
+      );
     });
 
     it('should throw error when shortCode is missing', () => {

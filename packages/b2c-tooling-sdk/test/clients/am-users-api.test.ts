@@ -49,20 +49,6 @@ describe('Account Manager Users API Client', () => {
     client = createAccountManagerUsersClient({hostname: TEST_HOST}, mockAuth);
   });
 
-  describe('client creation', () => {
-    it('should create client with default host', () => {
-      const auth = new MockAuthStrategy();
-      const client = createAccountManagerUsersClient({}, auth);
-      expect(client).to.exist;
-    });
-
-    it('should create client with custom host', () => {
-      const auth = new MockAuthStrategy();
-      const client = createAccountManagerUsersClient({hostname: 'custom.host.com'}, auth);
-      expect(client).to.exist;
-    });
-  });
-
   describe('getUser', () => {
     it('should get user by ID', async () => {
       const mockUser = {
@@ -74,15 +60,17 @@ describe('Account Manager Users API Client', () => {
       };
 
       server.use(
-        http.get(`${BASE_URL}/users/user-123`, () => {
+        http.get(`${BASE_URL}/users/user-123`, ({request}) => {
+          expect(request.headers.get('Authorization')).to.equal('Bearer test-token');
           return HttpResponse.json(mockUser);
         }),
       );
 
       const user = await getUser(client, 'user-123');
 
-      expect(user).to.deep.equal(mockUser);
+      expect(user.id).to.equal('user-123');
       expect(user.mail).to.equal('user@example.com');
+      expect(user.userState).to.equal('ENABLED');
     });
 
     it('should throw error when user not found', async () => {
@@ -266,7 +254,8 @@ describe('Account Manager Users API Client', () => {
 
       const user = await findUserByLogin(client, 'user@example.com');
 
-      expect(user).to.deep.equal(mockUser);
+      expect(user?.id).to.equal('user-123');
+      expect(user?.mail).to.equal('user@example.com');
     });
 
     it('should return undefined when user not found', async () => {
