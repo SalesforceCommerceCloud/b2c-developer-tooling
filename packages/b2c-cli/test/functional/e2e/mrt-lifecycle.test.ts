@@ -41,7 +41,6 @@ describe('MRT Lifecycle E2E Tests', function () {
 
   // Use a dedicated test project to avoid affecting other MRT resources
   const projectSlug = process.env.MRT_PROJECT || 'b2c-cli';
-  const hasProject = true;
 
   before(async function () {
     // Check required environment variables for MRT
@@ -168,11 +167,6 @@ describe('MRT Lifecycle E2E Tests', function () {
     });
 
     it('should get specific project', async function () {
-      if (!hasProject) {
-        console.log('  ⚠ No project available, skipping test');
-        this.skip();
-      }
-
       // Fixed: slug is a positional argument, not a flag
       const result = await runCLIWithRetry(['mrt', 'project', 'get', projectSlug, '--json'], {
         timeout: TIMEOUTS.DEFAULT,
@@ -190,11 +184,6 @@ describe('MRT Lifecycle E2E Tests', function () {
 
   describe('Step 4: Project Members', () => {
     it('should list project members', async function () {
-      if (!hasProject) {
-        console.log('  ⚠ No project available, skipping test');
-        this.skip();
-      }
-
       const result = await runCLIWithRetry(['mrt', 'project', 'member', 'list', '--project', projectSlug, '--json'], {
         timeout: TIMEOUTS.DEFAULT,
         env: MRT_TEST_ENV,
@@ -214,11 +203,6 @@ describe('MRT Lifecycle E2E Tests', function () {
     });
 
     it('should get specific project member', async function () {
-      if (!hasProject) {
-        console.log('  ⚠ No project available, skipping test');
-        this.skip();
-      }
-
       // First get a member email
       const listResult = await runCLI(['mrt', 'project', 'member', 'list', '--project', projectSlug, '--json'], {
         timeout: TIMEOUTS.DEFAULT,
@@ -256,11 +240,6 @@ describe('MRT Lifecycle E2E Tests', function () {
     let environmentName: string;
 
     it('should list environments for project', async function () {
-      if (!hasProject) {
-        console.log('  ⚠ No project available, skipping test');
-        this.skip();
-      }
-
       const result = await runCLIWithRetry(['mrt', 'env', 'list', '--project', projectSlug, '--json'], {
         timeout: TIMEOUTS.DEFAULT,
         env: MRT_TEST_ENV,
@@ -280,11 +259,6 @@ describe('MRT Lifecycle E2E Tests', function () {
     });
 
     it('should get specific environment', async function () {
-      if (!hasProject) {
-        console.log('  ⚠ No project available, skipping test');
-        this.skip();
-      }
-
       // First ensure we have an environment
       const listResult = await runCLI(['mrt', 'env', 'list', '--project', projectSlug, '--json'], {
         timeout: TIMEOUTS.DEFAULT,
@@ -314,11 +288,6 @@ describe('MRT Lifecycle E2E Tests', function () {
     });
 
     it('should get B2C connection for environment', async function () {
-      if (!hasProject) {
-        console.log('  ⚠ No project available, skipping test');
-        this.skip();
-      }
-
       // Get first environment
       const listResult = await runCLI(['mrt', 'env', 'list', '--project', projectSlug, '--json'], {
         timeout: TIMEOUTS.DEFAULT,
@@ -367,10 +336,6 @@ describe('MRT Lifecycle E2E Tests', function () {
     let varCreated = false;
 
     before(async function () {
-      if (!hasProject) {
-        this.skip();
-      }
-
       // Get first environment for testing
       const listResult = await runCLI(['mrt', 'env', 'list', '--project', projectSlug, '--json'], {
         timeout: TIMEOUTS.DEFAULT,
@@ -511,10 +476,6 @@ describe('MRT Lifecycle E2E Tests', function () {
     let environmentName: string;
 
     before(async function () {
-      if (!hasProject) {
-        this.skip();
-      }
-
       // Get first environment
       const listResult = await runCLI(['mrt', 'env', 'list', '--project', projectSlug, '--json'], {
         timeout: TIMEOUTS.DEFAULT,
@@ -551,10 +512,6 @@ describe('MRT Lifecycle E2E Tests', function () {
     let environmentName: string;
 
     before(async function () {
-      if (!hasProject) {
-        this.skip();
-      }
-
       // Get first environment
       const listResult = await runCLI(['mrt', 'env', 'list', '--project', projectSlug, '--json'], {
         timeout: TIMEOUTS.DEFAULT,
@@ -590,11 +547,6 @@ describe('MRT Lifecycle E2E Tests', function () {
 
   describe('Step 9: Bundles', () => {
     it('should list bundles for project', async function () {
-      if (!hasProject) {
-        console.log('  ⚠ No project available, skipping test');
-        this.skip();
-      }
-
       const result = await runCLIWithRetry(['mrt', 'bundle', 'list', '--project', projectSlug, '--json'], {
         timeout: TIMEOUTS.DEFAULT,
         env: MRT_TEST_ENV,
@@ -613,11 +565,6 @@ describe('MRT Lifecycle E2E Tests', function () {
     });
 
     it('should view deployment history for environment', async function () {
-      if (!hasProject) {
-        console.log('  ⚠ No project available, skipping test');
-        this.skip();
-      }
-
       // Get first environment
       const envListResult = await runCLI(['mrt', 'env', 'list', '--project', projectSlug, '--json'], {
         timeout: TIMEOUTS.DEFAULT,
@@ -648,11 +595,6 @@ describe('MRT Lifecycle E2E Tests', function () {
 
   describe('Step 10: Project Notifications', () => {
     it('should list project notifications', async function () {
-      if (!hasProject) {
-        console.log('  ⚠ No project available, skipping test');
-        this.skip();
-      }
-
       const result = await runCLIWithRetry(
         ['mrt', 'project', 'notification', 'list', '--project', projectSlug, '--json'],
         {
@@ -669,11 +611,6 @@ describe('MRT Lifecycle E2E Tests', function () {
     });
 
     it('should get specific notification if any exist', async function () {
-      if (!hasProject) {
-        console.log('  ⚠ No project available, skipping test');
-        this.skip();
-      }
-
       // First get list of notifications
       const listResult = await runCLI(['mrt', 'project', 'notification', 'list', '--project', projectSlug, '--json'], {
         timeout: TIMEOUTS.DEFAULT,
@@ -727,10 +664,6 @@ describe('MRT Lifecycle E2E Tests', function () {
     });
 
     it('should fail gracefully with invalid environment', async function () {
-      if (!hasProject) {
-        this.skip();
-      }
-
       const result = await runCLI(['mrt', 'env', 'get', 'nonexistent-env-12345', '--project', projectSlug, '--json'], {
         timeout: TIMEOUTS.DEFAULT,
         env: MRT_TEST_ENV,

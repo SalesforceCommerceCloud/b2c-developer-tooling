@@ -5,6 +5,7 @@
  */
 import {Args, Flags, ux} from '@oclif/core';
 import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {resolveLibraryEntries} from '@salesforce/b2c-tooling-sdk/config';
 import {
   LibraryNode,
   exportContent,
@@ -36,15 +37,15 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
   static flags = {
     ...JobCommand.baseFlags,
     library: Flags.string({
-      description: 'Library ID or site ID (also configurable via dw.json "content-library")',
+      description: 'Library ID or site ID (also configurable via dw.json "content-library" or "libraries")',
     }),
     output: Flags.string({
       char: 'o',
       description: 'Output directory',
     }),
     'site-library': Flags.boolean({
-      description: 'Library is a site-private library',
-      default: false,
+      description: 'Library is a site-private library (defaults from a matching "libraries" config entry)',
+      allowNo: true,
     }),
     'asset-query': Flags.string({
       char: 'q',
@@ -106,10 +107,16 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
       this.error('At least one content ID is required.');
     }
 
-    const libraryId = flags.library ?? this.resolvedConfig.values.contentLibrary;
+    const libraryEntries = resolveLibraryEntries(this.resolvedConfig.values.libraries);
+    const libraryId = flags.library ?? this.resolvedConfig.values.contentLibrary ?? libraryEntries[0]?.id;
     if (!libraryId) {
       this.error('Library is required. Set via --library flag or "content-library" in dw.json.');
     }
+
+    const isSiteLibrary =
+      flags['site-library'] === undefined
+        ? (libraryEntries.find((e) => e.id === libraryId)?.siteLibrary ?? false)
+        : flags['site-library'];
 
     if (!flags['library-file']) {
       this.requireOAuthCredentials();
@@ -121,7 +128,7 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
     if (flags['dry-run']) {
       const {library} = await this.operations.fetchContentLibrary(this.instance, libraryId, {
         libraryFile: flags['library-file'],
-        isSiteLibrary: flags['site-library'],
+        isSiteLibrary,
         assetQuery,
         keepOrphans: flags['keep-orphans'],
         waitOptions,
@@ -221,7 +228,7 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
     }
 
     const result = await this.operations.exportContent(this.instance, pageIds, libraryId, outputPath, {
-      isSiteLibrary: flags['site-library'],
+      isSiteLibrary,
       assetQuery,
       libraryFile: flags['library-file'],
       offline: flags.offline,

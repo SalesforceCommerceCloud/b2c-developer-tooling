@@ -125,7 +125,7 @@ describe('job run', () => {
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
     const execStub = sinon.stub().resolves({id: 'e1', execution_status: 'running'});
     command.operations = {...command.operations, executeJob: execStub};
-    sinon.stub(command, 'showJobLog').resolves(void 0);
+    const showJobLogStub = sinon.stub(command, 'showJobLog').resolves(void 0);
 
     const exec: any = {execution_status: 'finished', exit_status: {code: 'ERROR'}};
     const {JobExecutionError} = await import('@salesforce/b2c-tooling-sdk/operations/jobs');
@@ -143,6 +143,7 @@ describe('job run', () => {
       // expected
     }
 
+    expect(showJobLogStub.calledOnce).to.equal(true);
     expect(errorStub.called).to.equal(true);
   });
 });

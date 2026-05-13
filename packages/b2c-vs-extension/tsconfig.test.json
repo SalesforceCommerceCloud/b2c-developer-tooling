@@ -2,14 +2,16 @@
 	"compilerOptions": {
 		"module": "Node16",
 		"target": "ES2022",
-		"outDir": "out/test",
+		"outDir": "out",
 		"lib": ["ES2022"],
 		"sourceMap": true,
-		"rootDir": "src/test",
+		"rootDir": "src",
 		"strict": true,
 		"skipLibCheck": true,
 		"esModuleInterop": true,
-		"forceConsistentCasingInFileNames": true
+		"forceConsistentCasingInFileNames": true,
+		"types": ["mocha", "node"]
 	},
-	"include": ["src/test"]
+	"include": ["src/**/*"],
+	"exclude": ["src/template"]
 }

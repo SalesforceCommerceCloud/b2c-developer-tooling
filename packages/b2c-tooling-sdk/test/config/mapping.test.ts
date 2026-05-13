@@ -8,6 +8,7 @@ import {
   kebabToCamelCase,
   normalizeConfigKeys,
   normalizeOriginUrl,
+  resolveLibraryEntries,
   CONFIG_KEY_ALIASES,
 } from '../../src/config/mapping.js';
 
@@ -29,6 +30,33 @@ describe('config/mapping', () => {
     it('handles multi-segment kebab-case', () => {
       expect(kebabToCamelCase('certificate-passphrase')).to.equal('certificatePassphrase');
       expect(kebabToCamelCase('webdav-hostname')).to.equal('webdavHostname');
+    });
+  });
+
+  describe('resolveLibraryEntries', () => {
+    it('returns empty array for undefined', () => {
+      expect(resolveLibraryEntries(undefined)).to.deep.equal([]);
+    });
+
+    it('treats bare strings as shared libraries', () => {
+      expect(resolveLibraryEntries(['RefArch', 'OtherLib'])).to.deep.equal([
+        {id: 'RefArch', siteLibrary: false},
+        {id: 'OtherLib', siteLibrary: false},
+      ]);
+    });
+
+    it('passes through object entries and defaults siteLibrary to false', () => {
+      expect(resolveLibraryEntries([{id: 'shared'}, {id: 'private', siteLibrary: true}])).to.deep.equal([
+        {id: 'shared', siteLibrary: false},
+        {id: 'private', siteLibrary: true},
+      ]);
+    });
+
+    it('supports mixed string and object entries in the same array', () => {
+      expect(resolveLibraryEntries(['RefArch', {id: 'homepage', siteLibrary: true}])).to.deep.equal([
+        {id: 'RefArch', siteLibrary: false},
+        {id: 'homepage', siteLibrary: true},
+      ]);
     });
   });
 

@@ -208,6 +208,9 @@ describe('scapi replications publish', () => {
         expect.fail('Should have thrown');
       } catch {
         expect(errorStub.calledOnce).to.equal(true);
+        const message = String(errorStub.firstCall.args[0]);
+        // 422 surfaces the staging-instance detail returned by the API
+        expect(message).to.include('staging instances');
       }
     });
 
@@ -236,6 +239,9 @@ describe('scapi replications publish', () => {
         expect.fail('Should have thrown');
       } catch {
         expect(errorStub.calledOnce).to.equal(true);
+        const message = String(errorStub.firstCall.args[0]);
+        // 409 surfaces the full-replication-running detail
+        expect(message).to.include('full replication is running');
       }
     });
   });
