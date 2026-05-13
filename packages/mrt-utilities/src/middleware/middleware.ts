@@ -15,7 +15,7 @@
  * @version 0.0.1
  */
 
-import {Headers} from '../utils/ssr-proxying.js';
+import {Headers, DEFAULT_ACCESS_CONTROL_FORWARDING_HOSTNAMES} from '../utils/ssr-proxying.js';
 import {
   configureProxying,
   type ProxyResult,
@@ -327,12 +327,21 @@ export const createMRTProxyMiddlewares = (
   appProtocol: string = 'http',
   includeCaching: boolean = false,
   createProxyFn?: CreateProxyMiddlewareFn,
+  accessControlHeaderForwardingHostnames: string[] = DEFAULT_ACCESS_CONTROL_FORWARDING_HOSTNAMES,
+  preserveUserAgent: boolean = true,
 ): ProxyResult[] => {
   if (!proxyConfigs) {
     return [];
   }
   const {appHostname} = getRequestProcessorParameters();
-  const proxies: ProxyResult[] = configureProxying(proxyConfigs, appHostname, appProtocol, createProxyFn);
+  const proxies: ProxyResult[] = configureProxying(
+    proxyConfigs,
+    appHostname,
+    appProtocol,
+    createProxyFn,
+    accessControlHeaderForwardingHostnames,
+    preserveUserAgent,
+  );
   const middlewares: ProxyResult[] = [];
   proxies.forEach((proxy) => {
     const proxyPath = `${PROXY_PATH_BASE}/${proxy.path}`;
