@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.1
+
+### Patch Changes
+
+- [#409](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/409) [`ec31234`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ec312342e14080fb5d51b72243e763030c429f80) - Document the B2C DX VS Code Extension. New `/vscode-extension/` section with overview, installation (with a dynamic download link to the latest VSIX release), configuration reference, and a feature tour covering Sandbox Realm Explorer, Cartridge Code Sync, WebDAV Browser, Content Libraries, SCAPI API Browser, B2C Script Debugger, scaffold/CAP install, log tailing, and B2C CLI plugin support. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.0
 
 ### Minor Changes

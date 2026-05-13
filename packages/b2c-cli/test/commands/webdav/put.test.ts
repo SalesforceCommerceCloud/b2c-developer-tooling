@@ -53,11 +53,6 @@ describe('webdav put', () => {
     sinon.stub(fs, 'existsSync').returns(true);
     sinon.stub(fs, 'readFileSync').returns(Buffer.from('abc'));
 
-    const buildPathStub = sinon.stub(command, 'buildPath').callsFake((p: unknown) => {
-      const path = String(p);
-      return `Impex/${path.startsWith('/') ? path.slice(1) : path}`;
-    });
-
     const mkcolStub = sinon.stub().resolves(void 0);
     const putStub = sinon.stub().resolves(void 0);
 
@@ -70,8 +65,6 @@ describe('webdav put', () => {
 
     const result = await command.run();
 
-    expect(buildPathStub.calledOnceWithExactly('src/instance/export.zip')).to.equal(true);
-
     // Parent dirs: Impex, Impex/src, Impex/src/instance
     expect(mkcolStub.callCount).to.equal(3);
     expect(mkcolStub.getCall(0).args[0]).to.equal('Impex');
@@ -80,6 +73,7 @@ describe('webdav put', () => {
 
     expect(putStub.calledOnce).to.equal(true);
     expect(putStub.getCall(0).args[0]).to.equal('Impex/src/instance/export.zip');
+    expect(putStub.getCall(0).args[2]).to.equal('application/zip');
     expect(result.remotePath).to.equal('Impex/src/instance/export.zip');
     expect(result.size).to.equal(3);
     expect(result.contentType).to.equal('application/zip');
@@ -97,11 +91,6 @@ describe('webdav put', () => {
     sinon.stub(fs, 'existsSync').returns(true);
     sinon.stub(fs, 'readFileSync').returns(Buffer.from('abc'));
 
-    const buildPathStub = sinon.stub(command, 'buildPath').callsFake((p: unknown) => {
-      const path = String(p);
-      return `Impex/${path.startsWith('/') ? path.slice(1) : path}`;
-    });
-
     const mkcolStub = sinon.stub().resolves(void 0);
     const putStub = sinon.stub().resolves(void 0);
 
@@ -114,8 +103,9 @@ describe('webdav put', () => {
 
     const result = await command.run();
 
-    expect(buildPathStub.calledOnceWithExactly('src/instance/renamed.xml')).to.equal(true);
+    expect(putStub.calledOnce).to.equal(true);
     expect(putStub.getCall(0).args[0]).to.equal('Impex/src/instance/renamed.xml');
+    expect(putStub.getCall(0).args[2]).to.equal('application/xml');
     expect(result.remotePath).to.equal('Impex/src/instance/renamed.xml');
     expect(result.contentType).to.equal('application/xml');
   });

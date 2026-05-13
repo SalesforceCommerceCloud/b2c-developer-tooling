@@ -22,6 +22,7 @@ import {registerApiBrowser} from './api-browser/index.js';
 import {registerDebugger} from './debugger/index.js';
 import {registerCodeSync} from './code-sync/index.js';
 import {registerWebDavTree} from './webdav-tree/index.js';
+import {disposeTelemetry, initTelemetry, markFeatureUsed, sendEvent, sendException} from './telemetry.js';
 import {registerCipAnalytics} from './cip-analytics/index.js';
 
 function getWebviewContent(context: vscode.ExtensionContext): string {
@@ -115,14 +116,23 @@ export async function activate(context: vscode.ExtensionContext) {
 
   applyLogLevel(log);
 
+  // Best-effort telemetry init. Non-blocking: client.start() runs in the
+  // background. No-ops entirely when the user has telemetry disabled or no
+  // connection string is configured.
+  initTelemetry(context);
+
   try {
-    return await activateInner(context, log);
+    const result = await activateInner(context, log);
+    sendEvent('EXTENSION_ACTIVATED');
+    return result;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     const stack = err instanceof Error ? err.stack : undefined;
     log.appendLine(`Activation failed: ${message}`);
     if (stack) log.appendLine(stack);
     console.error('B2C DX extension activation failed:', err);
+    if (err instanceof Error) sendException(err, {phase: 'activate'});
+    sendEvent('ACTIVATION_FAILED');
     vscode.window.showErrorMessage(`B2C DX: Extension failed to activate. See Output > B2C DX. Error: ${message}`);
     const showActivationError = () => {
       log.show();
@@ -134,6 +144,11 @@ export async function activate(context: vscode.ExtensionContext) {
       vscode.commands.registerCommand('b2c-dx.listWebDav', showActivationError),
     );
   }
+}
+
+export async function deactivate(): Promise<void> {
+  sendEvent('EXTENSION_DEACTIVATED');
+  await disposeTelemetry();
 }
 
 async function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChannel) {
@@ -151,6 +166,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   registerSafety(context, configProvider);
 
   const disposable = vscode.commands.registerCommand('b2c-dx.openUI', () => {
+    markFeatureUsed('pageDesigner');
     vscode.window.showInformationMessage('B2C DX: Opening Page Designer Assistant.');
 
     const panel = vscode.window.createWebviewPanel(

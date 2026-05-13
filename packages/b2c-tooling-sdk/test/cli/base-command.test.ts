@@ -645,14 +645,17 @@ describe('cli/base-command', () => {
         expect(attrs.realm).to.be.undefined;
       });
 
-      it('does not throw when resolvedConfig has unexpected shape', async () => {
+      it('skips telemetry attribute attachment when resolvedConfig has unexpected shape', async () => {
         stubParse(command);
         await command.init();
         setupTelemetry(command);
         // Force a broken resolvedConfig to simulate unexpected runtime state
         command.setResolvedConfig(null as unknown as ReturnType<typeof command.getResolvedConfig>);
+        telemetryAddAttributesStub.resetHistory();
 
         expect(() => command.testAddTelemetryContext()).to.not.throw();
+        // Telemetry must not record any attributes when config is malformed
+        expect(telemetryAddAttributesStub.called).to.be.false;
       });
 
       it('does nothing when telemetry is not initialized', async () => {

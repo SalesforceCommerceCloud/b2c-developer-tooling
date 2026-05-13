@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {resolveLibraryEntries} from '@salesforce/b2c-tooling-sdk/config';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 
@@ -31,7 +32,7 @@ export class WebDavMappingsProvider {
     const config = this.configProvider.getConfig();
     this.catalogIds = [...(config?.values.catalogs ?? [])];
 
-    const libs = new Set<string>(config?.values.libraries ?? []);
+    const libs = new Set<string>(resolveLibraryEntries(config?.values.libraries).map((e) => e.id));
     const contentLib = config?.values.contentLibrary;
     if (contentLib) libs.add(contentLib);
     this.libraryIds = [...libs];

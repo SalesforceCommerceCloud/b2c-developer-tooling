@@ -6,7 +6,7 @@
 import {runCommand} from '@oclif/test';
 import {expect} from 'chai';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
+import {Config, ux} from '@oclif/core';
 import ScapiSchemasList from '../../../../src/commands/scapi/schemas/list.js';
 import {stubParse} from '../../../helpers/stub-parse.js';
 import {createIsolatedEnvHooks, runSilent} from '../../../helpers/test-setup.js';
@@ -113,22 +113,45 @@ describe('scapi schemas list', () => {
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
       sinon.stub(command, 'jsonEnabled').returns(false);
-      sinon.stub(command, 'log').returns(void 0);
       sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
       sinon.stub(command, 'getOAuthStrategy').returns({getAuthorizationHeader: async () => 'Bearer test'});
+
+      const logStub = sinon.stub(command, 'log');
+      const stdoutStub = sinon.stub(ux, 'stdout');
 
       sinon.stub(globalThis, 'fetch').resolves(
         new Response(
           JSON.stringify({
-            total: 1,
-            data: [{apiFamily: 'product', apiName: 'shopper-products', apiVersion: 'v1', status: 'current'}],
+            total: 2,
+            data: [
+              {apiFamily: 'product', apiName: 'shopper-products', apiVersion: 'v1', status: 'current'},
+              {apiFamily: 'checkout', apiName: 'shopper-baskets', apiVersion: 'v2', status: 'deprecated'},
+            ],
           }),
           {status: 200, headers: {'content-type': 'application/json'}},
         ),
       );
 
-      const result = (await runSilent(() => command.run())) as {total: number};
-      expect(result.total).to.equal(1);
+      const result = (await command.run()) as {total: number};
+      expect(result.total).to.equal(2);
+
+      const logOutput = logStub
+        .getCalls()
+        .map((c) => String(c.args[0] ?? ''))
+        .join('\n');
+      const stdoutOutput = stdoutStub
+        .getCalls()
+        .map((c) => String(c.args[0] ?? ''))
+        .join('');
+      const allOutput = `${logOutput}\n${stdoutOutput}`;
+
+      expect(logOutput).to.match(/Found\s+2/);
+      expect(allOutput).to.include('shopper-products');
+      expect(allOutput).to.include('shopper-baskets');
+      expect(allOutput).to.include('v1');
+      expect(allOutput).to.include('v2');
+      expect(allOutput).to.include('current');
+      expect(allOutput).to.include('deprecated');
     });
 
     it('handles API errors', async () => {

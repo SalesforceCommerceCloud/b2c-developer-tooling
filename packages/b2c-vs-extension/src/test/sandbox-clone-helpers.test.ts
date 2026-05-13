@@ -11,7 +11,7 @@ import {
   getActiveCloneSourceIds,
   getRealmInstanceId,
   type SandboxLike,
-} from './sandbox-clone-helpers.js';
+} from '../sandbox-tree/sandbox-clone-helpers.js';
 
 function sandbox(partial: Partial<SandboxLike> & {id: string}): SandboxLike {
   return {...partial};
