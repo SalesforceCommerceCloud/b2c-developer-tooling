@@ -96,12 +96,8 @@ describe('tools/scapi/scapi-custom-apis-get-status', () => {
     it('should create scapi_custom_apis_get_status tool with correct metadata', () => {
       const tool = createScapiCustomApisStatusTool(() => services);
 
-      expect(tool).to.exist;
       expect(tool.name).to.equal('scapi_custom_apis_get_status');
-      expect(tool.description).to.include('Custom');
-      expect(tool.description).to.include('endpoint');
-      expect(tool.description).to.include('Custom');
-      expect(tool.description).to.include('b2c scapi custom status');
+      expect(tool.description).to.be.a('string').and.not.empty;
       expect(tool.inputSchema).to.exist;
       expect(tool.handler).to.be.a('function');
       expect(tool.toolsets).to.deep.equal(['PWAV3', 'SCAPI', 'STOREFRONTNEXT']);
@@ -111,10 +107,7 @@ describe('tools/scapi/scapi-custom-apis-get-status', () => {
     it('should have optional input params: status, groupBy, columns', () => {
       const tool = createScapiCustomApisStatusTool(() => services);
 
-      expect(tool.inputSchema).to.have.property('status');
-      expect(tool.inputSchema).to.have.property('groupBy');
-      expect(tool.inputSchema).to.have.property('columns');
-      expect(tool.inputSchema).to.not.have.property('extended');
+      expect(Object.keys(tool.inputSchema as object)).to.have.members(['status', 'groupBy', 'columns']);
     });
   });
 

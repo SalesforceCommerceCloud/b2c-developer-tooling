@@ -31,10 +31,15 @@ describe('operations/mrt/organization-member', () => {
     server.close();
   });
 
-  it('listOrgMembers returns paginated results', async () => {
+  it('listOrgMembers forwards limit/offset query params and maps response to {count, members}', async () => {
+    let capturedLimit: string | null = null;
+    let capturedOffset: string | null = null;
     server.use(
-      http.get(`${DEFAULT_MRT_ORIGIN}/api/organizations/:org/members/`, () =>
-        HttpResponse.json({
+      http.get(`${DEFAULT_MRT_ORIGIN}/api/organizations/:org/members/`, ({request}) => {
+        const url = new URL(request.url);
+        capturedLimit = url.searchParams.get('limit');
+        capturedOffset = url.searchParams.get('offset');
+        return HttpResponse.json({
           count: 2,
           next: null,
           previous: null,
@@ -42,13 +47,22 @@ describe('operations/mrt/organization-member', () => {
             {user: 'a@x.com', email: 'a@x.com', role: 0, can_view_all_projects: true},
             {user: 'b@x.com', email: 'b@x.com', role: 1, can_view_all_projects: false},
           ],
-        }),
-      ),
+        });
+      }),
     );
 
-    const result = await listOrgMembers({organizationSlug: 'my-org'}, auth);
+    const result = await listOrgMembers({organizationSlug: 'my-org', limit: 25, offset: 50}, auth);
+
+    // Query params forwarded into the request
+    expect(capturedLimit).to.equal('25');
+    expect(capturedOffset).to.equal('50');
+
+    // SUT maps `results` → `members` (the observable transform on top of the raw API)
     expect(result.count).to.equal(2);
+    expect(result.next).to.be.null;
+    expect(result.previous).to.be.null;
     expect(result.members).to.have.lengthOf(2);
+    expect(result.members[0].email).to.equal('a@x.com');
   });
 
   it('addOrgMember posts the member and re-fetches the full record', async () => {

@@ -89,6 +89,12 @@ describe('utils/am/user-display', () => {
 
     printUserDetails(user, baseRoleMapping, baseOrgMapping);
     expect(stdoutStub.calledOnce).to.equal(true);
+    const text = stdoutStub.firstCall.args[0];
+    // String-form org IDs must still resolve through orgMapping into the
+    // user-visible "<name> (<id>)" display.
+    expect(text).to.include('Organizations');
+    expect(text).to.include('My Org');
+    expect(text).to.include('org-1');
   });
 
   it('prints user with roles', () => {
@@ -215,6 +221,14 @@ describe('utils/am/user-display', () => {
 
     printUserDetails(user, baseRoleMapping, baseOrgMapping);
     expect(stdoutStub.calledOnce).to.equal(true);
+    const text = stdoutStub.firstCall.args[0];
+    // Date fields should produce labelled output. The exact formatted date
+    // is locale-dependent (Date#toLocaleString), so assert on the labels and
+    // on the lastLoginDate raw passthrough.
+    expect(text).to.include('Created At');
+    expect(text).to.include('Last Modified');
+    expect(text).to.include('Last Login');
+    expect(text).to.include('2025-01-25');
   });
 
   it('handles non-expired password', () => {
@@ -266,6 +280,10 @@ describe('utils/am/user-display', () => {
 
     printUserDetails(user, baseRoleMapping, baseOrgMapping);
     expect(stdoutStub.calledOnce).to.equal(true);
+    const text = stdoutStub.firstCall.args[0];
+    // When an organization has no id, the SUT falls back to 'Unknown'.
+    expect(text).to.include('Organizations');
+    expect(text).to.include('Unknown');
   });
 
   it('handles optional phone fields', () => {

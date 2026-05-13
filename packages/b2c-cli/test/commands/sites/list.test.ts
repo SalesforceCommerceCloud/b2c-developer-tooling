@@ -59,6 +59,11 @@ describe('sites list', () => {
     const result = await command.run();
     expect(result.count).to.equal(0);
     expect(stdoutStub.calledOnce).to.equal(true);
+    const stdoutOutput = stdoutStub
+      .getCalls()
+      .map((c) => String(c.args[0] ?? ''))
+      .join('');
+    expect(stdoutOutput).to.include('No sites found');
   });
 
   it('calls command.error when ocapi returns error', async () => {
