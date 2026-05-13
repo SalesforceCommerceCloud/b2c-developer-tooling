@@ -15,6 +15,7 @@ import * as fsp from 'node:fs/promises';
 import * as path from 'node:path';
 import type {AuthMethod} from '../auth/types.js';
 import {getLogger} from '../logging/logger.js';
+import type {LibraryEntry} from './types.js';
 import {normalizeConfigKeys} from './mapping.js';
 
 /**
@@ -83,8 +84,14 @@ export interface DwJsonConfig {
   contentLibrary?: string;
   /** Catalog IDs for WebDAV browsing */
   catalogs?: string[];
-  /** Library IDs for WebDAV browsing */
-  libraries?: string[];
+  /**
+   * Library IDs for WebDAV browsing and the Content Libraries tree.
+   *
+   * Accepts either a string array or a mixed array of strings and
+   * `{id, siteLibrary?}` objects. Object entries can mark individual
+   * libraries as site-private.
+   */
+  libraries?: (string | LibraryEntry)[];
   /** JSON dot-paths for asset extraction during content library parsing (defaults to ['image.path']) */
   assetQuery?: string[];
   /** Optional CIP analytics host override */

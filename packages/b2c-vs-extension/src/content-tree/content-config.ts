@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {resolveLibraryEntries} from '@salesforce/b2c-tooling-sdk/config';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import type {Library} from '@salesforce/b2c-tooling-sdk/operations/content';
 import type {B2CExtensionConfig} from '../config-provider.js';
@@ -38,7 +39,29 @@ export class ContentConfigProvider {
 
   getContentLibrary(): string | undefined {
     const config = this.configProvider.getConfig();
-    return config?.values.contentLibrary ?? config?.values.libraries?.[0];
+    return config?.values.contentLibrary ?? resolveLibraryEntries(config?.values.libraries)[0]?.id;
+  }
+
+  /**
+   * The explicitly configured singular `contentLibrary` value (or undefined
+   * when only `libraries` is set). Use this when you need to distinguish an
+   * explicit `contentLibrary` from the `libraries[0]` fallback in
+   * {@link getContentLibrary}.
+   */
+  getExplicitContentLibrary(): string | undefined {
+    return this.configProvider.getConfig()?.values.contentLibrary;
+  }
+
+  /**
+   * Configured library entries (from `libraries` config), normalized to
+   * `{id, siteLibrary}` form. Returns an empty array when nothing is configured.
+   */
+  getConfiguredLibraries(): {id: string; siteLibrary: boolean}[] {
+    const config = this.configProvider.getConfig();
+    return resolveLibraryEntries(config?.values.libraries).map((entry) => ({
+      id: entry.id,
+      siteLibrary: entry.siteLibrary === true,
+    }));
   }
 
   getAssetQuery(): string[] | undefined {
