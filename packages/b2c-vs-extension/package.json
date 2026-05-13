@@ -11,6 +11,7 @@
   "categories": [
     "Other"
   ],
+  "type": "module",
   "dependencies": {
     "@salesforce/b2c-tooling-sdk": "workspace:*"
   },
@@ -32,7 +33,7 @@
     "onDebugResolve:b2c-script",
     "workspaceContains:**/commerce-app.json"
   ],
-  "main": "./dist/extension.js",
+  "main": "./dist/extension.cjs",
   "contributes": {
     "configuration": {
       "title": "B2C DX",
