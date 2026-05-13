@@ -12,8 +12,7 @@ Please file issues and feature requests on the [GitHub repository](https://githu
 
 The B2C DX VS Code Extension brings the [B2C CLI](../guide/) and the [B2C Tooling SDK](../api/) into VS Code as a set of dedicated activity-bar containers, tree views, commands, and a debugger. It uses the same `dw.json` / `SFCC_*` environment configuration the CLI uses, so any project that already works with `b2c` works with the extension — no extra setup.
 
-<!-- TODO(screenshot): replace ./images/overview.svg with ./images/overview.png — activity bar with all three B2C-DX containers expanded -->
-![B2C DX activity bar](./images/overview.svg)
+![B2C DX activity bar](./images/overview.png)
 
 ## Highlights
 
