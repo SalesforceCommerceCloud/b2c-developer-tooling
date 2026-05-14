@@ -63,7 +63,7 @@ inputs:
     description: 'Passphrase for the PKCS12 client certificate → SFCC_CERTIFICATE_PASSPHRASE'
     required: false
   selfsigned:
-    description: 'Allow self-signed server certificates (true/false) → SFCC_SELFSIGNED'
+    description: 'Allow self-signed server certificates → SFCC_SELFSIGNED. Set to "true" to enable; omit otherwise.'
     required: false
   log-level:
     description: 'CLI log level (trace, debug, info, warn, error, silent) → SFCC_LOG_LEVEL'
@@ -168,8 +168,12 @@ runs:
         if [ -n "${{ inputs.certificate-passphrase }}" ]; then
           echo "SFCC_CERTIFICATE_PASSPHRASE=${{ inputs.certificate-passphrase }}" >> "$GITHUB_ENV"
         fi
-        if [ -n "${{ inputs.selfsigned }}" ]; then
-          echo "SFCC_SELFSIGNED=${{ inputs.selfsigned }}" >> "$GITHUB_ENV"
+        # Only export SFCC_SELFSIGNED when explicitly truthy. The SDK's env-var
+        # source treats only "true"/"1" as enabling self-signed mode, but oclif
+        # boolean flags map any non-empty env value to true. Skipping export for
+        # other values avoids that asymmetry — leaving the flag at its default.
+        if [ "${{ inputs.selfsigned }}" = "true" ] || [ "${{ inputs.selfsigned }}" = "1" ]; then
+          echo "SFCC_SELFSIGNED=true" >> "$GITHUB_ENV"
         fi
         if [ -n "${{ inputs.log-level }}" ]; then
           echo "SFCC_LOG_LEVEL=${{ inputs.log-level }}" >> "$GITHUB_ENV"
