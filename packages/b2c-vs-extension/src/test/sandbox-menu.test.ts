@@ -6,9 +6,10 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
+import {fileURLToPath} from 'url';
 
 // Compiled test file lives at out/test/<file>.js; package.json is 2 levels up.
-const PACKAGE_JSON_PATH = path.resolve(__dirname, '..', '..', 'package.json');
+const PACKAGE_JSON_PATH = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'package.json');
 
 interface MenuEntry {
   command?: string;

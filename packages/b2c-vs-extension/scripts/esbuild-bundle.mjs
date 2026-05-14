@@ -73,7 +73,7 @@ function copyCipProtoFiles() {
 }
 
 function inlineSdkPackageJson() {
-  const outPath = path.join(pkgRoot, 'dist', 'extension.js');
+  const outPath = path.join(pkgRoot, 'dist', 'extension.cjs');
   let str = fs.readFileSync(outPath, 'utf8');
   const sdkPkg = JSON.stringify(JSON.parse(fs.readFileSync(sdkPkgJsonPath, 'utf8')));
   str = str.replace(/require\d*\s*\(\s*["']@salesforce\/b2c-tooling-sdk\/package\.json["']\s*\)/g, sdkPkg);
@@ -104,7 +104,7 @@ const buildOptions = {
   platform: 'node',
   format: 'cjs',
   target: 'node18',
-  outfile: path.join(pkgRoot, 'dist', 'extension.js'),
+  outfile: path.join(pkgRoot, 'dist', 'extension.cjs'),
   sourcemap: true,
   metafile: true,
   external: ['vscode'],
