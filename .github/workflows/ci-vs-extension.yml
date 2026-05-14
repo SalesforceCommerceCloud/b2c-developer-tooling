@@ -73,11 +73,6 @@ jobs:
       - name: Build packages
         run: pnpm -r run build
 
-      # Temporarily disabled: SDK dist/cjs emits ESM syntax (tsc with module: Node16
-      # respects the SDK's "type": "module"), which Node's CJS loader rejects when
-      # vscode-test requires it transitively from out/test/*.js. The production VSIX
-      # is unaffected because esbuild bundles the SDK directly. Re-enable once the
-      # SDK CJS emit is fixed.
-      # - name: Run VS Extension tests
-      #   working-directory: packages/b2c-vs-extension
-      #   run: xvfb-run -a pnpm run test
+      - name: Run VS Extension tests
+        working-directory: packages/b2c-vs-extension
+        run: xvfb-run -a pnpm run test
