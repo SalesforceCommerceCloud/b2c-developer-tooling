@@ -7,6 +7,7 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
+import {fileURLToPath} from 'url';
 import * as vscode from 'vscode';
 
 const EXTENSION_ID = 'Salesforce.b2c-vs-extension';
@@ -29,7 +30,8 @@ interface PackageJson {
 
 function loadPackageJson(): PackageJson {
   // Compiled file at out/test/integration/<file>.js → package.json is 3 levels up.
-  const pkgPath = path.resolve(__dirname, '..', '..', '..', 'package.json');
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const pkgPath = path.resolve(here, '..', '..', '..', 'package.json');
   return JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 }
 
