@@ -53,6 +53,18 @@ inputs:
   account-manager-host:
     description: 'Account Manager hostname → SFCC_ACCOUNT_MANAGER_HOST'
     required: false
+  webdav-server:
+    description: 'Separate WebDAV hostname (used for staging cert. hostnames) → SFCC_WEBDAV_SERVER'
+    required: false
+  certificate:
+    description: 'Path to PKCS12 client certificate for two-factor (mTLS) auth → SFCC_CERTIFICATE'
+    required: false
+  certificate-passphrase:
+    description: 'Passphrase for the PKCS12 client certificate → SFCC_CERTIFICATE_PASSPHRASE'
+    required: false
+  selfsigned:
+    description: 'Allow self-signed server certificates (true/false) → SFCC_SELFSIGNED'
+    required: false
   log-level:
     description: 'CLI log level (trace, debug, info, warn, error, silent) → SFCC_LOG_LEVEL'
     required: false
@@ -146,6 +158,18 @@ runs:
         fi
         if [ -n "${{ inputs.account-manager-host }}" ]; then
           echo "SFCC_ACCOUNT_MANAGER_HOST=${{ inputs.account-manager-host }}" >> "$GITHUB_ENV"
+        fi
+        if [ -n "${{ inputs.webdav-server }}" ]; then
+          echo "SFCC_WEBDAV_SERVER=${{ inputs.webdav-server }}" >> "$GITHUB_ENV"
+        fi
+        if [ -n "${{ inputs.certificate }}" ]; then
+          echo "SFCC_CERTIFICATE=${{ inputs.certificate }}" >> "$GITHUB_ENV"
+        fi
+        if [ -n "${{ inputs.certificate-passphrase }}" ]; then
+          echo "SFCC_CERTIFICATE_PASSPHRASE=${{ inputs.certificate-passphrase }}" >> "$GITHUB_ENV"
+        fi
+        if [ -n "${{ inputs.selfsigned }}" ]; then
+          echo "SFCC_SELFSIGNED=${{ inputs.selfsigned }}" >> "$GITHUB_ENV"
         fi
         if [ -n "${{ inputs.log-level }}" ]; then
           echo "SFCC_LOG_LEVEL=${{ inputs.log-level }}" >> "$GITHUB_ENV"
