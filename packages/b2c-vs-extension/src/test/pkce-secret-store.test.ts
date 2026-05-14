@@ -148,10 +148,7 @@ suite('VsCodeSecretsAuthSessionBackend', () => {
 
     const all = backend.list();
     assert.strictEqual(all.length, 2);
-    assert.deepStrictEqual(
-      all.map((s) => s.clientId).sort(),
-      ['client-a', 'client-b'],
-    );
+    assert.deepStrictEqual(all.map((s) => s.clientId).sort(), ['client-a', 'client-b']);
   });
 
   test('save replaces a prior record for the same clientId', async () => {
