@@ -125,6 +125,30 @@ Installs the CLI and writes credentials to environment variables. Use this when 
 
 Plugins are installed after the CLI and cached across runs. Each line is an npm package name or GitHub `owner/repo`.
 
+The setup action accepts the following inputs (each maps to the corresponding `SFCC_*` environment variable):
+
+| Input | Environment Variable |
+|-------|---------------------|
+| `client-id` | `SFCC_CLIENT_ID` |
+| `client-secret` | `SFCC_CLIENT_SECRET` |
+| `server` | `SFCC_SERVER` |
+| `code-version` | `SFCC_CODE_VERSION` |
+| `username` | `SFCC_USERNAME` |
+| `password` | `SFCC_PASSWORD` |
+| `short-code` | `SFCC_SHORTCODE` |
+| `tenant-id` | `SFCC_TENANT_ID` |
+| `account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` |
+| `webdav-server` | `SFCC_WEBDAV_SERVER` |
+| `certificate` | `SFCC_CERTIFICATE` |
+| `certificate-passphrase` | `SFCC_CERTIFICATE_PASSPHRASE` |
+| `selfsigned` | `SFCC_SELFSIGNED` |
+| `mrt-api-key` | `MRT_API_KEY` |
+| `mrt-project` | `MRT_PROJECT` |
+| `mrt-environment` | `MRT_ENVIRONMENT` |
+| `log-level` | `SFCC_LOG_LEVEL` |
+
+The `webdav-server`, `certificate`, `certificate-passphrase`, and `selfsigned` inputs are only needed for staging environments that require a separate WebDAV hostname and a client certificate (mTLS). See [Staging Environments (Two-Factor mTLS)](#staging-environments-two-factor-mtls).
+
 ### Run
 
 ```
@@ -276,6 +300,117 @@ Upload files via WebDAV.
 | `local-path` | *(required)* | Local file or directory |
 | `remote-path` | *(required)* | Remote destination path |
 | `root` | `IMPEX` | WebDAV root (IMPEX, TEMP, CARTRIDGES, etc.) |
+
+## Staging Environments (Two-Factor mTLS)
+
+Internal staging instances typically require:
+
+- A separate WebDAV hostname (often a `cert.*` variant of the main hostname)
+- A PKCS12 (`.p12`) client certificate with passphrase for mutual TLS
+- Permission to accept self-signed server certificates
+
+See [Two-Factor Authentication (mTLS)](/guide/configuration#two-factor-authentication-mtls) for the underlying configuration model.
+
+### CLI Flags
+
+The same options that go in `dw.json` are available as CLI flags. For local use against a staging instance:
+
+```bash
+b2c code deploy \
+  --server staging-internal-ccdemo.demandware.net \
+  --webdav-server cert.staging.internal.ccdemo.demandware.net \
+  --certificate /path/to/STG-2FA-ccdemo/deploy.p12 \
+  --passphrase 'your-cert-passphrase' \
+  --selfsigned \
+  --client-id "$SFCC_CLIENT_ID" \
+  --client-secret "$SFCC_CLIENT_SECRET"
+```
+
+| Flag | dw.json Field | Environment Variable |
+|------|---------------|---------------------|
+| `--server` | `hostname` | `SFCC_SERVER` |
+| `--webdav-server` | `webdav-hostname` | `SFCC_WEBDAV_SERVER` |
+| `--certificate` | `certificate` | `SFCC_CERTIFICATE` |
+| `--passphrase` | `certificate-passphrase` | `SFCC_CERTIFICATE_PASSPHRASE` |
+| `--selfsigned` | `self-signed` | `SFCC_SELFSIGNED` |
+
+### GitHub Actions
+
+Staging mTLS works with the standard actions — the `setup` action accepts `webdav-server`, `certificate`, `certificate-passphrase`, and `selfsigned` inputs alongside the usual auth inputs.
+
+Because the `.p12` is a binary file, store it as a base64-encoded GitHub secret and decode it to disk in a workflow step before calling `setup`. The `certificate` input then points at the decoded path.
+
+**Recommended secrets/variables for staging:**
+
+| Secret | Description |
+|--------|-------------|
+| `SFCC_STAGING_CERTIFICATE_P12_BASE64` | Base64-encoded `.p12` client certificate |
+| `SFCC_STAGING_CERTIFICATE_PASSPHRASE` | Passphrase for the `.p12` |
+| `SFCC_CLIENT_ID` / `SFCC_CLIENT_SECRET` | OAuth credentials |
+
+| Variable | Description |
+|----------|-------------|
+| `SFCC_STAGING_SERVER` | e.g. `staging-internal-ccdemo.demandware.net` |
+| `SFCC_STAGING_WEBDAV_SERVER` | e.g. `cert.staging.internal.ccdemo.demandware.net` |
+
+To create the base64 secret locally:
+
+```bash
+base64 -i deploy.p12 | pbcopy   # macOS
+# or
+base64 -w0 deploy.p12           # Linux
+```
+
+Then paste the value into a GitHub repository secret.
+
+**Workflow example:**
+
+```yaml
+name: Deploy to Staging
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Decode the .p12 to a file inside the runner workspace
+      - name: Decode staging client certificate
+        run: |
+          echo "${{ secrets.SFCC_STAGING_CERTIFICATE_P12_BASE64 }}" \
+            | base64 --decode > "$RUNNER_TEMP/staging-deploy.p12"
+          chmod 600 "$RUNNER_TEMP/staging-deploy.p12"
+
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
+        with:
+          client-id: ${{ secrets.SFCC_CLIENT_ID }}
+          client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
+          server: ${{ vars.SFCC_STAGING_SERVER }}
+          webdav-server: ${{ vars.SFCC_STAGING_WEBDAV_SERVER }}
+          certificate: ${{ runner.temp }}/staging-deploy.p12
+          certificate-passphrase: ${{ secrets.SFCC_STAGING_CERTIFICATE_PASSPHRASE }}
+          selfsigned: 'true'
+
+      - run: npm ci && npm run build
+
+      - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v1
+        with:
+          code-version: staging-${{ github.run_number }}
+          activate: true
+```
+
+Once the `setup` step writes `SFCC_CERTIFICATE`, `SFCC_WEBDAV_SERVER`, etc. to `$GITHUB_ENV`, every subsequent action picks them up automatically — no need to repeat them on `code-deploy`, `data-import`, `job-run`, or `webdav-upload`.
+
+::: tip Multiple Environments in One Workflow
+If a single workflow targets both a normal sandbox and a staging instance, run `setup` again before each phase with the appropriate inputs. The second `setup` overwrites the relevant env vars for subsequent steps.
+:::
+
+::: warning Cleanup
+The decoded `.p12` lives only inside the runner's ephemeral workspace and is destroyed when the job ends. Never commit the file or write it outside `$RUNNER_TEMP` / the workspace.
+:::
 
 ## Patterns
 
