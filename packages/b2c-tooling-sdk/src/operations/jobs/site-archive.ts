@@ -11,6 +11,7 @@
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import {glob, hasMagic} from 'glob';
 import JSZip from 'jszip';
 import {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
@@ -30,6 +31,18 @@ export interface SiteArchiveImportOptions {
   wait?: boolean;
   /** Wait options for job completion */
   waitOptions?: WaitForJobOptions;
+  /**
+   * Optional list of paths or glob patterns to include in the archive when
+   * importing from a directory. Each entry may be:
+   * - An absolute path under the root directory
+   * - A path relative to the root directory
+   * - A glob pattern (relative to the root) — magic chars `* ? [ ] { }`
+   *
+   * When omitted, the entire root directory is archived (current behavior).
+   * Entries that resolve outside the root directory throw an error.
+   * Ignored when target is a zip file, Buffer, or remote filename.
+   */
+  paths?: string[];
 }
 
 /**
@@ -101,11 +114,17 @@ export async function siteArchiveImport(
   options: SiteArchiveImportOptions & {archiveName?: string} = {},
 ): Promise<SiteArchiveImportResult> {
   const logger = getLogger();
-  const {keepArchive = false, wait = true, waitOptions, archiveName} = options;
+  const {keepArchive = false, wait = true, waitOptions, archiveName, paths} = options;
 
   let zipFilename: string;
   let needsUpload = true;
   let archiveContent: Buffer | NodeJS.ReadableStream | undefined;
+
+  if (paths && paths.length > 0) {
+    if (Buffer.isBuffer(target) || (typeof target === 'object' && 'remoteFilename' in target)) {
+      throw new Error('paths option is only supported when target is a directory');
+    }
+  }
 
   // Handle different input types
   if (typeof target === 'object' && 'remoteFilename' in target) {
@@ -138,6 +157,9 @@ export async function siteArchiveImport(
     const stat = await fs.promises.stat(targetPath);
 
     if (stat.isFile()) {
+      if (paths && paths.length > 0) {
+        throw new Error('paths option is only supported when target is a directory');
+      }
       // Existing zip file
       archiveContent = await fs.promises.readFile(targetPath);
       zipFilename = path.basename(targetPath);
@@ -147,8 +169,17 @@ export async function siteArchiveImport(
       const archiveDirName = archiveName || `import-${timestamp}`;
       zipFilename = `${archiveDirName}.zip`;
 
-      logger.debug({path: targetPath}, `Creating archive from directory: ${targetPath}`);
-      archiveContent = await createArchiveFromDirectory(targetPath, archiveDirName);
+      if (paths && paths.length > 0) {
+        const resolved = await resolveSubsetPaths(targetPath, paths);
+        logger.debug(
+          {path: targetPath, count: resolved.length},
+          `Creating archive from ${resolved.length} path(s) under: ${targetPath}`,
+        );
+        archiveContent = await createArchiveFromPaths(targetPath, resolved, archiveDirName);
+      } else {
+        logger.debug({path: targetPath}, `Creating archive from directory: ${targetPath}`);
+        archiveContent = await createArchiveFromDirectory(targetPath, archiveDirName);
+      }
     } else {
       throw new Error(`Target must be a file or directory: ${targetPath}`);
     }
@@ -233,6 +264,104 @@ export async function siteArchiveImport(
     archiveFilename: zipFilename,
     archiveKept: wait ? keepArchive : true,
   };
+}
+
+/**
+ * Resolves a list of user-provided paths/globs against a root directory.
+ *
+ * Each entry is matched in this order:
+ * 1. If it exists as-is (absolute or cwd-relative), use it.
+ * 2. Else if it exists when resolved against the root directory, use that.
+ * 3. Else if it contains glob magic characters, expand against the root.
+ *
+ * All resolved paths must live under the root directory.
+ */
+async function resolveSubsetPaths(rootDir: string, entries: string[]): Promise<string[]> {
+  const logger = getLogger();
+  const rootAbs = path.resolve(rootDir);
+  const matched = new Set<string>();
+
+  for (const entry of entries) {
+    const candidates: string[] = [];
+    let resolutionMode: 'literal' | 'root-relative' | 'glob';
+
+    // Try literal path resolution first (handles shell-expanded paths)
+    const asGiven = path.resolve(entry);
+    const asRootRelative = path.resolve(rootAbs, entry);
+    if (fs.existsSync(asGiven)) {
+      candidates.push(asGiven);
+      resolutionMode = 'literal';
+    } else if (asGiven !== asRootRelative && fs.existsSync(asRootRelative)) {
+      candidates.push(asRootRelative);
+      resolutionMode = 'root-relative';
+    } else if (hasMagic(entry)) {
+      // Glob expansion (always relative to root, not cwd)
+      const matches = await glob(entry, {cwd: rootAbs, absolute: true, dot: true, nodir: false});
+      if (matches.length === 0) {
+        throw new Error(`No files matched pattern: ${entry}`);
+      }
+      candidates.push(...matches);
+      resolutionMode = 'glob';
+    } else {
+      throw new Error(`Path not found: ${entry}`);
+    }
+
+    logger.debug(
+      {entry, mode: resolutionMode, matches: candidates.map((c) => path.relative(rootAbs, c))},
+      `Resolved "${entry}" (${resolutionMode}) → ${candidates.length} match(es)`,
+    );
+
+    for (const candidate of candidates) {
+      const rel = path.relative(rootAbs, candidate);
+      if (rel.startsWith('..') || path.isAbsolute(rel)) {
+        throw new Error(`Path is outside import root (${rootAbs}): ${candidate}`);
+      }
+      matched.add(candidate);
+    }
+  }
+
+  return [...matched];
+}
+
+/**
+ * Creates a zip archive from a specific set of files/directories under a root.
+ *
+ * Each entry's path inside the archive is its location relative to `rootDir`,
+ * preserved under `archiveDirName/`. Directories are recursed; files are added
+ * as-is.
+ */
+async function createArchiveFromPaths(rootDir: string, entries: string[], archiveDirName: string): Promise<Buffer> {
+  const logger = getLogger();
+  const zip = new JSZip();
+  const rootFolder = zip.folder(archiveDirName)!;
+  const rootAbs = path.resolve(rootDir);
+
+  for (const entry of entries) {
+    const stat = await fs.promises.stat(entry);
+    const rel = path.relative(rootAbs, entry);
+    const relPosix = rel.split(path.sep).join('/');
+
+    if (stat.isDirectory()) {
+      // Create the nested folder hierarchy and recurse
+      const folder = relPosix ? rootFolder.folder(relPosix)! : rootFolder;
+      await addDirectoryToZip(folder, entry);
+    } else if (stat.isFile()) {
+      const content = await fs.promises.readFile(entry);
+      rootFolder.file(relPosix, content);
+    }
+  }
+
+  // After all entries are added, log the final list of files in the archive so
+  // users can verify exactly what was included (especially after directory
+  // recursion, which is otherwise opaque from the path arguments alone).
+  const archivedFiles = Object.keys(zip.files).filter((p) => !zip.files[p].dir);
+  logger.debug({count: archivedFiles.length, files: archivedFiles}, `Archive contains ${archivedFiles.length} file(s)`);
+
+  return zip.generateAsync({
+    type: 'nodebuffer',
+    compression: 'DEFLATE',
+    compressionOptions: {level: 9},
+  });
 }
 
 /**

@@ -18,8 +18,8 @@ describe('job import', () => {
 
   afterEach(hooks.afterEach);
 
-  async function createCommand(flags: Record<string, unknown>, args: Record<string, unknown>) {
-    return createTestCommand(JobImport, hooks.getConfig(), flags, args);
+  async function createCommand(flags: Record<string, unknown>, args: Record<string, unknown>, argv: string[] = []) {
+    return createTestCommand(JobImport, hooks.getConfig(), flags, args, argv);
   }
 
   function stubCommon(command: any) {
@@ -133,6 +133,73 @@ describe('job import', () => {
 
     const options = importStub.getCall(0).args[2];
     expect(options.wait).to.equal(true);
+  });
+
+  it('forwards extra positionals as paths to siteArchiveImport', async () => {
+    const command: any = await createCommand({json: true}, {target: './my-site-data'}, [
+      './my-site-data',
+      'sites/RefArch',
+      'libraries/mylib',
+    ]);
+    stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+    const importStub = sinon.stub().resolves({
+      execution: {execution_status: 'finished', exit_status: {code: 'OK'}} as any,
+      archiveFilename: 'a.zip',
+      archiveKept: false,
+    });
+    command.operations = {...command.operations, siteArchiveImport: importStub};
+
+    await command.run();
+
+    expect(importStub.calledOnce).to.equal(true);
+    const options = importStub.getCall(0).args[2];
+    expect(options.paths).to.deep.equal(['sites/RefArch', 'libraries/mylib']);
+  });
+
+  it('does not pass paths option when no extra positionals are given', async () => {
+    const command: any = await createCommand({json: true}, {target: './dir'});
+    stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+    const importStub = sinon.stub().resolves({
+      execution: {execution_status: 'finished', exit_status: {code: 'OK'}} as any,
+      archiveFilename: 'a.zip',
+      archiveKept: false,
+    });
+    command.operations = {...command.operations, siteArchiveImport: importStub};
+
+    await command.run();
+
+    const options = importStub.getCall(0).args[2];
+    expect(options.paths).to.equal(undefined);
+  });
+
+  it('errors when extra positionals are combined with --remote', async () => {
+    const command: any = await createCommand({remote: true, json: true}, {target: 'a.zip'}, ['a.zip', 'sites/RefArch']);
+    stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+
+    const importStub = sinon.stub().rejects(new Error('Should not be called'));
+    command.operations = {...command.operations, siteArchiveImport: importStub};
+
+    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+    try {
+      await command.run();
+      expect.fail('Should have thrown');
+    } catch {
+      // expected
+    }
+
+    expect(errorStub.called).to.equal(true);
+    expect(importStub.called).to.equal(false);
   });
 
   it('shows job log and errors on JobExecutionError when show-log is true', async () => {
