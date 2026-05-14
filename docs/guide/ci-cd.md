@@ -405,7 +405,7 @@ jobs:
 Once the `setup` step writes `SFCC_CERTIFICATE`, `SFCC_WEBDAV_SERVER`, etc. to `$GITHUB_ENV`, every subsequent action picks them up automatically — no need to repeat them on `code-deploy`, `data-import`, `job-run`, or `webdav-upload`.
 
 ::: tip Multiple Environments in One Workflow
-If a single workflow targets both a normal sandbox and a staging instance, run `setup` again before each phase with the appropriate inputs. The second `setup` overwrites the relevant env vars for subsequent steps.
+If a single workflow targets both a normal sandbox and a staging instance, run `setup` again before each phase with the appropriate inputs. The second `setup` only overrides env vars for inputs you actually pass — anything left blank keeps its value from the previous `setup`. To fully switch environments, re-pass every variable that should change (or use the `env:` block on individual steps to scope overrides).
 :::
 
 ::: warning Cleanup
