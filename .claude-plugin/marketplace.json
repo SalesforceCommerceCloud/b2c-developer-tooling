@@ -66,8 +66,7 @@
       "source": {
         "source": "git-subdir",
         "url": "SalesforceCommerceCloud/commerce-apps",
-        "path": ".claude",
-        "ref": "feature/codex-copilot-plugin-docs"
+        "path": ".claude"
       },
       "category": "productivity",
       "keywords": [
