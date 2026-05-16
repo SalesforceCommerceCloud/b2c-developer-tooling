@@ -44,27 +44,27 @@ export const mochaHooks = {
     const realm = process.env.TEST_REALM!;
     const shortCode = process.env.SFCC_SHORTCODE!;
     const clientId = process.env.SFCC_CLIENT_ID!;
-
-    // Catch-all OCAPI permissions for the test sandbox so e2e suites exercising
-    // arbitrary endpoints (sites, job_execution_search, …) don't depend on the
-    // built-in DEFAULT_OCAPI_RESOURCES list staying in sync with new tests.
+    const allMethods = ['get', 'post', 'put', 'patch', 'delete'];
+    // OCAPI permissions for the test sandbox: enumerate every top-level
+    // resource the suite touches, with attribute wildcards.
     const ocapiSettings = JSON.stringify([
       {
         client_id: clientId,
         resources: [
-          {
-            resource_id: '/**',
-            methods: ['get', 'post', 'put', 'patch', 'delete'],
-            read_attributes: '(**)',
-            write_attributes: '(**)',
-          },
-          {
-            resource_id: '/*',
-            methods: ['get', 'post', 'put', 'patch', 'delete'],
-            read_attributes: '(**)',
-            write_attributes: '(**)',
-          },
-        ],
+          '/code_versions',
+          '/code_versions/*',
+          '/jobs/*/executions',
+          '/jobs/*/executions/*',
+          '/job_execution_search',
+          '/sites',
+          '/sites/*',
+          '/sites/*/cartridges',
+        ].map((resourceId) => ({
+          resource_id: resourceId,
+          methods: allMethods,
+          read_attributes: '(**)',
+          write_attributes: '(**)',
+        })),
       },
     ]);
 
@@ -79,6 +79,8 @@ export const mochaHooks = {
           '--ttl',
           '24',
           '--wait',
+          '--timeout',
+          '1200',
           '--set-permissions',
           '--ocapi-settings',
           ocapiSettings,
