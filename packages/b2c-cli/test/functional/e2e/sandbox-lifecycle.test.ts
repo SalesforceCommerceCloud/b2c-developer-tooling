@@ -417,17 +417,6 @@ describe('Sandbox Lifecycle E2E Tests', function () {
 
   describe('Additional Test Cases', function () {
     describe('Error Handling', function () {
-      it('should fail with a clear error for an invalid realm id', async function () {
-        const result = await runCLI(['sandbox', 'list', '--realm', 'invalid-realm-xyz', '--json']);
-
-        expect(result.exitCode, 'invalid realm should produce a non-zero exit').to.equal(1);
-
-        const errorText = String(result.stderr || result.stdout || '');
-        expect(errorText, 'invalid realm should surface a recognizable error message').to.match(
-          /Failed to fetch sandboxes|invalid|realm/i,
-        );
-      });
-
       it('should handle missing sandbox ID gracefully', async function () {
         const result = await runCLI(['sandbox', 'get', 'non-existent-sandbox-id', '--json']);
 

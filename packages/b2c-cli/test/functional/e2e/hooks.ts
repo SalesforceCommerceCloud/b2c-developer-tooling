@@ -43,11 +43,47 @@ export const mochaHooks = {
 
     const realm = process.env.TEST_REALM!;
     const shortCode = process.env.SFCC_SHORTCODE!;
+    const clientId = process.env.SFCC_CLIENT_ID!;
+
+    // Catch-all OCAPI permissions for the test sandbox so e2e suites exercising
+    // arbitrary endpoints (sites, job_execution_search, …) don't depend on the
+    // built-in DEFAULT_OCAPI_RESOURCES list staying in sync with new tests.
+    const ocapiSettings = JSON.stringify([
+      {
+        client_id: clientId,
+        resources: [
+          {
+            resource_id: '/**',
+            methods: ['get', 'post', 'put', 'patch', 'delete'],
+            read_attributes: '(**)',
+            write_attributes: '(**)',
+          },
+          {
+            resource_id: '/*',
+            methods: ['get', 'post', 'put', 'patch', 'delete'],
+            read_attributes: '(**)',
+            write_attributes: '(**)',
+          },
+        ],
+      },
+    ]);
 
     try {
       // Create sandbox with long TTL (24 hours to cover all tests) + retry for transient errors
       const result = await runCLIWithRetry(
-        ['ods', 'create', '--realm', realm, '--ttl', '24', '--wait', '--set-permissions', '--json'],
+        [
+          'ods',
+          'create',
+          '--realm',
+          realm,
+          '--ttl',
+          '24',
+          '--wait',
+          '--set-permissions',
+          '--ocapi-settings',
+          ocapiSettings,
+          '--json',
+        ],
         {
           timeout: TIMEOUTS.ODS_OPERATION,
           maxRetries: 3,
