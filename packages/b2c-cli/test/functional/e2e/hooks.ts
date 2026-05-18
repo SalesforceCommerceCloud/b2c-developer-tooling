@@ -44,20 +44,23 @@ export const mochaHooks = {
     const realm = process.env.TEST_REALM!;
     const shortCode = process.env.SFCC_SHORTCODE!;
     const clientId = process.env.SFCC_CLIENT_ID!;
-    // OCAPI permissions for the test sandbox: enumerate every resource the
-    // e2e suite touches with only the HTTP methods each endpoint supports.
+    // OCAPI permissions for the test sandbox.
+    // DBInit (26.6.0.220) validates that each method string is actually
+    // implemented for the given resource_id. Only list methods the OCAPI
+    // Data API exposes per resource — use the same methods proven in
+    // DEFAULT_OCAPI_RESOURCES (sandbox create command) plus extras for
+    // resources the e2e suite exercises.
     const ocapiSettings = JSON.stringify([
       {
         client_id: clientId,
         resources: [
           {resource_id: '/code_versions', methods: ['get']},
-          {resource_id: '/code_versions/*', methods: ['get', 'patch', 'delete']},
+          {resource_id: '/code_versions/*', methods: ['patch', 'delete']},
           {resource_id: '/jobs/*/executions', methods: ['post']},
           {resource_id: '/jobs/*/executions/*', methods: ['get']},
           {resource_id: '/job_execution_search', methods: ['post']},
           {resource_id: '/sites', methods: ['get']},
-          {resource_id: '/sites/*', methods: ['get', 'patch']},
-          {resource_id: '/sites/*/cartridges', methods: ['get', 'post']},
+          {resource_id: '/sites/*/cartridges', methods: ['post']},
         ].map((r) => ({...r, read_attributes: '(**)', write_attributes: '(**)'})),
       },
     ]);
