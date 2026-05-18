@@ -44,7 +44,7 @@ export const mochaHooks = {
     const realm = process.env.TEST_REALM!;
     const shortCode = process.env.SFCC_SHORTCODE!;
     const clientId = process.env.SFCC_CLIENT_ID!;
-    const allMethods = ['get', 'post', 'put', 'patch', 'delete'];
+    const allMethods = ['get', 'post', 'patch', 'delete'];
     // OCAPI permissions for the test sandbox: enumerate every top-level
     // resource the suite touches, with attribute wildcards.
     const ocapiSettings = JSON.stringify([
