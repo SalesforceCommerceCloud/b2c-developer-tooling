@@ -103,6 +103,81 @@ b2c ecdn cache purge --zone my-zone --path "www.example.com/dw/image/v2/realm_in
 
 ---
 
+## Rate Limiting
+
+### b2c ecdn rate-limit list
+
+List rate limiting rules for a zone.
+
+```bash
+b2c ecdn rate-limit list --zone my-zone
+b2c ecdn rate-limit list --zone my-zone --extended
+b2c ecdn rate-limit list --zone my-zone --json
+```
+
+---
+
+### b2c ecdn rate-limit get
+
+Get a single rate limiting rule by ID.
+
+```bash
+b2c ecdn rate-limit get --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e
+b2c ecdn rate-limit get --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --json
+```
+
+---
+
+### b2c ecdn rate-limit create
+
+Create a rate limiting rule.
+
+```bash
+b2c ecdn rate-limit create --zone my-zone --description "Rate limit /checkout" --expression '(http.request.uri.path matches "^/checkout")' --characteristics cf.unique_visitor_id --action block --period 60 --requests-per-period 50 --mitigation-timeout 600
+b2c ecdn rate-limit create --zone my-zone --description "Rate limit /checkout" --expression '(http.request.uri.path matches "^/checkout")' --characteristics cf.unique_visitor_id --action block --period 60 --requests-per-period 50 --mitigation-timeout 600 --json
+```
+
+#### Flags
+
+| Flag | Description | Required |
+|------|-------------|----------|
+| `--description` | Rule description | Yes |
+| `--expression` | Expression defining when to evaluate the rule | Yes |
+| `--characteristics` | Comma-separated request grouping keys | Yes |
+| `--action` | Mitigation action | Yes |
+| `--period` | Rate window in seconds (`10`, `60`, `120`, `300`, `600`) | Yes |
+| `--requests-per-period` | Max requests allowed within the period | Yes |
+| `--mitigation-timeout` | Action duration in seconds (`0`, `60`, `120`, `300`, `600`, `3600`, `86400`) | Yes |
+| `--counting-expression` | Optional expression for what requests to count | No |
+| `--enabled` / `--no-enabled` | Enable/disable rule | No |
+| `--position-before` | Insert before another rule ID | No |
+| `--position-after` | Insert after another rule ID | No |
+
+---
+
+### b2c ecdn rate-limit update
+
+Update fields of an existing rate limiting rule.
+
+```bash
+b2c ecdn rate-limit update --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --requests-per-period 100 --mitigation-timeout 120
+b2c ecdn rate-limit update --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --action managed_challenge --no-enabled
+b2c ecdn rate-limit update --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --requests-per-period 100 --mitigation-timeout 120 --json
+```
+
+---
+
+### b2c ecdn rate-limit delete
+
+Delete a rate limiting rule.
+
+```bash
+b2c ecdn rate-limit delete --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --force
+b2c ecdn rate-limit delete --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --force --json
+```
+
+---
+
 ## Certificate Management
 
 ### b2c ecdn certificates list
