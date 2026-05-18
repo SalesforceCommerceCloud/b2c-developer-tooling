@@ -44,27 +44,21 @@ export const mochaHooks = {
     const realm = process.env.TEST_REALM!;
     const shortCode = process.env.SFCC_SHORTCODE!;
     const clientId = process.env.SFCC_CLIENT_ID!;
-    const allMethods = ['get', 'post', 'patch', 'delete'];
-    // OCAPI permissions for the test sandbox: enumerate every top-level
-    // resource the suite touches, with attribute wildcards.
+    // OCAPI permissions for the test sandbox: enumerate every resource the
+    // e2e suite touches with only the HTTP methods each endpoint supports.
     const ocapiSettings = JSON.stringify([
       {
         client_id: clientId,
         resources: [
-          '/code_versions',
-          '/code_versions/*',
-          '/jobs/*/executions',
-          '/jobs/*/executions/*',
-          '/job_execution_search',
-          '/sites',
-          '/sites/*',
-          '/sites/*/cartridges',
-        ].map((resourceId) => ({
-          resource_id: resourceId,
-          methods: allMethods,
-          read_attributes: '(**)',
-          write_attributes: '(**)',
-        })),
+          {resource_id: '/code_versions', methods: ['get']},
+          {resource_id: '/code_versions/*', methods: ['get', 'patch', 'delete']},
+          {resource_id: '/jobs/*/executions', methods: ['post']},
+          {resource_id: '/jobs/*/executions/*', methods: ['get']},
+          {resource_id: '/job_execution_search', methods: ['post']},
+          {resource_id: '/sites', methods: ['get']},
+          {resource_id: '/sites/*', methods: ['get', 'patch']},
+          {resource_id: '/sites/*/cartridges', methods: ['get', 'post']},
+        ].map((r) => ({...r, read_attributes: '(**)', write_attributes: '(**)'})),
       },
     ]);
 
