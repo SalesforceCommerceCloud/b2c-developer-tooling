@@ -256,6 +256,92 @@ describe('content metadefinition validation', () => {
     });
   });
 
+  describe('componenttype embedded/component_id validation', () => {
+    it('passes when embedded is true and component_id is set', () => {
+      const result = validateMetaDefinition(
+        {
+          group: 'content',
+          embedded: true,
+          component_id: 'my-comp',
+          region_definitions: [],
+          attribute_definition_groups: [],
+        },
+        {type: 'componenttype'},
+      );
+      expect(result.valid).to.equal(true);
+    });
+
+    it('fails with readable error when embedded is true and component_id is missing', () => {
+      const result = validateMetaDefinition(
+        {group: 'content', embedded: true, region_definitions: [], attribute_definition_groups: []},
+        {type: 'componenttype'},
+      );
+      expect(result.valid).to.equal(false);
+      expect(result.errors).to.have.lengthOf(1);
+      expect(result.errors[0].message).to.include('requires property "component_id"');
+    });
+
+    it('passes when embedded is false and component_id is missing', () => {
+      const result = validateMetaDefinition(
+        {group: 'content', embedded: false, region_definitions: [], attribute_definition_groups: []},
+        {type: 'componenttype'},
+      );
+      expect(result.valid).to.equal(true);
+    });
+
+    it('passes when embedded is not set', () => {
+      const result = validateMetaDefinition(
+        {group: 'content', region_definitions: [], attribute_definition_groups: []},
+        {type: 'componenttype'},
+      );
+      expect(result.valid).to.equal(true);
+    });
+
+    it('passes when component_id is set without embedded', () => {
+      const result = validateMetaDefinition(
+        {group: 'content', component_id: 'my-comp', region_definitions: [], attribute_definition_groups: []},
+        {type: 'componenttype'},
+      );
+      expect(result.valid).to.equal(true);
+    });
+  });
+
+  describe('error message formatting', () => {
+    it('filters out raw anyOf wrapper messages', () => {
+      const result = validateMetaDefinition(
+        {group: 'content', embedded: true, region_definitions: [], attribute_definition_groups: []},
+        {type: 'componenttype'},
+      );
+      expect(result.errors.every((e) => !e.message.includes('is not any of'))).to.equal(true);
+    });
+
+    it('produces readable error for region definition mutual exclusion', () => {
+      const result = validateMetaDefinition(
+        {
+          group: 'content',
+          region_definitions: [
+            {id: 'main', component_type_exclusions: [{type_id: 'a'}], component_type_inclusions: [{type_id: 'b'}]},
+          ],
+          attribute_definition_groups: [],
+        },
+        {type: 'componenttype'},
+      );
+      expect(result.valid).to.equal(false);
+      expect(result.errors).to.have.lengthOf(1);
+      expect(result.errors[0].message).to.include('must satisfy one of');
+      expect(result.errors[0].message).not.to.include('[subschema');
+    });
+
+    it('preserves non-anyOf error messages as-is', () => {
+      const result = validateMetaDefinition(
+        {group: 'content', region_definitions: 'not-an-array', attribute_definition_groups: []},
+        {type: 'componenttype'},
+      );
+      expect(result.valid).to.equal(false);
+      expect(result.errors.some((e) => e.message.includes('is not of a type(s) array'))).to.equal(true);
+    });
+  });
+
   describe('CONTENT_SCHEMA_TYPES', () => {
     it('contains expected types', () => {
       expect(CONTENT_SCHEMA_TYPES).to.include('pagetype');

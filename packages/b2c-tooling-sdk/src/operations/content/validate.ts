@@ -134,12 +134,58 @@ export function detectMetaDefinitionType(data: Record<string, unknown>, filePath
   return detectTypeFromData(data);
 }
 
+function formatAnyOfError(err: ValidatorResult['errors'][number]): string {
+  const schema = err.schema as {anyOf?: unknown[]};
+  if (!schema?.anyOf || !Array.isArray(schema.anyOf)) return err.message;
+
+  const branches = schema.anyOf as Record<string, unknown>[];
+  const descriptions: string[] = [];
+  for (const branch of branches) {
+    if (branch.required && Array.isArray(branch.required)) {
+      const not = branch.not as Record<string, unknown> | undefined;
+      if (not?.required && Array.isArray(not.required)) {
+        descriptions.push(
+          `"${(branch.required as string[]).join('", "')}" (without "${(not.required as string[]).join('", "')}")`,
+        );
+      } else {
+        descriptions.push(`requires "${(branch.required as string[]).join('", "')}"`);
+      }
+    } else if (branch.not) {
+      const notSchema = branch.not as Record<string, unknown>;
+      if (notSchema.required && Array.isArray(notSchema.required)) {
+        descriptions.push(`must not have "${(notSchema.required as string[]).join('", "')}"`);
+      }
+    }
+  }
+
+  if (descriptions.length > 0) {
+    return `must satisfy one of: ${descriptions.join('; or ')}`;
+  }
+  return err.message;
+}
+
 function mapErrors(result: ValidatorResult): MetaDefinitionValidationError[] {
-  return result.errors.map((err) => ({
+  const meaningful = result.errors.filter((err) => err.name !== 'anyOf' && err.name !== 'not');
+  if (meaningful.length > 0) return meaningful.map(toValidationError);
+
+  const anyOfErrors = result.errors.filter((err) => err.name === 'anyOf');
+  if (anyOfErrors.length > 0) {
+    return anyOfErrors.map((err) => ({
+      path: err.property.replace(/^instance/, '') || '/',
+      message: formatAnyOfError(err),
+      property: err.property,
+    }));
+  }
+
+  return result.errors.map(toValidationError);
+}
+
+function toValidationError(err: ValidatorResult['errors'][number]): MetaDefinitionValidationError {
+  return {
     path: err.property.replace(/^instance/, '') || '/',
     message: err.message,
     property: err.property,
-  }));
+  };
 }
 
 /**
@@ -158,7 +204,7 @@ export function validateMetaDefinition(
   }
 
   const validator = getValidator();
-  const result = validator.validate(data, {$ref: `/${schemaType}.json`});
+  const result = validator.validate(data, {$ref: `/${schemaType}.json`}, {nestedErrors: true});
 
   return {
     valid: result.valid,
@@ -206,7 +252,7 @@ export function validateMetaDefinitionFile(
   }
 
   const validator = getValidator();
-  const result = validator.validate(data, {$ref: `${schemaType}.json`});
+  const result = validator.validate(data, {$ref: `${schemaType}.json`}, {nestedErrors: true});
 
   return {
     valid: result.valid,
