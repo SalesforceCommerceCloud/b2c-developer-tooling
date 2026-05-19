@@ -100,6 +100,12 @@ All actions accept auth inputs directly or read from `SFCC_*` environment variab
 | `mrt-project` | `MRT_PROJECT` | MRT operations |
 | `mrt-environment` | `MRT_ENVIRONMENT` | MRT operations |
 | `account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager |
+| `webdav-server` | `SFCC_WEBDAV_SERVER` | Staging WebDAV (cert. hostname) |
+| `certificate` | `SFCC_CERTIFICATE` | Two-factor mTLS (PKCS12 path) |
+| `certificate-passphrase` | `SFCC_CERTIFICATE_PASSPHRASE` | Two-factor mTLS |
+| `selfsigned` | `SFCC_SELFSIGNED` | Allow self-signed server certs |
+
+For staging environments that require a separate WebDAV hostname and a client certificate, see the [Staging Environments guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ci-cd.html#staging-environments-two-factor-mtls) for the full pattern (decoding a base64-encoded `.p12` from a secret + wiring it through `setup`).
 
 ## Plugins
 
