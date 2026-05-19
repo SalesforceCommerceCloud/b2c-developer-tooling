@@ -28,15 +28,33 @@
     }
   },
   "required": ["region_definitions","attribute_definition_groups", "group"],
-  "anyOf": [
+  "allOf": [
     {
-      "not": {
-        "properties": {"embedded": {"enum": [true]}},
-        "required": ["embedded"]
-      }
+      "anyOf": [
+        {
+          "not": {
+            "properties": {"embedded": {"enum": [true]}},
+            "required": ["embedded"]
+          }
+        },
+        {
+          "required": ["component_id"]
+        }
+      ]
     },
     {
-      "required": ["component_id"]
+      "anyOf": [
+        {
+          "not": {
+            "properties": {"embedded": {"enum": [true]}},
+            "required": ["embedded"]
+          }
+        },
+        {
+          "properties": {"arch_type": {"enum": ["headless"]}},
+          "required": ["arch_type"]
+        }
+      ]
     }
   ],
   "additionalProperties": false

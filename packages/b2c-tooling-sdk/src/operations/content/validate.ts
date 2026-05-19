@@ -165,7 +165,7 @@ function formatAnyOfError(err: ValidatorResult['errors'][number]): string {
 }
 
 function mapErrors(result: ValidatorResult): MetaDefinitionValidationError[] {
-  const meaningful = result.errors.filter((err) => err.name !== 'anyOf' && err.name !== 'not');
+  const meaningful = result.errors.filter((err) => err.name !== 'anyOf' && err.name !== 'not' && err.name !== 'allOf');
   if (meaningful.length > 0) return meaningful.map(toValidationError);
 
   const anyOfErrors = result.errors.filter((err) => err.name === 'anyOf');

@@ -257,7 +257,53 @@ describe('content metadefinition validation', () => {
   });
 
   describe('componenttype embedded/component_id validation', () => {
-    it('passes when embedded is true and component_id is set', () => {
+    it('passes when embedded is true with arch_type headless and component_id set', () => {
+      const result = validateMetaDefinition(
+        {
+          group: 'content',
+          embedded: true,
+          arch_type: 'headless',
+          component_id: 'my-comp',
+          region_definitions: [],
+          attribute_definition_groups: [],
+        },
+        {type: 'componenttype'},
+      );
+      expect(result.valid).to.equal(true);
+    });
+
+    it('fails when embedded is true and component_id is missing', () => {
+      const result = validateMetaDefinition(
+        {
+          group: 'content',
+          embedded: true,
+          arch_type: 'headless',
+          region_definitions: [],
+          attribute_definition_groups: [],
+        },
+        {type: 'componenttype'},
+      );
+      expect(result.valid).to.equal(false);
+      expect(result.errors.some((e) => e.message.includes('requires property "component_id"'))).to.equal(true);
+    });
+
+    it('fails when embedded is true and arch_type is not headless', () => {
+      const result = validateMetaDefinition(
+        {
+          group: 'content',
+          embedded: true,
+          arch_type: 'controller',
+          component_id: 'my-comp',
+          region_definitions: [],
+          attribute_definition_groups: [],
+        },
+        {type: 'componenttype'},
+      );
+      expect(result.valid).to.equal(false);
+      expect(result.errors.some((e) => e.message.includes('headless'))).to.equal(true);
+    });
+
+    it('fails when embedded is true and arch_type is missing', () => {
       const result = validateMetaDefinition(
         {
           group: 'content',
@@ -268,17 +314,8 @@ describe('content metadefinition validation', () => {
         },
         {type: 'componenttype'},
       );
-      expect(result.valid).to.equal(true);
-    });
-
-    it('fails with readable error when embedded is true and component_id is missing', () => {
-      const result = validateMetaDefinition(
-        {group: 'content', embedded: true, region_definitions: [], attribute_definition_groups: []},
-        {type: 'componenttype'},
-      );
       expect(result.valid).to.equal(false);
-      expect(result.errors).to.have.lengthOf(1);
-      expect(result.errors[0].message).to.include('requires property "component_id"');
+      expect(result.errors.some((e) => e.message.includes('requires property "arch_type"'))).to.equal(true);
     });
 
     it('passes when embedded is false and component_id is missing', () => {
