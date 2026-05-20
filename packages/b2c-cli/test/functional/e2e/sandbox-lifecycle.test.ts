@@ -7,7 +7,16 @@
 import {expect} from 'chai';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {getHostname, getSandboxId, parseJSONOutput, runCLI, runCLIWithRetry, TIMEOUTS, toString} from './test-utils.js';
+import {
+  getErrorDetails,
+  getHostname,
+  getSandboxId,
+  parseJSONOutput,
+  runCLI,
+  runCLIWithRetry,
+  TIMEOUTS,
+  toString,
+} from './test-utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -170,12 +179,13 @@ describe('Sandbox Lifecycle E2E Tests', function () {
 
       expect(result.exitCode, `Stop failed: ${toString(result.stderr)}`).to.equal(0);
 
-      // Verify state
+      // Verify state — the SUT must be queryable after stop
       const statusResult = await runCLIWithRetry(['sandbox', 'get', sandboxId, '--json']);
-      if (statusResult.exitCode === 0) {
-        const sandbox = parseJSONOutput(statusResult);
-        expect(['stopped', 'stopping'], 'Sandbox should be stopped or stopping').to.include(sandbox.state);
-      }
+      expect(statusResult.exitCode, `Get after stop failed: ${toString(statusResult.stderr)}`).to.equal(0);
+      const sandbox = parseJSONOutput(statusResult);
+      expect(['stopped', 'stopping'], `Sandbox should be stopped or stopping, but got '${sandbox.state}'`).to.include(
+        sandbox.state,
+      );
     });
   });
 
@@ -191,12 +201,13 @@ describe('Sandbox Lifecycle E2E Tests', function () {
 
       expect(result.exitCode, `Start failed: ${toString(result.stderr)}`).to.equal(0);
 
-      // Verify state
+      // Verify state — the SUT must be queryable after start
       const statusResult = await runCLIWithRetry(['sandbox', 'get', sandboxId, '--json']);
-      if (statusResult.exitCode === 0) {
-        const sandbox = parseJSONOutput(statusResult);
-        expect(['started', 'starting'], 'Sandbox should be started or starting').to.include(sandbox.state);
-      }
+      expect(statusResult.exitCode, `Get after start failed: ${toString(statusResult.stderr)}`).to.equal(0);
+      const sandbox = parseJSONOutput(statusResult);
+      expect(['started', 'starting'], `Sandbox should be started or starting, but got '${sandbox.state}'`).to.include(
+        sandbox.state,
+      );
     });
   });
 
@@ -212,15 +223,14 @@ describe('Sandbox Lifecycle E2E Tests', function () {
 
       expect(result.exitCode, `Restart failed: ${toString(result.stderr)}`).to.equal(0);
 
-      // Verify state
+      // Verify state — the SUT must be queryable after restart
       const statusResult = await runCLIWithRetry(['sandbox', 'get', sandboxId, '--json']);
-      if (statusResult.exitCode === 0) {
-        const sandbox = parseJSONOutput(statusResult);
-        expect(
-          ['started', 'starting', 'restarting'],
-          `Sandbox should be started/starting/restarting, but got '${sandbox.state}'`,
-        ).to.include(sandbox.state);
-      }
+      expect(statusResult.exitCode, `Get after restart failed: ${toString(statusResult.stderr)}`).to.equal(0);
+      const sandbox = parseJSONOutput(statusResult);
+      expect(
+        ['started', 'starting', 'restarting'],
+        `Sandbox should be started/starting/restarting, but got '${sandbox.state}'`,
+      ).to.include(sandbox.state);
     });
   });
 
@@ -262,27 +272,26 @@ describe('Sandbox Lifecycle E2E Tests', function () {
 
       // Response can be either a usage model or a wrapper with data property
       const usage: any = 'data' in response ? (response as any).data : response;
-      if (usage && typeof usage === 'object') {
-        if (usage.sandboxSeconds !== undefined) {
-          expect(usage.sandboxSeconds, 'sandboxSeconds should be a number when present').to.be.a('number');
-        }
-        if (usage.minutesUp !== undefined) {
-          expect(usage.minutesUp, 'minutesUp should be a number when present').to.be.a('number');
-        }
-        if (usage.minutesDown !== undefined) {
-          expect(usage.minutesDown, 'minutesDown should be a number when present').to.be.a('number');
-        }
+      expect(usage, 'Usage response should contain a usage object').to.be.an('object');
 
-        // Some backends may also provide aggregate sandbox counters; validate types when available
-        if (usage.activeSandboxes !== undefined) {
-          expect(usage.activeSandboxes, 'activeSandboxes should be a number when present').to.be.a('number');
-        }
-        if (usage.createdSandboxes !== undefined) {
-          expect(usage.createdSandboxes, 'createdSandboxes should be a number when present').to.be.a('number');
-        }
-        if (usage.deletedSandboxes !== undefined) {
-          expect(usage.deletedSandboxes, 'deletedSandboxes should be a number when present').to.be.a('number');
-        }
+      // The sandbox usage model has both per-sandbox uptime metrics and
+      // aggregate counters. At least one numeric metric must be present —
+      // an empty object is not a valid response.
+      const knownMetrics = [
+        'sandboxSeconds',
+        'minutesUp',
+        'minutesDown',
+        'activeSandboxes',
+        'createdSandboxes',
+        'deletedSandboxes',
+      ];
+      const presentMetrics = knownMetrics.filter((key) => usage[key] !== undefined);
+      expect(
+        presentMetrics.length,
+        `Expected at least one usage metric, got: ${JSON.stringify(usage)}`,
+      ).to.be.greaterThan(0);
+      for (const key of presentMetrics) {
+        expect(usage[key], `${key} should be a number`).to.be.a('number');
       }
     });
   });
@@ -328,15 +337,15 @@ describe('Sandbox Lifecycle E2E Tests', function () {
       expect(result.exitCode, `Alias list failed: ${toString(result.stderr)}`).to.equal(0);
 
       const response = parseJSONOutput(result);
-      // sandbox alias list --json returns an array of alias objects (possibly empty)
+      // sandbox alias list --json returns an array of alias objects. We just created
+      // an alias in the previous test, so the list MUST include it.
       expect(response, 'Alias list response should be an array').to.be.an('array');
+      expect((response as unknown[]).length, 'Alias list should include the alias created above').to.be.greaterThan(0);
 
-      if (Array.isArray(response) && response.length > 0) {
-        const found = (response as any[]).find(
-          (alias) => alias.id === createdAliasId || alias.name === createdAliasHostname,
-        );
-        expect(found, 'Expected alias list to include the created alias').to.exist;
-      }
+      const found = (response as any[]).find(
+        (alias) => alias.id === createdAliasId || alias.name === createdAliasHostname,
+      );
+      expect(found, 'Expected alias list to include the created alias').to.exist;
     });
 
     it('should delete the created alias for the sandbox', async function () {
@@ -382,7 +391,7 @@ describe('Sandbox Lifecycle E2E Tests', function () {
   });
 
   describe('Step 11: Delete Sandbox', function () {
-    it('should delete the sandbox', async function () {
+    it('should delete the sandbox and verify it is gone', async function () {
       // Skip if we don't have a valid sandbox ID
       if (!sandboxId) {
         this.skip();
@@ -391,22 +400,23 @@ describe('Sandbox Lifecycle E2E Tests', function () {
       const result = await runCLIWithRetry(['sandbox', 'delete', sandboxId, '--force', '--json'], {verbose: true});
 
       expect(result.exitCode, `Delete failed: ${toString(result.stderr)}`).to.equal(0);
-      console.log('  ✓ Sandbox deleted successfully');
+
+      // Verify the sandbox is actually gone — a follow-up `get` must fail.
+      const getResult = await runCLI(['sandbox', 'get', sandboxId, '--json']);
+      expect(
+        getResult.exitCode,
+        `Expected 'sandbox get' on deleted sandbox to fail, but it succeeded: ${toString(getResult.stdout)}`,
+      ).to.not.equal(0);
+      const errorText = String(getResult.stderr || getResult.stdout || '');
+      expect(errorText, 'Get on deleted sandbox should report a recognizable error').to.match(
+        /not found|404|deleted|does not exist/i,
+      );
+      console.log('  ✓ Sandbox deleted successfully and confirmed gone');
     });
   });
 
   describe('Additional Test Cases', function () {
     describe('Error Handling', function () {
-      it('should handle invalid realm gracefully', async function () {
-        const result = await runCLI(['sandbox', 'list', '--realm', 'invalid-realm-xyz', '--json']);
-
-        // Command should either succeed with empty list or fail with error
-        expect(
-          result.exitCode,
-          `Invalid realm command should either succeed (0) or fail (1), but got ${result.exitCode}`,
-        ).to.be.oneOf([0, 1]);
-      });
-
       it('should handle missing sandbox ID gracefully', async function () {
         const result = await runCLI(['sandbox', 'get', 'non-existent-sandbox-id', '--json']);
 
@@ -474,9 +484,15 @@ describe('Sandbox Lifecycle E2E Tests', function () {
       });
 
       it('should fetch realm usage in JSON format', async function () {
-        const result = await runCLIWithRetry(['sandbox', 'realm', 'usage', realmId!, '--json'], {verbose: true});
+        // Realm usage can take >30s against the unified API; use a higher timeout
+        // than TIMEOUTS.DEFAULT to avoid execa killing the process mid-flight.
+        this.timeout(180_000);
+        const result = await runCLIWithRetry(['sandbox', 'realm', 'usage', realmId!, '--json'], {
+          timeout: 120_000,
+          verbose: true,
+        });
 
-        expect(result.exitCode, `Realm usage failed: ${toString(result.stderr)}`).to.equal(0);
+        expect(result.exitCode, `Realm usage failed:\n${getErrorDetails(result)}`).to.equal(0);
 
         const response = parseJSONOutput(result);
         expect(response, 'Realm usage response should be a valid object').to.be.an('object');

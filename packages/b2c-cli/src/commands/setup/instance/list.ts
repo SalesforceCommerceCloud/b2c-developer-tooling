@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {ux} from '@oclif/core';
-import {BaseCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  BaseCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {DwJsonSource, type InstanceInfo} from '@salesforce/b2c-tooling-sdk/config';
 import {withDocs} from '../../../i18n/index.js';
 
@@ -32,6 +38,8 @@ const COLUMNS: Record<string, ColumnDef<InstanceInfo>> = {
 
 const DEFAULT_COLUMNS = ['name', 'hostname', 'source', 'active'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 /**
  * JSON output structure for the list command.
  */
@@ -52,6 +60,7 @@ export default class SetupInstanceList extends BaseCommand<typeof SetupInstanceL
 
   static flags = {
     ...BaseCommand.baseFlags,
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<InstanceListResponse> {
@@ -81,7 +90,7 @@ export default class SetupInstanceList extends BaseCommand<typeof SetupInstanceL
     ux.stdout('Instances');
     ux.stdout('─'.repeat(60));
 
-    createTable(COLUMNS).render(instances, DEFAULT_COLUMNS);
+    tableRenderer.render(instances, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     return result;
   }

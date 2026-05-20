@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags, ux} from '@oclif/core';
-import {BaseCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  BaseCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {searchDocs, listDocs, type SearchResult, type DocEntry} from '@salesforce/b2c-tooling-sdk/docs';
 import {t} from '../../i18n/index.js';
 
@@ -38,6 +44,8 @@ const COLUMNS: Record<string, ColumnDef<SearchResult>> = {
 
 const DEFAULT_COLUMNS = ['id', 'title', 'score'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
   static args = {
     query: Args.string({
@@ -68,6 +76,7 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
       description: 'List all available documentation entries',
       default: false,
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   protected operations = {
@@ -98,7 +107,7 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
         title: COLUMNS.title,
       };
 
-      createTable(listColumns).render(results, ['id', 'title']);
+      new TableRenderer(listColumns).render(results, ['id', 'title']);
 
       this.log(
         t('commands.docs.search.totalCount', '{{count}} documentation entries available', {count: entries.length}),
@@ -130,7 +139,7 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
       return response;
     }
 
-    createTable(COLUMNS).render(results, DEFAULT_COLUMNS);
+    tableRenderer.render(results, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     this.log(
       t('commands.docs.search.resultCount', 'Found {{count}} matches for "{{query}}"', {

@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {BaseCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  BaseCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {createScaffoldRegistry, type Scaffold, type ScaffoldCategory} from '@salesforce/b2c-tooling-sdk/scaffold';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -81,6 +87,7 @@ export default class ScaffoldSearch extends BaseCommand<typeof ScaffoldSearch> {
       char: 'c',
       description: 'Filter results by category',
     }),
+    ...columnFlagsFor(COLUMNS, {columnsChar: false}),
   };
 
   async run(): Promise<ScaffoldSearchResponse> {
@@ -123,7 +130,7 @@ export default class ScaffoldSearch extends BaseCommand<typeof ScaffoldSearch> {
     );
     this.log('');
 
-    tableRenderer.render(scaffolds, DEFAULT_COLUMNS);
+    tableRenderer.render(scaffolds, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     this.log('');
     this.log(t('commands.scaffold.search.hint', 'Use "b2c scaffold info <id>" for more details'));

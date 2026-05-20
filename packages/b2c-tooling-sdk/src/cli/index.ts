@@ -140,3 +140,7 @@ export {} from './hooks.js';
 // Table rendering utilities
 export {TableRenderer, createTable} from './table.js';
 export type {ColumnDef, TableRenderOptions} from './table.js';
+export {columnFlagsFor, selectColumns} from './columns.js';
+export type {ColumnFlags, ColumnFlagsOptions, WarnFn} from './columns.js';
+export {printFieldsBlock} from './details.js';
+export type {DetailField, DetailFieldObject, DetailSection, DetailValue, PrintFieldsBlockOptions} from './details.js';

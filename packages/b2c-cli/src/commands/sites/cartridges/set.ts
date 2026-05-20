@@ -9,6 +9,13 @@ import {type CartridgePathResult, BM_SITE_ID, setCartridgePath} from '@salesforc
 import {t, withDocs} from '../../../i18n/index.js';
 
 export default class SitesCartridgesSet extends InstanceCommand<typeof SitesCartridgesSet> {
+  static args = {
+    cartridges: Args.string({
+      description: t('args.cartridges.description', 'New cartridge path (colon-separated, e.g. "cart1:cart2:cart3")'),
+      required: true,
+    }),
+  };
+
   static description = withDocs(
     t('commands.sites.cartridges.set.description', 'Replace the entire cartridge path for a site'),
     '/cli/sites.html#b2c-sites-cartridges-set',
@@ -21,15 +28,6 @@ export default class SitesCartridgesSet extends InstanceCommand<typeof SitesCart
     '<%= config.bin %> sites cartridges set "bm_ext1:bm_ext2" --bm',
   ];
 
-  static hiddenAliases = ['sites:cartridge:set'];
-
-  static args = {
-    cartridges: Args.string({
-      description: t('args.cartridges.description', 'New cartridge path (colon-separated, e.g. "cart1:cart2:cart3")'),
-      required: true,
-    }),
-  };
-
   static flags = {
     'site-id': Flags.string({
       description: t('flags.siteId.description', 'Site ID (e.g. RefArch)'),
@@ -40,6 +38,8 @@ export default class SitesCartridgesSet extends InstanceCommand<typeof SitesCart
       exclusive: ['site-id'],
     }),
   };
+
+  static hiddenAliases = ['sites:cartridge:set'];
 
   async run(): Promise<CartridgePathResult> {
     this.assertDestructiveOperationAllowed('replace site cartridge path');

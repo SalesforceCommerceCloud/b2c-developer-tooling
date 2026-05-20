@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {OdsCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  OdsCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {getApiErrorMessage, type OdsComponents} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
 
@@ -100,15 +106,7 @@ export default class CloneList extends OdsCommand<typeof CloneList> {
       required: false,
       options: ['Pending', 'InProgress', 'Failed', 'Completed'],
     }),
-    columns: Flags.string({
-      char: 'c',
-      description: `Columns to display (comma-separated). Available: ${Object.keys(COLUMNS).join(', ')}`,
-    }),
-    extended: Flags.boolean({
-      char: 'x',
-      description: 'Show all columns',
-      default: false,
-    }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<{data?: SandboxCloneGetModel[]}> {
@@ -146,25 +144,9 @@ export default class CloneList extends OdsCommand<typeof CloneList> {
       return {data: clones};
     }
 
-    const columns = this.getSelectedColumns();
     const tableRenderer = new TableRenderer(COLUMNS);
-    tableRenderer.render(clones, columns);
+    tableRenderer.render(clones, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     return {data: clones};
-  }
-
-  private getSelectedColumns(): string[] {
-    const columnsFlag = this.flags.columns;
-    const extended = this.flags.extended;
-
-    if (columnsFlag) {
-      return columnsFlag.split(',').map((c) => c.trim());
-    }
-
-    if (extended) {
-      return Object.keys(COLUMNS);
-    }
-
-    return DEFAULT_COLUMNS;
   }
 }

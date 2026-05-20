@@ -3,9 +3,8 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Args, Flags, ux} from '@oclif/core';
-import cliui from 'cliui';
-import {AmCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {Args, Flags} from '@oclif/core';
+import {AmCommand, printFieldsBlock, type DetailField, type DetailSection} from '@salesforce/b2c-tooling-sdk/cli';
 import type {AccountManagerApiClient, ApiClientExpandOption} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
 
@@ -94,12 +93,36 @@ export default class ClientGet extends AmCommand<typeof ClientGet> {
     return client;
   }
 
-  private printBasicFields(ui: ReturnType<typeof cliui>, c: AccountManagerApiClient): void {
+  private buildTenantFilterSection(c: AccountManagerApiClient): DetailSection | undefined {
+    const map = c.roleTenantFilterMap as Record<string, string> | undefined;
+    const hasMap = map !== undefined && typeof map === 'object' && Object.keys(map).length > 0;
+    const filterStr =
+      typeof c.roleTenantFilter === 'string' && c.roleTenantFilter.length > 0 ? c.roleTenantFilter : undefined;
+
+    if (!hasMap && !filterStr) {
+      return undefined;
+    }
+
+    const fields: DetailField[] = [];
+    if (hasMap && map) {
+      for (const [roleId, filter] of Object.entries(map)) {
+        const filterValue = typeof filter === 'string' ? filter : JSON.stringify(filter);
+        fields.push([roleId, filterValue]);
+      }
+    } else if (filterStr) {
+      fields.push(['Filter', filterStr]);
+    }
+
+    return {title: 'Role Tenant Filters', fields};
+  }
+
+  private printClientDetails(c: AccountManagerApiClient): void {
     const passwordModified =
       c.passwordModificationTimestamp !== null && c.passwordModificationTimestamp !== undefined
         ? new Date(c.passwordModificationTimestamp).toLocaleString()
         : undefined;
-    const fields: [string, string | undefined][] = [
+
+    const basicFields: DetailField[] = [
       ['ID', c.id],
       ['Name', c.name],
       ['Description', c.description ?? undefined],
@@ -111,128 +134,43 @@ export default class ClientGet extends AmCommand<typeof ClientGet> {
       ['Disabled', c.disabledTimestamp ? new Date(c.disabledTimestamp).toLocaleString() : undefined],
     ];
 
-    for (const [label, value] of fields) {
-      if (value !== undefined) {
-        ui.div({text: `${label}:`, width: 25, padding: [0, 2, 0, 0]}, {text: value, padding: [0, 0, 0, 0]});
-      }
-    }
-  }
+    const sections: DetailSection[] = [];
 
-  private printClientDetails(c: AccountManagerApiClient): void {
-    const ui = cliui({width: process.stdout.columns || 80});
-
-    ui.div({text: 'API Client Details', padding: [1, 0, 0, 0]});
-    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-
-    this.printBasicFields(ui, c);
-    this.printRedirectUrls(ui, c);
-    this.printScopes(ui, c);
-    this.printDefaultScopes(ui, c);
-    this.printOrganizations(ui, c);
-    this.printRoles(ui, c);
-    this.printRoleTenantFilters(ui, c);
-    this.printVersionControl(ui, c);
-
-    ux.stdout(ui.toString());
-  }
-
-  private printDefaultScopes(ui: ReturnType<typeof cliui>, c: AccountManagerApiClient): void {
-    if (c.defaultScopes === undefined || c.defaultScopes.length === 0) {
-      return;
+    if (c.redirectUrls && c.redirectUrls.length > 0) {
+      sections.push({title: 'Redirect URLs', fields: [['URLs', c.redirectUrls.join(', ')]]});
     }
 
-    ui.div({text: 'Default Scopes', padding: [2, 0, 0, 0]});
-    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-    ui.div(
-      {text: 'Default Scopes:', width: 25, padding: [0, 2, 0, 0]},
-      {text: c.defaultScopes.join(', '), padding: [0, 0, 0, 0]},
-    );
-  }
-
-  private printOrganizations(ui: ReturnType<typeof cliui>, c: AccountManagerApiClient): void {
-    if (c.organizations === undefined || c.organizations.length === 0) {
-      return;
+    if (c.scopes && c.scopes.length > 0) {
+      sections.push({title: 'Scopes', fields: [['Scopes', c.scopes.join(', ')]]});
     }
 
-    ui.div({text: 'Organizations', padding: [2, 0, 0, 0]});
-    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-
-    const orgIds = c.organizations.map((o) => (typeof o === 'string' ? o : (o as {id?: string}).id || 'Unknown'));
-    ui.div(
-      {text: 'Organization IDs:', width: 25, padding: [0, 2, 0, 0]},
-      {text: orgIds.join(', '), padding: [0, 0, 0, 0]},
-    );
-  }
-
-  private printRedirectUrls(ui: ReturnType<typeof cliui>, c: AccountManagerApiClient): void {
-    if (c.redirectUrls === undefined || c.redirectUrls.length === 0) {
-      return;
+    if (c.defaultScopes && c.defaultScopes.length > 0) {
+      sections.push({title: 'Default Scopes', fields: [['Default Scopes', c.defaultScopes.join(', ')]]});
     }
 
-    ui.div({text: 'Redirect URLs', padding: [2, 0, 0, 0]});
-    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-    ui.div({text: 'URLs:', width: 25, padding: [0, 2, 0, 0]}, {text: c.redirectUrls.join(', '), padding: [0, 0, 0, 0]});
-  }
-
-  private printRoles(ui: ReturnType<typeof cliui>, c: AccountManagerApiClient): void {
-    if (c.roles === undefined || c.roles.length === 0) {
-      return;
+    if (c.organizations && c.organizations.length > 0) {
+      const orgIds = c.organizations.map((o) => (typeof o === 'string' ? o : (o as {id?: string}).id || 'Unknown'));
+      sections.push({title: 'Organizations', fields: [['Organization IDs', orgIds.join(', ')]]});
     }
 
-    ui.div({text: 'Roles', padding: [2, 0, 0, 0]});
-    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-
-    const roleNames = c.roles.map((r) =>
-      typeof r === 'string'
-        ? r
-        : (r as {roleEnumName?: string; id?: string}).roleEnumName || (r as {id?: string}).id || 'Unknown',
-    );
-    ui.div({text: 'Role IDs:', width: 25, padding: [0, 2, 0, 0]}, {text: roleNames.join(', '), padding: [0, 0, 0, 0]});
-  }
-
-  private printRoleTenantFilters(ui: ReturnType<typeof cliui>, c: AccountManagerApiClient): void {
-    const map = c.roleTenantFilterMap as Record<string, string> | undefined;
-    const hasMap = map !== undefined && typeof map === 'object' && Object.keys(map).length > 0;
-    const filterStr =
-      typeof c.roleTenantFilter === 'string' && c.roleTenantFilter.length > 0 ? c.roleTenantFilter : undefined;
-
-    if (!hasMap && !filterStr) {
-      return;
+    if (c.roles && c.roles.length > 0) {
+      const roleNames = c.roles.map((r) =>
+        typeof r === 'string'
+          ? r
+          : (r as {roleEnumName?: string; id?: string}).roleEnumName || (r as {id?: string}).id || 'Unknown',
+      );
+      sections.push({title: 'Roles', fields: [['Role IDs', roleNames.join(', ')]]});
     }
 
-    ui.div({text: 'Role Tenant Filters', padding: [2, 0, 0, 0]});
-    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-
-    if (hasMap) {
-      for (const [roleId, filter] of Object.entries(map)) {
-        const filterValue = typeof filter === 'string' ? filter : JSON.stringify(filter);
-        ui.div({text: `${roleId}:`, width: 30, padding: [0, 2, 0, 0]}, {text: filterValue, padding: [0, 0, 0, 0]});
-      }
-    } else if (filterStr) {
-      ui.div({text: 'Filter:', width: 25, padding: [0, 2, 0, 0]}, {text: filterStr, padding: [0, 0, 0, 0]});
-    }
-  }
-
-  private printScopes(ui: ReturnType<typeof cliui>, c: AccountManagerApiClient): void {
-    if (c.scopes === undefined || c.scopes.length === 0) {
-      return;
+    const tenantFilterSection = this.buildTenantFilterSection(c);
+    if (tenantFilterSection) {
+      sections.push(tenantFilterSection);
     }
 
-    ui.div({text: 'Scopes', padding: [2, 0, 0, 0]});
-    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-    ui.div({text: 'Scopes:', width: 25, padding: [0, 2, 0, 0]}, {text: c.scopes.join(', '), padding: [0, 0, 0, 0]});
-  }
-
-  private printVersionControl(ui: ReturnType<typeof cliui>, c: AccountManagerApiClient): void {
-    if (c.versionControl === undefined || c.versionControl.length === 0) {
-      return;
+    if (c.versionControl && c.versionControl.length > 0) {
+      sections.push({title: 'Version Control', fields: [['Identifiers', c.versionControl.join(', ')]]});
     }
 
-    ui.div({text: 'Version Control', padding: [2, 0, 0, 0]});
-    ui.div({text: '─'.repeat(50), padding: [0, 0, 0, 0]});
-    ui.div(
-      {text: 'Identifiers:', width: 25, padding: [0, 2, 0, 0]},
-      {text: c.versionControl.join(', '), padding: [0, 0, 0, 0]},
-    );
+    printFieldsBlock('API Client Details', basicFields, {sections});
   }
 }

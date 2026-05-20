@@ -10,7 +10,7 @@ import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import {DEFAULT_MRT_ORIGIN} from '../../../src/clients/mrt.js';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
-import {createEnv, getEnv, deleteEnv, waitForEnv} from '../../../src/operations/mrt/env.js';
+import {createEnv, getEnv, deleteEnv, waitForEnv, cloneEnv} from '../../../src/operations/mrt/env.js';
 
 const DEFAULT_BASE_URL = DEFAULT_MRT_ORIGIN;
 
@@ -312,6 +312,13 @@ describe('operations/mrt/env', () => {
 
       const auth = new MockAuthStrategy();
 
+      // Virtual clock that advances by 1s on every call to simulate timeout without real waiting.
+      let virtualNow = 0;
+      const fakeNow = () => {
+        virtualNow += 1000;
+        return virtualNow;
+      };
+
       try {
         await waitForEnv(
           {
@@ -320,6 +327,7 @@ describe('operations/mrt/env', () => {
             pollIntervalSeconds: 1,
             timeoutSeconds: 1,
             sleep: instantSleep,
+            now: fakeNow,
           },
           auth,
         );
@@ -382,6 +390,94 @@ describe('operations/mrt/env', () => {
         expect.fail('Should have thrown error');
       } catch (error: any) {
         expect(error.message).to.include('publish failed');
+      }
+    });
+  });
+
+  describe('cloneEnv', () => {
+    it('should clone an environment and return the new target', async () => {
+      let receivedBody: any;
+      let receivedPath: string | undefined;
+
+      server.use(
+        http.post(
+          `${DEFAULT_BASE_URL}/api/projects/:projectSlug/target/:targetSlug/clone/`,
+          async ({request, params}) => {
+            receivedBody = await request.json();
+            receivedPath = `${params.projectSlug}/${params.targetSlug}`;
+            return HttpResponse.json(
+              {slug: params.targetSlug, name: 'Staging Copy', state: 'CREATE_IN_PROGRESS'},
+              {status: 201},
+            );
+          },
+        ),
+      );
+
+      const auth = new MockAuthStrategy();
+      const result = await cloneEnv(
+        {
+          projectSlug: 'my-project',
+          slug: 'staging-copy',
+          fromSlug: 'staging',
+          cloneRedirects: true,
+          cloneEnvironmentVariables: true,
+        },
+        auth,
+      );
+
+      expect(receivedPath).to.equal('my-project/staging-copy');
+      expect(receivedBody.from_target_slug).to.equal('staging');
+      expect(receivedBody.clone_redirects).to.be.true;
+      expect(receivedBody.clone_environment_variables).to.be.true;
+      expect(receivedBody.clone_b2c_target_info).to.be.false;
+      expect(result.slug).to.equal('staging-copy');
+      expect(result.state).to.equal('CREATE_IN_PROGRESS');
+    });
+
+    it('should pass through custom domain options', async () => {
+      let receivedBody: any;
+
+      server.use(
+        http.post(
+          `${DEFAULT_BASE_URL}/api/projects/:projectSlug/target/:targetSlug/clone/`,
+          async ({request, params}) => {
+            receivedBody = await request.json();
+            return HttpResponse.json({slug: params.targetSlug, name: 'qa', state: 'CREATE_IN_PROGRESS'}, {status: 201});
+          },
+        ),
+      );
+
+      const auth = new MockAuthStrategy();
+      await cloneEnv(
+        {
+          projectSlug: 'my-project',
+          slug: 'qa',
+          fromSlug: 'staging',
+          externalHostname: 'qa.example.com',
+          externalDomain: 'example.com',
+          certificateId: 123,
+        },
+        auth,
+      );
+
+      expect(receivedBody.ssr_external_hostname).to.equal('qa.example.com');
+      expect(receivedBody.ssr_external_domain).to.equal('example.com');
+      expect(receivedBody.certificate_id).to.equal(123);
+    });
+
+    it('should throw on API error', async () => {
+      server.use(
+        http.post(`${DEFAULT_BASE_URL}/api/projects/:projectSlug/target/:targetSlug/clone/`, () =>
+          HttpResponse.json({message: 'Source target not found'}, {status: 404}),
+        ),
+      );
+
+      const auth = new MockAuthStrategy();
+      try {
+        await cloneEnv({projectSlug: 'p', slug: 's', fromSlug: 'missing'}, auth);
+        expect.fail('Should have thrown');
+      } catch (error: any) {
+        expect(error.message).to.include('clone environment');
       }
     });
   });

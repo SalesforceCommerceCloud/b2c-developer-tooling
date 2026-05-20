@@ -7,7 +7,7 @@ import {Args, Flags} from '@oclif/core';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {getApiErrorMessage, waitForSandbox, type OdsComponents} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
-import {confirm} from '@inquirer/prompts';
+import {confirm} from '@salesforce/b2c-tooling-sdk/ux';
 
 type SandboxOperationModel = OdsComponents['schemas']['SandboxOperationModel'];
 
@@ -73,10 +73,9 @@ export default class SandboxReset extends OdsCommand<typeof SandboxReset> {
 
     // Confirmation prompt (skip if --force or --json)
     if (!force && !this.jsonEnabled()) {
-      const confirmed = await confirm({
-        message: `⚠️  Reset will permanently delete all data and code in sandbox ${this.args.sandboxId}. Continue?`,
-        default: false,
-      });
+      const confirmed = await confirm(
+        `⚠️  Reset will permanently delete all data and code in sandbox ${this.args.sandboxId}. Continue?`,
+      );
 
       if (!confirmed) {
         this.log(t('commands.sandbox.reset.cancelled', 'Reset cancelled'));

@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  MrtCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   listAccessControlHeaders,
   type ListAccessControlHeadersResult,
@@ -33,6 +39,8 @@ const COLUMNS: Record<string, ColumnDef<MrtAccessControlHeader>> = {
 
 const DEFAULT_COLUMNS = ['id', 'value', 'status', 'created'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 /**
  * List access control headers for an MRT environment.
  */
@@ -57,6 +65,7 @@ export default class MrtAccessControlList extends MrtCommand<typeof MrtAccessCon
     offset: Flags.integer({
       description: 'Offset for pagination',
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<ListAccessControlHeadersResult> {
@@ -106,7 +115,10 @@ export default class MrtAccessControlList extends MrtCommand<typeof MrtAccessCon
             count: result.count,
           }),
         );
-        createTable(COLUMNS).render(result.headers, DEFAULT_COLUMNS);
+        tableRenderer.render(
+          result.headers,
+          selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
+        );
       }
     }
 

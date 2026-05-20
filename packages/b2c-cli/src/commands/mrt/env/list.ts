@@ -3,7 +3,13 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  MrtCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {listEnvs, type ListEnvsResult, type MrtEnvironment} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 
@@ -32,6 +38,8 @@ const COLUMNS: Record<string, ColumnDef<MrtEnvironment>> = {
 
 const DEFAULT_COLUMNS = ['name', 'slug', 'state', 'region', 'production'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 /**
  * List environments (targets) for an MRT project.
  */
@@ -50,6 +58,7 @@ export default class MrtEnvList extends MrtCommand<typeof MrtEnvList> {
 
   static flags = {
     ...MrtCommand.baseFlags,
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<ListEnvsResult> {
@@ -78,7 +87,10 @@ export default class MrtEnvList extends MrtCommand<typeof MrtEnvList> {
         this.log(
           t('commands.mrt.env.list.count', 'Found {{count}} environment(s):', {count: result.environments.length}),
         );
-        createTable(COLUMNS).render(result.environments, DEFAULT_COLUMNS);
+        tableRenderer.render(
+          result.environments,
+          selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
+        );
       }
     }
 

@@ -20,6 +20,8 @@ import {
 } from '../../../src/operations/sites/cartridges.js';
 
 const TEST_HOST = 'test.demandware.net';
+// Skip the 3s job-poll interval in tests; the mocked job completes immediately.
+const FAST_POLL = {waitOptions: {pollIntervalSeconds: 0}};
 const BASE_URL = `https://${TEST_HOST}/s/-/dw/data/v25_6`;
 const WEBDAV_BASE = `https://${TEST_HOST}/on/demandware.servlet/webdav/Sites`;
 
@@ -167,7 +169,7 @@ describe('operations/sites/cartridges', () => {
         }),
       );
 
-      const result = await addCartridge(mockInstance, 'Sites-Site', {name: 'new_cart', position: 'first'});
+      const result = await addCartridge(mockInstance, 'Sites-Site', {name: 'new_cart', position: 'first'}, FAST_POLL);
 
       expect(result.cartridges).to.equal('new_cart:existing_cart');
       expect(importedBuffer).to.exist;
@@ -195,7 +197,7 @@ describe('operations/sites/cartridges', () => {
         ...createImportHandlers(),
       );
 
-      const result = await addCartridge(mockInstance, 'RefArch', {name: 'cart_c', position: 'last'});
+      const result = await addCartridge(mockInstance, 'RefArch', {name: 'cart_c', position: 'last'}, FAST_POLL);
 
       expect(result.cartridges).to.equal('cart_a:cart_b:cart_c');
     });
@@ -222,7 +224,7 @@ describe('operations/sites/cartridges', () => {
         ...createImportHandlers(),
       );
 
-      const result = await removeCartridge(mockInstance, 'Sites-Site', 'cart_a');
+      const result = await removeCartridge(mockInstance, 'Sites-Site', 'cart_a', FAST_POLL);
 
       expect(result.cartridges).to.equal('cart_b');
     });
@@ -269,7 +271,7 @@ describe('operations/sites/cartridges', () => {
         }),
       );
 
-      const result = await setCartridgePath(mockInstance, 'Sites-Site', 'bm_cart1:bm_cart2');
+      const result = await setCartridgePath(mockInstance, 'Sites-Site', 'bm_cart1:bm_cart2', FAST_POLL);
 
       expect(result.cartridges).to.equal('bm_cart1:bm_cart2');
 
@@ -293,7 +295,7 @@ describe('operations/sites/cartridges', () => {
         }),
       );
 
-      await setCartridgePath(mockInstance, 'RefArch', 'cart1:cart2');
+      await setCartridgePath(mockInstance, 'RefArch', 'cart1:cart2', FAST_POLL);
 
       const zip = await JSZip.loadAsync(importedBuffer!);
       const files = Object.keys(zip.files);
@@ -317,30 +319,32 @@ describe('operations/sites/cartridges', () => {
     });
 
     it('should add at first position', async () => {
-      const result = await addCartridge(mockInstance, 'Sites-Site', {name: 'new', position: 'first'});
+      const result = await addCartridge(mockInstance, 'Sites-Site', {name: 'new', position: 'first'}, FAST_POLL);
       expect(result.cartridgeList).to.deep.equal(['new', 'cart_a', 'cart_b', 'cart_c']);
     });
 
     it('should add at last position', async () => {
-      const result = await addCartridge(mockInstance, 'Sites-Site', {name: 'new', position: 'last'});
+      const result = await addCartridge(mockInstance, 'Sites-Site', {name: 'new', position: 'last'}, FAST_POLL);
       expect(result.cartridgeList).to.deep.equal(['cart_a', 'cart_b', 'cart_c', 'new']);
     });
 
     it('should add before target', async () => {
-      const result = await addCartridge(mockInstance, 'Sites-Site', {
-        name: 'new',
-        position: 'before',
-        target: 'cart_b',
-      });
+      const result = await addCartridge(
+        mockInstance,
+        'Sites-Site',
+        {name: 'new', position: 'before', target: 'cart_b'},
+        FAST_POLL,
+      );
       expect(result.cartridgeList).to.deep.equal(['cart_a', 'new', 'cart_b', 'cart_c']);
     });
 
     it('should add after target', async () => {
-      const result = await addCartridge(mockInstance, 'Sites-Site', {
-        name: 'new',
-        position: 'after',
-        target: 'cart_b',
-      });
+      const result = await addCartridge(
+        mockInstance,
+        'Sites-Site',
+        {name: 'new', position: 'after', target: 'cart_b'},
+        FAST_POLL,
+      );
       expect(result.cartridgeList).to.deep.equal(['cart_a', 'cart_b', 'new', 'cart_c']);
     });
 

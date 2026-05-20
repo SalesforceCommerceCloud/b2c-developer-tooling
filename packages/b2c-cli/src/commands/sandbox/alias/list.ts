@@ -4,11 +4,44 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {OdsCommand, TableRenderer} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  OdsCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {getApiErrorMessage, type OdsComponents} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../../i18n/index.js';
 
 type SandboxAliasModel = OdsComponents['schemas']['SandboxAliasModel'];
+
+const COLUMNS: Record<string, ColumnDef<SandboxAliasModel>> = {
+  id: {
+    header: 'Alias ID',
+    get: (row) => row.id || '-',
+  },
+  name: {
+    header: 'Hostname',
+    get: (row) => row.name,
+  },
+  status: {
+    header: 'Status',
+    get: (row) => row.status || '-',
+  },
+  unique: {
+    header: 'Unique',
+    get: (row) => (row.unique ? 'Yes' : 'No'),
+  },
+  domainVerificationRecord: {
+    header: 'Verification Record',
+    get: (row) => row.domainVerificationRecord || '-',
+  },
+};
+
+const DEFAULT_COLUMNS = ['id', 'name', 'status', 'unique', 'domainVerificationRecord'];
+
+const tableRenderer = new TableRenderer(COLUMNS);
 
 /**
  * Command to list sandbox aliases.
@@ -42,6 +75,7 @@ export default class SandboxAliasList extends OdsCommand<typeof SandboxAliasList
       description: 'Specific alias ID to retrieve (if omitted, lists all aliases)',
       required: false,
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<SandboxAliasModel | SandboxAliasModel[]> {
@@ -86,30 +120,7 @@ export default class SandboxAliasList extends OdsCommand<typeof SandboxAliasList
         this.log(t('commands.sandbox.alias.list.no_aliases', 'No aliases found'));
       } else {
         this.log(t('commands.sandbox.alias.list.count', 'Found {{count}} alias(es):', {count: aliases.length}));
-        const columns = {
-          id: {
-            header: 'Alias ID',
-            get: (row: SandboxAliasModel) => row.id || '-',
-          },
-          name: {
-            header: 'Hostname',
-            get: (row: SandboxAliasModel) => row.name,
-          },
-          status: {
-            header: 'Status',
-            get: (row: SandboxAliasModel) => row.status || '-',
-          },
-          unique: {
-            header: 'Unique',
-            get: (row: SandboxAliasModel) => (row.unique ? 'Yes' : 'No'),
-          },
-          domainVerificationRecord: {
-            header: 'Verification Record',
-            get: (row: SandboxAliasModel) => row.domainVerificationRecord || '-',
-          },
-        };
-        const table = new TableRenderer(columns);
-        table.render(aliases, ['id', 'name', 'status', 'unique', 'domainVerificationRecord']);
+        tableRenderer.render(aliases, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
       }
     }
 

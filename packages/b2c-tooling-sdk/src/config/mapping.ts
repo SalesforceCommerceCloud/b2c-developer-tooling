@@ -17,7 +17,7 @@ import {parseSafetyLevelString} from '../safety/safety-middleware.js';
 import {isValidSafetyAction} from '../safety/types.js';
 import type {SafetyRule} from '../safety/types.js';
 import type {DwJsonConfig} from './dw-json.js';
-import type {NormalizedConfig, ConfigWarning} from './types.js';
+import type {LibraryEntry, NormalizedConfig, ConfigWarning} from './types.js';
 
 /**
  * Normalizes a URL origin string by ensuring it has an `https://` protocol prefix.
@@ -35,6 +35,18 @@ export function normalizeOriginUrl(origin: string | undefined): string | undefin
   }
   // Strip trailing slash for consistency
   return normalized.replace(/\/+$/, '');
+}
+
+/**
+ * Normalizes a {@link NormalizedConfig.libraries} value to an array of
+ * {@link LibraryEntry} objects. Bare strings are treated as
+ * `{id, siteLibrary: false}`. Returns an empty array when input is undefined.
+ */
+export function resolveLibraryEntries(libraries: (string | LibraryEntry)[] | undefined): LibraryEntry[] {
+  if (!libraries) return [];
+  return libraries.map((entry) =>
+    typeof entry === 'string' ? {id: entry, siteLibrary: false} : {siteLibrary: false, ...entry},
+  );
 }
 
 /**
@@ -161,6 +173,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     contentLibrary: json.contentLibrary,
     catalogs: json.catalogs,
     libraries: json.libraries,
+    assetQuery: json.assetQuery,
     cipHost: json.cipHost,
     instanceName: json.name,
     authMethods: json.authMethods,
@@ -173,6 +186,10 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     certificate: json.certificate,
     certificatePassphrase: json.certificatePassphrase,
     selfSigned: json.selfSigned,
+    // JWT Bearer auth options
+    jwtCertPath: json.jwtCertPath,
+    jwtKeyPath: json.jwtKeyPath,
+    jwtPassphrase: json.jwtPassphrase,
     // Safety
     safety: mapDwJsonSafety(json.safety),
   };
@@ -287,6 +304,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   if (config.libraries !== undefined) {
     result.libraries = config.libraries;
   }
+  if (config.assetQuery !== undefined) {
+    result.assetQuery = config.assetQuery;
+  }
   if (config.cipHost !== undefined) {
     result.cipHost = config.cipHost;
   }
@@ -307,6 +327,15 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.selfSigned !== undefined) {
     result.selfSigned = config.selfSigned;
+  }
+  if (config.jwtCertPath !== undefined) {
+    result.jwtCertPath = config.jwtCertPath;
+  }
+  if (config.jwtKeyPath !== undefined) {
+    result.jwtKeyPath = config.jwtKeyPath;
+  }
+  if (config.jwtPassphrase !== undefined) {
+    result.jwtPassphrase = config.jwtPassphrase;
   }
   if (config.safety !== undefined) {
     result.safety = {
@@ -429,6 +458,7 @@ export function mergeConfigsWithProtection(
       contentLibrary: overrides.contentLibrary ?? base.contentLibrary,
       catalogs: overrides.catalogs ?? base.catalogs,
       libraries: overrides.libraries ?? base.libraries,
+      assetQuery: overrides.assetQuery ?? base.assetQuery,
       cipHost: overrides.cipHost ?? base.cipHost,
       sandboxApiHost: overrides.sandboxApiHost ?? base.sandboxApiHost,
       realm: overrides.realm ?? base.realm,
@@ -443,6 +473,10 @@ export function mergeConfigsWithProtection(
       certificate: overrides.certificate ?? base.certificate,
       certificatePassphrase: overrides.certificatePassphrase ?? base.certificatePassphrase,
       selfSigned: overrides.selfSigned ?? base.selfSigned,
+      // JWT Bearer auth options
+      jwtCertPath: overrides.jwtCertPath ?? base.jwtCertPath,
+      jwtKeyPath: overrides.jwtKeyPath ?? base.jwtKeyPath,
+      jwtPassphrase: overrides.jwtPassphrase ?? base.jwtPassphrase,
       // Safety
       safety: overrides.safety ?? base.safety,
     },

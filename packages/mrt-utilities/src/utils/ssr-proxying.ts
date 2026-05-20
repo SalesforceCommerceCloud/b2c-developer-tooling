@@ -766,7 +766,19 @@ export const rewriteProxyResponseHeaders = ({
  * List of x- headers that are removed from proxied requests.
  * @private
  */
-export const X_HEADERS_TO_REMOVE_PROXY: string[] = ['x-mobify-access-key', 'x-sfdc-access-control'];
+export const X_HEADERS_TO_REMOVE_PROXY: string[] = ['x-mobify-access-key'];
+
+const X_SFDC_ACCESS_CONTROL = 'x-sfdc-access-control';
+
+export const DEFAULT_ACCESS_CONTROL_FORWARDING_HOSTNAMES: string[] = ['.commercecloud.salesforce.com'];
+
+export const hostnameMatchesTransformationList = (hostname: string, hostnameSuffixes?: string[] | null): boolean => {
+  if (!hostnameSuffixes || hostnameSuffixes.length === 0) {
+    return false;
+  }
+  const hostnameOnly = hostname.split(':')[0];
+  return hostnameSuffixes.some((suffix) => hostnameOnly.endsWith(suffix));
+};
 
 /**
  * List of x- headers that are removed from origin requests.
@@ -777,7 +789,6 @@ export const X_HEADERS_TO_REMOVE_ORIGIN: string[] = [
   'x-apigateway-event',
   'x-apigateway-context',
   'x-mobify-access-key',
-  'x-sfdc-access-control',
 ];
 
 /**
@@ -847,6 +858,10 @@ interface RewriteProxyRequestHeadersParams {
   targetHost: string;
   /** true to log operations */
   logging?: boolean;
+  /** hostname suffixes for which x-sfdc-access-control should be forwarded; empty/undefined = always strip */
+  accessControlHeaderForwardingHostnames?: string[];
+  /** when true, preserve the original User-Agent header in non-caching proxy requests */
+  preserveUserAgent?: boolean;
 }
 
 /**
@@ -870,6 +885,8 @@ export const rewriteProxyRequestHeaders = ({
   targetProtocol,
   targetHost,
   logging = false,
+  accessControlHeaderForwardingHostnames,
+  preserveUserAgent = true,
 }: RewriteProxyRequestHeadersParams): AWSHeaders | HTTPHeaders | IncomingHttpHeaders => {
   if (!headers) {
     return {};
@@ -878,6 +895,12 @@ export const rewriteProxyRequestHeaders = ({
 
   // Strip out some specific X-headers
   X_HEADERS_TO_REMOVE_PROXY.forEach((key) => workingHeaders.deleteHeader(key));
+
+  // Conditionally strip x-sfdc-access-control.
+  // Forward it only for non-caching requests to hosts matching the suffix list.
+  if (caching || !hostnameMatchesTransformationList(targetHost, accessControlHeaderForwardingHostnames)) {
+    workingHeaders.deleteHeader(X_SFDC_ACCESS_CONTROL);
+  }
 
   // For a caching proxy, apply special header processing
   if (caching) {
@@ -913,9 +936,9 @@ export const rewriteProxyRequestHeaders = ({
     workingHeaders.setHeader(ORIGIN, targetOrigin);
   }
 
-  // Replace some headers with hardwired values
-  if (workingHeaders.getHeader(USER_AGENT)) {
-    // Mimic the behaviour of CloudFront
+  // Replace User-Agent unless preserveUserAgent is set for non-caching proxies.
+  // Caching proxies always override User-Agent (handled above).
+  if (!preserveUserAgent && workingHeaders.getHeader(USER_AGENT)) {
     workingHeaders.setHeader(USER_AGENT, 'Amazon CloudFront');
   }
 

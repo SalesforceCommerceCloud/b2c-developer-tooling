@@ -15,6 +15,7 @@ import * as fsp from 'node:fs/promises';
 import * as path from 'node:path';
 import type {AuthMethod} from '../auth/types.js';
 import {getLogger} from '../logging/logger.js';
+import type {LibraryEntry} from './types.js';
 import {normalizeConfigKeys} from './mapping.js';
 
 /**
@@ -83,8 +84,16 @@ export interface DwJsonConfig {
   contentLibrary?: string;
   /** Catalog IDs for WebDAV browsing */
   catalogs?: string[];
-  /** Library IDs for WebDAV browsing */
-  libraries?: string[];
+  /**
+   * Library IDs for WebDAV browsing and the Content Libraries tree.
+   *
+   * Accepts either a string array or a mixed array of strings and
+   * `{id, siteLibrary?}` objects. Object entries can mark individual
+   * libraries as site-private.
+   */
+  libraries?: (string | LibraryEntry)[];
+  /** JSON dot-paths for asset extraction during content library parsing (defaults to ['image.path']) */
+  assetQuery?: string[];
   /** Optional CIP analytics host override */
   cipHost?: string;
   /** Path to PKCS12 certificate file for mTLS (two-factor auth) */
@@ -93,6 +102,12 @@ export interface DwJsonConfig {
   certificatePassphrase?: string;
   /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
   selfSigned?: boolean;
+  /** Path to JWT certificate file (cert.pem) for JWT authentication */
+  jwtCertPath?: string;
+  /** Path to JWT private key file (key.pem) for JWT authentication */
+  jwtKeyPath?: string;
+  /** Optional passphrase for encrypted JWT private key */
+  jwtPassphrase?: string;
   /**
    * Safety configuration for this instance.
    *

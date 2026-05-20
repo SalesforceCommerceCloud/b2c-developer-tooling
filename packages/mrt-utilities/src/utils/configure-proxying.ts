@@ -35,6 +35,10 @@ interface ApplyProxyRequestHeadersParams {
   targetHost: string;
   /** The protocol to use for the target */
   targetProtocol: string;
+  /** Hostname suffixes for which x-sfdc-access-control should be forwarded */
+  accessControlHeaderForwardingHostnames?: string[];
+  /** When true, preserve the original User-Agent header in non-caching proxy requests */
+  preserveUserAgent?: boolean;
   /** @internal Test hook: override rewrite function */
   rewriteRequestHeaders?: (
     opts: Parameters<typeof rewriteProxyRequestHeaders>[0],
@@ -57,6 +61,10 @@ interface ConfigureProxyParams {
   appProtocol?: string;
   /** Whether this is a caching proxy */
   caching?: boolean;
+  /** Hostname suffixes for which x-sfdc-access-control should be forwarded */
+  accessControlHeaderForwardingHostnames?: string[];
+  /** When true, preserve the original User-Agent header in non-caching proxy requests */
+  preserveUserAgent?: boolean;
 }
 
 /**
@@ -122,6 +130,8 @@ export const applyProxyRequestHeaders = ({
   proxyPath,
   targetHost,
   targetProtocol,
+  accessControlHeaderForwardingHostnames,
+  preserveUserAgent,
   rewriteRequestHeaders: rewriteFn,
 }: ApplyProxyRequestHeadersParams): void => {
   const headers = incomingRequest.headers;
@@ -133,6 +143,8 @@ export const applyProxyRequestHeaders = ({
     headerFormat: 'http',
     targetHost,
     targetProtocol,
+    accessControlHeaderForwardingHostnames,
+    preserveUserAgent,
   });
 
   // Copy any new and updated headers to the proxyRequest
@@ -195,6 +207,8 @@ export const configureProxy = (
     targetHost,
     appProtocol = /* istanbul ignore next */ 'https',
     caching,
+    accessControlHeaderForwardingHostnames,
+    preserveUserAgent,
   }: ConfigureProxyParams,
   createProxyFn?: CreateProxyMiddlewareFn,
 ): ProxyResult => {
@@ -242,6 +256,8 @@ export const configureProxy = (
         proxyPath,
         targetHost,
         targetProtocol,
+        accessControlHeaderForwardingHostnames,
+        preserveUserAgent,
       });
     },
 
@@ -302,6 +318,8 @@ export const configureProxying = (
   appHostname: string,
   appProtocol: string = 'https',
   createProxyFn?: CreateProxyMiddlewareFn,
+  accessControlHeaderForwardingHostnames?: string[],
+  preserveUserAgent?: boolean,
 ): ProxyResult[] => {
   const proxies: ProxyResult[] = [];
   proxyConfigs.forEach((config) => {
@@ -315,6 +333,8 @@ export const configureProxying = (
         appProtocol,
         appHostname,
         caching: false,
+        accessControlHeaderForwardingHostnames,
+        preserveUserAgent,
       },
       createProxyFn,
     );

@@ -65,16 +65,29 @@ export class DebugSessionManager {
     await this.client.createClient();
     this.connected = true;
 
-    // Start keepalive timer
-    const keepaliveInterval = this.config.keepaliveInterval ?? DEFAULT_KEEPALIVE_INTERVAL;
-    this.keepaliveTimer = setInterval(() => void this.keepalive(), keepaliveInterval);
+    try {
+      // Start keepalive timer
+      const keepaliveInterval = this.config.keepaliveInterval ?? DEFAULT_KEEPALIVE_INTERVAL;
+      this.keepaliveTimer = setInterval(() => void this.keepalive(), keepaliveInterval);
 
-    // Start thread poller
-    const pollInterval = this.config.pollInterval ?? DEFAULT_POLL_INTERVAL;
-    this.pollTimer = setInterval(() => void this.pollThreads(), pollInterval);
+      // Start thread poller
+      const pollInterval = this.config.pollInterval ?? DEFAULT_POLL_INTERVAL;
+      this.pollTimer = setInterval(() => void this.pollThreads(), pollInterval);
 
-    this.logger.debug('Script debugger connected');
-    this.callbacks.onConnected?.(this.config.hostname);
+      this.logger.debug('Script debugger connected');
+      this.callbacks.onConnected?.(this.config.hostname);
+    } catch (err) {
+      // Ensure timers are cleared if anything (incl. onConnected callback) throws
+      // after we started them; otherwise we'd leak intervals.
+      this.stopTimers();
+      this.connected = false;
+      try {
+        await this.client.deleteClient();
+      } catch (deleteErr) {
+        this.logger.debug({err: deleteErr}, 'Failed to clean up debugger client after connect error');
+      }
+      throw err;
+    }
   }
 
   /**

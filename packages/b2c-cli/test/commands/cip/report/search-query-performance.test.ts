@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import SearchQueryPerformance from '../../../../src/commands/cip/report/search-query-performance.js';
-import {createIsolatedConfigHooks, createTestCommand} from '../../../helpers/test-setup.js';
+import {createIsolatedConfigHooks, createTestCommand, runSilent} from '../../../helpers/test-setup.js';
 
 describe('cip report search-query-performance', () => {
   const hooks = createIsolatedConfigHooks();
@@ -49,9 +49,7 @@ describe('cip report search-query-performance', () => {
     });
 
     sinon.stub(command, 'validateCipAuthMethods').returns(void 0);
-    sinon.stub(process.stdout, 'write');
-
-    const result = await command.run();
+    const result = (await runSilent(() => command.run())) as any;
 
     expect(result.reportName).to.equal('search-query-performance');
     expect(result.sql).to.be.a('string');

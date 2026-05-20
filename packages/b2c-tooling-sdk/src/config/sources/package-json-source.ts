@@ -13,7 +13,7 @@
  */
 import * as fsp from 'node:fs/promises';
 import * as path from 'node:path';
-import type {ConfigSource, ConfigLoadResult, ResolveConfigOptions, NormalizedConfig} from '../types.js';
+import type {ConfigSource, ConfigLoadResult, LibraryEntry, NormalizedConfig, ResolveConfigOptions} from '../types.js';
 import {getPopulatedFields, normalizeConfigKeys} from '../mapping.js';
 import {getLogger} from '../../logging/logger.js';
 
@@ -25,6 +25,8 @@ const ALLOWED_FIELDS: (keyof NormalizedConfig)[] = [
   'shortCode',
   'clientId',
   'contentLibrary',
+  'libraries',
+  'assetQuery',
   'mrtProject',
   'mrtOrigin',
   'accountManagerHost',
@@ -39,10 +41,13 @@ interface PackageJsonB2CConfig {
   shortCode?: string;
   clientId?: string;
   contentLibrary?: string;
+  libraries?: (string | LibraryEntry)[];
+  assetQuery?: string[];
   mrtProject?: string;
   mrtOrigin?: string;
   accountManagerHost?: string;
   sandboxApiHost?: string;
+  realm?: string;
   [key: string]: unknown;
 }
 

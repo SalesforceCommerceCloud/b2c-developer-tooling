@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import CipQuery from '../../../src/commands/cip/query.js';
-import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
+import {createIsolatedConfigHooks, createTestCommand, expectError, runSilent} from '../../helpers/test-setup.js';
 
 describe('cip query', () => {
   const hooks = createIsolatedConfigHooks();
@@ -42,8 +42,13 @@ describe('cip query', () => {
 
     const result = await command.run();
 
+    // Verify the client received the resolved SQL — not just that the result
+    // echoes the input unchanged, which would pass even if the command dropped it.
+    expect(mockClient.query.calledOnce, 'CIP client should be invoked once').to.be.true;
+    expect(mockClient.query.firstCall.args[0]).to.equal('SELECT 1 as num');
     expect(result.sql).to.equal('SELECT 1 as num');
     expect(result.columns).to.deep.equal(['num']);
+    expect(result.rows).to.deep.equal([{num: 1}]);
     expect(result.rowCount).to.equal(1);
   });
 
@@ -52,13 +57,9 @@ describe('cip query', () => {
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
-    try {
-      await command.run();
-      expect.fail('Should have thrown');
-    } catch {
-      expect(errorStub.called).to.be.true;
-      expect(errorStub.firstCall.args[0]).to.include('No SQL provided');
-    }
+    await expectError(() => command.run());
+    expect(errorStub.called).to.be.true;
+    expect(errorStub.firstCall.args[0]).to.include('No SQL provided');
   });
 
   it('throws error when multiple SQL sources are provided', async () => {
@@ -66,13 +67,9 @@ describe('cip query', () => {
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
-    try {
-      await command.run();
-      expect.fail('Should have thrown');
-    } catch {
-      expect(errorStub.called).to.be.true;
-      expect(errorStub.firstCall.args[0]).to.include('exactly one source');
-    }
+    await expectError(() => command.run());
+    expect(errorStub.called).to.be.true;
+    expect(errorStub.firstCall.args[0]).to.include('exactly one source');
   });
 
   it('replaces FROM and TO placeholders in SQL', async () => {
@@ -107,7 +104,6 @@ describe('cip query', () => {
 
     sinon.stub(command, 'requireCipCredentials').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(false);
-    sinon.stub(process.stdout, 'write');
 
     const mockClient = {
       query: sinon.stub().resolves({
@@ -119,9 +115,12 @@ describe('cip query', () => {
 
     sinon.stub(command, 'getCipClient').returns(mockClient);
 
-    const result = await command.run();
+    const result = (await runSilent(() => command.run())) as any;
 
-    expect(result.sql).to.equal('SELECT 1');
+    expect(mockClient.query.calledOnce).to.be.true;
+    expect(mockClient.query.firstCall.args[0]).to.equal('SELECT 1');
+    expect(result.rowCount).to.equal(1);
+    expect(result.columns).to.deep.equal(['num']);
   });
 
   it('outputs CSV format when format flag is csv', async () => {
@@ -129,7 +128,6 @@ describe('cip query', () => {
 
     sinon.stub(command, 'requireCipCredentials').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(false);
-    sinon.stub(process.stdout, 'write');
 
     const mockClient = {
       query: sinon.stub().resolves({
@@ -141,8 +139,10 @@ describe('cip query', () => {
 
     sinon.stub(command, 'getCipClient').returns(mockClient);
 
-    const result = await command.run();
+    const result = (await runSilent(() => command.run())) as any;
 
-    expect(result.sql).to.equal('SELECT 1');
+    expect(mockClient.query.calledOnce).to.be.true;
+    expect(mockClient.query.firstCall.args[0]).to.equal('SELECT 1');
+    expect(result.rowCount).to.equal(1);
   });
 });

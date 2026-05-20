@@ -10,6 +10,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {openJobLog} from '../job-log-viewer.js';
+import {registerSafeCommand} from '../safety.js';
 
 async function showJobError(err: unknown, instance: B2CInstance, label: string): Promise<void> {
   if (err instanceof JobExecutionError && err.execution.is_log_file_existing) {
@@ -28,7 +29,7 @@ export function registerCapCommands(
   _context: vscode.ExtensionContext,
   configProvider: B2CExtensionConfig,
 ): vscode.Disposable[] {
-  const installCap = vscode.commands.registerCommand('b2c-dx.cap.install', async (uri?: vscode.Uri) => {
+  const installCap = registerSafeCommand('b2c-dx.cap.install', async (uri?: vscode.Uri) => {
     const instance = configProvider.getInstance();
     if (!instance) {
       vscode.window.showErrorMessage('No B2C Commerce instance configured.');

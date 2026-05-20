@@ -5,7 +5,13 @@
  */
 import {Args, Flags, ux} from '@oclif/core';
 import {checkbox, confirm, input} from '@inquirer/prompts';
-import {BaseCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  BaseCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   type IdeType,
   type SkillSet,
@@ -48,6 +54,8 @@ const SKILL_COLUMNS: Record<string, ColumnDef<SkillMetadata>> = {
 };
 
 const DEFAULT_SKILL_COLUMNS = ['name', 'description', 'skillSet'];
+
+const skillTableRenderer = new TableRenderer(SKILL_COLUMNS);
 
 /**
  * Response type for JSON output.
@@ -123,6 +131,7 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       description: 'Skip confirmation prompts (non-interactive)',
       default: false,
     }),
+    ...columnFlagsFor(SKILL_COLUMNS),
   };
 
   async run(): Promise<SetupSkillsResponse> {
@@ -200,7 +209,10 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
         return {skills: []};
       }
 
-      createTable(SKILL_COLUMNS).render(allSkills, DEFAULT_SKILL_COLUMNS);
+      skillTableRenderer.render(
+        allSkills,
+        selectColumns(this.flags, skillTableRenderer, DEFAULT_SKILL_COLUMNS, this.warn.bind(this)),
+      );
       return {skills: allSkills};
     }
 

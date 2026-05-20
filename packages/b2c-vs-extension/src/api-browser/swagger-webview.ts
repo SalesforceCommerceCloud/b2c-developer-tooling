@@ -182,12 +182,30 @@ export class SwaggerWebviewManager implements vscode.Disposable {
   private readonly panels = new Map<string, vscode.WebviewPanel>();
   private readonly specCache = new Map<string, Record<string, unknown>>();
   private readonly disposables: vscode.Disposable[] = [];
+  /** Tracks panels that have been disposed so we don't `postMessage` to them. */
+  private readonly disposedPanels = new WeakSet<vscode.WebviewPanel>();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly configProvider: B2CExtensionConfig,
     private readonly log: vscode.OutputChannel,
   ) {}
+
+  /**
+   * Post a message to the panel, but only if it hasn't been disposed.
+   * VS Code's `postMessage` resolves to `false` after disposal, but some flows
+   * also throw — so we both guard and swallow defensively.
+   */
+  private safePostMessage(panel: vscode.WebviewPanel, message: unknown): void {
+    if (this.disposedPanels.has(panel)) return;
+    try {
+      void panel.webview.postMessage(message);
+    } catch (error) {
+      this.log.appendLine(
+        `[API Browser] postMessage failed (panel likely disposed): ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
 
   async openSwaggerPanel(schema: SchemaEntry): Promise<void> {
     const key = `${schema.apiFamily}/${schema.apiName}/${schema.apiVersion}`;
@@ -271,18 +289,25 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     this.panels.set(key, panel);
 
     panel.onDidDispose(() => {
+      this.disposedPanels.add(panel);
       this.panels.delete(key);
     });
 
     panel.webview.html = this.getWebviewHtml(panel.webview, spec, apiType, initialToken);
 
     // Handle messages from webview (token refresh + API proxy)
-    panel.webview.onDidReceiveMessage(async (msg: {type: string; [k: string]: unknown}) => {
-      if (msg.type === 'refreshToken') {
-        await this.sendToken(panel, apiType, requiredScopes);
-      } else if (msg.type === 'proxyRequest') {
-        await this.handleProxyRequest(panel, msg);
-      }
+    panel.webview.onDidReceiveMessage((msg: {type: string; [k: string]: unknown}) => {
+      const handle = async (): Promise<void> => {
+        if (msg.type === 'refreshToken') {
+          await this.sendToken(panel, apiType, requiredScopes);
+        } else if (msg.type === 'proxyRequest') {
+          await this.handleProxyRequest(panel, msg);
+        }
+      };
+      handle().catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error);
+        this.log.appendLine(`[API Browser] webview message handler failed: ${message}`);
+      });
     });
   }
 
@@ -407,7 +432,7 @@ export class SwaggerWebviewManager implements vscode.Disposable {
         `[API Browser Proxy] ${requestId} → ${res.status} ${res.statusText} (${responseBody.length} bytes)`,
       );
 
-      panel.webview.postMessage({
+      this.safePostMessage(panel, {
         type: 'proxyResponse',
         requestId,
         status: res.status,
@@ -418,7 +443,7 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       this.log.appendLine(`[API Browser Proxy] ${requestId} → ERROR: ${errMsg}`);
-      panel.webview.postMessage({
+      this.safePostMessage(panel, {
         type: 'proxyResponse',
         requestId,
         error: errMsg,
@@ -430,19 +455,19 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     try {
       const token = await this.getToken(apiType, scopes);
       if (token) {
-        panel.webview.postMessage({type: 'updateToken', token});
+        this.safePostMessage(panel, {type: 'updateToken', token});
       } else {
         const hint =
           apiType === 'Shopper'
             ? 'No public SLAS client found. Configure slasClientId and siteId in dw.json, or create a public SLAS client.'
             : 'Configure clientId and clientSecret in dw.json.';
         this.log.appendLine(`[API Browser] No ${apiType} token available — ${hint}`);
-        panel.webview.postMessage({type: 'tokenError', error: hint});
+        this.safePostMessage(panel, {type: 'tokenError', error: hint});
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       this.log.appendLine(`[API Browser] Token error (${apiType}): ${message}`);
-      panel.webview.postMessage({type: 'tokenError', error: message});
+      this.safePostMessage(panel, {type: 'tokenError', error: message});
     }
   }
 

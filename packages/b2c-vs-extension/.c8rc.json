@@ -1,0 +1,15 @@
+{
+  "all": true,
+  "src": ["src"],
+  "exclude": [
+    "src/test/**",
+    "dist/**",
+    "scripts/**",
+    "**/*.d.ts",
+    "src/template/**",
+    "src/webview.html"
+  ],
+  "reporter": ["text", "text-summary", "lcov"],
+  "report-dir": "coverage",
+  "check-coverage": false
+}

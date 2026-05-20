@@ -134,23 +134,4 @@ describe('ecdn logpush jobs list', () => {
       expect(errorStub.calledOnce).to.equal(true);
     }
   });
-
-  it('shows all columns with --extended flag', async () => {
-    const command: any = await createCommand({'tenant-id': 'zzxy_prd', zone: 'my-zone', extended: true});
-
-    const columns = command.getSelectedColumns();
-
-    expect(columns).to.include('jobId');
-    expect(columns).to.include('name');
-    expect(columns).to.include('destinationPath');
-    expect(columns).to.include('lastComplete');
-  });
-
-  it('supports custom columns with --columns flag', async () => {
-    const command: any = await createCommand({'tenant-id': 'zzxy_prd', zone: 'my-zone', columns: 'jobId,name'});
-
-    const columns = command.getSelectedColumns();
-
-    expect(columns).to.deep.equal(['jobId', 'name']);
-  });
 });

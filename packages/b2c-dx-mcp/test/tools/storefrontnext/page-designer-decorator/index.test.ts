@@ -347,12 +347,16 @@ export default function DecoratedComponent({title}: DecoratedComponentProps) {
         autoMode: true,
       });
 
-      // Should handle already-decorated components gracefully
-      // May return an error or provide guidance
-      expect(result).to.exist;
+      // Auto mode must short-circuit and refuse to re-decorate, returning
+      // the deterministic "Already Decorated" notice that names the component
+      // and offers to modify the existing decorators.
       const text = getResultText(result);
-      // Should mention the component is already decorated or provide appropriate guidance
-      expect(text).to.match(/decorated|already|existing|Component/i);
+      expect(text).to.include('Component Already Decorated');
+      expect(text).to.include('DecoratedComponent');
+      expect(text).to.include('already has Page Designer decorators');
+      expect(text).to.include('modify the existing decorators');
+      // It must NOT emit a fresh @Component/@AttributeDefinition decorator block.
+      expect(text).to.not.match(/@AttributeDefinition\s*\(/);
     });
 
     it('should handle component with no props in auto mode', async () => {
@@ -1399,30 +1403,44 @@ export default ProductItem;
       const tool = createPageDesignerDecoratorTool(getServices);
       createTestComponent(testDir, 'ConversationComponent');
 
-      const steps = ['analyze', 'select_props', 'configure_attrs', 'configure_regions', 'confirm_generation'];
+      const steps = ['analyze', 'select_props', 'configure_attrs', 'configure_regions', 'confirm_generation'] as const;
 
       const results = await Promise.all(
         steps.map((step) =>
           tool.handler({
             component: 'ConversationComponent',
-            conversationContext: {
-              step: step as 'analyze' | 'configure_attrs' | 'configure_regions' | 'confirm_generation' | 'select_props',
-            },
+            conversationContext: {step},
           }),
         ),
       );
 
-      // Should not error on valid step
-      for (const [i, step] of steps.entries()) {
-        const result = results[i];
-        if (step === 'select_props' || step === 'confirm_generation') {
-          // These steps require metadata, so they'll error without it
-          // But the step itself should be accepted
-          expect(result).to.exist;
-        } else {
-          expect(result.isError).to.be.undefined;
-        }
-      }
+      const byStep = Object.fromEntries(steps.map((s, i) => [s, results[i]])) as Record<
+        (typeof steps)[number],
+        (typeof results)[number]
+      >;
+
+      // analyze: deterministic header + component name in output
+      expect(byStep.analyze.isError).to.be.undefined;
+      expect(getResultText(byStep.analyze)).to.include('Step 1: Component Analysis');
+      expect(getResultText(byStep.analyze)).to.include('ConversationComponent');
+
+      // select_props: requires componentMetadata; without it, errors with deterministic message
+      expect(byStep.select_props.isError).to.equal(true);
+      expect(getResultText(byStep.select_props)).to.include('Missing component metadata');
+
+      // configure_attrs: deterministic step header
+      expect(byStep.configure_attrs.isError).to.be.undefined;
+      expect(getResultText(byStep.configure_attrs)).to.include('Step 2: Attribute Configuration');
+
+      // configure_regions: deterministic step header + component name
+      expect(byStep.configure_regions.isError).to.be.undefined;
+      const regionsText = getResultText(byStep.configure_regions);
+      expect(regionsText).to.include('Step 3: Region Configuration');
+      expect(regionsText).to.include('ConversationComponent');
+
+      // confirm_generation: requires componentMetadata; errors with deterministic message
+      expect(byStep.confirm_generation.isError).to.equal(true);
+      expect(getResultText(byStep.confirm_generation)).to.include('Missing component metadata');
     });
   });
 

@@ -12,6 +12,9 @@ import {DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
 import {t, withDocs} from '../../i18n/index.js';
 import {confirm} from '../../prompts.js';
 
+/** Basename of the Mobify-format credentials file in the user's home directory. */
+const MOBIFY_FILE_BASENAME = '.mobify';
+
 interface MobifyConfigFile {
   username?: string;
   api_key?: string;
@@ -59,6 +62,11 @@ export default class MrtSaveCredentials extends BaseCommand<typeof MrtSaveCreden
     }),
   };
 
+  /** Wraps shared confirm for testability. */
+  protected async confirm(message: string): Promise<boolean> {
+    return confirm(message);
+  }
+
   async run(): Promise<MobifyConfigFile> {
     const {user, 'api-key': apiKey, 'cloud-origin': cloudOrigin, 'credentials-file': credentialsFile, yes} = this.flags;
 
@@ -98,20 +106,15 @@ export default class MrtSaveCredentials extends BaseCommand<typeof MrtSaveCreden
     return credentials;
   }
 
-  /** Wraps shared confirm for testability. */
-  protected async confirm(message: string): Promise<boolean> {
-    return confirm(message);
-  }
-
   private getMobifyPath(cloudOrigin?: string): string {
     if (cloudOrigin) {
       try {
         const url = new URL(cloudOrigin);
-        return path.join(os.homedir(), `.mobify--${url.hostname}`);
+        return path.join(os.homedir(), `${MOBIFY_FILE_BASENAME}--${url.hostname}`);
       } catch {
-        return path.join(os.homedir(), `.mobify--${cloudOrigin}`);
+        return path.join(os.homedir(), `${MOBIFY_FILE_BASENAME}--${cloudOrigin}`);
       }
     }
-    return path.join(os.homedir(), '.mobify');
+    return path.join(os.homedir(), MOBIFY_FILE_BASENAME);
   }
 }

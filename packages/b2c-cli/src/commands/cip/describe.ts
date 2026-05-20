@@ -8,7 +8,7 @@ import {Args, Flags} from '@oclif/core';
 import {describeCipTable} from '@salesforce/b2c-tooling-sdk';
 import {withDocs} from '../../i18n/index.js';
 import {CipCommand} from '../../utils/cip/command.js';
-import {renderTable, toCsv, type CipOutputFormat} from '../../utils/cip/format.js';
+import {renderTable, writeCsv, writeJson, type CipOutputFormat} from '../../utils/cip/format.js';
 
 const {from: _unusedFrom, to: _unusedTo, ...cipMetadataFlags} = CipCommand.baseFlags;
 
@@ -77,7 +77,7 @@ export default class CipDescribe extends CipCommand<typeof CipDescribe> {
     }
 
     if (this.flags.format === 'json') {
-      process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
+      writeJson(output);
       return output;
     }
 
@@ -88,7 +88,7 @@ export default class CipDescribe extends CipCommand<typeof CipDescribe> {
   private renderRows(rows: CipDescribeCommandResult['columns'], format: CipOutputFormat): void {
     const columns = ['column', 'dataType', 'isNullable'];
     if (format === 'csv') {
-      process.stdout.write(`${toCsv(columns, rows)}\n`);
+      writeCsv(columns, rows);
       return;
     }
 

@@ -8,7 +8,7 @@ import sinon from 'sinon';
 import {Config} from '@oclif/core';
 import ReplicationsWait from '../../../../src/commands/scapi/replications/wait.js';
 import {stubParse} from '../../../helpers/stub-parse.js';
-import {createIsolatedEnvHooks, runSilent} from '../../../helpers/test-setup.js';
+import {createIsolatedEnvHooks} from '../../../helpers/test-setup.js';
 
 describe('scapi replications wait', () => {
   const hooks = createIsolatedEnvHooks();
@@ -30,7 +30,7 @@ describe('scapi replications wait', () => {
 
     it('waits for process to complete', async () => {
       const command: any = new ReplicationsWait([], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd', timeout: 10, interval: 1}, {'process-id': 'proc-123'});
+      stubParse(command, {'tenant-id': 'zzxy_prd', timeout: 10, interval: 0}, {'process-id': 'proc-123'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -74,7 +74,7 @@ describe('scapi replications wait', () => {
 
     it('returns failed status', async () => {
       const command: any = new ReplicationsWait([], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd', timeout: 10, interval: 1}, {'process-id': 'proc-456'});
+      stubParse(command, {'tenant-id': 'zzxy_prd', timeout: 10, interval: 0}, {'process-id': 'proc-456'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -100,9 +100,9 @@ describe('scapi replications wait', () => {
       expect(result.status).to.equal('failed');
     });
 
-    it('logs status updates in non-JSON mode', async () => {
+    it('logs status transitions in non-JSON mode', async () => {
       const command: any = new ReplicationsWait([], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd', timeout: 10, interval: 1}, {'process-id': 'proc-789'});
+      stubParse(command, {'tenant-id': 'zzxy_prd', timeout: 10, interval: 0}, {'process-id': 'proc-789'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -111,8 +111,22 @@ describe('scapi replications wait', () => {
       sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
       sinon.stub(command, 'getOAuthStrategy').returns({getAuthorizationHeader: async () => 'Bearer test'});
 
-      sinon.stub(globalThis, 'fetch').resolves(
-        new Response(
+      let callCount = 0;
+      sinon.stub(globalThis, 'fetch').callsFake(async () => {
+        callCount++;
+        if (callCount === 1) {
+          return new Response(
+            JSON.stringify({
+              id: 'proc-789',
+              status: 'in_progress',
+              startTime: '2025-01-01T02:00:00Z',
+              initiatedBy: 'user@example.com',
+              productItem: {productId: 'PROD-3'},
+            }),
+            {status: 200, headers: {'content-type': 'application/json'}},
+          );
+        }
+        return new Response(
           JSON.stringify({
             id: 'proc-789',
             status: 'completed',
@@ -122,11 +136,18 @@ describe('scapi replications wait', () => {
             productItem: {productId: 'PROD-3'},
           }),
           {status: 200, headers: {'content-type': 'application/json'}},
-        ),
-      );
+        );
+      });
 
-      await runSilent(() => command.run());
-      expect(logStub.called).to.equal(true);
+      await command.run();
+
+      const logMessages = logStub.getCalls().map((c) => String(c.args[0] ?? ''));
+      const allLogs = logMessages.join('\n');
+      // Should have logged the transition through both statuses
+      expect(allLogs).to.include('in_progress');
+      expect(allLogs).to.include('completed');
+      // And the explicit "Process completed successfully" final message
+      expect(logMessages.some((m) => /completed successfully/i.test(m))).to.equal(true);
     });
 
     it('times out if process does not complete', async () => {
@@ -164,7 +185,7 @@ describe('scapi replications wait', () => {
 
     it('handles API errors during polling', async () => {
       const command: any = new ReplicationsWait([], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd', timeout: 10, interval: 1}, {'process-id': 'proc-error'});
+      stubParse(command, {'tenant-id': 'zzxy_prd', timeout: 10, interval: 0}, {'process-id': 'proc-error'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);

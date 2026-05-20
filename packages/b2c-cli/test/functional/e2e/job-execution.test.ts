@@ -164,7 +164,10 @@ describe('Job Execution E2E Tests', function () {
 
       const response = JSON.parse(toString(result.stdout));
       expect(response).to.be.an('object');
-      expect(String(response.execution_status)).to.be.oneOf(['finished', 'running', 'pending']);
+      expect(
+        String(response.execution_status),
+        `--wait should leave the job in 'finished' state, but got '${response.execution_status}'`,
+      ).to.equal('finished');
     });
   });
 
@@ -244,7 +247,10 @@ describe('Job Execution E2E Tests', function () {
 
       const response = JSON.parse(toString(result.stdout));
       expect(response.id).to.equal(executionId);
-      expect(String(response.execution_status)).to.be.oneOf(['finished', 'running', 'pending']);
+      expect(
+        String(response.execution_status),
+        `'job wait' should leave the job in 'finished' state, but got '${response.execution_status}'`,
+      ).to.equal('finished');
     });
   });
 
@@ -265,7 +271,10 @@ describe('Job Execution E2E Tests', function () {
 
       const response = JSON.parse(toString(result.stdout));
       expect(response.execution).to.be.an('object');
-      expect(String(response.execution.execution_status)).to.be.oneOf(['finished', 'running', 'pending']);
+      expect(
+        String(response.execution.execution_status),
+        `'job export' should produce a finished execution, but got '${response.execution.execution_status}'`,
+      ).to.equal('finished');
       expect(response.localPath).to.be.a('string');
 
       exportFilePath = response.localPath as string;
@@ -286,7 +295,29 @@ describe('Job Execution E2E Tests', function () {
       expect(exists, `Export file should exist at ${exportFilePath}`).to.be.true;
 
       const stats = await fs.stat(exportFilePath);
-      expect(stats.size, 'Export file should not be empty').to.be.greaterThan(0);
+
+      // Default export extracts the zip, so localPath is a directory. On
+      // Windows, fs.stat() of a directory returns size 0 (NTFS), unlike Linux
+      // where directory inodes report nonzero. Walk into the directory to
+      // verify it contains real data.
+      if (stats.isDirectory()) {
+        const entries = await fs.readdir(exportFilePath, {recursive: true, withFileTypes: true});
+        const files = entries.filter((e) => e.isFile());
+        expect(files.length, `Export directory should contain files at ${exportFilePath}`).to.be.greaterThan(0);
+
+        let totalBytes = 0;
+        for (const file of files) {
+          const filePath = path.join(file.parentPath ?? exportFilePath, file.name);
+          // eslint-disable-next-line no-await-in-loop
+          const fileStat = await fs.stat(filePath);
+          totalBytes += fileStat.size;
+        }
+        expect(totalBytes, `Export directory contents should not be empty (${files.length} files)`).to.be.greaterThan(
+          0,
+        );
+      } else {
+        expect(stats.size, `Export file should not be empty at ${exportFilePath}`).to.be.greaterThan(0);
+      }
     });
   });
 
@@ -309,7 +340,10 @@ describe('Job Execution E2E Tests', function () {
 
       const response = JSON.parse(toString(result.stdout));
       expect(response.execution).to.be.an('object');
-      expect(String(response.execution.execution_status)).to.be.oneOf(['finished', 'running', 'pending']);
+      expect(
+        String(response.execution.execution_status),
+        `'job import' should produce a finished execution, but got '${response.execution.execution_status}'`,
+      ).to.equal('finished');
     });
   });
 
@@ -339,7 +373,10 @@ describe('Job Execution E2E Tests', function () {
       expect(result.exitCode).to.equal(0, `Import with keep-archive failed: ${toString(result.stderr)}`);
 
       const response = JSON.parse(toString(result.stdout));
-      expect(String(response.execution.execution_status)).to.be.oneOf(['finished', 'running', 'pending']);
+      expect(
+        String(response.execution.execution_status),
+        `'job import --keep-archive' should produce a finished execution, but got '${response.execution.execution_status}'`,
+      ).to.equal('finished');
     });
   });
 

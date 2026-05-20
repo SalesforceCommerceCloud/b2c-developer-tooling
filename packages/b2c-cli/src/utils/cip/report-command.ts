@@ -13,7 +13,8 @@ import {
   type CipReportParamDefinition,
 } from '@salesforce/b2c-tooling-sdk';
 import {CipCommand} from './command.js';
-import {renderTable, toCsv, type CipOutputFormat} from './format.js';
+import {renderTable, writeCsv, writeJson, type CipOutputFormat} from './format.js';
+import {ux} from '@oclif/core';
 
 function camelToKebab(str: string): string {
   return str.replaceAll(/[A-Z]/gu, (match) => `-${match.toLowerCase()}`);
@@ -98,7 +99,7 @@ export abstract class CipReportCommand<T extends typeof Command> extends CipComm
 
     const sqlResult = buildCipReportSql(this.reportName, params);
     if (flags.sql === true) {
-      process.stdout.write(`${sqlResult.sql}\n`);
+      ux.stdout(sqlResult.sql);
       return {
         reportName: sqlResult.report.name,
         sql: sqlResult.sql,
@@ -125,7 +126,7 @@ export abstract class CipReportCommand<T extends typeof Command> extends CipComm
     }
 
     if (this.flags.format === 'json') {
-      process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
+      writeJson(output);
       return output;
     }
 
@@ -175,7 +176,7 @@ export abstract class CipReportCommand<T extends typeof Command> extends CipComm
 
   private renderRows(columns: string[], rows: Array<Record<string, unknown>>, format: CipOutputFormat): void {
     if (format === 'csv') {
-      process.stdout.write(`${toCsv(columns, rows)}\n`);
+      writeCsv(columns, rows);
       return;
     }
 

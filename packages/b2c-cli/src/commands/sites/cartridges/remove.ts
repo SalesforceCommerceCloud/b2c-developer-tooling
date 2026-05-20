@@ -9,6 +9,13 @@ import {type CartridgePathResult, BM_SITE_ID, removeCartridge} from '@salesforce
 import {t, withDocs} from '../../../i18n/index.js';
 
 export default class SitesCartridgesRemove extends InstanceCommand<typeof SitesCartridgesRemove> {
+  static args = {
+    cartridge: Args.string({
+      description: t('args.cartridge.description', 'Cartridge name to remove'),
+      required: true,
+    }),
+  };
+
   static description = withDocs(
     t('commands.sites.cartridges.remove.description', "Remove a cartridge from a site's cartridge path"),
     '/cli/sites.html#b2c-sites-cartridges-remove',
@@ -21,15 +28,6 @@ export default class SitesCartridgesRemove extends InstanceCommand<typeof SitesC
     '<%= config.bin %> sites cartridges remove bm_extension --bm',
   ];
 
-  static hiddenAliases = ['sites:cartridge:remove'];
-
-  static args = {
-    cartridge: Args.string({
-      description: t('args.cartridge.description', 'Cartridge name to remove'),
-      required: true,
-    }),
-  };
-
   static flags = {
     'site-id': Flags.string({
       description: t('flags.siteId.description', 'Site ID (e.g. RefArch)'),
@@ -40,6 +38,8 @@ export default class SitesCartridgesRemove extends InstanceCommand<typeof SitesC
       exclusive: ['site-id'],
     }),
   };
+
+  static hiddenAliases = ['sites:cartridge:remove'];
 
   async run(): Promise<CartridgePathResult> {
     this.assertDestructiveOperationAllowed('remove cartridge from site cartridge path');

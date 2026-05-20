@@ -15,7 +15,7 @@
  * @version 0.0.1
  */
 
-import {Headers} from '../utils/ssr-proxying.js';
+import {Headers, DEFAULT_ACCESS_CONTROL_FORWARDING_HOSTNAMES} from '../utils/ssr-proxying.js';
 import {
   configureProxying,
   type ProxyResult,
@@ -34,13 +34,7 @@ const CACHING_PATH_BASE = `${MOBIFY_PATH}/caching`;
 const BUNDLE_PATH_BASE = `${MOBIFY_PATH}/bundle`;
 const proxyBasePath = PROXY_PATH_BASE;
 const bundleBasePath = BUNDLE_PATH_BASE;
-const X_HEADERS_TO_REMOVE_ORIGIN = [
-  'x-api-key',
-  'x-apigateway-event',
-  'x-apigateway-context',
-  'x-mobify-access-key',
-  'x-sfdc-access-control',
-];
+const X_HEADERS_TO_REMOVE_ORIGIN = ['x-api-key', 'x-apigateway-event', 'x-apigateway-context', 'x-mobify-access-key'];
 export const X_MOBIFY_REQUEST_CLASS = 'x-mobify-request-class';
 export const X_MOBIFY_QUERYSTRING = 'x-mobify-querystring';
 export const X_MOBIFY_REQUEST_PROCESSOR_LOCAL = 'x-mobify-rp-local';
@@ -333,12 +327,21 @@ export const createMRTProxyMiddlewares = (
   appProtocol: string = 'http',
   includeCaching: boolean = false,
   createProxyFn?: CreateProxyMiddlewareFn,
+  accessControlHeaderForwardingHostnames: string[] = DEFAULT_ACCESS_CONTROL_FORWARDING_HOSTNAMES,
+  preserveUserAgent: boolean = true,
 ): ProxyResult[] => {
   if (!proxyConfigs) {
     return [];
   }
   const {appHostname} = getRequestProcessorParameters();
-  const proxies: ProxyResult[] = configureProxying(proxyConfigs, appHostname, appProtocol, createProxyFn);
+  const proxies: ProxyResult[] = configureProxying(
+    proxyConfigs,
+    appHostname,
+    appProtocol,
+    createProxyFn,
+    accessControlHeaderForwardingHostnames,
+    preserveUserAgent,
+  );
   const middlewares: ProxyResult[] = [];
   proxies.forEach((proxy) => {
     const proxyPath = `${PROXY_PATH_BASE}/${proxy.path}`;

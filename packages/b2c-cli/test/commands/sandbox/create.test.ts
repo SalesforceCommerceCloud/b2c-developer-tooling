@@ -8,7 +8,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import SandboxCreate from '../../../src/commands/sandbox/create.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
-import {runSilent} from '../../helpers/test-setup.js';
+import {makeCommandThrowOnError, runSilent, stubOdsClient} from '../../helpers/test-setup.js';
 
 function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.test.com'): void {
   Object.defineProperty(command, 'config', {
@@ -26,24 +26,11 @@ function stubCommandConfigAndLogger(command: any, sandboxApiHost = 'admin.dx.tes
   });
 }
 
-function stubOdsClient(command: any, client: Partial<{GET: any; POST: any; PUT: any; DELETE: any}>): void {
-  Object.defineProperty(command, 'odsClient', {
-    value: client,
-    configurable: true,
-  });
-}
-
 function stubResolvedConfig(command: any, resolvedConfig: Record<string, unknown>): void {
   Object.defineProperty(command, 'resolvedConfig', {
     get: () => ({values: resolvedConfig}),
     configurable: true,
   });
-}
-
-function makeCommandThrowOnError(command: any): void {
-  command.error = (msg: string) => {
-    throw new Error(msg);
-  };
 }
 
 /**
@@ -379,6 +366,32 @@ describe('sandbox create', () => {
 
       expect(requestBody.startScheduler).to.deep.equal(startSchedule);
       expect(requestBody.stopScheduler).to.deep.equal(stopSchedule);
+    });
+
+    it('should include emails in POST body', async () => {
+      const command = setupCreateCommand();
+
+      (command as any).flags = {
+        realm: 'abcd',
+        ttl: 24,
+        profile: 'medium',
+        wait: false,
+        'set-permissions': false,
+        emails: 'dev@example.com,ops@example.com',
+      };
+
+      let requestBody: any;
+      stubOdsClient(command, {
+        async POST(_url: string, options: any) {
+          requestBody = options.body;
+          return {
+            data: {data: {id: 'sb-1', state: 'creating'}},
+          };
+        },
+      });
+
+      await runSilent(() => command.run());
+      expect(requestBody.emails).to.deep.equal(['dev@example.com', 'ops@example.com']);
     });
 
     it('should throw on invalid JSON for scheduler flags', async () => {

@@ -24,16 +24,13 @@ describe('webdav unzip', () => {
   it('posts UNZIP request and returns archive/extract paths', async () => {
     const command = (await createCommand({root: 'impex'}, {path: 'src/instance/export.zip'})) as unknown as {
       ensureWebDavAuth: () => void;
-      buildPath: (p: string) => string;
       instance: unknown;
+      log: (...args: unknown[]) => void;
       run: () => Promise<{archivePath: string; extractPath: string}>;
     };
 
     sinon.stub(command, 'ensureWebDavAuth').returns();
-    const buildPathStub = sinon.stub(command, 'buildPath').callsFake((p: unknown) => {
-      const path = String(p);
-      return `Impex/${path.startsWith('/') ? path.slice(1) : path}`;
-    });
+    sinon.stub(command, 'log').returns();
 
     const requestStub = sinon.stub().resolves({
       ok: true,
@@ -51,10 +48,10 @@ describe('webdav unzip', () => {
 
     const result = await command.run();
 
-    expect(buildPathStub.calledOnceWithExactly('src/instance/export.zip')).to.equal(true);
     expect(requestStub.calledOnce).to.equal(true);
 
-    const [, init] = requestStub.getCall(0).args as [string, {body?: unknown; method?: string}];
+    const [requestPath, init] = requestStub.getCall(0).args as [string, {body?: unknown; method?: string}];
+    expect(requestPath).to.equal('Impex/src/instance/export.zip');
     expect(init.method).to.equal('POST');
     expect(String(init.body)).to.include('method=UNZIP');
 
@@ -65,14 +62,14 @@ describe('webdav unzip', () => {
   it('calls command.error when response is not ok', async () => {
     const command = (await createCommand({root: 'impex'}, {path: 'src/instance/export.zip'})) as unknown as {
       ensureWebDavAuth: () => void;
-      buildPath: (p: string) => string;
       error: (message: string) => never;
       instance: unknown;
+      log: (...args: unknown[]) => void;
       run: () => Promise<unknown>;
     };
 
     sinon.stub(command, 'ensureWebDavAuth').returns();
-    sinon.stub(command, 'buildPath').returns('Impex/src/instance/export.zip');
+    sinon.stub(command, 'log').returns();
 
     const requestStub = sinon.stub().resolves({
       ok: false,

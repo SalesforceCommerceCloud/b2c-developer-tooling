@@ -8,7 +8,7 @@ This guide covers installing and configuring the B2C DX MCP Server for various M
 
 ## Prerequisites
 
-- Node.js 22.0.0 or higher (`npx` is included with Node.js and must be accessible from the MCP client's process environment)
+- Node.js 22.16.0 or higher (`npx` is included with Node.js and must be accessible from the MCP client's process environment)
 - A B2C Commerce project (for project-specific toolsets)
 - MCP client (Claude Code, Cursor, GitHub Copilot, or compatible client)
 
@@ -132,7 +132,7 @@ See [Configuration](./configuration) for setting up `dw.json`, `.env`, and tools
 
 ### Server Not Starting
 
-- Verify Node.js version: `node --version` (must be 22.0.0+)
+- Verify Node.js version: `node --version` (must be 22.16.0+)
 - Check that `npx` is available and working
 
 ### `spawn npx ENOENT` Error

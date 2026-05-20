@@ -21,8 +21,6 @@ import {t} from '../../../i18n/index.js';
  * Use --renew to enable automatic token renewal for later use with `auth client renew`.
  */
 export default class AuthClient extends BaseCommand<typeof AuthClient> {
-  static hiddenAliases = ['client:auth'];
-
   static description = t('commands.auth.client.description', 'Authenticate an API client and save session');
 
   static examples = [
@@ -78,6 +76,8 @@ export default class AuthClient extends BaseCommand<typeof AuthClient> {
       env: 'SFCC_OAUTH_USER_PASSWORD',
     }),
   };
+
+  static hiddenAliases = ['client:auth'];
 
   protected override loadConfiguration() {
     const scopes = this.flags['auth-scope'] as string[] | undefined;

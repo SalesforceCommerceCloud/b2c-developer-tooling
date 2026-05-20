@@ -14,8 +14,6 @@ import {
 import {t, withDocs} from '../../i18n/index.js';
 
 export default class JobRun extends JobCommand<typeof JobRun> {
-  static hiddenAliases = ['job:run'];
-
   static args = {
     jobId: Args.string({
       description: 'Job ID to execute',
@@ -75,6 +73,8 @@ export default class JobRun extends JobCommand<typeof JobRun> {
       default: true,
     }),
   };
+
+  static hiddenAliases = ['job:run'];
 
   protected operations = {
     executeJob,
@@ -178,12 +178,16 @@ export default class JobRun extends JobCommand<typeof JobRun> {
   }
 
   private handleExecutionError(error: unknown, context: B2COperationContext): never {
-    // Run afterOperation hooks with failure (fire-and-forget, errors ignored)
+    // Fire-and-forget: we're already on the error path and rethrow below; surface
+    // hook failures in the debug log so they aren't completely invisible, but
+    // don't shadow the original error.
     this.runAfterHooks(context, {
       success: false,
       error: error instanceof Error ? error : new Error(String(error)),
       duration: Date.now() - context.startTime,
-    }).catch(() => {});
+    }).catch((error_: unknown) => {
+      this.logger.debug({err: error_}, '[job:run] afterOperation hook failed');
+    });
 
     if (error instanceof Error) {
       this.error(t('commands.job.run.executionFailed', 'Failed to execute job: {{message}}', {message: error.message}));

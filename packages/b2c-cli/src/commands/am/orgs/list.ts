@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags, Errors} from '@oclif/core';
-import {AmCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {AmCommand, TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {AccountManagerOrganization, OrganizationCollection} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
 
@@ -99,13 +99,7 @@ export default class OrgList extends AmCommand<typeof OrgList> {
       char: 'a',
       description: 'Return all organizations (uses max page size of 5000)',
     }),
-    columns: Flags.string({
-      description: 'Comma-separated list of columns to display',
-    }),
-    extended: Flags.boolean({
-      char: 'x',
-      description: 'Show extended columns',
-    }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<OrganizationCollection> {
@@ -143,15 +137,10 @@ export default class OrgList extends AmCommand<typeof OrgList> {
       return result;
     }
 
-    // Determine columns to display
-    let columnsToShow = DEFAULT_COLUMNS;
-    if (this.flags.columns) {
-      columnsToShow = this.flags.columns.split(',').map((c) => c.trim());
-    } else if (this.flags.extended) {
-      columnsToShow = Object.keys(COLUMNS);
-    }
-
-    tableRenderer.render(result.content, columnsToShow);
+    tableRenderer.render(
+      result.content,
+      selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
+    );
 
     // Show pagination hint if more pages available
     const totalPages = result.totalPages ?? 0;

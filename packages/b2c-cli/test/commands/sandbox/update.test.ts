@@ -13,14 +13,8 @@ import {
   makeCommandThrowOnError,
   runSilent,
   stubJsonEnabled,
+  stubOdsClient,
 } from '../../helpers/test-setup.js';
-
-function stubOdsClient(command: any, client: Partial<{PATCH: any}>): void {
-  Object.defineProperty(command, 'odsClient', {
-    value: client,
-    configurable: true,
-  });
-}
 
 function stubOdsHost(command: any, host = 'admin.dx.test.com'): void {
   Object.defineProperty(command, 'odsHost', {
@@ -191,6 +185,39 @@ describe('sandbox update', () => {
     expect(requestOptions.body.emails).to.deep.equal(['dev@example.com', 'qa@example.com']);
     expect(result.tags).to.deep.equal(['ci', 'nightly']);
     expect(result.emails).to.deep.equal(['dev@example.com', 'qa@example.com']);
+  });
+
+  it('parses scheduler flags and includes them in PATCH body', async () => {
+    const command = await setupCommand(
+      {
+        'start-scheduler': '{"weekdays":["MONDAY"],"time":"08:00:00Z"}',
+        'stop-scheduler': 'null',
+      },
+      {sandboxId: 'zzzz-001'},
+    );
+
+    sinon.stub(command as any, 'resolveSandboxId').resolves('sb-uuid-123');
+    stubJsonEnabled(command, true);
+
+    let requestOptions: any;
+    stubOdsClient(command, {
+      async PATCH(_: string, options: any) {
+        requestOptions = options;
+        return {
+          data: {
+            data: {
+              id: 'sb-uuid-123',
+              realm: 'zzzz',
+              state: 'started',
+            },
+          },
+        };
+      },
+    });
+
+    await runSilent(() => command.run());
+    expect(requestOptions).to.have.nested.property('body.startScheduler.time', '08:00:00Z');
+    expect(requestOptions).to.have.nested.property('body.stopScheduler', null);
   });
 
   it('requires at least one update flag including --resource-profile', async () => {

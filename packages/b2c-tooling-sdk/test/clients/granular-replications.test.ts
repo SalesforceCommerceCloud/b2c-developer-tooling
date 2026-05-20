@@ -28,10 +28,6 @@ describe('Granular Replications Client', () => {
     client = createGranularReplicationsClient({shortCode: SHORT_CODE, tenantId: TENANT_ID}, mockAuth);
   });
 
-  it('should create client with config', () => {
-    expect(client).to.exist;
-  });
-
   describe('LIST granular-processes', () => {
     it('should list granular processes', async () => {
       server.use(
@@ -115,6 +111,7 @@ describe('Granular Replications Client', () => {
     it('should queue product for publishing', async () => {
       server.use(
         http.post(`${BASE_URL}/organizations/${ORG_ID}/granular-processes`, async ({request}) => {
+          expect(request.headers.get('Authorization')).to.equal('Bearer test-token');
           const body = (await request.json()) as Record<string, unknown>;
           expect(body).to.deep.equal({product: {productId: 'PROD-1'}});
           return HttpResponse.json({id: 'proc-123'}, {status: 201});

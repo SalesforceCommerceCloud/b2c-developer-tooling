@@ -273,235 +273,91 @@ describe('config/sources', () => {
   });
 
   describe('MobifySource', () => {
-    it('loads mrtApiKey from ~/.mobify', async function () {
-      const originalHomedir = os.homedir;
-      let canMock = false;
-      try {
-        Object.defineProperty(os, 'homedir', {
-          value: () => tempDir,
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
-        canMock = true;
-      } catch {
-        this.skip();
-      }
+    it('loads mrtApiKey from credentialsFile path', async () => {
+      const mobifyPath = path.join(tempDir, '.mobify');
+      fs.writeFileSync(
+        mobifyPath,
+        JSON.stringify({
+          username: 'user@example.com',
+          api_key: 'test-api-key',
+        }),
+      );
 
-      if (canMock) {
-        const mobifyPath = path.join(tempDir, '.mobify');
-        fs.writeFileSync(
-          mobifyPath,
-          JSON.stringify({
-            username: 'user@example.com',
-            api_key: 'test-api-key',
-          }),
-        );
+      const resolver = new ConfigResolver();
+      const {config} = await resolver.resolve({}, {credentialsFile: mobifyPath});
 
-        const resolver = new ConfigResolver();
-        const {config} = await resolver.resolve();
-
-        expect(config.mrtApiKey).to.equal('test-api-key');
-
-        // Restore
-        Object.defineProperty(os, 'homedir', {
-          value: originalHomedir,
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
-      }
+      expect(config.mrtApiKey).to.equal('test-api-key');
     });
 
-    it('returns undefined when ~/.mobify does not exist', async function () {
-      const originalHomedir = os.homedir;
-      let canMock = false;
-      try {
-        Object.defineProperty(os, 'homedir', {
-          value: () => tempDir,
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
-        canMock = true;
-      } catch {
-        this.skip();
-      }
+    it('returns undefined when credentialsFile does not exist', async () => {
+      const resolver = new ConfigResolver();
+      const {config} = await resolver.resolve({}, {credentialsFile: path.join(tempDir, '.mobify-missing')});
 
-      if (canMock) {
-        const resolver = new ConfigResolver();
-        const {config} = await resolver.resolve();
-
-        expect(config.mrtApiKey).to.be.undefined;
-
-        // Restore
-        Object.defineProperty(os, 'homedir', {
-          value: originalHomedir,
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
-      }
+      expect(config.mrtApiKey).to.be.undefined;
     });
 
-    it('returns undefined when api_key is missing from ~/.mobify', async function () {
-      const originalHomedir = os.homedir;
-      let canMock = false;
-      try {
-        Object.defineProperty(os, 'homedir', {
-          value: () => tempDir,
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
-        canMock = true;
-      } catch {
-        this.skip();
-      }
+    it('returns undefined when api_key is missing from the credentialsFile', async () => {
+      const mobifyPath = path.join(tempDir, '.mobify');
+      fs.writeFileSync(
+        mobifyPath,
+        JSON.stringify({
+          username: 'user@example.com',
+        }),
+      );
 
-      if (canMock) {
-        const mobifyPath = path.join(tempDir, '.mobify');
-        fs.writeFileSync(
-          mobifyPath,
-          JSON.stringify({
-            username: 'user@example.com',
-          }),
-        );
+      const resolver = new ConfigResolver();
+      const {config} = await resolver.resolve({}, {credentialsFile: mobifyPath});
 
-        const resolver = new ConfigResolver();
-        const {config} = await resolver.resolve();
-
-        expect(config.mrtApiKey).to.be.undefined;
-
-        // Restore
-        Object.defineProperty(os, 'homedir', {
-          value: originalHomedir,
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
-      }
+      expect(config.mrtApiKey).to.be.undefined;
     });
 
-    it('handles cloudOrigin for custom mobify file', async function () {
-      const originalHomedir = os.homedir;
-      let canMock = false;
-      try {
-        Object.defineProperty(os, 'homedir', {
-          value: () => tempDir,
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
-        canMock = true;
-      } catch {
-        this.skip();
-      }
+    it('handles cloudOrigin-suffixed credentials file', async () => {
+      const mobifyPath = path.join(tempDir, '.mobify--example.com');
+      fs.writeFileSync(
+        mobifyPath,
+        JSON.stringify({
+          api_key: 'cloud-api-key',
+        }),
+      );
 
-      if (canMock) {
-        const mobifyPath = path.join(tempDir, '.mobify--example.com');
-        fs.writeFileSync(
-          mobifyPath,
-          JSON.stringify({
-            api_key: 'cloud-api-key',
-          }),
-        );
+      const resolver = new ConfigResolver();
+      const {config} = await resolver.resolve({}, {credentialsFile: mobifyPath, cloudOrigin: 'https://example.com'});
 
-        const resolver = new ConfigResolver();
-        const {config} = await resolver.resolve({}, {cloudOrigin: 'https://example.com'});
-
-        expect(config.mrtApiKey).to.equal('cloud-api-key');
-
-        // Restore
-        Object.defineProperty(os, 'homedir', {
-          value: originalHomedir,
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
-      }
+      expect(config.mrtApiKey).to.equal('cloud-api-key');
     });
 
-    it('creates SOURCE_ERROR warning for invalid JSON in ~/.mobify', async function () {
-      const originalHomedir = os.homedir;
-      let canMock = false;
-      try {
-        Object.defineProperty(os, 'homedir', {
-          value: () => tempDir,
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
-        canMock = true;
-      } catch {
-        this.skip();
-      }
+    it('creates SOURCE_ERROR warning for invalid JSON in credentialsFile', async () => {
+      const mobifyPath = path.join(tempDir, '.mobify');
+      fs.writeFileSync(mobifyPath, 'invalid json');
 
-      if (canMock) {
-        const mobifyPath = path.join(tempDir, '.mobify');
-        fs.writeFileSync(mobifyPath, 'invalid json');
+      const resolver = new ConfigResolver();
+      const {config, warnings} = await resolver.resolve({}, {credentialsFile: mobifyPath});
 
-        const resolver = new ConfigResolver();
-        const {config, warnings} = await resolver.resolve();
-
-        // Config should not have the API key
-        expect(config.mrtApiKey).to.be.undefined;
-        // Should have a SOURCE_ERROR warning for MobifySource
-        const sourceError = warnings.find((w) => w.code === 'SOURCE_ERROR' && w.message.includes('MobifySource'));
-        expect(sourceError).to.not.be.undefined;
-        expect(sourceError?.message).to.include('Failed to load configuration');
-
-        // Restore
-        Object.defineProperty(os, 'homedir', {
-          value: originalHomedir,
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
-      }
+      // Config should not have the API key
+      expect(config.mrtApiKey).to.be.undefined;
+      // Should have a SOURCE_ERROR warning for MobifySource
+      const sourceError = warnings.find((w) => w.code === 'SOURCE_ERROR' && w.message.includes('MobifySource'));
+      expect(sourceError).to.not.be.undefined;
+      expect(sourceError?.message).to.include('Failed to load configuration');
     });
 
-    it('provides location from load result', async function () {
-      const originalHomedir = os.homedir;
-      let canMock = false;
-      try {
-        Object.defineProperty(os, 'homedir', {
-          value: () => tempDir,
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
-        canMock = true;
-      } catch {
-        this.skip();
-      }
+    it('provides location from load result', async () => {
+      const mobifyPath = path.join(tempDir, '.mobify');
+      fs.writeFileSync(
+        mobifyPath,
+        JSON.stringify({
+          api_key: 'test-api-key',
+        }),
+      );
 
-      if (canMock) {
-        const mobifyPath = path.join(tempDir, '.mobify');
-        fs.writeFileSync(
-          mobifyPath,
-          JSON.stringify({
-            api_key: 'test-api-key',
-          }),
-        );
+      const resolver = new ConfigResolver();
+      const {sources} = await resolver.resolve({}, {credentialsFile: mobifyPath});
 
-        const resolver = new ConfigResolver();
-        const {sources} = await resolver.resolve();
-
-        const mobifySource = sources.find((s) => s.name === 'MobifySource');
-        // Normalize paths to handle macOS symlinks
-        const expectedPath = fs.realpathSync(mobifyPath);
-        const actualLocation = mobifySource?.location ? fs.realpathSync(mobifySource.location) : undefined;
-        expect(actualLocation).to.equal(expectedPath);
-
-        // Restore
-        Object.defineProperty(os, 'homedir', {
-          value: originalHomedir,
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
-      }
+      const mobifySource = sources.find((s) => s.name === 'MobifySource');
+      // Normalize paths to handle macOS symlinks
+      const expectedPath = fs.realpathSync(mobifyPath);
+      const actualLocation = mobifySource?.location ? fs.realpathSync(mobifySource.location) : undefined;
+      expect(actualLocation).to.equal(expectedPath);
     });
   });
 
@@ -530,6 +386,38 @@ describe('config/sources', () => {
       expect(config.mrtProject).to.equal('my-project');
       expect(config.mrtOrigin).to.equal('https://custom.cloud.com');
       expect(config.accountManagerHost).to.equal('account.demandware.com');
+    });
+
+    it('loads libraries as a string array', async () => {
+      const packageJsonPath = path.join(tempDir, 'package.json');
+      fs.writeFileSync(
+        packageJsonPath,
+        JSON.stringify({
+          name: 'test-project',
+          b2c: {libraries: ['RefArch', 'OtherLib']},
+        }),
+      );
+
+      const resolver = new ConfigResolver();
+      const {config} = await resolver.resolve();
+
+      expect(config.libraries).to.deep.equal(['RefArch', 'OtherLib']);
+    });
+
+    it('loads libraries with site-library entries (mixed shapes allowed)', async () => {
+      const packageJsonPath = path.join(tempDir, 'package.json');
+      fs.writeFileSync(
+        packageJsonPath,
+        JSON.stringify({
+          name: 'test-project',
+          b2c: {libraries: ['RefArch', {id: 'homepage', siteLibrary: true}]},
+        }),
+      );
+
+      const resolver = new ConfigResolver();
+      const {config} = await resolver.resolve();
+
+      expect(config.libraries).to.deep.equal(['RefArch', {id: 'homepage', siteLibrary: true}]);
     });
 
     it('ignores sensitive/instance-specific fields', async () => {
