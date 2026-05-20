@@ -68,6 +68,11 @@ b2c job import existing-archive.zip --remote
 
 # show job log on failure
 b2c job import ./my-site-data --show-log
+
+# import only a subset of a directory (extra positionals are paths/globs
+# resolved against the directory; preserves layout inside the archive)
+b2c job import ./my-site-data sites/RefArch libraries/mylib
+b2c job import ./my-site-data 'libraries/**'
 ```
 
 ### Export Site Archives

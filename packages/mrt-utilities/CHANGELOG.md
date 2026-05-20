@@ -1,5 +1,20 @@
 # @salesforce/mrt-utilities
 
+## 0.2.0
+
+### Minor Changes
+
+- [#426](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/426) [`3779ebd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3779ebd8fe9e2b791dac32c238b0456888b03a46) - Update proxy to keep user agent and ACH for SCAPI proxy (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
+## 0.1.7
+
+### Patch Changes
+
+- [#407](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/407) [`f1a4ac0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f1a4ac0f9ccd8034e6e26ab1598f52516ecf471d) - - The Lambda response adapter's `pipeToDestination` now destroys the destination stream when the underlying pipeline rejects, so consumers fail fast instead of hanging. (Thanks [@clavery](https://github.com/clavery)!)
+  - `pipedDestinations` cleanup is unified between the success and error paths.
+
+- [#398](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/398) [`18471af`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/18471af19de7cf99c45227d53476e0aa73985f68) - Keep ACH header in request (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
 ## 0.1.6
 
 ### Patch Changes

@@ -313,18 +313,50 @@ describe('operations/code/watch', () => {
       await errorPromise;
     });
 
-    it('should stop watching when stop() is called', async () => {
-      // Create a cartridge directory
+    it('should stop watching when stop() is called and ignore subsequent file changes', async function () {
+      this.timeout(5000);
+
       const cartridgeDir = path.join(tempDir, 'app_test');
       fs.mkdirSync(cartridgeDir, {recursive: true});
       fs.writeFileSync(path.join(cartridgeDir, '.project'), '<projectDescription/>');
 
-      watchResult = await watchCartridges(mockInstance, tempDir);
+      // Track upload calls; if any happen after stop(), this test must fail.
+      let uploadCount = 0;
+      server.use(
+        http.all(`${WEBDAV_BASE}/*`, ({request}) => {
+          if (request.method === 'PUT') uploadCount++;
+          return new HttpResponse(null, {status: 201});
+        }),
+      );
 
-      expect(watchResult.watcher).to.exist;
+      let onUploadCount = 0;
+      const result = await watchCartridges(mockInstance, tempDir, {
+        debounceTime: 50,
+        onUpload: () => {
+          onUploadCount++;
+        },
+      });
 
-      await watchResult.stop();
-      watchResult = null; // Prevent double cleanup
+      // Allow watcher to settle
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Stop the watcher
+      await result.stop();
+
+      // Capture counts at the time of stop
+      const uploadCountBefore = uploadCount;
+      const onUploadCountBefore = onUploadCount;
+
+      // Trigger a file change AFTER stop — must not be picked up.
+      fs.writeFileSync(path.join(cartridgeDir, 'after-stop.js'), 'console.log("ignored");');
+
+      // Wait long enough that an active watcher would have fired (debounce + buffer).
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      expect(uploadCount).to.equal(uploadCountBefore, 'no PUT uploads should occur after stop()');
+      expect(onUploadCount).to.equal(onUploadCountBefore, 'onUpload callback should not fire after stop()');
+
+      watchResult = null; // already stopped
     });
   });
 });

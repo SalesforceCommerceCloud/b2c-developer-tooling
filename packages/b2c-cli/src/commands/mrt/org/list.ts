@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  MrtCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   listOrganizations,
   type ListOrganizationsResult,
@@ -33,6 +39,8 @@ const COLUMNS: Record<string, ColumnDef<MrtOrganization>> = {
 
 const DEFAULT_COLUMNS = ['name', 'slug', 'status', 'created'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 /**
  * List MRT organizations accessible to the authenticated user.
  */
@@ -58,6 +66,7 @@ export default class MrtOrgList extends MrtCommand<typeof MrtOrgList> {
     offset: Flags.integer({
       description: 'Offset for pagination',
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<ListOrganizationsResult> {
@@ -81,7 +90,10 @@ export default class MrtOrgList extends MrtCommand<typeof MrtOrgList> {
         this.log(t('commands.mrt.org.list.empty', 'No organizations found.'));
       } else {
         this.log(t('commands.mrt.org.list.count', 'Found {{count}} organization(s):', {count: result.count}));
-        createTable(COLUMNS).render(result.organizations, DEFAULT_COLUMNS);
+        tableRenderer.render(
+          result.organizations,
+          selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
+        );
       }
     }
 

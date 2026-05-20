@@ -169,27 +169,41 @@ describe('auth/oauth-jwt', () => {
       }
     });
 
-    it('should accept valid configuration', () => {
-      expect(() => {
-        new JwtOAuthStrategy({
-          clientId: 'test-client',
-          certPath: TEST_CERT_PATH,
-          keyPath: TEST_KEY_PATH,
-          accountManagerHost: AM_HOST,
-        });
-      }).to.not.throw();
+    it('should accept valid configuration and produce a Bearer Authorization header', async () => {
+      server.use(
+        http.post(AM_URL, () =>
+          HttpResponse.json({access_token: createMockAccessToken('test-client'), expires_in: 1800}),
+        ),
+      );
+
+      const strategy = new JwtOAuthStrategy({
+        clientId: 'test-client',
+        certPath: TEST_CERT_PATH,
+        keyPath: TEST_KEY_PATH,
+        accountManagerHost: AM_HOST,
+      });
+
+      const header = await strategy.getAuthorizationHeader();
+      expect(header).to.match(/^Bearer .+\..+\..+$/);
     });
 
-    it('should accept encrypted key with passphrase', () => {
-      expect(() => {
-        new JwtOAuthStrategy({
-          clientId: 'test-client',
-          certPath: ENCRYPTED_CERT_PATH,
-          keyPath: ENCRYPTED_KEY_PATH,
-          passphrase: 'testpass123',
-          accountManagerHost: AM_HOST,
-        });
-      }).to.not.throw();
+    it('should accept encrypted key with passphrase and produce a Bearer Authorization header', async () => {
+      server.use(
+        http.post(AM_URL, () =>
+          HttpResponse.json({access_token: createMockAccessToken('test-client'), expires_in: 1800}),
+        ),
+      );
+
+      const strategy = new JwtOAuthStrategy({
+        clientId: 'test-client',
+        certPath: ENCRYPTED_CERT_PATH,
+        keyPath: ENCRYPTED_KEY_PATH,
+        passphrase: 'testpass123',
+        accountManagerHost: AM_HOST,
+      });
+
+      const header = await strategy.getAuthorizationHeader();
+      expect(header).to.match(/^Bearer .+\..+\..+$/);
     });
 
     it('should throw error for encrypted key without passphrase', () => {

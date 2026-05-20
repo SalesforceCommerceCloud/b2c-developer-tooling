@@ -124,6 +124,23 @@ describe('registry', () => {
         expect(tool.toolsets).to.include('STOREFRONTNEXT');
       }
     });
+
+    it('registered tool handlers are invokable end-to-end', async () => {
+      // Smoke test that verifies tools aren't just registered by name — the
+      // handler can actually be invoked and produce a tool-call response.
+      // Uses sfnext_get_guidelines (pure, no network/services needed).
+      const loadServices = createMockLoadServicesWrapper();
+      const registry = createToolRegistry(loadServices);
+      const tool = registry.STOREFRONTNEXT.find((t) => t.name === 'sfnext_get_guidelines');
+      expect(tool, 'sfnext_get_guidelines must be registered in STOREFRONTNEXT').to.not.be.undefined;
+
+      const result = await tool!.handler({sections: ['quick-reference']});
+      expect(result).to.have.property('content');
+      expect(result.content).to.be.an('array').and.to.have.lengthOf.greaterThan(0);
+      expect(result.content[0]).to.have.property('type', 'text');
+      expect(result.content[0]).to.have.property('text').that.is.a('string').and.to.have.lengthOf.greaterThan(0);
+      expect(result.isError, 'guidelines tool should not error on a valid section').to.not.equal(true);
+    });
   });
 
   describe('registerToolsets', () => {

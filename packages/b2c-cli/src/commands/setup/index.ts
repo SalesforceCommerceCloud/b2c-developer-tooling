@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {confirm} from '@inquirer/prompts';
+import {confirm} from '@salesforce/b2c-tooling-sdk/ux';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {withDocs} from '../../i18n/index.js';
 
@@ -30,10 +30,7 @@ export default class SetupIndex extends BaseCommand<typeof SetupIndex> {
     const isTTY = Boolean(process.stdin.isTTY && process.stdout.isTTY);
 
     if (!hasInstance && isTTY) {
-      const shouldCreate = await confirm({
-        message: 'No instance configured. Would you like to set one up?',
-        default: true,
-      });
+      const shouldCreate = await confirm('No instance configured. Would you like to set one up?', {defaultYes: true});
 
       if (shouldCreate) {
         await this.config.runCommand('setup:instance:create');

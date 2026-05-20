@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-tooling-sdk",
   "description": "Core tooling library for Salesforce B2C Commerce CLI",
-  "version": "1.8.0",
+  "version": "1.11.0",
   "author": "Charles Lavery",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -26,370 +26,181 @@
     "./package.json": "./package.json",
     ".": {
       "development": "./src/index.ts",
-      "import": {
-        "types": "./dist/esm/index.d.ts",
-        "default": "./dist/esm/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/index.d.ts",
-        "default": "./dist/cjs/index.js"
-      }
+      "types": "./dist/esm/index.d.ts",
+      "default": "./dist/esm/index.js"
     },
     "./auth": {
       "development": "./src/auth/index.ts",
-      "import": {
-        "types": "./dist/esm/auth/index.d.ts",
-        "default": "./dist/esm/auth/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/auth/index.d.ts",
-        "default": "./dist/cjs/auth/index.js"
-      }
+      "types": "./dist/esm/auth/index.d.ts",
+      "default": "./dist/esm/auth/index.js"
     },
     "./instance": {
       "development": "./src/instance/index.ts",
-      "import": {
-        "types": "./dist/esm/instance/index.d.ts",
-        "default": "./dist/esm/instance/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/instance/index.d.ts",
-        "default": "./dist/cjs/instance/index.js"
-      }
+      "types": "./dist/esm/instance/index.d.ts",
+      "default": "./dist/esm/instance/index.js"
     },
     "./operations/code": {
       "development": "./src/operations/code/index.ts",
-      "import": {
-        "types": "./dist/esm/operations/code/index.d.ts",
-        "default": "./dist/esm/operations/code/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/operations/code/index.d.ts",
-        "default": "./dist/cjs/operations/code/index.js"
-      }
+      "types": "./dist/esm/operations/code/index.d.ts",
+      "default": "./dist/esm/operations/code/index.js"
     },
     "./operations/jobs": {
       "development": "./src/operations/jobs/index.ts",
-      "import": {
-        "types": "./dist/esm/operations/jobs/index.d.ts",
-        "default": "./dist/esm/operations/jobs/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/operations/jobs/index.d.ts",
-        "default": "./dist/cjs/operations/jobs/index.js"
-      }
+      "types": "./dist/esm/operations/jobs/index.d.ts",
+      "default": "./dist/esm/operations/jobs/index.js"
     },
     "./operations/cap": {
       "development": "./src/operations/cap/index.ts",
-      "import": {
-        "types": "./dist/esm/operations/cap/index.d.ts",
-        "default": "./dist/esm/operations/cap/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/operations/cap/index.d.ts",
-        "default": "./dist/cjs/operations/cap/index.js"
-      }
+      "types": "./dist/esm/operations/cap/index.d.ts",
+      "default": "./dist/esm/operations/cap/index.js"
     },
     "./operations/mrt": {
       "development": "./src/operations/mrt/index.ts",
-      "import": {
-        "types": "./dist/esm/operations/mrt/index.d.ts",
-        "default": "./dist/esm/operations/mrt/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/operations/mrt/index.d.ts",
-        "default": "./dist/cjs/operations/mrt/index.js"
-      }
+      "types": "./dist/esm/operations/mrt/index.d.ts",
+      "default": "./dist/esm/operations/mrt/index.js"
     },
     "./docs": {
       "development": "./src/docs/index.ts",
-      "import": {
-        "types": "./dist/esm/docs/index.d.ts",
-        "default": "./dist/esm/docs/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/docs/index.d.ts",
-        "default": "./dist/cjs/docs/index.js"
-      }
+      "types": "./dist/esm/docs/index.d.ts",
+      "default": "./dist/esm/docs/index.js"
     },
     "./schemas": {
       "development": "./src/schemas/index.ts",
-      "import": {
-        "types": "./dist/esm/schemas/index.d.ts",
-        "default": "./dist/esm/schemas/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/schemas/index.d.ts",
-        "default": "./dist/cjs/schemas/index.js"
-      }
+      "types": "./dist/esm/schemas/index.d.ts",
+      "default": "./dist/esm/schemas/index.js"
     },
     "./operations/logs": {
       "development": "./src/operations/logs/index.ts",
-      "import": {
-        "types": "./dist/esm/operations/logs/index.d.ts",
-        "default": "./dist/esm/operations/logs/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/operations/logs/index.d.ts",
-        "default": "./dist/cjs/operations/logs/index.js"
-      }
+      "types": "./dist/esm/operations/logs/index.d.ts",
+      "default": "./dist/esm/operations/logs/index.js"
     },
     "./operations/users": {
       "development": "./src/operations/users/index.ts",
-      "import": {
-        "types": "./dist/esm/operations/users/index.d.ts",
-        "default": "./dist/esm/operations/users/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/operations/users/index.d.ts",
-        "default": "./dist/cjs/operations/users/index.js"
-      }
+      "types": "./dist/esm/operations/users/index.d.ts",
+      "default": "./dist/esm/operations/users/index.js"
     },
     "./operations/roles": {
       "development": "./src/operations/roles/index.ts",
-      "import": {
-        "types": "./dist/esm/operations/roles/index.d.ts",
-        "default": "./dist/esm/operations/roles/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/operations/roles/index.d.ts",
-        "default": "./dist/cjs/operations/roles/index.js"
-      }
+      "types": "./dist/esm/operations/roles/index.d.ts",
+      "default": "./dist/esm/operations/roles/index.js"
     },
     "./operations/bm-roles": {
       "development": "./src/operations/bm-roles/index.ts",
-      "import": {
-        "types": "./dist/esm/operations/bm-roles/index.d.ts",
-        "default": "./dist/esm/operations/bm-roles/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/operations/bm-roles/index.d.ts",
-        "default": "./dist/cjs/operations/bm-roles/index.js"
-      }
+      "types": "./dist/esm/operations/bm-roles/index.d.ts",
+      "default": "./dist/esm/operations/bm-roles/index.js"
+    },
+    "./operations/bm-users": {
+      "development": "./src/operations/bm-users/index.ts",
+      "types": "./dist/esm/operations/bm-users/index.d.ts",
+      "default": "./dist/esm/operations/bm-users/index.js"
     },
     "./operations/sites": {
       "development": "./src/operations/sites/index.ts",
-      "import": {
-        "types": "./dist/esm/operations/sites/index.d.ts",
-        "default": "./dist/esm/operations/sites/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/operations/sites/index.d.ts",
-        "default": "./dist/cjs/operations/sites/index.js"
-      }
+      "types": "./dist/esm/operations/sites/index.d.ts",
+      "default": "./dist/esm/operations/sites/index.js"
     },
     "./operations/orgs": {
       "development": "./src/operations/orgs/index.ts",
-      "import": {
-        "types": "./dist/esm/operations/orgs/index.d.ts",
-        "default": "./dist/esm/operations/orgs/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/operations/orgs/index.d.ts",
-        "default": "./dist/cjs/operations/orgs/index.js"
-      }
+      "types": "./dist/esm/operations/orgs/index.d.ts",
+      "default": "./dist/esm/operations/orgs/index.js"
     },
     "./operations/content": {
       "development": "./src/operations/content/index.ts",
-      "import": {
-        "types": "./dist/esm/operations/content/index.d.ts",
-        "default": "./dist/esm/operations/content/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/operations/content/index.d.ts",
-        "default": "./dist/cjs/operations/content/index.js"
-      }
+      "types": "./dist/esm/operations/content/index.d.ts",
+      "default": "./dist/esm/operations/content/index.js"
     },
     "./operations/cip": {
       "development": "./src/operations/cip/index.ts",
-      "import": {
-        "types": "./dist/esm/operations/cip/index.d.ts",
-        "default": "./dist/esm/operations/cip/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/operations/cip/index.d.ts",
-        "default": "./dist/cjs/operations/cip/index.js"
-      }
+      "types": "./dist/esm/operations/cip/index.d.ts",
+      "default": "./dist/esm/operations/cip/index.js"
     },
     "./slas": {
       "development": "./src/slas/index.ts",
-      "import": {
-        "types": "./dist/esm/slas/index.d.ts",
-        "default": "./dist/esm/slas/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/slas/index.d.ts",
-        "default": "./dist/cjs/slas/index.js"
-      }
+      "types": "./dist/esm/slas/index.d.ts",
+      "default": "./dist/esm/slas/index.js"
     },
     "./cli": {
       "development": "./src/cli/index.ts",
-      "import": {
-        "types": "./dist/esm/cli/index.d.ts",
-        "default": "./dist/esm/cli/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/cli/index.d.ts",
-        "default": "./dist/cjs/cli/index.js"
-      }
+      "types": "./dist/esm/cli/index.d.ts",
+      "default": "./dist/esm/cli/index.js"
     },
     "./clients": {
       "development": "./src/clients/index.ts",
-      "import": {
-        "types": "./dist/esm/clients/index.d.ts",
-        "default": "./dist/esm/clients/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/clients/index.d.ts",
-        "default": "./dist/cjs/clients/index.js"
-      }
+      "types": "./dist/esm/clients/index.d.ts",
+      "default": "./dist/esm/clients/index.js"
     },
     "./logging": {
       "development": "./src/logging/index.ts",
-      "import": {
-        "types": "./dist/esm/logging/index.d.ts",
-        "default": "./dist/esm/logging/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/logging/index.d.ts",
-        "default": "./dist/cjs/logging/index.js"
-      }
+      "types": "./dist/esm/logging/index.d.ts",
+      "default": "./dist/esm/logging/index.js"
     },
     "./errors": {
       "development": "./src/errors/index.ts",
-      "import": {
-        "types": "./dist/esm/errors/index.d.ts",
-        "default": "./dist/esm/errors/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/errors/index.d.ts",
-        "default": "./dist/cjs/errors/index.js"
-      }
+      "types": "./dist/esm/errors/index.d.ts",
+      "default": "./dist/esm/errors/index.js"
     },
     "./config": {
       "development": "./src/config/index.ts",
-      "import": {
-        "types": "./dist/esm/config/index.d.ts",
-        "default": "./dist/esm/config/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/config/index.d.ts",
-        "default": "./dist/cjs/config/index.js"
-      }
+      "types": "./dist/esm/config/index.d.ts",
+      "default": "./dist/esm/config/index.js"
     },
     "./discovery": {
       "development": "./src/discovery/index.ts",
-      "import": {
-        "types": "./dist/esm/discovery/index.d.ts",
-        "default": "./dist/esm/discovery/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/discovery/index.d.ts",
-        "default": "./dist/cjs/discovery/index.js"
-      }
+      "types": "./dist/esm/discovery/index.d.ts",
+      "default": "./dist/esm/discovery/index.js"
     },
     "./skills": {
       "development": "./src/skills/index.ts",
-      "import": {
-        "types": "./dist/esm/skills/index.d.ts",
-        "default": "./dist/esm/skills/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/skills/index.d.ts",
-        "default": "./dist/cjs/skills/index.js"
-      }
+      "types": "./dist/esm/skills/index.d.ts",
+      "default": "./dist/esm/skills/index.js"
     },
     "./scaffold": {
       "development": "./src/scaffold/index.ts",
-      "import": {
-        "types": "./dist/esm/scaffold/index.d.ts",
-        "default": "./dist/esm/scaffold/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/scaffold/index.d.ts",
-        "default": "./dist/cjs/scaffold/index.js"
-      }
+      "types": "./dist/esm/scaffold/index.d.ts",
+      "default": "./dist/esm/scaffold/index.js"
     },
     "./plugins": {
       "development": "./src/plugins/index.ts",
-      "import": {
-        "types": "./dist/esm/plugins/index.d.ts",
-        "default": "./dist/esm/plugins/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/plugins/index.d.ts",
-        "default": "./dist/cjs/plugins/index.js"
-      }
+      "types": "./dist/esm/plugins/index.d.ts",
+      "default": "./dist/esm/plugins/index.js"
     },
     "./test-utils": {
       "development": "./src/test-utils/index.ts",
-      "import": {
-        "types": "./dist/esm/test-utils/index.d.ts",
-        "default": "./dist/esm/test-utils/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/test-utils/index.d.ts",
-        "default": "./dist/cjs/test-utils/index.js"
-      }
+      "types": "./dist/esm/test-utils/index.d.ts",
+      "default": "./dist/esm/test-utils/index.js"
     },
     "./telemetry": {
       "development": "./src/telemetry/index.ts",
-      "import": {
-        "types": "./dist/esm/telemetry/index.d.ts",
-        "default": "./dist/esm/telemetry/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/telemetry/index.d.ts",
-        "default": "./dist/cjs/telemetry/index.js"
-      }
+      "types": "./dist/esm/telemetry/index.d.ts",
+      "default": "./dist/esm/telemetry/index.js"
     },
     "./operations/ods": {
       "development": "./src/operations/ods/index.ts",
-      "import": {
-        "types": "./dist/esm/operations/ods/index.d.ts",
-        "default": "./dist/esm/operations/ods/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/operations/ods/index.d.ts",
-        "default": "./dist/cjs/operations/ods/index.js"
-      }
+      "types": "./dist/esm/operations/ods/index.d.ts",
+      "default": "./dist/esm/operations/ods/index.js"
     },
     "./safety": {
       "development": "./src/safety/index.ts",
-      "import": {
-        "types": "./dist/esm/safety/index.d.ts",
-        "default": "./dist/esm/safety/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/safety/index.d.ts",
-        "default": "./dist/cjs/safety/index.js"
-      }
+      "types": "./dist/esm/safety/index.d.ts",
+      "default": "./dist/esm/safety/index.js"
     },
     "./i18n": {
       "development": "./src/i18n/index.ts",
-      "import": {
-        "types": "./dist/esm/i18n/index.d.ts",
-        "default": "./dist/esm/i18n/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/i18n/index.d.ts",
-        "default": "./dist/cjs/i18n/index.js"
-      }
+      "types": "./dist/esm/i18n/index.d.ts",
+      "default": "./dist/esm/i18n/index.js"
     },
     "./operations/debug": {
       "development": "./src/operations/debug/index.ts",
-      "import": {
-        "types": "./dist/esm/operations/debug/index.d.ts",
-        "default": "./dist/esm/operations/debug/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/operations/debug/index.d.ts",
-        "default": "./dist/cjs/operations/debug/index.js"
-      }
+      "types": "./dist/esm/operations/debug/index.d.ts",
+      "default": "./dist/esm/operations/debug/index.js"
+    },
+    "./ux": {
+      "development": "./src/ux/index.ts",
+      "types": "./dist/esm/ux/index.d.ts",
+      "default": "./dist/esm/ux/index.js"
     }
   },
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
+  "main": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
   "files": [
     "dist",
@@ -398,9 +209,8 @@
   ],
   "scripts": {
     "generate:types": "openapi-typescript specs/data-api.json -o src/clients/ocapi.generated.ts && openapi-typescript specs/slas-admin-v1.yaml -o src/clients/slas-admin.generated.ts && openapi-typescript specs/ods-api-v1.json -o src/clients/ods.generated.ts && openapi-typescript specs/mrt-api-v1.json -o src/clients/mrt.generated.ts && openapi-typescript specs/mrt-b2c.json -o src/clients/mrt-b2c.generated.ts && openapi-typescript specs/custom-apis-v1.yaml -o src/clients/custom-apis.generated.ts && openapi-typescript specs/scapi-schemas-v1.yaml -o src/clients/scapi-schemas.generated.ts && openapi-typescript specs/cdn-zones-v1.yaml -o src/clients/cdn-zones.generated.ts && openapi-typescript specs/am-users-api-v1.yaml -o src/clients/am-users-api.generated.ts && openapi-typescript specs/am-roles-api-v1.yaml -o src/clients/am-roles-api.generated.ts && openapi-typescript specs/am-apiclients-api-v1.yaml -o src/clients/am-apiclients-api.generated.ts && openapi-typescript specs/granular-replications-v1.yaml -o src/clients/granular-replications.generated.ts && openapi-typescript specs/scapi-cors-v1.yaml -o src/clients/scapi-cors.generated.ts",
-    "build": "pnpm run generate:types && pnpm run build:esm && pnpm run build:cjs",
+    "build": "pnpm run generate:types && pnpm run build:esm",
     "build:esm": "tsc -p tsconfig.esm.json",
-    "build:cjs": "tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
     "clean": "shx rm -rf dist",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",

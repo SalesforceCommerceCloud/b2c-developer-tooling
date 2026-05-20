@@ -1,22 +1,24 @@
 # B2C DX - VS Code Extension
 
-VS Code extension for B2C Commerce developer experience: Page Designer assistant, B2C CLI integration, and Cursor agent prompts.
+VS Code extension for B2C Commerce developer experience: sandbox realm explorer, cartridge code sync, WebDAV browser, content libraries, SCAPI API browser, B2C script debugger, scaffold/CAP install, log tailing, and a Page Designer Assistant.
 
-**Full documentation:** [IDE Support](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ide-support.html) in the B2C Developer Tooling docs (VitePress).
+**User-facing documentation:** [B2C DX VS Code Extension](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/) — overview, installation, configuration, and feature tour.
 
-## Features
+This README is the source of truth for repo-level developer info (build/watch, launch configs, packaging, tests). End-user documentation lives in the docs site above.
 
-- **Page Designer Assistant** — Create Storefront Next page files with PageType and Region definitions via a guided webview UI.
-- **Prompt Agent** — Send a prompt to the Cursor agent from the command palette (Cursor only).
-- **List WebDAV** — List WebDAV (Impex) via the B2C SDK; output in the B2C DX output channel.
+## Features (overview)
 
-## Commands
+- Sandbox Realm Explorer — create / start / stop / restart / clone / extend / view / open BM / delete.
+- Cartridge Code Sync — watch, deploy, upload/download, diff, code-version management.
+- WebDAV Browser + `b2c-webdav://` filesystem provider.
+- Content Libraries — browse, export (with/without assets), filter, import site archive.
+- SCAPI API Browser — Swagger UI panel.
+- B2C Script Debugger (debug type `b2c-script`).
+- Scaffold (`New from Scaffold...`) and CAP install.
+- Log tailing into a dedicated output channel.
+- Page Designer Assistant webview (Storefront Next page generation).
 
-| Command | Description |
-|--------|-------------|
-| **B2C DX: Open Page Designer Assistant UI** | Opens the Page Designer Assistant webview. |
-| **B2C DX: Prompt Agent** | Prompts for text and opens Cursor chat with that prompt. |
-| **B2C DX: List WebDAV** | Lists WebDAV contents (default: Impex) in the B2C DX output channel. |
+See the [docs site](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/features) for the full tour.
 
 ## Development
 
@@ -24,11 +26,30 @@ From the monorepo root:
 
 ```bash
 pnpm install
-pnpm --filter @salesforce/b2c-vs-extension run build
-pnpm --filter @salesforce/b2c-vs-extension run lint
-pnpm --filter @salesforce/b2c-vs-extension run format
-pnpm --filter @salesforce/b2c-vs-extension run test
+pnpm --filter b2c-vs-extension run build
+pnpm --filter b2c-vs-extension run lint
+pnpm --filter b2c-vs-extension run format
+pnpm --filter b2c-vs-extension run test
 ```
+
+### Tests
+
+The test suite uses **Mocha** + **`@vscode/test-cli`** (which wraps `@vscode/test-electron`). Two layers:
+
+- **Unit tests** (`src/test/*.test.ts`) — pure helpers, no `vscode` import where avoidable. Run inside the Extension Host but don't need a workspace.
+- **Integration tests** (`src/test/integration/*.test.ts`) — launch a real Extension Development Host with a fixture workspace and exercise activation, command registration, and tree providers.
+
+```bash
+# Run all tests (downloads VS Code on first run)
+pnpm --filter b2c-vs-extension run test
+
+# Coverage (text + lcov, no thresholds yet)
+pnpm --filter b2c-vs-extension exec c8 vscode-test
+```
+
+`.vscode-test.mjs` configures the Mocha runner; `tsconfig.test.json` compiles `src/**/*` to `out/`. The test glob (`out/test/**/*.test.js`) keeps the runner scoped to test files only.
+
+> **Note on coverage:** `c8` instruments the parent Node process, but the actual VS Code Extension Host runs in a child Electron process that is not instrumented out-of-the-box. The reported numbers are therefore a low-bound. For now we use coverage as a smoke check; richer instrumentation (e.g. via `nyc` injected through `extensionTestsEnv`) is a follow-up.
 
 The build bundles `@salesforce/b2c-tooling-sdk` into `dist/extension.js` with esbuild, so the extension works when installed from a `.vsix` without requiring a separate `node_modules` install (unlike the CLI, which declares the SDK as an npm dependency).
 

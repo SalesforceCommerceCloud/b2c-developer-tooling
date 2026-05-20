@@ -35,6 +35,8 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     '<%= config.bin %> <%= command.id %> ./export.zip',
     '<%= config.bin %> <%= command.id %> ./my-site-data --keep-archive',
     '<%= config.bin %> <%= command.id %> existing-archive.zip --remote',
+    '<%= config.bin %> <%= command.id %> ./my-site-data sites/RefArch libraries/mylib',
+    "<%= config.bin %> <%= command.id %> ./my-site-data 'libraries/**'",
   ];
 
   static flags = {
@@ -70,6 +72,10 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     }),
   };
 
+  // Allow additional positionals after `target` to specify a subset of
+  // paths/globs to include from a directory import.
+  static strict = false;
+
   protected operations = {
     siteArchiveImport,
   };
@@ -78,7 +84,12 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     this.requireOAuthCredentials();
     this.requireWebDavCredentials();
 
+    const {argv} = await this.parse(JobImport);
     const {target} = this.args;
+    // Additional positionals after `target` are paths/globs to include from
+    // a directory import. Variadic args from oclif arrive in `argv` after the
+    // declared positionals, so drop the first element (which is `target`).
+    const extraPaths = (argv as string[]).slice(1);
     const {
       wait,
       'keep-archive': keepArchive,
@@ -87,6 +98,10 @@ export default class JobImport extends JobCommand<typeof JobImport> {
       'poll-interval': pollInterval,
       'show-log': showLog = true,
     } = this.flags;
+
+    if (extraPaths.length > 0 && remote) {
+      this.error('Path arguments are not supported with --remote.');
+    }
 
     const hostname = this.resolvedConfig.values.hostname!;
 
@@ -106,6 +121,7 @@ export default class JobImport extends JobCommand<typeof JobImport> {
       remote,
       keepArchive,
       hostname,
+      paths: extraPaths.length > 0 ? extraPaths : undefined,
     });
 
     // Run beforeOperation hooks - check for skip
@@ -153,6 +169,7 @@ export default class JobImport extends JobCommand<typeof JobImport> {
       const result = await this.operations.siteArchiveImport(this.instance, importTarget, {
         keepArchive,
         wait,
+        paths: extraPaths.length > 0 ? extraPaths : undefined,
         waitOptions: {
           timeoutSeconds: timeout,
           pollIntervalSeconds: pollInterval,

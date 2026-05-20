@@ -102,6 +102,7 @@ export {resolveConfig, ConfigResolver, createConfigResolver} from './resolver.js
 export type {
   MaybePromise,
   NormalizedConfig,
+  LibraryEntry,
   ConfigSource,
   ConfigLoadResult,
   ConfigSourceInfo,
@@ -116,7 +117,7 @@ export type {
 } from './types.js';
 
 // Instance creation utility (public API for CLI commands)
-export {createInstanceFromConfig, normalizeConfigKeys} from './mapping.js';
+export {createInstanceFromConfig, normalizeConfigKeys, resolveLibraryEntries} from './mapping.js';
 
 // Low-level dw.json API (still available for advanced use)
 export {

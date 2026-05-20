@@ -44,20 +44,6 @@ describe('Account Manager API Clients API', () => {
     client = createAccountManagerApiClientsClient({hostname: TEST_HOST}, mockAuth);
   });
 
-  describe('client creation', () => {
-    it('should create client with default host', () => {
-      const auth = new MockAuthStrategy();
-      const c = createAccountManagerApiClientsClient({}, auth);
-      expect(c).to.exist;
-    });
-
-    it('should create client with custom host', () => {
-      const auth = new MockAuthStrategy();
-      const c = createAccountManagerApiClientsClient({hostname: 'custom.host.com'}, auth);
-      expect(c).to.exist;
-    });
-  });
-
   describe('listApiClients', () => {
     it('should list API clients with default pagination', async () => {
       const mockContent = [

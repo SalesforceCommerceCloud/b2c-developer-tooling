@@ -14,6 +14,7 @@ import {
   rfc1123,
   MAX_URL_LENGTH_BYTES,
   ALLOWED_CACHING_PROXY_REQUEST_HEADERS,
+  hostnameMatchesTransformationList,
   type HTTPHeaders,
   type AWSHeaders,
   type ParsedHost,
@@ -82,6 +83,8 @@ interface RewriteProxyRequestHeadersTestCase {
   targetProtocol?: string;
   testAllowlist?: boolean;
   method?: string;
+  accessControlHeaderForwardingHostnames?: string[];
+  preserveUserAgent?: boolean;
 }
 
 describe('rfc1123 tests', () => {
@@ -714,6 +717,115 @@ describe('rewriteProxyRequestHeaders tests', () => {
         'x-mobify': 'true',
       },
     },
+    {
+      name: 'forward x-sfdc-access-control when hostname matches forwarding list',
+      targetHost: 'api.commercecloud.salesforce.com',
+      accessControlHeaderForwardingHostnames: ['.commercecloud.salesforce.com'],
+      input: {
+        'accept-encoding': 'deflate, gzip',
+        'x-sfdc-access-control': 'abc123',
+      },
+      expected: {
+        'accept-encoding': 'deflate, gzip',
+        'x-sfdc-access-control': 'abc123',
+      },
+    },
+    {
+      name: 'strip x-sfdc-access-control when hostname does not match forwarding list',
+      targetHost: 'other.example.com',
+      accessControlHeaderForwardingHostnames: ['.commercecloud.salesforce.com'],
+      input: {
+        'accept-encoding': 'deflate, gzip',
+        'x-sfdc-access-control': 'abc123',
+      },
+      expected: {
+        'accept-encoding': 'deflate, gzip',
+        // @ts-expect-error: Testing undefined value
+        'x-sfdc-access-control': undefined,
+      },
+    },
+    {
+      name: 'strip x-sfdc-access-control when forwarding list is empty',
+      targetHost: 'api.commercecloud.salesforce.com',
+      accessControlHeaderForwardingHostnames: [],
+      input: {
+        'accept-encoding': 'deflate, gzip',
+        'x-sfdc-access-control': 'abc123',
+      },
+      expected: {
+        'accept-encoding': 'deflate, gzip',
+        // @ts-expect-error: Testing undefined value
+        'x-sfdc-access-control': undefined,
+      },
+    },
+    {
+      name: 'no-op when x-sfdc-access-control not present and hostname matches',
+      targetHost: 'api.commercecloud.salesforce.com',
+      accessControlHeaderForwardingHostnames: ['.commercecloud.salesforce.com'],
+      input: {
+        'accept-encoding': 'deflate, gzip',
+      },
+      expected: {
+        'accept-encoding': 'deflate, gzip',
+      },
+    },
+    {
+      name: 'strip x-sfdc-access-control for caching proxy even when hostname matches',
+      targetHost: 'api.commercecloud.salesforce.com',
+      accessControlHeaderForwardingHostnames: ['.commercecloud.salesforce.com'],
+      caching: true,
+      input: {
+        'x-sfdc-access-control': 'abc123',
+      },
+      expected: {
+        // @ts-expect-error: Testing undefined value
+        'x-sfdc-access-control': undefined,
+      },
+    },
+    {
+      name: 'preserves original User-Agent when preserveUserAgent is true',
+      targetHost: 'www.customer.com',
+      preserveUserAgent: true,
+      input: {
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+      },
+      expected: {
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+      },
+    },
+    {
+      name: 'overwrites User-Agent when preserveUserAgent is false',
+      targetHost: 'www.customer.com',
+      preserveUserAgent: false,
+      input: {
+        'user-agent': 'Mozilla/5.0 (Linux; Android 10)',
+      },
+      expected: {
+        'user-agent': 'Amazon CloudFront',
+      },
+    },
+    {
+      name: 'preserves User-Agent when preserveUserAgent is undefined (default is true)',
+      targetHost: 'www.customer.com',
+      input: {
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X)',
+      },
+      expected: {
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X)',
+      },
+    },
+    {
+      name: 'caching proxy always overwrites User-Agent even when preserveUserAgent is true',
+      targetHost: 'www.customer.com',
+      caching: true,
+      preserveUserAgent: true,
+      input: {
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0)',
+      },
+      expected: {
+        'user-agent': 'Amazon CloudFront',
+      },
+    },
   ];
 
   testCases.forEach((testCase, testCaseIndex) =>
@@ -735,6 +847,8 @@ describe('rewriteProxyRequestHeaders tests', () => {
         targetProtocol: testCase.targetProtocol || 'https',
         targetHost: testCase.targetHost || '',
         logging: true,
+        accessControlHeaderForwardingHostnames: testCase.accessControlHeaderForwardingHostnames,
+        preserveUserAgent: testCase.preserveUserAgent,
       });
 
       const expectedKeys = Object.keys(testCase.expected);
@@ -766,5 +880,42 @@ describe('rewriteProxyRequestHeaders tests', () => {
 
   it('bad Headers format', () => {
     expect(() => new Headers({}, 'unknown' as 'http')).to.throw();
+  });
+});
+
+describe('hostnameMatchesTransformationList', () => {
+  it('returns false for empty array', () => {
+    expect(hostnameMatchesTransformationList('api.example.com', [])).to.be.false;
+  });
+
+  it('returns false for null', () => {
+    expect(hostnameMatchesTransformationList('api.example.com', null)).to.be.false;
+  });
+
+  it('returns false for undefined', () => {
+    expect(hostnameMatchesTransformationList('api.example.com', undefined)).to.be.false;
+  });
+
+  it('returns false when hostname does not match any suffix', () => {
+    expect(hostnameMatchesTransformationList('other.example.com', ['.commercecloud.salesforce.com'])).to.be.false;
+  });
+
+  it('returns true when hostname ends with a suffix', () => {
+    expect(hostnameMatchesTransformationList('api.commercecloud.salesforce.com', ['.commercecloud.salesforce.com'])).to
+      .be.true;
+  });
+
+  it('returns true with multiple suffixes', () => {
+    expect(
+      hostnameMatchesTransformationList('test.exp-delivery-staging.com', [
+        '.commercecloud.salesforce.com',
+        '.exp-delivery-staging.com',
+      ]),
+    ).to.be.true;
+  });
+
+  it('strips port before matching', () => {
+    expect(hostnameMatchesTransformationList('api.commercecloud.salesforce.com:443', ['.commercecloud.salesforce.com']))
+      .to.be.true;
   });
 });

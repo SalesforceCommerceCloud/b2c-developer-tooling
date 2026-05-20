@@ -6,7 +6,7 @@
 
 import {expect} from 'chai';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
+import {Config, ux} from '@oclif/core';
 import ScapiCustomStatus from '../../../../src/commands/scapi/custom/status.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../../../helpers/stub-parse.js';
@@ -114,7 +114,7 @@ describe('scapi custom status', () => {
     expect(fetchStub.called).to.equal(true);
   });
 
-  it('does not block in non-JSON mode (renderEndpoints is stubbed)', async () => {
+  it('renders endpoints to stdout in non-JSON mode', async () => {
     const command: any = new ScapiCustomStatus([], config);
 
     stubParse(command, {'tenant-id': 'zzxy_prd'}, {});
@@ -122,24 +122,69 @@ describe('scapi custom status', () => {
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(false);
-    sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
 
-    sinon.stub(command, 'renderEndpoints').returns(void 0);
+    const logStub = sinon.stub(command, 'log');
+    const stdoutStub = sinon.stub(ux, 'stdout');
 
     sinon.stub(command, 'getOAuthStrategy').returns({
       getAuthorizationHeader: async () => 'Bearer test',
     });
 
     const fetchStub = sinon.stub(globalThis, 'fetch').resolves(
-      new Response(JSON.stringify({total: 1, data: []}), {
-        status: 200,
-        headers: {'content-type': 'application/json'},
-      }),
+      new Response(
+        JSON.stringify({
+          total: 2,
+          activeCodeVersion: 'version1',
+          data: [
+            {
+              apiName: 'OrdersApi',
+              apiVersion: 'v1',
+              cartridgeName: 'app_custom',
+              endpointPath: '/orders',
+              httpMethod: 'get',
+              status: 'active',
+              securityScheme: 'AmOAuth2',
+              siteId: 'RefArch',
+            },
+            {
+              apiName: 'ProductsApi',
+              apiVersion: 'v2',
+              cartridgeName: 'app_custom',
+              endpointPath: '/products',
+              httpMethod: 'post',
+              status: 'not_registered',
+              securityScheme: 'ShopperToken',
+              siteId: 'RefArchGlobal',
+            },
+          ],
+        }),
+        {status: 200, headers: {'content-type': 'application/json'}},
+      ),
     );
 
     const result = await command.run();
     expect(fetchStub.called).to.equal(true);
-    expect(result.total).to.equal(1);
+    expect(result.total).to.equal(2);
+
+    const logOutput = logStub
+      .getCalls()
+      .map((c) => String(c.args[0] ?? ''))
+      .join('\n');
+    const stdoutOutput = stdoutStub
+      .getCalls()
+      .map((c) => String(c.args[0] ?? ''))
+      .join('\n');
+    const allOutput = `${logOutput}\n${stdoutOutput}`;
+
+    // Header info logged via command.log
+    expect(logOutput).to.include('version1');
+    expect(logOutput).to.match(/Found\s+2/);
+
+    // Table content rendered via ux.stdout (TableRenderer)
+    expect(allOutput).to.include('/orders');
+    expect(allOutput).to.include('/products');
+    expect(allOutput).to.include('active');
+    expect(allOutput).to.include('not_registered');
   });
 });

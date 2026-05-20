@@ -5,7 +5,14 @@
  */
 import {Flags} from '@oclif/core';
 import {ux} from '@oclif/core';
-import {JobCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  JobCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
+import {resolveLibraryEntries} from '@salesforce/b2c-tooling-sdk/config';
 import {fetchContentLibrary} from '@salesforce/b2c-tooling-sdk/operations/content';
 
 interface ContentListItem {
@@ -36,6 +43,8 @@ const COLUMNS: Record<string, ColumnDef<ContentListItem>> = {
 
 const DEFAULT_COLUMNS = ['id', 'type', 'typeId', 'children'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 const TYPE_MAP: Record<string, string> = {
   page: 'PAGE',
   content: 'CONTENT',
@@ -56,11 +65,11 @@ export default class ContentList extends JobCommand<typeof ContentList> {
   static flags = {
     ...JobCommand.baseFlags,
     library: Flags.string({
-      description: 'Library ID or site ID (also configurable via dw.json "content-library")',
+      description: 'Library ID or site ID (also configurable via dw.json "content-library" or "libraries")',
     }),
     'site-library': Flags.boolean({
-      description: 'Site-private library',
-      default: false,
+      description: 'Site-private library (defaults from a matching "libraries" config entry)',
+      allowNo: true,
     }),
     'library-file': Flags.string({
       description: 'Local XML file',
@@ -80,6 +89,7 @@ export default class ContentList extends JobCommand<typeof ContentList> {
     timeout: Flags.integer({
       description: 'Job timeout in seconds',
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   protected operations = {
@@ -89,10 +99,16 @@ export default class ContentList extends JobCommand<typeof ContentList> {
   async run(): Promise<{data: ContentListItem[]}> {
     const {flags} = await this.parse(ContentList);
 
-    const libraryId = flags.library ?? this.resolvedConfig.values.contentLibrary;
+    const libraryEntries = resolveLibraryEntries(this.resolvedConfig.values.libraries);
+    const libraryId = flags.library ?? this.resolvedConfig.values.contentLibrary ?? libraryEntries[0]?.id;
     if (!libraryId) {
       this.error('Library is required. Set via --library flag or "content-library" in dw.json.');
     }
+
+    const isSiteLibrary =
+      flags['site-library'] === undefined
+        ? (libraryEntries.find((e) => e.id === libraryId)?.siteLibrary ?? false)
+        : flags['site-library'];
 
     if (!flags['library-file']) {
       this.requireOAuthCredentials();
@@ -104,7 +120,7 @@ export default class ContentList extends JobCommand<typeof ContentList> {
 
     const {library} = await this.operations.fetchContentLibrary(instance, libraryId, {
       libraryFile: flags['library-file'],
-      isSiteLibrary: flags['site-library'],
+      isSiteLibrary,
       waitOptions,
     });
 
@@ -158,7 +174,7 @@ export default class ContentList extends JobCommand<typeof ContentList> {
       return {data: items};
     }
 
-    createTable(COLUMNS).render(items, DEFAULT_COLUMNS);
+    tableRenderer.render(items, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     return {data: items};
   }

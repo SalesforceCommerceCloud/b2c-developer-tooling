@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  MrtCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {listRedirects, type ListRedirectsResult, type MrtRedirect} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
 
@@ -32,6 +38,8 @@ const COLUMNS: Record<string, ColumnDef<MrtRedirect>> = {
 };
 
 const DEFAULT_COLUMNS = ['fromPath', 'toUrl', 'status', 'publishingStatus'];
+
+const tableRenderer = new TableRenderer(COLUMNS);
 
 /**
  * List redirects for an MRT environment.
@@ -61,6 +69,7 @@ export default class MrtRedirectList extends MrtCommand<typeof MrtRedirectList> 
     search: Flags.string({
       description: 'Search term for filtering',
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<ListRedirectsResult> {
@@ -103,7 +112,10 @@ export default class MrtRedirectList extends MrtCommand<typeof MrtRedirectList> 
         this.log(t('commands.mrt.redirect.list.empty', 'No redirects found.'));
       } else {
         this.log(t('commands.mrt.redirect.list.count', 'Found {{count}} redirect(s):', {count: result.count}));
-        createTable(COLUMNS).render(result.redirects, DEFAULT_COLUMNS);
+        tableRenderer.render(
+          result.redirects,
+          selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
+        );
       }
     }
 

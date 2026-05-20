@@ -309,8 +309,12 @@ describe('Account Manager Operations E2E Tests', function () {
 
       expect(result.exitCode, 'Command should fail for invalid org').to.not.equal(0);
 
-      const errorText = result.stderr || result.stdout;
-      expect(errorText).to.include('error');
+      // The SDK throws `Organization <id> not found` for a 404 lookup. Assert on
+      // user-visible message text rather than the loose word "error".
+      const errorText = String(result.stderr || result.stdout || '');
+      expect(errorText, `Unexpected error output: ${errorText.slice(0, 300)}`).to.match(
+        /Organization .*invalid-org-id-12345.*not found/i,
+      );
     });
 
     it('should fail gracefully with invalid user ID', async function () {
@@ -324,8 +328,12 @@ describe('Account Manager Operations E2E Tests', function () {
 
       expect(result.exitCode, 'Command should fail for invalid user').to.not.equal(0);
 
-      const errorText = result.stderr || result.stdout;
-      expect(errorText).to.include('error');
+      // The SDK throws `User <id> not found` for a 404 lookup. Assert on
+      // user-visible message text rather than the loose word "error".
+      const errorText = String(result.stderr || result.stdout || '');
+      expect(errorText, `Unexpected error output: ${errorText.slice(0, 300)}`).to.match(
+        /User .*nonexistent-user-12345.*not found/i,
+      );
     });
 
     it('should require authentication', async function () {

@@ -66,7 +66,7 @@ export function normalizeClientResponse(client: Client): ClientOutput {
  */
 export function printClientDetails(output: ClientOutput, showSecret = true): void {
   const ui = cliui({width: process.stdout.columns || 80});
-  const labelWidth = 14;
+  const labelWidth = 16;
 
   ui.div('');
   ui.div({text: 'Client ID:', width: labelWidth}, {text: output.clientId});
@@ -74,10 +74,19 @@ export function printClientDetails(output: ClientOutput, showSecret = true): voi
   ui.div({text: 'Private:', width: labelWidth}, {text: String(output.isPrivateClient)});
   ui.div({text: 'Channels:', width: labelWidth}, {text: output.channels.join(', ')});
   ui.div({text: 'Scopes:', width: labelWidth}, {text: output.scopes.join('\n' + ' '.repeat(labelWidth))});
-  ui.div({text: 'Redirect URI:', width: labelWidth}, {text: output.redirectUri});
+
+  const redirectUris = parseRedirectUris(output.redirectUri);
+  ui.div(
+    {text: 'Redirect URIs:', width: labelWidth},
+    {text: redirectUris.length > 0 ? redirectUris.join('\n' + ' '.repeat(labelWidth)) : ''},
+  );
 
   if (output.callbackUri) {
-    ui.div({text: 'Callback URI:', width: labelWidth}, {text: output.callbackUri});
+    const callbackUris = parseRedirectUris(output.callbackUri);
+    ui.div(
+      {text: 'Callback URIs:', width: labelWidth},
+      {text: callbackUris.length > 0 ? callbackUris.join('\n' + ' '.repeat(labelWidth)) : output.callbackUri},
+    );
   }
 
   if (showSecret && output.secret) {
@@ -113,12 +122,9 @@ export function parseRedirectUris(redirectUri: string): string[] {
     .filter(Boolean);
 }
 
-/**
- * Format API error for display.
- */
-export function formatApiError(error: unknown, response: Response): string {
-  return getApiErrorMessage(error, response);
-}
+// Backwards-compatible alias for SDK's getApiErrorMessage; existing call sites
+// use this name. New code should import getApiErrorMessage from the SDK directly.
+export {getApiErrorMessage as formatApiError} from '@salesforce/b2c-tooling-sdk/clients';
 
 /**
  * Base command for SLAS client operations.
@@ -157,7 +163,7 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
 
     this.error(
       t('commands.slas.client.create.tenantError', 'Failed to check tenant: {{message}}', {
-        message: formatApiError(error, response),
+        message: getApiErrorMessage(error, response),
       }),
     );
   }
@@ -195,7 +201,7 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
     if (createError) {
       this.error(
         t('commands.slas.client.create.tenantCreateError', 'Failed to create tenant: {{message}}', {
-          message: formatApiError(createError, createResponse),
+          message: getApiErrorMessage(createError, createResponse),
         }),
       );
     }

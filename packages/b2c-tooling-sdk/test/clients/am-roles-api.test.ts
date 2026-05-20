@@ -36,20 +36,6 @@ describe('Account Manager Roles API Client', () => {
     client = createAccountManagerRolesClient({hostname: TEST_HOST}, mockAuth);
   });
 
-  describe('client creation', () => {
-    it('should create client with default host', () => {
-      const auth = new MockAuthStrategy();
-      const client = createAccountManagerRolesClient({}, auth);
-      expect(client).to.exist;
-    });
-
-    it('should create client with custom host', () => {
-      const auth = new MockAuthStrategy();
-      const client = createAccountManagerRolesClient({hostname: 'custom.host.com'}, auth);
-      expect(client).to.exist;
-    });
-  });
-
   describe('getRole', () => {
     it('should get role by ID', async () => {
       const mockRole = {
@@ -63,15 +49,17 @@ describe('Account Manager Roles API Client', () => {
       };
 
       server.use(
-        http.get(`${BASE_URL}/roles/bm-admin`, () => {
+        http.get(`${BASE_URL}/roles/bm-admin`, ({request}) => {
+          expect(request.headers.get('Authorization')).to.equal('Bearer test-token');
           return HttpResponse.json(mockRole);
         }),
       );
 
       const role = await getRole(client, 'bm-admin');
 
-      expect(role).to.deep.equal(mockRole);
       expect(role.id).to.equal('bm-admin');
+      expect(role.roleEnumName).to.equal('ECOM_ADMIN');
+      expect(role.permissions).to.deep.equal(['permission1', 'permission2']);
     });
 
     it('should throw error when role not found', async () => {

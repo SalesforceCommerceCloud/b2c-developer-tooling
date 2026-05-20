@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  MrtCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   listNotifications,
   type ListNotificationsResult,
@@ -39,6 +45,8 @@ const COLUMNS: Record<string, ColumnDef<MrtNotification>> = {
 
 const DEFAULT_COLUMNS = ['id', 'targets', 'recipients', 'events'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 /**
  * List notifications for an MRT project.
  */
@@ -67,6 +75,7 @@ export default class MrtNotificationList extends MrtCommand<typeof MrtNotificati
     target: Flags.string({
       description: 'Filter by target slug',
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<ListNotificationsResult> {
@@ -98,7 +107,10 @@ export default class MrtNotificationList extends MrtCommand<typeof MrtNotificati
         this.log(t('commands.mrt.notification.list.empty', 'No notifications found.'));
       } else {
         this.log(t('commands.mrt.notification.list.count', 'Found {{count}} notification(s):', {count: result.count}));
-        createTable(COLUMNS).render(result.notifications, DEFAULT_COLUMNS);
+        tableRenderer.render(
+          result.notifications,
+          selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
+        );
       }
     }
 

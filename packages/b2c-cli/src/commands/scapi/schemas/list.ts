@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {SchemaListItem} from '@salesforce/b2c-tooling-sdk/clients';
 import {ScapiSchemasCommand, formatApiError} from '../../../utils/scapi/schemas.js';
 import {t, withDocs} from '../../../i18n/index.js';
@@ -87,15 +87,7 @@ export default class ScapiSchemasList extends ScapiSchemasCommand<typeof ScapiSc
       description: t('flags.status.description', 'Filter by schema status'),
       options: ['current', 'deprecated'],
     }),
-    columns: Flags.string({
-      char: 'c',
-      description: `Columns to display (comma-separated). Available: ${Object.keys(COLUMNS).join(', ')}`,
-    }),
-    extended: Flags.boolean({
-      char: 'x',
-      description: t('flags.extended.description', 'Show all columns including extended fields'),
-      default: false,
-    }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<ListOutput> {
@@ -151,36 +143,8 @@ export default class ScapiSchemasList extends ScapiSchemasCommand<typeof ScapiSc
     );
     this.log('');
 
-    const columns = this.getSelectedColumns();
-    tableRenderer.render(schemas, columns);
+    tableRenderer.render(schemas, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     return output;
-  }
-
-  /**
-   * Determines which columns to display based on flags.
-   */
-  private getSelectedColumns(): string[] {
-    const columnsFlag = this.flags.columns;
-    const extended = this.flags.extended;
-
-    if (columnsFlag) {
-      // User specified explicit columns
-      const requested = columnsFlag.split(',').map((c) => c.trim());
-      const valid = tableRenderer.validateColumnKeys(requested);
-      if (valid.length === 0) {
-        this.warn(`No valid columns specified. Available: ${tableRenderer.getColumnKeys().join(', ')}`);
-        return DEFAULT_COLUMNS;
-      }
-      return valid;
-    }
-
-    if (extended) {
-      // Show all columns
-      return tableRenderer.getColumnKeys();
-    }
-
-    // Default columns (non-extended)
-    return DEFAULT_COLUMNS;
   }
 }

@@ -1,5 +1,39 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.1
+
+### Patch Changes
+
+- [#409](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/409) [`ec31234`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ec312342e14080fb5d51b72243e763030c429f80) - Document the B2C DX VS Code Extension. New `/vscode-extension/` section with overview, installation (with a dynamic download link to the latest VSIX release), configuration reference, and a feature tour covering Sandbox Realm Explorer, Cartridge Code Sync, WebDAV Browser, Content Libraries, SCAPI API Browser, B2C Script Debugger, scaffold/CAP install, log tailing, and B2C CLI plugin support. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.3.0
+
+### Minor Changes
+
+- [#408](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/408) [`a26226c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a26226c8d755bc3d93462418cb94ddc0f1083a29) - Replaced the BM Roles docs page with a comprehensive Business Manager reference covering all `b2c bm` commands — `bm roles` (list/get/create/delete/grant/revoke + permissions), `bm users` (list/get/search/update/delete), `bm whoami`, and `bm access-key` (get/create/set/delete). The new page documents the user-auth requirement on whoami and access-key endpoints, the access-key scope enum, and common workflows like rotating your own WebDAV password. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#395](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/395) [`b947888`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b947888ed07073ae2c4c79fe9cc00bd893b81bbe) - Add debug command documentation and b2c-debug agent skill covering interactive REPL, RPC mode, and DAP usage. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`3cefda3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3cefda324bce7a22183245162303df236f70be7d) - Documentation audit pass: corrected mismatched flags and missing commands across the CLI reference. Highlights: (Thanks [@clavery](https://github.com/clavery)!)
+  - Documented `b2c sandbox ips`, `b2c mrt env var push`, and `b2c debug` (previously omitted).
+  - Fixed `mrt project get/update/delete` examples to use the required positional slug; corrected `mrt project member add/update --role` to integer values; replaced `mrt env invalidate --path` with the actual `--pattern` flag; corrected `mrt env redirect create/delete/clone` flag names; rewrote `mrt user api-key` and `mrt user email-prefs` against the real flags.
+  - Rewrote `ecdn zones create`, `ecdn cache purge`, `ecdn security update`, `ecdn speed update`, and `ecdn logpush jobs create` flag tables to match source.
+  - Removed phantom flags (`--display-name`, etc.) from `am users update`.
+  - Standardized Node.js requirement on `>=22.16.0` across all installation guides.
+  - `account-manager` guide no longer recommends the unsupported `client_secret_post`; the `authentication` warning was reframed as guidance toward `client_secret_basic`.
+  - Added a Copilot section to the agent-skills guide so the homepage Copilot link points at meaningful content.
+  - Filled gaps in the CLI command-topic index (`bm-roles`, `setup`, `ecdn`, `replications`, `scapi-schemas`, `cap`, `logs`).
+
+- [#389](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/389) [`23205eb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/23205eb77443a64c46e61de8ead2b40c6469a97d) - Updated plugin install examples to default to user scope (Thanks [@amit-kumar8-sf](https://github.com/amit-kumar8-sf)!)
+
+- [#328](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/328) [`31e136b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/31e136b2cd3affd6ecfb53c949aa4374c82561ad) - ODS CLI: **`b2c sandbox create`** adds **`--emails`** for notification addresses; **`b2c sandbox update`** adds **`--start-scheduler`**, **`--stop-scheduler`**, **`--clear-start-scheduler`**, and **`--clear-stop-scheduler`**; **`b2c realm update`** adds **`--emails`**, **`--start-scheduler`**, **`--stop-scheduler`**, **`--clear-start-scheduler`**, and **`--clear-stop-scheduler`**. (Thanks [@charithaT07](https://github.com/charithaT07)!)
+
+  Sandbox API: **`b2c sandbox operations list`** and **`b2c sandbox operations get`** (inspect lifecycle operations); **`b2c sandbox alias get`** (get one alias by ID, same endpoint as **`alias list --alias-id`**).
+
+  User guide updated for scheduling flags, sandbox operations, and **`b2c sandbox alias get`**.
+
 ## 0.2.22
 
 ### Patch Changes

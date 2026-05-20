@@ -132,26 +132,4 @@ describe('ecdn mtls list', () => {
       expect(errorStub.calledOnce).to.equal(true);
     }
   });
-
-  it('shows all columns with --extended flag', async () => {
-    const command: any = await createCommand({'tenant-id': 'zzxy_prd', extended: true});
-
-    const columns = command.getSelectedColumns();
-
-    expect(columns).to.include('mtlsCertificateId');
-    expect(columns).to.include('mtlsCertificateName');
-    expect(columns).to.include('mtlsAssociatedCodeUploadHostname');
-    expect(columns).to.include('ca');
-  });
-
-  it('supports custom columns with --columns flag', async () => {
-    const command: any = await createCommand({
-      'tenant-id': 'zzxy_prd',
-      columns: 'mtlsCertificateId,mtlsCertificateName',
-    });
-
-    const columns = command.getSelectedColumns();
-
-    expect(columns).to.deep.equal(['mtlsCertificateId', 'mtlsCertificateName']);
-  });
 });

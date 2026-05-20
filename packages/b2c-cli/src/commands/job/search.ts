@@ -4,7 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags, ux} from '@oclif/core';
-import {InstanceCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  InstanceCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   searchJobExecutions,
   type JobExecutionSearchResult,
@@ -32,6 +38,8 @@ const COLUMNS: Record<string, ColumnDef<JobExecution>> = {
 };
 
 const DEFAULT_COLUMNS = ['id', 'jobId', 'status', 'startTime'];
+
+const tableRenderer = new TableRenderer(COLUMNS);
 
 export default class JobSearch extends InstanceCommand<typeof JobSearch> {
   static description = withDocs(
@@ -80,6 +88,7 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
       options: ['asc', 'desc'],
       default: 'desc',
     }),
+    ...columnFlagsFor(COLUMNS),
   };
 
   protected operations = {
@@ -124,7 +133,7 @@ export default class JobSearch extends InstanceCommand<typeof JobSearch> {
       }),
     );
 
-    createTable(COLUMNS).render(results.hits, DEFAULT_COLUMNS);
+    tableRenderer.render(results.hits, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     return results;
   }

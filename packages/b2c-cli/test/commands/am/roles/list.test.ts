@@ -61,33 +61,6 @@ describe('role list', () => {
     });
   });
 
-  describe('getSelectedColumns', () => {
-    it('should return default columns when no flags provided', () => {
-      const command = new RoleList([], {} as any);
-      (command as any).flags = {};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.deep.equal(['id', 'description', 'roleEnumName']);
-    });
-
-    it('should return all columns when --extended flag is set', () => {
-      const command = new RoleList([], {} as any);
-      (command as any).flags = {extended: true};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.include('id');
-      expect(columns).to.include('permissions');
-    });
-
-    it('should return custom columns when --columns flag is set', () => {
-      const command = new RoleList([], {} as any);
-      (command as any).flags = {columns: 'id,description,scope'};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.deep.equal(['id', 'description', 'scope']);
-    });
-  });
-
   describe('pagination validation', () => {
     it('should validate size parameter - minimum', async () => {
       const command = new RoleList([], {} as any);

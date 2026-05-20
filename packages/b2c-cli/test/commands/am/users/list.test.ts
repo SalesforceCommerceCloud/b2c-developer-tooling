@@ -86,43 +86,6 @@ describe('user list', () => {
     });
   });
 
-  describe('getSelectedColumns', () => {
-    it('should return default columns when no flags provided', () => {
-      const command = new UserList([], {} as any);
-      (command as any).flags = {};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.deep.equal([
-        'mail',
-        'firstName',
-        'lastName',
-        'userState',
-        'passwordExpired',
-        'twoFAEnabled',
-        'linkedToSfIdentity',
-        'lastLoginDate',
-      ]);
-    });
-
-    it('should return all columns when --extended flag is set', () => {
-      const command = new UserList([], {} as any);
-      (command as any).flags = {extended: true};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.include('mail');
-      expect(columns).to.include('roles');
-      expect(columns).to.include('organizations');
-    });
-
-    it('should return custom columns when --columns flag is set', () => {
-      const command = new UserList([], {} as any);
-      (command as any).flags = {columns: 'mail,firstName,userState'};
-      const columns = (command as any).getSelectedColumns();
-
-      expect(columns).to.deep.equal(['mail', 'firstName', 'userState']);
-    });
-  });
-
   describe('pagination validation', () => {
     it('should validate size parameter - minimum', async () => {
       const command = new UserList([], {} as any);

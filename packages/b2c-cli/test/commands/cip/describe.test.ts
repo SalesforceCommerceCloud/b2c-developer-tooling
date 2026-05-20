@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import CipDescribe from '../../../src/commands/cip/describe.js';
-import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
+import {createIsolatedConfigHooks, createTestCommand, runSilent} from '../../helpers/test-setup.js';
 
 describe('cip describe', () => {
   const hooks = createIsolatedConfigHooks();
@@ -101,7 +101,6 @@ describe('cip describe', () => {
 
     sinon.stub(command, 'requireCipCredentials').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(false);
-    sinon.stub(process.stdout, 'write');
 
     const mockQueryResult = {
       rows: [
@@ -123,7 +122,7 @@ describe('cip describe', () => {
     };
     sinon.stub(command, 'getCipClient').returns(mockClient);
 
-    const result = await command.run();
+    const result = (await runSilent(() => command.run())) as any;
 
     expect(result.tableName).to.equal('products');
   });
@@ -133,7 +132,6 @@ describe('cip describe', () => {
 
     sinon.stub(command, 'requireCipCredentials').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(false);
-    sinon.stub(process.stdout, 'write');
 
     const mockQueryResult = {
       rows: [
@@ -155,7 +153,7 @@ describe('cip describe', () => {
     };
     sinon.stub(command, 'getCipClient').returns(mockClient);
 
-    const result = await command.run();
+    const result = (await runSilent(() => command.run())) as any;
 
     expect(result.tableName).to.equal('customers');
   });

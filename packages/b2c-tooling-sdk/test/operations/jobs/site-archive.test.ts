@@ -122,6 +122,166 @@ describe('operations/jobs/site-archive', () => {
       expect(jobExecuted).to.be.true;
     });
 
+    it('should import only the listed paths under a directory root', async () => {
+      // Build a multi-area site export
+      const root = path.join(tempDir, 'site-data');
+      fs.mkdirSync(path.join(root, 'sites', 'RefArch'), {recursive: true});
+      fs.mkdirSync(path.join(root, 'sites', 'Other'), {recursive: true});
+      fs.mkdirSync(path.join(root, 'libraries', 'mylib'), {recursive: true});
+      fs.writeFileSync(path.join(root, 'sites', 'RefArch', 'site.xml'), '<site/>');
+      fs.writeFileSync(path.join(root, 'sites', 'Other', 'site.xml'), '<site/>');
+      fs.writeFileSync(path.join(root, 'libraries', 'mylib', 'library.xml'), '<library/>');
+
+      let uploadedZip: Buffer | null = null;
+
+      server.use(
+        http.all(`${WEBDAV_BASE}/*`, async ({request}) => {
+          const url = new URL(request.url);
+          if (request.method === 'PUT' && url.pathname.includes('Impex/src/instance/')) {
+            uploadedZip = Buffer.from(await request.arrayBuffer());
+            return new HttpResponse(null, {status: 201});
+          }
+          return new HttpResponse(null, {status: 204});
+        }),
+        http.post(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions`, () =>
+          HttpResponse.json({id: 'exec-subset', execution_status: 'finished', exit_status: {code: 'OK'}}),
+        ),
+        http.get(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions/exec-subset`, () =>
+          HttpResponse.json({
+            id: 'exec-subset',
+            execution_status: 'finished',
+            exit_status: {code: 'OK'},
+            is_log_file_existing: false,
+          }),
+        ),
+      );
+
+      const result = await siteArchiveImport(mockInstance, root, {
+        archiveName: 'subset-import',
+        paths: ['sites/RefArch', 'libraries/mylib'],
+        waitOptions: FAST_WAIT_OPTIONS,
+      });
+
+      expect(result.execution.id).to.equal('exec-subset');
+      expect(uploadedZip).to.not.be.null;
+
+      const resultZip = await JSZip.loadAsync(uploadedZip!);
+      const entries = Object.keys(resultZip.files).filter((p) => !resultZip.files[p].dir);
+      expect(entries).to.include('subset-import/sites/RefArch/site.xml');
+      expect(entries).to.include('subset-import/libraries/mylib/library.xml');
+      expect(entries).to.not.include('subset-import/sites/Other/site.xml');
+    });
+
+    it('should expand glob patterns relative to the import root', async () => {
+      const root = path.join(tempDir, 'site-data');
+      fs.mkdirSync(path.join(root, 'libraries', 'lib-a'), {recursive: true});
+      fs.mkdirSync(path.join(root, 'libraries', 'lib-b'), {recursive: true});
+      fs.mkdirSync(path.join(root, 'sites', 'RefArch'), {recursive: true});
+      fs.writeFileSync(path.join(root, 'libraries', 'lib-a', 'library.xml'), '<library/>');
+      fs.writeFileSync(path.join(root, 'libraries', 'lib-b', 'library.xml'), '<library/>');
+      fs.writeFileSync(path.join(root, 'sites', 'RefArch', 'site.xml'), '<site/>');
+
+      let uploadedZip: Buffer | null = null;
+
+      server.use(
+        http.all(`${WEBDAV_BASE}/*`, async ({request}) => {
+          if (request.method === 'PUT') {
+            uploadedZip = Buffer.from(await request.arrayBuffer());
+            return new HttpResponse(null, {status: 201});
+          }
+          return new HttpResponse(null, {status: 204});
+        }),
+        http.post(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions`, () =>
+          HttpResponse.json({id: 'exec-glob', execution_status: 'finished', exit_status: {code: 'OK'}}),
+        ),
+        http.get(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions/exec-glob`, () =>
+          HttpResponse.json({
+            id: 'exec-glob',
+            execution_status: 'finished',
+            exit_status: {code: 'OK'},
+            is_log_file_existing: false,
+          }),
+        ),
+      );
+
+      await siteArchiveImport(mockInstance, root, {
+        archiveName: 'glob-import',
+        paths: ['libraries/*'],
+        waitOptions: FAST_WAIT_OPTIONS,
+      });
+
+      const resultZip = await JSZip.loadAsync(uploadedZip!);
+      const entries = Object.keys(resultZip.files).filter((p) => !resultZip.files[p].dir);
+      expect(entries).to.include('glob-import/libraries/lib-a/library.xml');
+      expect(entries).to.include('glob-import/libraries/lib-b/library.xml');
+      expect(entries).to.not.include('glob-import/sites/RefArch/site.xml');
+    });
+
+    it('should reject paths that escape the import root', async () => {
+      const root = path.join(tempDir, 'site-data');
+      fs.mkdirSync(path.join(root, 'inside'), {recursive: true});
+      fs.writeFileSync(path.join(root, 'inside', 'a.xml'), '<a/>');
+
+      // Sibling directory outside the root
+      const outside = path.join(tempDir, 'outside');
+      fs.mkdirSync(outside, {recursive: true});
+      fs.writeFileSync(path.join(outside, 'b.xml'), '<b/>');
+
+      try {
+        await siteArchiveImport(mockInstance, root, {
+          archiveName: 'escape-test',
+          paths: [path.join(outside, 'b.xml')],
+          waitOptions: FAST_WAIT_OPTIONS,
+        });
+        expect.fail('Should have thrown');
+      } catch (error: any) {
+        expect(error.message).to.include('outside import root');
+      }
+    });
+
+    it('should throw when a non-glob path does not exist', async () => {
+      const root = path.join(tempDir, 'site-data');
+      fs.mkdirSync(root, {recursive: true});
+
+      try {
+        await siteArchiveImport(mockInstance, root, {
+          paths: ['sites/Missing'],
+          waitOptions: FAST_WAIT_OPTIONS,
+        });
+        expect.fail('Should have thrown');
+      } catch (error: any) {
+        expect(error.message).to.include('Path not found');
+      }
+    });
+
+    it('should throw when a glob matches nothing', async () => {
+      const root = path.join(tempDir, 'site-data');
+      fs.mkdirSync(path.join(root, 'libraries'), {recursive: true});
+
+      try {
+        await siteArchiveImport(mockInstance, root, {
+          paths: ['libraries/*.xml'],
+          waitOptions: FAST_WAIT_OPTIONS,
+        });
+        expect.fail('Should have thrown');
+      } catch (error: any) {
+        expect(error.message).to.include('No files matched');
+      }
+    });
+
+    it('should reject paths option when target is a remote filename', async () => {
+      try {
+        await siteArchiveImport(
+          mockInstance,
+          {remoteFilename: 'archive.zip'},
+          {paths: ['anything'], waitOptions: FAST_WAIT_OPTIONS},
+        );
+        expect.fail('Should have thrown');
+      } catch (error: any) {
+        expect(error.message).to.include('only supported when target is a directory');
+      }
+    });
+
     it('should import from a zip file', async () => {
       // Create a test zip file
       const zipPath = path.join(tempDir, 'test.zip');

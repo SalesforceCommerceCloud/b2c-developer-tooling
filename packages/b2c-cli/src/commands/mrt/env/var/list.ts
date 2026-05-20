@@ -3,7 +3,13 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {MrtCommand, createTable, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  MrtCommand,
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   listEnvVars,
   type ListEnvVarsResult,
@@ -32,6 +38,8 @@ const COLUMNS: Record<string, ColumnDef<EnvironmentVariable>> = {
 
 const DEFAULT_COLUMNS = ['name', 'value', 'status', 'updated'];
 
+const tableRenderer = new TableRenderer(COLUMNS);
+
 /**
  * List environment variables on an MRT project environment.
  */
@@ -51,6 +59,7 @@ export default class MrtEnvVarList extends MrtCommand<typeof MrtEnvVarList> {
 
   static flags = {
     ...MrtCommand.baseFlags,
+    ...columnFlagsFor(COLUMNS),
   };
 
   protected operations = {
@@ -58,7 +67,7 @@ export default class MrtEnvVarList extends MrtCommand<typeof MrtEnvVarList> {
   };
 
   protected renderTable(variables: EnvironmentVariable[]): void {
-    createTable(COLUMNS).render(variables, DEFAULT_COLUMNS);
+    tableRenderer.render(variables, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
   }
 
   async run(): Promise<ListEnvVarsResult> {

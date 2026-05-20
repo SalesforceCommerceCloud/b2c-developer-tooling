@@ -77,6 +77,14 @@ const guidesSidebar = [
     ],
   },
   {
+    text: 'VS Code Extension',
+    items: [
+      {text: 'Overview', link: '/vscode-extension/'},
+      {text: 'Installation', link: '/vscode-extension/installation'},
+      {text: 'Configuration', link: '/vscode-extension/configuration'},
+    ],
+  },
+  {
     text: 'MCP Server',
     items: [
       {text: 'Overview', link: '/mcp/'},
@@ -102,7 +110,7 @@ const referenceSidebar = [
       {text: 'Overview', link: '/cli/'},
       {text: 'Account Manager', link: '/cli/account-manager'},
       {text: 'Auth', link: '/cli/auth'},
-      {text: 'BM Roles', link: '/cli/bm-roles'},
+      {text: 'Business Manager', link: '/cli/bm'},
       {text: 'CIP', link: '/cli/cip'},
       {text: 'CAP (Commerce Apps)', link: '/cli/cap'},
       {text: 'Code', link: '/cli/code'},
@@ -129,18 +137,45 @@ const referenceSidebar = [
   {
     text: 'MCP Tools',
     items: [
-      {text: 'cartridge_deploy', link: '/mcp/tools/cartridge-deploy'},
-      {text: 'mrt_bundle_push', link: '/mcp/tools/mrt-bundle-push'},
-      {text: 'pwakit_get_guidelines', link: '/mcp/tools/pwakit-get-guidelines'},
-      {text: 'scapi_schemas_list', link: '/mcp/tools/scapi-schemas-list'},
-      {text: 'scapi_custom_api_generate_scaffold', link: '/mcp/tools/scapi-custom-api-generate-scaffold'},
-      {text: 'scapi_custom_apis_get_status', link: '/mcp/tools/scapi-custom-apis-get-status'},
-      {text: 'sfnext_get_guidelines', link: '/mcp/tools/sfnext-get-guidelines'},
-      {text: 'sfnext_start_figma_workflow', link: '/mcp/tools/sfnext-start-figma-workflow'},
-      {text: 'sfnext_analyze_component', link: '/mcp/tools/sfnext-analyze-component'},
-      {text: 'sfnext_match_tokens_to_theme', link: '/mcp/tools/sfnext-match-tokens-to-theme'},
-      {text: 'sfnext_add_page_designer_decorator', link: '/mcp/tools/sfnext-add-page-designer-decorator'},
-      {text: 'sfnext_configure_theme', link: '/mcp/tools/sfnext-configure-theme'},
+      {
+        text: 'Cartridges',
+        collapsed: true,
+        items: [{text: 'cartridge_deploy', link: '/mcp/tools/cartridge-deploy'}],
+      },
+      {
+        text: 'SCAPI',
+        collapsed: true,
+        items: [
+          {text: 'scapi_schemas_list', link: '/mcp/tools/scapi-schemas-list'},
+          {text: 'scapi_custom_api_generate_scaffold', link: '/mcp/tools/scapi-custom-api-generate-scaffold'},
+          {text: 'scapi_custom_apis_get_status', link: '/mcp/tools/scapi-custom-apis-get-status'},
+        ],
+      },
+      {
+        text: 'PWA Kit',
+        collapsed: true,
+        items: [
+          {text: 'mrt_bundle_push', link: '/mcp/tools/mrt-bundle-push'},
+          {text: 'pwakit_get_guidelines', link: '/mcp/tools/pwakit-get-guidelines'},
+        ],
+      },
+      {
+        text: 'Storefront Next',
+        collapsed: true,
+        items: [
+          {text: 'sfnext_get_guidelines', link: '/mcp/tools/sfnext-get-guidelines'},
+          {text: 'sfnext_start_figma_workflow', link: '/mcp/tools/sfnext-start-figma-workflow'},
+          {text: 'sfnext_analyze_component', link: '/mcp/tools/sfnext-analyze-component'},
+          {text: 'sfnext_match_tokens_to_theme', link: '/mcp/tools/sfnext-match-tokens-to-theme'},
+          {text: 'sfnext_add_page_designer_decorator', link: '/mcp/tools/sfnext-add-page-designer-decorator'},
+          {text: 'sfnext_configure_theme', link: '/mcp/tools/sfnext-configure-theme'},
+        ],
+      },
+      {
+        text: 'Diagnostics',
+        collapsed: true,
+        items: [{text: 'Script Debugger', link: '/mcp/tools/diagnostics'}],
+      },
     ],
   },
 ];
@@ -171,7 +206,7 @@ document.addEventListener('click', (e) => {
 
 export default defineConfig({
   title: 'B2C Developer Toolkit',
-  description: 'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and IDE extensions for Salesforce B2C Commerce',
+  description: 'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and the B2C DX VS Code Extension for Salesforce B2C Commerce',
   base: basePath,
 
   head: [['script', {}, versionSwitchScript]],
@@ -237,6 +272,7 @@ export default defineConfig({
     nav: [
       {text: 'Guides', link: '/guide/'},
       {text: 'Skills', link: '/guide/agent-skills'},
+      {text: 'VS Code', link: '/vscode-extension/'},
       {text: 'MCP', link: '/mcp/'},
       {text: 'Reference', link: '/cli/'},
       {text: 'SDK', link: '/api/'},
@@ -254,6 +290,7 @@ export default defineConfig({
     sidebar: {
       '/mcp/tools/': referenceSidebar,
       '/mcp/': guidesSidebar,
+      '/vscode-extension/': guidesSidebar,
       '/cli/': referenceSidebar,
       '/guide/': guidesSidebar,
       '/api/': [

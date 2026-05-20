@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags, ux} from '@oclif/core';
-import {confirm} from '@inquirer/prompts';
+import {confirm} from '@salesforce/b2c-tooling-sdk/ux';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {DwJsonSource} from '@salesforce/b2c-tooling-sdk/config';
 import {withDocs} from '../../../i18n/index.js';
@@ -67,10 +67,7 @@ export default class SetupInstanceRemove extends BaseCommand<typeof SetupInstanc
 
     // Confirm removal
     if (!this.flags.force) {
-      const proceed = await confirm({
-        message: `Remove instance "${name}"? This cannot be undone.`,
-        default: false,
-      });
+      const proceed = await confirm(`Remove instance "${name}"? This cannot be undone.`);
 
       if (!proceed) {
         ux.stdout('Instance removal cancelled.');

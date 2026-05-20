@@ -50,7 +50,7 @@ The CLI supports five authentication methods:
 
 **Client Credentials** uses the API client's secret for non-interactive authentication. This is ideal for CI/CD pipelines and automation.
 
-**JWT Bearer** uses a public/private certificate pair for secure authentication without storing client secrets. This is ideal for production environments and CI/CD where you want stronger security. See [JWT Authentication](#jwt-authentication-certificate-based) for details.
+**JWT Bearer** uses a public/private certificate pair for authentication without storing client secrets. See [JWT Authentication](#jwt-authentication-certificate-based) for details.
 
 **Stateful User Auth** uses `b2c auth login` to open a browser for interactive login once, then stores the session on disk. Subsequent commands automatically use the stored token when it is present and valid, without re-opening the browser. Clear the session with `b2c auth logout`. See [Auth Commands](/cli/auth#b2c-auth-login) for details.
 
@@ -79,10 +79,6 @@ For Account Manager operations that require user-level roles (organization and A
 5. Configure the **Token Endpoint Auth Method**:
    - `client_secret_basic` for client credentials flow
    - `private_key_jwt` for JWT Bearer authentication (certificate-based)
-
-::: tip Certificate-Based Authentication
-For enhanced security, use JWT Bearer authentication instead of client secrets. This requires uploading a certificate to the API client and using the `--jwt-cert` and `--jwt-key` flags. See [JWT Authentication](#jwt-authentication-certificate-based) for setup instructions.
-:::
 
 ::: info
 For client credentials with secrets, use `client_secret_basic` (the default). `client_secret_post` is not currently supported.
@@ -166,7 +162,7 @@ If you're running the CLI behind a proxy where `localhost:8080` isn't reachable 
 
 ## JWT Authentication (Certificate-Based)
 
-JWT Bearer authentication (RFC 7523) provides a more secure alternative to client secrets by using public/private certificate pairs. This is ideal for production environments and CI/CD pipelines where you want to avoid storing sensitive secrets.
+JWT Bearer authentication (RFC 7523) is an alternative to client secrets that uses public/private certificate pairs. This can be useful in environments where you want to avoid storing client secrets.
 
 ### How It Works
 
@@ -177,9 +173,8 @@ JWT Bearer authentication (RFC 7523) provides a more secure alternative to clien
 
 ### Benefits
 
-- **More secure**: Private key never leaves your machine
-- **No secrets to leak**: No client secret to store or compromise
-- **Better for CI/CD**: Certificates can be rotated without updating secrets across pipelines
+- **No client secret required**: Authenticate without storing a client secret
+- **Rotation**: Certificates can be rotated without updating secrets across pipelines
 - **Industry standard**: Implements OAuth 2.0 JWT Bearer (RFC 7523)
 
 ### Setup Instructions
@@ -422,6 +417,55 @@ For operations that interact with B2C Commerce instances (code deployment, jobs,
   "methods": ["get"]
 }
 ```
+
+**BM administration (`bm roles`, `bm users`, `bm whoami`, `bm access-key`):**
+
+```json
+{
+  "resource_id": "/roles",
+  "methods": ["get"]
+},
+{
+  "resource_id": "/roles/*",
+  "methods": ["get", "put", "delete"]
+},
+{
+  "resource_id": "/roles/*/users",
+  "methods": ["get"]
+},
+{
+  "resource_id": "/roles/*/users/*",
+  "methods": ["put", "delete"]
+},
+{
+  "resource_id": "/roles/*/permissions",
+  "methods": ["get", "put"]
+},
+{
+  "resource_id": "/users",
+  "methods": ["get"]
+},
+{
+  "resource_id": "/users/*",
+  "methods": ["get", "patch", "delete"]
+},
+{
+  "resource_id": "/users/this",
+  "methods": ["get"]
+},
+{
+  "resource_id": "/users/*/access_key/*",
+  "methods": ["get", "put", "patch", "delete"]
+},
+{
+  "resource_id": "/user_search",
+  "methods": ["post"]
+}
+```
+
+::: tip BM functional permissions
+`bm whoami` and the `bm access-key` family additionally require *a real BM user identity*. Service-client tokens cannot resolve to a BM user, so the CLI defaults these commands to browser-based user auth. Access-key writes also require the **Manage_Users_Access_Keys** BM functional permission on the user account performing the request — grant it via **Administration** > **Roles & Permissions** in Business Manager. See [BM Commands → Authentication](/cli/bm#authentication) for details.
+:::
 
 ## SCAPI Authentication
 

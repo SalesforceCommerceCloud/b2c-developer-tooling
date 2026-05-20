@@ -5,10 +5,10 @@
  */
 import {expect} from 'chai';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
+import {Config, ux} from '@oclif/core';
 import ReplicationsList from '../../../../src/commands/scapi/replications/list.js';
 import {stubParse} from '../../../helpers/stub-parse.js';
-import {createIsolatedEnvHooks, runSilent} from '../../../helpers/test-setup.js';
+import {createIsolatedEnvHooks} from '../../../helpers/test-setup.js';
 
 describe('scapi replications list', () => {
   const hooks = createIsolatedEnvHooks();
@@ -80,17 +80,26 @@ describe('scapi replications list', () => {
       sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
       sinon.stub(command, 'getOAuthStrategy').returns({getAuthorizationHeader: async () => 'Bearer test'});
 
+      const stdoutStub = sinon.stub(ux, 'stdout');
+
       sinon.stub(globalThis, 'fetch').resolves(
         new Response(
           JSON.stringify({
-            total: 1,
+            total: 2,
             data: [
               {
-                id: 'proc-1',
+                id: 'proc-abc',
                 status: 'completed',
                 startTime: '2025-01-01T00:00:00Z',
                 initiatedBy: 'user@example.com',
                 productItem: {productId: 'PROD-1'},
+              },
+              {
+                id: 'proc-xyz',
+                status: 'in_progress',
+                startTime: '2025-01-01T01:00:00Z',
+                initiatedBy: 'user@example.com',
+                priceTableItem: {priceTableId: 'table-1'},
               },
             ],
           }),
@@ -98,8 +107,18 @@ describe('scapi replications list', () => {
         ),
       );
 
-      const result = (await runSilent(() => command.run())) as {total: number};
-      expect(result.total).to.equal(1);
+      const result = (await command.run()) as {total: number};
+      expect(result.total).to.equal(2);
+
+      const stdoutOutput = stdoutStub
+        .getCalls()
+        .map((c) => String(c.args[0] ?? ''))
+        .join('');
+      expect(stdoutOutput).to.include('proc-abc');
+      expect(stdoutOutput).to.include('proc-xyz');
+      expect(stdoutOutput).to.include('completed');
+      expect(stdoutOutput).to.include('in_progress');
+      expect(stdoutOutput).to.match(/Total:\s*2/);
     });
 
     it('handles empty result set', async () => {
@@ -148,46 +167,6 @@ describe('scapi replications list', () => {
       } catch {
         expect(errorStub.calledOnce).to.equal(true);
       }
-    });
-  });
-
-  describe('getSelectedColumns', () => {
-    let config: Config;
-
-    beforeEach(async () => {
-      config = await Config.load();
-    });
-
-    afterEach(() => {
-      sinon.restore();
-    });
-
-    it('returns default columns when no flags provided', async () => {
-      const command: any = new ReplicationsList([], config);
-      stubParse(command, {}, {});
-      await command.init();
-
-      expect(command.getSelectedColumns()).to.deep.equal(['id', 'status', 'entityType', 'entityId', 'startTime']);
-    });
-
-    it('filters invalid column names and warns when none valid', async () => {
-      const command: any = new ReplicationsList([], config);
-      stubParse(command, {columns: 'nope,bad'}, {});
-      await command.init();
-
-      const warn = sinon.stub(command, 'warn').returns(void 0);
-      const columns = command.getSelectedColumns();
-
-      expect(columns).to.deep.equal(['id', 'status', 'entityType', 'entityId', 'startTime']);
-      expect(warn.calledOnce).to.equal(true);
-    });
-
-    it('returns only valid columns from --columns', async () => {
-      const command: any = new ReplicationsList([], config);
-      stubParse(command, {columns: 'id,status,bogus'}, {});
-      await command.init();
-
-      expect(command.getSelectedColumns()).to.deep.equal(['id', 'status']);
     });
   });
 });
