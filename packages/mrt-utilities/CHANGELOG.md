@@ -1,5 +1,11 @@
 # @salesforce/mrt-utilities
 
+## 0.2.1
+
+### Patch Changes
+
+- [#446](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/446) [`a9a07c4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a9a07c4266eaf1b4f54ae6c1ed936b0d9f79951b) - Bumped @aws-sdk packages to 3.1049.0 to resolve CVE-2026-25128 (fast-xml-parser uncaught exception vulnerability) (Thanks [@kevinxh](https://github.com/kevinxh)!)
+
 ## 0.2.0
 
 ### Minor Changes
