@@ -1,5 +1,11 @@
 # @salesforce/mrt-utilities
 
+## 0.2.0
+
+### Minor Changes
+
+- [#426](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/426) [`3779ebd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3779ebd8fe9e2b791dac32c238b0456888b03a46) - Update proxy to keep user agent and ACH for SCAPI proxy (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
 ## 0.1.7
 
 ### Patch Changes
