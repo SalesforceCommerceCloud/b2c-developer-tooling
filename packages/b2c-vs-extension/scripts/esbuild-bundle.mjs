@@ -63,6 +63,15 @@ function copySdkScaffolds() {
   fs.cpSync(src, dest, {recursive: true});
 }
 
+function copyCipProtoFiles() {
+  const src = path.join(sdkRoot, 'data', 'cip-proto');
+  const dest = path.join(pkgRoot, 'dist', 'data', 'cip-proto');
+  if (!fs.existsSync(src)) return;
+  fs.mkdirSync(dest, {recursive: true});
+  fs.cpSync(src, dest, {recursive: true});
+  console.log('[cip-proto] Copied proto files to dist/data/cip-proto/');
+}
+
 function inlineSdkPackageJson() {
   const outPath = path.join(pkgRoot, 'dist', 'extension.cjs');
   let str = fs.readFileSync(outPath, 'utf8');
@@ -108,17 +117,63 @@ const buildOptions = {
   logLevel: 'info',
 };
 
+// Webview UI bundles. Each entry compiles a React app for one webview panel
+// (Query Builder, Tables Browser, Report Dashboard). Targets the browser since
+// these run inside a VS Code webview, not the extension host.
+const webviewUiSrc = path.join(pkgRoot, 'src', 'webview-ui');
+const webviewBuildOptions = {
+  entryPoints: {
+    'query-builder': path.join(webviewUiSrc, 'query-builder', 'index.tsx'),
+    'tables-browser': path.join(webviewUiSrc, 'tables-browser', 'index.tsx'),
+    'report-dashboard': path.join(webviewUiSrc, 'report-dashboard', 'index.tsx'),
+  },
+  outdir: path.join(pkgRoot, 'dist', 'webview-ui'),
+  bundle: true,
+  platform: 'browser',
+  format: 'esm',
+  target: 'es2022',
+  sourcemap: true,
+  jsx: 'automatic',
+  loader: {'.css': 'text'},
+  define: {
+    'process.env.NODE_ENV': watchMode ? '"development"' : '"production"',
+  },
+  logLevel: 'info',
+};
+
 if (watchMode) {
   copySdkScaffolds();
+  copyCipProtoFiles();
   const ctx = await esbuild.context(buildOptions);
   await ctx.watch();
   console.log('[esbuild] watching for changes...');
+
+  // Watch webview-ui in parallel; failures inside the React bundles must not bring
+  // down the extension host build, so each runs in its own context.
+  if (fs.existsSync(webviewUiSrc)) {
+    const webviewCtx = await esbuild.context(webviewBuildOptions);
+    await webviewCtx.watch();
+    console.log('[esbuild] watching webview-ui for changes...');
+  }
 } else {
   const result = await esbuild.build(buildOptions);
 
   inlineSdkPackageJson();
   copySdkScaffolds();
+  copyCipProtoFiles();
   copySwaggerUiAssets();
+
+  if (fs.existsSync(webviewUiSrc)) {
+    try {
+      await esbuild.build(webviewBuildOptions);
+      console.log('[webview-ui] Built webview UI bundles into dist/webview-ui/');
+    } catch (err) {
+      // Surface a clean error so CI logs a single recognisable line instead of
+      // letting esbuild's stack ride out as the top-level rejection.
+      console.error('[webview-ui] Build failed:', err instanceof Error ? err.message : err);
+      process.exit(1);
+    }
+  }
 
   if (result.metafile && process.env.ANALYZE_BUNDLE) {
     const metaPath = path.join(pkgRoot, 'dist', 'meta.json');

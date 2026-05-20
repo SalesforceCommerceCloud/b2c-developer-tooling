@@ -23,6 +23,7 @@ import {registerDebugger} from './debugger/index.js';
 import {registerCodeSync} from './code-sync/index.js';
 import {registerWebDavTree} from './webdav-tree/index.js';
 import {disposeTelemetry, initTelemetry, markFeatureUsed, sendEvent, sendException} from './telemetry.js';
+import {registerCipAnalytics} from './cip-analytics/index.js';
 
 function getWebviewContent(context: vscode.ExtensionContext): string {
   const htmlPath = path.join(context.extensionPath, 'src', 'webview.html');
@@ -425,6 +426,10 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   }
   if (settings.get<boolean>('features.codeSync', true)) {
     registerCodeSync(context, configProvider, log);
+  }
+
+  if (settings.get<boolean>('features.cipAnalytics', true)) {
+    registerCipAnalytics(context, configProvider, log);
   }
 
   registerDebugger(context, configProvider);

@@ -13,7 +13,9 @@
   ],
   "type": "module",
   "dependencies": {
-    "@salesforce/b2c-tooling-sdk": "workspace:*"
+    "@salesforce/b2c-tooling-sdk": "workspace:*",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   },
   "engines": {
     "vscode": "^1.105.1"
@@ -102,6 +104,11 @@
           "type": "boolean",
           "default": true,
           "description": "Send anonymous usage telemetry (extension lifecycle and broad feature-category events). Honors VS Code's telemetry.telemetryLevel — disabling that disables this regardless of this setting."
+        },
+        "b2c-dx.features.cipAnalytics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the B2C-DX Analytics (CIP) sidebar for browsing tables and running curated reports."
         }
       }
     },
@@ -127,6 +134,11 @@
           "id": "b2c-dx-sandboxes",
           "title": "B2C-DX Sandboxes",
           "icon": "$(server-environment)"
+        },
+        {
+          "id": "b2c-dx-analytics",
+          "title": "B2C-DX Analytics",
+          "icon": "$(graph)"
         }
       ]
     },
@@ -149,6 +161,14 @@
           "name": "Cartridges",
           "icon": "media/b2c-icon.svg",
           "contextualTitle": "B2C-DX"
+        }
+      ],
+      "b2c-dx-analytics": [
+        {
+          "id": "b2cCipAnalytics",
+          "name": "CIP Analytics",
+          "icon": "$(graph)",
+          "contextualTitle": "B2C-DX Analytics"
         }
       ],
       "b2c-dx-scapi": [
@@ -187,6 +207,10 @@
       {
         "view": "b2cCartridgeExplorer",
         "contents": "No cartridges found.\n\nCartridges are identified by .project files in the workspace.\n\n[Refresh](command:b2c-dx.codeSync.refreshCartridges)"
+      },
+      {
+        "view": "b2cCipAnalytics",
+        "contents": "Explore Commerce Intelligence Platform (CIP) data — build SQL queries visually, browse tables, and run curated reports.\n\n[Open Query Builder](command:b2c-dx.cipAnalytics.queryBuilder)\n[Browse Tables](command:b2c-dx.cipAnalytics.browseTables)\n\nRequires OAuth credentials (clientId, clientSecret) in dw.json.\n\n[Refresh](command:b2c-dx.cipAnalytics.refresh)"
       }
     ],
     "debuggers": [
@@ -252,6 +276,71 @@
         "command": "b2c-dx.apiBrowser.openSwagger",
         "title": "Open API Documentation",
         "category": "B2C DX - API Browser"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.resetFromDwJson",
+        "title": "Reset from dw.json…",
+        "icon": "$(discard)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.openReport",
+        "title": "Open Report",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.browseTables",
+        "title": "Browse Tables",
+        "icon": "$(table)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.queryBuilder",
+        "title": "Open Query Builder",
+        "icon": "$(zap)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.configureConnection",
+        "title": "Configure Connection…",
+        "icon": "$(gear)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.testConnection",
+        "title": "Test Connection",
+        "icon": "$(debug-disconnect)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.switchRealm",
+        "title": "Switch Realm…",
+        "icon": "$(server)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.switchConnection",
+        "title": "Switch Connection…",
+        "icon": "$(plug)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.addRealm",
+        "title": "Add Realm…",
+        "icon": "$(add)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.removeRealm",
+        "title": "Remove Realm…",
+        "icon": "$(trash)",
+        "category": "B2C-DX Analytics"
       },
       {
         "command": "b2c-dx.sandbox.refresh",
@@ -640,6 +729,26 @@
           "group": "navigation"
         },
         {
+          "command": "b2c-dx.cipAnalytics.removeRealm",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.addRealm",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.refresh",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@4"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.resetFromDwJson",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@9"
+        },
+        {
           "command": "b2c-dx.codeSync.deploy",
           "when": "view == b2cCartridgeExplorer",
           "group": "navigation"
@@ -661,6 +770,26 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "b2c-dx.cipAnalytics.switchConnection",
+          "when": "view == b2cCipAnalytics && viewItem == cipRealm",
+          "group": "inline@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.removeRealm",
+          "when": "view == b2cCipAnalytics && viewItem == cipRealm",
+          "group": "2_realm@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.testConnection",
+          "when": "view == b2cCipAnalytics && viewItem == cipRealmInfo",
+          "group": "inline@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.configureConnection",
+          "when": "view == b2cCipAnalytics && viewItem == cipRealmInfo",
+          "group": "inline@1"
+        },
         {
           "command": "b2c-dx.webdav.addCatalog",
           "when": "view == b2cWebdavExplorer && viewItem == virtual-root-catalogs",
@@ -870,6 +999,50 @@
       ],
       "commandPalette": [
         {
+          "command": "b2c-dx.cipAnalytics.refresh",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.resetFromDwJson",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.openReport",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.browseTables",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.queryBuilder",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.configureConnection",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.testConnection",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.switchRealm",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.switchConnection",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.addRealm",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.removeRealm",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
           "command": "b2c-dx.apiBrowser.openSwagger",
           "when": "false"
         },
@@ -1031,6 +1204,8 @@
     "@eslint/compat": "catalog:",
     "@types/mocha": "catalog:",
     "@types/node": "catalog:",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
     "@types/vscode": "^1.105.1",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
