@@ -46,7 +46,14 @@
  */
 
 // Bundle creation
-export {createBundle, createGlobFilter, getDefaultMessage, DEFAULT_SSR_PARAMETERS, DEFAULT_SSR_ONLY, DEFAULT_SSR_SHARED} from './bundle.js';
+export {
+  createBundle,
+  createGlobFilter,
+  getDefaultMessage,
+  DEFAULT_SSR_PARAMETERS,
+  DEFAULT_SSR_ONLY,
+  DEFAULT_SSR_SHARED,
+} from './bundle.js';
 export type {CreateBundleOptions, Bundle, MrtServerConfig} from './bundle.js';
 
 // Push and bundle operations

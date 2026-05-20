@@ -58,6 +58,8 @@ const bundlePlugin = {
   name: 'bundle-deps',
   setup(build) {
     build.onResolve({filter: /^[^./]/}, (args) => {
+      // Skip Windows absolute paths (e.g. D:\...) which match the filter
+      if (/^[A-Za-z]:/.test(args.path)) return null;
       if (externalFilter(args.path)) {
         return {external: true};
       }
