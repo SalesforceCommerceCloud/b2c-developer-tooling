@@ -260,7 +260,7 @@ Import a site archive to a B2C Commerce instance using the `sfcc-site-archive-im
 ### Usage
 
 ```bash
-b2c job import TARGET
+b2c job import TARGET [PATHS...]
 ```
 
 ### Arguments
@@ -268,6 +268,7 @@ b2c job import TARGET
 | Argument | Description | Required |
 |----------|-------------|----------|
 | `TARGET` | Directory, zip file, or remote filename to import | Yes |
+| `PATHS...` | Optional subset of files, directories, or glob patterns under `TARGET` to include in the archive. When omitted, the entire directory is archived. Only valid when `TARGET` is a directory. | No |
 
 ### Flags
 
@@ -297,6 +298,15 @@ b2c job import existing-archive.zip --remote
 
 # With timeout
 b2c job import ./my-site-data --timeout 300
+
+# Import only specific parts of a site export
+b2c job import ./my-site-data sites/RefArch libraries/mylib
+
+# Import all libraries using a glob pattern
+b2c job import ./my-site-data 'libraries/**'
+
+# Mix sites and libraries
+b2c job import ./my-site-data sites/RefArch 'libraries/*'
 ```
 
 ### Notes
@@ -304,6 +314,7 @@ b2c job import ./my-site-data --timeout 300
 - When importing a directory, it will be automatically zipped before upload
 - The archive is uploaded to `Impex/src/instance/` on the instance
 - By default, the archive is deleted after successful import (use `--keep-archive` to retain)
+- When `PATHS` are given, only those files/directories are included in the archive — their location under `TARGET` is preserved (e.g. `sites/RefArch/...` stays at `sites/RefArch/...`).
 
 ---
 

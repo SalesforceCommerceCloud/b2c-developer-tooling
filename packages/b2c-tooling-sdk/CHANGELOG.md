@@ -1,5 +1,19 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.11.0
+
+### Minor Changes
+
+- [#444](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/444) [`5d62ac2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5d62ac21a505c3ae4c58507fe0ffe65a5ee89087) - Add `embedded` and `component_id` properties to the component type schema with conditional validation requiring `component_id` when `embedded` is `true`. Improve validation error messages to show human-readable output instead of raw JSON Schema subschema references. (Thanks [@mjuraschik](https://github.com/mjuraschik)!)
+
+- [#428](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/428) [`db7b330`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/db7b330cf60debf05d681b9e1dbb4e025d8eec02) - `b2c job import` now accepts an optional list of paths or globs after the directory `TARGET`, allowing you to import a subset of a site export. Paths are resolved literally first (so shell-expanded globs work) and fall back to root-relative or internal glob expansion when the literal path doesn't exist. The archive preserves each path's layout under `TARGET`. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Example: `b2c job import ./my-site-data sites/RefArch libraries/mylib`
+
+  The SDK's `siteArchiveImport` operation gains a corresponding `paths` option for directory targets.
+
+- [#425](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/425) [`5e43132`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5e43132ab1b10da33517a697b32e22737d2f9bb4) - The SDK is now ESM-only — the dual-format `dist/cjs` build has been removed and the package exports map exposes only ESM. CommonJS consumers that previously did `require('@salesforce/b2c-tooling-sdk')` from a CJS package must either switch to `import` or rely on Node's `require(esm)` (Node ≥22.12). The VS Code extension has been converted to a `"type": "module"` package; its bundled entry is now `dist/extension.cjs`. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.10.0
 
 ### Minor Changes
