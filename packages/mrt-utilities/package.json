@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/mrt-utilities",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Middleware and utilities to simulate a deployed Managed Runtime environment",
   "type": "module",
   "author": "Salesforce",
@@ -117,9 +117,9 @@
     "postpack": "git checkout package.json"
   },
   "dependencies": {
-    "@aws-sdk/client-cloudwatch": "3.952.0",
-    "@aws-sdk/client-dynamodb": "3.980.0",
-    "@aws-sdk/lib-dynamodb": "3.980.0",
+    "@aws-sdk/client-cloudwatch": "3.1049.0",
+    "@aws-sdk/client-dynamodb": "3.1049.0",
+    "@aws-sdk/lib-dynamodb": "3.1049.0",
     "@h4ad/serverless-adapter": "4.4.0",
     "change-case": "5.4.4",
     "compressible": "2.0.18",
