@@ -10,6 +10,7 @@ import {
   getActiveCodeVersion,
   activateCodeVersion,
   reloadCodeVersion,
+  OcapiScriptsBackend,
 } from '@salesforce/b2c-tooling-sdk/operations/code';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
@@ -98,7 +99,7 @@ export function createDeployCommand(
             outputChannel.appendLine(`Code version "${codeVersion}" activated`);
           } else if (actionPick.action === 'reload') {
             progress.report({message: 'Reloading code version...'});
-            await reloadCodeVersion(instance, codeVersion);
+            await reloadCodeVersion(new OcapiScriptsBackend(instance), codeVersion);
             outputChannel.appendLine(`Code version "${codeVersion}" reloaded`);
           }
 
