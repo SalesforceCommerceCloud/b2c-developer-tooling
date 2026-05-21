@@ -1,3 +1,7 @@
+---
+description: Commands for listing and retrieving Salesforce Commerce API (SCAPI) OpenAPI schemas, with selective path, schema, and example expansion for LLM context.
+---
+
 # SCAPI Schemas
 
 Commands for browsing and retrieving SCAPI (Salesforce Commerce API) schema specifications.
