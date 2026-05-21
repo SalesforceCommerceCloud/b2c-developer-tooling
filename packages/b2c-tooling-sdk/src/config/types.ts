@@ -26,6 +26,19 @@ import type {SafetyRule} from '../safety/types.js';
 export type MaybePromise<T> = T | Promise<T>;
 
 /**
+ * Configured content library entry. When present in a {@link NormalizedConfig.libraries}
+ * array, it identifies a library by ID and optionally marks it as site-private.
+ *
+ * The simpler `string` form (an ID alone) is equivalent to `{id, siteLibrary: false}`.
+ */
+export interface LibraryEntry {
+  /** Library ID (or site ID for site-private libraries) */
+  id: string;
+  /** True if this library is site-private (lookup uses the site-library API) */
+  siteLibrary?: boolean;
+}
+
+/**
  * Normalized B2C configuration with camelCase fields.
  *
  * This is the canonical intermediate format that all configuration sources
@@ -112,8 +125,17 @@ export interface NormalizedConfig {
   /** Catalog IDs for WebDAV browsing */
   catalogs?: string[];
 
-  /** Library IDs for WebDAV browsing */
-  libraries?: string[];
+  /**
+   * Library IDs for WebDAV browsing and the Content Libraries tree.
+   *
+   * Accepts either a string array (all treated as shared libraries) or an
+   * array of {@link LibraryEntry} objects that can mark individual libraries
+   * as site-private. Both forms can be mixed in the same array.
+   *
+   * @example
+   *   ["RefArch", { id: "homepage", siteLibrary: true }]
+   */
+  libraries?: (string | LibraryEntry)[];
 
   /**
    * JSON dot-paths for asset extraction from component data during

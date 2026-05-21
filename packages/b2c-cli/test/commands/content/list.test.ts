@@ -154,4 +154,72 @@ describe('content list', () => {
     expect(libraryId).to.equal('TestLib');
     expect(options.isSiteLibrary).to.equal(true);
   });
+
+  it('defaults --site-library from a matching libraries config entry', async () => {
+    const command: any = await createCommand({library: 'homepage'});
+    stubCommon(command);
+    sinon.stub(command, 'jsonEnabled').returns(true);
+    Object.defineProperty(command, 'resolvedConfig', {
+      value: {
+        values: {
+          libraries: ['RefArch', {id: 'homepage', siteLibrary: true}],
+        },
+      },
+      configurable: true,
+    });
+
+    const mockLibrary = createMockLibrary();
+    const fetchStub = sinon.stub(command.operations, 'fetchContentLibrary').resolves({library: mockLibrary});
+
+    await command.run();
+
+    const [, libraryId, options] = fetchStub.firstCall.args;
+    expect(libraryId).to.equal('homepage');
+    expect(options.isSiteLibrary).to.equal(true);
+  });
+
+  it('explicit --no-site-library overrides libraries config default', async () => {
+    const command: any = await createCommand({library: 'homepage', 'site-library': false});
+    stubCommon(command);
+    sinon.stub(command, 'jsonEnabled').returns(true);
+    Object.defineProperty(command, 'resolvedConfig', {
+      value: {
+        values: {
+          libraries: [{id: 'homepage', siteLibrary: true}],
+        },
+      },
+      configurable: true,
+    });
+
+    const mockLibrary = createMockLibrary();
+    const fetchStub = sinon.stub(command.operations, 'fetchContentLibrary').resolves({library: mockLibrary});
+
+    await command.run();
+
+    const options = fetchStub.firstCall.args[2];
+    expect(options.isSiteLibrary).to.equal(false);
+  });
+
+  it('falls back to first libraries entry when --library and contentLibrary unset', async () => {
+    const command: any = await createCommand({});
+    stubCommon(command);
+    sinon.stub(command, 'jsonEnabled').returns(true);
+    Object.defineProperty(command, 'resolvedConfig', {
+      value: {
+        values: {
+          libraries: [{id: 'RefArch'}, {id: 'homepage', siteLibrary: true}],
+        },
+      },
+      configurable: true,
+    });
+
+    const mockLibrary = createMockLibrary();
+    const fetchStub = sinon.stub(command.operations, 'fetchContentLibrary').resolves({library: mockLibrary});
+
+    await command.run();
+
+    const [, libraryId, options] = fetchStub.firstCall.args;
+    expect(libraryId).to.equal('RefArch');
+    expect(options.isSiteLibrary).to.equal(false);
+  });
 });

@@ -127,20 +127,29 @@ describe('tools/storefrontnext/site-theming', () => {
       const firstText = getResultText(firstResult);
       expect(firstText).to.include('Questions to Ask the User');
 
+      // Extract a question id actually shown in the first response. The internal
+      // section formats each question as: ### Question N (category): id
+      const idMatch = firstText.match(/\((?:colors|typography|general)\):\s*([\w-]+)/);
+      expect(idMatch, 'expected first response to contain at least one question id').to.not.equal(null);
+      const askedId = idMatch![1];
+
       const secondResult = await tool.handler({
         fileKeys: ['theming-questions'],
         conversationContext: {
-          questionsAsked: ['color-primary'],
+          questionsAsked: [askedId],
           collectedAnswers: {
-            colors: [],
+            colors: [{hex: '#635BFF', type: 'primary'}],
             fonts: [],
-            'color-primary': '#635BFF',
+            [askedId]: 'answered',
           },
         },
       });
 
       const secondText = getResultText(secondResult);
-      expect(secondText).to.be.a('string');
+      // The asked question id must be excluded from the next batch of questions.
+      // The internal section uses `### Question N (category): <id>` so we look
+      // specifically for that header pattern.
+      expect(secondText).to.not.match(new RegExp(`\\((?:colors|typography|general)\\):\\s*${askedId}\\b`));
     });
 
     it('should include collected theming info in response', async () => {

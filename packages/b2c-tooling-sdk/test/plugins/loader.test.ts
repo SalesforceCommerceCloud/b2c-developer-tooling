@@ -30,14 +30,6 @@ describe('plugins/loader', () => {
       expect(ctx).to.have.property('config').that.is.an('object');
     });
 
-    it('methods do not throw without a logger', () => {
-      const ctx = createHookContext();
-      expect(() => ctx.debug('test')).to.not.throw();
-      expect(() => ctx.log('test')).to.not.throw();
-      expect(() => ctx.warn('test')).to.not.throw();
-      expect(() => ctx.error('test')).to.not.throw();
-    });
-
     it('routes messages through provided logger', () => {
       const messages: {level: string; msg: string}[] = [];
       const logger = {

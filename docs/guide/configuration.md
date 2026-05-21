@@ -258,8 +258,11 @@ For the full command reference with all flags, see [Setup Commands](/cli/setup).
 | `account-manager-host`   | Account Manager hostname for OAuth                                                                                                  |
 | `shortCode`              | SCAPI short code. Also accepts `short-code` or `scapi-shortcode`.                                                                   |
 | `content-library`        | Default content library ID for `content export` and `content list` commands                                                         |
+| `libraries`              | Library IDs for the WebDAV browser and Content Libraries tree. Accepts `string[]` or `[{id, siteLibrary?}]`; elements may be mixed  |
+| `asset-query`            | JSON dot-paths used to extract static asset URLs during content library parsing (default `["image.path"]`). Also accepts `assetQuery` |
 | `tenant-id`              | Organization/tenant ID for SCAPI                                                                                                    |
 | `sandbox-api-host`       | ODS (sandbox) API hostname                                                                                                          |
+| `realm`                  | Default ODS realm for sandbox operations                                                                                            |
 | `cip-host`               | CIP analytics host override                                                                                                         |
 | `mrtApiKey`              | MRT API key                                                                                                                         |
 | `mrtProject`             | MRT project slug                                                                                                                    |
@@ -320,15 +323,18 @@ You can store project-level defaults in your `package.json` file under the `b2c`
 
 Only non-sensitive, project-level fields can be configured in `package.json`. Both camelCase and kebab-case are accepted (e.g., `shortCode` or `short-code`):
 
-| Field                | Description                                                                 |
-| -------------------- | --------------------------------------------------------------------------- |
-| `shortCode`          | SCAPI short code                                                            |
-| `clientId`           | OAuth client ID (for implicit login discovery)                              |
-| `contentLibrary`     | Default content library ID for `content export` and `content list` commands |
-| `mrtProject`         | MRT project slug                                                            |
-| `mrtOrigin`          | MRT API origin URL override                                                 |
-| `accountManagerHost` | Account Manager hostname for OAuth                                          |
-| `sandboxApiHost`     | ODS (sandbox) API hostname                                                  |
+| Field                | Description                                                                                                                              |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `shortCode`          | SCAPI short code                                                                                                                         |
+| `clientId`           | OAuth client ID (for implicit login discovery)                                                                                           |
+| `contentLibrary`     | Default content library ID for `content export` and `content list` commands                                                              |
+| `libraries`          | Library IDs for the WebDAV browser and Content Libraries tree. Accepts `string[]` or `[{id, siteLibrary?}]`; elements may be mixed       |
+| `assetQuery`         | JSON dot-paths used to extract static asset URLs during content library parsing (default `["image.path"]`)                               |
+| `mrtProject`         | MRT project slug                                                                                                                         |
+| `mrtOrigin`          | MRT API origin URL override                                                                                                              |
+| `accountManagerHost` | Account Manager hostname for OAuth                                                                                                       |
+| `sandboxApiHost`     | ODS (sandbox) API hostname                                                                                                               |
+| `realm`              | Default ODS realm for sandbox operations                                                                                                 |
 
 ::: warning Security Note
 Sensitive fields like `hostname`, `password`, `clientSecret`, `username`, and `mrtApiKey` are intentionally **not** supported in `package.json`. These should be configured via `dw.json` (which should be in `.gitignore`), environment variables, or secure credential stores.
@@ -337,6 +343,30 @@ Sensitive fields like `hostname`, `password`, `clientSecret`, `username`, and `m
 ::: tip Lowest Priority
 `package.json` has the lowest priority of all configuration sources. Values from `dw.json`, environment variables, or CLI flags will always override `package.json` settings. This makes it ideal for project defaults that can be overridden per-environment.
 :::
+
+### Content Libraries Example
+
+The `libraries` field can list the content libraries your project works with so that the VS Code Content Libraries tree auto-loads them and `b2c content list/export` can default `--site-library` based on the entry.
+
+A bare string is treated as a shared library; an object can mark a library as site-private. Both forms can appear in the same array:
+
+```json
+{
+  "b2c": {
+    "libraries": [
+      "RefArchSharedLibrary",
+      { "id": "SiteGenesis", "siteLibrary": true }
+    ]
+  }
+}
+```
+
+With this config:
+
+- `b2c content list --library SiteGenesis` calls the site-library API automatically (no need to pass `--site-library`); the library ID is the site ID.
+- `b2c content list --library RefArchSharedLibrary` treats `RefArchSharedLibrary` as a shared library.
+- `--site-library` / `--no-site-library` on the command line still wins over the config default.
+- The VS Code Content Libraries tree shows both entries on activation, with `SiteGenesis` marked `[site]`.
 
 ### Resolution Priority
 

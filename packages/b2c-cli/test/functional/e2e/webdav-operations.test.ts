@@ -194,7 +194,7 @@ describe('WebDAV Operations E2E Tests', function () {
   });
 
   describe('Step 2: List Files', function () {
-    it('should list files in WebDAV directory', async function () {
+    it('should list files in WebDAV directory and include the uploaded file', async function () {
       await waitFor(async () => {
         const result = await runCLI([
           'webdav',
@@ -210,6 +210,23 @@ describe('WebDAV Operations E2E Tests', function () {
         const response = JSON.parse(toString(result.stdout));
         return response.entries?.some((e: any) => entryName(e) === testFileName);
       });
+
+      // Final deterministic assertion: the listing must contain the uploaded file.
+      const result = await runCLI([
+        'webdav',
+        'ls',
+        remoteBasePath,
+        '--server',
+        serverHostname,
+        '--root',
+        'impex',
+        '--json',
+      ]);
+      expect(result.exitCode, `webdav ls failed: ${toString(result.stderr) || toString(result.stdout)}`).to.equal(0);
+      const response = JSON.parse(toString(result.stdout));
+      expect(response.entries, 'webdav ls --json should return an entries array').to.be.an('array');
+      const found = (response.entries as Array<unknown>).some((e) => entryName(e) === testFileName);
+      expect(found, `Expected '${testFileName}' to be present in directory listing of ${remoteBasePath}`).to.be.true;
     });
   });
 
@@ -237,7 +254,19 @@ describe('WebDAV Operations E2E Tests', function () {
 
   describe('Step 4: Delete File', function () {
     it('should delete file from WebDAV', async function () {
-      await runCLI(['webdav', 'rm', remoteFilePath, '--server', serverHostname, '--force', '--root', 'impex']);
+      const rmResult = await runCLI([
+        'webdav',
+        'rm',
+        remoteFilePath,
+        '--server',
+        serverHostname,
+        '--force',
+        '--root',
+        'impex',
+      ]);
+      expect(rmResult.exitCode, `webdav rm failed: ${toString(rmResult.stderr) || toString(rmResult.stdout)}`).to.equal(
+        0,
+      );
 
       await waitFor(async () => {
         const result = await runCLI([
@@ -254,6 +283,24 @@ describe('WebDAV Operations E2E Tests', function () {
         const response = JSON.parse(toString(result.stdout));
         return !response.entries?.some((e: any) => entryName(e) === testFileName);
       });
+
+      // Final deterministic assertion: the file is gone from the listing.
+      const lsResult = await runCLI([
+        'webdav',
+        'ls',
+        remoteBasePath,
+        '--server',
+        serverHostname,
+        '--root',
+        'impex',
+        '--json',
+      ]);
+      expect(lsResult.exitCode, `webdav ls failed: ${toString(lsResult.stderr) || toString(lsResult.stdout)}`).to.equal(
+        0,
+      );
+      const response = JSON.parse(toString(lsResult.stdout));
+      const stillThere = (response.entries as Array<unknown> | undefined)?.some((e) => entryName(e) === testFileName);
+      expect(stillThere, `Deleted file '${testFileName}' should not appear in directory listing`).to.not.be.true;
     });
   });
 
@@ -296,7 +343,20 @@ describe('WebDAV Operations E2E Tests', function () {
 
   describe('Step 7: Delete Directory', function () {
     it('should delete directory from WebDAV', async function () {
-      await runCLI(['webdav', 'rm', remoteDirPath, '--server', serverHostname, '--force', '--root', 'impex']);
+      const rmResult = await runCLI([
+        'webdav',
+        'rm',
+        remoteDirPath,
+        '--server',
+        serverHostname,
+        '--force',
+        '--root',
+        'impex',
+      ]);
+      expect(
+        rmResult.exitCode,
+        `webdav rm (directory) failed: ${toString(rmResult.stderr) || toString(rmResult.stdout)}`,
+      ).to.equal(0);
 
       await waitFor(async () => {
         const result = await runCLI([
@@ -313,6 +373,22 @@ describe('WebDAV Operations E2E Tests', function () {
         const response = JSON.parse(toString(result.stdout));
         return !response.entries?.some((e: any) => entryName(e) === testDirName);
       });
+
+      // Final deterministic assertion: the directory is gone.
+      const lsResult = await runCLI([
+        'webdav',
+        'ls',
+        remoteBasePath,
+        '--server',
+        serverHostname,
+        '--root',
+        'impex',
+        '--json',
+      ]);
+      expect(lsResult.exitCode).to.equal(0);
+      const response = JSON.parse(toString(lsResult.stdout));
+      const stillThere = (response.entries as Array<unknown> | undefined)?.some((e) => entryName(e) === testDirName);
+      expect(stillThere, `Deleted directory '${testDirName}' should not appear in listing`).to.not.be.true;
     });
   });
 
@@ -355,6 +431,24 @@ describe('WebDAV Operations E2E Tests', function () {
         const response = JSON.parse(toString(result.stdout));
         return response.entries?.some((e: any) => entryName(e) === `${testDirName}.zip`);
       });
+
+      // Final deterministic assertion: the zip is present in the listing.
+      const lsResult = await runCLI([
+        'webdav',
+        'ls',
+        remoteBasePath,
+        '--server',
+        serverHostname,
+        '--root',
+        'impex',
+        '--json',
+      ]);
+      expect(lsResult.exitCode).to.equal(0);
+      const response = JSON.parse(toString(lsResult.stdout));
+      expect(response.entries, 'webdav ls --json should return an entries array').to.be.an('array');
+      const zipName = `${testDirName}.zip`;
+      const found = (response.entries as Array<unknown>).some((e) => entryName(e) === zipName);
+      expect(found, `Expected zip '${zipName}' to be present in listing of ${remoteBasePath}`).to.be.true;
     });
   });
 

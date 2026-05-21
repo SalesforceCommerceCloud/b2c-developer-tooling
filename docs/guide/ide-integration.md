@@ -4,7 +4,9 @@ description: Configure IDE tooling like Prophet VS Code extension and IntelliJ S
 
 # IDE Integration
 
-This guide explains how to connect IDE extensions to your B2C CLI configuration.
+This guide explains how to connect third-party IDE extensions (Prophet, IntelliJ SFCC) to your B2C CLI configuration.
+
+> Looking for the **Salesforce-published B2C DX VS Code Extension**? See the dedicated [VS Code Extension](../vscode-extension/) section — it consumes `dw.json` and the active instance directly, no bridge script required.
 
 ## Prophet VS Code Extension
 

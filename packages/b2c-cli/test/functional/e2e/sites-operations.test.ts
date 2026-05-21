@@ -91,21 +91,16 @@ describe('Sites Operations E2E Tests', function () {
   });
 
   describe('Step 1: List All Sites', function () {
-    it('should respond to sites list command', async function () {
+    it('should list sites successfully', async function () {
       const result = await runCLI(['sites', 'list', '--server', serverHostname, '--json']);
 
-      // sites list may fail if OCAPI is not enabled — accept controlled failure
-      expect(result.exitCode).to.be.oneOf([0, 1]);
+      expect(result.exitCode, `sites list failed: ${toString(result.stderr) || toString(result.stdout)}`).to.equal(0);
 
-      if (result.exitCode === 0) {
-        const response = JSON.parse(toString(result.stdout));
-        expect(response.data).to.be.an('array');
-      } else {
-        const errorText = toString(result.stderr) || toString(result.stdout);
-        expect(errorText).to.not.equal('');
-        const error = JSON.parse(errorText);
-        expect(error.error).to.exist;
-      }
+      const response = JSON.parse(toString(result.stdout));
+      expect(response.data, 'sites list response should contain a data array').to.be.an('array');
+      // The TestSite imported in `before` should be visible in the listing.
+      const testSite = (response.data as Array<Record<string, unknown>>).find((s) => s.id === SITE_ID);
+      expect(testSite, `imported site '${SITE_ID}' should be present in sites list`).to.exist;
     });
   });
 

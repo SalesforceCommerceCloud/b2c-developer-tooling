@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "B2C DX VSCE",
   "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.6.0",
+  "version": "0.7.1",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -11,11 +11,15 @@
   "categories": [
     "Other"
   ],
+  "type": "module",
   "dependencies": {
     "@salesforce/b2c-tooling-sdk": "workspace:*"
   },
   "engines": {
     "vscode": "^1.105.1"
+  },
+  "telemetry": {
+    "connectionString": "InstrumentationKey=6fcc215f-0b11-4864-ad5c-3945ae19e2f3;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=a60f17ec-265a-4dfc-b8df-03a64695697d"
   },
   "activationEvents": [
     "onStartupFinished",
@@ -29,7 +33,7 @@
     "onDebugResolve:b2c-script",
     "workspaceContains:**/commerce-app.json"
   ],
-  "main": "./dist/extension.js",
+  "main": "./dist/extension.cjs",
   "contributes": {
     "configuration": {
       "title": "B2C DX",
@@ -93,6 +97,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable Code Sync (watch and deploy cartridges)."
+        },
+        "b2c-dx.telemetry.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Send anonymous usage telemetry (extension lifecycle and broad feature-category events). Honors VS Code's telemetry.telemetryLevel — disabling that disables this regardless of this setting."
         }
       }
     },
@@ -1025,7 +1034,8 @@
     "@types/vscode": "^1.105.1",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
-    "@vscode/vsce": "^3.7.1",
+    "@vscode/vsce": "^3.9.1",
+    "c8": "catalog:",
     "esbuild": "^0.24.0",
     "swagger-ui-dist": "^5.18.0",
     "eslint": "catalog:",

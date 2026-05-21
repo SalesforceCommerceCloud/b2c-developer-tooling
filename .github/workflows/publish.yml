@@ -429,13 +429,13 @@ jobs:
         if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true' && steps.packages.outputs.publish_plugins == 'true'
         run: |
           # Create b2c-skills.zip containing skills/b2c/skills/
-          cd skills/b2c && zip -r ../../b2c-skills.zip skills/
+          cd skills/b2c && zip -r ../../b2c-skills.zip skills/ -x "*/evals/*"
           cd ../..
           # Create b2c-cli-skills.zip containing skills/b2c-cli/skills/
-          cd skills/b2c-cli && zip -r ../../b2c-cli-skills.zip skills/
+          cd skills/b2c-cli && zip -r ../../b2c-cli-skills.zip skills/ -x "*/evals/*"
           cd ../..
           # Create storefront-next-skills.zip containing skills/storefront-next/skills/
-          cd skills/storefront-next && zip -r ../../storefront-next-skills.zip skills/
+          cd skills/storefront-next && zip -r ../../storefront-next-skills.zip skills/ -x "*/evals/*"
           cd ../..
           echo "Created skills artifacts:"
           ls -la *.zip

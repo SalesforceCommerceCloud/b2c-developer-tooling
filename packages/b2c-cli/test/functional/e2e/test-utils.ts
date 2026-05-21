@@ -33,7 +33,7 @@ export const TIMEOUTS = {
   /** Standard CLI operation (list, get, etc.) */
   DEFAULT: 30_000,
   /** ODS operations (create, start, stop with --wait) */
-  ODS_OPERATION: 720_000, // 12 minutes
+  ODS_OPERATION: 1_440_000, // 24 minutes
   /** Job execution with --wait */
   JOB_EXECUTION: 600_000, // 10 minutes
   /** WebDAV upload/download */
@@ -210,6 +210,10 @@ export async function runCLIWithRetry(args: string[], options: RetryOptions = {}
   let lastResult: ExecaReturnValue | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    if (verbose) {
+      console.log(`  → CLI: b2c ${args.join(' ')} (attempt ${attempt + 1}/${maxRetries + 1})`);
+    }
+
     // eslint-disable-next-line no-await-in-loop
     const result = await runCLI(args, {timeout, env, cwd});
 
@@ -223,14 +227,22 @@ export async function runCLIWithRetry(args: string[], options: RetryOptions = {}
 
     lastResult = result;
 
-    // Check if error is retryable
+    // Check if error is retryable. Treat execa timeouts as retryable since
+    // they kill the child process and produce empty stderr (no signal in text).
     const errorMsg = toString(result.stderr) || toString(result.stdout);
-    const isRetryable = retryableErrors.some((pattern) => pattern.test(errorMsg));
+    const isTimeout = Boolean(result.timedOut) || result.signal === 'SIGTERM';
+    const isRetryable = isTimeout || retryableErrors.some((pattern) => pattern.test(errorMsg));
 
-    // If not retryable or last attempt, return result
+    // If not retryable or last attempt, return result. Always surface what
+    // happened on CI so failures aren't silent (empty stderr on timeout).
     if (!isRetryable || attempt === maxRetries) {
-      if (verbose && !isRetryable) {
-        console.log(`  ✗ This looks non-transient; not retrying`);
+      if (verbose) {
+        if (isRetryable) {
+          console.log(`  ✗ Exhausted ${maxRetries + 1} attempts; giving up`);
+        } else {
+          console.log(`  ✗ Non-retryable failure; giving up`);
+        }
+        console.log(`    ${getErrorDetails(result).split('\n').join('\n    ')}`);
       }
       return result;
     }
@@ -239,8 +251,9 @@ export async function runCLIWithRetry(args: string[], options: RetryOptions = {}
     const delay = Math.min(initialDelay * 2 ** attempt, maxDelay);
 
     if (verbose) {
-      console.log(`  ⚠ Temporary issue (attempt ${attempt + 1}/${maxRetries + 1}); trying again in ${delay}ms...`);
-      console.log(`    Details: ${errorMsg.slice(0, 200)}${errorMsg.length > 200 ? '...' : ''}`);
+      const reason = isTimeout ? 'execa timeout' : 'transient error';
+      console.log(`  ⚠ ${reason} (attempt ${attempt + 1}/${maxRetries + 1}); retrying in ${delay}ms...`);
+      console.log(`    ${getErrorDetails(result).split('\n').join('\n    ')}`);
     }
 
     // eslint-disable-next-line no-await-in-loop
