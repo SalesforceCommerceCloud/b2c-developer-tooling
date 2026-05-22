@@ -78,7 +78,6 @@ Any editor that wraps `tsserver` (e.g., `coc-tsserver`, `typescript-language-ser
 ### Notes
 
 - The bundle is version-locked to a Script API release (currently 26.7). Re-run `b2c setup ide vscode-types --force` after upgrading the CLI to refresh.
-- The Prophet extension provides connection settings; it does not provide IntelliSense. The two coexist fine — use Prophet for the dw.json bridge and the steps above for typing.
 
 ## Prophet VS Code Extension
 
