@@ -1,0 +1,143 @@
+/**
+ * This class is used together with other classes that contain custom attributes and is used to read and write these
+ * attributes. The actual attributes are accessible as ECMA properties. The syntax for setting and retrieving the value
+ * of a custom attribute depends upon the type of the attribute. An exception will be thrown, if the wrong syntax is
+ * used to set an individual attribute.
+ * 
+ * The following script examples demonstrate how to work with custom attributes. Suppose we have an ExtensibleObject
+ * named "eo" possessing attributes of all the different types supported by the Commerce Cloud Digital metadata system.
+ * The following script snippet shows that setting single-valued attributes is simply a matter of using the assignment
+ * operator and standard ECMA primitives and built-in types:
+ * 
+ * ```
+ * // attribute of value type 'Boolean'
+ * eo.custom.bvalue = true;
+ * var b : Boolean = eo.custom.bvalue;
+ * 
+ * // attribute of value type 'Integer'
+ * eo.custom.ivalue = 10;
+ * var i : Number = eo.custom.ivalue;
+ * 
+ * // attribute of value type 'Number'
+ * eo.custom.dvalue = 99.99;
+ * var d : Number = eo.custom.dvalue;
+ * 
+ * // attribute of value type 'String'
+ * eo.custom.svalue = "String1";
+ * var s : String = eo.custom.svalue;
+ * 
+ * // attribute of value type 'Email'
+ * eo.custom.emailvalue = "email@demandware.com";
+ * var e : String = eo.custom.emailvalue;
+ * 
+ * // attribute of value type 'Text'
+ * eo.custom.tvalue = "laaaaaaaaaaaarge text";
+ * var t : String = eo.custom.tvalue;
+ * 
+ * // attribute of value type 'Date'
+ * eo.custom.dtvalue = new Date;
+ * var date : Date = eo.custom.dtvalue;
+ * ```
+ * 
+ * Retrieving multi-value attributes and working with Java-backed arrays
+ * 
+ * Multi-value attributes return Java-backed arrays, which contain copies of the internal data. In contrast to native
+ * JavaScript arrays, a Java-backed array behaves differently in the following ways:
+ * 
+ * - `Array.isArray( javaBackedArray )` will return `false`. If you want to do something based
+ * on the value type, use `javaBackedArray instanceof Array` instead.
+ * - Adding to or removing elements from a Java-backed array is not supported. You need to create a new native
+ * JavaScript array based on the Java-backed array, e.g. with `Array.from( javaBackedArray )` and do the
+ * modifications there.
+ * 
+ * ```
+ * var setofstring : Array = eo.custom.setofstringvalue;
+ * if( Array.isArray( setofstring ) ) // returns false
+ * {
+ * // this will never be reached, since setofstring is a Java-backed array and not a native JavaScript array
+ * }
+ * if( setofstring instanceof Array ) // returns true
+ * {
+ * // this will be reached, since setofstring is a Java-backed array
+ * }
+ * ```
+ * 
+ * Updating multi-value attributes
+ * 
+ * Retrieved data from a multi-value attribute returns a Java-backed array, which contains a copy of the internal data,
+ * so changes made to the Java-backed array do not affect the multi-value attribute. To update the multi-value attribute
+ * (e.g. adding a new element), it needs to be reassigned.
+ * 
+ * ```
+ * // retrieve a Java-backed array and convert it to a native JavaScript array
+ * var setofstring : Array = eo.custom.setofstringvalue;
+ * var newValue = Array.from( setofstring );
+ * 
+ * // add new element
+ * newValue.append( "new element" );
+ * 
+ * // reassign the new array to the multi-value attribute to persist the change
+ * eo.custom.setofstringvalue = newValue;
+ * ```
+ * 
+ * If you only want to change individual elements without appending or removing elements from the Java-backed array, you
+ * may even modify it directly.
+ * 
+ * ```
+ * // retrieve a Java-backed array
+ * var setofstring : Array = eo.custom.setofstringvalue;
+ * 
+ * // change individual element
+ * setofstring[0] = "updated element";
+ * 
+ * // reassign the array to the multi-value attribute to persist the change
+ * eo.custom.setofstringvalue = setofstring;
+ * ```
+ * 
+ * Set-of attributes and enum-of attributes
+ * 
+ * Set-of attributes and enum-of attributes are handled in a very similar manner. The chief difference is that enum-of
+ * attributes are limited to a prescribed set of value definitions whereas set-of attributes are open-ended.
+ * Furthermore, each value in an enum-of attribute has a value and a display name which affects the retrieval logic.
+ * 
+ * ```
+ * // attribute of value type 'Set of String'
+ * // set the attribute value only if it hasn't been already set
+ * if( !('setofstringvalue' in eo.custom) )
+ * {
+ * eo.custom.setofstringvalue = new Array("abc","def","ghi");
+ * }
+ * 
+ * // returns an Array of String instances
+ * var setofstring : Array = eo.custom.setofstringvalue;
+ * var s1 : String = setofstring[0];
+ * var s2 : String = setofstring[1];
+ * var s3 : String = setofstring[2];
+ * 
+ * // attribute of value type 'Enum of Integer' with multi-value handling
+ * eo.custom.enumofintmultivalue = new Array(1, 2, 3);
+ * 
+ * // returns an Array of EnumValue instances
+ * var enumofintmulti : Array = eo.custom.enumofintmultivalue;
+ * var value1 : Number = enumofintmulti[0].getValue();
+ * var displayvalue1 : String = enumofintmulti[0].getDisplayValue();
+ * var value2 : Number = enumofintmulti[1].getValue();
+ * var displayvalue2 : String = enumofintmulti[1].getDisplayValue();
+ * var value3 : Number = enumofintmulti[2].getValue();
+ * var displayvalue3 : String = enumofintmulti[2].getDisplayValue();
+ * ```
+ * 
+ * For further details on the Commerce Cloud Digital attribute system, see the core Commerce Cloud Digital
+ * documentation.
+ */
+declare abstract class CustomAttributes {
+    private constructor();
+    [name: string]:
+        | boolean | number | string | Date
+        | string[] | number[] | boolean[]
+        | Array<any>
+        | any
+        | null;
+}
+
+export = CustomAttributes;

@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "dw/*": ["./.b2c-script-types/types/dw/*"],
+      "*/cartridge/scripts/*": ["./cartridges/*/cartridge/scripts/*"]
+    },
+    "types": []
+  },
+  "include": [".b2c-script-types/types/global.d.ts", "**/cartridge/**/*.js"],
+  "exclude": ["**/cartridge/static/**", "**/node_modules/**"]
+}

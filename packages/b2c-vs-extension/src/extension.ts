@@ -10,6 +10,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {B2CExtensionConfig} from './config-provider.js';
+import {CartridgeService} from './cartridges/cartridge-service.js';
 import {registerCap} from './cap/index.js';
 import {registerJobLogViewer} from './job-log-viewer.js';
 import {registerContentTree} from './content-tree/index.js';
@@ -21,6 +22,7 @@ import {registerScaffold} from './scaffold/index.js';
 import {registerApiBrowser} from './api-browser/index.js';
 import {registerDebugger} from './debugger/index.js';
 import {registerCodeSync} from './code-sync/index.js';
+import {registerScriptTypes} from './script-types/index.js';
 import {registerWebDavTree} from './webdav-tree/index.js';
 import {disposeTelemetry, initTelemetry, markFeatureUsed, sendEvent, sendException} from './telemetry.js';
 
@@ -163,6 +165,9 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   await configProvider.ensureResolved();
 
   registerSafety(context, configProvider);
+
+  const cartridgeService = new CartridgeService(configProvider);
+  context.subscriptions.push(cartridgeService);
 
   const disposable = vscode.commands.registerCommand('b2c-dx.openUI', () => {
     markFeatureUsed('pageDesigner');
@@ -424,7 +429,10 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     registerCap(context, configProvider, log);
   }
   if (settings.get<boolean>('features.codeSync', true)) {
-    registerCodeSync(context, configProvider, log);
+    registerCodeSync(context, configProvider, cartridgeService, log);
+  }
+  if (settings.get<boolean>('features.scriptTypes', true)) {
+    registerScriptTypes(context, cartridgeService, log);
   }
 
   registerDebugger(context, configProvider);

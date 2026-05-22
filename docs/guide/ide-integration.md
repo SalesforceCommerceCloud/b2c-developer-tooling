@@ -1,12 +1,75 @@
 ---
-description: Configure IDE tooling like Prophet VS Code extension and IntelliJ SFCC plugin to consume resolved B2C CLI configuration.
+description: Configure IDE tooling like Prophet VS Code extension and IntelliJ SFCC plugin to consume resolved B2C CLI configuration, plus enable Script API IntelliSense via TypeScript definitions.
 ---
 
 # IDE Integration
 
-This guide explains how to connect third-party IDE extensions (Prophet, IntelliJ SFCC) to your B2C CLI configuration.
+This guide explains how to connect third-party IDE extensions (Prophet, IntelliJ SFCC) to your B2C CLI configuration, and how to enable Script API IntelliSense in any IDE.
 
 > Looking for the **Salesforce-published B2C DX VS Code Extension**? See the dedicated [VS Code Extension](../vscode-extension/) section — it consumes `dw.json` and the active instance directly, no bridge script required.
+
+## Script API IntelliSense
+
+Get autocomplete and inline documentation on `require('dw/catalog/ProductMgr')`, hover docs from JSDoc, signature help, and member completion in cartridge JavaScript files. The B2C tooling ships TypeScript definitions for the Script API (currently version 26.7) covering all `dw/*` modules, top-level globals (`request`, `customer`, `session`), and the `ICustomAttributes` extension hook.
+
+There are three setup paths depending on your IDE:
+
+### B2C DX VS Code Extension (recommended)
+
+If you have the B2C DX VS Code extension installed, IntelliSense is automatic:
+
+- No configuration files are written into your repository.
+- The extension registers a TypeScript Server plugin that resolves `dw/*` modules transparently for any file inside a detected cartridge (folders containing a `.project` file alongside a `cartridge/` directory).
+- Files outside your cartridges are unaffected.
+
+You can disable the feature with the `b2c-dx.features.scriptTypes` setting (default: `true`).
+
+### Standalone VS Code, WebStorm, or IntelliJ Ultimate
+
+For IDEs without the extension, run the following from your project root to vendor the type bundle and a `jsconfig.json`:
+
+```bash
+b2c setup ide vscode-types
+```
+
+This creates:
+
+- `./.b2c-script-types/types/` — vendored copy of the Script API definitions.
+- `./jsconfig.json` — TypeScript Language Service configuration mapping `dw/*` to the vendored types.
+
+You can commit both into your repository if you want everyone on the team to share the same setup. To re-vendor after upgrading the CLI, re-run with `--force`.
+
+The generated `jsconfig.json` looks like this — feel free to author it yourself if you prefer:
+
+```json
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "dw/*": ["./.b2c-script-types/types/dw/*"],
+      "*/cartridge/scripts/*": ["./cartridges/*/cartridge/scripts/*"]
+    },
+    "types": []
+  },
+  "include": [".b2c-script-types/types/global.d.ts", "**/cartridge/**/*.js"],
+  "exclude": ["**/cartridge/static/**", "**/node_modules/**"]
+}
+```
+
+### Neovim, Helix, Sublime, or other LSPs
+
+Any editor that wraps `tsserver` (e.g., `coc-tsserver`, `typescript-language-server`) honors `jsconfig.json`. Use the same `b2c setup ide vscode-types` command above; the LSP will pick it up automatically.
+
+### Notes
+
+- The bundle is version-locked to a Script API release (currently 26.7). Re-run `b2c setup ide vscode-types --force` after upgrading the CLI to refresh.
+- The Prophet extension provides connection settings; it does not provide IntelliSense. The two coexist fine — use Prophet for the dw.json bridge and the steps above for typing.
 
 ## Prophet VS Code Extension
 

@@ -13,6 +13,7 @@
   ],
   "type": "module",
   "dependencies": {
+    "@salesforce/b2c-script-types": "workspace:*",
     "@salesforce/b2c-tooling-sdk": "workspace:*"
   },
   "engines": {
@@ -35,6 +36,13 @@
   ],
   "main": "./dist/extension.cjs",
   "contributes": {
+    "typescriptServerPlugins": [
+      {
+        "name": "@salesforce/b2c-script-types",
+        "enableForWorkspaceTypeScriptVersions": true,
+        "configNamespace": "b2c-dx"
+      }
+    ],
     "configuration": {
       "title": "B2C DX",
       "properties": {
@@ -97,6 +105,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable Code Sync (watch and deploy cartridges)."
+        },
+        "b2c-dx.features.scriptTypes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Provide Script API IntelliSense (dw/*) in cartridge JavaScript via the bundled TypeScript Server plugin. No files are written to your workspace."
         },
         "b2c-dx.telemetry.enabled": {
           "type": "boolean",
@@ -590,6 +603,12 @@
         "title": "Activate Code Version",
         "icon": "$(check)",
         "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.scriptTypes.refresh",
+        "title": "Refresh Script API IntelliSense",
+        "icon": "$(refresh)",
+        "category": "B2C DX"
       }
     ],
     "menus": {
@@ -1016,7 +1035,7 @@
     "build": "node scripts/esbuild-bundle.mjs",
     "watch": "node scripts/esbuild-bundle.mjs --watch",
     "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
-    "package": "pnpm exec vsce package --no-dependencies",
+    "package": "pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
     "typecheck:agent": "tsc -p . --noEmit --pretty false",
