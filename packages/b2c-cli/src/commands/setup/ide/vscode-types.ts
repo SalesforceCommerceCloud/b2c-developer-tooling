@@ -33,6 +33,7 @@ function buildJsconfigContent(): string {
         baseUrl: '.',
         paths: {
           'dw/*': [`./${SCRIPT_TYPES_DIR}/types/dw/*`],
+          '~/cartridge/*': ['./cartridges/*/cartridge/*'],
           '*/cartridge/scripts/*': ['./cartridges/*/cartridge/scripts/*'],
         },
         types: [],

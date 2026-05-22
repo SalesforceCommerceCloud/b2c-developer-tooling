@@ -24,6 +24,14 @@ If you have the B2C DX VS Code extension installed, IntelliSense is automatic:
 
 You can disable the feature with the `b2c-dx.features.scriptTypes` setting (default: `true`).
 
+The plugin also resolves SFCC cartridge-style requires across your workspace's cartridge path:
+
+- `require('~/cartridge/scripts/foo')` — searches every cartridge in priority order, with the cartridge owning the current file checked first (SFRA-style override).
+- `require('*/cartridge/scripts/foo')` — equivalent to `~/`; resolves against the same cartridge path.
+- `require('app_storefront_base/cartridge/scripts/foo')` — resolves only within the named cartridge.
+
+Cartridge resolution order matches your runtime cartridge path: the `cartridges` field from your resolved configuration (`dw.json`, `SFCC_CARTRIDGES`, `.env`, etc.) wins. When that's not set, cartridges fall back to discovery order with known base cartridges (`app_storefront_base`, `modules`) sorted last. The same ordering also drives the **B2C-DX → Cartridges** tree view.
+
 ### Standalone VS Code, WebStorm, or IntelliJ Ultimate
 
 For IDEs without the extension, run the following from your project root to vendor the type bundle and a `jsconfig.json`:
@@ -53,6 +61,7 @@ The generated `jsconfig.json` looks like this — feel free to author it yoursel
     "baseUrl": ".",
     "paths": {
       "dw/*": ["./.b2c-script-types/types/dw/*"],
+      "~/cartridge/*": ["./cartridges/*/cartridge/*"],
       "*/cartridge/scripts/*": ["./cartridges/*/cartridge/scripts/*"]
     },
     "types": []

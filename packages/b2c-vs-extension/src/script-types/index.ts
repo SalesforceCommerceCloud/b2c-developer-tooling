@@ -58,9 +58,11 @@ export function registerScriptTypes(
     const a = await ensureApi();
     if (!a) return;
     const enabled = isFeatureEnabled();
-    const roots = enabled ? cartridgeService.getCartridgeRoots() : [];
-    a.configurePlugin(PLUGIN_ID, {cartridgeRoots: roots, enabled});
-    log.appendLine(`[ScriptTypes] Pushed ${roots.length} cartridge root(s); enabled=${enabled}.`);
+    const cartridges = enabled ? cartridgeService.getCartridges().map((c) => ({name: c.name, src: c.src})) : [];
+    a.configurePlugin(PLUGIN_ID, {cartridges, enabled});
+    log.appendLine(
+      `[ScriptTypes] Pushed ${cartridges.length} cartridge(s); enabled=${enabled}; order=[${cartridges.map((c) => c.name).join(', ')}].`,
+    );
   };
 
   void push();
@@ -75,9 +77,9 @@ export function registerScriptTypes(
 
   const refreshCmd = vscode.commands.registerCommand('b2c-dx.scriptTypes.refresh', async () => {
     cartridgeService.refresh();
-    const roots = cartridgeService.getCartridgeRoots();
+    const cartridges = cartridgeService.getCartridges();
     vscode.window.showInformationMessage(
-      `B2C DX: Script API IntelliSense — ${isFeatureEnabled() ? 'active' : 'disabled'} (${roots.length} cartridge${roots.length === 1 ? '' : 's'}).`,
+      `B2C DX: Script API IntelliSense — ${isFeatureEnabled() ? 'active' : 'disabled'} (${cartridges.length} cartridge${cartridges.length === 1 ? '' : 's'}).`,
     );
   });
 
