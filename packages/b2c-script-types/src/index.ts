@@ -22,19 +22,35 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
   let cartridgeRoots: string[] = [];
   let enabled = true;
 
+  // tsserver internally canonicalizes file paths to forward slashes regardless of
+  // platform (so containingFile is "C:/proj/..." on Windows). The cartridge roots
+  // we receive from the extension come from Node's path.resolve(), which returns
+  // backslashes on Windows — we have to normalize to match. We also fold case on
+  // case-insensitive filesystems (Windows + default macOS HFS+/APFS) so a path
+  // like "C:/Proj" matches a cartridge root of "c:/proj".
+  const caseSensitive = ts.sys.useCaseSensitiveFileNames;
+  const normalize = (p: string): string => {
+    const slashed = p.replace(/\\/g, '/');
+    return caseSensitive ? slashed : slashed.toLowerCase();
+  };
+
   const applyConfig = (config: unknown) => {
     const c = (config ?? {}) as PluginConfig;
     enabled = c.enabled !== false;
     const roots = Array.isArray(c.cartridgeRoots) ? c.cartridgeRoots : [];
     cartridgeRoots = roots
       .filter((p): p is string => typeof p === 'string' && p.length > 0)
-      .map((p) => (p.endsWith(path.sep) || p.endsWith('/') ? p : p + path.sep));
+      .map((p) => {
+        const n = normalize(p);
+        return n.endsWith('/') ? n : n + '/';
+      });
   };
 
   const isCartridgeFile = (filePath: string): boolean => {
     if (!enabled || cartridgeRoots.length === 0) return false;
+    const f = normalize(filePath);
     for (const root of cartridgeRoots) {
-      if (filePath.startsWith(root)) return true;
+      if (f.startsWith(root)) return true;
     }
     return false;
   };
