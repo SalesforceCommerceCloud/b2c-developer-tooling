@@ -49,9 +49,11 @@ function init({ typescript: ts }) {
         return false;
     };
     const resolveDwModule = (moduleName) => {
-        // require('dw/catalog/Product') -> <typesDir>/dw/catalog/Product.d.ts
+        // require('dw/catalog/Product') -> <typesDir>/dw/catalog/Product.d.ts.
+        // tsserver keys its internal file map on forward-slash paths, so normalize
+        // the return value here — path.join produces backslashes on Windows.
         if (moduleName.startsWith('dw/')) {
-            return node_path_1.default.join(TYPES_DIR, moduleName + '.d.ts');
+            return node_path_1.default.join(TYPES_DIR, moduleName + '.d.ts').replace(/\\/g, '/');
         }
         return undefined;
     };
