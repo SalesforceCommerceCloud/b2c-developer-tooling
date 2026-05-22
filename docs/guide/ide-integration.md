@@ -40,12 +40,12 @@ For IDEs without the extension, run the following from your project root to vend
 b2c setup ide vscode-types
 ```
 
-This creates:
+This creates two artifacts at the repo root:
 
 - `./.b2c-script-types/types/` — vendored copy of the Script API definitions.
 - `./jsconfig.json` — TypeScript Language Service configuration mapping `dw/*` to the vendored types.
 
-You can commit both into your repository if you want everyone on the team to share the same setup. To re-vendor after upgrading the CLI, re-run with `--force`.
+You can commit both into your repository if you want everyone on the team to share the same setup. To re-vendor after upgrading the CLI, re-run with `--force`. The `jsconfig.json` lives at the repo root by design — the `paths` mappings inside it are repo-root-relative and will not resolve correctly from a subdirectory.
 
 The generated `jsconfig.json` looks like this — feel free to author it yourself if you prefer:
 
@@ -71,9 +71,29 @@ The generated `jsconfig.json` looks like this — feel free to author it yoursel
 }
 ```
 
-### Neovim, Helix, Sublime, or other LSPs
+### Neovim, Helix, Zed, Sublime, or other LSP-based editors
 
-Any editor that wraps `tsserver` (e.g., `coc-tsserver`, `typescript-language-server`) honors `jsconfig.json`. Use the same `b2c setup ide vscode-types` command above; the LSP will pick it up automatically.
+Modern editors that drive `tsserver` through the Language Server Protocol pick up `jsconfig.json` automatically as long as the language server is launched with the project root as its workspace directory. Run `b2c setup ide vscode-types` at the repo root once and the LSP will detect it on next start — no editor-specific configuration is needed for the typings themselves.
+
+The recommended language servers and what to install:
+
+- **Neovim** with [`nvim-lspconfig`](https://github.com/neovim/nvim-lspconfig) — use the `ts_ls` server (formerly `tsserver`), backed by the `typescript-language-server` npm package. Older `coc-tsserver` setups also work.
+- **Helix** — bundles `typescript-language-server`; nothing to wire up beyond installing the package globally (`npm i -g typescript-language-server typescript`).
+- **Zed** — ships TypeScript support out of the box; no extra configuration.
+- **Sublime Text** — install `LSP` and `LSP-typescript` from Package Control.
+
+A minimal Neovim 0.10+ snippet for `nvim-lspconfig`:
+
+```lua
+require('lspconfig').ts_ls.setup({
+  -- treat repos with a jsconfig.json (or .project) as the project root so
+  -- tsserver picks up the cartridge typings the b2c CLI vendored.
+  root_dir = require('lspconfig.util').root_pattern('jsconfig.json', 'tsconfig.json', '.project', '.git'),
+  filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
+})
+```
+
+If your editor's LSP client is launched outside the repo root (for example, opening a single cartridge subdirectory), point it at the directory containing `jsconfig.json` so `tsserver` resolves the `paths` mappings correctly.
 
 ### Notes
 

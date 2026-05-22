@@ -121,9 +121,57 @@ b2c setup ide
 # Show setup ide subcommands
 b2c setup ide --help
 
+# Vendor Script API TypeScript definitions for IDE IntelliSense
+b2c setup ide vscode-types
+
 # Generate Prophet integration script
 b2c setup ide prophet
 ```
+
+## b2c setup ide vscode-types
+
+Vendor B2C Commerce Script API TypeScript definitions and write a `jsconfig.json` into the workspace so any IDE that drives `tsserver` (plain VS Code, WebStorm, IntelliJ Ultimate, Neovim, Helix, Zed, Sublime Text) gets `dw/*` IntelliSense, hover docs, and signature help in cartridge JavaScript files.
+
+The B2C DX VS Code extension does not need this command — it injects the same TypeScript Server plugin at runtime without writing files into your repo. Use this command only when you're not running the extension.
+
+### Usage
+
+```bash
+b2c setup ide vscode-types [FLAGS]
+```
+
+### Flags
+
+| Flag             | Description                                                       | Default          |
+| ---------------- | ----------------------------------------------------------------- | ---------------- |
+| `--output`, `-o` | Path for the generated `jsconfig.json` (relative to project root) | `jsconfig.json`  |
+| `--force`, `-f`  | Overwrite output files if they already exist                      | `false`          |
+| `--[no-]copy`    | Copy bundled types into `./.b2c-script-types/`                    | `true`           |
+| `--json`         | Output results as JSON                                            | `false`          |
+
+The generated `paths` mappings are written relative to the repo root, so `--output` is only intended for renaming the file itself (e.g., `--output jsconfig.cartridges.json`), not for relocating it into a subdirectory.
+
+### Examples
+
+```bash
+# Default: write ./jsconfig.json and ./.b2c-script-types/types/ at the repo root
+b2c setup ide vscode-types
+
+# Re-vendor after upgrading the CLI
+b2c setup ide vscode-types --force
+
+# Regenerate jsconfig only (skip the type bundle copy; types must already be vendored)
+b2c setup ide vscode-types --no-copy --force
+```
+
+### Output
+
+The command produces:
+
+- `./.b2c-script-types/types/` — vendored copy of the Script API definitions, version-pinned to the CLI release. Safe to commit.
+- `./jsconfig.json` (or the path passed to `--output`) — TypeScript Language Service configuration mapping `dw/*` to the vendored types and adding cartridge-style `paths` for `~/cartridge/*` and `*/cartridge/scripts/*`.
+
+See the [IDE Integration guide](/guide/ide-integration#script-api-intellisense) for editor-specific setup notes (Neovim, Helix, Zed, etc.).
 
 ## b2c setup ide prophet
 
