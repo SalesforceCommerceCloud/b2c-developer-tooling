@@ -1,3 +1,7 @@
+---
+description: Automate B2C Commerce code deployment, data import, MRT bundles, and job execution with the official B2C CLI GitHub Actions for CI/CD pipelines.
+---
+
 # CI/CD with GitHub Actions
 
 The B2C Developer Tooling project provides official GitHub Actions for automating B2C Commerce operations in your CI/CD pipelines.

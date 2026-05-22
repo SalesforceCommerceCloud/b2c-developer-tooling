@@ -1,5 +1,15 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.3.2
+
+### Patch Changes
+
+- [#428](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/428) [`db7b330`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/db7b330cf60debf05d681b9e1dbb4e025d8eec02) - `b2c job import` now accepts an optional list of paths or globs after the directory `TARGET`, allowing you to import a subset of a site export. Paths are resolved literally first (so shell-expanded globs work) and fall back to root-relative or internal glob expansion when the literal path doesn't exist. The archive preserves each path's layout under `TARGET`. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Example: `b2c job import ./my-site-data sites/RefArch libraries/mylib`
+
+  The SDK's `siteArchiveImport` operation gains a corresponding `paths` option for directory targets.
+
 ## 1.3.1
 
 ### Patch Changes
