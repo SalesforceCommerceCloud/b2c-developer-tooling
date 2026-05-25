@@ -6,4 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<QuickstartAdventure adventure-id="migrate-sfcc-ci" />
+<QuickstartGuide id="migrate-sfcc-ci" />

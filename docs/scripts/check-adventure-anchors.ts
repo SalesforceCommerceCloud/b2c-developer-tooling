@@ -186,12 +186,12 @@ for (const adventure of adventures) {
 
 if (issues.length === 0) {
   // eslint-disable-next-line no-console
-  console.log(`✓ All Setup Adventure anchors resolve (${adventures.length} adventures checked).`);
+  console.log(`✓ All Quickstart anchors resolve (${adventures.length} guides checked).`);
   process.exit(0);
 }
 
 // eslint-disable-next-line no-console
-console.error(`✗ ${issues.length} Setup Adventure anchor issue(s):`);
+console.error(`✗ ${issues.length} Quickstart anchor issue(s):`);
 for (const i of issues) {
   // eslint-disable-next-line no-console
   console.error(

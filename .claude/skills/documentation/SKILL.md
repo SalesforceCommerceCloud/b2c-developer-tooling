@@ -11,7 +11,7 @@ This skill covers updating documentation for the B2C CLI project.
 
 ## Documentation Structure
 
-The project has three types of documentation:
+The project has four types of documentation:
 
 ```
 docs/
@@ -26,10 +26,21 @@ docs/
 │   ├── webdav.md
 │   ├── jobs.md
 │   └── ...
+├── quickstart/         # Interactive Quickstart guides (page shims)
+│   ├── index.md        # topic listing rendered by <QuickstartIndex/>
+│   ├── deploy-code.md
+│   ├── jobs.md
+│   └── ...             # each renders <QuickstartGuide id="<id>" />
 ├── api/                # API reference (auto-generated)
 │   └── *.md
-└── .vitepress/         # Vitepress configuration
-    └── config.mts
+└── .vitepress/
+    ├── config.mts
+    └── data/adventures/ # Quickstart guide DATA (TS source of truth)
+        ├── _types.ts
+        ├── _authoring.ts   # defineAdventure / step / choice / md / doc
+        ├── _helpers.ts     # dwJson / ocapiConfig / scopes / link / check
+        ├── index.ts        # registry + presets + feature flags
+        └── <id>.ts         # one file per guide
 ```
 
 ## Documentation Types
@@ -128,7 +139,111 @@ b2c code deploy -x test_cartridge -x bm_extensions
 Requires WebDAV credentials (username/password) or OAuth.
 ```
 
-### 3. API Reference (`docs/api/`)
+### 3. Quickstart Guides (`docs/quickstart/` + `docs/.vitepress/data/adventures/`)
+
+Purpose: Interactive, branching wizards that synthesise a minimal `dw.json`
++ checklist + verify command for a specific user task. The user-facing name
+is **Quickstart guide**; the internal data type is `Adventure` and the
+authoring helpers are named accordingly (legacy term — keep it inside
+`.ts` files only, never in user-visible UI strings).
+
+Each guide is a typed `Adventure` object built with `defineAdventure({...})`.
+The page at `docs/quickstart/<id>.md` is just a 3-line shim:
+
+```md
+---
+title: My guide · Quickstart
+description: Short tagline.
+layout: doc
+sidebar: false
+aside: false
+---
+
+<QuickstartGuide id="my-guide" />
+```
+
+The real content lives in `docs/.vitepress/data/adventures/<id>.ts`:
+
+```ts
+import {choice, defineAdventure, doc, md, step} from './_authoring.js';
+import {check, dwJson, link, ocapiConfig, scopes} from './_helpers.js';
+
+export const myGuide = defineAdventure({
+  id: 'my-guide',
+  title: 'Do the thing',
+  tagline: 'One-line summary.',
+  icon: 'mdi:something',
+  tags: ['oauth', 'webdav'],            // search / filter on the index
+  priority: 'common',                   // 'core' | 'common' | 'specialized' | 'niche'
+  intro: 'Optional preamble shown above step 1.',
+  steps: [
+    step('auth', {
+      title: 'How will you authenticate?',
+      doc: doc('/guide/authentication', 'account-manager-api-client'),
+      choices: [
+        choice('client-credentials', {
+          title: 'Client Credentials',
+          icon: 'mdi:key-variant',
+          body: md`Recommended for CI. See [JWT setup](/guide/authentication#jwt-authentication-certificate-based).`,
+          contributes: {authMethod: 'client-credentials'},
+        }),
+      ],
+    }),
+  ],
+  synthesize(state) {
+    return {
+      dwJson: dwJson({hostname: true, clientId: true, clientSecret: state.authMethod === 'client-credentials'}),
+      checklist: [check('Create an Account Manager API client', link('/guide/authentication', 'creating-an-api-client', 'Creating an API Client'))],
+      verifyCommand: 'b2c whatever',
+    };
+  },
+});
+```
+
+After authoring, register the guide in `docs/.vitepress/data/adventures/index.ts`
+(import + push into the `adventures` array under the matching priority comment).
+
+**When to update an existing guide:**
+- A CLI command, flag, or env-var name referenced in the synthesizer or a
+  choice body changed.
+- A doc heading anchor referenced via `doc()` / `link()` / a markdown
+  `[text](/path#anchor)` link was renamed (the build-time anchor checker
+  catches this — `pnpm --filter @salesforce/b2c-dx-docs run docs:build`).
+- An auth/role/scope/permission requirement changed.
+
+**When to add a new guide:**
+- A new CLI command surface or workflow that needs more than a doc page —
+  i.e., the user has to make decisions and we can synthesise a useful
+  `dw.json` / checklist for each path.
+- See `PLAN_guides.md` at the repo root for the prioritised backlog.
+
+**When to remove a guide:**
+- The underlying CLI surface is deprecated or has been merged into another
+  guide. Remove the `.ts`, the `.md` shim, and the registry entry.
+
+**Authoring helpers (do not reinvent these):**
+| Helper | Purpose |
+|--------|---------|
+| `defineAdventure` | Wraps the literal in a typed `Adventure`; normalises step array → record. |
+| `step(id, {...})` | One step in the wizard. Has a `doc:` anchor and a list of choices. |
+| `choice(id, {...})` | One option inside a step. `contributes:` feeds the synthesizer. |
+| `md\`…\`` | Tagged template for multi-line markdown bodies. |
+| `doc(path, hash, label)` | Internal doc anchor for `step.doc` and choice `body` links. |
+| `link(...)` | Same shape as `doc` but used inside synthesizer `check(...)` items. |
+| `check(text, href)` | One numbered checklist item in synthesised output. |
+| `dwJson({...})` | Builds a placeholder dw.json snippet with the right keys. |
+| `ocapiConfig(client, [...])` | OCAPI Data API JSON for a list of features (`'codeVersions'`, `'jobs'`, `'sites'`, `'siteCartridges'`). |
+| `scopes(...)` | Computes the OAuth scope list from named bundles. |
+
+**Validation:**
+- `pnpm --filter @salesforce/b2c-dx-docs run docs:typecheck` — strict tsc.
+- `pnpm --filter @salesforce/b2c-dx-docs run docs:build` — the build hook
+  walks every reachable choice combination, calls `synthesize`, and
+  validates every `step.doc` anchor, every checklist `link()`, every
+  markdown `[text](/path#anchor)` inside choice `body` strings, and every
+  link inside synthesizer `warnings`.
+
+### 4. API Reference (`docs/api/`)
 
 Purpose: Document the SDK programmatic API.
 
@@ -367,6 +482,10 @@ b2c <topic> <command> --flag value
 1. Update `docs/cli/<topic>.md` with command documentation
 2. Update `docs/.vitepress/config.mts` sidebar if new topic
 3. Update `skills/b2c-cli/skills/b2c-<topic>/SKILL.md` with examples
+4. **Evaluate Quickstart impact**: does this command warrant its own guide
+   under `docs/.vitepress/data/adventures/`, or extend an existing one
+   (e.g., a new `b2c sites …` subcommand may belong in the `cartridge-path`
+   guide)? See `PLAN_guides.md` for the prioritised backlog.
 
 ### When Adding an SDK Module
 
@@ -380,17 +499,36 @@ b2c <topic> <command> --flag value
 1. Update affected examples in `docs/cli/*.md`
 2. Update affected examples in `skills/b2c-cli/skills/*/SKILL.md`
 3. Update guide pages if conceptual changes
+4. **Sweep matching Quickstart guides**: every command name, flag, env var,
+   or anchor used in a guide's `synthesize` / choice `body` / warning lives
+   in `docs/.vitepress/data/adventures/<id>.ts`. Run
+   `pnpm --filter @salesforce/b2c-dx-docs run docs:build` — the anchor
+   checker will flag broken doc links automatically; renamed commands /
+   flags need manual review.
 
 ### When Adding Configuration Options
 
 1. Update `docs/guide/configuration.md`
 2. Update relevant CLI command docs with new flags
 3. Update skills with new flag examples
+4. **Update Quickstart helpers if needed**: if the new option is a new
+   `dw.json` field, add a placeholder mapping to `dwJson()` in
+   `docs/.vitepress/data/adventures/_helpers.ts`. If it's a new OAuth
+   scope, add a `SCOPE_BUNDLES` entry. Then surface it in the relevant
+   guide(s).
+
+### When Renaming a Doc Heading
+
+1. The build-time anchor checker (`pnpm run docs:build`) will fail loudly
+   with the old slug — fix every `doc()` / `link()` / markdown
+   `[text](/path#anchor)` reference in
+   `docs/.vitepress/data/adventures/*.ts`.
 
 ## Navigation Structure
 
 **Top Navigation:**
 - Guide (`/guide/`)
+- Quickstart (`/quickstart/`)
 - CLI Reference (`/cli/`)
 - API Reference (`/api/`)
 

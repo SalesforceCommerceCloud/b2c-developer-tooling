@@ -5,11 +5,14 @@ import type {AdventureState, Step} from '../../data/adventures/_types.js';
 import AdventureOutput from './AdventureOutput.vue';
 import AdventureStep from './AdventureStep.vue';
 
-const props = defineProps<{adventureId: string}>();
+// `id` is the Adventure id from the registry. We use a generic-sounding
+// prop name on the component because the user-facing concept is
+// "Quickstart guide" — `adventure` is internal terminology only.
+const props = defineProps<{id: string}>();
 
 const adventure = computed(() => {
-  const a = getAdventure(props.adventureId);
-  if (!a) throw new Error(`No adventure registered with id "${props.adventureId}"`);
+  const a = getAdventure(props.id);
+  if (!a) throw new Error(`No adventure registered with id "${props.id}"`);
   return a;
 });
 
@@ -156,7 +159,7 @@ function applyQuickStart(qsId: string) {
 const eligibleQuickStarts = computed(() => quickStarts.filter((q) => q.adventureId === adventure.value.id));
 
 watch(
-  () => props.adventureId,
+  () => props.id,
   () => {
     selections.value = {};
     confirmed.value = {};

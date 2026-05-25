@@ -6,4 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<QuickstartAdventure adventure-id="ci-cd" />
+<QuickstartGuide id="ci-cd" />

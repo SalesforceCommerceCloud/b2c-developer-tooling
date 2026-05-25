@@ -6,4 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<QuickstartAdventure adventure-id="agent-mcp" />
+<QuickstartGuide id="agent-mcp" />

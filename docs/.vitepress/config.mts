@@ -163,10 +163,10 @@ async function checkAdventureAnchors(srcDir: string) {
     enumerate(0, {});
   }
   if (issues.length > 0) {
-    const msg = `Setup Adventure anchor check failed (${issues.length} issue${issues.length === 1 ? '' : 's'}):\n  ${issues.join('\n  ')}`;
+    const msg = `Quickstart anchor check failed (${issues.length} issue${issues.length === 1 ? '' : 's'}):\n  ${issues.join('\n  ')}`;
     throw new Error(msg);
   }
-  console.log(`✓ All Setup Adventure anchors resolve (${adventures.length} adventures checked).`);
+  console.log(`✓ All Quickstart anchors resolve (${adventures.length} guides checked).`);
 }
 
 // Build configuration from environment

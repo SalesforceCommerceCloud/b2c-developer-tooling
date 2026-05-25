@@ -6,4 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<QuickstartAdventure adventure-id="scapi-access" />
+<QuickstartGuide id="scapi-access" />

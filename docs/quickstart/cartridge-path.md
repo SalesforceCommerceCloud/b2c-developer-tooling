@@ -6,4 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<QuickstartAdventure adventure-id="cartridge-path" />
+<QuickstartGuide id="cartridge-path" />

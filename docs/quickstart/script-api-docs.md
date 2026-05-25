@@ -6,4 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<QuickstartAdventure adventure-id="script-api-docs" />
+<QuickstartGuide id="script-api-docs" />

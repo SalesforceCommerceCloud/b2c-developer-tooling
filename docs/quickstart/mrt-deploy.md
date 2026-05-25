@@ -6,4 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<QuickstartAdventure adventure-id="mrt-deploy" />
+<QuickstartGuide id="mrt-deploy" />

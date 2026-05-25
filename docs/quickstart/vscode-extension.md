@@ -6,4 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<QuickstartAdventure adventure-id="vscode-extension" />
+<QuickstartGuide id="vscode-extension" />
