@@ -922,9 +922,14 @@ export class CipWebviewManager {
     }
   }
 
-  /** Uri to the cip-analytics source folder (templates + shared CSS). */
+  /**
+   * Uri to the CIP Analytics shared CSS in the packaged dist tree.
+   * Esbuild's build step (`copyCipStyles` in scripts/esbuild-bundle.mjs) copies
+   * `src/cip-analytics/cip-styles.css` to `dist/cip-analytics/` so the runtime
+   * extension never reaches back into `src/`.
+   */
   private get cipAnalyticsUri(): vscode.Uri {
-    return vscode.Uri.joinPath(this.context.extensionUri, 'src', 'cip-analytics');
+    return vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'cip-analytics');
   }
 
   /** Uri to the bundled React webview UI assets (esbuild output). */

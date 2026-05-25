@@ -7,6 +7,7 @@ import {DEFAULT_CIP_HOST, DEFAULT_CIP_STAGING_HOST} from '@salesforce/b2c-toolin
 import {listCipReports} from '@salesforce/b2c-tooling-sdk/operations/cip';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
+import {registerSafeCommand} from '../safety.js';
 import {CipAnalyticsTreeDataProvider} from './cip-tree-provider.js';
 import {CipConnectionService, type CipEnv} from './cip-connection-service.js';
 import {CipQueryLibraryService} from './cip-query-library-service.js';
@@ -71,16 +72,16 @@ export function registerCipAnalytics(
   const webviewManager = new CipWebviewManager(context, configProvider, connection, queryLibrary, log);
 
   // Commands
-  const refreshDisposable = vscode.commands.registerCommand('b2c-dx.cipAnalytics.refresh', async () => {
+  const refreshDisposable = registerSafeCommand('b2c-dx.cipAnalytics.refresh', async () => {
     treeProvider.refresh();
   });
 
-  const resetFromDwDisposable = vscode.commands.registerCommand('b2c-dx.cipAnalytics.resetFromDwJson', async () => {
+  const resetFromDwDisposable = registerSafeCommand('b2c-dx.cipAnalytics.resetFromDwJson', async () => {
     await resetFromDwJsonFlow(connection);
     treeProvider.refresh();
   });
 
-  const openReportDisposable = vscode.commands.registerCommand(
+  const openReportDisposable = registerSafeCommand(
     'b2c-dx.cipAnalytics.openReport',
     async (report?: CipReportEntry, realmId?: string) => {
       if (!report) {
@@ -109,23 +110,17 @@ export function registerCipAnalytics(
     },
   );
 
-  const browseTablesDisposable = vscode.commands.registerCommand(
-    'b2c-dx.cipAnalytics.browseTables',
-    async (realmId?: string) => {
-      log.appendLine('[CIP Analytics] Opening tables browser');
-      await webviewManager.openTablesBrowser(realmId);
-    },
-  );
+  const browseTablesDisposable = registerSafeCommand('b2c-dx.cipAnalytics.browseTables', async (realmId?: string) => {
+    log.appendLine('[CIP Analytics] Opening tables browser');
+    await webviewManager.openTablesBrowser(realmId);
+  });
 
-  const queryBuilderDisposable = vscode.commands.registerCommand(
-    'b2c-dx.cipAnalytics.queryBuilder',
-    async (realmId?: string) => {
-      log.appendLine('[CIP Analytics] Opening Query Builder');
-      await webviewManager.openQueryBuilder(realmId);
-    },
-  );
+  const queryBuilderDisposable = registerSafeCommand('b2c-dx.cipAnalytics.queryBuilder', async (realmId?: string) => {
+    log.appendLine('[CIP Analytics] Opening Query Builder');
+    await webviewManager.openQueryBuilder(realmId);
+  });
 
-  const configureDisposable = vscode.commands.registerCommand(
+  const configureDisposable = registerSafeCommand(
     'b2c-dx.cipAnalytics.configureConnection',
     async (arg?: string | {realmId?: string}, addNew?: boolean) => {
       const realmId = typeof arg === 'string' ? arg : arg?.realmId;
@@ -138,7 +133,7 @@ export function registerCipAnalytics(
     },
   );
 
-  const testDisposable = vscode.commands.registerCommand(
+  const testDisposable = registerSafeCommand(
     'b2c-dx.cipAnalytics.testConnection',
     async (arg?: string | {realmId?: string}) => {
       const realmId = typeof arg === 'string' ? arg : arg?.realmId;
@@ -158,11 +153,11 @@ export function registerCipAnalytics(
     },
   );
 
-  const switchRealmDisposable = vscode.commands.registerCommand('b2c-dx.cipAnalytics.switchRealm', async () =>
+  const switchRealmDisposable = registerSafeCommand('b2c-dx.cipAnalytics.switchRealm', async () =>
     switchRealmFlow(connection),
   );
 
-  const switchConnectionDisposable = vscode.commands.registerCommand(
+  const switchConnectionDisposable = registerSafeCommand(
     'b2c-dx.cipAnalytics.switchConnection',
     async (arg?: string | {realmId?: string}) => {
       const realmId = typeof arg === 'string' ? arg : arg?.realmId;
@@ -170,11 +165,9 @@ export function registerCipAnalytics(
     },
   );
 
-  const addRealmDisposable = vscode.commands.registerCommand('b2c-dx.cipAnalytics.addRealm', async () =>
-    addRealmFlow(connection),
-  );
+  const addRealmDisposable = registerSafeCommand('b2c-dx.cipAnalytics.addRealm', async () => addRealmFlow(connection));
 
-  const removeRealmDisposable = vscode.commands.registerCommand(
+  const removeRealmDisposable = registerSafeCommand(
     'b2c-dx.cipAnalytics.removeRealm',
     async (arg?: string | {realmId?: string}) => {
       const realmId = typeof arg === 'string' ? arg : arg?.realmId;

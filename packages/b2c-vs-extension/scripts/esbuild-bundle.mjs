@@ -72,6 +72,24 @@ function copyCipProtoFiles() {
   console.log('[cip-proto] Copied proto files to dist/data/cip-proto/');
 }
 
+/**
+ * Copy raw CIP webview stylesheet into dist/ so the packaged extension never
+ * reaches back into src/. Mirrors how cip-proto data files are copied above.
+ *
+ * The webview UI scripts go through esbuild → dist/webview-ui/, but the shared
+ * stylesheet is hand-authored CSS rather than a JS-imported asset. Copying it
+ * keeps the runtime resource layout consistent (everything under dist/) and
+ * removes the special `!src/cip-analytics/*.css` exception in .vscodeignore.
+ */
+function copyCipStyles() {
+  const src = path.join(pkgRoot, 'src', 'cip-analytics', 'cip-styles.css');
+  if (!fs.existsSync(src)) return;
+  const destDir = path.join(pkgRoot, 'dist', 'cip-analytics');
+  fs.mkdirSync(destDir, {recursive: true});
+  fs.copyFileSync(src, path.join(destDir, 'cip-styles.css'));
+  console.log('[cip-styles] Copied cip-styles.css to dist/cip-analytics/');
+}
+
 function inlineSdkPackageJson() {
   const outPath = path.join(pkgRoot, 'dist', 'extension.cjs');
   let str = fs.readFileSync(outPath, 'utf8');
@@ -144,6 +162,7 @@ const webviewBuildOptions = {
 if (watchMode) {
   copySdkScaffolds();
   copyCipProtoFiles();
+  copyCipStyles();
   const ctx = await esbuild.context(buildOptions);
   await ctx.watch();
   console.log('[esbuild] watching for changes...');
@@ -161,6 +180,7 @@ if (watchMode) {
   inlineSdkPackageJson();
   copySdkScaffolds();
   copyCipProtoFiles();
+  copyCipStyles();
   copySwaggerUiAssets();
 
   if (fs.existsSync(webviewUiSrc)) {

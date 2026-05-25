@@ -33,6 +33,7 @@ const COMMAND_PREFIX_TO_CATEGORY: Array<readonly [string, FeatureCategory]> = [
   ['b2c-dx.cap.', 'cap'],
   ['b2c-dx.logs.', 'logs'],
   ['b2c-dx.instance.', 'instance'],
+  ['b2c-dx.cipAnalytics.', 'cipAnalytics'],
 ];
 
 function categoryForCommand(commandId: string): FeatureCategory | undefined {
