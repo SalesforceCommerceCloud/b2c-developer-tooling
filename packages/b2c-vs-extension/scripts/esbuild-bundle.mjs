@@ -76,10 +76,9 @@ function copyCipProtoFiles() {
  * Copy raw CIP webview stylesheet into dist/ so the packaged extension never
  * reaches back into src/. Mirrors how cip-proto data files are copied above.
  *
- * The webview UI scripts go through esbuild → dist/webview-ui/, but the shared
- * stylesheet is hand-authored CSS rather than a JS-imported asset. Copying it
- * keeps the runtime resource layout consistent (everything under dist/) and
- * removes the special `!src/cip-analytics/*.css` exception in .vscodeignore.
+ * The webview UI scripts go through esbuild → dist/webview-ui/ Copying it
+ * keeps the runtime resource layout consistent (everything under dist/).
+ * keeps the runtime resource layout consistent (everything under dist/).
  */
 function copyCipStyles() {
   const src = path.join(pkgRoot, 'src', 'cip-analytics', 'cip-styles.css');
