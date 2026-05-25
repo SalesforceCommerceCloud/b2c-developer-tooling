@@ -54,7 +54,13 @@ export interface Choice {
   title: string;
   // Vendor or category subtitle (e.g., 'Anthropic', 'Quick')
   subtitle?: string;
+  // Plain-text description (legacy; escaped on render). Prefer `body` for
+  // new authoring so links and inline code render.
   description?: string;
+  // Markdown body — rendered to HTML at display time. Supports inline
+  // links (with VitePress base-path resolution), bold, italic, lists, and
+  // inline/fenced code. Use the `md` template tag for multi-line authoring.
+  body?: string;
   // Iconify name (reuse the project's group-icons set when possible)
   icon?: string;
   badges?: Badge[];

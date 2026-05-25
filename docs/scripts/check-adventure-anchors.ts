@@ -148,15 +148,38 @@ function enumerateStates(adventure: Adventure): AdventureState[] {
   return results;
 }
 
+// Extract internal `[text](/path#hash)` links from a markdown blob and run
+// each through the anchor validator. External URLs and pure anchors get
+// passed over.
+function checkMarkdownLinks(advId: string, source: string, md: string | undefined) {
+  if (!md) return;
+  const linkRe = /\[[^\]]+\]\(([^)\s]+)\)/g;
+  let m: RegExpExecArray | null;
+  while ((m = linkRe.exec(md)) !== null) {
+    const url = m[1];
+    if (!url.startsWith('/')) continue;
+    const [pathPart, hashPart] = url.split('#');
+    check(advId, source, {path: pathPart, hash: hashPart, label: url});
+  }
+}
+
 for (const adventure of adventures) {
   for (const stepId of adventure.stepOrder) {
     const step = adventure.steps[stepId];
     check(adventure.id, `step:${stepId}`, step.docAnchor);
+    for (const c of step.choices({}, flags)) {
+      checkMarkdownLinks(adventure.id, `choice:${stepId}.${c.id}.body`, c.body);
+    }
   }
   for (const state of enumerateStates(adventure)) {
     const result = adventure.synthesize(state, flags);
     for (const item of result.checklist) {
       check(adventure.id, `checklist:${item.text}`, item.href);
+    }
+    if (result.warnings) {
+      for (const [i, w] of result.warnings.entries()) {
+        checkMarkdownLinks(adventure.id, `warning[${i}]`, w);
+      }
     }
   }
 }

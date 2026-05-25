@@ -93,7 +93,12 @@ export function check(text: string, href: DocAnchor): ChecklistItem {
 
 // OCAPI Data API resource snippets, keyed by feature. Authors compose these
 // into a single Business-Manager-ready JSON in synthesizers.
-export const OCAPI_RESOURCES = {
+interface OcapiResource {
+  resource_id: string;
+  methods: string[];
+}
+
+export const OCAPI_RESOURCES: Record<string, OcapiResource[]> = {
   codeVersions: [
     {resource_id: '/code_versions', methods: ['get']},
     {resource_id: '/code_versions/*', methods: ['get', 'put', 'patch', 'delete']},
@@ -110,12 +115,12 @@ export const OCAPI_RESOURCES = {
   // Cartridge-path mutations on a site (used by `b2c sites cartridges
   // add/remove/set`). Source: docs/cli/sites.md "Required OCAPI Permissions".
   siteCartridges: [{resource_id: '/sites/*/cartridges', methods: ['post', 'put', 'delete']}],
-} as const;
+};
 
-export type OcapiFeature = keyof typeof OCAPI_RESOURCES;
+export type OcapiFeature = 'codeVersions' | 'jobs' | 'siteCartridges' | 'sites';
 
 export function ocapiConfig(clientId: string, features: OcapiFeature[]): string {
-  const resources = features.flatMap((f) => OCAPI_RESOURCES[f]);
+  const resources: OcapiResource[] = features.flatMap((f) => OCAPI_RESOURCES[f] ?? []);
   const body = {
     _v: '24.5',
     clients: [

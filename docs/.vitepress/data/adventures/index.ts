@@ -19,11 +19,11 @@ import {scapiAccessAdventure} from './scapi-access.js';
 import {scriptApiDocsAdventure} from './script-api-docs.js';
 import {slasClientsAdventure} from './slas-clients.js';
 import {vscodeExtensionAdventure} from './vscode-extension.js';
-import type {Adventure, AdventureRegistry, QuickStart} from './_types.js';
+import type {Adventure, AdventureRegistry, Flags, QuickStart} from './_types.js';
 
 // Feature flags consulted by step `showIf` and choice `featureFlag`. Flip a
 // flag to swap a path site-wide without changing component code.
-export const flags = {
+export const flags: Flags = {
   // When true, adventures prefer SCAPI over OCAPI for permissions/scopes.
   // Today: false — the SCAPI variants are authored side-by-side but hidden.
   'scapi-migration': false,

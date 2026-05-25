@@ -82,6 +82,21 @@ async function checkAdventureAnchors(srcDir: string) {
       issues.push(`[${advId}] ${source} → ${a.path}#${a.hash} — anchor not found in ${path.relative(srcDir, file)}`);
     }
   };
+
+  // Walk every `[text](url)` link inside a free-form markdown string (used
+  // by Choice.body and synthesized warning entries). Internal absolute
+  // paths land in the same `checkAnchor` validator as docAnchors above.
+  const checkMarkdownLinks = (advId: string, source: string, md: string | undefined) => {
+    if (!md) return;
+    const linkRe = /\[[^\]]+\]\(([^)\s]+)\)/g;
+    let m: RegExpExecArray | null;
+    while ((m = linkRe.exec(md)) !== null) {
+      const url = m[1];
+      if (!url.startsWith('/')) continue; // external / anchor-only — out of scope
+      const [pathPart, hashPart] = url.split('#');
+      checkAnchor(advId, source, {path: pathPart, hash: hashPart, label: url});
+    }
+  };
   type State = Record<string, boolean | number | string | string[] | undefined>;
   type Contrib = Record<string, boolean | number | string | string[] | undefined>;
   const mergeContrib = (accum: State, contrib: Contrib | undefined) => {
@@ -96,24 +111,35 @@ async function checkAdventureAnchors(srcDir: string) {
       }
     }
   };
+  const checkSynth = (advId: string, accum: State) => {
+    const r = adventures.find((a) => a.id === advId)!.synthesize(accum, flags);
+    for (const item of r.checklist) checkAnchor(advId, `checklist:${item.text}`, item.href);
+    if (r.warnings) {
+      for (const [i, w] of r.warnings.entries()) checkMarkdownLinks(advId, `warning[${i}]`, w);
+    }
+  };
   for (const adventure of adventures) {
     for (const stepId of adventure.stepOrder) {
-      checkAnchor(adventure.id, `step:${stepId}`, adventure.steps[stepId].docAnchor);
+      const step = adventure.steps[stepId];
+      checkAnchor(adventure.id, `step:${stepId}`, step.docAnchor);
+      // Body markdown can carry links too — validate against an empty state
+      // (choice bodies don't depend on selection).
+      for (const c of step.choices({}, flags)) {
+        checkMarkdownLinks(adventure.id, `choice:${stepId}.${c.id}.body`, c.body);
+      }
     }
     const enumerate = (idx: number, accum: State) => {
       const visible = adventure.stepOrder
         .map((id) => adventure.steps[id])
         .filter((s) => !s.showIf || s.showIf(accum, flags));
       if (idx >= visible.length) {
-        const r = adventure.synthesize(accum, flags);
-        for (const item of r.checklist) checkAnchor(adventure.id, `checklist:${item.text}`, item.href);
+        checkSynth(adventure.id, accum);
         return;
       }
       const step = visible[idx];
       const choices = step.choices(accum, flags).filter((c) => !c.featureFlag || flags[c.featureFlag]);
       if (choices.length === 0) {
-        const r = adventure.synthesize(accum, flags);
-        for (const item of r.checklist) checkAnchor(adventure.id, `checklist:${item.text}`, item.href);
+        checkSynth(adventure.id, accum);
         return;
       }
       if (step.multiSelect) {

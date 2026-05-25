@@ -1,4 +1,5 @@
 import {h} from 'vue';
+import type {Theme} from 'vitepress';
 import DefaultTheme from 'vitepress/theme';
 import './custom.css';
 import 'virtual:group-icons.css';
@@ -7,7 +8,7 @@ import MarkdownActions from './MarkdownActions.vue';
 import QuickstartAdventure from './adventure/QuickstartAdventure.vue';
 import QuickstartIndex from './adventure/QuickstartIndex.vue';
 
-export default {
+const theme: Theme = {
   extends: DefaultTheme,
   Layout() {
     return h(DefaultTheme.Layout, null, {
@@ -21,3 +22,5 @@ export default {
     app.component('QuickstartIndex', QuickstartIndex);
   },
 };
+
+export default theme;
