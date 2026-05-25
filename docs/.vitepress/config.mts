@@ -21,6 +21,128 @@ function copyMarkdownSources(srcDir: string, outDir: string) {
   }
 }
 
+// Validate that every Setup Adventure doc anchor resolves to a real heading
+// in the corresponding source `.md` file. Called from `buildEnd`.
+async function checkAdventureAnchors(srcDir: string) {
+  const {adventures, flags} = await import('./data/adventures/index.js');
+  const slugify = (heading: string): string => {
+    const explicit = heading.match(/\{#([^}]+)\}\s*$/);
+    if (explicit) return explicit[1].trim();
+    return heading
+      .toLowerCase()
+      .trim()
+      .replace(/[`*_~]/g, '')
+      .replace(/<[^>]+>/g, '')
+      .replace(/[^\p{L}\p{N}\s-]/gu, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  };
+  const anchorsByFile = new Map<string, Set<string>>();
+  const loadAnchors = (filePath: string) => {
+    const cached = anchorsByFile.get(filePath);
+    if (cached) return cached;
+    const out = new Set<string>();
+    if (!fs.existsSync(filePath)) {
+      anchorsByFile.set(filePath, out);
+      return out;
+    }
+    const lines = fs.readFileSync(filePath, 'utf8').split(/\r?\n/);
+    let inFence = false;
+    for (const line of lines) {
+      if (/^```/.test(line)) {
+        inFence = !inFence;
+        continue;
+      }
+      if (inFence) continue;
+      const m = line.match(/^#{1,6}\s+(.+?)\s*$/);
+      if (!m) continue;
+      out.add(slugify(m[1]));
+    }
+    anchorsByFile.set(filePath, out);
+    return out;
+  };
+  const resolveDoc = (docPath: string) => {
+    const trimmed = docPath.replace(/\/$/, '');
+    const candidates = [path.join(srcDir, `${trimmed}.md`), path.join(srcDir, trimmed, 'index.md')];
+    for (const c of candidates) if (fs.existsSync(c)) return c;
+    return candidates[0];
+  };
+  const issues: string[] = [];
+  const checkAnchor = (advId: string, source: string, a: {hash?: string; label: string; path: string}) => {
+    if (/^https?:\/\//.test(a.path)) return; // external URLs aren't ours to validate
+    const file = resolveDoc(a.path);
+    if (!fs.existsSync(file)) {
+      issues.push(`[${advId}] ${source} → ${a.path} — source file not found`);
+      return;
+    }
+    if (!a.hash) return;
+    const anchors = loadAnchors(file);
+    if (!anchors.has(a.hash)) {
+      issues.push(`[${advId}] ${source} → ${a.path}#${a.hash} — anchor not found in ${path.relative(srcDir, file)}`);
+    }
+  };
+  type State = Record<string, boolean | number | string | string[] | undefined>;
+  type Contrib = Record<string, boolean | number | string | string[] | undefined>;
+  const mergeContrib = (accum: State, contrib: Contrib | undefined) => {
+    if (!contrib) return;
+    for (const [k, v] of Object.entries(contrib)) {
+      if (Array.isArray(v)) {
+        const prev = accum[k];
+        const merged = Array.isArray(prev) ? [...prev, ...v] : [...v];
+        accum[k] = Array.from(new Set(merged));
+      } else {
+        accum[k] = v;
+      }
+    }
+  };
+  for (const adventure of adventures) {
+    for (const stepId of adventure.stepOrder) {
+      checkAnchor(adventure.id, `step:${stepId}`, adventure.steps[stepId].docAnchor);
+    }
+    const enumerate = (idx: number, accum: State) => {
+      const visible = adventure.stepOrder
+        .map((id) => adventure.steps[id])
+        .filter((s) => !s.showIf || s.showIf(accum, flags));
+      if (idx >= visible.length) {
+        const r = adventure.synthesize(accum, flags);
+        for (const item of r.checklist) checkAnchor(adventure.id, `checklist:${item.text}`, item.href);
+        return;
+      }
+      const step = visible[idx];
+      const choices = step.choices(accum, flags).filter((c) => !c.featureFlag || flags[c.featureFlag]);
+      if (choices.length === 0) {
+        const r = adventure.synthesize(accum, flags);
+        for (const item of r.checklist) checkAnchor(adventure.id, `checklist:${item.text}`, item.href);
+        return;
+      }
+      if (step.multiSelect) {
+        // Cover representative subsets: each pick alone, plus all picks
+        // together. Sufficient for synthesizer branch coverage without
+        // exploding to 2^n combinations.
+        const subsets = [...choices.map((c) => [c]), choices];
+        for (const subset of subsets) {
+          const next = {...accum};
+          for (const c of subset) mergeContrib(next, c.contributes);
+          enumerate(idx + 1, next);
+        }
+      } else {
+        for (const c of choices) {
+          const next = {...accum};
+          mergeContrib(next, c.contributes);
+          enumerate(idx + 1, next);
+        }
+      }
+    };
+    enumerate(0, {});
+  }
+  if (issues.length > 0) {
+    const msg = `Setup Adventure anchor check failed (${issues.length} issue${issues.length === 1 ? '' : 's'}):\n  ${issues.join('\n  ')}`;
+    throw new Error(msg);
+  }
+  console.log(`✓ All Setup Adventure anchors resolve (${adventures.length} adventures checked).`);
+}
+
 // Build configuration from environment
 const isDevBuild = process.env.IS_DEV_BUILD === 'true';
 
@@ -216,8 +338,9 @@ export default defineConfig({
   // Ignore dead links in api-readme.md (links are valid after TypeDoc generates the API docs)
   ignoreDeadLinks: [/^\.\/clients\//],
 
-  buildEnd(siteConfig) {
+  async buildEnd(siteConfig) {
     copyMarkdownSources(siteConfig.srcDir, siteConfig.outDir);
+    await checkAdventureAnchors(siteConfig.srcDir);
   },
 
   // Show deeper heading levels in the outline; register group-icons md plugin
@@ -270,6 +393,7 @@ export default defineConfig({
     },
     nav: [
       {text: 'Guides', link: '/guide/'},
+      {text: 'Quickstart', link: '/quickstart/'},
       {text: 'Skills', link: '/guide/agent-skills'},
       {text: 'VS Code', link: '/vscode-extension/'},
       {text: 'MCP', link: '/mcp/'},
