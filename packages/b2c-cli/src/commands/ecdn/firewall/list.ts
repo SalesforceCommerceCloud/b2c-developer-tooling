@@ -20,7 +20,6 @@ const COLUMNS: Record<string, ColumnDef<CustomRule>> = {
   ruleId: {
     header: 'Rule ID',
     get: (r) => r.ruleId || '-',
-    extended: true,
   },
   description: {
     header: 'Description',
@@ -46,7 +45,7 @@ const COLUMNS: Record<string, ColumnDef<CustomRule>> = {
   },
 };
 
-const DEFAULT_COLUMNS = ['description', 'actions', 'enabled'];
+const DEFAULT_COLUMNS = ['ruleId', 'description', 'actions', 'enabled'];
 
 const tableRenderer = new TableRenderer(COLUMNS);
 

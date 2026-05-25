@@ -183,7 +183,7 @@ b2c ecdn rate-limit delete --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701a
 Manage custom firewall rules for a zone. Custom rules let you block,
 challenge, log, or otherwise act on requests that match a Cloudflare-style
 expression. Rules are evaluated in order and the order can be updated as a
-whole through `reorder`. 
+whole through `reorder`.
 
 ### b2c ecdn firewall list
 
@@ -202,7 +202,7 @@ b2c ecdn firewall list --zone my-zone --json
 |------|-------------|----------|
 | `--limit` | Maximum records per request (1–50) | No |
 | `--offset` | Result offset for pagination | No |
-| `--extended` | Include `Rule ID`, `Expression`, and `Last Updated` columns | No |
+| `--extended` | Include `Expression` and `Last Updated` columns (`Rule ID` is shown by default) | No |
 | `--columns` | Comma-separated column names | No |
 
 ---
