@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import CiCdAdventure from '../.vitepress/adventures/ci-cd.vue';
-</script>
-
-<CiCdAdventure />
+<QuickstartAdventure adventure-id="ci-cd" />

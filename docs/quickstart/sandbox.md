@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import SandboxAdventure from '../.vitepress/adventures/sandbox.vue';
-</script>
-
-<SandboxAdventure />
+<QuickstartAdventure adventure-id="sandbox" />

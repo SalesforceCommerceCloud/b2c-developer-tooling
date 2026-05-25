@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import DebugAdventure from '../.vitepress/adventures/debug.vue';
-</script>
-
-<DebugAdventure />
+<QuickstartAdventure adventure-id="debug" />

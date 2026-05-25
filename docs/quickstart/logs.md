@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import LogsAdventure from '../.vitepress/adventures/logs.vue';
-</script>
-
-<LogsAdventure />
+<QuickstartAdventure adventure-id="logs" />

@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import ScriptApiDocsAdventure from '../.vitepress/adventures/script-api-docs.vue';
-</script>
-
-<ScriptApiDocsAdventure />
+<QuickstartAdventure adventure-id="script-api-docs" />

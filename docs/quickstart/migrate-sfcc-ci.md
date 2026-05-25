@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import MigrateSfccCiAdventure from '../.vitepress/adventures/migrate-sfcc-ci.vue';
-</script>
-
-<MigrateSfccCiAdventure />
+<QuickstartAdventure adventure-id="migrate-sfcc-ci" />

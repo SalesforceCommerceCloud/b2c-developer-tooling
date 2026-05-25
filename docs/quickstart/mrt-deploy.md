@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import MrtDeployAdventure from '../.vitepress/adventures/mrt-deploy.vue';
-</script>
-
-<MrtDeployAdventure />
+<QuickstartAdventure adventure-id="mrt-deploy" />

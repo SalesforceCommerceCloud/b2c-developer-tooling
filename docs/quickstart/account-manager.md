@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import AccountManagerAdventure from '../.vitepress/adventures/account-manager.vue';
-</script>
-
-<AccountManagerAdventure />
+<QuickstartAdventure adventure-id="account-manager" />

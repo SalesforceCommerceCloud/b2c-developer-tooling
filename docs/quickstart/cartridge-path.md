@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import CartridgePathAdventure from '../.vitepress/adventures/cartridge-path.vue';
-</script>
-
-<CartridgePathAdventure />
+<QuickstartAdventure adventure-id="cartridge-path" />

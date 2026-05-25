@@ -2,6 +2,7 @@
 import {computed, ref} from 'vue';
 import {withBase} from 'vitepress';
 import type {Adventure, SynthesizedConfig} from '../../data/adventures/_types.js';
+import {renderBlock} from './_markdown.js';
 import {useCopyableCode} from './useCopyableCode.js';
 
 const warningsRef = ref<HTMLElement | null>(null);
@@ -12,32 +13,10 @@ const props = defineProps<{
   result: SynthesizedConfig;
 }>();
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-// Render a warning string that may contain a fenced ```json block (used to
-// inline OCAPI/MCP JSON snippets) into safe HTML.
+// Warnings are markdown-with-fenced-code. Inline links/bold/code AND fenced
+// blocks are honoured. Internal absolute paths go through withBase.
 function renderWarning(s: string): string {
-  const fence = /```(\w+)?\n([\s\S]*?)```/g;
-  // Capture fenced code first to avoid escaping the fence body's HTML twice.
-  const tokens: {body: string; lang?: string; type: 'code'}[] | {text: string; type: 'text'}[] = [] as any;
-  const out: string[] = [];
-  let last = 0;
-  let m: RegExpExecArray | null;
-  while ((m = fence.exec(s)) !== null) {
-    if (m.index > last) out.push(escapeHtml(s.slice(last, m.index)).replace(/\n/g, '<br>'));
-    const lang = m[1] ?? '';
-    const body = escapeHtml(m[2]);
-    out.push(`<pre class="b2c-output__inline-code"><code class="language-${lang}">${body}</code></pre>`);
-    last = m.index + m[0].length;
-  }
-  if (last < s.length) out.push(escapeHtml(s.slice(last)).replace(/\n/g, '<br>'));
-  return out.join('');
+  return renderBlock(s, (path) => withBase(path));
 }
 
 const tab = ref<'primary' | 'env'>('primary');

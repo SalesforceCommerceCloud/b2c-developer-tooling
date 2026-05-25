@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import MultiInstanceAdventure from '../.vitepress/adventures/multi-instance.vue';
-</script>
-
-<MultiInstanceAdventure />
+<QuickstartAdventure adventure-id="multi-instance" />

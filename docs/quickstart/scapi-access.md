@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import ScapiAccessAdventure from '../.vitepress/adventures/scapi-access.vue';
-</script>
-
-<ScapiAccessAdventure />
+<QuickstartAdventure adventure-id="scapi-access" />

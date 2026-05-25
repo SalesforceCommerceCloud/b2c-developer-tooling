@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import VscodeExtensionAdventure from '../.vitepress/adventures/vscode-extension.vue';
-</script>
-
-<VscodeExtensionAdventure />
+<QuickstartAdventure adventure-id="vscode-extension" />

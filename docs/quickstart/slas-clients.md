@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import SlasClientsAdventure from '../.vitepress/adventures/slas-clients.vue';
-</script>
-
-<SlasClientsAdventure />
+<QuickstartAdventure adventure-id="slas-clients" />

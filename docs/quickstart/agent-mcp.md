@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import AgentMcpAdventure from '../.vitepress/adventures/agent-mcp.vue';
-</script>
-
-<AgentMcpAdventure />
+<QuickstartAdventure adventure-id="agent-mcp" />

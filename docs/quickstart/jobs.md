@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import JobsAdventure from '../.vitepress/adventures/jobs.vue';
-</script>
-
-<JobsAdventure />
+<QuickstartAdventure adventure-id="jobs" />

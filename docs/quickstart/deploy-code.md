@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import DeployCodeAdventure from '../.vitepress/adventures/deploy-code.vue';
-</script>
-
-<DeployCodeAdventure />
+<QuickstartAdventure adventure-id="deploy-code" />

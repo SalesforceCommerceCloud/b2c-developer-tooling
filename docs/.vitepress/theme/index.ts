@@ -6,9 +6,6 @@ import HomeLayout from './HomeLayout.vue';
 import MarkdownActions from './MarkdownActions.vue';
 import QuickstartAdventure from './adventure/QuickstartAdventure.vue';
 import QuickstartIndex from './adventure/QuickstartIndex.vue';
-import Wizard from './adventure/declarative/Wizard.vue';
-import QStep from './adventure/declarative/QStep.vue';
-import QChoice from './adventure/declarative/QChoice.vue';
 
 export default {
   extends: DefaultTheme,
@@ -22,8 +19,5 @@ export default {
     app.component('b2c-home', HomeLayout);
     app.component('QuickstartAdventure', QuickstartAdventure);
     app.component('QuickstartIndex', QuickstartIndex);
-    app.component('Wizard', Wizard);
-    app.component('QStep', QStep);
-    app.component('QChoice', QChoice);
   },
 };

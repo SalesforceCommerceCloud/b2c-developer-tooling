@@ -6,8 +6,4 @@ sidebar: false
 aside: false
 ---
 
-<script setup>
-import PageDesignerAdventure from '../.vitepress/adventures/page-designer.vue';
-</script>
-
-<PageDesignerAdventure />
+<QuickstartAdventure adventure-id="page-designer" />

@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import {computed} from 'vue';
+import {withBase} from 'vitepress';
 import type {Badge, Choice} from '../../data/adventures/_types.js';
+import {renderInline} from './_markdown.js';
 
-defineProps<{
+const props = defineProps<{
   choice: Choice;
   selected?: boolean;
   multi?: boolean;
@@ -15,6 +18,14 @@ defineEmits<{
 function badgeClass(b: Badge): string {
   return `b2c-badge b2c-badge--${b.tone ?? 'info'}`;
 }
+
+// Render `body` markdown to HTML. Inline only — choice descriptions are
+// short. Internal absolute paths are passed through `withBase` so links
+// work under both the stable and `/dev/` base paths.
+const renderedBody = computed(() => {
+  if (!props.choice.body) return '';
+  return renderInline(props.choice.body, (path) => withBase(path));
+});
 </script>
 
 <template>
@@ -40,11 +51,9 @@ function badgeClass(b: Badge): string {
         <span v-for="b in choice.badges" :key="b.text" :class="badgeClass(b)">{{ b.text }}</span>
       </div>
       <div v-if="choice.subtitle" class="b2c-choice__sub">{{ choice.subtitle }}</div>
-      <!-- Slot-rendered description (from <QChoice> body) takes precedence
-           over the plain-string description used by TS-driven adventures. -->
-      <div v-if="(choice as any).descriptionVNodes" class="b2c-choice__desc">
-        <component :is="(choice as any).descriptionVNodes" />
-      </div>
+      <!-- `body` is markdown (rendered to HTML); `description` is legacy
+           plain text. `body` wins when both are present. -->
+      <div v-if="choice.body" class="b2c-choice__desc" v-html="renderedBody"></div>
       <p v-else-if="choice.description" class="b2c-choice__desc">{{ choice.description }}</p>
     </div>
   </button>
