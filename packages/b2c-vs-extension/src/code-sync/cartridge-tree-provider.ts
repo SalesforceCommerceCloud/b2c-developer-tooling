@@ -21,13 +21,6 @@ export class CartridgeItem extends vscode.TreeItem {
     this.iconPath = new vscode.ThemeIcon('package');
     this.contextValue = 'cartridge';
     this.tooltip = cartridge.src;
-    // Activate (single/double click per workbench.list.openMode) reveals the
-    // cartridge directory in the Explorer view, expanding ancestor folders.
-    this.command = {
-      command: 'revealInExplorer',
-      title: 'Reveal in Explorer',
-      arguments: [vscode.Uri.file(cartridge.src)],
-    };
   }
 }
 

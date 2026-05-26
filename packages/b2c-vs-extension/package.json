@@ -551,6 +551,12 @@
         "category": "B2C DX - Code Sync"
       },
       {
+        "command": "b2c-dx.codeSync.revealCartridge",
+        "title": "Reveal in Explorer",
+        "icon": "$(folder-opened)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
         "command": "b2c-dx.codeSync.uploadCartridge",
         "title": "Upload Cartridge",
         "icon": "$(cloud-upload)",
@@ -814,6 +820,11 @@
           "command": "b2c-dx.sandbox.delete",
           "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-(?!cloning|settingup)/",
           "group": "3_destructive@1"
+        },
+        {
+          "command": "b2c-dx.codeSync.revealCartridge",
+          "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
+          "group": "0_navigation@1"
         },
         {
           "command": "b2c-dx.codeSync.uploadCartridge",

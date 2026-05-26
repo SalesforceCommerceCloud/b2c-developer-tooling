@@ -421,6 +421,10 @@ export function registerCartridgeCommands(
   const tempDirs: string[] = [];
 
   const disposables = [
+    registerSafeCommand('b2c-dx.codeSync.revealCartridge', async (item: CartridgeItem) => {
+      if (!item?.cartridge?.src) return;
+      await vscode.commands.executeCommand('revealInExplorer', vscode.Uri.file(item.cartridge.src));
+    }),
     registerSafeCommand(
       'b2c-dx.codeSync.downloadCartridge',
       createDownloadCartridgeCommand(configProvider, outputChannel),
