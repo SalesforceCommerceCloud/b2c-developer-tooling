@@ -380,8 +380,9 @@ export default defineConfig({
   vite: {
     // Avoid the default 5173 — it collides with other VitePress / Vite
     // dev servers commonly running on this machine. Override per-run with
-    // `pnpm run docs:dev -- --port <n>`.
-    server: {port: 5180, strictPort: false},
+    // `VITEPRESS_PORT=<n> pnpm run docs:dev`. (`--port` doesn't reach
+    // vitepress through the chained `docs:api && vitepress dev` script.)
+    server: {port: Number(process.env.VITEPRESS_PORT) || 5180, strictPort: false},
     plugins: [
       groupIconVitePlugin({
         customIcon: {
