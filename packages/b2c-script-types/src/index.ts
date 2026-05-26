@@ -37,6 +37,26 @@ const TYPES_DIR = path.resolve(__dirname, '..', 'types').replace(/\\/g, '/');
 // injects this into the TS program's script file list so the `declare global`
 // block takes effect in projects that don't have a jsconfig.json including it.
 const GLOBAL_DTS = path.join(TYPES_DIR, 'global.d.ts').replace(/\\/g, '/');
+// Ambient typings for the SFRA `modules` cartridge — types for `require('server')`
+// and friends so cartridge code works under `checkJs: true` despite the dynamic
+// property assignments in modules/server.js that TS can't infer.
+const SFRA_SERVER_DTS = path.join(TYPES_DIR, 'sfra', 'server.d.ts').replace(/\\/g, '/');
+// Bare-name requires that the SFRA server.d.ts ambient declaration covers.
+// We deliberately do NOT redirect these to modules/<name>.js, so TS uses the
+// ambient declaration's types instead of the inferred .js types (which can't
+// see the dynamic `server.middleware = ...` assignments in modules/server.js).
+const SFRA_AMBIENT_MODULES = new Set([
+  'server',
+  'server/server',
+  'server/middleware',
+  'server/render',
+  'server/route',
+  'server/request',
+  'server/response',
+  'server/queryString',
+  'server/forms',
+  'server/forms/forms',
+]);
 
 // Candidate suffixes appended when resolving a SFCC-style relative require to
 // a cartridge file. SFRA convention is to omit the .js extension, so .js wins
@@ -306,6 +326,11 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     if (cartridges.length === 0) return undefined;
     if (moduleName.startsWith('.') || moduleName.startsWith('/')) return undefined;
     if (moduleName.startsWith('~/') || moduleName.startsWith('*/') || moduleName.startsWith('dw/')) return undefined;
+    // Let the bundled SFRA ambient declarations win for these names. If we
+    // resolved them to the .js file here, TS would infer types from the JS
+    // (which misses dynamic property assignments in modules/server.js) and
+    // ignore the ambient `declare module 'server' { ... }` shape.
+    if (SFRA_AMBIENT_MODULES.has(moduleName)) return undefined;
     const modulesCart = cartridges.find((c) => c.name === 'modules');
     if (!modulesCart) return undefined;
 
@@ -377,21 +402,29 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
 
     const host = info.languageServiceHost;
 
-    // Inject the SFCC global declarations into the TS program when the project
-    // contains at least one cartridge file. Configured projects (with a
-    // jsconfig.json that already includes global.d.ts) are unaffected because
-    // the file is deduped by normalized path. This is what surfaces typed
-    // `session`, `request`, `response`, `customer`, `empty(...)`, and the
-    // ambient `dw` namespace in cartridge JS without requiring any imports.
+    // Inject ambient declarations into the TS program when the project
+    // contains at least one cartridge file:
+    //   - global.d.ts: SFCC platform globals (session, request, response,
+    //     customer, empty(), the ambient `dw` namespace).
+    //   - sfra/server.d.ts: SFRA `modules` cartridge typings (server, route,
+    //     middleware, etc.) — only injected when a `modules` cartridge is
+    //     configured. Configured projects that already include either via a
+    //     jsconfig include glob are unaffected (dedup by normalized path).
     const origGetScriptFileNames = host.getScriptFileNames.bind(host);
     host.getScriptFileNames = () => {
       const list = origGetScriptFileNames();
       if (!enabled || cartridges.length === 0) return list;
       if (!list.some((f) => isCartridgeFile(f))) return list;
-      if (!fileExists(GLOBAL_DTS)) return list;
-      const target = normalize(GLOBAL_DTS);
-      if (list.some((f) => normalize(f) === target)) return list;
-      return [...list, GLOBAL_DTS];
+      const additions: string[] = [];
+      const present = new Set(list.map((f) => normalize(f)));
+      if (fileExists(GLOBAL_DTS) && !present.has(normalize(GLOBAL_DTS))) {
+        additions.push(GLOBAL_DTS);
+      }
+      const hasModules = cartridges.some((c) => c.name === 'modules');
+      if (hasModules && fileExists(SFRA_SERVER_DTS) && !present.has(normalize(SFRA_SERVER_DTS))) {
+        additions.push(SFRA_SERVER_DTS);
+      }
+      return additions.length > 0 ? [...list, ...additions] : list;
     };
 
     const origResolveModuleNameLiterals = host.resolveModuleNameLiterals?.bind(host);

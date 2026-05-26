@@ -29,7 +29,7 @@ The plugin also resolves SFCC cartridge-style requires, matching runtime semanti
 - `require('~/cartridge/scripts/foo')` — resolves only within the cartridge that contains the current file (the SFCC `~` shortcut for "current cartridge"). If `foo` doesn't exist there, IntelliSense reports it unresolved — same as runtime.
 - `require('*/cartridge/scripts/foo')` — walks the cartridge path with owner-first override priority (SFRA-style override).
 - `require('app_storefront_base/cartridge/scripts/foo')` — resolves only within the named cartridge.
-- `require('server')`, `require('server/middleware')`, etc. — bare requires resolve against the SFRA `modules` cartridge if present (its tree is exposed at the root, not under `cartridge/scripts/`).
+- `require('server')`, `require('server/middleware')`, etc. — bare requires resolve against the SFRA `modules` cartridge if present (its tree is exposed at the root, not under `cartridge/scripts/`). When a `modules` cartridge is detected, the plugin also injects ambient type declarations for the SFRA `server` API (Server, Route, Request, Response, middleware, forms, querystring) so cartridge code type-checks under `checkJs: true` despite the dynamic property assignments in `modules/server.js` that TypeScript can't infer on its own.
 
 Cartridge resolution order matches your runtime cartridge path: the `cartridges` field from your resolved configuration (`dw.json`, `SFCC_CARTRIDGES`, `.env`, etc.) wins. When that's not set, cartridges fall back to discovery order with known base cartridges (`app_storefront_base`, `modules`) sorted last. The same ordering also drives the **B2C-DX → Cartridges** tree view.
 
