@@ -11,7 +11,12 @@ import type {B2CExtensionConfig} from '../config-provider.js';
 
 // Cartridges that conventionally sit at the bottom of the cartridge path when
 // the user hasn't told us otherwise (no `cartridges` in dw.json/SFCC_CARTRIDGES).
-const KNOWN_BASE_CARTRIDGES = new Set(['modules', 'app_storefront_base']);
+// Higher rank = lower in the cartridge path. SFRA's runtime path ends with
+// `app_storefront_base:modules`, so `modules` sorts strictly last.
+const BASE_CARTRIDGE_RANK: Record<string, number> = {
+  app_storefront_base: 1,
+  modules: 2,
+};
 
 /**
  * Order discovered cartridges. Prefer the `cartridges` list resolved from
@@ -42,9 +47,9 @@ function orderCartridges(discovered: CartridgeMapping[], configured: string[] | 
 
   const indexed = discovered.map((c, i) => ({c, i}));
   indexed.sort((a, b) => {
-    const ab = KNOWN_BASE_CARTRIDGES.has(a.c.name) ? 1 : 0;
-    const bb = KNOWN_BASE_CARTRIDGES.has(b.c.name) ? 1 : 0;
-    if (ab !== bb) return ab - bb;
+    const ar = BASE_CARTRIDGE_RANK[a.c.name] ?? 0;
+    const br = BASE_CARTRIDGE_RANK[b.c.name] ?? 0;
+    if (ar !== br) return ar - br;
     return a.i - b.i;
   });
   return indexed.map((x) => x.c);
