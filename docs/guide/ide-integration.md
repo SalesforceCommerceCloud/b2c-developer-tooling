@@ -24,10 +24,10 @@ If you have the B2C DX VS Code extension installed, IntelliSense is automatic:
 
 You can disable the feature with the `b2c-dx.features.scriptTypes` setting (default: `true`).
 
-The plugin also resolves SFCC cartridge-style requires across your workspace's cartridge path:
+The plugin also resolves SFCC cartridge-style requires, matching runtime semantics:
 
-- `require('~/cartridge/scripts/foo')` — searches every cartridge in priority order, with the cartridge owning the current file checked first (SFRA-style override).
-- `require('*/cartridge/scripts/foo')` — equivalent to `~/`; resolves against the same cartridge path.
+- `require('~/cartridge/scripts/foo')` — resolves only within the cartridge that contains the current file (the SFCC `~` shortcut for "current cartridge"). If `foo` doesn't exist there, IntelliSense reports it unresolved — same as runtime.
+- `require('*/cartridge/scripts/foo')` — walks the cartridge path with owner-first override priority (SFRA-style override).
 - `require('app_storefront_base/cartridge/scripts/foo')` — resolves only within the named cartridge.
 
 Cartridge resolution order matches your runtime cartridge path: the `cartridges` field from your resolved configuration (`dw.json`, `SFCC_CARTRIDGES`, `.env`, etc.) wins. When that's not set, cartridges fall back to discovery order with known base cartridges (`app_storefront_base`, `modules`) sorted last. The same ordering also drives the **B2C-DX → Cartridges** tree view.
@@ -60,9 +60,7 @@ The generated `jsconfig.json` looks like this — feel free to author it yoursel
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "dw/*": ["./.b2c-script-types/types/dw/*"],
-      "~/cartridge/*": ["./cartridges/*/cartridge/*"],
-      "*/cartridge/scripts/*": ["./cartridges/*/cartridge/scripts/*"]
+      "dw/*": ["./.b2c-script-types/types/dw/*"]
     },
     "types": []
   },
@@ -73,31 +71,51 @@ The generated `jsconfig.json` looks like this — feel free to author it yoursel
 
 ### Neovim, Helix, Zed, Sublime, or other LSP-based editors
 
-Modern editors that drive `tsserver` through the Language Server Protocol pick up `jsconfig.json` automatically as long as the language server is launched with the project root as its workspace directory. Run `b2c setup ide vscode-types` at the repo root once and the LSP will detect it on next start — no editor-specific configuration is needed for the typings themselves.
+Modern editors that drive `tsserver` through the Language Server Protocol have two ways to wire up Script API IntelliSense:
+
+**Option A — vendored `jsconfig.json` (dw/* only).** Run `b2c setup ide vscode-types` at the repo root and your LSP picks it up on next start. Provides only `dw/*` resolution; cartridge-relative requires (`~/cartridge/...`, `*/cartridge/...`) are not handled because TypeScript `paths` mappings can't express multi-cartridge lookups.
+
+**Option B — load the bundled TS Server plugin (full feature parity with the VS Code extension).** Configure your LSP client to load `@salesforce/b2c-script-types` as a TypeScript Server plugin via `init_options`. The plugin auto-discovers cartridges by walking the project for `.project` files, and honors `dw.json`'s `cartridges` field for ordering — no separate vendoring step.
+
+Resolve the plugin location via the CLI:
+
+```bash
+b2c setup ide tsserver-plugin --json
+# {"pluginName":"@salesforce/b2c-script-types","pluginPath":"/usr/lib/.../dist/script-types","typesPath":"...","version":"26.7.0"}
+```
 
 The recommended language servers and what to install:
 
-- **Neovim** with [`nvim-lspconfig`](https://github.com/neovim/nvim-lspconfig) — use the `ts_ls` server (formerly `tsserver`), backed by the `typescript-language-server` npm package. Older `coc-tsserver` setups also work.
+- **Neovim** with [`nvim-lspconfig`](https://github.com/neovim/nvim-lspconfig) — use the `ts_ls` server (formerly `tsserver`), backed by the `typescript-language-server` npm package. Older `coc-tsserver` setups also work. The [nvim-sfcc](https://github.com/clavery/nvim-sfcc) plugin wraps the wiring below.
 - **Helix** — bundles `typescript-language-server`; nothing to wire up beyond installing the package globally (`npm i -g typescript-language-server typescript`).
 - **Zed** — ships TypeScript support out of the box; no extra configuration.
 - **Sublime Text** — install `LSP` and `LSP-typescript` from Package Control.
 
-A minimal Neovim 0.10+ snippet for `nvim-lspconfig`:
+A minimal Neovim 0.10+ snippet using `nvim-lspconfig` and the TS Server plugin:
 
 ```lua
+local function b2c_plugin_path()
+  local out = vim.fn.system({ 'b2c', 'setup', 'ide', 'tsserver-plugin', '--json' })
+  return (vim.fn.json_decode(out) or {}).pluginPath
+end
+
 require('lspconfig').ts_ls.setup({
-  -- treat repos with a jsconfig.json (or .project) as the project root so
-  -- tsserver picks up the cartridge typings the b2c CLI vendored.
   root_dir = require('lspconfig.util').root_pattern('jsconfig.json', 'tsconfig.json', '.project', '.git'),
   filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
+  init_options = {
+    plugins = {
+      { name = '@salesforce/b2c-script-types', location = b2c_plugin_path() },
+    },
+  },
 })
 ```
 
-If your editor's LSP client is launched outside the repo root (for example, opening a single cartridge subdirectory), point it at the directory containing `jsconfig.json` so `tsserver` resolves the `paths` mappings correctly.
+If your editor's LSP client is launched outside the repo root (for example, opening a single cartridge subdirectory), point it at the project root so the plugin's auto-discovery walks the right tree.
 
 ### Notes
 
-- The bundle is version-locked to a Script API release (currently 26.7). Re-run `b2c setup ide vscode-types --force` after upgrading the CLI to refresh.
+- The bundle is version-locked to a Script API release (currently 26.7). Re-run `b2c setup ide vscode-types --force` after upgrading the CLI to refresh the vendored copy. The plugin path returned by `b2c setup ide tsserver-plugin` always points at the bundle shipped with your installed CLI.
+- The vendored `jsconfig.json` only configures `dw/*` IntelliSense. Cartridge-relative requires (`~/cartridge/...`, `*/cartridge/...`, `cartridgeName/cartridge/...`) cannot be expressed in standalone TypeScript `paths` mappings (TypeScript allows at most one `*` per pattern), so they will appear unresolved without the B2C DX VS Code extension or another host that loads `@salesforce/b2c-script-types/plugin` via LSP.
 
 ## Prophet VS Code Extension
 

@@ -8,8 +8,7 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "dw/*": ["./.b2c-script-types/types/dw/*"],
-      "*/cartridge/scripts/*": ["./cartridges/*/cartridge/scripts/*"]
+      "dw/*": ["./.b2c-script-types/types/dw/*"]
     },
     "types": []
   },

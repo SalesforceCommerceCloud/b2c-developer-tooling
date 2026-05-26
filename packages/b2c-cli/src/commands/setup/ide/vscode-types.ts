@@ -33,8 +33,6 @@ function buildJsconfigContent(): string {
         baseUrl: '.',
         paths: {
           'dw/*': [`./${SCRIPT_TYPES_DIR}/types/dw/*`],
-          '~/cartridge/*': ['./cartridges/*/cartridge/*'],
-          '*/cartridge/scripts/*': ['./cartridges/*/cartridge/scripts/*'],
         },
         types: [],
       },
@@ -150,18 +148,25 @@ export default class SetupIdeVscodeTypes extends BaseCommand<typeof SetupIdeVsco
   }
 
   /**
-   * Resolve the bundled b2c-script-types types/ directory. The CLI build copies
-   * the workspace package into dist/script-types/; in source tree (dev/test) we
-   * fall back to the sibling workspace package directly.
+   * Resolve the bundled b2c-script-types `types/` directory. The CLI build
+   * stages the workspace package under
+   * `dist/script-types/node_modules/@salesforce/b2c-script-types/` so tsserver
+   * can probe-load the plugin. Source-tree dev runs without a prior build fall
+   * back to the sibling workspace package directly (types/ only — no probe
+   * layout needed for the vendor-and-write flow this command does).
    */
   private resolveTypesSource(): string {
     const here = path.dirname(fileURLToPath(import.meta.url));
-    // Built layout: dist/commands/setup/ide/vscode-types.js -> dist/script-types/types
-    const builtPath = path.resolve(here, '..', '..', '..', 'script-types', 'types');
+    const PKG = '@salesforce/b2c-script-types';
+
+    // Built: dist/commands/setup/ide/vscode-types.js -> dist/script-types/node_modules/@salesforce/b2c-script-types/types
+    const builtPath = path.resolve(here, '..', '..', '..', 'script-types', 'node_modules', PKG, 'types');
     if (existsSync(builtPath)) return builtPath;
-    // Source layout: src/commands/setup/ide/vscode-types.ts -> ../b2c-script-types/types
+
+    // Source: src/commands/setup/ide/vscode-types.ts -> ../b2c-script-types/types
     const srcPath = path.resolve(here, '..', '..', '..', '..', '..', 'b2c-script-types', 'types');
     if (existsSync(srcPath)) return srcPath;
+
     this.error('Could not locate the bundled Script API types. Reinstall the CLI or pass --no-copy.');
   }
 }

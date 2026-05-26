@@ -124,6 +124,9 @@ b2c setup ide --help
 # Vendor Script API TypeScript definitions for IDE IntelliSense
 b2c setup ide vscode-types
 
+# Print TS Server plugin path for LSP-based editors (Neovim, Helix, Zed, etc.)
+b2c setup ide tsserver-plugin --json
+
 # Generate Prophet integration script
 b2c setup ide prophet
 ```
@@ -169,9 +172,50 @@ b2c setup ide vscode-types --no-copy --force
 The command produces:
 
 - `./.b2c-script-types/types/` — vendored copy of the Script API definitions, version-pinned to the CLI release. Safe to commit.
-- `./jsconfig.json` (or the path passed to `--output`) — TypeScript Language Service configuration mapping `dw/*` to the vendored types and adding cartridge-style `paths` for `~/cartridge/*` and `*/cartridge/scripts/*`.
+- `./jsconfig.json` (or the path passed to `--output`) — TypeScript Language Service configuration mapping `dw/*` to the vendored types. Cartridge-relative requires (`~/cartridge/...`, `*/cartridge/...`) can't be expressed in standalone TypeScript `paths` mappings and will appear unresolved without the B2C DX VS Code extension.
 
 See the [IDE Integration guide](/guide/ide-integration#script-api-intellisense) for editor-specific setup notes (Neovim, Helix, Zed, etc.).
+
+## b2c setup ide tsserver-plugin
+
+Print absolute paths to the bundled `@salesforce/b2c-script-types` TypeScript Server plugin and types directory. Use this when configuring an LSP-based editor (Neovim, Helix, Zed, Sublime, etc.) to load the plugin via `init_options.plugins[]` — full feature parity with the B2C DX VS Code extension, including cartridge-relative require resolution.
+
+The command performs no filesystem writes; it just resolves and prints paths.
+
+### Usage
+
+```bash
+b2c setup ide tsserver-plugin [FLAGS]
+```
+
+### Flags
+
+| Flag     | Description            | Default |
+| -------- | ---------------------- | ------- |
+| `--json` | Output results as JSON | `false` |
+
+### Examples
+
+```bash
+# Human-readable
+b2c setup ide tsserver-plugin
+
+# JSON for tooling (e.g. nvim-sfcc)
+b2c setup ide tsserver-plugin --json
+```
+
+### Output
+
+```json
+{
+  "pluginName": "@salesforce/b2c-script-types",
+  "pluginPath": "/usr/local/lib/node_modules/@salesforce/b2c-cli/dist/script-types",
+  "typesPath": "/usr/local/lib/node_modules/@salesforce/b2c-cli/dist/script-types/types",
+  "version": "26.7.0"
+}
+```
+
+Pass `pluginName` as `name` and `pluginPath` as `location` in your editor's `tsserver` `init_options.plugins[]` entry. The plugin auto-discovers cartridges in the project root and honors `dw.json`'s `cartridges` field for ordering — no host-side wiring needed.
 
 ## b2c setup ide prophet
 
