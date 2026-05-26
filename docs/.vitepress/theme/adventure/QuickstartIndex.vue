@@ -13,6 +13,7 @@ const PRIORITY_SECTIONS: {key: AdventurePriority; title: string; tagline: string
 
 const search = ref('');
 const activeTag = ref<string | null>(null);
+const tagsOpen = ref(false);
 
 const filtered = computed(() => {
   const q = search.value.trim().toLowerCase();
@@ -87,7 +88,32 @@ function clearFilters() {
         />
         <span class="b2c-advi__search-count">{{ totalMatches }} of {{ adventures.length }}</span>
       </div>
-      <div class="b2c-advi__tags">
+      <!-- Active filter chip + disclosure toggle. Tags drive search whether
+           or not the picker is visible; this row stays compact unless the
+           user opts in. -->
+      <div class="b2c-advi__filterbar">
+        <button
+          type="button"
+          class="b2c-advi__disclose"
+          :aria-expanded="tagsOpen"
+          @click="tagsOpen = !tagsOpen"
+        >
+          {{ tagsOpen ? 'Hide tags' : 'Filter by tag' }}
+        </button>
+        <span v-if="activeTag" class="b2c-advi__active-tag">
+          tag: <strong>{{ activeTag }}</strong>
+          <button type="button" class="b2c-advi__active-tag-clear" aria-label="Clear tag filter" @click="activeTag = null">×</button>
+        </span>
+        <button
+          v-if="search || activeTag"
+          type="button"
+          class="b2c-advi__clear"
+          @click="clearFilters"
+        >
+          Clear filters
+        </button>
+      </div>
+      <div v-if="tagsOpen" class="b2c-advi__tags">
         <button
           v-for="{tag, count} in allTags"
           :key="tag"
@@ -97,14 +123,6 @@ function clearFilters() {
         >
           {{ tag }}
           <span class="b2c-advi__tag-count">{{ count }}</span>
-        </button>
-        <button
-          v-if="search || activeTag"
-          type="button"
-          class="b2c-advi__clear"
-          @click="clearFilters"
-        >
-          Clear filters
         </button>
       </div>
     </div>
@@ -226,11 +244,62 @@ function clearFilters() {
   white-space: nowrap;
 }
 
+.b2c-advi__filterbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.b2c-advi__disclose {
+  font-size: 12px;
+  padding: 3px 9px;
+  background: transparent;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 6px;
+  color: var(--vp-c-text-2);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.b2c-advi__disclose:hover {
+  color: var(--vp-c-brand-1);
+  border-color: var(--vp-c-brand-1);
+}
+
+.b2c-advi__active-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 3px 4px 3px 9px;
+  background: var(--vp-c-brand-soft);
+  border: 1px solid var(--vp-c-brand-1);
+  border-radius: 999px;
+  color: var(--vp-c-brand-1);
+}
+
+.b2c-advi__active-tag-clear {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 4px;
+  font-family: inherit;
+}
+
+.b2c-advi__active-tag-clear:hover {
+  color: var(--vp-c-brand-2);
+}
+
 .b2c-advi__tags {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
+  padding-top: 4px;
 }
 
 .b2c-advi__tag {
