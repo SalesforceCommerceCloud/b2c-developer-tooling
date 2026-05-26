@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.8.0
+
+### Minor Changes
+
+- [#451](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/451) [`665b2a1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/665b2a1144aa4c66ab7bf4f98294662bd55877a0) - Add Script API IntelliSense for cartridge JavaScript: `dw/*`, cartridge-style requires, and SFCC globals (`session`, `request`, `response`, `customer`, etc.) are typed automatically. The VS Code extension wires this up out of the box; for other editors, run `b2c setup ide tsserver-plugin` (LSP plugin) or `b2c setup ide vscode-types` (jsconfig). See the IDE Integration guide for details. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.7.1
 
 ### Patch Changes
