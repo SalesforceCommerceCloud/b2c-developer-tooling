@@ -32,6 +32,11 @@ interface NormalizedCartridge {
 
 const PLUGIN_NAME = '@salesforce/b2c-script-types';
 const TYPES_DIR = path.resolve(__dirname, '..', 'types').replace(/\\/g, '/');
+// Ambient declarations for SFCC globals (`session`, `request`, `response`,
+// `customer`, `empty(...)`, the `dw.*` namespace alias, etc.). The plugin
+// injects this into the TS program's script file list so the `declare global`
+// block takes effect in projects that don't have a jsconfig.json including it.
+const GLOBAL_DTS = path.join(TYPES_DIR, 'global.d.ts').replace(/\\/g, '/');
 
 // Candidate suffixes appended when resolving a SFCC-style relative require to
 // a cartridge file. SFRA convention is to omit the .js extension, so .js wins
@@ -371,6 +376,23 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     }
 
     const host = info.languageServiceHost;
+
+    // Inject the SFCC global declarations into the TS program when the project
+    // contains at least one cartridge file. Configured projects (with a
+    // jsconfig.json that already includes global.d.ts) are unaffected because
+    // the file is deduped by normalized path. This is what surfaces typed
+    // `session`, `request`, `response`, `customer`, `empty(...)`, and the
+    // ambient `dw` namespace in cartridge JS without requiring any imports.
+    const origGetScriptFileNames = host.getScriptFileNames.bind(host);
+    host.getScriptFileNames = () => {
+      const list = origGetScriptFileNames();
+      if (!enabled || cartridges.length === 0) return list;
+      if (!list.some((f) => isCartridgeFile(f))) return list;
+      if (!fileExists(GLOBAL_DTS)) return list;
+      const target = normalize(GLOBAL_DTS);
+      if (list.some((f) => normalize(f) === target)) return list;
+      return [...list, GLOBAL_DTS];
+    };
 
     const origResolveModuleNameLiterals = host.resolveModuleNameLiterals?.bind(host);
     if (origResolveModuleNameLiterals) {
