@@ -339,6 +339,42 @@ function init({ typescript: ts }) {
         const f = normalize(containingFile);
         return cartridges.find((c) => f.startsWith(c.root));
     };
+    // Cached map of byte ranges in types/sfra/server.d.ts to the SFRA module
+    // declared by their enclosing `declare module 'X' { ... }` block. Used to
+    // map go-to-definition results back to the matching modules/<X>.js file.
+    let sfraDtsRanges;
+    const sfraModuleAtOffset = (offset) => {
+        if (!sfraDtsRanges) {
+            const content = fileExists(SFRA_SERVER_DTS) ? ts.sys.readFile(SFRA_SERVER_DTS) : undefined;
+            sfraDtsRanges = content ? parseDeclareModuleRanges(content) : [];
+        }
+        for (const r of sfraDtsRanges) {
+            if (offset >= r.start && offset <= r.end)
+                return r.module;
+        }
+        return undefined;
+    };
+    const parseDeclareModuleRanges = (content) => {
+        const ranges = [];
+        const re = /declare module ['"]([^'"]+)['"]\s*\{/g;
+        let m;
+        while ((m = re.exec(content)) !== null) {
+            const start = m.index;
+            // Walk forward from the opening brace to find the matching close.
+            let depth = 1;
+            let i = m.index + m[0].length;
+            while (i < content.length && depth > 0) {
+                const ch = content[i];
+                if (ch === '{')
+                    depth++;
+                else if (ch === '}')
+                    depth--;
+                i++;
+            }
+            ranges.push({ start, end: i, module: m[1] });
+        }
+        return ranges;
+    };
     const reorderForContainingFile = (list, containingFile) => {
         const owner = ownerCartridge(containingFile);
         if (!owner)
@@ -480,8 +516,56 @@ function init({ typescript: ts }) {
                 });
             };
         }
+        // Wrap the language service so go-to-definition results that land inside
+        // our injected types/sfra/server.d.ts redirect to the real implementation
+        // in the user's `modules` cartridge. Without this, following go-to-def on
+        // `require('server')` (or a Server.use call) would dump the user into
+        // bundled type declarations instead of their actual source.
+        const proxy = Object.create(null);
+        for (const k of Object.keys(info.languageService)) {
+            const fn = info.languageService[k];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            proxy[k] = (...args) => fn.apply(info.languageService, args);
+        }
+        const remapDefinition = (def) => {
+            if (cartridges.length === 0)
+                return def;
+            if (normalize(def.fileName) !== normalize(SFRA_SERVER_DTS))
+                return def;
+            const modulesCart = cartridges.find((c) => c.name === 'modules');
+            if (!modulesCart)
+                return def;
+            const moduleName = sfraModuleAtOffset(def.textSpan.start);
+            if (!moduleName)
+                return def;
+            const candidates = [modulesCart.root + moduleName + '.js', modulesCart.root + moduleName + '/index.js'];
+            for (const candidate of candidates) {
+                if (fileExists(candidate)) {
+                    return { ...def, fileName: candidate, textSpan: { start: 0, length: 0 } };
+                }
+            }
+            return def;
+        };
+        proxy.getDefinitionAtPosition = (fileName, position) => {
+            const result = info.languageService.getDefinitionAtPosition(fileName, position);
+            return result?.map(remapDefinition);
+        };
+        proxy.getDefinitionAndBoundSpan = (fileName, position) => {
+            const result = info.languageService.getDefinitionAndBoundSpan(fileName, position);
+            if (!result?.definitions)
+                return result;
+            return { ...result, definitions: result.definitions.map(remapDefinition) };
+        };
+        proxy.getTypeDefinitionAtPosition = (fileName, position) => {
+            const result = info.languageService.getTypeDefinitionAtPosition(fileName, position);
+            return result?.map(remapDefinition);
+        };
+        proxy.getImplementationAtPosition = (fileName, position) => {
+            const result = info.languageService.getImplementationAtPosition(fileName, position);
+            return result?.map(remapDefinition);
+        };
         log(`plugin initialized (cartridges=${cartridges.length}, enabled=${enabled})`);
-        return info.languageService;
+        return proxy;
     }
     function onConfigurationChanged(config) {
         applyConfig(config);
