@@ -260,6 +260,50 @@ function init({ typescript: ts }) {
         }
         return undefined;
     };
+    // Resolve a bare `require('server')`-style import against the SFRA `modules`
+    // cartridge. Unlike normal cartridges (which expose files under
+    // `cartridge/scripts/...`), the `modules` cartridge exposes its entire tree
+    // at the root, so `require('server')` -> `<modules>/server[.js|/index.js]`
+    // and `require('server/middleware')` -> `<modules>/server/middleware[.js]`.
+    // Falls through unless a cartridge literally named `modules` is in the list.
+    const resolveModulesCartridge = (moduleName) => {
+        if (cartridges.length === 0)
+            return undefined;
+        if (moduleName.startsWith('.') || moduleName.startsWith('/'))
+            return undefined;
+        if (moduleName.startsWith('~/') || moduleName.startsWith('*/') || moduleName.startsWith('dw/'))
+            return undefined;
+        const modulesCart = cartridges.find((c) => c.name === 'modules');
+        if (!modulesCart)
+            return undefined;
+        const baseAbs = modulesCart.root + moduleName;
+        for (const ext of CANDIDATE_EXTENSIONS) {
+            const candidate = baseAbs + ext;
+            if (fileExists(candidate)) {
+                return { resolved: candidate, source: modulesCart.name };
+            }
+        }
+        // package.json `main` fallback for directories without an index.js.
+        const pkgPath = baseAbs + '/package.json';
+        if (fileExists(pkgPath)) {
+            try {
+                const content = ts.sys.readFile(pkgPath);
+                if (content) {
+                    const main = JSON.parse(content).main;
+                    if (typeof main === 'string' && main.length > 0) {
+                        const resolved = (modulesCart.root + moduleName + '/' + main.replace(/^\.\//, '')).replace(/\\/g, '/');
+                        if (fileExists(resolved)) {
+                            return { resolved, source: modulesCart.name };
+                        }
+                    }
+                }
+            }
+            catch {
+                // best-effort
+            }
+        }
+        return undefined;
+    };
     const ownerCartridge = (containingFile) => {
         const f = normalize(containingFile);
         return cartridges.find((c) => f.startsWith(c.root));
@@ -325,6 +369,17 @@ function init({ typescript: ts }) {
                             },
                         };
                     }
+                    const mod = resolveModulesCartridge(text);
+                    if (mod) {
+                        return {
+                            resolvedModule: {
+                                resolvedFileName: mod.resolved,
+                                extension: mod.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
+                                isExternalLibraryImport: false,
+                                packageId: undefined,
+                            },
+                        };
+                    }
                     return res;
                 });
             };
@@ -353,6 +408,14 @@ function init({ typescript: ts }) {
                         return {
                             resolvedFileName: cart.resolved,
                             extension: cart.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
+                            isExternalLibraryImport: false,
+                        };
+                    }
+                    const mod = resolveModulesCartridge(text);
+                    if (mod) {
+                        return {
+                            resolvedFileName: mod.resolved,
+                            extension: mod.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
                             isExternalLibraryImport: false,
                         };
                     }
