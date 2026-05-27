@@ -187,6 +187,11 @@ async function runScaffoldWizard(
     // Source detected (e.g., cartridge) → use projectRoot because cartridgeNamePath is relative to it
     outputDir = projectRoot;
     log.appendLine(`[Scaffold] Output dir from source detection: ${outputDir}`);
+  } else if (scaffold.id === 'cartridge') {
+    // Cartridges always live under <workspace>/cartridges so the Cartridges view
+    // and CLI find them without any extra configuration.
+    outputDir = path.join(projectRoot, 'cartridges');
+    log.appendLine(`[Scaffold] Output dir for cartridge: ${outputDir}`);
   } else if (uri) {
     outputDir = uri.fsPath;
     log.appendLine(`[Scaffold] Output dir from context menu: ${outputDir}`);
@@ -246,6 +251,12 @@ async function runScaffoldWizard(
     const fileUri = vscode.Uri.file(created[0].absolutePath);
     const doc = await vscode.workspace.openTextDocument(fileUri);
     await vscode.window.showTextDocument(doc);
+
+    // The fs watcher on **/.project misses files written outside any workspace folder
+    // and can race scaffold writes; refresh explicitly when a new .project landed.
+    if (created.some((f) => path.basename(f.path) === '.project')) {
+      await vscode.commands.executeCommand('b2c-dx.codeSync.refreshCartridges');
+    }
 
     // Show message with Reveal action for the output directory
     const action = await vscode.window.showInformationMessage(
