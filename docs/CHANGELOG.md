@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.2
+
+### Patch Changes
+
+- [`a670cc7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a670cc7c00e1ba5ee0057de7c1152bb57396c6fc) - Add page-specific SEO meta descriptions to the SCAPI Schemas CLI reference and CI/CD guide pages, replacing the site-wide default description. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.1
 
 ### Patch Changes

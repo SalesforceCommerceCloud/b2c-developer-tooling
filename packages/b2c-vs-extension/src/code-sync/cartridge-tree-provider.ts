@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {findCartridges, type CartridgeMapping} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {type CartridgeMapping} from '@salesforce/b2c-tooling-sdk/operations/code';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import type {B2CExtensionConfig} from '../config-provider.js';
+import type {CartridgeService} from '../cartridges/cartridge-service.js';
 
 export class CartridgeItem extends vscode.TreeItem {
   constructor(public readonly cartridge: CartridgeMapping) {
@@ -30,13 +30,14 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeI
   private readonly _onDidChangeTreeData = new vscode.EventEmitter<CartridgeItem | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  private cartridges: CartridgeMapping[] = [];
+  private readonly cartridgesSub: vscode.Disposable;
 
-  constructor(private readonly configProvider: B2CExtensionConfig) {}
+  constructor(private readonly cartridgeService: CartridgeService) {
+    this.cartridgesSub = cartridgeService.onDidChange(() => this._onDidChangeTreeData.fire());
+  }
 
   refresh(): void {
-    this.cartridges = [];
-    this._onDidChangeTreeData.fire();
+    this.cartridgeService.refresh();
   }
 
   getTreeItem(element: CartridgeItem): vscode.TreeItem {
@@ -45,18 +46,11 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeI
 
   getChildren(element?: CartridgeItem): CartridgeItem[] {
     if (element) return [];
-
-    if (this.cartridges.length === 0) {
-      const workingDirectory = this.configProvider.getWorkingDirectory();
-      if (workingDirectory) {
-        this.cartridges = findCartridges(workingDirectory);
-      }
-    }
-
-    return this.cartridges.map((c) => new CartridgeItem(c));
+    return this.cartridgeService.getCartridges().map((c) => new CartridgeItem(c));
   }
 
   dispose(): void {
+    this.cartridgesSub.dispose();
     this._onDidChangeTreeData.dispose();
   }
 }

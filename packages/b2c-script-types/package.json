@@ -1,0 +1,44 @@
+{
+  "name": "@salesforce/b2c-script-types",
+  "version": "26.7.0",
+  "private": true,
+  "description": "TypeScript definitions for the B2C Commerce Script API (dw/*) plus a TypeScript Language Service plugin that resolves cartridge require() calls.",
+  "license": "Apache-2.0",
+  "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
+  "main": "plugin/index.js",
+  "types": "types/global.d.ts",
+  "files": [
+    "types",
+    "plugin",
+    "jsconfig.template.json",
+    "VENDORED.md",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./types/global.d.ts",
+      "default": "./plugin/index.js"
+    },
+    "./plugin": "./plugin/index.js",
+    "./types/*": "./types/*"
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "lint": "eslint",
+    "lint:agent": "eslint --quiet",
+    "typecheck:agent": "tsc -p . --noEmit --pretty false",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src"
+  },
+  "devDependencies": {
+    "@eslint/compat": "catalog:",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-header": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
+  }
+}
