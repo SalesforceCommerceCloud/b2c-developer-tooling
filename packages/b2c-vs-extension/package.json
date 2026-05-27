@@ -14,7 +14,6 @@
   "type": "module",
   "dependencies": {
     "@salesforce/b2c-script-types": "workspace:*",
-    "@salesforce/b2c-tooling-sdk": "workspace:*"
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "react": "18.3.1",
     "react-dom": "18.3.1"
