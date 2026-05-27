@@ -45,6 +45,31 @@
         "configNamespace": "b2c-dx"
       }
     ],
+    "languages": [
+      {
+        "id": "isml",
+        "aliases": ["ISML", "isml"],
+        "extensions": [".isml"],
+        "configuration": "./language/isml/language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "isml",
+        "scopeName": "text.html.isml",
+        "path": "./language/isml/isml.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.isml.isscript": "javascript",
+          "meta.embedded.expression.isml": "javascript"
+        }
+      }
+    ],
+    "snippets": [
+      {
+        "language": "isml",
+        "path": "./language/isml/isml.snippets.json"
+      }
+    ],
     "configuration": {
       "title": "B2C DX",
       "properties": {
