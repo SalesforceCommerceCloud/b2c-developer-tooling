@@ -36,7 +36,8 @@ export type FeatureCategory =
   | 'cap'
   | 'pageDesigner'
   | 'logs'
-  | 'instance';
+  | 'instance'
+  | 'cipAnalytics';
 
 function readPjson(extensionPath: string): TelemetryPjson | undefined {
   try {

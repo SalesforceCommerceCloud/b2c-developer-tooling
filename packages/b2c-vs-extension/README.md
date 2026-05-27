@@ -1,6 +1,6 @@
 # B2C DX - VS Code Extension
 
-VS Code extension for B2C Commerce developer experience: sandbox realm explorer, cartridge code sync, WebDAV browser, content libraries, SCAPI API browser, B2C script debugger, scaffold/CAP install, log tailing, and a Page Designer Assistant.
+VS Code extension for B2C Commerce developer experience: sandbox realm explorer, cartridge code sync, WebDAV browser, content libraries, SCAPI API browser, B2C script debugger, scaffold/CAP install, log tailing, CIP analytics (Query Builder + curated reports), and a Page Designer Assistant.
 
 **User-facing documentation:** [B2C DX VS Code Extension](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/) — overview, installation, configuration, and feature tour.
 
@@ -17,6 +17,7 @@ This README is the source of truth for repo-level developer info (build/watch, l
 - Scaffold (`New from Scaffold...`) and CAP install.
 - Log tailing into a dedicated output channel.
 - Page Designer Assistant webview (Storefront Next page generation).
+- B2C-DX Analytics — CIP/CCAC Query Builder, Tables Browser, curated reports, multi-realm support, saved-query library.
 
 See the [docs site](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/features) for the full tour.
 
