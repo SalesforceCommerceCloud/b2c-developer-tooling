@@ -60,6 +60,10 @@ Stream live `error-*.log`, `warn-*.log`, and `info-*.log` files from your sandbo
 
 The bottom-left of the window shows your active instance — the name, the hostname, and a pin icon if you've locked a particular folder as the project root. Click it to switch instances; every view updates instantly.
 
+### Script API IntelliSense
+
+Cartridge JavaScript files automatically light up with autocomplete and hover docs for `dw/*` modules — no `jsconfig.json` written into your repo. See the [Script API IntelliSense guide](../guide/ide-integration#script-api-intellisense) for how it works and how to enable the same support in other IDEs.
+
 ### B2C CLI Plugin Support
 
 The extension runs the [B2C CLI](../guide/) under the hood, so any plugin you've installed via `b2c plugins install` automatically applies here too. Add a plugin that introduces a new config source, a custom sandbox command, or middleware, and the extension picks it up the next time the workspace loads — no separate plugin registry. (The MCP server works the same way; see the [MCP plugins note](../mcp/#plugins).)
