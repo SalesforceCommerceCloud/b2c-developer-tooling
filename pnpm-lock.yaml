@@ -407,6 +407,36 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
+  packages/b2c-script-types:
+    devDependencies:
+      '@eslint/compat':
+        specifier: 'catalog:'
+        version: 1.4.1(eslint@9.39.1)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.0
+      eslint:
+        specifier: 'catalog:'
+        version: 9.39.1
+      eslint-config-prettier:
+        specifier: 'catalog:'
+        version: 10.1.8(eslint@9.39.1)
+      eslint-plugin-header:
+        specifier: 'catalog:'
+        version: 3.1.1(eslint@9.39.1)
+      eslint-plugin-prettier:
+        specifier: 'catalog:'
+        version: 5.5.4(eslint-config-prettier@10.1.8(eslint@9.39.1))(eslint@9.39.1)(prettier@3.6.2)
+      prettier:
+        specifier: 'catalog:'
+        version: 3.6.2
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      typescript-eslint:
+        specifier: 'catalog:'
+        version: 8.54.0(eslint@9.39.1)(typescript@5.9.3)
+
   packages/b2c-tooling-sdk:
     dependencies:
       '@vscode/debugadapter':
@@ -557,6 +587,9 @@ importers:
 
   packages/b2c-vs-extension:
     dependencies:
+      '@salesforce/b2c-script-types':
+        specifier: workspace:*
+        version: link:../b2c-script-types
       '@salesforce/b2c-tooling-sdk':
         specifier: workspace:*
         version: link:../b2c-tooling-sdk

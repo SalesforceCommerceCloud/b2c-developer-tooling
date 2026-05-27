@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce B2C Commerce CLI",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -335,7 +335,7 @@
   },
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
   "scripts": {
-    "build": "shx rm -rf dist && tsc -p tsconfig.build.json",
+    "build": "shx rm -rf dist && tsc -p tsconfig.build.json && shx mkdir -p dist/script-types/node_modules/@salesforce/b2c-script-types && shx cp -r ../b2c-script-types/types dist/script-types/node_modules/@salesforce/b2c-script-types/types && shx cp -r ../b2c-script-types/plugin dist/script-types/node_modules/@salesforce/b2c-script-types/plugin && shx cp ../b2c-script-types/package.json dist/script-types/node_modules/@salesforce/b2c-script-types/package.json",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
     "typecheck:agent": "tsc --noEmit -p test --pretty false",

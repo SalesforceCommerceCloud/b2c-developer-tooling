@@ -63,6 +63,30 @@ function copySdkScaffolds() {
   fs.cpSync(src, dest, {recursive: true});
 }
 
+// Stage @salesforce/b2c-script-types into the extension's node_modules so the
+// TypeScript Server plugin (declared in contributes.typescriptServerPlugins) is
+// resolvable from the extension root at runtime, even with `vsce --no-dependencies`.
+function copyScriptTypesPlugin() {
+  const src = path.join(pkgRoot, '..', 'b2c-script-types');
+  const dest = path.join(pkgRoot, 'node_modules', '@salesforce', 'b2c-script-types');
+  if (!fs.existsSync(src)) {
+    console.warn('[script-types] source not found, skipping:', src);
+    return;
+  }
+  // Wipe any stale staged copy (or pnpm symlink) so we don't accumulate.
+  if (fs.existsSync(dest) || fs.lstatSync(dest, {throwIfNoEntry: false})) {
+    fs.rmSync(dest, {recursive: true, force: true});
+  }
+  fs.mkdirSync(path.dirname(dest), {recursive: true});
+  // Copy only the runtime artifacts; skip src/, eslint/tsconfig dev files.
+  for (const entry of ['package.json', 'plugin', 'types', 'README.md', 'jsconfig.template.json']) {
+    const s = path.join(src, entry);
+    if (!fs.existsSync(s)) continue;
+    fs.cpSync(s, path.join(dest, entry), {recursive: true});
+  }
+  console.log('[script-types] staged', path.relative(pkgRoot, dest));
+}
+
 function copyCipProtoFiles() {
   const src = path.join(sdkRoot, 'data', 'cip-proto');
   const dest = path.join(pkgRoot, 'dist', 'data', 'cip-proto');
@@ -160,6 +184,7 @@ const webviewBuildOptions = {
 
 if (watchMode) {
   copySdkScaffolds();
+  copyScriptTypesPlugin();
   copyCipProtoFiles();
   copyCipStyles();
   const ctx = await esbuild.context(buildOptions);
@@ -178,6 +203,7 @@ if (watchMode) {
 
   inlineSdkPackageJson();
   copySdkScaffolds();
+  copyScriptTypesPlugin();
   copyCipProtoFiles();
   copyCipStyles();
   copySwaggerUiAssets();

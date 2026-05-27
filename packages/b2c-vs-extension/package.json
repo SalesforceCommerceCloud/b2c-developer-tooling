@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "B2C DX VSCE",
   "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -13,6 +13,8 @@
   ],
   "type": "module",
   "dependencies": {
+    "@salesforce/b2c-script-types": "workspace:*",
+    "@salesforce/b2c-tooling-sdk": "workspace:*"
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "react": "18.3.1",
     "react-dom": "18.3.1"
@@ -37,6 +39,13 @@
   ],
   "main": "./dist/extension.cjs",
   "contributes": {
+    "typescriptServerPlugins": [
+      {
+        "name": "@salesforce/b2c-script-types",
+        "enableForWorkspaceTypeScriptVersions": true,
+        "configNamespace": "b2c-dx"
+      }
+    ],
     "configuration": {
       "title": "B2C DX",
       "properties": {
@@ -99,6 +108,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable Code Sync (watch and deploy cartridges)."
+        },
+        "b2c-dx.features.scriptTypes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Provide Script API IntelliSense (dw/*) in cartridge JavaScript via the bundled TypeScript Server plugin. No files are written to your workspace."
         },
         "b2c-dx.telemetry.enabled": {
           "type": "boolean",
@@ -627,6 +641,12 @@
         "category": "B2C DX - Code Sync"
       },
       {
+        "command": "b2c-dx.codeSync.revealCartridge",
+        "title": "Reveal in Explorer",
+        "icon": "$(folder-opened)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
         "command": "b2c-dx.codeSync.uploadCartridge",
         "title": "Upload Cartridge",
         "icon": "$(cloud-upload)",
@@ -679,6 +699,12 @@
         "title": "Activate Code Version",
         "icon": "$(check)",
         "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.scriptTypes.refresh",
+        "title": "Refresh Script API IntelliSense",
+        "icon": "$(refresh)",
+        "category": "B2C DX"
       }
     ],
     "menus": {
@@ -924,6 +950,11 @@
           "command": "b2c-dx.sandbox.delete",
           "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-(?!cloning|settingup)/",
           "group": "3_destructive@1"
+        },
+        {
+          "command": "b2c-dx.codeSync.revealCartridge",
+          "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
+          "group": "0_navigation@1"
         },
         {
           "command": "b2c-dx.codeSync.uploadCartridge",
@@ -1189,7 +1220,7 @@
     "build": "node scripts/esbuild-bundle.mjs",
     "watch": "node scripts/esbuild-bundle.mjs --watch",
     "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
-    "package": "pnpm exec vsce package --no-dependencies",
+    "package": "pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
     "typecheck:agent": "tsc -p . --noEmit --pretty false",

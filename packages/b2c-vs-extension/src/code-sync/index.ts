@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import * as vscode from 'vscode';
+import type {CartridgeService} from '../cartridges/cartridge-service.js';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {registerSafeCommand} from '../safety.js';
 import {CodeSyncManager} from './code-sync-manager.js';
@@ -14,10 +15,11 @@ import {registerCartridgeCommands, updateCodeVersionDisplay} from './cartridge-c
 export function registerCodeSync(
   context: vscode.ExtensionContext,
   configProvider: B2CExtensionConfig,
+  cartridgeService: CartridgeService,
   log: vscode.OutputChannel,
 ): void {
   const manager = new CodeSyncManager(context.workspaceState);
-  const treeProvider = new CartridgeTreeProvider(configProvider);
+  const treeProvider = new CartridgeTreeProvider(cartridgeService);
   const treeView = vscode.window.createTreeView('b2cCartridgeExplorer', {treeDataProvider: treeProvider});
 
   // --- Core sync commands ---
@@ -57,18 +59,15 @@ export function registerCodeSync(
   );
 
   const refreshCmd = registerSafeCommand('b2c-dx.codeSync.refreshCartridges', () => {
-    treeProvider.refresh();
+    cartridgeService.refresh();
     manager.refreshCartridges(configProvider.getWorkingDirectory());
   });
 
-  // Watch for new .project files (new cartridges added via scaffolding, etc.)
-  const projectFileWatcher = vscode.workspace.createFileSystemWatcher('**/.project');
-  projectFileWatcher.onDidCreate(() => {
-    treeProvider.refresh();
+  // CartridgeService already watches **/.project for create/delete and refreshes
+  // itself; the tree updates via its onDidChange subscription. We forward those
+  // events to the code-sync manager so it picks up newly-scaffolded cartridges.
+  const cartridgesSub = cartridgeService.onDidChange(() => {
     manager.refreshCartridges(configProvider.getWorkingDirectory());
-  });
-  projectFileWatcher.onDidDelete(() => {
-    treeProvider.refresh();
   });
 
   const uploadCartridgeCmd = registerSafeCommand('b2c-dx.codeSync.uploadCartridge', async (item: CartridgeItem) => {
@@ -141,7 +140,8 @@ export function registerCodeSync(
     if (manager.isWatching) {
       await manager.stopWatch();
     }
-    treeProvider.refresh();
+    // CartridgeService listens to onDidReset itself and refreshes its cache;
+    // the tree updates via the cartridge-service onDidChange event.
     updateContextKey();
     await evaluateAutoStart();
   });
@@ -160,7 +160,7 @@ export function registerCodeSync(
     refreshCmd,
     uploadCartridgeCmd,
     uploadToInstanceCmd,
-    projectFileWatcher,
+    cartridgesSub,
     ...cartridgeCmdDisposables,
   );
 }
