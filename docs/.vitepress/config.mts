@@ -129,6 +129,7 @@ const referenceSidebar = [
       {text: 'Setup', link: '/cli/setup'},
       {text: 'Sites', link: '/cli/sites'},
       {text: 'SLAS', link: '/cli/slas'},
+      {text: 'Storefront Next', link: '/cli/sfnext'},
       {text: 'WebDAV', link: '/cli/webdav'},
       {text: 'Logging', link: '/cli/logging'},
     ],

@@ -91,6 +91,12 @@
       "@oclif/plugin-autocomplete",
       "@oclif/plugin-warn-if-update-available"
     ],
+    "jitPlugins": {
+      "@salesforce/storefront-next-dev": "^1.0.0"
+    },
+    "hooks": {
+      "init": "./dist/hooks/sfnext-local-override"
+    },
     "warn-if-update-available": {
       "timeoutInDays": 1,
       "frequency": 1,
@@ -330,6 +336,9 @@
       },
       "scaffold": {
         "description": "Generate project scaffolds for cartridges, APIs, and components\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scaffold.html"
+      },
+      "sfnext": {
+        "description": "Storefront Next (SFNext) project, dev server, extensions, and deployment commands"
       }
     }
   },
