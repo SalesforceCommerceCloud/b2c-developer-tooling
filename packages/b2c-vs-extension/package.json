@@ -17,6 +17,8 @@
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "react": "18.3.1",
     "react-dom": "18.3.1"
+    "@salesforce/b2c-tooling-sdk": "workspace:*",
+    "vscode-html-languageservice": "catalog:"
   },
   "engines": {
     "vscode": "^1.105.1"
@@ -49,10 +51,34 @@
       {
         "id": "isml",
         "aliases": ["ISML", "isml"],
-        "extensions": [".isml"],
+        "extensions": [".isml", ".ds"],
         "configuration": "./language/isml/language-configuration.json"
       }
     ],
+    "configurationDefaults": {
+      "[isml]": {
+        "editor.linkedEditing": true,
+        "editor.suggest.insertMode": "replace",
+        "editor.wordWrap": "off"
+      },
+      "[json]": {
+        "editor.quickSuggestions": {
+          "other": true,
+          "comments": false,
+          "strings": true
+        }
+      },
+      "[jsonc]": {
+        "editor.quickSuggestions": {
+          "other": true,
+          "comments": false,
+          "strings": true
+        }
+      },
+      "emmet.includeLanguages": {
+        "isml": "html"
+      }
+    },
     "grammars": [
       {
         "language": "isml",
@@ -69,6 +95,10 @@
         "language": "isml",
         "path": "./language/isml/isml.snippets.json"
       }
+    ],
+    "breakpoints": [
+      {"language": "isml"},
+      {"language": "javascript"}
     ],
     "configuration": {
       "title": "B2C DX",
@@ -729,6 +759,16 @@
         "title": "Refresh Script API IntelliSense",
         "icon": "$(refresh)",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.isml.createTemplate",
+        "title": "Create ISML Template",
+        "category": "B2C DX - ISML"
+      },
+      {
+        "command": "b2c-dx.isml.showReferences",
+        "title": "Show ISML References",
+        "category": "B2C DX - ISML"
       }
     ],
     "menus": {
@@ -1053,6 +1093,10 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "b2c-dx.isml.createTemplate",
+          "when": "false"
+        },
         {
           "command": "b2c-dx.cipAnalytics.refresh",
           "when": "config.b2c-dx.features.cipAnalytics"

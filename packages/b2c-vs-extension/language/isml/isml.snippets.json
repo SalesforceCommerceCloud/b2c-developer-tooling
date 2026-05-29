@@ -1,151 +1,4 @@
 {
-  "isif": {
-    "prefix": "isif",
-    "body": [
-      "<isif condition=\"${1:condition}\">",
-      "\t$0",
-      "</isif>"
-    ],
-    "description": "ISML <isif> conditional block"
-  },
-  "isif-else": {
-    "prefix": "isifelse",
-    "body": [
-      "<isif condition=\"${1:condition}\">",
-      "\t$2",
-      "<iselse/>",
-      "\t$0",
-      "</isif>"
-    ],
-    "description": "ISML <isif>/<iselse> conditional block"
-  },
-  "isif-elseif-else": {
-    "prefix": "isifelseif",
-    "body": [
-      "<isif condition=\"${1:firstCondition}\">",
-      "\t$2",
-      "<iselseif condition=\"${3:secondCondition}\"/>",
-      "\t$4",
-      "<iselse/>",
-      "\t$0",
-      "</isif>"
-    ],
-    "description": "ISML <isif>/<iselseif>/<iselse> conditional block"
-  },
-  "iselse": {
-    "prefix": "iselse",
-    "body": ["<iselse/>"],
-    "description": "ISML <iselse/> branch"
-  },
-  "iselseif": {
-    "prefix": "iselseif",
-    "body": ["<iselseif condition=\"${1:condition}\"/>"],
-    "description": "ISML <iselseif/> branch"
-  },
-  "isloop": {
-    "prefix": "isloop",
-    "body": [
-      "<isloop items=\"${1:items}\" var=\"${2:item}\">",
-      "\t$0",
-      "</isloop>"
-    ],
-    "description": "ISML <isloop> iteration"
-  },
-  "isloop-status": {
-    "prefix": "isloopstatus",
-    "body": [
-      "<isloop items=\"${1:items}\" var=\"${2:item}\" status=\"${3:loopstate}\">",
-      "\t$0",
-      "</isloop>"
-    ],
-    "description": "ISML <isloop> with loop status object"
-  },
-  "isinclude-template": {
-    "prefix": "isinclude",
-    "body": ["<isinclude template=\"${1:path/to/template}\"/>"],
-    "description": "Include another ISML template"
-  },
-  "isinclude-url": {
-    "prefix": "isincludeurl",
-    "body": ["<isinclude url=\"${1:URLUtils.url('Controller-Action')}\"/>"],
-    "description": "Include a remote URL"
-  },
-  "isset": {
-    "prefix": "isset",
-    "body": ["<isset name=\"${1:name}\" value=\"${2:value}\" scope=\"${3|page,request,session|}\"/>"],
-    "description": "Set a variable in ISML"
-  },
-  "isscript": {
-    "prefix": "isscript",
-    "body": [
-      "<isscript>",
-      "\t$0",
-      "</isscript>"
-    ],
-    "description": "ISML <isscript> server-side script block"
-  },
-  "isdecorate": {
-    "prefix": "isdecorate",
-    "body": [
-      "<isdecorate template=\"${1:common/layout/page}\">",
-      "\t$0",
-      "</isdecorate>"
-    ],
-    "description": "Decorate template with a layout"
-  },
-  "iscontent": {
-    "prefix": "iscontent",
-    "body": ["<iscontent type=\"${1|text/html,text/xml,application/json,text/plain|}\" charset=\"${2:UTF-8}\" compact=\"${3|true,false|}\"/>"],
-    "description": "Set the response content type"
-  },
-  "iscomment": {
-    "prefix": "iscomment",
-    "body": [
-      "<iscomment>",
-      "\t$0",
-      "</iscomment>"
-    ],
-    "description": "ISML comment block (not rendered)"
-  },
-  "ismodule": {
-    "prefix": "ismodule",
-    "body": ["<ismodule template=\"${1:path/to/module}\" name=\"${2:moduleName}\" attribute=\"${3:attr}\"/>"],
-    "description": "Define a custom ISML module"
-  },
-  "isprint": {
-    "prefix": "isprint",
-    "body": ["<isprint value=\"${1:value}\" encoding=\"${2|on,off,htmlcontent,htmlsinglequote,htmldoublequote,htmlunquote,jshtml,jsattr,jsblock,jssource,jsonvalue,uricomponent,uristrict,xmlcontent,xmlsinglequote,xmldoublequote,xmlcomment|}\"/>"],
-    "description": "Render a value with explicit encoding"
-  },
-  "isprint-formatter": {
-    "prefix": "isprintformatter",
-    "body": ["<isprint value=\"${1:value}\" formatter=\"${2:#,##0.00}\"/>"],
-    "description": "Render a value with a number/date formatter"
-  },
-  "isredirect": {
-    "prefix": "isredirect",
-    "body": ["<isredirect location=\"${1:URLUtils.url('Controller-Action')}\" permanent=\"${2|false,true|}\"/>"],
-    "description": "Redirect the response to another URL"
-  },
-  "iscache": {
-    "prefix": "iscache",
-    "body": ["<iscache type=\"${1|relative,daily|}\" hour=\"${2:24}\" minute=\"${3:0}\" varyby=\"${4:price_promotion}\"/>"],
-    "description": "Configure page caching"
-  },
-  "isobject": {
-    "prefix": "isobject",
-    "body": [
-      "<isobject object=\"${1:pdict.product}\" view=\"${2:detail}\">",
-      "\t$0",
-      "</isobject>"
-    ],
-    "description": "Wrap markup so personalization tracking can pick up the object"
-  },
-  "isslot": {
-    "prefix": "isslot",
-    "body": ["<isslot id=\"${1:slot-id}\" description=\"${2:description}\" context=\"${3|global,category,folder|}\" context-object=\"${4:pdict.CurrentCategory}\"/>"],
-    "description": "Render a content slot"
-  },
   "expression": {
     "prefix": "${",
     "body": ["\\${${1:expression}}"],
@@ -165,5 +18,84 @@
     "prefix": "urlutilsurl",
     "body": ["\\${URLUtils.url('${1:Controller-Action}'${2:, 'param', value})}"],
     "description": "Build a URL via URLUtils.url"
+  },
+  "https-url": {
+    "prefix": "urlutilshttps",
+    "body": ["\\${URLUtils.https('${1:Controller-Action}'${2:, 'param', value})}"],
+    "description": "Build an HTTPS URL via URLUtils.https"
+  },
+  "abs-url": {
+    "prefix": "urlutilsabs",
+    "body": ["\\${URLUtils.abs('${1:Controller-Action}'${2:, 'param', value})}"],
+    "description": "Build an absolute URL via URLUtils.abs"
+  },
+  "static-url": {
+    "prefix": "urlutilsstatic",
+    "body": ["\\${URLUtils.staticURL('/${1:images/example.png}')}"],
+    "description": "Reference a static asset via URLUtils.staticURL"
+  },
+  "request-locale": {
+    "prefix": "requestlocale",
+    "body": ["\\${request.locale}"],
+    "description": "Current request locale"
+  },
+  "request-httpparam": {
+    "prefix": "requesthttpparam",
+    "body": ["\\${request.httpParameterMap.${1:paramName}.stringValue}"],
+    "description": "Read a query/form parameter"
+  },
+  "pdict": {
+    "prefix": "pdict",
+    "body": ["\\${pdict.${1:property}}"],
+    "description": "Read from the pipeline dictionary (pdict)"
+  },
+  "customer-logged": {
+    "prefix": "customerlogged",
+    "body": ["\\${customer.authenticated && customer.registered}"],
+    "description": "Condition for 'is the customer logged in'"
+  },
+  "current-basket": {
+    "prefix": "currentbasket",
+    "body": [
+      "<isscript>",
+      "\tvar BasketMgr = require('dw/order/BasketMgr');",
+      "\tvar basket = BasketMgr.getCurrentBasket();",
+      "\t$0",
+      "</isscript>"
+    ],
+    "description": "Get the current basket via BasketMgr"
+  },
+  "current-customer": {
+    "prefix": "currentcustomer",
+    "body": [
+      "<isscript>",
+      "\tvar CustomerMgr = require('dw/customer/CustomerMgr');",
+      "\tvar customer = CustomerMgr.getCustomerByLogin('${1:login}');",
+      "\t$0",
+      "</isscript>"
+    ],
+    "description": "Look up a customer via CustomerMgr"
+  },
+  "current-site": {
+    "prefix": "currentsite",
+    "body": [
+      "<isscript>",
+      "\tvar Site = require('dw/system/Site');",
+      "\tvar site = Site.getCurrent();",
+      "\t$0",
+      "</isscript>"
+    ],
+    "description": "Get the current Site"
+  },
+  "logger": {
+    "prefix": "dwlogger",
+    "body": [
+      "<isscript>",
+      "\tvar Logger = require('dw/system/Logger');",
+      "\tvar log = Logger.getLogger('${1:category}', '${2:filename}');",
+      "\tlog.info('${3:message}');",
+      "</isscript>"
+    ],
+    "description": "Acquire a dw/system/Logger and log a message"
   }
 }

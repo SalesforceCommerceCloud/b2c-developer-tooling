@@ -16,7 +16,7 @@
     {"open": "'", "close": "'"},
     {"open": "\"", "close": "\""},
     {"open": "<!--", "close": "-->", "notIn": ["comment", "string"]},
-    {"open": "${", "close": "}"}
+    {"open": "${", "close": "}", "notIn": ["comment"]}
   ],
   "surroundingPairs": [
     ["'", "'"],
