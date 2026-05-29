@@ -36,7 +36,18 @@ export class ApiSchemaTreeItem extends vscode.TreeItem {
     this.description = schema.apiVersion;
     this.contextValue = 'apiSchema';
 
-    const apiType = schema.apiFamily.startsWith('shopper') ? 'Shopper' : 'Admin';
+    // Tooltip type is best-effort — the authoritative classification happens
+    // when the spec is loaded (see detectApiType in swagger-webview.ts) since
+    // it depends on declared security schemes. For Custom APIs we can't know
+    // without the spec, so just label them as such here.
+    let apiType: string;
+    if (schema.apiFamily === 'custom') {
+      apiType = 'Custom';
+    } else if (schema.apiName.startsWith('shopper-') || schema.apiFamily === 'shopper') {
+      apiType = 'Shopper';
+    } else {
+      apiType = 'Admin';
+    }
     this.tooltip = `${schema.apiName} ${schema.apiVersion} (${apiType})`;
 
     if (schema.status === 'deprecated') {
