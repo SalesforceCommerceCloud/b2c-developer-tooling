@@ -26,6 +26,12 @@ export interface SchemaEntry {
   status?: 'current' | 'deprecated';
 }
 
+export function isShopperSchema(schema: Pick<SchemaEntry, 'apiFamily' | 'apiName'>): boolean {
+  const family = (schema.apiFamily ?? '').toLowerCase();
+  const name = (schema.apiName ?? '').toLowerCase();
+  return family.startsWith('shopper') || name.startsWith('shopper');
+}
+
 export class ApiSchemaTreeItem extends vscode.TreeItem {
   readonly nodeType = 'apiSchema' as const;
   readonly schema: SchemaEntry;
@@ -34,10 +40,12 @@ export class ApiSchemaTreeItem extends vscode.TreeItem {
     super(schema.apiName, vscode.TreeItemCollapsibleState.None);
     this.schema = schema;
     this.description = schema.apiVersion;
-    this.contextValue = 'apiSchema';
 
-    const apiType = schema.apiFamily.startsWith('shopper') ? 'Shopper' : 'Admin';
-    this.tooltip = `${schema.apiName} ${schema.apiVersion} (${apiType})`;
+    const isShopper = isShopperSchema(schema);
+    this.contextValue = isShopper ? 'apiSchema-shopper' : 'apiSchema-admin';
+
+    const apiType = isShopper ? 'Shopper' : 'Admin';
+    this.tooltip = `${schema.apiName} ${schema.apiVersion} (${apiType}) — apiFamily="${schema.apiFamily}"`;
 
     if (schema.status === 'deprecated') {
       this.iconPath = new vscode.ThemeIcon('warning', new vscode.ThemeColor('list.warningForeground'));
@@ -148,7 +156,14 @@ export class ApiBrowserTreeDataProvider implements vscode.TreeDataProvider<ApiBr
         status: s.status,
       }));
 
-      this.log.appendLine(`[API Browser] Loaded ${this.schemaCache.length} schemas`);
+      const uniqueFamilies = Array.from(new Set(this.schemaCache.map((s) => s.apiFamily)));
+      const shopperCount = this.schemaCache.filter(isShopperSchema).length;
+      this.log.appendLine(
+        `[API Browser] Loaded ${this.schemaCache.length} schemas (${shopperCount} shopper, ${this.schemaCache.length - shopperCount} admin)`,
+      );
+      this.log.appendLine(`[API Browser] Unique apiFamily values: ${JSON.stringify(uniqueFamilies)}`);
+      const sample = this.schemaCache.slice(0, 5).map((s) => `${s.apiFamily}/${s.apiName}/${s.apiVersion}`);
+      this.log.appendLine(`[API Browser] First 5 entries (family/name/version): ${JSON.stringify(sample)}`);
       return this.schemaCache;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
