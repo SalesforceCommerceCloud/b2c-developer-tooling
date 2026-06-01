@@ -5,8 +5,11 @@
   "version": "0.8.2",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
-  "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
-  "homepage": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/packages/b2c-vs-extension",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/forcedotcom/b2c-dx.git"
+  },
+  "homepage": "https://github.com/forcedotcom/b2c-dx#readme",
   "bugs": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/issues",
   "categories": [
     "Other"
