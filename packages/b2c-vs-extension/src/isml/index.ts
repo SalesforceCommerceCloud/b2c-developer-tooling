@@ -4,22 +4,25 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import * as vscode from 'vscode';
+import * as path from 'path';
 
 import type {CartridgeService} from '../cartridges/cartridge-service.js';
 import {VOID_TAGS} from './constants.js';
 import {collectIsmlDiagnostics, getIsmlQuickFixes} from './diagnostics.js';
-import {findTemplateLinks, resolveTemplate} from './document-links.js';
+import {findTemplateLinks, resolveTemplateWithLocaleCache} from './document-links.js';
 import {collectIsmlFoldingRanges} from './folding.js';
 import {findIsmlHoverInfo} from './hover.js';
 import {findIsmlLinkedEditingTagNameMatch, findIsmlTagNameMatch} from './matching.js';
 import {
   detectSemanticCompletionContext,
+  clearIsmlSemanticCaches,
   findIsmlDefinitionTarget,
   findIsmlReferenceRanges,
   getSemanticCompletionEntries,
 } from './semantic.js';
 import {TAG_SNIPPETS, detectCompletionContext} from './snippets.js';
 import {collectIsmlSymbols, type IsmlSymbol} from './symbols.js';
+import {scanIsmlTags} from './tags.js';
 
 export interface AutoCloseResult {
   tagName: string;
@@ -30,11 +33,13 @@ function registerSemanticCompletions(context: vscode.ExtensionContext, cartridge
     provideCompletionItems(document, position) {
       if (document.languageId !== 'isml') return undefined;
 
-      const linePrefix = document.getText(new vscode.Range(new vscode.Position(position.line, 0), position));
-      const semantic = detectSemanticCompletionContext(linePrefix);
+      const offset = document.offsetAt(position);
+      const semanticWindowStart = Math.max(0, offset - 4000);
+      const semanticPrefix = document.getText(new vscode.Range(document.positionAt(semanticWindowStart), position));
+      const semantic = detectSemanticCompletionContext(semanticPrefix);
       if (!semantic) return undefined;
 
-      const replaceStart = new vscode.Position(position.line, semantic.startOffset);
+      const replaceStart = document.positionAt(semanticWindowStart + semantic.startOffset);
       const range = new vscode.Range(replaceStart, position);
 
       return getSemanticCompletionEntries(semantic, cartridgeService.getCartridgeRoots(), document.uri.fsPath).map(
@@ -65,6 +70,15 @@ function registerSemanticCompletions(context: vscode.ExtensionContext, cartridge
       "'",
       ',',
     ),
+  );
+
+  const semanticFileWatcher = vscode.workspace.createFileSystemWatcher('**/cartridge/**/*.{js,ts}');
+  const clearCaches = () => clearIsmlSemanticCaches();
+  context.subscriptions.push(
+    semanticFileWatcher,
+    semanticFileWatcher.onDidCreate(clearCaches),
+    semanticFileWatcher.onDidChange(clearCaches),
+    semanticFileWatcher.onDidDelete(clearCaches),
   );
 }
 
@@ -177,6 +191,29 @@ export function detectAutoCloseTag(linePrefixIncludingBracket: string): AutoClos
   return {tagName};
 }
 
+function isInsideAutoCloseExcludedTag(text: string, offset: number): boolean {
+  const stack: string[] = [];
+  const EXCLUDED = new Set(['isscript', 'iscomment']);
+
+  for (const token of scanIsmlTags(text)) {
+    if (token.startOffset >= offset) break;
+
+    if (token.isClosing) {
+      const current = stack[stack.length - 1];
+      if (current === token.name) {
+        stack.pop();
+      }
+      continue;
+    }
+
+    if (token.isSelfClosing || VOID_TAGS.has(token.name)) continue;
+    if (!EXCLUDED.has(token.name)) continue;
+    stack.push(token.name);
+  }
+
+  return stack.length > 0;
+}
+
 function registerAutoCloseTag(context: vscode.ExtensionContext): void {
   const disposable = vscode.workspace.onDidChangeTextDocument(async (event) => {
     if (event.document.languageId !== 'isml') return;
@@ -194,6 +231,9 @@ function registerAutoCloseTag(context: vscode.ExtensionContext): void {
     const linePrefix = event.document.getText(
       new vscode.Range(new vscode.Position(insertedAt.line, 0), positionAfterBracket),
     );
+
+    const insertedOffset = event.document.offsetAt(positionAfterBracket);
+    if (isInsideAutoCloseExcludedTag(event.document.getText(), insertedOffset)) return;
 
     const result = detectAutoCloseTag(linePrefix);
     if (!result) return;
@@ -255,11 +295,12 @@ function registerDocumentLinks(context: vscode.ExtensionContext, cartridgeServic
       if (document.languageId !== 'isml') return [];
       const text = document.getText();
       const cartridgeRoots = cartridgeService.getCartridgeRoots();
+      const localeCache = new Map<string, string[]>();
       const links: vscode.DocumentLink[] = [];
 
       for (const link of findTemplateLinks(text)) {
         const range = new vscode.Range(document.positionAt(link.startOffset), document.positionAt(link.endOffset));
-        const resolved = resolveTemplate(link.template, cartridgeRoots);
+        const resolved = resolveTemplateWithLocaleCache(link.template, cartridgeRoots, localeCache);
         if (resolved) {
           const docLink = new vscode.DocumentLink(range, vscode.Uri.file(resolved));
           docLink.tooltip = `Open ${link.template}`;
@@ -299,17 +340,32 @@ function registerDocumentLinks(context: vscode.ExtensionContext, cartridgeServic
       if (!picked) return;
       const chosen = 'cartridge' in picked ? picked.cartridge : picked;
 
-      const trimmed = template.replace(/^\/+/, '');
-      const withExt = trimmed.endsWith('.isml') ? trimmed : `${trimmed}.isml`;
-      const targetPath = vscode.Uri.file(`${chosen.src}/cartridge/templates/default/${withExt}`);
+      if (typeof template !== 'string') {
+        await vscode.window.showErrorMessage('Invalid template path.');
+        return;
+      }
+
+      const normalizedTemplate = template.trim().replace(/\\/g, '/').replace(/^\/+/, '');
+      const isInvalidSegment = normalizedTemplate
+        .split('/')
+        .some((segment) => segment === '..' || segment.length === 0);
+      if (!normalizedTemplate || path.isAbsolute(normalizedTemplate) || isInvalidSegment) {
+        await vscode.window.showErrorMessage(`Invalid template path: ${template}`);
+        return;
+      }
+
+      const withExt = normalizedTemplate.endsWith('.isml') ? normalizedTemplate : `${normalizedTemplate}.isml`;
+      const targetPath = vscode.Uri.file(
+        path.join(chosen.src, 'cartridge', 'templates', 'default', ...withExt.split('/')),
+      );
 
       try {
         await vscode.workspace.fs.stat(targetPath);
         // exists — just open it
       } catch {
-        const dirUri = vscode.Uri.file(targetPath.fsPath.substring(0, targetPath.fsPath.lastIndexOf('/')));
+        const dirUri = vscode.Uri.file(path.dirname(targetPath.fsPath));
         await vscode.workspace.fs.createDirectory(dirUri);
-        const stub = new TextEncoder().encode(`<iscomment>\n    ${template}\n</iscomment>\n`);
+        const stub = new TextEncoder().encode(`<iscomment>\n    ${normalizedTemplate}\n</iscomment>\n`);
         await vscode.workspace.fs.writeFile(targetPath, stub);
       }
       const doc = await vscode.workspace.openTextDocument(targetPath);

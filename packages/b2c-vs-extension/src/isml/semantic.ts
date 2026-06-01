@@ -7,7 +7,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import {findTemplateLinks, resolveTemplate} from './document-links.js';
+import {findTemplateLinks, resolveTemplate, resolveTemplateWithLocaleCache} from './document-links.js';
 
 type SemanticCompletionKind = 'resource' | 'resourceKey' | 'resourceBundle' | 'urlutils' | 'res' | 'require';
 
@@ -141,6 +141,11 @@ interface RequireModuleCompletion {
 
 let cachedRequireModulesKey: string | undefined;
 let cachedRequireModules: RequireModuleCompletion[] | undefined;
+
+export function clearIsmlSemanticCaches(): void {
+  cachedRequireModulesKey = undefined;
+  cachedRequireModules = undefined;
+}
 
 function isFile(candidate: string): boolean {
   try {
@@ -460,9 +465,10 @@ function collectResolvedSemanticTargets(
   documentPath?: string,
 ): IsmlDefinitionTarget[] {
   const targets: IsmlDefinitionTarget[] = [];
+  const templateLocaleCache = new Map<string, string[]>();
 
   for (const link of findTemplateLinks(text)) {
-    const targetPath = resolveTemplate(link.template, cartridgeRoots);
+    const targetPath = resolveTemplateWithLocaleCache(link.template, cartridgeRoots, templateLocaleCache);
     if (!targetPath) continue;
     targets.push({startOffset: link.startOffset, endOffset: link.endOffset, targetPath});
   }
@@ -474,7 +480,7 @@ function collectResolvedSemanticTargets(
     const matchStart = match.index ?? 0;
     const templateStart = matchStart + full.indexOf(template);
     const templateEnd = templateStart + template.length;
-    const targetPath = resolveTemplate(template, cartridgeRoots);
+    const targetPath = resolveTemplateWithLocaleCache(template, cartridgeRoots, templateLocaleCache);
     if (!targetPath) continue;
     targets.push({startOffset: templateStart, endOffset: templateEnd, targetPath});
   }

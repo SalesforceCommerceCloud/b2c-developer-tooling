@@ -16,6 +16,8 @@ export interface TemplateLink {
   endOffset: number;
 }
 
+type LocaleCache = Map<string, string[]>;
+
 /**
  * Find every `template="..."` attribute on `<isinclude>`, `<isdecorate>`, or `<ismodule>`
  * in the given document text. Returned offsets cover the unquoted template path so the
@@ -41,6 +43,10 @@ export function findTemplateLinks(text: string): TemplateLink[] {
     }
 
     if (token.type === 'attributeName') {
+      if (!currentTagName || !TEMPLATE_TAGS.has(currentTagName)) {
+        currentAttributeName = null;
+        return;
+      }
       currentAttributeName = token.text.toLowerCase();
       return;
     }
@@ -65,8 +71,10 @@ export function findTemplateLinks(text: string): TemplateLink[] {
       }
     }
 
-    if (value.length === 0) return;
-    if (value.startsWith('$') || value.startsWith('${')) return;
+    if (value.length === 0 || value.startsWith('$') || value.startsWith('${')) {
+      currentAttributeName = null;
+      return;
+    }
 
     links.push({template: value, startOffset: valueStart, endOffset: valueEnd});
     currentAttributeName = null;
@@ -84,21 +92,41 @@ export function findTemplateLinks(text: string): TemplateLink[] {
  * that exist on disk (e.g. `en_US`, `fr_FR`).
  */
 export function resolveTemplate(template: string, cartridgeRoots: string[]): string | undefined {
+  return resolveTemplateWithLocaleCache(template, cartridgeRoots, new Map<string, string[]>());
+}
+
+function getOrderedLocales(templatesRoot: string, localeCache: LocaleCache): string[] | undefined {
+  const cached = localeCache.get(templatesRoot);
+  if (cached) return cached;
+
+  let locales: string[];
+  try {
+    locales = fs
+      .readdirSync(templatesRoot, {withFileTypes: true})
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
+  } catch {
+    return undefined;
+  }
+
+  const ordered = ['default', ...locales.filter((l) => l !== 'default')];
+  localeCache.set(templatesRoot, ordered);
+  return ordered;
+}
+
+export function resolveTemplateWithLocaleCache(
+  template: string,
+  cartridgeRoots: string[],
+  localeCache: LocaleCache,
+): string | undefined {
   const trimmed = template.replace(/^\/+/, '');
   const withExt = trimmed.endsWith('.isml') ? trimmed : `${trimmed}.isml`;
 
   for (const root of cartridgeRoots) {
     const templatesRoot = path.join(root, 'cartridge', 'templates');
-    let locales: string[];
-    try {
-      locales = fs
-        .readdirSync(templatesRoot, {withFileTypes: true})
-        .filter((d) => d.isDirectory())
-        .map((d) => d.name);
-    } catch {
-      continue;
-    }
-    const ordered = ['default', ...locales.filter((l) => l !== 'default')];
+    const ordered = getOrderedLocales(templatesRoot, localeCache);
+    if (!ordered) continue;
+
     for (const locale of ordered) {
       const candidate = path.join(templatesRoot, locale, withExt);
       try {

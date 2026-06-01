@@ -21,7 +21,5 @@ export const VOID_TAGS = new Set([
   'isactivedatahead',
   'isactivedatacontext',
   'isanalyticsoff',
-  'isslot',
-  'ismodule',
   'iscookies',
 ]);

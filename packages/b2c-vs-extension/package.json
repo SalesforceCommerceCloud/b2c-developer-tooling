@@ -27,6 +27,7 @@
   },
   "activationEvents": [
     "onStartupFinished",
+    "onLanguage:isml",
     "onView:b2cWebdavExplorer",
     "onView:b2cContentExplorer",
     "onFileSystem:b2c-webdav",
@@ -49,8 +50,8 @@
     "languages": [
       {
         "id": "isml",
-        "aliases": ["ISML", "isml"],
-        "extensions": [".isml", ".ds"],
+        "aliases": ["ISML"],
+        "extensions": [".isml"],
         "configuration": "./language/isml/language-configuration.json"
       }
     ],
@@ -1095,6 +1096,10 @@
         {
           "command": "b2c-dx.isml.createTemplate",
           "when": "false"
+        },
+        {
+          "command": "b2c-dx.isml.showReferences",
+          "when": "editorLangId == isml"
         },
         {
           "command": "b2c-dx.cipAnalytics.refresh",
