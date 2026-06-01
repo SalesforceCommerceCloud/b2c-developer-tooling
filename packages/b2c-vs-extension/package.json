@@ -16,8 +16,7 @@
     "@salesforce/b2c-script-types": "workspace:*",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
-    "@salesforce/b2c-tooling-sdk": "workspace:*",
+    "react-dom": "18.3.1",
     "vscode-html-languageservice": "catalog:"
   },
   "engines": {
