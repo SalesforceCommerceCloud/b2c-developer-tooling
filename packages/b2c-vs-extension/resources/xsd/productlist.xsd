@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/impex/productlist/2009-10-28"
+    xmlns="http://www.demandware.com/xml/impex/productlist/2009-10-28"
+    elementFormDefault="qualified" 
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- demandware main tag -->
+    <xsd:element name="product-lists">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="product-list" type="ProductList" minOccurs="1" maxOccurs="unbounded"></xsd:element>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    
+     <!-- fake element for mass data support -->
+    <xsd:element name="product-list" type="ProductList" />
+
+    <xsd:complexType name="ProductList">
+        <xsd:sequence>
+            <xsd:element name="owner" type="Owner" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="type" type="simpleType.ProductList.Type" minOccurs="1" maxOccurs="1"></xsd:element>
+            <xsd:element name="name" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="description" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="public" type="xsd:boolean" minOccurs="1" maxOccurs="1"></xsd:element>
+            <xsd:element name="registrants" type="Registrants" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="event" type="Event" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="shipping-address" type="Address" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="post-event-shipping-address" type="Address" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="items" type="Items" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="custom-attributes" type="CustomAttributes" minOccurs="0" maxOccurs="1"></xsd:element>
+        </xsd:sequence>
+        <xsd:attribute name="list-id" type="simpleType.Generic.NonEmptyUUID.26"/>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+    </xsd:complexType>
+
+    <xsd:complexType name="Owner" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="email" type="simpleType.Email" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+        <xsd:attribute name="customer-no" type="simpleType.Generic.NonEmptyString.256" use="required"/>
+    </xsd:complexType>
+    
+    <xsd:complexType name="Registrants" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="registrant" type="Registrant" minOccurs="0" maxOccurs="2"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="Registrant" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="first-name" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="last-name" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="email" type="simpleType.Email" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="role" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1"></xsd:element>
+        </xsd:sequence>
+        <xsd:attribute name="type" type="simpleType.Registrant.Type"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="Event" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="type" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="date" type="xsd:date" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="city" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="state-code" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="country-code" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="Items" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="gift-certificate-item" type="GiftCertificateItem" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="product-item" type="ProductItem" minOccurs="0" maxOccurs="unbounded"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="GiftCertificateItem" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="priority" type="xsd:int" minOccurs="1" maxOccurs="1"></xsd:element>
+            <xsd:element name="public" type="xsd:boolean" minOccurs="1" maxOccurs="1"></xsd:element>
+            <xsd:element name="purchases" type="Purchases" minOccurs="1" maxOccurs="1"></xsd:element>
+            <xsd:element name="custom-attributes" type="CustomAttributes" minOccurs="0" maxOccurs="1"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ProductItem" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="product-id" type="simpleType.Generic.NonEmptyString.100" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="quantity" type="xsd:decimal" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="priority" type="xsd:int" minOccurs="1" maxOccurs="1"></xsd:element>
+            <xsd:element name="public" type="xsd:boolean" minOccurs="1" maxOccurs="1"></xsd:element>
+            <xsd:element name="purchases" type="Purchases" minOccurs="1" maxOccurs="1"></xsd:element>
+            <xsd:element name="custom-attributes" type="CustomAttributes" minOccurs="0" maxOccurs="1"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="Purchases" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="purchase" type="Purchase" minOccurs="0" maxOccurs="unbounded"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="Purchase" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="quantity" type="xsd:decimal" minOccurs="1" maxOccurs="1"></xsd:element>
+            <xsd:element name="date" type="xsd:dateTime" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="order-no" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="purchaser-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1"></xsd:element>
+            <xsd:element name="custom-attributes" type="CustomAttributes" minOccurs="0" maxOccurs="1"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="Address" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="salutation" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="title" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="first-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="second-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="last-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="suffix" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="company-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="job-title" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="address1" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="address2" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="suite" type="simpleType.Generic.String.32" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="postbox" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="city" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="postal-code" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="state-code" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="country-code" type="simpleType.CountryCode" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="phone" type="simpleType.PhoneNumber" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="address-id" type="simpleType.Generic.NonEmptyString.256" />
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.CountryCode">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="2" />
+            <xsd:maxLength value="2" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.PhoneNumber">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="32" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Email">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.Generic.String.32">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="32" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+    
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <!--  Exact 26 signs long string with letters and numbers. -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyUUID.26">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="26" />
+            <xsd:maxLength value="26" />
+            <xsd:pattern value="[a-zA-Z0-9]*" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.100">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="simpleType.Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+    
+    <xsd:simpleType name="simpleType.Registrant.Type">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="registrant" />
+            <xsd:enumeration value="co-registrant" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.ProductList.Type">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="wish_list" />
+            <xsd:enumeration value="gift_registry" />
+            <xsd:enumeration value="shopping_list" />
+            <xsd:enumeration value="custom_1" />
+            <xsd:enumeration value="custom_2" />
+            <xsd:enumeration value="custom_3" />         
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+</xsd:schema>

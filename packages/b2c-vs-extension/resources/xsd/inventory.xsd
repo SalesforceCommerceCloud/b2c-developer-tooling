@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsd:schema
+    xmlns="http://www.demandware.com/xml/impex/inventory/2007-05-31"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="http://www.demandware.com/xml/impex/inventory/2007-05-31"
+    elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <xsd:element name="inventory">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="inventory-list" type="complexType.InventoryList" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- fake top level elements to allow JAXB subsection parsing -->
+    <xsd:element name="header" type="complexType.Header" />
+    <xsd:element name="record" type="complexType.InventoryRecord" />
+
+    <xsd:complexType name="complexType.InventoryList">
+        <xsd:sequence>
+            <xsd:element name="header" type="complexType.Header" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="records" type="complexType.InventoryRecords" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Header">
+        <xsd:sequence>
+            <xsd:element name="default-instock" type="xsd:boolean" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="description" type="simpleType.Generic.String.4000" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="use-bundle-inventory-only" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="on-order" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="list-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.InventoryRecords">
+        <xsd:sequence>
+            <xsd:element name="record" type="complexType.InventoryRecord" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.InventoryRecord">
+        <xsd:sequence>
+            <xsd:element name="allocation" type="simpleType.InventoryAmount" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="allocation-timestamp" type="xsd:dateTime" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="perpetual" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="preorder-backorder-handling" type="simpleType.InventoryRecord.PreorderBackorderHandling" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="preorder-backorder-allocation" type="simpleType.InventoryAmount" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="in-stock-date" type="xsd:date" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Deprecated in favor of new "in-stock-datetime" element.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="in-stock-datetime" type="xsd:dateTime" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="ats" type="simpleType.InventoryAmount" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>
+                        This element is calculated as the allocation + preorderBackorderAllocation - turnover - on-order.
+                        For this reason it is read only and cannot be imported.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>                    
+            <xsd:element name="on-order" type="xsd:decimal" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>
+                        On Order value is increased when an order is created. 
+                        It will be decreased and with that turnover will be increased when the order is exported.
+                        For this reason it is read only and cannot be imported.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element> 
+            <xsd:element name="turnover" type="simpleType.UnboundedInventoryAmount" minOccurs="0" maxOccurs="1" >
+            <xsd:annotation>
+                    <xsd:documentation>
+                        This element is calculated as the sum of all inventory transactions (decrements and increments) 
+                        that have been recorded subsequent to the allocation was reset date. 
+                        The quantity value can be negative due to higher quantity of inventory decrements than increments.
+                        For this reason it is read only and cannot be imported.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element> 
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="product-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" use="optional" />
+    </xsd:complexType>
+
+    <!-- Shared Complex Types -->
+
+    <xsd:complexType name="sharedType.CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="sharedType.CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="simpleType.Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <!-- Simple Types -->
+
+    <xsd:simpleType name="simpleType.InventoryAmount">
+        <xsd:restriction base="xsd:decimal">
+            <xsd:minInclusive value="0.0" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.UnboundedInventoryAmount">
+        <xsd:restriction base="xsd:decimal">
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.InventoryRecord.PreorderBackorderHandling">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="none" />
+            <xsd:enumeration value="preorder" />
+            <xsd:enumeration value="backorder" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.100">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

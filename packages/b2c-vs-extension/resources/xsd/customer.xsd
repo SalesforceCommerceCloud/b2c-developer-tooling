@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+    xmlns           = "http://www.demandware.com/xml/impex/customer/2006-10-31"
+    xmlns:xsd       = "http://www.w3.org/2001/XMLSchema"
+    targetNamespace = "http://www.demandware.com/xml/impex/customer/2006-10-31"
+    elementFormDefault = "qualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <xsd:element name="customers">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="customer" type="complexType.Customer" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="group-assignment" type="complexType.CustomerGroupAssignment" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- Fake some more top level elements to allow for snippet based JAXB parsing -->
+    <xsd:element name="customer" type="complexType.Customer" />
+
+    <xsd:element name="group-assignment" type="complexType.CustomerGroupAssignment">
+        <xsd:annotation>
+            <xsd:documentation>
+                Elements of this type are import-only and will never be exported.  
+                Furthermore, elements of this type will be handled only if included in
+                a customer import file (customer.xsd) but are ignored if included in a 
+                customer list import (customerlist2.xsd).
+                <p/>
+                The reason for this discrepancy is that customer groups are site-specific, 
+                and customer import is always done in the context of a site whereas customer 
+                list import is not.
+            </xsd:documentation>
+        </xsd:annotation>       
+    </xsd:element>
+
+    <xsd:complexType name="complexType.Customer" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="credentials" type="complexType.Credentials" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="profile" type="complexType.Profile" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="external-profiles" type="complexType.ExternalProfiles" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="addresses" type="complexType.Addresses" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="customer-groups" type="complexType.CustomerGroups" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        This element will never appear in a customer list export file (customerlist2.xsd)
+                        but may be included in a customer export (customer.xsd).  This element will also 
+                        be ignored if specified in a customer list import but will be processed in
+                        a customer import.
+                        <p/>
+                        The reason for this discrepancy is that customer groups are site-specific, 
+                        and customer export is always done in the context of a 
+                        site where as customer list export is not.
+                    </xsd:documentation>
+                </xsd:annotation>            
+            </xsd:element>
+            <xsd:element name="note" type="simpleType.Generic.String.4000" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="global-party-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>Value is ignored when imported on a production instance.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+        <xsd:attribute name="customer-no" type="simpleType.Generic.String.100" use="optional" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Profile" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="salutation" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="title" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="first-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="second-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="last-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="suffix" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="company-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="job-title" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="email" type="simpleType.Email" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="phone-home" type="simpleType.PhoneNumber" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="phone-business" type="simpleType.PhoneNumber" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="phone-mobile" type="simpleType.PhoneNumber" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="fax" type="simpleType.PhoneNumber" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="birthday" type="xsd:date" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="gender" type="simpleType.Gender" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="creation-date" type="xsd:dateTime" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="last-login-time" type="xsd:dateTime" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="last-visit-time" type="xsd:dateTime" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="preferred-locale" type="simpleType.Generic.String.10" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="customer-payment-profiles" type="complexType.CustomerPaymentProfiles" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>This element is for use with Salesforce Payments to track references of customer profiles between systems.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Credentials" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="login" type="simpleType.Login" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="password" type="complexType.Password" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                    If a customer is managed externally (i.e. provider-id and external-id are specified)
+                    then the password is always optional. Otherwise, a password is required for any of
+                    the following scenarios:
+                        * creation of a new customer
+                        * importing a customer in REPLACE mode
+                        * changing the login of a customer
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="password-question" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="password-answer" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="provider-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" >
+               <xsd:annotation> 
+                   <xsd:documentation>The element 'provider-id' has been deprecated. Use external-profiles to manage provider-id/external-id pairs.</xsd:documentation> 
+               </xsd:annotation> 
+			</xsd:element>            
+            <xsd:element name="external-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" >
+               <xsd:annotation> 
+                   <xsd:documentation>The element 'external-id' has been deprecated. Use external-profiles to manage provider-id/external-id pairs.</xsd:documentation> 
+               </xsd:annotation> 
+			</xsd:element>            
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="complexType.ExternalProfiles" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="external-profile" type="complexType.ExternalProfile" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ExternalProfile" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="provider-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="external-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="email" type="simpleType.Email" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="last-login-time" type="xsd:dateTime" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:simpleType name="simpleType.EncryptionScheme">
+        <xsd:restriction base="xsd:string">
+        	<xsd:enumeration value="md5" >
+        		<xsd:annotation> 
+                   <xsd:documentation>Support for the md5 encryption algorithm has changed. Passwords imported in md5 will be stored as an scrypt'd value.</xsd:documentation> 
+               </xsd:annotation> 
+        	</xsd:enumeration>
+        	<xsd:enumeration value="scrypt" />
+            <xsd:enumeration value="s0001" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:complexType name="complexType.Password">
+        <xsd:annotation>
+            <xsd:documentation>
+            Represents an encrypted or plain value and contains information on how to deal with it during import.
+            
+            Import: If the attribute 'encrypted' is set to false, the content of this tag will be encrypted  
+            using the new scrypt algorithm. 'encryptionScheme' should be 'null' in this case.
+            If the attribute 'encrypted' is set to true, it is assumed that the given password was encrypted
+            with the algorithm in 'encryptionScheme' (md5, scrypt, or the internal implementation s0001). 
+            The password will be imported 'as is'.
+            
+            Export: The attribute 'encrypted' will always be set to true. The attribute 'encryptionScheme'
+            will reflect the encryption scheme of the password in the database (md5 (deprecated), scrypt, or the internal implementation s0001). 
+            The encrypted password will not be transformed during export.
+            </xsd:documentation>
+        </xsd:annotation>    
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String.256">
+                <xsd:attribute name="encrypted" type="xsd:boolean" use="required" />
+                <xsd:attribute name="encryptionScheme" type="simpleType.EncryptionScheme" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CustomerGroups" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="customer-group" type="complexType.CustomerGroup" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CustomerGroup" mixed="false">
+        <xsd:attribute name="group-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Addresses" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="address" type="complexType.Address" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Address" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="salutation" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="title" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="first-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="second-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="last-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="suffix" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="company-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="job-title" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="address1" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="address2" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="suite" type="simpleType.Generic.String.32" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="postbox" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="city" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="postal-code" type="simpleType.Generic.String.10" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="state-code" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="country-code" type="simpleType.CountryCode" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="phone" type="simpleType.PhoneNumber" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="address-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="preferred" type="xsd:boolean" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CustomerGroupAssignment" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>
+                            Represents the assignment of a customer to a customer group.
+
+                            When a &lt;group-assignment&gt; element is imported, the customer with the specified 
+                            customer-no is assigned to the customer group with the specified group-id.  If an assignment 
+                            already exists, no change is made.
+                            
+                            When an element is imported with attribute mode="delete", the assignment of the customer
+                            with the specified customer-no to the customer group with the specified group-id is removed.
+                            If the customer is not assigned to the group, no change is made.
+                            
+                            When mode="delete", either the customer-no or group-id attribute can be omitted to remove
+                            multiple assignments of customers to customer groups.  If only customer-no is present, any
+                            existing assignments of the specified customer to groups are removed.  If only group-id is 
+                            present, any existing assignments of customers to the specified group are removed.
+                            
+                            Assignments can only be created or removed for static customer groups.  A warning message
+                            is logged if a specified customer group is dynamic.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+        <xsd:attribute name="group-id" type="simpleType.Generic.NonEmptyString.256" />
+        <xsd:attribute name="customer-no" type="simpleType.Generic.NonEmptyString.100" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CustomerPaymentProfiles" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="customer-payment-profile" type="complexType.CustomerPaymentProfile" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CustomerPaymentProfile" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="creation-date" type="xsd:dateTime" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="account-id" type="simpleType.Generic.NonEmptyString.256" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                The ID of the payment account used to create the customer payment profile.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="account-type" type="simpleType.PaymentAccountType" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                The type of the payment account used to create the customer payment profile.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="account-customer-id" type="simpleType.Generic.String.256" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                The ID of the customer payment profile in the payment account.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <!-- Shared Complex Types -->
+
+    <xsd:complexType name="sharedType.CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="sharedType.CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="simpleType.Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <!-- Simple Types -->
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Gender">
+        <xsd:annotation>
+            <xsd:documentation>Allowed string values are the 'int' values defined for the Customer.gender attribute, and additionally the values 'male' and 'female' for backward compatibility.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="simpleType.Generic.String" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.100">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="100" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.Generic.String.32">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="32" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.10">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="10" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.100">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.CountryCode">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="2" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Email">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Login">
+        <xsd:annotation>
+            <xsd:documentation>
+                The allowed character set for the login element is
+                limited to [A-Z a-z 0-9 .@_-].
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.PhoneNumber">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="32" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.PaymentAccountType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="STRIPE_TEST" />
+            <xsd:enumeration value="STRIPE_LIVE" />
+            <xsd:enumeration value="ADYEN_TEST" />
+            <xsd:enumeration value="ADYEN_LIVE" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

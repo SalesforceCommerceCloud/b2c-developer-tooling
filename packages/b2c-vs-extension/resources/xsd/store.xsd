@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+    xmlns           = "http://www.demandware.com/xml/impex/store/2007-04-30"
+    xmlns:xsd       = "http://www.w3.org/2001/XMLSchema"
+    targetNamespace = "http://www.demandware.com/xml/impex/store/2007-04-30"
+    elementFormDefault = "qualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <xsd:element name="stores">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="store" type="complexType.Store" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="store-group" type="complexType.StoreGroup" minOccurs="0" maxOccurs="unbounded">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            store-group are part of "DemandwareStore" beta feature. This element will be ignored on import if the feature is not enabled.  
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:element>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- Fake some more top level elements to allow for snippet based JAXB parsing -->
+    <xsd:element name="store" type="complexType.Store" />
+    <xsd:element name="store-group" type="complexType.StoreGroup" />   
+            
+    <xsd:complexType name="complexType.Store" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="address1" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="address2" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="city" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="postal-code" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="state-code" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="country-code" type="simpleType.CountryCode" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="email" type="simpleType.Email" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="phone" type="simpleType.PhoneNumber" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="fax" type="simpleType.PhoneNumber" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="store-events" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="store-hours" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="image" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="latitude" type="simpleType.Latitude" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="longitude" type="simpleType.Longitude" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="inventory-list-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="store-locator-enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="demandware-pos-enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Deprecated and will be removed in a future release.
+                        Please use pos-enabled-flag instead.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="pos-enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="store-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.StoreGroup" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="stores" type="complexType.StoreList" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="price-books" type="complexType.PriceBookList" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="store-group-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.StoreList" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="store" type="complexType.StoreAssignment" minOccurs="0" maxOccurs="unbounded" />    
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PriceBookList" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="price-book" type="complexType.PriceBookAssignment" minOccurs="0" maxOccurs="unbounded" />    
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.StoreAssignment" mixed="false">
+        <xsd:attribute name="store-id" type="simpleType.Generic.String.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PriceBookAssignment" mixed="false">
+        <xsd:attribute name="price-book-id" type="simpleType.Generic.String.256" use="required" />
+    </xsd:complexType>
+
+    <!-- Shared Complex Types -->
+
+    <xsd:complexType name="sharedType.LocalizedText" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="sharedType.CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="simpleType.Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <!-- Simple Types -->
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.10">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="10" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.CountryCode">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="2" />
+            <xsd:maxLength value="2" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Email">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.PhoneNumber">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Latitude">
+        <xsd:restriction base="xsd:decimal">
+            <xsd:minInclusive value="-90.0"/>
+            <xsd:maxInclusive value="+90.0"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Longitude">
+        <xsd:restriction base="xsd:decimal">
+            <xsd:minInclusive value="-180.0"/>
+            <xsd:maxInclusive value="+180.0"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+</xsd:schema>

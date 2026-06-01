@@ -1,0 +1,1363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsd:schema
+        xmlns           = "http://www.demandware.com/xml/impex/catalog/2006-10-31"
+        xmlns:xsd       = "http://www.w3.org/2001/XMLSchema"
+        xmlns:xml       = "http://www.w3.org/XML/1998/namespace"
+        targetNamespace = "http://www.demandware.com/xml/impex/catalog/2006-10-31"
+        elementFormDefault   = "qualified"
+        attributeFormDefault = "unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <xsd:element name="catalog">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="header" type="complexType.Header" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="product-attribute-definitions" type="complexType.AttributeDefinitions" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="category" type="complexType.Category" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="product" type="complexType.Product" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="product-option" type="complexType.Option" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="variation-attribute" type="complexType.VariationAttribute" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="category-assignment" type="complexType.CategoryAssignment" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="recommendation" type="complexType.Recommendation" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+            <xsd:attribute name="catalog-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- Fake some more top level elements to allow for snippet based JAXB parsing -->
+    <xsd:element name="header" type="complexType.Header" />
+    <xsd:element name="product-attribute-definitions" type="complexType.AttributeDefinitions" />
+    <xsd:element name="category" type="complexType.Category" />
+    <xsd:element name="product-option" type="complexType.Option" />
+    <xsd:element name="variation-attribute" type="complexType.VariationAttribute" />
+    <xsd:element name="product" type="complexType.Product" />
+    <xsd:element name="category-assignment" type="complexType.CategoryAssignment" />
+    <xsd:element name="recommendation" type="complexType.Recommendation" />
+
+    <!-- Header -->
+    <xsd:complexType name="complexType.Header" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="image-settings" type="complexType.Image.Settings" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Image.Settings" mixed="false">
+        <xsd:sequence>
+            <xsd:choice>
+                <xsd:element name="internal-location" type="complexType.Image.InternalLocation" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="external-location" type="complexType.Image.ExternalLocation" minOccurs="0" maxOccurs="1" />
+            </xsd:choice>
+            <xsd:element name="view-types" type="complexType.Image.ViewTypes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="variation-attribute-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="alt-pattern" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="title-pattern" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Image.ViewTypes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="view-type" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Image.InternalLocation" mixed="false">
+        <xsd:attribute name="base-path" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Image.ExternalLocation" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="http-url" type="simpleType.Generic.NonEmptyString.256" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="https-url" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.AttributeDefinitions" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="attribute-definition" type="complexType.AttributeDefinition" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.AttributeDefinition" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="type" type="simpleType.AttributeType" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="localizable-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="site-specific-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="mandatory-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="visible-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="externally-managed-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="min-length" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="field-length" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="field-height" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="unit" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="scale" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="min-value" type="xsd:double" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="max-value" type="xsd:double" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="regex" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="select-multiple-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="value-definitions" type="complexType.ValueDefinitions" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.AttributeDefinition.ID" use="required" />
+    </xsd:complexType>
+
+    <!-- Category -->
+    <xsd:complexType name="complexType.Category" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="online-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="online-from" type="xsd:dateTime" minOccurs="0" maxOccurs="1" nillable="true" />
+            <xsd:element name="online-to" type="xsd:dateTime" minOccurs="0" maxOccurs="1" nillable="true" />
+            <xsd:element name="variation-groups-display-mode" type="simpleType.VariationGroupsDisplayMode" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="parent" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="position" type="xsd:double" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="thumbnail" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="image" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="template" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="search-placement" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="search-rank" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="sitemap-included-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="sitemap-changefrequency" type="simpleType.SiteMapChangeFrequency" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="sitemap-priority" type="simpleType.SiteMapPriority" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="page-attributes" type="complexType.PageAttributes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="category-links" type="complexType.CategoryLinks" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="attribute-groups" type="complexType.AttributeGroups" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="refinement-definitions" type="complexType.RefinementDefinitions" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="product-detail-page-meta-tag-rules" type="complexType.PageMetaTagRules" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="product-listing-page-meta-tag-rules" type="complexType.PageMetaTagRules" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="product-specification-rule" type="complexType.ProductSpecificationRule" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="categorization-rules-and-excluded-products" type="complexType.CategorizationRulesAndExcludedProducts" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+        <xsd:attribute name="category-id" type="simpleType.Generic.NonEmptyString.256" />
+    </xsd:complexType>
+
+    <!--  Option -->
+
+    <xsd:complexType name="complexType.Option" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="image" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="sort-mode" type="simpleType.Option.SortMode" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="option-values" type="complexType.Option.Values" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+        <xsd:attribute name="option-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!--  Variation Attribute -->
+    <xsd:complexType name="complexType.VariationAttribute" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="variation-attribute-values" type="complexType.VariationAttribute.Values" minOccurs="0" maxOccurs="2" />
+        </xsd:sequence>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required"/>
+        <xsd:attribute name="variation-attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required"/>
+        <xsd:attribute name="slicing-attribute" type="xsd:boolean" />
+    </xsd:complexType>
+
+    <!-- Variation Attribute Values  -->
+    <xsd:complexType name="complexType.VariationAttribute.Values" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="variation-attribute-value" type="complexType.VariationAttribute.Value" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="merge-mode" type="simpleType.MergeMode" default="replace" use="optional">
+            <xsd:annotation>
+                <xsd:documentation>
+                    Used to control if specified variation values will be added to variation attribute, removed from variation attribute or replace
+                    existing variation attribute value list.
+                    Attribute should only be used in import MERGE and UPDATE modes. In import REPLACE mode, using the "merge-mode" attribute is not
+                    sensible, because existing variation attribute values will always be removed from the variation attribute before importing the
+                    variation attribute values specified in the import file.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <!-- Variation Attribute Value  -->
+    <xsd:complexType name="complexType.VariationAttribute.Value" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-value" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="value" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="default" type="xsd:boolean" />
+    </xsd:complexType>
+
+    <!-- Product -->
+
+    <xsd:complexType name="complexType.Product" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="ean" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="upc" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="unit" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="unit-quantity" type="xsd:decimal" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="unit-measure" type="simpleType.Generic.String.60" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="min-order-quantity" type="xsd:decimal" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="step-quantity" type="xsd:decimal" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="short-description" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="long-description" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="store-receipt-name" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" >
+                <xsd:annotation>
+                    <xsd:documentation>Deprecated. Please use element receipt-name which held by element store-attributes (complexType.Product.StoreAttributes).</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="store-tax-class" type="simpleType.Generic.String.60" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>Deprecated. Please use element tax-class which held by element store-attributes (complexType.Product.StoreAttributes).</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="store-force-price-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>Deprecated. Please use element force-price-flag which held by element store-attributes (complexType.Product.StoreAttributes).</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="store-non-inventory-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>Deprecated. Please use element non-inventory-flag which held by element store-attributes (complexType.Product.StoreAttributes).</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="store-non-revenue-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>Deprecated. Please use element non-revenue-flag which held by element store-attributes (complexType.Product.StoreAttributes).</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="store-non-discountable-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>Deprecated. Please use element non-discountable-flag which held by element store-attributes (complexType.Product.StoreAttributes).</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="online-flag" type="sharedType.SiteSpecificBoolean" minOccurs="0" maxOccurs="unbounded" nillable="true" />
+            <xsd:element name="online-from" type="sharedType.SiteSpecificDateTime" minOccurs="0" maxOccurs="unbounded" nillable="true" />
+            <xsd:element name="online-to" type="sharedType.SiteSpecificDateTime" minOccurs="0" maxOccurs="unbounded" nillable="true" />
+            <xsd:element name="available-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>Deprecated. Use inventory feature to maintain product availability.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="searchable-flag" type="sharedType.SiteSpecificBoolean" minOccurs="0" maxOccurs="unbounded" nillable="true" />
+            <xsd:element name="searchable-if-unavailable-flag" type="sharedType.SiteSpecificBoolean" minOccurs="0" maxOccurs="unbounded" nillable="true"/>
+            <xsd:element name="images" type="complexType.Product.Images" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="image" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>Deprecated. Please use the element images (complexType.Product.Images).</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="thumbnail" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>Deprecated. Please use the element images (complexType.Product.Images).</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="template" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="tax-class-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="localized-tax-class-id" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="brand" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="manufacturer-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="manufacturer-sku" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="search-placement" type="sharedType.SiteSpecificInt" minOccurs="0" maxOccurs="unbounded" nillable="true" />
+            <xsd:element name="search-rank" type="sharedType.SiteSpecificInt" minOccurs="0" maxOccurs="unbounded" nillable="true" />
+            <xsd:element name="sitemap-included-flag" type="sharedType.SiteSpecificBoolean" minOccurs="0" maxOccurs="unbounded" nillable="true" />
+            <xsd:element name="sitemap-changefrequency" type="sharedType.SiteSpecificSiteMapChangeFrequency" minOccurs="0" maxOccurs="unbounded" nillable="true" />
+            <xsd:element name="sitemap-priority" type="sharedType.SiteSpecificSiteMapPriority" minOccurs="0" maxOccurs="unbounded" nillable="true" />
+            <xsd:element name="page-attributes" type="complexType.PageAttributes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="sharedType.SiteSpecificCustomAttributes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="bundled-products" type="complexType.Product.BundledProducts" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="retail-set-products" type="complexType.Product.RetailSetProducts" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>Deprecated please use the element product-set-products (complexType.Product.ProductSetProducts).</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="product-set-products" type="complexType.Product.ProductSetProducts" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="options" type="complexType.Product.Options" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="variations" type="complexType.Product.Variations" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="product-links" type="complexType.Product.ProductLinks" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="category-links" type="complexType.Product.CategoryLinks" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>Deprecated please use the elements category-assignment (complexType.CategoryAssignment) and classification-category (complexType.Product.ClassificationCategory).</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="classification-category" type="complexType.Product.ClassificationCategory" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="pinterest-enabled-flag" type="sharedType.SiteSpecificBoolean" minOccurs="0" maxOccurs="unbounded" nillable="true" />
+            <xsd:element name="facebook-enabled-flag" type="sharedType.SiteSpecificBoolean" minOccurs="0" maxOccurs="unbounded" nillable="true" />
+            <xsd:element name="product-detail-page-meta-tag-rules" type="complexType.PageMetaTagRules" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="store-attributes" type="complexType.Product.StoreAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+        <xsd:attribute name="product-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+    </xsd:complexType>
+
+    <!-- Product Store Attributes -->
+    <xsd:complexType name="complexType.Product.StoreAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="receipt-name" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="tax-class" type="simpleType.Generic.String.60" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="force-price-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="non-inventory-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="non-revenue-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="non-discountable-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- Product Images -->
+    <xsd:complexType name="complexType.Product.Images" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="image-group" type="complexType.Product.ImageGroup" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="merge-mode" type="simpleType.MergeMode" default="merge" use="optional">
+            <xsd:annotation>
+                <xsd:documentation>
+                    Used to control if specified image groups will be merged to or replace the existing image specification.
+                    The values "merge" and "replace" are the only ones supported for the "merge-mode" attribute.
+                    Attribute should only be used in import MERGE and UPDATE modes. In import REPLACE mode, using the "merge-mode" attribute is not
+                    sensible, because existing image groups will always be removed before importing the image groups
+                    specified in the import file.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.ImageGroup" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="variation" type="complexType.Product.ImageGroup.VariationAttributeValue" minOccurs="0" maxOccurs="unbounded">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        This element, only relevant for variation masters, represents an ordered list of variation
+                        attribute values.  It is used to identify a set of variants to which the images in this group apply.
+
+                        - The image groups related to the product master will have zero of these elements.  These
+                          represent the "fallback" images.
+                        - If an image group applies for all the red variants, for example, it will have one of these
+                          elements, namely "color=red".
+                        - If an image group applies for all the red, leather variants, for example, it will have two
+                          of these elements, namely "color=red, fabric=leather".
+
+                        The list is ordered so that, within a master product, the same variation attribute must always
+                        appear at the same index of the list.  In our example, "color" would always be specified first
+                        for each image group, and then "fabric" would always appear second.  This ensures there are
+                        clear fallback rules to identify which images relate to each variant. When retrieving the images
+                        for a variant at runtime, the system chooses the most specific matching image groups possible.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="image" type="complexType.Product.Image" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="view-type" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="variation-value" type="simpleType.Generic.NonEmptyString.256">
+            <xsd:annotation>
+                <xsd:documentation>Deprecated. Please use the variation elements (complexType.Product.ImageGroup.VariationAttributeValue).</xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.ImageGroup.VariationAttributeValue" mixed="false">
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" />
+        <xsd:attribute name="value" type="simpleType.Generic.NonEmptyString.256" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.Image" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="alt" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="title" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="path" type="simpleType.Generic.NonEmptyString.1800" use="required" />
+    </xsd:complexType>
+
+    <!-- Category Assignment -->
+    <xsd:complexType name="complexType.CategoryAssignment" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="short-description" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="long-description" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="callout-message" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="image" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="position" type="simpleType.CategoryAssignment.Position" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="primary-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="variation-assignments" type="complexType.CategoryAssignment.VariationAssignments" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+        <xsd:attribute name="category-id" type="simpleType.Generic.NonEmptyString.256" />
+        <xsd:attribute name="product-id" type="simpleType.Generic.NonEmptyString.100" />
+    </xsd:complexType>
+
+    <!-- Recommendation -->
+    <xsd:complexType name="complexType.Recommendation" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="short-description" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="long-description" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="callout-message" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="image" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="source-id" type="simpleType.Generic.NonEmptyString.256" use="optional" />
+        <xsd:attribute name="source-type" type="simpleType.RecommendationSourceType" use="optional" />
+        <xsd:attribute name="target-id" type="simpleType.Generic.NonEmptyString.256" use="optional" />
+        <xsd:attribute name="target-type" type="simpleType.RecommendationTargetType" use="optional" />
+        <xsd:attribute name="type" type="simpleType.RecommendationType" use="optional" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" use="optional" />
+    </xsd:complexType>
+
+    <!-- CategoryLink -->
+    <xsd:complexType name="complexType.CategoryLinks" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="category-link" type="complexType.CategoryLink" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CategoryLink" mixed="false">
+        <xsd:attribute name="category-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="catalog-id" type="simpleType.Generic.NonEmptyString.256" use="optional" />
+        <xsd:attribute name="type" type="simpleType.Category.LinkType" use="required" />
+    </xsd:complexType>
+
+    <!-- BundledProducts -->
+    <xsd:complexType name="complexType.Product.BundledProducts" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="bundled-product" type="complexType.Product.BundledProduct" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.BundledProduct" mixed="false">
+        <xsd:all>
+            <xsd:element name="quantity" type="xsd:decimal" minOccurs="1" maxOccurs="1" />
+        </xsd:all>
+        <xsd:attribute name="product-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+    </xsd:complexType>
+
+    <!-- Retail Set Products -->
+    <xsd:complexType name="complexType.Product.RetailSetProducts" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>Deprecated please use the element product-set-products (complexType.Product.ProductSetProducts).</xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="retail-set-product" type="complexType.Product.RetailSetProduct" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.RetailSetProduct" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>Deprecated please use the element product-set-product (complexType.Product.ProductSetProduct) see complexType.Product.ProductSetProducts.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:all>
+            <xsd:element name="quantity" type="xsd:decimal" minOccurs="1" maxOccurs="1" />
+        </xsd:all>
+        <xsd:attribute name="product-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+    </xsd:complexType>
+
+    <!-- Product Set Products -->
+    <xsd:complexType name="complexType.Product.ProductSetProducts" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="product-set-product" type="complexType.Product.ProductSetProduct" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.ProductSetProduct" mixed="false">
+        <xsd:attribute name="product-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+    </xsd:complexType>
+
+    <!-- ProductCategoryLinks -->
+    <xsd:complexType name="complexType.Product.CategoryLinks" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>Deprecated please use the elements category-assignment (complexType.CategoryAssignment) and classification-category (complexType.Product.ClassificationCategory).</xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="classification-link" type="complexType.Product.CategoryLink" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="category-link" type="complexType.Product.CategoryLink" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.CategoryLink" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>Deprecated please use the element category-assignment (complexType.CategoryAssignment).</xsd:documentation>
+        </xsd:annotation>
+        <xsd:all>
+            <xsd:element name="position" type="xsd:double" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="primary-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+        </xsd:all>
+        <xsd:attribute name="category-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="catalog-id" type="simpleType.Generic.NonEmptyString.256" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.ClassificationCategory" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String.256">
+                <xsd:attribute name="catalog-id" type="simpleType.Generic.NonEmptyString.256" use="optional" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <!-- ProductLinks -->
+    <xsd:complexType name="complexType.Product.ProductLinks" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="product-link" type="complexType.Product.ProductLink" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.ProductLink" mixed="false">
+        <xsd:attribute name="product-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+        <xsd:attribute name="type" type="simpleType.Product.LinkType" use="required" />
+    </xsd:complexType>
+
+    <!-- Search Engine Support -->
+    <xsd:complexType name="complexType.PageAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="page-title" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="page-description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="page-keywords" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="page-url" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- Variations -->
+    <xsd:complexType name="complexType.Product.Variations" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="attributes" type="complexType.Product.Variations.Attributes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="variants" type="complexType.Product.Variations.Variants" minOccurs="0" maxOccurs="2" />
+            <xsd:element name="variation-groups" type="complexType.Product.Variations.VariationGroups" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.Variations.Attributes">
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="attribute" type="complexType.Product.Variations.Attributes.Attribute" >
+                <xsd:annotation>
+                    <xsd:documentation>Deprecated please use the elements variation-attribute (complexType.VariationAttribute) or shared-variation-attribute (complexType.Product.VariationAttribute.Reference).</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="variation-attribute" type="complexType.VariationAttribute" />
+            <xsd:element name="shared-variation-attribute" type="complexType.Product.VariationAttribute.Reference" />
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.VariationAttribute.Reference" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required"/>
+        <xsd:attribute name="variation-attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.Variations.Variants" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="variant" type="complexType.Product.Variations.Variant" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="merge-mode" type="simpleType.MergeMode" default="replace" use="optional">
+            <xsd:annotation>
+                <xsd:documentation>Used to control if specified variants will be added to master, removed from master or replace existing variant list.
+                    Attribute should only be used in import MERGE and UPDATE modes. In import REPLACE mode, using the "merge-mode" attribute is not sensible,
+                    because existing variants will always be removed from the master before importing the variants specified in the import file.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.Variations.Variant" mixed="false">
+        <xsd:attribute name="product-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+        <xsd:attribute name="default" type="xsd:boolean" />
+    </xsd:complexType>
+    
+    <xsd:complexType name="complexType.Product.Variations.VariationGroups" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>Reserved for Beta users. Variation groups will not be created and a warning will be logged if the Variation Groups (Beta) feature is disabled.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="variation-group" type="complexType.Product.Variations.VariationGroup" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="merge-mode" type="simpleType.MergeMode" default="replace" use="optional">
+            <xsd:annotation>
+                <xsd:documentation>Used to control if specified variation groups will be added to master, removed from master or replace existing variation groups list.
+                    Attribute should only be used in import MERGE and UPDATE modes. In import REPLACE mode, using the "merge-mode" attribute is not sensible,
+                    because existing variation groups will always be removed from the master before importing the variation groups specified in the import file.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>   
+    </xsd:complexType>
+    
+    <!--  A variation group is similar to a variant but it only has some of the variation values specified -->
+    <xsd:complexType name="complexType.Product.Variations.VariationGroup" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>Reserved for Beta users. Variation groups will not be created and a warning will be logged if the Variation Groups (Beta) feature is disabled.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:attribute name="product-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+    </xsd:complexType>   
+
+    <!--  Variation Configuration -->
+    <xsd:complexType name="complexType.CategoryAssignment.VariationAssignments" mixed="false">
+        <!-- Variation Attribute Values  -->
+        <xsd:sequence>
+            <xsd:element name="variation-assignment" type="complexType.CategoryAssignment.VariationAssignment" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!--  Variation Attribute -->
+    <xsd:complexType name="complexType.CategoryAssignment.VariationAssignment" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="variation-assignment-values" type="complexType.CategoryAssignment.VariationAssignment.Values" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="variation-attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required"/>
+        <xsd:attribute name="slicing-attribute" type="xsd:boolean" />
+    </xsd:complexType>
+
+    <!-- Variation Attribute Values  -->
+    <xsd:complexType name="complexType.CategoryAssignment.VariationAssignment.Values" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="variation-assignment-value" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- Attribute Group Definitions -->
+    <xsd:complexType name="complexType.AttributeGroups" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="attribute-group" type="complexType.AttributeGroup" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.AttributeGroup" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="attribute" type="complexType.AttributeReference" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="group-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.AttributeReference" mixed="false">
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="system" type="xsd:boolean" default="false" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.Variations.Attributes.Attribute" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>Deprecated please use the elements variation-attribute (complexType.VariationAttribute) or shared-variation-attribute (complexType.Product.VariationAttribute.Reference).</xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:extension base="complexType.AttributeReference">
+                <xsd:sequence>
+                    <xsd:element name="values" type="complexType.Product.Variations.Attributes.Attribute.Values" minOccurs="0" maxOccurs="1" />
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.Variations.Attributes.Attribute.Values" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>Deprecated please use the element variation-attribute-values (complexType.VariationAttribute.Values) see complexType.VariationAttribute.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="value" type="complexType.Product.Variations.Attributes.Attribute.Value" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.Variations.Attributes.Attribute.Value" mixed="false">
+        <xsd:annotation>
+            <xsd:documentation>Deprecated please use the element variation-attribute-value (complexType.VariationAttribute.Value) see complexType.VariationAttribute.Values.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="display-value" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="value-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="default" type="xsd:boolean" />
+    </xsd:complexType>
+
+    <!-- Search Refinement Definitions -->
+    <xsd:complexType name="complexType.RefinementDefinitions" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="refinement-definition" type="complexType.RefinementDefinition" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="blocked-refinement-definition" type="complexType.BlockedRefinementDefinition" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.RefinementDefinition" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="value-set" type="simpleType.Refinement.ValueSet" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="sort-mode" type="simpleType.Sorting.Mode" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="sort-direction" type="simpleType.Sorting.Direction" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="unbucketed-values-mode" type="simpleType.UnbucketedValues.Mode" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="cutoff-threshold" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="bucket-definitions" type="complexType.RefinementBuckets" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="type" type="simpleType.Refinement.Type" use="required" />
+        <xsd:attribute name="bucket-type" type="simpleType.Bucket.Type" use="optional" />
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" />
+        <xsd:attribute name="system" type="xsd:boolean" default="false" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.BlockedRefinementDefinition" mixed="false">
+        <xsd:attribute name="type" type="simpleType.Refinement.Type" use="required" />
+        <xsd:attribute name="bucket-type" type="simpleType.Bucket.Type" use="optional" />
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" />
+        <xsd:attribute name="system" type="xsd:boolean" default="false" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.RefinementBuckets" mixed="false">
+        <xsd:choice>
+            <xsd:element name="attribute-bucket" type="complexType.AttributeRefinementBucket" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="price-bucket" type="complexType.PriceRefinementBucket" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="threshold-bucket" type="complexType.ThresholdRefinementBucket" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="period-bucket" type="complexType.PeriodRefinementBucket" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.AttributeRefinementBucket" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="value-list" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="presentation-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="default" type="xsd:boolean">
+            <xsd:annotation>
+                <xsd:documentation>If TRUE, the attribute marks a default bucket. It is used to represent the unbucketed values, if 'unbucketed-values-mode' is 'show-as-bucket'. Note: The element 'value-list' is not considered, since the unbucketed values are determined dynamically.
+                    If the default bucket is not defined within import file the system creates a new one with an empty 'display-name'.</xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PriceRefinementBucket" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="threshold" type="xsd:double" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="currency" type="simpleType.Currency" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ThresholdRefinementBucket" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="threshold" type="sharedType.LocalizedText" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="presentation-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PeriodRefinementBucket" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-name" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="duration-in-days" type="xsd:int" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="presentation-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="description" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- Product Options -->
+    <xsd:complexType name="complexType.Product.Options">
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="option" type="complexType.Option" />
+            <xsd:element name="shared-option" type="complexType.Product.Option.Reference" />
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Product.Option.Reference" mixed="false">
+        <xsd:attribute name="option-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- Option Values -->
+    <xsd:complexType name="complexType.Option.Values" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="option-value" type="complexType.Option.Value" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Option.Value" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display-value" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="product-id-modifier" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="option-value-prices" type="complexType.Option.Value.Prices" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="value-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="default" type="xsd:boolean" />
+    </xsd:complexType>
+
+    <!-- Option Value Prices -->
+    <xsd:complexType name="complexType.Option.Value.Prices" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="option-value-price" type="complexType.Option.Value.Price" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Option.Value.Price" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:decimal">
+                <xsd:attribute name="currency" type="simpleType.Currency" use="required" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <!-- Value Definitions -->
+    <xsd:complexType name="complexType.ValueDefinitions" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="value-definition" type="complexType.ValueDefinition" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="immutable" type="xsd:boolean" default="false" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ValueDefinition" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="display" type="sharedType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="value" type="simpleType.Generic.NonEmptyString.4000" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="default" type="xsd:boolean" />
+    </xsd:complexType>
+
+    <!-- Shared Complex Types -->
+    <xsd:complexType name="sharedType.LocalizedText" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.LocalizedString" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String.4000">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="sharedType.CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="simpleType.Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.SiteSpecificCustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="sharedType.SiteSpecificCustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.SiteSpecificCustomAttribute" mixed="false">
+        <xsd:complexContent>
+            <xsd:extension base="sharedType.CustomAttribute">
+                <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.32" />
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.SiteSpecificBoolean" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:boolean">
+                <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.32" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.SiteSpecificInt" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:int">
+                <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.32" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.SiteSpecificDateTime" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:dateTime">
+                <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.32" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.SiteSpecificSiteMapChangeFrequency" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.SiteMapChangeFrequency">
+                <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.32" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.SiteSpecificSiteMapPriority" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.SiteMapPriority">
+                <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.32" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+        
+    <xsd:complexType name="complexType.PageMetaTagRules" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="page-meta-tag-rule" type="complexType.PageMetaTagRule" minOccurs="0" maxOccurs="50" />
+        </xsd:sequence>
+    </xsd:complexType>
+  
+    <xsd:complexType name="complexType.PageMetaTagRule" mixed="false">
+        <xsd:attribute name="rule-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+    </xsd:complexType>
+
+    <!-- Product Specification Rule -->
+    <xsd:complexType name="complexType.ProductSpecificationRule" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="name" type="simpleType.Generic.NonEmptyString.256" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="description" type="simpleType.Generic.NonEmptyString.4000" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="enabled-flag" type="xsd:boolean" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="last-calculated" type="xsd:dateTime" minOccurs="0" maxOccurs="1" nillable="true" />
+            <xsd:element name="product-specification" type="complexType.ProductSpecification" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CategorizationRulesAndExcludedProducts" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="categorization-rules" type="complexType.CategorizationRules" minOccurs="0"
+                         maxOccurs="1"/>
+            <xsd:element name="categorization-excluded-products" type="complexType.CategorizationExcludedProducts"
+                         minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CategorizationExcludedProducts" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="categorization-excluded-product" type="complexType.CategorizationExcludedProduct"
+                         minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CategorizationExcludedProduct">
+        <xsd:attribute name="product-id" type="simpleType.Generic.NonEmptyString.100" use="required"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CategorizationRules" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="categorization-rule" type="complexType.CategorizationRule" minOccurs="0"
+                         maxOccurs="5"/>
+        </xsd:sequence>
+        <xsd:attribute ref="xml:lang" default="x-default"/>
+        <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.256"/>
+        <xsd:attribute name="primary-category-assignment" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="classification-category-assignment" type="xsd:boolean" default="false"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CategorizationRule" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="categorization-condition" type="complexType.CategorizationCondition" minOccurs="1"
+                         maxOccurs="10"/>
+        </xsd:sequence>
+        <xsd:attribute name="id" type="simpleType.Generic.NonEmptyString.256" use="required"/>
+        <xsd:attribute name="enabled-flag" type="xsd:boolean" default="true"/>
+        <xsd:attribute name="exclusion" type="xsd:boolean" default="false"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CategorizationCondition">
+        <xsd:sequence>
+            <xsd:element name="attribute-value" type="simpleType.Generic.String" minOccurs="0"
+                         maxOccurs="1"/>
+        </xsd:sequence>
+        <xsd:attribute name="id" type="simpleType.Generic.NonEmptyString.256" use="required"/>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required"/>
+        <xsd:attribute name="operator" type="simpleType.CategorizationOperator" use="required"/>
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.CategorizationOperator">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="equals"/>
+            <xsd:enumeration value="not_equals"/>
+            <xsd:enumeration value="contains"/>
+            <xsd:enumeration value="starts_with"/>
+            <xsd:enumeration value="is_defined"/>
+            <xsd:enumeration value="is_not_defined"/>
+            <xsd:enumeration value="is_one_of"/>
+            <xsd:enumeration value="not_one_of"/>
+            <xsd:enumeration value="greater_than"/>
+            <xsd:enumeration value="less_than"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="complexType.ProductSpecification" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="included-products" type="complexType.ProductSpecification.ConditionGroups" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="excluded-products" type="complexType.ProductSpecification.ConditionGroups" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ProductSpecification.ConditionGroups" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="condition-group" type="complexType.ProductSpecification.ConditionGroup" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ProductSpecification.ConditionGroup" mixed="false">
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="brand-condition" type="complexType.ProductSpecification.ProductBrandFilter" />
+            <xsd:element name="product-id-condition" type="complexType.ProductSpecification.ProductIDFilter" />
+            <xsd:element name="category-condition" type="complexType.ProductSpecification.ProductCategoryFilter" />
+            <xsd:element name="attribute-condition" type="complexType.ProductSpecification.ProductAttributeFilter" />
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ProductSpecification.ProductBrandFilter" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="brand" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="operator" type="simpleType.BrandComparator" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ProductSpecification.ProductIDFilter" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="product-id" type="simpleType.Generic.NonEmptyString.100" minOccurs="1" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="operator" type="simpleType.ProductIDComparator" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ProductSpecification.ProductCategoryFilter" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="category-id" type="simpleType.Generic.String.256" minOccurs="1" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="catalog-id" type="simpleType.Generic.NonEmptyString.256" use="required"/>
+        <xsd:attribute name="operator" type="simpleType.CategoryIDComparator" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ProductSpecification.ProductAttributeFilter" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="attribute-value" type="simpleType.Generic.NonEmptyString.256" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="operator" type="simpleType.AttributeComparator" />
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" />
+    </xsd:complexType>
+
+    <!-- comparators for product specification -->
+    <xsd:simpleType name="simpleType.ProductIDComparator">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="is equal" />
+            <xsd:enumeration value="is not equal" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.CategoryIDComparator">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="is equal" />
+            <xsd:enumeration value="is direct child of"/>
+            <xsd:enumeration value="is child of"/>
+            <xsd:enumeration value="is direct parent of"/>
+            <xsd:enumeration value="is parent of"/>
+            <xsd:enumeration value="is sibling of"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.BrandComparator">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="exists" />
+            <xsd:enumeration value="does not exist" />
+            <xsd:enumeration value="is equal" />
+            <xsd:enumeration value="is not equal" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.AttributeComparator">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="less than" />
+            <xsd:enumeration value="greater than" />
+            <xsd:enumeration value="equals" />
+            <xsd:enumeration value="is not equal" />
+            <xsd:enumeration value="exists" />
+            <xsd:enumeration value="does not exist" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- simple Generic types -->
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.10">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="10" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.28">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="28" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.60">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="60" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.32">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="32" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.100">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.1800">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="1800" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="4000" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace and no '|' -->
+    <xsd:simpleType name="simpleType.AttributeDefinition.ID">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="[^\s|]|([^\s|][^|]*[^\s|])" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Currency">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="[A-Z]{3}" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.CategoryAssignment.Position">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="none" />
+            <xsd:enumeration value="top" />
+            <xsd:enumeration value="bottom" />
+            <xsd:enumeration value="auto" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Refinement.Type">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="attribute" />
+            <xsd:enumeration value="category" />
+            <xsd:enumeration value="price" />
+            <xsd:enumeration value="promotion" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.UnbucketedValues.Mode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="show-values" />
+            <xsd:enumeration value="show-as-bucket" />
+            <xsd:enumeration value="hide" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Refinement.ValueSet">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="search-result" />
+            <xsd:enumeration value="refinement-category" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Bucket.Type">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="none" />
+            <xsd:enumeration value="values" />
+            <xsd:enumeration value="thresholds" />
+            <xsd:enumeration value="periods" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Sorting.Mode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="value-name" />
+            <xsd:enumeration value="value-count" />
+            <xsd:enumeration value="category-position" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Sorting.Direction">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="ascending" />
+            <xsd:enumeration value="descending" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Category.LinkType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="cross-sell" />
+            <xsd:enumeration value="up-sell" />
+            <xsd:enumeration value="accessory" />
+            <xsd:enumeration value="spare-part" />
+            <xsd:enumeration value="other" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Product.LinkType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="cross-sell" />
+            <xsd:enumeration value="replacement" />
+            <xsd:enumeration value="up-sell" />
+            <xsd:enumeration value="accessory" />
+            <xsd:enumeration value="spare-part" />
+            <xsd:enumeration value="newer-version" />
+            <xsd:enumeration value="alt-orderunit" />
+            <xsd:enumeration value="other" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Option.SortMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="position" />
+            <xsd:enumeration value="price" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.RecommendationType">
+        <xsd:annotation>
+            <xsd:documentation>Allowed string values are the 'int' values defined for the Recommendation.recommendationType attribute, and additionally the values 'cross-sell', 'up-sell', and 'other' for backward compatibility.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="simpleType.Generic.String" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.MergeMode">
+        <xsd:annotation>
+            <xsd:documentation>Used to control the behavior of list elements in import file.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="add">
+                <xsd:annotation>
+                    <xsd:documentation>Add specified objects at the end of the existing list.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:enumeration>
+            <xsd:enumeration value="merge">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Update existing specified objects without changing their position in the list.
+                        Add new specified objects at end of existing list.
+                        Remove existing objects not specified in list.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:enumeration>
+            <xsd:enumeration value="remove">
+                <xsd:annotation>
+                    <xsd:documentation>Remove specified objects from the existing list.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:enumeration>
+            <xsd:enumeration value="replace">
+                <xsd:annotation>
+                    <xsd:documentation>Replace existing list with specified objects.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.RecommendationSourceType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="product" />
+            <xsd:enumeration value="category" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.RecommendationTargetType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="product" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.SiteMapChangeFrequency">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="always" />
+            <xsd:enumeration value="hourly" />
+            <xsd:enumeration value="daily" />
+            <xsd:enumeration value="weekly" />
+            <xsd:enumeration value="monthly" />
+            <xsd:enumeration value="yearly" />
+            <xsd:enumeration value="never" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.SiteMapPriority">
+        <xsd:restriction base="xsd:double">
+            <xsd:minInclusive value="0.0" />
+            <xsd:maxInclusive value="1.0" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.VariationGroupsDisplayMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="individual" />
+            <xsd:enumeration value="merged" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.AttributeType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="string" />
+            <xsd:enumeration value="int" />
+            <xsd:enumeration value="double" />
+            <xsd:enumeration value="text" />
+            <xsd:enumeration value="html" />
+            <xsd:enumeration value="image" />
+            <xsd:enumeration value="boolean" />
+            <xsd:enumeration value="date" />
+            <xsd:enumeration value="datetime" />
+            <xsd:enumeration value="email" />
+            <xsd:enumeration value="password" />
+            <xsd:enumeration value="set-of-string" />
+            <xsd:enumeration value="set-of-int" />
+            <xsd:enumeration value="set-of-double" />
+            <xsd:enumeration value="enum-of-string" />
+            <xsd:enumeration value="enum-of-int" />
+        </xsd:restriction>
+    </xsd:simpleType>
+</xsd:schema>

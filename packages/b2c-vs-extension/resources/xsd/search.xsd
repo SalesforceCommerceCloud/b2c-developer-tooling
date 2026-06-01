@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/impex/search/2007-02-28"
+    xmlns="http://www.demandware.com/xml/impex/search/2007-02-28"
+    elementFormDefault="qualified" 
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- demandware main tag -->
+    <xsd:element name="search">
+        <xsd:complexType mixed="false">
+             <xsd:annotation>
+                <xsd:documentation>
+                        Deprecated. search.xsd is deprecated and has been replaced by search2.xsd, which supports all elements except 'indexes'.
+                </xsd:documentation>
+            </xsd:annotation>
+            <xsd:sequence>
+                <xsd:element name="indexes" type="complexType.Indexes" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="stopwords" type="complexType.StopwordDefinitions" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="synonyms" type="complexType.SynonymDefinitions" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="hypernyms" type="complexType.HypernymDefinitions" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="redirects" type="complexType.RedirectDefinitions" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="suggestions" type="complexType.SuggestDefinitions" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="compound-words" type="complexType.CompoundWordDefinitions" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="category-exclusions" type="complexType.CategoryExclusionDefinitions" minOccurs="0" maxOccurs="1" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- fake element definition for top level elements -->
+    <xsd:element name="indexes" type="complexType.Indexes" />
+    <xsd:element name="stopwords" type="complexType.StopwordDefinitions" />
+    <xsd:element name="synonyms" type="complexType.SynonymDefinitions" />
+    <xsd:element name="hypernyms" type="complexType.HypernymDefinitions" />
+    <xsd:element name="redirects" type="complexType.RedirectDefinitions" />
+    <xsd:element name="suggestions" type="complexType.SuggestDefinitions" />
+    <xsd:element name="compound-words" type="complexType.CompoundWordDefinitions" />
+    <xsd:element name="category-exclusions" type="complexType.CategoryExclusionDefinitions" />
+
+    <xsd:complexType name="complexType.Indexes">
+        <xsd:sequence>
+            <xsd:element name="index" type="complexType.Index" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Index">
+        <xsd:sequence>
+            <xsd:element name="settings" type="complexType.Settings" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="text-relevance-attributes" type="complexType.TextRelevanceAttributes" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Deprecated. The element 'text-relevance-attributes' is not longer supported and will be ignored during import
+                        and export. Please use the element 'searchable-attributes' (SearchableAttributes) of search2.xsd.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="sorting-attributes" type="complexType.SortingAttributes" minOccurs="0" maxOccurs="1" >
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Deprecated. The element 'sorting-attributes' is deprecated but still supported.
+                        Please use the feature sorting rules with sort.xsd.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+        <xsd:attribute name="index-id" type="simpleType.IndexID" use="required" />
+        <xsd:attribute ref="xml:lang" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.Settings">
+        <xsd:sequence>
+            <xsd:element name="stemmer" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Deprecated. The element 'stemmer' is deprecated and will be ignored.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="indexing-mode" type="simpleType.IndexingMode" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.StopwordDefinitions">
+        <xsd:sequence>
+            <xsd:element name="stopword-group" type="complexType.StopwordDefinition" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.StopwordDefinition">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String.4000">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.SynonymDefinitions">
+        <xsd:sequence>
+            <xsd:element name="synonym-group" type="complexType.SynonymDefinition" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.SynonymDefinition">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String.4000">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.HypernymDefinitions">
+        <xsd:sequence>
+            <xsd:element name="hypernym-group" type="complexType.HypernymDefinition" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+    
+    <xsd:complexType name="complexType.CompoundWordDefinitions">
+        <xsd:sequence>
+            <xsd:element name="compound-word" type="complexType.CompoundWordDefinition" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CompoundWordDefinition">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String.4000">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CategoryExclusionDefinitions">
+        <xsd:sequence>
+            <xsd:element name="category-exclusion" type="complexType.CategoryExclusionDefinition" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CategoryExclusionDefinition">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String.4000">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.HypernymDefinition">
+        <xsd:sequence>
+            <xsd:element name="hyponyms" type="simpleType.Generic.String.4000" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="hypernym" type="simpleType.Generic.String.4000" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute ref="xml:lang" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.TextRelevanceAttributes">
+        <xsd:sequence>
+            <xsd:element name="text-relevance-attribute" type="complexType.TextRelevanceAttribute" minOccurs="0" maxOccurs="unbounded" >
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Deprecated. The element 'text-relevance-attribute' is not longer supported and will be ignored during import
+                        and export. Please use the element 'searchable-attribute' (SearchableAttributes) of search2.xsd.
+                   </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.TextRelevanceAttribute">
+        <xsd:sequence>
+            <xsd:element name="boost" type="xsd:double" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="object-type-id" type="complexType.ObjectType" use="optional"/>
+        <xsd:attribute name="system" type="xsd:boolean" default="false" use="optional" />
+    </xsd:complexType>
+    
+    <xsd:simpleType name="complexType.ObjectType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="product"></xsd:enumeration>
+            <xsd:enumeration value="category"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="complexType.SortingAttributes">
+        <xsd:sequence>
+            <xsd:element name="sorting-attribute" type="complexType.SortingAttribute" minOccurs="0" maxOccurs="unbounded" >
+                 <xsd:annotation>
+                    <xsd:documentation>
+                        Deprecated. The element 'sorting-attribute' is deprecated but still supported.
+                        Please use the feature sorting rules with sort.xsd.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.SortingAttribute">
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="system" type="xsd:boolean" default="false" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.RedirectDefinitions">
+        <xsd:sequence>
+            <xsd:element name="redirect" type="complexType.RedirectDefinition" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.RedirectDefinition">
+        <xsd:sequence>
+            <xsd:element name="keywords" type="complexType.LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="online-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:choice minOccurs="1" maxOccurs="1">
+                <xsd:element name="category-redirect" type="complexType.CategoryRedirect" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="product-redirect" type="complexType.ProductRedirect" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="page-redirect" type="complexType.PageRedirect" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="url-redirect" type="complexType.URLRedirect" minOccurs="0" maxOccurs="1" />
+                <xsd:element name="pipeline-redirect" type="complexType.PipelineRedirect" minOccurs="0" maxOccurs="1" />
+            </xsd:choice>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CategoryRedirect">
+        <xsd:attribute name="category-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.ProductRedirect">
+        <xsd:attribute name="product-id" type="simpleType.Generic.NonEmptyString.100" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PageRedirect">
+        <xsd:attribute name="page-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.URLRedirect">
+        <xsd:attribute name="target-url" type="xsd:anyURI" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PipelineRedirect">
+        <xsd:attribute name="pipeline-name" type="simpleType.Generic.String.256" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.SuggestDefinitions">
+        <xsd:sequence>
+            <xsd:element name="custom-phrases" type="complexType.PhraseList" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="blacklist" type="complexType.BlackList" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.PhraseList">
+        <xsd:sequence>
+            <xsd:element name="phrase" type="simpleType.Generic.String.4000" minOccurs="1" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.BlackList">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String.4000">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.100">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="100" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="complexType.LocalizedString" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="simpleType.Generic.String.4000">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.IndexID">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="product"></xsd:enumeration>
+            <xsd:enumeration value="content"></xsd:enumeration>
+            <xsd:enumeration value="redirect"></xsd:enumeration>
+            <xsd:enumeration value="spelling">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Deprecated. Spelling index is no longer supported by the platform.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:enumeration>
+            <xsd:enumeration value="suggest"></xsd:enumeration>
+            <xsd:enumeration value="synonym"></xsd:enumeration>
+            <xsd:enumeration value="catalog"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.IndexingMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="development"></xsd:enumeration>
+            <xsd:enumeration value="production"></xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

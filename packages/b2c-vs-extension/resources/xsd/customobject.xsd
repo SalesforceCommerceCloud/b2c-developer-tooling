@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema 
+    xmlns="http://www.demandware.com/xml/impex/customobject/2006-10-31"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+    targetNamespace="http://www.demandware.com/xml/impex/customobject/2006-10-31" 
+    elementFormDefault="qualified" >
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <xsd:element name="custom-objects">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="custom-object" type="complexType.CustomObject" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- Fake some more top level elements to allow for snippet based JAXB parsing -->
+    <xsd:element name="custom-object" type="complexType.CustomObject" />
+
+    <xsd:complexType name="complexType.CustomObject" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="object-attribute" type="sharedType.CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="type-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="object-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" />
+    </xsd:complexType>
+
+    <!-- Shared Complex Types -->
+
+    <xsd:complexType name="sharedType.CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="simpleType.Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <!-- Shared Simple Types -->
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!--  Nonempty string with no leading or trailing whitespace -->
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/impex/urlrules/2012-12-01"
+    xmlns="http://www.demandware.com/xml/impex/urlrules/2012-12-01"
+    elementFormDefault="qualified"
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+
+    <!-- top-level element -->
+    <xsd:element name="url-rules" type="URLRules"/>
+
+    <xsd:complexType name="URLRules">
+        <xsd:sequence>
+            <xsd:element name="general-settings" type="GeneralSettings" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="locale-settings" type="LocaleSettings" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="category-rule" type="CategoryRule" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="category-page-url-override" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="category-trailing-slash" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="category-offline-url-generation" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="category-search-refinement-url-enabled" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="category-search-refinements" type="URLSearchRefinements" minOccurs="0" maxOccurs="unbounded"/>
+            <xsd:element name="product-rule" type="ProductRule" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="product-page-url-override" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="product-id-separator" type="IDSeparator" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="folder-rule" type="FolderRule" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="folder-page-url-override" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="folder-trailing-slash" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="folder-offline-url-generation" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="folder-search-refinement-url-enabled" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="folder-search-refinements" type="URLSearchRefinements" minOccurs="0" maxOccurs="unbounded"/>
+            <xsd:element name="content-rule" type="ContentRule" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="content-page-url-override" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="content-id-separator" type="IDSeparator" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="pipeline-aliases" type="PipelineAliases" minOccurs="0" maxOccurs="unbounded"/>
+            <xsd:element name="pipeline-trailing-slash" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="pipeline-perform-redirect" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="character-replacements" type="CharacterReplacements" minOccurs="0" maxOccurs="unbounded"/>
+            <xsd:element name="search-refinement-url-settings" type="SearchRefinementURLSettings" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="SearchRefinementURLSettings">
+        <xsd:sequence>
+            <!-- refinement segment position with respect to category/folder alias-->
+            <xsd:element name="position" type="simpleType.SearchRefinementURLPosition" minOccurs="0" maxOccurs="1"/>          
+            <!-- refinement segment to category/folder alias delimiter -->
+            <xsd:element name="segment-delimiter" type="simpleType.SegmentDelimiter" minOccurs="0" maxOccurs="1"/>
+            <!-- multiple refinements delimiter -->
+            <xsd:element name="refinements-delimiter" type="simpleType.RefinementDelimiter" minOccurs="0" maxOccurs="1"/>            
+            <!-- multiple refinements value delimiter -->
+            <xsd:element name="value-delimiter" type="simpleType.RefinementValueDelimiter" minOccurs="0" maxOccurs="1"/>
+            <!-- conflicting refinements value delimiter -->
+            <xsd:element name="conflicting-value-delimiter" type="simpleType.ConflictingRefinementValueDelimiter" minOccurs="0" maxOccurs="1"/>
+            <!-- exclude the pipeline alias for a search refinement URL (in case of created without corresponding category or folder ID) -->
+            <xsd:element name="exclude-pipeline-alias-type" type="simpleType.ExcludeSearchPipelineAliasForURLType" minOccurs="0" maxOccurs="1"/>
+            <!-- refinement parameter product name identifier ('prefn') -->
+            <xsd:element name="product-name-identifier" type="Generic.NonEmptyString.20" minOccurs="0" maxOccurs="1"/>
+            <!-- refinement parameter product value identifier ('prefv') -->
+            <xsd:element name="product-value-identifier" type="Generic.NonEmptyString.20" minOccurs="0" maxOccurs="1"/>
+            <!-- refinement parameter content name identifier ('crefn') -->
+            <xsd:element name="content-name-identifier" type="Generic.NonEmptyString.20" minOccurs="0" maxOccurs="1"/>
+            <!-- refinement parameter content value identifier ('crefv') -->
+            <xsd:element name="content-value-identifier" type="Generic.NonEmptyString.20" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="URLSearchRefinements">
+        <xsd:annotation>
+           <xsd:documentation>URLSearchRefinements support only one URLSearchRefinement with constant 'true'.</xsd:documentation>
+       </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="url-search-refinements" type="URLSearchRefinement" minOccurs="0" maxOccurs="30"/>
+        </xsd:sequence>
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <xsd:complexType name="URLSearchRefinement">
+        <xsd:sequence>
+            <xsd:element name="search-refinement-name" type="Generic.NonEmptyString.256" minOccurs="1" maxOccurs="1"/>
+            <!-- 'true' if this search-refinement-name should be imported as constant, defaults to false -->
+            <xsd:element name="constant" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="CharacterReplacements">
+        <xsd:sequence>
+            <xsd:element name="character-replacement" type="CharacterReplacement" minOccurs="1" maxOccurs="50"/>
+        </xsd:sequence>
+        <xsd:attribute ref="xml:lang" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="CharacterReplacement">
+        <xsd:sequence>
+            <xsd:element name="character" type="Generic.NonEmptyString.256" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="replacement" type="Generic.String" minOccurs="1" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="PipelineAliases">
+        <xsd:sequence>
+            <xsd:element name="pipeline-alias" type="PipelineAlias" minOccurs="1" maxOccurs="500"/>
+        </xsd:sequence>
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <xsd:complexType name="PipelineAlias">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.NonEmptyString.256">
+                <xsd:attribute name="pipeline" type="Generic.NonEmptyString.256" use="required" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="GeneralSettings">
+        <xsd:sequence>
+            <xsd:element name="lower-case-urls" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="blank-substitute" type="BlankSubstitute" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="character-replacements-enabled" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="character-replacements-for-page-url-enabled" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="LocaleSettings">
+        <xsd:sequence>
+            <xsd:element name="type" type="simpleType.LocaleMappingType" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="locale-mappings" type="LocaleMappings" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="parameter-name" type="LocaleParameterName" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="LocaleMappings">
+        <xsd:sequence>
+            <xsd:element name="locale-mapping" type="LocaleMapping" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="LocaleMapping">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.NonEmptyString.256">
+                 <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:simpleType name="CategoryRule">
+        <xsd:restriction base="Generic.NonEmptyString.256">
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="ProductRule">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0"/>
+            <xsd:maxLength value="256"/>
+            <xsd:pattern value="\S(.*\S)*|"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="FolderRule">
+        <xsd:restriction base="Generic.NonEmptyString.256">
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="ContentRule">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0"/>
+            <xsd:maxLength value="256"/>
+            <xsd:pattern value="\S(.*\S)*|"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="LocaleParameterName">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1"/>
+            <xsd:maxLength value="20"/>
+            <xsd:pattern value="[a-z]*"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="BlankSubstitute">
+        <xsd:restriction base="Generic.String">
+            <xsd:pattern value="%20|-|_|\+|\."/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.SegmentDelimiter">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="slash" />
+            <xsd:enumeration value="minus" />
+            <xsd:enumeration value="underscore" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.RefinementDelimiter">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="slash" />
+            <xsd:enumeration value="minus" />
+            <xsd:enumeration value="underscore" />
+            <xsd:enumeration value="plus" />
+            <xsd:enumeration value="period" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.RefinementValueDelimiter">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="pipe" />
+            <xsd:enumeration value="minus" />
+            <xsd:enumeration value="underscore" />
+            <xsd:enumeration value="plus" />
+            <xsd:enumeration value="period" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.ConflictingRefinementValueDelimiter">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="minus" />
+            <xsd:enumeration value="underscore" />
+            <xsd:enumeration value="blank" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="IDSeparator">
+        <xsd:restriction base="Generic.String">
+            <xsd:pattern value="/|-"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1"/>
+            <xsd:maxLength value="256"/>
+            <xsd:pattern value="\S(.*\S)*"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.20">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1"/>
+            <xsd:maxLength value="20"/>
+            <xsd:pattern value="\S(.*\S)*"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String">
+        <xsd:restriction base="xsd:string"/>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.LocaleMappingType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="none" />
+            <xsd:enumeration value="host" />
+            <xsd:enumeration value="path" />
+            <xsd:enumeration value="parameter" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.SearchRefinementURLPosition">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="before" />
+            <xsd:enumeration value="after" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.ExcludeSearchPipelineAliasForURLType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="none" />
+            <xsd:enumeration value="catalog" />
+            <xsd:enumeration value="content" />
+        </xsd:restriction>
+    </xsd:simpleType>
+</xsd:schema>

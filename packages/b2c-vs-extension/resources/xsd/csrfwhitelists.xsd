@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsd:schema
+        xmlns="http://www.demandware.com/xml/impex/csrfwhitelists/2017-02-09"
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xml="http://www.w3.org/XML/1998/namespace"
+        targetNamespace="http://www.demandware.com/xml/impex/csrfwhitelists/2017-02-09"
+        elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace"
+                schemaLocation="xml.xsd"/>
+
+    <!-- top-level element -->
+    <xsd:element name="csrf-whitelists">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="pipelines" type="complexType.CSRFPipelines" minOccurs="0" maxOccurs="1"/>
+                <xsd:element name="user-agents" type="complexType.CSRFUserAgents" minOccurs="0" maxOccurs="1"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- fake element for mass data support -->
+    <xsd:element name="pipelines" type="complexType.CSRFPipelines"/>
+    <xsd:element name="user-agents" type="complexType.CSRFUserAgents"/>
+
+    <xsd:complexType name="complexType.CSRFPipelines">
+        <xsd:sequence>
+            <xsd:element name="pipeline" type="complexType.CSRFPipeline" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CSRFPipeline">
+        <xsd:attribute name="name" type="simpleType.Generic.NonEmptyString.256" use="required"/>
+        <xsd:attribute name="start-node" type="simpleType.Generic.NonEmptyString.256" use="optional">
+            <xsd:annotation>
+                <xsd:documentation>
+                    The start-node attribute is optional for a CSRF pipeline. If left blank, it means that all calls
+                    with given pipeline name
+                    regardless of start node are permitted.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CSRFUserAgents">
+        <xsd:sequence>
+            <xsd:element name="development" type="complexType.CSRFInstanceType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="staging" type="complexType.CSRFInstanceType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="production" type="complexType.CSRFInstanceType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="user-agent" type="simpleType.Generic.NonEmptyString.256" minOccurs="0"
+                         maxOccurs="unbounded">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        After adding instance specificity to CSRF user agent whitelists, this element is kept as it is for backward compatibility during import.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="complexType.CSRFInstanceType">
+        <xsd:sequence>
+            <xsd:element name="user-agent" type="simpleType.Generic.NonEmptyString.256" minOccurs="0"
+                         maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- simple generic types -->
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string"/>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="1"/>
+            <xsd:maxLength value="256"/>
+            <xsd:pattern value="\S|(\S(.*)\S)"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

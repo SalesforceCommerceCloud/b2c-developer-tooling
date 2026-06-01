@@ -94,6 +94,38 @@ The B2C Script Debugger registers regardless of these toggles — it activates o
 | `b2c-dx.sandbox.pollingInterval` | `10` | Seconds between polls while a sandbox is in a transitional state (`creating`, `starting`, `stopping`, `deleting`, `cloning`). Range: 2–300. Polling stops automatically once the realm settles. |
 | `b2c-dx.telemetry.enabled` | `true` | Send anonymous usage telemetry. Honors VS Code's `telemetry.telemetryLevel` — disabling that disables this regardless of this setting. |
 
+### XML schema validation
+
+The extension contributes XSD-based validation for common metadata XML files (via the VS Code XML extension). When a file path matches one of these folders, diagnostics are validated against the corresponding B2C schema:
+
+- `**/metadata/catalogs/*.xml`
+- `**/metadata/customer-groups/*.xml`
+- `**/metadata/customer-lists/*.xml`
+- `**/metadata/custom-objects/*.xml`
+- `**/metadata/inventory-lists/*.xml`
+- `**/metadata/libraries/*.xml`
+- `**/metadata/payment-methods/*.xml`
+- `**/metadata/payment-processors/*.xml`
+- `**/metadata/preferences/*.xml`
+- `**/metadata/pricebooks/*.xml`
+- `**/metadata/promotions/*.xml`
+- `**/metadata/redirect-urls/*.xml`
+- `**/metadata/search/*.xml`
+- `**/metadata/shipping/*.xml`
+- `**/metadata/sites/*.xml`
+- `**/metadata/slots/*.xml`
+- `**/metadata/sourcecodes/*.xml`
+- `**/metadata/stores/*.xml`
+- `**/metadata/url-rules/*.xml`
+
+To disable XML validation globally in your workspace, set:
+
+```jsonc
+{
+  "xml.validation.enabled": false
+}
+```
+
 ### Complete defaults (copy-paste)
 
 ```jsonc

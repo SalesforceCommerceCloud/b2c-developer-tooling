@@ -36,6 +36,9 @@
     "onDebugResolve:b2c-script",
     "workspaceContains:**/commerce-app.json"
   ],
+  "extensionDependencies": [
+    "redhat.vscode-xml"
+  ],
   "main": "./dist/extension.cjs",
   "contributes": {
     "typescriptServerPlugins": [
@@ -43,6 +46,84 @@
         "name": "@salesforce/b2c-script-types",
         "enableForWorkspaceTypeScriptVersions": true,
         "configNamespace": "b2c-dx"
+      }
+    ],
+    "xmlValidation": [
+      {
+        "fileMatch": "**/metadata/catalogs/*.xml",
+        "url": "./resources/xsd/catalog.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/customer-groups/*.xml",
+        "url": "./resources/xsd/customergroup.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/customer-lists/*.xml",
+        "url": "./resources/xsd/customerlist.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/custom-objects/*.xml",
+        "url": "./resources/xsd/customobject.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/inventory-lists/*.xml",
+        "url": "./resources/xsd/inventory.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/libraries/*.xml",
+        "url": "./resources/xsd/library.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/payment-methods/*.xml",
+        "url": "./resources/xsd/paymentmethod.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/payment-processors/*.xml",
+        "url": "./resources/xsd/paymentprocessor.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/preferences/*.xml",
+        "url": "./resources/xsd/preferences.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/pricebooks/*.xml",
+        "url": "./resources/xsd/pricebook.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/promotions/*.xml",
+        "url": "./resources/xsd/promotion.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/redirect-urls/*.xml",
+        "url": "./resources/xsd/redirecturl.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/search/*.xml",
+        "url": "./resources/xsd/search.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/shipping/*.xml",
+        "url": "./resources/xsd/shipping.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*.xml",
+        "url": "./resources/xsd/site.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/slots/*.xml",
+        "url": "./resources/xsd/slot.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sourcecodes/*.xml",
+        "url": "./resources/xsd/sourcecode.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/stores/*.xml",
+        "url": "./resources/xsd/store.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/url-rules/*.xml",
+        "url": "./resources/xsd/urlrules.xsd"
       }
     ],
     "configuration": {
@@ -1216,10 +1297,11 @@
     }
   },
   "scripts": {
-    "build": "node scripts/esbuild-bundle.mjs",
-    "watch": "node scripts/esbuild-bundle.mjs --watch",
-    "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
-    "package": "pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
+    "sync:xsd": "node scripts/sync-xsd.mjs",
+    "build": "pnpm run sync:xsd && node scripts/esbuild-bundle.mjs",
+    "watch": "pnpm run sync:xsd && node scripts/esbuild-bundle.mjs --watch",
+    "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-tooling-sdk run build && pnpm run sync:xsd && node scripts/esbuild-bundle.mjs",
+    "package": "pnpm run sync:xsd && pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
     "typecheck:agent": "tsc -p . --noEmit --pretty false",

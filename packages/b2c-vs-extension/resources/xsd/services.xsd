@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    targetNamespace="http://www.demandware.com/xml/impex/services/2014-09-26"
+    xmlns="http://www.demandware.com/xml/impex/services/2014-09-26"
+    elementFormDefault="qualified"
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <xsd:element name="services">
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="service-credential" type="complexType.ServiceCredential" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="service-profile" type="complexType.ServiceProfile" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="service" type="complexType.Service" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="service" type="complexType.Service" />
+
+    <xsd:complexType name="complexType.Service">
+        <xsd:sequence>
+            <xsd:element name="service-type" type="simpleType.Generic.NonEmptyString.256" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="enabled" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="log-prefix" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="comm-log-enabled" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="force-prd-enabled" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="mock-mode-enabled" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="profile-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="credential-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="service-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" use="optional" />
+    </xsd:complexType>
+
+    <xsd:element name="service-profile" type="complexType.ServiceProfile" />
+
+    <xsd:complexType name="complexType.ServiceProfile">
+        <xsd:sequence>
+            <xsd:element name="timeout-millis" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="rate-limit-enabled" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="rate-limit-calls" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="rate-limit-millis" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="cb-enabled" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="cb-ignore-5xx" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="cb-calls" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="cb-millis" type="xsd:int" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="service-profile-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" use="optional" />
+    </xsd:complexType>
+
+    <xsd:element name="service-credential" type="complexType.ServiceCredential" />
+
+    <xsd:complexType name="complexType.ServiceCredential">
+        <xsd:sequence>
+
+            <xsd:element name="url" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="user-id" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="password" minOccurs="0" maxOccurs="1">
+                <xsd:complexType>
+                    <xsd:simpleContent>
+                        <xsd:extension base="simpleType.Generic.String.4000">
+                            <xsd:attribute name="encrypted" type="xsd:boolean" />
+                            <xsd:attribute name="masked" type="xsd:boolean" />
+                            <xsd:attribute name="encryption-type" use="optional" >
+                                <xsd:simpleType>
+                                    <xsd:restriction base="xsd:string">
+                                        <xsd:enumeration value="RSA">
+                                            <xsd:annotation>
+                                                <xsd:documentation>Deprecated. The 'RSA' value is unsupported for 'encryption-type'.</xsd:documentation>
+                                            </xsd:annotation>
+                                        </xsd:enumeration>
+                                        <xsd:enumeration value="common.export" />
+                                    </xsd:restriction>
+                                </xsd:simpleType>
+                            </xsd:attribute>
+                        </xsd:extension>
+                    </xsd:simpleContent>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="service-credential-id" type="simpleType.Generic.String.256" use="required" />
+        <xsd:attribute name="mode" type="simpleType.ImportMode" use="optional" />
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="sharedType.CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="sharedType.CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="sharedType.CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="simpleType.Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

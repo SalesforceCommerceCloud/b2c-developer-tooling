@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsd:schema 
+    xmlns="http://www.demandware.com/xml/impex/paymentsettings/2009-09-15" 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+    xmlns:xml="http://www.w3.org/XML/1998/namespace" 
+    targetNamespace="http://www.demandware.com/xml/impex/paymentsettings/2009-09-15"
+    elementFormDefault="qualified" 
+    attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- top-level element -->
+    <xsd:element name="payment-settings">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="payment-method" type="PaymentMethod" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="payment-card" type="PaymentCard" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="payment-method" type="PaymentMethod"/>
+    <xsd:element name="payment-card" type="PaymentCard"/>
+
+    <!-- payment method -->
+    <xsd:complexType name="PaymentMethod">
+        <xsd:sequence>
+            <xsd:element name="name" type="LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="image" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="enabled-flag" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="processor-id" type="Generic.NonEmptyString.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="min-purchase-amount" type="Amount" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="max-purchase-amount" type="Amount" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="countries" type="Countries" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="currencies" type="Currencies" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="customer-groups" type="CustomerGroups" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="CustomAttributes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="ranges" type="PurchaseAmountRanges" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="method-id" type="Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- payment card -->
+    <xsd:complexType name="PaymentCard">
+        <xsd:sequence>
+            <xsd:element name="name" type="LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="description" type="LocalizedString" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="image" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="enabled-flag" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="card-number-settings" type="CardNumberSettings" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="security-code-length" type="SecurityCodeLength" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="min-purchase-amount" type="Amount" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="max-purchase-amount" type="Amount" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="countries" type="Countries" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="currencies" type="Currencies" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="customer-groups" type="CustomerGroups" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="custom-attributes" type="CustomAttributes" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="ranges" type="PurchaseAmountRanges" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="card-type" type="Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- countries -->
+    <xsd:complexType name="Countries">
+        <xsd:sequence>
+            <xsd:element name="country" type="Country" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="Country">
+        <xsd:attribute name="country-code" type="CountryCode" use="required" />
+    </xsd:complexType>
+
+    <!-- currencies -->
+    <xsd:complexType name="Currencies">
+        <xsd:sequence>
+            <xsd:element name="currency" type="simpleType.Currency" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- customer groups -->
+    <xsd:complexType name="CustomerGroups">
+        <xsd:sequence>
+            <xsd:element name="customer-group" type="CustomerGroup" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="CustomerGroup">
+        <xsd:attribute name="group-id" type="Generic.NonEmptyString.256" use="required" />
+    </xsd:complexType>
+
+    <!-- payment method/card min/max ranges -->
+    <xsd:complexType name="PurchaseAmountRanges">
+        <xsd:sequence>
+            <xsd:element name="range" type="PurchaseAmountRange" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- payment method/card min/max range -->
+    <xsd:complexType name="PurchaseAmountRange">
+        <xsd:sequence>
+            <xsd:element name="min-purchase-amount" type="Amount" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="max-purchase-amount" type="Amount" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+        <xsd:attribute name="currency" type="simpleType.Currency" use="required" />
+    </xsd:complexType>
+
+    <!-- card number settings -->
+    <xsd:complexType name="CardNumberSettings">
+        <xsd:sequence>
+            <xsd:element name="enable-checksum-verification" type="xsd:boolean" default="false" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="number-length" type="CardNumberLength" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="number-prefix" type="CardNumberPrefix" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="CardNumberLength">
+        <xsd:sequence>
+            <xsd:element name="length" type="CardNumber.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="CardNumberPrefix">
+        <xsd:sequence>
+            <xsd:element name="prefix" type="CardNumber.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- custom attributes -->
+    <xsd:complexType name="CustomAttributes" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="custom-attribute" type="CustomAttribute" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="CustomAttribute" mixed="true">
+        <xsd:sequence>
+            <xsd:element name="value" type="Generic.String" minOccurs="0" maxOccurs="unbounded" />
+        </xsd:sequence>
+        <xsd:attribute name="attribute-id" type="Generic.NonEmptyString.256" use="required" />
+        <xsd:attribute ref="xml:lang" />
+    </xsd:complexType>
+
+    <xsd:complexType name="LocalizedString" mixed="false">
+        <xsd:simpleContent>
+            <xsd:extension base="Generic.String.4000">
+                <xsd:attribute ref="xml:lang" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <!-- simple generic types -->
+
+    <xsd:simpleType name="Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.String.4000">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Generic.NonEmptyString.256">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="1" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="CardNumber.String">
+        <xsd:restriction base="Generic.String">
+            <xsd:maxLength value="40" />
+            <xsd:pattern value="\d+(\-\d+)?" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <xsd:simpleType name="SecurityCodeLength">
+        <xsd:restriction base="xsd:int">
+            <xsd:enumeration value="0" />
+            <xsd:enumeration value="3" />
+            <xsd:enumeration value="4" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="CountryCode">
+        <xsd:restriction base="Generic.String">
+            <xsd:minLength value="2" />
+            <xsd:maxLength value="2" />
+        </xsd:restriction>
+    </xsd:simpleType>
+    
+    <!-- ISO-4217 3-character currency code -->
+    <xsd:simpleType name="simpleType.Currency">
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="[A-Z]{3}" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="Amount">
+        <xsd:restriction base="xsd:decimal">
+            <xsd:minInclusive value="0" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>
