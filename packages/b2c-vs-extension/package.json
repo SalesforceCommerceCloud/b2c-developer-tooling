@@ -14,7 +14,8 @@
   "type": "module",
   "dependencies": {
     "@salesforce/b2c-script-types": "workspace:*",
-    "@salesforce/b2c-tooling-sdk": "workspace:*"
+    "@salesforce/b2c-tooling-sdk": "workspace:*",
+    "swagger-ui-dist": "^5.18.0"
   },
   "engines": {
     "vscode": "^1.105.1"
@@ -1067,7 +1068,6 @@
     "@vscode/vsce": "^3.9.1",
     "c8": "catalog:",
     "esbuild": "^0.24.0",
-    "swagger-ui-dist": "^5.18.0",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-header": "catalog:",
