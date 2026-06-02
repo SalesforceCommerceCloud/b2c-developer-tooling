@@ -219,7 +219,7 @@
       },
       {
         "view": "b2cCartridgeExplorer",
-        "contents": "No cartridges found.\n\nCartridges are folders containing a `.project` file.\n\n[Generate from a scaffold](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22scaffold%22%5D)\n\n[Refresh](command:b2c-dx.codeSync.refreshCartridges)"
+        "contents": "No cartridges found.\n\nCartridges are identified by .project files in the workspace.\n\n[Generate from a scaffold](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22scaffold%22%5D)\n\n[Refresh](command:b2c-dx.codeSync.refreshCartridges)"
       },
       {
         "view": "b2cCipAnalytics",
