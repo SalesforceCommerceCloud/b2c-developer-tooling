@@ -12,6 +12,16 @@ import {OnboardingStateStore, StepStatus} from './state.js';
 import {PERSONAS, PersonaId, StepAction, StepDefinition, getPersona, listPersonas, resolveSteps} from './personas.js';
 import {renderMarkdown} from './markdown.js';
 import {detectTools, generateInstallCliHtml, ToolDetectionResult} from './toolDetection.js';
+import {detectAllTargets, generateAiSkillsHtml} from './aiSkillsContent.js';
+import {
+  detectStepConfigurations,
+  getDetectionForStep,
+  readDeployContext,
+  DetectionSummary,
+  StepDetection,
+} from './stepDetection.js';
+import {findCartridges, listCodeVersions, type CodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
+import type {B2CExtensionConfig} from '../config-provider.js';
 
 type InboundMessage =
   | {type: 'selectPersona'; personaId: PersonaId}
@@ -24,7 +34,10 @@ type InboundMessage =
   | {type: 'runAction'; command: string; args?: unknown[]; stepId?: string}
   | {type: 'openLink'; url: string}
   | {type: 'reset'}
-  | {type: 'ready'};
+  | {type: 'ready'}
+  | {type: 'aiSkills.installSkills'; ide: string}
+  | {type: 'aiSkills.runCommand'; cmd: string; label: string}
+  | {type: 'aiSkills.recheck'};
 
 interface PersonaView {
   id: PersonaId;
@@ -43,6 +56,8 @@ interface StepView {
   status: StepStatus;
   actions: StepAction[];
   html: string;
+  /** Optional per-step detection chip ("1 configuration detected"). */
+  detection?: {label: string; matchedNames: string[]} | null;
 }
 
 interface ViewState {
@@ -53,10 +68,22 @@ interface ViewState {
   setupInstance: string | null;
 }
 
+type DeployedCartridgesResult =
+  | {kind: 'ok'; names: string[]; source: 'ocapi' | 'webdav'}
+  | {kind: 'no-provider'}
+  | {kind: 'no-instance'; reason?: string}
+  | {kind: 'no-code-version'}
+  | {kind: 'error'; reason: string};
+
 export class OnboardingPanel {
   private static current: OnboardingPanel | undefined;
 
-  static show(context: vscode.ExtensionContext, store: OnboardingStateStore, log: vscode.OutputChannel): void {
+  static show(
+    context: vscode.ExtensionContext,
+    store: OnboardingStateStore,
+    log: vscode.OutputChannel,
+    getConfigProvider?: () => B2CExtensionConfig | null,
+  ): void {
     if (OnboardingPanel.current) {
       OnboardingPanel.current.panel.reveal();
       return;
@@ -66,7 +93,7 @@ export class OnboardingPanel {
       retainContextWhenHidden: true,
       localResourceRoots: [vscode.Uri.file(context.extensionPath)],
     });
-    OnboardingPanel.current = new OnboardingPanel(context, store, log, panel);
+    OnboardingPanel.current = new OnboardingPanel(context, store, log, panel, getConfigProvider);
   }
 
   private readonly disposables: vscode.Disposable[] = [];
@@ -77,13 +104,108 @@ export class OnboardingPanel {
     private readonly store: OnboardingStateStore,
     private readonly log: vscode.OutputChannel,
     private readonly panel: vscode.WebviewPanel,
+    private readonly getConfigProvider?: () => B2CExtensionConfig | null,
   ) {
     this.panel.webview.html = this.renderShell();
     this.disposables.push(
       this.panel.onDidDispose(() => this.dispose()),
       this.panel.webview.onDidReceiveMessage((msg) => this.handleMessage(msg as InboundMessage)),
       this.store.onDidChange(() => void this.refresh()),
+      // Re-check whenever the user returns to the panel — covers the case where
+      // they ran an install in the terminal and switched back.
+      this.panel.onDidChangeViewState((e) => {
+        if (e.webviewPanel.active) {
+          if (this.activeStepId === 'ai-skills') {
+            this.aiSkillsCache = null;
+          }
+          void this.refresh();
+        }
+      }),
     );
+  }
+
+  /** Cached AI-skills detection result, invalidated on install actions. */
+  private aiSkillsCache: import('./aiSkillsContent.js').DetectedTarget[] | null = null;
+  /** Tracks the in-flight watcher so multiple installs don't stack. */
+  private aiSkillsWatcher: NodeJS.Timeout | null = null;
+  /** Disposables for terminal-shell-execution and close listeners on the in-flight install. */
+  private aiSkillsTermDisposables: vscode.Disposable[] = [];
+
+  /**
+   * Subscribes to terminal events for the install terminal so we can
+   * deterministically refresh as soon as the install command exits — much
+   * more responsive than polling.
+   */
+  private watchTerminalForAiSkills(terminal: vscode.Terminal): void {
+    // Clear any previous subscriptions; only one in-flight install at a time.
+    this.aiSkillsTermDisposables.forEach((d) => d.dispose());
+    this.aiSkillsTermDisposables = [];
+
+    // Stronger signal: shell-execution end (proposed but stable in 1.93+).
+    // Falls back silently on older runtimes via try/catch.
+    try {
+      const api = vscode.window as unknown as {
+        onDidEndTerminalShellExecution?: (listener: (e: {terminal: vscode.Terminal}) => void) => vscode.Disposable;
+      };
+      if (typeof api.onDidEndTerminalShellExecution === 'function') {
+        const sub = api.onDidEndTerminalShellExecution((e) => {
+          if (e.terminal === terminal) {
+            this.aiSkillsCache = null;
+            void this.refresh();
+          }
+        });
+        this.aiSkillsTermDisposables.push(sub);
+      }
+    } catch {
+      // ignore
+    }
+
+    // Fallback: when the user closes the terminal, refresh.
+    const closeSub = vscode.window.onDidCloseTerminal((closed) => {
+      if (closed === terminal) {
+        this.aiSkillsCache = null;
+        void this.refresh();
+        this.aiSkillsTermDisposables.forEach((d) => d.dispose());
+        this.aiSkillsTermDisposables = [];
+      }
+    });
+    this.aiSkillsTermDisposables.push(closeSub);
+  }
+
+  /**
+   * After kicking off an install in the terminal we don't get a deterministic
+   * completion signal, so we poll the filesystem every 2s for up to ~60s.
+   * As soon as detection produces a different snapshot we refresh and stop.
+   */
+  private startAiSkillsWatcher(): void {
+    if (this.aiSkillsWatcher) clearInterval(this.aiSkillsWatcher);
+    const before = JSON.stringify(this.aiSkillsCache?.map((t) => ({id: t.id, status: t.status})) ?? []);
+    let elapsed = 0;
+    const TICK_MS = 2000;
+    const MAX_MS = 60000;
+    this.aiSkillsWatcher = setInterval(async () => {
+      elapsed += TICK_MS;
+      try {
+        const {detectAllTargets} = await import('./aiSkillsContent.js');
+        const fresh = await detectAllTargets();
+        const snapshot = JSON.stringify(fresh.map((t) => ({id: t.id, status: t.status})));
+        if (snapshot !== before) {
+          this.aiSkillsCache = fresh;
+          if (this.aiSkillsWatcher) {
+            clearInterval(this.aiSkillsWatcher);
+            this.aiSkillsWatcher = null;
+          }
+          await this.refresh();
+          return;
+        }
+      } catch {
+        // best-effort — keep polling
+      }
+      if (elapsed >= MAX_MS && this.aiSkillsWatcher) {
+        clearInterval(this.aiSkillsWatcher);
+        this.aiSkillsWatcher = null;
+      }
+    }, TICK_MS);
   }
 
   private async handleMessage(msg: InboundMessage): Promise<void> {
@@ -200,6 +322,32 @@ export class OnboardingPanel {
           this.activeStepId = null;
           await this.refresh();
           return;
+        case 'aiSkills.installSkills': {
+          // Open a terminal preloaded with `b2c setup skills b2c --ide <ide>`.
+          // We don't auto-run — the user reviews it and presses Enter.
+          const ide = msg.ide.replace(/[^a-z0-9-]/gi, '');
+          if (!ide) return;
+          const term = vscode.window.createTerminal({name: `B2C DX — Skills (${ide})`});
+          term.show();
+          term.sendText(`b2c setup skills b2c --ide ${ide}`, false);
+          this.watchTerminalForAiSkills(term);
+          this.startAiSkillsWatcher();
+          return;
+        }
+        case 'aiSkills.runCommand': {
+          const safeLabel = msg.label.replace(/[^\w\s—()-]/g, '').slice(0, 40) || 'Install';
+          const term = vscode.window.createTerminal({name: `B2C DX — ${safeLabel}`});
+          term.show();
+          term.sendText(msg.cmd, false);
+          this.watchTerminalForAiSkills(term);
+          this.startAiSkillsWatcher();
+          return;
+        }
+        case 'aiSkills.recheck': {
+          this.aiSkillsCache = null;
+          await this.refresh();
+          return;
+        }
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -226,15 +374,27 @@ export class OnboardingPanel {
   }
 
   private async buildViewState(): Promise<ViewState> {
-    // Average step ≈ 3.5 min. The "ai-augmented" persona gets a `recommended`
-    // flag so the gate highlights it as the new path.
+    // Per-persona time estimates (minutes). Tuned from real walkthrough runs;
+    // these override the previous step-count × 3.5 formula which over-counted
+    // assistive UI steps (welcome, next-steps) that take seconds, not minutes.
+    const PERSONA_MINUTES: Record<string, number> = {
+      storefront: 8,
+      'api-integration': 10,
+      'devops-release': 6,
+      'ai-augmented': 12,
+    };
+    const estimateMinutes = (id: string, stepCount: number): number =>
+      PERSONA_MINUTES[id] ?? Math.max(5, Math.round((stepCount * 1.25) / 1) * 1);
+
+    // The "ai-augmented" persona gets a `recommended` flag so the gate
+    // highlights it as the new path.
     const personas: PersonaView[] = listPersonas().map((p) => ({
       id: p.id,
       label: p.label,
       tagline: p.tagline,
       description: p.description,
       stepCount: p.stepIds.length,
-      estimatedMinutes: Math.max(15, Math.round((p.stepIds.length * 3.5) / 5) * 5),
+      estimatedMinutes: estimateMinutes(p.id, p.stepIds.length),
       recommended: p.id === 'ai-augmented',
     }));
     const personaId = this.store.getPersona();
@@ -244,7 +404,9 @@ export class OnboardingPanel {
       return {persona: null, personas, steps: [], activeStepId: null, setupInstance};
     }
     const defs = resolveSteps(personaDef.id);
-    const rawSteps = await Promise.all(defs.map((def) => this.buildStepView(personaDef.id, def)));
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const detectionSummary = await detectStepConfigurations(workspaceRoot);
+    const rawSteps = await Promise.all(defs.map((def) => this.buildStepView(personaDef.id, def, detectionSummary)));
     // Sequential gating: a step is locked until every step before it is done
     // or skipped. The first step is always available.
     const steps = rawSteps.map((step, idx) => {
@@ -263,7 +425,7 @@ export class OnboardingPanel {
       tagline: personaDef.tagline,
       description: personaDef.description,
       stepCount: personaDef.stepIds.length,
-      estimatedMinutes: Math.max(15, Math.round((personaDef.stepIds.length * 3.5) / 5) * 5),
+      estimatedMinutes: estimateMinutes(personaDef.id, personaDef.stepIds.length),
     };
     return {
       persona: activePersonaView,
@@ -276,7 +438,11 @@ export class OnboardingPanel {
 
   private toolDetectionCache: ToolDetectionResult | null = null;
 
-  private async buildStepView(personaId: PersonaId, def: StepDefinition): Promise<StepView> {
+  private async buildStepView(
+    personaId: PersonaId,
+    def: StepDefinition,
+    detectionSummary?: DetectionSummary,
+  ): Promise<StepView> {
     const record = this.store.getStep(personaId, def.id);
     let html: string;
     let actions = def.actions ?? [];
@@ -285,9 +451,44 @@ export class OnboardingPanel {
       const result = await this.getToolDetection();
       html = generateInstallCliHtml(result);
       actions = this.buildInstallCliActions(result);
+    } else if (def.id === 'ai-skills') {
+      if (!this.aiSkillsCache) {
+        this.aiSkillsCache = await detectAllTargets();
+      }
+      html = generateAiSkillsHtml(this.aiSkillsCache);
     } else {
       const markdown = await this.readMarkdown(def.markdown);
       html = renderMarkdown(markdown);
+      // For the deploy step, prepend a banner showing exactly what will be
+      // deployed when the user clicks "Deploy Recommended Cartridge", and
+      // gray out the primary action if the recommended cartridge is already
+      // present in the active code version.
+      if (def.id === 'deploy-code') {
+        const result = await this.buildDeployBanner();
+        if (result) {
+          html = result.html + html;
+          if (result.alreadyDeployed && actions.length > 0) {
+            actions = actions.map((a) =>
+              a.command === 'b2c-dx.codeSync.deployOne'
+                ? {
+                    ...a,
+                    label: `Already Deployed${result.cartridgeName ? ` · ${result.cartridgeName}` : ''}`,
+                    disabled: true,
+                    tooltip: 'This cartridge is already in the active code version.',
+                  }
+                : a,
+            );
+          }
+        }
+      }
+    }
+
+    let detection: StepView['detection'] = null;
+    if (detectionSummary) {
+      const found: StepDetection | null = getDetectionForStep(def.id, detectionSummary);
+      if (found && found.matchCount > 0 && found.label) {
+        detection = {label: found.label, matchedNames: found.matchedNames ?? []};
+      }
     }
 
     return {
@@ -297,7 +498,361 @@ export class OnboardingPanel {
       status: record?.status ?? 'available',
       actions,
       html,
+      detection,
     };
+  }
+
+  /** Cached list of deployed cartridges per code-version, keyed by `host|version`. */
+  private deployedCartridgesCache = new Map<string, {result: DeployedCartridgesResult; fetchedAt: number}>();
+
+  /**
+   * Fetch the cartridges currently deployed to the active code version.
+   * Tries OCAPI `/code_versions` first (richer data) and falls back to a
+   * WebDAV PROPFIND on `Cartridges/<codeVersion>/` (which is what the deploy
+   * command itself uses, so credentials are usually already set up).
+   *
+   * Returns a tagged result so the banner can show a specific reason instead
+   * of a generic "OAuth not configured" message.
+   *
+   * Cached for 30 seconds to avoid hammering the network on every refresh.
+   */
+  private async fetchDeployedCartridges(codeVersion: string | undefined): Promise<DeployedCartridgesResult> {
+    const provider = this.getConfigProvider?.();
+    if (!provider) return {kind: 'no-provider'};
+    const instance = provider.getInstance();
+    if (!instance) {
+      const err = provider.getConfigError?.();
+      return {kind: 'no-instance', reason: err ?? undefined};
+    }
+    if (!codeVersion) return {kind: 'no-code-version'};
+
+    const host = provider.getConfig()?.values.hostname ?? 'unknown';
+    const cacheKey = `${host}|${codeVersion}`;
+    const cached = this.deployedCartridgesCache.get(cacheKey);
+    if (cached && Date.now() - cached.fetchedAt < 30_000) return cached.result;
+
+    let ocapiError: string | undefined;
+
+    // 1) Try OCAPI — gives back the canonical list directly.
+    try {
+      const versions: CodeVersion[] = await listCodeVersions(instance);
+      const target = versions.find((v) => v.id === codeVersion);
+      if (target) {
+        const names = target.cartridges ?? [];
+        const result: DeployedCartridgesResult = {kind: 'ok', names, source: 'ocapi'};
+        this.deployedCartridgesCache.set(cacheKey, {result, fetchedAt: Date.now()});
+        return result;
+      }
+      ocapiError = `code version "${codeVersion}" not found on instance`;
+    } catch (err) {
+      ocapiError = err instanceof Error ? err.message : String(err);
+      this.log.appendLine(`[onboarding] OCAPI listCodeVersions failed: ${ocapiError}`);
+    }
+
+    // 2) Fallback to WebDAV — same auth path as the deploy command itself.
+    try {
+      const entries = await instance.webdav.propfind(`Cartridges/${codeVersion}`, '1');
+      const names = entries
+        .filter((e) => e.isCollection && e.displayName && e.displayName !== codeVersion)
+        .map((e) => e.displayName as string);
+      const result: DeployedCartridgesResult = {kind: 'ok', names, source: 'webdav'};
+      this.deployedCartridgesCache.set(cacheKey, {result, fetchedAt: Date.now()});
+      return result;
+    } catch (err) {
+      const webdavError = err instanceof Error ? err.message : String(err);
+      this.log.appendLine(`[onboarding] WebDAV propfind failed: ${webdavError}`);
+      return {kind: 'error', reason: ocapiError ?? webdavError};
+    }
+  }
+
+  /**
+   * Builds a "what will be deployed" + "already deployed" banner for the
+   * deploy-code step. Returns the HTML plus a flag indicating whether the
+   * recommended cartridge is already in the active code version (so the
+   * caller can disable the primary action).
+   */
+  private async buildDeployBanner(): Promise<{html: string; alreadyDeployed: boolean; cartridgeName?: string} | null> {
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const ctx = await readDeployContext(workspaceRoot);
+    const lastScaffolded = this.context.workspaceState.get<string>('b2c-dx.scaffold.lastCartridgeName');
+
+    // Mirror the resolution logic in createDeployOneCommand:
+    //   1. If the last-scaffolded cartridge still exists in the workspace, use it.
+    //   2. Otherwise, if there's only one cartridge, that's what gets deployed.
+    //   3. Otherwise the user is shown a picker (we can't predict the choice).
+    let resolvedCartridge: string | undefined;
+    let cartridgeSource: 'scaffolded' | 'only' | 'picker' | 'none' = 'none';
+    if (workspaceRoot) {
+      try {
+        const cartridges = findCartridges(workspaceRoot);
+        if (lastScaffolded && cartridges.some((c) => c.name === lastScaffolded)) {
+          resolvedCartridge = lastScaffolded;
+          cartridgeSource = 'scaffolded';
+        } else if (cartridges.length === 1) {
+          resolvedCartridge = cartridges[0].name;
+          cartridgeSource = 'only';
+        } else if (cartridges.length > 1) {
+          cartridgeSource = 'picker';
+        }
+      } catch {
+        // best-effort — leave as 'none'
+      }
+    }
+
+    // Nothing to show if every field is empty.
+    if (!resolvedCartridge && cartridgeSource === 'none' && !ctx.hostname && !ctx.codeVersion) return null;
+
+    const escape = (s: string) =>
+      s.replace(/[&<>"']/g, (c) =>
+        c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '"' ? '&quot;' : '&#39;',
+      );
+    const fmt = (v?: string) =>
+      v ? `<code>${escape(v)}</code>` : `<span class="deploy-banner__missing">not set</span>`;
+
+    const sourceHint =
+      cartridgeSource === 'scaffolded'
+        ? '<span class="deploy-banner__hint">recently scaffolded</span>'
+        : cartridgeSource === 'only'
+          ? '<span class="deploy-banner__hint">only cartridge in workspace</span>'
+          : '';
+    const cartridgeLabel = resolvedCartridge
+      ? `<code>${escape(resolvedCartridge)}</code> ${sourceHint}`
+      : cartridgeSource === 'picker'
+        ? `<span class="deploy-banner__missing">multiple found — you'll be asked to pick one</span>`
+        : `<span class="deploy-banner__missing">no cartridges found in workspace</span>`;
+
+    const cartridgeReady = !!resolvedCartridge;
+    const allReady = cartridgeReady && !!ctx.codeVersion && !!ctx.hostname;
+
+    // Fetch deployed cartridges (best-effort — falls back gracefully).
+    const deployedResult = await this.fetchDeployedCartridges(ctx.codeVersion);
+    const deployedNames = deployedResult.kind === 'ok' ? deployedResult.names : [];
+    const alreadyDeployed = !!(resolvedCartridge && deployedNames.includes(resolvedCartridge));
+
+    const deployedSection = (() => {
+      const folderIcon = `<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="12" height="10" rx="1.5"/><line x1="2" y1="6" x2="14" y2="6"/><line x1="6" y1="9" x2="10" y2="9"/></svg>`;
+      const warnIcon = `<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="9"/><circle cx="8" cy="11" r="0.8" fill="currentColor"/></svg>`;
+
+      if (deployedResult.kind === 'no-provider') {
+        return `<div class="deploy-banner__row deploy-banner__row--full">
+          ${warnIcon}
+          <span class="deploy-banner__label">Deployed</span>
+          <span class="deploy-banner__value deploy-banner__deployed">
+            <span class="deploy-banner__missing">resolving connection…</span>
+          </span>
+        </div>`;
+      }
+      if (deployedResult.kind === 'no-instance') {
+        const detail = deployedResult.reason ? ` — ${escape(deployedResult.reason)}` : '';
+        return `<div class="deploy-banner__row deploy-banner__row--full">
+          ${warnIcon}
+          <span class="deploy-banner__label">Deployed</span>
+          <span class="deploy-banner__value deploy-banner__deployed">
+            <span class="deploy-banner__missing">no active B2C instance${detail}</span>
+          </span>
+        </div>`;
+      }
+      if (deployedResult.kind === 'no-code-version') {
+        return `<div class="deploy-banner__row deploy-banner__row--full">
+          ${warnIcon}
+          <span class="deploy-banner__label">Deployed</span>
+          <span class="deploy-banner__value deploy-banner__deployed">
+            <span class="deploy-banner__missing">code-version not set in dw.json</span>
+          </span>
+        </div>`;
+      }
+      if (deployedResult.kind === 'error') {
+        return `<div class="deploy-banner__row deploy-banner__row--full">
+          ${warnIcon}
+          <span class="deploy-banner__label">Deployed</span>
+          <span class="deploy-banner__value deploy-banner__deployed">
+            <span class="deploy-banner__missing">unable to query — ${escape(deployedResult.reason)}</span>
+          </span>
+        </div>`;
+      }
+      const names = deployedResult.names;
+      if (names.length === 0) {
+        return `<div class="deploy-banner__row deploy-banner__row--full">
+          ${folderIcon}
+          <span class="deploy-banner__label">Deployed</span>
+          <span class="deploy-banner__value deploy-banner__deployed">
+            <span class="deploy-banner__missing">no cartridges deployed yet</span>
+          </span>
+        </div>`;
+      }
+      const chips = names
+        .map(
+          (n) =>
+            `<code class="${resolvedCartridge && n === resolvedCartridge ? 'deploy-banner__chip--match' : ''}">${escape(n)}</code>`,
+        )
+        .join('');
+      return `<div class="deploy-banner__row deploy-banner__row--full">
+        ${folderIcon}
+        <span class="deploy-banner__label">Deployed <span class="deploy-banner__count">${names.length}</span></span>
+        <span class="deploy-banner__value deploy-banner__deployed">${chips}</span>
+      </div>`;
+    })();
+
+    const html = `<style>
+      .deploy-banner {
+        margin: 18px 0;
+        border-radius: 12px;
+        border: 1px solid color-mix(in srgb, var(--vscode-foreground) 18%, transparent);
+        background: var(--surface-card, var(--vscode-editorWidget-background, var(--vscode-editor-background)));
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 14px rgba(0,0,0,0.04);
+      }
+      .deploy-banner__header {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 12px 18px;
+        background: color-mix(in srgb, #1A8754 8%, transparent);
+        border-bottom: 1px solid color-mix(in srgb, #1A8754 18%, transparent);
+        flex-wrap: wrap;
+      }
+      .deploy-banner__eyebrow {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em;
+        font-weight: 700;
+        color: var(--brand-green, #1A8754);
+      }
+      .deploy-banner__eyebrow svg { color: inherit; }
+      .deploy-banner__status {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 2px 9px; border-radius: 999px;
+        font-size: 0.7rem; font-weight: 700;
+        white-space: nowrap;
+      }
+      .deploy-banner__status--ok {
+        color: var(--brand-green, #1A8754);
+        background: color-mix(in srgb, #1A8754 14%, transparent);
+      }
+      .deploy-banner__status--warn {
+        color: #C77700;
+        background: color-mix(in srgb, #C77700 14%, transparent);
+      }
+      .deploy-banner__status__dot {
+        width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+      }
+      .deploy-banner__rows {
+        display: flex; flex-direction: column;
+      }
+      .deploy-banner__row {
+        display: grid;
+        grid-template-columns: 28px 110px 1fr;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 18px;
+        border-top: 1px solid color-mix(in srgb, var(--vscode-foreground) 8%, transparent);
+      }
+      .deploy-banner__row:first-child { border-top: 0; }
+      .deploy-banner__row svg {
+        color: var(--vscode-descriptionForeground);
+        opacity: 0.85;
+      }
+      .deploy-banner__label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--vscode-descriptionForeground);
+      }
+      .deploy-banner__value { font-size: 0.9rem; min-width: 0; }
+      .deploy-banner__value code {
+        font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
+        font-size: 0.86rem;
+        background: color-mix(in srgb, var(--vscode-foreground) 10%, transparent);
+        padding: 3px 10px;
+        border-radius: 4px;
+        border: 0;
+        color: var(--vscode-foreground);
+        font-weight: 500;
+        word-break: break-all;
+      }
+      .deploy-banner__missing {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.84rem;
+        font-style: italic;
+        color: #C77700;
+      }
+      .deploy-banner__missing::before {
+        content: '!';
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 14px; height: 14px;
+        border-radius: 50%;
+        background: color-mix(in srgb, #C77700 18%, transparent);
+        font-style: normal; font-weight: 700; font-size: 0.7rem;
+      }
+      .deploy-banner__hint {
+        display: inline-block;
+        margin-left: 10px;
+        padding: 2px 9px;
+        border-radius: 999px;
+        background: color-mix(in srgb, #4A8BC2 14%, transparent);
+        border: 1px solid color-mix(in srgb, #4A8BC2 28%, transparent);
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: #2A6FAE;
+      }
+      .deploy-banner__row--full {
+        align-items: flex-start;
+      }
+      .deploy-banner__deployed {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .deploy-banner__deployed code {
+        font-size: 0.78rem;
+      }
+      .deploy-banner__chip--match {
+        background: color-mix(in srgb, #1A8754 18%, transparent) !important;
+        color: var(--brand-green, #1A8754) !important;
+        font-weight: 600 !important;
+      }
+      .deploy-banner__count {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--vscode-foreground) 12%, transparent);
+        color: var(--vscode-foreground);
+        font-size: 0.68rem;
+        font-weight: 700;
+      }
+    </style>
+    <section class="deploy-banner" aria-label="Deploy preview">
+      <header class="deploy-banner__header">
+        <span class="deploy-banner__eyebrow">
+          <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5z"/></svg>
+          On click of "Deploy Recommended Cartridge"
+        </span>
+        <span class="deploy-banner__status deploy-banner__status--${alreadyDeployed ? 'ok' : allReady ? 'ok' : 'warn'}">
+          <span class="deploy-banner__status__dot"></span>
+          ${alreadyDeployed ? 'Already deployed' : allReady ? 'Ready to deploy' : 'Missing details'}
+        </span>
+      </header>
+      <div class="deploy-banner__rows">
+        <div class="deploy-banner__row">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="12" height="10" rx="1.5"/><line x1="2" y1="6" x2="14" y2="6"/></svg>
+          <span class="deploy-banner__label">Cartridge</span>
+          <span class="deploy-banner__value">${cartridgeLabel}</span>
+        </div>
+        <div class="deploy-banner__row">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 4 1 8 5 12"/><polyline points="11 4 15 8 11 12"/><line x1="9" y1="2" x2="7" y2="14"/></svg>
+          <span class="deploy-banner__label">Code version</span>
+          <span class="deploy-banner__value">${fmt(ctx.codeVersion)}</span>
+        </div>
+        <div class="deploy-banner__row">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><line x1="2" y1="8" x2="14" y2="8"/><path d="M8 2 C 5 5, 5 11, 8 14 M8 2 C 11 5, 11 11, 8 14"/></svg>
+          <span class="deploy-banner__label">Target host</span>
+          <span class="deploy-banner__value">${fmt(ctx.hostname)}</span>
+        </div>
+        ${deployedSection}
+      </div>
+    </section>`;
+
+    return {html, alreadyDeployed, cartridgeName: resolvedCartridge};
   }
 
   private async getToolDetection(): Promise<ToolDetectionResult> {
@@ -425,7 +980,7 @@ export class OnboardingPanel {
       </div>
       <span class="stat-divider" aria-hidden="true"></span>
       <div class="stat">
-        <span class="stat-value">~30<small>min</small></span>
+        <span class="stat-value">~10<small>min</small></span>
         <span class="stat-label">Avg time</span>
       </div>
       <span class="stat-divider" aria-hidden="true"></span>
@@ -478,7 +1033,13 @@ export class OnboardingPanel {
             </div>
           </header>
           <section class="step-card__actions" id="step-actions-wrap" hidden>
-            <span class="step-card__section-label">Quick actions</span>
+            <div class="step-card__actions-header">
+              <span class="step-card__section-label">Quick actions</span>
+              <span class="detection-chip" id="step-detection-chip" hidden>
+                <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path fill="currentColor" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 1 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z"/></svg>
+                <span id="step-detection-label"></span>
+              </span>
+            </div>
             <div id="step-actions" class="step-actions"></div>
           </section>
           <section class="step-card__body">
@@ -513,6 +1074,12 @@ export class OnboardingPanel {
 
   dispose(): void {
     OnboardingPanel.current = undefined;
+    if (this.aiSkillsWatcher) {
+      clearInterval(this.aiSkillsWatcher);
+      this.aiSkillsWatcher = null;
+    }
+    this.aiSkillsTermDisposables.forEach((d) => d.dispose());
+    this.aiSkillsTermDisposables = [];
     this.disposables.forEach((d) => d.dispose());
     this.panel.dispose();
   }
@@ -1320,8 +1887,31 @@ button.secondary:hover {
   letter-spacing: 0.12em;
   font-weight: 600;
   color: var(--brand-blue-deep);
+}
+.step-card__actions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   margin-bottom: 10px;
 }
+.detection-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--brand-green-soft, rgba(26, 135, 84, 0.12));
+  color: var(--brand-green, #1A8754);
+  border: 1px solid var(--brand-green-hairline, rgba(26, 135, 84, 0.40));
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: default;
+}
+.detection-chip svg { color: inherit; }
 .step-actions {
   display: flex;
   gap: 10px;
@@ -1342,6 +1932,17 @@ button.secondary:hover {
   background: var(--brand-blue-soft);
   border-color: var(--brand-blue);
   color: var(--brand-blue-deep);
+}
+.step-actions button:disabled,
+.step-actions button.ghost:disabled,
+.step-actions button:disabled:hover {
+  cursor: not-allowed;
+  opacity: 0.55;
+  background: var(--surface-card);
+  color: var(--vscode-descriptionForeground);
+  border: 1px solid var(--hairline);
+  transform: none;
+  box-shadow: none;
 }
 .step-card__body {
   margin-top: 22px;
@@ -1761,6 +2362,8 @@ const PANEL_JS = `
   }
 
   function renderActiveStep(step, idx, total) {
+    const detectionChip = document.getElementById('step-detection-chip');
+    const detectionLabel = document.getElementById('step-detection-label');
     if (!step) {
       stepNumber.textContent = '';
       stepPosition.textContent = '';
@@ -1769,6 +2372,7 @@ const PANEL_JS = `
       stepActions.innerHTML = '';
       stepActionsWrap.hidden = true;
       stepBody.innerHTML = '';
+      if (detectionChip) detectionChip.hidden = true;
       return;
     }
     stepNumber.textContent = String(idx + 1);
@@ -1783,19 +2387,62 @@ const PANEL_JS = `
         const btn = document.createElement('button');
         if (!action.primary) btn.className = 'ghost';
         btn.textContent = action.label;
-        btn.addEventListener('click', () =>
-          post({type: 'runAction', command: action.command, args: action.args, stepId: step.id}),
-        );
+        if (action.tooltip) btn.title = action.tooltip;
+        if (action.disabled) {
+          btn.disabled = true;
+          btn.setAttribute('aria-disabled', 'true');
+        } else {
+          btn.addEventListener('click', () =>
+            post({type: 'runAction', command: action.command, args: action.args, stepId: step.id}),
+          );
+        }
         stepActions.appendChild(btn);
       });
     } else {
       stepActionsWrap.hidden = true;
+    }
+    // Per-step config detection chip (e.g., "1 configuration detected")
+    if (detectionChip && detectionLabel) {
+      if (step.detection && step.detection.label) {
+        detectionLabel.textContent = step.detection.label;
+        const names = step.detection.matchedNames || [];
+        detectionChip.title = names.length
+          ? 'Detected in dw.json: ' + names.join(', ')
+          : 'Detected in dw.json';
+        detectionChip.hidden = false;
+        // Ensure the actions wrapper is visible even if there are no actions,
+        // so the chip alone can communicate "this step is already configured".
+        if (step.actions && step.actions.length === 0) stepActionsWrap.hidden = false;
+      } else {
+        detectionChip.hidden = true;
+      }
     }
     // Scroll the card (not the body) so step-header stays visible after navigation.
     if (stepCard && typeof stepCard.scrollIntoView === 'function') {
       stepCard.scrollIntoView({behavior: 'smooth', block: 'start'});
     }
   }
+
+  // AI skills step: dispatch button clicks (install skills / run cmd) before
+  // the generic link interceptor sees them.
+  document.addEventListener('click', (e) => {
+    const btn = e.target && e.target.closest && e.target.closest('[data-action]');
+    if (!btn) return;
+    const action = btn.getAttribute('data-action');
+    if (action === 'install-skills') {
+      const ide = btn.getAttribute('data-ide') || '';
+      e.preventDefault();
+      post({type: 'aiSkills.installSkills', ide: ide});
+    } else if (action === 'run-cmd') {
+      const cmd = btn.getAttribute('data-cmd') || '';
+      const label = btn.getAttribute('data-label') || 'Install';
+      e.preventDefault();
+      post({type: 'aiSkills.runCommand', cmd: cmd, label: label});
+    } else if (action === 'ai-recheck') {
+      e.preventDefault();
+      post({type: 'aiSkills.recheck'});
+    }
+  });
 
   // Intercept clicks on any link inside the content area. We NEVER let the
   // webview follow command: or http links directly — all routing goes through

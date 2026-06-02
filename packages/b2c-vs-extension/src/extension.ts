@@ -279,20 +279,25 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   // Register walkthrough commands early so they're available for first-time users
   registerWalkthroughCommands(context);
 
-  // Onboarding (next-gen walkthrough) state + panel
+  // Onboarding (next-gen walkthrough) state + panel.
+  // The configProvider is created later (line ~480), so we expose a lazy getter
+  // that the panel calls at refresh time — by then the provider is resolved.
   const onboardingStore = new OnboardingStateStore(context);
   context.subscriptions.push(onboardingStore);
+  // Forward declare; the actual configProvider is assigned below once created.
+  let lateConfigProvider: B2CExtensionConfig | null = null;
+  const getConfigProvider = (): B2CExtensionConfig | null => lateConfigProvider;
   context.subscriptions.push(
     vscode.commands.registerCommand('b2c-dx.onboarding.open', () => {
-      OnboardingPanel.show(context, onboardingStore, log);
+      OnboardingPanel.show(context, onboardingStore, log, getConfigProvider);
     }),
     vscode.commands.registerCommand('b2c-dx.onboarding.reset', async () => {
       await onboardingStore.reset();
-      OnboardingPanel.show(context, onboardingStore, log);
+      OnboardingPanel.show(context, onboardingStore, log, getConfigProvider);
     }),
     vscode.commands.registerCommand('b2c-dx.onboarding.changePersona', async () => {
       await onboardingStore.setPersona(null);
-      OnboardingPanel.show(context, onboardingStore, log);
+      OnboardingPanel.show(context, onboardingStore, log, getConfigProvider);
     }),
   );
 
@@ -479,6 +484,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   registerJobLogViewer(context);
 
   const configProvider = new B2CExtensionConfig(log, context.workspaceState);
+  lateConfigProvider = configProvider;
   context.subscriptions.push(configProvider);
   await configProvider.ensureResolved();
 

@@ -18,3 +18,5 @@ export {PERSONAS, listPersonas, resolveSteps, STEP_CATALOG} from './personas.js'
 export type {PersonaId, PersonaDefinition, StepDefinition, StepAction} from './personas.js';
 export {detectTools, generateInstallCliHtml} from './toolDetection.js';
 export type {ToolDetectionResult, ToolStatus} from './toolDetection.js';
+export {detectStepConfigurations, getDetectionForStep} from './stepDetection.js';
+export type {DetectionSummary, StepDetection} from './stepDetection.js';

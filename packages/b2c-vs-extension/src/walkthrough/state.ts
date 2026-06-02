@@ -39,9 +39,9 @@ export class OnboardingStateStore {
   readonly onDidChange = this.emitter.event;
 
   constructor(context: vscode.ExtensionContext) {
-    this.memento = context.globalState;
-    // Sync progress across machines signed into the same VS Code account.
-    context.globalState.setKeysForSync([STATE_KEY]);
+    // Per-workspace state: each workspace has its own onboarding lifecycle.
+    // A fresh workspace = a fresh onboarding flow.
+    this.memento = context.workspaceState;
   }
 
   get(): OnboardingSnapshot {

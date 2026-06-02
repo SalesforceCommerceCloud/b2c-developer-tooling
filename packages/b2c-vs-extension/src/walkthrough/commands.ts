@@ -872,17 +872,27 @@ function renderInspectPanel(rows: InspectRow[], parsed: unknown, cliVersion?: st
   };
 
   const lockSvg = `<svg class="lock-icon" viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path fill="currentColor" d="M8 1a3 3 0 0 0-3 3v3H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-1V4a3 3 0 0 0-3-3zm-2 6V4a2 2 0 1 1 4 0v3H6z"/></svg>`;
+  const copySvg = `<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M5 1h7a1 1 0 0 1 1 1v9h-1V2H5V1zm-2 3h7a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm0 1v9h7V5H3z"/></svg>`;
 
   const renderRow = (r: InspectRow, idx: number): string => {
+    const valueStr = r.value || '';
     const display = r.value
       ? r.sensitive
         ? `<span class="masked">${lockSvg}<span class="masked-dots">••••••••</span></span>`
         : escapeHtml(r.value)
       : '<span class="muted">—</span>';
     const srcLabel = r.source ? escapeHtml(r.source) : 'unknown';
-    return `<tr class="${idx % 2 === 0 ? 'row-even' : 'row-odd'}${r.sensitive ? ' row-secret' : ''}">
-      <td class="field">${escapeHtml(r.field)}</td>
-      <td class="value">${display}</td>
+    const srcLower = (r.source ?? 'unknown').toLowerCase();
+    const searchHaystack = `${r.field} ${valueStr} ${srcLabel}`.toLowerCase();
+    return `<tr class="${idx % 2 === 0 ? 'row-even' : 'row-odd'}${r.sensitive ? ' row-secret' : ''}" data-search="${escapeHtml(searchHaystack)}" data-source="${escapeHtml(srcLower)}">
+      <td class="field">
+        <span class="field-name">${escapeHtml(r.field)}</span>
+        <button class="copy-btn" data-copy="${escapeHtml(r.field)}" title="Copy field name">${copySvg}</button>
+      </td>
+      <td class="value">
+        ${display}
+        ${!r.sensitive && r.value ? `<button class="copy-btn" data-copy="${escapeHtml(r.value)}" title="Copy value">${copySvg}</button>` : ''}
+      </td>
       <td class="source"><span class="src-pill" style="--src-color:${sourceColor(r.source)}"><span class="dot"></span>${srcLabel}</span></td>
     </tr>`;
   };
@@ -912,22 +922,30 @@ function renderInspectPanel(rows: InspectRow[], parsed: unknown, cliVersion?: st
   const secretCount = rows.filter((r) => r.sensitive).length;
   const sourceCount = bySource.size;
 
+  // Source legend — show distinct sources with their colors so users can decode the pills.
+  const legendItems = [...bySource.keys()]
+    .map(
+      (s) =>
+        `<span class="legend-item" style="--src-color:${sourceColor(s)}"><span class="dot"></span>${escapeHtml(s)}</span>`,
+    )
+    .join('');
+
   return `<!doctype html><html><head><meta charset="UTF-8"><style>${styles}</style></head><body>
   <header class="hdr">
     <div class="hdr-text">
       <span class="eyebrow">B2C DX · Resolved Config</span>
       <h1>What the CLI sees right now</h1>
       <p class="muted">Source of truth for every config field — secrets are masked.</p>
-      ${
-        rows.length
-          ? `<div class="stats">
-              <span class="stat"><strong>${rows.length}</strong> field${rows.length === 1 ? '' : 's'}</span>
-              <span class="stat-sep" aria-hidden="true">·</span>
-              <span class="stat"><strong>${sourceCount}</strong> source${sourceCount === 1 ? '' : 's'}</span>
-              ${secretCount ? `<span class="stat-sep" aria-hidden="true">·</span><span class="stat secret-stat">${lockSvg}<strong>${secretCount}</strong> masked</span>` : ''}
-            </div>`
-          : ''
-      }
+      <div class="meta-chips">
+        ${cliVersion ? `<span class="meta-chip" title="Installed B2C CLI version"><svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path fill="currentColor" d="M2 3h12v10H2z" opacity="0.15"/><path fill="currentColor" d="M2 2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H2zm0 1h12v10H2V3zm2 2h2v1H4V5zm0 2h4v1H4V7zm0 2h6v1H4V9z"/></svg>CLI v${escapeHtml(cliVersion)}</span>` : ''}
+        ${
+          rows.length
+            ? `<span class="meta-chip"><strong>${rows.length}</strong>&nbsp;field${rows.length === 1 ? '' : 's'}</span>
+               <span class="meta-chip"><strong>${sourceCount}</strong>&nbsp;source${sourceCount === 1 ? '' : 's'}</span>
+               ${secretCount ? `<span class="meta-chip secret-chip">${lockSvg}<strong>${secretCount}</strong>&nbsp;masked</span>` : ''}`
+            : ''
+        }
+      </div>
     </div>
     <div class="hdr-actions">
       <button class="btn-primary" onclick="vscode.postMessage({type:'refresh'})" title="Re-run b2c setup inspect">
@@ -936,7 +954,7 @@ function renderInspectPanel(rows: InspectRow[], parsed: unknown, cliVersion?: st
       </button>
       <button class="btn-ghost" onclick="vscode.postMessage({type:'openTerminalUnmask'})" title="Open b2c setup inspect --unmask in terminal">
         <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M2 2h12a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm.5 2v8h11V4h-11zm1.85 2.15L5.7 4.8l3.2 3.2-3.2 3.2-1.35-1.35L6.2 8 4.35 6.15zM9 10h4v1.5H9V10z"/></svg>
-        Open unmasked in terminal
+        Open unmasked
       </button>
     </div>
   </header>
@@ -944,15 +962,36 @@ function renderInspectPanel(rows: InspectRow[], parsed: unknown, cliVersion?: st
   ${
     rows.length
       ? `
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M11.5 7a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0zm-.82 4.74a6 6 0 1 1 1.06-1.06l3.04 3.04a.75.75 0 1 1-1.06 1.06l-3.04-3.04z"/></svg>
+      <input type="text" id="search" placeholder="Filter fields, values, or sources… (press /)" autocomplete="off" spellcheck="false" />
+      <button class="search-clear" id="search-clear" title="Clear (Esc)" hidden>×</button>
+    </div>
+    <div class="filter-pills" id="filter-pills">
+      <button class="filter-pill active" data-filter="all">All <span class="pill-count">${rows.length}</span></button>
+      ${[...bySource.entries()]
+        .map(
+          ([s, items]) =>
+            `<button class="filter-pill" data-filter="${escapeHtml(s.toLowerCase())}" style="--src-color:${sourceColor(s)}"><span class="dot"></span>${escapeHtml(s)} <span class="pill-count">${items.length}</span></button>`,
+        )
+        .join('')}
+    </div>
+  </div>
+
   <section class="card">
     <header class="card-hdr">
       <h2>All fields</h2>
-      <span class="badge">${rows.length}</span>
+      <span class="badge" id="visible-count">${rows.length}</span>
+      <span class="card-hdr-spacer"></span>
+      <span class="muted hint" id="empty-hint" hidden>No matches</span>
     </header>
-    <table class="tbl">
-      <thead><tr><th>Field</th><th>Value</th><th class="th-source">Source</th></tr></thead>
-      <tbody>${rows.map((r, i) => renderRow(r, i)).join('')}</tbody>
-    </table>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Field</th><th>Value</th><th class="th-source">Source</th></tr></thead>
+        <tbody id="tbl-body">${rows.map((r, i) => renderRow(r, i)).join('')}</tbody>
+      </table>
+    </div>
   </section>
 
   <section class="card">
@@ -960,10 +999,13 @@ function renderInspectPanel(rows: InspectRow[], parsed: unknown, cliVersion?: st
       <h2>Grouped by source</h2>
       <span class="badge">${sourceCount}</span>
     </header>
+    ${legendItems ? `<div class="legend" aria-label="Source colour key">${legendItems}</div>` : ''}
     <div class="src-grid">
       ${[...bySource.entries()].map(([s, items]) => renderSourceBlock(s, items)).join('')}
     </div>
   </section>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   `
       : `<section class="card empty" style="text-align:left;padding:36px 40px;">
         <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
@@ -983,7 +1025,88 @@ function renderInspectPanel(rows: InspectRow[], parsed: unknown, cliVersion?: st
       </section>`
   }
 
-  <script>const vscode = acquireVsCodeApi();</script>
+  <script>
+    const vscode = acquireVsCodeApi();
+    (function() {
+      const search = document.getElementById('search');
+      const searchClear = document.getElementById('search-clear');
+      const tblBody = document.getElementById('tbl-body');
+      const visibleCount = document.getElementById('visible-count');
+      const emptyHint = document.getElementById('empty-hint');
+      const filterPills = document.getElementById('filter-pills');
+      const toast = document.getElementById('toast');
+      let activeFilter = 'all';
+      let toastTimer;
+
+      function applyFilters() {
+        if (!tblBody) return;
+        const q = (search && search.value || '').trim().toLowerCase();
+        let visible = 0;
+        for (const tr of tblBody.querySelectorAll('tr')) {
+          const haystack = tr.dataset.search || '';
+          const src = tr.dataset.source || '';
+          const matchSearch = !q || haystack.includes(q);
+          const matchFilter = activeFilter === 'all' || src === activeFilter;
+          const show = matchSearch && matchFilter;
+          tr.style.display = show ? '' : 'none';
+          if (show) visible++;
+        }
+        if (visibleCount) visibleCount.textContent = String(visible);
+        if (emptyHint) emptyHint.hidden = visible !== 0;
+        if (searchClear) searchClear.hidden = !(search && search.value);
+      }
+
+      function showToast(msg) {
+        if (!toast) return;
+        toast.textContent = msg;
+        toast.hidden = false;
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function() {
+          toast.classList.remove('show');
+          setTimeout(function() { toast.hidden = true; }, 250);
+        }, 1800);
+      }
+
+      if (search) search.addEventListener('input', applyFilters);
+      if (searchClear) {
+        searchClear.addEventListener('click', function() {
+          if (search) { search.value = ''; search.focus(); }
+          applyFilters();
+        });
+      }
+      if (filterPills) {
+        filterPills.addEventListener('click', function(e) {
+          const btn = e.target.closest('.filter-pill');
+          if (!btn) return;
+          activeFilter = btn.dataset.filter || 'all';
+          filterPills.querySelectorAll('.filter-pill').forEach(function(p) { p.classList.toggle('active', p === btn); });
+          applyFilters();
+        });
+      }
+
+      document.addEventListener('click', function(e) {
+        const btn = e.target.closest('[data-copy]');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const text = btn.dataset.copy || '';
+        navigator.clipboard.writeText(text).then(function() {
+          showToast('Copied to clipboard');
+        }).catch(function() { showToast('Could not copy'); });
+      });
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === '/' && document.activeElement !== search) {
+          e.preventDefault();
+          if (search) search.focus();
+        } else if (e.key === 'Escape' && search && document.activeElement === search) {
+          search.value = '';
+          applyFilters();
+        }
+      });
+    })();
+  </script>
   </body></html>`;
 }
 
@@ -1127,6 +1250,167 @@ function inspectStyles(): string {
     .src-fields li { font-family: var(--vscode-editor-font-family, ui-monospace, monospace); font-size: 0.82rem; color: var(--vscode-descriptionForeground); display: flex; align-items: center; gap: 6px; }
     .src-fields li .field { color: var(--vscode-foreground); }
     pre.raw { background: rgba(127,127,127,0.10); padding: 12px 14px; border-radius: 8px; border: 1px solid var(--hairline); overflow-x: auto; font-size: 0.82rem; line-height: 1.45; white-space: pre; }
+
+    /* Meta chips in header */
+    .meta-chips { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
+    .meta-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--hairline);
+      font-size: 0.78rem;
+      color: var(--vscode-descriptionForeground);
+    }
+    .meta-chip strong { color: var(--vscode-foreground); font-weight: 700; }
+    .meta-chip svg { color: var(--brand-blue); }
+    .meta-chip.secret-chip { color: var(--secret-amber); border-color: color-mix(in srgb, var(--secret-amber) 30%, transparent); background: var(--secret-amber-soft); }
+    .meta-chip.secret-chip strong { color: var(--secret-amber); }
+    .meta-chip.secret-chip .lock-icon { color: var(--secret-amber); }
+
+    /* Toolbar (search + filter pills) */
+    .toolbar {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: 12px;
+    }
+    .search-wrap {
+      position: relative;
+      flex: 1 1 280px;
+      min-width: 240px;
+      display: flex; align-items: center;
+    }
+    .search-icon {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--vscode-descriptionForeground); pointer-events: none;
+    }
+    #search {
+      width: 100%;
+      padding: 8px 36px 8px 36px;
+      border-radius: 8px;
+      border: 1px solid var(--hairline);
+      background: var(--vscode-input-background, var(--vscode-editor-background));
+      color: var(--vscode-input-foreground, var(--vscode-foreground));
+      font: inherit; font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    #search:focus { border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(1,118,211,0.18); }
+    #search::placeholder { color: var(--vscode-input-placeholderForeground, var(--vscode-descriptionForeground)); opacity: 0.85; }
+    .search-clear {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 22px; height: 22px;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 0; border-radius: 50%; border: 0;
+      background: transparent;
+      color: var(--vscode-descriptionForeground);
+      font-size: 1.1rem; line-height: 1;
+      cursor: pointer;
+    }
+    .search-clear:hover { background: var(--row-hover); color: var(--vscode-foreground); }
+
+    .filter-pills { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+    .filter-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 11px; border-radius: 999px;
+      background: transparent;
+      border: 1px solid var(--hairline);
+      color: var(--vscode-descriptionForeground);
+      font-size: 0.78rem; font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .filter-pill:hover { background: var(--row-hover); color: var(--vscode-foreground); }
+    .filter-pill.active {
+      background: var(--brand-blue);
+      color: #fff; border-color: var(--brand-blue);
+    }
+    .filter-pill.active .pill-count { background: rgba(255,255,255,0.22); color: #fff; }
+    .filter-pill .dot {
+      display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--src-color, var(--src-fallback));
+    }
+    .filter-pill.active .dot { background: rgba(255,255,255,0.85); }
+    .pill-count {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 18px; height: 16px; padding: 0 5px;
+      border-radius: 999px;
+      background: var(--brand-blue-soft);
+      color: var(--brand-blue-deep);
+      font-size: 0.68rem; font-weight: 700;
+    }
+
+    /* Card header spacer + hint */
+    .card-hdr-spacer { flex: 1 1 auto; }
+    .card-hdr .hint { font-size: 0.82rem; }
+
+    /* Sticky table header */
+    .tbl-wrap { position: relative; }
+    .tbl thead th {
+      position: sticky; top: 0;
+      background: var(--surface);
+      z-index: 2;
+    }
+
+    /* Copy-to-clipboard buttons */
+    .copy-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px;
+      margin-left: 6px;
+      padding: 0; border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--vscode-descriptionForeground);
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+      vertical-align: middle;
+    }
+    .tbl tr:hover .copy-btn { opacity: 0.7; }
+    .copy-btn:hover { opacity: 1 !important; background: var(--row-hover); color: var(--brand-blue); }
+    .copy-btn:focus-visible { opacity: 1; outline: 2px solid var(--brand-blue); outline-offset: 1px; }
+    .field-name { display: inline-block; }
+
+    /* Source legend */
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      padding: 8px 12px;
+      margin-bottom: 14px;
+      background: var(--vscode-editor-background);
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+    }
+    .legend-item {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      background: color-mix(in srgb, var(--src-color) 8%, transparent);
+      border: 1px solid color-mix(in srgb, var(--src-color) 22%, transparent);
+      color: var(--vscode-foreground);
+      font-size: 0.76rem; font-weight: 500;
+    }
+    .legend-item .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--src-color);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px; left: 50%; transform: translateX(-50%) translateY(8px);
+      padding: 10px 18px;
+      background: var(--vscode-foreground);
+      color: var(--vscode-editor-background);
+      border-radius: 999px;
+      font-size: 0.84rem; font-weight: 600;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 100;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   `;
 }
 
@@ -1295,7 +1579,8 @@ async function addToGitignore(workspaceRoot: string): Promise<void> {
  */
 export async function showWalkthroughOnFirstActivation(context: vscode.ExtensionContext): Promise<void> {
   const SEEN_KEY = 'b2c-dx.gettingStarted.autoOpened';
-  if (context.globalState.get<boolean>(SEEN_KEY, false)) return;
+  // Per-workspace flag: each workspace gets its own first-run experience.
+  if (context.workspaceState.get<boolean>(SEEN_KEY, false)) return;
   const folders = vscode.workspace.workspaceFolders;
   if (!folders || folders.length === 0) return;
 
@@ -1304,7 +1589,7 @@ export async function showWalkthroughOnFirstActivation(context: vscode.Extension
   for (const folder of folders) {
     try {
       await fs.access(path.join(folder.uri.fsPath, 'dw.json'));
-      await context.globalState.update(SEEN_KEY, true);
+      await context.workspaceState.update(SEEN_KEY, true);
       return;
     } catch {
       // not present here, keep checking
@@ -1317,7 +1602,7 @@ export async function showWalkthroughOnFirstActivation(context: vscode.Extension
       'Salesforce.b2c-vs-extension#b2c-dx.gettingStarted',
       false,
     );
-    void context.globalState.update(SEEN_KEY, true);
+    void context.workspaceState.update(SEEN_KEY, true);
   }, 1000);
 }
 
@@ -1386,6 +1671,58 @@ async function ensureInstanceName(context: vscode.ExtensionContext): Promise<str
   if (!name) return undefined;
   await setSetupSession(context, name);
   return name;
+}
+
+/**
+ * Read dw.json and return the name of the currently active config (or, if no
+ * entry is flagged active, the sole config when only one exists). Returns
+ * undefined if dw.json is missing, malformed, or has no usable entry.
+ */
+async function readActiveInstanceName(workspaceRoot: string): Promise<string | undefined> {
+  const dwJsonPath = path.join(workspaceRoot, 'dw.json');
+  if (!(await checkFileExists(dwJsonPath))) return undefined;
+  try {
+    const doc = JSON.parse(await fs.readFile(dwJsonPath, 'utf-8')) as {
+      configs?: {name?: string; active?: boolean}[];
+    };
+    const configs = Array.isArray(doc.configs) ? doc.configs : [];
+    const active = configs.find((c) => c?.active === true && typeof c.name === 'string');
+    if (active?.name) return active.name;
+    // Fall back to the only entry when there's exactly one — it's implicitly active.
+    if (configs.length === 1 && typeof configs[0]?.name === 'string') return configs[0].name;
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Resolve the instance name for follow-on setup steps (OAuth, WebDAV, SCAPI).
+ * These edit an existing config rather than creating one, so they should
+ * target the currently *active* entry in dw.json — not the workspace session,
+ * which can drift after the user activates a different instance externally.
+ *
+ * Order of preference:
+ *   1. Active config in dw.json (the canonical source of truth)
+ *   2. Workspace session (set by the Connection step)
+ *   3. Prompt the user (same UX as ensureInstanceName)
+ *
+ * Whenever we resolve from dw.json or by prompt, we sync the workspace session
+ * so the panel chip and inspect-resolved-config reflect the same target.
+ */
+async function ensureActiveInstanceName(
+  context: vscode.ExtensionContext,
+  workspaceRoot: string,
+): Promise<string | undefined> {
+  const activeName = await readActiveInstanceName(workspaceRoot);
+  if (activeName) {
+    const session = getSetupSession(context);
+    if (session?.instanceName !== activeName) {
+      await setSetupSession(context, activeName);
+    }
+    return activeName;
+  }
+  return ensureInstanceName(context);
 }
 
 /** Read the workspace dw.json and return its `configs[]` entry for `name`,
@@ -1553,12 +1890,36 @@ async function runConnectionStep(context: vscode.ExtensionContext): Promise<void
     entry.hostname = hostname;
     if (codeVersion) entry['code-version'] = codeVersion;
     else delete entry['code-version'];
+    // Derive and persist the realm from the hostname so the Sandbox Explorer
+    // can bootstrap directly off dw.json. Only set it if not already present —
+    // a user-set realm always wins.
+    if (!entry.realm) {
+      const derived = deriveRealmFromHostname(hostname);
+      if (derived) entry.realm = derived;
+    }
     await writeConfigDoc(wsFolder.uri.fsPath, doc);
     await openFile(path.join(wsFolder.uri.fsPath, 'dw.json'));
     await offerInspectFollowUp(`Connection saved to dw.json (${inst}).`);
   } catch (e) {
     vscode.window.showErrorMessage(`B2C DX: ${e instanceof Error ? e.message : String(e)}`);
   }
+}
+
+/**
+ * Derive the ODS realm from a B2C Commerce hostname.
+ * e.g. "zzzz-005.test01.dx.unified.demandware.net" → "zzzz"
+ *      "abcd-001.dx.commercecloud.salesforce.com"  → "abcd"
+ */
+function deriveRealmFromHostname(hostname: string): string | undefined {
+  const trimmed = hostname.trim();
+  if (!trimmed) return undefined;
+  const firstSegment = trimmed.split('.')[0] ?? '';
+  const realm = firstSegment.split('-')[0]?.trim();
+  if (!realm) return undefined;
+  // ODS realms are 4-character alphanumeric IDs. Defensive guard so we don't
+  // write a garbage value when the user types something unusual.
+  if (!/^[a-z0-9]{2,8}$/i.test(realm)) return undefined;
+  return realm.toLowerCase();
 }
 
 // ─── Step 2 — OAuth credentials ────────────────────────
@@ -1568,7 +1929,7 @@ async function runOAuthStep(context: vscode.ExtensionContext): Promise<void> {
     vscode.window.showErrorMessage('B2C DX: Open a workspace folder first.');
     return;
   }
-  const inst = await ensureInstanceName(context);
+  const inst = await ensureActiveInstanceName(context, wsFolder.uri.fsPath);
   if (!inst) return;
 
   const placementPicked = await vscode.window.showQuickPick(placementItems(defaultSecretPlacement()), {
@@ -1612,7 +1973,7 @@ async function runWebDavStep(context: vscode.ExtensionContext): Promise<void> {
     vscode.window.showErrorMessage('B2C DX: Open a workspace folder first.');
     return;
   }
-  const inst = await ensureInstanceName(context);
+  const inst = await ensureActiveInstanceName(context, wsFolder.uri.fsPath);
   if (!inst) return;
 
   const placementPicked = await vscode.window.showQuickPick(placementItems(defaultSecretPlacement()), {
@@ -1656,7 +2017,7 @@ async function runScapiStep(context: vscode.ExtensionContext): Promise<void> {
     vscode.window.showErrorMessage('B2C DX: Open a workspace folder first.');
     return;
   }
-  const inst = await ensureInstanceName(context);
+  const inst = await ensureActiveInstanceName(context, wsFolder.uri.fsPath);
   if (!inst) return;
 
   const shortCode = await vscode.window.showInputBox({
@@ -1675,8 +2036,11 @@ async function runScapiStep(context: vscode.ExtensionContext): Promise<void> {
   if (tenantId === undefined) return;
   const oauthScopes = await vscode.window.showInputBox({
     title: `SCAPI · ${inst} · oauth-scopes (optional)`,
-    prompt: 'Space-separated SCAPI scopes',
-    placeHolder: 'sfcc.shopper-customers sfcc.shopper-products',
+    prompt:
+      'Space- or comma-separated scopes the AM client is authorized to grant. ' +
+      'Leave blank if your AM client uses default scopes — pinning shopper-* scopes ' +
+      'will break Sandbox Explorer if the same client is not registered for them.',
+    placeHolder: 'e.g. sfcc.products sfcc.catalogs   (leave blank to use AM defaults)',
     ignoreFocusOut: true,
   });
 
@@ -1684,7 +2048,16 @@ async function runScapiStep(context: vscode.ExtensionContext): Promise<void> {
     const {doc, entry} = await readOrCreateConfigEntry(wsFolder.uri.fsPath, inst);
     if (shortCode) entry['short-code'] = shortCode;
     if (tenantId) entry['tenant-id'] = tenantId;
-    if (oauthScopes) entry['oauth-scopes'] = oauthScopes;
+    // Persist oauth-scopes as a string[] — the SDK / Sandbox Explorer expects
+    // an array; the older space-delimited string form trips `scopes.sort()`.
+    // Accept either delimiter from the user.
+    if (oauthScopes && oauthScopes.trim().length > 0) {
+      const scopes = oauthScopes
+        .split(/[\s,]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (scopes.length > 0) entry['oauth-scopes'] = scopes;
+    }
     await writeConfigDoc(wsFolder.uri.fsPath, doc);
     await offerInspectFollowUp(`SCAPI fields saved to dw.json (${inst}).`);
   } catch (e) {

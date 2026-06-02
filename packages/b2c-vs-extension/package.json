@@ -634,6 +634,12 @@
         "category": "B2C DX - Code Sync"
       },
       {
+        "command": "b2c-dx.codeSync.deployOne",
+        "title": "Deploy a Single Cartridge",
+        "icon": "$(cloud-upload)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
         "command": "b2c-dx.codeSync.refreshCartridges",
         "title": "Refresh Cartridges",
         "icon": "$(refresh)",

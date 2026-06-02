@@ -24,6 +24,10 @@ export interface StepAction {
   args?: unknown[];
   /** Marks this as the primary call-to-action (rendered as a filled button). */
   primary?: boolean;
+  /** When true, the button renders disabled with a hint tooltip. */
+  disabled?: boolean;
+  /** Tooltip / aria-label describing why the action is in its current state. */
+  tooltip?: string;
 }
 
 export interface PersonaDefinition {
@@ -95,7 +99,11 @@ export const STEP_CATALOG: Record<string, StepDefinition> = {
     title: 'Deploy Your First Cartridge',
     summary: 'Upload cartridge code to your sandbox.',
     markdown: 'media/walkthrough/deploy-cartridge.md',
-    actions: [{label: 'Deploy All Cartridges', command: 'b2c-dx.codeSync.deploy', primary: true}],
+    actions: [
+      {label: 'Deploy Recommended Cartridge', command: 'b2c-dx.codeSync.deployOne', primary: true},
+      {label: 'Deploy All Cartridges', command: 'b2c-dx.codeSync.deploy'},
+      {label: 'Refresh WebDAV Browser', command: 'b2c-dx.webdav.refresh'},
+    ],
   },
   'manage-sandboxes': {
     id: 'manage-sandboxes',
@@ -134,7 +142,7 @@ export const STEP_CATALOG: Record<string, StepDefinition> = {
     id: 'ai-skills',
     title: 'Set Up Agent Skills & MCP',
     summary:
-      'Pair the extension with Claude Code, Cursor, or Copilot using the documented MCP server and Agent Skills.',
+      'One-click install of B2C agent skills + MCP for Claude Code, Cursor, Copilot, Windsurf, Codex, OpenCode, and more.',
     markdown: 'media/walkthrough/ai-skills.md',
   },
 };
@@ -193,12 +201,14 @@ export const PERSONAS: Record<PersonaId, PersonaDefinition> = {
     label: 'AI-augmented developer',
     tagline: 'Pair Cursor / Claude Code / Copilot with this extension.',
     description:
-      'Same setup as a storefront developer, plus the documented MCP server and Agent Skills so your AI tools share context with the extension.',
+      'AI-first onboarding: get your IDE wired up to B2C agent skills and MCP first, then connect to a sandbox and deploy.',
+    // AI setup leads — agent skills + MCP get installed before instance config
+    // so the IDE has B2C context while the user works through the rest.
     stepIds: [
       'welcome',
       'install-cli',
-      'configure-dw-json',
       'ai-skills',
+      'configure-dw-json',
       'setup-cartridges',
       'deploy-code',
       'enable-code-sync',
