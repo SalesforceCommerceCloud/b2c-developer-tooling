@@ -17,7 +17,7 @@ headerPlugin.rules.header.meta.schema = false;
 export default [
   includeIgnoreFile(gitignorePath),
   {
-    ignores: ['src/template/**', 'test-workspace/**'],
+    ignores: ['src/template/**'],
   },
   ...tseslint.configs.recommended,
   prettierPlugin,
