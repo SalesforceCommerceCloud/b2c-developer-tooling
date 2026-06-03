@@ -24,7 +24,6 @@ import {registerDebugger} from './debugger/index.js';
 import {registerCodeSync} from './code-sync/index.js';
 import {registerScriptTypes} from './script-types/index.js';
 import {registerWebDavTree} from './webdav-tree/index.js';
-import {registerXmlValidation} from './xml-validation/index.js';
 import {disposeTelemetry, initTelemetry, markFeatureUsed, sendEvent, sendException} from './telemetry.js';
 import {registerCipAnalytics} from './cip-analytics/index.js';
 
@@ -436,8 +435,6 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   if (settings.get<boolean>('features.scriptTypes', true)) {
     registerScriptTypes(context, cartridgeService, log);
   }
-
-  registerXmlValidation(context, log);
 
   if (settings.get<boolean>('features.cipAnalytics', true)) {
     registerCipAnalytics(context, configProvider, log);
