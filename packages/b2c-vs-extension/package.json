@@ -727,6 +727,11 @@
         "category": "B2C DX - Getting Started"
       },
       {
+        "command": "b2c-dx.walkthrough.resetProgress",
+        "title": "Reset Getting Started Progress",
+        "category": "B2C DX - Getting Started"
+      },
+      {
         "command": "b2c-dx.cli.verify",
         "title": "Verify B2C CLI Installation",
         "category": "B2C DX - Getting Started"

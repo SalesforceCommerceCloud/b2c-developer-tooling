@@ -1571,6 +1571,33 @@ async function addToGitignore(workspaceRoot: string): Promise<void> {
 }
 
 /**
+ * Defensive per-workspace cleanup of onboarding session state. Runs on every
+ * activation: if the current workspace has no dw.json, treat it as a fresh
+ * onboarding context — drop any stale `setup.activeInstance` (which would
+ * otherwise leak the previous workspace's instance name into chips/tooltips)
+ * and clear the auto-opened seen flag so the deep-dive panel triggers again.
+ *
+ * The OnboardingStateStore itself uses workspaceState and resets naturally
+ * per workspace; this function only mops up loose keys that aren't covered.
+ */
+export async function resetWorkspaceOnboardingIfFresh(context: vscode.ExtensionContext): Promise<void> {
+  const folders = vscode.workspace.workspaceFolders ?? [];
+  if (folders.length === 0) return;
+  for (const folder of folders) {
+    try {
+      await fs.access(path.join(folder.uri.fsPath, 'dw.json'));
+      return; // workspace already configured — leave state alone
+    } catch {
+      // keep checking
+    }
+  }
+  await context.workspaceState.update('b2c-dx.setup.activeInstance', undefined);
+  await context.workspaceState.update('b2c-dx.gettingStarted.autoOpened', undefined);
+  void vscode.commands.executeCommand('setContext', 'b2c-dx.setupSessionActive', false);
+  void vscode.commands.executeCommand('setContext', 'b2c-dx.setupInstance', undefined);
+}
+
+/**
  * Open the native VS Code walkthrough automatically on first activation, but
  * only when no dw.json exists in the workspace — i.e. the user hasn't set the
  * extension up yet. Users can re-open it any time via "B2C DX: Open Getting

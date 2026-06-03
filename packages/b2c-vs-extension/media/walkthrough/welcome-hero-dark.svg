@@ -95,26 +95,26 @@
   <!-- Stat strip -->
   <g transform="translate(160, 396)">
     <line x1="0" y1="0" x2="680" y2="0" stroke="#1B96FF" stroke-opacity="0.20"/>
-    <g transform="translate(60, 26)">
-      <text font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="28" font-weight="800" letter-spacing="-1" fill="#FFFFFF">4</text>
-      <text x="0" y="22" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="11" font-weight="700" letter-spacing="2" fill="#A8C9E8">ROLES</text>
+    <g transform="translate(85, 46)">
+      <text text-anchor="middle" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="28" font-weight="800" letter-spacing="-1" fill="#FFFFFF">4</text>
+      <text x="0" y="22" text-anchor="middle" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="11" font-weight="700" letter-spacing="2" fill="#A8C9E8">ROLES</text>
     </g>
-    <line x1="170" y1="6" x2="170" y2="58" stroke="#1B96FF" stroke-opacity="0.20"/>
-    <g transform="translate(228, 26)">
-      <text font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="28" font-weight="800" letter-spacing="-1" fill="#FFFFFF">5</text>
-      <text x="0" y="22" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="11" font-weight="700" letter-spacing="2" fill="#A8C9E8">PHASES</text>
+    <line x1="170" y1="20" x2="170" y2="86" stroke="#1B96FF" stroke-opacity="0.20"/>
+    <g transform="translate(255, 46)">
+      <text text-anchor="middle" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="28" font-weight="800" letter-spacing="-1" fill="#FFFFFF">5</text>
+      <text x="0" y="22" text-anchor="middle" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="11" font-weight="700" letter-spacing="2" fill="#A8C9E8">PHASES</text>
     </g>
-    <line x1="340" y1="6" x2="340" y2="58" stroke="#1B96FF" stroke-opacity="0.20"/>
-    <g transform="translate(402, 26)">
-      <text font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="28" font-weight="800" letter-spacing="-1" fill="#FFFFFF">~30<tspan font-size="14" font-weight="700" fill="#A8C9E8"> MIN</tspan></text>
-      <text x="0" y="22" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="11" font-weight="700" letter-spacing="2" fill="#A8C9E8">AVG TIME</text>
+    <line x1="340" y1="20" x2="340" y2="86" stroke="#1B96FF" stroke-opacity="0.20"/>
+    <g transform="translate(430, 46)">
+      <text text-anchor="middle" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="28" font-weight="800" letter-spacing="-1" fill="#FFFFFF">~10<tspan font-size="14" font-weight="700" fill="#A8C9E8"> MIN</tspan></text>
+      <text x="0" y="22" text-anchor="middle" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="11" font-weight="700" letter-spacing="2" fill="#A8C9E8">AVG TIME</text>
     </g>
-    <line x1="520" y1="6" x2="520" y2="58" stroke="#1B96FF" stroke-opacity="0.20"/>
-    <g transform="translate(580, 26)">
-      <text font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="28" font-weight="800" letter-spacing="-1" fill="#3FD68B">✓</text>
-      <text x="0" y="22" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="11" font-weight="700" letter-spacing="2" fill="#A8C9E8">DOC-BACKED</text>
+    <line x1="520" y1="20" x2="520" y2="86" stroke="#1B96FF" stroke-opacity="0.20"/>
+    <g transform="translate(600, 46)">
+      <text text-anchor="middle" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="28" font-weight="800" letter-spacing="-1" fill="#3FD68B">✓</text>
+      <text x="0" y="22" text-anchor="middle" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="11" font-weight="700" letter-spacing="2" fill="#A8C9E8">DOC-BACKED</text>
     </g>
-    <line x1="0" y1="80" x2="680" y2="80" stroke="#1B96FF" stroke-opacity="0.20"/>
+    <line x1="0" y1="100" x2="680" y2="100" stroke="#1B96FF" stroke-opacity="0.20"/>
   </g>
 
   <!-- Role cards (2 × 2) -->
@@ -125,7 +125,7 @@
       <rect width="56" height="56" rx="14" fill="url(#role-icon-d)" filter="url(#icon-shadow-d)"/>
       <g transform="translate(14, 16)" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none">
         <rect x="0" y="0" width="28" height="22" rx="2.5"/>
-        <line x1="0" y1="6" x2="28" y2="6"/>
+        <line x1="0" y1="20" x2="28" y2="6"/>
         <circle cx="3.5" cy="3" r="0.9" fill="#fff" stroke="none"/>
         <circle cx="6.5" cy="3" r="0.9" fill="#fff" stroke="none"/>
       </g>
@@ -134,7 +134,7 @@
     <text x="104" y="76"  font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="14" font-weight="500" fill="#7CC5FF">SFRA · PWA Kit · ISML</text>
     <text x="28"  y="124" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="14" fill="#A8C9E8">Cartridge authoring, fast iteration with Code Sync,</text>
     <text x="28"  y="144" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="14" fill="#A8C9E8">and the WebDAV browser.</text>
-    <text x="28"  y="180" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" letter-spacing="1" fill="#3FD68B">7 PHASES · ~25 MIN</text>
+    <text x="28"  y="180" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" letter-spacing="1" fill="#3FD68B">8 PHASES · ~8 MIN</text>
     <g transform="translate(390, 172)" stroke="#7CC5FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
       <line x1="0" y1="8" x2="14" y2="8"/>
       <polyline points="9 3 14 8 9 13"/>
@@ -155,7 +155,7 @@
     <text x="104" y="76"  font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="14" font-weight="500" fill="#7CC5FF">SCAPI · OCAPI · jobs · hooks</text>
     <text x="28"  y="124" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="14" fill="#A8C9E8">OAuth setup and the API Browser front-and-center.</text>
     <text x="28"  y="144" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="14" fill="#A8C9E8">Code Sync optional.</text>
-    <text x="28"  y="180" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" letter-spacing="1" fill="#3FD68B">7 PHASES · ~30 MIN</text>
+    <text x="28"  y="180" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" letter-spacing="1" fill="#3FD68B">8 PHASES · ~10 MIN</text>
     <g transform="translate(390, 172)" stroke="#7CC5FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
       <line x1="0" y1="8" x2="14" y2="8"/>
       <polyline points="9 3 14 8 9 13"/>
@@ -178,7 +178,7 @@
     <text x="104" y="76"  font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="14" font-weight="500" fill="#7CC5FF">sandboxes · code versions · CAPs</text>
     <text x="28"  y="124" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="14" fill="#A8C9E8">OAuth + Sandbox Explorer first; less time on</text>
     <text x="28"  y="144" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="14" fill="#A8C9E8">cartridge authoring.</text>
-    <text x="28"  y="180" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" letter-spacing="1" fill="#3FD68B">6 PHASES · ~20 MIN</text>
+    <text x="28"  y="180" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" letter-spacing="1" fill="#3FD68B">7 PHASES · ~6 MIN</text>
     <g transform="translate(390, 172)" stroke="#7CC5FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
       <line x1="0" y1="8" x2="14" y2="8"/>
       <polyline points="9 3 14 8 9 13"/>
@@ -206,7 +206,7 @@
     <text x="104" y="76"  font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="14" font-weight="500" fill="#3FD68B">Cursor · Claude Code · Copilot</text>
     <text x="28"  y="124" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="14" fill="#A8C9E8">Storefront setup plus the documented MCP server</text>
     <text x="28"  y="144" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="14" fill="#A8C9E8">and Agent Skills.</text>
-    <text x="28"  y="180" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" letter-spacing="1" fill="#3FD68B">8 PHASES · ~30 MIN</text>
+    <text x="28"  y="180" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" letter-spacing="1" fill="#3FD68B">8 PHASES · ~12 MIN</text>
     <g transform="translate(390, 172)" stroke="#3FD68B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
       <line x1="0" y1="8" x2="14" y2="8"/>
       <polyline points="9 3 14 8 9 13"/>
@@ -226,9 +226,9 @@
           font-size="13" font-weight="500" fill="#E6F0FB" opacity="0.85">
       Click <tspan font-weight="700" fill="#FFFFFF">Open role-based guide</tspan> below to launch the deep-dive panel.
     </text>
-    <g transform="translate(630, 56)">
-      <rect width="220" height="34" rx="17" fill="#FFFFFF" fill-opacity="0.14" stroke="#FFFFFF" stroke-opacity="0.40"/>
-      <text x="110" y="22" text-anchor="middle"
+    <g transform="translate(610, 29)">
+      <rect width="230" height="34" rx="17" fill="#FFFFFF" fill-opacity="0.14" stroke="#FFFFFF" stroke-opacity="0.40"/>
+      <text x="115" y="22" text-anchor="middle"
             font-family="'Inter','Segoe UI',system-ui,sans-serif"
             font-size="12" font-weight="600" letter-spacing="0.5" fill="#FFFFFF">Already set up? Mark all done →</text>
     </g>

@@ -30,6 +30,7 @@ import {disposeTelemetry, initTelemetry, markFeatureUsed, sendEvent, sendExcepti
 import {registerCipAnalytics} from './cip-analytics/index.js';
 import {
   registerWalkthroughCommands,
+  resetWorkspaceOnboardingIfFresh,
   showWalkthroughOnFirstActivation,
   initializeTelemetry,
   validateWalkthroughCommand,
@@ -433,6 +434,27 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
       );
       vscode.window.showInformationMessage('B2C DX: Getting Started marked as complete.');
     }),
+    // "Reset Getting Started Progress" — clears both surfaces:
+    //   • our per-workspace OnboardingStateStore (deep-dive panel)
+    //   • VS Code's per-installation native walkthrough ticks
+    // VS Code stores native walkthrough completion in user-global state and
+    // does not expose a per-workspace API to clear it; this command lets the
+    // user trigger a clean slate manually when switching workspaces.
+    vscode.commands.registerCommand('b2c-dx.walkthrough.resetProgress', async () => {
+      await onboardingStore.reset();
+      await context.workspaceState.update('b2c-dx.gettingStarted.autoOpened', undefined);
+      try {
+        await vscode.commands.executeCommand('resetGettingStartedProgress');
+      } catch {
+        // built-in command not available in older VS Code releases; no-op
+      }
+      await vscode.commands.executeCommand(
+        'workbench.action.openWalkthrough',
+        'Salesforce.b2c-vs-extension#b2c-dx.gettingStarted',
+        false,
+      );
+      vscode.window.showInformationMessage('B2C DX: Getting Started progress reset.');
+    }),
   );
 
   // Theme toggle — flips between the user's preferred light + dark themes.
@@ -818,6 +840,34 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     configChangeListener,
   );
   log.appendLine('B2C DX extension activated.');
+
+  // Workspace-only reset: clear stale setup-session keys when the current
+  // workspace has no dw.json, so a fresh workspace doesn't inherit the
+  // previous one's onboarding chips/tooltips.
+  await resetWorkspaceOnboardingIfFresh(context).catch((err) => {
+    log.appendLine(
+      `Warning: Failed to reset onboarding for fresh workspace: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  });
+
+  // Drop the per-workspace onboarding panel state (persona + step records)
+  // when the workspace has no dw.json, so the deep-dive panel reopens with no
+  // selection. Cheap to call: workspaceState writes are local.
+  const workspaceHasDwJson = await (async () => {
+    const folders = vscode.workspace.workspaceFolders ?? [];
+    for (const folder of folders) {
+      try {
+        await vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, 'dw.json'));
+        return true;
+      } catch {
+        // keep checking
+      }
+    }
+    return false;
+  })();
+  if (!workspaceHasDwJson) {
+    await onboardingStore.reset();
+  }
 
   // Show walkthrough on first activation (optional, non-blocking)
   // This runs asynchronously after activation is complete

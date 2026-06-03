@@ -6,17 +6,21 @@ This directory contains markdown content and media assets for the **B2C Commerce
 
 ### Markdown Content
 
-| File | Purpose | Used In Step |
-|------|---------|--------------|
-| `welcome.md` | Introduction and overview | Step 1: Welcome |
-| `dw-json-setup.md` | Guide for creating dw.json config | Step 2: Configure Instance |
-| `oauth-setup.md` | OAuth credentials setup instructions | Step 3: Setup OAuth |
-| `webdav-browser.md` | WebDAV browser feature overview | Step 4: Explore WebDAV |
-| `cartridge-structure.md` | Cartridge structure and detection | Step 5: Setup Cartridges |
-| `deploy-cartridge.md` | Cartridge deployment guide | Step 6: Deploy Code |
-| `sandbox-explorer.md` | Sandbox management instructions | Step 7: Manage Sandboxes |
-| `code-sync.md` | Code Sync feature documentation | Step 8: Enable Code Sync |
-| `next-steps.md` | Advanced features and resources | Step 9: Next Steps |
+Step IDs come from `src/walkthrough/personas.ts` (`STEP_CATALOG`). Each persona in `PERSONAS` picks a subset and ordering of these.
+
+| File | Step ID | Purpose |
+|------|---------|---------|
+| `welcome.md` | `welcome` | Intro and the universal five-step path |
+| `install-cli.md` | `install-cli` | Optional B2C CLI install (npm / brew / npx) |
+| `dw-json-setup.md` | `configure-dw-json` | dw.json layout, credential grouping, resolution precedence |
+| `oauth-setup.md` | `setup-oauth` | client-id / client-secret in the active config |
+| `webdav-browser.md` | `explore-webdav` | username / password and the WebDAV view |
+| `cartridge-structure.md` | `setup-cartridges` | Cartridge layout, `.project` detection, SCAPI fields |
+| `deploy-cartridge.md` | `deploy-code` | First deploy via Cartridges view / `b2c-dx.codeSync.deploy` |
+| `sandbox-explorer.md` | `manage-sandboxes` | Realm + sandbox lifecycle (DevOps persona) |
+| `code-sync.md` | `enable-code-sync` | Auto-deploy on save |
+| `ai-skills.md` | `ai-skills` | Agent Skills + MCP install (AI-augmented persona) |
+| `next-steps.md` | `next-steps` | Where to go after onboarding |
 
 ### Image Assets (To Be Added)
 
