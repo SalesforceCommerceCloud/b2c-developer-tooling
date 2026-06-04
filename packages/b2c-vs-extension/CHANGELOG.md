@@ -1,5 +1,24 @@
 # Change Log
 
+## 0.8.2
+
+### Patch Changes
+
+- [#461](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/461) [`3fe804f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3fe804f34e98fdf4a46c189561c89389e6bce5f0) - Make the published VSIX OPC-compliant by declaring a content type for `.ts` files (introduced by the bundled Script API types). The packaging step now patches `[Content_Types].xml` after injection so every file extension in the archive has a registered content type. Strict OPC consumers — observed on some Windows installs — may otherwise reject the package. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.8.1
+
+### Patch Changes
+
+- Updated dependencies [[`b8dcf74`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b8dcf741c253fee0df4219400bfa10a79c704e98)]:
+  - @salesforce/b2c-tooling-sdk@1.11.1
+
+## 0.8.0
+
+### Minor Changes
+
+- [#451](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/451) [`665b2a1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/665b2a1144aa4c66ab7bf4f98294662bd55877a0) - Add Script API IntelliSense for cartridge JavaScript: `dw/*`, cartridge-style requires, and SFCC globals (`session`, `request`, `response`, `customer`, etc.) are typed automatically. The VS Code extension wires this up out of the box; for other editors, run `b2c setup ide tsserver-plugin` (LSP plugin) or `b2c setup ide vscode-types` (jsconfig). See the IDE Integration guide for details. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.7.1
 
 ### Patch Changes

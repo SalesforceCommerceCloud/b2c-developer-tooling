@@ -1,5 +1,24 @@
 # @salesforce/b2c-cli
 
+## 1.13.0
+
+### Minor Changes
+
+- [#455](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/455) [`420400a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/420400a28b17549717956f8c47adc2043fe3bfea) - Add `b2c sfnext` topic via JIT plugin (`@salesforce/storefront-next-dev`). On first use the plugin auto-installs at the latest published version; inside a scaffolded Storefront Next project the project-pinned version is preferred automatically. Bootstrap a new project with `npx @salesforce/b2c-cli sfnext create-storefront`. Update later with `b2c plugins update`. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.12.1
+
+### Patch Changes
+
+- Updated dependencies [[`b8dcf74`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b8dcf741c253fee0df4219400bfa10a79c704e98)]:
+  - @salesforce/b2c-tooling-sdk@1.11.1
+
+## 1.12.0
+
+### Minor Changes
+
+- [#451](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/451) [`665b2a1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/665b2a1144aa4c66ab7bf4f98294662bd55877a0) - Add Script API IntelliSense for cartridge JavaScript: `dw/*`, cartridge-style requires, and SFCC globals (`session`, `request`, `response`, `customer`, etc.) are typed automatically. The VS Code extension wires this up out of the box; for other editors, run `b2c setup ide tsserver-plugin` (LSP plugin) or `b2c setup ide vscode-types` (jsconfig). See the IDE Integration guide for details. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.11.0
 
 ### Minor Changes
