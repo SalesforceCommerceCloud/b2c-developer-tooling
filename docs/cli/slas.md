@@ -189,7 +189,7 @@ Displays a list of SLAS clients with:
 
 ## b2c slas client create
 
-Create a new SLAS client.
+Create or update a SLAS client.
 
 ### Usage
 

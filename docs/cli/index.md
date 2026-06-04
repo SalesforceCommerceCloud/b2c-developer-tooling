@@ -37,6 +37,8 @@ Safety Mode provides protection against accidental or unwanted destructive opera
 | | `NO_DELETE` | Block DELETE operations |
 | | `NO_UPDATE` | Block DELETE and destructive operations (reset, stop, restart) |
 | | `READ_ONLY` | Block all write operations (GET only) |
+| `SFCC_SAFETY_CONFIRM` | `true`, `1` | Enable confirmation mode (prompt user instead of blocking destructive operations) |
+| `SFCC_SAFETY_CONFIG` | File path | Path to global safety config file (JSON format with optional `level`, `confirm`, and `rules`) |
 
 **Example:**
 ```bash

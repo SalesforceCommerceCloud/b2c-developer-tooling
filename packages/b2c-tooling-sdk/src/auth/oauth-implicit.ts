@@ -116,6 +116,11 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
   private redirectUri: string;
   private _hasHadSuccess = false;
 
+  /**
+   * Creates a new ImplicitOAuthStrategy instance.
+   *
+   * @param config - OAuth implicit flow configuration containing clientId, optional scopes, accountManagerHost, localPort, redirectUri, and openBrowser callback.
+   */
   constructor(private config: ImplicitOAuthConfig) {
     this.accountManagerHost = config.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST;
     this.localPort = config.localPort || parseInt(process.env.SFCC_OAUTH_LOCAL_PORT || '', 10) || DEFAULT_LOCAL_PORT;

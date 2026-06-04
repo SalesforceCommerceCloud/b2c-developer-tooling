@@ -383,12 +383,11 @@ b2c am roles list [FLAGS]
 
 - ID
 - Description
-- Scope
-- Internal Role
+- Role Enum Name
 
 #### Extended Columns
 
-- Target Type
+- Permissions
 
 #### Examples
 
@@ -755,8 +754,7 @@ b2c am clients list [FLAGS]
 
 #### Extended Columns
 
-- Last Auth
-- Disabled
+None. All columns are available via the `--columns` flag.
 
 #### Examples
 

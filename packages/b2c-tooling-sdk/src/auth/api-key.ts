@@ -27,6 +27,12 @@ export class ApiKeyStrategy implements AuthStrategy {
   private readonly headerValue: string;
   private readonly headerName: string;
 
+  /**
+   * Creates a new ApiKeyStrategy instance for API key authentication.
+   *
+   * @param key - The API key value to use for authentication
+   * @param headerName - The HTTP header name to populate with the API key. Defaults to 'x-api-key'. When set to 'Authorization', the key will be formatted as a Bearer token ('Bearer {key}'); for other header names, the key is set directly.
+   */
   constructor(key: string, headerName = 'x-api-key') {
     const logger = getLogger();
     this.headerName = headerName;

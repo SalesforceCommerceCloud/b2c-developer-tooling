@@ -6,9 +6,29 @@
 import type {AuthStrategy, FetchInit} from './types.js';
 import {getLogger} from '../logging/logger.js';
 
+/**
+ * Basic authentication strategy for WebDAV operations.
+ *
+ * Encodes username and access key as Base64 for HTTP Basic auth.
+ * Implements the {@link AuthStrategy} interface.
+ *
+ * @example
+ * ```typescript
+ * import { BasicAuthStrategy } from '@salesforce/b2c-tooling-sdk';
+ *
+ * const auth = new BasicAuthStrategy('username', 'access-key');
+ * const response = await auth.fetch('https://webdav.example.com/path');
+ * ```
+ */
 export class BasicAuthStrategy implements AuthStrategy {
   private encoded: string;
 
+  /**
+   * Creates a new BasicAuthStrategy instance for HTTP Basic authentication.
+   *
+   * @param user - The username for Basic authentication
+   * @param pass - The password or access key for Basic authentication
+   */
   constructor(user: string, pass: string) {
     this.encoded = Buffer.from(`${user}:${pass}`).toString('base64');
 

@@ -128,8 +128,10 @@ b2c ecdn certificates add --zone my-zone --hostname www.example.com --certificat
 | Flag | Description | Required |
 |------|-------------|----------|
 | `--hostname` | Custom hostname | Yes |
-| `--certificate-file` | Path to certificate PEM file | Yes |
-| `--private-key-file` | Path to private key PEM file | Yes |
+| `--type` | Certificate type (`custom`, `automatic`; default `automatic`) | No |
+| `--certificate-file` | Path to certificate PEM file | Conditional (required for `custom`) |
+| `--private-key-file` | Path to private key PEM file | Conditional (required for `custom`) |
+| `--bundle-method` | Bundle method for custom certificate chain verification | No |
 
 ---
 
@@ -141,6 +143,17 @@ Update a certificate.
 b2c ecdn certificates update --zone my-zone --certificate-id abc123 --certificate-file ./new-cert.pem --private-key-file ./new-key.pem
 ```
 
+#### Flags
+
+| Flag | Description | Required |
+|------|-------------|----------|
+| `--certificate-id` | Certificate ID to update | Yes |
+| `--hostname`, `-h` | Hostname for the certificate | No |
+| `--type` | Certificate type (`custom`, `automatic`) | No |
+| `--certificate-file` | Path to certificate PEM file | No |
+| `--private-key-file` | Path to private key PEM file | No |
+| `--bundle-method` | Bundle method for custom certificate chain verification | No |
+
 ---
 
 ### b2c ecdn certificates delete
@@ -151,6 +164,12 @@ Delete a certificate.
 b2c ecdn certificates delete --zone my-zone --certificate-id abc123
 ```
 
+#### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--force`, `-f` | Skip confirmation prompt |
+
 ---
 
 ### b2c ecdn certificates validate
@@ -158,7 +177,7 @@ b2c ecdn certificates delete --zone my-zone --certificate-id abc123
 Validate a custom hostname certificate.
 
 ```bash
-b2c ecdn certificates validate --zone my-zone --certificate-id abc123
+b2c ecdn certificates validate --zone my-zone --custom-hostname-id abc123
 ```
 
 ---
@@ -270,6 +289,7 @@ b2c ecdn waf groups update --zone my-zone --group-id abc123 --mode on
 | Flag | Description | Options |
 |------|-------------|---------|
 | `--mode` | Group mode | `on`, `off` |
+| `--action` | Action for the WAF group | `block`, `challenge`, `monitor`, `default` |
 
 ---
 
@@ -298,8 +318,15 @@ b2c ecdn waf rules get --zone my-zone --rule-id abc123
 Update a WAF v1 rule.
 
 ```bash
-b2c ecdn waf rules update --zone my-zone --rule-id abc123 --mode on
+b2c ecdn waf rules update --zone my-zone --rule-id abc123 --action block
 ```
+
+#### Flags
+
+| Flag | Description | Options | Required |
+|------|-------------|---------|----------|
+| `--rule-id` | WAF rule ID to update | — | Yes |
+| `--action` | Action for the WAF rule | `block`, `challenge`, `monitor`, `disable`, `default` | Yes |
 
 ---
 
@@ -362,8 +389,15 @@ b2c ecdn waf owasp get --zone my-zone
 Update OWASP package settings.
 
 ```bash
-b2c ecdn waf owasp update --zone my-zone --sensitivity high
+b2c ecdn waf owasp update --zone my-zone --sensitivity high --action-mode challenge
 ```
+
+#### Flags
+
+| Flag | Description | Options | Required |
+|------|-------------|---------|----------|
+| `--sensitivity` | Sensitivity level | `low`, `medium`, `high`, `off` | Yes |
+| `--action-mode` | Action mode | `simulate`, `challenge`, `block` | Yes |
 
 ---
 
@@ -476,7 +510,7 @@ b2c ecdn page-shield notifications list --tenant-id zzxy_prd
 Create a notification webhook.
 
 ```bash
-b2c ecdn page-shield notifications create --tenant-id zzxy_prd --url https://example.com/webhook --secret my-secret --zones zone1,zone2
+b2c ecdn page-shield notifications create --tenant-id zzxy_prd --webhook-url https://example.com/webhook --secret my-secret --zones zone1,zone2
 ```
 
 ---
@@ -664,7 +698,7 @@ b2c ecdn mtls list --tenant-id zzxy_prd
 Create an mTLS certificate for code upload authentication.
 
 ```bash
-b2c ecdn mtls create --tenant-id zzxy_prd --name "Build Server" --ca-certificate-file ./ca.pem --leaf-certificate-file ./leaf.pem
+b2c ecdn mtls create --tenant-id zzxy_prd --name "Build Server" --certificate-file ./cert.pem --private-key-file ./key.pem
 ```
 
 #### Flags
@@ -672,8 +706,8 @@ b2c ecdn mtls create --tenant-id zzxy_prd --name "Build Server" --ca-certificate
 | Flag | Description | Required |
 |------|-------------|----------|
 | `--name` | Certificate name | Yes |
-| `--ca-certificate-file` | Path to CA certificate PEM | Yes |
-| `--leaf-certificate-file` | Path to leaf certificate PEM | Yes |
+| `--certificate-file` | Path to PEM-encoded certificate file | Yes |
+| `--private-key-file` | Path to PEM-encoded private key file | Yes |
 
 ---
 
