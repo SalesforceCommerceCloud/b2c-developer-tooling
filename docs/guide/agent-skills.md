@@ -20,6 +20,20 @@ claude plugin install b2c
 claude plugin install storefront-next
 ```
 
+```bash [Codex]
+codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+# Then in Codex, run /plugins, select the "B2C Developer Tooling"
+# marketplace, and select and install the desired plugins.
+```
+
+```bash [Cursor]
+# Cursor reads skills from .cursor/skills/, .agents/skills/, and from
+# Claude Code / Codex skill paths (.claude/skills/, .codex/skills/).
+# If you've already installed via the Claude Code marketplace, Cursor
+# will auto-discover those skills. Otherwise, install with the B2C CLI:
+npx @salesforce/b2c-cli setup skills --ide cursor
+```
+
 ```text [Copilot (VS Code)]
 In VS Code, open the Command Palette (Cmd/Ctrl+Shift+P) and run:
   Chat: Install Plugin from Source
@@ -32,12 +46,6 @@ copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 copilot plugin install b2c-cli@b2c-developer-tooling
 copilot plugin install b2c@b2c-developer-tooling
 copilot plugin install storefront-next@b2c-developer-tooling
-```
-
-```bash [Codex]
-codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-# Then in Codex, run /plugins, select the "B2C Developer Tooling"
-# marketplace, and select and install the desired plugins.
 ```
 
 ```bash [Agentforce Vibes]
@@ -141,6 +149,58 @@ codex plugin marketplace remove b2c-developer-tooling
 
 > **Note:** The `b2c-dx-mcp` plugin is available only for Claude Code. For other clients, install the MCP server directly — see [MCP Installation](/mcp/installation).
 
+## Cursor
+
+Cursor follows the open [Agent Skills](https://cursor.com/docs/skills) standard. Each skill is a folder containing a `SKILL.md` file with YAML frontmatter (`name`, `description`, optional `paths` for glob scoping, and optional `disable-model-invocation`). Optional `scripts/`, `references/`, and `assets/` subdirectories live alongside `SKILL.md`.
+
+### Skill Discovery Locations
+
+Cursor automatically loads skills from these locations:
+
+| Path | Scope | Source |
+|------|-------|--------|
+| `.cursor/skills/` | Project | Native Cursor |
+| `.agents/skills/` | Project | Native Cursor |
+| `~/.cursor/skills/` | User | Native Cursor |
+| `~/.agents/skills/` | User | Native Cursor |
+| `.claude/skills/` | Project | Claude Code compatibility |
+| `~/.claude/skills/` | User | Claude Code compatibility |
+| `.codex/skills/` | Project | Codex compatibility |
+| `~/.codex/skills/` | User | Codex compatibility |
+
+Because Cursor reads from Claude Code and Codex paths too, **any plugin you've already installed via `claude plugin install` or `codex plugin install` is automatically picked up by Cursor** — no separate install needed.
+
+### Install with the B2C CLI
+
+::: code-group
+
+```bash [Project Scope]
+b2c setup skills b2c --ide cursor
+b2c setup skills b2c-cli --ide cursor
+b2c setup skills storefront-next --ide cursor
+```
+
+```bash [User Scope]
+b2c setup skills b2c --ide cursor --global
+b2c setup skills b2c-cli --ide cursor --global
+b2c setup skills storefront-next --ide cursor --global
+```
+
+:::
+
+This writes skills to `.cursor/skills/` (project) or `~/.cursor/skills/` (user). For monorepos, a `.cursor/skills/` folder placed in a nested project directory is auto-scoped to files within that directory — no `paths` field required in `SKILL.md`.
+
+### Reuse Claude Code Plugin Installs
+
+If you also use Claude Code, install once and Cursor will see the same skills:
+
+```bash
+claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+claude plugin install b2c-cli
+claude plugin install b2c
+claude plugin install storefront-next
+```
+
 ## Copilot
 
 GitHub Copilot supports skills in both VS Code and the Copilot CLI.
@@ -237,7 +297,7 @@ Use [`b2c setup skills`](/cli/setup) for any supported IDE.
 
 | IDE | Flag |
 |-----|------|
-| [Cursor](https://cursor.com/docs/context/skills) | `--ide cursor` |
+| [Cursor](https://cursor.com/docs/skills) | `--ide cursor` |
 | [Windsurf](https://docs.windsurf.com/) | `--ide windsurf` |
 | [VS Code / Copilot](https://code.visualstudio.com/docs/copilot/customization/agent-skills) | `--ide vscode` |
 | [Codex CLI](https://github.com/openai/codex) | `--ide codex` |

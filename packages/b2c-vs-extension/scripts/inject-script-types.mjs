@@ -11,6 +11,11 @@
  * back. VS Code's TypeScript Server plugin loader requires the plugin to live
  * at <extension-root>/node_modules/<name>, so we add it to the zip ourselves
  * after vsce produces the VSIX.
+ *
+ * Because the injected tree introduces file extensions (notably .ts/.d.ts)
+ * that vsce did not see, [Content_Types].xml is patched in-place to register
+ * a Default content type for any new extension. Without this, strict OPC
+ * consumers — observed on some Windows installs — reject the VSIX.
  */
 import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
@@ -59,6 +64,48 @@ try {
     stdio: 'inherit',
   });
   console.log('[inject] added script-types plugin to', path.relative(pkgRoot, vsixPath));
+
+  patchContentTypes(vsixPath, stagingDir, target);
 } finally {
   fs.rmSync(stagingDir, {recursive: true, force: true});
+}
+
+function collectExtensions(dir, acc = new Set()) {
+  for (const entry of fs.readdirSync(dir, {withFileTypes: true})) {
+    const p = path.join(dir, entry.name);
+    if (entry.isDirectory()) collectExtensions(p, acc);
+    else {
+      const ext = path.extname(entry.name).toLowerCase();
+      if (ext) acc.add(ext);
+    }
+  }
+  return acc;
+}
+
+function patchContentTypes(vsixPath, stagingDir, injectedRoot) {
+  const injected = collectExtensions(injectedRoot);
+  // unzip treats `[` as a glob char-class; backslash-escape to match it literally.
+  const existing = execFileSync('unzip', ['-p', vsixPath, '\\[Content_Types\\].xml'], {encoding: 'utf8'});
+  const declared = new Set();
+  for (const m of existing.matchAll(/Extension="(\.[^"]+)"/g)) {
+    declared.add(m[1].toLowerCase());
+  }
+
+  const missing = [...injected].filter((e) => !declared.has(e));
+  if (missing.length === 0) {
+    return;
+  }
+
+  const inserts = missing.map((e) => `<Default Extension="${e}" ContentType="application/octet-stream"/>`).join('');
+  const updated = existing.replace('</Types>', `${inserts}</Types>`);
+
+  // zip's CLI treats `[` as a glob char-class, so write the file then feed its
+  // name through stdin via -@ to avoid wildcard expansion.
+  fs.writeFileSync(path.join(stagingDir, '[Content_Types].xml'), updated);
+  execFileSync('zip', ['-q', vsixPath, '-@'], {
+    cwd: stagingDir,
+    input: '[Content_Types].xml\n',
+    stdio: ['pipe', 'inherit', 'inherit'],
+  });
+  console.log('[inject] patched [Content_Types].xml with extensions:', missing.join(', '));
 }

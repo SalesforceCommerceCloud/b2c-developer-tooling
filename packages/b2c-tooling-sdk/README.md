@@ -1,8 +1,5 @@
 # Salesforce B2C Commerce Tooling SDK
 
-> [!NOTE]
-> This project is currently in **Developer Preview**. Not all features are implemented, and the API may change in future releases.
-
 A TypeScript SDK for programmatic access to Salesforce B2C Commerce APIs including OCAPI, WebDAV, SLAS, ODS, and MRT.
 
 [![Version](https://img.shields.io/npm/v/@salesforce/b2c-tooling-sdk.svg)](https://npmjs.org/package/@salesforce/b2c-tooling-sdk)
@@ -344,4 +341,4 @@ This project is licensed under the Apache License 2.0. See [LICENSE.txt](../../L
 
 ## Disclaimer
 
-This project is currently in **Developer Preview** and is provided "as-is" without warranty of any kind. It is not yet generally available (GA) and should not be used in production environments. Features, APIs, and functionality may change without notice in future releases.
+This SDK is **Generally Available** and provided "as-is" without warranty of any kind. Breaking changes will follow a documented deprecation cycle.
