@@ -4,6 +4,9 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
+import {fetch as undiciFetch} from 'undici';
+// undiciFetch returns undici's Response type; cast to global Response at call sites.
+type UndiciFetch = (url: string, init?: RequestInit) => Promise<Response>;
 import {getLogger} from '../logging/logger.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {globalAuthMiddlewareRegistry, applyAuthRequestMiddleware, applyAuthResponseMiddleware} from './middleware.js';
@@ -120,9 +123,15 @@ export class OAuthStrategy implements AuthStrategy {
     headers.set('Authorization', `Bearer ${token}`);
     headers.set('x-dw-client-id', this.config.clientId);
 
-    // Pass through dispatcher for TLS/mTLS support
-    // Node.js fetch accepts dispatcher as an undocumented option
-    let res = await fetch(url, {...init, headers} as RequestInit);
+    // Pass through dispatcher for TLS/mTLS support.
+    // When a dispatcher (undici Agent) is present, use undici's own fetch so the
+    // Agent and fetch come from the same undici instance. On Node 22+, global.fetch
+    // is the stable built-in backed by Node's internally bundled undici, which may
+    // differ from the undici npm package version and rejects a foreign Agent with
+    // UND_ERR_INVALID_ARG. Using undiciFetch avoids this version mismatch entirely.
+    const fetchOpts = {...init, headers} as RequestInit;
+    const fetchFn = ((init as {dispatcher?: unknown}).dispatcher ? undiciFetch : fetch) as UndiciFetch;
+    let res = await fetchFn(url, fetchOpts);
 
     if (res.status !== 401) {
       this._hasHadSuccess = true;
@@ -135,7 +144,7 @@ export class OAuthStrategy implements AuthStrategy {
       this.invalidateToken();
       const newToken = await this.getAccessToken();
       headers.set('Authorization', `Bearer ${newToken}`);
-      res = await fetch(url, {...init, headers} as RequestInit);
+      res = await fetchFn(url, {...init, headers} as RequestInit);
     }
 
     return res;
