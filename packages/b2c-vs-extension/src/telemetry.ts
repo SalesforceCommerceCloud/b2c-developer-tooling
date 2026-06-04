@@ -34,7 +34,6 @@ export type FeatureCategory =
   | 'debugger'
   | 'scaffold'
   | 'cap'
-  | 'pageDesigner'
   | 'logs'
   | 'instance';
 

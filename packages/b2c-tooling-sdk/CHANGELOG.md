@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.11.1
+
+### Patch Changes
+
+- [`b8dcf74`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b8dcf741c253fee0df4219400bfa10a79c704e98) - Document Cursor as a first-class skills target, including its compatibility with Claude Code and Codex skill paths so plugins installed via `claude plugin install` are auto-picked-up by Cursor. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.11.0
 
 ### Minor Changes
