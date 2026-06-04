@@ -13,7 +13,6 @@ on:
   pull_request:
     branches:
       - main
-      - develop
     paths:
       - 'packages/b2c-vs-extension/**'
       - 'packages/b2c-tooling-sdk/**'
