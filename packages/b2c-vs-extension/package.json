@@ -1769,6 +1769,7 @@
     }
   },
   "scripts": {
+    "sync:xsd": "node scripts/sync-xsd.mjs",
     "build": "node scripts/esbuild-bundle.mjs",
     "watch": "node scripts/esbuild-bundle.mjs --watch",
     "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
@@ -1778,7 +1779,7 @@
     "typecheck:agent": "tsc -p . --noEmit --pretty false",
     "format": "prettier --write src",
     "format:check": "prettier --check src",
-    "pretest": "tsc -p tsconfig.test.json",
+    "pretest": "pnpm run sync:xsd && tsc -p tsconfig.test.json",
     "test": "vscode-test",
     "posttest": "pnpm run lint",
     "analyze": "ANALYZE_BUNDLE=1 node scripts/esbuild-bundle.mjs"
