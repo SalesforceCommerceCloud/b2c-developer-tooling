@@ -1769,11 +1769,10 @@
     }
   },
   "scripts": {
-    "sync:xsd": "node scripts/sync-xsd.mjs",
-    "build": "pnpm run sync:xsd && node scripts/esbuild-bundle.mjs",
-    "watch": "pnpm run sync:xsd && node scripts/esbuild-bundle.mjs --watch",
-    "vscode:prepublish": "pnpm run sync:xsd && pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
-    "package": "pnpm run sync:xsd && pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
+    "build": "node scripts/esbuild-bundle.mjs",
+    "watch": "node scripts/esbuild-bundle.mjs --watch",
+    "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
+    "package": "pnpm run build && pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
     "typecheck:agent": "tsc -p . --noEmit --pretty false",

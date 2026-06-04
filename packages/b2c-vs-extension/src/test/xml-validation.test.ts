@@ -24,12 +24,31 @@ interface MappingEntry {
   fileMatch: string[];
 }
 
+interface MappingsFile {
+  mappings: MappingEntry[];
+  bundleOnly: string[];
+  skipped: string[];
+}
+
 function readPackageJson(): {contributes?: {xmlValidation?: XmlValidationEntry[]}} {
   return JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 }
 
 function readMappings(): MappingEntry[] {
   return JSON.parse(fs.readFileSync(mappingsPath, 'utf8')).mappings;
+}
+
+function readMappingsFile(): MappingsFile {
+  const parsed = JSON.parse(fs.readFileSync(mappingsPath, 'utf8'));
+  return {mappings: parsed.mappings, bundleOnly: parsed.bundleOnly ?? [], skipped: parsed.skipped ?? []};
+}
+
+function listSdkXsds(): string[] {
+  const sdkXsdDir = path.resolve(pkgRoot, '..', 'b2c-tooling-sdk', 'data', 'xsd');
+  return fs
+    .readdirSync(sdkXsdDir)
+    .filter((name) => name.endsWith('.xsd'))
+    .sort();
 }
 
 suite('XML schema validation contribution', () => {
@@ -59,7 +78,7 @@ suite('XML schema validation contribution', () => {
     assert.deepStrictEqual(
       actual,
       expected,
-      'package.json#contributes.xmlValidation is out of sync with resources/xsd-mappings.json — run `pnpm run sync:xsd`.',
+      'package.json#contributes.xmlValidation is out of sync with resources/xsd-mappings.json — run `pnpm run build`.',
     );
   });
 
@@ -70,11 +89,51 @@ suite('XML schema validation contribution', () => {
     }
   });
 
-  test('resources/xsd/ contains no XSDs that are not declared in mappings', () => {
-    const declared = new Set(readMappings().map((m) => m.schema));
+  test('resources/xsd/ contains no XSDs that are not declared in mappings or bundleOnly', () => {
+    const {mappings, bundleOnly} = readMappingsFile();
+    const declared = new Set([...mappings.map((m) => m.schema), ...bundleOnly]);
     const onDisk = fs.readdirSync(xsdDir).filter((name) => name.endsWith('.xsd'));
     for (const file of onDisk) {
-      assert.ok(declared.has(file), `Stray XSD on disk (not in mappings): ${file}`);
+      assert.ok(declared.has(file), `Stray XSD on disk (not in mappings or bundleOnly): ${file}`);
+    }
+  });
+
+  test('every SDK XSD is mapped, bundleOnly, or skipped (no silent gaps)', () => {
+    const {mappings, bundleOnly, skipped} = readMappingsFile();
+    const accounted = new Set([...mappings.map((m) => m.schema), ...bundleOnly, ...skipped]);
+    const sdkXsds = listSdkXsds();
+
+    const unaccounted = sdkXsds.filter((file) => !accounted.has(file));
+    assert.deepStrictEqual(
+      unaccounted,
+      [],
+      `SDK schemas not accounted for — add to mappings[], bundleOnly[], or skipped[] in resources/xsd-mappings.json: ${unaccounted.join(', ')}`,
+    );
+
+    const sdkSet = new Set(sdkXsds);
+    const phantom = [...accounted].filter((file) => !sdkSet.has(file));
+    assert.deepStrictEqual(
+      phantom,
+      [],
+      `Schemas listed in xsd-mappings.json that no longer exist in the SDK: ${phantom.join(', ')}`,
+    );
+  });
+
+  test('schemas imported by mapped XSDs are present (transitive bundling)', () => {
+    const {mappings} = readMappingsFile();
+    const declared = new Set(fs.readdirSync(xsdDir).filter((name) => name.endsWith('.xsd')));
+    const importPattern = /schemaLocation\s*=\s*"([^"]+\.xsd)"/g;
+
+    for (const {schema} of mappings) {
+      const content = fs.readFileSync(path.join(xsdDir, schema), 'utf8');
+      let match: RegExpExecArray | null;
+      while ((match = importPattern.exec(content)) !== null) {
+        const imported = match[1].split('/').pop()!;
+        assert.ok(
+          declared.has(imported),
+          `${schema} imports "${imported}" but it is not bundled — add it to bundleOnly[] in resources/xsd-mappings.json`,
+        );
+      }
     }
   });
 });

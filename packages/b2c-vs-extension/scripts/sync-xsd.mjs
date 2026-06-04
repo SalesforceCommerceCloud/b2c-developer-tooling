@@ -7,14 +7,16 @@
 /*
  * Single source of truth: resources/xsd-mappings.json
  *
- * This script:
- *   1. Reads the mappings file.
- *   2. Copies the listed XSDs from the SDK (`b2c-tooling-sdk/data/xsd/`) into
+ * Reads the mappings file and:
+ *   1. Copies the listed XSDs from the SDK (`b2c-tooling-sdk/data/xsd/`) into
  *      `resources/xsd/`. Any unrelated *.xsd previously written under that dir
  *      is removed so the bundle never carries unused schemas.
- *   3. Regenerates the `contributes.xmlValidation` block in package.json from
+ *   2. Regenerates the `contributes.xmlValidation` block in package.json from
  *      the same mappings — keeping the VS Code contribution and the bundled
- *      schemas in lockstep. CI may invoke with `--check` to fail on drift.
+ *      schemas in lockstep.
+ *
+ * Invoked automatically at the start of esbuild-bundle.mjs (build/watch),
+ * so a developer never needs to run it as a separate step.
  */
 
 import fs from 'node:fs';
@@ -23,38 +25,7 @@ import {fileURLToPath} from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const pkgRoot = path.resolve(__dirname, '..');
-const sdkXsdDir = path.resolve(pkgRoot, '..', 'b2c-tooling-sdk', 'data', 'xsd');
-const extensionXsdDir = path.join(pkgRoot, 'resources', 'xsd');
-const mappingsPath = path.join(pkgRoot, 'resources', 'xsd-mappings.json');
-const packageJsonPath = path.join(pkgRoot, 'package.json');
-
-const checkMode = process.argv.includes('--check');
-
-function fail(message) {
-  console.error(`[xsd-sync] ${message}`);
-  process.exit(1);
-}
-
-function readMappings() {
-  if (!fs.existsSync(mappingsPath)) {
-    fail(`Mappings file not found: ${mappingsPath}`);
-  }
-  const parsed = JSON.parse(fs.readFileSync(mappingsPath, 'utf8'));
-  const entries = parsed?.mappings;
-  if (!Array.isArray(entries) || entries.length === 0) {
-    fail('xsd-mappings.json must contain a non-empty "mappings" array');
-  }
-  for (const entry of entries) {
-    if (typeof entry?.schema !== 'string' || !entry.schema.endsWith('.xsd')) {
-      fail(`Invalid mapping entry — "schema" must end in .xsd: ${JSON.stringify(entry)}`);
-    }
-    if (!Array.isArray(entry.fileMatch) || entry.fileMatch.length === 0) {
-      fail(`Mapping for ${entry.schema} must have a non-empty fileMatch[]`);
-    }
-  }
-  return entries;
-}
+const defaultPkgRoot = path.resolve(__dirname, '..');
 
 function listXsdFiles(directory) {
   if (!fs.existsSync(directory)) return [];
@@ -69,18 +40,80 @@ function filesEqual(leftPath, rightPath) {
   return fs.readFileSync(leftPath).equals(fs.readFileSync(rightPath));
 }
 
-function syncSchemas(mappings) {
+function readMappings(mappingsPath) {
+  if (!fs.existsSync(mappingsPath)) {
+    throw new Error(`[xsd-sync] Mappings file not found: ${mappingsPath}`);
+  }
+  const parsed = JSON.parse(fs.readFileSync(mappingsPath, 'utf8'));
+  const entries = parsed?.mappings;
+  const bundleOnly = parsed?.bundleOnly ?? [];
+  const skipped = parsed?.skipped ?? [];
+  if (!Array.isArray(entries) || entries.length === 0) {
+    throw new Error('[xsd-sync] xsd-mappings.json must contain a non-empty "mappings" array');
+  }
+  if (!Array.isArray(bundleOnly)) {
+    throw new Error('[xsd-sync] xsd-mappings.json "bundleOnly" must be an array of filenames');
+  }
+  if (!Array.isArray(skipped)) {
+    throw new Error('[xsd-sync] xsd-mappings.json "skipped" must be an array of filenames');
+  }
+  for (const entry of entries) {
+    if (typeof entry?.schema !== 'string' || !entry.schema.endsWith('.xsd')) {
+      throw new Error(`[xsd-sync] Invalid mapping entry — "schema" must end in .xsd: ${JSON.stringify(entry)}`);
+    }
+    if (!Array.isArray(entry.fileMatch) || entry.fileMatch.length === 0) {
+      throw new Error(`[xsd-sync] Mapping for ${entry.schema} must have a non-empty fileMatch[]`);
+    }
+  }
+  for (const name of [...bundleOnly, ...skipped]) {
+    if (typeof name !== 'string' || !name.endsWith('.xsd')) {
+      throw new Error(
+        `[xsd-sync] Invalid bundleOnly/skipped entry — must be a filename ending in .xsd: ${JSON.stringify(name)}`,
+      );
+    }
+  }
+  return {mappings: entries, bundleOnly, skipped};
+}
+
+function assertFullSdkCoverage(mappings, bundleOnly, skipped, sdkXsdDir) {
+  const sdkFiles = new Set(listXsdFiles(sdkXsdDir));
+  const accounted = new Set([...mappings.map((m) => m.schema), ...bundleOnly, ...skipped]);
+
+  const unaccounted = [...sdkFiles].filter((file) => !accounted.has(file)).sort();
+  if (unaccounted.length > 0) {
+    const list = unaccounted.map((f) => `  - ${f}`).join('\n');
+    throw new Error(
+      `[xsd-sync] ${unaccounted.length} SDK schema(s) are not accounted for:\n${list}\n` +
+        `[xsd-sync] Edit resources/xsd-mappings.json — add each to one of:\n` +
+        `[xsd-sync]   mappings[]    (bundled + contributed as fileMatch) for user-facing schemas\n` +
+        `[xsd-sync]   bundleOnly[]  (bundled, no fileMatch) for schemas imported by other XSDs\n` +
+        `[xsd-sync]   skipped[]     (excluded entirely) for internal/feed/non-workspace schemas.`,
+    );
+  }
+
+  const phantom = [...accounted].filter((file) => !sdkFiles.has(file)).sort();
+  if (phantom.length > 0) {
+    const list = phantom.map((f) => `  - ${f}`).join('\n');
+    throw new Error(
+      `[xsd-sync] ${phantom.length} schema(s) listed in xsd-mappings.json no longer exist in the SDK:\n${list}\n` +
+        `[xsd-sync] Remove them from mappings[]/bundleOnly[]/skipped[] in resources/xsd-mappings.json.`,
+    );
+  }
+}
+
+function syncSchemas(mappings, bundleOnly, sdkXsdDir, extensionXsdDir) {
   if (!fs.existsSync(sdkXsdDir)) {
-    fail(`SDK XSD source directory not found: ${sdkXsdDir}`);
+    throw new Error(`[xsd-sync] SDK XSD source directory not found: ${sdkXsdDir}`);
   }
   fs.mkdirSync(extensionXsdDir, {recursive: true});
 
   const sourceFiles = new Set(listXsdFiles(sdkXsdDir));
-  const requested = new Set(mappings.map((m) => m.schema));
+  // Bundle both: schemas users validate against AND their transitive imports.
+  const requested = new Set([...mappings.map((m) => m.schema), ...bundleOnly]);
 
   for (const schema of requested) {
     if (!sourceFiles.has(schema)) {
-      fail(`Mapped schema "${schema}" is missing from SDK source directory ${sdkXsdDir}`);
+      throw new Error(`[xsd-sync] Schema "${schema}" is missing from SDK source directory ${sdkXsdDir}`);
     }
   }
 
@@ -101,9 +134,6 @@ function syncSchemas(mappings) {
       unchangedCount += 1;
       continue;
     }
-    if (checkMode) {
-      fail(`Drift: ${schema} in resources/xsd/ does not match the SDK source. Run \`pnpm run sync:xsd\`.`);
-    }
     fs.copyFileSync(src, dest);
     copiedCount += 1;
   }
@@ -121,42 +151,61 @@ function buildContribution(mappings) {
   return entries;
 }
 
-function writeContribution(generated) {
+function writeContribution(packageJsonPath, generated) {
   const raw = fs.readFileSync(packageJsonPath, 'utf8');
   const trailingNewline = raw.endsWith('\n');
   const pkg = JSON.parse(raw);
   pkg.contributes ??= {};
   const existing = pkg.contributes.xmlValidation ?? [];
-  const desired = generated;
 
-  const sameLength = existing.length === desired.length;
   const sameContent =
-    sameLength &&
-    existing.every((entry, idx) => entry?.fileMatch === desired[idx].fileMatch && entry?.url === desired[idx].url);
+    existing.length === generated.length &&
+    existing.every((entry, idx) => entry?.fileMatch === generated[idx].fileMatch && entry?.url === generated[idx].url);
 
   if (sameContent) return false;
 
-  if (checkMode) {
-    fail(
-      'Drift: package.json#contributes.xmlValidation is out of sync with xsd-mappings.json. Run `pnpm run sync:xsd`.',
-    );
-  }
-
-  pkg.contributes.xmlValidation = desired;
-  const next = JSON.stringify(pkg, null, 2) + (trailingNewline ? '\n' : '');
-  fs.writeFileSync(packageJsonPath, next);
+  pkg.contributes.xmlValidation = generated;
+  fs.writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + (trailingNewline ? '\n' : ''));
   return true;
 }
 
-const mappings = readMappings();
-const stats = syncSchemas(mappings);
-const contributionEntries = buildContribution(mappings);
-const wrotePackageJson = writeContribution(contributionEntries);
+/**
+ * Run the full sync. Safe to call multiple times — copies only when source/dest
+ * differ and rewrites package.json only when the contribution array would change.
+ */
+export function syncXsd({pkgRoot = defaultPkgRoot} = {}) {
+  const sdkXsdDir = path.resolve(pkgRoot, '..', 'b2c-tooling-sdk', 'data', 'xsd');
+  const extensionXsdDir = path.join(pkgRoot, 'resources', 'xsd');
+  const mappingsPath = path.join(pkgRoot, 'resources', 'xsd-mappings.json');
+  const packageJsonPath = path.join(pkgRoot, 'package.json');
 
-if (checkMode) {
-  console.log(`[xsd-sync] check OK: ${stats.total} schemas, ${contributionEntries.length} fileMatch entries`);
-} else {
+  const {mappings, bundleOnly, skipped} = readMappings(mappingsPath);
+  assertFullSdkCoverage(mappings, bundleOnly, skipped, sdkXsdDir);
+  const stats = syncSchemas(mappings, bundleOnly, sdkXsdDir, extensionXsdDir);
+  const contribution = buildContribution(mappings);
+  const wrotePkg = writeContribution(packageJsonPath, contribution);
+
   console.log(
-    `[xsd-sync] complete: ${stats.total} schemas (${stats.copiedCount} copied, ${stats.unchangedCount} unchanged, ${stats.removedCount} removed); ${contributionEntries.length} fileMatch entries${wrotePackageJson ? ' — wrote package.json' : ''}`,
+    `[xsd-sync] ${mappings.length} mapped, ${bundleOnly.length} bundleOnly, ${skipped.length} skipped; ${contribution.length} fileMatch entries (${stats.copiedCount} copied, ${stats.unchangedCount} unchanged, ${stats.removedCount} removed)${wrotePkg ? ' — wrote package.json' : ''}`,
   );
+  return {
+    ...stats,
+    mappedCount: mappings.length,
+    bundleOnlyCount: bundleOnly.length,
+    skippedCount: skipped.length,
+    contributionEntries: contribution.length,
+    wrotePackageJson: wrotePkg,
+  };
+}
+
+// Allow direct invocation (e.g. `node scripts/sync-xsd.mjs`) for emergencies,
+// even though the build pipeline calls syncXsd() directly.
+const isDirectInvoke = process.argv[1] && path.resolve(process.argv[1]) === __filename;
+if (isDirectInvoke) {
+  try {
+    syncXsd();
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  }
 }

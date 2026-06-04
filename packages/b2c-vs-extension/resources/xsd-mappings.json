@@ -1,6 +1,18 @@
 {
   "$schema": "./xsd-mappings.schema.json",
-  "description": "Source-of-truth for XML→XSD validation contributed by this extension. The build step (scripts/sync-xsd.mjs) reads this file to (1) copy only the listed schemas from the SDK into resources/xsd/ and (2) regenerate package.json#contributes.xmlValidation. Each entry covers two workspace conventions: the canonical SFCC site-archive layout (sites/<id>/, catalogs/<id>/, …) and the exploded `metadata/` workspace convention used by sfcc-ci / prophet-style projects.",
+  "description": "Source-of-truth for XML→XSD validation contributed by this extension. The build step (scripts/sync-xsd.mjs) reads this file to (1) copy the listed schemas from the SDK into resources/xsd/ and (2) regenerate package.json#contributes.xmlValidation. Each `mappings` entry covers two workspace conventions: the canonical SFCC site-archive layout (sites/<id>/, catalogs/<id>/, …) and the exploded `metadata/` workspace convention used by sfcc-ci / prophet-style projects. Every SDK schema must appear in `mappings` (bundled + contributed as fileMatch), `bundleOnly` (bundled because another schema imports it, but never the validation target itself), or `skipped` (excluded entirely). The build fails if any SDK schema is in none of those lists — this prevents new schemas from silently missing validation.",
+  "bundleOnly": [
+    "xml.xsd"
+  ],
+  "skipped": [
+    "bmext.xsd",
+    "customeractivedata.xsd",
+    "customerpaymentinstrument.xsd",
+    "feed.xsd",
+    "order.xsd",
+    "returnimportfeed.xsd",
+    "shippingorderupdatefeed.xsd"
+  ],
   "mappings": [
     {
       "schema": "abtest.xsd",
