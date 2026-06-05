@@ -116,14 +116,6 @@ export async function validateCap(target: string): Promise<CapValidationResult> 
         if (errors.filter((e) => e.startsWith('commerce-app.json:')).length === 0) {
           manifest = raw as unknown as CommerceAppManifest;
         }
-        // Check root dir naming convention
-        const dirName = path.basename(capDir);
-        if (manifest && dirName !== '.' && dirName !== tempDir) {
-          const expectedName = `${manifest.id}-v${manifest.version}`;
-          if (dirName !== expectedName) {
-            warnings.push(`Root directory "${dirName}" does not match expected convention "${expectedName}"`);
-          }
-        }
       } catch {
         errors.push('commerce-app.json: file exists but is not valid JSON');
       }

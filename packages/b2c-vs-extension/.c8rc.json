@@ -5,9 +5,7 @@
     "src/test/**",
     "dist/**",
     "scripts/**",
-    "**/*.d.ts",
-    "src/template/**",
-    "src/webview.html"
+    "**/*.d.ts"
   ],
   "reporter": ["text", "text-summary", "lcov"],
   "report-dir": "coverage",
