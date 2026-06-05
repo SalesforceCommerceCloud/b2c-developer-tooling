@@ -477,36 +477,44 @@ export const proxyTransformationTest = (req: Request, res: Response) => {
     });
   }
 
-  const expectedCookieName = siteId ? `cc-at_${siteId}` : null;
-  const expectedCookieValue = expectedCookieName ? cookieMap[expectedCookieName] : null;
   const sfdcDwsidFromHeader = req.headers.sfdc_dwsid as string;
 
+  // After the CloudFront proxy origin rewriter runs, all auth cookies should
+  // be stripped. We check by prefix to catch the site-id-suffixed names
+  // (cc-at_<siteId>, cc-nx-g_<siteId>, cc-nx_<siteId>) without the lambda
+  // having to know the original site id (the x-site-id header is also stripped).
+  const ccAtCookiePresent = Object.keys(cookieMap).some((k) => k.startsWith('cc-at_'));
+  const ccNxGuestCookiePresent = Object.keys(cookieMap).some((k) => k.startsWith('cc-nx-g_'));
+  const ccNxRegisteredCookiePresent = Object.keys(cookieMap).some((k) => k.startsWith('cc-nx_'));
+
+  // Validation results — all assertions reflect the EXPECTED post-transformation
+  // state: x-site-id and the auth cookies should be gone, Authorization and
+  // sfdc_dwsid headers should be present.
   const validations = {
     siteIdPresent: !!siteId,
-    siteId,
+    siteId: siteId || null,
     authHeaderPresent: !!authHeader,
     authHeader,
-    expectedCookieName,
-    expectedCookieValue,
-    authHeaderMatchesCookie: false,
     sfdc_dwsidPresent: !!sfdcDwsidFromHeader,
     sfdc_dwsidValue: sfdcDwsidFromHeader,
     dwsidPresent: !!cookieMap.dwsid,
     dwsidValue: cookieMap.dwsid,
-    sfdc_dwsidMatchesDwsid: sfdcDwsidFromHeader === cookieMap.dwsid,
+    sfdc_dwsidMatchesDwsid: false,
+    ccAtCookiePresent,
+    ccNxGuestCookiePresent,
+    ccNxRegisteredCookiePresent,
   };
 
-  if (authHeader && expectedCookieValue) {
-    const expectedAuthHeader = `Bearer ${expectedCookieValue}`;
-    validations.authHeaderMatchesCookie = authHeader === expectedAuthHeader;
-  }
-
+  // Determine overall success — post-transformation, the header/cookies that
+  // were used as input should be gone, and the derived headers should be present.
   const allValidationsPassed =
-    validations.siteIdPresent &&
+    !validations.siteIdPresent &&
     validations.authHeaderPresent &&
-    validations.authHeaderMatchesCookie &&
     validations.sfdc_dwsidPresent &&
-    validations.sfdc_dwsidMatchesDwsid;
+    !validations.dwsidPresent &&
+    !ccAtCookiePresent &&
+    !ccNxGuestCookiePresent &&
+    !ccNxRegisteredCookiePresent;
 
   return res.json({
     success: allValidationsPassed,

@@ -769,42 +769,67 @@ describe('reference-routes', () => {
   });
 
   describe('proxyTransformationTest', () => {
-    it('should return success when all validations pass', async () => {
+    // The endpoint validates the EXPECTED post-transformation request shape
+    // produced by the CloudFront proxy origin rewriter: x-site-id and the
+    // auth cookies (cc-at_*, cc-nx-g_*, cc-nx_*, dwsid) are stripped, and
+    // Authorization + sfdc_dwsid headers are added in their place.
+    it('should return success when post-transformation state is correct', async () => {
+      app.get('/test', proxyTransformationTest);
+      const response = await request(app)
+        .get('/test')
+        .set('authorization', 'Bearer token123')
+        .set('sfdc_dwsid', 'session456')
+        .expect(200);
+      expect(response.body).to.deep.equal({
+        success: true,
+        validations: {
+          siteIdPresent: false,
+          siteId: null,
+          authHeaderPresent: true,
+          authHeader: 'Bearer token123',
+          sfdc_dwsidPresent: true,
+          sfdc_dwsidValue: 'session456',
+          dwsidPresent: false,
+          sfdc_dwsidMatchesDwsid: false,
+          ccAtCookiePresent: false,
+          ccNxGuestCookiePresent: false,
+          ccNxRegisteredCookiePresent: false,
+        },
+        allCookies: {},
+        headers: {
+          authorization: 'Bearer token123',
+          sfdc_dwsid: 'session456',
+        },
+      });
+    });
+
+    it('should return failure when x-site-id header was not stripped', async () => {
       app.get('/test', proxyTransformationTest);
       const response = await request(app)
         .get('/test')
         .set('x-site-id', 'test-site')
         .set('authorization', 'Bearer token123')
         .set('sfdc_dwsid', 'session456')
-        .set('cookie', 'cc-at_test-site=token123; dwsid=session456')
         .expect(200);
-      expect(response.body).to.deep.equal({
-        success: true,
-        validations: {
-          siteIdPresent: true,
-          siteId: 'test-site',
-          authHeaderPresent: true,
-          authHeader: 'Bearer token123',
-          expectedCookieName: 'cc-at_test-site',
-          expectedCookieValue: 'token123',
-          authHeaderMatchesCookie: true,
-          sfdc_dwsidPresent: true,
-          sfdc_dwsidValue: 'session456',
-          dwsidPresent: true,
-          dwsidValue: 'session456',
-          sfdc_dwsidMatchesDwsid: true,
-        },
-        allCookies: {'cc-at_test-site': 'token123', dwsid: 'session456'},
-        headers: {
-          'x-site-id': 'test-site',
-          authorization: 'Bearer token123',
-          cookie: 'cc-at_test-site=token123; dwsid=session456',
-          sfdc_dwsid: 'session456',
-        },
-      });
+      expect(response.body.success).to.equal(false);
+      expect(response.body.validations.siteIdPresent).to.equal(true);
     });
 
-    it('should return failure when site ID is missing', async () => {
+    it('should return failure when authorization header is missing', async () => {
+      app.get('/test', proxyTransformationTest);
+      const response = await request(app).get('/test').set('sfdc_dwsid', 'session456').expect(200);
+      expect(response.body.success).to.equal(false);
+      expect(response.body.validations.authHeaderPresent).to.equal(false);
+    });
+
+    it('should return failure when sfdc_dwsid header is missing', async () => {
+      app.get('/test', proxyTransformationTest);
+      const response = await request(app).get('/test').set('authorization', 'Bearer token123').expect(200);
+      expect(response.body.success).to.equal(false);
+      expect(response.body.validations.sfdc_dwsidPresent).to.equal(false);
+    });
+
+    it('should return failure when dwsid cookie was not stripped', async () => {
       app.get('/test', proxyTransformationTest);
       const response = await request(app)
         .get('/test')
@@ -813,95 +838,55 @@ describe('reference-routes', () => {
         .set('cookie', 'dwsid=session456')
         .expect(200);
       expect(response.body.success).to.equal(false);
-      expect(response.body.validations.siteIdPresent).to.equal(false);
+      expect(response.body.validations.dwsidPresent).to.equal(true);
     });
 
-    it('should return failure when authorization header is missing', async () => {
+    it('should return failure when cc-at_<siteId> cookie was not stripped', async () => {
       app.get('/test', proxyTransformationTest);
       const response = await request(app)
         .get('/test')
-        .set('x-site-id', 'test-site')
-        .set('sfdc_dwsid', 'session456')
-        .set('cookie', 'cc-at_test-site=token123; dwsid=session456')
-        .expect(200);
-      expect(response.body.success).to.equal(false);
-      expect(response.body.validations.authHeaderPresent).to.equal(false);
-    });
-
-    it('should return failure when authorization header does not match cookie', async () => {
-      app.get('/test', proxyTransformationTest);
-      const response = await request(app)
-        .get('/test')
-        .set('x-site-id', 'test-site')
-        .set('authorization', 'Bearer wrong-token')
-        .set('sfdc_dwsid', 'session456')
-        .set('cookie', 'cc-at_test-site=token123; dwsid=session456')
-        .expect(200);
-      expect(response.body.success).to.equal(false);
-      expect(response.body.validations.authHeaderMatchesCookie).to.equal(false);
-    });
-
-    it('should return failure when sfdc_dwsid header is missing', async () => {
-      app.get('/test', proxyTransformationTest);
-      const response = await request(app)
-        .get('/test')
-        .set('x-site-id', 'test-site')
-        .set('authorization', 'Bearer token123')
-        .set('cookie', 'cc-at_test-site=token123; dwsid=session456')
-        .expect(200);
-      expect(response.body.success).to.equal(false);
-      expect(response.body.validations.sfdc_dwsidPresent).to.equal(false);
-    });
-
-    it('should return failure when dwsid cookie is missing', async () => {
-      app.get('/test', proxyTransformationTest);
-      const response = await request(app)
-        .get('/test')
-        .set('x-site-id', 'test-site')
         .set('authorization', 'Bearer token123')
         .set('sfdc_dwsid', 'session456')
         .set('cookie', 'cc-at_test-site=token123')
         .expect(200);
       expect(response.body.success).to.equal(false);
-      expect(response.body.validations.dwsidPresent).to.equal(false);
+      expect(response.body.validations.ccAtCookiePresent).to.equal(true);
     });
 
-    it('should return failure when sfdc_dwsid and dwsid do not match', async () => {
+    it('should return failure when cc-nx-g_<siteId> cookie was not stripped', async () => {
       app.get('/test', proxyTransformationTest);
       const response = await request(app)
         .get('/test')
-        .set('x-site-id', 'test-site')
-        .set('authorization', 'Bearer token123')
-        .set('sfdc_dwsid', 'different-session')
-        .set('cookie', 'cc-at_test-site=token123; dwsid=session456')
-        .expect(200);
-      expect(response.body.success).to.equal(false);
-      expect(response.body.validations.sfdc_dwsidMatchesDwsid).to.equal(false);
-    });
-
-    it('should handle requests with no cookies', async () => {
-      app.get('/test', proxyTransformationTest);
-      const response = await request(app)
-        .get('/test')
-        .set('x-site-id', 'test-site')
         .set('authorization', 'Bearer token123')
         .set('sfdc_dwsid', 'session456')
+        .set('cookie', 'cc-nx-g_test-site=guest-refresh')
         .expect(200);
       expect(response.body.success).to.equal(false);
-      expect(response.body.allCookies).to.deep.equal({});
+      expect(response.body.validations.ccNxGuestCookiePresent).to.equal(true);
+    });
+
+    it('should return failure when cc-nx_<siteId> cookie was not stripped', async () => {
+      app.get('/test', proxyTransformationTest);
+      const response = await request(app)
+        .get('/test')
+        .set('authorization', 'Bearer token123')
+        .set('sfdc_dwsid', 'session456')
+        .set('cookie', 'cc-nx_test-site=registered-refresh')
+        .expect(200);
+      expect(response.body.success).to.equal(false);
+      expect(response.body.validations.ccNxRegisteredCookiePresent).to.equal(true);
     });
 
     it('should parse cookies with spaces correctly', async () => {
       app.get('/test', proxyTransformationTest);
       const response = await request(app)
         .get('/test')
-        .set('x-site-id', 'test-site')
         .set('authorization', 'Bearer token123')
         .set('sfdc_dwsid', 'session456')
-        .set('cookie', 'cc-at_test-site=token123;  dwsid=session456')
+        .set('cookie', 'foo=bar;  baz=qux')
         .expect(200);
       expect(response.body.success).to.equal(true);
-      expect(response.body.allCookies).to.deep.equal({'cc-at_test-site': 'token123', dwsid: 'session456'});
+      expect(response.body.allCookies).to.deep.equal({foo: 'bar', baz: 'qux'});
     });
   });
 });

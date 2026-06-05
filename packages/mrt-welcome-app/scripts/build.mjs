@@ -12,17 +12,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkgRoot = path.resolve(__dirname, '..');
 const buildDir = path.resolve(pkgRoot, 'build');
 
-const enableSourceMaps = !process.env.DISABLE_SOURCE_MAPS;
 const format = process.env.MRT_EXPORT_TYPE === 'esm' ? 'esm' : 'cjs';
 
-const noExternal = [/^@h4ad\/.*/, 'express', '@salesforce/mrt-utilities', 'ejs'];
+// Packages that must NOT be bundled (e.g., native modules, or modules provided
+// by the Lambda runtime). The deploy ships only build/ssr.js — there is no
+// node_modules at runtime — so the default is to bundle everything.
+const external = [];
 
 const externalFilter = (id) => {
-  for (const pattern of noExternal) {
-    if (typeof pattern === 'string' && id === pattern) return false;
-    if (pattern instanceof RegExp && pattern.test(id)) return false;
+  for (const pattern of external) {
+    if (typeof pattern === 'string' && (id === pattern || id.startsWith(pattern + '/'))) return true;
+    if (pattern instanceof RegExp && pattern.test(id)) return true;
   }
-  return true;
+  return false;
 };
 
 const bundlePlugin = {
@@ -63,13 +65,20 @@ async function build() {
   await fs.rm(buildDir, {recursive: true, force: true});
   await fs.mkdir(buildDir, {recursive: true});
 
+  const ssrExt = format === 'esm' ? '.mjs' : '.js';
+  // In ESM mode, esbuild leaves CJS `require()` calls from bundled deps as a
+  // runtime helper that throws "Dynamic require of X is not supported". Bridge
+  // it to a real Node CJS require so transitive deps that use require() work.
+  const esmRequireBanner =
+    "import {createRequire as __mrtCreateRequire} from 'node:module';" +
+    'const require = __mrtCreateRequire(import.meta.url);';
   await esbuild.build({
     bundle: true,
     platform: 'node',
     target: 'node22',
     format,
     minify: true,
-    sourcemap: enableSourceMaps ? 'inline' : false,
+    sourcemap: false,
     outdir: buildDir,
     define: {
       'process.env.NODE_ENV': '"production"',
@@ -77,25 +86,17 @@ async function build() {
     plugins: [bundlePlugin],
     splitting: false,
     entryPoints: {ssr: path.join(pkgRoot, 'src', 'ssr.ts')},
+    outExtension: {'.js': ssrExt},
+    ...(format === 'esm' ? {banner: {js: esmRequireBanner}} : {}),
   });
 
-  const ssrStat = await fs.stat(path.join(buildDir, 'ssr.js'));
-  console.log(`  build/ssr.js  ${formatSize(ssrStat.size)}`);
+  const ssrStat = await fs.stat(path.join(buildDir, `ssr${ssrExt}`));
+  console.log(`  build/ssr${ssrExt}  ${formatSize(ssrStat.size)}`);
 
   // Copy views
   const viewsSrc = path.join(pkgRoot, 'src', 'views');
   const viewsDest = path.join(buildDir, 'views');
   await copyDir(viewsSrc, viewsDest);
-
-  // Build config.server.ts so the CLI can load ssrOnly/ssrShared/ssrParameters
-  await esbuild.build({
-    bundle: false,
-    platform: 'node',
-    target: 'node22',
-    format: 'cjs',
-    outdir: buildDir,
-    entryPoints: {'config.server': path.join(pkgRoot, 'config.server.ts')},
-  });
 
   // Create empty loader.js required by MRT
   await fs.writeFile(path.join(buildDir, 'loader.js'), '// This file is intentionally empty\n');
