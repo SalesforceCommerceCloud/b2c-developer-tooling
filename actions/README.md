@@ -113,7 +113,7 @@ Install CLI plugins via the `plugins` input on the `setup` action (one per line)
       sfcc-solutions-share/b2c-plugin-intellij-sfcc-config
 ```
 
-Each entry is an npm package name or GitHub `owner/repo`. Plugins are cached alongside the CLI.
+Each entry is an npm package name or GitHub `owner/repo`. Already-installed plugins are skipped on re-invocation.
 
 ## Logging
 
