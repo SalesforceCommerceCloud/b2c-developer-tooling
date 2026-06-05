@@ -122,6 +122,7 @@ const referenceSidebar = [
       {text: 'Jobs', link: '/cli/jobs'},
       {text: 'Logs', link: '/cli/logs'},
       {text: 'MRT', link: '/cli/mrt'},
+      {text: 'Preferences', link: '/cli/preferences'},
       {text: 'Sandbox', link: '/cli/sandbox'},
       {text: 'Scaffold', link: '/cli/scaffold'},
       {text: 'SCAPI Schemas', link: '/cli/scapi-schemas'},
