@@ -13,6 +13,7 @@ export class ApiFamilyTreeItem extends vscode.TreeItem {
   readonly nodeType = 'apiFamily' as const;
   constructor(readonly family: string) {
     super(family, vscode.TreeItemCollapsibleState.Collapsed);
+    this.id = `api:family:${family}`;
     this.contextValue = 'apiFamily';
     this.iconPath = new vscode.ThemeIcon('symbol-namespace');
     this.tooltip = `API Family: ${family}`;
@@ -33,6 +34,7 @@ export class ApiSchemaTreeItem extends vscode.TreeItem {
   constructor(schema: SchemaEntry) {
     super(schema.apiName, vscode.TreeItemCollapsibleState.None);
     this.schema = schema;
+    this.id = `api:schema:${schema.apiFamily}:${schema.apiName}:${schema.apiVersion}`;
     this.description = schema.apiVersion;
     this.contextValue = 'apiSchema';
 

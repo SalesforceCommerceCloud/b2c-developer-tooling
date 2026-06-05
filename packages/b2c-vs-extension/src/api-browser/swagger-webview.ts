@@ -184,6 +184,11 @@ export class SwaggerWebviewManager implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
   /** Tracks panels that have been disposed so we don't `postMessage` to them. */
   private readonly disposedPanels = new WeakSet<vscode.WebviewPanel>();
+  /**
+   * In-flight proxy fetch controllers keyed by requestId, scoped per panel.
+   * Allows us to abort outstanding fetches when the panel is disposed.
+   */
+  private readonly proxyControllers = new WeakMap<vscode.WebviewPanel, Map<string, AbortController>>();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -234,7 +239,10 @@ export class SwaggerWebviewManager implements vscode.Disposable {
 
     const apiType = detectApiType(spec, schema);
 
-    // Resolve external $refs server-side so the webview doesn't have to fetch them
+    // Resolve external $refs server-side so the webview doesn't have to fetch them.
+    // This completes before the panel exists, so panel-disposal can't cancel it; if a
+    // future refactor moves panel creation earlier, an AbortController plumbed through
+    // resolveExternalRefs and aborted from onDidDispose would make this cancellable.
     if (config.hasOAuthConfig()) {
       const oauthOptions = await this.configProvider.getImplicitAuthOptions();
       const oauthStrategy = config.createOAuth(oauthOptions);
@@ -287,10 +295,19 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     );
 
     this.panels.set(key, panel);
+    this.proxyControllers.set(panel, new Map());
 
     panel.onDidDispose(() => {
       this.disposedPanels.add(panel);
       this.panels.delete(key);
+      // Abort any in-flight proxy fetches scoped to this panel
+      const controllers = this.proxyControllers.get(panel);
+      if (controllers) {
+        for (const controller of controllers.values()) {
+          controller.abort();
+        }
+        controllers.clear();
+      }
     });
 
     panel.webview.html = this.getWebviewHtml(panel.webview, spec, apiType, initialToken);
@@ -414,11 +431,19 @@ export class SwaggerWebviewManager implements vscode.Disposable {
 
     this.log.appendLine(`[API Browser Proxy] ${method} ${url} (${requestId})`);
 
+    // Track the AbortController so panel disposal can abort in-flight fetches.
+    const controllers = this.proxyControllers.get(panel);
+    const controller = new AbortController();
+    if (controllers) {
+      controllers.set(requestId, controller);
+    }
+
     try {
       const res = await fetch(url, {
         method,
         headers,
         body: body || undefined,
+        signal: controller.signal,
       });
 
       const responseHeaders: Record<string, string> = {};
@@ -442,12 +467,18 @@ export class SwaggerWebviewManager implements vscode.Disposable {
       });
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      this.log.appendLine(`[API Browser Proxy] ${requestId} → ERROR: ${errMsg}`);
+      if (err instanceof Error && err.name === 'AbortError') {
+        this.log.appendLine(`[API Browser Proxy] ${requestId} → aborted`);
+      } else {
+        this.log.appendLine(`[API Browser Proxy] ${requestId} → ERROR: ${errMsg}`);
+      }
       this.safePostMessage(panel, {
         type: 'proxyResponse',
         requestId,
         error: errMsg,
       });
+    } finally {
+      controllers?.delete(requestId);
     }
   }
 

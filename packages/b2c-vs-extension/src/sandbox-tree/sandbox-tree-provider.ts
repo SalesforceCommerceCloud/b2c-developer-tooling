@@ -34,6 +34,7 @@ export class RealmTreeItem extends vscode.TreeItem {
   readonly nodeType = 'realm' as const;
   constructor(readonly realm: string) {
     super(realm, vscode.TreeItemCollapsibleState.Collapsed);
+    this.id = `realm:${realm}`;
     this.contextValue = 'realm';
     this.iconPath = new vscode.ThemeIcon('server-environment');
     this.tooltip = `Realm: ${realm}`;
@@ -51,6 +52,7 @@ export class SandboxTreeItem extends vscode.TreeItem {
       ? `${sandbox.realm ?? ''}${sandbox.realm ? '-' : ''}${sandbox.instance}`
       : sandbox.id;
     super(label, vscode.TreeItemCollapsibleState.None);
+    this.id = `sandbox:${realm}:${sandbox.id}`;
 
     const display = computeSandboxDisplay(sandbox, isCloneSource);
     const rawState = (sandbox.state ?? 'unknown').toLowerCase();

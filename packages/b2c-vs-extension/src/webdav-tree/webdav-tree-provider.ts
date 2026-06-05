@@ -40,6 +40,14 @@ export class WebDavTreeItem extends vscode.TreeItem {
         : vscode.TreeItemCollapsibleState.Collapsed;
     super(fileName, collapsible);
 
+    // Stable id keyed by nodeType + webdavPath. Placeholders fall back to
+    // their parent-derived label since they have no path of their own.
+    if (nodeType === 'placeholder') {
+      this.id = `webdav:placeholder:${fileName}`;
+    } else {
+      this.id = `webdav:${nodeType}:${webdavPath}`;
+    }
+
     // Use path-specific contextValues for virtual roots so menu when-clauses
     // can distinguish Catalogs from Libraries.
     if (nodeType === 'virtual-root') {

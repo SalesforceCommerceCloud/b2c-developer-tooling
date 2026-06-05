@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import * as fs from 'fs';
-import * as path from 'path';
 import * as vscode from 'vscode';
 
 /**
@@ -17,25 +15,20 @@ export class CapFileDecorationProvider implements vscode.FileDecorationProvider 
   private readonly _onDidChangeFileDecorations = new vscode.EventEmitter<vscode.Uri | vscode.Uri[] | undefined>();
   readonly onDidChangeFileDecorations = this._onDidChangeFileDecorations.event;
 
+  /**
+   * @param isCapDirectory O(1) predicate that returns true when the given URI
+   *   is a known CAP directory. Backed by the in-memory set maintained by the
+   *   CAP feature's FileSystemWatcher, so paints don't hit the filesystem.
+   */
+  constructor(private readonly isCapDirectory: (uri: vscode.Uri) => boolean) {}
+
   provideFileDecoration(uri: vscode.Uri): vscode.FileDecoration | undefined {
-    // Only decorate directories
-    try {
-      const stat = fs.statSync(uri.fsPath);
-      if (!stat.isDirectory()) return undefined;
-    } catch {
-      return undefined;
-    }
-
-    const capJsonPath = path.join(uri.fsPath, 'commerce-app.json');
-    if (fs.existsSync(capJsonPath)) {
-      return {
-        badge: 'CA',
-        tooltip: 'Commerce App Package (CAP)',
-        color: new vscode.ThemeColor('charts.blue'),
-      };
-    }
-
-    return undefined;
+    if (!this.isCapDirectory(uri)) return undefined;
+    return {
+      badge: 'CA',
+      tooltip: 'Commerce App Package (CAP)',
+      color: new vscode.ThemeColor('charts.blue'),
+    };
   }
 
   /** Notify VS Code to re-evaluate decorations for all files. */

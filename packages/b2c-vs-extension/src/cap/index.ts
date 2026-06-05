@@ -22,15 +22,15 @@ export function registerCap(
   configProvider: B2CExtensionConfig,
   log: vscode.OutputChannel,
 ): void {
-  // File decoration provider
-  const decorator = new CapFileDecorationProvider();
-  context.subscriptions.push(vscode.window.registerFileDecorationProvider(decorator));
-  context.subscriptions.push(decorator);
-
   // Track known CAP directory URIs for context menu visibility.
   // The `in` operator in VS Code `when` clauses checks for keys in an object.
   // The `resource` when-clause variable evaluates to the full URI string (file:///...).
   const capUris = new Set<string>();
+
+  // File decoration provider — backed by capUris so paints stay O(1).
+  const decorator = new CapFileDecorationProvider((uri) => capUris.has(uri.toString()));
+  context.subscriptions.push(vscode.window.registerFileDecorationProvider(decorator));
+  context.subscriptions.push(decorator);
 
   function updateCapContext(): void {
     const obj: Record<string, boolean> = {};
