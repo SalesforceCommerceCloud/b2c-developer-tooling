@@ -231,12 +231,15 @@ export class SandboxTreeDataProvider implements vscode.TreeDataProvider<SandboxT
       return [];
     }
 
-    // Auto-add configured realm if list is empty (like content tree auto-adds contentLibrary)
+    // Auto-add configured realm if list is empty (like content tree auto-adds contentLibrary).
+    // The connection-step wizard now writes the derived realm directly to dw.json,
+    // so getDefaultRealm() returns it via the explicit `realm` field. We still
+    // fall back to the hostname prefix for legacy dw.json files without `realm:`.
     const realms = this.configProvider.getRealms();
     if (realms.length === 0) {
-      const configuredRealm = this.configProvider.getConfiguredRealm();
-      if (configuredRealm) {
-        this.configProvider.addRealm(configuredRealm);
+      const defaultRealm = this.configProvider.getDefaultRealm();
+      if (defaultRealm) {
+        this.configProvider.addRealm(defaultRealm);
       }
     }
 
