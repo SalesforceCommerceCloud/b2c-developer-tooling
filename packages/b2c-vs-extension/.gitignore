@@ -5,3 +5,4 @@ node_modules
 .vsce-stage/
 *.vsix
 /coverage
+resources/xsd/

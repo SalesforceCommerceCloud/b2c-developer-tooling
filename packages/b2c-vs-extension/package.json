@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "B2C DX VSCE",
   "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.8.0",
+  "version": "0.8.2",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -16,7 +16,8 @@
     "@salesforce/b2c-script-types": "workspace:*",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "vscode-html-languageservice": "catalog:"
   },
   "engines": {
     "vscode": "^1.105.1"
@@ -26,6 +27,7 @@
   },
   "activationEvents": [
     "onStartupFinished",
+    "onLanguage:isml",
     "onView:b2cWebdavExplorer",
     "onView:b2cContentExplorer",
     "onFileSystem:b2c-webdav",
@@ -36,6 +38,9 @@
     "onDebugResolve:b2c-script",
     "workspaceContains:**/commerce-app.json"
   ],
+  "extensionDependencies": [
+    "redhat.vscode-xml"
+  ],
   "main": "./dist/extension.cjs",
   "contributes": {
     "typescriptServerPlugins": [
@@ -43,6 +48,609 @@
         "name": "@salesforce/b2c-script-types",
         "enableForWorkspaceTypeScriptVersions": true,
         "configNamespace": "b2c-dx"
+      }
+    ],
+    "languages": [
+      {
+        "id": "isml",
+        "aliases": ["ISML"],
+        "extensions": [".isml"],
+        "configuration": "./language/isml/language-configuration.json"
+      }
+    ],
+    "configurationDefaults": {
+      "[isml]": {
+        "editor.linkedEditing": true,
+        "editor.suggest.insertMode": "replace",
+        "editor.wordWrap": "off"
+      },
+      "[json]": {
+        "editor.quickSuggestions": {
+          "other": true,
+          "comments": false,
+          "strings": true
+        }
+      },
+      "[jsonc]": {
+        "editor.quickSuggestions": {
+          "other": true,
+          "comments": false,
+          "strings": true
+        }
+      },
+      "emmet.includeLanguages": {
+        "isml": "html"
+      }
+    },
+    "grammars": [
+      {
+        "language": "isml",
+        "scopeName": "text.html.isml",
+        "path": "./language/isml/isml.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.isml.isscript": "javascript",
+          "meta.embedded.expression.isml": "javascript"
+        }
+      }
+    ],
+    "snippets": [
+      {
+        "language": "isml",
+        "path": "./language/isml/isml.snippets.json"
+      }
+    ],
+    "breakpoints": [
+      {"language": "isml"},
+      {"language": "javascript"}
+    ],
+    "xmlValidation": [
+      {
+        "fileMatch": "**/sites/*/ab-tests.xml",
+        "url": "./resources/xsd/abtest.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/ab-tests.xml",
+        "url": "./resources/xsd/abtest.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/ab-tests/*.xml",
+        "url": "./resources/xsd/abtest.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/abtest-participants.xml",
+        "url": "./resources/xsd/abtestparticipants.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/abtest-participants.xml",
+        "url": "./resources/xsd/abtestparticipants.xsd"
+      },
+      {
+        "fileMatch": "**/catalogs/*/assignments.xml",
+        "url": "./resources/xsd/assignment.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/assignments.xml",
+        "url": "./resources/xsd/assignment.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/catalogs/*/assignments.xml",
+        "url": "./resources/xsd/assignment.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/cache-settings.xml",
+        "url": "./resources/xsd/cachesettings.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/cache-settings.xml",
+        "url": "./resources/xsd/cachesettings.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/cache-settings/*.xml",
+        "url": "./resources/xsd/cachesettings.xsd"
+      },
+      {
+        "fileMatch": "**/catalogs/*/catalog.xml",
+        "url": "./resources/xsd/catalog.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/catalogs/*/catalog.xml",
+        "url": "./resources/xsd/catalog.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/catalogs/*.xml",
+        "url": "./resources/xsd/catalog.xsd"
+      },
+      {
+        "fileMatch": "**/commerce-feature-states.xml",
+        "url": "./resources/xsd/commercefeaturestate.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/commerce-feature-states.xml",
+        "url": "./resources/xsd/commercefeaturestate.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/commerce-feature-states.xml",
+        "url": "./resources/xsd/commercefeaturestate.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/coupons.xml",
+        "url": "./resources/xsd/coupon.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/coupons.xml",
+        "url": "./resources/xsd/coupon.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/coupons/*.xml",
+        "url": "./resources/xsd/coupon.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/coupon-redemptions.xml",
+        "url": "./resources/xsd/couponredemption.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/coupon-redemptions.xml",
+        "url": "./resources/xsd/couponredemption.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/csrf-whitelists.xml",
+        "url": "./resources/xsd/csrfwhitelists.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/csrf-allowlists.xml",
+        "url": "./resources/xsd/csrfwhitelists.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/csrf-whitelists.xml",
+        "url": "./resources/xsd/csrfwhitelists.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/csrf-allowlists.xml",
+        "url": "./resources/xsd/csrfwhitelists.xsd"
+      },
+      {
+        "fileMatch": "**/customer_lists/*/customers.xml",
+        "url": "./resources/xsd/customer.xsd"
+      },
+      {
+        "fileMatch": "**/customer_lists/*/customers/*.xml",
+        "url": "./resources/xsd/customer.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/customer-cdn-settings.xml",
+        "url": "./resources/xsd/customercdnsettings.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/customer-cdn-settings.xml",
+        "url": "./resources/xsd/customercdnsettings.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/customer-cdn-settings/*.xml",
+        "url": "./resources/xsd/customercdnsettings.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/customer-groups.xml",
+        "url": "./resources/xsd/customergroup.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/customer-groups.xml",
+        "url": "./resources/xsd/customergroup.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/customer-groups/*.xml",
+        "url": "./resources/xsd/customergroup.xsd"
+      },
+      {
+        "fileMatch": "**/customer_lists.xml",
+        "url": "./resources/xsd/customerlist.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/customer-lists/*.xml",
+        "url": "./resources/xsd/customerlist.xsd"
+      },
+      {
+        "fileMatch": "**/customer_lists/*/customer-list.xml",
+        "url": "./resources/xsd/customerlist2.xsd"
+      },
+      {
+        "fileMatch": "**/customer_lists/*.xml",
+        "url": "./resources/xsd/customerlist2.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/custom-objects.xml",
+        "url": "./resources/xsd/customobject.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/custom-objects/*.xml",
+        "url": "./resources/xsd/customobject.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/custom-objects/*.xml",
+        "url": "./resources/xsd/customobject.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/dcext.xml",
+        "url": "./resources/xsd/dcext.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/dcext.xml",
+        "url": "./resources/xsd/dcext.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/dcext/*.xml",
+        "url": "./resources/xsd/dcext.xsd"
+      },
+      {
+        "fileMatch": "**/cartridges/*/cartridge/forms/**/*.xml",
+        "url": "./resources/xsd/form.xsd"
+      },
+      {
+        "fileMatch": "**/geolocations.xml",
+        "url": "./resources/xsd/geolocation.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/geolocations.xml",
+        "url": "./resources/xsd/geolocation.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/geolocations.xml",
+        "url": "./resources/xsd/geolocation.xsd"
+      },
+      {
+        "fileMatch": "**/gift_certificates/gift-certificates.xml",
+        "url": "./resources/xsd/giftcertificate.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/gift-certificates.xml",
+        "url": "./resources/xsd/giftcertificate.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/gift-certificates.xml",
+        "url": "./resources/xsd/giftcertificate.xsd"
+      },
+      {
+        "fileMatch": "**/inventory_lists/*.xml",
+        "url": "./resources/xsd/inventory.xsd"
+      },
+      {
+        "fileMatch": "**/inventory_lists/*/inventory.xml",
+        "url": "./resources/xsd/inventory.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/inventory-lists/*.xml",
+        "url": "./resources/xsd/inventory.xsd"
+      },
+      {
+        "fileMatch": "**/jobs.xml",
+        "url": "./resources/xsd/jobs.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/jobs.xml",
+        "url": "./resources/xsd/jobs.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/jobs.xml",
+        "url": "./resources/xsd/jobs.xsd"
+      },
+      {
+        "fileMatch": "**/libraries/*/library.xml",
+        "url": "./resources/xsd/library.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/library.xml",
+        "url": "./resources/xsd/library.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/libraries/*.xml",
+        "url": "./resources/xsd/library.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/locales.xml",
+        "url": "./resources/xsd/locales.xsd"
+      },
+      {
+        "fileMatch": "**/locales.xml",
+        "url": "./resources/xsd/locales.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/locales.xml",
+        "url": "./resources/xsd/locales.xsd"
+      },
+      {
+        "fileMatch": "**/meta/system-objecttype-extensions.xml",
+        "url": "./resources/xsd/metadata.xsd"
+      },
+      {
+        "fileMatch": "**/meta/custom-objecttype-definitions.xml",
+        "url": "./resources/xsd/metadata.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/meta/*.xml",
+        "url": "./resources/xsd/metadata.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/meta/*.xml",
+        "url": "./resources/xsd/metadata.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/oauth-providers.xml",
+        "url": "./resources/xsd/oauth.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/oauth-providers.xml",
+        "url": "./resources/xsd/oauth.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/oauth-providers/*.xml",
+        "url": "./resources/xsd/oauth.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/page-meta-tags.xml",
+        "url": "./resources/xsd/pagemetatag.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/page-meta-tags.xml",
+        "url": "./resources/xsd/pagemetatag.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/page-meta-tags/*.xml",
+        "url": "./resources/xsd/pagemetatag.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/payment-methods.xml",
+        "url": "./resources/xsd/paymentmethod.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/payment-methods.xml",
+        "url": "./resources/xsd/paymentmethod.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/payment-methods/*.xml",
+        "url": "./resources/xsd/paymentmethod.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/payment-processors.xml",
+        "url": "./resources/xsd/paymentprocessor.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/payment-processors.xml",
+        "url": "./resources/xsd/paymentprocessor.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/payment-processors/*.xml",
+        "url": "./resources/xsd/paymentprocessor.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/preferences.xml",
+        "url": "./resources/xsd/preferences.xsd"
+      },
+      {
+        "fileMatch": "**/preferences.xml",
+        "url": "./resources/xsd/preferences.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/preferences/*.xml",
+        "url": "./resources/xsd/preferences.xsd"
+      },
+      {
+        "fileMatch": "**/price_adjustment_limits/price-adjustment-limits.xml",
+        "url": "./resources/xsd/priceadjustmentlimits.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/price-adjustment-limits.xml",
+        "url": "./resources/xsd/priceadjustmentlimits.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/price-adjustment-limits.xml",
+        "url": "./resources/xsd/priceadjustmentlimits.xsd"
+      },
+      {
+        "fileMatch": "**/pricebooks/*.xml",
+        "url": "./resources/xsd/pricebook.xsd"
+      },
+      {
+        "fileMatch": "**/pricebooks/*/pricebook.xml",
+        "url": "./resources/xsd/pricebook.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/pricebooks/*.xml",
+        "url": "./resources/xsd/pricebook.xsd"
+      },
+      {
+        "fileMatch": "**/customer_lists/*/product-lists/*.xml",
+        "url": "./resources/xsd/productlist.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/product-lists.xml",
+        "url": "./resources/xsd/productlist.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/product-lists.xml",
+        "url": "./resources/xsd/productlist.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/promotions.xml",
+        "url": "./resources/xsd/promotion.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/promotions.xml",
+        "url": "./resources/xsd/promotion.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/promotions/*.xml",
+        "url": "./resources/xsd/promotion.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/redirect-urls.xml",
+        "url": "./resources/xsd/redirecturl.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/redirect-urls.xml",
+        "url": "./resources/xsd/redirecturl.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/redirect-urls/*.xml",
+        "url": "./resources/xsd/redirecturl.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/schedules.xml",
+        "url": "./resources/xsd/schedules.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/schedules.xml",
+        "url": "./resources/xsd/schedules.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/search.xml",
+        "url": "./resources/xsd/search.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/search.xml",
+        "url": "./resources/xsd/search.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/search/*.xml",
+        "url": "./resources/xsd/search.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/search2.xml",
+        "url": "./resources/xsd/search2.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/search2.xml",
+        "url": "./resources/xsd/search2.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/services.xml",
+        "url": "./resources/xsd/services.xsd"
+      },
+      {
+        "fileMatch": "**/services.xml",
+        "url": "./resources/xsd/services.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/services.xml",
+        "url": "./resources/xsd/services.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/shipping.xml",
+        "url": "./resources/xsd/shipping.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/shipping.xml",
+        "url": "./resources/xsd/shipping.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/shipping/*.xml",
+        "url": "./resources/xsd/shipping.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/site.xml",
+        "url": "./resources/xsd/site.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*.xml",
+        "url": "./resources/xsd/site.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/site.xml",
+        "url": "./resources/xsd/site.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/sitemap-configuration.xml",
+        "url": "./resources/xsd/sitemapconfiguration.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/sitemap-configuration.xml",
+        "url": "./resources/xsd/sitemapconfiguration.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/slots.xml",
+        "url": "./resources/xsd/slot.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/slot-configurations.xml",
+        "url": "./resources/xsd/slot.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/slots.xml",
+        "url": "./resources/xsd/slot.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/slots/*.xml",
+        "url": "./resources/xsd/slot.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/sorting-rules.xml",
+        "url": "./resources/xsd/sort.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/sort.xml",
+        "url": "./resources/xsd/sort.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/sorting-rules.xml",
+        "url": "./resources/xsd/sort.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/source-codes.xml",
+        "url": "./resources/xsd/sourcecode.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/sourcecodes.xml",
+        "url": "./resources/xsd/sourcecode.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sourcecodes/*.xml",
+        "url": "./resources/xsd/sourcecode.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/stores.xml",
+        "url": "./resources/xsd/store.xsd"
+      },
+      {
+        "fileMatch": "**/stores/stores.xml",
+        "url": "./resources/xsd/store.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/stores/*.xml",
+        "url": "./resources/xsd/store.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/storefronts.xml",
+        "url": "./resources/xsd/storefronts.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/storefronts.xml",
+        "url": "./resources/xsd/storefronts.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/storefronts/*.xml",
+        "url": "./resources/xsd/storefronts.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/tax.xml",
+        "url": "./resources/xsd/tax.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/tax.xml",
+        "url": "./resources/xsd/tax.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/tax/*.xml",
+        "url": "./resources/xsd/tax.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/url-rules.xml",
+        "url": "./resources/xsd/urlrules.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/url-rules.xml",
+        "url": "./resources/xsd/urlrules.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/url-rules/*.xml",
+        "url": "./resources/xsd/urlrules.xsd"
       }
     ],
     "configuration": {
@@ -712,6 +1320,16 @@
         "category": "B2C DX"
       },
       {
+        "command": "b2c-dx.isml.createTemplate",
+        "title": "Create ISML Template",
+        "category": "B2C DX - ISML"
+      },
+      {
+        "command": "b2c-dx.isml.showReferences",
+        "title": "Show ISML References",
+        "category": "B2C DX - ISML"
+      },
+      {
         "command": "b2c-dx.walkthrough.createDwJson",
         "title": "Create dw.json Configuration",
         "category": "B2C DX - Getting Started"
@@ -1242,6 +1860,14 @@
       ],
       "commandPalette": [
         {
+          "command": "b2c-dx.isml.createTemplate",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.isml.showReferences",
+          "when": "editorLangId == isml"
+        },
+        {
           "command": "b2c-dx.cipAnalytics.refresh",
           "when": "config.b2c-dx.features.cipAnalytics"
         },
@@ -1429,16 +2055,17 @@
     }
   },
   "scripts": {
+    "sync:xsd": "node scripts/sync-xsd.mjs",
     "build": "node scripts/esbuild-bundle.mjs",
     "watch": "node scripts/esbuild-bundle.mjs --watch",
     "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
-    "package": "pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
+    "package": "pnpm run build && pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
     "typecheck:agent": "tsc -p . --noEmit --pretty false",
     "format": "prettier --write src",
     "format:check": "prettier --check src",
-    "pretest": "tsc -p tsconfig.test.json",
+    "pretest": "pnpm run sync:xsd && tsc -p tsconfig.test.json",
     "test": "vscode-test",
     "posttest": "pnpm run lint",
     "analyze": "ANALYZE_BUNDLE=1 node scripts/esbuild-bundle.mjs"
