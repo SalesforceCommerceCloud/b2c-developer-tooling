@@ -614,4 +614,4 @@ Downloaded artifacts are cached locally at: `~/.cache/b2c-cli/skills/{version}/{
 
 - [Agent Skills & Plugins Guide](/guide/agent-skills) - Overview of available skills
 - [Claude Code Skills Documentation](https://claude.ai/code) - Claude Code skill format
-- [Cursor Skills Documentation](https://cursor.com/docs/context/skills) - Cursor skill format
+- [Cursor Skills Documentation](https://cursor.com/docs/skills) - Cursor skill format. Cursor also auto-loads skills from `.claude/skills/` and `~/.claude/skills/`, so `--ide claude-code` installs are picked up by Cursor automatically.

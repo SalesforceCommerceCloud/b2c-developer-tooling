@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
+import {dispatchFetch} from './dispatch-fetch.js';
 import {getLogger} from '../logging/logger.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {globalAuthMiddlewareRegistry, applyAuthRequestMiddleware, applyAuthResponseMiddleware} from './middleware.js';
@@ -120,9 +121,8 @@ export class OAuthStrategy implements AuthStrategy {
     headers.set('Authorization', `Bearer ${token}`);
     headers.set('x-dw-client-id', this.config.clientId);
 
-    // Pass through dispatcher for TLS/mTLS support
-    // Node.js fetch accepts dispatcher as an undocumented option
-    let res = await fetch(url, {...init, headers} as RequestInit);
+    // Pass through dispatcher for TLS/mTLS support (see dispatchFetch)
+    let res = await dispatchFetch(url, {...init, headers});
 
     if (res.status !== 401) {
       this._hasHadSuccess = true;
@@ -135,7 +135,7 @@ export class OAuthStrategy implements AuthStrategy {
       this.invalidateToken();
       const newToken = await this.getAccessToken();
       headers.set('Authorization', `Bearer ${newToken}`);
-      res = await fetch(url, {...init, headers} as RequestInit);
+      res = await dispatchFetch(url, {...init, headers});
     }
 
     return res;
