@@ -29,7 +29,8 @@ export type FeatureCategory =
   | 'cap'
   | 'pageDesigner'
   | 'logs'
-  | 'instance';
+  | 'instance'
+  | 'scriptTypes';
 
 /** VS Code 1.86+ telemetry-level signal. Falls back to true on older hosts. */
 function isVsCodeTelemetryEnabled(): boolean {

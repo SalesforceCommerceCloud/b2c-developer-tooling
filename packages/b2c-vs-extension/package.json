@@ -575,12 +575,6 @@
         "category": "B2C DX - Code Sync"
       },
       {
-        "command": "b2c-dx.codeSync.diffCartridge",
-        "title": "Compare with Instance",
-        "icon": "$(diff)",
-        "category": "B2C DX - Code Sync"
-      },
-      {
         "command": "b2c-dx.codeSync.addToSitePath",
         "title": "Add to Site Cartridge Path",
         "icon": "$(add)",
@@ -1025,10 +1019,6 @@
         },
         {
           "command": "b2c-dx.codeSync.downloadCartridge",
-          "when": "false"
-        },
-        {
-          "command": "b2c-dx.codeSync.diffCartridge",
           "when": "false"
         },
         {

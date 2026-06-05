@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import * as fs from 'fs';
+import {readFile} from 'fs/promises';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
@@ -73,7 +73,7 @@ export function registerWebDavCommands(
       {location: vscode.ProgressLocation.Notification, title: `Uploading ${fileName}...`},
       async () => {
         try {
-          const content = fs.readFileSync(uri.fsPath);
+          const content = await readFile(uri.fsPath);
           await fsProvider.writeFile(webdavPathToUri(fullPath), new Uint8Array(content), {
             create: true,
             overwrite: true,

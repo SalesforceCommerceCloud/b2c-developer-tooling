@@ -274,8 +274,38 @@ export class WebDavFileSystemProvider implements vscode.FileSystemProvider {
     }
   }
 
-  rename(): never {
-    throw vscode.FileSystemError.NoPermissions('Rename not supported');
+  async rename(oldUri: vscode.Uri, newUri: vscode.Uri, options: {overwrite: boolean}): Promise<void> {
+    const oldPath = uriToWebdavPath(oldUri);
+    const newPath = uriToWebdavPath(newUri);
+
+    // Cross-root moves are not supported (e.g., between Impex and Cartridges)
+    const oldRoot = oldPath.split('/')[0];
+    const newRoot = newPath.split('/')[0];
+    if (!oldRoot || !newRoot || oldRoot !== newRoot) {
+      throw vscode.FileSystemError.NoPermissions(newUri);
+    }
+
+    const instance = this.configProvider.getInstance();
+    if (!instance) {
+      throw vscode.FileSystemError.Unavailable('No B2C Commerce instance configured');
+    }
+
+    try {
+      await instance.webdav.move(oldPath, newPath, options.overwrite);
+      this.clearCache(oldPath);
+      this.clearCache(newPath);
+      this._onDidChangeFile.fire([
+        {type: vscode.FileChangeType.Deleted, uri: oldUri},
+        {type: vscode.FileChangeType.Created, uri: newUri},
+      ]);
+    } catch (err) {
+      if (err instanceof vscode.FileSystemError) throw err;
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes('412') || message.toLowerCase().includes('precondition failed')) {
+        throw vscode.FileSystemError.FileExists(newUri);
+      }
+      throw mapHttpError(err, oldUri);
+    }
   }
 
   /** Clear cached data for a path and its parent directory. If no path, clear everything. */

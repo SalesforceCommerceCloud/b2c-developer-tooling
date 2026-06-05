@@ -107,13 +107,19 @@ export function registerContentCommands(
     let result;
     try {
       result = await vscode.window.withProgress(
-        {location: vscode.ProgressLocation.Notification, title: progressTitle, cancellable: false},
-        async (progress) => {
+        {location: vscode.ProgressLocation.Notification, title: progressTitle, cancellable: true},
+        async (progress, token) => {
+          // The SDK exportContent call does not accept an AbortSignal, so we
+          // can only honor cancellation at asset-download progress boundaries;
+          // in-flight requests will complete before we abort.
           return exportContent(instance, contentIds, libraryId, outputPath, {
             isSiteLibrary,
             offline,
             assetQuery: configProvider.getAssetQuery(),
             onAssetProgress: (_asset, index, total) => {
+              if (token.isCancellationRequested) {
+                throw new vscode.CancellationError();
+              }
               progress.report({
                 message: `Downloading asset ${index + 1}/${total}`,
                 increment: (1 / total) * 100,
@@ -123,6 +129,10 @@ export function registerContentCommands(
         },
       );
     } catch (err) {
+      if (err instanceof vscode.CancellationError) {
+        // Operation cancelled by user.
+        return;
+      }
       const message = err instanceof Error ? err.message : String(err);
       vscode.window.showErrorMessage(`Export failed: ${message}`);
       return;
