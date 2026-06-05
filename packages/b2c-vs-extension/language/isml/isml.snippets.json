@@ -1,0 +1,101 @@
+{
+  "expression": {
+    "prefix": "${",
+    "body": ["\\${${1:expression}}"],
+    "description": "ISML expression placeholder"
+  },
+  "resource-msg": {
+    "prefix": "resourcemsg",
+    "body": ["\\${Resource.msg('${1:key}', '${2:bundle}', null)}"],
+    "description": "Localized message via Resource.msg"
+  },
+  "resource-msgf": {
+    "prefix": "resourcemsgf",
+    "body": ["\\${Resource.msgf('${1:key}', '${2:bundle}', null, ${3:args})}"],
+    "description": "Formatted localized message via Resource.msgf"
+  },
+  "url": {
+    "prefix": "urlutilsurl",
+    "body": ["\\${URLUtils.url('${1:Controller-Action}'${2:, 'param', value})}"],
+    "description": "Build a URL via URLUtils.url"
+  },
+  "https-url": {
+    "prefix": "urlutilshttps",
+    "body": ["\\${URLUtils.https('${1:Controller-Action}'${2:, 'param', value})}"],
+    "description": "Build an HTTPS URL via URLUtils.https"
+  },
+  "abs-url": {
+    "prefix": "urlutilsabs",
+    "body": ["\\${URLUtils.abs('${1:Controller-Action}'${2:, 'param', value})}"],
+    "description": "Build an absolute URL via URLUtils.abs"
+  },
+  "static-url": {
+    "prefix": "urlutilsstatic",
+    "body": ["\\${URLUtils.staticURL('/${1:images/example.png}')}"],
+    "description": "Reference a static asset via URLUtils.staticURL"
+  },
+  "request-locale": {
+    "prefix": "requestlocale",
+    "body": ["\\${request.locale}"],
+    "description": "Current request locale"
+  },
+  "request-httpparam": {
+    "prefix": "requesthttpparam",
+    "body": ["\\${request.httpParameterMap.${1:paramName}.stringValue}"],
+    "description": "Read a query/form parameter"
+  },
+  "pdict": {
+    "prefix": "pdict",
+    "body": ["\\${pdict.${1:property}}"],
+    "description": "Read from the pipeline dictionary (pdict)"
+  },
+  "customer-logged": {
+    "prefix": "customerlogged",
+    "body": ["\\${customer.authenticated && customer.registered}"],
+    "description": "Condition for 'is the customer logged in'"
+  },
+  "current-basket": {
+    "prefix": "currentbasket",
+    "body": [
+      "<isscript>",
+      "\tvar BasketMgr = require('dw/order/BasketMgr');",
+      "\tvar basket = BasketMgr.getCurrentBasket();",
+      "\t$0",
+      "</isscript>"
+    ],
+    "description": "Get the current basket via BasketMgr"
+  },
+  "current-customer": {
+    "prefix": "currentcustomer",
+    "body": [
+      "<isscript>",
+      "\tvar CustomerMgr = require('dw/customer/CustomerMgr');",
+      "\tvar customer = CustomerMgr.getCustomerByLogin('${1:login}');",
+      "\t$0",
+      "</isscript>"
+    ],
+    "description": "Look up a customer via CustomerMgr"
+  },
+  "current-site": {
+    "prefix": "currentsite",
+    "body": [
+      "<isscript>",
+      "\tvar Site = require('dw/system/Site');",
+      "\tvar site = Site.getCurrent();",
+      "\t$0",
+      "</isscript>"
+    ],
+    "description": "Get the current Site"
+  },
+  "logger": {
+    "prefix": "dwlogger",
+    "body": [
+      "<isscript>",
+      "\tvar Logger = require('dw/system/Logger');",
+      "\tvar log = Logger.getLogger('${1:category}', '${2:filename}');",
+      "\tlog.info('${3:message}');",
+      "</isscript>"
+    ],
+    "description": "Acquire a dw/system/Logger and log a message"
+  }
+}

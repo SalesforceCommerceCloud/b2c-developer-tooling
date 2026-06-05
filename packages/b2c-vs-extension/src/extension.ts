@@ -22,6 +22,7 @@ import {registerScaffold} from './scaffold/index.js';
 import {registerApiBrowser} from './api-browser/index.js';
 import {registerDebugger} from './debugger/index.js';
 import {registerCodeSync} from './code-sync/index.js';
+import {registerIsml} from './isml/index.js';
 import {registerScriptTypes} from './script-types/index.js';
 import {registerWebDavTree} from './webdav-tree/index.js';
 import {disposeTelemetry, initTelemetry, markFeatureUsed, sendEvent, sendException} from './telemetry.js';
@@ -439,6 +440,8 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   if (settings.get<boolean>('features.cipAnalytics', true)) {
     registerCipAnalytics(context, configProvider, log);
   }
+
+  registerIsml(context, cartridgeService);
 
   registerDebugger(context, configProvider);
 
