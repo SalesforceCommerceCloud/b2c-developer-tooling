@@ -171,14 +171,7 @@ export class ApiBrowserTreeDataProvider implements vscode.TreeDataProvider<ApiBr
         status: s.status,
       }));
 
-      const uniqueFamilies = Array.from(new Set(this.schemaCache.map((s) => s.apiFamily)));
-      const shopperCount = this.schemaCache.filter(isShopperSchema).length;
-      this.log.appendLine(
-        `[API Browser] Loaded ${this.schemaCache.length} schemas (${shopperCount} shopper, ${this.schemaCache.length - shopperCount} admin)`,
-      );
-      this.log.appendLine(`[API Browser] Unique apiFamily values: ${JSON.stringify(uniqueFamilies)}`);
-      const sample = this.schemaCache.slice(0, 5).map((s) => `${s.apiFamily}/${s.apiName}/${s.apiVersion}`);
-      this.log.appendLine(`[API Browser] First 5 entries (family/name/version): ${JSON.stringify(sample)}`);
+      this.log.appendLine(`[API Browser] Loaded ${this.schemaCache.length} schemas`);
       return this.schemaCache;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

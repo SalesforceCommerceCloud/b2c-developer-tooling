@@ -50,9 +50,7 @@ export function registerApiBrowser(
   const scapiAddDisposable = registerSafeCommand(
     'b2c-dx.apiBrowser.scapiAdd',
     (item: ApiSchemaTreeItem | SchemaEntry) => {
-      log.appendLine(`[API Browser] scapiAdd invoked with arg type=${item?.constructor?.name ?? typeof item}`);
       const schema = item instanceof ApiSchemaTreeItem ? item.schema : item;
-      log.appendLine(`[API Browser] scapiAdd schema=${JSON.stringify(schema)}`);
       if (!schema || !isShopperSchema(schema)) {
         const msg = `Storefront Next scapi add is only available for Shopper schemas (got apiFamily="${schema?.apiFamily ?? '<missing>'}", apiName="${schema?.apiName ?? '<missing>'}").`;
         log.appendLine(`[API Browser] ${msg}`);
