@@ -72,16 +72,11 @@ describe('auth/dispatch-fetch (issue #468)', () => {
   });
 
   it('uses global.fetch when no dispatcher is present', async () => {
-    const mockAgent = new MockAgent();
-    mockAgent.disableNetConnect();
-    mockAgent.get('https://example.test').intercept({path: '/', method: 'GET'}).reply(200, 'ok');
-
-    // Route the stub through the mock so no real network is touched, while still
-    // counting that global.fetch was the entry point for the no-dispatcher case.
-    globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
+    // The beforeEach stub already counts global.fetch calls; replace it with one
+    // that short-circuits to a canned Response so no network is touched.
+    globalThis.fetch = (async () => {
       globalFetchCalls++;
-      const {fetch: undiciFetch} = await import('undici');
-      return undiciFetch(url as string, {...init, dispatcher: mockAgent} as RequestInit) as unknown as Response;
+      return new Response('ok', {status: 200});
     }) as typeof fetch;
 
     const auth = new BasicAuthStrategy('user', 'pass');
@@ -89,7 +84,5 @@ describe('auth/dispatch-fetch (issue #468)', () => {
 
     expect(res.status).to.equal(200);
     expect(globalFetchCalls, 'no-dispatcher requests use global.fetch').to.equal(1);
-
-    await mockAgent.close();
   });
 });
