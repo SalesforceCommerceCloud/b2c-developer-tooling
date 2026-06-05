@@ -11,12 +11,17 @@ import esbuild from 'esbuild';
 import fs from 'node:fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
+import {syncXsd} from './sync-xsd.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // scripts/ -> package root
 const pkgRoot = path.resolve(__dirname, '..');
+
+// Keep XSDs and package.json#contributes.xmlValidation in lockstep with
+// resources/xsd-mappings.json before any bundling happens.
+syncXsd({pkgRoot});
 
 // In CJS there is no import.meta; SDK's version.js uses createRequire(import.meta.url). Shim it.
 // Use globalThis so the value is visible inside all module wrappers in the bundle.
