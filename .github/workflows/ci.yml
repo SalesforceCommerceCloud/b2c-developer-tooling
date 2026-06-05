@@ -26,11 +26,7 @@ jobs:
 
     strategy:
       matrix:
-        # Node 26 (bundled undici 8.x) is included to guard the mTLS dispatcher
-        # path against undici version skew: the request handler interface changed
-        # across undici majors, and Node's bundled undici differs from the npm
-        # `undici` dependency. See packages/b2c-tooling-sdk/src/auth/dispatch-fetch.ts.
-        node-version: [22.x, 24.x, 26.x]
+        node-version: [22.x, 24.x]
 
     steps:
       - name: Checkout code
