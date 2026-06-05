@@ -386,6 +386,11 @@
         "category": "B2C DX"
       },
       {
+        "command": "b2c-dx.webdav.rename",
+        "title": "Rename",
+        "category": "B2C DX"
+      },
+      {
         "command": "b2c-dx.webdav.download",
         "title": "Download",
         "icon": "$(cloud-download)",
@@ -721,6 +726,11 @@
           "group": "1_open@2"
         },
         {
+          "command": "b2c-dx.webdav.rename",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(directory|file)$/",
+          "group": "2_destructive@0"
+        },
+        {
           "command": "b2c-dx.webdav.delete",
           "when": "view == b2cWebdavExplorer && viewItem =~ /^(directory|file)$/",
           "group": "2_destructive@1"
@@ -957,6 +967,10 @@
           "when": "false"
         },
         {
+          "command": "b2c-dx.webdav.rename",
+          "when": "false"
+        },
+        {
           "command": "b2c-dx.webdav.download",
           "when": "false"
         },
@@ -1025,7 +1039,14 @@
           "when": "false"
         }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "b2c-dx.webdav.rename",
+        "key": "f2",
+        "when": "focusedView == b2cWebdavExplorer"
+      }
+    ]
   },
   "scripts": {
     "build": "node scripts/esbuild-bundle.mjs",
