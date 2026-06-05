@@ -593,6 +593,9 @@ importers:
       '@salesforce/b2c-tooling-sdk':
         specifier: workspace:*
         version: link:../b2c-tooling-sdk
+      swagger-ui-dist:
+        specifier: ^5.18.0
+        version: 5.32.0
     devDependencies:
       '@eslint/compat':
         specifier: 'catalog:'
@@ -636,9 +639,6 @@ importers:
       prettier:
         specifier: 'catalog:'
         version: 3.6.2
-      swagger-ui-dist:
-        specifier: ^5.18.0
-        version: 5.32.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3

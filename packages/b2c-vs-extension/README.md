@@ -6,6 +6,8 @@ VS Code extension for B2C Commerce developer experience: sandbox realm explorer,
 
 This README is the source of truth for repo-level developer info (build/watch, launch configs, packaging, tests). End-user documentation lives in the docs site above.
 
+> **Marketplace publishing happens out of [`forcedotcom/b2c-dx`](https://github.com/forcedotcom/b2c-dx).** All extension development, issues, and pull requests stay in this monorepo; the `forcedotcom/b2c-dx` repo holds the marketplace landing page, governance files, and the workflows that publish each release to VS Code Marketplace and Open VSX. See [PUBLISHING.md](./PUBLISHING.md) for the publish flow and the manual fallback.
+
 ## Features (overview)
 
 - Sandbox Realm Explorer — create / start / stop / restart / clone / extend / view / open BM / delete.
