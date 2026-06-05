@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import type {AuthStrategy, FetchInit} from './types.js';
+import {dispatchFetch} from './dispatch-fetch.js';
 import {getLogger} from '../logging/logger.js';
 
 /**
@@ -43,8 +44,8 @@ export class ApiKeyStrategy implements AuthStrategy {
   async fetch(url: string, init: FetchInit = {}): Promise<Response> {
     const headers = new Headers(init.headers);
     headers.set(this.headerName, this.headerValue);
-    // Pass through dispatcher for TLS/mTLS support
-    return fetch(url, {...init, headers} as RequestInit);
+    // Pass through dispatcher for TLS/mTLS support (see dispatchFetch)
+    return dispatchFetch(url, {...init, headers});
   }
 
   /**
