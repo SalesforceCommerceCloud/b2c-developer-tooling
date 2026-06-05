@@ -37,9 +37,13 @@ export function createLogsWatchStopTool(
       },
       async execute(args, context) {
         const registry = getLogWatchRegistry(context);
-        const watch = registry.getWatchOrThrow(args.watch_id);
-        const totalSeen = watch.totalEntriesSeen;
-        await registry.destroyWatch(args.watch_id);
+        // Idempotent: a watch that was already stopped (and removed) returns a
+        // success response rather than throwing, so retry/cleanup paths are safe.
+        const watch = registry.getWatch(args.watch_id);
+        const totalSeen = watch?.totalEntriesSeen ?? 0;
+        if (watch) {
+          await registry.destroyWatch(args.watch_id);
+        }
         return {
           stopped_at: new Date().toISOString(),
           total_entries_seen: totalSeen,

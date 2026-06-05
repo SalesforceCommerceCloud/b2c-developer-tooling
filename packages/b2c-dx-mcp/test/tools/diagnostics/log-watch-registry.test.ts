@@ -93,6 +93,36 @@ describe('LogWatchRegistry', () => {
       registry.appendEntry(e.watchId, makeEntry('x'));
       await wait;
     });
+
+    it('evicts oldest when over byte cap and counts dropped', () => {
+      // bufferBytesCap small enough that 2 entries exceed it, forcing eviction
+      // even though the count cap is high.
+      const big = 'x'.repeat(100);
+      const e = registry.registerWatch({
+        hostname: 'h',
+        prefixes: [],
+        tailResult: createTailResult(),
+        bufferCap: 1000,
+        bufferBytesCap: 250, // makeEntry raw+message ≈ 2*len; ~200 bytes each
+      });
+      registry.appendEntry(e.watchId, makeEntry(big));
+      registry.appendEntry(e.watchId, makeEntry(big));
+      registry.appendEntry(e.watchId, makeEntry(big));
+      // Only the most recent entries that fit under the byte cap remain.
+      expect(e.buffer.length).to.be.lessThan(3);
+      expect(e.droppedEntries).to.be.greaterThan(0);
+    });
+
+    it('always keeps at least one entry even if it exceeds the byte cap', () => {
+      const e = registry.registerWatch({
+        hostname: 'h',
+        prefixes: [],
+        tailResult: createTailResult(),
+        bufferBytesCap: 10,
+      });
+      registry.appendEntry(e.watchId, makeEntry('x'.repeat(10_000)));
+      expect(e.buffer).to.have.lengthOf(1);
+    });
   });
 
   describe('appendFileDiscovered', () => {
@@ -101,6 +131,20 @@ describe('LogWatchRegistry', () => {
       registry.appendFileDiscovered(e.watchId, makeFile('error.log'));
       registry.appendFileDiscovered(e.watchId, makeFile('error.log'));
       expect(e.filesDiscovered).to.have.lengthOf(1);
+    });
+
+    it('reports each file once on poll but keeps the cumulative list', () => {
+      const e = registry.registerWatch({hostname: 'h', prefixes: [], tailResult: createTailResult()});
+      registry.appendFileDiscovered(e.watchId, makeFile('error-1.log'));
+      // First drain returns the newly-discovered file.
+      expect(registry.drain(e.watchId, 100).filesDiscovered.map((f) => f.name)).to.deep.equal(['error-1.log']);
+      // Second drain (no new files) returns nothing — not the same file again.
+      expect(registry.drain(e.watchId, 100).filesDiscovered).to.deep.equal([]);
+      // A newly discovered file shows up on the next drain only.
+      registry.appendFileDiscovered(e.watchId, makeFile('error-2.log'));
+      expect(registry.drain(e.watchId, 100).filesDiscovered.map((f) => f.name)).to.deep.equal(['error-2.log']);
+      // Cumulative list (used by logs_watch_list) still has both.
+      expect(e.filesDiscovered.map((f) => f.name)).to.deep.equal(['error-1.log', 'error-2.log']);
     });
   });
 

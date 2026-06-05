@@ -15,6 +15,13 @@ const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 /** Maximum number of buffered entries before oldest are evicted. */
 export const DEFAULT_BUFFER_CAP = 5000;
 
+/**
+ * Maximum cumulative bytes buffered before oldest entries are evicted.
+ * Guards against a small number of pathologically large entries (e.g. multi-MB
+ * stack traces) blowing past the count cap's intended memory bound.
+ */
+export const DEFAULT_BUFFER_BYTES_CAP = 50 * 1024 * 1024; // 50 MB
+
 /** Maximum number of buffered errors before oldest are evicted. */
 const ERROR_CAP = 25;
 
@@ -31,12 +38,18 @@ export interface LogWatchEntry {
   hostname: string;
   prefixes: string[];
   buffer: LogEntry[];
+  /** Running byte size of `buffer` (raw + message), used for the byte cap. */
+  bufferBytes: number;
   rotations: LogFile[];
+  /** Cumulative deduped list of every file ever discovered (for logs_watch_list). */
   filesDiscovered: LogFile[];
+  /** Files discovered since the last poll drain (what logs_watch_poll returns). */
+  pendingFilesDiscovered: LogFile[];
   errors: Array<{message: string; at: string}>;
   totalEntriesSeen: number;
   droppedEntries: number;
   bufferCap: number;
+  bufferBytesCap: number;
   stop: () => Promise<void>;
   done: Promise<void>;
   pollWaiters: PollWaiter[];
@@ -50,6 +63,12 @@ export interface RegisterWatchOptions {
   prefixes: string[];
   tailResult: TailLogsResult;
   bufferCap?: number;
+  bufferBytesCap?: number;
+}
+
+/** Approximate in-memory byte cost of a buffered entry. */
+function entryBytes(entry: LogEntry): number {
+  return (entry.raw?.length ?? 0) + (entry.message?.length ?? 0);
 }
 
 export class LogWatchRegistry {
@@ -71,12 +90,19 @@ export class LogWatchRegistry {
     const w = this.watches.get(watchId);
     if (!w || w.stopped) return;
     w.buffer.push(entry);
+    w.bufferBytes += entryBytes(entry);
     w.totalEntriesSeen += 1;
-    if (w.buffer.length > w.bufferCap) {
-      const drop = w.buffer.length - w.bufferCap;
-      w.buffer.splice(0, drop);
-      w.droppedEntries += drop;
+
+    // Evict oldest entries until under BOTH the count cap and the byte cap.
+    // The byte cap guards against a few pathologically large entries (e.g.
+    // multi-MB stack traces) exceeding the intended memory bound. Always keep
+    // at least one entry so a single oversized entry is still deliverable.
+    while (w.buffer.length > 1 && (w.buffer.length > w.bufferCap || w.bufferBytes > w.bufferBytesCap)) {
+      const dropped = w.buffer.shift()!;
+      w.bufferBytes -= entryBytes(dropped);
+      w.droppedEntries += 1;
     }
+
     w.lastActivityAt = Date.now();
     this.flushWaiters(w);
   }
@@ -99,6 +125,9 @@ export class LogWatchRegistry {
     if (!w || w.stopped) return;
     if (!w.filesDiscovered.some((f) => f.name === file.name)) {
       w.filesDiscovered.push(file);
+      // Queue for the next poll drain so each newly-discovered file is reported
+      // exactly once, while filesDiscovered keeps the cumulative view for list.
+      w.pendingFilesDiscovered.push(file);
     }
     w.lastActivityAt = Date.now();
   }
@@ -168,10 +197,15 @@ export class LogWatchRegistry {
   } {
     const w = this.getWatchOrThrow(watchId);
     const entries = w.buffer.splice(0, maxEntries);
+    for (const e of entries) {
+      w.bufferBytes -= entryBytes(e);
+    }
+    if (w.bufferBytes < 0 || w.buffer.length === 0) w.bufferBytes = 0;
     const truncated = w.buffer.length > 0;
     const rotations = w.rotations.splice(0);
     const errors = w.errors.splice(0);
-    const filesDiscovered = [...w.filesDiscovered];
+    // Only files discovered since the last poll — drained like rotations/errors.
+    const filesDiscovered = w.pendingFilesDiscovered.splice(0);
     w.lastActivityAt = Date.now();
     return {entries, errors, filesDiscovered, rotations, truncated};
   }
@@ -201,7 +235,13 @@ export class LogWatchRegistry {
   }
 
   registerWatch(opts: RegisterWatchOptions): LogWatchEntry {
-    const {hostname, prefixes, tailResult, bufferCap = DEFAULT_BUFFER_CAP} = opts;
+    const {
+      hostname,
+      prefixes,
+      tailResult,
+      bufferCap = DEFAULT_BUFFER_CAP,
+      bufferBytesCap = DEFAULT_BUFFER_BYTES_CAP,
+    } = opts;
 
     const existing = this.findByHostname(hostname);
     if (existing) {
@@ -215,6 +255,8 @@ export class LogWatchRegistry {
     const now = Date.now();
     const entry: LogWatchEntry = {
       buffer: [],
+      bufferBytes: 0,
+      bufferBytesCap,
       bufferCap,
       createdAt: now,
       done: tailResult.done,
@@ -223,6 +265,7 @@ export class LogWatchRegistry {
       filesDiscovered: [],
       hostname,
       lastActivityAt: now,
+      pendingFilesDiscovered: [],
       pollWaiters: [],
       prefixes,
       rotations: [],

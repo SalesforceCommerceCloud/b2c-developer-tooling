@@ -20,14 +20,16 @@ import {createScapiTools} from './tools/scapi/index.js';
 import {createStorefrontNextTools} from './tools/storefrontnext/index.js';
 
 /**
- * Base toolset that is always enabled.
- * Provides SCAPI discovery and custom API scaffolding tools.
+ * Base toolsets that are always enabled regardless of detected project type.
+ * - SCAPI: SCAPI discovery and custom API scaffolding tools.
+ * - DIAGNOSTICS: script debugger, log inspection, and docs tools — useful in
+ *   every project type, so they are always available.
  */
-const BASE_TOOLSET: Toolset = 'SCAPI';
+const BASE_TOOLSETS: Toolset[] = ['SCAPI', 'DIAGNOSTICS'];
 
 /**
  * Toolset mapping by project type.
- * Each project type enables specific toolsets IN ADDITION to the base toolset.
+ * Each project type enables specific toolsets IN ADDITION to the base toolsets.
  */
 const PROJECT_TYPE_TOOLSETS: Record<ProjectType, Toolset[]> = {
   cartridges: ['CARTRIDGES'],
@@ -36,27 +38,29 @@ const PROJECT_TYPE_TOOLSETS: Record<ProjectType, Toolset[]> = {
 };
 
 /**
- * Gets toolsets for a project type, always including the base toolset.
+ * Gets toolsets for a project type, always including the base toolsets.
  */
 function getToolsetsForProjectType(projectType: ProjectType): Toolset[] {
   const additionalToolsets = PROJECT_TYPE_TOOLSETS[projectType] ?? [];
-  return [...additionalToolsets, BASE_TOOLSET];
+  return [...additionalToolsets, ...BASE_TOOLSETS];
 }
 
 /**
  * Maps multiple detected project types to a union of MCP toolsets.
  *
  * Combines toolsets from all matched project types, enabling hybrid
- * project support (e.g., cartridges + pwa-kit-v3 gets CARTRIDGES + PWAV3 + MRT + SCAPI).
+ * project support (e.g., cartridges + pwa-kit-v3 gets CARTRIDGES + PWAV3 + MRT + SCAPI + DIAGNOSTICS).
  *
  * @param projectTypes - Array of detected project types
- * @returns Union of all toolsets for the detected project types (always includes base toolset)
+ * @returns Union of all toolsets for the detected project types (always includes base toolsets)
  */
 function getToolsetsForProjectTypes(projectTypes: ProjectType[]): Toolset[] {
   const toolsetSet = new Set<Toolset>();
 
-  // Always include base toolset
-  toolsetSet.add(BASE_TOOLSET);
+  // Always include base toolsets
+  for (const base of BASE_TOOLSETS) {
+    toolsetSet.add(base);
+  }
 
   // Add toolsets for each detected project type
   for (const projectType of projectTypes) {
@@ -118,7 +122,7 @@ export function createToolRegistry(
 
 /**
  * Performs workspace auto-discovery and returns appropriate toolsets.
- * Always includes BASE_TOOLSET even if no project types are detected.
+ * Always includes the BASE_TOOLSETS even if no project types are detected.
  *
  * @param flags - Startup flags containing projectDirectory
  * @param reason - Reason for triggering auto-discovery (for logging)
@@ -167,8 +171,8 @@ async function performAutoDiscovery(flags: StartupFlags, reason: string): Promis
  * 2. Start with all tools from --toolsets (or auto-discovered toolsets)
  * 3. Add individual tools from --tools (can be from any toolset)
  *
- * Auto-discovery always enables at least the BASE_TOOLSET (SCAPI), even if no
- * project types are detected in the workspace.
+ * Auto-discovery always enables at least the BASE_TOOLSETS (SCAPI + DIAGNOSTICS),
+ * even if no project types are detected in the workspace.
  *
  * Example:
  *   --toolsets STOREFRONTNEXT,MRT --tools cartridge_deploy
@@ -236,7 +240,7 @@ export async function registerToolsets(
   // Auto-discovery: If no valid toolsets AND no valid individual tools, detect workspace type.
   // This handles both: (1) no flags provided, and (2) all provided flags are invalid.
   // Auto-discovery enables appropriate toolsets based on workspace type,
-  // or at minimum BASE_TOOLSET if no project types are detected.
+  // or at minimum the BASE_TOOLSETS if no project types are detected.
   if (toolsetsToEnable.size === 0 && validIndividualTools.length === 0) {
     const discoveredToolsets = await performAutoDiscovery(flags, 'no valid toolsets or tools');
     for (const toolset of discoveredToolsets) {

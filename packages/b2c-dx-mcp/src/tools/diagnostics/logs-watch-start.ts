@@ -67,7 +67,11 @@ export function createLogsWatchStartTool(
           .int()
           .min(0)
           .optional()
-          .describe('Number of recent entries per file to emit on startup. Defaults to 1. Set 0 to skip.'),
+          .describe(
+            'Number of pre-existing entries per file to emit on startup. Defaults to 0 so a fresh ' +
+              'watch only captures NEW entries (matches the recommended "start before triggering" workflow). ' +
+              'Set >0 to include recent context.',
+          ),
         poll_interval_ms: z
           .number()
           .int()
@@ -105,7 +109,7 @@ export function createLogsWatchStartTool(
         const tailResult = await tailLogsFn(context.b2cInstance!, {
           prefixes,
           pollInterval: args.poll_interval_ms ?? 3000,
-          lastEntries: args.last_entries ?? 1,
+          lastEntries: args.last_entries ?? 0,
           onEntry(entry) {
             if (!ref.id) return;
             if (levelFilter && levelFilter.length > 0 && !matchesLevel(entry, levelFilter)) {
@@ -130,7 +134,17 @@ export function createLogsWatchStartTool(
           },
         });
 
-        const entry = registry.registerWatch({hostname, prefixes, tailResult});
+        // registerWatch re-checks the hostname and throws on a duplicate. If two
+        // logs_watch_start calls race past the findByHostname check above, the
+        // loser's tailLogs poll is already running in the background — stop it so
+        // it isn't orphaned (it would otherwise poll WebDAV until process exit).
+        let entry;
+        try {
+          entry = registry.registerWatch({hostname, prefixes, tailResult});
+        } catch (error) {
+          await tailResult.stop().catch(() => {});
+          throw error;
+        }
         ref.id = entry.watchId;
 
         return {

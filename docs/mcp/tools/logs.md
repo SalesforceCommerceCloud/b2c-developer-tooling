@@ -78,7 +78,7 @@ Start a background log watch. Returns a `watch_id` immediately. Buffers entries 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `prefixes` | string[] | No | `["error", "customerror"]` | Log prefixes to watch |
-| `last_entries` | number | No | `1` | Recent entries per file to emit on startup. `0` skips. |
+| `last_entries` | number | No | `0` | Pre-existing entries per file to emit on startup. `0` (default) captures only new entries; set >0 for recent context. |
 | `poll_interval_ms` | number | No | `3000` | How often the underlying tail polls WebDAV |
 | `level` | string[] | No | | Drop entries not matching level before buffering |
 | `search` | string | No | | Drop entries not matching substring before buffering |
@@ -96,6 +96,11 @@ Drain buffered entries. If the buffer is empty, blocks up to `timeout_ms` waitin
 | `max_entries` | number | No | `200` | Maximum entries returned per call |
 
 **Returns:** `{watch_id, entries, files_discovered, files_rotated, errors, truncated, buffered_remaining, dropped_entries, stopped}`. When `truncated` is `true`, call again to drain the rest.
+
+- `entries`: `[{file, level, timestamp, message, raw}]` — buffered since the last poll.
+- `files_discovered` / `files_rotated`: `[{name, prefix, size, lastModified, path}]` — each file is reported once, on the poll after it is discovered/rotated.
+- `errors`: `[{message, at}]` where `at` is an ISO 8601 timestamp of when the tail error occurred.
+- `dropped_entries`: count of entries evicted (buffer cap) since the last poll; resets to `0` after each poll.
 
 ### logs_watch_stop
 
