@@ -267,4 +267,4 @@ This project is licensed under the Apache License 2.0. See [LICENSE.txt](./LICEN
 
 ## Disclaimer
 
-This project is currently in **Developer Preview** and is provided "as-is" without warranty of any kind. It is not yet generally available (GA) and should not be used in production environments. Features, APIs, and functionality may change without notice in future releases.
+This project is provided "as-is" without warranty of any kind. While the CLI, SDK, and MCP server are **Generally Available**, the VS Code extension is currently in **Developer Preview** — see its [documentation](./docs/vscode-extension/index.md) for details. Breaking changes to any component will follow a documented deprecation cycle.

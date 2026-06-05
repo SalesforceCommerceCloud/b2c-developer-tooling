@@ -14,6 +14,7 @@
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import type {AuthStrategy, FetchInit, AccessTokenResponse} from './types.js';
+import {dispatchFetch} from './dispatch-fetch.js';
 import {getLogger} from '../logging/logger.js';
 import {
   getOAuthCacheKey,
@@ -201,8 +202,8 @@ export class JwtOAuthStrategy implements AuthStrategy {
     headers.set('Authorization', `Bearer ${token}`);
     headers.set('x-dw-client-id', this.config.clientId);
 
-    // Pass through dispatcher for TLS/mTLS support
-    let res = await fetch(url, {...init, headers} as RequestInit);
+    // Pass through dispatcher for TLS/mTLS support (see dispatchFetch)
+    let res = await dispatchFetch(url, {...init, headers});
 
     if (res.status !== 401) {
       this._hasHadSuccess = true;
@@ -215,7 +216,7 @@ export class JwtOAuthStrategy implements AuthStrategy {
       this.invalidateToken();
       const newToken = await this.getAccessToken();
       headers.set('Authorization', `Bearer ${newToken}`);
-      res = await fetch(url, {...init, headers} as RequestInit);
+      res = await dispatchFetch(url, {...init, headers});
     }
 
     return res;

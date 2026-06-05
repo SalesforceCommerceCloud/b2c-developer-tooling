@@ -30,7 +30,7 @@ A summary by feature:
 | **B2C Script Debugger** | WebDAV (for source-mapping). |
 | **Log Tailing** | WebDAV (logs are read from `Logs/`). |
 | **CAP install** | WebDAV; some apps additionally require OAuth client credentials. |
-| **Scaffold**, **Page Designer Assistant** | None — local-only. |
+| **Scaffold** | None — local-only. |
 
 ### Example `dw.json`
 

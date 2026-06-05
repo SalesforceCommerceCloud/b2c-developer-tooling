@@ -1,5 +1,18 @@
 # @salesforce/b2c-cli
 
+## 1.13.0
+
+### Minor Changes
+
+- [#455](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/455) [`420400a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/420400a28b17549717956f8c47adc2043fe3bfea) - Add `b2c sfnext` topic via JIT plugin (`@salesforce/storefront-next-dev`). On first use the plugin auto-installs at the latest published version; inside a scaffolded Storefront Next project the project-pinned version is preferred automatically. Bootstrap a new project with `npx @salesforce/b2c-cli sfnext create-storefront`. Update later with `b2c plugins update`. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.12.1
+
+### Patch Changes
+
+- Updated dependencies [[`b8dcf74`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b8dcf741c253fee0df4219400bfa10a79c704e98)]:
+  - @salesforce/b2c-tooling-sdk@1.11.1
+
 ## 1.12.0
 
 ### Minor Changes

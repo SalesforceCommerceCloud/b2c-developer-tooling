@@ -11,6 +11,10 @@ import type {CartridgeService} from '../cartridges/cartridge-service.js';
 export class CartridgeItem extends vscode.TreeItem {
   constructor(public readonly cartridge: CartridgeMapping) {
     super(cartridge.name, vscode.TreeItemCollapsibleState.None);
+    // Use src (absolute filesystem path) since cartridge name alone is not
+    // unique across the workspace — the same cartridge name can exist under
+    // different package roots.
+    this.id = `cart:${cartridge.src}`;
 
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (workspaceFolders) {

@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 
 import type {CartridgeService} from '../cartridges/cartridge-service.js';
+import {registerSafeCommand} from '../safety.js';
 
 const PLUGIN_ID = '@salesforce/b2c-script-types';
 
@@ -75,7 +76,7 @@ export function registerScriptTypes(
     }
   });
 
-  const refreshCmd = vscode.commands.registerCommand('b2c-dx.scriptTypes.refresh', async () => {
+  const refreshCmd = registerSafeCommand('b2c-dx.scriptTypes.refresh', async () => {
     cartridgeService.refresh();
     const cartridges = cartridgeService.getCartridges();
     vscode.window.showInformationMessage(

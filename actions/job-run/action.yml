@@ -59,6 +59,8 @@ runs:
       with:
         version: ${{ inputs.version }}
         node-version: ${{ inputs.node-version }}
+        # Reuse an already-installed CLI; only install when none is present.
+        skip-if-present: 'true'
         client-id: ${{ inputs.client-id }}
         client-secret: ${{ inputs.client-secret }}
         server: ${{ inputs.server }}

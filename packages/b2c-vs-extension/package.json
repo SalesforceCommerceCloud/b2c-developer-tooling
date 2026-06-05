@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "B2C DX VSCE",
   "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.8.0",
+  "version": "0.8.2",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -241,11 +241,6 @@
     ],
     "commands": [
       {
-        "command": "b2c-dx.openUI",
-        "title": "Open Page Designer Assistant UI",
-        "category": "B2C DX - Page Designer Assistant"
-      },
-      {
         "command": "b2c-dx.promptAgent",
         "title": "Prompt Agent",
         "category": "B2C DX"
@@ -394,6 +389,11 @@
         "command": "b2c-dx.webdav.delete",
         "title": "Delete",
         "icon": "$(trash)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.rename",
+        "title": "Rename",
         "category": "B2C DX"
       },
       {
@@ -581,12 +581,6 @@
         "category": "B2C DX - Code Sync"
       },
       {
-        "command": "b2c-dx.codeSync.diffCartridge",
-        "title": "Compare with Instance",
-        "icon": "$(diff)",
-        "category": "B2C DX - Code Sync"
-      },
-      {
         "command": "b2c-dx.codeSync.addToSitePath",
         "title": "Add to Site Cartridge Path",
         "icon": "$(add)",
@@ -741,6 +735,11 @@
           "command": "b2c-dx.webdav.download",
           "when": "view == b2cWebdavExplorer && viewItem == file",
           "group": "1_open@2"
+        },
+        {
+          "command": "b2c-dx.webdav.rename",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(directory|file)$/",
+          "group": "2_destructive@0"
         },
         {
           "command": "b2c-dx.webdav.delete",
@@ -983,6 +982,10 @@
           "when": "false"
         },
         {
+          "command": "b2c-dx.webdav.rename",
+          "when": "false"
+        },
+        {
           "command": "b2c-dx.webdav.download",
           "when": "false"
         },
@@ -1043,10 +1046,6 @@
           "when": "false"
         },
         {
-          "command": "b2c-dx.codeSync.diffCartridge",
-          "when": "false"
-        },
-        {
           "command": "b2c-dx.codeSync.addToSitePath",
           "when": "false"
         },
@@ -1055,12 +1054,19 @@
           "when": "false"
         }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "b2c-dx.webdav.rename",
+        "key": "f2",
+        "when": "focusedView == b2cWebdavExplorer"
+      }
+    ]
   },
   "scripts": {
     "build": "node scripts/esbuild-bundle.mjs",
     "watch": "node scripts/esbuild-bundle.mjs --watch",
-    "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
+    "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-script-types run build && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
     "package": "pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
@@ -1082,6 +1088,7 @@
     "@vscode/vsce": "^3.9.1",
     "c8": "catalog:",
     "esbuild": "^0.24.0",
+    "jszip": "3.10.1",
     "swagger-ui-dist": "^5.18.0",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
