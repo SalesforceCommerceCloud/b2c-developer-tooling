@@ -29,7 +29,7 @@ npx @salesforce/b2c-cli --help
 ```
 
 ```bash [Homebrew]
-brew install SalesforceCommerceCloud/tools/b2c-cli
+brew install salesforcecommercecloud/tools/b2c-cli
 ```
 
 :::

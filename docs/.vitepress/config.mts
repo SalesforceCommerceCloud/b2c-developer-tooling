@@ -174,7 +174,15 @@ const referenceSidebar = [
       {
         text: 'Diagnostics',
         collapsed: true,
-        items: [{text: 'Script Debugger', link: '/mcp/tools/diagnostics'}],
+        items: [
+          {text: 'Script Debugger', link: '/mcp/tools/diagnostics'},
+          {text: 'Logs', link: '/mcp/tools/logs'},
+        ],
+      },
+      {
+        text: 'Documentation',
+        collapsed: true,
+        items: [{text: 'Script API & Schemas', link: '/mcp/tools/docs'}],
       },
     ],
   },

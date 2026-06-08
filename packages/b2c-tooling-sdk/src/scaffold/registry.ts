@@ -152,7 +152,10 @@ export class ScaffoldRegistry {
   }
 
   /**
-   * Add scaffold providers
+   * Add scaffold providers to the registry for discovery.
+   * Providers are appended to the existing list and evaluated in priority order.
+   * Clears the cache to ensure new scaffolds are discovered on next query.
+   * @param providers - Array of scaffold providers to add
    */
   addProviders(providers: ScaffoldProvider[]): void {
     this.providers.push(...providers);
@@ -160,7 +163,10 @@ export class ScaffoldRegistry {
   }
 
   /**
-   * Add scaffold transformers
+   * Add scaffold transformers to the registry.
+   * Transformers are applied to all scaffolds during discovery after deduplication.
+   * Clears the cache to ensure transformers are reapplied on the next getScaffolds() call.
+   * @param transformers - Array of scaffold transformers to add
    */
   addTransformers(transformers: ScaffoldTransformer[]): void {
     this.transformers.push(...transformers);

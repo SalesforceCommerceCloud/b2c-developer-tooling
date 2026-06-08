@@ -104,7 +104,7 @@ After install, complete the setup wizard tasks in Business Manager or via CLI. I
 To remove an installed app:
 
 ```bash
-b2c cap uninstall my-integration --domain tax --site RefArch
+b2c cap uninstall my-integration --site RefArch
 ```
 
 ## VS Code Extension Integration
@@ -127,7 +127,7 @@ Install and uninstall commands require:
 - **WebDAV credentials** (`SFCC_USERNAME`, `SFCC_PASSWORD`) — for uploading the CAP zip
 
 ```bash
-export SFCC_HOSTNAME=my-instance.commercecloud.salesforce.com
+export SFCC_SERVER=my-instance.commercecloud.salesforce.com
 export SFCC_CLIENT_ID=your-client-id
 export SFCC_CLIENT_SECRET=your-client-secret
 export SFCC_USERNAME=your-bm-username
@@ -150,7 +150,7 @@ A typical CI/CD pipeline for Commerce App deployment:
 - name: Install CAP
   run: b2c cap install ./dist/my-integration-v${{ env.VERSION }}.zip --site ${{ env.SITE_ID }}
   env:
-    SFCC_HOSTNAME: ${{ secrets.SFCC_HOSTNAME }}
+    SFCC_SERVER: ${{ secrets.SFCC_SERVER }}
     SFCC_CLIENT_ID: ${{ secrets.SFCC_CLIENT_ID }}
     SFCC_CLIENT_SECRET: ${{ secrets.SFCC_CLIENT_SECRET }}
     SFCC_USERNAME: ${{ secrets.SFCC_USERNAME }}

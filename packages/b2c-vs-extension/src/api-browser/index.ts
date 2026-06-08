@@ -6,8 +6,25 @@
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {registerSafeCommand} from '../safety.js';
-import {ApiBrowserTreeDataProvider, type SchemaEntry} from './api-browser-tree-provider.js';
+import {
+  ApiBrowserTreeDataProvider,
+  ApiSchemaTreeItem,
+  isShopperSchema,
+  type SchemaEntry,
+} from './api-browser-tree-provider.js';
 import {SwaggerWebviewManager} from './swagger-webview.js';
+
+const SFNEXT_TERMINAL_NAME = 'sfnext scapi add';
+
+function runSfnextScapiAdd(schema: SchemaEntry, cwd: string, log: vscode.OutputChannel): void {
+  const existing = vscode.window.terminals.find((t) => t.name === SFNEXT_TERMINAL_NAME);
+  const terminal = existing ?? vscode.window.createTerminal({name: SFNEXT_TERMINAL_NAME, cwd});
+  const command = `pnpm sfnext scapi add ${schema.apiFamily} ${schema.apiName} ${schema.apiVersion}`;
+  log.appendLine(`[API Browser] Spawning terminal "${SFNEXT_TERMINAL_NAME}" (cwd=${cwd})`);
+  log.appendLine(`[API Browser] $ ${command}`);
+  terminal.show();
+  terminal.sendText(command);
+}
 
 export function registerApiBrowser(
   context: vscode.ExtensionContext,
@@ -30,9 +47,24 @@ export function registerApiBrowser(
     swaggerManager.openSwaggerPanel(schema);
   });
 
+  const scapiAddDisposable = registerSafeCommand(
+    'b2c-dx.apiBrowser.scapiAdd',
+    (item: ApiSchemaTreeItem | SchemaEntry) => {
+      const schema = item instanceof ApiSchemaTreeItem ? item.schema : item;
+      if (!schema || !isShopperSchema(schema)) {
+        const msg = `Storefront Next scapi add is only available for Shopper schemas (got apiFamily="${schema?.apiFamily ?? '<missing>'}", apiName="${schema?.apiName ?? '<missing>'}").`;
+        log.appendLine(`[API Browser] ${msg}`);
+        vscode.window.showErrorMessage(msg);
+        return;
+      }
+      const cwd = configProvider.getWorkingDirectory();
+      runSfnextScapiAdd(schema, cwd, log);
+    },
+  );
+
   configProvider.onDidReset(() => {
     treeProvider.refresh();
   });
 
-  context.subscriptions.push(treeView, refreshDisposable, openSwaggerDisposable, swaggerManager);
+  context.subscriptions.push(treeView, refreshDisposable, openSwaggerDisposable, scapiAddDisposable, swaggerManager);
 }

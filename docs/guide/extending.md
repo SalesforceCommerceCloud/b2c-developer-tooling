@@ -840,7 +840,7 @@ const envFilterTransformer: CartridgeTransformer = {
 
 ## Scaffold Providers
 
-Plugins can provide custom scaffolds via the `b2c:scaffold-providers` hook, or register providers programmatically via the SDK's `scaffoldRegistry`.
+Plugins can provide custom scaffolds via the `b2c:scaffold-providers` hook, or register providers programmatically via the SDK's `createScaffoldRegistry()` factory.
 
 ### Hook: `b2c:scaffold-providers`
 
@@ -914,13 +914,16 @@ const transformer: ScaffoldTransformer = {
 
 ### SDK Usage (without CLI)
 
-For programmatic SDK usage without the CLI, register providers directly with the scaffold registry:
+For programmatic SDK usage without the CLI, create a scaffold registry and register providers and transformers on it:
 
 ```typescript
-import { scaffoldRegistry } from '@salesforce/b2c-tooling-sdk/scaffold';
+import { createScaffoldRegistry } from '@salesforce/b2c-tooling-sdk/scaffold';
+
+// Create a registry instance
+const registry = createScaffoldRegistry();
 
 // Add a custom provider
-scaffoldRegistry.addProviders([{
+registry.addProviders([{
   name: 'my-provider',
   priority: 'after',
   async getScaffolds(options) {
@@ -929,7 +932,7 @@ scaffoldRegistry.addProviders([{
 }]);
 
 // Add a transformer
-scaffoldRegistry.addTransformers([{
+registry.addTransformers([{
   name: 'my-transformer',
   async transform(scaffolds, options) {
     return scaffolds;
@@ -937,31 +940,9 @@ scaffoldRegistry.addTransformers([{
 }]);
 ```
 
-### Example: Plugin Hook Implementation
-
-```typescript
-// src/hooks/scaffold-providers.ts
-import type { ScaffoldProvidersHook } from '@salesforce/b2c-tooling-sdk/cli';
-import type { ScaffoldProvider } from '@salesforce/b2c-tooling-sdk/scaffold';
-
-const hook: ScaffoldProvidersHook = async function(options) {
-  const customProvider: ScaffoldProvider = {
-    name: 'my-plugin-scaffolds',
-    priority: 'after',
-
-    async getScaffolds(discoveryOptions) {
-      // Load scaffolds from plugin's bundled templates
-      const scaffoldsDir = new URL('../scaffolds', import.meta.url).pathname;
-      // ... load and return scaffolds
-      return [];
-    },
-  };
-
-  return { providers: [customProvider] };
-};
-
-export default hook;
-```
+::: tip Programmatic Registration
+Scaffold providers are registered programmatically via `createScaffoldRegistry()` (see the example above). The SDK does not currently expose a typed `ScaffoldProvidersHook` for plugin-based registration — use the registry API from your plugin's command initialization instead.
+:::
 
 See [Scaffolding Guide](./scaffolding) for details on creating custom scaffolds.
 

@@ -74,6 +74,10 @@ function escapeSqlLiteral(value: string): string {
 
 /**
  * Lists tables from the CIP metadata catalog.
+ *
+ * @param client - CIP client instance for executing metadata queries
+ * @param options - Optional filtering and pagination options (schema, table name pattern, table type, fetch size)
+ * @returns Promise resolving to a list of table metadata records with schema information and table count
  */
 export async function listCipTables(
   client: CipClient,
@@ -112,6 +116,11 @@ export async function listCipTables(
 
 /**
  * Describes table columns from the CIP metadata catalog.
+ *
+ * @param client - CIP client instance for metadata queries
+ * @param tableName - Name of the table to describe
+ * @param options - Optional schema selection and pagination options
+ * @returns Promise resolving to table column descriptions and metadata
  */
 export async function describeCipTable(
   client: CipClient,
@@ -145,6 +154,8 @@ export async function describeCipTable(
 
 /**
  * Lists all curated CIP reports.
+ *
+ * @returns Array of all available curated CIP report definitions
  */
 export function listCipReports(): CipReportDefinition[] {
   return [...CIP_REPORTS];
@@ -152,6 +163,9 @@ export function listCipReports(): CipReportDefinition[] {
 
 /**
  * Looks up a curated CIP report by name.
+ *
+ * @param name - The report name to look up
+ * @returns The report definition if found, undefined if no report matches the provided name
  */
 export function getCipReportByName(name: string): CipReportDefinition | undefined {
   return CIP_REPORTS.find((report) => report.name === name);
@@ -174,6 +188,11 @@ function validateReportParams(report: CipReportDefinition, params: Record<string
 
 /**
  * Builds SQL for a curated report after validating provided parameters.
+ *
+ * @param name - The name of the report to build SQL for
+ * @param params - Parameter values to substitute into the report template, keyed by parameter name
+ * @returns The report definition and generated SQL string ready for execution
+ * @throws {Error} If the report name is not found in the catalog or required parameters are missing
  */
 export function buildCipReportSql(name: string, params: Record<string, string>): CipReportSqlResult {
   const report = getCipReportByName(name);
@@ -191,6 +210,11 @@ export function buildCipReportSql(name: string, params: Record<string, string>):
 
 /**
  * Executes a curated report query and returns decoded rows.
+ *
+ * @param client - The CIP client instance to execute the query with
+ * @param reportName - The name of the curated report to execute
+ * @param options - Report execution options including params and fetch size
+ * @returns Promise resolving to the query result containing decoded rows and report metadata
  */
 export async function executeCipReport(
   client: CipClient,

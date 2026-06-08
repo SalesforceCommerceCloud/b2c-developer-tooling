@@ -17,12 +17,12 @@ Human-readable output with colors, suitable for interactive terminal use:
 [18:31:59] INFO: Upload complete
 ```
 
-### JSON Lines (`--json`)
+### JSON Lines (`--jsonl`)
 
 Machine-readable output for scripting, CI/CD pipelines, and log aggregation:
 
 ```bash
-b2c code deploy --json
+b2c code deploy --jsonl
 ```
 
 ```json
@@ -64,7 +64,8 @@ In debug/trace mode, context objects are displayed:
 |------|---------------------|-------------|
 | `--log-level` | `SFCC_LOG_LEVEL` | Set log verbosity |
 | `-D, --debug` | `SFCC_DEBUG` | Enable debug logging |
-| `--json` | | Output JSON lines |
+| `--jsonl, --json-logs` | `SFCC_JSON_LOGS` | Output log messages as JSON lines |
+| `--json` | | Output command result as JSON |
 
 ## Environment Variables
 
@@ -73,7 +74,6 @@ In debug/trace mode, context objects are displayed:
 | `SFCC_LOG_LEVEL` | Log level (trace, debug, info, warn, error, silent) |
 | `SFCC_DEBUG` | Enable debug logging |
 | `SFCC_LOG_TO_STDOUT` | Send logs to stdout instead of stderr |
-| `SFCC_LOG_COLORIZE` | Force colors on/off |
 | `SFCC_REDACT_SECRETS` | Set to `false` to disable secret redaction |
 | `NO_COLOR` | Industry standard to disable colors |
 | `DEBUG` | Set to `oclif*` for CLI framework debug logs |
@@ -125,14 +125,14 @@ SFCC_REDACT_SECRETS=false b2c code deploy --debug
 
 ## CI/CD Usage
 
-For CI/CD pipelines, use JSON output and disable colors:
+For CI/CD pipelines, use JSON lines log output and disable colors:
 
 ```bash
-NO_COLOR=1 b2c code deploy --json 2>&1 | tee deploy.log
+NO_COLOR=1 b2c code deploy --jsonl 2>&1 | tee deploy.log
 ```
 
 Or explicitly set the log level:
 
 ```bash
-SFCC_LOG_LEVEL=info b2c code deploy --json
+SFCC_LOG_LEVEL=info b2c code deploy --jsonl
 ```

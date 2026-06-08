@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import * as fs from 'fs';
+import {readFile} from 'fs/promises';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
@@ -73,7 +73,7 @@ export function registerWebDavCommands(
       {location: vscode.ProgressLocation.Notification, title: `Uploading ${fileName}...`},
       async () => {
         try {
-          const content = fs.readFileSync(uri.fsPath);
+          const content = await readFile(uri.fsPath);
           await fsProvider.writeFile(webdavPathToUri(fullPath), new Uint8Array(content), {
             create: true,
             overwrite: true,
@@ -81,6 +81,43 @@ export function registerWebDavCommands(
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           vscode.window.showErrorMessage(`WebDAV: Upload failed: ${message}`);
+        }
+      },
+    );
+  });
+
+  const renameItem = registerSafeCommand('b2c-dx.webdav.rename', async (arg?: WebDavTreeItem) => {
+    // Context-menu invocation passes the clicked item; F2 keybinding passes nothing,
+    // so fall back to the tree's current selection.
+    const node = arg ?? treeView.selection[0];
+    if (!node || (node.nodeType !== 'file' && node.nodeType !== 'directory')) return;
+
+    const newName = await vscode.window.showInputBox({
+      title: `Rename "${node.fileName}"`,
+      value: node.fileName,
+      prompt: 'Enter new name',
+      validateInput: (value) => {
+        const trimmed = value?.trim() ?? '';
+        if (!trimmed) return 'Name cannot be empty';
+        if (trimmed.includes('/') || trimmed.includes('\\')) return 'Name cannot contain "/" or "\\"';
+        if (trimmed === '.' || trimmed === '..') return 'Invalid name';
+        return undefined;
+      },
+    });
+    if (!newName || newName === node.fileName) return;
+
+    const lastSlash = node.webdavPath.lastIndexOf('/');
+    const parentPath = lastSlash >= 0 ? node.webdavPath.substring(0, lastSlash) : '';
+    const newWebdavPath = parentPath ? `${parentPath}/${newName}` : newName;
+
+    await vscode.window.withProgress(
+      {location: vscode.ProgressLocation.Notification, title: `Renaming ${node.fileName}...`},
+      async () => {
+        try {
+          await fsProvider.rename(webdavPathToUri(node.webdavPath), webdavPathToUri(newWebdavPath), {overwrite: false});
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          vscode.window.showErrorMessage(`WebDAV: Rename failed: ${message}`);
         }
       },
     );
@@ -306,6 +343,7 @@ export function registerWebDavCommands(
     newFolder,
     newFile,
     uploadFile,
+    renameItem,
     deleteItem,
     download,
     openFile,

@@ -12,7 +12,8 @@ import type {OcapiComponents} from '../clients/index.js';
 import type {ScaffoldChoice, ScaffoldParameter, DynamicParameterSource, SourceResult} from './types.js';
 
 /**
- * SCAPI/OCAPI hook extension points.
+ * SCAPI/OCAPI hook extension points for basket, order, customer, auth, and product resources.
+ * Each choice includes a hook value and display label suitable for parameter selection.
  */
 export const SCAPI_OCAPI_HOOK_POINTS: ScaffoldChoice[] = [
   // Basket

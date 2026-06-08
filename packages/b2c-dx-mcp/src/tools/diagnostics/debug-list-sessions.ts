@@ -33,7 +33,7 @@ export function createDebugListSessionsTool(
       description:
         'List active script debugger sessions with their breakpoints and any halted threads. ' +
         'Use this to discover orphaned sessions, check whether breakpoints are armed, and poll for halted threads in the non-blocking debug workflow.',
-      toolsets: ['CARTRIDGES', 'SCAPI'],
+      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {},
       async execute(_args, context) {
         const registry = getRegistry(context);

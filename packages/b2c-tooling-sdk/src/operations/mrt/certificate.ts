@@ -45,6 +45,37 @@ export interface ListCertificatesResult {
   certificates: MrtCertificateListCreate[];
 }
 
+/**
+ * Lists certificates for an organization.
+ *
+ * @param options - List options for filtering and pagination
+ * @param options.organizationSlug - The organization slug to list certificates for
+ * @param options.limit - Maximum number of results to return (optional)
+ * @param options.offset - Number of results to skip (optional)
+ * @param options.ordering - Field to order results by (optional)
+ * @param options.search - Search query to filter results (optional)
+ * @param options.customOnly - When true, return only customer-managed certificates (optional)
+ * @param options.origin - Custom API origin (optional, defaults to DEFAULT_MRT_ORIGIN)
+ * @param auth - Authentication strategy (ApiKeyStrategy)
+ * @returns A paginated list result containing certificate count, pagination links, and certificate data
+ * @throws Error if the API request fails
+ *
+ * @example
+ * ```typescript
+ * import {ApiKeyStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+ * import {listCertificates} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ *
+ * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
+ *
+ * const result = await listCertificates({
+ *   organizationSlug: 'my-org',
+ *   limit: 10,
+ *   customOnly: true,
+ * }, auth);
+ *
+ * console.log(`Found ${result.count} certificates`);
+ * ```
+ */
 export async function listCertificates(
   options: ListCertificatesOptions,
   auth: AuthStrategy,
@@ -79,6 +110,14 @@ export interface GetCertificateOptions {
   origin?: string;
 }
 
+/**
+ * Retrieves a certificate by ID.
+ *
+ * @param options - Options including organizationSlug and certId
+ * @param auth - Authentication strategy
+ * @returns The certificate details
+ * @throws Error if the request fails
+ */
 export async function getCertificate(options: GetCertificateOptions, auth: AuthStrategy): Promise<MrtCertificate> {
   const {organizationSlug, certId, origin} = options;
   const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, auth);
@@ -101,6 +140,27 @@ export interface CreateCertificateOptions {
   origin?: string;
 }
 
+/**
+ * Creates a certificate for a domain in an organization.
+ *
+ * @param options - Create options with organization slug and domain name
+ * @param auth - Authentication strategy
+ * @returns A promise that resolves to the created certificate
+ * @throws Error if the request fails (e.g., invalid domain, duplicate certificate)
+ *
+ * @example
+ * ```typescript
+ * import {ApiKeyStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+ * import {createCertificate} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ *
+ * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
+ *
+ * const cert = await createCertificate({
+ *   organizationSlug: 'my-org',
+ *   domainName: 'shop.example.com',
+ * }, auth);
+ * ```
+ */
 export async function createCertificate(
   options: CreateCertificateOptions,
   auth: AuthStrategy,
@@ -128,6 +188,13 @@ export interface DeleteCertificateOptions {
   origin?: string;
 }
 
+/**
+ * Deletes a certificate from an organization.
+ *
+ * @param options - Delete options including organization slug and certificate ID
+ * @param auth - Authentication strategy (ApiKeyStrategy)
+ * @throws {Error} If the request fails or certificate cannot be deleted
+ */
 export async function deleteCertificate(options: DeleteCertificateOptions, auth: AuthStrategy): Promise<void> {
   const {organizationSlug, certId, origin} = options;
   const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, auth);
@@ -148,6 +215,27 @@ export interface RestartCertificateValidationOptions {
 /**
  * Restarts validation for a certificate. Only works for certificates that have
  * not yet been validated.
+ *
+ * @param options - Configuration options
+ * @param options.organizationSlug - The organization slug
+ * @param options.certId - The certificate ID
+ * @param options.origin - Optional MRT API origin URL
+ * @param auth - Authentication strategy (ApiKeyStrategy)
+ * @returns The restarted certificate object
+ * @throws Error if the request fails
+ *
+ * @example
+ * ```typescript
+ * import {ApiKeyStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+ * import {restartCertificateValidation} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ *
+ * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
+ *
+ * const cert = await restartCertificateValidation({
+ *   organizationSlug: 'my-org',
+ *   certId: 12345,
+ * }, auth);
+ * ```
  */
 export async function restartCertificateValidation(
   options: RestartCertificateValidationOptions,
