@@ -6,6 +6,28 @@ description: Commands for deploying, downloading, activating code versions, and 
 
 Commands for managing cartridge code on B2C Commerce instances.
 
+## API Backend
+
+The `code list`, `code activate`, and `code delete` commands support both OCAPI and SCAPI backends. By default (`auto` mode), SCAPI is preferred when `shortCode` and `tenantId` are configured. If SCAPI scopes are unavailable, the CLI falls back to OCAPI transparently.
+
+```bash
+# Force SCAPI
+b2c code list --api-backend scapi
+
+# Force OCAPI
+b2c code list --api-backend ocapi
+```
+
+Or set in `dw.json`: `"api-backend": "scapi"`. Or `SFCC_API_BACKEND=scapi` env var.
+
+::: tip
+The `code activate --reload` flag forces an OCAPI call regardless of `--api-backend`, since SCAPI does not expose the cache-rebuild operation.
+:::
+
+::: tip
+The `code deploy`, `code download`, and `code watch` commands always use WebDAV (no SCAPI equivalent for cartridge file transfer).
+:::
+
 ## Authentication
 
 Code commands use different authentication depending on the operation:
@@ -13,7 +35,8 @@ Code commands use different authentication depending on the operation:
 | Operation | Auth Required |
 |-----------|--------------|
 | `code deploy`, `code download`, `code watch` | WebDAV (Basic Auth or OAuth) |
-| `code list`, `code activate`, `code delete` | OAuth + OCAPI |
+| `code list`, `code activate`, `code delete` (SCAPI) | OAuth + `sfcc.scripts` (read) or `sfcc.scripts.rw` (write) + tenant scope |
+| `code list`, `code activate`, `code delete` (OCAPI) | OAuth + OCAPI permissions for `/code_versions` |
 
 ### WebDAV Operations (deploy, download, watch)
 
@@ -24,16 +47,16 @@ export SFCC_USERNAME=your-bm-username
 export SFCC_PASSWORD=your-webdav-access-key
 ```
 
-### OCAPI Operations (list, activate, delete)
+### SCAPI / OCAPI Operations (list, activate, delete)
 
-These commands require OAuth authentication with OCAPI permissions for the `/code_versions` resource configured in Business Manager.
+These commands require OAuth authentication. For SCAPI, configure the `sfcc.scripts.rw` scope on your API client in Account Manager. For OCAPI, configure permissions for the `/code_versions` resource in Business Manager.
 
 ```bash
 export SFCC_CLIENT_ID=your-client-id
 export SFCC_CLIENT_SECRET=your-client-secret
 ```
 
-For complete setup instructions including OCAPI configuration, see the [Authentication Guide](/guide/authentication).
+For complete setup instructions, see the [Authentication Guide](/guide/authentication).
 
 ---
 

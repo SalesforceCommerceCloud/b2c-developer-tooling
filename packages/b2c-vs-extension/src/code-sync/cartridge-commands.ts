@@ -11,6 +11,7 @@ import {
   createCodeVersion,
   reloadCodeVersion,
   deleteCodeVersion,
+  OcapiScriptsBackend,
 } from '@salesforce/b2c-tooling-sdk/operations/code';
 import {
   addCartridge,
@@ -274,7 +275,7 @@ function createListCodeVersionsCommand(
       } else if (actionPick.action === 'reload') {
         await vscode.window.withProgress(
           {location: vscode.ProgressLocation.Notification, title: `Reloading "${versionId}"...`},
-          () => reloadCodeVersion(instance, versionId),
+          () => reloadCodeVersion(new OcapiScriptsBackend(instance), versionId),
         );
         vscode.window.showInformationMessage(`B2C DX: Code version "${versionId}" reloaded.`);
       } else if (actionPick.action === 'delete') {
