@@ -33,5 +33,10 @@
     "@changesets/cli": "^2.31.0",
     "eslint-plugin-prettier": "catalog:",
     "prettier": "catalog:"
+  },
+  "pnpm": {
+    "overrides": {
+      "@smithy/types": "4.14.3"
+    }
   }
 }
