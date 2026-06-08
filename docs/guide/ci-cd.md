@@ -344,18 +344,21 @@ Staging mTLS works with the standard actions — the `setup` action accepts `web
 
 Because the `.p12` is a binary file, store it as a base64-encoded GitHub secret and decode it to disk in a workflow step before calling `setup`. The `certificate` input then points at the decoded path.
 
-**Recommended secrets/variables for staging:**
+These are in addition to the [authentication](#authentication) secrets and variables — the same `SFCC_*` names used elsewhere map straight through to the `setup` inputs:
 
-| Secret | Description |
-|--------|-------------|
-| `SFCC_STAGING_CERTIFICATE_P12_BASE64` | Base64-encoded `.p12` client certificate |
-| `SFCC_STAGING_CERTIFICATE_PASSPHRASE` | Passphrase for the `.p12` |
-| `SFCC_CLIENT_ID` / `SFCC_CLIENT_SECRET` | OAuth credentials |
+| Secret | Maps to input → env var | Description |
+|--------|-------------------------|-------------|
+| `SFCC_CLIENT_ID` | `client-id` → `SFCC_CLIENT_ID` | OAuth Client ID |
+| `SFCC_CLIENT_SECRET` | `client-secret` → `SFCC_CLIENT_SECRET` | OAuth Client Secret |
+| `SFCC_CERTIFICATE_PASSPHRASE` | `certificate-passphrase` → `SFCC_CERTIFICATE_PASSPHRASE` | Passphrase for the `.p12` |
+| `STAGING_CERTIFICATE_P12_BASE64` | *(none — decoded to a file)* | Base64-encoded `.p12` client certificate |
 
-| Variable | Description |
-|----------|-------------|
-| `SFCC_STAGING_SERVER` | e.g. `staging-internal-ccdemo.demandware.net` |
-| `SFCC_STAGING_WEBDAV_SERVER` | e.g. `cert.staging.internal.ccdemo.demandware.net` |
+| Variable | Maps to input → env var | Description |
+|----------|-------------------------|-------------|
+| `SFCC_SERVER` | `server` → `SFCC_SERVER` | e.g. `staging-internal-ccdemo.demandware.net` |
+| `SFCC_WEBDAV_SERVER` | `webdav-server` → `SFCC_WEBDAV_SERVER` | e.g. `cert.staging.internal.ccdemo.demandware.net` |
+
+`STAGING_CERTIFICATE_P12_BASE64` is the only value here that is **not** an `SFCC_*` environment variable — it holds the raw base64 of the certificate file, which a workflow step decodes to disk. The `certificate` input then points at that decoded path (the tooling reads the file path from `SFCC_CERTIFICATE`, not the certificate contents).
 
 To create the base64 secret locally:
 
@@ -384,7 +387,7 @@ jobs:
       # Decode the .p12 to a file inside the runner workspace
       - name: Decode staging client certificate
         run: |
-          echo "${{ secrets.SFCC_STAGING_CERTIFICATE_P12_BASE64 }}" \
+          echo "${{ secrets.STAGING_CERTIFICATE_P12_BASE64 }}" \
             | base64 --decode > "$RUNNER_TEMP/staging-deploy.p12"
           chmod 600 "$RUNNER_TEMP/staging-deploy.p12"
 
@@ -392,10 +395,10 @@ jobs:
         with:
           client-id: ${{ secrets.SFCC_CLIENT_ID }}
           client-secret: ${{ secrets.SFCC_CLIENT_SECRET }}
-          server: ${{ vars.SFCC_STAGING_SERVER }}
-          webdav-server: ${{ vars.SFCC_STAGING_WEBDAV_SERVER }}
+          server: ${{ vars.SFCC_SERVER }}
+          webdav-server: ${{ vars.SFCC_WEBDAV_SERVER }}
           certificate: ${{ runner.temp }}/staging-deploy.p12
-          certificate-passphrase: ${{ secrets.SFCC_STAGING_CERTIFICATE_PASSPHRASE }}
+          certificate-passphrase: ${{ secrets.SFCC_CERTIFICATE_PASSPHRASE }}
           selfsigned: 'true'
 
       - run: npm ci && npm run build
