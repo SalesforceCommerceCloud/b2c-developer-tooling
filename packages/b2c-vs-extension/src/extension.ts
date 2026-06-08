@@ -165,34 +165,53 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   const instanceStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
   instanceStatusBar.command = 'b2c-dx.instance.switch';
   const updateInstanceStatusBar = async () => {
-    const config = configProvider.getConfig();
-    if (config) {
-      // Find active instance name from dw.json
-      const instances = await dwJsonSource.listInstances({workingDirectory: getWorkingDirectory()});
-      const active = instances.find((i) => i.active);
-      const name = active?.name;
-      const host = config.values.hostname ?? '';
-      const truncatedHost = host.length > 40 ? host.slice(0, 37) + '...' : host;
-      const display = name || truncatedHost || 'unnamed';
-      const pinnedSuffix = configProvider.isProjectRootPinned() ? ' $(pinned)' : '';
-      instanceStatusBar.text = `$(cloud) ${display}${pinnedSuffix}`;
-      const tooltipLines = [`B2C Instance: ${name ?? 'unnamed'}`];
-      if (host) tooltipLines.push(`Host: ${host}`);
-      if (configProvider.isProjectRootPinned()) {
-        tooltipLines.push(`Project root: ${getWorkingDirectory()} (pinned)`);
-      }
-      tooltipLines.push('Click to switch instance');
-      instanceStatusBar.tooltip = tooltipLines.join('\n');
-      instanceStatusBar.show();
-    } else {
-      const err = configProvider.getConfigError();
-      if (err) {
-        instanceStatusBar.text = '$(cloud) B2C: Not configured';
-        instanceStatusBar.tooltip = err;
+    // This runs on the activation path (awaited below) and on every config
+    // reset. It must never throw: listInstances() re-throws on a malformed
+    // dw.json, and an unhandled throw here would escape activateInner() and
+    // disable the entire extension (only the two fallback commands survive).
+    // A garbled local dw.json must not take down offline browsing, so any
+    // failure degrades to the "Not configured" presentation.
+    try {
+      const config = configProvider.getConfig();
+      // `getConfig()` is truthy whenever resolveConfig succeeds at all — even
+      // when dw.json is malformed (the resolver tolerates it) or empty — so
+      // gate on an actual instance (hostname) rather than mere truthiness,
+      // otherwise a misconfigured workspace shows "$(cloud) unnamed" instead
+      // of the clearer "Not configured" state.
+      if (config?.hasB2CInstanceConfig()) {
+        // Find active instance name from dw.json
+        const instances = await dwJsonSource.listInstances({workingDirectory: getWorkingDirectory()});
+        const active = instances.find((i) => i.active);
+        const name = active?.name;
+        const host = config.values.hostname ?? '';
+        const truncatedHost = host.length > 40 ? host.slice(0, 37) + '...' : host;
+        const display = name || truncatedHost || 'unnamed';
+        const pinnedSuffix = configProvider.isProjectRootPinned() ? ' $(pinned)' : '';
+        instanceStatusBar.text = `$(cloud) ${display}${pinnedSuffix}`;
+        const tooltipLines = [`B2C Instance: ${name ?? 'unnamed'}`];
+        if (host) tooltipLines.push(`Host: ${host}`);
+        if (configProvider.isProjectRootPinned()) {
+          tooltipLines.push(`Project root: ${getWorkingDirectory()} (pinned)`);
+        }
+        tooltipLines.push('Click to switch instance');
+        instanceStatusBar.tooltip = tooltipLines.join('\n');
         instanceStatusBar.show();
       } else {
-        instanceStatusBar.hide();
+        const err = configProvider.getConfigError();
+        if (err) {
+          instanceStatusBar.text = '$(cloud) B2C: Not configured';
+          instanceStatusBar.tooltip = err;
+          instanceStatusBar.show();
+        } else {
+          instanceStatusBar.hide();
+        }
       }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      log.appendLine(`[Instance] Failed to update status bar: ${message}`);
+      instanceStatusBar.text = '$(cloud) B2C: Not configured';
+      instanceStatusBar.tooltip = `Could not read instance configuration: ${message}`;
+      instanceStatusBar.show();
     }
   };
   await updateInstanceStatusBar();

@@ -35,6 +35,7 @@ export class LogTailManager implements vscode.Disposable {
   private statusBar: vscode.StatusBarItem;
   private tailResult: TailLogsResult | undefined;
   private entryCount = 0;
+  private lastErrorMessage: string | undefined;
 
   constructor() {
     this.outputChannel = vscode.window.createOutputChannel('B2C Logs');
@@ -87,9 +88,15 @@ export class LogTailManager implements vscode.Disposable {
           const level = entry.level ? `[${entry.level}]` : '';
           const ts = entry.timestamp ?? '';
           this.outputChannel.appendLine(`${ts} ${level} ${entry.message}`);
+          this.lastErrorMessage = undefined;
           this.updateStatusBar();
         },
         onError: (error) => {
+          // Tailing polls on an interval; an unreachable instance produces the
+          // same error every tick. Collapse consecutive identical errors into a
+          // single line so the channel doesn't fill with duplicates.
+          if (error.message === this.lastErrorMessage) return;
+          this.lastErrorMessage = error.message;
           this.outputChannel.appendLine(`[ERROR] ${error.message}`);
         },
         onFileDiscovered: (file) => {

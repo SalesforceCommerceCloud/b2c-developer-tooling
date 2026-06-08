@@ -198,6 +198,19 @@ describe('config/sources', () => {
         expect(instances[0].active).to.be.true;
         expect(instances[1].name).to.equal('staging');
       });
+
+      it('returns an empty array (does not throw) when dw.json is malformed', async () => {
+        // A garbled dw.json must degrade gracefully rather than throw — the
+        // VS Code extension awaits this on its activation path, so a re-thrown
+        // JSON.parse error would disable the whole extension.
+        const dwJsonPath = path.join(tempDir, 'dw.json');
+        fs.writeFileSync(dwJsonPath, '{ "hostname": "broken.demandware.net", }'); // trailing comma
+
+        const source = new DwJsonSource();
+        const instances = await source.listInstances();
+
+        expect(instances).to.deep.equal([]);
+      });
     });
 
     describe('createInstance', () => {

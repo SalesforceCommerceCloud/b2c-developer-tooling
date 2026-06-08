@@ -195,7 +195,13 @@
       },
       {
         "view": "b2cSandboxExplorer",
+        "when": "!b2c-dx.sandbox.needsOAuth",
         "contents": "No sandbox realms configured.\n\nSet \"realm\" in dw.json or add a realm manually.\n\n[Add Realm](command:b2c-dx.sandbox.addRealm)"
+      },
+      {
+        "view": "b2cSandboxExplorer",
+        "when": "b2c-dx.sandbox.needsOAuth",
+        "contents": "Sandbox management requires Account Manager OAuth credentials.\n\nAdd \"client-id\" and \"client-secret\" to dw.json to browse and manage sandboxes for this realm."
       },
       {
         "view": "b2cCartridgeExplorer",
