@@ -9,7 +9,7 @@ import type {B2CExtensionConfig} from '../config-provider.js';
 import {registerSafeCommand} from '../safety.js';
 import {CodeSyncManager} from './code-sync-manager.js';
 import {CartridgeTreeProvider, CartridgeItem} from './cartridge-tree-provider.js';
-import {createDeployCommand} from './deploy-command.js';
+import {createDeployCommand, createDeployOneCommand} from './deploy-command.js';
 import {registerCartridgeCommands, updateCodeVersionDisplay} from './cartridge-commands.js';
 
 export function registerCodeSync(
@@ -58,6 +58,11 @@ export function registerCodeSync(
     createDeployCommand(configProvider, manager.outputChannel),
   );
 
+  const deployOneCmd = registerSafeCommand(
+    'b2c-dx.codeSync.deployOne',
+    createDeployOneCommand(configProvider, manager.outputChannel, context),
+  );
+
   const refreshCmd = registerSafeCommand('b2c-dx.codeSync.refreshCartridges', () => {
     cartridgeService.refresh();
     manager.refreshCartridges(configProvider.getWorkingDirectory());
@@ -77,6 +82,11 @@ export function registerCodeSync(
       return;
     }
     await manager.uploadSingleCartridge(instance, item.cartridge);
+    try {
+      await vscode.commands.executeCommand('b2c-dx.webdav.refresh');
+    } catch {
+      // best-effort
+    }
   });
 
   const uploadToInstanceCmd = registerSafeCommand('b2c-dx.codeSync.uploadToInstance', async (uri?: vscode.Uri) => {
@@ -87,6 +97,11 @@ export function registerCodeSync(
       return;
     }
     await manager.uploadFileOrFolder(instance, uri, configProvider.getWorkingDirectory());
+    try {
+      await vscode.commands.executeCommand('b2c-dx.webdav.refresh');
+    } catch {
+      // best-effort
+    }
   });
 
   // --- Cartridge commands (download, diff, site path, code versions) ---
@@ -157,6 +172,7 @@ export function registerCodeSync(
     startCmd,
     stopCmd,
     deployCmd,
+    deployOneCmd,
     refreshCmd,
     uploadCartridgeCmd,
     uploadToInstanceCmd,
