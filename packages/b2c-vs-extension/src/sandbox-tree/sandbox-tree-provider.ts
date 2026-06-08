@@ -13,6 +13,7 @@ import {
   getRealmInstanceId,
 } from './sandbox-clone-helpers.js';
 import type {SandboxConfigProvider, SandboxInfo} from './sandbox-config.js';
+import {showThrottledError} from '../notify.js';
 
 const DEFAULT_ODS_HOST = 'admin.dx.commercecloud.salesforce.com';
 
@@ -304,7 +305,11 @@ export class SandboxTreeDataProvider implements vscode.TreeDataProvider<SandboxT
       );
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      vscode.window.showErrorMessage(`Sandboxes (${element.realm}): ${message}`);
+      // getRealmChildren runs on every expand AND every background poll tick
+      // (~every 10s while a realm has transitional sandboxes). When the
+      // instance/ODS is unreachable this would stack a toast per tick — throttle
+      // per realm so the failure surfaces once rather than as a stream.
+      showThrottledError(`Sandboxes (${element.realm}): ${message}`, `sandbox:${element.realm}`);
       return [];
     }
   }
