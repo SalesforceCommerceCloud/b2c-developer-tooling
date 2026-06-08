@@ -103,6 +103,201 @@ b2c ecdn cache purge --zone my-zone --path "www.example.com/dw/image/v2/realm_in
 
 ---
 
+## Rate Limiting
+
+### b2c ecdn rate-limit list
+
+List rate limiting rules for a zone.
+
+```bash
+b2c ecdn rate-limit list --zone my-zone
+b2c ecdn rate-limit list --zone my-zone --extended
+b2c ecdn rate-limit list --zone my-zone --json
+```
+
+---
+
+### b2c ecdn rate-limit get
+
+Get a single rate limiting rule by ID.
+
+```bash
+b2c ecdn rate-limit get --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e
+b2c ecdn rate-limit get --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --json
+```
+
+---
+
+### b2c ecdn rate-limit create
+
+Create a rate limiting rule.
+
+```bash
+b2c ecdn rate-limit create --zone my-zone --description "Rate limit /checkout" --expression '(http.request.uri.path matches "^/checkout")' --characteristics cf.unique_visitor_id --action block --period 60 --requests-per-period 50 --mitigation-timeout 600
+b2c ecdn rate-limit create --zone my-zone --description "Rate limit /checkout" --expression '(http.request.uri.path matches "^/checkout")' --characteristics cf.unique_visitor_id --action block --period 60 --requests-per-period 50 --mitigation-timeout 600 --json
+```
+
+#### Flags
+
+| Flag | Description | Required |
+|------|-------------|----------|
+| `--description` | Rule description | Yes |
+| `--expression` | Expression defining when to evaluate the rule | Yes |
+| `--characteristics` | Comma-separated request grouping keys | Yes |
+| `--action` | Mitigation action | Yes |
+| `--period` | Rate window in seconds (`10`, `60`, `120`, `300`, `600`) | Yes |
+| `--requests-per-period` | Max requests allowed within the period | Yes |
+| `--mitigation-timeout` | Action duration in seconds (`0`, `60`, `120`, `300`, `600`, `3600`, `86400`) | Yes |
+| `--counting-expression` | Optional expression for what requests to count | No |
+| `--enabled` / `--no-enabled` | Enable/disable rule | No |
+| `--position-before` | Insert before another rule ID | No |
+| `--position-after` | Insert after another rule ID | No |
+
+---
+
+### b2c ecdn rate-limit update
+
+Update fields of an existing rate limiting rule.
+
+```bash
+b2c ecdn rate-limit update --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --requests-per-period 100 --mitigation-timeout 120
+b2c ecdn rate-limit update --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --action managed_challenge --no-enabled
+b2c ecdn rate-limit update --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --requests-per-period 100 --mitigation-timeout 120 --json
+```
+
+---
+
+### b2c ecdn rate-limit delete
+
+Delete a rate limiting rule.
+
+```bash
+b2c ecdn rate-limit delete --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --force
+b2c ecdn rate-limit delete --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --force --json
+```
+
+---
+
+## Custom Firewall Rules
+
+Manage custom firewall rules for a zone. Custom rules let you block,
+challenge, log, or otherwise act on requests that match a Cloudflare-style
+expression. Rules are evaluated in order and the order can be updated as a
+whole through `reorder`.
+
+### b2c ecdn firewall list
+
+List custom firewall rules for a zone.
+
+```bash
+b2c ecdn firewall list --zone my-zone
+b2c ecdn firewall list --zone my-zone --extended
+b2c ecdn firewall list --zone my-zone --limit 50
+b2c ecdn firewall list --zone my-zone --json
+```
+
+#### Flags
+
+| Flag | Description | Required |
+|------|-------------|----------|
+| `--limit` | Maximum records per request (1–50) | No |
+| `--offset` | Result offset for pagination | No |
+| `--extended` | Include `Expression` and `Last Updated` columns (`Rule ID` is shown by default) | No |
+| `--columns` | Comma-separated column names | No |
+
+---
+
+### b2c ecdn firewall get
+
+Get a single custom firewall rule by ID.
+
+```bash
+b2c ecdn firewall get --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e
+b2c ecdn firewall get --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --json
+```
+
+---
+
+### b2c ecdn firewall create
+
+Create a custom firewall rule.
+
+```bash
+b2c ecdn firewall create --zone my-zone --description "Block /admin" \
+  --expression '(http.request.uri.path matches "^/admin")' --actions block
+
+b2c ecdn firewall create --zone my-zone --description "Challenge bots" \
+  --expression 'cf.threat_score gt 30' --actions managed_challenge --no-enabled
+
+b2c ecdn firewall create --zone my-zone --description "Insert before existing" \
+  --expression '(http.host eq "old.example.com")' --actions block \
+  --before 2c0fc9fa937b11eaa1b71c4d701ab86e
+```
+
+#### Flags
+
+| Flag | Description | Required |
+|------|-------------|----------|
+| `--description` | Rule description | Yes |
+| `--expression` | Expression that determines when the rule applies | Yes |
+| `--actions` | Comma-separated list of actions applied by the rule | Yes |
+| `--enabled` / `--no-enabled` | Enable/disable rule (default `true`) | No |
+| `--before` | Insert before another rule ID (mutually exclusive with `--after`) | No |
+| `--after` | Insert after another rule ID (mutually exclusive with `--before`) | No |
+
+---
+
+### b2c ecdn firewall update
+
+Update fields of an existing custom firewall rule. Provide at least one
+update field; the command rejects empty patches so accidental no-op runs do
+not look like successes.
+
+```bash
+b2c ecdn firewall update --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e \
+  --description "Updated copy"
+
+b2c ecdn firewall update --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e \
+  --actions managed_challenge --no-enabled
+```
+
+---
+
+### b2c ecdn firewall delete
+
+Delete a custom firewall rule. Requires `--force` outside of `--json` mode.
+Routes through the destructive-action safety guard so an in-flight policy
+or confirmation prompt has the chance to intercept before any HTTP call.
+
+```bash
+b2c ecdn firewall delete --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --force
+b2c ecdn firewall delete --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --force --json
+```
+
+---
+
+### b2c ecdn firewall reorder
+
+Update the evaluation order of all custom firewall rules. Provide either
+`--rule-ids` (comma-separated, in the desired order) or `--rule-ids-file`
+(path to a JSON file containing a string array). Reordering is treated as a
+destructive action and so requires `--force` outside of `--json` mode.
+
+```bash
+b2c ecdn firewall reorder --zone my-zone \
+  --rule-ids ffffe61cf25e4ec49c34b029ff3060f7,2c0fc9fa937b11eaa1b71c4d701ab86e --force
+
+b2c ecdn firewall reorder --zone my-zone --rule-ids-file ./order.json --force
+```
+
+`order.json` example:
+
+```json
+["ffffe61cf25e4ec49c34b029ff3060f7", "2c0fc9fa937b11eaa1b71c4d701ab86e"]
+```
+
+---
+
 ## Certificate Management
 
 ### b2c ecdn certificates list
