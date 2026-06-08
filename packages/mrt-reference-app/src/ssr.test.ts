@@ -15,11 +15,10 @@ import type {Express} from 'express';
 import {processLambdaResponse, CONTENT_TYPE, X_ORIGINAL_CONTENT_TYPE} from './ssr.js';
 import type {APIGatewayProxyResult, APIGatewayProxyEvent} from 'aws-lambda';
 import createEventModule from '@serverless/event-mocks';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 const createEvent = ((createEventModule as any).default ?? createEventModule) as typeof createEventModule;
 
 class AccessDenied extends ServiceException {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(options?: any) {
     super({...options, name: 'AccessDenied'});
   }
@@ -160,11 +159,11 @@ describe('server', () => {
 
   it('Path "/isolation" fails', async () => {
     const consoleSpy = sinon.stub(console, 'error');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     lambdaMock.on(InvokeCommand).resolves({} as any);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     s3Mock.on(GetObjectCommand).resolves({} as any);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     logsMock.on(CreateLogStreamCommand).resolves({} as any);
     const params = `FunctionName=name&Bucket=bucket&Key=key&logGroupName=lgName`;
     const response = await request(app).get(`/isolation?${params}`);

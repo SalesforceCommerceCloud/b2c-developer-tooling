@@ -19,11 +19,10 @@ describe('server', () => {
 
     it('should create app without MRT middleware by default', () => {
       const app = createApp();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const routes = (app as any)._router?.stack || [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const hasMRTMiddleware = routes.some(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (route: any) => route?.handle?.name?.includes('mrt') || route?.handle?.name?.includes('MRT'),
       );
       expect(hasMRTMiddleware).to.equal(false);

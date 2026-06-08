@@ -37,9 +37,7 @@ const createLambdaHandler = (app: Express): HandlerFunction => {
       .setFramework(new ExpressFramework())
       .setHandler(new DefaultHandler())
       .setResolver(new CallbackResolver())
-      .addAdapter(
-        new ApiGatewayV1Adapter({lowercaseRequestHeaders: true, throwOnChunkedTransferEncoding: false}),
-      )
+      .addAdapter(new ApiGatewayV1Adapter({lowercaseRequestHeaders: true, throwOnChunkedTransferEncoding: false}))
       .build() as HandlerFunction;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

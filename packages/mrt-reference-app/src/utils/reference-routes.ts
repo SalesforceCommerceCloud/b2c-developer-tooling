@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/* eslint-disable camelcase -- snake_case identifiers match the JSON wire format the reference app exposes (e.g., memtest metrics keys, additional_info parameter). */
 import type {Request, Response, NextFunction} from 'express';
 import fs from 'fs/promises';
 import path from 'path';
@@ -10,7 +11,12 @@ import {fileURLToPath} from 'url';
 import winston from 'winston';
 import crypto from 'crypto';
 import {SecretsManagerClient, GetSecretValueCommand} from '@aws-sdk/client-secrets-manager';
-import {DataStore, DataStoreNotFoundError, DataStoreServiceError, DataStoreUnavailableError} from '@salesforce/mrt-utilities';
+import {
+  DataStore,
+  DataStoreNotFoundError,
+  DataStoreServiceError,
+  DataStoreUnavailableError,
+} from '@salesforce/mrt-utilities';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -152,9 +158,7 @@ export const memoryTest = async (req: Request, res: Response) => {
   const test_count = req?.query?.count ? parseInt(req.query.count as string) : 1;
   const test_size = req?.query?.size ? parseInt(req.query.size as string) : 1024;
   const force_gc =
-    global?.gc &&
-    req?.query &&
-    (parseBoolean(req.query.forcegc as string) || parseBoolean(req.query.gc as string));
+    global?.gc && req?.query && (parseBoolean(req.query.forcegc as string) || parseBoolean(req.query.gc as string));
 
   const malloc_time_start = Date.now();
   allocateMemory(test_count, test_size);

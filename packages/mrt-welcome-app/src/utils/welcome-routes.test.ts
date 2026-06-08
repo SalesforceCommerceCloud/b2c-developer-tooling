@@ -14,7 +14,6 @@ import {echo} from './welcome-routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const parseJsonFromHtml = (html: string): any => {
   const match = html.match(/<pre class="code">([\s\S]*?)<\/pre>/);
   if (!match || !match[1]) {
@@ -41,7 +40,10 @@ describe('welcome-routes', () => {
     it('should render HTML template', async () => {
       app.get('/test', echo);
 
-      const response = await request(app).get('/test').expect(200).expect('Content-Type', /text\/html/);
+      const response = await request(app)
+        .get('/test')
+        .expect(200)
+        .expect('Content-Type', /text\/html/);
 
       expect(response.text).to.include('Welcome to your Environment');
 

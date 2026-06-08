@@ -11,17 +11,14 @@ import {EventEmitter} from 'events';
 import {buildHandler} from './streamingHandler.js';
 
 const mockHttpResponseStream = {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   from: sinon.stub().callsFake((stream: Writable) => stream),
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).awslambda = {
   HttpResponseStream: mockHttpResponseStream,
 };
 
 function createMockWritable(): Writable & EventEmitter {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const stream = new EventEmitter() as any;
   let ended = false;
   let destroyed = false;

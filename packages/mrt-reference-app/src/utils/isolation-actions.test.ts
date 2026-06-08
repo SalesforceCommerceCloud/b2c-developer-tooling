@@ -22,7 +22,6 @@ const s3Mock = mockClient(S3Client);
 const logsMock = mockClient(CloudWatchLogsClient);
 
 class AccessDenied extends ServiceException {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(options?: any) {
     super({...options, name: 'AccessDenied'});
   }
@@ -57,7 +56,7 @@ describe('isolation-actions', () => {
 
     it('should return false when access is granted', async () => {
       const consoleSpy = sinon.stub(console, 'error');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       lambdaMock.on(InvokeCommand).resolves({} as any);
       const result = await isolationOriginLambdaTest({FunctionName: 'test-function'});
       expect(result).to.equal(false);
@@ -96,7 +95,7 @@ describe('isolation-actions', () => {
 
     it('should return false when access is granted', async () => {
       const consoleSpy = sinon.stub(console, 'error');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       s3Mock.on(GetObjectCommand).resolves({} as any);
       const result = await isolationS3Test({Bucket: 'test-bucket', Key: 'test-key'});
       expect(result).to.equal(false);
@@ -122,7 +121,7 @@ describe('isolation-actions', () => {
       const error = new ServiceException({$fault: 'client', $metadata: {}} as never);
       error.name = 'AccessDeniedException';
       logsMock.on(CreateLogStreamCommand).rejects(error);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const result = await isolationLogsTest({logGroupName: 'test-log-group', logStreamName: 'test-stream'} as any);
       expect(result).to.equal(true);
       expect(consoleSpy.called).to.equal(false);
@@ -134,9 +133,9 @@ describe('isolation-actions', () => {
       const error = new ServiceException({$fault: 'client', $metadata: {}} as never);
       error.name = 'AccessDeniedException';
       logsMock.on(CreateLogStreamCommand).rejects(error);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const result1 = await isolationLogsTest({logGroupName: 'test-log-group', logStreamName: 'test-stream-1'} as any);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const result2 = await isolationLogsTest({logGroupName: 'test-log-group', logStreamName: 'test-stream-2'} as any);
       expect(result1).to.equal(true);
       expect(result2).to.equal(true);
@@ -146,9 +145,9 @@ describe('isolation-actions', () => {
 
     it('should return false when access is granted', async () => {
       const consoleSpy = sinon.stub(console, 'error');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       logsMock.on(CreateLogStreamCommand).resolves({} as any);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const result = await isolationLogsTest({logGroupName: 'test-log-group', logStreamName: 'test-stream'} as any);
       expect(result).to.equal(false);
       expect(consoleSpy.called).to.equal(true);
@@ -204,11 +203,11 @@ describe('isolation-actions', () => {
 
     it('should return false for all tests when access is granted', async () => {
       const consoleSpy = sinon.stub(console, 'error');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       lambdaMock.on(InvokeCommand).resolves({} as any);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       s3Mock.on(GetObjectCommand).resolves({} as any);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       logsMock.on(CreateLogStreamCommand).resolves({} as any);
 
       const results = await executeIsolationTests({
@@ -245,7 +244,7 @@ describe('isolation-actions', () => {
       const lambdaError = new ServiceException({$fault: 'client', $metadata: {}} as never);
       lambdaError.name = 'AccessDeniedException';
       lambdaMock.on(InvokeCommand).rejects(lambdaError);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       s3Mock.on(GetObjectCommand).resolves({} as any);
       const logsError = new ServiceException({$fault: 'client', $metadata: {}} as never);
       logsError.name = 'AccessDeniedException';
@@ -290,7 +289,7 @@ describe('isolation-actions', () => {
     it('should handle missing FunctionName', async () => {
       const consoleSpy = sinon.stub(console, 'error');
       lambdaMock.on(InvokeCommand).rejects(new Error('Missing parameter'));
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const result = await isolationOriginLambdaTest({FunctionName: ''} as any);
       expect(result).to.equal(false);
       expect(consoleSpy.called).to.equal(true);
@@ -302,7 +301,7 @@ describe('isolation-actions', () => {
     it('should handle missing bucket parameter', async () => {
       const consoleSpy = sinon.stub(console, 'error');
       s3Mock.on(GetObjectCommand).rejects(new AccessDenied());
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const result = await isolationS3Test({Key: 'test-key'} as any);
       expect(result).to.equal(true);
       expect(consoleSpy.called).to.equal(false);
@@ -312,7 +311,7 @@ describe('isolation-actions', () => {
     it('should handle missing key parameter', async () => {
       const consoleSpy = sinon.stub(console, 'error');
       s3Mock.on(GetObjectCommand).rejects(new AccessDenied());
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const result = await isolationS3Test({Bucket: 'test-bucket'} as any);
       expect(result).to.equal(true);
       expect(consoleSpy.called).to.equal(false);
@@ -332,9 +331,9 @@ describe('isolation-actions', () => {
   describe('isolationLogsTest edge cases', () => {
     it('should handle missing logGroupName', async () => {
       const consoleSpy = sinon.stub(console, 'error');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       logsMock.on(CreateLogStreamCommand).resolves({} as any);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const result = await isolationLogsTest({} as any);
       expect(result).to.equal(false);
       expect(consoleSpy.called).to.equal(true);
@@ -346,7 +345,7 @@ describe('isolation-actions', () => {
       const error = new ServiceException({$fault: 'server', $metadata: {}} as never);
       error.name = 'ServiceException';
       logsMock.on(CreateLogStreamCommand).rejects(error);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const result = await isolationLogsTest({logGroupName: 'test-log-group', logStreamName: 'test-stream'} as any);
       expect(result).to.equal(false);
       expect(consoleSpy.called).to.equal(true);

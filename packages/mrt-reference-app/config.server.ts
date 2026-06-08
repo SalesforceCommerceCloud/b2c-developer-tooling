@@ -6,7 +6,9 @@
 import type {MrtServerConfig} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 
 const bundleType = process.env.MRT_BUNDLE_TYPE;
-const ssrEntryPoint = ['stream', 'streaming', 'streamingHandler'].includes(bundleType ?? '') ? 'streamingHandler' : 'ssr';
+const ssrEntryPoint = ['stream', 'streaming', 'streamingHandler'].includes(bundleType ?? '')
+  ? 'streamingHandler'
+  : 'ssr';
 
 export const config: MrtServerConfig = {
   ssrOnly: [

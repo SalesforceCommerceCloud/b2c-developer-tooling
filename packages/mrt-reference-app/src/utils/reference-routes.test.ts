@@ -10,7 +10,12 @@ import express, {type Express} from 'express';
 import fs from 'fs/promises';
 import {mockClient} from 'aws-sdk-client-mock';
 import {SecretsManagerClient, GetSecretValueCommand} from '@aws-sdk/client-secrets-manager';
-import {DataStore, DataStoreNotFoundError, DataStoreServiceError, DataStoreUnavailableError} from '@salesforce/mrt-utilities';
+import {
+  DataStore,
+  DataStoreNotFoundError,
+  DataStoreServiceError,
+  DataStoreUnavailableError,
+} from '@salesforce/mrt-utilities';
 import {
   echo,
   exception,
@@ -87,7 +92,10 @@ describe('reference-routes', () => {
   describe('tlsVersionTest', () => {
     it('should make requests to TLS test domains', async () => {
       app.get('/test', tlsVersionTest);
-      const response = await request(app).get('/test').expect(200).expect('Content-Type', /application\/json/);
+      const response = await request(app)
+        .get('/test')
+        .expect(200)
+        .expect('Content-Type', /application\/json/);
       expect(response.text).to.include('tls1.1');
       expect(response.text).to.include('tls1.2');
     });
@@ -168,14 +176,13 @@ describe('reference-routes', () => {
     });
 
     it('should perform garbage collection when requested', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (global as any).gc = sinon.stub();
       app.get('/test', memoryTest);
       const response = await request(app).get('/test?forcegc=true').expect(200);
       expect(response.body.additional_info.force_gc).to.equal(true);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       expect(((global as any).gc as sinon.SinonStub).called).to.equal(true);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       delete (global as any).gc;
     });
   });
@@ -229,7 +236,7 @@ describe('reference-routes', () => {
 
     it('should call next function', () => {
       const nextFn = sinon.stub();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const mockReq = {method: 'GET', originalUrl: '/test'} as any;
       const mockRes = {
         headersSent: true,
@@ -238,7 +245,6 @@ describe('reference-routes', () => {
           if (event === 'finish') cb();
         }),
         getHeaders: sinon.stub().returns({}),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
       loggingMiddleware(mockReq, mockRes, nextFn);
       expect(nextFn.called).to.equal(true);
@@ -325,8 +331,8 @@ describe('reference-routes', () => {
     it('should handle empty cookie value', async () => {
       app.get('/test', cookieTest);
       const response = await request(app).get('/test?name=test-cookie&value=').expect(200);
-      expect(response.headers['set-cookie']).to.satisfy(
-        (v: string | string[]) => (Array.isArray(v) ? v.join(',') : v).includes('test-cookie=; Path=/'),
+      expect(response.headers['set-cookie']).to.satisfy((v: string | string[]) =>
+        (Array.isArray(v) ? v.join(',') : v).includes('test-cookie=; Path=/'),
       );
     });
 
@@ -400,12 +406,11 @@ describe('reference-routes', () => {
     });
 
     it('should handle multiple gc-related parameters', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (global as any).gc = sinon.stub();
       app.get('/test', memoryTest);
       const response = await request(app).get('/test?gc=true&forcegc=true').expect(200);
       expect(response.body.additional_info.force_gc).to.equal(true);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       delete (global as any).gc;
     });
   });
@@ -509,7 +514,6 @@ describe('reference-routes', () => {
         write,
         end,
         flush: sinon.stub(),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
       streamingResponseLarge({} as never, mockRes);
       expect((mockRes.status as sinon.SinonStub).calledWith(200)).to.equal(true);
@@ -549,9 +553,7 @@ describe('reference-routes', () => {
       await clock.tickAsync(10000);
       await promise;
       expect(
-        (mockRes as {json: sinon.SinonStub}).json.calledWith(
-          sinon.match({message: 'Delayed logging 10000ms'}),
-        ),
+        (mockRes as {json: sinon.SinonStub}).json.calledWith(sinon.match({message: 'Delayed logging 10000ms'})),
       ).to.equal(true);
       expect((mockRes as {json: sinon.SinonStub}).json.args[0][0]).to.have.property('duration');
       clock.restore();
@@ -606,17 +608,15 @@ describe('reference-routes', () => {
     let originalInstance: DataStore | null;
 
     beforeEach(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       originalInstance = (DataStore as any)._instance;
       mockGetEntry = sinon.stub();
       mockIsDataStoreAvailable = sinon.stub().returns(true);
       const mockDataStore = {getEntry: mockGetEntry, isDataStoreAvailable: mockIsDataStoreAvailable} as never;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       (DataStore as any)._instance = mockDataStore;
     });
 
     afterEach(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (DataStore as any)._instance = originalInstance;
     });
 
@@ -658,7 +658,6 @@ describe('reference-routes', () => {
   });
 
   describe('secretsManagerTest', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const secretsManagerMock: any = mockClient(SecretsManagerClient as any);
 
     beforeEach(() => {
@@ -708,7 +707,9 @@ describe('reference-routes', () => {
     });
 
     it('should return 404 when secret is not found', async () => {
-      secretsManagerMock.on(GetSecretValueCommand).rejects({name: 'ResourceNotFoundException', message: 'Secret not found'});
+      secretsManagerMock
+        .on(GetSecretValueCommand)
+        .rejects({name: 'ResourceNotFoundException', message: 'Secret not found'});
       app.get('/test', secretsManagerTest);
       const response = await request(app).get('/test?secretId=nonexistent').expect(404);
       expect(response.body).to.deep.equal({
@@ -720,7 +721,9 @@ describe('reference-routes', () => {
     });
 
     it('should return 403 when access is denied', async () => {
-      secretsManagerMock.on(GetSecretValueCommand).rejects({name: 'AccessDeniedException', message: 'User is not authorized to perform action'});
+      secretsManagerMock
+        .on(GetSecretValueCommand)
+        .rejects({name: 'AccessDeniedException', message: 'User is not authorized to perform action'});
       app.get('/test', secretsManagerTest);
       const response = await request(app).get('/test?secretId=forbidden-secret').expect(403);
       expect(response.body).to.deep.equal({
@@ -732,7 +735,9 @@ describe('reference-routes', () => {
     });
 
     it('should return 400 for invalid request', async () => {
-      secretsManagerMock.on(GetSecretValueCommand).rejects({name: 'InvalidRequestException', message: 'Invalid request'});
+      secretsManagerMock
+        .on(GetSecretValueCommand)
+        .rejects({name: 'InvalidRequestException', message: 'Invalid request'});
       app.get('/test', secretsManagerTest);
       const response = await request(app).get('/test?secretId=invalid').expect(400);
       expect(response.body).to.deep.equal({
@@ -744,7 +749,9 @@ describe('reference-routes', () => {
     });
 
     it('should return 500 for decryption failure', async () => {
-      secretsManagerMock.on(GetSecretValueCommand).rejects({name: 'DecryptionFailure', message: 'Failed to decrypt secret'});
+      secretsManagerMock
+        .on(GetSecretValueCommand)
+        .rejects({name: 'DecryptionFailure', message: 'Failed to decrypt secret'});
       app.get('/test', secretsManagerTest);
       const response = await request(app).get('/test?secretId=encrypted-secret').expect(500);
       expect(response.body).to.deep.equal({

@@ -54,9 +54,7 @@ const createRequestTimingMiddleware = (app: AppWithMetrics) => (req: Request, re
   const afterResponse = () => {
     const responseTime = Date.now() - res.locals.requestStartTime;
     if (app.metrics) {
-      const metrics = [
-        {name: 'RequestTime', value: responseTime, unit: 'Milliseconds', dimensions: getDimensions()},
-      ];
+      const metrics = [{name: 'RequestTime', value: responseTime, unit: 'Milliseconds', dimensions: getDimensions()}];
       const requestResult = {name: 'RequestSuccess', value: 1, unit: 'Count', dimensions: getDimensions()};
       if (res.statusCode === 404) {
         requestResult.name = 'RequestFailed404';

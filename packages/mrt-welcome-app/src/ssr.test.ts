@@ -10,7 +10,7 @@ import type {Express} from 'express';
 import {processLambdaResponse, get} from './ssr.js';
 import type {APIGatewayProxyResult, APIGatewayProxyEvent, Context} from 'aws-lambda';
 import createEventModule from '@serverless/event-mocks';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 const createEvent = ((createEventModule as any).default ?? createEventModule) as typeof createEventModule;
 
 describe('server', () => {
@@ -38,7 +38,10 @@ describe('server', () => {
   });
 
   it('Path / should render correctly', async () => {
-    const response = await request(app).get('/').expect(200).expect('Content-Type', /text\/html/);
+    const response = await request(app)
+      .get('/')
+      .expect(200)
+      .expect('Content-Type', /text\/html/);
     expect(response.text).to.include('Welcome to your Environment');
   });
 

@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/* eslint-disable camelcase -- snake_case identifiers match the JSON wire format the welcome app exposes (e.g., additional_info parameter). */
 import type {Request, Response} from 'express';
 
 const ENVS_TO_EXPOSE = [
@@ -44,8 +45,7 @@ const filterAndSortObjectKeys = (o: Record<string, any>, whitelist: string[]): R
     .filter((key) => {
       const keylc = key.toLowerCase().trim();
       return whitelist.some(
-        (pattern) =>
-          (pattern.endsWith('*') && keylc.startsWith(pattern.slice(0, -1))) || pattern === keylc,
+        (pattern) => (pattern.endsWith('*') && keylc.startsWith(pattern.slice(0, -1))) || pattern === keylc,
       );
     })
     .sort()

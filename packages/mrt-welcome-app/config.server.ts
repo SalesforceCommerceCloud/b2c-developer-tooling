@@ -6,12 +6,7 @@
 import type {MrtServerConfig} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 
 export const config: MrtServerConfig = {
-  ssrOnly: [
-    'ssr.js',
-    'loader.js',
-    'package.json',
-    'views/layout.html',
-  ],
+  ssrOnly: ['ssr.js', 'loader.js', 'package.json', 'views/layout.html'],
   ssrShared: [],
   ssrParameters: {
     ssrFunctionNodeVersion: '24.x',

@@ -5,7 +5,11 @@
  */
 import {LambdaClient, InvokeCommand, type InvokeCommandInput} from '@aws-sdk/client-lambda';
 import {S3Client, GetObjectCommand, type GetObjectCommandInput} from '@aws-sdk/client-s3';
-import {CloudWatchLogsClient, CreateLogStreamCommand, type CreateLogStreamCommandInput} from '@aws-sdk/client-cloudwatch-logs';
+import {
+  CloudWatchLogsClient,
+  CreateLogStreamCommand,
+  type CreateLogStreamCommandInput,
+} from '@aws-sdk/client-cloudwatch-logs';
 import {DynamoDBClient} from '@aws-sdk/client-dynamodb';
 import {DynamoDBDocumentClient, GetCommand} from '@aws-sdk/lib-dynamodb';
 import type {Request, Response} from 'express';
