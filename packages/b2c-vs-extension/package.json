@@ -14,7 +14,10 @@
   "type": "module",
   "dependencies": {
     "@salesforce/b2c-script-types": "workspace:*",
-    "@salesforce/b2c-tooling-sdk": "workspace:*"
+    "@salesforce/b2c-tooling-sdk": "workspace:*",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "vscode-html-languageservice": "catalog:"
   },
   "engines": {
     "vscode": "^1.105.1"
@@ -24,6 +27,7 @@
   },
   "activationEvents": [
     "onStartupFinished",
+    "onLanguage:isml",
     "onView:b2cWebdavExplorer",
     "onView:b2cContentExplorer",
     "onFileSystem:b2c-webdav",
@@ -34,6 +38,9 @@
     "onDebugResolve:b2c-script",
     "workspaceContains:**/commerce-app.json"
   ],
+  "extensionDependencies": [
+    "redhat.vscode-xml"
+  ],
   "main": "./dist/extension.cjs",
   "contributes": {
     "typescriptServerPlugins": [
@@ -41,6 +48,609 @@
         "name": "@salesforce/b2c-script-types",
         "enableForWorkspaceTypeScriptVersions": true,
         "configNamespace": "b2c-dx"
+      }
+    ],
+    "languages": [
+      {
+        "id": "isml",
+        "aliases": ["ISML"],
+        "extensions": [".isml"],
+        "configuration": "./language/isml/language-configuration.json"
+      }
+    ],
+    "configurationDefaults": {
+      "[isml]": {
+        "editor.linkedEditing": true,
+        "editor.suggest.insertMode": "replace",
+        "editor.wordWrap": "off"
+      },
+      "[json]": {
+        "editor.quickSuggestions": {
+          "other": true,
+          "comments": false,
+          "strings": true
+        }
+      },
+      "[jsonc]": {
+        "editor.quickSuggestions": {
+          "other": true,
+          "comments": false,
+          "strings": true
+        }
+      },
+      "emmet.includeLanguages": {
+        "isml": "html"
+      }
+    },
+    "grammars": [
+      {
+        "language": "isml",
+        "scopeName": "text.html.isml",
+        "path": "./language/isml/isml.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.isml.isscript": "javascript",
+          "meta.embedded.expression.isml": "javascript"
+        }
+      }
+    ],
+    "snippets": [
+      {
+        "language": "isml",
+        "path": "./language/isml/isml.snippets.json"
+      }
+    ],
+    "breakpoints": [
+      {"language": "isml"},
+      {"language": "javascript"}
+    ],
+    "xmlValidation": [
+      {
+        "fileMatch": "**/sites/*/ab-tests.xml",
+        "url": "./resources/xsd/abtest.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/ab-tests.xml",
+        "url": "./resources/xsd/abtest.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/ab-tests/*.xml",
+        "url": "./resources/xsd/abtest.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/abtest-participants.xml",
+        "url": "./resources/xsd/abtestparticipants.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/abtest-participants.xml",
+        "url": "./resources/xsd/abtestparticipants.xsd"
+      },
+      {
+        "fileMatch": "**/catalogs/*/assignments.xml",
+        "url": "./resources/xsd/assignment.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/assignments.xml",
+        "url": "./resources/xsd/assignment.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/catalogs/*/assignments.xml",
+        "url": "./resources/xsd/assignment.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/cache-settings.xml",
+        "url": "./resources/xsd/cachesettings.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/cache-settings.xml",
+        "url": "./resources/xsd/cachesettings.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/cache-settings/*.xml",
+        "url": "./resources/xsd/cachesettings.xsd"
+      },
+      {
+        "fileMatch": "**/catalogs/*/catalog.xml",
+        "url": "./resources/xsd/catalog.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/catalogs/*/catalog.xml",
+        "url": "./resources/xsd/catalog.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/catalogs/*.xml",
+        "url": "./resources/xsd/catalog.xsd"
+      },
+      {
+        "fileMatch": "**/commerce-feature-states.xml",
+        "url": "./resources/xsd/commercefeaturestate.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/commerce-feature-states.xml",
+        "url": "./resources/xsd/commercefeaturestate.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/commerce-feature-states.xml",
+        "url": "./resources/xsd/commercefeaturestate.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/coupons.xml",
+        "url": "./resources/xsd/coupon.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/coupons.xml",
+        "url": "./resources/xsd/coupon.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/coupons/*.xml",
+        "url": "./resources/xsd/coupon.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/coupon-redemptions.xml",
+        "url": "./resources/xsd/couponredemption.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/coupon-redemptions.xml",
+        "url": "./resources/xsd/couponredemption.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/csrf-whitelists.xml",
+        "url": "./resources/xsd/csrfwhitelists.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/csrf-allowlists.xml",
+        "url": "./resources/xsd/csrfwhitelists.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/csrf-whitelists.xml",
+        "url": "./resources/xsd/csrfwhitelists.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/csrf-allowlists.xml",
+        "url": "./resources/xsd/csrfwhitelists.xsd"
+      },
+      {
+        "fileMatch": "**/customer_lists/*/customers.xml",
+        "url": "./resources/xsd/customer.xsd"
+      },
+      {
+        "fileMatch": "**/customer_lists/*/customers/*.xml",
+        "url": "./resources/xsd/customer.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/customer-cdn-settings.xml",
+        "url": "./resources/xsd/customercdnsettings.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/customer-cdn-settings.xml",
+        "url": "./resources/xsd/customercdnsettings.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/customer-cdn-settings/*.xml",
+        "url": "./resources/xsd/customercdnsettings.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/customer-groups.xml",
+        "url": "./resources/xsd/customergroup.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/customer-groups.xml",
+        "url": "./resources/xsd/customergroup.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/customer-groups/*.xml",
+        "url": "./resources/xsd/customergroup.xsd"
+      },
+      {
+        "fileMatch": "**/customer_lists.xml",
+        "url": "./resources/xsd/customerlist.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/customer-lists/*.xml",
+        "url": "./resources/xsd/customerlist.xsd"
+      },
+      {
+        "fileMatch": "**/customer_lists/*/customer-list.xml",
+        "url": "./resources/xsd/customerlist2.xsd"
+      },
+      {
+        "fileMatch": "**/customer_lists/*.xml",
+        "url": "./resources/xsd/customerlist2.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/custom-objects.xml",
+        "url": "./resources/xsd/customobject.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/custom-objects/*.xml",
+        "url": "./resources/xsd/customobject.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/custom-objects/*.xml",
+        "url": "./resources/xsd/customobject.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/dcext.xml",
+        "url": "./resources/xsd/dcext.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/dcext.xml",
+        "url": "./resources/xsd/dcext.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/dcext/*.xml",
+        "url": "./resources/xsd/dcext.xsd"
+      },
+      {
+        "fileMatch": "**/cartridges/*/cartridge/forms/**/*.xml",
+        "url": "./resources/xsd/form.xsd"
+      },
+      {
+        "fileMatch": "**/geolocations.xml",
+        "url": "./resources/xsd/geolocation.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/geolocations.xml",
+        "url": "./resources/xsd/geolocation.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/geolocations.xml",
+        "url": "./resources/xsd/geolocation.xsd"
+      },
+      {
+        "fileMatch": "**/gift_certificates/gift-certificates.xml",
+        "url": "./resources/xsd/giftcertificate.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/gift-certificates.xml",
+        "url": "./resources/xsd/giftcertificate.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/gift-certificates.xml",
+        "url": "./resources/xsd/giftcertificate.xsd"
+      },
+      {
+        "fileMatch": "**/inventory_lists/*.xml",
+        "url": "./resources/xsd/inventory.xsd"
+      },
+      {
+        "fileMatch": "**/inventory_lists/*/inventory.xml",
+        "url": "./resources/xsd/inventory.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/inventory-lists/*.xml",
+        "url": "./resources/xsd/inventory.xsd"
+      },
+      {
+        "fileMatch": "**/jobs.xml",
+        "url": "./resources/xsd/jobs.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/jobs.xml",
+        "url": "./resources/xsd/jobs.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/jobs.xml",
+        "url": "./resources/xsd/jobs.xsd"
+      },
+      {
+        "fileMatch": "**/libraries/*/library.xml",
+        "url": "./resources/xsd/library.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/library.xml",
+        "url": "./resources/xsd/library.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/libraries/*.xml",
+        "url": "./resources/xsd/library.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/locales.xml",
+        "url": "./resources/xsd/locales.xsd"
+      },
+      {
+        "fileMatch": "**/locales.xml",
+        "url": "./resources/xsd/locales.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/locales.xml",
+        "url": "./resources/xsd/locales.xsd"
+      },
+      {
+        "fileMatch": "**/meta/system-objecttype-extensions.xml",
+        "url": "./resources/xsd/metadata.xsd"
+      },
+      {
+        "fileMatch": "**/meta/custom-objecttype-definitions.xml",
+        "url": "./resources/xsd/metadata.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/meta/*.xml",
+        "url": "./resources/xsd/metadata.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/meta/*.xml",
+        "url": "./resources/xsd/metadata.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/oauth-providers.xml",
+        "url": "./resources/xsd/oauth.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/oauth-providers.xml",
+        "url": "./resources/xsd/oauth.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/oauth-providers/*.xml",
+        "url": "./resources/xsd/oauth.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/page-meta-tags.xml",
+        "url": "./resources/xsd/pagemetatag.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/page-meta-tags.xml",
+        "url": "./resources/xsd/pagemetatag.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/page-meta-tags/*.xml",
+        "url": "./resources/xsd/pagemetatag.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/payment-methods.xml",
+        "url": "./resources/xsd/paymentmethod.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/payment-methods.xml",
+        "url": "./resources/xsd/paymentmethod.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/payment-methods/*.xml",
+        "url": "./resources/xsd/paymentmethod.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/payment-processors.xml",
+        "url": "./resources/xsd/paymentprocessor.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/payment-processors.xml",
+        "url": "./resources/xsd/paymentprocessor.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/payment-processors/*.xml",
+        "url": "./resources/xsd/paymentprocessor.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/preferences.xml",
+        "url": "./resources/xsd/preferences.xsd"
+      },
+      {
+        "fileMatch": "**/preferences.xml",
+        "url": "./resources/xsd/preferences.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/preferences/*.xml",
+        "url": "./resources/xsd/preferences.xsd"
+      },
+      {
+        "fileMatch": "**/price_adjustment_limits/price-adjustment-limits.xml",
+        "url": "./resources/xsd/priceadjustmentlimits.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/price-adjustment-limits.xml",
+        "url": "./resources/xsd/priceadjustmentlimits.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/price-adjustment-limits.xml",
+        "url": "./resources/xsd/priceadjustmentlimits.xsd"
+      },
+      {
+        "fileMatch": "**/pricebooks/*.xml",
+        "url": "./resources/xsd/pricebook.xsd"
+      },
+      {
+        "fileMatch": "**/pricebooks/*/pricebook.xml",
+        "url": "./resources/xsd/pricebook.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/pricebooks/*.xml",
+        "url": "./resources/xsd/pricebook.xsd"
+      },
+      {
+        "fileMatch": "**/customer_lists/*/product-lists/*.xml",
+        "url": "./resources/xsd/productlist.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/product-lists.xml",
+        "url": "./resources/xsd/productlist.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/product-lists.xml",
+        "url": "./resources/xsd/productlist.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/promotions.xml",
+        "url": "./resources/xsd/promotion.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/promotions.xml",
+        "url": "./resources/xsd/promotion.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/promotions/*.xml",
+        "url": "./resources/xsd/promotion.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/redirect-urls.xml",
+        "url": "./resources/xsd/redirecturl.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/redirect-urls.xml",
+        "url": "./resources/xsd/redirecturl.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/redirect-urls/*.xml",
+        "url": "./resources/xsd/redirecturl.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/schedules.xml",
+        "url": "./resources/xsd/schedules.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/schedules.xml",
+        "url": "./resources/xsd/schedules.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/search.xml",
+        "url": "./resources/xsd/search.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/search.xml",
+        "url": "./resources/xsd/search.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/search/*.xml",
+        "url": "./resources/xsd/search.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/search2.xml",
+        "url": "./resources/xsd/search2.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/search2.xml",
+        "url": "./resources/xsd/search2.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/services.xml",
+        "url": "./resources/xsd/services.xsd"
+      },
+      {
+        "fileMatch": "**/services.xml",
+        "url": "./resources/xsd/services.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/services.xml",
+        "url": "./resources/xsd/services.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/shipping.xml",
+        "url": "./resources/xsd/shipping.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/shipping.xml",
+        "url": "./resources/xsd/shipping.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/shipping/*.xml",
+        "url": "./resources/xsd/shipping.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/site.xml",
+        "url": "./resources/xsd/site.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*.xml",
+        "url": "./resources/xsd/site.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/site.xml",
+        "url": "./resources/xsd/site.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/sitemap-configuration.xml",
+        "url": "./resources/xsd/sitemapconfiguration.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/sitemap-configuration.xml",
+        "url": "./resources/xsd/sitemapconfiguration.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/slots.xml",
+        "url": "./resources/xsd/slot.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/slot-configurations.xml",
+        "url": "./resources/xsd/slot.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/slots.xml",
+        "url": "./resources/xsd/slot.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/slots/*.xml",
+        "url": "./resources/xsd/slot.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/sorting-rules.xml",
+        "url": "./resources/xsd/sort.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/sort.xml",
+        "url": "./resources/xsd/sort.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/**/sorting-rules.xml",
+        "url": "./resources/xsd/sort.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/source-codes.xml",
+        "url": "./resources/xsd/sourcecode.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/sourcecodes.xml",
+        "url": "./resources/xsd/sourcecode.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sourcecodes/*.xml",
+        "url": "./resources/xsd/sourcecode.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/stores.xml",
+        "url": "./resources/xsd/store.xsd"
+      },
+      {
+        "fileMatch": "**/stores/stores.xml",
+        "url": "./resources/xsd/store.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/stores/*.xml",
+        "url": "./resources/xsd/store.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/storefronts.xml",
+        "url": "./resources/xsd/storefronts.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/storefronts.xml",
+        "url": "./resources/xsd/storefronts.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/storefronts/*.xml",
+        "url": "./resources/xsd/storefronts.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/tax.xml",
+        "url": "./resources/xsd/tax.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/tax.xml",
+        "url": "./resources/xsd/tax.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/tax/*.xml",
+        "url": "./resources/xsd/tax.xsd"
+      },
+      {
+        "fileMatch": "**/sites/*/url-rules.xml",
+        "url": "./resources/xsd/urlrules.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/sites/*/url-rules.xml",
+        "url": "./resources/xsd/urlrules.xsd"
+      },
+      {
+        "fileMatch": "**/metadata/url-rules/*.xml",
+        "url": "./resources/xsd/urlrules.xsd"
       }
     ],
     "configuration": {
@@ -115,6 +725,11 @@
           "type": "boolean",
           "default": true,
           "description": "Send anonymous usage telemetry (extension lifecycle and broad feature-category events). Honors VS Code's telemetry.telemetryLevel — disabling that disables this regardless of this setting."
+        },
+        "b2c-dx.features.cipAnalytics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the B2C-DX Analytics (CIP) sidebar for browsing tables and running curated reports."
         }
       }
     },
@@ -140,6 +755,11 @@
           "id": "b2c-dx-sandboxes",
           "title": "B2C-DX Sandboxes",
           "icon": "$(server-environment)"
+        },
+        {
+          "id": "b2c-dx-analytics",
+          "title": "B2C-DX Analytics",
+          "icon": "$(graph)"
         }
       ]
     },
@@ -164,6 +784,14 @@
           "contextualTitle": "B2C-DX"
         }
       ],
+      "b2c-dx-analytics": [
+        {
+          "id": "b2cCipAnalytics",
+          "name": "CIP Analytics",
+          "icon": "$(graph)",
+          "contextualTitle": "B2C-DX Analytics"
+        }
+      ],
       "b2c-dx-scapi": [
         {
           "id": "b2cApiBrowser",
@@ -183,15 +811,15 @@
     "viewsWelcome": [
       {
         "view": "b2cWebdavExplorer",
-        "contents": "No B2C Commerce instance configured.\n\nCreate a dw.json file in your workspace or set SFCC_* environment variables.\n\n[Refresh](command:b2c-dx.webdav.refresh)"
+        "contents": "No B2C Commerce instance configured.\n\n[Set up your instance](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22configure-instance%22%5D)\n\n[Refresh](command:b2c-dx.webdav.refresh)"
       },
       {
         "view": "b2cContentExplorer",
-        "contents": "No content libraries configured.\n\nSet \"contentLibrary\" in dw.json or add a library manually.\n\n[Add Library](command:b2c-dx.content.addLibrary)"
+        "contents": "No content libraries configured.\n\n[Set up your instance](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22configure-instance%22%5D) to enable content browsing, then add a library.\n\n[Add Library](command:b2c-dx.content.addLibrary)"
       },
       {
         "view": "b2cApiBrowser",
-        "contents": "Browse SCAPI OpenAPI schemas for your Commerce Cloud instance.\n\nRequires OAuth credentials (clientId, clientSecret) and shortCode in dw.json.\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
+        "contents": "Browse SCAPI OpenAPI schemas for your Commerce Cloud instance.\n\nRequires OAuth credentials (`client-id`, `client-secret`, `shortCode`) in dw.json.\n\n[Connect & authenticate](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22connect%22%5D)\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
       },
       {
         "view": "b2cSandboxExplorer",
@@ -201,11 +829,15 @@
       {
         "view": "b2cSandboxExplorer",
         "when": "b2c-dx.sandbox.needsOAuth",
-        "contents": "Sandbox management requires Account Manager OAuth credentials.\n\nAdd \"client-id\" and \"client-secret\" to dw.json to browse and manage sandboxes for this realm."
+        "contents": "Sandbox management requires Account Manager OAuth credentials.\n\nAdd \"client-id\" and \"client-secret\" to dw.json to browse and manage sandboxes for this realm.\n\n[Connect & authenticate](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22connect%22%5D)"
       },
       {
         "view": "b2cCartridgeExplorer",
-        "contents": "No cartridges found.\n\nCartridges are identified by .project files in the workspace.\n\n[Refresh](command:b2c-dx.codeSync.refreshCartridges)"
+        "contents": "No cartridges found.\n\nCartridges are identified by .project files in the workspace.\n\n[Generate from a scaffold](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22scaffold%22%5D)\n\n[Refresh](command:b2c-dx.codeSync.refreshCartridges)"
+      },
+      {
+        "view": "b2cCipAnalytics",
+        "contents": "Explore Commerce Intelligence Platform (CIP) data — build SQL queries visually, browse tables, and run curated reports.\n\n[Open Query Builder](command:b2c-dx.cipAnalytics.queryBuilder)\n[Browse Tables](command:b2c-dx.cipAnalytics.browseTables)\n\nRequires OAuth credentials (clientId, clientSecret) in dw.json.\n\n[Refresh](command:b2c-dx.cipAnalytics.refresh)"
       }
     ],
     "debuggers": [
@@ -266,6 +898,71 @@
         "command": "b2c-dx.apiBrowser.openSwagger",
         "title": "Open API Documentation",
         "category": "B2C DX - API Browser"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.resetFromDwJson",
+        "title": "Reset from dw.json…",
+        "icon": "$(discard)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.openReport",
+        "title": "Open Report",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.browseTables",
+        "title": "Browse Tables",
+        "icon": "$(table)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.queryBuilder",
+        "title": "Open Query Builder",
+        "icon": "$(zap)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.configureConnection",
+        "title": "Configure Connection…",
+        "icon": "$(gear)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.testConnection",
+        "title": "Test Connection",
+        "icon": "$(debug-disconnect)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.switchRealm",
+        "title": "Switch Realm…",
+        "icon": "$(server)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.switchConnection",
+        "title": "Switch Connection…",
+        "icon": "$(plug)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.addRealm",
+        "title": "Add Realm…",
+        "icon": "$(add)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.removeRealm",
+        "title": "Remove Realm…",
+        "icon": "$(trash)",
+        "category": "B2C-DX Analytics"
       },
       {
         "command": "b2c-dx.apiBrowser.scapiAdd",
@@ -557,6 +1254,12 @@
         "category": "B2C DX - Code Sync"
       },
       {
+        "command": "b2c-dx.codeSync.deployOne",
+        "title": "Deploy a Single Cartridge",
+        "icon": "$(cloud-upload)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
         "command": "b2c-dx.codeSync.refreshCartridges",
         "title": "Refresh Cartridges",
         "icon": "$(refresh)",
@@ -621,6 +1324,223 @@
         "title": "Refresh Script API IntelliSense",
         "icon": "$(refresh)",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.isml.createTemplate",
+        "title": "Create ISML Template",
+        "category": "B2C DX - ISML"
+      },
+      {
+        "command": "b2c-dx.isml.showReferences",
+        "title": "Show ISML References",
+        "category": "B2C DX - ISML"
+      },
+      {
+        "command": "b2c-dx.walkthrough.createDwJson",
+        "title": "Create dw.json Configuration",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.walkthrough.open",
+        "title": "Open Getting Started Guide",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.walkthrough.markAllDone",
+        "title": "Mark Getting Started as Done",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.walkthrough.resetProgress",
+        "title": "Reset Getting Started Progress",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.cli.verify",
+        "title": "Verify B2C CLI Installation",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.cli.update",
+        "title": "Update B2C CLI to Latest",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.cli.installNpm",
+        "title": "Install B2C CLI via npm",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.cli.installBrew",
+        "title": "Install B2C CLI via Homebrew",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.cli.recheck",
+        "title": "Re-check B2C CLI Installation",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.walkthrough.chooseCredentialStorage",
+        "title": "Configure Instance (Wizard)",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.walkthrough.inspectSetup",
+        "title": "Inspect Resolved Config (b2c setup inspect)",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.setup.connection",
+        "title": "Setup · Connection (instance + hostname)",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.setup.oauth",
+        "title": "Setup · OAuth Credentials",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.setup.webdav",
+        "title": "Setup · WebDAV Credentials",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.setup.scapi",
+        "title": "Setup · SCAPI Configuration",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.setup.resetSession",
+        "title": "Reset Setup Session (Start over from connection step)",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.theme.toggle",
+        "title": "Toggle Light / Dark Theme",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.onboarding.open",
+        "title": "Open Onboarding Panel",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.onboarding.reset",
+        "title": "Reset Onboarding Progress",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.onboarding.changePersona",
+        "title": "Change Onboarding Role",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.walkthrough.validate",
+        "title": "Validate Walkthrough Configuration",
+        "category": "B2C DX - Development"
+      },
+      {
+        "command": "b2c-dx.walkthrough.checkAccessibility",
+        "title": "Check Walkthrough Accessibility",
+        "category": "B2C DX - Development"
+      },
+      {
+        "command": "b2c-dx.walkthrough.showTelemetry",
+        "title": "Show Walkthrough Telemetry",
+        "category": "B2C DX - Development"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "b2c-dx.gettingStarted",
+        "title": "B2C DX — Developer Onboarding",
+        "description": "A guided 5-phase setup — install, configure, connect, deploy, scaffold — for the Salesforce B2C Commerce Developer Experience extension. Most teams complete this in under 30 minutes.",
+        "icon": "media/b2c-icon.svg",
+        "steps": [
+          {
+            "id": "pick-start",
+            "title": "Phase 0 · Choose your role",
+            "description": "Different roles need different things first. Open the **role-based deep-dive** for a path tailored to how you'll use B2C Commerce — Storefront, API/Integration, DevOps/Release, or AI-augmented developer. Or skip ahead and follow the universal five-phase flow below.\n\n[Open role-based guide](command:b2c-dx.onboarding.open)\n\nAlready set up? [Mark all phases as done](command:b2c-dx.walkthrough.markAllDone).",
+            "media": {
+              "image": {
+                "light": "media/walkthrough/welcome-hero-light.svg",
+                "dark": "media/walkthrough/welcome-hero-dark.svg",
+                "hc": "media/walkthrough/welcome-hero-dark.svg",
+                "hcLight": "media/walkthrough/welcome-hero-light.svg"
+              },
+              "altText": "B2C DX wordmark above a vertical five-step timeline: Install the B2C CLI (optional), Configure your instance (dw.json), Connect and authenticate, Deploy your first cartridge, and Generate from a scaffold."
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.onboarding.open",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          },
+          {
+            "id": "install-cli",
+            "title": "Phase 1 · Install the B2C CLI",
+            "description": "**Optional.** The B2C CLI powers deploys, log tailing, and sandbox commands from the terminal. Skip if you'll only use the VS Code views.\n\nInstall via `npm install -g @salesforce/b2c-cli` or `brew install salesforcecommercecloud/tools/b2c-cli`. \n\nRequires Node.js 22+.\n\n[Verify installation](command:b2c-dx.cli.verify) · [Update to latest](command:b2c-dx.cli.update)",
+            "media": {
+              "markdown": "media/walkthrough/install-cli.md"
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.cli.verify",
+              "onContext:b2c-dx.cliInstalled",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          },
+          {
+            "id": "configure-instance",
+            "title": "Phase 2 · Configure your instance",
+            "description": "Run the configuration wizard. Non-secret fields (hostname, code-version, short-code, tenant-id, mrtProject, mrtEnvironment) go into `dw.json`; secret pairs (OAuth `client-id`+`client-secret`, Basic `username`+`password`, MRT API key) are placed independently — Keychain, `pass`, env vars, or dw.json — per the documented Credential Grouping rule.\n\n[Run setup wizard](command:b2c-dx.walkthrough.chooseCredentialStorage) · [Inspect resolved config](command:b2c-dx.walkthrough.inspectSetup) · [Create dw.json (manual)](command:b2c-dx.walkthrough.createDwJson)",
+            "media": {
+              "markdown": "media/walkthrough/dw-json-setup.md"
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.walkthrough.chooseCredentialStorage",
+              "onCommand:b2c-dx.walkthrough.createDwJson",
+              "onContext:b2c-dx.dwJsonExists",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          },
+          {
+            "id": "connect",
+            "title": "Phase 3 · Connect & authenticate",
+            "description": "Verify your config resolves and the extension can reach your instance. The active instance shows in the status bar (bottom-left).\n\nOAuth fields (`client-id`, `client-secret`, `short-code`) unlock the Sandbox Explorer and API Browser; basic auth (`username`, `password`) is enough for WebDAV and cartridge deploys.\n\n[Inspect resolved config](command:b2c-dx.walkthrough.inspectSetup) — runs `b2c setup inspect` and shows where each value came from (file / env / keychain).\n\n[Inspect active instance](command:b2c-dx.instance.inspect) · [Open Realm Explorer](command:workbench.view.extension.b2c-dx-sandboxes)",
+            "media": {
+              "markdown": "media/walkthrough/oauth-setup.md"
+            },
+            "completionEvents": [
+              "onContext:b2c-dx.instanceConnected",
+              "onCommand:b2c-dx.instance.inspect",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          },
+          {
+            "id": "deploy-cartridge",
+            "title": "Phase 4 · Deploy your first cartridge",
+            "description": "Cartridges are folders containing a `.project` file. The extension auto-detects them in your workspace and lists them under the Cartridges view.\n\n[Deploy all cartridges](command:b2c-dx.codeSync.deploy)\n\n[Open Cartridges view](command:workbench.view.extension.b2c-dx)",
+            "media": {
+              "markdown": "media/walkthrough/deploy-cartridge.md"
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.codeSync.deploy",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          },
+          {
+            "id": "scaffold",
+            "title": "Phase 5 · Generate from a scaffold",
+            "description": "Generate boilerplate for cartridges, controllers, models, and Page Designer pages without leaving VS Code.\n\nRight-click a folder in the Explorer → **B2C DX → New from Scaffold…** or run the command directly.\n\n[New from Scaffold…](command:b2c-dx.scaffold.generate)\n\n---\n\nFinished early? [Mark all steps as done](command:b2c-dx.walkthrough.markAllDone).",
+            "media": {
+              "markdown": "media/walkthrough/next-steps.md"
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.scaffold.generate",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          }
+        ]
       }
     ],
     "menus": {
@@ -671,6 +1591,26 @@
           "group": "navigation"
         },
         {
+          "command": "b2c-dx.cipAnalytics.removeRealm",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.addRealm",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.refresh",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@4"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.resetFromDwJson",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@9"
+        },
+        {
           "command": "b2c-dx.codeSync.deploy",
           "when": "view == b2cCartridgeExplorer",
           "group": "navigation"
@@ -692,6 +1632,26 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "b2c-dx.cipAnalytics.switchConnection",
+          "when": "view == b2cCipAnalytics && viewItem == cipRealm",
+          "group": "inline@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.removeRealm",
+          "when": "view == b2cCipAnalytics && viewItem == cipRealm",
+          "group": "2_realm@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.testConnection",
+          "when": "view == b2cCipAnalytics && viewItem == cipRealmInfo",
+          "group": "inline@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.configureConnection",
+          "when": "view == b2cCipAnalytics && viewItem == cipRealmInfo",
+          "group": "inline@1"
+        },
         {
           "command": "b2c-dx.apiBrowser.scapiAdd",
           "when": "view == b2cApiBrowser && viewItem == apiSchema-shopper && b2c-dx.isStorefrontNext",
@@ -916,6 +1876,58 @@
       ],
       "commandPalette": [
         {
+          "command": "b2c-dx.isml.createTemplate",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.isml.showReferences",
+          "when": "editorLangId == isml"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.refresh",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.resetFromDwJson",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.openReport",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.browseTables",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.queryBuilder",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.configureConnection",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.testConnection",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.switchRealm",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.switchConnection",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.addRealm",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.removeRealm",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
           "command": "b2c-dx.apiBrowser.openSwagger",
           "when": "false"
         },
@@ -1070,16 +2082,17 @@
     ]
   },
   "scripts": {
+    "sync:xsd": "node scripts/sync-xsd.mjs",
     "build": "node scripts/esbuild-bundle.mjs",
     "watch": "node scripts/esbuild-bundle.mjs --watch",
     "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-script-types run build && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
-    "package": "pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
+    "package": "pnpm run build && pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
     "typecheck:agent": "tsc -p . --noEmit --pretty false",
     "format": "prettier --write src",
     "format:check": "prettier --check src",
-    "pretest": "tsc -p tsconfig.test.json",
+    "pretest": "pnpm run sync:xsd && tsc -p tsconfig.test.json",
     "test": "vscode-test",
     "posttest": "pnpm run lint",
     "analyze": "ANALYZE_BUNDLE=1 node scripts/esbuild-bundle.mjs"
@@ -1088,6 +2101,8 @@
     "@eslint/compat": "catalog:",
     "@types/mocha": "catalog:",
     "@types/node": "catalog:",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
     "@types/vscode": "^1.105.1",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",

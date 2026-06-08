@@ -22,12 +22,12 @@ export default [
   ...tseslint.configs.recommended,
   prettierPlugin,
   {
-    files: ['**/*.ts'],
+    files: ['**/*.ts', '**/*.tsx'],
     plugins: {
       header: headerPlugin,
     },
     languageOptions: {
-      parserOptions: {ecmaVersion: 2022, sourceType: 'module'},
+      parserOptions: {ecmaVersion: 2022, sourceType: 'module', ecmaFeatures: {jsx: true}},
     },
     rules: {
       'header/header': ['error', 'block', copyrightHeader],

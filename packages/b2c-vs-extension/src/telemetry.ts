@@ -29,6 +29,7 @@ export type FeatureCategory =
   | 'cap'
   | 'logs'
   | 'instance'
+  | 'cipAnalytics'
   | 'scriptTypes';
 
 /** VS Code 1.86+ telemetry-level signal. Falls back to true on older hosts. */
