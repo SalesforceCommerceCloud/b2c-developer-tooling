@@ -55,11 +55,13 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
       default: async () => process.env.SFCC_MRT_ENVIRONMENT || process.env.MRT_TARGET || undefined,
     }),
     'cloud-origin': Flags.string({
+      char: 'o',
       description: `MRT cloud origin URL (or set mrtOrigin in dw.json; default: ${DEFAULT_MRT_ORIGIN})`,
       env: 'MRT_CLOUD_ORIGIN',
       default: async () => process.env.SFCC_MRT_CLOUD_ORIGIN || undefined,
     }),
     'credentials-file': Flags.string({
+      char: 'c',
       description: 'Path to MRT credentials file (overrides default ~/.mobify)',
       env: 'MRT_CREDENTIALS_FILE',
     }),
