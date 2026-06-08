@@ -27,6 +27,12 @@ export interface SchemaEntry {
   status?: 'current' | 'deprecated';
 }
 
+export function isShopperSchema(schema: Pick<SchemaEntry, 'apiFamily' | 'apiName'>): boolean {
+  const family = (schema.apiFamily ?? '').toLowerCase();
+  const name = (schema.apiName ?? '').toLowerCase();
+  return family.startsWith('shopper') || name.startsWith('shopper');
+}
+
 export class ApiSchemaTreeItem extends vscode.TreeItem {
   readonly nodeType = 'apiSchema' as const;
   readonly schema: SchemaEntry;
@@ -36,7 +42,11 @@ export class ApiSchemaTreeItem extends vscode.TreeItem {
     this.schema = schema;
     this.id = `api:schema:${schema.apiFamily}:${schema.apiName}:${schema.apiVersion}`;
     this.description = schema.apiVersion;
-    this.contextValue = 'apiSchema';
+
+    // The contextValue drives the Storefront Next "scapi add" right-click menu,
+    // which is only offered for Shopper schemas (see isShopperSchema + package.json).
+    const isShopper = isShopperSchema(schema);
+    this.contextValue = isShopper ? 'apiSchema-shopper' : 'apiSchema-admin';
 
     // Tooltip type is best-effort — the authoritative classification happens
     // when the spec is loaded (see detectApiType in swagger-webview.ts) since
@@ -45,12 +55,12 @@ export class ApiSchemaTreeItem extends vscode.TreeItem {
     let apiType: string;
     if (schema.apiFamily === 'custom') {
       apiType = 'Custom';
-    } else if (schema.apiName.startsWith('shopper-') || schema.apiFamily === 'shopper') {
+    } else if (isShopper) {
       apiType = 'Shopper';
     } else {
       apiType = 'Admin';
     }
-    this.tooltip = `${schema.apiName} ${schema.apiVersion} (${apiType})`;
+    this.tooltip = `${schema.apiName} ${schema.apiVersion} (${apiType}) — apiFamily="${schema.apiFamily}"`;
 
     if (schema.status === 'deprecated') {
       this.iconPath = new vscode.ThemeIcon('warning', new vscode.ThemeColor('list.warningForeground'));

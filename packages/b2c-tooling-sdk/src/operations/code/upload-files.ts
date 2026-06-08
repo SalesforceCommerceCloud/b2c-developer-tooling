@@ -72,6 +72,7 @@ export function fileToCartridgePath(absolutePath: string, cartridges: CartridgeM
  * @param uploads - Files to upload
  * @param deletes - Files to delete
  * @param options - Callbacks for upload/delete/error events
+ * @returns Resolves when uploads and deletes complete
  */
 export async function uploadFiles(
   instance: B2CInstance,

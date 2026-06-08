@@ -262,6 +262,12 @@
         "category": "B2C DX - API Browser"
       },
       {
+        "command": "b2c-dx.apiBrowser.scapiAdd",
+        "title": "Add to Storefront (sfnext scapi add)",
+        "icon": "$(add)",
+        "category": "B2C DX - API Browser"
+      },
+      {
         "command": "b2c-dx.sandbox.refresh",
         "title": "Refresh",
         "icon": "$(refresh)",
@@ -681,6 +687,11 @@
       ],
       "view/item/context": [
         {
+          "command": "b2c-dx.apiBrowser.scapiAdd",
+          "when": "view == b2cApiBrowser && viewItem == apiSchema-shopper && b2c-dx.isStorefrontNext",
+          "group": "1_storefront@1"
+        },
+        {
           "command": "b2c-dx.webdav.addCatalog",
           "when": "view == b2cWebdavExplorer && viewItem == virtual-root-catalogs",
           "group": "0_add@0"
@@ -900,6 +911,10 @@
       "commandPalette": [
         {
           "command": "b2c-dx.apiBrowser.openSwagger",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.apiBrowser.scapiAdd",
           "when": "false"
         },
         {

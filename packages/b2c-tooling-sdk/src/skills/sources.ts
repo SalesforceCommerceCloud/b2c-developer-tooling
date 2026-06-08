@@ -11,6 +11,12 @@ function pluginsTag(version: string): string {
   return `b2c-agent-plugins@${bare}`;
 }
 
+/**
+ * Registry mapping skill sets to their source configurations.
+ *
+ * Each skill set (b2c, b2c-cli, storefront-next, cap-dev) maps to its respective
+ * GitHub repository and download configuration for artifact retrieval.
+ */
 export const SKILL_SOURCES: Record<SkillSet, SkillSourceConfig> = {
   b2c: {
     id: 'b2c',
@@ -46,6 +52,13 @@ export const SKILL_SOURCES: Record<SkillSet, SkillSourceConfig> = {
   },
 };
 
+/**
+ * Get the source configuration for a specific skill set.
+ *
+ * @param skillSet - The skill set identifier ('b2c', 'b2c-cli', 'storefront-next', or 'cap-dev')
+ * @returns The source configuration for the skill set
+ * @throws Error if the skill set is not recognized
+ */
 export function getSkillSource(skillSet: SkillSet): SkillSourceConfig {
   const source = SKILL_SOURCES[skillSet];
   if (!source) {
@@ -54,4 +67,8 @@ export function getSkillSource(skillSet: SkillSet): SkillSourceConfig {
   return source;
 }
 
+/**
+ * All available skill set identifiers.
+ * Derived from the keys of SKILL_SOURCES.
+ */
 export const ALL_SKILL_SETS: SkillSet[] = Object.keys(SKILL_SOURCES) as SkillSet[];

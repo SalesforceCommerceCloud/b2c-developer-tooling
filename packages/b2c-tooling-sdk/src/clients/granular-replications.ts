@@ -3,6 +3,15 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/**
+ * Granular Replications API client for B2C Commerce.
+ *
+ * Provides a fully typed client for Granular Replications API operations using
+ * openapi-fetch with OAuth authentication middleware. Used for publishing individual
+ * items (products, price tables, content assets) from staging to production.
+ *
+ * @module clients/granular-replications
+ */
 import createClient, {type Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './granular-replications.generated.js';
@@ -28,6 +37,14 @@ export type PublishProcessResponse = components['schemas']['PublishProcessRespon
 export type PublishProcessListResponse = components['schemas']['PublishProcessListResponse'];
 export type PublishIdResponse = components['schemas']['PublishIdResponse'];
 
+/**
+ * Configuration for creating a Granular Replications API client.
+ *
+ * @property shortCode - The instance short code (e.g., 'kv7kzm78')
+ * @property tenantId - The tenant ID (e.g., 'zzxy_prd')
+ * @property scopes - Optional custom OAuth scopes. Defaults to sfcc.granular-replications.rw and tenant-specific scope
+ * @property middlewareRegistry - Optional custom middleware registry for request/response interceptors
+ */
 export interface GranularReplicationsClientConfig {
   shortCode: string;
   tenantId: string;
