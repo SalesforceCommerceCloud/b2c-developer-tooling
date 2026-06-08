@@ -316,6 +316,9 @@
               }
             }
           },
+          "rate-limit": {
+            "description": "Manage rate limiting rules\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
+          },
           "mtls": {
             "description": "Manage mTLS certificates for code deployment\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           },

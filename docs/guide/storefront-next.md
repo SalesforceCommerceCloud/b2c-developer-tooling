@@ -199,7 +199,7 @@ b2c mrt tail-logs -p <PROJECT> -e <ENVIRONMENT> --level ERROR --level WARN
 b2c mrt tail-logs -p <PROJECT> -e <ENVIRONMENT> --search "timeout|500"
 ```
 
-This is useful for diagnosing deployment failures, SSR errors, and API connectivity issues. See [MRT Commands](/cli/mrt#tail-logs) for all options.
+This is useful for diagnosing deployment failures, SSR errors, and API connectivity issues. See [MRT Commands](/cli/mrt#b2c-mrt-tail-logs) for all options.
 
 ## Summary
 

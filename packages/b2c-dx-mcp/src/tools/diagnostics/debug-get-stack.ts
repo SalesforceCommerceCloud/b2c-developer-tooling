@@ -32,7 +32,7 @@ export function createDebugGetStackTool(
       description:
         'Get the call stack for a halted thread. ' +
         'Returns frames with mapped local file paths and server script paths.',
-      toolsets: ['CARTRIDGES', 'SCAPI'],
+      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
         thread_id: z.number().int().describe('Thread ID from debug_wait_for_stop or debug_list_sessions.'),

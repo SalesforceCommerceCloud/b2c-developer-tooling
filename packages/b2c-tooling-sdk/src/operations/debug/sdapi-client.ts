@@ -84,11 +84,20 @@ export class SdapiClient {
   // Breakpoints
   // -----------------------------------------------------------------------
 
+  /**
+   * Retrieves all currently set breakpoints for the debugger session.
+   * @returns Promise resolving to array of breakpoints, or empty array if none are set.
+   */
   async getBreakpoints(): Promise<SdapiBreakpoint[]> {
     const data = await this.request<SdapiBreakpoints>('GET', '/breakpoints');
     return data.breakpoints ?? [];
   }
 
+  /**
+   * Sets or replaces breakpoints for the debugger.
+   * @param breakpoints Array of breakpoint definitions to set.
+   * @returns Promise resolving to array of confirmed breakpoints from the server.
+   */
   async setBreakpoints(breakpoints: BreakpointInput[]): Promise<SdapiBreakpoint[]> {
     const data = await this.request<SdapiBreakpoints>('POST', '/breakpoints', {
       body: {breakpoints},
@@ -108,11 +117,20 @@ export class SdapiClient {
   // Threads
   // -----------------------------------------------------------------------
 
+  /**
+   * Gets all active script threads.
+   * @returns Promise resolving to array of script threads, or empty array if none are active.
+   */
   async getThreads(): Promise<SdapiScriptThread[]> {
     const data = await this.request<SdapiScriptThreads>('GET', '/threads');
     return data.script_threads ?? [];
   }
 
+  /**
+   * Retrieves a specific thread by ID.
+   * @param threadId The thread identifier.
+   * @returns Promise resolving to the thread object with its current state.
+   */
   async getThread(threadId: number): Promise<SdapiScriptThread> {
     return this.request<SdapiScriptThread>('GET', `/threads/${threadId}`);
   }
@@ -169,6 +187,13 @@ export class SdapiClient {
     return this.request<SdapiObjectMembers>('GET', `/threads/${threadId}/frames/${frameIndex}/members${suffix}`);
   }
 
+  /**
+   * Evaluates a JavaScript expression in a frame context.
+   * @param threadId The thread ID of the halted thread.
+   * @param frameIndex The stack frame index (0 = topmost frame).
+   * @param expr The JavaScript expression to evaluate.
+   * @returns Promise resolving to the evaluation result.
+   */
   async evaluate(threadId: number, frameIndex: number, expr: string): Promise<SdapiEvalResult> {
     const params = new URLSearchParams({expr});
     return this.request<SdapiEvalResult>('GET', `/threads/${threadId}/frames/${frameIndex}/eval?${params.toString()}`);

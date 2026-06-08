@@ -230,6 +230,8 @@ b2c cap list [--site-id SITE_IDS]
 | `--site-id SITE_IDS` | `-s` | Site IDs to query (comma-separated). If omitted, queries all sites. |
 | `--timeout SECONDS` | `-t` | Timeout in seconds (default: no timeout) |
 | `--local` | `-l` | List locally detected Commerce App Packages (no instance required) |
+| `--columns COLS` | `-c` | Columns to display (comma-separated). Available columns: `path`, `id`, `name`, `version`, `domain`, `siteId`, `featureName`, `featureType`, `featureSource`, `installStatus`, `configStatus`, `installedAt` |
+| `--extended` | `-x` | Show all columns including extended fields |
 | `--json` | | Output result as JSON |
 
 ### Table Columns

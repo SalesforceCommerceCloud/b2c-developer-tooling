@@ -169,6 +169,8 @@ In addition to [global flags](./index#global-flags):
 | `--start` | Starting index for pagination | `0` |
 | `--sort-by` | Sort by field (start_time, end_time, job_id, status) | `start_time` |
 | `--sort-order` | Sort order (asc, desc) | `desc` |
+| `--columns`, `-c` | Columns to display (comma-separated): id, jobId, status, startTime | |
+| `--extended`, `-x` | Show all columns including extended fields | `false` |
 
 ### Examples
 
@@ -279,6 +281,7 @@ In addition to [global flags](./index#global-flags):
 | `--keep-archive`, `-k` | Keep archive on instance after import | `false` |
 | `--remote`, `-r` | Target is a filename already on the instance (in Impex/src/instance/) | `false` |
 | `--timeout`, `-t` | Timeout in seconds | No timeout |
+| `--wait`, `-w` | Wait for import job to complete | `true` |
 | `--show-log` | Show job log on failure | `true` |
 
 ### Examples
@@ -334,7 +337,7 @@ In addition to [global flags](./index#global-flags):
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--output`, `-o` | Output path for the export | `.` (current directory) |
+| `--output`, `-o` | Output path for the export | `./export` |
 | `--data-units` | Data units JSON configuration | |
 | `--site` | Site ID(s) to export (comma-separated, repeatable) | |
 | `--site-data` | Site data types to export (comma-separated) | |

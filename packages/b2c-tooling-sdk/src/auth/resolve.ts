@@ -41,7 +41,13 @@ export interface ResolveAuthStrategyOptions {
   /**
    * Allowed authentication methods in priority order.
    * The first method with available credentials will be used.
-   * Defaults to all methods: ['client-credentials', 'implicit', 'basic', 'api-key']
+   * Defaults to: ['client-credentials', 'implicit', 'basic', 'api-key'].
+   *
+   * Note: the `'jwt'` method is defined in the {@link AuthMethod} type but is
+   * not automatically resolvable here, because JWT auth requires file paths
+   * (e.g. `certPath`/`keyPath`) that are not part of the generic
+   * {@link AuthCredentials} accepted by this resolver. To use JWT, instantiate
+   * `JwtOAuthStrategy` directly instead of relying on `resolveAuthStrategy`.
    */
   allowedMethods?: AuthMethod[];
 }
