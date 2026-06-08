@@ -1,0 +1,275 @@
+{
+  "version": "1.0.0",
+  "tags": [
+    {
+      "name": "isif",
+      "summary": "Conditional block. Renders body when `condition` evaluates to true.",
+      "syntax": "<isif condition=\"${condition}\">...</isif>",
+      "block": true,
+      "attributes": [
+        {"name": "condition", "required": true, "description": "ISML expression. The body renders when truthy."}
+      ],
+      "tips": [
+        "Use `<iselseif/>` and `<iselse/>` for additional branches.",
+        "Conditions are evaluated server-side. Avoid heavy logic — move it into a script and pass a boolean via `pdict`."
+      ],
+      "examples": [
+        "<isif condition=\"${pdict.product.available}\">\n    <isinclude template=\"product/components/availability\"/>\n<iselse/>\n    <p>${Resource.msg('product.outofstock', 'product', null)}</p>\n</isif>"
+      ]
+    },
+    {
+      "name": "iselseif",
+      "summary": "Branch condition inside an `<isif>` block.",
+      "syntax": "<iselseif condition=\"${condition}\"/>",
+      "block": false,
+      "attributes": [
+        {"name": "condition", "required": true, "description": "ISML expression evaluated when prior branches were false."}
+      ],
+      "tips": ["Self-closing only — never paired with `</iselseif>`."]
+    },
+    {
+      "name": "iselse",
+      "summary": "Fallback branch for an `<isif>` block.",
+      "syntax": "<iselse/>",
+      "block": false,
+      "attributes": [],
+      "tips": ["Self-closing only — never paired with `</iselse>`."]
+    },
+    {
+      "name": "isloop",
+      "summary": "Iterates over a collection or iterator.",
+      "syntax": "<isloop items=\"${collection}\" var=\"item\" status=\"loopstate\">...</isloop>",
+      "block": true,
+      "attributes": [
+        {"name": "items", "required": false, "description": "Collection to iterate. Mutually exclusive with `iterator`."},
+        {"name": "iterator", "required": false, "description": "Iterator instance. Mutually exclusive with `items`."},
+        {"name": "var", "required": false, "description": "Variable name bound to each element when using `items`."},
+        {"name": "alias", "required": false, "description": "Variable name bound when using `iterator`."},
+        {"name": "status", "required": false, "description": "Optional status object exposing `index`, `count`, `first`, `last`, `odd`, `even`."},
+        {"name": "begin", "required": false, "description": "Zero-based index of the first element to render."},
+        {"name": "end", "required": false, "description": "Zero-based index of the last element to render (inclusive)."},
+        {"name": "step", "required": false, "description": "Number of elements to advance per iteration."}
+      ],
+      "tips": [
+        "Use `<isbreak/>` to exit the loop early and `<iscontinue/>` to skip the rest of the body.",
+        "Prefer `iterator/alias` over `items/var` when iterating large collections — it avoids materializing the full list."
+      ],
+      "examples": [
+        "<isloop items=\"${pdict.products}\" var=\"product\" status=\"loop\">\n    <li class=\"${loop.first ? 'first' : ''}\">${product.name}</li>\n</isloop>"
+      ]
+    },
+    {
+      "name": "isbreak",
+      "summary": "Exit the enclosing `<isloop>` immediately.",
+      "syntax": "<isbreak/>",
+      "block": false,
+      "attributes": []
+    },
+    {
+      "name": "iscontinue",
+      "summary": "Skip to the next iteration of the enclosing `<isloop>`.",
+      "syntax": "<iscontinue/>",
+      "block": false,
+      "attributes": []
+    },
+    {
+      "name": "isnext",
+      "summary": "Advance the enclosing iterator-mode `<isloop>` to the next element.",
+      "syntax": "<isnext/>",
+      "block": false,
+      "attributes": []
+    },
+    {
+      "name": "isinclude",
+      "summary": "Includes another ISML template by `template` or remote URL.",
+      "syntax": "<isinclude template=\"common/header\"/>",
+      "block": false,
+      "attributes": [
+        {"name": "template", "required": false, "description": "Cartridge-relative template path. Mutually exclusive with `url`."},
+        {"name": "url", "required": false, "description": "URL produced by `URLUtils.url(...)`. Mutually exclusive with `template`."},
+        {"name": "sf-toolkit", "required": false, "description": "Set to `off` to suppress storefront toolkit injection (Active Data scripts)."}
+      ],
+      "tips": [
+        "Use `template` for local includes — this is the common case in cartridges.",
+        "`url` triggers a sub-request against the controller; reserve it for remote/personalized fragments."
+      ],
+      "examples": [
+        "<isinclude template=\"common/header\"/>",
+        "<isinclude url=\"${URLUtils.url('Cart-MiniCart')}\"/>"
+      ]
+    },
+    {
+      "name": "isdecorate",
+      "summary": "Wraps current output in a decorator template.",
+      "syntax": "<isdecorate template=\"common/layout/page\">...</isdecorate>",
+      "block": true,
+      "attributes": [
+        {"name": "template", "required": true, "description": "Cartridge-relative path of the decorator template."}
+      ],
+      "tips": [
+        "The decorator template references the wrapped content via `<isreplace/>`.",
+        "Avoid nesting decorators more than two levels deep — it complicates debugging."
+      ]
+    },
+    {
+      "name": "ismodule",
+      "summary": "Declares a custom ISML tag module.",
+      "syntax": "<ismodule template=\"components/banner\" name=\"banner\" attribute=\"type\"/>",
+      "block": false,
+      "attributes": [
+        {"name": "template", "required": true, "description": "Path to the module template within the cartridge."},
+        {"name": "name", "required": true, "description": "Tag name developers will use to invoke the module."},
+        {"name": "attribute", "required": false, "description": "Attribute name(s) the module accepts. Repeat the attribute for multiple."}
+      ],
+      "tips": ["Place `<ismodule>` declarations in a shared template (often `modules.isml`) included by every page."]
+    },
+    {
+      "name": "isslot",
+      "summary": "Renders a content slot configured in Business Manager.",
+      "syntax": "<isslot id=\"hero-slot\" context=\"global\"/>",
+      "block": false,
+      "attributes": [
+        {"name": "id", "required": true, "description": "Slot identifier matching the configuration in Business Manager."},
+        {"name": "description", "required": false, "description": "Free-form description shown in Business Manager."},
+        {"name": "context", "required": true, "description": "One of `global`, `category`, or `folder`."},
+        {"name": "context-object", "required": false, "description": "Required when context is `category` or `folder` — usually `pdict.CurrentCategory` or `pdict.CurrentFolder`."}
+      ]
+    },
+    {
+      "name": "isscript",
+      "summary": "Server-side script block in B2C Commerce script.",
+      "syntax": "<isscript>\n    var helper = require('*/cartridge/scripts/util/foo');\n</isscript>",
+      "block": true,
+      "attributes": [],
+      "tips": [
+        "Use `<isscript>` for `require(...)`, data lookups, and `res.render(...)` calls.",
+        "Prefer moving non-trivial logic into `cartridge/scripts/` modules — `<isscript>` should stay short."
+      ],
+      "examples": [
+        "<isscript>\n    var assets = require('*/cartridge/scripts/assets');\n    assets.addCss('/css/global.css');\n    assets.addJs('/js/main.js');\n</isscript>"
+      ]
+    },
+    {
+      "name": "isprint",
+      "summary": "Prints a value with explicit encoding or formatter.",
+      "syntax": "<isprint value=\"${value}\" encoding=\"htmlcontent\"/>",
+      "block": false,
+      "attributes": [
+        {"name": "value", "required": true, "description": "ISML expression to render."},
+        {"name": "encoding", "required": false, "description": "One of `on`, `off`, `htmlcontent`, `htmlsinglequote`, `htmldoublequote`, `htmlunquote`, `jshtml`, `jsattr`, `jsblock`, `jssource`, `jsonvalue`, `uricomponent`, `uristrict`, `xmlcontent`, `xmlsinglequote`, `xmldoublequote`, `xmlcomment`."},
+        {"name": "formatter", "required": false, "description": "Number/date format string (e.g. `#,##0.00`, `yyyy-MM-dd`)."},
+        {"name": "timezone", "required": false, "description": "Timezone reference: `SITE`, `INSTANCE`, or `UTC`. Only used with date formatters."}
+      ],
+      "tips": [
+        "Always specify `encoding` when rendering user-supplied values to prevent XSS.",
+        "Use `encoding=\"off\"` only for values that are already HTML and trusted."
+      ]
+    },
+    {
+      "name": "isset",
+      "summary": "Assigns a variable in page, request, or session scope.",
+      "syntax": "<isset name=\"myVar\" value=\"${value}\" scope=\"page\"/>",
+      "block": false,
+      "attributes": [
+        {"name": "name", "required": true, "description": "Variable name."},
+        {"name": "value", "required": true, "description": "ISML expression assigned to the variable."},
+        {"name": "scope", "required": false, "description": "One of `page` (default), `request`, or `session`."}
+      ]
+    },
+    {
+      "name": "iscontent",
+      "summary": "Sets the response content type, charset, and compaction.",
+      "syntax": "<iscontent type=\"text/html\" charset=\"UTF-8\" compact=\"true\"/>",
+      "block": false,
+      "attributes": [
+        {"name": "type", "required": false, "description": "MIME type. Defaults to `text/html`."},
+        {"name": "charset", "required": false, "description": "Response charset. Defaults to `UTF-8`."},
+        {"name": "compact", "required": false, "description": "When `true`, removes redundant whitespace from the response."}
+      ]
+    },
+    {
+      "name": "iscomment",
+      "summary": "ISML comment block — body is never rendered.",
+      "syntax": "<iscomment>\n    note for developers\n</iscomment>",
+      "block": true,
+      "attributes": []
+    },
+    {
+      "name": "iscache",
+      "summary": "Configures page caching.",
+      "syntax": "<iscache type=\"relative\" hour=\"24\" minute=\"0\" varyby=\"price_promotion\"/>",
+      "block": false,
+      "attributes": [
+        {"name": "type", "required": true, "description": "`relative` (TTL) or `daily` (until midnight site time)."},
+        {"name": "hour", "required": false, "description": "TTL hours (0-24)."},
+        {"name": "minute", "required": false, "description": "TTL minutes (0-59)."},
+        {"name": "varyby", "required": false, "description": "`price_promotion` to vary by customer segment."},
+        {"name": "status", "required": false, "description": "`on` to enable, `off` to disable for this template."}
+      ],
+      "tips": [
+        "`<iscache>` only takes effect on the top-level rendered template, not includes.",
+        "Disable with `<iscache type=\"relative\" hour=\"0\" minute=\"0\"/>` when serving personalized content."
+      ]
+    },
+    {
+      "name": "isredirect",
+      "summary": "Redirects the response to another URL.",
+      "syntax": "<isredirect location=\"${URLUtils.url('Home-Show')}\" permanent=\"false\"/>",
+      "block": false,
+      "attributes": [
+        {"name": "location", "required": true, "description": "Target URL — usually built with `URLUtils.url(...)`."},
+        {"name": "permanent", "required": false, "description": "`true` for HTTP 301, `false` (default) for HTTP 302."}
+      ]
+    },
+    {
+      "name": "isstatus",
+      "summary": "Sets the HTTP response status code.",
+      "syntax": "<isstatus value=\"404\"/>",
+      "block": false,
+      "attributes": [{"name": "value", "required": true, "description": "Numeric HTTP status (200, 301, 302, 404, 500, …)."}]
+    },
+    {
+      "name": "isobject",
+      "summary": "Wraps markup so personalization tracking can identify the rendered object.",
+      "syntax": "<isobject object=\"${pdict.product}\" view=\"detail\">...</isobject>",
+      "block": true,
+      "attributes": [
+        {"name": "object", "required": true, "description": "Object reference, typically from `pdict`."},
+        {"name": "view", "required": true, "description": "Predefined view name: `detail`, `recommendation`, `searchhit`, `none`."}
+      ]
+    },
+    {
+      "name": "isactivedatacontext",
+      "summary": "Sets Active Data context for tracking.",
+      "syntax": "<isactivedatacontext category=\"${pdict.CurrentCategory.ID}\"/>",
+      "block": false,
+      "attributes": [
+        {"name": "category", "required": false, "description": "Category ID to attribute the impression to."}
+      ]
+    },
+    {
+      "name": "isanalyticsoff",
+      "summary": "Suppresses Active Data tracking for the surrounding block.",
+      "syntax": "<isanalyticsoff/>",
+      "block": false,
+      "attributes": []
+    },
+    {
+      "name": "iscomponent",
+      "summary": "Renders a Page Designer component (legacy).",
+      "syntax": "<iscomponent type_id=\"cartridge/component\" attribute=\"value\"/>",
+      "block": false,
+      "attributes": [
+        {"name": "type_id", "required": true, "description": "Component type identifier."}
+      ],
+      "tips": ["Prefer the script-side `PageMgr.renderRegion(...)` API for new development."]
+    },
+    {
+      "name": "iscookies",
+      "summary": "Renders configured cookie disclosures.",
+      "syntax": "<iscookies/>",
+      "block": false,
+      "attributes": []
+    }
+  ]
+}

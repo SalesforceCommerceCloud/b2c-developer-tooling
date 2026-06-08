@@ -1,0 +1,762 @@
+[
+  {
+    "attributes": [
+      {
+        "description": "Category ID to attribute the impression to.",
+        "name": "category",
+        "required": false
+      }
+    ],
+    "description": "Sets Active Data context for tracking.",
+    "id": "isml:isactivedatacontext",
+    "kind": "tag",
+    "qualifiedName": "isml.isactivedatacontext",
+    "sections": [
+      {
+        "body": "```isml\n<isactivedatacontext category=\"${pdict.CurrentCategory.ID}\"/>\n```",
+        "heading": "Syntax"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "isactivedatacontext",
+      "<isactivedatacontext>",
+      "isml"
+    ],
+    "title": "<isactivedatacontext>"
+  },
+  {
+    "description": "Suppresses Active Data tracking for the surrounding block.",
+    "id": "isml:isanalyticsoff",
+    "kind": "tag",
+    "qualifiedName": "isml.isanalyticsoff",
+    "sections": [
+      {
+        "body": "```isml\n<isanalyticsoff/>\n```",
+        "heading": "Syntax"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "isanalyticsoff",
+      "<isanalyticsoff>",
+      "isml"
+    ],
+    "title": "<isanalyticsoff>"
+  },
+  {
+    "description": "Exit the enclosing `<isloop>` immediately.",
+    "id": "isml:isbreak",
+    "kind": "tag",
+    "qualifiedName": "isml.isbreak",
+    "sections": [
+      {
+        "body": "```isml\n<isbreak/>\n```",
+        "heading": "Syntax"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "isbreak",
+      "<isbreak>",
+      "isml"
+    ],
+    "title": "<isbreak>"
+  },
+  {
+    "attributes": [
+      {
+        "description": "`relative` (TTL) or `daily` (until midnight site time).",
+        "name": "type",
+        "required": true
+      },
+      {
+        "description": "TTL hours (0-24).",
+        "name": "hour",
+        "required": false
+      },
+      {
+        "description": "TTL minutes (0-59).",
+        "name": "minute",
+        "required": false
+      },
+      {
+        "description": "`price_promotion` to vary by customer segment.",
+        "name": "varyby",
+        "required": false
+      },
+      {
+        "description": "`on` to enable, `off` to disable for this template.",
+        "name": "status",
+        "required": false
+      }
+    ],
+    "description": "Configures page caching.",
+    "id": "isml:iscache",
+    "kind": "tag",
+    "qualifiedName": "isml.iscache",
+    "sections": [
+      {
+        "body": "```isml\n<iscache type=\"relative\" hour=\"24\" minute=\"0\" varyby=\"price_promotion\"/>\n```",
+        "heading": "Syntax"
+      },
+      {
+        "body": "- `<iscache>` only takes effect on the top-level rendered template, not includes.\n- Disable with `<iscache type=\"relative\" hour=\"0\" minute=\"0\"/>` when serving personalized content.",
+        "heading": "Tips"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "iscache",
+      "<iscache>",
+      "isml"
+    ],
+    "title": "<iscache>"
+  },
+  {
+    "description": "ISML comment block — body is never rendered.",
+    "id": "isml:iscomment",
+    "kind": "tag",
+    "qualifiedName": "isml.iscomment",
+    "sections": [
+      {
+        "body": "```isml\n<iscomment>\n    note for developers\n</iscomment>\n```",
+        "heading": "Syntax"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "iscomment",
+      "<iscomment>",
+      "isml"
+    ],
+    "title": "<iscomment>"
+  },
+  {
+    "attributes": [
+      {
+        "description": "Component type identifier.",
+        "name": "type_id",
+        "required": true
+      }
+    ],
+    "description": "Renders a Page Designer component (legacy).",
+    "id": "isml:iscomponent",
+    "kind": "tag",
+    "qualifiedName": "isml.iscomponent",
+    "sections": [
+      {
+        "body": "```isml\n<iscomponent type_id=\"cartridge/component\" attribute=\"value\"/>\n```",
+        "heading": "Syntax"
+      },
+      {
+        "body": "- Prefer the script-side `PageMgr.renderRegion(...)` API for new development.",
+        "heading": "Tips"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "iscomponent",
+      "<iscomponent>",
+      "isml"
+    ],
+    "title": "<iscomponent>"
+  },
+  {
+    "attributes": [
+      {
+        "description": "MIME type. Defaults to `text/html`.",
+        "name": "type",
+        "required": false
+      },
+      {
+        "description": "Response charset. Defaults to `UTF-8`.",
+        "name": "charset",
+        "required": false
+      },
+      {
+        "description": "When `true`, removes redundant whitespace from the response.",
+        "name": "compact",
+        "required": false
+      }
+    ],
+    "description": "Sets the response content type, charset, and compaction.",
+    "id": "isml:iscontent",
+    "kind": "tag",
+    "qualifiedName": "isml.iscontent",
+    "sections": [
+      {
+        "body": "```isml\n<iscontent type=\"text/html\" charset=\"UTF-8\" compact=\"true\"/>\n```",
+        "heading": "Syntax"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "iscontent",
+      "<iscontent>",
+      "isml"
+    ],
+    "title": "<iscontent>"
+  },
+  {
+    "description": "Skip to the next iteration of the enclosing `<isloop>`.",
+    "id": "isml:iscontinue",
+    "kind": "tag",
+    "qualifiedName": "isml.iscontinue",
+    "sections": [
+      {
+        "body": "```isml\n<iscontinue/>\n```",
+        "heading": "Syntax"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "iscontinue",
+      "<iscontinue>",
+      "isml"
+    ],
+    "title": "<iscontinue>"
+  },
+  {
+    "description": "Renders configured cookie disclosures.",
+    "id": "isml:iscookies",
+    "kind": "tag",
+    "qualifiedName": "isml.iscookies",
+    "sections": [
+      {
+        "body": "```isml\n<iscookies/>\n```",
+        "heading": "Syntax"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "iscookies",
+      "<iscookies>",
+      "isml"
+    ],
+    "title": "<iscookies>"
+  },
+  {
+    "attributes": [
+      {
+        "description": "Cartridge-relative path of the decorator template.",
+        "name": "template",
+        "required": true
+      }
+    ],
+    "description": "Wraps current output in a decorator template.",
+    "id": "isml:isdecorate",
+    "kind": "tag",
+    "qualifiedName": "isml.isdecorate",
+    "sections": [
+      {
+        "body": "```isml\n<isdecorate template=\"common/layout/page\">...</isdecorate>\n```",
+        "heading": "Syntax"
+      },
+      {
+        "body": "- The decorator template references the wrapped content via `<isreplace/>`.\n- Avoid nesting decorators more than two levels deep — it complicates debugging.",
+        "heading": "Tips"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "isdecorate",
+      "<isdecorate>",
+      "isml"
+    ],
+    "title": "<isdecorate>"
+  },
+  {
+    "description": "Fallback branch for an `<isif>` block.",
+    "id": "isml:iselse",
+    "kind": "tag",
+    "qualifiedName": "isml.iselse",
+    "sections": [
+      {
+        "body": "```isml\n<iselse/>\n```",
+        "heading": "Syntax"
+      },
+      {
+        "body": "- Self-closing only — never paired with `</iselse>`.",
+        "heading": "Tips"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "iselse",
+      "<iselse>",
+      "isml"
+    ],
+    "title": "<iselse>"
+  },
+  {
+    "attributes": [
+      {
+        "description": "ISML expression evaluated when prior branches were false.",
+        "name": "condition",
+        "required": true
+      }
+    ],
+    "description": "Branch condition inside an `<isif>` block.",
+    "id": "isml:iselseif",
+    "kind": "tag",
+    "qualifiedName": "isml.iselseif",
+    "sections": [
+      {
+        "body": "```isml\n<iselseif condition=\"${condition}\"/>\n```",
+        "heading": "Syntax"
+      },
+      {
+        "body": "- Self-closing only — never paired with `</iselseif>`.",
+        "heading": "Tips"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "iselseif",
+      "<iselseif>",
+      "isml"
+    ],
+    "title": "<iselseif>"
+  },
+  {
+    "attributes": [
+      {
+        "description": "ISML expression. The body renders when truthy.",
+        "name": "condition",
+        "required": true
+      }
+    ],
+    "description": "Conditional block. Renders body when `condition` evaluates to true.",
+    "examples": [
+      "<isif condition=\"${pdict.product.available}\">\n    <isinclude template=\"product/components/availability\"/>\n<iselse/>\n    <p>${Resource.msg('product.outofstock', 'product', null)}</p>\n</isif>"
+    ],
+    "id": "isml:isif",
+    "kind": "tag",
+    "qualifiedName": "isml.isif",
+    "sections": [
+      {
+        "body": "```isml\n<isif condition=\"${condition}\">...</isif>\n```",
+        "heading": "Syntax"
+      },
+      {
+        "body": "- Use `<iselseif/>` and `<iselse/>` for additional branches.\n- Conditions are evaluated server-side. Avoid heavy logic — move it into a script and pass a boolean via `pdict`.",
+        "heading": "Tips"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "isif",
+      "<isif>",
+      "isml"
+    ],
+    "title": "<isif>"
+  },
+  {
+    "attributes": [
+      {
+        "description": "Cartridge-relative template path. Mutually exclusive with `url`.",
+        "name": "template",
+        "required": false
+      },
+      {
+        "description": "URL produced by `URLUtils.url(...)`. Mutually exclusive with `template`.",
+        "name": "url",
+        "required": false
+      },
+      {
+        "description": "Set to `off` to suppress storefront toolkit injection (Active Data scripts).",
+        "name": "sf-toolkit",
+        "required": false
+      }
+    ],
+    "description": "Includes another ISML template by `template` or remote URL.",
+    "examples": [
+      "<isinclude template=\"common/header\"/>",
+      "<isinclude url=\"${URLUtils.url('Cart-MiniCart')}\"/>"
+    ],
+    "id": "isml:isinclude",
+    "kind": "tag",
+    "qualifiedName": "isml.isinclude",
+    "sections": [
+      {
+        "body": "```isml\n<isinclude template=\"common/header\"/>\n```",
+        "heading": "Syntax"
+      },
+      {
+        "body": "- Use `template` for local includes — this is the common case in cartridges.\n- `url` triggers a sub-request against the controller; reserve it for remote/personalized fragments.",
+        "heading": "Tips"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "isinclude",
+      "<isinclude>",
+      "isml"
+    ],
+    "title": "<isinclude>"
+  },
+  {
+    "attributes": [
+      {
+        "description": "Collection to iterate. Mutually exclusive with `iterator`.",
+        "name": "items",
+        "required": false
+      },
+      {
+        "description": "Iterator instance. Mutually exclusive with `items`.",
+        "name": "iterator",
+        "required": false
+      },
+      {
+        "description": "Variable name bound to each element when using `items`.",
+        "name": "var",
+        "required": false
+      },
+      {
+        "description": "Variable name bound when using `iterator`.",
+        "name": "alias",
+        "required": false
+      },
+      {
+        "description": "Optional status object exposing `index`, `count`, `first`, `last`, `odd`, `even`.",
+        "name": "status",
+        "required": false
+      },
+      {
+        "description": "Zero-based index of the first element to render.",
+        "name": "begin",
+        "required": false
+      },
+      {
+        "description": "Zero-based index of the last element to render (inclusive).",
+        "name": "end",
+        "required": false
+      },
+      {
+        "description": "Number of elements to advance per iteration.",
+        "name": "step",
+        "required": false
+      }
+    ],
+    "description": "Iterates over a collection or iterator.",
+    "examples": [
+      "<isloop items=\"${pdict.products}\" var=\"product\" status=\"loop\">\n    <li class=\"${loop.first ? 'first' : ''}\">${product.name}</li>\n</isloop>"
+    ],
+    "id": "isml:isloop",
+    "kind": "tag",
+    "qualifiedName": "isml.isloop",
+    "sections": [
+      {
+        "body": "```isml\n<isloop items=\"${collection}\" var=\"item\" status=\"loopstate\">...</isloop>\n```",
+        "heading": "Syntax"
+      },
+      {
+        "body": "- Use `<isbreak/>` to exit the loop early and `<iscontinue/>` to skip the rest of the body.\n- Prefer `iterator/alias` over `items/var` when iterating large collections — it avoids materializing the full list.",
+        "heading": "Tips"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "isloop",
+      "<isloop>",
+      "isml"
+    ],
+    "title": "<isloop>"
+  },
+  {
+    "attributes": [
+      {
+        "description": "Path to the module template within the cartridge.",
+        "name": "template",
+        "required": true
+      },
+      {
+        "description": "Tag name developers will use to invoke the module.",
+        "name": "name",
+        "required": true
+      },
+      {
+        "description": "Attribute name(s) the module accepts. Repeat the attribute for multiple.",
+        "name": "attribute",
+        "required": false
+      }
+    ],
+    "description": "Declares a custom ISML tag module.",
+    "id": "isml:ismodule",
+    "kind": "tag",
+    "qualifiedName": "isml.ismodule",
+    "sections": [
+      {
+        "body": "```isml\n<ismodule template=\"components/banner\" name=\"banner\" attribute=\"type\"/>\n```",
+        "heading": "Syntax"
+      },
+      {
+        "body": "- Place `<ismodule>` declarations in a shared template (often `modules.isml`) included by every page.",
+        "heading": "Tips"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "ismodule",
+      "<ismodule>",
+      "isml"
+    ],
+    "title": "<ismodule>"
+  },
+  {
+    "description": "Advance the enclosing iterator-mode `<isloop>` to the next element.",
+    "id": "isml:isnext",
+    "kind": "tag",
+    "qualifiedName": "isml.isnext",
+    "sections": [
+      {
+        "body": "```isml\n<isnext/>\n```",
+        "heading": "Syntax"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "isnext",
+      "<isnext>",
+      "isml"
+    ],
+    "title": "<isnext>"
+  },
+  {
+    "attributes": [
+      {
+        "description": "Object reference, typically from `pdict`.",
+        "name": "object",
+        "required": true
+      },
+      {
+        "description": "Predefined view name: `detail`, `recommendation`, `searchhit`, `none`.",
+        "name": "view",
+        "required": true
+      }
+    ],
+    "description": "Wraps markup so personalization tracking can identify the rendered object.",
+    "id": "isml:isobject",
+    "kind": "tag",
+    "qualifiedName": "isml.isobject",
+    "sections": [
+      {
+        "body": "```isml\n<isobject object=\"${pdict.product}\" view=\"detail\">...</isobject>\n```",
+        "heading": "Syntax"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "isobject",
+      "<isobject>",
+      "isml"
+    ],
+    "title": "<isobject>"
+  },
+  {
+    "attributes": [
+      {
+        "description": "ISML expression to render.",
+        "name": "value",
+        "required": true
+      },
+      {
+        "description": "One of `on`, `off`, `htmlcontent`, `htmlsinglequote`, `htmldoublequote`, `htmlunquote`, `jshtml`, `jsattr`, `jsblock`, `jssource`, `jsonvalue`, `uricomponent`, `uristrict`, `xmlcontent`, `xmlsinglequote`, `xmldoublequote`, `xmlcomment`.",
+        "name": "encoding",
+        "required": false
+      },
+      {
+        "description": "Number/date format string (e.g. `#,##0.00`, `yyyy-MM-dd`).",
+        "name": "formatter",
+        "required": false
+      },
+      {
+        "description": "Timezone reference: `SITE`, `INSTANCE`, or `UTC`. Only used with date formatters.",
+        "name": "timezone",
+        "required": false
+      }
+    ],
+    "description": "Prints a value with explicit encoding or formatter.",
+    "id": "isml:isprint",
+    "kind": "tag",
+    "qualifiedName": "isml.isprint",
+    "sections": [
+      {
+        "body": "```isml\n<isprint value=\"${value}\" encoding=\"htmlcontent\"/>\n```",
+        "heading": "Syntax"
+      },
+      {
+        "body": "- Always specify `encoding` when rendering user-supplied values to prevent XSS.\n- Use `encoding=\"off\"` only for values that are already HTML and trusted.",
+        "heading": "Tips"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "isprint",
+      "<isprint>",
+      "isml"
+    ],
+    "title": "<isprint>"
+  },
+  {
+    "attributes": [
+      {
+        "description": "Target URL — usually built with `URLUtils.url(...)`.",
+        "name": "location",
+        "required": true
+      },
+      {
+        "description": "`true` for HTTP 301, `false` (default) for HTTP 302.",
+        "name": "permanent",
+        "required": false
+      }
+    ],
+    "description": "Redirects the response to another URL.",
+    "id": "isml:isredirect",
+    "kind": "tag",
+    "qualifiedName": "isml.isredirect",
+    "sections": [
+      {
+        "body": "```isml\n<isredirect location=\"${URLUtils.url('Home-Show')}\" permanent=\"false\"/>\n```",
+        "heading": "Syntax"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "isredirect",
+      "<isredirect>",
+      "isml"
+    ],
+    "title": "<isredirect>"
+  },
+  {
+    "description": "Server-side script block in B2C Commerce script.",
+    "examples": [
+      "<isscript>\n    var assets = require('*/cartridge/scripts/assets');\n    assets.addCss('/css/global.css');\n    assets.addJs('/js/main.js');\n</isscript>"
+    ],
+    "id": "isml:isscript",
+    "kind": "tag",
+    "qualifiedName": "isml.isscript",
+    "sections": [
+      {
+        "body": "```isml\n<isscript>\n    var helper = require('*/cartridge/scripts/util/foo');\n</isscript>\n```",
+        "heading": "Syntax"
+      },
+      {
+        "body": "- Use `<isscript>` for `require(...)`, data lookups, and `res.render(...)` calls.\n- Prefer moving non-trivial logic into `cartridge/scripts/` modules — `<isscript>` should stay short.",
+        "heading": "Tips"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "isscript",
+      "<isscript>",
+      "isml"
+    ],
+    "title": "<isscript>"
+  },
+  {
+    "attributes": [
+      {
+        "description": "Variable name.",
+        "name": "name",
+        "required": true
+      },
+      {
+        "description": "ISML expression assigned to the variable.",
+        "name": "value",
+        "required": true
+      },
+      {
+        "description": "One of `page` (default), `request`, or `session`.",
+        "name": "scope",
+        "required": false
+      }
+    ],
+    "description": "Assigns a variable in page, request, or session scope.",
+    "id": "isml:isset",
+    "kind": "tag",
+    "qualifiedName": "isml.isset",
+    "sections": [
+      {
+        "body": "```isml\n<isset name=\"myVar\" value=\"${value}\" scope=\"page\"/>\n```",
+        "heading": "Syntax"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "isset",
+      "<isset>",
+      "isml"
+    ],
+    "title": "<isset>"
+  },
+  {
+    "attributes": [
+      {
+        "description": "Slot identifier matching the configuration in Business Manager.",
+        "name": "id",
+        "required": true
+      },
+      {
+        "description": "Free-form description shown in Business Manager.",
+        "name": "description",
+        "required": false
+      },
+      {
+        "description": "One of `global`, `category`, or `folder`.",
+        "name": "context",
+        "required": true
+      },
+      {
+        "description": "Required when context is `category` or `folder` — usually `pdict.CurrentCategory` or `pdict.CurrentFolder`.",
+        "name": "context-object",
+        "required": false
+      }
+    ],
+    "description": "Renders a content slot configured in Business Manager.",
+    "id": "isml:isslot",
+    "kind": "tag",
+    "qualifiedName": "isml.isslot",
+    "sections": [
+      {
+        "body": "```isml\n<isslot id=\"hero-slot\" context=\"global\"/>\n```",
+        "heading": "Syntax"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "isslot",
+      "<isslot>",
+      "isml"
+    ],
+    "title": "<isslot>"
+  },
+  {
+    "attributes": [
+      {
+        "description": "Numeric HTTP status (200, 301, 302, 404, 500, …).",
+        "name": "value",
+        "required": true
+      }
+    ],
+    "description": "Sets the HTTP response status code.",
+    "id": "isml:isstatus",
+    "kind": "tag",
+    "qualifiedName": "isml.isstatus",
+    "sections": [
+      {
+        "body": "```isml\n<isstatus value=\"404\"/>\n```",
+        "heading": "Syntax"
+      }
+    ],
+    "source": "isml",
+    "tags": [
+      "isstatus",
+      "<isstatus>",
+      "isml"
+    ],
+    "title": "<isstatus>"
+  }
+]

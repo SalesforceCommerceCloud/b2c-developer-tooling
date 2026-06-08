@@ -82,6 +82,7 @@ const guidesSidebar = [
       {text: 'Overview', link: '/vscode-extension/'},
       {text: 'Installation', link: '/vscode-extension/installation'},
       {text: 'Configuration', link: '/vscode-extension/configuration'},
+      {text: 'Docs Browser', link: '/vscode-extension/docs-browser'},
     ],
   },
   {

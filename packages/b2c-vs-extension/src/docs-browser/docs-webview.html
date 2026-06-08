@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src __CSP_SOURCE__ 'unsafe-inline'; script-src 'nonce-__NONCE__'; img-src __CSP_SOURCE__ data:; font-src __CSP_SOURCE__;"
+    />
+    <title>B2C DX — Docs</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: var(--vscode-font-family);
+        font-size: var(--vscode-font-size);
+        color: var(--vscode-foreground);
+        background: var(--vscode-editor-background);
+        line-height: 1.5;
+      }
+
+      .layout {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      header.app-header {
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--vscode-panel-border);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: var(--vscode-sideBar-background);
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+
+      .app-title-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .app-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .app-version {
+        font-size: 0.85em;
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .search-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      input[type='search'] {
+        flex: 1;
+        background: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border: 1px solid var(--vscode-input-border, transparent);
+        border-radius: 2px;
+        padding: 4px 8px;
+        font-family: inherit;
+        font-size: inherit;
+      }
+
+      input[type='search']:focus {
+        outline: 1px solid var(--vscode-focusBorder);
+        outline-offset: -1px;
+      }
+
+      .search-results {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        max-height: 240px;
+        overflow-y: auto;
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: 2px;
+        background: var(--vscode-editor-background);
+      }
+
+      .search-results.hidden,
+      .empty-state.hidden,
+      main.hidden {
+        display: none;
+      }
+
+      .search-results li {
+        padding: 4px 10px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .search-results li:hover,
+      .search-results li.active {
+        background: var(--vscode-list-hoverBackground);
+      }
+
+      .search-result-qualified {
+        font-size: 0.85em;
+        color: var(--vscode-descriptionForeground);
+      }
+
+      main {
+        padding: 20px;
+        max-width: 920px;
+        margin: 0 auto;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      main h1 {
+        font-size: 1.4rem;
+        margin: 0 0 4px;
+      }
+
+      main h2 {
+        font-size: 1rem;
+        margin: 24px 0 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid var(--vscode-panel-border);
+      }
+
+      main code,
+      main pre {
+        font-family: var(--vscode-editor-font-family);
+        font-size: var(--vscode-editor-font-size);
+      }
+
+      main code {
+        background: var(--vscode-textCodeBlock-background, var(--vscode-textBlockQuote-background));
+        padding: 1px 4px;
+        border-radius: 2px;
+      }
+
+      main pre {
+        background: var(--vscode-textCodeBlock-background, var(--vscode-textBlockQuote-background));
+        padding: 12px;
+        overflow-x: auto;
+        border-radius: 2px;
+        border: 1px solid var(--vscode-panel-border);
+      }
+
+      main pre code {
+        background: transparent;
+        padding: 0;
+      }
+
+      .entry-breadcrumb {
+        font-size: 0.85em;
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .entry-badges {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+      }
+
+      .entry-kind-badge,
+      .entry-since-badge,
+      .entry-deprecated-badge {
+        font-size: 0.75em;
+        padding: 1px 6px;
+        border-radius: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .entry-kind-badge {
+        background: var(--vscode-badge-background);
+        color: var(--vscode-badge-foreground);
+      }
+
+      .entry-since-badge {
+        background: var(--vscode-textBlockQuote-background);
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .entry-deprecated-badge {
+        background: var(--vscode-inputValidation-warningBackground, #f0a020);
+        color: var(--vscode-inputValidation-warningForeground, #000);
+      }
+
+      .entry-deprecated-message {
+        margin: 8px 0;
+        padding: 6px 10px;
+        background: var(--vscode-inputValidation-warningBackground, transparent);
+        color: var(--vscode-inputValidation-warningForeground, var(--vscode-foreground));
+        border-radius: 2px;
+        border-left: 3px solid var(--vscode-inputValidation-warningBorder, var(--vscode-editorWarning-foreground));
+      }
+
+      .entry-qualified-name {
+        display: inline-block;
+        margin-top: 6px;
+      }
+
+      .entry-summary {
+        font-size: 1rem;
+        color: var(--vscode-descriptionForeground);
+        margin-top: 8px;
+      }
+
+      .entry-signature {
+        margin: 12px 0;
+      }
+
+      table.entry-params {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 6px;
+      }
+
+      table.entry-params th,
+      table.entry-params td {
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--vscode-panel-border);
+        vertical-align: top;
+      }
+
+      table.entry-params th {
+        font-weight: 600;
+        font-size: 0.9em;
+      }
+
+      .entry-empty {
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .entry-required {
+        color: var(--vscode-errorForeground, var(--vscode-foreground));
+        font-weight: 600;
+      }
+
+      ul {
+        padding-left: 20px;
+      }
+
+      .empty-state {
+        padding: 32px 20px;
+        color: var(--vscode-descriptionForeground);
+        text-align: center;
+      }
+
+      .recents-heading {
+        font-size: 0.85em;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 24px;
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .recents-list {
+        list-style: none;
+        margin: 8px auto 0;
+        padding: 0;
+        max-width: 480px;
+        text-align: left;
+      }
+
+      .recents-list li {
+        padding: 6px 12px;
+        border-radius: 2px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .recents-list li:hover {
+        background: var(--vscode-list-hoverBackground);
+      }
+
+      .recents-title {
+        color: var(--vscode-textLink-foreground);
+      }
+
+      .recents-qualified {
+        color: var(--vscode-descriptionForeground);
+        font-size: 0.85em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <header class="app-header">
+        <div class="app-title-row">
+          <h1 class="app-title">B2C Docs Browser</h1>
+          <span class="app-version" id="versionLabel">__VERSION_LABEL__</span>
+        </div>
+        <div class="search-row">
+          <input
+            type="search"
+            id="searchInput"
+            placeholder="Search Script API…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
+        <ul class="search-results hidden" id="searchResults" role="listbox"></ul>
+      </header>
+      <div class="empty-state" id="emptyState">
+        <p id="emptyMessage">Pick an entry from the Docs sidebar or search above.</p>
+        <div id="recentsContainer" class="hidden">
+          <h2 class="recents-heading">Recently viewed</h2>
+          <ul class="recents-list" id="recentsList"></ul>
+        </div>
+      </div>
+      <main id="entryContainer" class="hidden"></main>
+    </div>
+
+    <script nonce="__NONCE__">
+      (function () {
+        const vscode = acquireVsCodeApi();
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+        const emptyState = document.getElementById('emptyState');
+        const entryContainer = document.getElementById('entryContainer');
+
+        let activeIndex = -1;
+        let lastResults = [];
+        let searchDebounce;
+
+        function postSearch(query) {
+          vscode.postMessage({type: 'search', query: query});
+        }
+
+        function postOpen(id) {
+          vscode.postMessage({type: 'openEntry', id: id});
+        }
+
+        function renderRecents(items) {
+          const container = document.getElementById('recentsContainer');
+          const list = document.getElementById('recentsList');
+          if (!container || !list) return;
+          list.innerHTML = '';
+          if (!items || items.length === 0) {
+            container.classList.add('hidden');
+            return;
+          }
+          for (const item of items) {
+            const li = document.createElement('li');
+            const title = document.createElement('span');
+            title.className = 'recents-title';
+            title.textContent = item.title;
+            li.appendChild(title);
+            const qual = document.createElement('span');
+            qual.className = 'recents-qualified';
+            qual.textContent = item.qualifiedName;
+            li.appendChild(qual);
+            li.addEventListener('mousedown', function (event) {
+              event.preventDefault();
+              postOpen(item.id);
+            });
+            list.appendChild(li);
+          }
+          container.classList.remove('hidden');
+        }
+
+        function renderResults(results) {
+          lastResults = results;
+          activeIndex = -1;
+          searchResults.innerHTML = '';
+          if (!results || results.length === 0) {
+            searchResults.classList.add('hidden');
+            return;
+          }
+          for (let i = 0; i < results.length; i++) {
+            const hit = results[i];
+            const li = document.createElement('li');
+            li.setAttribute('role', 'option');
+            li.dataset.index = String(i);
+
+            const title = document.createElement('span');
+            title.textContent = hit.title;
+            li.appendChild(title);
+
+            const qual = document.createElement('span');
+            qual.className = 'search-result-qualified';
+            qual.textContent = hit.qualifiedName;
+            li.appendChild(qual);
+
+            li.addEventListener('mousedown', function (event) {
+              event.preventDefault();
+              postOpen(hit.id);
+            });
+            searchResults.appendChild(li);
+          }
+          searchResults.classList.remove('hidden');
+        }
+
+        function highlight(index) {
+          const items = searchResults.querySelectorAll('li');
+          items.forEach(function (el, i) {
+            if (i === index) el.classList.add('active');
+            else el.classList.remove('active');
+          });
+          activeIndex = index;
+        }
+
+        searchInput.addEventListener('input', function (event) {
+          const query = event.target.value;
+          if (searchDebounce) clearTimeout(searchDebounce);
+          searchDebounce = setTimeout(function () {
+            if (query.trim().length === 0) {
+              renderResults([]);
+              return;
+            }
+            postSearch(query);
+          }, 80);
+        });
+
+        searchInput.addEventListener('keydown', function (event) {
+          if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            if (lastResults.length === 0) return;
+            highlight(Math.min(lastResults.length - 1, activeIndex + 1));
+          } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            if (lastResults.length === 0) return;
+            highlight(Math.max(0, activeIndex - 1));
+          } else if (event.key === 'Enter') {
+            event.preventDefault();
+            const target = activeIndex >= 0 ? lastResults[activeIndex] : lastResults[0];
+            if (target) postOpen(target.id);
+          } else if (event.key === 'Escape') {
+            event.preventDefault();
+            renderResults([]);
+            searchInput.value = '';
+          }
+        });
+
+        window.addEventListener('message', function (event) {
+          const message = event.data;
+          if (!message || typeof message.type !== 'string') return;
+          if (message.type === 'searchResults') {
+            renderResults(message.results || []);
+            return;
+          }
+          if (message.type === 'showEntry') {
+            entryContainer.innerHTML = message.html || '';
+            entryContainer.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            renderResults([]);
+            window.scrollTo(0, 0);
+            return;
+          }
+          if (message.type === 'showEmpty') {
+            entryContainer.innerHTML = '';
+            entryContainer.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            const messageEl = document.getElementById('emptyMessage');
+            if (messageEl) {
+              messageEl.textContent = message.message || 'Pick an entry from the Docs sidebar or search above.';
+            }
+            renderRecents(message.recents || []);
+            return;
+          }
+          if (message.type === 'updateVersion') {
+            const label = document.getElementById('versionLabel');
+            if (label) label.textContent = message.label || '';
+          }
+        });
+
+        vscode.postMessage({type: 'ready'});
+      })();
+    </script>
+  </body>
+</html>

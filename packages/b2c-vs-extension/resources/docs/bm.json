@@ -1,0 +1,278 @@
+[
+  {
+    "description": "1 topic",
+    "id": "bm:category:api",
+    "kind": "topic",
+    "packagePath": "bm/api",
+    "qualifiedName": "bm.api",
+    "source": "bm",
+    "tags": [
+      "api",
+      "api"
+    ],
+    "title": "Api"
+  },
+  {
+    "description": "1 topic",
+    "id": "bm:category:configuration",
+    "kind": "topic",
+    "packagePath": "bm/configuration",
+    "qualifiedName": "bm.configuration",
+    "source": "bm",
+    "tags": [
+      "configuration",
+      "configuration"
+    ],
+    "title": "Configuration"
+  },
+  {
+    "description": "1 topic",
+    "id": "bm:category:data-model",
+    "kind": "topic",
+    "packagePath": "bm/data-model",
+    "qualifiedName": "bm.data-model",
+    "source": "bm",
+    "tags": [
+      "data-model",
+      "data-model"
+    ],
+    "title": "Data Model"
+  },
+  {
+    "description": "2 topics",
+    "id": "bm:category:deployment",
+    "kind": "topic",
+    "packagePath": "bm/deployment",
+    "qualifiedName": "bm.deployment",
+    "source": "bm",
+    "tags": [
+      "deployment",
+      "deployment"
+    ],
+    "title": "Deployment"
+  },
+  {
+    "description": "2 topics",
+    "id": "bm:category:integration",
+    "kind": "topic",
+    "packagePath": "bm/integration",
+    "qualifiedName": "bm.integration",
+    "source": "bm",
+    "tags": [
+      "integration",
+      "integration"
+    ],
+    "title": "Integration"
+  },
+  {
+    "description": "1 topic",
+    "id": "bm:category:scheduling",
+    "kind": "topic",
+    "packagePath": "bm/scheduling",
+    "qualifiedName": "bm.scheduling",
+    "source": "bm",
+    "tags": [
+      "scheduling",
+      "scheduling"
+    ],
+    "title": "Scheduling"
+  },
+  {
+    "description": "Code on a B2C Commerce instance is grouped into **code versions**. Only one code version is active per instance; activating a different version is the release mechanism.",
+    "id": "bm:code-deployment",
+    "kind": "topic",
+    "packagePath": "bm/deployment",
+    "parentId": "bm:category:deployment",
+    "qualifiedName": "bm.code-deployment",
+    "sections": [
+      {
+        "body": "Code on a B2C Commerce instance is grouped into **code versions**. Only one\ncode version is active per instance; activating a different version is the\nrelease mechanism.\n\n## Where to manage\n\n`Administration > Site Development > Code Deployment`\n\n## Typical flow\n\n1. Build cartridges locally or in CI.\n2. Upload to a new code version directory via WebDAV (`Cartridges/<version>/`).\n3. Activate the new code version once health checks pass.\n4. Keep the previous version available for fast rollback.\n\n## CLI shortcuts\n\nThe B2C CLI provides:\n\n```bash\nsf b2c code list-versions\nsf b2c code activate <version>\nsf b2c code download <version>\n```\n\nThe VS Code extension exposes the same actions in the Cartridges sidebar.\n\n## Tips\n\n- Name code versions like `version1_2026_05_01_a` so the active one sorts to\n  the top of the list.\n- Keep at least 2 inactive code versions for safe rollback.\n- Code versions are **per-instance** — a sandbox, dev, staging, and production\n  each have their own.\n- Activation is atomic on the storefront layer but not on the OCAPI layer —\n  expect a few seconds of cache invalidation churn after activation.",
+        "heading": "Code Deployment"
+      }
+    ],
+    "source": "bm",
+    "tags": [
+      "code-deployment",
+      "code deployment",
+      "deployment",
+      "code",
+      "version",
+      "release"
+    ],
+    "title": "Code Deployment"
+  },
+  {
+    "description": "Every system object (Product, Customer, Order, Site, …) supports developer- defined custom attributes. They are the safe extension point for storing business-specific data.",
+    "id": "bm:custom-attributes",
+    "kind": "topic",
+    "packagePath": "bm/data-model",
+    "parentId": "bm:category:data-model",
+    "qualifiedName": "bm.custom-attributes",
+    "sections": [
+      {
+        "body": "Every system object (Product, Customer, Order, Site, …) supports developer-\ndefined custom attributes. They are the safe extension point for storing\nbusiness-specific data.\n\n## Where to manage\n\n`Administration > Site Development > System Object Types > <ObjectType> >\nAttribute Definitions`\n\n## Defining via metadata import\n\nProduction-grade workflow uses XML metadata files imported via Site Import:\n\n```xml\n<type-extension type-id=\"Product\">\n  <custom-attribute-definitions>\n    <attribute-definition attribute-id=\"bundleHandling\">\n      <display-name xml:lang=\"x-default\">Bundle Handling</display-name>\n      <type>enum-of-string</type>\n      <localizable-flag>false</localizable-flag>\n      <mandatory-flag>false</mandatory-flag>\n      <visible-flag>true</visible-flag>\n      <field-length>0</field-length>\n      <value-definitions>\n        <value-definition>\n          <display><value>Ship Together</value></display>\n          <value>together</value>\n        </value-definition>\n        <value-definition>\n          <display><value>Ship Separately</value></display>\n          <value>separate</value>\n        </value-definition>\n      </value-definitions>\n    </attribute-definition>\n  </custom-attribute-definitions>\n</type-extension>\n```\n\n## Reading and writing from script\n\n```javascript\nvar product = ProductMgr.getProduct('SKU-123');\nvar handling = product.custom.bundleHandling;\n\nrequire('dw/system/Transaction').wrap(function () {\n  product.custom.bundleHandling = 'separate';\n});\n```\n\nWrites must occur inside a `Transaction`.\n\n## Tips\n\n- Prefer **enum-of-string** with explicit values over free-text — limits churn\n  and supports localization.\n- Check **searchable** and **system** flags carefully — they affect index\n  behavior and BM visibility.\n- Custom attributes deploy via **site import**, the same as preferences and\n  other metadata.",
+        "heading": "Custom Attributes"
+      }
+    ],
+    "source": "bm",
+    "tags": [
+      "custom-attributes",
+      "custom attributes",
+      "data-model",
+      "custom",
+      "attribute",
+      "system-object",
+      "schema"
+    ],
+    "title": "Custom Attributes"
+  },
+  {
+    "description": "Hooks are extension points that let cartridge scripts react to platform events or customize OCAPI/SCAPI behavior without modifying base controllers.",
+    "id": "bm:hooks",
+    "kind": "topic",
+    "packagePath": "bm/integration",
+    "parentId": "bm:category:integration",
+    "qualifiedName": "bm.hooks",
+    "sections": [
+      {
+        "body": "Hooks are extension points that let cartridge scripts react to platform events\nor customize OCAPI/SCAPI behavior without modifying base controllers.\n\n## Declaring a hook\n\n```json\n// cartridge/package.json\n{ \"hooks\": \"./hooks.json\" }\n\n// cartridge/hooks.json\n{\n  \"hooks\": [\n    { \"name\": \"dw.order.calculate\", \"script\": \"./scripts/hooks/calculate\" },\n    { \"name\": \"app.payment.processor.basic_credit.Authorize\", \"script\": \"./scripts/payment/basicCredit\" }\n  ]\n}\n```\n\nThe `script` path is relative to `hooks.json`. The exported function is named\nto match the convention of the hook (often `function execute()` or\n`function modifyResponse()`).\n\n## Common hook namespaces\n\n- `dw.order.*` — basket calculation, validation, post-checkout side effects.\n- `dw.ocapi.shop.*` and `dw.scapi.shopper.*` — customize storefront APIs.\n- `dw.ocapi.data.*` — admin API customizations.\n- `app.payment.processor.<id>.*` — payment processor implementations.\n\n## Tips\n\n- Cartridge hook order follows the **cartridge path** — the first cartridge\n  with a matching hook wins for `intercept` style hooks; `*.modify*` hooks\n  chain in path order.\n- Hooks declared in cartridges that aren't on the active path silently do\n  nothing — verify the cartridge path on the relevant site.\n- Avoid heavy work in `dw.order.calculate` — it runs on every basket\n  modification.",
+        "heading": "Hooks"
+      }
+    ],
+    "source": "bm",
+    "tags": [
+      "hooks",
+      "integration",
+      "hook",
+      "extension-point",
+      "ocapi",
+      "scapi",
+      "payment"
+    ],
+    "title": "Hooks"
+  },
+  {
+    "description": "Jobs are scheduled or on-demand workflows composed of one or more steps. Use them for catalog imports, exports, integrations, and any background processing that is too long for a request handler.",
+    "id": "bm:jobs",
+    "kind": "topic",
+    "packagePath": "bm/scheduling",
+    "parentId": "bm:category:scheduling",
+    "qualifiedName": "bm.jobs",
+    "sections": [
+      {
+        "body": "Jobs are scheduled or on-demand workflows composed of one or more steps. Use\nthem for catalog imports, exports, integrations, and any background processing\nthat is too long for a request handler.\n\n## Where to manage\n\n`Administration > Operations > Jobs`\n\n## Step types\n\n- **System steps** — built-in steps for common imports/exports\n  (catalog, customer, order, content, inventory, price, stock).\n- **Custom steps** — JavaScript functions in your cartridge declared in\n  `cartridge/steptypes.json`.\n\n## Defining a custom step\n\n```json\n// cartridge/steptypes.json\n{\n  \"step-types\": {\n    \"script-module-step\": [\n      {\n        \"@type-id\": \"custom.MyStep\",\n        \"module\": \"*/cartridge/scripts/jobs/myStep\",\n        \"function\": \"execute\",\n        \"transactional\": \"false\",\n        \"timeout-in-seconds\": \"3600\",\n        \"parameters\": {\n          \"parameter\": [\n            {\"@name\": \"PreferenceID\", \"@type\": \"string\", \"@required\": \"true\"}\n          ]\n        }\n      }\n    ]\n  }\n}\n```\n\n```javascript\n// cartridge/scripts/jobs/myStep.js\nexports.execute = function (parameters, stepExecution) {\n  var Status = require('dw/system/Status');\n  // ...\n  return new Status(Status.OK);\n};\n```\n\n## Tips\n\n- Set `transactional` only when the step issues writes that must roll back as a\n  unit — transactional steps consume a worker thread.\n- Use the `stepExecution.getJobExecution()` API to access shared job-level\n  context across steps.\n- Schedule jobs **per site** when the work is site-scoped; **organization-level**\n  for cross-site work like sandbox housekeeping.",
+        "heading": "Jobs"
+      }
+    ],
+    "source": "bm",
+    "tags": [
+      "jobs",
+      "scheduling",
+      "job",
+      "schedule",
+      "batch",
+      "import",
+      "export"
+    ],
+    "title": "Jobs"
+  },
+  {
+    "description": "Replication moves data from staging to production in a controlled, auditable way. It is the standard pattern for promoting catalogs, content, prices, inventory, custom attributes, and most metadata.",
+    "id": "bm:replication",
+    "kind": "topic",
+    "packagePath": "bm/deployment",
+    "parentId": "bm:category:deployment",
+    "qualifiedName": "bm.replication",
+    "sections": [
+      {
+        "body": "Replication moves data from staging to production in a controlled,\nauditable way. It is the standard pattern for promoting catalogs, content,\nprices, inventory, custom attributes, and most metadata.\n\n## Where to manage\n\n`Merchant Tools > Site Development > Site Data Replication`\n\n## Replication types\n\n- **Site data replication** — site-scoped data (catalogs assignment, prices,\n  promotions, content slots).\n- **Organization-level data replication** — shared data (system object\n  definitions, jobs, services, global preferences).\n\n## Typical flow\n\n1. Stage the change on the staging instance.\n2. Create a replication group containing the affected data types.\n3. Run the replication group manually, or schedule it for a release window.\n4. Production picks up the changes once the data is replicated **and** the\n   accompanying code version is activated.\n\n## Tips\n\n- **Code and data go together** — a feature that needs new custom attributes\n  ships in two parts: code (via WebDAV/code activation) and data (via\n  replication). Coordinate both in the same release.\n- The `Last Successful Replication` timestamp is the audit trail — capture it\n  in your release notes.\n- Inventory and pricing have dedicated replication groups because of their\n  high churn — replicate them on a faster cadence than the rest of the\n  catalog.",
+        "heading": "Data Replication"
+      }
+    ],
+    "source": "bm",
+    "tags": [
+      "replication",
+      "data replication",
+      "deployment",
+      "staging",
+      "production"
+    ],
+    "title": "Data Replication"
+  },
+  {
+    "description": "Storefront-facing APIs (Shopper API, OCAPI Shop) require an Account Manager client with the right shopper roles in addition to OAuth credentials. Missing roles is the most common cause of `400 invalid_scope` and `403` errors.",
+    "id": "bm:scapi-shopper-roles",
+    "kind": "topic",
+    "packagePath": "bm/api",
+    "parentId": "bm:category:api",
+    "qualifiedName": "bm.scapi-shopper-roles",
+    "sections": [
+      {
+        "body": "Storefront-facing APIs (Shopper API, OCAPI Shop) require an Account Manager\nclient with the right shopper roles in addition to OAuth credentials. Missing\nroles is the most common cause of `400 invalid_scope` and `403` errors.\n\n## Where to manage\n\n`Administration > Site Development > Open Commerce API Settings` (OCAPI)\n\n`Administration > Site Development > Shopper API Settings` (SCAPI, in newer\nrealms)\n\n## Common shopper roles\n\n- `sfcc.shopper-products` — product detail pages.\n- `sfcc.shopper-baskets` — basket and checkout.\n- `sfcc.shopper-orders` — post-checkout retrieval.\n- `sfcc.shopper-customers` — customer registration and login.\n- `sfcc.shopper-search` — product search and suggestions.\n- `sfcc.shopper-stores` — store locator endpoints.\n\n## Granting roles\n\nRoles are granted to an Account Manager **API Client** (not to a person). When\nadding a client:\n\n1. Create the client in Account Manager.\n2. Assign tenant access for the realm.\n3. Tick the shopper roles the storefront needs.\n4. Use the client's credentials in `dw.json` — the B2C CLI commands and the\n   VS Code extension will use them for SLAS / SCAPI traffic.\n\n## Tips\n\n- The B2C CLI's `slas client list` command surfaces the exact scopes a token\n  resolves to — useful when you suspect a missing role.\n- Errors that contain the literal string `invalid_scope` always trace back to\n  this configuration.\n- Per-site OCAPI settings cache for ~10 minutes after edit. Use the **Reset\n  cache** button when the change isn't picked up.",
+        "heading": "SCAPI / OCAPI Shopper Roles"
+      }
+    ],
+    "source": "bm",
+    "tags": [
+      "scapi-shopper-roles",
+      "scapi / ocapi shopper roles",
+      "api",
+      "scapi",
+      "ocapi",
+      "role",
+      "permission",
+      "oauth"
+    ],
+    "title": "SCAPI / OCAPI Shopper Roles"
+  },
+  {
+    "description": "The Service Framework wraps outbound calls (HTTP, SOAP, FTP, generic) so storefront and job code can rely on shared timeouts, circuit breakers, and profile-based monitoring.",
+    "id": "bm:services",
+    "kind": "topic",
+    "packagePath": "bm/integration",
+    "parentId": "bm:category:integration",
+    "qualifiedName": "bm.services",
+    "sections": [
+      {
+        "body": "The Service Framework wraps outbound calls (HTTP, SOAP, FTP, generic) so\nstorefront and job code can rely on shared timeouts, circuit breakers, and\nprofile-based monitoring.\n\n## Where to manage\n\n- Service definitions: `Administration > Operations > Services`\n- Profiles, credentials, and circuit-breaker config: same screen, separate tabs.\n\n## Three building blocks\n\n1. **Profile** — timeout, circuit breaker, rate limit settings.\n2. **Credential** — endpoint URL plus optional username/password/cert.\n3. **Service** — bound to a profile and a credential, identified by a stable\n   service ID.\n\n## Calling from script\n\n```javascript\nvar LocalServiceRegistry = require('dw/svc/LocalServiceRegistry');\n\nvar service = LocalServiceRegistry.createService('my.external.api', {\n  createRequest: function (svc, body) {\n    svc.setRequestMethod('POST');\n    svc.addHeader('Content-Type', 'application/json');\n    return JSON.stringify(body);\n  },\n  parseResponse: function (svc, client) {\n    return JSON.parse(client.text);\n  },\n  filterLogMessage: function (message) {\n    return message.replace(/\"password\":\"[^\"]+\"/g, '\"password\":\"***\"');\n  }\n});\n\nvar result = service.call({foo: 'bar'});\nif (result.ok) {\n  // result.object is whatever parseResponse returned\n}\n```\n\n## Tips\n\n- Always implement `filterLogMessage` to redact secrets from communication logs.\n- Watch the **circuit breaker** counters — flapping services indicate the\n  remote endpoint is unhealthy and the breaker is protecting you.\n- Use `LocalServiceRegistry` (per-request) over `ServiceRegistry` (legacy\n  global) for new code.",
+        "heading": "Service Framework"
+      }
+    ],
+    "source": "bm",
+    "tags": [
+      "services",
+      "service framework",
+      "integration",
+      "service",
+      "http",
+      "webservice",
+      "ftp",
+      "callout"
+    ],
+    "title": "Service Framework"
+  },
+  {
+    "description": "Site preferences are typed key-value pairs scoped to a single site. Use them for runtime configuration that should be editable by Merchants without a release.",
+    "id": "bm:site-preferences",
+    "kind": "topic",
+    "packagePath": "bm/configuration",
+    "parentId": "bm:category:configuration",
+    "qualifiedName": "bm.site-preferences",
+    "sections": [
+      {
+        "body": "Site preferences are typed key-value pairs scoped to a single site. Use them\nfor runtime configuration that should be editable by Merchants without a\nrelease.\n\n## Where to manage\n\n`Merchant Tools > Site Preferences > Custom Preferences`\n\n## Custom preference groups\n\nCustom site preferences live under group definitions you create in\n`bm_custom_site_preferences`. Each group corresponds to an attribute group on\nthe `SitePreferences` system object.\n\nTo add a new group:\n\n1. `Administration > Site Development > System Object Types > SitePreferences`.\n2. Add a new attribute group with a meaningful identifier.\n3. Add typed attributes (string, boolean, int, double, datetime, enum-of-string,\n   set-of-string, password, html, …).\n4. Set values per site under `Merchant Tools > Site Preferences`.\n\n## Reading from script\n\n```javascript\nvar Site = require('dw/system/Site');\nvar prefs = Site.getCurrent().getPreferences();\nvar customPrefs = prefs.getCustom();\nvar apiKey = customPrefs.myExternalServiceApiKey;\n```\n\n## Tips\n\n- Mark sensitive preferences as **password** so they are masked in BM.\n- Group preferences by feature, not by technical layer — Merchants navigate by\n  business intent.\n- Preferences cache aggressively — use replication to roll out changes between\n  staging and production.",
+        "heading": "Site Preferences"
+      }
+    ],
+    "source": "bm",
+    "tags": [
+      "site-preferences",
+      "site preferences",
+      "configuration",
+      "preferences",
+      "site",
+      "custom"
+    ],
+    "title": "Site Preferences"
+  }
+]
