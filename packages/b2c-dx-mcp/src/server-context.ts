@@ -4,12 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {LogWatchRegistry} from './tools/diagnostics/log-watch-registry.js';
 import {DebugSessionRegistry} from './tools/diagnostics/session-registry.js';
 
 /**
  * Server-scoped persistent state that lives for the lifetime of the MCP
  * server process. Holds registries for stateful resources (debug sessions,
- * future log watches) that need to span multiple tool invocations.
+ * log watches) that need to span multiple tool invocations.
  *
  * ## Multi-agent / shared-state caveats
  *
@@ -23,18 +24,20 @@ import {DebugSessionRegistry} from './tools/diagnostics/session-registry.js';
  * client would also share the same context. Tools that mutate registries
  * (like the debug tools) should not assume single-tenant access.
  *
- * The debug registry already handles concurrent sessions via session IDs
- * and host:client_id pairs, so multi-agent use is functional but agents
- * may see each other's sessions via `debug_list_sessions`.
+ * Both registries dedup on a stable key (host:client_id for debug,
+ * hostname for log watches), so multi-agent use is functional but agents
+ * may see each other's sessions/watches via list tools.
  */
 export class ServerContext {
   readonly debugSessions: DebugSessionRegistry;
+  readonly logWatches: LogWatchRegistry;
 
   constructor() {
     this.debugSessions = new DebugSessionRegistry();
+    this.logWatches = new LogWatchRegistry();
   }
 
   async destroyAll(): Promise<void> {
-    await this.debugSessions.destroyAll();
+    await Promise.allSettled([this.debugSessions.destroyAll(), this.logWatches.destroyAll()]);
   }
 }

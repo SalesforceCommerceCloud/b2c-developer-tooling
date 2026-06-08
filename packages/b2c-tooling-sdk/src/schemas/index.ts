@@ -38,6 +38,7 @@
  * import {
  *   getPathKeys,
  *   getSchemaNames,
+ *   getExampleNames,
  *   isCollapsedSchema,
  *   getApiType
  * } from '@salesforce/b2c-tooling-sdk/schemas';
@@ -47,6 +48,9 @@
  *
  * // Get available schemas
  * const schemas = getSchemaNames(schema); // ["Product", "Order", ...]
+ *
+ * // Get available examples
+ * const examples = getExampleNames(schema); // ["ProductExample", "OrderExample", ...]
  *
  * // Check if schema is collapsed
  * if (isCollapsedSchema(schema)) {

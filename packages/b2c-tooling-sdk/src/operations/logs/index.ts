@@ -89,3 +89,15 @@ export {
   extractPaths,
   type PathNormalizerOptions,
 } from './path-normalizer.js';
+
+// Filtering helpers
+export {
+  filterByLevel,
+  filterBySearch,
+  filterBySince,
+  matchesLevel,
+  matchesSearch,
+  parseLogTimestamp,
+  parseRelativeTime,
+  parseSinceTime,
+} from './filter.js';

@@ -15,7 +15,7 @@ The `@salesforce/mrt-utilities` package provides middleware and utilities to sim
 ## Prerequisites
 
 - Node.js 22.16.0 or later
-- [Express](https://expressjs.com/) 5.x (peer dependency)
+- [Express](https://expressjs.com/) 4.x or 5.x (peer dependency)
 
 ## Installation
 

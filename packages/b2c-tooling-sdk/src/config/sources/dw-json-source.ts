@@ -28,6 +28,16 @@ export class DwJsonSource implements ConfigSource {
   readonly name = 'DwJsonSource';
   readonly priority = 0;
 
+  /**
+   * Load configuration from dw.json.
+   *
+   * Searches for dw.json in the project directory and returns the resolved
+   * configuration for the requested instance (or the active/root config when
+   * no instance name is provided).
+   *
+   * @param options - Resolution options including instance name and project directory
+   * @returns The loaded configuration and file location, or undefined if dw.json is not found
+   */
   async load(options: ResolveConfigOptions): Promise<ConfigLoadResult | undefined> {
     const logger = getLogger();
 

@@ -130,15 +130,50 @@ function createPinoLogger(options: LoggerOptions): Logger {
   return pino(pinoOptions, prettyStream);
 }
 
+/**
+ * Creates a logger instance with the specified options.
+ *
+ * Merges provided options with any global configuration set via {@link configureLogger}.
+ * Options provided here override global settings.
+ *
+ * @param options - Configuration options for the logger. See {@link LoggerOptions} for details.
+ * @returns A configured logger instance
+ * @example
+ * const logger = createLogger({ level: 'debug', colorize: true });
+ * logger.info('Starting application');
+ */
 export function createLogger(options: LoggerOptions = {}): Logger {
   return createPinoLogger({...globalOptions, ...options});
 }
 
+/**
+ * Configures global logger defaults for the entire application.
+ *
+ * Subsequent calls to {@link createLogger} and {@link getLogger} will inherit these settings.
+ * This is typically called once at application startup.
+ *
+ * @param options - Global logger configuration to apply
+ * @example
+ * configureLogger({ level: 'info', json: true });
+ * const logger = getLogger(); // Uses configured defaults
+ */
 export function configureLogger(options: LoggerOptions): void {
   globalOptions = {...globalOptions, ...options};
   globalLogger = createPinoLogger(globalOptions);
 }
 
+/**
+ * Retrieves the global logger instance.
+ *
+ * Returns the same logger instance on repeated calls. If not yet configured,
+ * creates one with default settings (silent level).
+ * Configure defaults via {@link configureLogger} before first use.
+ *
+ * @returns The global logger instance
+ * @example
+ * const logger = getLogger();
+ * logger.warn('An issue occurred');
+ */
 export function getLogger(): Logger {
   if (!globalLogger) {
     globalLogger = createPinoLogger(globalOptions);
@@ -146,11 +181,35 @@ export function getLogger(): Logger {
   return globalLogger;
 }
 
+/**
+ * Resets the global logger to its initial state.
+ *
+ * Clears the cached global logger instance and resets global configuration
+ * back to default (silent level). This is primarily useful for testing or
+ * when reconfiguring logging in a fresh context.
+ *
+ * @example
+ * // Configure logger for one test
+ * configureLogger({ level: 'debug' });
+ * // Reset for next test
+ * resetLogger();
+ * const logger = getLogger(); // New logger with silent level
+ */
 export function resetLogger(): void {
   globalLogger = null;
   globalOptions = {level: 'silent'};
 }
 
+/**
+ * Creates a logger instance that suppresses all output.
+ *
+ * Useful for testing or scenarios where logging should be completely disabled.
+ *
+ * @returns A silent logger instance with no output
+ * @example
+ * const logger = createSilentLogger();
+ * logger.info('This will not print'); // No output produced
+ */
 export function createSilentLogger(): Logger {
   return createLogger({level: 'silent'});
 }

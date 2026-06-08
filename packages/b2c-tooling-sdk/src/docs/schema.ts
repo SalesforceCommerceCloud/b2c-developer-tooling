@@ -46,6 +46,14 @@ function getFuse(): Fuse<SchemaEntry> {
 
 /**
  * List all available schema entries.
+ *
+ * @returns Array of all schema entries in the index
+ *
+ * @example
+ * ```typescript
+ * const schemas = listSchemas();
+ * schemas.forEach(s => console.log(s.id));
+ * ```
  */
 export function listSchemas(): SchemaEntry[] {
   const index = loadIndex();
@@ -54,6 +62,9 @@ export function listSchemas(): SchemaEntry[] {
 
 /**
  * Read a schema by its exact ID.
+ *
+ * @param id - The exact schema ID to look up
+ * @returns An object containing the schema entry, file content, and file path; or null if the schema ID is not found
  */
 export function readSchema(id: string): {entry: SchemaEntry; content: string; path: string} | null {
   const index = loadIndex();
@@ -71,7 +82,11 @@ export function readSchema(id: string): {entry: SchemaEntry; content: string; pa
 
 /**
  * Find a schema by fuzzy query and return its content.
+ * First attempts an exact ID match, then falls back to fuzzy search.
  * Returns the best match or null if no match found.
+ *
+ * @param query - The search query string (can be exact schema ID or fuzzy search term)
+ * @returns Object containing the schema entry, file content, and file path; or null if no match found
  */
 export function readSchemaByQuery(query: string): {entry: SchemaEntry; content: string; path: string} | null {
   // First try exact match
@@ -97,6 +112,16 @@ export function readSchemaByQuery(query: string): {entry: SchemaEntry; content: 
 
 /**
  * Search schemas by fuzzy query.
+ *
+ * @param query - The search query string to match against schema IDs
+ * @param limit - Maximum number of results to return (default: 20)
+ * @returns Array of schema search results with relevance scores, sorted by match score (lower scores indicate better matches)
+ *
+ * @example
+ * ```typescript
+ * const results = searchSchemas('catalog');
+ * results.forEach(r => console.log(r.entry.id, r.score));
+ * ```
  */
 export function searchSchemas(query: string, limit = 20): SchemaSearchResult[] {
   const fuse = getFuse();

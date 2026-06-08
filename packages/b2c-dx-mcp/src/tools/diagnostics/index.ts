@@ -18,10 +18,22 @@ import {createDebugEvaluateTool} from './debug-evaluate.js';
 import {createDebugContinueTool} from './debug-continue.js';
 import {createDebugStepTools} from './debug-step.js';
 import {createDebugCaptureAtBreakpointTool} from './debug-capture-at-breakpoint.js';
+import {createLogsListFilesTool, type LogsListFilesInjections} from './logs-list-files.js';
+import {createLogsGetRecentTool, type LogsGetRecentInjections} from './logs-get-recent.js';
+import {createLogsWatchStartTool, type LogsWatchStartInjections} from './logs-watch-start.js';
+import {createLogsWatchPollTool} from './logs-watch-poll.js';
+import {createLogsWatchStopTool} from './logs-watch-stop.js';
+import {createLogsWatchListTool} from './logs-watch-list.js';
+
+export interface DiagnosticsToolInjections
+  extends LogsGetRecentInjections,
+    LogsListFilesInjections,
+    LogsWatchStartInjections {}
 
 export function createDiagnosticsTools(
   loadServices: () => Promise<Services> | Services,
   serverContext?: ServerContext,
+  injections?: DiagnosticsToolInjections,
 ): McpTool[] {
   return [
     createDebugListSessionsTool(loadServices, serverContext),
@@ -35,5 +47,11 @@ export function createDiagnosticsTools(
     createDebugContinueTool(loadServices, serverContext),
     ...createDebugStepTools(loadServices, serverContext),
     createDebugCaptureAtBreakpointTool(loadServices, serverContext),
+    createLogsListFilesTool(loadServices, serverContext, injections),
+    createLogsGetRecentTool(loadServices, serverContext, injections),
+    createLogsWatchStartTool(loadServices, serverContext, injections),
+    createLogsWatchPollTool(loadServices, serverContext),
+    createLogsWatchStopTool(loadServices, serverContext),
+    createLogsWatchListTool(loadServices, serverContext),
   ];
 }
