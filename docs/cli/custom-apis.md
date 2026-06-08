@@ -14,6 +14,10 @@ These flags are available on all Custom APIs commands:
 |------|---------------------|-------------|
 | `--tenant-id` | `SFCC_TENANT_ID` | (Required) Organization/tenant ID |
 | `--short-code` | `SFCC_SHORTCODE` | SCAPI short code |
+| `--client-id` | `SFCC_CLIENT_ID` | Account Manager API Client ID |
+| `--client-secret` | `SFCC_CLIENT_SECRET` | Account Manager API Client secret |
+
+Additional authentication flags (`--auth-methods`, `--user-auth`, `--account-manager-host`, `--jwt-cert`, `--jwt-key`, `--jwt-passphrase`) and logging flags (`--log-level`, `--debug`, `--jsonl`) are also available. See the [Authentication Guide](/guide/authentication#scapi-authentication) for credential configuration, or run any command with `--help` for the complete flag list.
 
 ## Authentication
 

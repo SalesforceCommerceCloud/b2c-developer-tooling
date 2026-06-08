@@ -51,8 +51,8 @@ suite('extension activation', () => {
   });
 
   // This is the workhorse check. The extension's top-level try/catch
-  // (extension.ts:117-136) registers only three stub commands on failure
-  // (openUI, promptAgent, listWebDav), so any swallowed activation error
+  // (extension.ts:117-136) registers only two stub commands on failure
+  // (promptAgent, listWebDav), so any swallowed activation error
   // surfaces here as a flood of missing commands.
   test('every contributed command is registered', async () => {
     const registered = new Set(await vscode.commands.getCommands(true));

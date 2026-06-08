@@ -97,6 +97,7 @@ export abstract class MrtCommand<T extends typeof Command> extends BaseCommand<T
 
   /**
    * Validates that MRT credentials are configured, errors if not.
+   * @throws {Error} If MRT API key is not configured
    */
   protected requireMrtCredentials(): void {
     if (!this.hasMrtCredentials()) {

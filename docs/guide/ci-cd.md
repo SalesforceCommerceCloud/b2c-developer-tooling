@@ -19,7 +19,7 @@ The actions are available from the `SalesforceCommerceCloud/b2c-developer-toolin
 - **WebDAV uploads** — upload files for data import, content, etc.
 - **Any CLI command** — raw passthrough for operations not covered by high-level actions
 
-All actions are composite YAML — no compiled JavaScript, fully transparent and auditable. They cache the npm install across runs and expose structured JSON outputs for downstream workflow steps.
+All actions are composite YAML — no compiled JavaScript, fully transparent and auditable. The high-level actions (`code-deploy`, `data-import`, `job-run`, `mrt-deploy`, `webdav-upload`) reuse an already-installed CLI and only install one when none is present — so running a deploy after a setup step, or repeated operations on a self-hosted runner, do not trigger a redundant reinstall. The `setup` action called directly is explicit: it installs the version you request. Actions expose structured JSON outputs for downstream workflow steps.
 
 ## Authentication
 
@@ -114,7 +114,7 @@ Combines setup and command execution. Pass a `command` to run a CLI command, or 
 uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
 ```
 
-Installs the CLI and writes credentials to environment variables. Use this when you need multiple steps after setup.
+Installs the CLI and writes credentials to environment variables. Use this when you need multiple steps after setup. Called directly, `setup` always installs the requested `version`. Set `skip-if-present: 'true'` to reuse an already-installed CLI and install only when none is present (this is what the high-level actions do internally so they never reinstall on top of an existing CLI).
 
 ```yaml
 - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v1
@@ -127,7 +127,7 @@ Installs the CLI and writes credentials to environment variables. Use this when 
       sfcc-solutions-share/b2c-plugin-intellij-sfcc-config
 ```
 
-Plugins are installed after the CLI and cached across runs. Each line is an npm package name or GitHub `owner/repo`.
+Plugins are installed after the CLI; already-installed plugins are skipped by exact name match. Each line is an npm package name or GitHub `owner/repo`. For reliable skip-on-reinstall, prefer the published npm package name — when a GitHub `owner/repo` slug differs from the package it publishes, the plugin is reinstalled each run (harmless, just slower).
 
 ### Run
 
@@ -166,7 +166,7 @@ Deploy cartridges with typed inputs.
     username: ${{ secrets.SFCC_USERNAME }}
     password: ${{ secrets.SFCC_PASSWORD }}
     code-version: ${{ vars.SFCC_CODE_VERSION }}
-    reload: true
+    activate: true
     cartridges: 'app_storefront_base,app_custom'
 ```
 
@@ -353,7 +353,7 @@ When `json` is enabled (the default), the `result` output contains the command's
   id: deploy
   with:
     code-version: v25_03_1
-    reload: true
+    activate: true
 
 - name: Show deploy result
   run: echo '${{ steps.deploy.outputs.result }}'
@@ -414,7 +414,7 @@ The CLI supports [plugins](/guide/extending) for custom configuration sources, H
       sfcc-solutions-share/b2c-plugin-intellij-sfcc-config
 ```
 
-Each line is an npm package name or GitHub `owner/repo`. Plugins are installed after the CLI and cached across workflow runs.
+Each line is an npm package name or GitHub `owner/repo`. Plugins are installed after the CLI; already-installed plugins are skipped on re-invocation.
 
 ## Logging
 

@@ -31,7 +31,7 @@ export function createDebugEndSessionTool(
       description:
         'End a script debugger session and free its slot on the instance. ' +
         'IMPORTANT: Always call this when finished debugging — leaving sessions open can interfere with other debuggers and consumes a debugger client slot.',
-      toolsets: ['CARTRIDGES', 'SCAPI'],
+      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
         clear_breakpoints: z

@@ -29,6 +29,7 @@ The SDK is organized into focused submodules that can be imported individually:
 ├── /operations/content  # Page Designer content export
 ├── /operations/cip      # Curated CIP analytics reports and SQL helpers
 ├── /operations/jobs     # Job execution, site archive import/export
+├── /operations/cap      # Custom API operations
 ├── /operations/logs     # Log tailing and retrieval
 ├── /operations/mrt      # Managed Runtime bundle operations
 ├── /operations/ods      # On-demand sandbox utilities
@@ -36,8 +37,13 @@ The SDK is organized into focused submodules that can be imported individually:
 ├── /operations/users    # Account Manager users
 ├── /operations/roles    # Account Manager roles
 ├── /operations/bm-roles # Business Manager roles
+├── /operations/bm-users # Business Manager users
 ├── /operations/orgs     # Account Manager organizations
 ├── /operations/sites    # Storefront site info and cartridge paths
+│
+├── /test-utils         # Testing utilities and helpers
+├── /telemetry          # Telemetry and analytics
+├── /ux                 # User experience utilities
 │
 ├── /slas                # SLAS helpers
 ├── /safety              # Safety-mode confirmation middleware
@@ -106,7 +112,8 @@ const {data} = await slasClient.GET('/tenants/{tenantId}/clients', {
 ### MRT Operations
 
 ```typescript
-import {pushBundle, ApiKeyStrategy} from '@salesforce/b2c-tooling-sdk';
+import {pushBundle} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {ApiKeyStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 
 const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!);
 const result = await pushBundle(

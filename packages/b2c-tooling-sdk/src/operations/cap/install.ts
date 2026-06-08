@@ -187,6 +187,20 @@ export async function commerceAppInstall(
   };
 }
 
+/**
+ * Reads and parses the commerce-app.json manifest file from a CAP directory.
+ *
+ * @param capDir - Path to the CAP directory containing commerce-app.json
+ * @returns Parsed manifest object
+ * @throws Error if commerce-app.json does not exist in the directory
+ * @throws Error if commerce-app.json is not valid JSON
+ *
+ * @example
+ * ```typescript
+ * const manifest = readManifest('./my-commerce-app');
+ * console.log(`App: ${manifest.id}@${manifest.version}`);
+ * ```
+ */
 export function readManifest(capDir: string): CommerceAppManifest {
   const manifestPath = path.join(capDir, 'commerce-app.json');
   if (!fs.existsSync(manifestPath)) {

@@ -9,6 +9,10 @@ inputs:
     description: 'CLI version to install (e.g. "latest", "0.4.1", "nightly")'
     required: false
     default: 'latest'
+  skip-if-present:
+    description: 'Reuse an already-installed CLI instead of installing. When true, the CLI is installed only if none is present (no version check, no upgrade). High-level actions set this so they reuse an existing install; a direct setup call leaves it false and always installs the requested version.'
+    required: false
+    default: 'false'
   node-version:
     description: 'Node.js version to install'
     required: false
@@ -69,20 +73,36 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
 
-    - name: Cache npm and CLI data
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.npm
-          ~/.local/share/b2c
-        key: b2c-cli-${{ runner.os }}-${{ inputs.version }}-${{ inputs.plugins || 'no-plugins' }}
-        restore-keys: |
-          b2c-cli-${{ runner.os }}-${{ inputs.version }}-
-          b2c-cli-${{ runner.os }}-
-
     - name: Install B2C CLI
       shell: bash
-      run: npm install -g @salesforce/b2c-cli@${{ inputs.version }}
+      env:
+        B2C_VERSION: ${{ inputs.version }}
+        B2C_SKIP_IF_PRESENT: ${{ inputs.skip-if-present }}
+      run: |
+        REQUESTED="${B2C_VERSION:-latest}"
+
+        # Is a usable CLI already on PATH? (handles re-invocation within a job and
+        # persistent self-hosted runners where the install survives between jobs)
+        INSTALLED=""
+        if command -v b2c >/dev/null 2>&1; then
+          # Token anchored to the package name so it can never capture the node version
+          # from "@salesforce/b2c-cli/<ver> <platform> node-v<ver>".
+          INSTALLED=$(b2c --version 2>/dev/null | grep -oE '@salesforce/b2c-cli/[^[:space:]]+' | head -n1 | cut -d/ -f3 || true)
+        fi
+
+        if [ "$B2C_SKIP_IF_PRESENT" = "true" ] && [ -n "$INSTALLED" ]; then
+          # "Ensure a CLI is available" mode (used by high-level actions): reuse whatever
+          # is installed; never upgrade and never hit the network. This is what makes a
+          # deploy/import that follows a setup step a no-op instead of a reinstall.
+          echo "B2C CLI ${INSTALLED} already present; reusing it (skip-if-present)"
+        else
+          # Calling setup directly is an explicit request to install the requested
+          # version. Install the spec directly — npm resolves tags ("latest"/"nightly")
+          # and ranges itself, so no registry probe is needed, keeping the path fast and
+          # free of a network call that could fail the step.
+          echo "Installing @salesforce/b2c-cli@${REQUESTED} (currently: ${INSTALLED:-none})"
+          npm install -g "@salesforce/b2c-cli@${REQUESTED}"
+        fi
 
     - name: Set environment variables
       shell: bash
@@ -134,14 +154,45 @@ runs:
     - name: Install plugins
       if: inputs.plugins != ''
       shell: bash
+      env:
+        B2C_PLUGINS: ${{ inputs.plugins }}
       run: |
+        # Installed plugin names, one per line, exactly as the CLI records them
+        # (the published package name — not the GitHub repo slug). Parsed from --json
+        # with node (always present; setup-node ran first) so the match is exact.
+        INSTALLED_PLUGINS=$(b2c plugins --json 2>/dev/null \
+          | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{for(const p of JSON.parse(s))if(p&&p.name)console.log(p.name)}catch(e){}})' \
+          || true)
+
         while IFS= read -r plugin; do
-          plugin=$(echo "$plugin" | xargs)
+          # Trim surrounding whitespace (incl. a trailing CR from CRLF-encoded YAML)
+          # with pure bash — avoids `xargs`, which aborts the step on an unbalanced
+          # quote and mangles backslashes.
+          plugin="${plugin#"${plugin%%[![:space:]]*}"}"
+          plugin="${plugin%"${plugin##*[![:space:]]}"}"
           if [ -n "$plugin" ]; then
-            echo "Installing plugin: $plugin"
-            b2c plugins install "$plugin"
+            # Determine the name to match against installed plugins. npm specs (scoped
+            # "@scope/name" or bare "name") are recorded verbatim. For a GitHub
+            # "owner/repo" spec the published package name is unknown ahead of time, so
+            # fall back to the repo basename — which equals the package name for the
+            # common case. Exact, fixed-string line match (grep -Fxq) avoids both
+            # substring false-positives and regex-metacharacter surprises.
+            spec="${plugin%/}"          # drop a trailing slash before deriving the name
+            if [ "${spec:0:1}" = "@" ] || [ "${spec%/*}" = "$spec" ]; then
+              name="$spec"              # scoped npm name, or bare npm name (no slash)
+            else
+              name="${spec##*/}"        # GitHub owner/repo -> repo basename
+            fi
+            # Only skip on a real, non-empty exact match; an empty name must never
+            # match the (possibly empty) installed list and silently skip the install.
+            if [ -n "$name" ] && printf '%s\n' "$INSTALLED_PLUGINS" | grep -Fxq "$name"; then
+              echo "Plugin already installed: $plugin"
+            else
+              echo "Installing plugin: $plugin"
+              b2c plugins install "$plugin"
+            fi
           fi
-        done <<< "${{ inputs.plugins }}"
+        done <<< "$B2C_PLUGINS"
 
     - name: Verify installation
       id: verify

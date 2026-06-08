@@ -6,7 +6,6 @@
 import {
   findCartridges,
   uploadCartridges,
-  deleteCartridges,
   getActiveCodeVersion,
   activateCodeVersion,
   reloadCodeVersion,
@@ -85,12 +84,19 @@ export function createDeployCommand(
       {
         location: vscode.ProgressLocation.Notification,
         title: 'Deploying cartridges...',
-        cancellable: false,
+        cancellable: true,
       },
-      async (progress) => {
+      async (progress, token) => {
         try {
+          // The SDK upload/activate/reload calls do not accept an AbortSignal,
+          // so we can only honor cancellation between top-level steps; an
+          // in-flight upload will complete before we abort.
           progress.report({message: 'Uploading cartridges...'});
           await uploadCartridges(instance, selectedCartridges);
+
+          if (token.isCancellationRequested) {
+            throw new vscode.CancellationError();
+          }
 
           if (actionPick.action === 'activate') {
             progress.report({message: 'Activating code version...'});
@@ -110,77 +116,15 @@ export function createDeployCommand(
             `B2C DX: Deployed ${selectedCartridges.length} cartridge(s) to "${codeVersion}".`,
           );
         } catch (err) {
+          if (err instanceof vscode.CancellationError) {
+            outputChannel.appendLine('Deploy cancelled by user.');
+            outputChannel.appendLine(`--- Deploy cancelled ---`);
+            return;
+          }
           const message = err instanceof Error ? err.message : String(err);
           outputChannel.appendLine(`[Error] Deploy failed: ${message}`);
           outputChannel.appendLine(`--- Deploy failed ---`);
           vscode.window.showErrorMessage(`B2C DX: Deploy failed: ${message}`);
-        }
-      },
-    );
-  };
-}
-
-export function createDeleteAndDeployCommand(
-  configProvider: B2CExtensionConfig,
-  outputChannel: vscode.OutputChannel,
-): () => Promise<void> {
-  return async () => {
-    const instance = configProvider.getInstance();
-    if (!instance) {
-      vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured.');
-      return;
-    }
-
-    let codeVersion = instance.config.codeVersion;
-    if (!codeVersion) {
-      try {
-        const active = await getActiveCodeVersion(instance);
-        if (active?.id) {
-          codeVersion = active.id;
-          instance.config.codeVersion = codeVersion;
-        }
-      } catch {
-        // fall through
-      }
-    }
-    if (!codeVersion) {
-      vscode.window.showErrorMessage('B2C DX: No code version configured.');
-      return;
-    }
-
-    const directory = configProvider.getWorkingDirectory();
-    const cartridges = findCartridges(directory);
-    if (cartridges.length === 0) {
-      vscode.window.showWarningMessage('B2C DX: No cartridges found.');
-      return;
-    }
-
-    const confirm = await vscode.window.showWarningMessage(
-      `This will delete existing cartridges on "${codeVersion}" before deploying. Continue?`,
-      {modal: true},
-      'Delete & Deploy',
-    );
-    if (confirm !== 'Delete & Deploy') return;
-
-    outputChannel.appendLine(`--- Clean Deploy started ---`);
-
-    await vscode.window.withProgress(
-      {location: vscode.ProgressLocation.Notification, title: 'Clean deploy...', cancellable: false},
-      async (progress) => {
-        try {
-          progress.report({message: 'Deleting existing cartridges...'});
-          await deleteCartridges(instance, cartridges);
-
-          progress.report({message: 'Uploading cartridges...'});
-          await uploadCartridges(instance, cartridges);
-
-          outputChannel.appendLine(`Clean deployed ${cartridges.length} cartridge(s) to "${codeVersion}"`);
-          outputChannel.appendLine(`--- Clean Deploy complete ---`);
-          vscode.window.showInformationMessage(`B2C DX: Clean deploy complete.`);
-        } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
-          outputChannel.appendLine(`[Error] Clean deploy failed: ${message}`);
-          vscode.window.showErrorMessage(`B2C DX: Clean deploy failed: ${message}`);
         }
       },
     );
