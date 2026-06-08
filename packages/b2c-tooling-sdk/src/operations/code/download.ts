@@ -182,6 +182,7 @@ async function extractZip(
  * @param cartridgeName - Name of the cartridge to download
  * @param outputPath - Local path to extract the cartridge into
  * @param onProgress - Optional progress callback
+ * @returns Promise that resolves when the cartridge has been successfully downloaded and extracted
  */
 export async function downloadSingleCartridge(
   instance: B2CInstance,

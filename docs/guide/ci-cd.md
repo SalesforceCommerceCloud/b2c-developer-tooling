@@ -166,7 +166,7 @@ Deploy cartridges with typed inputs.
     username: ${{ secrets.SFCC_USERNAME }}
     password: ${{ secrets.SFCC_PASSWORD }}
     code-version: ${{ vars.SFCC_CODE_VERSION }}
-    reload: true
+    activate: true
     cartridges: 'app_storefront_base,app_custom'
 ```
 
@@ -353,7 +353,7 @@ When `json` is enabled (the default), the `result` output contains the command's
   id: deploy
   with:
     code-version: v25_03_1
-    reload: true
+    activate: true
 
 - name: Show deploy result
   run: echo '${{ steps.deploy.outputs.result }}'

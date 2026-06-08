@@ -56,7 +56,7 @@ To enable non-production support, turn on **Enable Reports & Dashboards Data Tra
 
 Reports & Dashboards non-production URL:
 
-- `https://ccac.stg.analytics.commercecloud.salesforce.com`
+- `https://jdbc.stg.analytics.commercecloud.salesforce.com`
 
 For CLI commands, you can target the staging analytics host with `--staging`.
 

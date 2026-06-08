@@ -65,7 +65,7 @@ const versions = await listCodeVersions(instance);
 
 // Account Manager operations (users, AM roles, orgs) use a separate client
 const amClient = createAccountManagerClient({}, config.createOAuth());
-const users = await listUsers(amClient.users, {size: 25});
+const users = await amClient.listUsers({size: 25});
 ```
 
 Both `instance` and `amClient` manage their own tokens — you never see or pass a token string. See the [Authentication Setup](./authentication) guide for credential configuration details.
@@ -266,7 +266,6 @@ Account Manager operations use a separate client (not `instance`), since they ta
 ```typescript
 import {resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {createAccountManagerClient} from '@salesforce/b2c-tooling-sdk/clients';
-import {listUsers, createUser, grantRole} from '@salesforce/b2c-tooling-sdk/operations/users';
 
 const config = await resolveConfig();
 
@@ -274,10 +273,10 @@ const config = await resolveConfig();
 const client = createAccountManagerClient({}, config.createOAuth());
 
 // List users
-const users = await listUsers(client.users, {size: 25});
+const users = await client.listUsers({size: 25});
 
 // Create a user
-const newUser = await createUser(client.users, {
+const newUser = await client.createUser({
   mail: 'user@example.com',
   firstName: 'Test',
   lastName: 'User',
@@ -285,11 +284,7 @@ const newUser = await createUser(client.users, {
 });
 
 // Grant a role
-await grantRole(client.users, {
-  userId: newUser.id,
-  roleId: 'bm-admin',
-  scope: 'my-realm',
-});
+await client.grantRole(newUser.id, 'bm-admin', 'my-realm');
 ```
 
 See the [Account Manager guide](./account-manager) for more details on AM operations.
@@ -306,9 +301,8 @@ The SDK separates Account Manager roles from Business Manager instance roles int
 | `user.revokeLocal(instance, login, role, ...)` | `revokeBmRole(instance, roleId, login)` | `operations/bm-roles` |
 
 ```typescript
-// Account Manager roles (organization-level)
-import {listRoles} from '@salesforce/b2c-tooling-sdk/operations/roles';
-const amRoles = await listRoles(client.roles, {size: 50});
+// Account Manager roles (organization-level) — use the unified client directly
+const amRoles = await client.listRoles({size: 50});
 
 // Business Manager roles (instance-level)
 import {listBmRoles, grantBmRole, revokeBmRole} from '@salesforce/b2c-tooling-sdk/operations/bm-roles';
@@ -320,10 +314,9 @@ await revokeBmRole(instance, 'Administrator', 'user@example.com');
 ### Organizations (`sfcc.org`)
 
 ```typescript
-import {listOrgs, getOrg} from '@salesforce/b2c-tooling-sdk/operations/orgs';
-
-const orgs = await listOrgs(client.orgs, {size: 25});
-const org = await getOrg(client.orgs, 'my-org-id');
+// Use the unified client directly
+const orgs = await client.listOrgs({size: 25});
+const org = await client.getOrg('my-org-id');
 ```
 
 ## Using Typed Clients Directly
