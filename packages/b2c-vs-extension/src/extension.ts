@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {DwJsonSource} from '@salesforce/b2c-tooling-sdk/config';
+import {detectWorkspaceType} from '@salesforce/b2c-tooling-sdk/discovery';
 import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
 import * as path from 'path';
@@ -46,6 +47,27 @@ function applyLogLevel(log: vscode.OutputChannel): void {
     const detail = err instanceof Error ? `${err.message}\n${err.stack}` : String(err);
     log.appendLine(`Warning: Failed to configure SDK logger; SDK logs will not appear in this panel.\n${detail}`);
   }
+}
+
+async function updateStorefrontNextContext(
+  configProvider: B2CExtensionConfig,
+  log: vscode.OutputChannel,
+): Promise<void> {
+  const workingDir = configProvider.getWorkingDirectory();
+  log.appendLine(`[Workspace] Running detectWorkspaceType for cwd=${workingDir}`);
+  let isStorefrontNext = false;
+  try {
+    const result = await detectWorkspaceType(workingDir);
+    log.appendLine(
+      `[Workspace] Detection result: projectTypes=[${result.projectTypes.join(', ')}] matchedPatterns=[${result.matchedPatterns.join(', ')}]`,
+    );
+    isStorefrontNext = result.projectTypes.includes('storefront-next');
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    log.appendLine(`[Workspace] storefront-next detection failed: ${message}`);
+  }
+  await vscode.commands.executeCommand('setContext', 'b2c-dx.isStorefrontNext', isStorefrontNext);
+  log.appendLine(`[Workspace] setContext b2c-dx.isStorefrontNext=${isStorefrontNext} (cwd=${workingDir})`);
 }
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -100,6 +122,13 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   await configProvider.ensureResolved();
 
   registerSafety(context, configProvider);
+
+  void updateStorefrontNextContext(configProvider, log);
+  context.subscriptions.push(
+    configProvider.onDidReset(() => {
+      void updateStorefrontNextContext(configProvider, log);
+    }),
+  );
 
   const cartridgeService = new CartridgeService(configProvider);
   context.subscriptions.push(cartridgeService);
