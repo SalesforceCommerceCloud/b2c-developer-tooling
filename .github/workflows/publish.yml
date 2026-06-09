@@ -269,34 +269,39 @@ jobs:
 
           TAGS_CREATED=""
 
+          # Create a tag only if it does not already exist locally or on the
+          # remote. A prior partial publish run may have already pushed a tag
+          # for this version; skipping it keeps re-runs idempotent instead of
+          # failing the step with "tag already exists".
+          create_tag() {
+            local tag="$1"
+            if git rev-parse -q --verify "refs/tags/$tag" >/dev/null || \
+               git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+              echo "Tag already exists, skipping: $tag"
+              return
+            fi
+            git tag "$tag"
+            TAGS_CREATED="$TAGS_CREATED $tag"
+          }
+
           if [[ "${{ steps.packages.outputs.publish_sdk }}" == "true" ]]; then
-            TAG="@salesforce/b2c-tooling-sdk@${{ steps.packages.outputs.version_sdk }}"
-            git tag "$TAG"
-            TAGS_CREATED="$TAGS_CREATED $TAG"
+            create_tag "@salesforce/b2c-tooling-sdk@${{ steps.packages.outputs.version_sdk }}"
           fi
 
           if [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]]; then
-            TAG="@salesforce/b2c-cli@${{ steps.packages.outputs.version_cli }}"
-            git tag "$TAG"
-            TAGS_CREATED="$TAGS_CREATED $TAG"
+            create_tag "@salesforce/b2c-cli@${{ steps.packages.outputs.version_cli }}"
           fi
 
           if [[ "${{ steps.packages.outputs.publish_mcp }}" == "true" ]]; then
-            TAG="@salesforce/b2c-dx-mcp@${{ steps.packages.outputs.version_mcp }}"
-            git tag "$TAG"
-            TAGS_CREATED="$TAGS_CREATED $TAG"
+            create_tag "@salesforce/b2c-dx-mcp@${{ steps.packages.outputs.version_mcp }}"
           fi
 
           if [[ "${{ steps.packages.outputs.publish_mrt }}" == "true" ]]; then
-            TAG="@salesforce/mrt-utilities@${{ steps.packages.outputs.version_mrt }}"
-            git tag "$TAG"
-            TAGS_CREATED="$TAGS_CREATED $TAG"
+            create_tag "@salesforce/mrt-utilities@${{ steps.packages.outputs.version_mrt }}"
           fi
 
           if [[ "${{ steps.packages.outputs.publish_vsx }}" == "true" ]]; then
-            TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
-            git tag "$TAG"
-            TAGS_CREATED="$TAGS_CREATED $TAG"
+            create_tag "b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
           fi
 
           if [ -n "$TAGS_CREATED" ]; then
