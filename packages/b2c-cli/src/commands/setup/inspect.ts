@@ -75,7 +75,7 @@ function getDisplayValue(field: string, value: unknown, unmask: boolean): string
  * Command to display resolved configuration.
  */
 export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
-  static aliases = ['setup:config'];
+  static aliases = ['setup:config', 'config:get'];
 
   static description = withDocs('Display resolved configuration', '/cli/setup.html#b2c-setup-inspect');
 
