@@ -159,6 +159,10 @@ describe('registry', () => {
       expect(server.registeredTools.length).to.be.greaterThan(0);
       // SCAPI tools should be registered as fallback
       expect(server.registeredTools).to.include('scapi_schemas_list');
+      // DIAGNOSTICS is a base toolset too — log/debugger/docs tools are
+      // auto-enabled for every project type, including unknown workspaces.
+      expect(server.registeredTools).to.include('logs_list_files');
+      expect(server.registeredTools).to.include('docs_search');
     });
 
     it('should skip auto-discovery when empty toolsets array is explicitly provided', async () => {

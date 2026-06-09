@@ -7,6 +7,13 @@ import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {createOdsClient} from '@salesforce/b2c-tooling-sdk/clients';
 import * as vscode from 'vscode';
 import {registerSafeCommand, runWithSafety} from '../safety.js';
+import {
+  CLONE_PROFILES,
+  getExplicitCloneTargetProfiles,
+  getSandboxSourceProfile,
+  isCloneProfileDowngrade,
+  type CloneProfile,
+} from './sandbox-clone-helpers.js';
 import type {SandboxConfigProvider} from './sandbox-config.js';
 import type {RealmTreeItem, SandboxTreeDataProvider, SandboxTreeItem} from './sandbox-tree-provider.js';
 
@@ -292,8 +299,6 @@ export function registerSandboxCommands(
     );
   });
 
-  const CLONE_PROFILES = ['medium', 'large', 'xlarge', 'xxlarge'] as const;
-  type CloneProfile = (typeof CLONE_PROFILES)[number];
   const CLONE_POLL_INTERVAL_MS = 10_000;
   const CLONE_POLL_TIMEOUT_MS = 60 * 60_000;
 
@@ -314,12 +319,27 @@ export function registerSandboxCommands(
     if (ttlStr === undefined) return;
     const ttl = Number(ttlStr);
 
+    const sourceProfile = getSandboxSourceProfile(node.sandbox);
+    const explicitTargetProfiles = getExplicitCloneTargetProfiles(sourceProfile);
     const profilePick = await vscode.window.showQuickPick(
-      [{label: 'Same as source', value: undefined}, ...CLONE_PROFILES.map((p) => ({label: p, value: p}))],
-      {title: 'Clone Sandbox — Resource Profile', placeHolder: 'Select profile for the clone'},
+      [{label: 'Same as source', value: undefined}, ...explicitTargetProfiles.map((p) => ({label: p, value: p}))],
+      {
+        title: 'Clone Sandbox — Resource Profile',
+        placeHolder:
+          explicitTargetProfiles.length < CLONE_PROFILES.length
+            ? `Select profile for the clone (downgrades from ${sourceProfile ?? 'source profile'} are blocked)`
+            : 'Select profile for the clone',
+      },
     );
     if (!profilePick) return;
     const targetProfile = profilePick.value as CloneProfile | undefined;
+
+    if (isCloneProfileDowngrade(sourceProfile, targetProfile)) {
+      vscode.window.showErrorMessage(
+        `Profile downgrade not allowed: source profile is ${sourceProfile}. Choose same or higher profile.`,
+      );
+      return;
+    }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const emailsStr = await vscode.window.showInputBox({
