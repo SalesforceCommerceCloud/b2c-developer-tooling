@@ -823,23 +823,29 @@
     "viewsWelcome": [
       {
         "view": "b2cWebdavExplorer",
-        "contents": "No B2C Commerce instance configured.\n\nCreate a dw.json file in your workspace or set SFCC_* environment variables.\n\n[Refresh](command:b2c-dx.webdav.refresh)"
+        "contents": "No B2C Commerce instance configured.\n\n[Set up your instance](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22configure-instance%22%5D)\n\n[Refresh](command:b2c-dx.webdav.refresh)"
       },
       {
         "view": "b2cContentExplorer",
-        "contents": "No content libraries configured.\n\nSet \"contentLibrary\" in dw.json or add a library manually.\n\n[Add Library](command:b2c-dx.content.addLibrary)"
+        "contents": "No content libraries configured.\n\n[Set up your instance](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22configure-instance%22%5D) to enable content browsing, then add a library.\n\n[Add Library](command:b2c-dx.content.addLibrary)"
       },
       {
         "view": "b2cApiBrowser",
-        "contents": "Browse SCAPI OpenAPI schemas for your Commerce Cloud instance.\n\nRequires OAuth credentials (clientId, clientSecret) and shortCode in dw.json.\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
+        "contents": "Browse SCAPI OpenAPI schemas for your Commerce Cloud instance.\n\nRequires OAuth credentials (`client-id`, `client-secret`, `shortCode`) in dw.json.\n\n[Connect & authenticate](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22connect%22%5D)\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
       },
       {
         "view": "b2cSandboxExplorer",
+        "when": "!b2c-dx.sandbox.needsOAuth",
         "contents": "No sandbox realms configured.\n\nSet \"realm\" in dw.json or add a realm manually.\n\n[Add Realm](command:b2c-dx.sandbox.addRealm)"
       },
       {
+        "view": "b2cSandboxExplorer",
+        "when": "b2c-dx.sandbox.needsOAuth",
+        "contents": "Sandbox management requires Account Manager OAuth credentials.\n\nAdd \"client-id\" and \"client-secret\" to dw.json to browse and manage sandboxes for this realm.\n\n[Connect & authenticate](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22connect%22%5D)"
+      },
+      {
         "view": "b2cCartridgeExplorer",
-        "contents": "No cartridges found.\n\nCartridges are identified by .project files in the workspace.\n\n[Refresh](command:b2c-dx.codeSync.refreshCartridges)"
+        "contents": "No cartridges found.\n\nCartridges are identified by .project files in the workspace.\n\n[Generate from a scaffold](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22scaffold%22%5D)\n\n[Refresh](command:b2c-dx.codeSync.refreshCartridges)"
       },
       {
         "view": "b2cCipAnalytics",
@@ -888,11 +894,6 @@
       }
     ],
     "commands": [
-      {
-        "command": "b2c-dx.openUI",
-        "title": "Open Page Designer Assistant UI",
-        "category": "B2C DX - Page Designer Assistant"
-      },
       {
         "command": "b2c-dx.promptAgent",
         "title": "Prompt Agent",
@@ -978,6 +979,12 @@
         "title": "Remove Realm…",
         "icon": "$(trash)",
         "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.apiBrowser.scapiAdd",
+        "title": "Add to Storefront (sfnext scapi add)",
+        "icon": "$(add)",
+        "category": "B2C DX - API Browser"
       },
       {
         "command": "b2c-dx.sandbox.refresh",
@@ -1101,6 +1108,11 @@
         "command": "b2c-dx.webdav.delete",
         "title": "Delete",
         "icon": "$(trash)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.rename",
+        "title": "Rename",
         "category": "B2C DX"
       },
       {
@@ -1258,6 +1270,12 @@
         "category": "B2C DX - Code Sync"
       },
       {
+        "command": "b2c-dx.codeSync.deployOne",
+        "title": "Deploy a Single Cartridge",
+        "icon": "$(cloud-upload)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
         "command": "b2c-dx.codeSync.refreshCartridges",
         "title": "Refresh Cartridges",
         "icon": "$(refresh)",
@@ -1285,12 +1303,6 @@
         "command": "b2c-dx.codeSync.downloadCartridge",
         "title": "Download from Instance",
         "icon": "$(cloud-download)",
-        "category": "B2C DX - Code Sync"
-      },
-      {
-        "command": "b2c-dx.codeSync.diffCartridge",
-        "title": "Compare with Instance",
-        "icon": "$(diff)",
         "category": "B2C DX - Code Sync"
       },
       {
@@ -1338,6 +1350,213 @@
         "command": "b2c-dx.isml.showReferences",
         "title": "Show ISML References",
         "category": "B2C DX - ISML"
+      },
+      {
+        "command": "b2c-dx.walkthrough.createDwJson",
+        "title": "Create dw.json Configuration",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.walkthrough.open",
+        "title": "Open Getting Started Guide",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.walkthrough.markAllDone",
+        "title": "Mark Getting Started as Done",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.walkthrough.resetProgress",
+        "title": "Reset Getting Started Progress",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.cli.verify",
+        "title": "Verify B2C CLI Installation",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.cli.update",
+        "title": "Update B2C CLI to Latest",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.cli.installNpm",
+        "title": "Install B2C CLI via npm",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.cli.installBrew",
+        "title": "Install B2C CLI via Homebrew",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.cli.recheck",
+        "title": "Re-check B2C CLI Installation",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.walkthrough.chooseCredentialStorage",
+        "title": "Configure Instance (Wizard)",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.walkthrough.inspectSetup",
+        "title": "Inspect Resolved Config (b2c setup inspect)",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.setup.connection",
+        "title": "Setup · Connection (instance + hostname)",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.setup.oauth",
+        "title": "Setup · OAuth Credentials",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.setup.webdav",
+        "title": "Setup · WebDAV Credentials",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.setup.scapi",
+        "title": "Setup · SCAPI Configuration",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.setup.resetSession",
+        "title": "Reset Setup Session (Start over from connection step)",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.theme.toggle",
+        "title": "Toggle Light / Dark Theme",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.onboarding.open",
+        "title": "Open Onboarding Panel",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.onboarding.reset",
+        "title": "Reset Onboarding Progress",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.onboarding.changePersona",
+        "title": "Change Onboarding Role",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.walkthrough.validate",
+        "title": "Validate Walkthrough Configuration",
+        "category": "B2C DX - Development"
+      },
+      {
+        "command": "b2c-dx.walkthrough.checkAccessibility",
+        "title": "Check Walkthrough Accessibility",
+        "category": "B2C DX - Development"
+      },
+      {
+        "command": "b2c-dx.walkthrough.showTelemetry",
+        "title": "Show Walkthrough Telemetry",
+        "category": "B2C DX - Development"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "b2c-dx.gettingStarted",
+        "title": "B2C DX — Developer Onboarding",
+        "description": "A guided 5-phase setup — install, configure, connect, deploy, scaffold — for the Salesforce B2C Commerce Developer Experience extension. Most teams complete this in under 30 minutes.",
+        "icon": "media/b2c-icon.svg",
+        "steps": [
+          {
+            "id": "pick-start",
+            "title": "Phase 0 · Choose your role",
+            "description": "Different roles need different things first. Open the **role-based deep-dive** for a path tailored to how you'll use B2C Commerce — Storefront, API/Integration, DevOps/Release, or AI-augmented developer. Or skip ahead and follow the universal five-phase flow below.\n\n[Open role-based guide](command:b2c-dx.onboarding.open)\n\nAlready set up? [Mark all phases as done](command:b2c-dx.walkthrough.markAllDone).",
+            "media": {
+              "image": {
+                "light": "media/walkthrough/welcome-hero-light.svg",
+                "dark": "media/walkthrough/welcome-hero-dark.svg",
+                "hc": "media/walkthrough/welcome-hero-dark.svg",
+                "hcLight": "media/walkthrough/welcome-hero-light.svg"
+              },
+              "altText": "B2C DX wordmark above a vertical five-step timeline: Install the B2C CLI (optional), Configure your instance (dw.json), Connect and authenticate, Deploy your first cartridge, and Generate from a scaffold."
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.onboarding.open",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          },
+          {
+            "id": "install-cli",
+            "title": "Phase 1 · Install the B2C CLI",
+            "description": "**Optional.** The B2C CLI powers deploys, log tailing, and sandbox commands from the terminal. Skip if you'll only use the VS Code views.\n\nInstall via `npm install -g @salesforce/b2c-cli` or `brew install salesforcecommercecloud/tools/b2c-cli`. \n\nRequires Node.js 22+.\n\n[Verify installation](command:b2c-dx.cli.verify) · [Update to latest](command:b2c-dx.cli.update)",
+            "media": {
+              "markdown": "media/walkthrough/install-cli.md"
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.cli.verify",
+              "onContext:b2c-dx.cliInstalled",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          },
+          {
+            "id": "configure-instance",
+            "title": "Phase 2 · Configure your instance",
+            "description": "Run the configuration wizard. Non-secret fields (hostname, code-version, short-code, tenant-id, mrtProject, mrtEnvironment) go into `dw.json`; secret pairs (OAuth `client-id`+`client-secret`, Basic `username`+`password`, MRT API key) are placed independently — Keychain, `pass`, env vars, or dw.json — per the documented Credential Grouping rule.\n\n[Run setup wizard](command:b2c-dx.walkthrough.chooseCredentialStorage) · [Inspect resolved config](command:b2c-dx.walkthrough.inspectSetup) · [Create dw.json (manual)](command:b2c-dx.walkthrough.createDwJson)",
+            "media": {
+              "markdown": "media/walkthrough/dw-json-setup.md"
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.walkthrough.chooseCredentialStorage",
+              "onCommand:b2c-dx.walkthrough.createDwJson",
+              "onContext:b2c-dx.dwJsonExists",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          },
+          {
+            "id": "connect",
+            "title": "Phase 3 · Connect & authenticate",
+            "description": "Verify your config resolves and the extension can reach your instance. The active instance shows in the status bar (bottom-left).\n\nOAuth fields (`client-id`, `client-secret`, `short-code`) unlock the Sandbox Explorer and API Browser; basic auth (`username`, `password`) is enough for WebDAV and cartridge deploys.\n\n[Inspect resolved config](command:b2c-dx.walkthrough.inspectSetup) — runs `b2c setup inspect` and shows where each value came from (file / env / keychain).\n\n[Inspect active instance](command:b2c-dx.instance.inspect) · [Open Realm Explorer](command:workbench.view.extension.b2c-dx-sandboxes)",
+            "media": {
+              "markdown": "media/walkthrough/oauth-setup.md"
+            },
+            "completionEvents": [
+              "onContext:b2c-dx.instanceConnected",
+              "onCommand:b2c-dx.instance.inspect",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          },
+          {
+            "id": "deploy-cartridge",
+            "title": "Phase 4 · Deploy your first cartridge",
+            "description": "Cartridges are folders containing a `.project` file. The extension auto-detects them in your workspace and lists them under the Cartridges view.\n\n[Deploy all cartridges](command:b2c-dx.codeSync.deploy)\n\n[Open Cartridges view](command:workbench.view.extension.b2c-dx)",
+            "media": {
+              "markdown": "media/walkthrough/deploy-cartridge.md"
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.codeSync.deploy",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          },
+          {
+            "id": "scaffold",
+            "title": "Phase 5 · Generate from a scaffold",
+            "description": "Generate boilerplate for cartridges, controllers, models, and Page Designer pages without leaving VS Code.\n\nRight-click a folder in the Explorer → **B2C DX → New from Scaffold…** or run the command directly.\n\n[New from Scaffold…](command:b2c-dx.scaffold.generate)\n\n---\n\nFinished early? [Mark all steps as done](command:b2c-dx.walkthrough.markAllDone).",
+            "media": {
+              "markdown": "media/walkthrough/next-steps.md"
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.scaffold.generate",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          }
+        ]
       },
       {
         "command": "b2c-dx.docs.search",
@@ -1496,6 +1715,11 @@
           "group": "inline@1"
         },
         {
+          "command": "b2c-dx.apiBrowser.scapiAdd",
+          "when": "view == b2cApiBrowser && viewItem == apiSchema-shopper && b2c-dx.isStorefrontNext",
+          "group": "1_storefront@1"
+        },
+        {
           "command": "b2c-dx.webdav.addCatalog",
           "when": "view == b2cWebdavExplorer && viewItem == virtual-root-catalogs",
           "group": "0_add@0"
@@ -1539,6 +1763,11 @@
           "command": "b2c-dx.webdav.download",
           "when": "view == b2cWebdavExplorer && viewItem == file",
           "group": "1_open@2"
+        },
+        {
+          "command": "b2c-dx.webdav.rename",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(directory|file)$/",
+          "group": "2_destructive@0"
         },
         {
           "command": "b2c-dx.webdav.delete",
@@ -1788,6 +2017,10 @@
           "when": "false"
         },
         {
+          "command": "b2c-dx.apiBrowser.scapiAdd",
+          "when": "false"
+        },
+        {
           "command": "b2c-dx.sandbox.removeRealm",
           "when": "false"
         },
@@ -1852,6 +2085,10 @@
           "when": "false"
         },
         {
+          "command": "b2c-dx.webdav.rename",
+          "when": "false"
+        },
+        {
           "command": "b2c-dx.webdav.download",
           "when": "false"
         },
@@ -1912,10 +2149,6 @@
           "when": "false"
         },
         {
-          "command": "b2c-dx.codeSync.diffCartridge",
-          "when": "false"
-        },
-        {
           "command": "b2c-dx.codeSync.addToSitePath",
           "when": "false"
         },
@@ -1924,7 +2157,14 @@
           "when": "false"
         }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "b2c-dx.webdav.rename",
+        "key": "f2",
+        "when": "focusedView == b2cWebdavExplorer"
+      }
+    ]
   },
   "scripts": {
     "sync:xsd": "node scripts/sync-xsd.mjs",
@@ -1932,6 +2172,7 @@
     "build:docs-index": "node scripts/build-docs-index/run.mjs",
     "watch": "node scripts/esbuild-bundle.mjs --watch",
     "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-tooling-sdk run build && pnpm run build:docs-index && node scripts/esbuild-bundle.mjs",
+    "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-script-types run build && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
     "package": "pnpm run build && pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
@@ -1955,6 +2196,7 @@
     "@vscode/vsce": "^3.9.1",
     "c8": "catalog:",
     "esbuild": "^0.24.0",
+    "jszip": "3.10.1",
     "swagger-ui-dist": "^5.18.0",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",

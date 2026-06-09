@@ -654,6 +654,9 @@ importers:
       eslint-plugin-prettier:
         specifier: 'catalog:'
         version: 5.5.4(eslint-config-prettier@10.1.8(eslint@9.39.1))(eslint@9.39.1)(prettier@3.6.2)
+      jszip:
+        specifier: 3.10.1
+        version: 3.10.1
       prettier:
         specifier: 'catalog:'
         version: 3.6.2

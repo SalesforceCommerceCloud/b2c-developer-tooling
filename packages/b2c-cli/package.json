@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce B2C Commerce CLI",
-  "version": "1.12.0",
+  "version": "1.13.0",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -91,6 +91,13 @@
       "@oclif/plugin-autocomplete",
       "@oclif/plugin-warn-if-update-available"
     ],
+    "jitPlugins": {
+      "@salesforce/storefront-next-dev": "latest"
+    },
+    "hooks": {
+      "init": "./dist/hooks/sfnext-local-override",
+      "jit_plugin_not_installed": "./dist/hooks/sfnext-jit-install"
+    },
     "warn-if-update-available": {
       "timeoutInDays": 1,
       "frequency": 1,
@@ -309,6 +316,9 @@
               }
             }
           },
+          "rate-limit": {
+            "description": "Manage rate limiting rules\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
+          },
           "mtls": {
             "description": "Manage mTLS certificates for code deployment\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           },
@@ -330,6 +340,9 @@
       },
       "scaffold": {
         "description": "Generate project scaffolds for cartridges, APIs, and components\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scaffold.html"
+      },
+      "sfnext": {
+        "description": "Storefront Next (SFNext) project, dev server, extensions, and deployment commands"
       }
     }
   },
@@ -343,7 +356,7 @@
     "format:check": "prettier --check src",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "pnpm run lint",
-    "prepack": "oclif manifest && oclif readme",
+    "prepack": "oclif manifest --jit && oclif readme",
     "pretest": "tsc --noEmit -p test",
     "test": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
     "test:ci": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",

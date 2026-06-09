@@ -64,6 +64,25 @@ b2c ecdn certificates add --zone my-zone --hostname www.example.com --certificat
 b2c ecdn certificates validate --zone my-zone --certificate-id abc123
 ```
 
+### Manage Rate Limiting Rules
+
+```bash
+# list rate limiting rules
+b2c ecdn rate-limit list --zone my-zone
+
+# create a rate limiting rule
+b2c ecdn rate-limit create --zone my-zone --description "Rate limit /checkout" --expression '(http.request.uri.path matches "^/checkout")' --characteristics cf.unique_visitor_id --action block --period 60 --requests-per-period 50 --mitigation-timeout 600
+
+# get a rule
+b2c ecdn rate-limit get --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e
+
+# update a rule
+b2c ecdn rate-limit update --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --requests-per-period 100
+
+# delete a rule
+b2c ecdn rate-limit delete --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --force
+```
+
 ### Security Settings
 
 ```bash

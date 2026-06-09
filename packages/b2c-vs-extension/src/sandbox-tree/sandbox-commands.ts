@@ -297,7 +297,7 @@ export function registerSandboxCommands(
   const CLONE_POLL_INTERVAL_MS = 10_000;
   const CLONE_POLL_TIMEOUT_MS = 60 * 60_000;
 
-  const clone = vscode.commands.registerCommand('b2c-dx.sandbox.clone', async (node: SandboxTreeItem) => {
+  const clone = registerSafeCommand('b2c-dx.sandbox.clone', async (node: SandboxTreeItem) => {
     if (!node) return;
 
     const ttlStr = await vscode.window.showInputBox({
@@ -348,9 +348,9 @@ export function registerSandboxCommands(
       {
         location: vscode.ProgressLocation.Notification,
         title: `Cloning sandbox ${sandboxName}`,
-        cancellable: false,
+        cancellable: true,
       },
-      async (progress) => {
+      async (progress, token) => {
         progress.report({message: node.sandbox.id});
         let sourceMarked = false;
         try {
@@ -386,7 +386,15 @@ export function registerSandboxCommands(
           const startTime = Date.now();
           let lastPct = 0;
           while (Date.now() - startTime < CLONE_POLL_TIMEOUT_MS) {
+            // Cancellation only stops the local poll; the server continues. To
+            // abort the operation, use the ODS console.
+            if (token.isCancellationRequested) {
+              throw new vscode.CancellationError();
+            }
             await new Promise((r) => setTimeout(r, CLONE_POLL_INTERVAL_MS));
+            if (token.isCancellationRequested) {
+              throw new vscode.CancellationError();
+            }
             treeProvider.refreshRealm(node.realm);
             const statusResult = await odsClient.GET('/sandboxes/{sandboxId}/clones/{cloneId}', {
               params: {path: {sandboxId: node.sandbox.id, cloneId}},
@@ -429,6 +437,10 @@ export function registerSandboxCommands(
             `Clone ${cloneId} still in progress after timeout. Use "View Clone Details" to check status.`,
           );
         } catch (err) {
+          if (err instanceof vscode.CancellationError) {
+            // Operation cancelled — local poll stopped; server-side clone continues.
+            return;
+          }
           const message = err instanceof Error ? err.message : String(err);
           vscode.window.showErrorMessage(`Sandbox clone failed: ${message}`);
         } finally {
@@ -440,37 +452,34 @@ export function registerSandboxCommands(
     );
   });
 
-  const viewCloneDetails = vscode.commands.registerCommand(
-    'b2c-dx.sandbox.viewCloneDetails',
-    async (node: SandboxTreeItem) => {
-      if (!node) return;
-      await vscode.window.withProgress(
-        {location: vscode.ProgressLocation.Notification, title: 'Fetching clone details...'},
-        async () => {
-          try {
-            const details = await treeProvider.getSandboxWithCloneDetails(node.sandbox.id);
-            if (!details) {
-              vscode.window.showErrorMessage('Could not fetch clone details.');
-              return;
-            }
-            const cloneDetails = details.cloneDetails ?? {
-              clonedFrom: details.clonedFrom,
-              sourceInstanceIdentifier: details.sourceInstanceIdentifier,
-            };
-            const content = JSON.stringify(cloneDetails, null, 2);
-            const uri = vscode.Uri.parse(`${SANDBOX_DETAIL_SCHEME}:${node.label ?? node.sandbox.id}-clone.json`);
-            detailProvider.setContent(uri, content);
-            const doc = await vscode.workspace.openTextDocument(uri);
-            await vscode.languages.setTextDocumentLanguage(doc, 'json');
-            await vscode.window.showTextDocument(doc, {preview: true});
-          } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            vscode.window.showErrorMessage(`Failed to fetch clone details: ${message}`);
+  const viewCloneDetails = registerSafeCommand('b2c-dx.sandbox.viewCloneDetails', async (node: SandboxTreeItem) => {
+    if (!node) return;
+    await vscode.window.withProgress(
+      {location: vscode.ProgressLocation.Notification, title: 'Fetching clone details...'},
+      async () => {
+        try {
+          const details = await treeProvider.getSandboxWithCloneDetails(node.sandbox.id);
+          if (!details) {
+            vscode.window.showErrorMessage('Could not fetch clone details.');
+            return;
           }
-        },
-      );
-    },
-  );
+          const cloneDetails = details.cloneDetails ?? {
+            clonedFrom: details.clonedFrom,
+            sourceInstanceIdentifier: details.sourceInstanceIdentifier,
+          };
+          const content = JSON.stringify(cloneDetails, null, 2);
+          const uri = vscode.Uri.parse(`${SANDBOX_DETAIL_SCHEME}:${node.label ?? node.sandbox.id}-clone.json`);
+          detailProvider.setContent(uri, content);
+          const doc = await vscode.workspace.openTextDocument(uri);
+          await vscode.languages.setTextDocumentLanguage(doc, 'json');
+          await vscode.window.showTextDocument(doc, {preview: true});
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          vscode.window.showErrorMessage(`Failed to fetch clone details: ${message}`);
+        }
+      },
+    );
+  });
 
   return [
     detailRegistration,

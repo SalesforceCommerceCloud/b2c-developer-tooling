@@ -4,9 +4,6 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as fs from 'node:fs';
-import * as os from 'node:os';
-import * as path from 'node:path';
 import type {Library, LibraryNode} from '@salesforce/b2c-tooling-sdk/operations/content';
 import {siteArchiveImport, getJobLog, JobExecutionError} from '@salesforce/b2c-tooling-sdk';
 import JSZip from 'jszip';
@@ -94,6 +91,12 @@ function generateContentXML(library: Library, contentId: string): string {
 export class ContentFileSystemProvider implements vscode.FileSystemProvider {
   private _onDidChangeFile = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
   readonly onDidChangeFile = this._onDidChangeFile.event;
+  // Cache of last-known mtime/size for content items, keyed by `${libraryId}:${contentId}`.
+  // Without this, returning Date.now() from stat() makes VS Code think the file changed externally
+  // on every stat call, triggering phantom "file modified" prompts that can clobber unsaved buffers.
+  // Cache only mtime — size is intentionally omitted because readFile returns dynamically
+  // generated XML whose byte length doesn't match the bytes the user wrote.
+  private mtimes = new Map<string, number>();
 
   constructor(private configProvider: ContentConfigProvider) {}
 
@@ -102,13 +105,19 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
   }
 
   async stat(uri: vscode.Uri): Promise<vscode.FileStat> {
-    const {contentId} = parseContentUri(uri);
+    const {libraryId, contentId} = parseContentUri(uri);
     if (!contentId) {
       // Library root — directory
       return {type: vscode.FileType.Directory, ctime: 0, mtime: 0, size: 0};
     }
-    // Content item — file
-    return {type: vscode.FileType.File, ctime: 0, mtime: Date.now(), size: 0};
+    // Content item — file. Use cached mtime if known; otherwise return 0
+    // (VS Code treats mtime: 0 as "unknown / no change detected").
+    return {
+      type: vscode.FileType.File,
+      ctime: 0,
+      mtime: this.mtimes.get(`${libraryId}:${contentId}`) ?? 0,
+      size: 0,
+    };
   }
 
   async readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
@@ -140,7 +149,7 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
   }
 
   async writeFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
-    const {libraryId, isSiteLibrary} = parseContentUri(uri);
+    const {libraryId, contentId, isSiteLibrary} = parseContentUri(uri);
     const instance = this.configProvider.getInstance();
     if (!instance) {
       throw vscode.FileSystemError.Unavailable('No B2C Commerce instance configured');
@@ -156,11 +165,6 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
           const zip = new JSZip();
           zip.file(archivePath, xmlContent);
           const buffer = await zip.generateAsync({type: 'nodebuffer'});
-
-          // DEBUG: write archive to temp dir for inspection
-          const debugPath = path.join(os.tmpdir(), `content-update-${Date.now()}.zip`);
-          await fs.promises.writeFile(debugPath, buffer);
-          console.log(`[content-fs] Debug archive written to: ${debugPath}`);
 
           await siteArchiveImport(instance, buffer);
         },
@@ -181,6 +185,11 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
 
     // Invalidate cache since the instance was updated
     this.configProvider.invalidateLibrary(libraryId);
+    // Record mtime so subsequent stat() calls return a stable timestamp instead of Date.now(),
+    // preventing VS Code from thinking the file changed externally.
+    if (contentId) {
+      this.mtimes.set(`${libraryId}:${contentId}`, Date.now());
+    }
     this._onDidChangeFile.fire([{type: vscode.FileChangeType.Changed, uri}]);
     vscode.window.showInformationMessage(`Content imported to ${libraryId} successfully.`);
   }

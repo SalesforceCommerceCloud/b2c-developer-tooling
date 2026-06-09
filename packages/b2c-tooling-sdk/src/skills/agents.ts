@@ -50,7 +50,7 @@ export const IDE_CONFIGS: Record<IdeType, IdeConfig> = {
     detectInstalled: async () => {
       return fs.existsSync(path.join(home, '.cursor'));
     },
-    docsUrl: 'https://cursor.com/docs/context/skills',
+    docsUrl: 'https://cursor.com/docs/skills',
   },
   windsurf: {
     id: 'windsurf',

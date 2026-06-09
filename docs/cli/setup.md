@@ -20,10 +20,12 @@ b2c setup inspect [FLAGS]
 
 ### Flags
 
-| Flag       | Description                                                   | Default |
-| ---------- | ------------------------------------------------------------- | ------- |
-| `--unmask` | Show sensitive values unmasked (passwords, secrets, API keys) | `false` |
-| `--json`   | Output results as JSON                                        | `false` |
+| Flag                     | Description                                                   | Default                  |
+| ------------------------ | ------------------------------------------------------------- | ------------------------ |
+| `--unmask`               | Show sensitive values unmasked (passwords, secrets, API keys) | `false`                  |
+| `--account-manager-host` | Account Manager hostname for OAuth                            | `account.demandware.com` |
+| `--cloud-origin`         | MRT cloud origin URL                                          | `https://cloud.mobify.com` |
+| `--json`                 | Output results as JSON                                        | `false`                  |
 
 ### Examples
 
@@ -279,9 +281,11 @@ b2c setup instance list [FLAGS]
 
 ### Flags
 
-| Flag     | Description            | Default |
-| -------- | ---------------------- | ------- |
-| `--json` | Output results as JSON | `false` |
+| Flag               | Description                                                          | Default |
+| ------------------ | -------------------------------------------------------------------- | ------- |
+| `--columns`, `-c`  | Columns to display (comma-separated): name, hostname, source, active | All     |
+| `--extended`, `-x` | Show all columns including extended fields                           | `false` |
+| `--json`           | Output results as JSON                                               | `false` |
 
 ### Examples
 
@@ -477,6 +481,8 @@ b2c setup skills [SKILLSET]
 | `--update`, `-u`      | Update existing skills (overwrite)                                                             | `false`     |
 | `--version`           | Specific release version                                                                       | `latest`    |
 | `--force`             | Skip confirmation prompts (non-interactive)                                                    | `false`     |
+| `--columns`, `-c`     | Columns to display (comma-separated): name, description, skillSet, hasReferences               |             |
+| `--extended`, `-x`    | Show all columns including extended fields                                                     | `false`     |
 | `--json`              | Output results as JSON                                                                         | `false`     |
 
 ### Supported IDEs
@@ -614,4 +620,4 @@ Downloaded artifacts are cached locally at: `~/.cache/b2c-cli/skills/{version}/{
 
 - [Agent Skills & Plugins Guide](/guide/agent-skills) - Overview of available skills
 - [Claude Code Skills Documentation](https://claude.ai/code) - Claude Code skill format
-- [Cursor Skills Documentation](https://cursor.com/docs/context/skills) - Cursor skill format
+- [Cursor Skills Documentation](https://cursor.com/docs/skills) - Cursor skill format. Cursor also auto-loads skills from `.claude/skills/` and `~/.claude/skills/`, so `--ide claude-code` installs are picked up by Cursor automatically.

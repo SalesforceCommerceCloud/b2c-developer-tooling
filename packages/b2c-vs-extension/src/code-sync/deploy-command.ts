@@ -6,7 +6,6 @@
 import {
   findCartridges,
   uploadCartridges,
-  deleteCartridges,
   getActiveCodeVersion,
   activateCodeVersion,
   reloadCodeVersion,
@@ -85,12 +84,19 @@ export function createDeployCommand(
       {
         location: vscode.ProgressLocation.Notification,
         title: 'Deploying cartridges...',
-        cancellable: false,
+        cancellable: true,
       },
-      async (progress) => {
+      async (progress, token) => {
         try {
+          // The SDK upload/activate/reload calls do not accept an AbortSignal,
+          // so we can only honor cancellation between top-level steps; an
+          // in-flight upload will complete before we abort.
           progress.report({message: 'Uploading cartridges...'});
           await uploadCartridges(instance, selectedCartridges);
+
+          if (token.isCancellationRequested) {
+            throw new vscode.CancellationError();
+          }
 
           if (actionPick.action === 'activate') {
             progress.report({message: 'Activating code version...'});
@@ -106,10 +112,23 @@ export function createDeployCommand(
             `Deployed ${selectedCartridges.length} cartridge(s) to "${codeVersion}" successfully`,
           );
           outputChannel.appendLine(`--- Deploy complete ---`);
+
+          // Refresh the WebDAV browser so newly-uploaded cartridges show up.
+          try {
+            await vscode.commands.executeCommand('b2c-dx.webdav.refresh');
+          } catch {
+            // best-effort — webdav tree may not be registered if feature is disabled
+          }
+
           vscode.window.showInformationMessage(
             `B2C DX: Deployed ${selectedCartridges.length} cartridge(s) to "${codeVersion}".`,
           );
         } catch (err) {
+          if (err instanceof vscode.CancellationError) {
+            outputChannel.appendLine('Deploy cancelled by user.');
+            outputChannel.appendLine(`--- Deploy cancelled ---`);
+            return;
+          }
           const message = err instanceof Error ? err.message : String(err);
           outputChannel.appendLine(`[Error] Deploy failed: ${message}`);
           outputChannel.appendLine(`--- Deploy failed ---`);
@@ -120,9 +139,15 @@ export function createDeployCommand(
   };
 }
 
-export function createDeleteAndDeployCommand(
+/**
+ * Deploys a single cartridge — defaults the picker to the last-scaffolded
+ * cartridge so users coming from the walkthrough's "Create New Cartridge"
+ * step can deploy what they just made in one click.
+ */
+export function createDeployOneCommand(
   configProvider: B2CExtensionConfig,
   outputChannel: vscode.OutputChannel,
+  context: vscode.ExtensionContext,
 ): () => Promise<void> {
   return async () => {
     const instance = configProvider.getInstance();
@@ -155,32 +180,65 @@ export function createDeleteAndDeployCommand(
       return;
     }
 
-    const confirm = await vscode.window.showWarningMessage(
-      `This will delete existing cartridges on "${codeVersion}" before deploying. Continue?`,
-      {modal: true},
-      'Delete & Deploy',
-    );
-    if (confirm !== 'Delete & Deploy') return;
+    // Default to the last-scaffolded cartridge so the walkthrough flow is
+    // one-click. Falls back to the first cartridge if there's no record.
+    const lastScaffolded = context.workspaceState.get<string>('b2c-dx.scaffold.lastCartridgeName');
+    const recommended = lastScaffolded ? (cartridges.find((c) => c.name === lastScaffolded) ?? null) : null;
 
-    outputChannel.appendLine(`--- Clean Deploy started ---`);
+    let toDeploy;
+    if (cartridges.length === 1) {
+      toDeploy = cartridges[0];
+    } else {
+      const items = cartridges.map((c) => ({
+        label: c.name === recommended?.name ? `$(star-full) ${c.name}` : c.name,
+        description: c.name === recommended?.name ? 'recently scaffolded' : c.src,
+        detail: c.name === recommended?.name ? c.src : undefined,
+        cartridge: c,
+      }));
+      // Sort the recommended cartridge to the top so it's the default focus.
+      if (recommended) {
+        items.sort((a, b) =>
+          a.cartridge.name === recommended.name ? -1 : b.cartridge.name === recommended.name ? 1 : 0,
+        );
+      }
+      const picked = await vscode.window.showQuickPick(items, {
+        title: 'Deploy a cartridge',
+        placeHolder: recommended
+          ? `Default: ${recommended.name} — choose a cartridge to deploy`
+          : 'Select a cartridge to deploy',
+      });
+      if (!picked) return;
+      toDeploy = picked.cartridge;
+    }
+
+    outputChannel.appendLine(`--- Deploy single started ---`);
+    outputChannel.appendLine(`Cartridge: ${toDeploy.name}`);
+    outputChannel.appendLine(`Code Version: ${codeVersion}`);
 
     await vscode.window.withProgress(
-      {location: vscode.ProgressLocation.Notification, title: 'Clean deploy...', cancellable: false},
-      async (progress) => {
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: `Deploying ${toDeploy.name}...`,
+        cancellable: false,
+      },
+      async () => {
         try {
-          progress.report({message: 'Deleting existing cartridges...'});
-          await deleteCartridges(instance, cartridges);
+          await uploadCartridges(instance, [toDeploy]);
+          outputChannel.appendLine(`Deployed "${toDeploy.name}" to "${codeVersion}"`);
+          outputChannel.appendLine(`--- Deploy single complete ---`);
 
-          progress.report({message: 'Uploading cartridges...'});
-          await uploadCartridges(instance, cartridges);
+          try {
+            await vscode.commands.executeCommand('b2c-dx.webdav.refresh');
+          } catch {
+            // best-effort
+          }
 
-          outputChannel.appendLine(`Clean deployed ${cartridges.length} cartridge(s) to "${codeVersion}"`);
-          outputChannel.appendLine(`--- Clean Deploy complete ---`);
-          vscode.window.showInformationMessage(`B2C DX: Clean deploy complete.`);
+          vscode.window.showInformationMessage(`B2C DX: Deployed "${toDeploy.name}" to "${codeVersion}".`);
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
-          outputChannel.appendLine(`[Error] Clean deploy failed: ${message}`);
-          vscode.window.showErrorMessage(`B2C DX: Clean deploy failed: ${message}`);
+          outputChannel.appendLine(`[Error] Deploy failed: ${message}`);
+          outputChannel.appendLine(`--- Deploy single failed ---`);
+          vscode.window.showErrorMessage(`B2C DX: Deploy failed: ${message}`);
         }
       },
     );

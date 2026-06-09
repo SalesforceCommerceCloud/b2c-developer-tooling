@@ -10,8 +10,24 @@ import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
 import {contentItemUri} from './content-fs-provider.js';
 import {webdavPathToUri} from '../webdav-tree/webdav-fs-provider.js';
+import {showThrottledError} from '../notify.js';
 
 type ContentNodeType = 'library' | 'page' | 'content' | 'component' | 'static';
+
+/**
+ * Build a stable path-from-root string for a LibraryNode. Used to produce a
+ * unique TreeItem.id since the same content id (e.g. a shared component) can
+ * appear under multiple parent nodes in the same library tree.
+ */
+function buildLibraryNodePath(node: LibraryNode): string {
+  const segments: string[] = [];
+  let current: LibraryNode | null = node;
+  while (current && current.parent) {
+    segments.unshift(current.id);
+    current = current.parent;
+  }
+  return segments.join('/');
+}
 
 export class ContentTreeItem extends vscode.TreeItem {
   constructor(
@@ -40,6 +56,17 @@ export class ContentTreeItem extends vscode.TreeItem {
             : vscode.TreeItemCollapsibleState.None;
 
     super(label, collapsible);
+
+    // Stable id: libraries are unique by id+scope; non-library nodes need a
+    // path-from-root because the same content id can appear under multiple
+    // parents (a component can be referenced by several pages).
+    const libScope = `${libraryId}:${isSiteLibrary ? 'site' : 'shared'}`;
+    if (nodeType === 'library') {
+      this.id = `lib:${libScope}`;
+    } else {
+      const ancestorPath = libraryNode ? buildLibraryNodePath(libraryNode) : contentId;
+      this.id = `content:${nodeType}:${libScope}:${ancestorPath}`;
+    }
 
     this.contextValue = nodeType;
 
@@ -185,7 +212,9 @@ export class ContentTreeDataProvider implements vscode.TreeDataProvider<ContentT
         this.configProvider.setCachedLibrary(element.libraryId, library);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        vscode.window.showErrorMessage(`Failed to fetch library ${element.libraryId}: ${message}`);
+        // Expand/collapse cycles re-fetch the library, so throttle per library
+        // to avoid stacking identical toasts when the instance is unreachable.
+        showThrottledError(`Failed to fetch library ${element.libraryId}: ${message}`, `content:${element.libraryId}`);
         return [];
       }
     }

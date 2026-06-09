@@ -13,6 +13,7 @@ import {
   getRealmInstanceId,
 } from './sandbox-clone-helpers.js';
 import type {SandboxConfigProvider, SandboxInfo} from './sandbox-config.js';
+import {showThrottledError} from '../notify.js';
 
 const DEFAULT_ODS_HOST = 'admin.dx.commercecloud.salesforce.com';
 
@@ -34,6 +35,7 @@ export class RealmTreeItem extends vscode.TreeItem {
   readonly nodeType = 'realm' as const;
   constructor(readonly realm: string) {
     super(realm, vscode.TreeItemCollapsibleState.Collapsed);
+    this.id = `realm:${realm}`;
     this.contextValue = 'realm';
     this.iconPath = new vscode.ThemeIcon('server-environment');
     this.tooltip = `Realm: ${realm}`;
@@ -51,6 +53,7 @@ export class SandboxTreeItem extends vscode.TreeItem {
       ? `${sandbox.realm ?? ''}${sandbox.realm ? '-' : ''}${sandbox.instance}`
       : sandbox.id;
     super(label, vscode.TreeItemCollapsibleState.None);
+    this.id = `sandbox:${realm}:${sandbox.id}`;
 
     const display = computeSandboxDisplay(sandbox, isCloneSource);
     const rawState = (sandbox.state ?? 'unknown').toLowerCase();
@@ -231,12 +234,15 @@ export class SandboxTreeDataProvider implements vscode.TreeDataProvider<SandboxT
       return [];
     }
 
-    // Auto-add configured realm if list is empty (like content tree auto-adds contentLibrary)
+    // Auto-add configured realm if list is empty (like content tree auto-adds contentLibrary).
+    // The connection-step wizard now writes the derived realm directly to dw.json,
+    // so getDefaultRealm() returns it via the explicit `realm` field. We still
+    // fall back to the hostname prefix for legacy dw.json files without `realm:`.
     const realms = this.configProvider.getRealms();
     if (realms.length === 0) {
-      const configuredRealm = this.configProvider.getConfiguredRealm();
-      if (configuredRealm) {
-        this.configProvider.addRealm(configuredRealm);
+      const defaultRealm = this.configProvider.getDefaultRealm();
+      if (defaultRealm) {
+        this.configProvider.addRealm(defaultRealm);
       }
     }
 
@@ -264,8 +270,10 @@ export class SandboxTreeDataProvider implements vscode.TreeDataProvider<SandboxT
     }
 
     try {
+      // Use Window (status-bar) progress, not Notification — this fires on every refresh
+      // including background polls, and a toast every 10s is hostile UX.
       const sandboxes = await vscode.window.withProgress(
-        {location: vscode.ProgressLocation.Notification, title: `Fetching sandboxes for realm ${element.realm}...`},
+        {location: vscode.ProgressLocation.Window, title: `Fetching sandboxes for realm ${element.realm}`},
         async () => {
           const host = config.values.sandboxApiHost ?? DEFAULT_ODS_HOST;
           const oauthOptions = await configProvider.getImplicitAuthOptions();
@@ -297,7 +305,11 @@ export class SandboxTreeDataProvider implements vscode.TreeDataProvider<SandboxT
       );
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      vscode.window.showErrorMessage(`Sandboxes (${element.realm}): ${message}`);
+      // getRealmChildren runs on every expand AND every background poll tick
+      // (~every 10s while a realm has transitional sandboxes). When the
+      // instance/ODS is unreachable this would stack a toast per tick — throttle
+      // per realm so the failure surfaces once rather than as a stream.
+      showThrottledError(`Sandboxes (${element.realm}): ${message}`, `sandbox:${element.realm}`);
       return [];
     }
   }

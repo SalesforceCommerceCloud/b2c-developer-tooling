@@ -5,8 +5,6 @@
  */
 
 import {createTelemetry, Telemetry, type TelemetryAttributes} from '@salesforce/b2c-tooling-sdk/telemetry';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 import * as vscode from 'vscode';
 
 const TELEMETRY_PROJECT = 'b2c-vs-extension';
@@ -14,11 +12,6 @@ const SETTING_ENABLED = 'b2c-dx.telemetry.enabled';
 
 let instance: Telemetry | undefined;
 const usedCategories = new Set<FeatureCategory>();
-
-interface TelemetryPjson {
-  version: string;
-  telemetry?: {connectionString?: string};
-}
 
 /**
  * Broad feature categories used to bucket usage events. Keep this list short
@@ -34,9 +27,10 @@ export type FeatureCategory =
   | 'debugger'
   | 'scaffold'
   | 'cap'
-  | 'pageDesigner'
   | 'logs'
   | 'instance'
+  | 'cipAnalytics'
+  | 'scriptTypes';
   | 'cipAnalytics'
   | 'docsBrowser';
 
@@ -78,8 +72,7 @@ export function initTelemetry(context: vscode.ExtensionContext): void {
   if (!isVsCodeTelemetryEnabled()) return;
   if (!isExtensionTelemetryEnabled()) return;
 
-  const pjson = readPjson(context.extensionPath);
-  const connectionString = Telemetry.getConnectionString(pjson?.telemetry?.connectionString);
+  const connectionString = Telemetry.getConnectionString(__TELEMETRY_CONNECTION_STRING__ || undefined);
   if (!connectionString) return;
 
   // Run start() in the background. Events sent before start() resolves are
@@ -87,7 +80,7 @@ export function initTelemetry(context: vscode.ExtensionContext): void {
   const client = createTelemetry({
     project: TELEMETRY_PROJECT,
     appInsightsKey: connectionString,
-    version: pjson?.version,
+    version: __EXT_VERSION__,
     dataDir: context.globalStorageUri.fsPath,
     initialAttributes: {
       host: vscode.env.appName,
