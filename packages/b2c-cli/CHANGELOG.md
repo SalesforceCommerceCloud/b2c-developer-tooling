@@ -1,5 +1,11 @@
 # @salesforce/b2c-cli
 
+## 1.14.1
+
+### Patch Changes
+
+- [`76f1059`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/76f10593646b94b0f3560614ef63bf987ca0e184) - Fix the npm publish failing during `prepack`. `oclif manifest` defaults to `--jit`, which downloads each JIT plugin and reads its `oclif.manifest.json`; the `@salesforce/storefront-next-dev` JIT plugin does not ship that file, so manifest generation aborted and the CLI failed to publish. The prepack now runs `oclif manifest --no-jit`. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.14.0
 
 ### Minor Changes
