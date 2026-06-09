@@ -37,6 +37,26 @@ b2c job import ./my-site-data --show-log
 b2c job import existing-archive.zip --remote
 ```
 
+### Import Archives Larger Than the Instance Limit
+
+An instance rejects a single import archive above its size limit (typically 200 MB). Use `--split` on a directory import to import the data in multiple smaller parts:
+
+```bash
+# Split a large directory import into multiple archive parts
+b2c job import ./big-site-data --split
+
+# Tune the per-archive size limit (default 190mb; bare number is MiB)
+b2c job import ./big-site-data --split --max-size 150mb
+```
+
+How splitting works:
+
+- **Metadata/XML is imported first**, kept together in one archive when it fits (so internal references and dependency ordering resolve within a single import). If the XML alone is too large, it splits at top-level data-unit boundaries (`catalogs`, `libraries`, `sites`, `meta`, …) in dependency order — never splitting a single unit.
+- **Static assets** (files under a `static/` folder) are deferred into later archive parts, packed by compressed size. They attach to the catalogs/libraries created by the metadata import.
+- Parts import sequentially; the command stops on the first failure.
+
+If a single file, or a single data unit's XML, is larger than `--max-size` on its own, the command errors (a file is never split across archives). A normal directory import that exceeds the limit warns and recommends `--split`. `--split` cannot be combined with `--remote`, subset paths, or `--no-wait`.
+
 ## Export Commands
 
 ```bash

@@ -12,25 +12,74 @@ import type {CommerceFeatureState} from './list.js';
 
 const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/SalesforceCommerceCloud/commerce-apps/main';
 
+/**
+ * Options for pulling Commerce Apps from an instance or GitHub.
+ *
+ * When pulling apps, the SDK will attempt to fetch from the B2C instance first,
+ * then fall back to the official Commerce Apps GitHub repository.
+ */
 export interface PullCommerceAppsOptions {
+  /** Output directory for extracted Commerce Apps (defaults to 'commerce-apps' in current working directory). */
   outputDir?: string;
 }
 
+/**
+ * Source where a pulled app was obtained.
+ * - `'instance'`: App was downloaded from the B2C instance via WebDAV.
+ * - `'github'`: App was downloaded from the GitHub repository (fallback).
+ */
 export type PullSource = 'instance' | 'github';
 
+/**
+ * Details of a successfully pulled Commerce App.
+ */
 export interface PulledApp {
+  /** Feature name (app ID). */
   featureName: string;
+  /** Version ID of the pulled app. */
   version: string;
+  /** Domain of the app (e.g., 'tax', 'shipping'). */
   domain: string;
+  /** Source where the app was obtained (`'instance'` or `'github'`). */
   source: PullSource;
+  /** Absolute path where the app was extracted. */
   extractedPath: string;
 }
 
+/**
+ * Result of pulling Commerce Apps from an instance or GitHub.
+ */
 export interface PullCommerceAppsResult {
+  /** Successfully pulled apps with extraction details. */
   pulled: PulledApp[];
+  /** Apps that failed to pull with error details. */
   failed: Array<{featureName: string; error: string}>;
 }
 
+/**
+ * Pulls installed Commerce Apps from a B2C Commerce instance or GitHub repository.
+ *
+ * Attempts to download installed app packages from WebDAV on the instance first,
+ * with fallback to the official GitHub repository if not found on the instance.
+ * Extracts the downloaded zip archives to local directories.
+ *
+ * @param instance - The B2C Commerce instance to pull apps from.
+ * @param features - Array of CommerceFeatureState objects representing installed apps.
+ * @param options - Pull configuration options (e.g., outputDir for extraction).
+ * @returns A promise resolving to a result object containing successfully pulled apps and any failures.
+ *
+ * @example
+ * ```typescript
+ * const result = await listInstalledApps(instance);
+ * const pullResult = await pullCommerceApps(instance, result.features, {
+ *   outputDir: './commerce-apps',
+ * });
+ * console.log(`Successfully pulled ${pullResult.pulled.length} app(s)`);
+ * if (pullResult.failed.length > 0) {
+ *   console.error('Failed to pull apps:', pullResult.failed);
+ * }
+ * ```
+ */
 export async function pullCommerceApps(
   instance: B2CInstance,
   features: CommerceFeatureState[],

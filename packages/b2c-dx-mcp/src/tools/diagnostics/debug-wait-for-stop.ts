@@ -38,7 +38,7 @@ export function createDebugWaitForStopTool(
         'Wait for a thread to halt at a breakpoint or step. ' +
         'Returns immediately if a thread is already halted; otherwise BLOCKS until a halt occurs or the timeout expires. ' +
         'Preferred non-blocking alternative: after debug_set_breakpoints, trigger the request yourself, then use debug_list_sessions to check halted_threads before calling debug_get_stack/debug_get_variables.',
-      toolsets: ['CARTRIDGES', 'SCAPI'],
+      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
         timeout_ms: z

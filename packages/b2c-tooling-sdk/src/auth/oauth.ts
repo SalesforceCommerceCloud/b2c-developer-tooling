@@ -99,11 +99,37 @@ export function invalidateCachedOAuthToken(cacheKey: string): void {
   ACCESS_TOKEN_CACHE.delete(cacheKey);
 }
 
+/**
+ * OAuth 2.0 Client Credentials authentication strategy.
+ *
+ * Implements the client credentials flow for automated/server-side authentication
+ * with no user interaction required. Automatically manages token caching, expiration,
+ * and 401 retry logic with single-flight token requests to prevent thundering herd
+ * on the token endpoint.
+ *
+ * @example
+ * ```typescript
+ * import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk';
+ *
+ * const auth = new OAuthStrategy({
+ *   clientId: 'your-client-id',
+ *   clientSecret: 'your-client-secret',
+ *   scopes: ['sfcc.products'],
+ * });
+ *
+ * const response = await auth.fetch('https://api.example.com/products');
+ * ```
+ */
 export class OAuthStrategy implements AuthStrategy {
   private accountManagerHost: string;
   private _hasHadSuccess = false;
   private cacheKey: string;
 
+  /**
+   * Creates a new OAuthStrategy instance with the provided OAuth configuration.
+   *
+   * @param config - OAuth client credentials and optional configuration
+   */
   constructor(private config: OAuthConfig) {
     this.accountManagerHost = config.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST;
     this.cacheKey = getOAuthCacheKey(
@@ -114,6 +140,18 @@ export class OAuthStrategy implements AuthStrategy {
     );
   }
 
+  /**
+   * Performs a fetch request with OAuth bearer token authentication.
+   *
+   * Automatically injects the Authorization header and client ID header with a valid
+   * access token. Implements 401 retry logic: if a previously-successful request
+   * returns 401, invalidates the cached token and retries once with a fresh token.
+   * Does not retry on initial 401 to avoid retrying with bad credentials.
+   *
+   * @param url - The URL to fetch
+   * @param init - Optional fetch init options (headers, body, method, etc.)
+   * @returns The fetch response
+   */
   async fetch(url: string, init: FetchInit = {}): Promise<Response> {
     const token = await this.getAccessToken();
 

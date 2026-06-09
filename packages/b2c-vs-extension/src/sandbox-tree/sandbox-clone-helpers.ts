@@ -10,8 +10,20 @@ export interface SandboxLike {
   realm?: string;
   instance?: string;
   state?: string;
+  profile?: string;
+  resourceProfile?: string;
   clonedFrom?: string;
 }
+
+export const CLONE_PROFILES = ['medium', 'large', 'xlarge', 'xxlarge'] as const;
+export type CloneProfile = (typeof CLONE_PROFILES)[number];
+
+const CLONE_PROFILE_RANK: Record<CloneProfile, number> = {
+  medium: 0,
+  large: 1,
+  xlarge: 2,
+  xxlarge: 3,
+};
 
 /** States of a cloned sandbox that indicate the clone is still being set up from its source. */
 export const CLONE_IN_PROGRESS_STATES = new Set(['cloning', 'creating', 'failed']);
@@ -21,6 +33,37 @@ export const TRANSITIONAL_STATES = new Set(['creating', 'starting', 'stopping', 
 
 export function getRealmInstanceId(s: SandboxLike): string | undefined {
   return s.realm && s.instance ? `${s.realm}-${s.instance}` : undefined;
+}
+
+export function normalizeCloneProfile(profile: string | undefined): CloneProfile | undefined {
+  const normalized = profile?.trim().toLowerCase();
+  if (!normalized) return undefined;
+  return CLONE_PROFILES.find((p) => p === normalized);
+}
+
+export function getSandboxSourceProfile(sandbox: Pick<SandboxLike, 'profile' | 'resourceProfile'>): string | undefined {
+  return sandbox.profile ?? sandbox.resourceProfile;
+}
+
+export function getAllowedCloneTargetProfiles(sourceProfile: string | undefined): CloneProfile[] {
+  const normalizedSource = normalizeCloneProfile(sourceProfile);
+  if (!normalizedSource) return [...CLONE_PROFILES];
+  const sourceRank = CLONE_PROFILE_RANK[normalizedSource];
+  return CLONE_PROFILES.filter((p) => CLONE_PROFILE_RANK[p] >= sourceRank);
+}
+
+export function getExplicitCloneTargetProfiles(sourceProfile: string | undefined): CloneProfile[] {
+  const allowedProfiles = getAllowedCloneTargetProfiles(sourceProfile);
+  const normalizedSource = normalizeCloneProfile(sourceProfile);
+  if (!normalizedSource) return allowedProfiles;
+  return allowedProfiles.filter((p) => p !== normalizedSource);
+}
+
+export function isCloneProfileDowngrade(sourceProfile: string | undefined, targetProfile: string | undefined): boolean {
+  const normalizedSource = normalizeCloneProfile(sourceProfile);
+  const normalizedTarget = normalizeCloneProfile(targetProfile);
+  if (!normalizedSource || !normalizedTarget) return false;
+  return CLONE_PROFILE_RANK[normalizedTarget] < CLONE_PROFILE_RANK[normalizedSource];
 }
 
 /** Return the set of realm-instance identifiers that are currently a source of an in-progress clone. */
