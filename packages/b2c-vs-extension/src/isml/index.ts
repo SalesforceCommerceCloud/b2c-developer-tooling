@@ -405,14 +405,7 @@ function registerHover(context: vscode.ExtensionContext): void {
         }
       }
 
-      // Append "Open in Docs Browser" link. The id mirrors how the docs index
-      // ids ISML tags (always lowercase, no angle brackets).
-      const docsId = `isml:${info.tagName.toLowerCase()}`;
-      const args = encodeURIComponent(JSON.stringify([docsId]));
-      parts.push('', `[Open in B2C Docs Browser](command:b2c-dx.docs.open?${args})`);
-
       const contents = new vscode.MarkdownString(parts.join('\n'));
-      contents.isTrusted = true;
       return new vscode.Hover(contents);
     },
   };

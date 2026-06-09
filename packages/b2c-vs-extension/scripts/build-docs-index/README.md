@@ -12,7 +12,11 @@ Output goes to `packages/b2c-vs-extension/resources/docs/`:
 | `script-api.json` | Full `DocEntry[]` for every `dw.*` class, interface, enum, and member. |
 | `script-api-search.json` | Lightweight dictionary used by the search UI (no descriptions). |
 
-In later phases the same script will also emit `isml.json` and `bm.json`.
+ISML and Business Manager support are tracked as separate follow-up work.
+They were intentionally left out of v1 because they require an authoritative
+upstream source (the official ISML grammar / Salesforce-owned BM topic
+content) before we ship anything. Hand-curated content was rejected during
+review.
 
 ## How to run
 
@@ -32,11 +36,9 @@ delta, which catches:
 
 ## Source of truth
 
-| Source | Phase | Where it comes from |
-| --- | --- | --- |
-| Script API (`dw.*`) | 1 | `packages/b2c-script-types/types/dw/**/*.d.ts` JSDoc |
-| ISML tags | 4 | `packages/b2c-vs-extension/src/isml/hover.ts` + curated YAML |
-| Business Manager topics | 4 | Curated Markdown in this folder |
+| Source | Where it comes from |
+| --- | --- |
+| Script API (`dw.*`) | `packages/b2c-script-types/types/dw/**/*.d.ts` JSDoc — Salesforce-authored, vendored from the platform docs build |
 
 ## Schema
 

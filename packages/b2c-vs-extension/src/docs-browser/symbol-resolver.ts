@@ -68,3 +68,40 @@ export function findIsmlTagAtOffset(text: string, offset: number): string | unde
   }
   return undefined;
 }
+
+/**
+ * Derive a Script API qualified name from a Go-to-Definition target.
+ *
+ * `b2c-script-types` ships one class/interface/enum per file under
+ * `types/dw/**`. The file path is therefore canonical:
+ *
+ *     types/dw/order/BasketMgr.d.ts  ->  dw.order.BasketMgr
+ *
+ * If the cursor identifier matches the file's basename (the class is being
+ * referenced directly), we return just the class qualified name. Otherwise
+ * the identifier is a member and we append it:
+ *
+ *     ('.../types/dw/order/BasketMgr.d.ts', 'BasketMgr')        -> dw.order.BasketMgr
+ *     ('.../types/dw/order/BasketMgr.d.ts', 'getCurrentBasket') -> dw.order.BasketMgr.getCurrentBasket
+ *     ('.../some/other/path.ts',           'foo')               -> undefined
+ *
+ * Accepts both forward-slash and backslash paths so it works on Windows.
+ */
+export function deriveScriptApiQualifiedName(
+  definitionPath: string,
+  identifier: string | undefined,
+): string | undefined {
+  if (!definitionPath) return undefined;
+  const normalized = definitionPath.replace(/\\/g, '/');
+  const match = /\/types\/(dw\/(?:[^/]+\/)*[^/]+)\.d\.ts$/.exec(normalized);
+  if (!match) return undefined;
+
+  const slashPath = match[1]; // e.g. dw/order/BasketMgr
+  const className = slashPath.replace(/\//g, '.'); // dw.order.BasketMgr
+  const fileBasename = slashPath.split('/').pop();
+
+  if (!identifier || identifier === fileBasename) {
+    return className;
+  }
+  return `${className}.${identifier}`;
+}

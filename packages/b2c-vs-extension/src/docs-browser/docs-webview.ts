@@ -10,7 +10,7 @@ import * as vscode from 'vscode';
 
 import type {DocsIndexLoader} from './docs-index.js';
 import type {DocsRecents} from './docs-recents.js';
-import {renderDocEntryHtml} from './docs-entry-renderer.js';
+import {type EntryChildLookup, type MemberRow, renderDocEntryWithMembersHtml} from './docs-entry-renderer.js';
 import {searchDocs} from './docs-search.js';
 import type {IndexManifest, SearchEntry} from './types.js';
 
@@ -111,7 +111,7 @@ export class DocsWebviewManager implements vscode.Disposable {
       type: 'showEntry',
       id,
       qualifiedName: search.qualifiedName,
-      html: renderDocEntryHtml(full),
+      html: renderDocEntryWithMembersHtml(full, this.buildChildLookup()),
     });
     try {
       await this.recents.push(id);
@@ -174,6 +174,28 @@ export class DocsWebviewManager implements vscode.Disposable {
 
   private postEmpty(): void {
     this.post({type: 'showEmpty', recents: this.collectRecentPayloads()});
+  }
+
+  private buildChildLookup(): EntryChildLookup {
+    return {
+      childrenOf: (parentId: string): MemberRow[] => {
+        const children = this.loader.getSearchEntries().filter((entry) => entry.parentId === parentId);
+        const rows: MemberRow[] = [];
+        for (const child of children) {
+          const full = this.loader.getFullEntry(child.id);
+          rows.push({
+            id: child.id,
+            title: child.title,
+            kind: child.kind,
+            signature: full?.signature,
+            description: full?.description,
+            deprecated: Boolean(full?.deprecated),
+            sinceApiVersion: full?.sinceApiVersion,
+          });
+        }
+        return rows;
+      },
+    };
   }
 
   private collectRecentPayloads(): SearchHitPayload[] {

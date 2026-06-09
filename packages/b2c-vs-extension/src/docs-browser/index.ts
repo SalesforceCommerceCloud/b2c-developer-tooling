@@ -11,7 +11,11 @@ import {DocsRecents} from './docs-recents.js';
 import {searchDocs} from './docs-search.js';
 import {DocsTreeProvider} from './docs-tree-provider.js';
 import {DocsWebviewManager} from './docs-webview.js';
-import {extractIdentifierAtOffset, extractScriptApiQualifiedName, findIsmlTagAtOffset} from './symbol-resolver.js';
+import {
+  deriveScriptApiQualifiedName,
+  extractIdentifierAtOffset,
+  extractScriptApiQualifiedName,
+} from './symbol-resolver.js';
 
 /**
  * Phase 5 surface:
@@ -66,15 +70,14 @@ export function registerDocsBrowser(context: vscode.ExtensionContext, log: vscod
 }
 
 /**
- * Right-click handler. Picks the best target depending on language:
+ * Right-click handler for JavaScript/TypeScript editors. Resolves the symbol
+ * under the cursor to a Script API entry and opens the docs panel at that
+ * entry. If nothing resolves, opens the search quick-pick prefilled with the
+ * best candidate string so the user has a one-keystroke recovery path.
  *
- *   - ISML  -> `findIsmlTagAtOffset` -> `isml:<tag>` lookup.
- *   - JS/TS -> ask the hover provider, extract `dw.*` qualified name, look up
- *              by qualified name. If that fails, fall back to the bare identifier
- *              (often a class name, e.g. `BasketMgr`).
- *
- * If nothing resolves, opens the search quick-pick prefilled with the best
- * candidate string so the user has a one-keystroke recovery path.
+ * ISML editor support is intentionally not registered while the index is
+ * Script-API-only; revisit when ISML data is sourced from the official ISML
+ * grammar (see follow-up work).
  */
 async function runViewSymbolDocs(
   loader: DocsIndexLoader,
@@ -84,9 +87,7 @@ async function runViewSymbolDocs(
 ): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
-    await vscode.window.showInformationMessage(
-      'B2C DX Docs: open a JavaScript, TypeScript, or ISML file to look up docs.',
-    );
+    await vscode.window.showInformationMessage('B2C DX Docs: open a JavaScript or TypeScript file to look up docs.');
     return;
   }
 
@@ -94,34 +95,40 @@ async function runViewSymbolDocs(
   const position = editor.selection.active;
   const offset = document.offsetAt(position);
 
-  if (document.languageId === 'isml') {
-    const tagName = findIsmlTagAtOffset(document.getText(), offset);
-    if (tagName) {
-      const id = `isml:${tagName.toLowerCase()}`;
-      if (loader.getSearchEntryById(id)) {
-        await webviewManager.showEntry(id);
-        return;
-      }
-      // Tag not in the index — open search prefilled with the bare name.
-      await runSearch(loader, webviewManager, recents, tagName);
-      return;
-    }
-    await runSearch(loader, webviewManager, recents, '');
-    return;
-  }
-
-  // JS/TS path.
+  // JS/TS path. Resolve in order of reliability:
+  //
+  //   1. Go-to-Definition  → `b2c-script-types` ships one declaration per
+  //      file, so the definition file path uniquely identifies the class.
+  //      Combined with the bare identifier under the cursor, this maps
+  //      cleanly to a single entry.
+  //
+  //   2. Hover scan        → fallback when the symbol has no Go-to-Definition
+  //      target (e.g. cartridge-local types). Less reliable because a JSDoc
+  //      body may mention unrelated `dw.*` symbols.
+  //
+  //   3. Bare identifier   → final fallback, opens the search picker so the
+  //      user can pick the right entry themselves.
   const word = extractIdentifierAtOffset(document.getText(), offset);
   let qualified: string | undefined;
+
   try {
-    const hovers =
-      (await vscode.commands.executeCommand<vscode.Hover[]>('vscode.executeHoverProvider', document.uri, position)) ??
-      [];
-    const text = collectHoverText(hovers);
-    qualified = extractScriptApiQualifiedName(text);
+    const definitions =
+      (await vscode.commands.executeCommand<Array<vscode.Location | vscode.LocationLink>>(
+        'vscode.executeDefinitionProvider',
+        document.uri,
+        position,
+      )) ?? [];
+    for (const def of definitions) {
+      const targetUri = 'targetUri' in def ? def.targetUri : def.uri;
+      const candidate = deriveScriptApiQualifiedName(targetUri.fsPath, word);
+      if (candidate) {
+        qualified = candidate;
+        break;
+      }
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    log.appendLine(`B2C DX docs: hover lookup failed: ${message}`);
+    log.appendLine(`B2C DX docs: definition lookup failed: ${message}`);
   }
 
   if (qualified) {
@@ -132,18 +139,75 @@ async function runViewSymbolDocs(
     }
   }
 
-  // Try the bare identifier as a fallback. Mostly useful when the cursor is on
-  // a class name or method whose hover content didn't include a qualifier.
-  if (word) {
-    const entry = loader.findEntryByQualifiedName(word) ?? findBestSearchHit(loader, word);
-    if (entry) {
-      await webviewManager.showEntry(entry.id);
-      return;
+  // Hover-scan fallback.
+  if (!qualified) {
+    try {
+      const hovers =
+        (await vscode.commands.executeCommand<vscode.Hover[]>('vscode.executeHoverProvider', document.uri, position)) ??
+        [];
+      const text = collectHoverText(hovers);
+      qualified = extractScriptApiQualifiedName(text);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      log.appendLine(`B2C DX docs: hover lookup failed: ${message}`);
+    }
+    if (qualified) {
+      const entry = loader.findEntryByQualifiedName(qualified);
+      if (entry) {
+        await webviewManager.showEntry(entry.id);
+        return;
+      }
     }
   }
 
-  // Final fallback: open search prefilled with whichever candidate we have.
-  await runSearch(loader, webviewManager, recents, qualified ?? word ?? '');
+  // Nothing resolved — explain why and offer search as the recovery path.
+  await reportUnresolved({
+    loader,
+    webviewManager,
+    recents,
+    cursorWord: word,
+    qualified,
+  });
+}
+
+/**
+ * Show a one-click info toast when the cursor doesn't resolve to a Script
+ * API entry. The message tries to be specific:
+ *
+ *   - No identifier under cursor   → "Place the cursor on a symbol …"
+ *   - Identifier is not in dw.*    → "<word> is not in the B2C Script API."
+ *   - dw.* qualifier but no match  → "<dw.foo.Bar> isn't in this docs index." (rare; stale index)
+ *
+ * Either path offers a "Search Docs" button that opens the picker prefilled
+ * with the best candidate so the user gets one-keystroke recovery.
+ */
+async function reportUnresolved(args: {
+  loader: DocsIndexLoader;
+  webviewManager: DocsWebviewManager;
+  recents: DocsRecents;
+  cursorWord: string | undefined;
+  qualified: string | undefined;
+}): Promise<void> {
+  const {loader, webviewManager, recents, cursorWord, qualified} = args;
+
+  let message: string;
+  if (qualified) {
+    message = `B2C Docs: ${qualified} is not in this docs index.`;
+  } else if (cursorWord) {
+    message = `B2C Docs: ${cursorWord} is not in the B2C Script API.`;
+  } else {
+    message = 'B2C Docs: place the cursor on a symbol to look up docs.';
+  }
+
+  const initialQuery = qualified ?? cursorWord ?? '';
+  const actions: string[] = [];
+  if (initialQuery) actions.push('Search Docs');
+  actions.push('Dismiss');
+
+  const choice = await vscode.window.showInformationMessage(message, ...actions);
+  if (choice === 'Search Docs') {
+    await runSearch(loader, webviewManager, recents, initialQuery);
+  }
 }
 
 function collectHoverText(hovers: vscode.Hover[]): string {
@@ -162,12 +226,6 @@ function collectHoverText(hovers: vscode.Hover[]): string {
     }
   }
   return parts.join('\n');
-}
-
-function findBestSearchHit(loader: DocsIndexLoader, query: string) {
-  const entries = loader.getSearchEntries();
-  const hits = searchDocs(entries, query, {limit: 1});
-  return hits[0]?.entry;
 }
 
 async function runSearch(
@@ -191,7 +249,7 @@ async function runSearch(
 
   const quickPick = vscode.window.createQuickPick<DocsQuickPickItem>();
   quickPick.title = `B2C DX Docs · Script API v${manifest.scriptApiVersion}`;
-  quickPick.placeholder = 'Search Script API, ISML, or Business Manager docs…';
+  quickPick.placeholder = 'Search Script API classes, methods, properties…';
   quickPick.matchOnDescription = true;
   quickPick.matchOnDetail = true;
 

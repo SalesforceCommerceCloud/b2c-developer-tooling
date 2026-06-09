@@ -11,12 +11,18 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import {renderDocEntryHtml} from '../docs-browser/docs-entry-renderer.js';
+import {
+  type EntryChildLookup,
+  type MemberRow,
+  renderDocEntryHtml,
+  renderDocEntryWithMembersHtml,
+} from '../docs-browser/docs-entry-renderer.js';
 import {DocsIndexLoader} from '../docs-browser/docs-index.js';
 import {DocsRecents, type RecentsStorage} from '../docs-browser/docs-recents.js';
 import {searchDocs} from '../docs-browser/docs-search.js';
 import {escapeHtml, renderInline, renderMarkdown} from '../docs-browser/markdown.js';
 import {
+  deriveScriptApiQualifiedName,
   extractIdentifierAtOffset,
   extractScriptApiQualifiedName,
   findIsmlTagAtOffset,
@@ -497,137 +503,143 @@ suite('renderDocEntryHtml', () => {
   });
 });
 
-suite('Loader: ISML and BM sources', () => {
-  let harness: TestHarness;
-  setup(() => {
-    harness = createHarness();
-  });
-  teardown(() => disposeHarness(harness));
+suite('renderDocEntryWithMembersHtml', () => {
+  const classEntry: DocEntry = {
+    id: 'script-api:dw/order/BasketMgr',
+    source: 'script-api',
+    kind: 'class',
+    title: 'BasketMgr',
+    qualifiedName: 'dw.order.BasketMgr',
+    parentId: 'script-api:dw/order',
+    packagePath: 'dw/order',
+    description: 'Provides static helper methods for managing baskets.',
+  };
 
-  test('appends ISML and BM search entries to the dictionary', () => {
-    const docsDir = path.join(harness.tmpRoot, 'resources', 'docs');
-    const manifest: IndexManifest = {
-      schemaVersion: 1,
-      scriptApiVersion: '26.7.0',
-      ismlVersion: '1.0.0',
-      bmVersion: 'abc1234',
-      generatedAt: '1970-01-01T00:00:00.000Z',
-      counts: {scriptApi: 1, isml: 1, bm: 1},
-      checksum: 'test',
+  const memberRows: MemberRow[] = [
+    {
+      id: 'script-api:dw/order/BasketMgr#OK',
+      title: 'BasketMgr.OK',
+      kind: 'constant',
+      signature: 'static OK: number',
+      description: 'OK status.',
+    },
+    {
+      id: 'script-api:dw/order/BasketMgr#baskets',
+      title: 'BasketMgr.baskets',
+      kind: 'property',
+      signature: 'static readonly baskets: List<Basket>',
+      description: 'All open baskets.',
+    },
+    {
+      id: 'script-api:dw/order/BasketMgr#getCurrentBasket',
+      title: 'BasketMgr.getCurrentBasket',
+      kind: 'method',
+      signature: 'static getCurrentBasket(): Basket | null',
+      description: 'Returns the current basket or null.',
+    },
+    {
+      id: 'script-api:dw/order/BasketMgr#getCurrentOrNewBasket',
+      title: 'BasketMgr.getCurrentOrNewBasket',
+      kind: 'method',
+      signature: 'static getCurrentOrNewBasket(): Basket',
+      description: 'Returns the current basket or creates a new one.',
+      sinceApiVersion: '21.10',
+    },
+    {
+      id: 'script-api:dw/order/BasketMgr#deletedMethod',
+      title: 'BasketMgr.deletedMethod',
+      kind: 'method',
+      signature: 'static deletedMethod(): void',
+      description: 'Old API.',
+      deprecated: true,
+    },
+  ];
+
+  function makeLookup(rows: readonly MemberRow[]): EntryChildLookup {
+    return {childrenOf: () => rows};
+  }
+
+  test('renders Methods, Properties, and Constants tables for a class', () => {
+    const html = renderDocEntryWithMembersHtml(classEntry, makeLookup(memberRows));
+    assert.ok(html.includes('<h2>Methods</h2>'));
+    assert.ok(html.includes('<h2>Properties</h2>'));
+    assert.ok(html.includes('<h2>Constants</h2>'));
+  });
+
+  test('orders sections deterministically: Constants, Properties, Methods', () => {
+    const html = renderDocEntryWithMembersHtml(classEntry, makeLookup(memberRows));
+    const constantsAt = html.indexOf('<h2>Constants</h2>');
+    const propertiesAt = html.indexOf('<h2>Properties</h2>');
+    const methodsAt = html.indexOf('<h2>Methods</h2>');
+    assert.ok(constantsAt >= 0 && propertiesAt > constantsAt && methodsAt > propertiesAt);
+  });
+
+  test('member rows are clickable and carry data-doc-entry-id', () => {
+    const html = renderDocEntryWithMembersHtml(classEntry, makeLookup(memberRows));
+    assert.ok(
+      html.includes('data-doc-entry-id="script-api:dw/order/BasketMgr#getCurrentBasket"'),
+      'getCurrentBasket row should carry its id',
+    );
+    assert.ok(html.includes('class="entry-member-row"'));
+  });
+
+  test('method table shows the full signature, not just the title', () => {
+    const html = renderDocEntryWithMembersHtml(classEntry, makeLookup(memberRows));
+    assert.ok(html.includes('static getCurrentBasket(): Basket | null'));
+  });
+
+  test('shows deprecated badge for deprecated members', () => {
+    const html = renderDocEntryWithMembersHtml(classEntry, makeLookup(memberRows));
+    // Look for badge specifically inside a row body, not the entry header.
+    assert.ok(html.includes('entry-deprecated-badge'));
+    assert.ok(html.includes('deletedMethod'));
+  });
+
+  test('shows since badge for members with sinceApiVersion', () => {
+    const html = renderDocEntryWithMembersHtml(classEntry, makeLookup(memberRows));
+    assert.ok(html.includes('since 21.10'));
+  });
+
+  test('skips empty sections when a kind has no members', () => {
+    const onlyMethods = memberRows.filter((row) => row.kind === 'method');
+    const html = renderDocEntryWithMembersHtml(classEntry, makeLookup(onlyMethods));
+    assert.ok(!html.includes('<h2>Properties</h2>'));
+    assert.ok(!html.includes('<h2>Constants</h2>'));
+    assert.ok(html.includes('<h2>Methods</h2>'));
+  });
+
+  test('falls back to entry-only render for non-container kinds', () => {
+    const methodEntry: DocEntry = {
+      id: 'script-api:dw/order/BasketMgr#getCurrentBasket',
+      source: 'script-api',
+      kind: 'method',
+      title: 'BasketMgr.getCurrentBasket',
+      qualifiedName: 'dw.order.BasketMgr.getCurrentBasket',
+      description: 'Returns the current basket.',
     };
-    fs.writeFileSync(path.join(docsDir, 'manifest.json'), JSON.stringify(manifest));
-    fs.writeFileSync(
-      path.join(docsDir, 'script-api-search.json'),
-      JSON.stringify([
-        {id: 'script-api:dw/order/BasketMgr', title: 'BasketMgr', qualifiedName: 'dw.order.BasketMgr', kind: 'class'},
+    const html = renderDocEntryWithMembersHtml(methodEntry, makeLookup(memberRows));
+    assert.ok(!html.includes('<h2>Methods</h2>'));
+    assert.ok(!html.includes('<h2>Properties</h2>'));
+  });
+
+  test('produces no member sections when the lookup returns empty', () => {
+    const html = renderDocEntryWithMembersHtml(classEntry, makeLookup([]));
+    assert.ok(!html.includes('<h2>Methods</h2>'));
+    assert.ok(!html.includes('<h2>Properties</h2>'));
+    assert.ok(!html.includes('<h2>Constants</h2>'));
+  });
+
+  test('member rows sort alphabetically by title within a section', () => {
+    const out = renderDocEntryWithMembersHtml(
+      classEntry,
+      makeLookup([
+        {id: 'script-api:x#z', title: 'BasketMgr.zMethod', kind: 'method', signature: 'static zMethod()'},
+        {id: 'script-api:x#a', title: 'BasketMgr.aMethod', kind: 'method', signature: 'static aMethod()'},
       ]),
     );
-    fs.writeFileSync(
-      path.join(docsDir, 'isml-search.json'),
-      JSON.stringify([{id: 'isml:isloop', title: '<isloop>', qualifiedName: 'isml.isloop', kind: 'tag'}]),
-    );
-    fs.writeFileSync(
-      path.join(docsDir, 'bm-search.json'),
-      JSON.stringify([{id: 'bm:jobs', title: 'Jobs', qualifiedName: 'bm.jobs', kind: 'topic'}]),
-    );
-
-    const loader = new DocsIndexLoader(harness.context as vscode.ExtensionContext, harness.log);
-    const ids = loader.getSearchEntries().map((entry) => entry.id);
-    assert.ok(ids.includes('script-api:dw/order/BasketMgr'));
-    assert.ok(ids.includes('isml:isloop'));
-    assert.ok(ids.includes('bm:jobs'));
-    loader.dispose();
-  });
-});
-
-suite('Build script: ISML', () => {
-  let tmpRoot: string;
-  setup(() => {
-    tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-dx-isml-build-'));
-  });
-  teardown(() => {
-    fs.rmSync(tmpRoot, {recursive: true, force: true});
-  });
-
-  test('produces a tag entry with attributes and tags', async () => {
-    const sourcePath = path.join(tmpRoot, 'isml-tags.json');
-    fs.writeFileSync(
-      sourcePath,
-      JSON.stringify({
-        version: '0.0.1',
-        tags: [
-          {
-            name: 'iscustom',
-            summary: 'Custom test tag.',
-            syntax: '<iscustom value="x"/>',
-            attributes: [{name: 'value', required: true, description: 'Some value.'}],
-            tips: ['Use sparingly.'],
-            examples: ['<iscustom value="hello"/>'],
-          },
-        ],
-      }),
-    );
-
-    // The build script is a sibling of the runtime; load via dynamic import.
-    const moduleUrl = new URL(
-      '../../scripts/build-docs-index/build-isml.mjs',
-      // import.meta.url at runtime points at out/test/<file>.js
-      // — climb up to the package root and then to the script.
-      // Mocha's CommonJS-compiled file uses __filename so we re-resolve.
-      import.meta.url,
-    ).href;
-
-    const built = (await import(moduleUrl)) as {
-      buildIsmlIndex: (opts: {sourcePath: string}) => {
-        entries: Array<{id: string; attributes?: unknown[]; tags?: string[]}>;
-        version: string;
-      };
-    };
-    const result = built.buildIsmlIndex({sourcePath});
-    assert.strictEqual(result.entries.length, 1);
-    const [entry] = result.entries;
-    assert.strictEqual(entry.id, 'isml:iscustom');
-    assert.ok(Array.isArray(entry.attributes));
-    assert.strictEqual((entry.attributes ?? []).length, 1);
-    assert.strictEqual(result.version, '0.0.1');
-    assert.ok((entry.tags ?? []).includes('isml'));
-  });
-});
-
-suite('Build script: BM frontmatter parser', () => {
-  test('parses scalars and arrays', async () => {
-    const moduleUrl = new URL('../../scripts/build-docs-index/build-bm.mjs', import.meta.url).href;
-    const mod = (await import(moduleUrl)) as {
-      parseFrontmatter: (
-        raw: string,
-        fileName: string,
-      ) => {frontmatter: Record<string, string | string[]>; body: string};
-    };
-    const {frontmatter, body} = mod.parseFrontmatter(
-      [
-        '---',
-        'id: jobs',
-        'title: Jobs',
-        'category: scheduling',
-        'tags: [job, batch, "schedule item"]',
-        '---',
-        '',
-        'Body text.',
-      ].join('\n'),
-      'jobs.md',
-    );
-    assert.strictEqual(frontmatter.id, 'jobs');
-    assert.strictEqual(frontmatter.title, 'Jobs');
-    assert.deepStrictEqual(frontmatter.tags, ['job', 'batch', 'schedule item']);
-    assert.ok(body.includes('Body text.'));
-  });
-
-  test('throws on missing frontmatter delimiter', async () => {
-    const moduleUrl = new URL('../../scripts/build-docs-index/build-bm.mjs', import.meta.url).href;
-    const mod = (await import(moduleUrl)) as {
-      parseFrontmatter: (raw: string, fileName: string) => unknown;
-    };
-    assert.throws(() => mod.parseFrontmatter('no frontmatter here', 'broken.md'));
+    const aAt = out.indexOf('aMethod');
+    const zAt = out.indexOf('zMethod');
+    assert.ok(aAt > 0 && zAt > aAt, `expected aMethod before zMethod, got aAt=${aAt} zAt=${zAt}`);
   });
 });
 
@@ -680,6 +692,46 @@ suite('Symbol resolver', () => {
     const text = '<isloop items="x"></isloop>';
     const offset = text.indexOf('items');
     assert.strictEqual(findIsmlTagAtOffset(text, offset), undefined);
+  });
+
+  test('deriveScriptApiQualifiedName maps a class file to the class name', () => {
+    assert.strictEqual(
+      deriveScriptApiQualifiedName('/abs/types/dw/order/BasketMgr.d.ts', 'BasketMgr'),
+      'dw.order.BasketMgr',
+    );
+  });
+
+  test('deriveScriptApiQualifiedName appends member identifier', () => {
+    assert.strictEqual(
+      deriveScriptApiQualifiedName('/abs/types/dw/order/BasketMgr.d.ts', 'getCurrentBasket'),
+      'dw.order.BasketMgr.getCurrentBasket',
+    );
+  });
+
+  test('deriveScriptApiQualifiedName handles nested packages', () => {
+    assert.strictEqual(
+      deriveScriptApiQualifiedName('/abs/types/dw/system/Site.d.ts', 'getCurrent'),
+      'dw.system.Site.getCurrent',
+    );
+  });
+
+  test('deriveScriptApiQualifiedName tolerates Windows backslashes', () => {
+    assert.strictEqual(
+      deriveScriptApiQualifiedName(String.raw`C:\repo\types\dw\order\BasketMgr.d.ts`, 'getCurrentBasket'),
+      'dw.order.BasketMgr.getCurrentBasket',
+    );
+  });
+
+  test('deriveScriptApiQualifiedName returns undefined for non-script-types paths', () => {
+    assert.strictEqual(deriveScriptApiQualifiedName('/some/cartridge/scripts/helpers/foo.js', 'bar'), undefined);
+    assert.strictEqual(deriveScriptApiQualifiedName('', 'BasketMgr'), undefined);
+  });
+
+  test('deriveScriptApiQualifiedName returns just the class when identifier matches the basename', () => {
+    assert.strictEqual(
+      deriveScriptApiQualifiedName('/abs/types/dw/order/BasketMgr.d.ts', 'BasketMgr'),
+      'dw.order.BasketMgr',
+    );
   });
 });
 

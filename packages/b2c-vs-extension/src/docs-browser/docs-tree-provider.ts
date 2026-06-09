@@ -107,6 +107,10 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<DocsTreeNode> {
       ),
     );
 
+    // ISML and Business Manager are intentionally omitted in the current
+    // release. Tracked as separate follow-up work that requires authoritative
+    // upstream sources (the ISML grammar / Salesforce-owned BM content) before
+    // any data is shipped.
     if (manifest.counts.isml > 0) {
       nodes.push(
         new SourceNode(
@@ -115,8 +119,6 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<DocsTreeNode> {
           formatSourceDescription(manifest.ismlVersion || undefined, manifest.counts.isml),
         ),
       );
-    } else {
-      nodes.push(new InfoNode('ISML Tags — coming soon', 'ISML doc index will be added in a later phase.'));
     }
 
     if (manifest.counts.bm > 0) {
@@ -127,11 +129,8 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<DocsTreeNode> {
           formatSourceDescription(manifest.bmVersion || undefined, manifest.counts.bm),
         ),
       );
-    } else {
-      nodes.push(
-        new InfoNode('Business Manager — coming soon', 'Business Manager topics will be added in a later phase.'),
-      );
     }
+
     return nodes;
   }
 

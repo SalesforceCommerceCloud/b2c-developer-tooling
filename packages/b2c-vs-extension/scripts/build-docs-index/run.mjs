@@ -4,8 +4,11 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 /**
- * Build the docs index. Phase 1 only emits Script API; ISML and BM are added
- * in later phases. Output goes to packages/b2c-vs-extension/resources/docs/.
+ * Build the docs index. Currently only emits Script API entries — ISML and
+ * Business Manager support are tracked as separate follow-up work that needs
+ * authoritative upstream sources before any data is generated.
+ *
+ * Output goes to packages/b2c-vs-extension/resources/docs/.
  *
  * Usage:
  *   pnpm --filter b2c-vs-extension run build:docs-index
@@ -20,8 +23,6 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 import {SCHEMA_VERSION, stableStringify} from './schema.mjs';
-import {buildBmIndex} from './build-bm.mjs';
-import {buildIsmlIndex} from './build-isml.mjs';
 import {buildScriptApiIndex} from './build-script-api.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -61,48 +62,22 @@ async function main() {
   writeIfChanged(scriptApiJsonPath, scriptApiPayload);
   writeIfChanged(scriptApiSearchPath, scriptApiSearchPayload);
 
-  const ismlResult = buildIsmlIndex();
-  const ismlPayload = stableStringify(ismlResult.entries);
-  const ismlSearchPayload = stableStringify(ismlResult.search);
-  writeIfChanged(path.join(outputDir, 'isml.json'), ismlPayload);
-  writeIfChanged(path.join(outputDir, 'isml-search.json'), ismlSearchPayload);
-  process.stdout.write(
-    `[docs-index] isml v${ismlResult.version || '(no version)'}: ${ismlResult.entries.length} entries\n`,
-  );
-
-  const bmResult = buildBmIndex();
-  const bmPayload = stableStringify(bmResult.entries);
-  const bmSearchPayload = stableStringify(bmResult.search);
-  writeIfChanged(path.join(outputDir, 'bm.json'), bmPayload);
-  writeIfChanged(path.join(outputDir, 'bm-search.json'), bmSearchPayload);
-  // BM has no source-side version field; derive a short stable hash from the
-  // payload so consumers can detect content changes.
-  const bmVersion = bmResult.entries.length > 0 ? sha256OfMany([bmPayload]).slice(0, 7) : '';
-  process.stdout.write(`[docs-index] bm v${bmVersion || '(empty)'}: ${bmResult.entries.length} entries\n`);
-
   const counts = {
     scriptApi: scriptApiEntries.length,
-    isml: ismlResult.entries.length,
-    bm: bmResult.entries.length,
+    isml: 0,
+    bm: 0,
   };
 
   // Checksum the SOURCE payloads (not the manifest) so manifest changes
   // (e.g. timestamps) don't make the checksum tautological.
-  const checksum = sha256OfMany([
-    scriptApiPayload,
-    scriptApiSearchPayload,
-    ismlPayload,
-    ismlSearchPayload,
-    bmPayload,
-    bmSearchPayload,
-  ]);
+  const checksum = sha256OfMany([scriptApiPayload, scriptApiSearchPayload]);
 
   /** @type {import('./schema.mjs').IndexManifest} */
   const manifest = {
     schemaVersion: SCHEMA_VERSION,
     scriptApiVersion,
-    ismlVersion: ismlResult.version,
-    bmVersion,
+    ismlVersion: '',
+    bmVersion: '',
     generatedAt: getStableGeneratedAt(),
     counts,
     checksum,
@@ -112,7 +87,7 @@ async function main() {
   writeIfChanged(manifestPath, stableStringify(manifest));
 
   process.stdout.write(
-    `[docs-index] wrote ${counts.scriptApi} script-api / ${counts.isml} isml / ${counts.bm} bm entries to ${path.relative(repoRoot, outputDir)}\n`,
+    `[docs-index] wrote ${counts.scriptApi} script-api entries to ${path.relative(repoRoot, outputDir)}\n`,
   );
 }
 
@@ -152,9 +127,9 @@ function getStableGeneratedAt() {
       return new Date(epoch * 1000).toISOString();
     }
   }
-  // Fall back to the b2c-script-types package version + a fixed offset so that
-  // bumping the source bumps generatedAt without depending on `git`.
-  // We just use a hash bucket — not a true date, but a stable string.
+  // Fall back to a fixed epoch so that bumping the source bumps generatedAt
+  // without depending on `git`. We just use a hash bucket — not a true date,
+  // but a stable string.
   return '1970-01-01T00:00:00.000Z';
 }
 

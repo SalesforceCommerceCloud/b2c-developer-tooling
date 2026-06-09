@@ -243,6 +243,27 @@
         font-weight: 600;
       }
 
+      tr.entry-member-row {
+        cursor: pointer;
+      }
+
+      tr.entry-member-row:hover {
+        background: var(--vscode-list-hoverBackground);
+      }
+
+      tr.entry-member-row td:first-child code {
+        color: var(--vscode-textLink-foreground);
+      }
+
+      .entry-member-signature {
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .entry-row-badges {
+        margin-left: 6px;
+      }
+
       ul {
         padding-left: 20px;
       }
@@ -437,6 +458,21 @@
             event.preventDefault();
             renderResults([]);
             searchInput.value = '';
+          }
+        });
+
+        // Delegated click handler so members tables on class pages open the
+        // member entry in-place. The renderer marks each row with
+        // data-doc-entry-id; we intercept clicks anywhere inside the row.
+        entryContainer.addEventListener('click', function (event) {
+          var target = event.target;
+          while (target && target !== entryContainer) {
+            if (target.dataset && target.dataset.docEntryId) {
+              event.preventDefault();
+              postOpen(target.dataset.docEntryId);
+              return;
+            }
+            target = target.parentNode;
           }
         });
 

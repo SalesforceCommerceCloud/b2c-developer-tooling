@@ -735,7 +735,7 @@
         "b2c-dx.features.docsBrowser": {
           "type": "boolean",
           "default": true,
-          "description": "Enable the in-editor Docs Browser for SFCC Script API, ISML, and Business Manager documentation."
+          "description": "Enable the in-editor Docs Browser for the SFCC Script API reference."
         }
       }
     },
@@ -1362,6 +1362,20 @@
         "category": "B2C DX - Docs"
       }
     ],
+    "keybindings": [
+      {
+        "command": "b2c-dx.docs.search",
+        "key": "ctrl+alt+d",
+        "mac": "cmd+alt+d",
+        "when": "config.b2c-dx.features.docsBrowser"
+      },
+      {
+        "command": "b2c-dx.docs.viewSymbolDocs",
+        "key": "shift+f1",
+        "mac": "shift+f1",
+        "when": "config.b2c-dx.features.docsBrowser && editorTextFocus && (editorLangId == javascript || editorLangId == typescript)"
+      }
+    ],
     "menus": {
       "view/title": [
         {
@@ -1652,7 +1666,7 @@
       "editor/context": [
         {
           "command": "b2c-dx.docs.viewSymbolDocs",
-          "when": "config.b2c-dx.features.docsBrowser && (editorLangId == javascript || editorLangId == typescript || editorLangId == isml)",
+          "when": "config.b2c-dx.features.docsBrowser && (editorLangId == javascript || editorLangId == typescript)",
           "group": "navigation@9"
         }
       ],
@@ -1723,7 +1737,7 @@
         },
         {
           "command": "b2c-dx.docs.viewSymbolDocs",
-          "when": "config.b2c-dx.features.docsBrowser && (editorLangId == javascript || editorLangId == typescript || editorLangId == isml)"
+          "when": "config.b2c-dx.features.docsBrowser && (editorLangId == javascript || editorLangId == typescript)"
         },
         {
           "command": "b2c-dx.cipAnalytics.refresh",
