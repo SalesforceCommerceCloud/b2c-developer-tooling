@@ -11,6 +11,7 @@
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import * as zlib from 'node:zlib';
 import {glob, hasMagic} from 'glob';
 import JSZip from 'jszip';
 import {B2CInstance} from '../../instance/index.js';
@@ -43,6 +44,20 @@ export interface SiteArchiveImportOptions {
    * Ignored when target is a zip file, Buffer, or remote filename.
    */
   paths?: string[];
+  /**
+   * Optional soft size ceiling (in bytes) for the assembled archive. When set
+   * along with {@link SiteArchiveImportOptions.onOversize} and the archive
+   * exceeds it, the callback is invoked before upload — the import still
+   * proceeds. The SDK itself does not warn or block; the consumer decides how
+   * to react. Use {@link siteArchiveImportSplit} to split oversized imports.
+   */
+  maxBytes?: number;
+  /**
+   * Called before upload when the assembled archive exceeds `maxBytes`. Lets
+   * the consumer (e.g. the CLI) surface its own guidance. Receives the archive
+   * size and the configured ceiling.
+   */
+  onOversize?: (info: {bytes: number; maxBytes: number}) => void;
 }
 
 /**
@@ -114,7 +129,7 @@ export async function siteArchiveImport(
   options: SiteArchiveImportOptions & {archiveName?: string} = {},
 ): Promise<SiteArchiveImportResult> {
   const logger = getLogger();
-  const {keepArchive = false, wait = true, waitOptions, archiveName, paths} = options;
+  const {keepArchive = false, wait = true, waitOptions, archiveName, paths, maxBytes, onOversize} = options;
 
   let zipFilename: string;
   let needsUpload = true;
@@ -187,6 +202,14 @@ export async function siteArchiveImport(
 
   // Upload archive if needed
   const uploadPath = `Impex/src/instance/${zipFilename}`;
+
+  // Bubble (do not block, do not warn) when the assembled archive exceeds the
+  // configured ceiling so the caller can advise the user. The SDK has no
+  // opinion on how to react — that's the consumer's call. Buffers have a known
+  // length; streams are not measured here.
+  if (maxBytes && onOversize && Buffer.isBuffer(archiveContent) && archiveContent.length > maxBytes) {
+    onOversize({bytes: archiveContent.length, maxBytes});
+  }
 
   if (needsUpload && archiveContent) {
     logger.debug({path: uploadPath}, `Uploading archive to ${uploadPath}`);
@@ -411,6 +434,441 @@ async function wrapArchiveContents(
     compression: 'DEFLATE',
     compressionOptions: {level: 9},
   });
+}
+
+/**
+ * A file discovered under the import root, with its on-disk and estimated
+ * compressed sizes. Compressed size drives bin packing for split imports.
+ */
+interface SplitFileEntry {
+  /** Absolute path on disk. */
+  abs: string;
+  /** Path relative to the import root, using POSIX separators. */
+  rel: string;
+  /** On-disk (uncompressed) size in bytes. */
+  size: number;
+  /** Estimated size contribution inside a zip (compressed + entry overhead). */
+  packedSize: number;
+}
+
+/**
+ * Result of classifying the files under an import root into the two tiers used
+ * for split imports.
+ */
+interface ClassifiedFiles {
+  /** Order-sensitive files (XML / metadata) — imported first, kept together. */
+  xml: SplitFileEntry[];
+  /** Order-independent static resources — deferred to later archive parts. */
+  assets: SplitFileEntry[];
+}
+
+/**
+ * Options for {@link siteArchiveImportSplit}.
+ */
+export interface SiteArchiveImportSplitOptions {
+  /**
+   * Maximum size in bytes for each archive part (default: 190 MiB). Parts are
+   * packed by estimated compressed size to stay under this ceiling; the
+   * instance import limit is the constraint this works around.
+   */
+  maxBytes?: number;
+  /** Keep archive parts on the instance after import (default: false). */
+  keepArchive?: boolean;
+  /** Wait options applied to each part's import job. */
+  waitOptions?: WaitForJobOptions;
+  /** Base archive name; parts are suffixed (e.g. `<name>-core`, `<name>-assets-1`). */
+  archiveName?: string;
+  /** Called when the overall plan is known, before any upload. */
+  onPlan?: (plan: SplitImportPlanInfo) => void;
+  /** Called before each part begins uploading. */
+  onPart?: (info: SplitImportPartInfo) => void;
+}
+
+/**
+ * Summary of the computed split plan, surfaced via {@link SiteArchiveImportSplitOptions.onPlan}.
+ */
+export interface SplitImportPlanInfo {
+  /** Total number of archive parts that will be imported. */
+  partCount: number;
+  /** Number of parts containing order-sensitive XML/metadata. */
+  xmlPartCount: number;
+  /** Number of parts containing deferred static assets. */
+  assetPartCount: number;
+  /** Per-archive byte ceiling used for packing. */
+  maxBytes: number;
+}
+
+/**
+ * Per-part progress info, surfaced via {@link SiteArchiveImportSplitOptions.onPart}.
+ */
+export interface SplitImportPartInfo {
+  /** 1-based index of this part. */
+  index: number;
+  /** Total number of parts. */
+  total: number;
+  /** Tier of this part. */
+  kind: 'xml' | 'assets';
+  /** Archive filename for this part. */
+  filename: string;
+  /** Number of files in this part. */
+  fileCount: number;
+  /** Assembled archive size in bytes. */
+  bytes: number;
+}
+
+/** Known-incompressible file extensions — packed/estimated as stored (size ≈ on-disk). */
+const INCOMPRESSIBLE_EXTENSIONS = new Set([
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.webp',
+  '.avif',
+  '.ico',
+  '.bmp',
+  '.tif',
+  '.tiff',
+  '.zip',
+  '.gz',
+  '.tgz',
+  '.bz2',
+  '.xz',
+  '.7z',
+  '.rar',
+  '.mp4',
+  '.m4v',
+  '.mov',
+  '.avi',
+  '.webm',
+  '.mkv',
+  '.mp3',
+  '.m4a',
+  '.aac',
+  '.ogg',
+  '.wav',
+  '.flac',
+  '.pdf',
+  '.woff',
+  '.woff2',
+  '.jar',
+  '.swf',
+]);
+
+/** Per-entry zip overhead estimate (local + central headers + descriptor), plus 2× name. */
+const ZIP_ENTRY_OVERHEAD = 100;
+
+/**
+ * Dependency-ordered priority of top-level data-unit directories. Lower runs
+ * first when XML must be split across multiple archive parts. Unlisted
+ * directories sort after these (still before nothing — appended last).
+ */
+const UNIT_PRIORITY: Record<string, number> = {
+  meta: 0,
+  catalogs: 1,
+  pricebooks: 2,
+  'price-books': 2,
+  'inventory-lists': 3,
+  inventory: 3,
+  libraries: 4,
+  sites: 5,
+};
+
+/** Human-readable byte size (MiB/KiB/B). */
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MiB`;
+  }
+  if (bytes >= 1024) {
+    return `${(bytes / 1024).toFixed(1)} KiB`;
+  }
+  return `${bytes} B`;
+}
+
+/**
+ * Estimates the in-archive size of a file: its on-disk size for known
+ * incompressible types (stored), or the exact DEFLATE size otherwise. A small
+ * per-entry overhead is added to account for zip headers.
+ */
+async function estimateCompressedSize(abs: string, rel: string, size: number): Promise<number> {
+  const ext = path.extname(abs).toLowerCase();
+  const overhead = ZIP_ENTRY_OVERHEAD + Buffer.byteLength(rel) * 2;
+
+  if (INCOMPRESSIBLE_EXTENSIONS.has(ext)) {
+    return size + overhead;
+  }
+
+  const content = await fs.promises.readFile(abs);
+  const deflated = zlib.deflateRawSync(content, {level: 9});
+  return deflated.length + overhead;
+}
+
+/**
+ * Walks the import root and classifies every file into the XML (order-sensitive)
+ * or asset (deferrable static resource) tier, estimating each file's packed
+ * size. A file is treated as a static asset when its path contains a `static/`
+ * segment (the canonical location for catalog/library static resources).
+ */
+async function classifyFiles(rootDir: string): Promise<ClassifiedFiles> {
+  const rootAbs = path.resolve(rootDir);
+  const xml: SplitFileEntry[] = [];
+  const assets: SplitFileEntry[] = [];
+
+  async function walk(dir: string): Promise<void> {
+    const entries = await fs.promises.readdir(dir, {withFileTypes: true});
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await walk(full);
+      } else if (entry.isFile()) {
+        const stat = await fs.promises.stat(full);
+        const rel = path.relative(rootAbs, full).split(path.sep).join('/');
+        const packedSize = await estimateCompressedSize(full, rel, stat.size);
+        const fileEntry: SplitFileEntry = {abs: full, rel, size: stat.size, packedSize};
+        const segments = rel.split('/');
+        const isStatic = segments.includes('static');
+        if (isStatic) {
+          assets.push(fileEntry);
+        } else {
+          xml.push(fileEntry);
+        }
+      }
+    }
+  }
+
+  await walk(rootAbs);
+  return {xml, assets};
+}
+
+/**
+ * Bin-packs files into groups whose total packed size stays under `budget`,
+ * using first-fit-decreasing. Throws if any single file exceeds the budget on
+ * its own (it cannot be placed in any archive and the file itself is not split).
+ */
+function packBySize(entries: SplitFileEntry[], budget: number): SplitFileEntry[][] {
+  const sorted = [...entries].sort((a, b) => b.packedSize - a.packedSize);
+  const bins: {entries: SplitFileEntry[]; used: number}[] = [];
+
+  for (const entry of sorted) {
+    if (entry.packedSize > budget) {
+      throw new Error(
+        `File too large to fit in a single archive part: ${entry.rel} ` +
+          `(${formatBytes(entry.packedSize)} compressed exceeds ${formatBytes(budget)} budget). ` +
+          `A single file cannot be split across archives.`,
+      );
+    }
+    const bin = bins.find((b) => b.used + entry.packedSize <= budget);
+    if (bin) {
+      bin.entries.push(entry);
+      bin.used += entry.packedSize;
+    } else {
+      bins.push({entries: [entry], used: entry.packedSize});
+    }
+  }
+
+  return bins.map((b) => b.entries);
+}
+
+/**
+ * Packs order-sensitive XML files into archive parts. When everything fits
+ * under `budget`, returns a single part (the preferred outcome — all XML
+ * together avoids cross-archive ordering concerns). Otherwise splits at
+ * top-level data-unit directory boundaries (e.g. `catalogs`, `libraries`,
+ * `sites`) in dependency order, keeping each unit's files together so internal
+ * references (e.g. between catalogs) stay in one archive.
+ *
+ * @throws if a single top-level unit's XML alone exceeds the budget.
+ */
+function packXml(entries: SplitFileEntry[], budget: number): SplitFileEntry[][] {
+  const total = entries.reduce((sum, e) => sum + e.packedSize, 0);
+  if (total <= budget) {
+    return [entries];
+  }
+
+  // Group by top-level directory (the data-unit boundary).
+  const groups = new Map<string, SplitFileEntry[]>();
+  for (const entry of entries) {
+    const top = entry.rel.split('/')[0];
+    const group = groups.get(top);
+    if (group) {
+      group.push(entry);
+    } else {
+      groups.set(top, [entry]);
+    }
+  }
+
+  // Order groups by dependency priority, unlisted units last (alphabetical).
+  const orderedKeys = [...groups.keys()].sort((a, b) => {
+    const pa = UNIT_PRIORITY[a] ?? Number.MAX_SAFE_INTEGER;
+    const pb = UNIT_PRIORITY[b] ?? Number.MAX_SAFE_INTEGER;
+    return pa !== pb ? pa - pb : a.localeCompare(b);
+  });
+
+  const parts: SplitFileEntry[][] = [];
+  let current: SplitFileEntry[] = [];
+  let currentSize = 0;
+
+  for (const key of orderedKeys) {
+    const group = groups.get(key)!;
+    const groupSize = group.reduce((sum, e) => sum + e.packedSize, 0);
+
+    if (groupSize > budget) {
+      throw new Error(
+        `Data unit "${key}" is too large to fit in a single archive part ` +
+          `(${formatBytes(groupSize)} compressed exceeds ${formatBytes(budget)} budget). ` +
+          `Its XML cannot be split without risking broken internal references; ` +
+          `reduce the export scope for this unit or raise --max-size.`,
+      );
+    }
+
+    if (currentSize + groupSize > budget && current.length > 0) {
+      parts.push(current);
+      current = [];
+      currentSize = 0;
+    }
+    current.push(...group);
+    currentSize += groupSize;
+  }
+
+  if (current.length > 0) {
+    parts.push(current);
+  }
+
+  return parts;
+}
+
+/**
+ * Imports a large site archive by splitting it into multiple archive parts that
+ * each stay under a size ceiling, then importing them sequentially.
+ *
+ * This works around the instance-side limit on a single import archive. The
+ * strategy:
+ * 1. **Order-sensitive XML/metadata** is imported first, kept together in one
+ *    archive when it fits (preferred). If it must be split, it splits at
+ *    top-level data-unit boundaries in dependency order, never splitting a
+ *    single unit — so catalogs (and their internal references) ride together.
+ * 2. **Static assets** (catalog/library static resources) are deferred to
+ *    subsequent archive parts, bin-packed by compressed size. They are
+ *    order-independent and attach to the units created by the XML import.
+ *
+ * Parts are imported sequentially and the operation stops on the first failure.
+ *
+ * @param instance - B2C instance to import to
+ * @param dir - Local directory to import (must be a directory)
+ * @param options - Split import options
+ * @returns One import result per archive part, in import order
+ * @throws Error if a single file or data unit cannot fit under `maxBytes`
+ * @throws JobExecutionError if any part's import job fails
+ *
+ * @example
+ * ```typescript
+ * const results = await siteArchiveImportSplit(instance, './big-site-data', {
+ *   maxBytes: 190 * 1024 * 1024,
+ *   onPart: (p) => console.log(`Part ${p.index}/${p.total}: ${p.kind} (${p.fileCount} files)`),
+ * });
+ * ```
+ */
+export async function siteArchiveImportSplit(
+  instance: B2CInstance,
+  dir: string,
+  options: SiteArchiveImportSplitOptions = {},
+): Promise<SiteArchiveImportResult[]> {
+  const logger = getLogger();
+  const {maxBytes = 190 * 1024 * 1024, keepArchive = false, waitOptions, archiveName, onPlan, onPart} = options;
+
+  if (!fs.existsSync(dir)) {
+    throw new Error(`Target not found: ${dir}`);
+  }
+  const stat = await fs.promises.stat(dir);
+  if (!stat.isDirectory()) {
+    throw new Error('siteArchiveImportSplit requires a directory target');
+  }
+
+  // Pack with a safety margin below the ceiling; the post-build assertion is
+  // the real guard against estimation drift.
+  const budget = Math.floor(maxBytes * 0.95);
+
+  logger.debug({dir, maxBytes, budget}, `Classifying files under ${dir} for split import`);
+  const {xml, assets} = await classifyFiles(dir);
+
+  const xmlParts = xml.length > 0 ? packXml(xml, budget) : [];
+  const assetParts = assets.length > 0 ? packBySize(assets, budget) : [];
+
+  const baseName = archiveName ?? `import-${Date.now()}`;
+
+  // Build the ordered list of parts: XML first, then assets.
+  interface PlannedPart {
+    kind: 'xml' | 'assets';
+    entries: SplitFileEntry[];
+    dirName: string;
+  }
+  const planned: PlannedPart[] = [];
+  xmlParts.forEach((entries, i) => {
+    const suffix = xmlParts.length > 1 ? `-xml-${i + 1}` : '-xml';
+    planned.push({kind: 'xml', entries, dirName: `${baseName}${suffix}`});
+  });
+  assetParts.forEach((entries, i) => {
+    planned.push({kind: 'assets', entries, dirName: `${baseName}-assets-${i + 1}`});
+  });
+
+  if (planned.length === 0) {
+    throw new Error(`No files found to import under: ${dir}`);
+  }
+
+  onPlan?.({
+    partCount: planned.length,
+    xmlPartCount: xmlParts.length,
+    assetPartCount: assetParts.length,
+    maxBytes,
+  });
+  logger.debug(
+    {partCount: planned.length, xmlParts: xmlParts.length, assetParts: assetParts.length},
+    `Split plan: ${planned.length} part(s) (${xmlParts.length} xml, ${assetParts.length} asset)`,
+  );
+
+  const results: SiteArchiveImportResult[] = [];
+  const rootAbs = path.resolve(dir);
+
+  for (let i = 0; i < planned.length; i++) {
+    const part = planned[i];
+    const buffer = await createArchiveFromPaths(
+      rootAbs,
+      part.entries.map((e) => e.abs),
+      part.dirName,
+    );
+
+    // Guard against estimation drift: a part must not exceed the ceiling.
+    if (buffer.length > maxBytes) {
+      throw new Error(
+        `Archive part ${part.dirName} assembled to ${formatBytes(buffer.length)}, ` +
+          `which exceeds the ${formatBytes(maxBytes)} limit. ` +
+          `This can happen when incompressible data was under-estimated; ` +
+          `try a lower --max-size.`,
+      );
+    }
+
+    onPart?.({
+      index: i + 1,
+      total: planned.length,
+      kind: part.kind,
+      filename: `${part.dirName}.zip`,
+      fileCount: part.entries.length,
+      bytes: buffer.length,
+    });
+    logger.debug(
+      {part: part.dirName, kind: part.kind, files: part.entries.length, bytes: buffer.length},
+      `Importing part ${i + 1}/${planned.length}: ${part.dirName} (${formatBytes(buffer.length)})`,
+    );
+
+    const result = await siteArchiveImport(instance, buffer, {
+      archiveName: part.dirName,
+      keepArchive,
+      wait: true,
+      waitOptions,
+    });
+    results.push(result);
+  }
+
+  return results;
 }
 
 /**
