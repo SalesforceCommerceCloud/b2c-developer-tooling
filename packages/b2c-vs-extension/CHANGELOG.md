@@ -1,5 +1,31 @@
 # Change Log
 
+## 0.9.0
+
+### Minor Changes
+
+- [#457](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/457) [`8aa076e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8aa076e367b5f99ad3c0a5e7c0926c464a7f5a83) - API Browser: right-click a Shopper schema to run `pnpm sfnext scapi add` in an integrated terminal. The action is only shown when the workspace is detected as a Storefront Next project. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#467](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/467) [`ce0c0b5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ce0c0b5c3961faa86dc446f061316100bf4ecbcc) - Remove the Page Designer Assistant webview and its "Open Page Designer Assistant UI" command from the VS Code extension. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#458](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/458) [`637df9e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/637df9ed4d02d4b9ba6cfb68a149dddce6dba8d5) - Fix VS Code API Browser handling of Custom APIs and shopper-named system APIs. Custom APIs now show endpoint paths with the required `/organizations/{organizationId}/...` prefix, and the Shopper/Admin classification is now derived from the spec's declared security schemes (ShopperToken / AmOAuth2 / BearerToken) rather than the API family name — fixing token selection for shopper-named APIs that live under non-shopper families (e.g. `product/shopper-products`, `checkout/shopper-baskets`) and for Custom APIs which can be either type. Resolves #453. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#475](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/475) [`0363dca`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/0363dca90f1eb3822d0c750d29ace743e82afcaf) - Harden the extension build and packaging pipeline. The esbuild bundle now minifies, drops debugger statements, targets Node 22 (matching VS Code 1.105's runtime), and inlines `require('@salesforce/b2c-tooling-sdk/package.json')` at SDK source-load time so minification can no longer break the substitution. SDK data directories that the runtime expects (`cip-proto`, `script-api`, `content-schemas`, `scaffolds`) are all staged into `dist/data/` instead of just `scaffolds`. The `inject-script-types` step that adds the bundled TypeScript Server plugin to the VSIX now uses pure-Node JSZip instead of shelling out to `zip`/`unzip`, removing the host-binary requirement (Windows CI compatibility) and fixing a regression where `[Content_Types].xml` entries for the injected plugin were emitted without their leading dot. The extension version and telemetry connection string are now injected as build-time constants, eliminating a runtime `readFileSync(package.json)`. `vscode:prepublish` now builds `@salesforce/b2c-script-types` before the extension bundle so a stale plugin tree can no longer ship. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#475](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/475) [`0363dca`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/0363dca90f1eb3822d0c750d29ace743e82afcaf) - Correctness and UX hardening pass across the extension: (Thanks [@clavery](https://github.com/clavery)!)
+  - **Content libraries**: `ContentFileSystemProvider.stat()` now returns a stable `mtime` instead of `Date.now()` per call. VS Code no longer believes content files are constantly mutating, eliminating phantom "file modified externally" prompts and silent buffer reloads that could clobber unsaved edits.
+  - **WebDAV explorer**: F2-rename now works. The `rename()` method delegates to the SDK's `webdav.move` (already used by drag-and-drop) instead of throwing `NoPermissions`. Cross-root attempts and 412 conflicts are mapped to the right `vscode.FileSystemError`.
+  - **Activation performance**: replaced sync `fs.readFileSync` / `existsSync` / `statSync` on the activation hot path (`B2CExtensionConfig`) and in the per-paint CAP file-decoration provider with `vscode.workspace.fs` async equivalents and a Set lookup, respectively. CAP decorations now answer in O(1) without filesystem syscalls.
+  - **Cancellation**: long-running operations (sandbox clone polling, CAP install, deploy, content export, Swagger UI proxy fetches) now show a working Cancel button. Cancelling stops the local poll/wait; aborting the server-side operation requires SDK `AbortSignal` support which is a separate change.
+  - **Tree state stability**: every tree provider (sandbox, WebDAV, content libraries, API browser, cartridges) now sets a stable `TreeItem.id`, so expand/collapse state survives refresh and `treeView.reveal()` works without try/catch fallback.
+  - **Safety + telemetry coverage**: 11 contributed commands previously bypassed `registerSafeCommand`, including `b2c-dx.sandbox.clone` (a billable operation). All now route through the safety guard and feature-usage telemetry. Added a `scriptTypes` feature category and command-prefix mapping.
+  - **Dead code removal**: removed an unused `createDeleteAndDeployCommand`, the unused `tempDirs` cleanup loop in `cartridge-commands`, the dead `openExternal` branch in the Page Designer webview message handler, and the never-implemented `b2c-dx.codeSync.diffCartridge` command.
+
+- Updated dependencies [[`b723939`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b72393951bb95b64f3291cd3cb76197e280a6a37), [`21bbed0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/21bbed0ea1b42e8750d4259669370f8bcf562c10), [`de8d40b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/de8d40b54dc923c5805fac2ef587db8b86349a6b), [`80e63fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/80e63fca888d9b83efd53c9c0054247fb2aa31b3), [`c8e0b60`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c8e0b602e1a8da88f7e6620e5d5614f3a55689bd)]:
+  - @salesforce/b2c-tooling-sdk@1.12.0
+
 ## 0.8.2
 
 ### Patch Changes
