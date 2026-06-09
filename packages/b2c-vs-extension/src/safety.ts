@@ -15,6 +15,33 @@ import {createSafetyMiddleware, globalMiddlewareRegistry} from '@salesforce/b2c-
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from './config-provider.js';
+import {type FeatureCategory, markFeatureUsed} from './telemetry.js';
+
+/**
+ * Map command-id prefixes to broad feature categories so usage telemetry can
+ * answer "did the user use feature X this session" without per-command noise.
+ * Commands not matched here don't emit a usage event (the lifecycle events
+ * still fire). Keep the prefix list short and stable.
+ */
+const COMMAND_PREFIX_TO_CATEGORY: Array<readonly [string, FeatureCategory]> = [
+  ['b2c-dx.sandbox.', 'sandbox'],
+  ['b2c-dx.webdav.', 'webdav'],
+  ['b2c-dx.content.', 'content'],
+  ['b2c-dx.codeSync.', 'codeSync'],
+  ['b2c-dx.apiBrowser.', 'apiBrowser'],
+  ['b2c-dx.scaffold.', 'scaffold'],
+  ['b2c-dx.cap.', 'cap'],
+  ['b2c-dx.logs.', 'logs'],
+  ['b2c-dx.instance.', 'instance'],
+  ['b2c-dx.scriptTypes.', 'scriptTypes'],
+];
+
+function categoryForCommand(commandId: string): FeatureCategory | undefined {
+  for (const [prefix, category] of COMMAND_PREFIX_TO_CATEGORY) {
+    if (commandId.startsWith(prefix)) return category;
+  }
+  return undefined;
+}
 
 const PROVIDER_NAME = 'vscode-safety-guard';
 
@@ -99,8 +126,10 @@ export function runWithSafety<T>(operation: () => Promise<T>, detail?: string): 
 // Matches vscode.commands.registerCommand's own signature, which uses any[] for context-menu args.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function registerSafeCommand(commandId: string, handler: (...args: any[]) => any): vscode.Disposable {
+  const category = categoryForCommand(commandId);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return vscode.commands.registerCommand(commandId, async (...args: any[]) => {
+    if (category) markFeatureUsed(category);
     try {
       currentGuard.assert({type: 'command', commandId});
     } catch (err) {

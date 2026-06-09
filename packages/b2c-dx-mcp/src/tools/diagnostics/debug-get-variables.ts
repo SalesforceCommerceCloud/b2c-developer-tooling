@@ -34,7 +34,7 @@ export function createDebugGetVariablesTool(
       description:
         'Get variables for a stack frame in a halted thread. ' +
         'Defaults to top-frame locals. Use scope to filter (local/closure/global) or object_path to drill into nested objects.',
-      toolsets: ['CARTRIDGES', 'SCAPI'],
+      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
         thread_id: z.number().int().describe('Thread ID from debug_wait_for_stop or debug_list_sessions.'),

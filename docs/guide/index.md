@@ -1,6 +1,10 @@
 ---
-description: Introduction to the Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, and SDK for Salesforce Agentforce Commerce.
+description: Introduction to the Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, VS Code extension, and SDK for Salesforce Agentforce Commerce.
 ---
+
+<script setup>
+import {data as vsxRelease} from '../vscode-extension/release.data.ts';
+</script>
 
 # Introduction
 
@@ -9,6 +13,7 @@ The Agentic B2C Developer Toolkit exposes the B2C Commerce platform as commands,
 - **B2C CLI** — a single command for every workflow: cartridge deploys, jobs, ODS/MRT, WebDAV, site archives, SLAS, eCDN, Account Manager, CI/CD.
 - **Agent Skills** — 30+ preconfigured skills that teach your coding agent (Claude Code, Cursor, Agentforce Vibes, Copilot, Codex) how B2C Commerce works — SCAPI Custom APIs, SLAS, SFRA controllers and forms, ISML, Page Designer, hooks, custom objects — and which CLI commands to run when.
 - **MCP Server** — a focused set of MCP tools that complement the CLI for agent-driven workflows.
+- **VS Code Extension** *(Developer Preview)* — sandbox management, cartridge code sync, content libraries, SCAPI explorer, and a server-side script debugger right inside VS Code.
 - **Tooling SDK** — everything the CLI does, available as a typed TypeScript SDK for custom integrations.
 
 ## Quick CLI Install
@@ -24,7 +29,7 @@ npx @salesforce/b2c-cli --help
 ```
 
 ```bash [Homebrew]
-brew install SalesforceCommerceCloud/tools/b2c-cli
+brew install salesforcecommercecloud/tools/b2c-cli
 ```
 
 :::
@@ -74,6 +79,29 @@ claude plugin install b2c-dx-mcp --scope project
 
 See the [MCP Server Installation Guide](/mcp/installation) for full setup steps and troubleshooting.
 
+## Quick VS Code Extension Install <Badge type="warning" text="Developer Preview" />
+
+The B2C DX VS Code Extension brings sandbox management, code sync, content libraries, the SCAPI explorer, and a server-side debugger into VS Code. It isn't on the Marketplace yet — install the latest pre-built `.vsix` from GitHub.
+
+<div v-if="!vsxRelease.unavailable">
+
+Latest version: <strong>{{ vsxRelease.version }}</strong> · <a :href="vsxRelease.vsixDownloadUrl">Download {{ vsxRelease.vsixAssetName }}</a> · <a :href="vsxRelease.releasePageUrl">Release notes</a>
+
+```bash
+code --install-extension {{ vsxRelease.vsixAssetName }}
+# or, in Cursor:
+cursor --install-extension {{ vsxRelease.vsixAssetName }}
+```
+
+</div>
+<div v-else>
+
+The extension hasn't shipped a release yet. Browse the <a :href="vsxRelease.fallbackUrl">GitHub releases page</a> for `b2c-vs-extension@*` tags.
+
+</div>
+
+See the [VS Code Extension](/vscode-extension/) section for the full overview, [installation](/vscode-extension/installation), and [configuration](/vscode-extension/configuration).
+
 ## Next Steps
 
 - [Authentication Setup](./authentication) - Set up Account Manager, OCAPI, and WebDAV
@@ -81,6 +109,7 @@ See the [MCP Server Installation Guide](/mcp/installation) for full setup steps 
 - [Configuration](./configuration) - Configure instances and credentials
 - [IDE Integration](./ide-integration) - Connect Prophet VS Code to B2C CLI configuration
 - [MCP Server](/mcp/) - AI-assisted development with Model Context Protocol
+- [VS Code Extension](/vscode-extension/) - Sandbox management, code sync, and the script debugger inside VS Code
 - [CLI Reference](/cli/) - Browse available commands
 - [MCP Tools](/mcp/toolsets) - Explore MCP tools for cartridges, MRT, SCAPI, and so on
 - [SDK Reference](/api/) - Explore the SDK

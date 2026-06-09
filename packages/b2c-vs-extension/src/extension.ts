@@ -4,90 +4,27 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {DwJsonSource} from '@salesforce/b2c-tooling-sdk/config';
+import {detectWorkspaceType} from '@salesforce/b2c-tooling-sdk/discovery';
 import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
-import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {B2CExtensionConfig} from './config-provider.js';
+import {CartridgeService} from './cartridges/cartridge-service.js';
 import {registerCap} from './cap/index.js';
 import {registerJobLogViewer} from './job-log-viewer.js';
 import {registerContentTree} from './content-tree/index.js';
 import {registerLogs} from './logs/index.js';
 import {initializePlugins} from './plugins.js';
-import {registerSafety} from './safety.js';
+import {registerSafeCommand, registerSafety} from './safety.js';
 import {registerSandboxTree} from './sandbox-tree/index.js';
 import {registerScaffold} from './scaffold/index.js';
 import {registerApiBrowser} from './api-browser/index.js';
 import {registerDebugger} from './debugger/index.js';
 import {registerCodeSync} from './code-sync/index.js';
+import {registerScriptTypes} from './script-types/index.js';
 import {registerWebDavTree} from './webdav-tree/index.js';
-
-function getWebviewContent(context: vscode.ExtensionContext): string {
-  const htmlPath = path.join(context.extensionPath, 'src', 'webview.html');
-  return fs.readFileSync(htmlPath, 'utf-8');
-}
-
-/** PascalCase for use in template content (class names, types, etc.). e.g. "first page" → "FirstPage" */
-function pageNameToPageId(pageName: string): string {
-  return pageName
-    .trim()
-    .split(/\s+/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join('');
-}
-
-/** camelCase for filename. e.g. "first page" → "firstPage" */
-function pageNameToFileNameId(pageName: string): string {
-  const pascal = pageNameToPageId(pageName || 'Page');
-  return pascal.charAt(0).toLowerCase() + pascal.slice(1);
-}
-
-type RegionForm = {id: string; name: string; description: string; maxComponents: number};
-
-type WebviewMessage =
-  | {type: 'openExternal'}
-  | {
-      type: 'submitForm';
-      pageType: {name?: string; description?: string; supportedAspectTypes?: string[]};
-      regions: RegionForm[];
-    };
-
-function renderTemplate(
-  template: string,
-  pageName: string,
-  pageDescription: string,
-  supportedAspectTypes: string[],
-  regions: RegionForm[],
-): string {
-  const pageId = pageNameToPageId(pageName || 'Page');
-  const quoted = (s: string) => `'${String(s).replace(/'/g, "\\'")}'`;
-  const aspectsStr = `[${supportedAspectTypes.map((a) => quoted(a)).join(', ')}]`;
-  const regionsBlock = regions
-    .map(
-      (r) =>
-        `{
-        id: ${quoted(r.id)},
-        name: ${quoted(r.name)},
-        description: ${quoted(r.description)},
-        maxComponents: ${r.maxComponents},
-    }`,
-    )
-    .join(',\n    ');
-  const firstRegionId = regions[0]?.id ?? '';
-
-  // Order matters: `${pageName}Data` must be replaced before `${pageName}`,
-  // otherwise the broader `${pageName}` rule strips the placeholder boundary
-  // and the `Data` suffix is left orphaned (e.g. produces `'Foo'Data`).
-  return template
-    .replace(/\$\{pageName\}Data/g, `${pageId}Data`)
-    .replace(/\$\{pageName\}/g, quoted(pageName || ''))
-    .replace(/\$\{pageDescription\}/g, quoted(pageDescription || ''))
-    .replace(/\$\{supportedAspectTypes\}/g, aspectsStr)
-    .replace('__REGIONS__', regionsBlock)
-    .replace(/\$\{pageId\}/g, pageId)
-    .replace(/\$\{regions\[0\]\.id\}/g, firstRegionId);
-}
+import {disposeTelemetry, initTelemetry, sendEvent, sendException} from './telemetry.js';
 
 function applyLogLevel(log: vscode.OutputChannel): void {
   const config = vscode.workspace.getConfiguration('b2c-dx');
@@ -112,30 +49,64 @@ function applyLogLevel(log: vscode.OutputChannel): void {
   }
 }
 
+async function updateStorefrontNextContext(
+  configProvider: B2CExtensionConfig,
+  log: vscode.OutputChannel,
+): Promise<void> {
+  const workingDir = configProvider.getWorkingDirectory();
+  log.appendLine(`[Workspace] Running detectWorkspaceType for cwd=${workingDir}`);
+  let isStorefrontNext = false;
+  try {
+    const result = await detectWorkspaceType(workingDir);
+    log.appendLine(
+      `[Workspace] Detection result: projectTypes=[${result.projectTypes.join(', ')}] matchedPatterns=[${result.matchedPatterns.join(', ')}]`,
+    );
+    isStorefrontNext = result.projectTypes.includes('storefront-next');
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    log.appendLine(`[Workspace] storefront-next detection failed: ${message}`);
+  }
+  await vscode.commands.executeCommand('setContext', 'b2c-dx.isStorefrontNext', isStorefrontNext);
+  log.appendLine(`[Workspace] setContext b2c-dx.isStorefrontNext=${isStorefrontNext} (cwd=${workingDir})`);
+}
+
 export async function activate(context: vscode.ExtensionContext) {
   const log = vscode.window.createOutputChannel('B2C DX');
 
   applyLogLevel(log);
 
+  // Best-effort telemetry init. Non-blocking: client.start() runs in the
+  // background. No-ops entirely when the user has telemetry disabled or no
+  // connection string is configured.
+  initTelemetry(context);
+
   try {
-    return await activateInner(context, log);
+    const result = await activateInner(context, log);
+    sendEvent('EXTENSION_ACTIVATED');
+    return result;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     const stack = err instanceof Error ? err.stack : undefined;
     log.appendLine(`Activation failed: ${message}`);
     if (stack) log.appendLine(stack);
     console.error('B2C DX extension activation failed:', err);
+    if (err instanceof Error) sendException(err, {phase: 'activate'});
+    sendEvent('ACTIVATION_FAILED');
     vscode.window.showErrorMessage(`B2C DX: Extension failed to activate. See Output > B2C DX. Error: ${message}`);
     const showActivationError = () => {
       log.show();
       vscode.window.showErrorMessage(`B2C DX activation error: ${message}`);
     };
     context.subscriptions.push(
-      vscode.commands.registerCommand('b2c-dx.openUI', showActivationError),
       vscode.commands.registerCommand('b2c-dx.promptAgent', showActivationError),
       vscode.commands.registerCommand('b2c-dx.listWebDav', showActivationError),
     );
   }
+}
+
+export async function deactivate(): Promise<void> {
+  sendEvent('EXTENSION_DEACTIVATED');
+  await disposeTelemetry();
 }
 
 async function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChannel) {
@@ -152,78 +123,17 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
 
   registerSafety(context, configProvider);
 
-  const disposable = vscode.commands.registerCommand('b2c-dx.openUI', () => {
-    vscode.window.showInformationMessage('B2C DX: Opening Page Designer Assistant.');
+  void updateStorefrontNextContext(configProvider, log);
+  context.subscriptions.push(
+    configProvider.onDidReset(() => {
+      void updateStorefrontNextContext(configProvider, log);
+    }),
+  );
 
-    const panel = vscode.window.createWebviewPanel(
-      'b2c-dx-page-designer-ui',
-      'My Extension UI',
-      vscode.ViewColumn.One,
-      {enableScripts: true},
-    );
+  const cartridgeService = new CartridgeService(configProvider);
+  context.subscriptions.push(cartridgeService);
 
-    panel.webview.html = getWebviewContent(context);
-
-    panel.webview.onDidReceiveMessage(async (msg: WebviewMessage) => {
-      if (msg.type === 'openExternal') {
-        await vscode.env.openExternal(vscode.Uri.parse('https://example.com'));
-      }
-      if (msg.type === 'submitForm') {
-        try {
-          const {pageType, regions} = msg;
-          const pageName = pageType?.name ?? '';
-          const templatePath = path.join(context.extensionPath, 'src', 'template', '_app.pageId.tsx');
-          const template = fs.readFileSync(templatePath, 'utf-8');
-          const content = renderTemplate(
-            template,
-            pageName,
-            pageType?.description ?? '',
-            pageType?.supportedAspectTypes ?? [],
-            regions ?? [],
-          );
-
-          const fileNameId = pageNameToFileNameId(pageName);
-          const fileName = `_app.${fileNameId}.tsx`;
-
-          let targetUri: vscode.Uri;
-          if (vscode.workspace.workspaceFolders?.length) {
-            const rootUri = vscode.Uri.file(configProvider.getWorkingDirectory());
-            const routesUri = vscode.Uri.joinPath(rootUri, 'routes');
-            const routesPath = routesUri.fsPath;
-            const hasRoutesFolder = fs.existsSync(routesPath) && fs.statSync(routesPath).isDirectory();
-            targetUri = hasRoutesFolder
-              ? vscode.Uri.joinPath(routesUri, fileName)
-              : vscode.Uri.joinPath(rootUri, fileName);
-          } else {
-            const picked = await vscode.window.showSaveDialog({
-              defaultUri: vscode.Uri.joinPath(context.globalStorageUri, fileName),
-              saveLabel: 'Create file',
-            });
-            if (!picked) {
-              return;
-            }
-            targetUri = picked;
-          }
-
-          vscode.window.showInformationMessage(`Writing file to: ${targetUri.fsPath}`);
-
-          await vscode.workspace.fs.writeFile(targetUri, Buffer.from(content, 'utf-8'));
-          await vscode.window.showInformationMessage(`Saved to: ${targetUri.fsPath}`, 'Open');
-          const doc = await vscode.workspace.openTextDocument(targetUri);
-          await vscode.window.showTextDocument(doc, {
-            viewColumn: panel.viewColumn ?? vscode.ViewColumn.One,
-            preview: false,
-            preserveFocus: false,
-          });
-        } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
-          vscode.window.showErrorMessage(`Failed to save: ${message}`);
-        }
-      }
-    });
-  });
-
-  const promptAgentDisposable = vscode.commands.registerCommand('b2c-dx.promptAgent', async () => {
+  const promptAgentDisposable = registerSafeCommand('b2c-dx.promptAgent', async () => {
     const prompt = await vscode.window.showInputBox({
       title: 'Prompt Agent',
       placeHolder: 'Enter your prompt for the agent...',
@@ -244,7 +154,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     }
   });
 
-  const listWebDavDisposable = vscode.commands.registerCommand('b2c-dx.listWebDav', () => {
+  const listWebDavDisposable = registerSafeCommand('b2c-dx.listWebDav', () => {
     vscode.commands.executeCommand('b2cWebdavExplorer.focus');
   });
 
@@ -298,7 +208,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     },
   });
 
-  const inspectInstanceDisposable = vscode.commands.registerCommand('b2c-dx.instance.inspect', async () => {
+  const inspectInstanceDisposable = registerSafeCommand('b2c-dx.instance.inspect', async () => {
     const config = configProvider.getConfig();
     if (!config) {
       vscode.window.showWarningMessage('B2C DX: No B2C Commerce configuration found.');
@@ -324,7 +234,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     await vscode.window.showTextDocument(doc, {preview: true});
   });
 
-  const switchInstanceDisposable = vscode.commands.registerCommand('b2c-dx.instance.switch', async () => {
+  const switchInstanceDisposable = registerSafeCommand('b2c-dx.instance.switch', async () => {
     const workingDirectory = getWorkingDirectory();
     const instances = await dwJsonSource.listInstances({workingDirectory});
 
@@ -368,17 +278,14 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     }
   });
 
-  const setProjectRootDisposable = vscode.commands.registerCommand(
-    'b2c-dx.setProjectRoot',
-    async (uri?: vscode.Uri) => {
-      if (!uri) return;
-      const folderPath = uri.fsPath;
-      await configProvider.setProjectRoot(folderPath);
-      vscode.window.showInformationMessage(`B2C DX: Project root set to ${path.basename(folderPath)}`);
-    },
-  );
+  const setProjectRootDisposable = registerSafeCommand('b2c-dx.setProjectRoot', async (uri?: vscode.Uri) => {
+    if (!uri) return;
+    const folderPath = uri.fsPath;
+    await configProvider.setProjectRoot(folderPath);
+    vscode.window.showInformationMessage(`B2C DX: Project root set to ${path.basename(folderPath)}`);
+  });
 
-  const resetProjectRootDisposable = vscode.commands.registerCommand('b2c-dx.resetProjectRoot', async () => {
+  const resetProjectRootDisposable = registerSafeCommand('b2c-dx.resetProjectRoot', async () => {
     if (!configProvider.isProjectRootPinned()) {
       vscode.window.showInformationMessage('B2C DX: Project root is already using auto-detection.');
       return;
@@ -411,7 +318,10 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     registerCap(context, configProvider, log);
   }
   if (settings.get<boolean>('features.codeSync', true)) {
-    registerCodeSync(context, configProvider, log);
+    registerCodeSync(context, configProvider, cartridgeService, log);
+  }
+  if (settings.get<boolean>('features.scriptTypes', true)) {
+    registerScriptTypes(context, cartridgeService, log);
   }
 
   registerDebugger(context, configProvider);
@@ -424,7 +334,6 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   });
 
   context.subscriptions.push(
-    disposable,
     promptAgentDisposable,
     listWebDavDisposable,
     instanceStatusBar,

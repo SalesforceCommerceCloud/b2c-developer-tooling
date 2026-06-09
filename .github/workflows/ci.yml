@@ -82,9 +82,21 @@ jobs:
         working-directory: packages/mrt-utilities
         run: pnpm run pretest && pnpm run test:ci && pnpm run lint
 
+      - name: Run MRT Reference App tests
+        id: mrt-reference-app-test
+        if: always() && steps.mrt-test.conclusion != 'cancelled'
+        working-directory: packages/mrt-reference-app
+        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
+
+      - name: Run MRT Welcome App tests
+        id: mrt-welcome-app-test
+        if: always() && steps.mrt-reference-app-test.conclusion != 'cancelled'
+        working-directory: packages/mrt-welcome-app
+        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
+
       - name: Run VS Extension checks
         id: vs-extension-test
-        if: always() && steps.mrt-test.conclusion != 'cancelled'
+        if: always() && steps.mrt-welcome-app-test.conclusion != 'cancelled'
         working-directory: packages/b2c-vs-extension
         run: pnpm run typecheck:agent && pnpm run lint
 
@@ -143,7 +155,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [22.x, 24.x]
+        # Node 24 pinned to 24.15.0 on Windows: 24.16.0 ships a libuv update
+        # that aborts with `Assertion failed: !_wcsnicmp(filename, dir, dirlen)`
+        # in src/win/fs-event.c during chokidar's recursive watch tests.
+        # Revisit when upstream Node ships a fix.
+        node-version: [22.x, 24.15.0]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -178,8 +194,18 @@ jobs:
         if: always() && steps.cli-test.conclusion != 'cancelled'
         working-directory: packages/mrt-utilities
         run: pnpm run pretest && pnpm run test:ci && pnpm run lint
-      - name: Run VS Extension checks
+      - name: Run MRT Reference App tests
+        id: mrt-reference-app-test
         if: always() && steps.mrt-test.conclusion != 'cancelled'
+        working-directory: packages/mrt-reference-app
+        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
+      - name: Run MRT Welcome App tests
+        id: mrt-welcome-app-test
+        if: always() && steps.mrt-reference-app-test.conclusion != 'cancelled'
+        working-directory: packages/mrt-welcome-app
+        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
+      - name: Run VS Extension checks
+        if: always() && steps.mrt-welcome-app-test.conclusion != 'cancelled'
         working-directory: packages/b2c-vs-extension
         run: pnpm run typecheck:agent && pnpm run lint
       - name: Print Windows test failures
@@ -196,6 +222,9 @@ jobs:
               'packages/b2c-tooling-sdk/test-results.json',
               'packages/b2c-dx-mcp/test-results.json',
               'packages/b2c-cli/test-results.json',
+              'packages/mrt-utilities/test-results.json',
+              'packages/mrt-reference-app/test-results.json',
+              'packages/mrt-welcome-app/test-results.json',
             ];
             let totalFailures = 0;
             for (const report of reports) {

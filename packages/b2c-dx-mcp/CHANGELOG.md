@@ -1,5 +1,39 @@
 # @salesforce/b2c-dx-mcp
 
+## 1.2.0
+
+### Minor Changes
+
+- [#420](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/420) [`de8d40b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/de8d40b54dc923c5805fac2ef587db8b86349a6b) - Add MCP tools for log inspection and documentation lookup. Logs: `logs_list_files`, `logs_get_recent`, and a `logs_watch_start` / `logs_watch_poll` / `logs_watch_stop` / `logs_watch_list` lifecycle that buffers entries between polls so agents don't miss logs produced between tool calls. Docs: `docs_search`, `docs_read`, `docs_list`, `docs_schema_search`, `docs_schema_read`, `docs_schema_list` for the bundled Script API and XSD schema corpora. Adds a new `DIAGNOSTICS` toolset that groups the script debugger and log tools; like `SCAPI`, it is always enabled (auto-discovered for every project type). SDK now also exports the log filter helpers (`parseSinceTime`, `filterBySince`, `filterByLevel`, `filterBySearch`, `matchesLevel`, `matchesSearch`) for reuse. (Thanks [@clavery](https://github.com/clavery)!)
+
+  The log watch buffers `logs_watch_start` defaults to `last_entries: 0` (capture only new entries, matching the "start before triggering" workflow), bounds the entry buffer by bytes as well as count, reports each discovered file only once per poll, stops the underlying tail if a concurrent-start hostname race loses registration, and makes `logs_watch_stop` truly idempotent.
+
+### Patch Changes
+
+- Updated dependencies [[`b723939`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b72393951bb95b64f3291cd3cb76197e280a6a37), [`21bbed0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/21bbed0ea1b42e8750d4259669370f8bcf562c10), [`de8d40b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/de8d40b54dc923c5805fac2ef587db8b86349a6b), [`80e63fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/80e63fca888d9b83efd53c9c0054247fb2aa31b3), [`c8e0b60`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c8e0b602e1a8da88f7e6620e5d5614f3a55689bd)]:
+  - @salesforce/b2c-tooling-sdk@1.12.0
+
+## 1.1.3
+
+### Patch Changes
+
+- Updated dependencies [[`b8dcf74`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b8dcf741c253fee0df4219400bfa10a79c704e98)]:
+  - @salesforce/b2c-tooling-sdk@1.11.1
+
+## 1.1.2
+
+### Patch Changes
+
+- Updated dependencies [[`5d62ac2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5d62ac21a505c3ae4c58507fe0ffe65a5ee89087), [`db7b330`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/db7b330cf60debf05d681b9e1dbb4e025d8eec02), [`5e43132`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5e43132ab1b10da33517a697b32e22737d2f9bb4)]:
+  - @salesforce/b2c-tooling-sdk@1.11.0
+
+## 1.1.1
+
+### Patch Changes
+
+- Updated dependencies [[`e4b8238`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4b82385bfddb93a17f874f34315e4ab73e7c84a)]:
+  - @salesforce/b2c-tooling-sdk@1.10.0
+
 ## 1.1.0
 
 ### Minor Changes

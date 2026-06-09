@@ -15,6 +15,7 @@ import * as fsp from 'node:fs/promises';
 import * as path from 'node:path';
 import type {AuthMethod} from '../auth/types.js';
 import {getLogger} from '../logging/logger.js';
+import type {LibraryEntry} from './types.js';
 import {normalizeConfigKeys} from './mapping.js';
 
 /**
@@ -83,8 +84,14 @@ export interface DwJsonConfig {
   contentLibrary?: string;
   /** Catalog IDs for WebDAV browsing */
   catalogs?: string[];
-  /** Library IDs for WebDAV browsing */
-  libraries?: string[];
+  /**
+   * Library IDs for WebDAV browsing and the Content Libraries tree.
+   *
+   * Accepts either a string array or a mixed array of strings and
+   * `{id, siteLibrary?}` objects. Object entries can mark individual
+   * libraries as site-private.
+   */
+  libraries?: (string | LibraryEntry)[];
   /** JSON dot-paths for asset extraction during content library parsing (defaults to ['image.path']) */
   assetQuery?: string[];
   /** Optional CIP analytics host override */
@@ -167,7 +174,7 @@ export interface LoadDwJsonResult {
  * Finds dw.json by searching upward from the starting directory.
  *
  * @param projectDirectory - Directory to start searching from (defaults to cwd)
- * @returns Path to dw.json if found, undefined otherwise
+ * @returns A Promise that resolves to the path to dw.json if found, or undefined if not found
  *
  * @example
  * const dwPath = findDwJson();
@@ -259,7 +266,7 @@ function selectConfig(json: DwJsonMultiConfig, instanceName?: string): DwJsonCon
  * with the full configs array.
  *
  * @param options - Loading options
- * @returns The raw multi-config structure and path, or undefined if not found
+ * @returns A Promise that resolves to the raw multi-config structure and path, or undefined if not found
  */
 export async function loadFullDwJson(
   options: LoadDwJsonOptions = {},

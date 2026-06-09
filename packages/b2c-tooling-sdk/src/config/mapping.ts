@@ -17,7 +17,7 @@ import {parseSafetyLevelString} from '../safety/safety-middleware.js';
 import {isValidSafetyAction} from '../safety/types.js';
 import type {SafetyRule} from '../safety/types.js';
 import type {DwJsonConfig} from './dw-json.js';
-import type {NormalizedConfig, ConfigWarning} from './types.js';
+import type {LibraryEntry, NormalizedConfig, ConfigWarning} from './types.js';
 
 /**
  * Normalizes a URL origin string by ensuring it has an `https://` protocol prefix.
@@ -35,6 +35,18 @@ export function normalizeOriginUrl(origin: string | undefined): string | undefin
   }
   // Strip trailing slash for consistency
   return normalized.replace(/\/+$/, '');
+}
+
+/**
+ * Normalizes a {@link NormalizedConfig.libraries} value to an array of
+ * {@link LibraryEntry} objects. Bare strings are treated as
+ * `{id, siteLibrary: false}`. Returns an empty array when input is undefined.
+ */
+export function resolveLibraryEntries(libraries: (string | LibraryEntry)[] | undefined): LibraryEntry[] {
+  if (!libraries) return [];
+  return libraries.map((entry) =>
+    typeof entry === 'string' ? {id: entry, siteLibrary: false} : {siteLibrary: false, ...entry},
+  );
 }
 
 /**
@@ -106,6 +118,20 @@ export function normalizeConfigKeys(raw: Record<string, unknown>): Record<string
 }
 
 /**
+ * Parses a cartridges value that may be a colon-separated string,
+ * comma-separated string, or already an array.
+ */
+function parseCartridges(value: string | string[] | undefined): string[] | undefined {
+  if (value === undefined) return undefined;
+  if (Array.isArray(value)) return value.length > 0 ? value : undefined;
+  const items = value
+    .split(/[,:]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return items.length > 0 ? items : undefined;
+}
+
+/**
  * Maps dw.json fields to normalized config format.
  *
  * This is the SINGLE place where dw.json field mapping happens.
@@ -125,20 +151,6 @@ export function normalizeConfigKeys(raw: Record<string, unknown>): Record<string
  * // { hostname: 'example.com', codeVersion: 'v1' }
  * ```
  */
-/**
- * Parses a cartridges value that may be a colon-separated string,
- * comma-separated string, or already an array.
- */
-function parseCartridges(value: string | string[] | undefined): string[] | undefined {
-  if (value === undefined) return undefined;
-  if (Array.isArray(value)) return value.length > 0 ? value : undefined;
-  const items = value
-    .split(/[,:]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return items.length > 0 ? items : undefined;
-}
-
 export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfig {
   return {
     hostname: json.hostname,

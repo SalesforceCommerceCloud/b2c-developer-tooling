@@ -7,8 +7,24 @@
 import type {OdsClient} from '../../clients/ods.js';
 import {getLogger} from '../../logging/logger.js';
 
+/**
+ * Status of a sandbox clone operation in the ODS system.
+ *
+ * Standard values are `COMPLETED`, `FAILED`, `IN_PROGRESS`, and `PENDING`. Any
+ * other string value is also accepted for forward compatibility with future
+ * statuses returned by the API.
+ */
 export type CloneState = 'COMPLETED' | 'FAILED' | 'IN_PROGRESS' | 'PENDING' | (string & {});
 
+/**
+ * Error thrown when a sandbox clone operation does not complete within the
+ * configured timeout while polling.
+ *
+ * @param sandboxId - ID of the source sandbox
+ * @param cloneId - ID of the clone operation
+ * @param timeoutSeconds - Timeout duration in seconds
+ * @param lastStatus - Last observed clone status before the timeout occurred, if any
+ */
 export class ClonePollingTimeoutError extends Error {
   constructor(
     public readonly sandboxId: string,
@@ -25,6 +41,13 @@ export class ClonePollingTimeoutError extends Error {
   }
 }
 
+/**
+ * Error thrown when an API request to fetch clone status fails.
+ *
+ * @param sandboxId - ID of the source sandbox
+ * @param cloneId - ID of the clone operation
+ * @param message - Underlying error message from the API call
+ */
 export class ClonePollingError extends Error {
   constructor(
     public readonly sandboxId: string,
@@ -36,6 +59,13 @@ export class ClonePollingError extends Error {
   }
 }
 
+/**
+ * Error thrown when a sandbox clone operation enters the `FAILED` state.
+ *
+ * @param sandboxId - ID of the source sandbox
+ * @param cloneId - ID of the clone operation
+ * @param status - Clone status observed when the failure was detected
+ */
 export class CloneFailedError extends Error {
   constructor(
     public readonly sandboxId: string,
@@ -47,6 +77,9 @@ export class CloneFailedError extends Error {
   }
 }
 
+/**
+ * Information passed to the `onPoll` callback on each clone status poll.
+ */
 export interface WaitForClonePollInfo {
   sandboxId: string;
   cloneId: string;
@@ -55,6 +88,9 @@ export interface WaitForClonePollInfo {
   progressPercentage?: number;
 }
 
+/**
+ * Configuration options for {@link waitForClone} polling behavior.
+ */
 export interface WaitForCloneOptions {
   sandboxId: string;
   cloneId: string;
@@ -71,11 +107,23 @@ async function defaultSleep(ms: number): Promise<void> {
 }
 
 /**
- * Waits for a sandbox clone to reach COMPLETED or FAILED state by polling its status.
+ * Waits for a sandbox clone to reach `COMPLETED` or `FAILED` state by polling
+ * its status against the ODS API.
+ *
+ * Polls at `pollIntervalSeconds` until the clone completes, the configured
+ * timeout is exceeded, or the clone enters a failed state. An initial poll
+ * delay equal to `pollIntervalSeconds` is applied before the first status
+ * check.
  *
  * @param client - ODS client for API calls
  * @param options - Polling configuration options
- *
+ * @param options.sandboxId - ID of the source sandbox
+ * @param options.cloneId - ID of the clone operation to monitor
+ * @param options.pollIntervalSeconds - Seconds between status checks
+ * @param options.timeoutSeconds - Maximum seconds to wait (`0` disables the timeout)
+ * @param options.onPoll - Optional callback invoked after each status poll
+ * @param options.sleep - Optional custom sleep function (primarily for testing)
+ * @returns Promise that resolves when the clone reaches `COMPLETED`
  * @throws {ClonePollingTimeoutError} If the timeout is exceeded before completion
  * @throws {ClonePollingError} If the API request fails
  * @throws {CloneFailedError} If the clone enters the FAILED state

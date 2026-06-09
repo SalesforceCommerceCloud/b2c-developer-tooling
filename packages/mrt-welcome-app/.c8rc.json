@@ -1,0 +1,11 @@
+{
+  "all": true,
+  "src": ["src"],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/dev/**",
+    "**/*.d.ts"
+  ],
+  "reporter": ["text", "text-summary", "html", "lcov"],
+  "report-dir": "coverage"
+}

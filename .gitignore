@@ -17,7 +17,6 @@ package-lock.json
 
 .claude/settings.local.json
 .envrc
-CLAUDE.md
 
 # VitePress
 docs/.vitepress/dist
@@ -27,6 +26,7 @@ docs/.vitepress/cache
 docs/api/
 
 *dw.json*
+!packages/b2c-vs-extension/src/test/fixtures/**/dw.json
 .env
 .config/wt.toml
 .b2c/

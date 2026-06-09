@@ -32,13 +32,13 @@ CIP commands use **OAuth client credentials only**.
 | --------------------- | ---------------------------------------------- |
 | Client ID             | `--client-id` or `SFCC_CLIENT_ID`              |
 | Client Secret         | `--client-secret` or `SFCC_CLIENT_SECRET`      |
-| Tenant (CIP instance) | `--tenant-id` / `--tenant` or `SFCC_TENANT_ID` |
+| Tenant (CIP instance) | `--tenant-id` or `SFCC_TENANT_ID`              |
 
 Your API client must include the **Salesforce Commerce API** role with a tenant filter that includes your target instance.
 
 ## Connection and Output Flags
 
-These flags are available on all CIP commands:
+These flags are available on `cip tables`, `cip describe`, `cip query`, and `cip report` subcommands:
 
 | Flag           | Description                           | Default                                       |
 | -------------- | ------------------------------------- | --------------------------------------------- |
@@ -46,6 +46,7 @@ These flags are available on all CIP commands:
 | `--fetch-size` | Frame fetch size for paging           | `1000`                                        |
 | `--cip-host`   | CIP host override                     | `jdbc.analytics.commercecloud.salesforce.com` |
 | `--staging`    | Use staging analytics host            | `false`                                       |
+| `--json`       | Output result as JSON                 | `false`                                       |
 
 ## Query and Report Date Flags
 
@@ -243,4 +244,4 @@ Both `cip query` and report commands support:
 - `--format table` (default)
 - `--format csv` (writes CSV to stdout)
 - `--format json` (writes JSON to stdout)
-- `--json` (global JSON mode)
+- `--json` (global JSON mode; available on all CIP commands)

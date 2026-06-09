@@ -156,6 +156,10 @@ function parseRelease(release: {
 
 /**
  * Fetch release information from GitHub API.
+ *
+ * @param version - Release version to fetch. Can be 'latest' (default), a version number, or a full tag.
+ * @returns Release information including asset URLs and version metadata.
+ * @throws Error if release not found or GitHub API error.
  */
 export async function getRelease(version: string = 'latest'): Promise<ReleaseInfo> {
   const logger = getLogger();
@@ -203,6 +207,9 @@ export async function getRelease(version: string = 'latest'): Promise<ReleaseInf
 
 /**
  * List available releases with skills artifacts.
+ *
+ * @param limit - Maximum number of releases to return (default: 10).
+ * @returns Array of recent release information.
  */
 export async function listReleases(limit: number = 10): Promise<ReleaseInfo[]> {
   const logger = getLogger();
@@ -529,6 +536,8 @@ export async function downloadSkillsArtifact(skillSet: SkillSet, options: Downlo
 
 /**
  * Clear the skills cache.
+ *
+ * @param version - Optional specific version to clear. If omitted, clears the entire cache.
  */
 export async function clearCache(version?: string): Promise<void> {
   const cacheDir = getCacheDir();

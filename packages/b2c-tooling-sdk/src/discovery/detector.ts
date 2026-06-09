@@ -109,7 +109,7 @@ export class WorkspaceTypeDetector {
  * This is a convenience function for simple detection use cases.
  *
  * @param workspacePath - Path to the workspace directory
- * @param options - Detection options
+ * @param [options] - Detection options for customizing behavior
  * @returns Detection result with all matched project types
  *
  * @example

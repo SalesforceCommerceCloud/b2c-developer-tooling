@@ -53,7 +53,7 @@ In addition to [global flags](./index#global-flags):
 |------|-------------|---------|
 | `--library` | Library ID or site ID. Also configurable via `content-library` in dw.json. | |
 | `--output`, `-o` | Output directory | `content-<timestamp>` |
-| `--site-library` | Treat the library as a site-private library | `false` |
+| `--site-library` / `--no-site-library` | Treat the library as a site-private library. Defaults from a matching `libraries` config entry, otherwise `false` | from config |
 | `--asset-query`, `-q` | JSON dot-paths for static asset extraction (can be repeated) | `image.path` |
 | `--regex`, `-r` | Treat page IDs as regular expressions | `false` |
 | `--folder` | Filter by folder classification (can be repeated) | |
@@ -102,6 +102,38 @@ export SFCC_SERVER=my-sandbox.demandware.net
 export SFCC_CLIENT_ID=your-client-id
 export SFCC_CLIENT_SECRET=your-client-secret
 b2c content export homepage
+
+# With a libraries config entry (see below) marking the site library as
+# site-private, --site-library is inferred automatically:
+b2c content export homepage --library SiteGenesis
+```
+
+### Configuring multiple libraries
+
+Listing libraries under `b2c.libraries` in `package.json` (or `libraries` in `dw.json`) lets the CLI pick a default library and infer `--site-library` per entry. Bare strings are shared libraries; `{id, siteLibrary: true}` marks a site-private library. Both forms can be mixed:
+
+```json
+{
+  "b2c": {
+    "libraries": [
+      "RefArchSharedLibrary",
+      { "id": "SiteGenesis", "siteLibrary": true }
+    ]
+  }
+}
+```
+
+With this config:
+
+```bash
+# Uses RefArchSharedLibrary (first entry) as the default library
+b2c content export hero-banner
+
+# --site-library is inferred from the matching entry
+b2c content export homepage --library SiteGenesis
+
+# Explicit flag still overrides the config
+b2c content export homepage --library SiteGenesis --no-site-library
 ```
 
 ### Output
@@ -116,7 +148,7 @@ With `--json`, returns a structured result including the library tree, output pa
 
 ### Notes
 
-- The `--library` flag can be set in `dw.json` as `content-library` or in `package.json` under `b2c.contentLibrary` to avoid passing it every time
+- The `--library` flag can be set in `dw.json` as `content-library` or in `package.json` under `b2c.contentLibrary` to avoid passing it every time. You can also list libraries under `b2c.libraries` (mixed strings or `{id, siteLibrary?}` objects); when the resolved library matches an entry marked `siteLibrary: true`, `--site-library` defaults to true automatically. The CLI flag still wins when passed explicitly
 - Use `b2c content list` to discover available page IDs before exporting
 - You can export pages, content assets, or individual components by their content ID. When a component ID is specified, it is promoted to the root of the export with its full child tree
 - The `--asset-query` flag specifies JSON dot-notation paths within component data to extract static asset references. The default `image.path` covers the common Page Designer image component pattern
@@ -141,12 +173,14 @@ In addition to [global flags](./index#global-flags):
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--library` | Library ID or site ID. Also configurable via `content-library` in dw.json. | |
-| `--site-library` | Treat the library as a site-private library | `false` |
+| `--site-library` / `--no-site-library` | Treat the library as a site-private library. Defaults from a matching `libraries` config entry, otherwise `false` | from config |
 | `--library-file` | Use a local library XML file instead of fetching from instance | |
 | `--type` | Filter by node type: `page`, `content`, or `component` | |
 | `--components` | Include components in table output | `false` |
 | `--tree` | Show tree structure instead of table | `false` |
 | `--timeout` | Job timeout in seconds | |
+| `--columns`, `-c` | Columns to display (comma-separated). Available: id, type, typeId, children | All columns |
+| `--extended`, `-x` | Show all columns including extended fields | `false` |
 
 ### Examples
 
@@ -165,6 +199,11 @@ b2c content list --library SharedLibrary --tree
 
 # List from a site-private library
 b2c content list --library RefArch --site-library
+
+# With a libraries config entry marking the site library as site-private,
+# --site-library is inferred automatically (see "b2c content export"
+# above for an example b2c.libraries config):
+b2c content list --library SiteGenesis
 
 # List from a local XML file
 b2c content list --library SharedLibrary --library-file ./library.xml
@@ -207,7 +246,7 @@ With `--json`, returns `{ data: [...] }` with each item containing `id`, `type`,
 
 ## b2c content validate
 
-Validate Page Designer metadefinition JSON files against bundled JSON schemas. This is a local-only command — no instance connection or authentication is required.
+Validate Page Designer metadefinition JSON files against schemas. This is a local-only command — no instance connection or authentication is required.
 
 The command auto-detects the schema type using file path conventions (`experience/pages/` → pagetype, `experience/components/` → componenttype) and falls back to inspecting the JSON properties. You can also specify the type explicitly with `--type`.
 

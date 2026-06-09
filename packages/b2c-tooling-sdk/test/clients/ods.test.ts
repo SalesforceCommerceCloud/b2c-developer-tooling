@@ -36,31 +36,31 @@ describe('ODS Client', () => {
     odsClient = createOdsClient({host: TEST_HOST}, mockAuth);
   });
 
-  describe('client creation', () => {
-    it('should create client with default host', () => {
-      const auth = new MockAuthStrategy();
-      const client = createOdsClient({}, auth);
-      expect(client).to.exist;
-    });
+  describe('extraParams middleware', () => {
+    it('should forward configured extraParams query into outgoing request', async () => {
+      let capturedQuery: string | null = null;
+      server.use(
+        http.get(`${BASE_URL}/sandboxes`, ({request}) => {
+          const url = new URL(request.url);
+          capturedQuery = url.searchParams.get('debug');
+          return HttpResponse.json({data: []});
+        }),
+      );
 
-    it('should create client with custom host', () => {
       const auth = new MockAuthStrategy();
-      const client = createOdsClient({host: 'custom.host.com'}, auth);
-      expect(client).to.exist;
-    });
-
-    it('should create client with extra params', () => {
-      const auth = new MockAuthStrategy();
-      const client = createOdsClient(
+      const clientWithExtras = createOdsClient(
         {
+          host: TEST_HOST,
           extraParams: {
             query: {debug: 'true'},
-            body: {_internal: {trace: true}},
           },
         },
         auth,
       );
-      expect(client).to.exist;
+
+      const {error} = await clientWithExtras.GET('/sandboxes', {});
+      expect(error).to.be.undefined;
+      expect(capturedQuery).to.equal('true');
     });
   });
 
@@ -159,15 +159,11 @@ describe('ODS Client', () => {
 
   describe('GET /sandboxes/{sandboxId}', () => {
     it('should get sandbox by ID', async () => {
-      const mockSandbox = {
-        id: 'sb-123',
-        realm: 'zzzv',
-        state: 'started',
-      };
-
+      let capturedAuth: string | null = null;
       server.use(
-        http.get(`${BASE_URL}/sandboxes/sb-123`, () => {
-          return HttpResponse.json({data: mockSandbox});
+        http.get(`${BASE_URL}/sandboxes/sb-123`, ({request}) => {
+          capturedAuth = request.headers.get('Authorization');
+          return HttpResponse.json({data: {id: 'sb-123', realm: 'zzzv', state: 'started'}});
         }),
       );
 
@@ -177,10 +173,9 @@ describe('ODS Client', () => {
         },
       });
 
+      expect(capturedAuth).to.equal('Bearer test-token');
       expect(error).to.be.undefined;
       expect(data?.data?.id).to.equal('sb-123');
-      expect(data?.data?.state).to.equal('started');
-      expect(data?.data?.realm).to.equal('zzzv');
     });
 
     it('should handle 404 not found', async () => {

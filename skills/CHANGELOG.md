@@ -1,5 +1,33 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.3.3
+
+### Patch Changes
+
+- [#485](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/485) [`e6cec0a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e6cec0a704c65d9f0241fa9771fed37017eb7b1a) - Fix `value-definition` element order in the b2c-metadata and b2c-site-import-export skills. The B2C `metadata.xsd` requires `<display>` to appear before `<value>` inside each `<value-definition>`; the skill examples had them reversed, which caused enum/set attribute imports to fail site-archive validation with `cvc-complex-type.2.4.d`. Examples now use the correct order and call out the requirement. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#484](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/484) [`80e63fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/80e63fca888d9b83efd53c9c0054247fb2aa31b3) - `b2c job import` now supports `--split` for importing directories larger than the instance archive size limit. With `--split` (and optional `--max-size`, default `190mb`), the import is broken into several smaller archives: order-sensitive metadata/XML is imported first — kept together when it fits, otherwise split at data-unit boundaries in dependency order — followed by static assets packed by compressed size. A normal import that exceeds the limit now warns and recommends `--split`. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Example: `b2c job import ./big-site-data --split --max-size 150mb`
+
+  The SDK adds a corresponding `siteArchiveImportSplit()` operation.
+
+## 1.3.2
+
+### Patch Changes
+
+- [#428](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/428) [`db7b330`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/db7b330cf60debf05d681b9e1dbb4e025d8eec02) - `b2c job import` now accepts an optional list of paths or globs after the directory `TARGET`, allowing you to import a subset of a site export. Paths are resolved literally first (so shell-expanded globs work) and fall back to root-relative or internal glob expansion when the literal path doesn't exist. The archive preserves each path's layout under `TARGET`. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Example: `b2c job import ./my-site-data sites/RefArch libraries/mylib`
+
+  The SDK's `siteArchiveImport` operation gains a corresponding `paths` option for directory targets.
+
+## 1.3.1
+
+### Patch Changes
+
+- [`ac0da1b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ac0da1b42699613e6d7c22503676641df3a31201) - Exclude per-skill `evals/` directories from the released skills zip artifacts so end users don't receive eval fixtures. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.3.0
 
 ### Minor Changes

@@ -13,6 +13,21 @@ import {webdavPathToUri} from '../webdav-tree/webdav-fs-provider.js';
 
 type ContentNodeType = 'library' | 'page' | 'content' | 'component' | 'static';
 
+/**
+ * Build a stable path-from-root string for a LibraryNode. Used to produce a
+ * unique TreeItem.id since the same content id (e.g. a shared component) can
+ * appear under multiple parent nodes in the same library tree.
+ */
+function buildLibraryNodePath(node: LibraryNode): string {
+  const segments: string[] = [];
+  let current: LibraryNode | null = node;
+  while (current && current.parent) {
+    segments.unshift(current.id);
+    current = current.parent;
+  }
+  return segments.join('/');
+}
+
 export class ContentTreeItem extends vscode.TreeItem {
   constructor(
     readonly nodeType: ContentNodeType,
@@ -40,6 +55,17 @@ export class ContentTreeItem extends vscode.TreeItem {
             : vscode.TreeItemCollapsibleState.None;
 
     super(label, collapsible);
+
+    // Stable id: libraries are unique by id+scope; non-library nodes need a
+    // path-from-root because the same content id can appear under multiple
+    // parents (a component can be referenced by several pages).
+    const libScope = `${libraryId}:${isSiteLibrary ? 'site' : 'shared'}`;
+    if (nodeType === 'library') {
+      this.id = `lib:${libScope}`;
+    } else {
+      const ancestorPath = libraryNode ? buildLibraryNodePath(libraryNode) : contentId;
+      this.id = `content:${nodeType}:${libScope}:${ancestorPath}`;
+    }
 
     this.contextValue = nodeType;
 
@@ -142,11 +168,16 @@ export class ContentTreeDataProvider implements vscode.TreeDataProvider<ContentT
       return [];
     }
 
-    // Auto-add configured library if list is empty.
-    // Prefer explicit contentLibrary, fall back to libraries[0] from config.
+    // Auto-seed configured libraries if the in-memory list is empty.
+    // Seed the union of `libraries` (each entry can mark siteLibrary) and
+    // the singular `contentLibrary` (as a shared library). addLibrary
+    // dedupes by id+siteLibrary, so listing the same id in both is a no-op.
     const libraries = this.configProvider.getLibraries();
     if (libraries.length === 0) {
-      const contentLibrary = this.configProvider.getContentLibrary();
+      for (const entry of this.configProvider.getConfiguredLibraries()) {
+        this.configProvider.addLibrary(entry.id, entry.siteLibrary);
+      }
+      const contentLibrary = this.configProvider.getExplicitContentLibrary();
       if (contentLibrary) {
         this.configProvider.addLibrary(contentLibrary, false);
       }

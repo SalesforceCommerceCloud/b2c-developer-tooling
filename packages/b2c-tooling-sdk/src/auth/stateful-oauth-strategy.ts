@@ -34,6 +34,14 @@ export class StatefulOAuthStrategy implements AuthStrategy {
   private _session: StatefulSession;
   private _hasHadSuccess = false;
 
+  /**
+   * Creates a new StatefulOAuthStrategy instance.
+   *
+   * @param session - The stateful session containing clientId, accessToken, and optional refresh/renew credentials
+   * @param options - Strategy configuration options
+   * @param options.accountManagerHost - The Account Manager hostname (defaults to DEFAULT_ACCOUNT_MANAGER_HOST)
+   * @param options.scopes - Optional OAuth scopes to request during token refresh
+   */
   constructor(session: StatefulSession, options: StatefulOAuthStrategyOptions) {
     this._session = session;
     this.accountManagerHost = options.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST;

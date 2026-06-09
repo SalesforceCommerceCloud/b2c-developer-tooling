@@ -442,6 +442,15 @@ export async function searchJobExecutions(
  * @param instance - B2C instance
  * @param jobId - Job ID to search for
  * @returns Running execution or undefined if none found
+ * @throws Error if the search request fails (inherited from {@link searchJobExecutions})
+ *
+ * @example
+ * ```typescript
+ * const running = await findRunningJobExecution(instance, 'my-job');
+ * if (running) {
+ *   console.log(`Currently running execution: ${running.id} (status: ${running.execution_status})`);
+ * }
+ * ```
  */
 export async function findRunningJobExecution(instance: B2CInstance, jobId: string): Promise<JobExecution | undefined> {
   const results = await searchJobExecutions(instance, {

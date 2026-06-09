@@ -169,6 +169,8 @@ In addition to [global flags](./index#global-flags):
 | `--start` | Starting index for pagination | `0` |
 | `--sort-by` | Sort by field (start_time, end_time, job_id, status) | `start_time` |
 | `--sort-order` | Sort order (asc, desc) | `desc` |
+| `--columns`, `-c` | Columns to display (comma-separated): id, jobId, status, startTime | |
+| `--extended`, `-x` | Show all columns including extended fields | `false` |
 
 ### Examples
 
@@ -260,7 +262,7 @@ Import a site archive to a B2C Commerce instance using the `sfcc-site-archive-im
 ### Usage
 
 ```bash
-b2c job import TARGET
+b2c job import TARGET [PATHS...]
 ```
 
 ### Arguments
@@ -268,6 +270,7 @@ b2c job import TARGET
 | Argument | Description | Required |
 |----------|-------------|----------|
 | `TARGET` | Directory, zip file, or remote filename to import | Yes |
+| `PATHS...` | Optional subset of files, directories, or glob patterns under `TARGET` to include in the archive. When omitted, the entire directory is archived. Only valid when `TARGET` is a directory. | No |
 
 ### Flags
 
@@ -277,7 +280,10 @@ In addition to [global flags](./index#global-flags):
 |------|-------------|---------|
 | `--keep-archive`, `-k` | Keep archive on instance after import | `false` |
 | `--remote`, `-r` | Target is a filename already on the instance (in Impex/src/instance/) | `false` |
+| `--split`, `-s` | Split a large directory import into multiple archive parts to stay under the instance size limit | `false` |
+| `--max-size` | Per-archive size limit for `--split` (e.g. `190`, `190mb`, `512kb`; a bare number is MiB) | `190mb` |
 | `--timeout`, `-t` | Timeout in seconds | No timeout |
+| `--wait`, `-w` | Wait for import job to complete | `true` |
 | `--show-log` | Show job log on failure | `true` |
 
 ### Examples
@@ -297,6 +303,21 @@ b2c job import existing-archive.zip --remote
 
 # With timeout
 b2c job import ./my-site-data --timeout 300
+
+# Import only specific parts of a site export
+b2c job import ./my-site-data sites/RefArch libraries/mylib
+
+# Import all libraries using a glob pattern
+b2c job import ./my-site-data 'libraries/**'
+
+# Mix sites and libraries
+b2c job import ./my-site-data sites/RefArch 'libraries/*'
+
+# Split a large import that exceeds the instance archive size limit
+b2c job import ./big-site-data --split
+
+# Split with a custom per-archive size limit
+b2c job import ./big-site-data --split --max-size 150mb
 ```
 
 ### Notes
@@ -304,6 +325,22 @@ b2c job import ./my-site-data --timeout 300
 - When importing a directory, it will be automatically zipped before upload
 - The archive is uploaded to `Impex/src/instance/` on the instance
 - By default, the archive is deleted after successful import (use `--keep-archive` to retain)
+- When `PATHS` are given, only those files/directories are included in the archive — their location under `TARGET` is preserved (e.g. `sites/RefArch/...` stays at `sites/RefArch/...`).
+
+### Importing archives larger than the instance limit
+
+A B2C Commerce instance rejects a single import archive above its size limit (typically 200 MB). The `--split` flag works around this **for directory imports** by importing the data in multiple smaller archive parts:
+
+1. **Metadata/XML first.** All order-sensitive XML (catalogs, libraries, sites, `meta`, etc.) is imported first, kept together in a single archive when it fits. Keeping it together means the import job resolves all internal references and dependency ordering within one archive. If the XML alone exceeds the limit, it is split at top-level data-unit boundaries (e.g. `catalogs`, `libraries`, `sites`) in dependency order — never splitting an individual unit, so a catalog and its internal references always stay together.
+2. **Static assets after.** Static resources (anything under a `static/` folder — images, fonts, binaries) are deferred into subsequent archive parts, packed by **compressed** size. They are order-independent and attach to the catalogs/libraries created by the metadata import.
+
+Parts are imported **sequentially** and the command stops on the first failure.
+
+Packing is by estimated compressed size (already-compressed file types such as JPG/PNG/ZIP are measured as stored). The default per-part ceiling is `190mb` to leave headroom under the instance limit; tune it with `--max-size`.
+
+If a **single file** or a **single data unit's XML** is larger than `--max-size` on its own, it cannot be placed in any part (a file is never split across archives) and the command errors — reduce the export scope for that unit or raise `--max-size` if the instance allows a larger archive.
+
+When you run a normal (non-`--split`) directory import and the assembled archive exceeds the limit, the command warns and recommends re-running with `--split`. `--split` cannot be combined with `--remote`, subset `PATHS`, or `--no-wait`.
 
 ---
 
@@ -323,7 +360,7 @@ In addition to [global flags](./index#global-flags):
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--output`, `-o` | Output path for the export | `.` (current directory) |
+| `--output`, `-o` | Output path for the export | `./export` |
 | `--data-units` | Data units JSON configuration | |
 | `--site` | Site ID(s) to export (comma-separated, repeatable) | |
 | `--site-data` | Site data types to export (comma-separated) | |

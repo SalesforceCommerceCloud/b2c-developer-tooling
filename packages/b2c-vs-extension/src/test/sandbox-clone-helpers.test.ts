@@ -5,19 +5,76 @@
  */
 import * as assert from 'assert';
 import {
+  CLONE_PROFILES,
   CLONE_IN_PROGRESS_STATES,
   TRANSITIONAL_STATES,
   computeSandboxDisplay,
   getActiveCloneSourceIds,
+  getAllowedCloneTargetProfiles,
+  getExplicitCloneTargetProfiles,
   getRealmInstanceId,
+  getSandboxSourceProfile,
+  isCloneProfileDowngrade,
+  normalizeCloneProfile,
   type SandboxLike,
-} from './sandbox-clone-helpers.js';
+} from '../sandbox-tree/sandbox-clone-helpers.js';
 
 function sandbox(partial: Partial<SandboxLike> & {id: string}): SandboxLike {
   return {...partial};
 }
 
 suite('sandbox-clone-helpers', () => {
+  suite('clone profile helpers', () => {
+    test('normalizeCloneProfile handles case and whitespace', () => {
+      assert.strictEqual(normalizeCloneProfile(' LARGE '), 'large');
+      assert.strictEqual(normalizeCloneProfile('xlarge'), 'xlarge');
+      assert.strictEqual(normalizeCloneProfile(undefined), undefined);
+      assert.strictEqual(normalizeCloneProfile(''), undefined);
+      assert.strictEqual(normalizeCloneProfile('tiny'), undefined);
+    });
+
+    test('getAllowedCloneTargetProfiles returns all profiles when source profile is unknown', () => {
+      assert.deepStrictEqual(getAllowedCloneTargetProfiles(undefined), [...CLONE_PROFILES]);
+      assert.deepStrictEqual(getAllowedCloneTargetProfiles('tiny'), [...CLONE_PROFILES]);
+    });
+
+    test('getAllowedCloneTargetProfiles blocks downgrades for large source', () => {
+      assert.deepStrictEqual(getAllowedCloneTargetProfiles('large'), ['large', 'xlarge', 'xxlarge']);
+    });
+
+    test('getSandboxSourceProfile falls back to resourceProfile when profile is missing', () => {
+      assert.strictEqual(getSandboxSourceProfile({resourceProfile: 'large'}), 'large');
+    });
+
+    test('getSandboxSourceProfile prefers profile when both are present', () => {
+      assert.strictEqual(getSandboxSourceProfile({profile: 'xlarge', resourceProfile: 'large'}), 'xlarge');
+    });
+
+    test('getAllowedCloneTargetProfiles allows only xxlarge for xxlarge source', () => {
+      assert.deepStrictEqual(getAllowedCloneTargetProfiles('xxlarge'), ['xxlarge']);
+    });
+
+    test('getExplicitCloneTargetProfiles excludes source profile for large source', () => {
+      assert.deepStrictEqual(getExplicitCloneTargetProfiles('large'), ['xlarge', 'xxlarge']);
+    });
+
+    test('getExplicitCloneTargetProfiles returns empty list for xxlarge source', () => {
+      assert.deepStrictEqual(getExplicitCloneTargetProfiles('xxlarge'), []);
+    });
+
+    test('getExplicitCloneTargetProfiles keeps all options when source profile is unknown', () => {
+      assert.deepStrictEqual(getExplicitCloneTargetProfiles(undefined), [...CLONE_PROFILES]);
+    });
+
+    test('isCloneProfileDowngrade detects downgrade and allows same/upgrade', () => {
+      assert.strictEqual(isCloneProfileDowngrade('large', 'medium'), true);
+      assert.strictEqual(isCloneProfileDowngrade('large', 'large'), false);
+      assert.strictEqual(isCloneProfileDowngrade('large', 'xlarge'), false);
+      assert.strictEqual(isCloneProfileDowngrade('large', undefined), false);
+      assert.strictEqual(isCloneProfileDowngrade(undefined, 'medium'), false);
+    });
+  });
+
   suite('getRealmInstanceId', () => {
     test('joins realm and instance', () => {
       assert.strictEqual(getRealmInstanceId(sandbox({id: 'x', realm: 'zzzz', instance: '004'})), 'zzzz-004');
