@@ -18,6 +18,8 @@ claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 claude plugin install b2c-cli
 claude plugin install b2c
 claude plugin install storefront-next
+# Install b2c-dx-mcp if you want the MCP server installed
+claude plugin install b2c-dx-mcp
 ```
 
 ```bash [Codex]
@@ -105,6 +107,7 @@ Install plugins at your preferred scope:
 claude plugin install b2c-cli
 claude plugin install b2c
 claude plugin install storefront-next
+# Install b2c-dx-mcp if you want the MCP server installed
 claude plugin install b2c-dx-mcp
 ```
 
@@ -112,6 +115,7 @@ claude plugin install b2c-dx-mcp
 claude plugin install b2c-cli --scope project
 claude plugin install b2c --scope project
 claude plugin install storefront-next --scope project
+# Install b2c-dx-mcp if you want the MCP server installed
 claude plugin install b2c-dx-mcp --scope project
 ```
 
