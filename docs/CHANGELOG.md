@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.5
+
+### Patch Changes
+
+- [`39dc19d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/39dc19d5c91ea537b18fd57ef8373250b74a3b83) - Document the `storefront-next` and `b2c-dx-mcp` plugins in the homepage and Agent Skills install snippets, and note that `b2c-dx-mcp` installs the MCP server. Removed the agent-facing "When to use which tool" sections from the MCP log and docs tool reference pages. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.4
 
 ### Patch Changes
