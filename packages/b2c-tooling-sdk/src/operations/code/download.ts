@@ -214,8 +214,15 @@ export async function downloadSingleCartridge(
   );
 
   if (!zipResponse.ok) {
-    const text = await zipResponse.text();
-    throw new Error(`Failed to create server-side zip: ${zipResponse.status} ${zipResponse.statusText} - ${text}`);
+    let text = '';
+    try {
+      text = await zipResponse.text();
+    } catch (err) {
+      logger.debug({err}, 'Failed to read response body for server-zip error');
+    }
+    throw new Error(
+      `Failed to create server-side zip: ${zipResponse.status} ${zipResponse.statusText}${text ? ' - ' + text : ''}`,
+    );
   }
 
   const buffer = await withProgress('downloading', onProgress, async () => {
@@ -327,8 +334,15 @@ export async function downloadCartridges(
   );
 
   if (!zipResponse.ok) {
-    const text = await zipResponse.text();
-    throw new Error(`Failed to create server-side zip: ${zipResponse.status} ${zipResponse.statusText} - ${text}`);
+    let text = '';
+    try {
+      text = await zipResponse.text();
+    } catch (err) {
+      logger.debug({err}, 'Failed to read response body for server-zip error');
+    }
+    throw new Error(
+      `Failed to create server-side zip: ${zipResponse.status} ${zipResponse.statusText}${text ? ' - ' + text : ''}`,
+    );
   }
   logger.debug('Server-side zip created');
 

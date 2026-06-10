@@ -59,8 +59,14 @@ async function loadScaffold(scaffoldDir: string, source: ScaffoldSource): Promis
       filesPath,
       source,
     };
-  } catch {
-    // Manifest doesn't exist or is invalid JSON
+  } catch (err) {
+    // ENOENT (manifest missing) is expected for sibling dirs; anything else is
+    // worth surfacing so a malformed scaffold.json doesn't silently disappear
+    // from discovery output.
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+      const logger = getLogger();
+      logger.warn({manifestPath, err}, 'Invalid scaffold manifest');
+    }
     return null;
   }
 }

@@ -14,14 +14,9 @@ import type {
 } from '@salesforce/b2c-tooling-sdk/operations/debug';
 import type {CartridgeMapping} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {resolveBreakpointPath} from '@salesforce/b2c-tooling-sdk/operations/debug';
+import {ANSI} from '@salesforce/b2c-tooling-sdk/cli';
 
-const RED = '[31m';
-const YELLOW = '[33m';
-const CYAN = '[36m';
-const GREEN = '[32m';
-const DIM = '[2m';
-const BOLD = '[1m';
-const RESET = '[0m';
+const {RED, YELLOW, CYAN, GREEN, DIM, BOLD, RESET} = ANSI;
 
 interface ReplState {
   currentThreadId?: number;

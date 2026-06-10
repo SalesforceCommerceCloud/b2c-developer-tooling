@@ -215,8 +215,13 @@ export async function uploadCartridges(
   });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Failed to unzip archive: ${response.status} ${response.statusText} - ${text}`);
+    let text = '';
+    try {
+      text = await response.text();
+    } catch (err) {
+      logger.debug({err}, 'Failed to read response body for unzip error');
+    }
+    throw new Error(`Failed to unzip archive: ${response.status} ${response.statusText}${text ? ' - ' + text : ''}`);
   }
   logger.debug('Archive unzipped');
 

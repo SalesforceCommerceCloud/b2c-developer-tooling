@@ -18,6 +18,13 @@ export const ANSI = {
   DIM: `${ESC}[2m`,
   BOLD: `${ESC}[1m`,
   HIGHLIGHT: `${ESC}[1;33m`,
+  // Standalone hues for ad-hoc CLI styling (REPL prompts, status output, cap commands)
+  RED: `${ESC}[31m`,
+  GREEN: `${ESC}[32m`,
+  YELLOW: `${ESC}[33m`,
+  MAGENTA: `${ESC}[35m`,
+  CYAN: `${ESC}[36m`,
+  GRAY: `${ESC}[90m`,
 } as const;
 
 /**
