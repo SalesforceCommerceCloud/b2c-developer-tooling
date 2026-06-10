@@ -46,7 +46,9 @@ The picker boosts exact matches (`dw.order.BasketMgr`) over substring matches
 Place the cursor on a `dw.*` symbol in a JavaScript or TypeScript cartridge
 file and:
 
-- **Keyboard shortcut** → `Shift+F1` opens the matching entry directly.
+- **Keyboard shortcut** → `Cmd+Alt+Shift+D` (Mac) / `Ctrl+Alt+Shift+D`
+  (Windows / Linux) opens the matching entry directly. Active only inside
+  cartridge files (the path must contain `/cartridge/`).
 - **Editor right-click → View B2C Docs** does the same.
 - **Command Palette → B2C DX - Docs: View B2C Docs** does the same.
 
@@ -62,9 +64,10 @@ right entry.
 
 | Source | Items | Source of truth |
 | --- | --- | --- |
-| SFCC Script API (`dw.*`) | ~8.6k entries — every class, interface, enum, method, property, constant. | JSDoc inside `@salesforce/b2c-script-types` `.d.ts` files, vendored from the official Salesforce platform documentation build. |
+| SFCC Script API (`dw.*`) | Every class, interface, enum, method, property, and constant from the Script API surface. | JSDoc inside `@salesforce/b2c-script-types` `.d.ts` files, vendored from the official Salesforce platform documentation build. |
 
-The header shows the version of the index — currently **Script API v26.7.0**.
+The header shows the exact version and entry count of the index for the
+release you have installed (e.g. `Script API v26.7.0 (8664)`).
 
 ## Recently viewed
 

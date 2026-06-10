@@ -30,18 +30,8 @@ export type FeatureCategory =
   | 'logs'
   | 'instance'
   | 'cipAnalytics'
-  | 'scriptTypes';
-  | 'cipAnalytics'
+  | 'scriptTypes'
   | 'docsBrowser';
-
-function readPjson(extensionPath: string): TelemetryPjson | undefined {
-  try {
-    const raw = fs.readFileSync(path.join(extensionPath, 'package.json'), 'utf8');
-    return JSON.parse(raw) as TelemetryPjson;
-  } catch {
-    return undefined;
-  }
-}
 
 /** VS Code 1.86+ telemetry-level signal. Falls back to true on older hosts. */
 function isVsCodeTelemetryEnabled(): boolean {

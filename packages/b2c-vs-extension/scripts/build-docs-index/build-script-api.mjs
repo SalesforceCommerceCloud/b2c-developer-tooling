@@ -95,16 +95,32 @@ export function buildScriptApiIndex({typesRoot, scriptApiVersion}) {
   // Deterministic order.
   entries.sort(byId);
 
+  // Search-dictionary projection. The runtime relies on this NEVER touching
+  // the full source file — class-page member tables read straight from these
+  // fields. Keep the projection small but enough to render rows.
+  //
+  // Only members of a class/interface/enum carry the heavy fields (signature,
+  // description, deprecated, sinceApiVersion). Package nodes and the parent
+  // declarations themselves don't need them — packages don't have signatures
+  // and the parent's full entry is loaded when the user opens it directly.
+  // This keeps script-api-search.json roughly the size of just the names.
   /** @type {object[]} */
-  const search = entries.map((entry) => ({
-    id: entry.id,
-    title: entry.title,
-    qualifiedName: entry.qualifiedName,
-    kind: entry.kind,
-    packagePath: entry.packagePath,
-    parentId: entry.parentId,
-    tags: entry.tags,
-  }));
+  const search = entries.map((entry) => {
+    const isMemberRow = entry.kind === 'method' || entry.kind === 'property' || entry.kind === 'constant';
+    return removeUndefined({
+      id: entry.id,
+      title: entry.title,
+      qualifiedName: entry.qualifiedName,
+      kind: entry.kind,
+      packagePath: entry.packagePath,
+      parentId: entry.parentId,
+      tags: entry.tags,
+      signature: isMemberRow ? entry.signature : undefined,
+      description: isMemberRow ? entry.description : undefined,
+      deprecated: isMemberRow && entry.deprecated ? true : undefined,
+      sinceApiVersion: isMemberRow ? entry.sinceApiVersion : undefined,
+    });
+  });
 
   if (scriptApiVersion) {
     process.stdout.write(`[docs-index] script-api v${scriptApiVersion}: ${entries.length} entries\n`);

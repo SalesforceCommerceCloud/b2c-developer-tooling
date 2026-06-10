@@ -1465,6 +1465,28 @@
         "command": "b2c-dx.walkthrough.showTelemetry",
         "title": "Show Walkthrough Telemetry",
         "category": "B2C DX - Development"
+      },
+      {
+        "command": "b2c-dx.docs.search",
+        "title": "Search Docs",
+        "icon": "$(search)",
+        "category": "B2C DX - Docs"
+      },
+      {
+        "command": "b2c-dx.docs.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C DX - Docs"
+      },
+      {
+        "command": "b2c-dx.docs.open",
+        "title": "Open Docs Entry",
+        "category": "B2C DX - Docs"
+      },
+      {
+        "command": "b2c-dx.docs.viewSymbolDocs",
+        "title": "View B2C Docs",
+        "category": "B2C DX - Docs"
       }
     ],
     "walkthroughs": [
@@ -1557,42 +1579,6 @@
             ]
           }
         ]
-      },
-      {
-        "command": "b2c-dx.docs.search",
-        "title": "Search Docs",
-        "icon": "$(search)",
-        "category": "B2C DX - Docs"
-      },
-      {
-        "command": "b2c-dx.docs.refresh",
-        "title": "Refresh",
-        "icon": "$(refresh)",
-        "category": "B2C DX - Docs"
-      },
-      {
-        "command": "b2c-dx.docs.open",
-        "title": "Open Docs Entry",
-        "category": "B2C DX - Docs"
-      },
-      {
-        "command": "b2c-dx.docs.viewSymbolDocs",
-        "title": "View B2C Docs",
-        "category": "B2C DX - Docs"
-      }
-    ],
-    "keybindings": [
-      {
-        "command": "b2c-dx.docs.search",
-        "key": "ctrl+alt+d",
-        "mac": "cmd+alt+d",
-        "when": "config.b2c-dx.features.docsBrowser"
-      },
-      {
-        "command": "b2c-dx.docs.viewSymbolDocs",
-        "key": "shift+f1",
-        "mac": "shift+f1",
-        "when": "config.b2c-dx.features.docsBrowser && editorTextFocus && (editorLangId == javascript || editorLangId == typescript)"
       }
     ],
     "menus": {
@@ -2163,6 +2149,18 @@
         "command": "b2c-dx.webdav.rename",
         "key": "f2",
         "when": "focusedView == b2cWebdavExplorer"
+      },
+      {
+        "command": "b2c-dx.docs.search",
+        "key": "ctrl+alt+d",
+        "mac": "cmd+alt+d",
+        "when": "config.b2c-dx.features.docsBrowser"
+      },
+      {
+        "command": "b2c-dx.docs.viewSymbolDocs",
+        "key": "ctrl+alt+shift+d",
+        "mac": "cmd+alt+shift+d",
+        "when": "config.b2c-dx.features.docsBrowser && editorTextFocus && (editorLangId == javascript || editorLangId == typescript) && resourcePath =~ /\\/cartridge\\//"
       }
     ]
   },
@@ -2171,8 +2169,7 @@
     "build": "node scripts/esbuild-bundle.mjs",
     "build:docs-index": "node scripts/build-docs-index/run.mjs",
     "watch": "node scripts/esbuild-bundle.mjs --watch",
-    "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-tooling-sdk run build && pnpm run build:docs-index && node scripts/esbuild-bundle.mjs",
-    "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-script-types run build && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
+    "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-script-types run build && pnpm --filter @salesforce/b2c-tooling-sdk run build && pnpm run build:docs-index && node scripts/esbuild-bundle.mjs",
     "package": "pnpm run build && pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",

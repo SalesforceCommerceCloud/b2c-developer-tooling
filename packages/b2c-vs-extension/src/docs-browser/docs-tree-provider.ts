@@ -65,12 +65,21 @@ class InfoNode extends vscode.TreeItem {
   }
 }
 
-export class DocsTreeProvider implements vscode.TreeDataProvider<DocsTreeNode> {
+export class DocsTreeProvider implements vscode.TreeDataProvider<DocsTreeNode>, vscode.Disposable {
   private readonly _onDidChangeTreeData = new vscode.EventEmitter<DocsTreeNode | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+  private readonly reloadSubscription: vscode.Disposable;
+  private disposed = false;
 
   constructor(private readonly loader: DocsIndexLoader) {
-    loader.onDidReload(() => this._onDidChangeTreeData.fire());
+    this.reloadSubscription = loader.onDidReload(() => this._onDidChangeTreeData.fire());
+  }
+
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.reloadSubscription.dispose();
+    this._onDidChangeTreeData.dispose();
   }
 
   refresh(): void {

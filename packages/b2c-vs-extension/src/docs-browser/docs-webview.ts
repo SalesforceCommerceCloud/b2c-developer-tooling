@@ -177,23 +177,23 @@ export class DocsWebviewManager implements vscode.Disposable {
   }
 
   private buildChildLookup(): EntryChildLookup {
+    // Read straight from the lightweight search dictionary so opening a
+    // class page never blocks the UI thread on the multi-megabyte full
+    // source file. The build script projects signature, description,
+    // deprecated, and sinceApiVersion onto each search entry for exactly
+    // this purpose.
     return {
       childrenOf: (parentId: string): MemberRow[] => {
         const children = this.loader.getSearchEntries().filter((entry) => entry.parentId === parentId);
-        const rows: MemberRow[] = [];
-        for (const child of children) {
-          const full = this.loader.getFullEntry(child.id);
-          rows.push({
-            id: child.id,
-            title: child.title,
-            kind: child.kind,
-            signature: full?.signature,
-            description: full?.description,
-            deprecated: Boolean(full?.deprecated),
-            sinceApiVersion: full?.sinceApiVersion,
-          });
-        }
-        return rows;
+        return children.map((child) => ({
+          id: child.id,
+          title: child.title,
+          kind: child.kind,
+          signature: child.signature,
+          description: child.description,
+          deprecated: child.deprecated === true,
+          sinceApiVersion: child.sinceApiVersion,
+        }));
       },
     };
   }

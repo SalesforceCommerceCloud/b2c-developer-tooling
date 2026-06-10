@@ -36,7 +36,7 @@ export function registerDocsBrowser(context: vscode.ExtensionContext, log: vscod
     treeDataProvider: tree,
     showCollapseAll: true,
   });
-  context.subscriptions.push(treeView);
+  context.subscriptions.push(tree, treeView);
 
   const recents = new DocsRecents(context.globalState);
   const webviewManager = new DocsWebviewManager(context, loader, log, recents);
@@ -137,26 +137,28 @@ async function runViewSymbolDocs(
       await webviewManager.showEntry(entry.id);
       return;
     }
+    // Go-to-Def resolved a path that doesn't map to an entry (e.g. an old
+    // class name still indexed by TS but dropped from the docs source). Drop
+    // the candidate so the hover fallback gets a fresh attempt.
+    qualified = undefined;
   }
 
   // Hover-scan fallback.
-  if (!qualified) {
-    try {
-      const hovers =
-        (await vscode.commands.executeCommand<vscode.Hover[]>('vscode.executeHoverProvider', document.uri, position)) ??
-        [];
-      const text = collectHoverText(hovers);
-      qualified = extractScriptApiQualifiedName(text);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      log.appendLine(`B2C DX docs: hover lookup failed: ${message}`);
-    }
-    if (qualified) {
-      const entry = loader.findEntryByQualifiedName(qualified);
-      if (entry) {
-        await webviewManager.showEntry(entry.id);
-        return;
-      }
+  try {
+    const hovers =
+      (await vscode.commands.executeCommand<vscode.Hover[]>('vscode.executeHoverProvider', document.uri, position)) ??
+      [];
+    const text = collectHoverText(hovers);
+    qualified = extractScriptApiQualifiedName(text);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    log.appendLine(`B2C DX docs: hover lookup failed: ${message}`);
+  }
+  if (qualified) {
+    const entry = loader.findEntryByQualifiedName(qualified);
+    if (entry) {
+      await webviewManager.showEntry(entry.id);
+      return;
     }
   }
 

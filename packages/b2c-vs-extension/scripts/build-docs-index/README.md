@@ -53,3 +53,12 @@ updated in the same PR.
 - `generatedAt` is sourced from `SOURCE_DATE_EPOCH` if set, else a fixed epoch.
   Don't use `new Date()` — that breaks reproducibility.
 - We never touch a file when the contents match.
+
+## Size note
+
+The committed JSON files are deliberately uncompressed so reviewers can diff
+them. They ship inside the VSIX as-is, which is fine today (~13 MB combined
+for 8.6k Script API entries). If a future Script API release pushes this
+materially higher, gzip the files at build time and decompress in the
+loader — `DocsIndexLoader.appendSearchEntriesFrom` and `loadFullSource` are
+the two read sites to update.

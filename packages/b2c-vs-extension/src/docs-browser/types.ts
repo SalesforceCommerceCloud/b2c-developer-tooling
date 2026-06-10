@@ -80,7 +80,13 @@ export interface DocEntry {
 
 /**
  * Lightweight entry shape used by the search dictionary. Every field is also
- * present on the full DocEntry; this subset is what gets loaded eagerly.
+ * present on the full DocEntry; this subset is what gets loaded eagerly so
+ * that the runtime never blocks the UI thread on the multi-megabyte full
+ * source file.
+ *
+ * The `signature`, `description`, `deprecated`, and `sinceApiVersion` fields
+ * are populated for class members so the class-page renderer can show
+ * Methods/Properties tables without resolving each child to its full entry.
  */
 export interface SearchEntry {
   id: string;
@@ -90,6 +96,10 @@ export interface SearchEntry {
   packagePath?: string;
   parentId?: string;
   tags?: string[];
+  signature?: string;
+  description?: string;
+  deprecated?: boolean;
+  sinceApiVersion?: string;
 }
 
 export interface IndexCounts {
