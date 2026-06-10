@@ -432,16 +432,30 @@ jobs:
 
       - name: Package skills artifacts
         if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true' && steps.packages.outputs.publish_plugins == 'true'
+        id: package-skills
         run: |
-          # Create b2c-skills.zip containing skills/b2c/skills/
-          cd skills/b2c && zip -r ../../b2c-skills.zip skills/ -x "*/evals/*"
-          cd ../..
-          # Create b2c-cli-skills.zip containing skills/b2c-cli/skills/
-          cd skills/b2c-cli && zip -r ../../b2c-cli-skills.zip skills/ -x "*/evals/*"
-          cd ../..
-          # Create storefront-next-skills.zip containing skills/storefront-next/skills/
-          cd skills/storefront-next && zip -r ../../storefront-next-skills.zip skills/ -x "*/evals/*"
-          cd ../..
+          # Plugins to package are listed in skills/plugins.json. Each entry maps
+          # to a skills/<name>/ directory whose skills/ subfolder is zipped into
+          # <name>-skills.zip. Adding a plugin there requires no change to this
+          # workflow.
+          ZIPS=""
+          while IFS= read -r name; do
+            [ -n "$name" ] || continue
+            plugin_dir="skills/$name"
+            if [ ! -d "$plugin_dir/skills" ]; then
+              echo "::error::Plugin '$name' from skills/plugins.json has no $plugin_dir/skills directory"
+              exit 1
+            fi
+            zipfile="${name}-skills.zip"
+            (cd "$plugin_dir" && zip -r "$GITHUB_WORKSPACE/$zipfile" skills/ -x "*/evals/*")
+            ZIPS="$ZIPS $zipfile"
+          done < <(jq -r '.plugins[].name' skills/plugins.json)
+          if [ -z "$ZIPS" ]; then
+            echo "::error::No plugins listed in skills/plugins.json"
+            exit 1
+          fi
+          # Trim leading space; persist space-separated list for the upload step
+          echo "zips=${ZIPS# }" >> "$GITHUB_OUTPUT"
           echo "Created skills artifacts:"
           ls -la *.zip
 
@@ -454,7 +468,7 @@ jobs:
             --title "Agent Plugins ${{ steps.packages.outputs.version_plugins }}" \
             --notes "Skills artifacts for b2c-agent-plugins v${{ steps.packages.outputs.version_plugins }}"
 
-          gh release upload "$RELEASE_TAG" b2c-skills.zip b2c-cli-skills.zip storefront-next-skills.zip
+          gh release upload "$RELEASE_TAG" ${{ steps.package-skills.outputs.zips }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
