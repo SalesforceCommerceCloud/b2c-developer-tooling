@@ -1,0 +1,14 @@
+{
+  "description": "Manifest of agent skill plugins packaged and uploaded on release. Each entry corresponds to a skills/<name>/ directory whose skills/ subfolder is zipped into <name>-skills.zip and attached to the b2c-agent-plugins GitHub release. Add a plugin here to have it published — the publish workflow reads this file and requires no edits.",
+  "plugins": [
+    {
+      "name": "b2c"
+    },
+    {
+      "name": "b2c-cli"
+    },
+    {
+      "name": "storefront-next"
+    }
+  ]
+}
