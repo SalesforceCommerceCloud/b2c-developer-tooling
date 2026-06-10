@@ -23,7 +23,10 @@ This workflow uses the **Figma MCP server**. Before proceeding, confirm:
 
 ## Source kit
 
-Duplicate from the official internal Storefront Next Design System file. Record the source and the new file keys in your project's design-system notes (e.g. `docs/design-system/FIGMA_FILE_KEYS.md`) so the mapping is reproducible.
+Duplicate the official **Storefront Next Design System** community kit:
+<https://www.figma.com/community/file/1646023293012114166>
+
+Open the community file in Figma and use **Open in Figma → Duplicate** to copy it into your own drafts, then move it into your team project. Record the new file key in your project's design-system notes (e.g. `docs/design-system/FIGMA_FILE_KEYS.md`) so the mapping is reproducible.
 
 ## Workflow
 

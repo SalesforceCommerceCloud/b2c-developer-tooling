@@ -21,14 +21,14 @@ Before writing a single line of a new component, answer these questions in order
 4. **Only if all three answers are no** — create a new component.
 
 ```tsx
-// ❌ WRONG — creating LushPrimaryButton when Button already exists
-export function LushPrimaryButton({ children }: Props) {
-  return <button className="bg-[#009b3a] text-white ...">{children}</button>
+// ❌ WRONG — creating BrandPrimaryButton when Button already exists
+export function BrandPrimaryButton({ children }: Props) {
+  return <button className="bg-[#2e7d32] text-white ...">{children}</button>
 }
 
 // ✅ CORRECT — new CVA variant on the existing Button primitive
 // In src/components/ui/button.tsx, add to buttonVariants:
-lush: 'bg-primary text-primary-foreground hover:bg-primary/90',
+brand: 'bg-primary text-primary-foreground hover:bg-primary/90',
 
 // ✅ CORRECT — thin composite when behaviour differs
 export function AddToCartButton(props: AddToCartButtonProps) {
@@ -64,7 +64,7 @@ Does the change only affect visual tokens (color, font, spacing)?
                                       Promote to base when a second vertical needs the same pattern.
 ```
 
-**Never add vertical-specific logic (`if lush` / `if furniture`) to a shared component.** If you find yourself writing that, the slot/render-prop pattern is missing from the base component.
+**Never add vertical-specific logic (`if verticalA` / `if verticalB`) to a shared component.** If you find yourself writing that, the slot/render-prop pattern is missing from the base component.
 
 ## Primitives (`src/components/ui/`)
 
