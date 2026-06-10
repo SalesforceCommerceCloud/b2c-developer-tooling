@@ -790,3 +790,74 @@ suite('DocsRecents', () => {
     assert.deepStrictEqual(recents.list(), []);
   });
 });
+
+/**
+ * Pin guarantees that protect search and class-page rendering from regressing
+ * to the duplicate-id state we shipped initially:
+ *
+ *   - Every id is unique across the full index.
+ *   - Method overloads receive a `~N` suffix in declaration order so each gets
+ *     a distinct entry instead of repeatedly clobbering one row.
+ */
+suite('Generated index integrity', () => {
+  let entries: DocEntry[];
+
+  // Resolve resources/docs relative to the compiled test file (out/test/...).
+  const resourcesDocsDir = new URL('../../resources/docs/', import.meta.url);
+
+  suiteSetup(() => {
+    const indexPath = new URL('script-api.json', resourcesDocsDir);
+    if (!fs.existsSync(indexPath)) {
+      throw new Error(
+        `Expected the docs index at ${indexPath.pathname}. ` +
+          'Run `pnpm --filter b2c-vs-extension run build:docs-index` and re-run the tests.',
+      );
+    }
+    entries = JSON.parse(fs.readFileSync(indexPath, 'utf8')) as DocEntry[];
+  });
+
+  test('every entry id is unique', () => {
+    const counts = new Map<string, number>();
+    for (const entry of entries) counts.set(entry.id, (counts.get(entry.id) ?? 0) + 1);
+    const dupes = [...counts.entries()].filter(([, n]) => n > 1);
+    assert.deepStrictEqual(
+      dupes,
+      [],
+      `Expected zero duplicate ids in script-api.json, found ${dupes.length}: ${dupes
+        .slice(0, 5)
+        .map(([id, n]) => `${n}×${id}`)
+        .join(', ')}`,
+    );
+  });
+
+  test('method overloads carry a ~N suffix and stable signatures', () => {
+    // dw.alert.Alerts#addAlert had 3 overloads in v26.7.0; pin that any
+    // multi-overload member uses the suffix scheme rather than collapsing.
+    const addAlertOverloads = entries.filter(
+      (entry) => entry.id.startsWith('script-api:dw/alert/Alerts#addAlert') && entry.kind === 'method',
+    );
+    if (addAlertOverloads.length > 0) {
+      assert.ok(
+        addAlertOverloads.every((entry) => /#addAlert(~\d+)?$/.test(entry.id)),
+        `Expected addAlert overloads to be ~N-suffixed, got ${addAlertOverloads.map((entry) => entry.id).join(', ')}`,
+      );
+      // Every overload has its own (different) signature.
+      const sigs = new Set(addAlertOverloads.map((entry) => entry.signature));
+      assert.strictEqual(
+        sigs.size,
+        addAlertOverloads.length,
+        'Expected every overload entry to ship a distinct signature.',
+      );
+    }
+  });
+
+  test('search dictionary mirrors the full index ids exactly', () => {
+    const searchPath = new URL('script-api-search.json', resourcesDocsDir);
+    const search = JSON.parse(fs.readFileSync(searchPath, 'utf8')) as SearchEntry[];
+    assert.strictEqual(search.length, entries.length, 'search dictionary length must match the full index');
+    const fullIds = new Set(entries.map((entry) => entry.id));
+    for (const row of search) {
+      assert.ok(fullIds.has(row.id), `search row ${row.id} has no matching full entry`);
+    }
+  });
+});

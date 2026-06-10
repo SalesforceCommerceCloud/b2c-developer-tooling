@@ -74,12 +74,29 @@ export function buildScriptApiIndex({typesRoot, scriptApiVersion}) {
 
     entries.push(parentEntry);
 
-    // Members
+    // Members. Walk in declaration order so that overloads (same name, different
+    // signatures) get a stable per-name index appended to their id.
     const members = collectMembers(declaration);
+    /** @type {Map<string, number>} */
+    const nameSeen = new Map();
+    /** @type {Map<string, number>} */
+    const nameTotal = new Map();
     for (const member of members) {
+      const memberName = typeof member.getName === 'function' ? member.getName() : undefined;
+      if (!memberName) continue;
+      nameTotal.set(memberName, (nameTotal.get(memberName) ?? 0) + 1);
+    }
+    for (const member of members) {
+      const memberName = typeof member.getName === 'function' ? member.getName() : undefined;
+      let overloadIndex;
+      if (memberName && (nameTotal.get(memberName) ?? 0) > 1) {
+        overloadIndex = nameSeen.get(memberName) ?? 0;
+        nameSeen.set(memberName, overloadIndex + 1);
+      }
       const entry = buildMemberEntry({
         member,
         parent: parentEntry,
+        overloadIndex,
       });
       if (entry) entries.push(entry);
     }
@@ -91,6 +108,25 @@ export function buildScriptApiIndex({typesRoot, scriptApiVersion}) {
 
   // Validate every entry. Throws on first malformed one.
   for (const entry of entries) assertValidDocEntry(entry, entry.id);
+
+  // Belt-and-suspenders: id collisions are silent disasters at runtime
+  // (search returns duplicates, member rows render the wrong source).
+  // Fail the build immediately if any future ts-morph behavior change
+  // reintroduces them.
+  /** @type {Map<string, number>} */
+  const idCounts = new Map();
+  for (const entry of entries) idCounts.set(entry.id, (idCounts.get(entry.id) ?? 0) + 1);
+  const dupes = [...idCounts.entries()].filter(([, n]) => n > 1);
+  if (dupes.length > 0) {
+    const sample = dupes
+      .slice(0, 5)
+      .map(([id, n]) => `  ${n}× ${id}`)
+      .join('\n');
+    throw new Error(
+      `Duplicate Script API ids detected (${dupes.length} colliding ids).\n` +
+        `Each id must be unique across the index. Sample:\n${sample}`,
+    );
+  }
 
   // Deterministic order.
   entries.sort(byId);
@@ -227,6 +263,14 @@ function buildParentEntry({declaration, kind, declName, qualifiedName, packagePa
 }
 
 /**
+ * Collect every property and method declared on a class/interface/enum.
+ *
+ * IMPORTANT: ts-morph's `getProperties()` / `getMethods()` already return
+ * **all** declared members (instance + static). The `getStaticProperties()`
+ * / `getStaticMethods()` accessors are filtered subsets — calling them too
+ * produces byte-for-byte duplicate rows. The static-ness of each member is
+ * preserved on the node itself and surfaced downstream via `isStatic()`.
+ *
  * @param {ReturnType<typeof pickPrimaryDeclaration>} declaration
  */
 function collectMembers(declaration) {
@@ -235,14 +279,8 @@ function collectMembers(declaration) {
   if (typeof declaration.getProperties === 'function') {
     members.push(...declaration.getProperties());
   }
-  if (typeof declaration.getStaticProperties === 'function') {
-    members.push(...declaration.getStaticProperties());
-  }
   if (typeof declaration.getMethods === 'function') {
     members.push(...declaration.getMethods());
-  }
-  if (typeof declaration.getStaticMethods === 'function') {
-    members.push(...declaration.getStaticMethods());
   }
   if (typeof declaration.getMembers === 'function' && declaration.getKind() === SyntaxKind.EnumDeclaration) {
     // Enum members come through getMembers(); treat each as a constant.
@@ -255,9 +293,12 @@ function collectMembers(declaration) {
  * @param {object} args
  * @param {import('ts-morph').Node} args.member
  * @param {import('./schema.mjs').DocEntry} args.parent
+ * @param {number} [args.overloadIndex] zero-based index when the parent has
+ *        multiple members with this name. Appended to the id as `~N` so
+ *        each overload gets a unique entry.
  * @returns {import('./schema.mjs').DocEntry | undefined}
  */
-function buildMemberEntry({member, parent}) {
+function buildMemberEntry({member, parent, overloadIndex}) {
   const name = typeof member.getName === 'function' ? member.getName() : undefined;
   if (!name) return undefined;
 
@@ -283,9 +324,14 @@ function buildMemberEntry({member, parent}) {
   const sections = [];
   if (jsDoc.body) sections.push({heading: 'Description', body: jsDoc.body});
 
+  // Overload disambiguator. Single-overload members keep a clean id; only
+  // overloads receive a `~N` suffix in declaration order so each gets its
+  // own URL-safe stable identifier.
+  const idSuffix = typeof overloadIndex === 'number' ? `~${overloadIndex}` : '';
+
   /** @type {import('./schema.mjs').DocEntry} */
   const entry = {
-    id: `${parent.id}#${name}`,
+    id: `${parent.id}#${name}${idSuffix}`,
     source: 'script-api',
     kind: memberKind,
     title: `${parent.title}.${name}`,

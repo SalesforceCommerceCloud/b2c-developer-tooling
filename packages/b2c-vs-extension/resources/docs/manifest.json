@@ -1,10 +1,10 @@
 {
   "bmVersion": "",
-  "checksum": "5820d5debb830c79acdd4a4a647367bb9c58bf1c23f483541445f41a5d06e0d2",
+  "checksum": "9833b625ab59797f9a0917f4c9aafc79de5cf02ced3b8dfca2984bfb961494b2",
   "counts": {
     "bm": 0,
     "isml": 0,
-    "scriptApi": 8664
+    "scriptApi": 7366
   },
   "generatedAt": "1970-01-01T00:00:00.000Z",
   "ismlVersion": "",
