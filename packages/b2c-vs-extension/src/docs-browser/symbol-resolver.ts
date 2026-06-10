@@ -4,8 +4,6 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {scanIsmlTags} from '../isml/tags.js';
-
 /**
  * Extract a Script API qualified name (e.g. `dw.order.BasketMgr.getCurrentBasket`)
  * from VS Code hover content. The TypeScript Server plugin shipped via
@@ -53,20 +51,6 @@ export function extractIdentifierAtOffset(text: string, offset: number): string 
   while (end < text.length && isIdent(text[end])) end++;
   if (end === start) return undefined;
   return text.slice(start, end);
-}
-
-/**
- * Find the ISML tag whose name span covers the offset. Returns the bare tag
- * name (e.g. `isloop`, `iscustom-foo`) so the caller can build an `isml:<name>`
- * id.
- */
-export function findIsmlTagAtOffset(text: string, offset: number): string | undefined {
-  for (const token of scanIsmlTags(text)) {
-    if (offset >= token.nameStartOffset && offset <= token.nameEndOffset) {
-      return token.name;
-    }
-  }
-  return undefined;
 }
 
 /**

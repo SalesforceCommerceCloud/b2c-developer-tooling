@@ -4,11 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 /**
- * Build the docs index. Currently only emits Script API entries — ISML and
- * Business Manager support are tracked as separate follow-up work that needs
- * authoritative upstream sources before any data is generated.
- *
- * Output goes to packages/b2c-vs-extension/resources/docs/.
+ * Build the Script API docs index. Output goes to
+ * `packages/b2c-vs-extension/resources/docs/`.
  *
  * Usage:
  *   pnpm --filter b2c-vs-extension run build:docs-index
@@ -64,8 +61,6 @@ async function main() {
 
   const counts = {
     scriptApi: scriptApiEntries.length,
-    isml: 0,
-    bm: 0,
   };
 
   // Checksum the SOURCE payloads (not the manifest) so manifest changes
@@ -76,8 +71,6 @@ async function main() {
   const manifest = {
     schemaVersion: SCHEMA_VERSION,
     scriptApiVersion,
-    ismlVersion: '',
-    bmVersion: '',
     generatedAt: getStableGeneratedAt(),
     counts,
     checksum,

@@ -252,19 +252,8 @@ export class DocsWebviewManager implements vscode.Disposable {
 
 function formatVersionLabel(manifest: IndexManifest | undefined): string {
   if (!manifest) return 'Docs index unavailable';
-  const parts: string[] = [];
-  if (manifest.scriptApiVersion) {
-    parts.push(`Script API v${manifest.scriptApiVersion} (${manifest.counts.scriptApi})`);
-  }
-  if (manifest.counts.isml > 0) {
-    const ismlLabel = manifest.ismlVersion ? `ISML ${manifest.ismlVersion}` : 'ISML';
-    parts.push(`${ismlLabel} (${manifest.counts.isml})`);
-  }
-  if (manifest.counts.bm > 0) {
-    const bmLabel = manifest.bmVersion ? `BM ${manifest.bmVersion}` : 'BM';
-    parts.push(`${bmLabel} (${manifest.counts.bm})`);
-  }
-  return parts.join(' · ');
+  if (!manifest.scriptApiVersion) return '';
+  return `Script API v${manifest.scriptApiVersion} (${manifest.counts.scriptApi})`;
 }
 
 function escapeAttribute(value: string): string {

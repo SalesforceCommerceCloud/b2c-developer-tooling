@@ -12,9 +12,9 @@
  * under `src/docs-browser/`. Bumping `SCHEMA_VERSION` is a breaking change for
  * the loader and must be paired with a loader update.
  *
- * @typedef {'script-api' | 'isml' | 'bm'} DocSource
+ * @typedef {'script-api'} DocSource
  *
- * @typedef {'package' | 'class' | 'interface' | 'enum' | 'method' | 'property' | 'constant' | 'tag' | 'attribute' | 'topic'} DocEntryKind
+ * @typedef {'package' | 'class' | 'interface' | 'enum' | 'method' | 'property' | 'constant'} DocEntryKind
  *
  * @typedef {object} DocParam
  * @property {string} name
@@ -25,11 +25,6 @@
  * @typedef {object} DocSection
  * @property {string} heading
  * @property {string} body  Markdown source. Renderer pre-processes this at build time when possible.
- *
- * @typedef {object} DocAttribute
- * @property {string} name
- * @property {boolean} [required]
- * @property {string} [description]
  *
  * @typedef {object} DocReturn
  * @property {string} [type]
@@ -44,7 +39,7 @@
  * @property {string} [message]
  *
  * @typedef {object} DocEntry
- * @property {string} id              Stable cross-source id (e.g. "script-api:dw/order/BasketMgr#getCurrentBasket").
+ * @property {string} id              Stable id (e.g. "script-api:dw/order/BasketMgr#getCurrentBasket").
  * @property {DocSource} source
  * @property {DocEntryKind} kind
  * @property {string} title           Short display title (e.g. "BasketMgr.getCurrentBasket").
@@ -61,18 +56,13 @@
  * @property {DocSection[]} [sections]
  * @property {string[]} [examples]    Each is a code block (no fences). Caller decides language.
  * @property {string[]} [tags]        Free-form search keywords.
- * @property {DocAttribute[]} [attributes]  Only for ISML kind 'tag'.
  *
  * @typedef {object} IndexCounts
  * @property {number} scriptApi
- * @property {number} isml
- * @property {number} bm
  *
  * @typedef {object} IndexManifest
  * @property {1} schemaVersion
  * @property {string} scriptApiVersion
- * @property {string} ismlVersion
- * @property {string} bmVersion
  * @property {string} generatedAt    ISO-8601 instant.
  * @property {IndexCounts} counts
  * @property {string} checksum       sha256 of concatenated source JSON files.
@@ -81,7 +71,7 @@
 export const SCHEMA_VERSION = 1;
 
 /** All DocSource values. Keep in lockstep with the typedef above. */
-export const DOC_SOURCES = Object.freeze(['script-api', 'isml', 'bm']);
+export const DOC_SOURCES = Object.freeze(['script-api']);
 
 /** All DocEntryKind values. Keep in lockstep with the typedef above. */
 export const DOC_ENTRY_KINDS = Object.freeze([
@@ -92,9 +82,6 @@ export const DOC_ENTRY_KINDS = Object.freeze([
   'method',
   'property',
   'constant',
-  'tag',
-  'attribute',
-  'topic',
 ]);
 
 /**

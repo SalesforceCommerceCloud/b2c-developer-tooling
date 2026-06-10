@@ -5,7 +5,7 @@
  */
 
 import {escapeHtml, renderInline, renderMarkdown} from './markdown.js';
-import type {DocAttribute, DocEntry, DocEntryKind, DocParam, DocReturn, DocThrows} from './types.js';
+import type {DocEntry, DocEntryKind, DocParam, DocReturn, DocThrows} from './types.js';
 
 /**
  * Compact view of a child member, enough to render an inline row on the
@@ -75,7 +75,6 @@ export function renderDocEntryHtml(entry: DocEntry): string {
   if (entry.description) parts.push(`<p class="entry-summary">${renderInline(entry.description)}</p>`);
 
   if (entry.params && entry.params.length > 0) parts.push(renderParams(entry.params));
-  if (entry.attributes && entry.attributes.length > 0) parts.push(renderAttributes(entry.attributes));
   if (entry.returns) parts.push(renderReturns(entry.returns));
   if (entry.throws && entry.throws.length > 0) parts.push(renderThrows(entry.throws));
 
@@ -210,26 +209,6 @@ function renderRowBadges(row: MemberRow): string {
 
 function escapeAttribute(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function renderAttributes(attributes: DocAttribute[]): string {
-  const rows = attributes
-    .map(
-      (attr) => `
-        <tr>
-          <td><code>${escapeHtml(attr.name)}</code></td>
-          <td>${attr.required ? '<span class="entry-required">yes</span>' : '<span class="entry-empty">no</span>'}</td>
-          <td>${attr.description ? renderInline(attr.description) : '<span class="entry-empty">—</span>'}</td>
-        </tr>`,
-    )
-    .join('');
-  return `
-    <section class="entry-section">
-      <h2>Attributes</h2>
-      <table class="entry-params"><thead>
-        <tr><th>Name</th><th>Required</th><th>Description</th></tr>
-      </thead><tbody>${rows}</tbody></table>
-    </section>`;
 }
 
 function renderReturns(returns: DocReturn): string {

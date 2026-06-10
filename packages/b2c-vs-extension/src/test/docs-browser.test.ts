@@ -25,7 +25,6 @@ import {
   deriveScriptApiQualifiedName,
   extractIdentifierAtOffset,
   extractScriptApiQualifiedName,
-  findIsmlTagAtOffset,
 } from '../docs-browser/symbol-resolver.js';
 import type {DocEntry, IndexManifest, SearchEntry} from '../docs-browser/types.js';
 
@@ -75,10 +74,8 @@ function writeIndex(
     const manifest: IndexManifest = {
       schemaVersion: 1,
       scriptApiVersion: '26.7.0',
-      ismlVersion: '',
-      bmVersion: '',
       generatedAt: '1970-01-01T00:00:00.000Z',
-      counts: {scriptApi: 0, isml: 0, bm: 0},
+      counts: {scriptApi: 0},
       checksum: 'test',
       ...partial.manifest,
     };
@@ -181,7 +178,7 @@ suite('DocsIndexLoader', () => {
 
   test('loads manifest, search dictionary, and full entries lazily', () => {
     writeIndex(harness, {
-      manifest: {counts: {scriptApi: 4, isml: 0, bm: 0}},
+      manifest: {counts: {scriptApi: 4}},
       scriptApiSearch: sampleSearchEntries,
       scriptApi: sampleFullEntries,
     });
@@ -207,7 +204,7 @@ suite('DocsIndexLoader', () => {
 
   test('findEntryByQualifiedName accepts dot and slash forms', () => {
     writeIndex(harness, {
-      manifest: {counts: {scriptApi: 4, isml: 0, bm: 0}},
+      manifest: {counts: {scriptApi: 4}},
       scriptApiSearch: sampleSearchEntries,
     });
     const loader = new DocsIndexLoader(harness.context as vscode.ExtensionContext, harness.log);
@@ -233,14 +230,14 @@ suite('DocsIndexLoader', () => {
 
   test('reload clears caches and forces re-read', () => {
     writeIndex(harness, {
-      manifest: {counts: {scriptApi: 1, isml: 0, bm: 0}},
+      manifest: {counts: {scriptApi: 1}},
       scriptApiSearch: [sampleSearchEntries[0]],
     });
     const loader = new DocsIndexLoader(harness.context as vscode.ExtensionContext, harness.log);
     assert.strictEqual(loader.getSearchEntries().length, 1);
 
     writeIndex(harness, {
-      manifest: {counts: {scriptApi: 4, isml: 0, bm: 0}},
+      manifest: {counts: {scriptApi: 4}},
       scriptApiSearch: sampleSearchEntries,
     });
 
@@ -257,7 +254,7 @@ suite('DocsIndexLoader', () => {
   });
 
   test('logs and skips malformed search dictionary', () => {
-    writeIndex(harness, {manifest: {counts: {scriptApi: 0, isml: 0, bm: 0}}});
+    writeIndex(harness, {manifest: {counts: {scriptApi: 0}}});
     fs.writeFileSync(path.join(harness.tmpRoot, 'resources', 'docs', 'script-api-search.json'), 'not-json');
     const loader = new DocsIndexLoader(harness.context as vscode.ExtensionContext, harness.log);
     assert.strictEqual(loader.getSearchEntries().length, 0);
@@ -480,27 +477,6 @@ suite('renderDocEntryHtml', () => {
     assert.ok(html.includes('Foo&lt;script&gt;'));
     assert.ok(html.includes('See &lt;iframe&gt;'));
   });
-
-  test('renders ISML attribute table when present', () => {
-    const ismlEntry: DocEntry = {
-      id: 'isml:isloop',
-      source: 'isml',
-      kind: 'tag',
-      title: '<isloop>',
-      qualifiedName: 'isml.isloop',
-      description: 'Iterates over a collection.',
-      attributes: [
-        {name: 'items', required: false, description: 'Collection to iterate.'},
-        {name: 'var', required: true, description: 'Loop variable.'},
-      ],
-    };
-    const html = renderDocEntryHtml(ismlEntry);
-    assert.ok(html.includes('Attributes'));
-    assert.ok(html.includes('<code>items</code>'));
-    assert.ok(html.includes('<code>var</code>'));
-    assert.ok(html.includes('entry-required'));
-    assert.ok(html.includes('Loop variable.'));
-  });
 });
 
 suite('renderDocEntryWithMembersHtml', () => {
@@ -680,18 +656,6 @@ suite('Symbol resolver', () => {
   test('extractIdentifierAtOffset returns undefined when cursor is in whitespace gap', () => {
     const text = 'a  b';
     assert.strictEqual(extractIdentifierAtOffset(text, 2), undefined);
-  });
-
-  test('findIsmlTagAtOffset returns the tag name under the cursor', () => {
-    const text = '<isloop items="x" var="i"></isloop>';
-    const offset = text.indexOf('isloop') + 2;
-    assert.strictEqual(findIsmlTagAtOffset(text, offset), 'isloop');
-  });
-
-  test('findIsmlTagAtOffset returns undefined when cursor is outside any tag name', () => {
-    const text = '<isloop items="x"></isloop>';
-    const offset = text.indexOf('items');
-    assert.strictEqual(findIsmlTagAtOffset(text, offset), undefined);
   });
 
   test('deriveScriptApiQualifiedName maps a class file to the class name', () => {

@@ -1,13 +1,9 @@
 {
-  "bmVersion": "",
   "checksum": "9833b625ab59797f9a0917f4c9aafc79de5cf02ced3b8dfca2984bfb961494b2",
   "counts": {
-    "bm": 0,
-    "isml": 0,
     "scriptApi": 7366
   },
   "generatedAt": "1970-01-01T00:00:00.000Z",
-  "ismlVersion": "",
   "schemaVersion": 1,
   "scriptApiVersion": "26.7.0"
 }

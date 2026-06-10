@@ -41,12 +41,9 @@ const KIND_BOOST: Record<DocEntryKind, number> = {
   class: 4,
   interface: 4,
   enum: 4,
-  tag: 3,
-  topic: 3,
   method: 2,
   property: 1,
   constant: 1,
-  attribute: 0,
 };
 
 /**

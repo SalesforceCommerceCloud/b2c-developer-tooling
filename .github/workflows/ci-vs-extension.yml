@@ -83,6 +83,10 @@ jobs:
             exit 1
           fi
 
+      - name: Verify Docs Browser runtime assets
+        working-directory: packages/b2c-vs-extension
+        run: pnpm run verify:docs-browser-assets
+
       - name: Run VS Extension tests
         working-directory: packages/b2c-vs-extension
         run: xvfb-run -a pnpm run test

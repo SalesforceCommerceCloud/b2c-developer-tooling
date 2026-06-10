@@ -19,10 +19,6 @@ interface SourcePaths {
   manifest: string;
   scriptApi: string;
   scriptApiSearch: string;
-  isml: string;
-  ismlSearch: string;
-  bm: string;
-  bmSearch: string;
 }
 
 interface LoadedFullSource {
@@ -31,14 +27,14 @@ interface LoadedFullSource {
 }
 
 /**
- * Loads the docs index from `resources/docs/` inside the extension install
- * location. Three-tier laziness:
+ * Loads the Script API docs index from `resources/docs/` inside the
+ * extension install location. Three-tier laziness:
  *
  *   1. `getManifest()`      — reads manifest.json on first call, then cached.
- *   2. `getSearchEntries()` — reads search dictionaries on first call, cached.
- *      ~3 MB of JSON for Script API alone, parsed once per session.
- *   3. `getFullEntry(id)`   — loads the full source file (~8 MB for Script API)
- *      only when the user actually opens an entry. Cached thereafter.
+ *   2. `getSearchEntries()` — reads the search dictionary on first call,
+ *      cached. ~5 MB of JSON parsed once per session.
+ *   3. `getFullEntry(id)`   — loads the full source file (~8 MB) only when
+ *      the user actually opens an entry. Cached thereafter.
  *
  * No network calls. Failures degrade gracefully:
  *   - Missing manifest -> getManifest() returns undefined; caller shows guidance.
@@ -72,10 +68,6 @@ export class DocsIndexLoader implements vscode.Disposable {
       manifest: path.join(docsDir, 'manifest.json'),
       scriptApi: path.join(docsDir, 'script-api.json'),
       scriptApiSearch: path.join(docsDir, 'script-api-search.json'),
-      isml: path.join(docsDir, 'isml.json'),
-      ismlSearch: path.join(docsDir, 'isml-search.json'),
-      bm: path.join(docsDir, 'bm.json'),
-      bmSearch: path.join(docsDir, 'bm-search.json'),
     };
   }
 
@@ -188,8 +180,6 @@ export class DocsIndexLoader implements vscode.Disposable {
 
     const collected: SearchEntry[] = [];
     this.appendSearchEntriesFrom(this.paths.scriptApiSearch, collected);
-    this.appendSearchEntriesFrom(this.paths.ismlSearch, collected);
-    this.appendSearchEntriesFrom(this.paths.bmSearch, collected);
 
     this.searchEntries = collected;
     this.searchByQualifiedName = new Map();
@@ -238,8 +228,9 @@ export class DocsIndexLoader implements vscode.Disposable {
     const cached = this.fullSources.get(source);
     if (cached) return cached;
 
-    const filePath =
-      source === 'script-api' ? this.paths.scriptApi : source === 'isml' ? this.paths.isml : this.paths.bm;
+    // Currently only 'script-api' is a valid DocSource. Adding more in the
+    // future means extending the SourcePaths interface and routing here.
+    const filePath = this.paths.scriptApi;
     let raw: string;
     try {
       raw = fs.readFileSync(filePath, 'utf8');

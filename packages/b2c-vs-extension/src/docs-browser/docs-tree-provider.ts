@@ -116,30 +116,6 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<DocsTreeNode>, 
       ),
     );
 
-    // ISML and Business Manager are intentionally omitted in the current
-    // release. Tracked as separate follow-up work that requires authoritative
-    // upstream sources (the ISML grammar / Salesforce-owned BM content) before
-    // any data is shipped.
-    if (manifest.counts.isml > 0) {
-      nodes.push(
-        new SourceNode(
-          'isml',
-          'ISML Tags',
-          formatSourceDescription(manifest.ismlVersion || undefined, manifest.counts.isml),
-        ),
-      );
-    }
-
-    if (manifest.counts.bm > 0) {
-      nodes.push(
-        new SourceNode(
-          'bm',
-          'Business Manager',
-          formatSourceDescription(manifest.bmVersion || undefined, manifest.counts.bm),
-        ),
-      );
-    }
-
     return nodes;
   }
 
@@ -147,59 +123,21 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<DocsTreeNode>, 
     const entries = this.loader.getSearchEntries().filter((entry) => entry.id.startsWith(`${source}:`));
     if (entries.length === 0) return [new InfoNode('No entries indexed.')];
 
-    if (source === 'script-api') {
-      const packages = entries.filter((entry) => entry.kind === 'package');
-      packages.sort(byQualifiedName);
-      return packages.map(
-        (pkg) =>
-          new PackageNode(
-            source,
-            pkg.packagePath ?? pkg.qualifiedName.replace(/\./g, '/'),
-            pkg.qualifiedName,
-            describePackage(entries, pkg),
-          ),
-      );
-    }
-
-    if (source === 'bm') {
-      // BM is grouped by synthesized category nodes whose ids are `bm:category:<name>`.
-      const categories = entries.filter((entry) => entry.id.startsWith('bm:category:'));
-      categories.sort(byTitle);
-      if (categories.length === 0) {
-        // Fall through to flat layout if categories aren't present (legacy index).
-        return entries
-          .filter((entry) => entry.kind === 'topic' && !entry.id.startsWith('bm:category:'))
-          .sort(byTitle)
-          .map((entry) => new EntryNode(entry));
-      }
-      return categories.map(
-        (cat) =>
-          new PackageNode(
-            source,
-            cat.packagePath ?? cat.qualifiedName.replace(/\./g, '/'),
-            cat.title,
-            cat.tags?.[0] ? undefined : undefined,
-          ),
-      );
-    }
-
-    // ISML: flat list of tags.
-    const direct = entries
-      .filter((entry) => entry.kind !== 'package' && !entry.id.startsWith(`${source}:category:`))
-      .sort(byTitle);
-    return direct.map((entry) => new EntryNode(entry));
+    const packages = entries.filter((entry) => entry.kind === 'package');
+    packages.sort(byQualifiedName);
+    return packages.map(
+      (pkg) =>
+        new PackageNode(
+          source,
+          pkg.packagePath ?? pkg.qualifiedName.replace(/\./g, '/'),
+          pkg.qualifiedName,
+          describePackage(entries, pkg),
+        ),
+    );
   }
 
   private getPackageChildren(source: DocSource, packagePath: string): DocsTreeNode[] {
     const entries = this.loader.getSearchEntries();
-    if (source === 'bm') {
-      // BM categories use synthetic ids; convert packagePath back to the id form.
-      const categoryId = `bm:category:${packagePath.replace(/^bm\//, '')}`;
-      const direct = entries.filter((entry) => entry.parentId === categoryId).sort(byTitle);
-      if (direct.length === 0) return [new InfoNode('No topics.')];
-      return direct.map((entry) => new EntryNode(entry));
-    }
-
     const packageId = `${source}:${packagePath}`;
     const direct = entries
       .filter((entry) => entry.parentId === packageId)
@@ -238,7 +176,6 @@ function byQualifiedName(a: SearchEntry, b: SearchEntry): number {
 
 function iconForSource(source: DocSource): string {
   if (source === 'script-api') return 'symbol-class';
-  if (source === 'isml') return 'symbol-misc';
   return 'book';
 }
 
@@ -258,12 +195,6 @@ function iconForKind(kind: SearchEntry['kind']): string {
       return 'symbol-property';
     case 'constant':
       return 'symbol-constant';
-    case 'tag':
-      return 'symbol-snippet';
-    case 'attribute':
-      return 'symbol-key';
-    case 'topic':
-      return 'book';
     default:
       return 'symbol-misc';
   }

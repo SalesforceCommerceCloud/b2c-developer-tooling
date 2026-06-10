@@ -10,19 +10,15 @@
  * breaking change for this module.
  */
 
-export type DocSource = 'script-api' | 'isml' | 'bm';
+/**
+ * Currently the docs index only emits Script API entries. The discriminated
+ * union exists so future doc sources (e.g. an ISML grammar parser) can be
+ * added without touching the runtime contract — they would extend this union
+ * and ship their own builder.
+ */
+export type DocSource = 'script-api';
 
-export type DocEntryKind =
-  | 'package'
-  | 'class'
-  | 'interface'
-  | 'enum'
-  | 'method'
-  | 'property'
-  | 'constant'
-  | 'tag'
-  | 'attribute'
-  | 'topic';
+export type DocEntryKind = 'package' | 'class' | 'interface' | 'enum' | 'method' | 'property' | 'constant';
 
 export interface DocParam {
   name: string;
@@ -34,12 +30,6 @@ export interface DocParam {
 export interface DocSection {
   heading: string;
   body: string;
-}
-
-export interface DocAttribute {
-  name: string;
-  required?: boolean;
-  description?: string;
 }
 
 export interface DocReturn {
@@ -75,7 +65,6 @@ export interface DocEntry {
   sections?: DocSection[];
   examples?: string[];
   tags?: string[];
-  attributes?: DocAttribute[];
 }
 
 /**
@@ -104,15 +93,11 @@ export interface SearchEntry {
 
 export interface IndexCounts {
   scriptApi: number;
-  isml: number;
-  bm: number;
 }
 
 export interface IndexManifest {
   schemaVersion: 1;
   scriptApiVersion: string;
-  ismlVersion: string;
-  bmVersion: string;
   generatedAt: string;
   counts: IndexCounts;
   checksum: string;
