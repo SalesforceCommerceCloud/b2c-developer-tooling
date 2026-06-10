@@ -2152,14 +2152,14 @@
       },
       {
         "command": "b2c-dx.docs.search",
-        "key": "ctrl+alt+d",
-        "mac": "cmd+alt+d",
+        "key": "alt+d",
+        "mac": "alt+d",
         "when": "config.b2c-dx.features.docsBrowser"
       },
       {
         "command": "b2c-dx.docs.viewSymbolDocs",
-        "key": "ctrl+alt+shift+d",
-        "mac": "cmd+alt+shift+d",
+        "key": "alt+shift+d",
+        "mac": "alt+shift+d",
         "when": "config.b2c-dx.features.docsBrowser && editorTextFocus && (editorLangId == javascript || editorLangId == typescript) && resourcePath =~ /\\/cartridge\\//"
       }
     ]

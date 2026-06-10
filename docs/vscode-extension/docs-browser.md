@@ -29,8 +29,9 @@ Code blocks and tables follow your VS Code theme.
 
 ## Searching
 
-- **Keyboard shortcut** → `Cmd+Alt+D` (Mac) / `Ctrl+Alt+D` (Windows / Linux)
-  opens the search picker from anywhere.
+- **Keyboard shortcut** → `Alt+D` opens the search picker from anywhere.
+  (On Mac, hold the **Option** key — that's the same key, Apple labels it
+  differently.)
 - **Sidebar title bar** → click the **Search Docs** ($(search)) icon for the
   same ranked quick-pick. The picker is keyboard-friendly: type, arrow-keys,
   Enter.
@@ -46,9 +47,8 @@ The picker boosts exact matches (`dw.order.BasketMgr`) over substring matches
 Place the cursor on a `dw.*` symbol in a JavaScript or TypeScript cartridge
 file and:
 
-- **Keyboard shortcut** → `Cmd+Alt+Shift+D` (Mac) / `Ctrl+Alt+Shift+D`
-  (Windows / Linux) opens the matching entry directly. Active only inside
-  cartridge files (the path must contain `/cartridge/`).
+- **Keyboard shortcut** → `Alt+Shift+D` opens the matching entry directly.
+  Active only inside cartridge files (the path must contain `/cartridge/`).
 - **Editor right-click → View B2C Docs** does the same.
 - **Command Palette → B2C DX - Docs: View B2C Docs** does the same.
 
