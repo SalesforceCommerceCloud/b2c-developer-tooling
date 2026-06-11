@@ -18,6 +18,8 @@ claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 claude plugin install b2c-cli
 claude plugin install b2c
 claude plugin install storefront-next
+# Install storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma
 # Install b2c-dx-mcp if you want the MCP server installed
 claude plugin install b2c-dx-mcp
 ```
@@ -48,6 +50,7 @@ copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 copilot plugin install b2c-cli@b2c-developer-tooling
 copilot plugin install b2c@b2c-developer-tooling
 copilot plugin install storefront-next@b2c-developer-tooling
+copilot plugin install storefront-next-figma@b2c-developer-tooling
 ```
 
 ```bash [Agentforce Vibes]
@@ -85,6 +88,10 @@ npx @salesforce/b2c-cli setup skills
       <td>Storefront Next development — project setup, routing, data fetching, components, Page Designer, authentication, i18n, extensions, testing, and deployment to Managed Runtime</td>
     </tr>
     <tr>
+      <td><a href="https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/storefront-next-figma/skills"><code>storefront-next-figma</code></a></td>
+      <td>Figma design-kit workflows for Storefront Next verticals — duplicate the kit, sync brand variables from <code>brand.css</code>, edit components, and publish Code Connect. Requires the <a href="https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server">Figma MCP server</a></td>
+    </tr>
+    <tr>
       <td><a href="/mcp/"><code>b2c-dx-mcp</code></a></td>
       <td>Automatic project type detection and B2C Commerce workflows for your AI assistant. See <a href="/mcp/installation">MCP Installation</a></td>
     </tr>
@@ -107,6 +114,8 @@ Install plugins at your preferred scope:
 claude plugin install b2c-cli
 claude plugin install b2c
 claude plugin install storefront-next
+# Install storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma
 # Install b2c-dx-mcp if you want the MCP server installed
 claude plugin install b2c-dx-mcp
 ```
@@ -115,6 +124,8 @@ claude plugin install b2c-dx-mcp
 claude plugin install b2c-cli --scope project
 claude plugin install b2c --scope project
 claude plugin install storefront-next --scope project
+# Install storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma --scope project
 # Install b2c-dx-mcp if you want the MCP server installed
 claude plugin install b2c-dx-mcp --scope project
 ```
@@ -152,6 +163,8 @@ codex plugin marketplace remove b2c-developer-tooling
 ```
 
 > **Note:** The `b2c-dx-mcp` plugin is available only for Claude Code. For other clients, install the MCP server directly — see [MCP Installation](/mcp/installation).
+
+> **Note:** The `storefront-next-figma` plugin requires the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server) to be configured in your AI tool — its skills drive the Figma design kit (duplicating the kit, syncing brand variables, and publishing Code Connect) through Figma's MCP tools. Install it alongside `storefront-next` when you also manage the design system in Figma.
 
 ## Cursor
 
@@ -203,6 +216,8 @@ claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 claude plugin install b2c-cli
 claude plugin install b2c
 claude plugin install storefront-next
+# Add storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma
 ```
 
 ## Copilot
@@ -228,6 +243,7 @@ copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 copilot plugin install b2c-cli@b2c-developer-tooling
 copilot plugin install b2c@b2c-developer-tooling
 copilot plugin install storefront-next@b2c-developer-tooling
+copilot plugin install storefront-next-figma@b2c-developer-tooling
 ```
 
 ## B2C CLI
@@ -244,6 +260,7 @@ List available skills:
 b2c setup skills b2c --list
 b2c setup skills b2c-cli --list
 b2c setup skills storefront-next --list
+b2c setup skills storefront-next-figma --list
 ```
 
 Install to specific IDEs:

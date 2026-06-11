@@ -180,7 +180,8 @@ export const en = {
           '  claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling\n' +
           '  claude plugin install b2c-cli\n' +
           '  claude plugin install b2c\n' +
-          '  claude plugin install storefront-next\n\n' +
+          '  claude plugin install storefront-next\n' +
+          '  claude plugin install storefront-next-figma\n\n' +
           'Use --ide manual for manual installation to the same paths.',
         preview: 'Installing {{count}} skills to {{ides}} ({{scope}})',
         cancelled: 'Installation cancelled.',
@@ -188,7 +189,7 @@ export const en = {
         skippedCount: 'Skipped {{count}} skill(s):',
         errorsCount: 'Failed to install {{count}} skill(s):',
         skillsetRequired:
-          'Skillset argument required in non-interactive mode. Specify b2c, b2c-cli, storefront-next, or cap-dev.',
+          'Skillset argument required in non-interactive mode. Specify b2c, b2c-cli, storefront-next, storefront-next-figma, or cap-dev.',
         selectSkillset: 'Select skill set(s) to install:',
         noSkillsetsSelected: 'No skill sets selected.',
         selectIdes: 'Select target IDEs:',

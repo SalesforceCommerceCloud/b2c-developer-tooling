@@ -14,8 +14,9 @@ function pluginsTag(version: string): string {
 /**
  * Registry mapping skill sets to their source configurations.
  *
- * Each skill set (b2c, b2c-cli, storefront-next, cap-dev) maps to its respective
- * GitHub repository and download configuration for artifact retrieval.
+ * Each skill set (b2c, b2c-cli, storefront-next, storefront-next-figma, cap-dev)
+ * maps to its respective GitHub repository and download configuration for
+ * artifact retrieval.
  */
 export const SKILL_SOURCES: Record<SkillSet, SkillSourceConfig> = {
   b2c: {
@@ -42,6 +43,14 @@ export const SKILL_SOURCES: Record<SkillSet, SkillSourceConfig> = {
     assetName: 'storefront-next-skills.zip',
     tagPattern: pluginsTag,
   },
+  'storefront-next-figma': {
+    id: 'storefront-next-figma',
+    displayName: 'Storefront Next Figma design-kit skills (requires the Figma MCP server)',
+    type: 'release-artifact',
+    repo: 'SalesforceCommerceCloud/b2c-developer-tooling',
+    assetName: 'storefront-next-figma-skills.zip',
+    tagPattern: pluginsTag,
+  },
   'cap-dev': {
     id: 'cap-dev',
     displayName: 'Commerce Apps development skills',
@@ -55,7 +64,7 @@ export const SKILL_SOURCES: Record<SkillSet, SkillSourceConfig> = {
 /**
  * Get the source configuration for a specific skill set.
  *
- * @param skillSet - The skill set identifier ('b2c', 'b2c-cli', 'storefront-next', or 'cap-dev')
+ * @param skillSet - The skill set identifier ('b2c', 'b2c-cli', 'storefront-next', 'storefront-next-figma', or 'cap-dev')
  * @returns The source configuration for the skill set
  * @throws Error if the skill set is not recognized
  */

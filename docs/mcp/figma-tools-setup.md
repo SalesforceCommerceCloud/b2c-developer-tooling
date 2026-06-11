@@ -51,4 +51,5 @@ If the Figma MCP server is not enabled, the workflow tool will still return inst
 - [sfnext_analyze_component](./tools/sfnext-analyze-component) - REUSE/EXTEND/CREATE recommendation
 - [sfnext_match_tokens_to_theme](./tools/sfnext-match-tokens-to-theme) - Token mapping
 - [STOREFRONTNEXT Toolset](./toolsets#storefrontnext) - Overview of Storefront Next tools
+- [`storefront-next-figma` plugin](/guide/agent-skills#available-plugins) - Agent skills for managing the Figma design kit (duplicate the kit, sync brand variables, publish Code Connect); also requires the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server)
 - [Figma MCP Server Documentation](https://developers.figma.com/docs/figma-mcp-server) - Official Figma MCP setup

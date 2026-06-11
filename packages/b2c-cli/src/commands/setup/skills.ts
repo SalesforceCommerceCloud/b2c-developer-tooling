@@ -70,7 +70,7 @@ interface SetupSkillsResponse {
 export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
   static args = {
     skillset: Args.string({
-      description: 'Skill set to install: b2c, b2c-cli, storefront-next, or cap-dev',
+      description: 'Skill set to install: b2c, b2c-cli, storefront-next, storefront-next-figma, or cap-dev',
       options: ALL_SKILL_SETS,
     }),
   };
@@ -86,6 +86,7 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
     '<%= config.bin %> <%= command.id %> b2c',
     '<%= config.bin %> <%= command.id %> b2c-cli --ide cursor --global',
     '<%= config.bin %> <%= command.id %> storefront-next --ide cursor',
+    '<%= config.bin %> <%= command.id %> storefront-next-figma --ide cursor',
     '<%= config.bin %> <%= command.id %> cap-dev --ide claude-code --global',
     '<%= config.bin %> <%= command.id %> b2c --list',
     '<%= config.bin %> <%= command.id %> b2c-cli --skill b2c-code --skill b2c-webdav --ide cursor',
@@ -143,7 +144,7 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       this.error(
         t(
           'commands.setup.skills.skillsetRequired',
-          'Skillset argument required in non-interactive mode. Specify b2c, b2c-cli, storefront-next, or cap-dev.',
+          'Skillset argument required in non-interactive mode. Specify b2c, b2c-cli, storefront-next, storefront-next-figma, or cap-dev.',
         ),
       );
     } else {
@@ -283,7 +284,8 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
             '  claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling\n' +
             '  claude plugin install b2c-cli\n' +
             '  claude plugin install b2c\n' +
-            '  claude plugin install storefront-next\n\n' +
+            '  claude plugin install storefront-next\n' +
+            '  claude plugin install storefront-next-figma\n\n' +
             'Use --ide manual for manual installation to the same paths.',
         ),
       );
