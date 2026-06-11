@@ -73,6 +73,20 @@ jobs:
       - name: Build packages
         run: pnpm -r run build
 
+      - name: Verify docs index is up to date
+        working-directory: packages/b2c-vs-extension
+        run: |
+          pnpm run build:docs-index
+          if [[ -n "$(git status --porcelain resources/docs/)" ]]; then
+            echo "::error::Committed docs index is stale. Run 'pnpm --filter b2c-vs-extension run build:docs-index' and commit the result."
+            git --no-pager diff --stat resources/docs/
+            exit 1
+          fi
+
+      - name: Verify Docs Browser runtime assets
+        working-directory: packages/b2c-vs-extension
+        run: pnpm run verify:docs-browser-assets
+
       - name: Run VS Extension tests
         working-directory: packages/b2c-vs-extension
         run: xvfb-run -a pnpm run test

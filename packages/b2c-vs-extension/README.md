@@ -18,6 +18,7 @@ This README is the source of truth for repo-level developer info (build/watch, l
 - Log tailing into a dedicated output channel.
 - B2C-DX Analytics — CIP/CCAC Query Builder, Tables Browser, curated reports, multi-realm support, saved-query library.
 - ISML language support — syntax highlighting, language configuration (comments, brackets, auto-close), snippets, automatic closing-tag insertion, and Emmet support for `.isml` files.
+- Docs Browser — offline-first sidebar+panel for the SFCC Script API reference; right-click any `dw.*` symbol in a JavaScript file to jump straight to its docs.
 
 See the [docs site](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/features) for the full tour.
 

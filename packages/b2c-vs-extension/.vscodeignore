@@ -3,6 +3,10 @@
 src/**
 !src/webview.html
 !src/api-browser/swagger-webview.html
+!src/docs-browser/docs-webview.html
+!src/storefront-next-cartridge.html
+!src/scapi-explorer.html
+!src/ods-management.html
 out/**
 **/node_modules/**
 dist/meta.json

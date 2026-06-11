@@ -17,7 +17,11 @@ headerPlugin.rules.header.meta.schema = false;
 export default [
   includeIgnoreFile(gitignorePath),
   {
-    ignores: ['src/template/**'],
+    // `src/template/**` are scaffold templates (rendered, not run).
+    // `test-workspace/**` is a fixture cartridge tree used by the integration
+    //   tests and onboarding walkthrough — it intentionally uses cartridge
+    //   conventions (CommonJS `require()`) that fail TypeScript's lint rules.
+    ignores: ['src/template/**', 'test-workspace/**'],
   },
   ...tseslint.configs.recommended,
   prettierPlugin,
