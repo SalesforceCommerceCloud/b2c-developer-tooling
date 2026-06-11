@@ -1,5 +1,13 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.6
+
+### Patch Changes
+
+- [#492](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/492) [`5af7cae`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5af7caeb66c78196fad647b51dbdb184b8bee844) - Removed pilot note for Storefront Next (Thanks [@knhage](https://github.com/knhage)!)
+
+- [`19f059e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/19f059e7ba928d1070d7960920770f1256dfae73) - Document the new `storefront-next-figma` plugin in the Agent Skills guide, the install snippets (homepage, setup), and the Figma tools setup page. The plugin requires the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server) and can be installed from the plugin marketplace or with `b2c setup skills storefront-next-figma`. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.5
 
 ### Patch Changes
