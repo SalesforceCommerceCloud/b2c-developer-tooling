@@ -17,6 +17,7 @@ import {MockAuthStrategy} from '../../helpers/mock-auth.js';
 import JSZip from 'jszip';
 import {
   siteArchiveImport,
+  siteArchiveImportSplit,
   siteArchiveExport,
   siteArchiveExportToPath,
 } from '../../../src/operations/jobs/site-archive.js';
@@ -581,6 +582,355 @@ describe('operations/jobs/site-archive', () => {
         // The error message includes the job ID
         expect(error.message).to.include('failed');
       }
+    });
+  });
+
+  describe('siteArchiveImportSplit', () => {
+    /**
+     * Registers MSW handlers that capture every uploaded archive and respond to
+     * the import job execution for each part. Each PUT body is collected so
+     * tests can inspect how files were partitioned across archives.
+     */
+    function captureSplitUploads(): {uploads: Buffer[]; executions: () => number} {
+      const uploads: Buffer[] = [];
+      let execCount = 0;
+
+      server.use(
+        http.all(`${WEBDAV_BASE}/*`, async ({request}) => {
+          const url = new URL(request.url);
+          if (request.method === 'PUT' && url.pathname.includes('Impex/src/instance/')) {
+            uploads.push(Buffer.from(await request.arrayBuffer()));
+            return new HttpResponse(null, {status: 201});
+          }
+          if (request.method === 'DELETE') {
+            return new HttpResponse(null, {status: 204});
+          }
+          return new HttpResponse(null, {status: 404});
+        }),
+        http.post(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions`, () => {
+          execCount++;
+          return HttpResponse.json({
+            id: `split-exec-${execCount}`,
+            execution_status: 'finished',
+            exit_status: {code: 'OK'},
+          });
+        }),
+        http.get(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions/:id`, ({params}) =>
+          HttpResponse.json({
+            id: params.id,
+            execution_status: 'finished',
+            exit_status: {code: 'OK'},
+            is_log_file_existing: false,
+          }),
+        ),
+      );
+
+      return {uploads, executions: () => execCount};
+    }
+
+    /** Collects the non-directory entry paths from a captured archive buffer. */
+    async function entriesOf(buffer: Buffer): Promise<string[]> {
+      const zip = await JSZip.loadAsync(buffer);
+      return Object.keys(zip.files).filter((p) => !zip.files[p].dir);
+    }
+
+    it('keeps all XML in a single part when it fits under the limit', async () => {
+      const root = path.join(tempDir, 'site-data');
+      fs.mkdirSync(path.join(root, 'catalogs', 'cat-a'), {recursive: true});
+      fs.mkdirSync(path.join(root, 'libraries', 'lib-a'), {recursive: true});
+      fs.writeFileSync(path.join(root, 'catalogs', 'cat-a', 'catalog.xml'), '<catalog/>');
+      fs.writeFileSync(path.join(root, 'libraries', 'lib-a', 'library.xml'), '<library/>');
+
+      const {uploads} = captureSplitUploads();
+
+      const results = await siteArchiveImportSplit(mockInstance, root, {
+        archiveName: 'big',
+        waitOptions: FAST_WAIT_OPTIONS,
+      });
+
+      // No static assets → exactly one (xml) part.
+      expect(results).to.have.lengthOf(1);
+      expect(uploads).to.have.lengthOf(1);
+
+      const entries = await entriesOf(uploads[0]);
+      expect(entries).to.include('big-xml/catalogs/cat-a/catalog.xml');
+      expect(entries).to.include('big-xml/libraries/lib-a/library.xml');
+    });
+
+    it('defers static assets into separate parts after the XML', async () => {
+      const root = path.join(tempDir, 'site-data');
+      fs.mkdirSync(path.join(root, 'catalogs', 'cat-a', 'static'), {recursive: true});
+      fs.writeFileSync(path.join(root, 'catalogs', 'cat-a', 'catalog.xml'), '<catalog/>');
+      // A large incompressible asset that exceeds the per-part budget on its own
+      // would error, so size it under a tiny limit but big enough to force its
+      // own asset part separate from the XML.
+      const asset = Buffer.alloc(50 * 1024, 7); // compressible-but-we-store-by-ext? .bin is compressible
+      fs.writeFileSync(path.join(root, 'catalogs', 'cat-a', 'static', 'image.jpg'), asset);
+
+      const {uploads} = captureSplitUploads();
+
+      const results = await siteArchiveImportSplit(mockInstance, root, {
+        archiveName: 'big',
+        maxBytes: 1024 * 1024,
+        waitOptions: FAST_WAIT_OPTIONS,
+      });
+
+      // One XML part + one asset part, XML imported first.
+      expect(results).to.have.lengthOf(2);
+      expect(uploads).to.have.lengthOf(2);
+
+      const first = await entriesOf(uploads[0]);
+      const second = await entriesOf(uploads[1]);
+      expect(first).to.include('big-xml/catalogs/cat-a/catalog.xml');
+      expect(first).to.not.include('big-xml/catalogs/cat-a/static/image.jpg');
+      expect(second.some((p) => p.endsWith('catalogs/cat-a/static/image.jpg'))).to.be.true;
+    });
+
+    it('splits assets across multiple parts to stay under the size limit', async () => {
+      const root = path.join(tempDir, 'site-data');
+      fs.mkdirSync(path.join(root, 'libraries', 'lib-a', 'static'), {recursive: true});
+      fs.writeFileSync(path.join(root, 'libraries', 'lib-a', 'library.xml'), '<library/>');
+
+      // Three ~40KB incompressible (jpg) assets with an 80KB budget → each
+      // asset is stored (not deflated), so they cannot all share one archive.
+      for (let i = 0; i < 3; i++) {
+        fs.writeFileSync(
+          path.join(root, 'libraries', 'lib-a', 'static', `img-${i}.jpg`),
+          Buffer.alloc(40 * 1024, i + 1),
+        );
+      }
+
+      const {uploads} = captureSplitUploads();
+
+      const results = await siteArchiveImportSplit(mockInstance, root, {
+        archiveName: 'big',
+        maxBytes: 80 * 1024,
+        waitOptions: FAST_WAIT_OPTIONS,
+      });
+
+      // 1 xml part + at least 2 asset parts (3×40KB stored can't fit 2-per-80KB
+      // with overhead → 3 asset parts in practice).
+      const xmlParts = results.length - (results.length - 1);
+      expect(xmlParts).to.equal(1);
+      expect(results.length).to.be.greaterThan(2);
+
+      // Every asset must appear exactly once across all asset archives.
+      const allEntries: string[] = [];
+      for (const buf of uploads) {
+        allEntries.push(...(await entriesOf(buf)));
+      }
+      for (let i = 0; i < 3; i++) {
+        const matches = allEntries.filter((p) => p.endsWith(`static/img-${i}.jpg`));
+        expect(matches, `img-${i}.jpg should appear once`).to.have.lengthOf(1);
+      }
+    });
+
+    it('throws when a single asset exceeds the per-part limit', async () => {
+      const root = path.join(tempDir, 'site-data');
+      fs.mkdirSync(path.join(root, 'libraries', 'lib-a', 'static'), {recursive: true});
+      fs.writeFileSync(path.join(root, 'libraries', 'lib-a', 'library.xml'), '<library/>');
+      // 200KB incompressible asset, 50KB budget → cannot fit, cannot split.
+      fs.writeFileSync(path.join(root, 'libraries', 'lib-a', 'static', 'huge.jpg'), Buffer.alloc(200 * 1024, 9));
+
+      captureSplitUploads();
+
+      try {
+        await siteArchiveImportSplit(mockInstance, root, {
+          maxBytes: 50 * 1024,
+          waitOptions: FAST_WAIT_OPTIONS,
+        });
+        expect.fail('Should have thrown');
+      } catch (error: any) {
+        expect(error.message).to.include('too large to fit in a single archive');
+      }
+    });
+
+    it('throws when a single data unit XML exceeds the per-part limit', async () => {
+      const root = path.join(tempDir, 'site-data');
+      fs.mkdirSync(path.join(root, 'catalogs', 'cat-a'), {recursive: true});
+      // Incompressible content (xorshift PRNG) so the deflated size stays large
+      // and reliably exceeds the budget even after compression. A .xml under a
+      // catalog is classified as order-sensitive (not a static asset).
+      const big = Buffer.alloc(100 * 1024);
+      let state = 0x12345678;
+      for (let i = 0; i < big.length; i++) {
+        state ^= state << 13;
+        state ^= state >>> 17;
+        state ^= state << 5;
+        big[i] = state & 0xff;
+      }
+      fs.writeFileSync(path.join(root, 'catalogs', 'cat-a', 'catalog.xml'), big);
+
+      captureSplitUploads();
+
+      try {
+        await siteArchiveImportSplit(mockInstance, root, {
+          maxBytes: 10 * 1024, // 10KB budget — the ~100KB XML unit cannot fit
+          waitOptions: FAST_WAIT_OPTIONS,
+        });
+        expect.fail('Should have thrown');
+      } catch (error: any) {
+        expect(error.message).to.match(/too large to fit in a single archive part/);
+      }
+    });
+
+    it('imports parts sequentially, one job execution per part', async () => {
+      const root = path.join(tempDir, 'site-data');
+      fs.mkdirSync(path.join(root, 'libraries', 'lib-a', 'static'), {recursive: true});
+      fs.writeFileSync(path.join(root, 'libraries', 'lib-a', 'library.xml'), '<library/>');
+      for (let i = 0; i < 2; i++) {
+        fs.writeFileSync(
+          path.join(root, 'libraries', 'lib-a', 'static', `img-${i}.jpg`),
+          Buffer.alloc(40 * 1024, i + 1),
+        );
+      }
+
+      const {uploads, executions} = captureSplitUploads();
+
+      const results = await siteArchiveImportSplit(mockInstance, root, {
+        archiveName: 'big',
+        maxBytes: 60 * 1024,
+        waitOptions: FAST_WAIT_OPTIONS,
+      });
+
+      expect(executions()).to.equal(results.length);
+      expect(uploads).to.have.lengthOf(results.length);
+      // First part is always the XML/metadata tier.
+      const first = await entriesOf(uploads[0]);
+      expect(first.some((p) => p.endsWith('library.xml'))).to.be.true;
+    });
+
+    it('reports the plan and each part via callbacks', async () => {
+      const root = path.join(tempDir, 'site-data');
+      fs.mkdirSync(path.join(root, 'libraries', 'lib-a', 'static'), {recursive: true});
+      fs.writeFileSync(path.join(root, 'libraries', 'lib-a', 'library.xml'), '<library/>');
+      fs.writeFileSync(path.join(root, 'libraries', 'lib-a', 'static', 'img.jpg'), Buffer.alloc(40 * 1024, 1));
+
+      captureSplitUploads();
+
+      let plan: any = null;
+      const parts: any[] = [];
+
+      await siteArchiveImportSplit(mockInstance, root, {
+        maxBytes: 1024 * 1024,
+        waitOptions: FAST_WAIT_OPTIONS,
+        onPlan: (p) => {
+          plan = p;
+        },
+        onPart: (info) => {
+          parts.push(info);
+        },
+      });
+
+      expect(plan).to.not.be.null;
+      expect(plan.partCount).to.equal(2);
+      expect(plan.xmlPartCount).to.equal(1);
+      expect(plan.assetPartCount).to.equal(1);
+      expect(parts).to.have.lengthOf(2);
+      expect(parts[0].kind).to.equal('xml');
+      expect(parts[1].kind).to.equal('assets');
+    });
+
+    it('rejects a non-directory target', async () => {
+      const zipPath = path.join(tempDir, 'archive.zip');
+      fs.writeFileSync(zipPath, Buffer.from('PK\x03\x04'));
+
+      try {
+        await siteArchiveImportSplit(mockInstance, zipPath, {waitOptions: FAST_WAIT_OPTIONS});
+        expect.fail('Should have thrown');
+      } catch (error: any) {
+        expect(error.message).to.include('requires a directory');
+      }
+    });
+  });
+
+  describe('siteArchiveImport oversize callback', () => {
+    it('invokes onOversize when the archive exceeds maxBytes', async () => {
+      const root = path.join(tempDir, 'site-data');
+      fs.mkdirSync(path.join(root, 'libraries', 'lib-a', 'static'), {recursive: true});
+      fs.writeFileSync(path.join(root, 'libraries', 'lib-a', 'library.xml'), '<library/>');
+      // Incompressible content so the assembled archive genuinely exceeds the
+      // tiny ceiling (the archive DEFLATEs everything, so all-identical bytes
+      // would shrink to near-nothing).
+      const incompressible = Buffer.alloc(40 * 1024);
+      let state = 0x2545f491;
+      for (let i = 0; i < incompressible.length; i++) {
+        state ^= state << 13;
+        state ^= state >>> 17;
+        state ^= state << 5;
+        incompressible[i] = state & 0xff;
+      }
+      fs.writeFileSync(path.join(root, 'libraries', 'lib-a', 'static', 'img.jpg'), incompressible);
+
+      server.use(
+        http.all(
+          `${WEBDAV_BASE}/*`,
+          async ({request}) => new HttpResponse(null, {status: request.method === 'PUT' ? 201 : 204}),
+        ),
+        http.post(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions`, () =>
+          HttpResponse.json({id: 'os-1', execution_status: 'finished', exit_status: {code: 'OK'}}),
+        ),
+        http.get(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions/os-1`, () =>
+          HttpResponse.json({
+            id: 'os-1',
+            execution_status: 'finished',
+            exit_status: {code: 'OK'},
+            is_log_file_existing: false,
+          }),
+        ),
+      );
+
+      let oversize: {bytes: number; maxBytes: number} | null = null;
+
+      await siteArchiveImport(mockInstance, root, {
+        archiveName: 'big',
+        maxBytes: 1024, // tiny ceiling so the archive is over it
+        onOversize: (info) => {
+          oversize = info;
+        },
+        waitOptions: FAST_WAIT_OPTIONS,
+      });
+
+      expect(oversize).to.not.be.null;
+      expect(oversize!.bytes).to.be.greaterThan(1024);
+      expect(oversize!.maxBytes).to.equal(1024);
+    });
+
+    it('does not invoke onOversize when the archive is within maxBytes', async () => {
+      const root = path.join(tempDir, 'site-data');
+      fs.mkdirSync(path.join(root, 'libraries', 'lib-a'), {recursive: true});
+      fs.writeFileSync(path.join(root, 'libraries', 'lib-a', 'library.xml'), '<library/>');
+
+      server.use(
+        http.all(
+          `${WEBDAV_BASE}/*`,
+          async ({request}) => new HttpResponse(null, {status: request.method === 'PUT' ? 201 : 204}),
+        ),
+        http.post(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions`, () =>
+          HttpResponse.json({id: 'os-2', execution_status: 'finished', exit_status: {code: 'OK'}}),
+        ),
+        http.get(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions/os-2`, () =>
+          HttpResponse.json({
+            id: 'os-2',
+            execution_status: 'finished',
+            exit_status: {code: 'OK'},
+            is_log_file_existing: false,
+          }),
+        ),
+      );
+
+      let called = false;
+
+      await siteArchiveImport(mockInstance, root, {
+        archiveName: 'small',
+        maxBytes: 50 * 1024 * 1024,
+        onOversize: () => {
+          called = true;
+        },
+        waitOptions: FAST_WAIT_OPTIONS,
+      });
+
+      expect(called).to.be.false;
     });
   });
 

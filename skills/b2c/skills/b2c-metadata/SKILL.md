@@ -94,7 +94,9 @@ Add custom attributes to existing system objects.
 
 ### Enum Value Definitions
 
-Enum types (`enum-of-string`, `enum-of-int`, `set-of-string`, `set-of-int`) require `value-definitions` with **value/display pairs**:
+Enum types (`enum-of-string`, `enum-of-int`, `set-of-string`, `set-of-int`) require `value-definitions` with **display/value pairs**:
+
+> **Element order matters.** Inside each `<value-definition>`, the `<display>` element must come **before** `<value>`. The `metadata.xsd` schema enforces this strict ordering — putting `<value>` first fails site import validation with `cvc-complex-type.2.4.d: Invalid content was found starting with element 'display'`.
 
 ```xml
 <attribute-definition attribute-id="warrantyType">
@@ -103,16 +105,16 @@ Enum types (`enum-of-string`, `enum-of-int`, `set-of-string`, `set-of-int`) requ
     <mandatory-flag>false</mandatory-flag>
     <value-definitions>
         <value-definition>
-            <value>none</value>
             <display xml:lang="x-default">No Warranty</display>
+            <value>none</value>
         </value-definition>
         <value-definition>
-            <value>limited</value>
             <display xml:lang="x-default">Limited Warranty</display>
+            <value>limited</value>
         </value-definition>
         <value-definition>
-            <value>full</value>
             <display xml:lang="x-default">Full Warranty</display>
+            <value>full</value>
         </value-definition>
     </value-definitions>
 </attribute-definition>
@@ -120,8 +122,8 @@ Enum types (`enum-of-string`, `enum-of-int`, `set-of-string`, `set-of-int`) requ
 
 | Element | Purpose |
 |---------|---------|
+| `<display>` | Human-readable label shown in Business Manager (must appear first) |
 | `<value>` | The stored/API value (use lowercase, no spaces) |
-| `<display>` | Human-readable label shown in Business Manager |
 
 ## Product Custom Attribute Example
 
@@ -145,16 +147,16 @@ Enum types (`enum-of-string`, `enum-of-int`, `set-of-string`, `set-of-int`) requ
                 <mandatory-flag>false</mandatory-flag>
                 <value-definitions>
                     <value-definition>
-                        <value>new</value>
                         <display xml:lang="x-default">New</display>
+                        <value>new</value>
                     </value-definition>
                     <value-definition>
-                        <value>refurbished</value>
                         <display xml:lang="x-default">Refurbished</display>
+                        <value>refurbished</value>
                     </value-definition>
                     <value-definition>
-                        <value>used</value>
                         <display xml:lang="x-default">Used</display>
+                        <value>used</value>
                     </value-definition>
                 </value-definitions>
             </attribute-definition>
@@ -174,12 +176,12 @@ Enum types (`enum-of-string`, `enum-of-int`, `set-of-string`, `set-of-int`) requ
                 <mandatory-flag>false</mandatory-flag>
                 <value-definitions>
                     <value-definition>
-                        <value>waterproof</value>
                         <display xml:lang="x-default">Waterproof</display>
+                        <value>waterproof</value>
                     </value-definition>
                     <value-definition>
-                        <value>recyclable</value>
                         <display xml:lang="x-default">Recyclable</display>
+                        <value>recyclable</value>
                     </value-definition>
                 </value-definitions>
             </attribute-definition>

@@ -62,16 +62,16 @@ b2c docs schema --list
                 <mandatory-flag>false</mandatory-flag>
                 <value-definitions>
                     <value-definition>
-                        <value>none</value>
                         <display xml:lang="x-default">No Warranty</display>
+                        <value>none</value>
                     </value-definition>
                     <value-definition default="true">
-                        <value>standard</value>
                         <display xml:lang="x-default">Standard Warranty</display>
+                        <value>standard</value>
                     </value-definition>
                     <value-definition>
-                        <value>extended</value>
                         <display xml:lang="x-default">Extended Warranty</display>
+                        <value>extended</value>
                     </value-definition>
                 </value-definitions>
             </attribute-definition>
@@ -99,16 +99,16 @@ b2c docs schema --list
                 <mandatory-flag>false</mandatory-flag>
                 <value-definitions>
                     <value-definition>
-                        <value>energy-star</value>
                         <display xml:lang="x-default">Energy Star</display>
+                        <value>energy-star</value>
                     </value-definition>
                     <value-definition>
-                        <value>ul-listed</value>
                         <display xml:lang="x-default">UL Listed</display>
+                        <value>ul-listed</value>
                     </value-definition>
                     <value-definition>
-                        <value>fda-approved</value>
                         <display xml:lang="x-default">FDA Approved</display>
+                        <value>fda-approved</value>
                     </value-definition>
                 </value-definitions>
             </attribute-definition>
@@ -154,16 +154,16 @@ b2c docs schema --list
                 <type>enum-of-string</type>
                 <value-definitions>
                     <value-definition default="true">
-                        <value>pending</value>
                         <display xml:lang="x-default">Pending</display>
+                        <value>pending</value>
                     </value-definition>
                     <value-definition>
-                        <value>synced</value>
                         <display xml:lang="x-default">Synced</display>
+                        <value>synced</value>
                     </value-definition>
                     <value-definition>
-                        <value>failed</value>
                         <display xml:lang="x-default">Failed</display>
+                        <value>failed</value>
                     </value-definition>
                 </value-definitions>
             </attribute-definition>
@@ -230,16 +230,16 @@ b2c docs schema --list
                 <type>set-of-string</type>
                 <value-definitions>
                     <value-definition>
-                        <value>promotions</value>
                         <display xml:lang="x-default">Promotions</display>
+                        <value>promotions</value>
                     </value-definition>
                     <value-definition>
-                        <value>new-arrivals</value>
                         <display xml:lang="x-default">New Arrivals</display>
+                        <value>new-arrivals</value>
                     </value-definition>
                     <value-definition>
-                        <value>tips</value>
                         <display xml:lang="x-default">Tips & Tricks</display>
+                        <value>tips</value>
                     </value-definition>
                 </value-definitions>
             </attribute-definition>

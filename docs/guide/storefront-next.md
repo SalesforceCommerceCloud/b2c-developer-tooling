@@ -4,11 +4,9 @@ description: Set up Storefront Next development environments using the B2C CLI t
 
 # Storefront Next
 
-::: warning Important
-Storefront Next is currently in a closed pilot. Access to Storefront Next is limited to pilot customers. Features and configuration may change.
-:::
-
 Set up Storefront Next development environments using the B2C CLI to create sandboxes, SLAS clients, MRT environments, and deploy.
+
+To learn more about Storefront Next, see the [Storefront Next](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-get-started.html) documentation.
 
 ## Prerequisites
 

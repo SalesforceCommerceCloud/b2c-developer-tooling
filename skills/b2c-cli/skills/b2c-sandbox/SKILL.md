@@ -13,6 +13,12 @@ Use the `b2c` CLI plugin to manage Salesforce B2C Commerce On-demand sandboxes (
 
 > **Alias:** The `ods` prefix is still supported as a backward-compatible alias (e.g., `b2c ods list` works the same as `b2c sandbox list`).
 
+## Configuration & Authentication
+
+The CLI auto-discovers credentials from `SFCC_*` environment variables, `dw.json` in the current or parent directories, `~/.mobify`, `package.json`, and configuration plugins. **Flags like `--client-id` and `--client-secret` are usually unnecessary** — only pass them to override what's auto-detected. Use `--user-auth` only when you need browser-based login (e.g., no client secret, or interactive use).
+
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
+
 ## Sandbox ID Formats
 
 Commands that operate on a specific sandbox accept two ID formats:

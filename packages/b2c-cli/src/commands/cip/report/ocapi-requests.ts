@@ -6,8 +6,14 @@
 
 import {withDocs} from '../../../i18n/index.js';
 import {CipReportCommand} from '../../../utils/cip/report-command.js';
-import {createSiteIdFlag} from '../../../utils/cip/report-flags.js';
+import {buildReportFlags, requireReport} from '../../../utils/cip/report-flags.js';
 
+const REPORT_NAME = 'ocapi-requests';
+
+/**
+ * `b2c cip report ocapi-requests` — flags are auto-derived from the catalog
+ * definition; param parsing/validation lives in {@link CipReportCommand} and the SDK.
+ */
 export default class CipReportOcapiRequests extends CipReportCommand<typeof CipReportOcapiRequests> {
   static description = withDocs(
     'Analyze OCAPI request volume and response latency',
@@ -19,12 +25,8 @@ export default class CipReportOcapiRequests extends CipReportCommand<typeof CipR
   static flags = {
     ...CipReportCommand.baseFlags,
     ...CipReportCommand.reportFlags,
-    'site-id': createSiteIdFlag(),
+    ...buildReportFlags(requireReport(REPORT_NAME)),
   };
 
-  protected readonly reportName = 'ocapi-requests';
-
-  protected getReportParams(): Record<string, string> {
-    return this.getBaseReportParams();
-  }
+  protected readonly reportName = REPORT_NAME;
 }

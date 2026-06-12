@@ -6,8 +6,6 @@ description: Get theming guidelines, guided questions, and WCAG color contrast v
 
 Guides theming changes (colors, fonts, visual styling) for Storefront Next and validates color combinations for WCAG accessibility.
 
-> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
-
 ## Overview
 
 The `sfnext_configure_theme` tool provides a structured workflow for applying theming to Storefront Next sites:

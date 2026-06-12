@@ -4,16 +4,8 @@ packages:
   - skills
 
 catalog:
-  # Production dependencies (exact versions for published packages)
-  '@oclif/core': 4.8.0
-  cliui: 9.0.1
-  glob: 13.0.0
-  jsonschema: 1.5.0
-  open: 11.0.0
-  vscode-html-languageservice: 5.6.0
-
-  # Dev dependencies (shared across packages)
   '@eslint/compat': ^1
+  '@oclif/core': 4.8.0
   '@oclif/prettier-config': ^0.2.1
   '@oclif/test': ^4
   '@salesforce/dev-config': ^4.3.2
@@ -23,20 +15,25 @@ catalog:
   '@types/sinon': ^21.0.0
   c8: ^11.0.0
   chai: ^4
+  cliui: 9.0.1
   eslint: ^9
   eslint-config-oclif: ^6
   eslint-config-prettier: ^10
   eslint-plugin-header: ^3.1.1
-  eslint-plugin-prettier: ^5.5.4
+  eslint-plugin-prettier: ^5.5.5
+  glob: 13.0.0
+  jsonschema: 1.5.0
   mocha: ^10
   msw: ^2.12.4
   oclif: ^4
-  prettier: ^3.6.2
+  open: 11.0.0
+  prettier: ^3.8.3
   shx: ^0.3.3
   sinon: ^21.0.1
   tsx: ^4
   typescript: ^5
   typescript-eslint: ^8
+  vscode-html-languageservice: 5.6.0
 
 minimumReleaseAge: 2880
 
@@ -44,16 +41,13 @@ minimumReleaseAgeExclude: []
 
 nodeLinker: hoisted
 
-# Pin exact versions by default when adding dependencies (no ^ or ~ prefix)
-savePrefix: ''
-
 onlyBuiltDependencies:
   - unrs-resolver
   - yarn
 
 overrides:
-  baseline-browser-mapping: '>=2.9.19'
   '@isaacs/brace-expansion@<=5.0.0': '>=5.0.1'
+  baseline-browser-mapping: '>=2.9.19'
   diff@>=4.0.0 <4.0.4: '>=4.0.4'
   diff@>=5.0.0 <5.2.2: '>=5.2.2'
   esbuild@<=0.24.2: '>=0.25.0'
@@ -67,6 +61,8 @@ overrides:
   picomatch@>=2.0.0 <3.0.0: 2.3.2
   picomatch@>=4.0.0 <4.0.4: 4.0.4
   qs@<6.14.2: '>=6.15.2'
+
+savePrefix: ''
 
 trustPolicy: no-downgrade
 

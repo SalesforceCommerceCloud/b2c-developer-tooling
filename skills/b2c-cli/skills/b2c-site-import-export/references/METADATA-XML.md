@@ -58,20 +58,20 @@ For service configurations (HTTP services, credentials, profiles), see the `b2c:
                 <mandatory-flag>false</mandatory-flag>
                 <value-definitions>
                     <value-definition default="true">
-                        <value>pending</value>
                         <display xml:lang="x-default">Pending</display>
+                        <value>pending</value>
                     </value-definition>
                     <value-definition>
-                        <value>processing</value>
                         <display xml:lang="x-default">Processing</display>
+                        <value>processing</value>
                     </value-definition>
                     <value-definition>
-                        <value>shipped</value>
                         <display xml:lang="x-default">Shipped</display>
+                        <value>shipped</value>
                     </value-definition>
                     <value-definition>
-                        <value>delivered</value>
                         <display xml:lang="x-default">Delivered</display>
+                        <value>delivered</value>
                     </value-definition>
                 </value-definitions>
             </attribute-definition>

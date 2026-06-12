@@ -6,14 +6,6 @@ description: MCP tools for searching B2C Commerce Script API and XSD schema docu
 
 MCP tools for searching and reading the bundled B2C Commerce Script API documentation and XSD schemas. These tools read data shipped with the SDK — they do **not** require any instance configuration or authentication. Available in **every toolset**.
 
-## When to use which tool
-
-- Look up a class or module — search first to confirm the id, then read.
-  - `docs_search` (fuzzy) → `docs_read` (full markdown).
-- Look up an XSD schema for an import file (e.g., `system-objecttype-extensions.xml`) — same pattern.
-  - `docs_schema_search` → `docs_schema_read`.
-- Browse all available entries — `docs_list` / `docs_schema_list`.
-
 > **Note:** `docs_read` and `docs_schema_read` content can be large (full markdown files / full XSD bodies). Prefer `docs_search`/`docs_schema_search` to narrow down before reading.
 
 ---
