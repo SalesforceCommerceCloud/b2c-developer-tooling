@@ -245,20 +245,20 @@
           },
           "schemas": {
             "description": "Browse and retrieve SCAPI schema specifications\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scapi-schemas.html"
+          }
+        }
+      },
+      "preferences": {
+        "description": "Commands for managing custom global and site preferences\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/preferences.html",
+        "subtopics": {
+          "global": {
+            "description": "Read and update custom preferences at the organization (global) level"
           },
-          "preferences": {
-            "description": "Commands for managing SCAPI custom global and site preferences\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/preferences.html",
+          "site": {
+            "description": "Read, update, and search custom preferences at the site level",
             "subtopics": {
-              "global": {
-                "description": "Read and update custom preferences at the organization (global) level"
-              },
-              "site": {
-                "description": "Read, update, and search custom preferences at the site level",
-                "subtopics": {
-                  "preference": {
-                    "description": "Read and update a single preference value across sites in a site preference group"
-                  }
-                }
+              "preference": {
+                "description": "Read and update a single preference value across sites in a site preference group"
               }
             }
           }

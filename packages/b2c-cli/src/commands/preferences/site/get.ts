@@ -4,20 +4,14 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags, ux} from '@oclif/core';
-import {PreferencesCommand} from '../../../../utils/scapi/preferences.js';
+import {PreferencesCommand, instanceTypeFlag, maskPasswordsFlag} from '../../../utils/preferences.js';
 import {getApiErrorMessage, type SitePreferences, type PreferenceInstanceType} from '@salesforce/b2c-tooling-sdk';
-import {t, withDocs} from '../../../../i18n/index.js';
-
-const INSTANCE_TYPES: PreferenceInstanceType[] = ['staging', 'development', 'sandbox', 'production'];
+import {t, withDocs} from '../../../i18n/index.js';
 
 export default class PreferencesSiteGet extends PreferencesCommand<typeof PreferencesSiteGet> {
   static args = {
     'group-id': Args.string({
       description: 'Preference group ID',
-      required: true,
-    }),
-    'instance-type': Args.string({
-      description: 'Instance type to read preferences for. Use "current" to use the instance handling the request.',
       required: true,
     }),
   };
@@ -33,44 +27,32 @@ export default class PreferencesSiteGet extends PreferencesCommand<typeof Prefer
   static enableJsonFlag = true;
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> CustomGroupId staging --site-id RefArch --tenant-id zzxy_prd',
+    '<%= config.bin %> <%= command.id %> CustomGroupId --site-id RefArch --tenant-id zzxy_prd',
+    '<%= config.bin %> <%= command.id %> CustomGroupId --instance-type staging --site-id RefArch --tenant-id zzxy_prd',
   ];
 
   static flags = {
+    'instance-type': instanceTypeFlag,
     'site-id': Flags.string({
       char: 's',
       description: 'Site ID',
       required: true,
     }),
-    'mask-passwords': Flags.boolean({
-      description: 'Mask values of type password',
-      default: false,
-      allowNo: true,
-    }),
+    'mask-passwords': maskPasswordsFlag,
   };
 
   async run(): Promise<SitePreferences> {
     this.requireOAuthCredentials();
 
-    const {'group-id': groupId, 'instance-type': instanceTypeArg} = this.args;
-    const {'site-id': siteId, 'mask-passwords': maskPasswords} = this.flags;
+    const {'group-id': groupId} = this.args;
+    const {'instance-type': instanceType, 'site-id': siteId, 'mask-passwords': maskPasswords} = this.flags;
     const organizationId = this.getOrganizationId();
-
-    if (instanceTypeArg !== 'current' && !INSTANCE_TYPES.includes(instanceTypeArg as PreferenceInstanceType)) {
-      this.error(
-        t(
-          'commands.preferences.invalidInstanceType',
-          'Invalid instance type "{{value}}". Use one of: {{values}} or "current".',
-          {value: instanceTypeArg, values: INSTANCE_TYPES.join(', ')},
-        ),
-      );
-    }
 
     const result = await this.preferencesClient.GET(
       '/organizations/{organizationId}/site-preference-groups/{groupId}/{instanceType}',
       {
         params: {
-          path: {organizationId, groupId, instanceType: instanceTypeArg as PreferenceInstanceType},
+          path: {organizationId, groupId, instanceType: instanceType as PreferenceInstanceType},
           query: {siteId, maskPasswords},
         },
       },

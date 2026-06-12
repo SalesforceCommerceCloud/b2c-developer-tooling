@@ -5,20 +5,14 @@
  */
 import fs from 'node:fs';
 import {Args, Flags, ux} from '@oclif/core';
-import {PreferencesCommand} from '../../../../utils/scapi/preferences.js';
+import {PreferencesCommand, instanceTypeFlag, maskPasswordsFlag} from '../../../utils/preferences.js';
 import {getApiErrorMessage, type SitePreferences, type PreferenceInstanceType} from '@salesforce/b2c-tooling-sdk';
-import {t, withDocs} from '../../../../i18n/index.js';
-
-const INSTANCE_TYPES: PreferenceInstanceType[] = ['staging', 'development', 'sandbox', 'production'];
+import {t, withDocs} from '../../../i18n/index.js';
 
 export default class PreferencesSiteUpdate extends PreferencesCommand<typeof PreferencesSiteUpdate> {
   static args = {
     'group-id': Args.string({
       description: 'Preference group ID',
-      required: true,
-    }),
-    'instance-type': Args.string({
-      description: 'Instance type to update preferences for. Use "current" to use the instance handling the request.',
       required: true,
     }),
   };
@@ -34,11 +28,12 @@ export default class PreferencesSiteUpdate extends PreferencesCommand<typeof Pre
   static enableJsonFlag = true;
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> CustomGroupId staging --site-id RefArch --file prefs.json --tenant-id zzxy_prd',
-    '<%= config.bin %> <%= command.id %> CustomGroupId staging --site-id RefArch --body \'{"c_attr":"value"}\' --tenant-id zzxy_prd',
+    '<%= config.bin %> <%= command.id %> CustomGroupId --site-id RefArch --file prefs.json --tenant-id zzxy_prd',
+    '<%= config.bin %> <%= command.id %> CustomGroupId --instance-type staging --site-id RefArch --body \'{"c_attr":"value"}\' --tenant-id zzxy_prd',
   ];
 
   static flags = {
+    'instance-type': instanceTypeFlag,
     'site-id': Flags.string({
       char: 's',
       description: 'Site ID',
@@ -53,32 +48,18 @@ export default class PreferencesSiteUpdate extends PreferencesCommand<typeof Pre
       description: 'Inline JSON body with preferences. Custom attributes use the "c_" prefix.',
       exclusive: ['file'],
     }),
-    'mask-passwords': Flags.boolean({
-      description: 'Mask values of type password in the response',
-      default: false,
-      allowNo: true,
-    }),
+    'mask-passwords': maskPasswordsFlag,
   };
 
   async run(): Promise<SitePreferences> {
     this.requireOAuthCredentials();
 
-    const {'group-id': groupId, 'instance-type': instanceTypeArg} = this.args;
-    const {'site-id': siteId, file, body, 'mask-passwords': maskPasswords} = this.flags;
+    const {'group-id': groupId} = this.args;
+    const {'instance-type': instanceType, 'site-id': siteId, file, body, 'mask-passwords': maskPasswords} = this.flags;
     const organizationId = this.getOrganizationId();
 
     if (!file && !body) {
       this.error(t('commands.preferences.bodyRequired', 'Provide --file or --body with the preferences to update.'));
-    }
-
-    if (instanceTypeArg !== 'current' && !INSTANCE_TYPES.includes(instanceTypeArg as PreferenceInstanceType)) {
-      this.error(
-        t(
-          'commands.preferences.invalidInstanceType',
-          'Invalid instance type "{{value}}". Use one of: {{values}} or "current".',
-          {value: instanceTypeArg, values: INSTANCE_TYPES.join(', ')},
-        ),
-      );
     }
 
     let raw: string;
@@ -102,7 +83,7 @@ export default class PreferencesSiteUpdate extends PreferencesCommand<typeof Pre
       '/organizations/{organizationId}/site-preference-groups/{groupId}/{instanceType}',
       {
         params: {
-          path: {organizationId, groupId, instanceType: instanceTypeArg as PreferenceInstanceType},
+          path: {organizationId, groupId, instanceType: instanceType as PreferenceInstanceType},
           query: {siteId, maskPasswords},
         },
         body: requestBody,

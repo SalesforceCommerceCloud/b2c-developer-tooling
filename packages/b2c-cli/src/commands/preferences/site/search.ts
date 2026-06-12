@@ -5,7 +5,7 @@
  */
 import fs from 'node:fs';
 import {Args, Flags, ux} from '@oclif/core';
-import {PreferencesCommand} from '../../../../utils/scapi/preferences.js';
+import {PreferencesCommand, instanceTypeFlag, maskPasswordsFlag} from '../../../utils/preferences.js';
 import {TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   getApiErrorMessage,
@@ -14,9 +14,8 @@ import {
   type PreferenceValueSearchResult,
   type PreferencesSearchRequest,
 } from '@salesforce/b2c-tooling-sdk';
-import {t, withDocs} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
-const INSTANCE_TYPES: PreferenceInstanceType[] = ['staging', 'development', 'sandbox', 'production'];
 const SEARCHABLE_FIELDS = ['id', 'displayName', 'description'];
 const VALUE_TYPE_FIELD = 'valueType';
 const SORTABLE_FIELDS = [...SEARCHABLE_FIELDS, VALUE_TYPE_FIELD];
@@ -44,10 +43,6 @@ export default class PreferencesSiteSearch extends PreferencesCommand<typeof Pre
       description: 'Preference group ID',
       required: true,
     }),
-    'instance-type': Args.string({
-      description: 'Instance type to search preferences for. Use "current" to use the instance handling the request.',
-      required: true,
-    }),
   };
 
   static description = withDocs(
@@ -61,14 +56,15 @@ export default class PreferencesSiteSearch extends PreferencesCommand<typeof Pre
   static enableJsonFlag = true;
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> CustomGroupId staging --tenant-id zzxy_prd',
-    '<%= config.bin %> <%= command.id %> CustomGroupId staging --search-phrase Wapi --tenant-id zzxy_prd',
-    '<%= config.bin %> <%= command.id %> CustomGroupId staging --value-type string --sort-by id --tenant-id zzxy_prd',
-    '<%= config.bin %> <%= command.id %> CustomGroupId staging --query-file query.json --tenant-id zzxy_prd',
-    '<%= config.bin %> <%= command.id %> CustomGroupId staging --query \'{"matchAllQuery":{}}\' --expand value --tenant-id zzxy_prd',
+    '<%= config.bin %> <%= command.id %> CustomGroupId --tenant-id zzxy_prd',
+    '<%= config.bin %> <%= command.id %> CustomGroupId --instance-type staging --search-phrase Wapi --tenant-id zzxy_prd',
+    '<%= config.bin %> <%= command.id %> CustomGroupId --value-type string --sort-by id --tenant-id zzxy_prd',
+    '<%= config.bin %> <%= command.id %> CustomGroupId --query-file query.json --tenant-id zzxy_prd',
+    '<%= config.bin %> <%= command.id %> CustomGroupId --query \'{"matchAllQuery":{}}\' --expand value --tenant-id zzxy_prd',
   ];
 
   static flags = {
+    'instance-type': instanceTypeFlag,
     'search-phrase': Flags.string({
       description: 'Free-text phrase searched across id, displayName, description',
       exclusive: ['query', 'query-file'],
@@ -86,7 +82,8 @@ export default class PreferencesSiteSearch extends PreferencesCommand<typeof Pre
       exclusive: ['query', 'search-phrase', 'value-type'],
     }),
     'sort-by': Flags.string({
-      description: `Sort field (${SORTABLE_FIELDS.join(', ')})`,
+      description: 'Sort field',
+      options: SORTABLE_FIELDS,
     }),
     'sort-order': Flags.string({
       description: 'Sort order',
@@ -97,29 +94,29 @@ export default class PreferencesSiteSearch extends PreferencesCommand<typeof Pre
       char: 'l',
       description: 'Maximum number of results (1-200)',
       default: 25,
+      min: 1,
+      max: 200,
     }),
     offset: Flags.integer({
       char: 'o',
       description: 'Result offset for pagination',
       default: 0,
+      min: 0,
     }),
     expand: Flags.string({
       description: 'Expand option ("value" returns attribute value definitions)',
       options: ['value'],
     }),
-    'mask-passwords': Flags.boolean({
-      description: 'Mask values of type password',
-      default: false,
-      allowNo: true,
-    }),
+    'mask-passwords': maskPasswordsFlag,
     ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<PreferenceValueSearchResult> {
     this.requireOAuthCredentials();
 
-    const {'group-id': groupId, 'instance-type': instanceTypeArg} = this.args;
+    const {'group-id': groupId} = this.args;
     const {
+      'instance-type': instanceType,
       'search-phrase': searchPhrase,
       'value-type': valueType,
       query: queryFlag,
@@ -132,16 +129,6 @@ export default class PreferencesSiteSearch extends PreferencesCommand<typeof Pre
       'mask-passwords': maskPasswords,
     } = this.flags;
     const organizationId = this.getOrganizationId();
-
-    if (instanceTypeArg !== 'current' && !INSTANCE_TYPES.includes(instanceTypeArg as PreferenceInstanceType)) {
-      this.error(
-        t(
-          'commands.preferences.invalidInstanceType',
-          'Invalid instance type "{{value}}". Use one of: {{values}} or "current".',
-          {value: instanceTypeArg, values: INSTANCE_TYPES.join(', ')},
-        ),
-      );
-    }
 
     const requestBody = this.buildSearchRequest({
       searchPhrase,
@@ -158,7 +145,7 @@ export default class PreferencesSiteSearch extends PreferencesCommand<typeof Pre
       '/organizations/{organizationId}/site-preference-groups/{groupId}/{instanceType}/preference-search',
       {
         params: {
-          path: {organizationId, groupId, instanceType: instanceTypeArg as PreferenceInstanceType},
+          path: {organizationId, groupId, instanceType: instanceType as PreferenceInstanceType},
           query: {maskPasswords, expand: expand ? [expand as 'value'] : undefined},
         },
         body: requestBody,

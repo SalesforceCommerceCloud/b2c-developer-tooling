@@ -4,10 +4,10 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags, ux} from '@oclif/core';
-import {PreferencesCommand} from '../../../../utils/scapi/preferences.js';
+import {PreferencesCommand} from '../../../utils/preferences.js';
 import {TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {getApiErrorMessage, type CustomPreference, type CustomPreferenceList} from '@salesforce/b2c-tooling-sdk';
-import {t, withDocs} from '../../../../i18n/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
 
 const COLUMNS: Record<string, ColumnDef<CustomPreference>> = {
   id: {header: 'ID', get: (p) => p.id || '-'},
@@ -48,11 +48,14 @@ export default class PreferencesSiteList extends PreferencesCommand<typeof Prefe
       char: 'l',
       description: 'Maximum number of results (1-200)',
       default: 200,
+      min: 1,
+      max: 200,
     }),
     offset: Flags.integer({
       char: 'o',
       description: 'Result offset for pagination',
       default: 0,
+      min: 0,
     }),
     'mask-password': Flags.boolean({
       description: 'Mask values of type password',

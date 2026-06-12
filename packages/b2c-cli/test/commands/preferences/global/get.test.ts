@@ -6,11 +6,11 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
-import PreferencesGlobalGet from '../../../../../src/commands/scapi/preferences/global/get.js';
-import {stubParse} from '../../../../helpers/stub-parse.js';
-import {createIsolatedEnvHooks} from '../../../../helpers/test-setup.js';
+import PreferencesGlobalGet from '../../../../src/commands/preferences/global/get.js';
+import {stubParse} from '../../../helpers/stub-parse.js';
+import {createIsolatedEnvHooks} from '../../../helpers/test-setup.js';
 
-describe('scapi preferences global get', () => {
+describe('preferences global get', () => {
   const hooks = createIsolatedEnvHooks();
 
   beforeEach(hooks.beforeEach);
@@ -32,8 +32,8 @@ describe('scapi preferences global get', () => {
       const command: any = new PreferencesGlobalGet([], config);
       stubParse(
         command,
-        {'tenant-id': 'zzxy_prd', 'mask-passwords': false},
-        {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+        {'tenant-id': 'zzxy_prd', 'instance-type': 'staging', 'mask-passwords': false},
+        {'group-id': 'CustomGroupId'},
       );
       await command.init();
 
@@ -56,34 +56,12 @@ describe('scapi preferences global get', () => {
       expect(result).to.deep.include({c_attr: 'value'});
     });
 
-    it('errors on invalid instance type', async () => {
-      const command: any = new PreferencesGlobalGet([], config);
-      stubParse(
-        command,
-        {'tenant-id': 'zzxy_prd', 'mask-passwords': false},
-        {'group-id': 'CustomGroupId', 'instance-type': 'invalid'},
-      );
-      await command.init();
-
-      sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-      sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
-      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
-
-      try {
-        await command.run();
-        expect.fail('Should have thrown');
-      } catch {
-        expect(errorStub.calledOnce).to.equal(true);
-        expect(String(errorStub.firstCall.args[0])).to.match(/Invalid instance type/i);
-      }
-    });
-
     it('accepts "current" as a valid instance type and passes expand=sites', async () => {
       const command: any = new PreferencesGlobalGet([], config);
       stubParse(
         command,
-        {'tenant-id': 'zzxy_prd', 'mask-passwords': false, expand: 'sites'},
-        {'group-id': 'CustomGroupId', 'instance-type': 'current'},
+        {'tenant-id': 'zzxy_prd', 'instance-type': 'current', 'mask-passwords': false, expand: 'sites'},
+        {'group-id': 'CustomGroupId'},
       );
       await command.init();
 
@@ -110,8 +88,8 @@ describe('scapi preferences global get', () => {
       const command: any = new PreferencesGlobalGet([], config);
       stubParse(
         command,
-        {'tenant-id': 'zzxy_prd', 'mask-passwords': false},
-        {'group-id': 'BadGroup', 'instance-type': 'staging'},
+        {'tenant-id': 'zzxy_prd', 'instance-type': 'staging', 'mask-passwords': false},
+        {'group-id': 'BadGroup'},
       );
       await command.init();
 
