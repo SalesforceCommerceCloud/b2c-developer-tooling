@@ -6,6 +6,7 @@
 import type {CipReportDefinition} from '@salesforce/b2c-tooling-sdk/operations/cip';
 import * as vscode from 'vscode';
 import type {CipRealm, CipRealmGroup, CipStatus} from './cip-connection-service.js';
+import type {CipSavedQuery} from './cip-query-library-service.js';
 
 /**
  * Extension-specific report entry type. Aliased to the SDK's `CipReportDefinition` for now;
@@ -208,6 +209,78 @@ export class CipReportTreeItem extends vscode.TreeItem {
   }
 }
 
+/**
+ * Collapsible "Saved Queries" header under a tenant. Children are saved-query
+ * leaves scoped to that tenant. Carries both the realmId (so click-to-open
+ * lands on the right Query Builder panel) and the tenantId (so the children
+ * can be filtered with `listForTenant`).
+ */
+export class CipSavedQueriesSectionTreeItem extends vscode.TreeItem {
+  readonly nodeType = 'savedQueriesSection' as const;
+
+  constructor(
+    readonly realmId: string,
+    readonly tenantId: string,
+    count: number,
+  ) {
+    super('Saved Queries', vscode.TreeItemCollapsibleState.Collapsed);
+    this.contextValue = 'cipSavedQueriesSection';
+    this.iconPath = new vscode.ThemeIcon('bookmark');
+    this.description = count > 0 ? String(count) : 'none yet';
+    this.tooltip = 'Saved queries scoped to this tenant. Save from the Query Builder toolbar.';
+  }
+}
+
+/**
+ * Leaf for a single saved query. Click loads the SQL into the Query Builder.
+ * Right-click context menu (declared in package.json) offers Rename / Delete.
+ */
+export class CipSavedQueryTreeItem extends vscode.TreeItem {
+  readonly nodeType = 'savedQuery' as const;
+  readonly queryId: string;
+
+  constructor(
+    query: CipSavedQuery,
+    readonly realmId: string,
+  ) {
+    super(query.name, vscode.TreeItemCollapsibleState.None);
+    this.queryId = query.id;
+    this.contextValue = 'cipSavedQuery';
+    this.iconPath = new vscode.ThemeIcon('bookmark');
+    if (query.description) this.description = query.description;
+    this.tooltip = new vscode.MarkdownString(
+      [
+        `**${query.name}**`,
+        query.description ? `\n${query.description}\n` : '',
+        '```sql',
+        query.sql,
+        '```',
+      ].join('\n'),
+    );
+    this.command = {
+      command: 'b2c-dx.cipAnalytics.openSavedQuery',
+      title: 'Open Saved Query',
+      arguments: [{realmId: this.realmId, queryId: this.queryId}],
+    };
+  }
+}
+
+/**
+ * Empty-state placeholder under "Saved Queries" when the tenant has none.
+ * Keeps the section discoverable without forcing an empty array of children
+ * (which VS Code would render as a hairline-thin collapsed parent).
+ */
+export class CipSavedQueriesEmptyTreeItem extends vscode.TreeItem {
+  readonly nodeType = 'savedQueriesEmpty' as const;
+
+  constructor(readonly realmId: string) {
+    super('No saved queries yet', vscode.TreeItemCollapsibleState.None);
+    this.contextValue = 'cipSavedQueriesEmpty';
+    this.iconPath = new vscode.ThemeIcon('info');
+    this.description = 'Save from the Query Builder';
+  }
+}
+
 export type CipTreeNode =
   | CipRealmTreeItem
   | CipRealmInfoTreeItem
@@ -216,4 +289,7 @@ export type CipTreeNode =
   | CipTablesBrowserTreeItem
   | CipSectionTreeItem
   | CipCategoryTreeItem
-  | CipReportTreeItem;
+  | CipReportTreeItem
+  | CipSavedQueriesSectionTreeItem
+  | CipSavedQueryTreeItem
+  | CipSavedQueriesEmptyTreeItem;

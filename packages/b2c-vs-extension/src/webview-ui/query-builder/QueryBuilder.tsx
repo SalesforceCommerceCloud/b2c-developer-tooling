@@ -236,6 +236,18 @@ export function QueryBuilder() {
       case 'savedQueryError':
         setSaveModalError(String(msg.error || 'Could not save query.'));
         break;
+      case 'loadSavedQuery':
+        // Sidebar asked us to drop the saved SQL into the editor. Use the
+        // same path the toolbar dropdown uses so behavior stays consistent
+        // across entry points; ref keeps this static-deps callback fresh.
+        loadSavedQueryRef.current(msg.query);
+        break;
+      case 'renameSavedQuery':
+        // Pencil icon in the sidebar → open the same React modal the
+        // toolbar uses, in rename mode, prefilled with the chosen query.
+        setSaveModalError(null);
+        setSaveModal({mode: 'rename', query: msg.query});
+        break;
       default:
         break;
     }
@@ -371,6 +383,12 @@ export function QueryBuilder() {
     if (sqlEditorRef.current) sqlEditorRef.current.value = q.sql;
     setStatus({kind: 'success', text: `Loaded "${q.name}" — review and run.`});
   }
+
+  // Mirror the latest `loadSavedQuery` into a ref so the static
+  // (`useCallback([])`) inbound-message dispatcher can call the freshest
+  // version without rebuilding the listener and briefly losing messages.
+  const loadSavedQueryRef = useRef(loadSavedQuery);
+  loadSavedQueryRef.current = loadSavedQuery;
 
   return (
     <div className="app">
@@ -652,6 +670,7 @@ export function QueryBuilder() {
         state={saveModal}
         defaultName={suggestQueryName()}
         error={saveModalError}
+        existingNames={savedQueries.filter((q) => q.tenantId === activeTenantId).map((q) => q.name)}
         onClose={() => {
           setSaveModal({mode: null});
           setSaveModalError(null);

@@ -3654,6 +3654,21 @@ body.cip-entity-browser > header {
   padding: 8px 10px;
 }
 
+/* Inline hint shown beneath an input — used by the duplicate-name check. */
+.qb-modal__hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--vscode-descriptionForeground);
+}
+.qb-modal__hint--error {
+  color: var(--cip-error);
+}
+.input--invalid {
+  border-color: var(--cip-error) !important;
+}
+
 .qb-modal__foot {
   display: flex;
   justify-content: flex-end;

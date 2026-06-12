@@ -15,7 +15,7 @@ import * as os from 'node:os';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import type {CipConnectionService} from './cip-connection-service.js';
-import type {CipQueryLibraryService} from './cip-query-library-service.js';
+import {CipDuplicateNameError, type CipQueryLibraryService} from './cip-query-library-service.js';
 
 type QueryResultData = {columns: string[]; rows: Array<Record<string, unknown>>};
 
@@ -47,6 +47,26 @@ interface ReportContextSeed {
     min?: number;
     max?: number;
   }>;
+}
+
+/**
+ * One-shot intent fired at a Query Builder panel — load a saved query into
+ * the editor, or open the rename modal for one. Constructed by the host
+ * (`openQueryBuilder`), consumed by the webview's inbound dispatcher.
+ */
+type QueryBuilderAction =
+  | {kind: 'loadSavedQuery'; query: SerializableSavedQuery}
+  | {kind: 'renameSavedQuery'; query: SerializableSavedQuery};
+
+/** Plain-data view of a saved query the webview safely receives over postMessage. */
+interface SerializableSavedQuery {
+  id: string;
+  name: string;
+  sql: string;
+  description?: string;
+  tenantId: string;
+  createdAt: number;
+  updatedAt: number;
 }
 
 /**
@@ -96,6 +116,16 @@ export class CipWebviewManager {
 
   /** Tracks which open panels are Query Builder panels — only those care about library updates. */
   private readonly queryBuilderPanels = new Set<vscode.WebviewPanel>();
+
+  /**
+   * One-shot action to dispatch to a Query Builder panel as soon as the
+   * webview is ready. Set by `openQueryBuilder` when the caller asks for a
+   * load/rename, drained on the next `listSavedQueries` message (the
+   * webview's first-mount signal). Avoids the post-mount postMessage race:
+   * if we fired the message during `createWebviewPanel`, React might not
+   * have mounted yet and the message would be silently dropped.
+   */
+  private readonly pendingActions = new WeakMap<vscode.WebviewPanel, QueryBuilderAction>();
 
   /** Metadata/system table names returned by Avatica that are not tenant data entities. */
   private static readonly NON_DATA_TABLES = new Set(['quota', 'tables', 'columns']);
@@ -292,14 +322,23 @@ export class CipWebviewManager {
 
   /**
    * Open or reveal the Query Builder webview (inspired by SOQL Builder).
+   *
+   * `options.action` is a one-shot intent the panel runs as soon as it's
+   * mounted — load a saved query into the editor, or open the rename modal.
+   * For an existing (already-mounted) panel we postMessage immediately. For
+   * a brand-new panel we stash the action in `pendingActions` and the
+   * webview drains it via its first `listSavedQueries` request, which only
+   * fires after React has mounted and the inbound listener is up.
    */
-  async openQueryBuilder(realmId?: string): Promise<void> {
+  async openQueryBuilder(realmId?: string, options?: {action?: QueryBuilderAction}): Promise<void> {
     await this.ensureRealmActive(realmId);
     const columnKey = `cipAnalytics-queryBuilder-${realmId ?? 'default'}`;
+    const action = options?.action;
 
     const existingPanel = this.panels.get(columnKey);
     if (existingPanel) {
       existingPanel.reveal(vscode.ViewColumn.One);
+      if (action) this.dispatchAction(existingPanel, action);
       return;
     }
 
@@ -311,6 +350,7 @@ export class CipWebviewManager {
 
     this.panels.set(columnKey, panel);
     this.queryBuilderPanels.add(panel);
+    if (action) this.pendingActions.set(panel, action);
     panel.webview.html = this.getQueryBuilderContent(panel.webview);
 
     panel.webview.onDidReceiveMessage(
@@ -325,6 +365,7 @@ export class CipWebviewManager {
       () => {
         this.panels.delete(columnKey);
         this.queryBuilderPanels.delete(panel);
+        this.pendingActions.delete(panel);
       },
       null,
       this.context.subscriptions,
@@ -334,6 +375,33 @@ export class CipWebviewManager {
     this.sendSavedQueries(panel);
 
     this.log.appendLine('[CIP Analytics] Opened Query Builder');
+  }
+
+  /**
+   * Resolve a saved-query id to a plain-data record safe for postMessage.
+   * Strips the in-memory references that the webview has no use for.
+   */
+  resolveSavedQuery(queryId: string): SerializableSavedQuery | null {
+    const entry = this.queryLibrary.get(queryId);
+    if (!entry) return null;
+    return {
+      id: entry.id,
+      name: entry.name,
+      sql: entry.sql,
+      description: entry.description,
+      tenantId: entry.tenantId,
+      createdAt: entry.createdAt,
+      updatedAt: entry.updatedAt,
+    };
+  }
+
+  /** Forward a one-shot action to a panel that's already past first-mount. */
+  private dispatchAction(panel: vscode.WebviewPanel, action: QueryBuilderAction): void {
+    if (action.kind === 'loadSavedQuery') {
+      panel.webview.postMessage({command: 'loadSavedQuery', query: action.query});
+    } else if (action.kind === 'renameSavedQuery') {
+      panel.webview.postMessage({command: 'renameSavedQuery', query: action.query});
+    }
   }
 
   /**
@@ -431,6 +499,15 @@ export class CipWebviewManager {
       }
       case 'listSavedQueries': {
         this.sendSavedQueries(panel);
+        // The webview's first-mount signal — dispatch any queued action
+        // now that React is up and listening. The deletion makes this
+        // genuinely one-shot: a future `listSavedQueries` (e.g. a re-mount
+        // after Reload Webview) won't replay a stale action.
+        const pending = this.pendingActions.get(panel);
+        if (pending) {
+          this.pendingActions.delete(panel);
+          this.dispatchAction(panel, pending);
+        }
         break;
       }
       case 'saveQuery': {
@@ -479,14 +556,22 @@ export class CipWebviewManager {
       panel.webview.postMessage({command: 'savedQueryError', error: 'Connect to a CIP realm before saving.'});
       return;
     }
-    const entry = await this.queryLibrary.save({
-      name,
-      sql,
-      description: params.description,
-      tenantId: conn.tenantId,
-    });
-    this.log.appendLine(`[CIP Query Builder] Saved query "${entry.name}" (${entry.id})`);
-    panel.webview.postMessage({command: 'savedQuerySaved', query: entry});
+    try {
+      const entry = await this.queryLibrary.save({
+        name,
+        sql,
+        description: params.description,
+        tenantId: conn.tenantId,
+      });
+      this.log.appendLine(`[CIP Query Builder] Saved query "${entry.name}" (${entry.id})`);
+      panel.webview.postMessage({command: 'savedQuerySaved', query: entry});
+    } catch (err) {
+      if (err instanceof CipDuplicateNameError) {
+        panel.webview.postMessage({command: 'savedQueryError', error: err.message});
+        return;
+      }
+      throw err;
+    }
   }
 
   /** Patch an existing saved query (rename / edit description / overwrite SQL). */
@@ -500,13 +585,21 @@ export class CipWebviewManager {
     if (typeof params.name === 'string') patch.name = params.name;
     if (typeof params.sql === 'string') patch.sql = params.sql;
     if (typeof params.description === 'string') patch.description = params.description;
-    const next = await this.queryLibrary.update(id, patch);
-    if (!next) {
-      panel.webview.postMessage({command: 'savedQueryError', error: 'Query not found.'});
-      return;
+    try {
+      const next = await this.queryLibrary.update(id, patch);
+      if (!next) {
+        panel.webview.postMessage({command: 'savedQueryError', error: 'Query not found.'});
+        return;
+      }
+      this.log.appendLine(`[CIP Query Builder] Updated query "${next.name}" (${next.id})`);
+      panel.webview.postMessage({command: 'savedQueryUpdated', query: next});
+    } catch (err) {
+      if (err instanceof CipDuplicateNameError) {
+        panel.webview.postMessage({command: 'savedQueryError', error: err.message});
+        return;
+      }
+      throw err;
     }
-    this.log.appendLine(`[CIP Query Builder] Updated query "${next.name}" (${next.id})`);
-    panel.webview.postMessage({command: 'savedQueryUpdated', query: next});
   }
 
   /** Delete a saved query after a native VS Code confirmation prompt. */

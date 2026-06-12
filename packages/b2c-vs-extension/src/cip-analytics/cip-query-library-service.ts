@@ -22,6 +22,26 @@ export interface CipSavedQuery {
 const STORE_KEY = 'b2c-dx.cipAnalytics.savedQueries';
 
 /**
+ * Thrown when a save / rename would collide with another query of the same
+ * name under the same tenant. Comparison is case-insensitive on the trimmed
+ * name. Callers (webview manager / commands) catch this and surface a
+ * friendly message to the user via the existing `savedQueryError` channel.
+ */
+export class CipDuplicateNameError extends Error {
+  readonly name = 'CipDuplicateNameError' as const;
+  constructor(
+    public readonly conflictingName: string,
+    public readonly tenantId: string,
+  ) {
+    super(`A saved query named "${conflictingName}" already exists for this tenant.`);
+  }
+}
+
+function normalizeName(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+/**
  * Workspace-scoped saved-query store for the Query Builder. Mirrors the shape of
  * {@link CipConnectionService}: in-memory cache + persisted Memento + onDidChange event.
  *
@@ -53,11 +73,29 @@ export class CipQueryLibraryService implements vscode.Disposable {
     return this.queries.find((q) => q.id === id);
   }
 
+  /**
+   * True when another entry under the same tenant already uses this name
+   * (case-insensitive, trimmed). When `excludeId` is supplied that entry is
+   * ignored — used by `update()` so a no-op rename of a query to its own
+   * name doesn't trip the check.
+   */
+  hasNameConflict(name: string, tenantId: string, excludeId?: string): boolean {
+    const target = normalizeName(name);
+    if (!target) return false;
+    return this.queries.some(
+      (q) => q.id !== excludeId && q.tenantId === tenantId && normalizeName(q.name) === target,
+    );
+  }
+
   async save(input: {name: string; sql: string; description?: string; tenantId: string}): Promise<CipSavedQuery> {
+    const trimmedName = input.name.trim();
+    if (this.hasNameConflict(trimmedName, input.tenantId)) {
+      throw new CipDuplicateNameError(trimmedName, input.tenantId);
+    }
     const now = Date.now();
     const entry: CipSavedQuery = {
       id: randomUUID(),
-      name: input.name.trim(),
+      name: trimmedName,
       sql: input.sql,
       description: input.description?.trim() || undefined,
       tenantId: input.tenantId,
@@ -77,6 +115,12 @@ export class CipQueryLibraryService implements vscode.Disposable {
     const idx = this.queries.findIndex((q) => q.id === id);
     if (idx < 0) return undefined;
     const prev = this.queries[idx];
+    if (patch.name !== undefined) {
+      const trimmed = patch.name.trim();
+      if (this.hasNameConflict(trimmed, prev.tenantId, id)) {
+        throw new CipDuplicateNameError(trimmed, prev.tenantId);
+      }
+    }
     const next: CipSavedQuery = {
       ...prev,
       ...(patch.name !== undefined ? {name: patch.name.trim()} : {}),

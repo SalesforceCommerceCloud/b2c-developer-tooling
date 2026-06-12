@@ -72,7 +72,10 @@ export type InboundMessage =
   | {command: 'savedQuerySaved'}
   | {command: 'savedQueryUpdated'}
   | {command: 'savedQueryDeleted'}
-  | {command: 'savedQueryError'; error: string};
+  | {command: 'savedQueryError'; error: string}
+  // Sidebar → Query Builder one-shot intents.
+  | {command: 'loadSavedQuery'; query: SavedQuery}
+  | {command: 'renameSavedQuery'; query: SavedQuery};
 
 let cached: VsCodeApi | null = null;
 
