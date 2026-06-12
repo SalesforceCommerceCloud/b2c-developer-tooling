@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {
+  buildCipReportSql,
   executeCipReport,
   listCipTables,
   describeCipTable,
@@ -46,8 +47,22 @@ interface ReportContextSeed {
     required?: boolean;
     min?: number;
     max?: number;
+    options?: string[];
+    multiple?: boolean;
+    default?: string;
   }>;
 }
+
+function getOptionalArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const strings = value.filter((item): item is string => typeof item === 'string');
+  return strings.length > 0 ? strings : undefined;
+}
+
+const REMOTE_INCLUDE_REPORT_NAME = 'remote-include-performance';
+const REMOTE_INCLUDE_TABLE_NAME = 'ccdw_aggr_include_controller_request';
+const REMOTE_INCLUDE_PARENT_SELECT = 'SELECT ic.main_controller_name, ic.controller_name';
+const REMOTE_INCLUDE_PARENT_GROUP = 'GROUP BY ic.main_controller_name, ic.controller_name';
 
 /**
  * One-shot intent fired at a Query Builder panel — load a saved query into
@@ -99,6 +114,19 @@ function headlineForQueryError(detail: string): string {
   if (/duplicate column/i.test(detail)) return 'Duplicate column in result';
   if (/division by zero/i.test(detail)) return 'Division by zero';
   return 'Query rejected by CIP';
+}
+
+function rewriteRemoteIncludeParentColumn(sql: string, parentColumn: string): string {
+  if (parentColumn === 'main_controller_name') {
+    return sql;
+  }
+
+  const selectReplacement = `SELECT ic.${parentColumn} AS main_controller_name, ic.controller_name`;
+  const groupReplacement = `GROUP BY ic.${parentColumn}, ic.controller_name`;
+
+  return sql
+    .replace(REMOTE_INCLUDE_PARENT_SELECT, selectReplacement)
+    .replace(REMOTE_INCLUDE_PARENT_GROUP, groupReplacement);
 }
 
 /**
@@ -768,6 +796,66 @@ export class CipWebviewManager {
     };
   }
 
+  private static isMissingRemoteIncludeParentColumnError(reportName: string, error: unknown): boolean {
+    if (reportName !== REMOTE_INCLUDE_REPORT_NAME) {
+      return false;
+    }
+
+    const message = error instanceof Error ? error.message : String(error);
+    return /column\s+"?main_controll+er_name"?\s+does\s+not\s+exist/i.test(message);
+  }
+
+  private static isMissingColumnError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return /column\s+"?[A-Za-z0-9_]+"?\s+does\s+not\s+exist/i.test(message);
+  }
+
+  private async resolveRemoteIncludeParentCandidates(client: CipClient, fetchSize: number): Promise<string[]> {
+    const candidates: string[] = [];
+    try {
+      const metadata = await describeCipTable(client, REMOTE_INCLUDE_TABLE_NAME, {
+        fetchSize,
+        schema: 'warehouse',
+      });
+      const metadataCandidates = metadata.columns
+        .map((column) => column.columnName.toLowerCase())
+        .filter((name) => name !== 'main_controller_name' && name.endsWith('controller_name'));
+      candidates.push(...metadataCandidates);
+    } catch {
+      // Metadata lookup can fail or be misleading on some tenants. We still try known fallback columns below.
+    }
+
+    candidates.push('parent_controller_name', 'referrer_controller_name', 'controller_name');
+    return [...new Set(candidates)];
+  }
+
+  private async executeRemoteIncludeFallback(
+    client: CipClient,
+    reportParams: Record<string, string>,
+    fetchSize: number,
+  ): Promise<{rows: Array<Record<string, unknown>>}> {
+    const {sql} = buildCipReportSql(REMOTE_INCLUDE_REPORT_NAME, reportParams);
+    const candidates = await this.resolveRemoteIncludeParentCandidates(client, fetchSize);
+    let lastError: unknown;
+
+    for (const parentColumn of candidates) {
+      const rewrittenSql = rewriteRemoteIncludeParentColumn(sql, parentColumn);
+      this.log.appendLine(`[CIP Analytics] Retrying ${REMOTE_INCLUDE_REPORT_NAME} with parent column: ${parentColumn}`);
+      try {
+        return client.query(rewrittenSql, {fetchSize});
+      } catch (error) {
+        lastError = error;
+        if (!CipWebviewManager.isMissingColumnError(error)) {
+          throw error;
+        }
+      }
+    }
+
+    throw lastError instanceof Error
+      ? lastError
+      : new Error(`${REMOTE_INCLUDE_REPORT_NAME} fallback exhausted all parent-column candidates`);
+  }
+
   /**
    * De-duped wrapper around {@link loadTables}. If another Load Tables call is already in
    * flight for the same panel, reuse that promise instead of firing a second Avatica
@@ -1122,6 +1210,30 @@ export class CipWebviewManager {
         },
       });
     } catch (error) {
+      if (CipWebviewManager.isMissingRemoteIncludeParentColumnError(report.name, error)) {
+        try {
+          const fetchSize = parseInt(params.fetchSize || '1000', 10);
+          const reportParams = {...params};
+          delete reportParams.fetchSize;
+          const result = await this.executeRemoteIncludeFallback(ctx.client, reportParams, fetchSize);
+          this.connection.markConnected(`Report OK · ${result.rows.length} rows`);
+          this.log.appendLine(
+            `[CIP Analytics] Query recovered with remote-include fallback: ${result.rows.length} rows returned`,
+          );
+          panel.webview.postMessage({
+            command: 'queryResults',
+            data: {
+              rows: result.rows,
+              rowCount: result.rows.length,
+              columns: result.rows.length > 0 ? Object.keys(result.rows[0]) : [],
+            },
+          });
+          return;
+        } catch (retryError) {
+          error = retryError;
+        }
+      }
+
       const {message, headline, details, isConnectionIssue} = CipWebviewManager.classifyQueryError(error);
       this.log.appendLine(`[CIP Analytics] Query failed: ${message}`);
       if (isConnectionIssue) {
@@ -1236,14 +1348,20 @@ export class CipWebviewManager {
         description: report.description,
         category: report.category,
         displayName,
-        parameters: report.parameters.map((p) => ({
-          name: p.name,
-          description: p.description,
-          type: p.type,
-          required: p.required,
-          min: p.min,
-          max: p.max,
-        })),
+        parameters: report.parameters.map((p) => {
+          const raw = p as unknown as Record<string, unknown>;
+          return {
+            name: p.name,
+            description: p.description,
+            type: p.type,
+            required: p.required,
+            min: p.min,
+            max: p.max,
+            options: getOptionalArray(raw.options),
+            multiple: typeof raw.multiple === 'boolean' ? raw.multiple : undefined,
+            default: typeof raw.default === 'string' ? raw.default : undefined,
+          };
+        }),
       },
     });
   }

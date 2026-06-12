@@ -85,3 +85,37 @@ suite('CipWebviewManager.classifyQueryError', () => {
     assert.match(r.message, /Connection failed/);
   });
 });
+
+suite('CipWebviewManager remote-include fallback guard', () => {
+  test('detects main_controller_name missing-column error only for remote-include report', () => {
+    const guard = CipWebviewManager as unknown as {
+      isMissingRemoteIncludeParentColumnError: (reportName: string, error: unknown) => boolean;
+    };
+
+    const missingColumn = new Error(
+      'CIP Avatica request failed (400 Bad Request): column "main_controller_name" does not exist',
+    );
+    assert.equal(guard.isMissingRemoteIncludeParentColumnError('remote-include-performance', missingColumn), true);
+    assert.equal(guard.isMissingRemoteIncludeParentColumnError('sales-analytics', missingColumn), false);
+  });
+
+  test('also detects misspelled main_controlller_name variant from Avatica', () => {
+    const guard = CipWebviewManager as unknown as {
+      isMissingRemoteIncludeParentColumnError: (reportName: string, error: unknown) => boolean;
+    };
+
+    const misspelled = new Error(
+      'CIP Avatica request failed (400 Bad Request): column "main_controlller_name" does not exist Position: 1171',
+    );
+    assert.equal(guard.isMissingRemoteIncludeParentColumnError('remote-include-performance', misspelled), true);
+  });
+
+  test('detects generic missing-column errors for fallback retries', () => {
+    const guard = CipWebviewManager as unknown as {
+      isMissingColumnError: (error: unknown) => boolean;
+    };
+
+    assert.equal(guard.isMissingColumnError(new Error('column "parent_controller_name" does not exist')), true);
+    assert.equal(guard.isMissingColumnError(new Error('parse error at line 1, column 1')), false);
+  });
+});

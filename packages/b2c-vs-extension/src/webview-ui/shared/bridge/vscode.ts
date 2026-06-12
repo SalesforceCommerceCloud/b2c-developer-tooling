@@ -27,6 +27,9 @@ export interface ReportContext {
     required?: boolean;
     min?: number;
     max?: number;
+    options?: string[];
+    multiple?: boolean;
+    default?: string;
   }>;
 }
 
