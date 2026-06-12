@@ -42,7 +42,7 @@ export function createDebugSetBreakpointsTool(
         'Set breakpoints in a debug session. Replaces all previously set breakpoints. ' +
         'Accepts local file paths (mapped to server paths via cartridge discovery), cartridge-prefixed paths, or server paths starting with /. ' +
         'Check the "verified" field and "warnings" — unmapped paths are flagged.',
-      toolsets: ['CARTRIDGES', 'SCAPI'],
+      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
         breakpoints: z

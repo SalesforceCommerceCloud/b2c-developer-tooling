@@ -31,16 +31,16 @@ b2c scaffold list [--category <category>] [--source <source>]
 
 | Flag | Description |
 |------|-------------|
-| `--category`, `-c` | Filter by category: `cartridge`, `custom-api`, `page-designer`, `job`, `metadata` |
+| `--category`, `-c` | Filter by category (built-in scaffolds use `cartridge`; custom scaffolds may use other categories) |
 | `--source`, `-s` | Filter by source: `built-in`, `user`, `project`, `plugin` |
 | `--columns` | Columns to display (comma-separated) |
-| `--extended`, `-x` | Show all columns including description and tags |
+| `--extended`, `-x` | Show all columns including description and path |
 
 ### Output
 
 Default columns: `id`, `displayName`, `category`, `source`
 
-Extended columns (with `-x`): adds `description`, `tags`, `path`
+Extended columns (with `-x`): adds `description` and `path`
 
 ### Examples
 
@@ -163,6 +163,14 @@ b2c scaffold search <query> [--category <category>]
 | Flag | Description |
 |------|-------------|
 | `--category`, `-c` | Filter results by category |
+| `--columns` | Columns to display (comma-separated): `id`, `displayName`, `category`, `source`, `description` |
+| `--extended`, `-x` | Show all columns including extended fields |
+
+### Output
+
+Default columns: `id`, `displayName`, `category`, `description`
+
+Extended columns (with `-x`): adds `source`
 
 ### Examples
 

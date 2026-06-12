@@ -46,7 +46,7 @@ This creates two artifacts at the repo root:
 - `./.b2c-script-types/types/` — vendored copy of the Script API definitions.
 - `./jsconfig.json` — TypeScript Language Service configuration mapping `dw/*` to the vendored types.
 
-You can commit both into your repository if you want everyone on the team to share the same setup. To re-vendor after upgrading the CLI, re-run with `--force`. The `jsconfig.json` lives at the repo root by design — the `paths` mappings inside it are repo-root-relative and will not resolve correctly from a subdirectory.
+You can commit both into your repository if you want everyone on the team to share the same setup. To re-vendor after upgrading the CLI, re-run the command with `--force` to overwrite the existing files. The vendored types are refreshed automatically because the `--copy` flag defaults to true. The `jsconfig.json` lives at the repo root by design — the `paths` mappings inside it are repo-root-relative and will not resolve correctly from a subdirectory.
 
 The generated `jsconfig.json` looks like this — feel free to author it yourself if you prefer:
 
@@ -115,7 +115,7 @@ If your editor's LSP client is launched outside the repo root (for example, open
 
 ### Notes
 
-- The bundle is version-locked to a Script API release (currently 26.7). Re-run `b2c setup ide vscode-types --force` after upgrading the CLI to refresh the vendored copy. The plugin path returned by `b2c setup ide tsserver-plugin` always points at the bundle shipped with your installed CLI.
+- The bundle is version-locked to a Script API release (currently 26.7). Re-run `b2c setup ide vscode-types` after upgrading the CLI to refresh the vendored copy; use `--force` to overwrite existing files if they were previously created. The plugin path returned by `b2c setup ide tsserver-plugin` always points at the bundle shipped with your installed CLI.
 - The vendored `jsconfig.json` only configures `dw/*` IntelliSense. Cartridge-relative requires (`~/cartridge/...`, `*/cartridge/...`, `cartridgeName/cartridge/...`) cannot be expressed in standalone TypeScript `paths` mappings (TypeScript allows at most one `*` per pattern), so they will appear unresolved without the B2C DX VS Code extension or another host that loads `@salesforce/b2c-script-types/plugin` via LSP.
 
 ## Prophet VS Code Extension

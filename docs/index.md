@@ -96,6 +96,11 @@ claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 # Use --scope project to install for current project only
 claude plugin install b2c-cli
 claude plugin install b2c
+claude plugin install storefront-next
+# Install storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma
+# Install b2c-dx-mcp if you want the MCP server installed
+claude plugin install b2c-dx-mcp
 ```
 
 ```bash [Codex]
@@ -122,6 +127,8 @@ Then enter:
 copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 copilot plugin install b2c-cli@b2c-developer-tooling
 copilot plugin install b2c@b2c-developer-tooling
+copilot plugin install storefront-next@b2c-developer-tooling
+copilot plugin install storefront-next-figma@b2c-developer-tooling
 ```
 
 ```bash [Agentforce Vibes]

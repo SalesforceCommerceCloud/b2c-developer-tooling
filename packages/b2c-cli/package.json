@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce B2C Commerce CLI",
-  "version": "1.13.0",
+  "version": "1.15.0",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -332,6 +332,9 @@
               }
             }
           },
+          "rate-limit": {
+            "description": "Manage rate limiting rules\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
+          },
           "mtls": {
             "description": "Manage mTLS certificates for code deployment\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           },
@@ -369,7 +372,7 @@
     "format:check": "prettier --check src",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "pnpm run lint",
-    "prepack": "oclif manifest --jit && oclif readme",
+    "prepack": "oclif manifest --no-jit && oclif readme",
     "pretest": "tsc --noEmit -p test",
     "test": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
     "test:ci": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",

@@ -45,10 +45,12 @@ b2c docs search [query]
 
 ### Flags
 
-| Flag            | Description                              | Default |
-| --------------- | ---------------------------------------- | ------- |
-| `--limit`, `-l` | Maximum number of results to display     | `20`    |
-| `--list`        | List all available documentation entries | `false` |
+| Flag               | Description                                                       | Default |
+| ------------------ | ----------------------------------------------------------------- | ------- |
+| `--limit`, `-l`    | Maximum number of results to display                              | `20`    |
+| `--list`           | List all available documentation entries                          | `false` |
+| `--columns`, `-c`  | Columns to display (comma-separated). Available: id, title, score | (none)  |
+| `--extended`, `-x` | Show all columns including extended fields                        | `false` |
 
 ### Examples
 

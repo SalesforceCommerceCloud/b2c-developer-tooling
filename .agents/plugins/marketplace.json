@@ -42,6 +42,19 @@
       "category": "Productivity"
     },
     {
+      "name": "storefront-next-figma",
+      "description": "Figma design-kit skills for Storefront Next verticals — duplicate the kit, sync brand variables, and publish Code Connect. Requires the Figma MCP server.",
+      "source": {
+        "source": "local",
+        "path": "./skills/storefront-next-figma"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
       "name": "cap-dev",
       "description": "Skills for scaffolding, packaging, validating, and submitting Commerce App Packages (CAPs) for Salesforce Commerce Cloud.",
       "source": {

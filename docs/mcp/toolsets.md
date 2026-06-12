@@ -1,10 +1,10 @@
 ---
-description: Available toolsets and tools in the B2C DX MCP Server for SCAPI, CARTRIDGES, MRT, PWAV3, and STOREFRONTNEXT development.
+description: Available toolsets and tools in the B2C DX MCP Server for SCAPI, CARTRIDGES, DIAGNOSTICS, MRT, PWAV3, and STOREFRONTNEXT development.
 ---
 
 # Toolsets & Tools
 
-The B2C DX MCP Server provides five toolsets with specialized tools for different B2C Commerce development workflows.
+The B2C DX MCP Server provides six toolsets with specialized tools for different B2C Commerce development workflows.
 
 
 ## Overview
@@ -13,12 +13,13 @@ Toolsets are collections of related tools that work together to support specific
 
 **Available toolsets:**
 - [CARTRIDGES](#cartridges) - Cartridge deployment and code version management
+- [DIAGNOSTICS](#diagnostics) - Script debugger, log inspection, and bundled documentation
 - [MRT](#mrt) - Managed Runtime bundle operations
 - [PWAV3](#pwav3) - PWA Kit v3 development tools
 - [SCAPI](#scapi) - Salesforce Commerce API discovery
 - [STOREFRONTNEXT](#storefrontnext) - Storefront Next development tools
 
-**Note:** With auto-discovery, the `SCAPI` toolset is always included. When using `--toolsets` or `--tools`, only the specified toolsets/tools are enabled.
+**Note:** With auto-discovery, the `SCAPI` and `DIAGNOSTICS` toolsets are always included. When using `--toolsets` or `--tools`, only the specified toolsets/tools are enabled.
 
 ## CARTRIDGES
 
@@ -33,6 +34,39 @@ Cartridge development, deployment, and code version management.
 | Tool | Description | Documentation |
 |------|-------------|---------------|
 | [`cartridge_deploy`](./tools/cartridge-deploy) | Deploy cartridges to a B2C Commerce instance | [View details](./tools/cartridge-deploy) |
+
+## DIAGNOSTICS
+
+Script debugger, runtime log inspection, and bundled Script API / XSD documentation lookup.
+
+**Status:** ✅ Generally Available
+
+**Always enabled** - Base toolset available for all projects. The log and debugger tools also appear in `CARTRIDGES` and `SCAPI`; the documentation tools appear in every toolset.
+
+### Script Debugger
+
+| Tool | Description | Documentation |
+|------|-------------|---------------|
+| `debug_start_session` / `debug_end_session` / `debug_list_sessions` | Manage SDAPI debugger sessions | [View details](./tools/diagnostics) |
+| `debug_set_breakpoints` | Set breakpoints in cartridge scripts | [View details](./tools/diagnostics) |
+| `debug_wait_for_stop` / `debug_continue` / `debug_step_into` / `debug_step_over` / `debug_step_out` | Control execution flow | [View details](./tools/diagnostics) |
+| `debug_get_stack` / `debug_get_variables` / `debug_evaluate` | Inspect stack frames, variables, and evaluate expressions | [View details](./tools/diagnostics) |
+| `debug_capture_at_breakpoint` | One-shot capture of stack + variables at a breakpoint | [View details](./tools/diagnostics) |
+
+### Logs
+
+| Tool | Description | Documentation |
+|------|-------------|---------------|
+| `logs_list_files` | List log files on the instance via WebDAV | [View details](./tools/logs) |
+| `logs_get_recent` | Fetch recent log entries in a single request | [View details](./tools/logs) |
+| `logs_watch_start` / `logs_watch_poll` / `logs_watch_stop` / `logs_watch_list` | Buffered log watch lifecycle so entries aren't missed between calls | [View details](./tools/logs) |
+
+### Documentation
+
+| Tool | Description | Documentation |
+|------|-------------|---------------|
+| `docs_search` / `docs_read` / `docs_list` | Search and read bundled Script API documentation | [View details](./tools/docs) |
+| `docs_schema_search` / `docs_schema_read` / `docs_schema_list` | Search and read bundled XSD schemas | [View details](./tools/docs) |
 
 ## MRT
 
@@ -85,8 +119,6 @@ Salesforce Commerce API discovery and exploration.
 ## STOREFRONTNEXT
 
 Storefront Next development tools for building modern storefronts.
-
-> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
 
 **Status:** 🚧 Preview — requires `--allow-non-ga-tools` flag.
 

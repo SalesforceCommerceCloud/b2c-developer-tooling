@@ -49,7 +49,12 @@ b2c code list
 
 ### Flags
 
-Uses [global instance and authentication flags](./index#global-flags).
+In addition to [global instance and authentication flags](./index#global-flags):
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--columns`, `-c` | Columns to display (comma-separated). Available: id, active, rollback, lastModified, cartridges | All columns |
+| `--extended`, `-x` | Show all columns including extended fields | `false` |
 
 ### Examples
 
@@ -116,8 +121,8 @@ In addition to [global flags](./index#global-flags):
 | `--activate`, `-a` | Activate code version after deploy | `false` |
 | `--reload`, `-r` | Reload (toggle activation to force reload) code version after deploy | `false` |
 | `--delete` | Delete existing cartridges before upload | `false` |
-| `--cartridge`, `-c` | Include specific cartridge(s) (can be repeated) | |
-| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (can be repeated) | |
+| `--cartridge`, `-c` | Include specific cartridge(s) (comma-separated or repeated) | |
+| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated) | |
 
 ### Examples
 
@@ -183,8 +188,10 @@ In addition to [global flags](./index#global-flags):
 |------|-------------|---------|
 | `--output`, `-o` | Output directory for downloaded cartridges | `cartridges` |
 | `--mirror`, `-m` | Extract cartridges to their local project locations | `false` |
-| `--cartridge`, `-c` | Include specific cartridge(s) (can be repeated) | |
-| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (can be repeated) | |
+| `--cartridge`, `-c` | Include specific cartridge(s) (comma-separated or repeated) | |
+| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated) | |
+
+**Note:** The `--mirror` and `--output` flags are mutually exclusive. You must use one or the other, not both. Use `--output` to extract all cartridges to a single directory, or use `--mirror` to extract each cartridge to its local project location.
 
 ### Examples
 
@@ -343,8 +350,8 @@ In addition to [global flags](./index#global-flags):
 
 | Flag | Description |
 |------|-------------|
-| `--cartridge`, `-c` | Include specific cartridge(s) (can be repeated) |
-| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (can be repeated) |
+| `--cartridge`, `-c` | Include specific cartridge(s) (comma-separated or repeated) |
+| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated) |
 
 ### Examples
 

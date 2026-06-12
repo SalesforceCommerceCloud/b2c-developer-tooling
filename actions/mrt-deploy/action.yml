@@ -51,6 +51,8 @@ runs:
       with:
         version: ${{ inputs.version }}
         node-version: ${{ inputs.node-version }}
+        # Reuse an already-installed CLI; only install when none is present.
+        skip-if-present: 'true'
         mrt-api-key: ${{ inputs.mrt-api-key }}
         mrt-project: ${{ inputs.project }}
         mrt-environment: ${{ inputs.environment }}
