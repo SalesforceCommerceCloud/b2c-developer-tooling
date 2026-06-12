@@ -11,7 +11,9 @@ Use the `b2c` CLI plugin to manage SCAPI Custom API endpoints and check their re
 
 ## Configuration
 
-Values like `tenantId` and `shortCode` resolve from `dw.json` / `SFCC_*` env vars / the active instance. Examples below show minimal usage; add flags only to override configured values. If a required value is missing, the CLI emits an actionable error pointing at the flag, env var, and config key. See the `b2c-config` skill for precedence details.
+Values like `tenantId`, `shortCode`, `clientId`, and `clientSecret` resolve from `dw.json` / `SFCC_*` env vars / the active instance / configuration plugins. Examples below show minimal usage; **add flags only to override configured values** — passing `--client-id`/`--client-secret`/`--tenant-id`/`--short-code` is usually unnecessary. If a required value is missing, the CLI emits an actionable error pointing at the flag, env var, and config key.
+
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (`--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 ## Tenant ID vs. Organization ID
 

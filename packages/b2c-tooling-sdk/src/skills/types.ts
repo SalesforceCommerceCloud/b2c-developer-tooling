@@ -20,7 +20,7 @@ export type IdeType =
 /**
  * Skill set categories matching the plugins directory structure.
  */
-export type SkillSet = 'b2c' | 'b2c-cli' | 'cap-dev' | 'storefront-next';
+export type SkillSet = 'b2c' | 'b2c-cli' | 'cap-dev' | 'storefront-next' | 'storefront-next-figma';
 
 /**
  * Configuration for a skill source — defines how to fetch skills from a particular repository.

@@ -6,8 +6,14 @@
 
 import {withDocs} from '../../../i18n/index.js';
 import {CipReportCommand} from '../../../utils/cip/report-command.js';
-import {createSiteIdFlag} from '../../../utils/cip/report-flags.js';
+import {buildReportFlags, requireReport} from '../../../utils/cip/report-flags.js';
 
+const REPORT_NAME = 'customer-registration-trends';
+
+/**
+ * `b2c cip report customer-registration-trends` — flags are auto-derived from the catalog
+ * definition; param parsing/validation lives in {@link CipReportCommand} and the SDK.
+ */
 export default class CipReportCustomerRegistrationTrends extends CipReportCommand<
   typeof CipReportCustomerRegistrationTrends
 > {
@@ -21,12 +27,8 @@ export default class CipReportCustomerRegistrationTrends extends CipReportComman
   static flags = {
     ...CipReportCommand.baseFlags,
     ...CipReportCommand.reportFlags,
-    'site-id': createSiteIdFlag(),
+    ...buildReportFlags(requireReport(REPORT_NAME)),
   };
 
-  protected readonly reportName = 'customer-registration-trends';
-
-  protected getReportParams(): Record<string, string> {
-    return this.getBaseReportParams();
-  }
+  protected readonly reportName = REPORT_NAME;
 }
