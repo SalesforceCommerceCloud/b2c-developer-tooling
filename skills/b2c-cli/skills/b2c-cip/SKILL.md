@@ -1,6 +1,6 @@
 ---
 name: b2c-cip
-description: Run analytics reports and SQL queries against B2C Commerce Intelligence data using the b2c CLI. Use this skill whenever the user needs sales analytics, search query performance metrics, payment data, or KPI exports. Also use when they need to discover available data tables, run custom SQL, or pull aggregate reports — even if they just say "show me sales data" or "what are our top search terms".
+description: Run analytics reports and SQL queries against B2C Commerce Intelligence data using the b2c CLI. Use this skill whenever the user needs sales analytics, search query performance metrics, payment data, or KPI exports, OR technical/developer analytics such as SCAPI/OCAPI request volume, API error rates, response-time/latency distributions, cache hit ratios, or SFRA controller health. Also use when they need to discover available data tables, run custom SQL, or pull aggregate reports — even if they just say "show me sales data", "what are our top search terms", or "which SCAPI endpoints are slow or erroring".
 ---
 
 # B2C CIP Skill
@@ -17,17 +17,22 @@ cip
 ├── describe <table>              - describe table columns
 ├── query                         - raw SQL execution
 └── report                        - curated report topic
-    ├── sales-analytics
-    ├── sales-summary
-    ├── ocapi-requests
-    ├── top-selling-products
-    ├── product-co-purchase-analysis
-    ├── promotion-discount-analysis
-    ├── search-query-performance
-    ├── payment-method-performance
-    ├── customer-registration-trends
-    └── top-referrers
+    ├── list                       - list the catalog grouped by category
+    ├── Sales:      sales-analytics, sales-summary, revenue-by-channel
+    ├── Technical:  ocapi-requests, ocapi-client-usage, scapi-traffic-latency,
+    │               scapi-error-rate-by-status, scapi-latency-distribution,
+    │               scapi-cache-hit-ratio, controller-health-scorecard,
+    │               controller-error-rate-trend, remote-include-performance
+    ├── Product:    top-selling-products, product-co-purchase-analysis, recommender-effectiveness
+    ├── Promotion:  promotion-discount-analysis, promotion-roi-leaderboard, discount-depth-breakdown
+    ├── Search:     search-query-performance, zero-result-searches
+    ├── Customer:   customer-registration-trends, new-vs-returning-buyer-revenue
+    ├── Payment:    payment-method-performance
+    ├── Traffic:    top-referrers, checkout-funnel-dropoff, bot-traffic-share
+    └── Inventory:  inventory-stockout-by-location
 ```
+
+Run `b2c cip report list` (or `--help`) for the live catalog; each report's exact flags come from `b2c cip report <name> --describe`.
 
 ## Configuration
 
@@ -94,8 +99,9 @@ The list is derived from official JDBC documentation and intended as a quick dis
 ## Curated Report Examples
 
 ```bash
-# Show report commands
-b2c cip report --help
+# Discover the catalog grouped by category (no credentials needed)
+b2c cip report list
+b2c cip report list --category "Technical Analytics"
 
 # Run a report (tenant resolves from config)
 b2c cip report sales-analytics \
@@ -103,7 +109,7 @@ b2c cip report sales-analytics \
   --from 2025-01-01 \
   --to 2025-01-31
 
-# Show report parameter contract
+# Show report parameter contract (flags are auto-derived per report)
 b2c cip report top-referrers --describe
 
 # Print generated SQL and stop
@@ -111,6 +117,32 @@ b2c cip report top-referrers --site-id Sites-RefArch-Site --limit 25 --sql
 
 # Force staging analytics host
 b2c cip report top-referrers --site-id Sites-RefArch-Site --limit 25 --staging --sql
+```
+
+### Technical / developer reports
+
+These analyze SCAPI, OCAPI, and SFRA controller request data. The request tables carry a
+response-time histogram (`num_requests_bucket1..11`, fastest→slowest), so the latency-distribution
+and health-scorecard reports surface the **slow-tail percentage** that a plain average hides.
+SCAPI traffic is often attributed to a headless site (or no site), so `--site-id` is optional on
+SCAPI reports — omit it to span all sites.
+
+```bash
+# SCAPI latency distribution + slow-tail %, all sites
+b2c cip report scapi-latency-distribution --from 2025-01-01 --to 2025-01-31
+
+# SCAPI endpoints ranked by 5xx error rate
+b2c cip report scapi-error-rate-by-status --from 2025-01-01 --to 2025-01-31 --status-class 5xx
+
+# SCAPI cache hit ratio (find cacheable endpoints running as MISS)
+b2c cip report scapi-cache-hit-ratio --from 2025-01-01 --to 2025-01-31
+
+# OCAPI usage per integration client_id
+b2c cip report ocapi-client-usage --from 2025-01-01 --to 2025-01-31
+
+# SFRA controller health scorecard / daily error-rate trend
+b2c cip report controller-health-scorecard --site-id Sites-RefArch-Site --from 2025-01-01 --to 2025-01-31
+b2c cip report controller-error-rate-trend --site-id Sites-RefArch-Site --from 2025-01-01 --to 2025-01-31
 ```
 
 ### SQL Pipeline Pattern

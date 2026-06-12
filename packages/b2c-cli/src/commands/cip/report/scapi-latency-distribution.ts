@@ -8,16 +8,18 @@ import {withDocs} from '../../../i18n/index.js';
 import {CipReportCommand} from '../../../utils/cip/report-command.js';
 import {buildReportFlags, requireReport} from '../../../utils/cip/report-flags.js';
 
-const REPORT_NAME = 'search-query-performance';
+const REPORT_NAME = 'scapi-latency-distribution';
 
 /**
- * `b2c cip report search-query-performance` — flags are auto-derived from the catalog
+ * `b2c cip report scapi-latency-distribution` — flags are auto-derived from the catalog
  * definition; param parsing/validation lives in {@link CipReportCommand} and the SDK.
  */
-export default class CipReportSearchQueryPerformance extends CipReportCommand<typeof CipReportSearchQueryPerformance> {
+export default class CipReportScapiLatencyDistribution extends CipReportCommand<
+  typeof CipReportScapiLatencyDistribution
+> {
   static description = withDocs(
-    'Identify search terms driving revenue and conversion',
-    '/cli/cip.html#b2c-cip-report-search-query-performance',
+    'Surface the SCAPI latency histogram and slow-tail (SLA breach) percentage per endpoint',
+    '/cli/cip.html#b2c-cip-report-scapi-latency-distribution',
   );
 
   static enableJsonFlag = true;

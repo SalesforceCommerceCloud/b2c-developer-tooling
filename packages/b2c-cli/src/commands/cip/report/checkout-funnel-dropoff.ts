@@ -8,16 +8,16 @@ import {withDocs} from '../../../i18n/index.js';
 import {CipReportCommand} from '../../../utils/cip/report-command.js';
 import {buildReportFlags, requireReport} from '../../../utils/cip/report-flags.js';
 
-const REPORT_NAME = 'search-query-performance';
+const REPORT_NAME = 'checkout-funnel-dropoff';
 
 /**
- * `b2c cip report search-query-performance` — flags are auto-derived from the catalog
+ * `b2c cip report checkout-funnel-dropoff` — flags are auto-derived from the catalog
  * definition; param parsing/validation lives in {@link CipReportCommand} and the SDK.
  */
-export default class CipReportSearchQueryPerformance extends CipReportCommand<typeof CipReportSearchQueryPerformance> {
+export default class CipReportCheckoutFunnelDropoff extends CipReportCommand<typeof CipReportCheckoutFunnelDropoff> {
   static description = withDocs(
-    'Identify search terms driving revenue and conversion',
-    '/cli/cip.html#b2c-cip-report-search-query-performance',
+    'Visits reaching each checkout step with step-over-step drop-off to pinpoint funnel leaks',
+    '/cli/cip.html#b2c-cip-report-checkout-funnel-dropoff',
   );
 
   static enableJsonFlag = true;

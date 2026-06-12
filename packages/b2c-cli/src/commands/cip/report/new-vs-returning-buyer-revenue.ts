@@ -8,16 +8,18 @@ import {withDocs} from '../../../i18n/index.js';
 import {CipReportCommand} from '../../../utils/cip/report-command.js';
 import {buildReportFlags, requireReport} from '../../../utils/cip/report-flags.js';
 
-const REPORT_NAME = 'search-query-performance';
+const REPORT_NAME = 'new-vs-returning-buyer-revenue';
 
 /**
- * `b2c cip report search-query-performance` — flags are auto-derived from the catalog
+ * `b2c cip report new-vs-returning-buyer-revenue` — flags are auto-derived from the catalog
  * definition; param parsing/validation lives in {@link CipReportCommand} and the SDK.
  */
-export default class CipReportSearchQueryPerformance extends CipReportCommand<typeof CipReportSearchQueryPerformance> {
+export default class CipReportNewVsReturningBuyerRevenue extends CipReportCommand<
+  typeof CipReportNewVsReturningBuyerRevenue
+> {
   static description = withDocs(
-    'Identify search terms driving revenue and conversion',
-    '/cli/cip.html#b2c-cip-report-search-query-performance',
+    'Split revenue, orders, AOV, and discount depth between first-time and returning buyers',
+    '/cli/cip.html#b2c-cip-report-new-vs-returning-buyer-revenue',
   );
 
   static enableJsonFlag = true;
