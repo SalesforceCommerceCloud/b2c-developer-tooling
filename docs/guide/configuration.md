@@ -6,6 +6,10 @@ description: Configure the B2C CLI with environment variables, dw.json files, an
 
 The B2C CLI automatically detects and uses available credentials. You can provide credentials via CLI flags, environment variables, or configuration files.
 
+::: tip Prefer a guided path?
+The [Quickstart](/quickstart/) walks you through the minimum config for common tasks (deploy code, run jobs, work with Page Designer content, set up an AI coding agent) and synthesises a `dw.json` snippet plus a verify command.
+:::
+
 ::: tip
 For detailed setup instructions including Account Manager API client creation, role configuration, and OCAPI setup, see the [Authentication Setup](./authentication) guide.
 :::

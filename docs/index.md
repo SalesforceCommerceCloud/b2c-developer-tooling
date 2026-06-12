@@ -16,6 +16,9 @@ hero:
     alt: Agentic B2C Developer Toolkit — CLI, Agentforce Vibes, and Claude Code
   actions:
     - theme: brand
+      text: Quickstart
+      link: /quickstart/
+    - theme: alt
       text: Get Started
       link: /guide/
     - theme: alt
