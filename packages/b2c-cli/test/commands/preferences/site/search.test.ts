@@ -6,11 +6,11 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
-import PreferencesSiteSearch from '../../../../../src/commands/scapi/preferences/site/search.js';
-import {stubParse} from '../../../../helpers/stub-parse.js';
-import {createIsolatedEnvHooks, runSilent} from '../../../../helpers/test-setup.js';
+import PreferencesSiteSearch from '../../../../src/commands/preferences/site/search.js';
+import {stubParse} from '../../../helpers/stub-parse.js';
+import {createIsolatedEnvHooks, runSilent} from '../../../helpers/test-setup.js';
 
-describe('scapi preferences site search', () => {
+describe('preferences site search', () => {
   const hooks = createIsolatedEnvHooks();
 
   beforeEach(hooks.beforeEach);
@@ -38,8 +38,15 @@ describe('scapi preferences site search', () => {
       const command: any = new PreferencesSiteSearch([], config);
       stubParse(
         command,
-        {'tenant-id': 'zzxy_prd', limit: 25, offset: 0, 'sort-order': 'asc', 'mask-passwords': false},
-        {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+        {
+          'tenant-id': 'zzxy_prd',
+          'instance-type': 'staging',
+          limit: 25,
+          offset: 0,
+          'sort-order': 'asc',
+          'mask-passwords': false,
+        },
+        {'group-id': 'CustomGroupId'},
       );
       await command.init();
       stubCommandDefaults(command);
@@ -69,13 +76,14 @@ describe('scapi preferences site search', () => {
         command,
         {
           'tenant-id': 'zzxy_prd',
+          'instance-type': 'staging',
           'search-phrase': 'Wapi',
           limit: 25,
           offset: 0,
           'sort-order': 'asc',
           'mask-passwords': false,
         },
-        {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+        {'group-id': 'CustomGroupId'},
       );
       await command.init();
       stubCommandDefaults(command);
@@ -102,13 +110,14 @@ describe('scapi preferences site search', () => {
         command,
         {
           'tenant-id': 'zzxy_prd',
+          'instance-type': 'staging',
           'value-type': 'string',
           limit: 25,
           offset: 0,
           'sort-order': 'asc',
           'mask-passwords': false,
         },
-        {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+        {'group-id': 'CustomGroupId'},
       );
       await command.init();
       stubCommandDefaults(command);
@@ -135,6 +144,7 @@ describe('scapi preferences site search', () => {
         command,
         {
           'tenant-id': 'zzxy_prd',
+          'instance-type': 'staging',
           'search-phrase': 'Wapi',
           'value-type': 'string',
           limit: 25,
@@ -142,7 +152,7 @@ describe('scapi preferences site search', () => {
           'sort-order': 'asc',
           'mask-passwords': false,
         },
-        {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+        {'group-id': 'CustomGroupId'},
       );
       await command.init();
       stubCommandDefaults(command);
@@ -173,6 +183,7 @@ describe('scapi preferences site search', () => {
         command,
         {
           'tenant-id': 'zzxy_prd',
+          'instance-type': 'staging',
           query: '{"matchAllQuery":{}}',
           'sort-by': 'id',
           'sort-order': 'desc',
@@ -180,7 +191,7 @@ describe('scapi preferences site search', () => {
           offset: 0,
           'mask-passwords': false,
         },
-        {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+        {'group-id': 'CustomGroupId'},
       );
       await command.init();
       stubCommandDefaults(command);
@@ -206,13 +217,14 @@ describe('scapi preferences site search', () => {
         command,
         {
           'tenant-id': 'zzxy_prd',
+          'instance-type': 'staging',
           expand: 'value',
           limit: 25,
           offset: 0,
           'sort-order': 'asc',
           'mask-passwords': false,
         },
-        {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+        {'group-id': 'CustomGroupId'},
       );
       await command.init();
       stubCommandDefaults(command);
@@ -230,34 +242,19 @@ describe('scapi preferences site search', () => {
       await command.run();
     });
 
-    it('errors on invalid instance type', async () => {
-      const command: any = new PreferencesSiteSearch([], config);
-      stubParse(
-        command,
-        {'tenant-id': 'zzxy_prd', limit: 25, offset: 0, 'sort-order': 'asc', 'mask-passwords': false},
-        {'group-id': 'CustomGroupId', 'instance-type': 'bogus'},
-      );
-      await command.init();
-
-      sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-      sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
-      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
-
-      try {
-        await command.run();
-        expect.fail('Should have thrown');
-      } catch {
-        expect(errorStub.calledOnce).to.equal(true);
-        expect(String(errorStub.firstCall.args[0])).to.match(/Invalid instance type/i);
-      }
-    });
-
     it('renders search hits to stdout in non-JSON mode', async () => {
       const command: any = new PreferencesSiteSearch([], config);
       stubParse(
         command,
-        {'tenant-id': 'zzxy_prd', limit: 25, offset: 0, 'sort-order': 'asc', 'mask-passwords': false},
-        {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+        {
+          'tenant-id': 'zzxy_prd',
+          'instance-type': 'staging',
+          limit: 25,
+          offset: 0,
+          'sort-order': 'asc',
+          'mask-passwords': false,
+        },
+        {'group-id': 'CustomGroupId'},
       );
       await command.init();
       stubCommandDefaults(command);

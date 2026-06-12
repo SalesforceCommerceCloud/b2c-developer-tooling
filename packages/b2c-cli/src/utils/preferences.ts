@@ -3,10 +3,35 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Command} from '@oclif/core';
+import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {createPreferencesClient, type PreferencesClient} from '@salesforce/b2c-tooling-sdk';
-import {t} from '../../i18n/index.js';
+import {
+  createPreferencesClient,
+  type PreferenceInstanceType,
+  type PreferencesClient,
+} from '@salesforce/b2c-tooling-sdk';
+import {t} from '../i18n/index.js';
+
+const INSTANCE_TYPES: PreferenceInstanceType[] = ['staging', 'development', 'sandbox', 'production'];
+
+/**
+ * Flag for selecting the SCAPI Preferences instance type.
+ *
+ * Defaults to `current`, which directs the API to use the instance handling
+ * the request. Spread this into command `static flags` rather than redefining.
+ */
+export const instanceTypeFlag = Flags.string({
+  description: 'Instance type. Use "current" to use the instance handling the request.',
+  options: [...INSTANCE_TYPES, 'current'],
+  default: 'current',
+});
+
+/** Shared `--mask-passwords` (plural) flag used by all instance-scoped preferences commands. */
+export const maskPasswordsFlag = Flags.boolean({
+  description: 'Mask values of type password',
+  default: false,
+  allowNo: true,
+});
 
 /**
  * Base command class for SCAPI Configuration Preferences API commands.

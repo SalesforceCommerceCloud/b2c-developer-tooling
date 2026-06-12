@@ -4,24 +4,18 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags, ux} from '@oclif/core';
-import {PreferencesCommand} from '../../../../utils/scapi/preferences.js';
+import {PreferencesCommand, instanceTypeFlag, maskPasswordsFlag} from '../../../utils/preferences.js';
 import {
   getApiErrorMessage,
   type OrganizationPreferences,
   type PreferenceInstanceType,
 } from '@salesforce/b2c-tooling-sdk';
-import {t, withDocs} from '../../../../i18n/index.js';
-
-const INSTANCE_TYPES: PreferenceInstanceType[] = ['staging', 'development', 'sandbox', 'production'];
+import {t, withDocs} from '../../../i18n/index.js';
 
 export default class PreferencesGlobalGet extends PreferencesCommand<typeof PreferencesGlobalGet> {
   static args = {
     'group-id': Args.string({
       description: 'Preference group ID',
-      required: true,
-    }),
-    'instance-type': Args.string({
-      description: 'Instance type to read preferences for. Use "current" to use the instance handling the request.',
       required: true,
     }),
   };
@@ -37,16 +31,14 @@ export default class PreferencesGlobalGet extends PreferencesCommand<typeof Pref
   static enableJsonFlag = true;
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> CustomGroupId staging --tenant-id zzxy_prd',
-    '<%= config.bin %> <%= command.id %> CustomGroupId current --tenant-id zzxy_prd --expand sites',
+    '<%= config.bin %> <%= command.id %> CustomGroupId --tenant-id zzxy_prd',
+    '<%= config.bin %> <%= command.id %> CustomGroupId --instance-type staging --tenant-id zzxy_prd',
+    '<%= config.bin %> <%= command.id %> CustomGroupId --tenant-id zzxy_prd --expand sites',
   ];
 
   static flags = {
-    'mask-passwords': Flags.boolean({
-      description: 'Mask values of type password',
-      default: false,
-      allowNo: true,
-    }),
+    'instance-type': instanceTypeFlag,
+    'mask-passwords': maskPasswordsFlag,
     expand: Flags.string({
       description: 'Expand option ("sites" returns site-specific values)',
       options: ['sites'],
@@ -56,25 +48,15 @@ export default class PreferencesGlobalGet extends PreferencesCommand<typeof Pref
   async run(): Promise<OrganizationPreferences> {
     this.requireOAuthCredentials();
 
-    const {'group-id': groupId, 'instance-type': instanceTypeArg} = this.args;
-    const {'mask-passwords': maskPasswords, expand} = this.flags;
+    const {'group-id': groupId} = this.args;
+    const {'instance-type': instanceType, 'mask-passwords': maskPasswords, expand} = this.flags;
     const organizationId = this.getOrganizationId();
-
-    if (instanceTypeArg !== 'current' && !INSTANCE_TYPES.includes(instanceTypeArg as PreferenceInstanceType)) {
-      this.error(
-        t(
-          'commands.preferences.invalidInstanceType',
-          'Invalid instance type "{{value}}". Use one of: {{values}} or "current".',
-          {value: instanceTypeArg, values: INSTANCE_TYPES.join(', ')},
-        ),
-      );
-    }
 
     const result = await this.preferencesClient.GET(
       '/organizations/{organizationId}/global-preference-groups/{groupId}/{instanceType}',
       {
         params: {
-          path: {organizationId, groupId, instanceType: instanceTypeArg as PreferenceInstanceType},
+          path: {organizationId, groupId, instanceType: instanceType as PreferenceInstanceType},
           query: {maskPasswords, expand: expand ? [expand as 'sites'] : undefined},
         },
       },

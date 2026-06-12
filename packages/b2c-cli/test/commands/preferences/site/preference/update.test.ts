@@ -6,11 +6,11 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
-import PreferencesSiteUpdate from '../../../../../src/commands/scapi/preferences/site/update.js';
+import PreferencesSitePreferenceUpdate from '../../../../../src/commands/preferences/site/preference/update.js';
 import {stubParse} from '../../../../helpers/stub-parse.js';
 import {createIsolatedEnvHooks} from '../../../../helpers/test-setup.js';
 
-describe('scapi preferences site update', () => {
+describe('preferences site preference update', () => {
   const hooks = createIsolatedEnvHooks();
 
   beforeEach(hooks.beforeEach);
@@ -29,11 +29,11 @@ describe('scapi preferences site update', () => {
     });
 
     it('errors when neither --file nor --body is provided', async () => {
-      const command: any = new PreferencesSiteUpdate([], config);
+      const command: any = new PreferencesSitePreferenceUpdate([], config);
       stubParse(
         command,
-        {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch', 'mask-passwords': false},
-        {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+        {'tenant-id': 'zzxy_prd', 'instance-type': 'staging', 'mask-passwords': false},
+        {'group-id': 'CustomGroupId', 'preference-id': 'WapiStringAttr'},
       );
       await command.init();
 
@@ -50,34 +50,12 @@ describe('scapi preferences site update', () => {
       }
     });
 
-    it('errors on invalid instance type', async () => {
-      const command: any = new PreferencesSiteUpdate([], config);
-      stubParse(
-        command,
-        {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch', 'mask-passwords': false, body: '{"c_attr":"v"}'},
-        {'group-id': 'CustomGroupId', 'instance-type': 'invalid'},
-      );
-      await command.init();
-
-      sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-      sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
-      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
-
-      try {
-        await command.run();
-        expect.fail('Should have thrown');
-      } catch {
-        expect(errorStub.calledOnce).to.equal(true);
-        expect(String(errorStub.firstCall.args[0])).to.match(/Invalid instance type/i);
-      }
-    });
-
     it('errors on invalid JSON body', async () => {
-      const command: any = new PreferencesSiteUpdate([], config);
+      const command: any = new PreferencesSitePreferenceUpdate([], config);
       stubParse(
         command,
-        {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch', 'mask-passwords': false, body: 'not-json'},
-        {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+        {'tenant-id': 'zzxy_prd', 'instance-type': 'staging', 'mask-passwords': false, body: '{not-json'},
+        {'group-id': 'CustomGroupId', 'preference-id': 'WapiStringAttr'},
       );
       await command.init();
 
@@ -94,12 +72,17 @@ describe('scapi preferences site update', () => {
       }
     });
 
-    it('sends body to PATCH request with siteId query param', async () => {
-      const command: any = new PreferencesSiteUpdate([], config);
+    it('sends body to PATCH at the correct preference path', async () => {
+      const command: any = new PreferencesSitePreferenceUpdate([], config);
       stubParse(
         command,
-        {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch', 'mask-passwords': false, body: '{"c_attr":"value"}'},
-        {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+        {
+          'tenant-id': 'zzxy_prd',
+          'instance-type': 'staging',
+          'mask-passwords': false,
+          body: '{"id":"WapiStringAttr","siteValues":{"RefArch":"new"}}',
+        },
+        {'group-id': 'CustomGroupId', 'preference-id': 'WapiStringAttr'},
       );
       await command.init();
 
@@ -110,18 +93,20 @@ describe('scapi preferences site update', () => {
 
       const fetchStub = sinon.stub(globalThis, 'fetch').callsFake(async (input: Request | string | URL) => {
         const req = input as Request;
-        expect(req.url).to.include('/site-preference-groups/CustomGroupId/staging');
-        expect(req.url).to.include('siteId=RefArch');
+        expect(req.url).to.include('/site-preference-groups/CustomGroupId/staging/preferences/WapiStringAttr');
         expect(req.method).to.equal('PATCH');
-        expect(await req.clone().json()).to.deep.equal({c_attr: 'value'});
-        return new Response(JSON.stringify({c_attr: 'value'}), {
+        const body = (await req.clone().json()) as {id: string; siteValues: Record<string, string>};
+        expect(body.id).to.equal('WapiStringAttr');
+        expect(body.siteValues).to.deep.equal({RefArch: 'new'});
+        return new Response(JSON.stringify(body), {
           status: 200,
           headers: {'content-type': 'application/json'},
         });
       });
 
-      await command.run();
+      const result = await command.run();
       expect(fetchStub.called).to.equal(true);
+      expect(result.id).to.equal('WapiStringAttr');
     });
   });
 });

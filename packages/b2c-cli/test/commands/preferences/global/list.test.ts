@@ -6,11 +6,11 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
-import PreferencesGlobalList from '../../../../../src/commands/scapi/preferences/global/list.js';
-import {stubParse} from '../../../../helpers/stub-parse.js';
-import {createIsolatedEnvHooks, runSilent} from '../../../../helpers/test-setup.js';
+import PreferencesGlobalList from '../../../../src/commands/preferences/global/list.js';
+import {stubParse} from '../../../helpers/stub-parse.js';
+import {createIsolatedEnvHooks, runSilent} from '../../../helpers/test-setup.js';
 
-describe('scapi preferences global list', () => {
+describe('preferences global list', () => {
   const hooks = createIsolatedEnvHooks();
 
   beforeEach(hooks.beforeEach);

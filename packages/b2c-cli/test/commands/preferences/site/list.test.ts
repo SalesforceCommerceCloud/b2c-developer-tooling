@@ -6,11 +6,11 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
-import PreferencesSiteGet from '../../../../../src/commands/scapi/preferences/site/get.js';
-import {stubParse} from '../../../../helpers/stub-parse.js';
-import {createIsolatedEnvHooks} from '../../../../helpers/test-setup.js';
+import PreferencesSiteList from '../../../../src/commands/preferences/site/list.js';
+import {stubParse} from '../../../helpers/stub-parse.js';
+import {createIsolatedEnvHooks, runSilent} from '../../../helpers/test-setup.js';
 
-describe('scapi preferences site get', () => {
+describe('preferences site list', () => {
   const hooks = createIsolatedEnvHooks();
 
   beforeEach(hooks.beforeEach);
@@ -28,12 +28,12 @@ describe('scapi preferences site get', () => {
       sinon.restore();
     });
 
-    it('returns the API response in JSON mode and includes siteId in query', async () => {
-      const command: any = new PreferencesSiteGet([], config);
+    it('returns the API response in JSON mode', async () => {
+      const command: any = new PreferencesSiteList([], config);
       stubParse(
         command,
-        {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch', 'mask-passwords': false},
-        {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+        {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch', limit: 200, offset: 0, 'mask-password': false},
+        {},
       );
       await command.init();
 
@@ -44,9 +44,9 @@ describe('scapi preferences site get', () => {
 
       const fetchStub = sinon.stub(globalThis, 'fetch').callsFake(async (url: Request | string | URL) => {
         const requestUrl = typeof url === 'string' ? url : url instanceof URL ? url.toString() : url.url;
-        expect(requestUrl).to.include('/site-preference-groups/CustomGroupId/staging');
+        expect(requestUrl).to.include('/site-custom-preferences');
         expect(requestUrl).to.include('siteId=RefArch');
-        return new Response(JSON.stringify({c_attr: 'value'}), {
+        return new Response(JSON.stringify({total: 1, data: [{id: 'c_attr', value: 'foo', groupId: 'CustomGroup'}]}), {
           status: 200,
           headers: {'content-type': 'application/json'},
         });
@@ -54,37 +54,41 @@ describe('scapi preferences site get', () => {
 
       const result = await command.run();
       expect(fetchStub.called).to.equal(true);
-      expect(result).to.deep.include({c_attr: 'value'});
+      expect(result.total).to.equal(1);
+      expect(result.data[0].id).to.equal('c_attr');
     });
 
-    it('errors on invalid instance type', async () => {
-      const command: any = new PreferencesSiteGet([], config);
+    it('renders preferences to stdout in non-JSON mode', async () => {
+      const command: any = new PreferencesSiteList([], config);
       stubParse(
         command,
-        {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch', 'mask-passwords': false},
-        {'group-id': 'CustomGroupId', 'instance-type': 'invalid'},
+        {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch', limit: 200, offset: 0, 'mask-password': false},
+        {},
       );
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+      sinon.stub(command, 'jsonEnabled').returns(false);
       sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
-      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+      sinon.stub(command, 'getOAuthStrategy').returns({getAuthorizationHeader: async () => 'Bearer test'});
 
-      try {
-        await command.run();
-        expect.fail('Should have thrown');
-      } catch {
-        expect(errorStub.calledOnce).to.equal(true);
-        expect(String(errorStub.firstCall.args[0])).to.match(/Invalid instance type/i);
-      }
+      sinon.stub(globalThis, 'fetch').resolves(
+        new Response(JSON.stringify({total: 1, data: [{id: 'c_attr', value: 'foo'}]}), {
+          status: 200,
+          headers: {'content-type': 'application/json'},
+        }),
+      );
+
+      const result = (await runSilent(() => command.run())) as {total: number};
+      expect(result.total).to.equal(1);
     });
 
     it('errors on API failure', async () => {
-      const command: any = new PreferencesSiteGet([], config);
+      const command: any = new PreferencesSiteList([], config);
       stubParse(
         command,
-        {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch', 'mask-passwords': false},
-        {'group-id': 'BadGroup', 'instance-type': 'staging'},
+        {'tenant-id': 'zzxy_prd', 'site-id': 'RefArch', limit: 200, offset: 0, 'mask-password': false},
+        {},
       );
       await command.init();
 
@@ -95,8 +99,8 @@ describe('scapi preferences site get', () => {
       const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
       sinon.stub(globalThis, 'fetch').resolves(
-        new Response(JSON.stringify({title: 'Not Found'}), {
-          status: 404,
+        new Response(JSON.stringify({title: 'Forbidden'}), {
+          status: 403,
           headers: {'content-type': 'application/json'},
         }),
       );

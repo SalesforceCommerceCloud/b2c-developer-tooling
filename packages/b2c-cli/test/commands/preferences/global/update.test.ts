@@ -9,11 +9,11 @@ import path from 'node:path';
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
-import PreferencesGlobalUpdate from '../../../../../src/commands/scapi/preferences/global/update.js';
-import {stubParse} from '../../../../helpers/stub-parse.js';
-import {createIsolatedEnvHooks} from '../../../../helpers/test-setup.js';
+import PreferencesGlobalUpdate from '../../../../src/commands/preferences/global/update.js';
+import {stubParse} from '../../../helpers/stub-parse.js';
+import {createIsolatedEnvHooks} from '../../../helpers/test-setup.js';
 
-describe('scapi preferences global update', () => {
+describe('preferences global update', () => {
   const hooks = createIsolatedEnvHooks();
 
   beforeEach(hooks.beforeEach);
@@ -35,8 +35,8 @@ describe('scapi preferences global update', () => {
       const command: any = new PreferencesGlobalUpdate([], config);
       stubParse(
         command,
-        {'tenant-id': 'zzxy_prd', 'mask-passwords': false},
-        {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+        {'tenant-id': 'zzxy_prd', 'instance-type': 'staging', 'mask-passwords': false},
+        {'group-id': 'CustomGroupId'},
       );
       await command.init();
 
@@ -53,34 +53,17 @@ describe('scapi preferences global update', () => {
       }
     });
 
-    it('errors on invalid instance type', async () => {
-      const command: any = new PreferencesGlobalUpdate([], config);
-      stubParse(
-        command,
-        {'tenant-id': 'zzxy_prd', 'mask-passwords': false, body: '{"c_attr":"v"}'},
-        {'group-id': 'CustomGroupId', 'instance-type': 'invalid'},
-      );
-      await command.init();
-
-      sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-      sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
-      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
-
-      try {
-        await command.run();
-        expect.fail('Should have thrown');
-      } catch {
-        expect(errorStub.calledOnce).to.equal(true);
-        expect(String(errorStub.firstCall.args[0])).to.match(/Invalid instance type/i);
-      }
-    });
-
     it('errors when --file does not exist', async () => {
       const command: any = new PreferencesGlobalUpdate([], config);
       stubParse(
         command,
-        {'tenant-id': 'zzxy_prd', 'mask-passwords': false, file: '/nonexistent/path/prefs.json'},
-        {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+        {
+          'tenant-id': 'zzxy_prd',
+          'instance-type': 'staging',
+          'mask-passwords': false,
+          file: '/nonexistent/path/prefs.json',
+        },
+        {'group-id': 'CustomGroupId'},
       );
       await command.init();
 
@@ -101,8 +84,8 @@ describe('scapi preferences global update', () => {
       const command: any = new PreferencesGlobalUpdate([], config);
       stubParse(
         command,
-        {'tenant-id': 'zzxy_prd', 'mask-passwords': false, body: '{not json}'},
-        {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+        {'tenant-id': 'zzxy_prd', 'instance-type': 'staging', 'mask-passwords': false, body: '{not json}'},
+        {'group-id': 'CustomGroupId'},
       );
       await command.init();
 
@@ -123,8 +106,8 @@ describe('scapi preferences global update', () => {
       const command: any = new PreferencesGlobalUpdate([], config);
       stubParse(
         command,
-        {'tenant-id': 'zzxy_prd', 'mask-passwords': false, body: '{"c_attr":"value"}'},
-        {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+        {'tenant-id': 'zzxy_prd', 'instance-type': 'staging', 'mask-passwords': false, body: '{"c_attr":"value"}'},
+        {'group-id': 'CustomGroupId'},
       );
       await command.init();
 
@@ -158,8 +141,8 @@ describe('scapi preferences global update', () => {
         const command: any = new PreferencesGlobalUpdate([], config);
         stubParse(
           command,
-          {'tenant-id': 'zzxy_prd', 'mask-passwords': false, file: filePath},
-          {'group-id': 'CustomGroupId', 'instance-type': 'staging'},
+          {'tenant-id': 'zzxy_prd', 'instance-type': 'staging', 'mask-passwords': false, file: filePath},
+          {'group-id': 'CustomGroupId'},
         );
         await command.init();
 
