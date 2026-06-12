@@ -125,16 +125,19 @@ describe('Preferences Client', () => {
 
     it('passes expand=sites to query string', async () => {
       server.use(
-        http.get(`${BASE_URL}/organizations/${ORG_ID}/global-preference-groups/CustomGroup/current`, ({request}) => {
-          const url = new URL(request.url);
-          expect(url.searchParams.getAll('expand')).to.include('sites');
-          return HttpResponse.json({c_attr: 'value'});
-        }),
+        http.get(
+          `${BASE_URL}/organizations/${ORG_ID}/global-preference-groups/CustomGroup/development`,
+          ({request}) => {
+            const url = new URL(request.url);
+            expect(url.searchParams.getAll('expand')).to.include('sites');
+            return HttpResponse.json({c_attr: 'value'});
+          },
+        ),
       );
 
       await client.GET('/organizations/{organizationId}/global-preference-groups/{groupId}/{instanceType}', {
         params: {
-          path: {organizationId: ORG_ID, groupId: 'CustomGroup', instanceType: 'current'},
+          path: {organizationId: ORG_ID, groupId: 'CustomGroup', instanceType: 'development'},
           query: {expand: ['sites']},
         },
       });
