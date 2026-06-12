@@ -70,17 +70,17 @@ export default class SandboxStorage extends OdsCommand<typeof SandboxStorage> {
   }
 
   private printStorage(storage: SandboxStorageModel): void {
-    console.log('Sandbox Storage');
-    console.log('───────────────');
-    console.log('Filesystem                Total (MB)  Used (MB)  Used (%)');
-    console.log('────────────────────────  ──────────  ─────────  ────────');
+    this.log('Sandbox Storage');
+    this.log('───────────────');
+    this.log('Filesystem                Total (MB)  Used (MB)  Used (%)');
+    this.log('────────────────────────  ──────────  ─────────  ────────');
 
     for (const [name, usage] of Object.entries(storage)) {
       const total = usage?.spaceTotal ?? '-';
       const used = usage?.spaceUsed ?? '-';
       const percentage = usage?.percentageUsed ?? '-';
 
-      console.log(
+      this.log(
         `${name.padEnd(24)}  ${String(total).padStart(10)}  ${String(used).padStart(9)}  ${String(percentage).padStart(8)}`,
       );
     }

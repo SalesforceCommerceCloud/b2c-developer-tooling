@@ -192,12 +192,17 @@ async function loadServerConfig(buildPath: string): Promise<MrtServerConfig | nu
   } catch {
     return null;
   }
+  // File exists — any error from here on is a real misconfiguration (syntax error,
+  // runtime throw inside the user's config). Surface it instead of silently falling
+  // back to defaults, which produces the wrong ssrOnly/ssrShared/ssrParameters in
+  // the deployed bundle.
   try {
     const mod = await import(configPath);
     const config: MrtServerConfig = mod.config ?? mod.default?.config ?? mod.default;
     return config ?? null;
-  } catch {
-    return null;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`Failed to load ${configPath}: ${msg}`, {cause: err});
   }
 }
 

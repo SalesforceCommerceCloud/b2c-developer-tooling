@@ -4,7 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args} from '@oclif/core';
-import {SlasClientCommand, formatApiError} from '../../../utils/slas/client.js';
+import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
+import {SlasClientCommand} from '../../../utils/slas/client.js';
 import {t, withDocs} from '../../../i18n/index.js';
 
 interface DeleteOutput {
@@ -60,7 +61,7 @@ export default class SlasClientDelete extends SlasClientCommand<typeof SlasClien
     if (error) {
       this.error(
         t('commands.slas.client.delete.error', 'Failed to delete SLAS client: {{message}}', {
-          message: formatApiError(error, response),
+          message: getApiErrorMessage(error, response),
         }),
       );
     }

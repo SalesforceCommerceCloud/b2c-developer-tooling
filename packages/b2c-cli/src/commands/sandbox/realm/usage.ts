@@ -104,9 +104,9 @@ export default class SandboxRealmUsage extends OdsCommand<typeof SandboxRealmUsa
   }
 
   private printRealmUsageSummary(usage: RealmUsageModel): void {
-    console.log('Realm Usage Summary');
+    this.log('Realm Usage Summary');
 
-    console.log('───────────────────');
+    this.log('───────────────────');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const anyUsage = usage as any;
@@ -126,17 +126,17 @@ export default class SandboxRealmUsage extends OdsCommand<typeof SandboxRealmUsa
       if (value !== undefined) {
         hasSummaryMetric = true;
 
-        console.log(`${label}: ${value}`);
+        this.log(`${label}: ${value}`);
       }
     }
 
     if (anyUsage.minutesUpByProfile && anyUsage.minutesUpByProfile.length > 0) {
-      console.log();
+      this.log('');
 
-      console.log('Minutes up by profile:');
+      this.log('Minutes up by profile:');
       for (const item of anyUsage.minutesUpByProfile) {
         if (item.profile && item.minutes !== undefined) {
-          console.log(`  ${item.profile}: ${item.minutes} minutes`);
+          this.log(`  ${item.profile}: ${item.minutes} minutes`);
         }
       }
     }
@@ -150,13 +150,13 @@ export default class SandboxRealmUsage extends OdsCommand<typeof SandboxRealmUsa
       !hasDetailedData &&
       !(anyUsage.minutesUpByProfile && anyUsage.minutesUpByProfile.length > 0)
     ) {
-      console.log(
+      this.log(
         t('commands.realm.usage.emptyPeriod', 'No usage data was returned for this realm in the requested period.'),
       );
     } else if (hasDetailedData) {
-      console.log();
+      this.log('');
 
-      console.log(
+      this.log(
         t(
           'commands.realm.usage.detailedHint',
           'Detailed usage data is available; re-run with --json to see full details.',

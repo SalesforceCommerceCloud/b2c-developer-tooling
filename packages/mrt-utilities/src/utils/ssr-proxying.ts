@@ -5,28 +5,13 @@
  */
 
 /**
- * @fileoverview SSR (Server-Side Rendering) Proxying utilities for MRT middleware.
+ * @fileoverview SSR proxying utilities for MRT middleware.
  *
- * This module provides utilities for handling HTTP headers, cookies, and proxying
- * in both Express.js applications and AWS Lambda@Edge functions. It's designed
- * to work in multiple contexts while maintaining consistency.
- *
- * Special requirements:
- * - Don't add any functionality in here that is not required by the proxying code
- * - Avoid importing any other modules not explicitly used by this code
- * - Must work in both Express.js and Lambda@Edge environments
- *
- * @author Salesforce Commerce Cloud
- * @version 0.0.1
+ * Used by both the SDK (Express) and Lambda@Edge functions on CloudFront, so:
+ * - keep it free of dependencies that aren't strictly required for proxying
+ * - avoid features that aren't needed by the proxy path
+ * - it must work in both Express.js and Lambda@Edge runtimes
  */
-
-/*
-There are some special requirements for this module, which is used in the
-SDK and also in Lambda@Edge functions run by CloudFront. Specifically:
-- Don't add any functionality in here that is not required by the
-proxying code.
-- Avoid importing any other modules not explicitly used by this code
-*/
 
 import {parse as parseSetCookie} from 'set-cookie-parser';
 import {trainCase} from 'change-case';

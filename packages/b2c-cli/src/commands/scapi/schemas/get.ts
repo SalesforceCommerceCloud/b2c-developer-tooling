@@ -11,7 +11,8 @@ import {
   getExampleNames,
   type OpenApiSchemaInput,
 } from '@salesforce/b2c-tooling-sdk/schemas';
-import {ScapiSchemasCommand, formatApiError} from '../../../utils/scapi/schemas.js';
+import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
+import {ScapiSchemasCommand} from '../../../utils/scapi/schemas.js';
 import {t, withDocs} from '../../../i18n/index.js';
 
 /**
@@ -186,7 +187,7 @@ export default class ScapiSchemasGet extends ScapiSchemasCommand<typeof ScapiSch
     if (error) {
       this.error(
         t('commands.scapi.schemas.get.error', 'Failed to fetch schema: {{message}}', {
-          message: formatApiError(error, response),
+          message: getApiErrorMessage(error, response),
         }),
       );
     }

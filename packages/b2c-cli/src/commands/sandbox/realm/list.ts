@@ -82,12 +82,12 @@ export default class SandboxRealmList extends OdsCommand<typeof SandboxRealmList
 
     // Human-readable output: simple table-like listing
 
-    console.log('Realm');
+    this.log('Realm');
 
-    console.log('─────');
+    this.log('─────');
 
     for (const realm of realms) {
-      console.log(realm.realmId);
+      this.log(realm.realmId);
     }
 
     return response;

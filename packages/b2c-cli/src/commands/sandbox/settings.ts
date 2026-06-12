@@ -73,26 +73,26 @@ export default class SandboxSettingsCommand extends OdsCommand<typeof SandboxSet
     const ocapi = settings.ocapi ?? [];
     const webdav = settings.webdav ?? [];
 
-    console.log('Sandbox Settings');
-    console.log('────────────────');
-    console.log(`OCAPI client entries: ${ocapi.length}`);
-    console.log(`WebDAV client entries: ${webdav.length}`);
+    this.log('Sandbox Settings');
+    this.log('────────────────');
+    this.log(`OCAPI client entries: ${ocapi.length}`);
+    this.log(`WebDAV client entries: ${webdav.length}`);
 
     if (ocapi.length > 0) {
-      console.log();
-      console.log('OCAPI');
+      this.log('');
+      this.log('OCAPI');
       for (const entry of ocapi) {
         const resources = entry.resources?.length ?? 0;
-        console.log(`  - ${entry.client_id ?? 'unknown-client'} (${resources} resource rules)`);
+        this.log(`  - ${entry.client_id ?? 'unknown-client'} (${resources} resource rules)`);
       }
     }
 
     if (webdav.length > 0) {
-      console.log();
-      console.log('WebDAV');
+      this.log('');
+      this.log('WebDAV');
       for (const entry of webdav) {
         const permissions = entry.permissions?.length ?? 0;
-        console.log(`  - ${entry.client_id ?? 'unknown-client'} (${permissions} permission rules)`);
+        this.log(`  - ${entry.client_id ?? 'unknown-client'} (${permissions} permission rules)`);
       }
     }
   }

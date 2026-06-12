@@ -164,27 +164,30 @@ export async function uploadCartridges(
   const uploadPath = `Cartridges/_sync-${now}.zip`;
   const onProgress = options?.onProgress;
 
-  // Progress helper: fires immediately (0s) then every 5s until stopped
+  // Progress helper: fires immediately (0s) then every 5s for the duration of `body`.
+  // Always tears down the interval, even if `body` throws.
   const PROGRESS_INTERVAL_MS = 5_000;
-  function startProgress(phase: UploadProgressInfo['phase']): () => void {
+  async function withProgress<T>(phase: UploadProgressInfo['phase'], body: () => Promise<T>): Promise<T> {
     const start = Date.now();
     onProgress?.({phase, elapsedSeconds: 0});
-    if (!onProgress) return () => {};
+    if (!onProgress) return body();
     const interval = setInterval(() => {
       onProgress({phase, elapsedSeconds: Math.round((Date.now() - start) / 1000)});
     }, PROGRESS_INTERVAL_MS);
-    return () => clearInterval(interval);
+    try {
+      return await body();
+    } finally {
+      clearInterval(interval);
+    }
   }
 
-  // Create zip archive
+  // Create zip archive (one-shot phase signal; no polling — preserves original behavior)
   onProgress?.({phase: 'archiving', elapsedSeconds: 0});
   logger.debug('Creating cartridge archive...');
   const zip = new JSZip();
-
   for (const c of cartridges) {
     await addDirectoryToZip(zip, c.src, path.join(codeVersion, c.dest));
   }
-
   const buffer = await zip.generateAsync({
     type: 'nodebuffer',
     compression: 'DEFLATE',
@@ -193,34 +196,32 @@ export async function uploadCartridges(
   logger.debug({size: buffer.length}, `Archive created: ${buffer.length} bytes`);
 
   // Upload archive
-  let stopProgress = startProgress('uploading');
-  logger.debug({uploadPath}, 'Uploading archive...');
-  try {
+  await withProgress('uploading', async () => {
+    logger.debug({uploadPath}, 'Uploading archive...');
     await webdav.put(uploadPath, buffer, 'application/zip');
-  } finally {
-    stopProgress();
-  }
-  logger.debug('Archive uploaded');
+    logger.debug('Archive uploaded');
+  });
 
   // Unzip on server
-  stopProgress = startProgress('unzipping');
-  logger.debug('Unzipping archive on server...');
-  let response: Response;
-  try {
-    response = await webdav.request(uploadPath, {
+  const response = await withProgress('unzipping', async () => {
+    logger.debug('Unzipping archive on server...');
+    return webdav.request(uploadPath, {
       method: 'POST',
       body: UNZIP_BODY,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     });
-  } finally {
-    stopProgress();
-  }
+  });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Failed to unzip archive: ${response.status} ${response.statusText} - ${text}`);
+    let text = '';
+    try {
+      text = await response.text();
+    } catch (err) {
+      logger.debug({err}, 'Failed to read response body for unzip error');
+    }
+    throw new Error(`Failed to unzip archive: ${response.status} ${response.statusText}${text ? ' - ' + text : ''}`);
   }
   logger.debug('Archive unzipped');
 
