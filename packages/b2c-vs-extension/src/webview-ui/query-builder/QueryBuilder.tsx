@@ -23,7 +23,9 @@ import {useInboundMessages} from '../shared/bridge/useMessage.js';
 import type {ConnectionState, SavedQuery} from '../shared/types.js';
 import {buildSql} from './buildSql.js';
 import {initialState, reducer, type ViewMode} from './reducer.js';
+import {findIncompleteFilter} from './validateFilters.js';
 import {FromClause} from './clauses/FromClause.js';
+import {GroupByClause} from './clauses/GroupByClause.js';
 import {LimitClause} from './clauses/LimitClause.js';
 import {OrderByClauseView} from './clauses/OrderByClause.js';
 import {SelectClause} from './clauses/SelectClause.js';
@@ -52,6 +54,10 @@ function getTypeClass(type: string): string {
 interface StatusState {
   kind: StatusKind;
   text?: string;
+  /** Bold lead-in for two-line errors. */
+  headline?: string;
+  /** Verbose server message paired with `headline`. */
+  details?: string;
 }
 
 export function QueryBuilder() {
@@ -79,12 +85,23 @@ export function QueryBuilder() {
       buildSql({
         currentTable: state.currentTable,
         selectedFields: state.selectedFields,
+        aggregates: state.aggregates,
         filters: state.filters,
         filterLogic: state.filterLogic,
         orderBy: state.orderBy,
+        groupBy: state.groupBy,
         limit: state.limit,
       }),
-    [state.currentTable, state.selectedFields, state.filters, state.filterLogic, state.orderBy, state.limit],
+    [
+      state.currentTable,
+      state.selectedFields,
+      state.aggregates,
+      state.filters,
+      state.filterLogic,
+      state.orderBy,
+      state.groupBy,
+      state.limit,
+    ],
   );
 
   // The Generated SQL preview should always show the SQL that would run if the
@@ -138,6 +155,14 @@ export function QueryBuilder() {
     postMessage({command: 'listSavedQueries'});
   }, []);
 
+  // Auto-dismiss only success banners — they're confirmations the user has
+  // already absorbed and Errors stay
+  useEffect(() => {
+    if (status.kind !== 'success') return;
+    const id = window.setTimeout(() => setStatus({kind: null}), 3000);
+    return () => window.clearTimeout(id);
+  }, [status]);
+
   // Inbound message dispatch.
   const onMessage = useCallback((msg: import('../shared/bridge/vscode.js').InboundMessage) => {
     switch (msg.command) {
@@ -189,7 +214,11 @@ export function QueryBuilder() {
         break;
       case 'queryError':
         setQueryRunning(false);
-        setStatus({kind: 'error', text: msg.error});
+        if (msg.headline) {
+          setStatus({kind: 'error', headline: msg.headline, details: msg.details});
+        } else {
+          setStatus({kind: 'error', text: msg.error});
+        }
         break;
       case 'savedQueries':
         setSavedQueries(Array.isArray(msg.queries) ? msg.queries : []);
@@ -206,6 +235,18 @@ export function QueryBuilder() {
         break;
       case 'savedQueryError':
         setSaveModalError(String(msg.error || 'Could not save query.'));
+        break;
+      case 'loadSavedQuery':
+        // Sidebar asked us to drop the saved SQL into the editor. Use the
+        // same path the toolbar dropdown uses so behavior stays consistent
+        // across entry points; ref keeps this static-deps callback fresh.
+        loadSavedQueryRef.current(msg.query);
+        break;
+      case 'renameSavedQuery':
+        // Pencil icon in the sidebar → open the same React modal the
+        // toolbar uses, in rename mode, prefilled with the chosen query.
+        setSaveModalError(null);
+        setSaveModal({mode: 'rename', query: msg.query});
         break;
       default:
         break;
@@ -288,6 +329,16 @@ export function QueryBuilder() {
       postMessage({command: 'configureConnection'});
       return;
     }
+    // In builder view, catch incomplete filter rows before posting. The
+    // server's error for `WHERE col = ''` against a boolean / numeric / date
+    // column is a confusing 400 ("invalid input syntax for type boolean")
+    if (state.currentView === 'builder') {
+      const incomplete = findIncompleteFilter(state.filters);
+      if (incomplete) {
+        setStatus({kind: 'error', text: incomplete});
+        return;
+      }
+    }
     const text = state.currentView === 'editor' ? state.customSql : sql;
     if (!text || text.startsWith('--')) {
       setStatus({kind: 'error', text: 'No valid query — select an entity first.'});
@@ -332,6 +383,12 @@ export function QueryBuilder() {
     if (sqlEditorRef.current) sqlEditorRef.current.value = q.sql;
     setStatus({kind: 'success', text: `Loaded "${q.name}" — review and run.`});
   }
+
+  // Mirror the latest `loadSavedQuery` into a ref so the static
+  // (`useCallback([])`) inbound-message dispatcher can call the freshest
+  // version without rebuilding the listener and briefly losing messages.
+  const loadSavedQueryRef = useRef(loadSavedQuery);
+  loadSavedQueryRef.current = loadSavedQuery;
 
   return (
     <div className="app">
@@ -473,9 +530,11 @@ export function QueryBuilder() {
               <SelectClause
                 columns={state.columns}
                 selectedFields={state.selectedFields}
+                aggregates={state.aggregates}
                 onToggle={(f) => dispatch({type: 'toggleField', field: f})}
                 onSelectAll={() => dispatch({type: 'selectAllFields'})}
                 onClear={() => dispatch({type: 'clearFields'})}
+                onSetAggregate={(field, agg) => dispatch({type: 'setAggregate', field, agg})}
               />
               <FromClause currentTable={state.currentTable} />
               <WhereClause
@@ -486,6 +545,13 @@ export function QueryBuilder() {
                 onUpdate={(index, patch) => dispatch({type: 'updateFilter', index, patch})}
                 onRemove={(index) => dispatch({type: 'removeFilter', index})}
                 onLogicChange={(logic) => dispatch({type: 'setFilterLogic', logic})}
+              />
+              <GroupByClause
+                columns={state.columns}
+                groupBy={state.groupBy}
+                onAdd={() => dispatch({type: 'addGroupBy'})}
+                onUpdate={(index, column) => dispatch({type: 'updateGroupBy', index, column})}
+                onRemove={(index) => dispatch({type: 'removeGroupBy', index})}
               />
               <OrderByClauseView
                 columns={state.columns}
@@ -540,6 +606,20 @@ export function QueryBuilder() {
               <span>{queryRunning ? 'Running…' : 'Run Query'}</span>
             </button>
           </div>
+          {/* Status banner sits directly under the run bar so messages
+              (validation errors, "Loaded N entities", etc.) appear in the
+              user's natural reading flow next to the action they triggered.
+              Auto-hides after a few seconds for success/error; loading
+              persists until replaced. */}
+          <StatusBar
+            kind={status.kind}
+            text={status.text}
+            headline={status.headline}
+            details={status.details}
+            // Only errors get a dismiss button — success disappears on its
+            // own timer; loading clears when the underlying op completes.
+            onClose={status.kind === 'error' ? () => setStatus({kind: null}) : undefined}
+          />
         </div>
 
         <div
@@ -586,12 +666,11 @@ export function QueryBuilder() {
         </div>
       </div>
 
-      <StatusBar kind={status.kind} text={status.text} />
-
       <SaveQueryModal
         state={saveModal}
         defaultName={suggestQueryName()}
         error={saveModalError}
+        existingNames={savedQueries.filter((q) => q.tenantId === activeTenantId).map((q) => q.name)}
         onClose={() => {
           setSaveModal({mode: null});
           setSaveModalError(null);

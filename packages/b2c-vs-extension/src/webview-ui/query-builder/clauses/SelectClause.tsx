@@ -5,19 +5,38 @@
  */
 import * as React from 'react';
 import {ClauseCard} from '../../shared/components/ClauseCard.js';
-import {Chip} from '../../shared/components/Chip.js';
 import {Icon} from '../../shared/components/Icon.js';
-import type {ColumnInfo} from '../../shared/types.js';
+import type {AggregateFn, ColumnInfo} from '../../shared/types.js';
+
+const AGG_OPTIONS: Array<{value: '' | AggregateFn; label: string}> = [
+  {value: '', label: 'none'},
+  {value: 'COUNT', label: 'COUNT'},
+  {value: 'SUM', label: 'SUM'},
+  {value: 'AVG', label: 'AVG'},
+  {value: 'MIN', label: 'MIN'},
+  {value: 'MAX', label: 'MAX'},
+];
 
 interface Props {
   columns: ColumnInfo[];
   selectedFields: string[];
+  /** Per-field aggregate function. Missing entry → no aggregate. */
+  aggregates: Record<string, AggregateFn | undefined>;
   onToggle: (field: string) => void;
   onSelectAll: () => void;
   onClear: () => void;
+  onSetAggregate: (field: string, agg: AggregateFn | undefined) => void;
 }
 
-export function SelectClause({columns, selectedFields, onToggle, onSelectAll, onClear}: Props) {
+export function SelectClause({
+  columns,
+  selectedFields,
+  aggregates,
+  onToggle,
+  onSelectAll,
+  onClear,
+  onSetAggregate,
+}: Props) {
   const allSelected = selectedFields.length > 0 && selectedFields.length === columns.length;
   const noColumns = columns.length === 0;
 
@@ -45,9 +64,35 @@ export function SelectClause({columns, selectedFields, onToggle, onSelectAll, on
         <span className="placeholder">No columns selected — will use SELECT * (all columns).</span>
       ) : (
         <div className="chips">
-          {selectedFields.map((f) => (
-            <Chip key={f} label={f} onRemove={() => onToggle(f)} />
-          ))}
+          {selectedFields.map((f) => {
+            const agg = aggregates[f];
+            return (
+              <div className={`chip select-chip${agg ? ' has-agg' : ''}`} key={f}>
+                <span className="select-chip__name" title={f}>
+                  {f}
+                </span>
+                <select
+                  className="select-chip__agg"
+                  aria-label={`Aggregate for ${f}`}
+                  title="Aggregate function"
+                  value={agg ?? ''}
+                  onChange={(e) => {
+                    const v = e.currentTarget.value as '' | AggregateFn;
+                    onSetAggregate(f, v === '' ? undefined : v);
+                  }}
+                >
+                  {AGG_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="remove" role="button" aria-label={`Remove ${f}`} onClick={() => onToggle(f)}>
+                  ✕
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
     </ClauseCard>
