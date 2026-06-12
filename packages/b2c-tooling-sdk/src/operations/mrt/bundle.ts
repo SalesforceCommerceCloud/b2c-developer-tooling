@@ -20,6 +20,19 @@ import {Minimatch} from 'minimatch';
 import {getLogger} from '../../logging/logger.js';
 
 /**
+ * Shape of config.server.ts exported from an MRT app.
+ * Used to define ssrOnly, ssrShared, and ssrParameters for bundle creation.
+ */
+export interface MrtServerConfig {
+  ssrOnly: string[];
+  ssrShared: string[];
+  ssrParameters?: Record<string, unknown>;
+}
+
+export const DEFAULT_SSR_ONLY = ['ssr.js', 'ssr.mjs', 'server/**/*'];
+export const DEFAULT_SSR_SHARED = ['static/**/*', 'client/**/*'];
+
+/**
  * Default SSR parameters applied to all bundles.
  * These can be overridden by providing ssrParameters in CreateBundleOptions.
  */
@@ -49,15 +62,17 @@ export interface CreateBundleOptions {
 
   /**
    * Glob patterns for files that should only run on the server.
+   * If omitted, loaded from build/config.server.js if present.
    * @example ['ssr.js', 'ssr/*.js']
    */
-  ssrOnly: string[];
+  ssrOnly?: string[];
 
   /**
    * Glob patterns for files shared between client and server.
+   * If omitted, loaded from build/config.server.js if present.
    * @example ['static/**\/*', '**\/*.js']
    */
-  ssrShared: string[];
+  ssrShared?: string[];
 
   /**
    * Path to the build directory containing the application build output.
@@ -170,15 +185,39 @@ export function getDefaultMessage(): string {
  * });
  * ```
  */
+async function loadServerConfig(buildPath: string): Promise<MrtServerConfig | null> {
+  const configPath = path.join(buildPath, 'config.server.js');
+  try {
+    await stat(configPath);
+  } catch {
+    return null;
+  }
+  try {
+    const mod = await import(configPath);
+    const config: MrtServerConfig = mod.config ?? mod.default?.config ?? mod.default;
+    return config ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function createBundle(options: CreateBundleOptions): Promise<Bundle> {
   const logger = getLogger();
-  const {ssrOnly, ssrShared, projectSlug} = options;
+  const {projectSlug} = options;
   const buildDirectory = options.buildDirectory || 'build';
   const message = options.message || getDefaultMessage();
+  const buildPath = path.isAbsolute(buildDirectory) ? buildDirectory : path.join(process.cwd(), buildDirectory);
 
-  // Merge default SSR parameters with provided ones (provided values take precedence)
+  const serverConfig = await loadServerConfig(buildPath);
+
+  const ssrOnly = options.ssrOnly ?? serverConfig?.ssrOnly ?? DEFAULT_SSR_ONLY;
+  const ssrShared = options.ssrShared ?? serverConfig?.ssrShared ?? DEFAULT_SSR_SHARED;
+  const ssrParamsFromConfig = serverConfig?.ssrParameters ?? {};
+
+  // Merge: defaults < config.server.js < explicit options (explicit values win)
   const ssrParameters = {
     ...DEFAULT_SSR_PARAMETERS,
+    ...ssrParamsFromConfig,
     ...options.ssrParameters,
   };
 
@@ -188,9 +227,6 @@ export async function createBundle(options: CreateBundleOptions): Promise<Bundle
   if (ssrOnly.length === 0 || ssrShared.length === 0) {
     throw new Error('ssrOnly and ssrShared patterns are required and cannot be empty');
   }
-
-  // Verify build directory exists
-  const buildPath = path.isAbsolute(buildDirectory) ? buildDirectory : path.join(process.cwd(), buildDirectory);
 
   try {
     await stat(buildPath);

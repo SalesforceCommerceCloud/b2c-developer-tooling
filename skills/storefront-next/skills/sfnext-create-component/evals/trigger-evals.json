@@ -1,0 +1,12 @@
+[
+  {"query": "I need to build a new ProductTile component for our Storefront Next storefront. It should have comfortable and compact density variants and follow the design-system rules — semantic tokens, data-slot attributes, and a Storybook story.", "should_trigger": true},
+  {"query": "Add a new badge component with primary, secondary, and destructive variants using CVA. How do I make sure the variant classes use semantic tokens and not raw colors?", "should_trigger": true},
+  {"query": "I want to create a reusable card component in the design system. Which layer does it belong in, primitive or composite, and what accessibility checks must it pass before I'm done?", "should_trigger": true},
+  {"query": "Before I build a new button, how do I check whether I should reuse an existing one, add a CVA variant, or create a brand-new component?", "should_trigger": true},
+  {"query": "Build a new swatch-group UI element with proper data-slot attributes, a focus ring, and one Storybook story per variant.", "should_trigger": true},
+  {"query": "How do I wire up a route loader that streams product data into my page using Suspense and Await?", "should_trigger": false},
+  {"query": "I need to create a new brand vertical with its own color palette and dark header. Where do the brand tokens live?", "should_trigger": false},
+  {"query": "How do I register a Page Designer component in the component registry and add its meta definition?", "should_trigger": false},
+  {"query": "Set up authentication middleware with the split-cookie SLAS architecture for my storefront.", "should_trigger": false},
+  {"query": "How do I add an extension that injects a promo banner at the header.before.nav target point?", "should_trigger": false}
+]

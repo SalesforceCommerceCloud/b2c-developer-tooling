@@ -9,14 +9,14 @@ info:
   title: My Custom API
 components:
   securitySchemes:
-    ShopperToken:                     # For Shopper APIs (requires siteId)
+    ShopperToken:                     # For Shopper APIs — always site-scoped (requires siteId)
       type: oauth2
       flows:
         clientCredentials:
           tokenUrl: https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token
           scopes:
             c_my_scope: Description of my scope
-    AmOAuth2:                         # For Admin APIs (no siteId)
+    AmOAuth2:                         # For Admin APIs — siteId optional (site or org context)
       type: oauth2
       flows:
         clientCredentials:
@@ -75,10 +75,24 @@ security:
 | Aspect | Shopper API | Admin API |
 |--------|-------------|-----------|
 | Security Scheme | `ShopperToken` | `AmOAuth2` |
-| `siteId` Parameter | Required | Must omit |
+| `siteId` Parameter | Required (always site-scoped) | Optional — see "Admin API call contexts" below |
 | Max Runtime | 10 seconds | 60 seconds |
 | Max Request Body | 5 MiB | 20 MB |
 | Activity Type | STOREFRONT | BUSINESS_MANAGER |
+
+### Admin API call contexts
+
+Unlike Shopper APIs, Admin APIs (`AmOAuth2`) can be invoked in either a storefront site context or the Business Manager / organization context. The `siteId` parameter selects which:
+
+| Context | `siteId` value | Cartridge path used to resolve `rest-apis/` |
+|---|---|---|
+| Storefront site context | A real site ID (e.g. `RefArch`) | That **site's** cartridge path |
+| Organization / Business Manager context | The literal value `Sites-Site` | The **Business Manager** cartridge path |
+| Organization / Business Manager context | `siteId` omitted | The **Business Manager** cartridge path |
+
+`Sites-Site` is not a real storefront — it's the system-defined site identifier the platform uses for BM / org-level operations. Passing `siteId=Sites-Site` is the explicit way to invoke an Admin Custom API against the BM context; omitting `siteId` resolves the same way.
+
+If you want the same Admin API to work in both contexts, declare `siteId` as an *optional* parameter (drop `required: true`). The cartridge containing your `rest-apis/` folder must be on whichever cartridge path corresponds to how the caller invokes it — the storefront site's path for storefront-`siteId` calls, and the BM cartridge path for `Sites-Site` / omitted-`siteId` calls.
 
 ## Path Parameter Example
 

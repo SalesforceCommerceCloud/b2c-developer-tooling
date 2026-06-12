@@ -6,8 +6,6 @@ description: MCP Server for Salesforce B2C Commerce - AI-assisted development to
 
 The B2C DX MCP Server enables AI assistants (like Claude Code, Cursor, GitHub Copilot, and others) to help with B2C Commerce development tasks. It provides toolsets for **SCAPI**, **CARTRIDGES**, **MRT**, **PWAV3**, and **STOREFRONTNEXT** development.
 
-> **Note:** 🚧 The STOREFRONTNEXT MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
-
 ## Quick Start
 
 1. **Install** — set up the MCP server for your client. See the [Installation Guide](./installation) for Claude Code, Cursor, GitHub Copilot, and other clients.

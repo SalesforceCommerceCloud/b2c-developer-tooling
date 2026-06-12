@@ -31,7 +31,7 @@ export function createDebugContinueTool(
       description:
         'Resume execution of a halted thread. ' +
         'The thread runs until the next breakpoint or completes the current request.',
-      toolsets: ['CARTRIDGES', 'SCAPI'],
+      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
         thread_id: z.number().int().describe('Thread ID of the halted thread to resume.'),

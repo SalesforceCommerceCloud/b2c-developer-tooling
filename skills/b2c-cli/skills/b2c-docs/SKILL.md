@@ -45,13 +45,13 @@ b2c docs read ProductMgr --json
 
 ### Download Documentation
 
-Download the latest Script API documentation from a B2C Commerce instance:
+Download the latest Script API documentation from a B2C Commerce instance. The CLI auto-discovers the target server and credentials from `dw.json`, `SFCC_*` env vars, and configuration plugins — `--server` is only needed to override. Run `b2c setup inspect` to confirm what the CLI sees; see the `b2c-cli:b2c-config` skill for troubleshooting.
 
 ```bash
-# Download to a directory
+# Download to a directory (uses configured instance)
 b2c docs download ./my-docs
 
-# Download with specific server
+# Override server explicitly
 b2c docs download ./docs --server sandbox.demandware.net
 
 # Keep the original archive

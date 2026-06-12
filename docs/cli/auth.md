@@ -39,6 +39,13 @@ export SFCC_CLIENT_ID=your-client-id
 b2c auth login
 ```
 
+### Flags
+
+| Flag | Environment Variable | Description |
+|------|---------------------|-------------|
+| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (default: account.demandware.com) |
+| `--auth-scope` | `SFCC_OAUTH_SCOPES` | OAuth scopes to request (comma-separated or repeated flag) |
+
 After a successful login, subsequent commands use the stored token until it expires or you run `b2c auth logout`.
 
 ## b2c auth logout
@@ -118,6 +125,12 @@ Uses `refresh_token` grant when a refresh token is stored, otherwise falls back 
 b2c auth client renew
 ```
 
+### Flags
+
+| Flag | Environment Variable | Description |
+|------|---------------------|-------------|
+| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname for OAuth (default: account.demandware.com) |
+
 ### Example
 
 ```bash
@@ -181,6 +194,13 @@ b2c auth token
 | `--client-secret` | `SFCC_CLIENT_SECRET` | Client Secret for OAuth |
 | `--auth-scope` | `SFCC_OAUTH_SCOPES` | OAuth scopes to request (can be repeated) |
 | `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (default: account.demandware.com) |
+| `--short-code` | `SFCC_SHORTCODE` | SCAPI short code |
+| `--tenant-id` | `SFCC_TENANT_ID` | Organization/tenant ID |
+| `--auth-methods` | `SFCC_AUTH_METHODS` | Allowed auth methods in priority order (comma-separated): client-credentials, jwt, implicit, basic, api-key |
+| `--user-auth` | | Use browser-based user authentication (implicit OAuth flow) |
+| `--jwt-cert` | `SFCC_JWT_CERT` | Path to JWT certificate file (cert.pem) for JWT Bearer authentication |
+| `--jwt-key` | `SFCC_JWT_KEY` | Path to JWT private key file (key.pem) for JWT Bearer authentication |
+| `--jwt-passphrase` | `SFCC_JWT_PASSPHRASE` | Passphrase for encrypted JWT private key |
 
 ### Examples
 

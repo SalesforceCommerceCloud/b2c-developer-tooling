@@ -6,8 +6,6 @@ description: Get Storefront Next development guidelines and best practices for R
 
 Returns critical architecture rules, coding standards, and best practices for building Storefront Next applications with React Server Components.
 
-> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
-
 ## Overview
 
 The `sfnext_get_guidelines` tool provides essential development guidance for Storefront Next. It:
