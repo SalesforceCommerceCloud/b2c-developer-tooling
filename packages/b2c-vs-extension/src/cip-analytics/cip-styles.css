@@ -2197,8 +2197,22 @@ body.cip-query-builder {
    surface change when a function is active. */
 .select-chip {
   gap: 6px;
+  padding-right: 4px;
+  max-width: 320px; /* Fits most CCDW column names without ellipsis. */
+}
+/* The column name shrinks and ellipsizes so the dropdown and × remain
+ * visible inside the chip's max-width. Without `min-width: 0` flex
+ * children refuse to shrink below their content's intrinsic width and
+ * the trailing controls get pushed past the chip's overflow boundary. */
+.select-chip__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .select-chip__agg {
+  flex: 0 0 auto;
   height: 22px;
   padding: 0 4px;
   background: transparent;
@@ -2216,6 +2230,34 @@ body.cip-query-builder {
 }
 .select-chip.has-agg {
   background: var(--vscode-editorWidget-background);
+}
+
+/* SELECT chip's remove button. The default `.chip .remove` is a tiny 16x16
+ * span that disappears next to the 22px native <select>; this scoped
+ * override gives it a real button surface, a clear border on hover, and
+ * matches the dropdown's height so the two controls read as a pair.
+ * `flex: 0 0 auto` is what keeps the × inside the chip when the column
+ * name would otherwise push it out the right edge. */
+.select-chip .remove {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 22px;
+  border-radius: var(--cip-radius-sm);
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--vscode-foreground);
+  opacity: 0.75;
+}
+.select-chip .remove:hover {
+  background: var(--cip-error-soft);
+  border-color: var(--cip-error);
+  color: var(--cip-error);
+  opacity: 1;
+}
+.select-chip .remove:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
 }
 
 .filter-row:hover,
@@ -2426,9 +2468,13 @@ body.cip-query-builder {
   overflow: auto;
 }
 
-/* === FOOTER STATUS BAR === */
+/* === FOOTER STATUS BAR ===
+ * Used by the Query Builder under the run bar. Vertical padding ensures the
+ * banner has presence regardless of whether it lives in the app's bottom
+ * grid row or nested inside `.main-top`. */
 .footer {
-  padding: 0 16px;
+  padding: 6px 16px;
+  min-height: 28px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -2449,6 +2495,68 @@ body.cip-query-builder {
 .footer.loading {
   background: var(--cip-accent-soft);
   color: var(--cip-accent);
+}
+
+/* Two-line "rich" status banner used for errors. The headline is bold and
+ * scannable; the details line carries the verbose server message in a
+ * smaller, lower-contrast style. The dismiss × button anchors right. */
+.footer--rich {
+  align-items: flex-start;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.footer__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.footer__headline {
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1.3;
+}
+.footer__details {
+  font-size: 11px;
+  line-height: 1.4;
+  opacity: 0.85;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.footer__toggle {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  text-decoration: underline;
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0.85;
+}
+.footer__toggle:hover {
+  opacity: 1;
+}
+.footer__close {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--cip-radius-sm);
+  color: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.footer__close:hover {
+  opacity: 1;
+  border-color: var(--vscode-panel-border);
 }
 
 .footer .hint {

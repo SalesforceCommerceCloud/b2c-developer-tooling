@@ -68,7 +68,9 @@ export function SelectClause({
             const agg = aggregates[f];
             return (
               <div className={`chip select-chip${agg ? ' has-agg' : ''}`} key={f}>
-                <span className="select-chip__name">{f}</span>
+                <span className="select-chip__name" title={f}>
+                  {f}
+                </span>
                 <select
                   className="select-chip__agg"
                   aria-label={`Aggregate for ${f}`}

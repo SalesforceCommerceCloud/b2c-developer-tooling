@@ -52,3 +52,36 @@ suite('CipWebviewManager.formatConnectionError', () => {
     assert.equal(m, 'Connection failed: weird literal');
   });
 });
+
+suite('CipWebviewManager.classifyQueryError', () => {
+  test('connection errors are flagged as such', () => {
+    assert.equal(CipWebviewManager.classifyQueryError(new Error('HTTP 429')).isConnectionIssue, true);
+    assert.equal(CipWebviewManager.classifyQueryError(new Error('oauth: invalid_scope')).isConnectionIssue, true);
+    assert.equal(CipWebviewManager.classifyQueryError(new Error('Authentication failed')).isConnectionIssue, true);
+    assert.equal(CipWebviewManager.classifyQueryError(new Error('connect ETIMEDOUT 1.2.3.4')).isConnectionIssue, true);
+    assert.equal(CipWebviewManager.classifyQueryError(new Error('getaddrinfo ENOTFOUND host')).isConnectionIssue, true);
+  });
+
+  test('400 Bad Request is NOT a connection issue (server received the query)', () => {
+    const r = CipWebviewManager.classifyQueryError(
+      new Error('CIP Avatica request failed (400 Bad Request): invalid input syntax for type boolean: ""'),
+    );
+    assert.equal(r.isConnectionIssue, false);
+    assert.match(r.message, /^Query failed:/);
+  });
+
+  test('Avatica/Phoenix parser messages are NOT connection issues', () => {
+    const a = CipWebviewManager.classifyQueryError(new Error('parse error at line 1, column 32'));
+    assert.equal(a.isConnectionIssue, false);
+    const b = CipWebviewManager.classifyQueryError(new Error('column "foo" does not exist'));
+    assert.equal(b.isConnectionIssue, false);
+    const c = CipWebviewManager.classifyQueryError(new Error('table "missing_tbl" does not exist'));
+    assert.equal(c.isConnectionIssue, false);
+  });
+
+  test('unknown errors default to connection-issue (conservative)', () => {
+    const r = CipWebviewManager.classifyQueryError(new Error('plain old boom'));
+    assert.equal(r.isConnectionIssue, true);
+    assert.match(r.message, /Connection failed/);
+  });
+});

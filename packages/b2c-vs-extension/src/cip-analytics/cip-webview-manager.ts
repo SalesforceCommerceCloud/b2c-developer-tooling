@@ -50,6 +50,38 @@ interface ReportContextSeed {
 }
 
 /**
+ * Strip the boilerplate that wraps every Avatica error so the actual
+ * server-reported cause leads the message. The CIP gateway prepends
+ * something like:
+ *
+ *   `CIP Avatica request failed (400 Bad Request): Error while executing SQL
+ *    "<the entire SQL>": <real cause>`
+ */
+function stripPlumbingPrefix(raw: string): string {
+  let s = raw.trim();
+  // Remove the outer "CIP Avatica request failed (...): " wrapper.
+  s = s.replace(/^CIP Avatica request failed \([^)]*\):\s*/i, '');
+  s = s.replace(/^Error while executing SQL\s+"[\s\S]*?":\s*/i, '');
+  return s.trim() || raw.trim();
+}
+
+/**
+ * Map the inner Calcite/Phoenix error message to a short, scannable headline.
+ * Falls back to a generic "Query rejected by CIP" if no pattern matches —
+ * the details line still carries the full cause, so we never lose info.
+ */
+function headlineForQueryError(detail: string): string {
+  if (/not being grouped/i.test(detail)) return 'Column needs a GROUP BY or aggregate';
+  if (/column .* does not exist/i.test(detail) || /unknown column/i.test(detail)) return 'Unknown column';
+  if (/table .* does not exist/i.test(detail) || /unknown table/i.test(detail)) return 'Unknown table';
+  if (/invalid input syntax for type/i.test(detail)) return "Value type doesn't match column";
+  if (/parse error/i.test(detail) || /syntax error/i.test(detail)) return 'SQL syntax error';
+  if (/duplicate column/i.test(detail)) return 'Duplicate column in result';
+  if (/division by zero/i.test(detail)) return 'Division by zero';
+  return 'Query rejected by CIP';
+}
+
+/**
  * Manages CIP Analytics webview panels.
  * Inspired by SOQL Builder - provides visual query interface with parameter forms.
  */
@@ -531,10 +563,14 @@ export class CipWebviewManager {
         },
       });
     } catch (error) {
-      const errorMessage = CipWebviewManager.formatConnectionError(error);
-      this.log.appendLine(`[CIP Query Builder] Query failed: ${errorMessage}`);
-      this.connection.markDisconnected(errorMessage);
-      panel.webview.postMessage({command: 'queryError', error: errorMessage});
+      const {message, headline, details, isConnectionIssue} = CipWebviewManager.classifyQueryError(error);
+      this.log.appendLine(`[CIP Query Builder] Query failed: ${message}`);
+      // Only flip the connection to disconnected for genuine connection
+      // problems (auth, network, rate-limit, timeout).
+      if (isConnectionIssue) {
+        this.connection.markDisconnected(message);
+      }
+      panel.webview.postMessage({command: 'queryError', error: message, headline, details});
     }
   }
 
@@ -543,26 +579,100 @@ export class CipWebviewManager {
    * Pure (no `this`) so it can be unit-tested in isolation.
    */
   static formatConnectionError(error: unknown): string {
+    return CipWebviewManager.classifyQueryError(error).message;
+  }
+
+  /**
+   * Classify a query/connection error into a user-friendly message and a
+   * flag indicating whether it represents a real connection problem.
+   */
+  static classifyQueryError(error: unknown): {
+    message: string;
+    headline?: string;
+    details?: string;
+    isConnectionIssue: boolean;
+  } {
     const msg = error instanceof Error ? error.message : String(error);
 
     // 429 from CIP usually means we fired too many handshakes in a short window.
-    // Tell the user to back off rather than retry immediately.
+    // Tell the user to back off rather than retry immediately. This IS a
+    // connection-layer signal — the gateway is rejecting traffic.
     if (/\b429\b/.test(msg) || /Too Many Requests/i.test(msg)) {
-      return 'Rate-limited by CIP (HTTP 429). Wait ~30 seconds before retrying.';
+      return {
+        message: 'Rate-limited by CIP (HTTP 429). Wait ~30 seconds before retrying.',
+        headline: 'Rate-limited by CIP',
+        details: 'Wait ~30 seconds before retrying.',
+        isConnectionIssue: true,
+      };
     }
     if (msg.includes('invalid_scope')) {
-      return 'Invalid tenant ID or no CIP access. Verify tenant ID with your admin, or check if CIP is provisioned.';
+      return {
+        message:
+          'Invalid tenant ID or no CIP access. Verify tenant ID with your admin, or check if CIP is provisioned.',
+        headline: 'Invalid tenant ID or CIP not provisioned',
+        details: 'Verify the tenant ID with your admin, or check whether CIP is provisioned for this realm.',
+        isConnectionIssue: true,
+      };
     }
     if (msg.includes('Authentication') || msg.includes('401')) {
-      return 'Authentication failed. Check OAuth credentials (clientId/clientSecret).';
+      return {
+        message: 'Authentication failed. Check OAuth credentials (clientId/clientSecret).',
+        headline: 'Authentication failed',
+        details: 'Check the OAuth credentials (clientId / clientSecret) in dw.json.',
+        isConnectionIssue: true,
+      };
     }
     if (msg.includes('timeout') || msg.includes('ETIMEDOUT')) {
-      return 'Connection timeout. CIP may not be provisioned yet (wait 2 hours after enabling).';
+      return {
+        message: 'Connection timeout. CIP may not be provisioned yet (wait 2 hours after enabling).',
+        headline: 'Connection timed out',
+        details: 'CIP may not be fully provisioned yet — wait ~2 hours after enabling.',
+        isConnectionIssue: true,
+      };
     }
     if (msg.includes('ENOTFOUND') || msg.includes('ECONNREFUSED')) {
-      return 'Cannot reach CIP host. Check network connection or CIP host configuration.';
+      return {
+        message: 'Cannot reach CIP host. Check network connection or CIP host configuration.',
+        headline: 'Cannot reach CIP host',
+        details: 'Check the network connection or the CIP host configuration.',
+        isConnectionIssue: true,
+      };
     }
-    return `Connection failed: ${msg}`;
+
+    // From here down: the server received the request and rejected the SQL
+    // itself. Strip the boring plumbing ("CIP Avatica request failed
+    // (400 Bad Request): Error while executing SQL "...": ") so the
+    // detail line leads with the actual cause. Then map the most common
+    // Calcite/Phoenix phrasings to a friendly headline.
+    const stripped = stripPlumbingPrefix(msg);
+    const isQueryError =
+      /\b400\b/.test(msg) ||
+      /Bad Request/i.test(msg) ||
+      /\b404\b/.test(msg) ||
+      /Not Found/i.test(msg) ||
+      /parse error/i.test(msg) ||
+      /syntax error/i.test(msg) ||
+      /invalid input syntax/i.test(msg) ||
+      /column .* does not exist/i.test(msg) ||
+      /table .* does not exist/i.test(msg) ||
+      /not being grouped/i.test(msg);
+
+    if (isQueryError) {
+      const headline = headlineForQueryError(stripped);
+      return {
+        message: `Query failed: ${msg}`,
+        headline,
+        details: stripped,
+        isConnectionIssue: false,
+      };
+    }
+
+    return {
+      message: `Connection failed: ${msg}`,
+      headline: 'Connection failed',
+      details: msg,
+      isConnectionIssue: true,
+    };
   }
 
   /**
@@ -658,10 +768,12 @@ export class CipWebviewManager {
         tableCount: tableNames.length,
       });
     } catch (error) {
-      const errorMessage = CipWebviewManager.formatConnectionError(error);
-      this.log.appendLine(`[CIP Tables Browser] Failed to load tables: ${errorMessage}`);
-      this.connection.markDisconnected(errorMessage);
-      panel.webview.postMessage({command: 'tablesLoadError', error: errorMessage});
+      const {message, headline, details, isConnectionIssue} = CipWebviewManager.classifyQueryError(error);
+      this.log.appendLine(`[CIP Tables Browser] Failed to load tables: ${message}`);
+      if (isConnectionIssue) {
+        this.connection.markDisconnected(message);
+      }
+      panel.webview.postMessage({command: 'tablesLoadError', error: message, headline, details});
     }
   }
 
@@ -742,10 +854,12 @@ export class CipWebviewManager {
 
       panel.webview.postMessage({command: 'tableDescribed', tableName, schema: {columns}});
     } catch (error) {
-      const errorMessage = CipWebviewManager.formatConnectionError(error);
-      this.log.appendLine(`[CIP Tables Browser] Failed to describe table: ${errorMessage}`);
-      this.connection.markDisconnected(errorMessage);
-      panel.webview.postMessage({command: 'tableDescribeError', tableName, error: errorMessage});
+      const {message, headline, details, isConnectionIssue} = CipWebviewManager.classifyQueryError(error);
+      this.log.appendLine(`[CIP Tables Browser] Failed to describe table: ${message}`);
+      if (isConnectionIssue) {
+        this.connection.markDisconnected(message);
+      }
+      panel.webview.postMessage({command: 'tableDescribeError', tableName, error: message, headline, details});
     }
   }
 
@@ -915,10 +1029,12 @@ export class CipWebviewManager {
         },
       });
     } catch (error) {
-      const errorMessage = CipWebviewManager.formatConnectionError(error);
-      this.log.appendLine(`[CIP Analytics] Query failed: ${errorMessage}`);
-      this.connection.markDisconnected(errorMessage);
-      panel.webview.postMessage({command: 'queryError', error: errorMessage});
+      const {message, headline, details, isConnectionIssue} = CipWebviewManager.classifyQueryError(error);
+      this.log.appendLine(`[CIP Analytics] Query failed: ${message}`);
+      if (isConnectionIssue) {
+        this.connection.markDisconnected(message);
+      }
+      panel.webview.postMessage({command: 'queryError', error: message, headline, details});
     }
   }
 

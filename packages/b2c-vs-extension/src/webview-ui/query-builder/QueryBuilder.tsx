@@ -23,6 +23,7 @@ import {useInboundMessages} from '../shared/bridge/useMessage.js';
 import type {ConnectionState, SavedQuery} from '../shared/types.js';
 import {buildSql} from './buildSql.js';
 import {initialState, reducer, type ViewMode} from './reducer.js';
+import {findIncompleteFilter} from './validateFilters.js';
 import {FromClause} from './clauses/FromClause.js';
 import {GroupByClause} from './clauses/GroupByClause.js';
 import {LimitClause} from './clauses/LimitClause.js';
@@ -53,6 +54,10 @@ function getTypeClass(type: string): string {
 interface StatusState {
   kind: StatusKind;
   text?: string;
+  /** Bold lead-in for two-line errors. */
+  headline?: string;
+  /** Verbose server message paired with `headline`. */
+  details?: string;
 }
 
 export function QueryBuilder() {
@@ -150,6 +155,14 @@ export function QueryBuilder() {
     postMessage({command: 'listSavedQueries'});
   }, []);
 
+  // Auto-dismiss only success banners — they're confirmations the user has
+  // already absorbed and Errors stay
+  useEffect(() => {
+    if (status.kind !== 'success') return;
+    const id = window.setTimeout(() => setStatus({kind: null}), 3000);
+    return () => window.clearTimeout(id);
+  }, [status]);
+
   // Inbound message dispatch.
   const onMessage = useCallback((msg: import('../shared/bridge/vscode.js').InboundMessage) => {
     switch (msg.command) {
@@ -201,7 +214,11 @@ export function QueryBuilder() {
         break;
       case 'queryError':
         setQueryRunning(false);
-        setStatus({kind: 'error', text: msg.error});
+        if (msg.headline) {
+          setStatus({kind: 'error', headline: msg.headline, details: msg.details});
+        } else {
+          setStatus({kind: 'error', text: msg.error});
+        }
         break;
       case 'savedQueries':
         setSavedQueries(Array.isArray(msg.queries) ? msg.queries : []);
@@ -299,6 +316,16 @@ export function QueryBuilder() {
       setStatus({kind: 'error', text: 'Configure the CIP connection first.'});
       postMessage({command: 'configureConnection'});
       return;
+    }
+    // In builder view, catch incomplete filter rows before posting. The
+    // server's error for `WHERE col = ''` against a boolean / numeric / date
+    // column is a confusing 400 ("invalid input syntax for type boolean")
+    if (state.currentView === 'builder') {
+      const incomplete = findIncompleteFilter(state.filters);
+      if (incomplete) {
+        setStatus({kind: 'error', text: incomplete});
+        return;
+      }
     }
     const text = state.currentView === 'editor' ? state.customSql : sql;
     if (!text || text.startsWith('--')) {
@@ -561,6 +588,20 @@ export function QueryBuilder() {
               <span>{queryRunning ? 'Running…' : 'Run Query'}</span>
             </button>
           </div>
+          {/* Status banner sits directly under the run bar so messages
+              (validation errors, "Loaded N entities", etc.) appear in the
+              user's natural reading flow next to the action they triggered.
+              Auto-hides after a few seconds for success/error; loading
+              persists until replaced. */}
+          <StatusBar
+            kind={status.kind}
+            text={status.text}
+            headline={status.headline}
+            details={status.details}
+            // Only errors get a dismiss button — success disappears on its
+            // own timer; loading clears when the underlying op completes.
+            onClose={status.kind === 'error' ? () => setStatus({kind: null}) : undefined}
+          />
         </div>
 
         <div
@@ -606,8 +647,6 @@ export function QueryBuilder() {
           </div>
         </div>
       </div>
-
-      <StatusBar kind={status.kind} text={status.text} />
 
       <SaveQueryModal
         state={saveModal}
