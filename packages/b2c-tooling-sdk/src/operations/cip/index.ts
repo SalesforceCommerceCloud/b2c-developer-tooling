@@ -48,6 +48,27 @@ function toStringOrEmpty(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
 
+/**
+ * Resolves a value from a metadata row by matching candidate column patterns
+ * case-insensitively (ignoring underscores).
+ *
+ * CIP's Avatica metadata results are keyed by the column *labels* the JDBC
+ * driver emits. Depending on the tenant/driver these can be the camelCase
+ * aliases from our SELECT (`tableName`) or the standard uppercase JDBC metadata
+ * names (`TABLE_NAME`). Hard-coding a single casing makes the mapping silently
+ * yield empty strings for the other variant — so match tolerantly instead.
+ */
+function pickRowValue(row: Record<string, unknown>, ...patterns: RegExp[]): unknown {
+  for (const key of Object.keys(row)) {
+    const normalizedKey = key.replaceAll('_', '').toLowerCase();
+    if (patterns.some((pattern) => pattern.test(normalizedKey))) {
+      return row[key];
+    }
+  }
+
+  return undefined;
+}
+
 function toBoolean(value: unknown): boolean {
   if (typeof value === 'boolean') {
     return value;
@@ -102,9 +123,9 @@ export async function listCipTables(
   const result = await client.query(sql, {fetchSize: options.fetchSize});
 
   const tables: CipTableMetadata[] = result.rows.map((row) => ({
-    tableName: toStringOrEmpty(row.tableName),
-    tableSchema: toStringOrEmpty(row.tableSchem),
-    tableType: toStringOrEmpty(row.tableType),
+    tableName: toStringOrEmpty(pickRowValue(row, /^tablename$/)),
+    tableSchema: toStringOrEmpty(pickRowValue(row, /^tableschem(a)?$/)),
+    tableType: toStringOrEmpty(pickRowValue(row, /^tabletype$/)),
   }));
 
   return {
@@ -136,12 +157,12 @@ export async function describeCipTable(
   const result = await client.query(sql, {fetchSize: options.fetchSize});
 
   const columns: CipColumnMetadata[] = result.rows.map((row) => ({
-    columnName: toStringOrEmpty(row.columnName),
-    dataType: toStringOrEmpty(row.typeName),
-    isNullable: toBoolean(row.isNullable),
-    ordinalPosition: toNumber(row.ordinalPosition),
-    tableName: toStringOrEmpty(row.tableName),
-    tableSchema: toStringOrEmpty(row.tableSchem),
+    columnName: toStringOrEmpty(pickRowValue(row, /^columnname$/)),
+    dataType: toStringOrEmpty(pickRowValue(row, /^(typename|datatype)$/)),
+    isNullable: toBoolean(pickRowValue(row, /^isnullable$/)),
+    ordinalPosition: toNumber(pickRowValue(row, /^ordinalposition$/)),
+    tableName: toStringOrEmpty(pickRowValue(row, /^tablename$/)),
+    tableSchema: toStringOrEmpty(pickRowValue(row, /^tableschem(a)?$/)),
   }));
 
   return {
