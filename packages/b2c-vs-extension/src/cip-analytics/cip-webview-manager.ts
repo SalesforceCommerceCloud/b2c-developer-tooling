@@ -139,6 +139,12 @@ export class CipWebviewManager {
   private tablesInFlight = new WeakMap<vscode.WebviewPanel, Promise<void>>();
   /** De-duplicates concurrent Describe Table calls per panel+table. */
   private describeInFlight = new WeakMap<vscode.WebviewPanel, Map<string, Promise<void>>>();
+  /** Cache of site-id dropdown options per active tenant+host with TTL. */
+  private siteOptionsCache = new Map<string, {expiresAt: number; sites: string[]}>();
+  /** De-dupes concurrent site-list loads per active tenant+host. */
+  private sitesInFlight = new Map<string, Promise<string[]>>();
+  /** Last-seen active connection identity used to invalidate site cache on realm switch/update. */
+  private activeSiteCacheKey: string | null = null;
 
   private readonly disposables: vscode.Disposable[] = [];
 
@@ -157,6 +163,8 @@ export class CipWebviewManager {
 
   /** Metadata/system table names returned by Avatica that are not tenant data entities. */
   private static readonly NON_DATA_TABLES = new Set(['quota', 'tables', 'columns']);
+  /** Site list can be cached briefly; realm/host changes still invalidate immediately. */
+  private static readonly SITE_OPTIONS_TTL_MS = 10 * 60 * 1000;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -168,6 +176,13 @@ export class CipWebviewManager {
     // Forward connection status to every open panel so each can refresh its banner.
     this.disposables.push(
       this.connection.onDidChange((c) => {
+        const nextCacheKey = c.tenantId ? `${c.tenantId}@@${this.connection.resolvedHost()}` : null;
+        if (nextCacheKey !== this.activeSiteCacheKey) {
+          this.siteOptionsCache.clear();
+          this.sitesInFlight.clear();
+          this.activeSiteCacheKey = nextCacheKey;
+        }
+
         for (const panel of this.panels.values()) {
           panel.webview.postMessage({command: 'connectionState', connection: c});
         }
@@ -1158,12 +1173,34 @@ export class CipWebviewManager {
       panel.webview.postMessage({command: 'sitesLoaded', sites: []});
       return;
     }
+
+    const cacheKey = `${ctx.tenantId}@@${ctx.host}`;
+    const cached = this.siteOptionsCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      panel.webview.postMessage({command: 'sitesLoaded', sites: cached.sites});
+      return;
+    }
+
+    let inFlight = this.sitesInFlight.get(cacheKey);
+    if (!inFlight) {
+      inFlight = (async () => {
+        const result = await ctx.client.query(
+          `SELECT DISTINCT nsite_id FROM ccdw_dim_site WHERE nsite_id IS NOT NULL ORDER BY nsite_id`,
+          {fetchSize: 500},
+        );
+        return result.rows.map((r) => String(r.nsite_id ?? '')).filter(Boolean);
+      })().finally(() => {
+        this.sitesInFlight.delete(cacheKey);
+      });
+      this.sitesInFlight.set(cacheKey, inFlight);
+    }
+
     try {
-      const result = await ctx.client.query(
-        `SELECT DISTINCT nsite_id FROM ccdw_dim_site WHERE nsite_id IS NOT NULL ORDER BY nsite_id`,
-        {fetchSize: 500},
-      );
-      const sites = result.rows.map((r) => String(r.nsite_id ?? '')).filter(Boolean);
+      const sites = await inFlight;
+      this.siteOptionsCache.set(cacheKey, {
+        expiresAt: Date.now() + CipWebviewManager.SITE_OPTIONS_TTL_MS,
+        sites,
+      });
       panel.webview.postMessage({command: 'sitesLoaded', sites});
     } catch {
       panel.webview.postMessage({command: 'sitesLoaded', sites: []});

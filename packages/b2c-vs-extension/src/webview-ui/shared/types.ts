@@ -61,12 +61,17 @@ export type FilterOperator =
   | 'IS NULL'
   | 'IS NOT NULL';
 
+/** Quick date preset chosen in Query Builder's WHERE clause. */
+export type DateQuickPreset = 'last-week' | 'last-month' | 'last-6-months' | 'today' | 'custom';
+
 export interface FilterCondition {
   column: string;
   operator: FilterOperator;
   value: string;
   /** Upper bound for the `BETWEEN` operator. Ignored for every other operator. */
   valueTo?: string;
+  /** Optional UI hint so explicit preset clicks (especially Custom) stay selected. */
+  datePreset?: DateQuickPreset;
 }
 
 export interface OrderClause {

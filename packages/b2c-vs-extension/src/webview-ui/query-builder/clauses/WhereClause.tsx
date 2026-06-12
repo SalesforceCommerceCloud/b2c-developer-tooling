@@ -9,7 +9,7 @@ import {ClauseCard} from '../../shared/components/ClauseCard.js';
 import {Icon} from '../../shared/components/Icon.js';
 import {SegmentedControl} from '../../shared/components/SegmentedControl.js';
 import {isDateLikeType, resolvePreset, toISODate, type DateRangePreset} from '../../shared/dateRange.js';
-import type {ColumnInfo, FilterCondition, FilterOperator} from '../../shared/types.js';
+import type {ColumnInfo, DateQuickPreset, FilterCondition, FilterOperator} from '../../shared/types.js';
 
 const SCALAR_OPERATORS: FilterOperator[] = [
   '=',
@@ -51,6 +51,16 @@ interface Props {
 }
 
 export function WhereClause({columns, filters, filterLogic, onAdd, onUpdate, onRemove, onLogicChange}: Props) {
+  const commitColumn = (index: number, filter: FilterCondition, nextCol: string) => {
+    const nextIsDate = isDateLikeType(columnTypeByName.get(nextCol));
+    const patch: Partial<FilterCondition> = {column: nextCol};
+    if (nextIsDate && !DATE_OPERATORS.includes(filter.operator)) {
+      patch.operator = '=';
+    }
+    patch.datePreset = undefined;
+    onUpdate(index, patch);
+  };
+
   // Cache the column → type lookup so the per-row date detection isn't an
   // O(n×m) scan of the columns array on every render.
   const columnTypeByName = useMemo(() => {
@@ -95,25 +105,16 @@ export function WhereClause({columns, filters, filterLogic, onAdd, onUpdate, onR
             const needsValue = f.operator !== 'IS NULL' && f.operator !== 'IS NOT NULL';
             const isBetween = f.operator === 'BETWEEN';
             const inputType = isDateCol ? 'date' : 'text';
+            const activePreset = isDateCol && needsValue ? detectActiveDatePreset(f) : null;
 
             return (
               <div className={`filter-row${isDateCol ? ' filter-row--date' : ''}`} key={idx}>
                 <div className="filter-row__main">
                   <select
                     className="field-select"
+                    aria-label="Filter column"
                     value={f.column}
-                    onChange={(e) => {
-                      const nextCol = e.currentTarget.value;
-                      const nextIsDate = isDateLikeType(columnTypeByName.get(nextCol));
-                      const patch: Partial<FilterCondition> = {column: nextCol};
-                      // If the new column is a date but the current operator
-                      // isn't valid for dates (e.g. user picked LIKE first),
-                      // snap back to '=' so the row stays usable.
-                      if (nextIsDate && !DATE_OPERATORS.includes(f.operator)) {
-                        patch.operator = '=';
-                      }
-                      onUpdate(idx, patch);
-                    }}
+                    onChange={(e) => commitColumn(idx, f, e.currentTarget.value)}
                   >
                     <option value="">Select column...</option>
                     {columns.map((c) => (
@@ -131,6 +132,7 @@ export function WhereClause({columns, filters, filterLogic, onAdd, onUpdate, onR
                       // Drop the upper bound when leaving BETWEEN so a stale
                       // `valueTo` doesn't linger in state and confuse the SQL.
                       if (nextOp !== 'BETWEEN' && f.valueTo !== undefined) patch.valueTo = undefined;
+                      patch.datePreset = undefined;
                       onUpdate(idx, patch);
                     }}
                   >
@@ -146,7 +148,7 @@ export function WhereClause({columns, filters, filterLogic, onAdd, onUpdate, onR
                       className="field-input"
                       placeholder={isDateCol ? '' : 'Value'}
                       value={f.value || ''}
-                      onChange={(e) => onUpdate(idx, {value: e.currentTarget.value})}
+                      onChange={(e) => onUpdate(idx, {datePreset: undefined, value: e.currentTarget.value})}
                     />
                   ) : (
                     <span />
@@ -158,7 +160,7 @@ export function WhereClause({columns, filters, filterLogic, onAdd, onUpdate, onR
                       placeholder={isDateCol ? '' : 'Upper bound'}
                       aria-label="Upper bound"
                       value={f.valueTo || ''}
-                      onChange={(e) => onUpdate(idx, {valueTo: e.currentTarget.value})}
+                      onChange={(e) => onUpdate(idx, {datePreset: undefined, valueTo: e.currentTarget.value})}
                     />
                   ) : null}
                   <button
@@ -177,19 +179,33 @@ export function WhereClause({columns, filters, filterLogic, onAdd, onUpdate, onR
                       <button
                         key={p.key}
                         type="button"
-                        className="btn-ghost date-preset-chip"
-                        onClick={() => applyPreset(idx, f.operator, p.key, onUpdate)}
+                        className={`btn btn-secondary date-preset-btn${activePreset === p.key ? ' active' : ''}`}
+                        aria-pressed={activePreset === p.key}
+                        onClick={() => applyPreset(idx, p.key, onUpdate)}
                       >
                         {p.label}
                       </button>
                     ))}
                     <button
                       type="button"
-                      className="btn-ghost date-preset-chip"
+                      className={`btn btn-secondary date-preset-btn${activePreset === 'today' ? ' active' : ''}`}
+                      aria-pressed={activePreset === 'today'}
                       title="Set to today"
-                      onClick={() => onUpdate(idx, {value: toISODate(new Date())})}
+                      onClick={() => {
+                        const today = toISODate(new Date());
+                        onUpdate(idx, {datePreset: 'today', operator: '=', value: today, valueTo: undefined});
+                      }}
                     >
                       Today
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn btn-secondary date-preset-btn${activePreset === 'custom' ? ' active' : ''}`}
+                      aria-pressed={activePreset === 'custom'}
+                      title="Use a custom date range"
+                      onClick={() => applyCustomPreset(idx, f, onUpdate)}
+                    >
+                      Custom
                     </button>
                   </div>
                 ) : null}
@@ -203,25 +219,81 @@ export function WhereClause({columns, filters, filterLogic, onAdd, onUpdate, onR
 }
 
 /**
- * Map a preset onto the current filter's value(s). For `BETWEEN` we fill
- * both bounds. For `<=` we put the *end* of the range in `value` (since
- * that's the natural single-bound interpretation of "events up to last
- * week"). Otherwise we fill `value` with the start of the range and clear
- * any stale `valueTo` from a previous BETWEEN selection.
+ * Apply a quick preset as a single-field "since X" condition.
+ * We normalize to `>=` so quick presets always show one input and only
+ * `Custom` owns the explicit two-bound `BETWEEN` UX.
  */
 function applyPreset(
   index: number,
-  operator: FilterOperator,
   preset: DateRangePreset,
   onUpdate: (index: number, patch: Partial<FilterCondition>) => void,
 ): void {
   const range = resolvePreset(preset);
   if (!range) return;
-  if (operator === 'BETWEEN') {
-    onUpdate(index, {value: range.from, valueTo: range.to});
-  } else if (operator === '<=') {
-    onUpdate(index, {value: range.to, valueTo: undefined});
-  } else {
-    onUpdate(index, {value: range.from, valueTo: undefined});
+  onUpdate(index, {
+    datePreset: preset,
+    operator: '>=',
+    value: range.from,
+    valueTo: undefined,
+  });
+}
+
+function applyCustomPreset(
+  index: number,
+  filter: FilterCondition,
+  onUpdate: (index: number, patch: Partial<FilterCondition>) => void,
+): void {
+  onUpdate(index, {
+    datePreset: 'custom',
+    operator: 'BETWEEN',
+    valueTo: filter.valueTo ?? filter.value ?? '',
+  });
+}
+
+function detectActiveDatePreset(filter: FilterCondition): DateQuickPreset | null {
+  if (filter.datePreset) {
+    return filter.datePreset;
   }
+
+  const today = toISODate(new Date());
+  if (matchesToday(filter, today)) {
+    return 'today';
+  }
+
+  for (const preset of DATE_PRESETS) {
+    if (matchesPreset(filter, preset.key)) {
+      return preset.key;
+    }
+  }
+
+  return null;
+}
+
+function matchesToday(filter: FilterCondition, today: string): boolean {
+  if (filter.operator === 'BETWEEN') {
+    return filter.value === today && filter.valueTo === today;
+  }
+
+  if (filter.operator === '<=') {
+    return filter.value === today;
+  }
+
+  return filter.value === today && !filter.valueTo;
+}
+
+function matchesPreset(filter: FilterCondition, preset: DateRangePreset): boolean {
+  const range = resolvePreset(preset);
+  if (!range) {
+    return false;
+  }
+
+  if (filter.operator === 'BETWEEN') {
+    return filter.value === range.from && filter.valueTo === range.to;
+  }
+
+  if (filter.operator === '<=') {
+    return filter.value === range.to;
+  }
+
+  return filter.value === range.from && !filter.valueTo;
 }

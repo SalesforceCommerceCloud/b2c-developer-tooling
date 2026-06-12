@@ -2187,9 +2187,30 @@ body.cip-query-builder {
   border-radius: 999px;
   border: 1px solid var(--vscode-panel-border);
   background: var(--vscode-editor-background);
+  color: var(--vscode-foreground);
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 .date-preset-chip:hover {
   border-color: var(--vscode-focusBorder);
+  background: var(--vscode-list-hoverBackground);
+}
+.date-preset-chip:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}
+.date-preset-chip.active,
+.date-preset-chip[aria-pressed='true'] {
+  background: var(--cip-accent);
+  border-color: var(--cip-accent);
+  color: #fff;
+}
+.date-preset-chip.active:hover,
+.date-preset-chip[aria-pressed='true']:hover {
+  filter: brightness(1.06);
 }
 
 /* SELECT chips with an inline aggregate dropdown. The base `.chip` styling

@@ -61,6 +61,6 @@ export function resolvePreset(preset: DateRangePreset): {from: string; to: strin
  */
 export function isDateLikeType(type: string | undefined): boolean {
   if (!type) return false;
-  const t = type.toLowerCase();
-  return t.includes('date') || t.includes('time');
+  const t = type.toLowerCase().trim();
+  return /(^|[^a-z])(date|datetime|timestamp(?:_ntz|_ltz|_tz)?|time)([^a-z]|$)/.test(t);
 }
