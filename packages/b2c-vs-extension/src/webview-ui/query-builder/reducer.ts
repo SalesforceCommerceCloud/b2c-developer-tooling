@@ -6,7 +6,7 @@
 // Query Builder state machine. Mirrors the in-memory `state` object from the
 // legacy inline script so the migration is a literal port — and unit-testable
 // for the first time.
-import type {ColumnInfo, FilterCondition, OrderClause, QueryResultData} from '../shared/types.js';
+import type {AggregateFn, ColumnInfo, FilterCondition, OrderClause, QueryResultData} from '../shared/types.js';
 
 export type ViewMode = 'builder' | 'editor';
 
@@ -15,9 +15,13 @@ export interface QueryBuilderState {
   currentTable: string | null;
   columns: ColumnInfo[];
   selectedFields: string[];
+  /** Per-field aggregate function. Missing entry → no aggregate. */
+  aggregates: Record<string, AggregateFn | undefined>;
   filters: FilterCondition[];
   filterLogic: 'AND' | 'OR';
   orderBy: OrderClause[];
+  /** Columns to GROUP BY. Order mirrors the emitted SQL. */
+  groupBy: string[];
   limit: number | null;
   currentView: ViewMode;
   customSql: string;
@@ -29,9 +33,11 @@ export const initialState: QueryBuilderState = {
   currentTable: null,
   columns: [],
   selectedFields: [],
+  aggregates: {},
   filters: [],
   filterLogic: 'AND',
   orderBy: [],
+  groupBy: [],
   limit: 100,
   currentView: 'builder',
   customSql: '',
@@ -46,6 +52,7 @@ export type QueryBuilderAction =
   | {type: 'toggleField'; field: string}
   | {type: 'selectAllFields'}
   | {type: 'clearFields'}
+  | {type: 'setAggregate'; field: string; agg: AggregateFn | undefined}
   | {type: 'addFilter'}
   | {type: 'updateFilter'; index: number; patch: Partial<FilterCondition>}
   | {type: 'removeFilter'; index: number}
@@ -53,6 +60,9 @@ export type QueryBuilderAction =
   | {type: 'addOrder'}
   | {type: 'updateOrder'; index: number; patch: Partial<OrderClause>}
   | {type: 'removeOrder'; index: number}
+  | {type: 'addGroupBy'}
+  | {type: 'updateGroupBy'; index: number; column: string}
+  | {type: 'removeGroupBy'; index: number}
   | {type: 'setLimit'; limit: number | null}
   | {type: 'setView'; view: ViewMode}
   | {type: 'setCustomSql'; sql: string}
@@ -65,27 +75,57 @@ export function reducer(state: QueryBuilderState, action: QueryBuilderAction): Q
     case 'setColumns':
       return {...state, columns: action.columns};
     case 'selectTable':
-      // Reset filters/orderBy/columns when switching tables, mirroring legacy behavior.
+      // Reset every column-bound piece of state when switching tables.
+      // Aggregates and groupBy are tied to the previous table's columns and
+      // would emit invalid SQL otherwise.
       return {
         ...state,
         currentTable: action.tableName,
         selectedFields: [],
+        aggregates: {},
         filters: [],
         orderBy: [],
+        groupBy: [],
         columns: [],
       };
     case 'clearTable':
-      return {...state, currentTable: null, columns: [], selectedFields: [], filters: [], orderBy: []};
+      return {
+        ...state,
+        currentTable: null,
+        columns: [],
+        selectedFields: [],
+        aggregates: {},
+        filters: [],
+        orderBy: [],
+        groupBy: [],
+      };
     case 'toggleField': {
       const idx = state.selectedFields.indexOf(action.field);
-      const next =
-        idx >= 0 ? state.selectedFields.filter((f) => f !== action.field) : [...state.selectedFields, action.field];
-      return {...state, selectedFields: next};
+      if (idx >= 0) {
+        // Drop the field's aggregate when the field itself is removed so we
+        // don't leak orphan entries into `state.aggregates`.
+        const {[action.field]: _removed, ...rest} = state.aggregates;
+        return {
+          ...state,
+          selectedFields: state.selectedFields.filter((f) => f !== action.field),
+          aggregates: rest,
+        };
+      }
+      return {...state, selectedFields: [...state.selectedFields, action.field]};
     }
     case 'selectAllFields':
       return {...state, selectedFields: state.columns.map((c) => c.name)};
     case 'clearFields':
-      return {...state, selectedFields: []};
+      return {...state, selectedFields: [], aggregates: {}};
+    case 'setAggregate': {
+      const next = {...state.aggregates};
+      if (action.agg === undefined) {
+        delete next[action.field];
+      } else {
+        next[action.field] = action.agg;
+      }
+      return {...state, aggregates: next};
+    }
     case 'addFilter':
       return {...state, filters: [...state.filters, {column: '', operator: '=', value: ''}]};
     case 'updateFilter':
@@ -106,6 +146,15 @@ export function reducer(state: QueryBuilderState, action: QueryBuilderAction): Q
       };
     case 'removeOrder':
       return {...state, orderBy: state.orderBy.filter((_, i) => i !== action.index)};
+    case 'addGroupBy':
+      return {...state, groupBy: [...state.groupBy, '']};
+    case 'updateGroupBy':
+      return {
+        ...state,
+        groupBy: state.groupBy.map((c, i) => (i === action.index ? action.column : c)),
+      };
+    case 'removeGroupBy':
+      return {...state, groupBy: state.groupBy.filter((_, i) => i !== action.index)};
     case 'setLimit':
       return {...state, limit: action.limit};
     case 'setView':

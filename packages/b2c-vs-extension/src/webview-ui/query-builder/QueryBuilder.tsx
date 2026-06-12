@@ -24,6 +24,7 @@ import type {ConnectionState, SavedQuery} from '../shared/types.js';
 import {buildSql} from './buildSql.js';
 import {initialState, reducer, type ViewMode} from './reducer.js';
 import {FromClause} from './clauses/FromClause.js';
+import {GroupByClause} from './clauses/GroupByClause.js';
 import {LimitClause} from './clauses/LimitClause.js';
 import {OrderByClauseView} from './clauses/OrderByClause.js';
 import {SelectClause} from './clauses/SelectClause.js';
@@ -79,12 +80,23 @@ export function QueryBuilder() {
       buildSql({
         currentTable: state.currentTable,
         selectedFields: state.selectedFields,
+        aggregates: state.aggregates,
         filters: state.filters,
         filterLogic: state.filterLogic,
         orderBy: state.orderBy,
+        groupBy: state.groupBy,
         limit: state.limit,
       }),
-    [state.currentTable, state.selectedFields, state.filters, state.filterLogic, state.orderBy, state.limit],
+    [
+      state.currentTable,
+      state.selectedFields,
+      state.aggregates,
+      state.filters,
+      state.filterLogic,
+      state.orderBy,
+      state.groupBy,
+      state.limit,
+    ],
   );
 
   // The Generated SQL preview should always show the SQL that would run if the
@@ -473,9 +485,11 @@ export function QueryBuilder() {
               <SelectClause
                 columns={state.columns}
                 selectedFields={state.selectedFields}
+                aggregates={state.aggregates}
                 onToggle={(f) => dispatch({type: 'toggleField', field: f})}
                 onSelectAll={() => dispatch({type: 'selectAllFields'})}
                 onClear={() => dispatch({type: 'clearFields'})}
+                onSetAggregate={(field, agg) => dispatch({type: 'setAggregate', field, agg})}
               />
               <FromClause currentTable={state.currentTable} />
               <WhereClause
@@ -486,6 +500,13 @@ export function QueryBuilder() {
                 onUpdate={(index, patch) => dispatch({type: 'updateFilter', index, patch})}
                 onRemove={(index) => dispatch({type: 'removeFilter', index})}
                 onLogicChange={(logic) => dispatch({type: 'setFilterLogic', logic})}
+              />
+              <GroupByClause
+                columns={state.columns}
+                groupBy={state.groupBy}
+                onAdd={() => dispatch({type: 'addGroupBy'})}
+                onUpdate={(index, column) => dispatch({type: 'updateGroupBy', index, column})}
+                onRemove={(index) => dispatch({type: 'removeGroupBy', index})}
               />
               <OrderByClauseView
                 columns={state.columns}

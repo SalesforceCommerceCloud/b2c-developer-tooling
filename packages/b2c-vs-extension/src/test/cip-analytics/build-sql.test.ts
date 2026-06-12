@@ -198,4 +198,81 @@ suite('buildSql', () => {
     });
     assert.match(sql, /ORDER BY created_at DESC, id ASC\nLIMIT 50$/);
   });
+
+  // ── BETWEEN ───────────────────────────────────────────────────────────────
+
+  test('BETWEEN renders both bounds, quoting strings and leaving numbers raw', () => {
+    const sql = buildSql({
+      currentTable: 'ccdw_aggr_sales_summary',
+      selectedFields: [],
+      filters: [{column: 'submit_date', operator: 'BETWEEN', value: '2026-01-01', valueTo: '2026-01-31'}],
+      filterLogic: 'AND',
+      orderBy: [],
+      limit: null,
+    });
+    assert.match(sql, /WHERE submit_date BETWEEN '2026-01-01' AND '2026-01-31'$/);
+  });
+
+  test('empty filter value emits a quoted empty string (no dangling RHS)', () => {
+    // Regression: previously `qty = ` would have emitted `WHERE qty = `
+    // which is invalid SQL. Now we always render *something* on the RHS.
+    const sql = buildSql({
+      currentTable: 'orders_fact',
+      selectedFields: [],
+      filters: [{column: 'status', operator: '=', value: ''}],
+      filterLogic: 'AND',
+      orderBy: [],
+      limit: null,
+    });
+    assert.match(sql, /WHERE status = ''$/);
+  });
+
+  // ── GROUP BY + aggregates ─────────────────────────────────────────────────
+
+  test('emits GROUP BY between WHERE and ORDER BY, with aggregate aliases', () => {
+    const sql = buildSql({
+      currentTable: 'ccdw_aggr_sales_summary',
+      selectedFields: ['site_id', 'order_count'],
+      aggregates: {order_count: 'SUM'},
+      filters: [{column: 'submit_date', operator: '>=', value: '2026-01-01'}],
+      filterLogic: 'AND',
+      orderBy: [{column: 'site_id', direction: 'ASC'}],
+      groupBy: ['site_id'],
+      limit: null,
+    });
+    assert.match(sql, /SELECT site_id, SUM\(order_count\) AS order_count_sum/);
+    assert.match(sql, /WHERE submit_date >= '2026-01-01'/);
+    assert.match(sql, /GROUP BY site_id\nORDER BY site_id ASC$/);
+  });
+
+  test('GROUP BY supports multiple columns and multiple aggregates', () => {
+    // Mirrors the shape of `top-selling-products` and `customer-registration-trends`
+    // (group by date + dimension columns, aggregate measures).
+    const sql = buildSql({
+      currentTable: 'ccdw_aggr_sales_summary',
+      selectedFields: ['site_id', 'submit_date', 'revenue', 'orders'],
+      aggregates: {revenue: 'SUM', orders: 'COUNT'},
+      filters: [],
+      filterLogic: 'AND',
+      orderBy: [],
+      groupBy: ['site_id', 'submit_date'],
+      limit: null,
+    });
+    assert.match(sql, /SELECT site_id, submit_date, SUM\(revenue\) AS revenue_sum, COUNT\(orders\) AS orders_count/);
+    assert.match(sql, /GROUP BY site_id, submit_date/);
+  });
+
+  test('legacy callers without aggregates/groupBy produce identical SQL to before', () => {
+    // Backwards-compat regression: passing only the original fields must
+    // still work and must not include any GROUP BY clause.
+    const sql = buildSql({
+      currentTable: 'orders_fact',
+      selectedFields: ['id', 'qty'],
+      filters: [{column: 'qty', operator: '>', value: '5'}],
+      filterLogic: 'AND',
+      orderBy: [{column: 'id', direction: 'DESC'}],
+      limit: 10,
+    });
+    assert.equal(sql, 'SELECT id, qty\nFROM orders_fact\nWHERE qty > 5\nORDER BY id DESC\nLIMIT 10');
+  });
 });

@@ -2157,6 +2157,67 @@ body.cip-query-builder {
   grid-template-columns: minmax(0, 2fr) 120px 32px;
 }
 
+/* Date-aware filter rows wrap their controls in `.filter-row__main` and
+   tuck preset chips below in `.filter-row__presets`. The parent grid is
+   collapsed to a block; the inner element re-establishes a grid that has
+   room for the BETWEEN second input. Plain filter rows still use the
+   original four-column grid via `display: contents` on the inner. */
+.filter-row--date {
+  display: block;
+  padding: 8px 10px;
+}
+.filter-row__main {
+  display: grid;
+  gap: 8px;
+  align-items: center;
+  grid-template-columns: minmax(0, 2fr) 140px minmax(0, 1.5fr) minmax(0, 1.5fr) 32px;
+}
+.filter-row:not(.filter-row--date) .filter-row__main {
+  display: contents;
+}
+.filter-row__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.date-preset-chip {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-editor-background);
+}
+.date-preset-chip:hover {
+  border-color: var(--vscode-focusBorder);
+}
+
+/* SELECT chips with an inline aggregate dropdown. The base `.chip` styling
+   is preserved; this adds spacing for the aggregate select and a subtle
+   surface change when a function is active. */
+.select-chip {
+  gap: 6px;
+}
+.select-chip__agg {
+  height: 22px;
+  padding: 0 4px;
+  background: transparent;
+  color: var(--vscode-foreground);
+  border: 1px solid transparent;
+  border-radius: var(--cip-radius-sm);
+  font-size: 11px;
+  font-family: var(--vscode-font-family);
+  cursor: pointer;
+}
+.select-chip__agg:hover,
+.select-chip__agg:focus {
+  border-color: var(--vscode-panel-border);
+  outline: none;
+}
+.select-chip.has-agg {
+  background: var(--vscode-editorWidget-background);
+}
+
 .filter-row:hover,
 .order-row:hover {
   border-color: var(--vscode-panel-border);

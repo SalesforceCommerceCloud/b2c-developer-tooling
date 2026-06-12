@@ -53,6 +53,7 @@ export type FilterOperator =
   | '<'
   | '>='
   | '<='
+  | 'BETWEEN'
   | 'LIKE'
   | 'NOT LIKE'
   | 'IN'
@@ -64,9 +65,18 @@ export interface FilterCondition {
   column: string;
   operator: FilterOperator;
   value: string;
+  /** Upper bound for the `BETWEEN` operator. Ignored for every other operator. */
+  valueTo?: string;
 }
 
 export interface OrderClause {
   column: string;
   direction: 'ASC' | 'DESC';
 }
+
+/**
+ * Aggregate functions that can be applied to a SELECT column once a GROUP BY
+ * is in play. Mirrors what the curated CIP reports use most often (SUM,
+ * COUNT, AVG, MIN, MAX).
+ */
+export type AggregateFn = 'SUM' | 'COUNT' | 'AVG' | 'MIN' | 'MAX';

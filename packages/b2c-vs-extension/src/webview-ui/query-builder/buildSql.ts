@@ -5,14 +5,22 @@
  */
 // Pure SQL composition extracted from query-builder.html so it can be unit
 // tested without booting the webview.
-import type {FilterCondition, OrderClause} from '../shared/types.js';
+import type {AggregateFn, FilterCondition, OrderClause} from '../shared/types.js';
 
 interface BuildSqlInput {
   currentTable: string | null;
   selectedFields: string[];
+  /**
+   * Per-field aggregate function (e.g. `{revenue: 'SUM'}`). Missing entries
+   * mean "no aggregate". Optional so legacy callers that don't aggregate keep
+   * producing identical SQL.
+   */
+  aggregates?: Record<string, AggregateFn | undefined>;
   filters: FilterCondition[];
   filterLogic: 'AND' | 'OR';
   orderBy: OrderClause[];
+  /** Columns to GROUP BY. Order is preserved in the emitted SQL. */
+  groupBy?: string[];
   limit: number | null;
 }
 
@@ -442,10 +450,41 @@ export function quoteIdent(name: string): string {
     .join('.');
 }
 
+/**
+ * Render a single SELECT column with optional aggregate. Without an aggregate
+ * the column is emitted as-is (`"name"` or `name`). With one we wrap it in
+ * the function call and alias it back to a stable, identifier-safe label so
+ * results tables show e.g. `revenue_sum` instead of `SUM("revenue")`.
+ */
+function renderSelectColumn(field: string, agg: AggregateFn | undefined): string {
+  const ident = quoteIdent(field);
+  if (!agg) return ident;
+  const alias = quoteIdent(`${field}_${agg.toLowerCase()}`);
+  return `${agg}(${ident}) AS ${alias}`;
+}
+
+/**
+ * Quote a scalar filter value: strings get single-quoted (with embedded
+ * single quotes doubled), numbers stay raw. Empty input is treated as a
+ * quoted empty string so we never emit a dangling `col = ` with nothing on
+ * the right-hand side.
+ */
+function formatScalarValue(value: string | undefined): string {
+  const v = value ?? '';
+  if (v === '') return "''";
+  return isNaN(Number(v)) ? "'" + v.replace(/'/g, "''") + "'" : v;
+}
+
 export function buildSql(input: BuildSqlInput): string {
   if (!input.currentTable) return '-- Select an entity to generate query';
 
-  const fields = input.selectedFields.length > 0 ? input.selectedFields.map(quoteIdent).join(', ') : '*';
+  const aggregates = input.aggregates ?? {};
+  const groupBy = (input.groupBy ?? []).filter((c) => c);
+
+  const fields =
+    input.selectedFields.length > 0
+      ? input.selectedFields.map((f) => renderSelectColumn(f, aggregates[f])).join(', ')
+      : '*';
   let sql = 'SELECT ' + fields + '\nFROM ' + quoteIdent(input.currentTable);
 
   const validFilters = input.filters.filter((f) => f.column);
@@ -455,14 +494,21 @@ export function buildSql(input: BuildSqlInput): string {
       if (f.operator === 'IS NULL' || f.operator === 'IS NOT NULL') {
         return col + ' ' + f.operator;
       }
-      const needsQuotes = f.operator === 'LIKE' || f.operator === 'NOT LIKE' || isNaN(Number(f.value));
-      if (f.operator === 'IN' || f.operator === 'NOT IN') {
-        return col + ' ' + f.operator + ' (' + f.value + ')';
+      if (f.operator === 'BETWEEN') {
+        const lo = formatScalarValue(f.value);
+        const hi = formatScalarValue(f.valueTo);
+        return `${col} BETWEEN ${lo} AND ${hi}`;
       }
-      const value = needsQuotes ? "'" + (f.value || '').replace(/'/g, "''") + "'" : f.value;
-      return col + ' ' + f.operator + ' ' + value;
+      if (f.operator === 'IN' || f.operator === 'NOT IN') {
+        return col + ' ' + f.operator + ' (' + (f.value || '') + ')';
+      }
+      return col + ' ' + f.operator + ' ' + formatScalarValue(f.value);
     });
     sql += '\nWHERE ' + conditions.join(' ' + input.filterLogic + ' ');
+  }
+
+  if (groupBy.length > 0) {
+    sql += '\nGROUP BY ' + groupBy.map(quoteIdent).join(', ');
   }
 
   const validOrder = input.orderBy.filter((o) => o.column);
