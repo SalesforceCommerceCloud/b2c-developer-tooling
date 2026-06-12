@@ -6,10 +6,10 @@
 
 import {expect} from 'chai';
 import sinon from 'sinon';
-import SearchQueryPerformance from '../../../../src/commands/cip/report/search-query-performance.js';
+import RemoteIncludePerformance from '../../../../src/commands/cip/report/remote-include-performance.js';
 import {createIsolatedConfigHooks, createTestCommand, runSilent} from '../../../helpers/test-setup.js';
 
-describe('cip report search-query-performance', () => {
+describe('cip report remote-include-performance', () => {
   const hooks = createIsolatedConfigHooks();
 
   beforeEach(async () => {
@@ -21,49 +21,27 @@ describe('cip report search-query-performance', () => {
   });
 
   async function createCommand(flags: Record<string, unknown>): Promise<any> {
-    return createTestCommand(SearchQueryPerformance, hooks.getConfig(), flags, {});
+    return createTestCommand(RemoteIncludePerformance, hooks.getConfig(), flags, {});
   }
-
-  it('throws a missing-required-parameter error when has-results is omitted', async () => {
-    const command = await createCommand({
-      'site-id': 'Sites-test-Site',
-      from: '2025-01-01',
-      to: '2025-01-31',
-    });
-
-    sinon.stub(command, 'validateCipAuthMethods').returns(void 0);
-
-    // The SDK enforces required params (including the enum hasResults) at SQL-build
-    // time, so omitting --has-results surfaces a missing-required-parameter error.
-    try {
-      await runSilent(() => command.run());
-      expect.fail('Should have thrown');
-    } catch (error) {
-      expect((error as Error).message).to.include('hasResults');
-    }
-  });
 
   it('returns SQL when sql flag is true', async () => {
     const command = await createCommand({
-      'has-results': 'true',
       'site-id': 'Sites-test-Site',
-      from: '2025-01-01',
-      to: '2025-01-31',
+      from: '2026-01-01',
+      to: '2026-01-31',
       sql: true,
     });
 
     sinon.stub(command, 'validateCipAuthMethods').returns(void 0);
     const result = (await runSilent(() => command.run())) as any;
 
-    expect(result.reportName).to.equal('search-query-performance');
+    expect(result.reportName).to.equal('remote-include-performance');
     expect(result.sql).to.be.a('string');
     expect(result.sql.length).to.be.greaterThan(0);
   });
 
   it('returns report description when describe flag is true', async () => {
-    const command = await createCommand({
-      describe: true,
-    });
+    const command = await createCommand({describe: true});
 
     sinon.stub(command, 'validateCipAuthMethods').returns(void 0);
     sinon.stub(command, 'log').returns(void 0);
@@ -71,17 +49,16 @@ describe('cip report search-query-performance', () => {
 
     const result = await command.run();
 
-    expect(result.name).to.equal('search-query-performance');
+    expect(result.name).to.equal('remote-include-performance');
     expect(result.description).to.be.a('string');
     expect(result.parameters).to.be.an('array');
   });
 
   it('executes report and returns data in JSON mode', async () => {
     const command = await createCommand({
-      'has-results': 'true',
       'site-id': 'Sites-test-Site',
-      from: '2025-01-01',
-      to: '2025-01-31',
+      from: '2026-01-01',
+      to: '2026-01-31',
       json: true,
     });
 
@@ -90,19 +67,14 @@ describe('cip report search-query-performance', () => {
     sinon.stub(command, 'jsonEnabled').returns(true);
 
     const mockClient = {
-      query: sinon.stub().resolves({
-        columns: ['search_term', 'search_count'],
-        rows: [{search_term: 'shoes', search_count: 100}],
-        rowCount: 1,
-      }),
+      query: sinon.stub().resolves({columns: ['a', 'b'], rows: [{a: 1, b: 2}], rowCount: 1}),
     };
 
     sinon.stub(command, 'getCipClient').returns(mockClient);
 
     const result = await command.run();
 
-    expect(result.reportName).to.equal('search-query-performance');
-    expect(result.columns).to.deep.equal(['search_term', 'search_count']);
+    expect(result.reportName).to.equal('remote-include-performance');
     expect(result.rowCount).to.equal(1);
     expect(result.rows).to.have.lengthOf(1);
   });

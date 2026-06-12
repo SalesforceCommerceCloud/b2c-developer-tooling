@@ -8,16 +8,16 @@ import {withDocs} from '../../../i18n/index.js';
 import {CipReportCommand} from '../../../utils/cip/report-command.js';
 import {buildReportFlags, requireReport} from '../../../utils/cip/report-flags.js';
 
-const REPORT_NAME = 'search-query-performance';
+const REPORT_NAME = 'ocapi-client-usage';
 
 /**
- * `b2c cip report search-query-performance` — flags are auto-derived from the catalog
+ * `b2c cip report ocapi-client-usage` — flags are auto-derived from the catalog
  * definition; param parsing/validation lives in {@link CipReportCommand} and the SDK.
  */
-export default class CipReportSearchQueryPerformance extends CipReportCommand<typeof CipReportSearchQueryPerformance> {
+export default class CipReportOcapiClientUsage extends CipReportCommand<typeof CipReportOcapiClientUsage> {
   static description = withDocs(
-    'Identify search terms driving revenue and conversion',
-    '/cli/cip.html#b2c-cip-report-search-query-performance',
+    'Rank OCAPI client_ids by request volume with per-client error rate and latency',
+    '/cli/cip.html#b2c-cip-report-ocapi-client-usage',
   );
 
   static enableJsonFlag = true;
