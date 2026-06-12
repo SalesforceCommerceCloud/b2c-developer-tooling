@@ -249,13 +249,7 @@ export class CipSavedQueryTreeItem extends vscode.TreeItem {
     this.iconPath = new vscode.ThemeIcon('bookmark');
     if (query.description) this.description = query.description;
     this.tooltip = new vscode.MarkdownString(
-      [
-        `**${query.name}**`,
-        query.description ? `\n${query.description}\n` : '',
-        '```sql',
-        query.sql,
-        '```',
-      ].join('\n'),
+      [`**${query.name}**`, query.description ? `\n${query.description}\n` : '', '```sql', query.sql, '```'].join('\n'),
     );
     this.command = {
       command: 'b2c-dx.cipAnalytics.openSavedQuery',

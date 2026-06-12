@@ -82,9 +82,7 @@ export class CipQueryLibraryService implements vscode.Disposable {
   hasNameConflict(name: string, tenantId: string, excludeId?: string): boolean {
     const target = normalizeName(name);
     if (!target) return false;
-    return this.queries.some(
-      (q) => q.id !== excludeId && q.tenantId === tenantId && normalizeName(q.name) === target,
-    );
+    return this.queries.some((q) => q.id !== excludeId && q.tenantId === tenantId && normalizeName(q.name) === target);
   }
 
   async save(input: {name: string; sql: string; description?: string; tenantId: string}): Promise<CipSavedQuery> {
