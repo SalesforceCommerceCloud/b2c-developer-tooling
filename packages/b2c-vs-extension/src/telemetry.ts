@@ -41,6 +41,15 @@ function isExtensionTelemetryEnabled(): boolean {
   return vscode.workspace.getConfiguration().get<boolean>(SETTING_ENABLED, true);
 }
 
+function resolveBuildConstant(reader: () => string): string | undefined {
+  try {
+    const value = reader();
+    return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Initialize the extension's telemetry client.
  *
@@ -61,7 +70,9 @@ export function initTelemetry(context: vscode.ExtensionContext): void {
   if (!isVsCodeTelemetryEnabled()) return;
   if (!isExtensionTelemetryEnabled()) return;
 
-  const connectionString = Telemetry.getConnectionString(__TELEMETRY_CONNECTION_STRING__ || undefined);
+  const configuredConnectionString = resolveBuildConstant(() => __TELEMETRY_CONNECTION_STRING__);
+  const extensionVersion = resolveBuildConstant(() => __EXT_VERSION__) ?? 'dev';
+  const connectionString = Telemetry.getConnectionString(configuredConnectionString);
   if (!connectionString) return;
 
   // Run start() in the background. Events sent before start() resolves are
@@ -69,7 +80,7 @@ export function initTelemetry(context: vscode.ExtensionContext): void {
   const client = createTelemetry({
     project: TELEMETRY_PROJECT,
     appInsightsKey: connectionString,
-    version: __EXT_VERSION__,
+    version: extensionVersion,
     dataDir: context.globalStorageUri.fsPath,
     initialAttributes: {
       host: vscode.env.appName,

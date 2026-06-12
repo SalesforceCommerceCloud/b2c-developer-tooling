@@ -676,6 +676,11 @@
           "default": true,
           "description": "Enable log tailing commands."
         },
+        "b2c-dx.features.jobsExplorer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the Jobs Explorer for monitoring Business Manager jobs."
+        },
         "b2c-dx.features.scaffold": {
           "type": "boolean",
           "default": true,
@@ -710,6 +715,35 @@
           "minimum": 2,
           "maximum": 300,
           "description": "Seconds between polls during sandbox state transitions."
+        },
+        "b2c-dx.jobs.refreshInterval": {
+          "type": "number",
+          "default": 30,
+          "minimum": 5,
+          "maximum": 300,
+          "description": "Seconds between background refreshes for the Jobs view."
+        },
+        "b2c-dx.jobs.discoveryExecutionScanLimit": {
+          "type": "number",
+          "default": 2000,
+          "minimum": 200,
+          "maximum": 5000,
+          "description": "Maximum number of recent executions scanned to discover unique jobs in the Jobs view."
+        },
+        "b2c-dx.jobs.historyLimit": {
+          "type": "number",
+          "default": 25,
+          "minimum": 5,
+          "maximum": 200,
+          "description": "Number of recent executions shown per job when expanding execution history."
+        },
+        "b2c-dx.jobs.knownJobIds": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Optional list of known job IDs shown as quick picks when running a job from VS Code."
         },
         "b2c-dx.features.codeSync": {
           "type": "boolean",
@@ -755,6 +789,11 @@
           "id": "b2c-dx-sandboxes",
           "title": "B2C-DX Sandboxes",
           "icon": "$(server-environment)"
+        },
+        {
+          "id": "b2c-dx-operations",
+          "title": "B2C-DX Operations",
+          "icon": "$(tools)"
         },
         {
           "id": "b2c-dx-analytics",
@@ -804,7 +843,16 @@
         {
           "id": "b2cSandboxExplorer",
           "name": "Realm Explorer",
+          "icon": "$(server-environment)",
           "contextualTitle": "B2C-DX"
+        }
+      ],
+      "b2c-dx-operations": [
+        {
+          "id": "b2cJobsExplorer",
+          "name": "Jobs",
+          "icon": "$(list-unordered)",
+          "contextualTitle": "B2C-DX Operations"
         }
       ]
     },
@@ -830,6 +878,16 @@
         "view": "b2cSandboxExplorer",
         "when": "b2c-dx.sandbox.needsOAuth",
         "contents": "Sandbox management requires Account Manager OAuth credentials.\n\nAdd \"client-id\" and \"client-secret\" to dw.json to browse and manage sandboxes for this realm.\n\n[Connect & authenticate](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22connect%22%5D)"
+      },
+      {
+        "view": "b2cJobsExplorer",
+        "when": "b2c-dx.jobs.needsOAuth",
+        "contents": "Job monitoring requires OAuth credentials with OCAPI job scopes.\n\nAdd \"client-id\" and \"client-secret\" to dw.json, then ensure your API client has access to `/job_execution_search` and `/jobs/*/executions*`.\n\n[Connect & authenticate](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22connect%22%5D)"
+      },
+      {
+        "view": "b2cJobsExplorer",
+        "when": "!b2c-dx.jobs.needsOAuth",
+        "contents": "No recent job executions found.\n\nRun a job from this view or from Business Manager to populate execution history.\n\n[Run Job](command:b2c-dx.jobs.run)\n\n[Refresh](command:b2c-dx.jobs.refresh)"
       },
       {
         "view": "b2cCartridgeExplorer",
@@ -1047,6 +1105,60 @@
         "title": "View Clone Details",
         "icon": "$(git-branch)",
         "category": "B2C DX - Sandboxes"
+      },
+      {
+        "command": "b2c-dx.jobs.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C DX - Jobs"
+      },
+      {
+        "command": "b2c-dx.jobs.run",
+        "title": "Run Job",
+        "icon": "$(play)",
+        "category": "B2C DX - Jobs"
+      },
+      {
+        "command": "b2c-dx.jobs.createScaffold",
+        "title": "Create Job Scaffold",
+        "icon": "$(new-file)",
+        "category": "B2C DX - Jobs"
+      },
+      {
+        "command": "b2c-dx.jobs.deployScaffold",
+        "title": "Deploy Job Scaffold",
+        "icon": "$(cloud-upload)",
+        "category": "B2C DX - Jobs"
+      },
+      {
+        "command": "b2c-dx.jobs.rerun",
+        "title": "Re-Run Job",
+        "icon": "$(debug-restart)",
+        "category": "B2C DX - Jobs"
+      },
+      {
+        "command": "b2c-dx.jobs.stop",
+        "title": "Stop Execution",
+        "icon": "$(debug-stop)",
+        "category": "B2C DX - Jobs"
+      },
+      {
+        "command": "b2c-dx.jobs.viewExecutionDetails",
+        "title": "View Execution Details",
+        "icon": "$(info)",
+        "category": "B2C DX - Jobs"
+      },
+      {
+        "command": "b2c-dx.jobs.openExecutionLog",
+        "title": "Open Execution Log",
+        "icon": "$(output)",
+        "category": "B2C DX - Jobs"
+      },
+      {
+        "command": "b2c-dx.jobs.openFailureLog",
+        "title": "Open Failure Log",
+        "icon": "$(warning)",
+        "category": "B2C DX - Jobs"
       },
       {
         "command": "b2c-dx.instance.inspect",
@@ -1586,6 +1698,26 @@
           "group": "navigation"
         },
         {
+          "command": "b2c-dx.jobs.refresh",
+          "when": "view == b2cJobsExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.jobs.run",
+          "when": "view == b2cJobsExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.jobs.createScaffold",
+          "when": "view == b2cJobsExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.jobs.deployScaffold",
+          "when": "view == b2cJobsExplorer",
+          "group": "navigation"
+        },
+        {
           "command": "b2c-dx.codeSync.refreshCartridges",
           "when": "view == b2cCartridgeExplorer",
           "group": "navigation"
@@ -1798,6 +1930,46 @@
           "group": "3_destructive@1"
         },
         {
+          "command": "b2c-dx.jobs.run",
+          "when": "view == b2cJobsExplorer && viewItem =~ /^job-/",
+          "group": "1_lifecycle@1"
+        },
+        {
+          "command": "b2c-dx.jobs.createScaffold",
+          "when": "view == b2cJobsExplorer && viewItem =~ /^job-/",
+          "group": "1_lifecycle@4"
+        },
+        {
+          "command": "b2c-dx.jobs.deployScaffold",
+          "when": "view == b2cJobsExplorer && viewItem =~ /^job-/",
+          "group": "2_logs@3"
+        },
+        {
+          "command": "b2c-dx.jobs.viewExecutionDetails",
+          "when": "view == b2cJobsExplorer && viewItem =~ /^jobExecution-/",
+          "group": "1_info@1"
+        },
+        {
+          "command": "b2c-dx.jobs.rerun",
+          "when": "view == b2cJobsExplorer && viewItem =~ /^jobExecution-/",
+          "group": "1_lifecycle@2"
+        },
+        {
+          "command": "b2c-dx.jobs.stop",
+          "when": "view == b2cJobsExplorer && viewItem == jobExecution-running",
+          "group": "1_lifecycle@3"
+        },
+        {
+          "command": "b2c-dx.jobs.openExecutionLog",
+          "when": "view == b2cJobsExplorer && viewItem =~ /^jobExecution-/",
+          "group": "2_logs@1"
+        },
+        {
+          "command": "b2c-dx.jobs.openFailureLog",
+          "when": "view == b2cJobsExplorer && viewItem == jobExecution-failed",
+          "group": "2_logs@2"
+        },
+        {
           "command": "b2c-dx.codeSync.revealCartridge",
           "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
           "group": "0_navigation@1"
@@ -1973,6 +2145,26 @@
         },
         {
           "command": "b2c-dx.sandbox.viewCloneDetails",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.rerun",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.stop",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.viewExecutionDetails",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.openExecutionLog",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.openFailureLog",
           "when": "false"
         },
         {
