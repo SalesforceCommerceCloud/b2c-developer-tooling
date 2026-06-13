@@ -37,10 +37,10 @@ See the [CLI Configuration guide](../guide/configuration#configuration-file) for
 | **SCAPI** | `short-code`, `tenant-id`, `client-id`, `client-secret` |
 | **CARTRIDGES** | `hostname`, `username`, `password` (or OAuth: `hostname`, `client-id`, `client-secret`) |
 | **MRT** | `mrtProject`, `mrtApiKey` (or `api_key` in `~/.mobify`, or `MRT_API_KEY` env var). `mrtEnvironment` required when deploying. |
-| **PWAV3** | None (project directory auto-detected) |
-| **STOREFRONTNEXT** | None (project directory auto-detected) |
+| **PWAV3** | None for guidelines tools (project directory auto-detected). MRT credentials (`mrtProject`, `mrtEnvironment`, `mrtApiKey`) required for `mrt_bundle_push` and the `mrt_logs_watch_*` tools. |
+| **STOREFRONTNEXT** | None for guidelines/Figma tools (project directory auto-detected). MRT credentials (`mrtProject`, `mrtEnvironment`, `mrtApiKey`) required for `mrt_bundle_push` and the `mrt_logs_watch_*` tools. |
 
-**Note:** Some tools require specific scopes. See [Configuring Scopes](../guide/authentication#configuring-scopes) in the Authentication Setup guide and individual tool pages for scope requirements.
+**Note:** The `mrt_logs_watch_*` tools also appear in the always-on **DIAGNOSTICS** toolset and require the same MRT credentials (`mrtProject`, `mrtEnvironment`, `mrtApiKey`). Some tools require specific scopes. See [Configuring Scopes](../guide/authentication#configuring-scopes) in the Authentication Setup guide and individual tool pages for scope requirements.
 
 ### `.env` File {#env-file}
 

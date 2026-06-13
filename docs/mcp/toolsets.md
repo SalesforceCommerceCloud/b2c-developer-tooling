@@ -60,6 +60,7 @@ Script debugger, runtime log inspection, and bundled Script API / XSD documentat
 | `logs_list_files` | List log files on the instance via WebDAV | [View details](./tools/logs) |
 | `logs_get_recent` | Fetch recent log entries in a single request | [View details](./tools/logs) |
 | `logs_watch_start` / `logs_watch_poll` / `logs_watch_stop` / `logs_watch_list` | Buffered log watch lifecycle so entries aren't missed between calls | [View details](./tools/logs) |
+| `mrt_logs_watch_start` / `mrt_logs_watch_poll` / `mrt_logs_watch_stop` / `mrt_logs_watch_list` | Buffered tail of Managed Runtime (MRT) application logs over a WebSocket | [View details](./tools/mrt-logs) |
 
 ### Documentation
 
@@ -82,6 +83,8 @@ Managed Runtime operations for PWA Kit and Storefront Next deployments.
 |------|-------------|---------------|
 | [`mrt_bundle_push`](./tools/mrt-bundle-push) | Build, push bundle (optionally deploy) | [View details](./tools/mrt-bundle-push) |
 
+> **Note:** the MRT log-tail tools (`mrt_logs_watch_*`) are available in the `DIAGNOSTICS`, `PWAV3`, and `STOREFRONTNEXT` toolsets — not the `MRT` toolset. See [MRT Log Tools](./tools/mrt-logs).
+
 ## PWAV3
 
 PWA Kit v3 development tools for building headless storefronts.
@@ -99,6 +102,7 @@ PWA Kit v3 development tools for building headless storefronts.
 | [`scapi_custom_api_generate_scaffold`](./tools/scapi-custom-api-generate-scaffold) | Generate a new custom SCAPI endpoint (schema, api.json, script.js) in an existing cartridge. | [View details](./tools/scapi-custom-api-generate-scaffold) |
 | [`scapi_custom_apis_get_status`](./tools/scapi-custom-apis-get-status) | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. | [View details](./tools/scapi-custom-apis-get-status) |
 | [`mrt_bundle_push`](./tools/mrt-bundle-push) | Build, push bundle (optionally deploy) | [View details](./tools/mrt-bundle-push) |
+| `mrt_logs_watch_start` / `mrt_logs_watch_poll` / `mrt_logs_watch_stop` / `mrt_logs_watch_list` | Tail Managed Runtime application logs over a WebSocket | [View details](./tools/mrt-logs) |
 
 ## SCAPI
 
@@ -138,12 +142,13 @@ Storefront Next development tools for building modern storefronts.
 | [`scapi_custom_api_generate_scaffold`](./tools/scapi-custom-api-generate-scaffold) | Generate a new custom SCAPI endpoint (schema, api.json, script.js) in an existing cartridge. | [View details](./tools/scapi-custom-api-generate-scaffold) |
 | [`scapi_custom_apis_get_status`](./tools/scapi-custom-apis-get-status) | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. | [View details](./tools/scapi-custom-apis-get-status) |
 | [`mrt_bundle_push`](./tools/mrt-bundle-push) | Build, push bundle (optionally deploy) | [View details](./tools/mrt-bundle-push) |
+| `mrt_logs_watch_start` / `mrt_logs_watch_poll` / `mrt_logs_watch_stop` / `mrt_logs_watch_list` | Tail Managed Runtime application logs over a WebSocket | [View details](./tools/mrt-logs) |
 
 **Figma-to-component tools** (`sfnext_start_figma_workflow`, `sfnext_analyze_component`, `sfnext_match_tokens_to_theme`) require additional setup: an external Figma MCP server and a valid Figma URL with `node-id`. See [Figma-to-Component Tools Setup](./figma-tools-setup) for prerequisites and configuration.
 
 ## Tool Deduplication
 
-Some tools appear in multiple toolsets (for example, `mrt_bundle_push`, `scapi_schemas_list`, `scapi_custom_api_generate_scaffold`, `scapi_custom_apis_get_status`). When using multiple toolsets, tools are automatically deduplicated, so you'll only see each tool once.
+Some tools appear in multiple toolsets (for example, `mrt_bundle_push`, the `mrt_logs_watch_*` tools, `scapi_schemas_list`, `scapi_custom_api_generate_scaffold`, `scapi_custom_apis_get_status`). When using multiple toolsets, tools are automatically deduplicated, so you'll only see each tool once.
 
 ## Next Steps
 

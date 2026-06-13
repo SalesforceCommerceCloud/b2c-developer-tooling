@@ -5,6 +5,7 @@
  */
 
 import {LogWatchRegistry} from './tools/diagnostics/log-watch-registry.js';
+import {MrtLogWatchRegistry} from './tools/diagnostics/mrt-log-watch-registry.js';
 import {DebugSessionRegistry} from './tools/diagnostics/session-registry.js';
 
 /**
@@ -24,20 +25,27 @@ import {DebugSessionRegistry} from './tools/diagnostics/session-registry.js';
  * client would also share the same context. Tools that mutate registries
  * (like the debug tools) should not assume single-tenant access.
  *
- * Both registries dedup on a stable key (host:client_id for debug,
- * hostname for log watches), so multi-agent use is functional but agents
- * may see each other's sessions/watches via list tools.
+ * The registries dedup on a stable key (host:client_id for debug, hostname for
+ * SFCC log watches, project/environment/origin for MRT log watches), so
+ * multi-agent use is functional but agents may see each other's
+ * sessions/watches via list tools.
  */
 export class ServerContext {
   readonly debugSessions: DebugSessionRegistry;
   readonly logWatches: LogWatchRegistry;
+  readonly mrtLogWatches: MrtLogWatchRegistry;
 
   constructor() {
     this.debugSessions = new DebugSessionRegistry();
     this.logWatches = new LogWatchRegistry();
+    this.mrtLogWatches = new MrtLogWatchRegistry();
   }
 
   async destroyAll(): Promise<void> {
-    await Promise.allSettled([this.debugSessions.destroyAll(), this.logWatches.destroyAll()]);
+    await Promise.allSettled([
+      this.debugSessions.destroyAll(),
+      this.logWatches.destroyAll(),
+      this.mrtLogWatches.destroyAll(),
+    ]);
   }
 }

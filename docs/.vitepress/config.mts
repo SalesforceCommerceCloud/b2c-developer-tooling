@@ -177,6 +177,7 @@ const referenceSidebar = [
         items: [
           {text: 'Script Debugger', link: '/mcp/tools/diagnostics'},
           {text: 'Logs', link: '/mcp/tools/logs'},
+          {text: 'MRT Logs', link: '/mcp/tools/mrt-logs'},
         ],
       },
       {
