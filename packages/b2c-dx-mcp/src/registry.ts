@@ -7,7 +7,7 @@
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {detectWorkspaceType, type ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
 import type {McpTool, Toolset, StartupFlags} from './utils/index.js';
-import {ALL_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES} from './utils/index.js';
+import {ALL_TOOLSETS, DEPRECATED_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES} from './utils/index.js';
 import type {B2CDxMcpServer} from './server.js';
 import type {Services} from './services.js';
 import type {ServerContext} from './server-context.js';
@@ -34,6 +34,9 @@ const BASE_TOOLSETS: Toolset[] = ['SCAPI', 'DIAGNOSTICS'];
 const PROJECT_TYPE_TOOLSETS: Record<ProjectType, Toolset[]> = {
   cartridges: ['CARTRIDGES'],
   'pwa-kit-v3': ['PWAV3', 'MRT'],
+  // Note: STOREFRONTNEXT_DEPRECATED is intentionally NOT auto-activated. The
+  // legacy sfnext_* tools are superseded by the storefront-next agent-skills
+  // plugins and must be explicitly requested via --toolsets.
   'storefront-next': ['STOREFRONTNEXT', 'MRT', 'CARTRIDGES'],
 };
 
@@ -97,6 +100,7 @@ export function createToolRegistry(
     PWAV3: [],
     SCAPI: [],
     STOREFRONTNEXT: [],
+    STOREFRONTNEXT_DEPRECATED: [],
   };
 
   // Collect all tools from all factories
@@ -233,9 +237,14 @@ export async function registerToolsets(
     );
   }
 
-  // Determine which toolsets to enable
+  // Determine which toolsets to enable.
+  // `ALL` expands to every toolset EXCEPT deprecated ones — deprecated toolsets
+  // must always be named explicitly.
   const validToolsets = toolsets.filter((t): t is Toolset => TOOLSETS.includes(t as Toolset));
-  const toolsetsToEnable = new Set<Toolset>(toolsets.includes(ALL_TOOLSETS) ? TOOLSETS : validToolsets);
+  const allNonDeprecatedToolsets = TOOLSETS.filter(
+    (t) => !DEPRECATED_TOOLSETS.includes(t as (typeof DEPRECATED_TOOLSETS)[number]),
+  );
+  const toolsetsToEnable = new Set<Toolset>(toolsets.includes(ALL_TOOLSETS) ? allNonDeprecatedToolsets : validToolsets);
 
   // Auto-discovery: If no valid toolsets AND no valid individual tools, detect workspace type.
   // This handles both: (1) no flags provided, and (2) all provided flags are invalid.

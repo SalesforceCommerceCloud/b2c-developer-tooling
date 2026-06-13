@@ -95,6 +95,27 @@ describe('MCP Server E2E', function () {
       await client.stop();
     });
 
+    it('excludes deprecated sfnext_* tools from --toolsets all', async () => {
+      const client = new McpE2EClient({args: ['--toolsets', 'all', '--allow-non-ga-tools']});
+      await client.start();
+      const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
+      const names = result.tools.map((t) => t.name);
+      expect(names.some((n) => n.startsWith('sfnext_'))).to.be.false;
+      await client.stop();
+    });
+
+    it('registers deprecated sfnext_* tools only when STOREFRONTNEXT_DEPRECATED is requested', async () => {
+      const client = new McpE2EClient({
+        args: ['--toolsets', 'STOREFRONTNEXT_DEPRECATED', '--allow-non-ga-tools'],
+      });
+      await client.start();
+      const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
+      const names = result.tools.map((t) => t.name);
+      expect(names).to.include('sfnext_get_guidelines');
+      expect(names).to.include('sfnext_add_page_designer_decorator');
+      await client.stop();
+    });
+
     it('filters tools by individual tool name', async () => {
       const client = new McpE2EClient({
         args: ['--tools', 'scapi_schemas_list,scapi_custom_apis_get_status', '--allow-non-ga-tools'],
@@ -207,7 +228,11 @@ describe('MCP Server E2E', function () {
       await client.start();
       const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
       const names = result.tools.map((t) => t.name);
-      expect(names.some((n) => n.includes('sfnext') || n.includes('scapi'))).to.be.true;
+      // Storefront Next auto-discovery enables the shared GA tools...
+      expect(names).to.include('mrt_bundle_push');
+      expect(names.some((n) => n.startsWith('scapi_'))).to.be.true;
+      // ...but NOT the deprecated sfnext_* tools, which are opt-in only.
+      expect(names.some((n) => n.startsWith('sfnext_'))).to.be.false;
       await client.stop();
     });
 
