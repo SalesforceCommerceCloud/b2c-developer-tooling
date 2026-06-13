@@ -24,9 +24,13 @@ import {createLogsWatchStartTool, type LogsWatchStartInjections} from './logs-wa
 import {createLogsWatchPollTool} from './logs-watch-poll.js';
 import {createLogsWatchStopTool} from './logs-watch-stop.js';
 import {createLogsWatchListTool} from './logs-watch-list.js';
+import {createMrtLogsWatchStartTool, type MrtLogsWatchStartInjections} from './mrt-logs-watch-start.js';
+import {createMrtLogsWatchPollTool} from './mrt-logs-watch-poll.js';
+import {createMrtLogsWatchStopTool} from './mrt-logs-watch-stop.js';
+import {createMrtLogsWatchListTool} from './mrt-logs-watch-list.js';
 
 export interface DiagnosticsToolInjections
-  extends LogsGetRecentInjections, LogsListFilesInjections, LogsWatchStartInjections {}
+  extends LogsGetRecentInjections, LogsListFilesInjections, LogsWatchStartInjections, MrtLogsWatchStartInjections {}
 
 export function createDiagnosticsTools(
   loadServices: () => Promise<Services> | Services,
@@ -51,5 +55,9 @@ export function createDiagnosticsTools(
     createLogsWatchPollTool(loadServices, serverContext),
     createLogsWatchStopTool(loadServices, serverContext),
     createLogsWatchListTool(loadServices, serverContext),
+    createMrtLogsWatchStartTool(loadServices, serverContext, injections),
+    createMrtLogsWatchPollTool(loadServices, serverContext),
+    createMrtLogsWatchStopTool(loadServices, serverContext),
+    createMrtLogsWatchListTool(loadServices, serverContext),
   ];
 }
