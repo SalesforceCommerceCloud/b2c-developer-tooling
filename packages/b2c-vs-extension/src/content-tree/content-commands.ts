@@ -11,6 +11,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
 import type {ContentFileSystemProvider} from './content-fs-provider.js';
+import {generateContentXML, importLibraryXML} from './content-fs-provider.js';
 import type {ContentTreeDataProvider, ContentTreeItem} from './content-tree-provider.js';
 import {openJobLog} from '../job-log-viewer.js';
 import {registerSafeCommand} from '../safety.js';
@@ -33,6 +34,7 @@ export function registerContentCommands(
   configProvider: ContentConfigProvider,
   treeProvider: ContentTreeDataProvider,
   _fsProvider: ContentFileSystemProvider,
+  treeView: vscode.TreeView<ContentTreeItem>,
 ): vscode.Disposable[] {
   const refresh = registerSafeCommand('b2c-dx.content.refresh', () => {
     configProvider.clearCache();
@@ -248,6 +250,86 @@ export function registerContentCommands(
     vscode.window.showInformationMessage('Site archive imported successfully.');
   });
 
+  // Reveal the canonical source of a shared content block under the "Content
+  // Blocks" group. Triggered when a user clicks a reference node, enforcing that
+  // a block is only ever viewed/edited in one place.
+  const revealBlock = registerSafeCommand('b2c-dx.content.revealBlock', async (node: ContentTreeItem) => {
+    if (!node || node.nodeType !== 'fragmentRef') return;
+    const source = treeProvider.getContentBlockSource(node.libraryId, node.isSiteLibrary, node.contentId);
+    if (!source) {
+      vscode.window.showWarningMessage(`Content block "${node.contentId}" was not found in the library.`);
+      return;
+    }
+    try {
+      await treeView.reveal(source, {select: true, focus: true, expand: true});
+    } catch {
+      // reveal can throw if the tree isn't ready; non-fatal.
+    }
+    // Open the block's XML so the reference click still lands somewhere useful.
+    await vscode.commands.executeCommand('vscode.open', ...(source.command?.arguments ?? []));
+  });
+
+  // Convert a component (assigned inline to a page/region) into a shared content
+  // block. On the platform this rewrites the element's <type> from component.* to
+  // fragment.* and adds a <display-name> on the SAME content object — no new id,
+  // no link rewiring (the parent link-type follows the parent's type). We mirror
+  // that exact mutation and re-import the single element.
+  const convertToBlock = registerSafeCommand('b2c-dx.content.convertToBlock', async (node: ContentTreeItem) => {
+    if (!node || node.nodeType !== 'component' || !node.libraryNode) {
+      return;
+    }
+    const instance = configProvider.getInstance();
+    if (!instance) {
+      vscode.window.showErrorMessage('No B2C Commerce instance configured.');
+      return;
+    }
+    const library = configProvider.getCachedLibrary(node.libraryId);
+    if (!library) {
+      vscode.window.showErrorMessage(`Library "${node.libraryId}" is not loaded. Expand it first.`);
+      return;
+    }
+
+    const xml = node.libraryNode.xml;
+    const currentType = (xml?.['type'] as string[] | undefined)?.[0];
+    if (!xml || !currentType || !currentType.startsWith('component.')) {
+      vscode.window.showErrorMessage('Only a component can be converted to a content block.');
+      return;
+    }
+
+    const displayName = await vscode.window.showInputBox({
+      title: 'Convert to Content Block',
+      prompt: 'Enter a display name for the new content block',
+      value: node.libraryNode.displayName ?? node.contentId,
+      validateInput: (value: string) => (value.trim() ? null : 'Enter a display name'),
+    });
+    if (displayName === undefined) return; // cancelled
+
+    // Mutate the in-memory xml: component.* -> fragment.* and inject display-name.
+    const fragmentType = `fragment.${currentType.slice('component.'.length)}`;
+    (xml['type'] as string[])[0] = fragmentType;
+    xml['display-name'] = [{$: {'xml:lang': 'x-default'}, _: displayName.trim()}];
+
+    try {
+      const contentXML = generateContentXML(library, node.contentId);
+      await vscode.window.withProgress(
+        {location: vscode.ProgressLocation.Notification, title: `Converting ${node.contentId} to a content block...`},
+        async () => {
+          await importLibraryXML(instance, node.libraryId, node.isSiteLibrary, contentXML);
+        },
+      );
+    } catch (err) {
+      await showJobError(err, instance, 'Convert to content block failed');
+      return;
+    } finally {
+      // Discard the transient in-place mutation; the tree re-fetches fresh state
+      // (whether the import succeeded or failed).
+      configProvider.invalidateLibrary(node.libraryId);
+    }
+
+    treeProvider.refresh();
+    vscode.window.showInformationMessage(`Converted "${node.contentId}" to content block "${displayName.trim()}".`);
+  });
+
   const browseWebdav = registerSafeCommand('b2c-dx.content.browseWebdav', async (node: ContentTreeItem) => {
     if (!node) return;
 
@@ -271,6 +353,8 @@ export function registerContentCommands(
     filter,
     clearFilter,
     importCmd,
+    revealBlock,
+    convertToBlock,
     browseWebdav,
   ];
 }

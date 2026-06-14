@@ -194,23 +194,25 @@ export async function exportContent(
     return true;
   });
 
-  // Step 3b: Promote matching components to root level
+  // Step 3b: Promote matching components and content blocks to root level
   const allNodes = [...library.nodes({traverseHidden: true, callbackHidden: true})];
   for (const node of allNodes) {
-    if (node.type === 'COMPONENT' && matchesId(node.id)) {
+    if ((node.type === 'COMPONENT' || node.type === 'FRAGMENT') && matchesId(node.id)) {
       library.promoteToRoot(node as LibraryNode);
     }
   }
 
-  // Step 4: Count pages, content, and components
+  // Step 4: Count pages, content, components, and content blocks
   let pageCount = 0;
   let contentCount = 0;
   let componentCount = 0;
+  let fragmentCount = 0;
   library.traverse(
     (node) => {
       if (node.type === 'PAGE') pageCount++;
       else if (node.type === 'CONTENT') contentCount++;
       else if (node.type === 'COMPONENT') componentCount++;
+      else if (node.type === 'FRAGMENT') fragmentCount++;
     },
     {traverseHidden: false},
   );
@@ -297,5 +299,6 @@ export async function exportContent(
     pageCount,
     contentCount,
     componentCount,
+    fragmentCount,
   };
 }

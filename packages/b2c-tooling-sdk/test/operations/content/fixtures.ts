@@ -159,3 +159,64 @@ export const MISSING_LINK_LIBRARY_XML = `<?xml version="1.0" encoding="UTF-8"?>
     </content-links>
   </content>
 </library>`;
+
+/**
+ * Library XML exercising Page Designer "content blocks" (fragment.* typed content).
+ *
+ * Mirrors the real shapes observed on a live instance (MarketStreet site library):
+ * - A leaf content block: discover-block (fragment.Content.contentCard) with a display-name.
+ * - A Layout content block: grid-block (fragment.Layout.grid) that keeps its regions;
+ *   its region children stay plain components (converting a block does NOT convert children).
+ * - The grid-block is SHARED: linked from BOTH home-page and promo-page (one definition,
+ *   two incoming links) — and the leaf discover-block is nested INSIDE grid-block's region.
+ * - An UNLINKED block: lonely-block (fragment.Content.contentCard) referenced by no page,
+ *   to prove getContentBlocks() scans the full content set, not just the linked tree.
+ * - grid-block's links omit <position> (self-closing); home-page's links carry <position>
+ *   to cover both serialization shapes.
+ */
+export const FRAGMENT_LIBRARY_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<library xmlns="http://www.demandware.com/xml/impex/library/2006-10-31" library-id="FragmentLib">
+  <content content-id="home-page">
+    <display-name xml:lang="x-default">Home Page</display-name>
+    <type>page.homePage</type>
+    <data xml:lang="x-default"><![CDATA[{"title": "Home"}]]></data>
+    <content-links>
+      <content-link content-id="grid-block" type="page.homePage.main">
+        <position>0.0</position>
+      </content-link>
+    </content-links>
+  </content>
+  <content content-id="promo-page">
+    <display-name xml:lang="x-default">Promo Page</display-name>
+    <type>page.homePage</type>
+    <data xml:lang="x-default"><![CDATA[{"title": "Promo"}]]></data>
+    <content-links>
+      <content-link content-id="grid-block" type="page.homePage.main">
+        <position>0.0</position>
+      </content-link>
+    </content-links>
+  </content>
+  <content content-id="grid-block">
+    <display-name xml:lang="x-default">GridBlock</display-name>
+    <type>fragment.Layout.grid</type>
+    <data xml:lang="x-default"><![CDATA[{"columns": "2"}]]></data>
+    <content-links>
+      <content-link content-id="plain-card" type="fragment.Layout.grid.column_1"/>
+      <content-link content-id="discover-block" type="fragment.Layout.grid.column_2"/>
+    </content-links>
+  </content>
+  <content content-id="plain-card">
+    <type>component.Content.contentCard</type>
+    <data xml:lang="x-default"><![CDATA[{"title": "Plain Card"}]]></data>
+  </content>
+  <content content-id="discover-block">
+    <display-name xml:lang="x-default">DiscoverBlock</display-name>
+    <type>fragment.Content.contentCard</type>
+    <data xml:lang="x-default"><![CDATA[{"title": "Discover"}]]></data>
+  </content>
+  <content content-id="lonely-block">
+    <display-name xml:lang="x-default">LonelyBlock</display-name>
+    <type>fragment.Content.contentCard</type>
+    <data xml:lang="x-default"><![CDATA[{"title": "Unlinked"}]]></data>
+  </content>
+</library>`;

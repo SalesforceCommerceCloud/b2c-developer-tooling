@@ -11,7 +11,28 @@ import type {ContentConfigProvider} from './content-config.js';
 import {contentItemUri} from './content-fs-provider.js';
 import {webdavPathToUri} from '../webdav-tree/webdav-fs-provider.js';
 
-type ContentNodeType = 'library' | 'page' | 'content' | 'component' | 'static';
+/**
+ * Tree node kinds.
+ *
+ * Content blocks (SDK `FRAGMENT` nodes) are shared/reusable singletons, so they
+ * are rendered two ways:
+ * - `contentBlockGroup`: a synthetic per-library group node ("Content Blocks")
+ *   that is the single source of truth — it lists every block with its full
+ *   child subtree, and is the only place a block can be opened/edited.
+ * - `fragment`: a block as it appears *inside the group* (expandable source).
+ * - `fragmentRef`: a block as it appears *anywhere it is linked* (under a page,
+ *   component, or another block) — a non-expanding pointer that reveals the
+ *   source in the group when clicked. Editing only ever happens via the source.
+ */
+type ContentNodeType =
+  | 'library'
+  | 'page'
+  | 'content'
+  | 'component'
+  | 'static'
+  | 'contentBlockGroup'
+  | 'fragment'
+  | 'fragmentRef';
 
 /**
  * Build a stable path-from-root string for a LibraryNode. Used to produce a
@@ -36,32 +57,23 @@ export class ContentTreeItem extends vscode.TreeItem {
     readonly contentId: string,
     readonly libraryNode?: LibraryNode,
   ) {
-    const label =
-      nodeType === 'library'
-        ? isSiteLibrary
-          ? `${libraryId} [site]`
-          : libraryId
-        : nodeType === 'component' && libraryNode?.typeId
-          ? libraryNode.typeId
-          : contentId;
-
-    const collapsible =
-      nodeType === 'static'
-        ? vscode.TreeItemCollapsibleState.None
-        : nodeType === 'library' || nodeType === 'page'
-          ? vscode.TreeItemCollapsibleState.Collapsed
-          : (libraryNode?.children.length ?? 0) > 0
-            ? vscode.TreeItemCollapsibleState.Collapsed
-            : vscode.TreeItemCollapsibleState.None;
+    const label = ContentTreeItem.buildLabel(nodeType, libraryId, isSiteLibrary, contentId, libraryNode);
+    const collapsible = ContentTreeItem.buildCollapsibleState(nodeType, libraryNode);
 
     super(label, collapsible);
 
-    // Stable id: libraries are unique by id+scope; non-library nodes need a
-    // path-from-root because the same content id can appear under multiple
-    // parents (a component can be referenced by several pages).
+    // Stable id: libraries are unique by id+scope; the synthetic group is unique
+    // per library; a source fragment is unique by its content id (the block is a
+    // single shared object, regardless of where it is linked); other content
+    // nodes (incl. fragment references) need a path-from-root because the same
+    // content id can appear under multiple parents.
     const libScope = `${libraryId}:${isSiteLibrary ? 'site' : 'shared'}`;
     if (nodeType === 'library') {
       this.id = `lib:${libScope}`;
+    } else if (nodeType === 'contentBlockGroup') {
+      this.id = `content:contentBlockGroup:${libScope}`;
+    } else if (nodeType === 'fragment') {
+      this.id = `content:fragment:${libScope}:${contentId}`;
     } else {
       const ancestorPath = libraryNode ? buildLibraryNodePath(libraryNode) : contentId;
       this.id = `content:${nodeType}:${libScope}:${ancestorPath}`;
@@ -69,14 +81,16 @@ export class ContentTreeItem extends vscode.TreeItem {
 
     this.contextValue = nodeType;
 
-    // Show content ID as description for components (label is typeId)
+    // Descriptions
     if (nodeType === 'component' && libraryNode?.typeId) {
+      // Show content ID as description for components (label is typeId)
       this.description = contentId;
-    }
-
-    // Type suffix for content assets
-    if (nodeType === 'content') {
+    } else if (nodeType === 'content') {
       this.description = 'CONTENT ASSET';
+    } else if (nodeType === 'fragment' || nodeType === 'fragmentRef') {
+      // Reference nodes get an arrow affordance signalling "shared block".
+      this.description =
+        nodeType === 'fragmentRef' ? `↗ ${libraryNode?.typeId ?? 'content block'}` : (libraryNode?.typeId ?? undefined);
     }
 
     // Icons
@@ -96,6 +110,15 @@ export class ContentTreeItem extends vscode.TreeItem {
       case 'static':
         this.iconPath = new vscode.ThemeIcon('file-media');
         break;
+      case 'contentBlockGroup':
+        this.iconPath = new vscode.ThemeIcon('symbol-structure');
+        break;
+      case 'fragment':
+        this.iconPath = new vscode.ThemeIcon('symbol-field');
+        break;
+      case 'fragmentRef':
+        this.iconPath = new vscode.ThemeIcon('references');
+        break;
     }
 
     // Click command for openable items
@@ -107,7 +130,22 @@ export class ContentTreeItem extends vscode.TreeItem {
         title: 'Open Static Asset',
         arguments: [webdavPathToUri(webdavPath)],
       };
-    } else if (nodeType !== 'library') {
+    } else if (nodeType === 'fragmentRef') {
+      // A reference is navigational, not editable: reveal the canonical source
+      // under the Content Blocks group so all edits funnel through one place.
+      this.command = {
+        command: 'b2c-dx.content.revealBlock',
+        title: 'Reveal Content Block',
+        arguments: [this],
+      };
+    } else if (nodeType === 'fragment') {
+      // The source block opens its XML for viewing/editing.
+      this.command = {
+        command: 'vscode.open',
+        title: 'Open Content Block',
+        arguments: [contentItemUri(libraryId, isSiteLibrary, contentId)],
+      };
+    } else if (nodeType === 'page' || nodeType === 'content' || nodeType === 'component') {
       const uri = contentItemUri(libraryId, isSiteLibrary, contentId);
       this.command = {
         command: 'vscode.open',
@@ -115,6 +153,46 @@ export class ContentTreeItem extends vscode.TreeItem {
         arguments: [uri],
       };
     }
+  }
+
+  private static buildLabel(
+    nodeType: ContentNodeType,
+    libraryId: string,
+    isSiteLibrary: boolean,
+    contentId: string,
+    libraryNode?: LibraryNode,
+  ): string {
+    switch (nodeType) {
+      case 'library':
+        return isSiteLibrary ? `${libraryId} [site]` : libraryId;
+      case 'contentBlockGroup':
+        return 'Content Blocks';
+      case 'fragment':
+      case 'fragmentRef':
+        // Content blocks are identified by their display name.
+        return libraryNode?.displayName ?? contentId;
+      case 'component':
+        return libraryNode?.typeId ?? contentId;
+      default:
+        return contentId;
+    }
+  }
+
+  private static buildCollapsibleState(
+    nodeType: ContentNodeType,
+    libraryNode?: LibraryNode,
+  ): vscode.TreeItemCollapsibleState {
+    // References and static assets are always leaves; the group is always
+    // expandable. Everything else expands only when it has children.
+    if (nodeType === 'static' || nodeType === 'fragmentRef') {
+      return vscode.TreeItemCollapsibleState.None;
+    }
+    if (nodeType === 'library' || nodeType === 'page' || nodeType === 'contentBlockGroup') {
+      return vscode.TreeItemCollapsibleState.Collapsed;
+    }
+    return (libraryNode?.children.length ?? 0) > 0
+      ? vscode.TreeItemCollapsibleState.Collapsed
+      : vscode.TreeItemCollapsibleState.None;
   }
 }
 
@@ -143,6 +221,18 @@ export class ContentTreeDataProvider implements vscode.TreeDataProvider<ContentT
     return element;
   }
 
+  getParent(element: ContentTreeItem): ContentTreeItem | undefined {
+    // Only the source-fragment → group → library chain needs a parent, which is
+    // what TreeView.reveal walks when surfacing a block from a reference click.
+    if (element.nodeType === 'fragment') {
+      return new ContentTreeItem('contentBlockGroup', element.libraryId, element.isSiteLibrary, element.libraryId);
+    }
+    if (element.nodeType === 'contentBlockGroup') {
+      return new ContentTreeItem('library', element.libraryId, element.isSiteLibrary, element.libraryId);
+    }
+    return undefined;
+  }
+
   async getChildren(element?: ContentTreeItem): Promise<ContentTreeItem[]> {
     if (!element) {
       return this.getRootChildren();
@@ -152,7 +242,25 @@ export class ContentTreeDataProvider implements vscode.TreeDataProvider<ContentT
       return this.getLibraryChildren(element);
     }
 
-    // PAGE, CONTENT, COMPONENT: return children from the libraryNode reference
+    // The synthetic group lists every content block as an expandable source.
+    if (element.nodeType === 'contentBlockGroup') {
+      const library = this.configProvider.getCachedLibrary(element.libraryId);
+      if (!library) {
+        return [];
+      }
+      return library
+        .getContentBlocks()
+        .map((node) => this.nodeToTreeItem(node, element.libraryId, element.isSiteLibrary, 'source'));
+    }
+
+    // References are leaves — never expand them (avoids duplicating a shared
+    // block's subtree and any cycle risk).
+    if (element.nodeType === 'fragmentRef') {
+      return [];
+    }
+
+    // PAGE, CONTENT, COMPONENT, and source FRAGMENT: render children from the
+    // libraryNode reference. A fragment child is rendered as a reference.
     if (element.libraryNode) {
       return element.libraryNode.children.map((node) =>
         this.nodeToTreeItem(node, element.libraryId, element.isSiteLibrary),
@@ -160,6 +268,19 @@ export class ContentTreeDataProvider implements vscode.TreeDataProvider<ContentT
     }
 
     return [];
+  }
+
+  /**
+   * Find the cached source-fragment LibraryNode for a content id, so a reference
+   * click can reveal the canonical block under the Content Blocks group.
+   */
+  getContentBlockSource(libraryId: string, isSiteLibrary: boolean, contentId: string): ContentTreeItem | undefined {
+    const library = this.configProvider.getCachedLibrary(libraryId);
+    if (!library) {
+      return undefined;
+    }
+    const block = library.getContentBlocks().find((b) => b.id === contentId);
+    return block ? this.nodeToTreeItem(block, libraryId, isSiteLibrary, 'source') : undefined;
   }
 
   private getRootChildren(): ContentTreeItem[] {
@@ -223,11 +344,36 @@ export class ContentTreeDataProvider implements vscode.TreeDataProvider<ContentT
       children = children.filter((node) => node.id.toLowerCase().includes(lower));
     }
 
-    return children.map((node) => this.nodeToTreeItem(node, element.libraryId, element.isSiteLibrary));
+    const items = children.map((node) => this.nodeToTreeItem(node, element.libraryId, element.isSiteLibrary));
+
+    // Prepend the synthetic "Content Blocks" group when the library has any
+    // fragments. This group is the source of truth for shared blocks.
+    if (library.getContentBlocks().length > 0) {
+      items.unshift(
+        new ContentTreeItem('contentBlockGroup', element.libraryId, element.isSiteLibrary, element.libraryId),
+      );
+    }
+
+    return items;
   }
 
-  private nodeToTreeItem(node: LibraryNode, libraryId: string, isSiteLibrary: boolean): ContentTreeItem {
-    const nodeType = node.type.toLowerCase() as ContentNodeType;
+  /**
+   * Convert a LibraryNode into a tree item. A FRAGMENT renders as an expandable
+   * source only inside the Content Blocks group (`context === 'source'`); in any
+   * other position it renders as a non-expanding reference.
+   */
+  private nodeToTreeItem(
+    node: LibraryNode,
+    libraryId: string,
+    isSiteLibrary: boolean,
+    context: 'source' | 'inline' = 'inline',
+  ): ContentTreeItem {
+    let nodeType: ContentNodeType;
+    if (node.type === 'FRAGMENT') {
+      nodeType = context === 'source' ? 'fragment' : 'fragmentRef';
+    } else {
+      nodeType = node.type.toLowerCase() as ContentNodeType;
+    }
     return new ContentTreeItem(nodeType, libraryId, isSiteLibrary, node.id, node);
   }
 }
