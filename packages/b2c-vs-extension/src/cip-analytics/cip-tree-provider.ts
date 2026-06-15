@@ -7,6 +7,7 @@ import {listCipReports} from '@salesforce/b2c-tooling-sdk/operations/cip';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import type {CipConnectionService} from './cip-connection-service.js';
+import type {CipQueryLibraryService} from './cip-query-library-service.js';
 import {
   CipAddConfigTreeItem,
   CipCategoryTreeItem,
@@ -14,6 +15,9 @@ import {
   CipRealmInfoTreeItem,
   CipRealmTreeItem,
   CipReportTreeItem,
+  CipSavedQueriesEmptyTreeItem,
+  CipSavedQueriesSectionTreeItem,
+  CipSavedQueryTreeItem,
   CipSectionTreeItem,
   CipTablesBrowserTreeItem,
   type CipTreeNode,
@@ -23,8 +27,8 @@ import {
  * Tree data provider for CIP Analytics.
  *
  * Root level shows one node per saved realm. Each realm expands to reveal
- * Query Builder, Entity Browser and Curated Reports as children — matching
- * the existing UI but scoped per realm.
+ * Query Builder, Entity Browser, Saved Queries, and Curated Reports as
+ * children — matching the existing UI but scoped per realm.
  */
 export class CipAnalyticsTreeDataProvider implements vscode.TreeDataProvider<CipTreeNode> {
   private _onDidChangeTreeData = new vscode.EventEmitter<CipTreeNode | undefined | void>();
@@ -33,10 +37,15 @@ export class CipAnalyticsTreeDataProvider implements vscode.TreeDataProvider<Cip
   constructor(
     private readonly configProvider: B2CExtensionConfig,
     private readonly connection: CipConnectionService,
+    private readonly queryLibrary: CipQueryLibraryService,
     private readonly log: vscode.OutputChannel,
   ) {
     // Re-render realm status icons whenever connection state changes.
     this.connection.onDidChange(() => this._onDidChangeTreeData.fire());
+    // Re-render saved-query leaves whenever the library changes (save / edit
+    // / delete from any panel or tree command). This is what keeps the
+    // sidebar and the toolbar dropdown in sync.
+    this.queryLibrary.onDidChange(() => this._onDidChangeTreeData.fire());
   }
 
   refresh(): void {
@@ -56,13 +65,16 @@ export class CipAnalyticsTreeDataProvider implements vscode.TreeDataProvider<Cip
       return this.getRealmChildren(element);
     }
     if (element instanceof CipRealmInfoTreeItem) {
-      return this.getTenantChildren(element.realmId);
+      return this.getTenantChildren(element);
     }
     if (element instanceof CipSectionTreeItem) {
       return this.getSectionChildren(element);
     }
     if (element instanceof CipCategoryTreeItem) {
       return this.getCategoryChildren(element);
+    }
+    if (element instanceof CipSavedQueriesSectionTreeItem) {
+      return this.getSavedQueriesChildren(element);
     }
     return [];
   }
@@ -88,11 +100,21 @@ export class CipAnalyticsTreeDataProvider implements vscode.TreeDataProvider<Cip
     return children;
   }
 
-  /** Tenant node children: Query Builder + Entity Browser + Curated Reports. */
-  private getTenantChildren(realmId: string): CipTreeNode[] {
+  /**
+   * Tenant node children: Query Builder + Entity Browser + Saved Queries +
+   * Curated Reports. Saved Queries comes before Curated Reports because
+   * it's typically the user's own work — more relevant to them than the
+   * library shipped with the SDK.
+   */
+  private getTenantChildren(element: CipRealmInfoTreeItem): CipTreeNode[] {
+    const realmId = element.realmId;
+    const realm = this.connection.getRealms().find((r) => r.id === realmId);
+    const tenantId = realm?.tenantId ?? '';
+    const savedCount = tenantId ? this.queryLibrary.listForTenant(tenantId).length : 0;
     return [
       new CipQueryBuilderTreeItem(realmId),
       new CipTablesBrowserTreeItem(realmId),
+      new CipSavedQueriesSectionTreeItem(realmId, tenantId, savedCount),
       new CipSectionTreeItem('reports', 'Curated Reports', realmId),
     ];
   }
@@ -119,5 +141,18 @@ export class CipAnalyticsTreeDataProvider implements vscode.TreeDataProvider<Cip
       .filter((r) => r.category === element.category)
       .sort((a, b) => a.name.localeCompare(b.name))
       .map((r) => new CipReportTreeItem(r, element.realmId));
+  }
+
+  /**
+   * Saved Queries section children: tenant-scoped queries newest-first, or a
+   * single empty-state leaf when there are none. We deliberately don't show
+   * cross-tenant queries here — the toolbar dropdown already does that with
+   * a "Other tenants" group. The sidebar stays focused.
+   */
+  private getSavedQueriesChildren(element: CipSavedQueriesSectionTreeItem): CipTreeNode[] {
+    if (!element.tenantId) return [new CipSavedQueriesEmptyTreeItem(element.realmId)];
+    const queries = this.queryLibrary.listForTenant(element.tenantId);
+    if (queries.length === 0) return [new CipSavedQueriesEmptyTreeItem(element.realmId)];
+    return queries.map((q) => new CipSavedQueryTreeItem(q, element.realmId));
   }
 }

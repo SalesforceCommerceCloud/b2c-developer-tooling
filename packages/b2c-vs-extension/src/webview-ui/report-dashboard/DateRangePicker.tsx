@@ -7,42 +7,15 @@
 // Reused by report dashboards that declare both a `from` and `to` date param.
 import * as React from 'react';
 import {useEffect, useState} from 'react';
+import {resolvePreset, type DateRangePreset} from '../shared/dateRange.js';
 
 export type DateRangeValue = {from: string; to: string} | null;
-export type Preset = 'last-week' | 'last-month' | 'last-6-months' | 'custom';
+export type Preset = DateRangePreset;
 
 interface Props {
   onChange: (value: DateRangeValue) => void;
   /** Surfaces validation messages back to the parent (e.g., custom range with empty inputs). */
   onError?: (message: string | null) => void;
-}
-
-function toISODate(d: Date): string {
-  return d.toISOString().split('T')[0];
-}
-
-function resolvePreset(preset: Preset): {from: string; to: string} | null {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (preset === 'last-week') {
-    const day = today.getDay();
-    const lastMonday = new Date(today);
-    lastMonday.setDate(today.getDate() - ((day + 6) % 7) - 7);
-    const lastSunday = new Date(lastMonday);
-    lastSunday.setDate(lastMonday.getDate() + 6);
-    return {from: toISODate(lastMonday), to: toISODate(lastSunday)};
-  }
-  if (preset === 'last-month') {
-    const first = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-    const last = new Date(today.getFullYear(), today.getMonth(), 0);
-    return {from: toISODate(first), to: toISODate(last)};
-  }
-  if (preset === 'last-6-months') {
-    const first = new Date(today.getFullYear(), today.getMonth() - 6, 1);
-    const last = new Date(today.getFullYear(), today.getMonth(), 0);
-    return {from: toISODate(first), to: toISODate(last)};
-  }
-  return null;
 }
 
 export function DateRangePicker({onChange, onError}: Props) {

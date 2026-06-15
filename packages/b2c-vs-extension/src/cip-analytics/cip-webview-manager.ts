@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {
+  buildCipReportSql,
   executeCipReport,
   listCipTables,
   describeCipTable,
@@ -15,7 +16,7 @@ import * as os from 'node:os';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import type {CipConnectionService} from './cip-connection-service.js';
-import type {CipQueryLibraryService} from './cip-query-library-service.js';
+import {CipDuplicateNameError, type CipQueryLibraryService} from './cip-query-library-service.js';
 
 type QueryResultData = {columns: string[]; rows: Array<Record<string, unknown>>};
 
@@ -46,7 +47,86 @@ interface ReportContextSeed {
     required?: boolean;
     min?: number;
     max?: number;
+    options?: string[];
+    multiple?: boolean;
+    default?: string;
   }>;
+}
+
+function getOptionalArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const strings = value.filter((item): item is string => typeof item === 'string');
+  return strings.length > 0 ? strings : undefined;
+}
+
+const REMOTE_INCLUDE_REPORT_NAME = 'remote-include-performance';
+const REMOTE_INCLUDE_TABLE_NAME = 'ccdw_aggr_include_controller_request';
+const REMOTE_INCLUDE_PARENT_SELECT = 'SELECT ic.main_controller_name, ic.controller_name';
+const REMOTE_INCLUDE_PARENT_GROUP = 'GROUP BY ic.main_controller_name, ic.controller_name';
+
+/**
+ * One-shot intent fired at a Query Builder panel — load a saved query into
+ * the editor, or open the rename modal for one. Constructed by the host
+ * (`openQueryBuilder`), consumed by the webview's inbound dispatcher.
+ */
+type QueryBuilderAction =
+  | {kind: 'loadSavedQuery'; query: SerializableSavedQuery}
+  | {kind: 'renameSavedQuery'; query: SerializableSavedQuery};
+
+/** Plain-data view of a saved query the webview safely receives over postMessage. */
+interface SerializableSavedQuery {
+  id: string;
+  name: string;
+  sql: string;
+  description?: string;
+  tenantId: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/**
+ * Strip the boilerplate that wraps every Avatica error so the actual
+ * server-reported cause leads the message. The CIP gateway prepends
+ * something like:
+ *
+ *   `CIP Avatica request failed (400 Bad Request): Error while executing SQL
+ *    "<the entire SQL>": <real cause>`
+ */
+function stripPlumbingPrefix(raw: string): string {
+  let s = raw.trim();
+  // Remove the outer "CIP Avatica request failed (...): " wrapper.
+  s = s.replace(/^CIP Avatica request failed \([^)]*\):\s*/i, '');
+  s = s.replace(/^Error while executing SQL\s+"[\s\S]*?":\s*/i, '');
+  return s.trim() || raw.trim();
+}
+
+/**
+ * Map the inner Calcite/Phoenix error message to a short, scannable headline.
+ * Falls back to a generic "Query rejected by CIP" if no pattern matches —
+ * the details line still carries the full cause, so we never lose info.
+ */
+function headlineForQueryError(detail: string): string {
+  if (/not being grouped/i.test(detail)) return 'Column needs a GROUP BY or aggregate';
+  if (/column .* does not exist/i.test(detail) || /unknown column/i.test(detail)) return 'Unknown column';
+  if (/table .* does not exist/i.test(detail) || /unknown table/i.test(detail)) return 'Unknown table';
+  if (/invalid input syntax for type/i.test(detail)) return "Value type doesn't match column";
+  if (/parse error/i.test(detail) || /syntax error/i.test(detail)) return 'SQL syntax error';
+  if (/duplicate column/i.test(detail)) return 'Duplicate column in result';
+  if (/division by zero/i.test(detail)) return 'Division by zero';
+  return 'Query rejected by CIP';
+}
+
+function rewriteRemoteIncludeParentColumn(sql: string, parentColumn: string): string {
+  if (parentColumn === 'main_controller_name') {
+    return sql;
+  }
+
+  const selectReplacement = `SELECT ic.${parentColumn} AS main_controller_name, ic.controller_name`;
+  const groupReplacement = `GROUP BY ic.${parentColumn}, ic.controller_name`;
+
+  return sql
+    .replace(REMOTE_INCLUDE_PARENT_SELECT, selectReplacement)
+    .replace(REMOTE_INCLUDE_PARENT_GROUP, groupReplacement);
 }
 
 /**
@@ -59,14 +139,32 @@ export class CipWebviewManager {
   private tablesInFlight = new WeakMap<vscode.WebviewPanel, Promise<void>>();
   /** De-duplicates concurrent Describe Table calls per panel+table. */
   private describeInFlight = new WeakMap<vscode.WebviewPanel, Map<string, Promise<void>>>();
+  /** Cache of site-id dropdown options per active tenant+host with TTL. */
+  private siteOptionsCache = new Map<string, {expiresAt: number; sites: string[]}>();
+  /** De-dupes concurrent site-list loads per active tenant+host. */
+  private sitesInFlight = new Map<string, Promise<string[]>>();
+  /** Last-seen active connection identity used to invalidate site cache on realm switch/update. */
+  private activeSiteCacheKey: string | null = null;
 
   private readonly disposables: vscode.Disposable[] = [];
 
   /** Tracks which open panels are Query Builder panels — only those care about library updates. */
   private readonly queryBuilderPanels = new Set<vscode.WebviewPanel>();
 
+  /**
+   * One-shot action to dispatch to a Query Builder panel as soon as the
+   * webview is ready. Set by `openQueryBuilder` when the caller asks for a
+   * load/rename, drained on the next `listSavedQueries` message (the
+   * webview's first-mount signal). Avoids the post-mount postMessage race:
+   * if we fired the message during `createWebviewPanel`, React might not
+   * have mounted yet and the message would be silently dropped.
+   */
+  private readonly pendingActions = new WeakMap<vscode.WebviewPanel, QueryBuilderAction>();
+
   /** Metadata/system table names returned by Avatica that are not tenant data entities. */
   private static readonly NON_DATA_TABLES = new Set(['quota', 'tables', 'columns']);
+  /** Site list can be cached briefly; realm/host changes still invalidate immediately. */
+  private static readonly SITE_OPTIONS_TTL_MS = 10 * 60 * 1000;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -78,6 +176,13 @@ export class CipWebviewManager {
     // Forward connection status to every open panel so each can refresh its banner.
     this.disposables.push(
       this.connection.onDidChange((c) => {
+        const nextCacheKey = c.tenantId ? `${c.tenantId}@@${this.connection.resolvedHost()}` : null;
+        if (nextCacheKey !== this.activeSiteCacheKey) {
+          this.siteOptionsCache.clear();
+          this.sitesInFlight.clear();
+          this.activeSiteCacheKey = nextCacheKey;
+        }
+
         for (const panel of this.panels.values()) {
           panel.webview.postMessage({command: 'connectionState', connection: c});
         }
@@ -260,14 +365,23 @@ export class CipWebviewManager {
 
   /**
    * Open or reveal the Query Builder webview (inspired by SOQL Builder).
+   *
+   * `options.action` is a one-shot intent the panel runs as soon as it's
+   * mounted — load a saved query into the editor, or open the rename modal.
+   * For an existing (already-mounted) panel we postMessage immediately. For
+   * a brand-new panel we stash the action in `pendingActions` and the
+   * webview drains it via its first `listSavedQueries` request, which only
+   * fires after React has mounted and the inbound listener is up.
    */
-  async openQueryBuilder(realmId?: string): Promise<void> {
+  async openQueryBuilder(realmId?: string, options?: {action?: QueryBuilderAction}): Promise<void> {
     await this.ensureRealmActive(realmId);
     const columnKey = `cipAnalytics-queryBuilder-${realmId ?? 'default'}`;
+    const action = options?.action;
 
     const existingPanel = this.panels.get(columnKey);
     if (existingPanel) {
       existingPanel.reveal(vscode.ViewColumn.One);
+      if (action) this.dispatchAction(existingPanel, action);
       return;
     }
 
@@ -279,6 +393,7 @@ export class CipWebviewManager {
 
     this.panels.set(columnKey, panel);
     this.queryBuilderPanels.add(panel);
+    if (action) this.pendingActions.set(panel, action);
     panel.webview.html = this.getQueryBuilderContent(panel.webview);
 
     panel.webview.onDidReceiveMessage(
@@ -293,6 +408,7 @@ export class CipWebviewManager {
       () => {
         this.panels.delete(columnKey);
         this.queryBuilderPanels.delete(panel);
+        this.pendingActions.delete(panel);
       },
       null,
       this.context.subscriptions,
@@ -302,6 +418,33 @@ export class CipWebviewManager {
     this.sendSavedQueries(panel);
 
     this.log.appendLine('[CIP Analytics] Opened Query Builder');
+  }
+
+  /**
+   * Resolve a saved-query id to a plain-data record safe for postMessage.
+   * Strips the in-memory references that the webview has no use for.
+   */
+  resolveSavedQuery(queryId: string): SerializableSavedQuery | null {
+    const entry = this.queryLibrary.get(queryId);
+    if (!entry) return null;
+    return {
+      id: entry.id,
+      name: entry.name,
+      sql: entry.sql,
+      description: entry.description,
+      tenantId: entry.tenantId,
+      createdAt: entry.createdAt,
+      updatedAt: entry.updatedAt,
+    };
+  }
+
+  /** Forward a one-shot action to a panel that's already past first-mount. */
+  private dispatchAction(panel: vscode.WebviewPanel, action: QueryBuilderAction): void {
+    if (action.kind === 'loadSavedQuery') {
+      panel.webview.postMessage({command: 'loadSavedQuery', query: action.query});
+    } else if (action.kind === 'renameSavedQuery') {
+      panel.webview.postMessage({command: 'renameSavedQuery', query: action.query});
+    }
   }
 
   /**
@@ -399,6 +542,15 @@ export class CipWebviewManager {
       }
       case 'listSavedQueries': {
         this.sendSavedQueries(panel);
+        // The webview's first-mount signal — dispatch any queued action
+        // now that React is up and listening. The deletion makes this
+        // genuinely one-shot: a future `listSavedQueries` (e.g. a re-mount
+        // after Reload Webview) won't replay a stale action.
+        const pending = this.pendingActions.get(panel);
+        if (pending) {
+          this.pendingActions.delete(panel);
+          this.dispatchAction(panel, pending);
+        }
         break;
       }
       case 'saveQuery': {
@@ -447,14 +599,22 @@ export class CipWebviewManager {
       panel.webview.postMessage({command: 'savedQueryError', error: 'Connect to a CIP realm before saving.'});
       return;
     }
-    const entry = await this.queryLibrary.save({
-      name,
-      sql,
-      description: params.description,
-      tenantId: conn.tenantId,
-    });
-    this.log.appendLine(`[CIP Query Builder] Saved query "${entry.name}" (${entry.id})`);
-    panel.webview.postMessage({command: 'savedQuerySaved', query: entry});
+    try {
+      const entry = await this.queryLibrary.save({
+        name,
+        sql,
+        description: params.description,
+        tenantId: conn.tenantId,
+      });
+      this.log.appendLine(`[CIP Query Builder] Saved query "${entry.name}" (${entry.id})`);
+      panel.webview.postMessage({command: 'savedQuerySaved', query: entry});
+    } catch (err) {
+      if (err instanceof CipDuplicateNameError) {
+        panel.webview.postMessage({command: 'savedQueryError', error: err.message});
+        return;
+      }
+      throw err;
+    }
   }
 
   /** Patch an existing saved query (rename / edit description / overwrite SQL). */
@@ -468,13 +628,21 @@ export class CipWebviewManager {
     if (typeof params.name === 'string') patch.name = params.name;
     if (typeof params.sql === 'string') patch.sql = params.sql;
     if (typeof params.description === 'string') patch.description = params.description;
-    const next = await this.queryLibrary.update(id, patch);
-    if (!next) {
-      panel.webview.postMessage({command: 'savedQueryError', error: 'Query not found.'});
-      return;
+    try {
+      const next = await this.queryLibrary.update(id, patch);
+      if (!next) {
+        panel.webview.postMessage({command: 'savedQueryError', error: 'Query not found.'});
+        return;
+      }
+      this.log.appendLine(`[CIP Query Builder] Updated query "${next.name}" (${next.id})`);
+      panel.webview.postMessage({command: 'savedQueryUpdated', query: next});
+    } catch (err) {
+      if (err instanceof CipDuplicateNameError) {
+        panel.webview.postMessage({command: 'savedQueryError', error: err.message});
+        return;
+      }
+      throw err;
     }
-    this.log.appendLine(`[CIP Query Builder] Updated query "${next.name}" (${next.id})`);
-    panel.webview.postMessage({command: 'savedQueryUpdated', query: next});
   }
 
   /** Delete a saved query after a native VS Code confirmation prompt. */
@@ -531,10 +699,14 @@ export class CipWebviewManager {
         },
       });
     } catch (error) {
-      const errorMessage = CipWebviewManager.formatConnectionError(error);
-      this.log.appendLine(`[CIP Query Builder] Query failed: ${errorMessage}`);
-      this.connection.markDisconnected(errorMessage);
-      panel.webview.postMessage({command: 'queryError', error: errorMessage});
+      const {message, headline, details, isConnectionIssue} = CipWebviewManager.classifyQueryError(error);
+      this.log.appendLine(`[CIP Query Builder] Query failed: ${message}`);
+      // Only flip the connection to disconnected for genuine connection
+      // problems (auth, network, rate-limit, timeout).
+      if (isConnectionIssue) {
+        this.connection.markDisconnected(message);
+      }
+      panel.webview.postMessage({command: 'queryError', error: message, headline, details});
     }
   }
 
@@ -543,26 +715,160 @@ export class CipWebviewManager {
    * Pure (no `this`) so it can be unit-tested in isolation.
    */
   static formatConnectionError(error: unknown): string {
+    return CipWebviewManager.classifyQueryError(error).message;
+  }
+
+  /**
+   * Classify a query/connection error into a user-friendly message and a
+   * flag indicating whether it represents a real connection problem.
+   */
+  static classifyQueryError(error: unknown): {
+    message: string;
+    headline?: string;
+    details?: string;
+    isConnectionIssue: boolean;
+  } {
     const msg = error instanceof Error ? error.message : String(error);
 
     // 429 from CIP usually means we fired too many handshakes in a short window.
-    // Tell the user to back off rather than retry immediately.
+    // Tell the user to back off rather than retry immediately. This IS a
+    // connection-layer signal — the gateway is rejecting traffic.
     if (/\b429\b/.test(msg) || /Too Many Requests/i.test(msg)) {
-      return 'Rate-limited by CIP (HTTP 429). Wait ~30 seconds before retrying.';
+      return {
+        message: 'Rate-limited by CIP (HTTP 429). Wait ~30 seconds before retrying.',
+        headline: 'Rate-limited by CIP',
+        details: 'Wait ~30 seconds before retrying.',
+        isConnectionIssue: true,
+      };
     }
     if (msg.includes('invalid_scope')) {
-      return 'Invalid tenant ID or no CIP access. Verify tenant ID with your admin, or check if CIP is provisioned.';
+      return {
+        message:
+          'Invalid tenant ID or no CIP access. Verify tenant ID with your admin, or check if CIP is provisioned.',
+        headline: 'Invalid tenant ID or CIP not provisioned',
+        details: 'Verify the tenant ID with your admin, or check whether CIP is provisioned for this realm.',
+        isConnectionIssue: true,
+      };
     }
     if (msg.includes('Authentication') || msg.includes('401')) {
-      return 'Authentication failed. Check OAuth credentials (clientId/clientSecret).';
+      return {
+        message: 'Authentication failed. Check OAuth credentials (clientId/clientSecret).',
+        headline: 'Authentication failed',
+        details: 'Check the OAuth credentials (clientId / clientSecret) in dw.json.',
+        isConnectionIssue: true,
+      };
     }
     if (msg.includes('timeout') || msg.includes('ETIMEDOUT')) {
-      return 'Connection timeout. CIP may not be provisioned yet (wait 2 hours after enabling).';
+      return {
+        message: 'Connection timeout. CIP may not be provisioned yet (wait 2 hours after enabling).',
+        headline: 'Connection timed out',
+        details: 'CIP may not be fully provisioned yet — wait ~2 hours after enabling.',
+        isConnectionIssue: true,
+      };
     }
     if (msg.includes('ENOTFOUND') || msg.includes('ECONNREFUSED')) {
-      return 'Cannot reach CIP host. Check network connection or CIP host configuration.';
+      return {
+        message: 'Cannot reach CIP host. Check network connection or CIP host configuration.',
+        headline: 'Cannot reach CIP host',
+        details: 'Check the network connection or the CIP host configuration.',
+        isConnectionIssue: true,
+      };
     }
-    return `Connection failed: ${msg}`;
+
+    // From here down: the server received the request and rejected the SQL
+    // itself. Strip the boring plumbing ("CIP Avatica request failed
+    // (400 Bad Request): Error while executing SQL "...": ") so the
+    // detail line leads with the actual cause. Then map the most common
+    // Calcite/Phoenix phrasings to a friendly headline.
+    const stripped = stripPlumbingPrefix(msg);
+    const isQueryError =
+      /\b400\b/.test(msg) ||
+      /Bad Request/i.test(msg) ||
+      /\b404\b/.test(msg) ||
+      /Not Found/i.test(msg) ||
+      /parse error/i.test(msg) ||
+      /syntax error/i.test(msg) ||
+      /invalid input syntax/i.test(msg) ||
+      /column .* does not exist/i.test(msg) ||
+      /table .* does not exist/i.test(msg) ||
+      /not being grouped/i.test(msg);
+
+    if (isQueryError) {
+      const headline = headlineForQueryError(stripped);
+      return {
+        message: `Query failed: ${msg}`,
+        headline,
+        details: stripped,
+        isConnectionIssue: false,
+      };
+    }
+
+    return {
+      message: `Connection failed: ${msg}`,
+      headline: 'Connection failed',
+      details: msg,
+      isConnectionIssue: true,
+    };
+  }
+
+  private static isMissingRemoteIncludeParentColumnError(reportName: string, error: unknown): boolean {
+    if (reportName !== REMOTE_INCLUDE_REPORT_NAME) {
+      return false;
+    }
+
+    const message = error instanceof Error ? error.message : String(error);
+    return /column\s+"?main_controll+er_name"?\s+does\s+not\s+exist/i.test(message);
+  }
+
+  private static isMissingColumnError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return /column\s+"?[A-Za-z0-9_]+"?\s+does\s+not\s+exist/i.test(message);
+  }
+
+  private async resolveRemoteIncludeParentCandidates(client: CipClient, fetchSize: number): Promise<string[]> {
+    const candidates: string[] = [];
+    try {
+      const metadata = await describeCipTable(client, REMOTE_INCLUDE_TABLE_NAME, {
+        fetchSize,
+        schema: 'warehouse',
+      });
+      const metadataCandidates = metadata.columns
+        .map((column) => column.columnName.toLowerCase())
+        .filter((name) => name !== 'main_controller_name' && name.endsWith('controller_name'));
+      candidates.push(...metadataCandidates);
+    } catch {
+      // Metadata lookup can fail or be misleading on some tenants. We still try known fallback columns below.
+    }
+
+    candidates.push('parent_controller_name', 'referrer_controller_name', 'controller_name');
+    return [...new Set(candidates)];
+  }
+
+  private async executeRemoteIncludeFallback(
+    client: CipClient,
+    reportParams: Record<string, string>,
+    fetchSize: number,
+  ): Promise<{rows: Array<Record<string, unknown>>}> {
+    const {sql} = buildCipReportSql(REMOTE_INCLUDE_REPORT_NAME, reportParams);
+    const candidates = await this.resolveRemoteIncludeParentCandidates(client, fetchSize);
+    let lastError: unknown;
+
+    for (const parentColumn of candidates) {
+      const rewrittenSql = rewriteRemoteIncludeParentColumn(sql, parentColumn);
+      this.log.appendLine(`[CIP Analytics] Retrying ${REMOTE_INCLUDE_REPORT_NAME} with parent column: ${parentColumn}`);
+      try {
+        return client.query(rewrittenSql, {fetchSize});
+      } catch (error) {
+        lastError = error;
+        if (!CipWebviewManager.isMissingColumnError(error)) {
+          throw error;
+        }
+      }
+    }
+
+    throw lastError instanceof Error
+      ? lastError
+      : new Error(`${REMOTE_INCLUDE_REPORT_NAME} fallback exhausted all parent-column candidates`);
   }
 
   /**
@@ -658,10 +964,12 @@ export class CipWebviewManager {
         tableCount: tableNames.length,
       });
     } catch (error) {
-      const errorMessage = CipWebviewManager.formatConnectionError(error);
-      this.log.appendLine(`[CIP Tables Browser] Failed to load tables: ${errorMessage}`);
-      this.connection.markDisconnected(errorMessage);
-      panel.webview.postMessage({command: 'tablesLoadError', error: errorMessage});
+      const {message, headline, details, isConnectionIssue} = CipWebviewManager.classifyQueryError(error);
+      this.log.appendLine(`[CIP Tables Browser] Failed to load tables: ${message}`);
+      if (isConnectionIssue) {
+        this.connection.markDisconnected(message);
+      }
+      panel.webview.postMessage({command: 'tablesLoadError', error: message, headline, details});
     }
   }
 
@@ -742,10 +1050,12 @@ export class CipWebviewManager {
 
       panel.webview.postMessage({command: 'tableDescribed', tableName, schema: {columns}});
     } catch (error) {
-      const errorMessage = CipWebviewManager.formatConnectionError(error);
-      this.log.appendLine(`[CIP Tables Browser] Failed to describe table: ${errorMessage}`);
-      this.connection.markDisconnected(errorMessage);
-      panel.webview.postMessage({command: 'tableDescribeError', tableName, error: errorMessage});
+      const {message, headline, details, isConnectionIssue} = CipWebviewManager.classifyQueryError(error);
+      this.log.appendLine(`[CIP Tables Browser] Failed to describe table: ${message}`);
+      if (isConnectionIssue) {
+        this.connection.markDisconnected(message);
+      }
+      panel.webview.postMessage({command: 'tableDescribeError', tableName, error: message, headline, details});
     }
   }
 
@@ -863,12 +1173,34 @@ export class CipWebviewManager {
       panel.webview.postMessage({command: 'sitesLoaded', sites: []});
       return;
     }
+
+    const cacheKey = `${ctx.tenantId}@@${ctx.host}`;
+    const cached = this.siteOptionsCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      panel.webview.postMessage({command: 'sitesLoaded', sites: cached.sites});
+      return;
+    }
+
+    let inFlight = this.sitesInFlight.get(cacheKey);
+    if (!inFlight) {
+      inFlight = (async () => {
+        const result = await ctx.client.query(
+          `SELECT DISTINCT nsite_id FROM ccdw_dim_site WHERE nsite_id IS NOT NULL ORDER BY nsite_id`,
+          {fetchSize: 500},
+        );
+        return result.rows.map((r) => String(r.nsite_id ?? '')).filter(Boolean);
+      })().finally(() => {
+        this.sitesInFlight.delete(cacheKey);
+      });
+      this.sitesInFlight.set(cacheKey, inFlight);
+    }
+
     try {
-      const result = await ctx.client.query(
-        `SELECT DISTINCT nsite_id FROM ccdw_dim_site WHERE nsite_id IS NOT NULL ORDER BY nsite_id`,
-        {fetchSize: 500},
-      );
-      const sites = result.rows.map((r) => String(r.nsite_id ?? '')).filter(Boolean);
+      const sites = await inFlight;
+      this.siteOptionsCache.set(cacheKey, {
+        expiresAt: Date.now() + CipWebviewManager.SITE_OPTIONS_TTL_MS,
+        sites,
+      });
       panel.webview.postMessage({command: 'sitesLoaded', sites});
     } catch {
       panel.webview.postMessage({command: 'sitesLoaded', sites: []});
@@ -915,10 +1247,36 @@ export class CipWebviewManager {
         },
       });
     } catch (error) {
-      const errorMessage = CipWebviewManager.formatConnectionError(error);
-      this.log.appendLine(`[CIP Analytics] Query failed: ${errorMessage}`);
-      this.connection.markDisconnected(errorMessage);
-      panel.webview.postMessage({command: 'queryError', error: errorMessage});
+      if (CipWebviewManager.isMissingRemoteIncludeParentColumnError(report.name, error)) {
+        try {
+          const fetchSize = parseInt(params.fetchSize || '1000', 10);
+          const reportParams = {...params};
+          delete reportParams.fetchSize;
+          const result = await this.executeRemoteIncludeFallback(ctx.client, reportParams, fetchSize);
+          this.connection.markConnected(`Report OK · ${result.rows.length} rows`);
+          this.log.appendLine(
+            `[CIP Analytics] Query recovered with remote-include fallback: ${result.rows.length} rows returned`,
+          );
+          panel.webview.postMessage({
+            command: 'queryResults',
+            data: {
+              rows: result.rows,
+              rowCount: result.rows.length,
+              columns: result.rows.length > 0 ? Object.keys(result.rows[0]) : [],
+            },
+          });
+          return;
+        } catch (retryError) {
+          error = retryError;
+        }
+      }
+
+      const {message, headline, details, isConnectionIssue} = CipWebviewManager.classifyQueryError(error);
+      this.log.appendLine(`[CIP Analytics] Query failed: ${message}`);
+      if (isConnectionIssue) {
+        this.connection.markDisconnected(message);
+      }
+      panel.webview.postMessage({command: 'queryError', error: message, headline, details});
     }
   }
 
@@ -1027,14 +1385,20 @@ export class CipWebviewManager {
         description: report.description,
         category: report.category,
         displayName,
-        parameters: report.parameters.map((p) => ({
-          name: p.name,
-          description: p.description,
-          type: p.type,
-          required: p.required,
-          min: p.min,
-          max: p.max,
-        })),
+        parameters: report.parameters.map((p) => {
+          const raw = p as unknown as Record<string, unknown>;
+          return {
+            name: p.name,
+            description: p.description,
+            type: p.type,
+            required: p.required,
+            min: p.min,
+            max: p.max,
+            options: getOptionalArray(raw.options),
+            multiple: typeof raw.multiple === 'boolean' ? raw.multiple : undefined,
+            default: typeof raw.default === 'string' ? raw.default : undefined,
+          };
+        }),
       },
     });
   }

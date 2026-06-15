@@ -57,16 +57,18 @@ export function registerCipAnalytics(
   refreshStatusBar();
   context.subscriptions.push(statusBar, connection.onDidChange(refreshStatusBar));
 
+  // Saved-query library (Query Builder → Save / Load). Constructed before
+  // the tree provider so the tree can subscribe to its onDidChange and
+  // render saved-query leaves under each tenant.
+  const queryLibrary = new CipQueryLibraryService(context.workspaceState);
+  context.subscriptions.push(queryLibrary);
+
   // Tree view
-  const treeProvider = new CipAnalyticsTreeDataProvider(configProvider, connection, log);
+  const treeProvider = new CipAnalyticsTreeDataProvider(configProvider, connection, queryLibrary, log);
   const treeView = vscode.window.createTreeView('b2cCipAnalytics', {
     treeDataProvider: treeProvider,
     showCollapseAll: true,
   });
-
-  // Saved-query library (Query Builder → Save / Load).
-  const queryLibrary = new CipQueryLibraryService(context.workspaceState);
-  context.subscriptions.push(queryLibrary);
 
   // Webview manager
   const webviewManager = new CipWebviewManager(context, configProvider, connection, queryLibrary, log);
@@ -119,6 +121,69 @@ export function registerCipAnalytics(
     log.appendLine('[CIP Analytics] Opening Query Builder');
     await webviewManager.openQueryBuilder(realmId);
   });
+
+  /**
+   * Sidebar leaf click → opens (or reveals) the Query Builder for the saved
+   * query's realm and pre-loads the SQL into the editor view so the user
+   * can run it. VS Code calls context-menu / command-bound handlers with
+   * the tree item itself as the first arg, so we accept either shape:
+   * `{realmId, queryId}` from a tree item, or an explicit object from
+   * `arguments:[{...}]` callers.
+   */
+  const openSavedQueryDisposable = registerSafeCommand(
+    'b2c-dx.cipAnalytics.openSavedQuery',
+    async (arg?: {realmId?: string; queryId?: string}) => {
+      const queryId = arg?.queryId;
+      const realmId = arg?.realmId;
+      if (!queryId) return;
+      const query = webviewManager.resolveSavedQuery(queryId);
+      if (!query) {
+        vscode.window.showWarningMessage('That saved query no longer exists.');
+        return;
+      }
+      log.appendLine(`[CIP Analytics] Opening saved query "${query.name}"`);
+      await webviewManager.openQueryBuilder(realmId, {action: {kind: 'loadSavedQuery', query}});
+    },
+  );
+
+  /**
+   * Pencil icon → opens (or reveals) the Query Builder and asks the React
+   * app to pop the same Save / Rename modal the toolbar uses, in rename
+   * mode, prefilled with this query.
+   */
+  const renameSavedQueryDisposable = registerSafeCommand(
+    'b2c-dx.cipAnalytics.renameSavedQuery',
+    async (arg?: {realmId?: string; queryId?: string}) => {
+      const queryId = arg?.queryId;
+      const realmId = arg?.realmId;
+      if (!queryId) return;
+      const query = webviewManager.resolveSavedQuery(queryId);
+      if (!query) {
+        vscode.window.showWarningMessage('That saved query no longer exists.');
+        return;
+      }
+      log.appendLine(`[CIP Analytics] Editing saved query "${query.name}"`);
+      await webviewManager.openQueryBuilder(realmId, {action: {kind: 'renameSavedQuery', query}});
+    },
+  );
+
+  /** Trash icon → native confirmation modal, then permanent delete. */
+  const deleteSavedQueryDisposable = registerSafeCommand(
+    'b2c-dx.cipAnalytics.deleteSavedQuery',
+    async (arg?: {queryId?: string}) => {
+      const queryId = arg?.queryId;
+      if (!queryId) return;
+      const entry = queryLibrary.get(queryId);
+      if (!entry) return;
+      const choice = await vscode.window.showWarningMessage(
+        `Delete saved query "${entry.name}"?`,
+        {modal: true, detail: 'This cannot be undone.'},
+        'Delete',
+      );
+      if (choice !== 'Delete') return;
+      await queryLibrary.delete(queryId);
+    },
+  );
 
   const configureDisposable = registerSafeCommand(
     'b2c-dx.cipAnalytics.configureConnection',
@@ -186,6 +251,9 @@ export function registerCipAnalytics(
     openReportDisposable,
     browseTablesDisposable,
     queryBuilderDisposable,
+    openSavedQueryDisposable,
+    renameSavedQueryDisposable,
+    deleteSavedQueryDisposable,
     configureDisposable,
     testDisposable,
     switchRealmDisposable,
