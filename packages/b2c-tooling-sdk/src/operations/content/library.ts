@@ -68,6 +68,38 @@ export class LibraryNode {
       hidden: this.hidden,
     };
   }
+
+  /**
+   * Convert this component node into a content block (fragment) in place.
+   *
+   * Mirrors the element-level shape of Page Designer's "Convert to Content
+   * Block": the underlying `<content>` keeps its content-id, its `<type>` is
+   * rewritten from `component.*` to the matching `fragment.*`, a `<display-name>`
+   * is set (in schema-correct first position), and the element's own region
+   * `content-link` types are flipped to `fragment.*` to match.
+   *
+   * NOTE: this only mutates the in-memory node. It is NOT sufficient to persist a
+   * conversion via site-archive import — a merge import ignores `<type>` changes
+   * on an existing element. To persist, use {@link Library.buildContentBlockConversionXML}.
+   *
+   * @param displayName - The x-default display name for the new content block.
+   * @returns this (for chaining)
+   * @throws If this node is not a component or has no backing XML.
+   */
+  convertToFragment(displayName: string): this {
+    if (this.type !== 'COMPONENT' || !this.typeId || !this.typeId.startsWith('component.')) {
+      throw new Error('Only a component node can be converted to a content block');
+    }
+    if (!this.xml) {
+      throw new Error(`Content "${this.id}" has no backing XML to convert`);
+    }
+
+    this.xml = transformContentXmlToFragment(this.xml, displayName);
+    this.typeId = (this.xml['type'] as string[])[0];
+    this.type = 'FRAGMENT';
+    this.displayName = displayName;
+    return this;
+  }
 }
 
 /**
@@ -97,6 +129,89 @@ function classifyContentType(contentType: string | null): LibraryNodeType {
 function extractDisplayName(content: Record<string, unknown>): string | null {
   const displayNames = content['display-name'] as Array<Record<string, string>> | undefined;
   return displayNames?.[0]?.['_'] ?? null;
+}
+
+/**
+ * Produce a new xml2js content object representing the fragment form of a
+ * component element: `<type>` rewritten `component.*` → `fragment.*`, a
+ * `<display-name>` set as the first child (schema order), and the element's own
+ * region `content-link` `type` attributes flipped from `component.<base>.*` to
+ * `fragment.<base>.*` (Layout blocks keep their regions, renamed to match the
+ * new type). Does not mutate the input.
+ */
+function transformContentXmlToFragment(xml: Record<string, unknown>, displayName: string): Record<string, unknown> {
+  const currentType = (xml['type'] as string[] | undefined)?.[0];
+  if (!currentType || !currentType.startsWith('component.')) {
+    throw new Error('Only a component element can be converted to a content block');
+  }
+  const baseType = currentType.slice('component.'.length);
+  const fragmentType = `fragment.${baseType}`;
+
+  // Rebuild with display-name first (xml2js serializes in key-insertion order).
+  const rebuilt: Record<string, unknown> = {};
+  if (xml['$'] !== undefined) {
+    rebuilt['$'] = xml['$'];
+  }
+  rebuilt['display-name'] = [{$: {'xml:lang': 'x-default'}, _: displayName}];
+  for (const [key, value] of Object.entries(xml)) {
+    if (key === '$' || key === 'display-name') {
+      continue;
+    }
+    if (key === 'type') {
+      rebuilt['type'] = [fragmentType];
+      continue;
+    }
+    if (key === 'content-links') {
+      // Flip this element's own region link types: component.<base>.<region> ->
+      // fragment.<base>.<region>. Child links to OTHER content keep their own
+      // ids; only the region-type attribute (owned by this element's type) changes.
+      rebuilt['content-links'] = renameRegionLinkTypes(value, currentType, fragmentType);
+      continue;
+    }
+    rebuilt[key] = value;
+  }
+  if (rebuilt['type'] === undefined) {
+    rebuilt['type'] = [fragmentType];
+  }
+  return rebuilt;
+}
+
+/**
+ * Return the content-ids this content element links to via its `content-links`.
+ */
+function childLinkIds(content: Record<string, unknown> | undefined): string[] {
+  if (!content) {
+    return [];
+  }
+  const contentLinks = content['content-links'] as Array<Record<string, unknown>> | undefined;
+  const links = contentLinks?.[0]?.['content-link'] as Array<Record<string, unknown>> | undefined;
+  if (!links) {
+    return [];
+  }
+  return links
+    .map((link) => (link['$'] as Record<string, string> | undefined)?.['content-id'])
+    .filter((id): id is string => typeof id === 'string');
+}
+
+/**
+ * Deep-clone a `content-links` xml2js value, rewriting any `content-link` whose
+ * `type` attribute starts with `${oldType}.` so it starts with `${newType}.`.
+ */
+function renameRegionLinkTypes(contentLinks: unknown, oldType: string, newType: string): unknown {
+  const cloned = JSON.parse(JSON.stringify(contentLinks)) as Array<Record<string, unknown>>;
+  for (const wrapper of cloned) {
+    const links = wrapper['content-link'] as Array<Record<string, unknown>> | undefined;
+    if (!links) {
+      continue;
+    }
+    for (const link of links) {
+      const attrs = link['$'] as Record<string, string> | undefined;
+      if (attrs && typeof attrs['type'] === 'string' && attrs['type'].startsWith(`${oldType}.`)) {
+        attrs['type'] = `${newType}.${attrs['type'].slice(oldType.length + 1)}`;
+      }
+    }
+  }
+  return cloned;
 }
 
 /**
@@ -337,6 +452,83 @@ export class Library {
       blocks.push(node);
     }
     return blocks;
+  }
+
+  /**
+   * Build a self-contained library XML payload that converts a component into a
+   * content block (fragment) when imported via site-archive import.
+   *
+   * A plain merge import ignores `<type>` changes on an existing element, and a
+   * `mode="delete"` on a content element **deep-deletes its entire subtree** and
+   * strips every incoming `content-link`. To faithfully reproduce Page Designer's
+   * in-place conversion (verified byte-for-byte against a manual conversion), this
+   * archive therefore:
+   *
+   * 1. deletes the target (`<content mode="delete"/>`) — clearing the old type
+   *    and its subtree;
+   * 2. recreates the target as `fragment.*` (display-name first, own region-link
+   *    types flipped) — see {@link transformContentXmlToFragment};
+   * 3. recreates **every descendant** of the target (they were cascade-deleted);
+   * 4. re-imports **every referrer** (any content that links the target, possibly
+   *    several — content blocks are shared) so their `content-link` survives.
+   *
+   * All four happen in one archive/one import job so the storefront is never left
+   * with a dangling reference.
+   *
+   * @param contentId - The component content-id to convert.
+   * @param displayName - The x-default display name for the new content block.
+   * @returns Importable library XML string.
+   * @throws If the content-id is not found or is not a component.
+   */
+  async buildContentBlockConversionXML(contentId: string, displayName: string): Promise<string> {
+    const target = this.contentById[contentId];
+    if (!target) {
+      throw new Error(`Content "${contentId}" not found in library`);
+    }
+    const targetType = (target['type'] as string[] | undefined)?.[0];
+    if (!targetType || !targetType.startsWith('component.')) {
+      throw new Error(`Content "${contentId}" is not a component and cannot be converted to a content block`);
+    }
+
+    // Collect the target's descendants (its content-link tree). They are
+    // cascade-deleted by mode="delete" and must be recreated as-is.
+    const descendantIds: string[] = [];
+    const seen = new Set<string>([contentId]);
+    const queue = [contentId];
+    while (queue.length > 0) {
+      const id = queue.shift() as string;
+      for (const childId of childLinkIds(this.contentById[id])) {
+        if (!seen.has(childId) && this.contentById[childId]) {
+          seen.add(childId);
+          descendantIds.push(childId);
+          queue.push(childId);
+        }
+      }
+    }
+
+    // Collect every referrer: any content element that links the target.
+    const referrerIds: string[] = [];
+    for (const [id, el] of Object.entries(this.contentById)) {
+      if (id === contentId) {
+        continue;
+      }
+      if (childLinkIds(el).includes(contentId)) {
+        referrerIds.push(id);
+      }
+    }
+
+    // Build the content array: delete marker, recreated fragment, descendants, referrers.
+    const transformedTarget = transformContentXmlToFragment(target, displayName);
+    const content: Array<Record<string, unknown>> = [
+      {$: {'content-id': contentId, mode: 'delete'}},
+      transformedTarget,
+      ...descendantIds.map((id) => this.contentById[id]),
+      ...referrerIds.map((id) => this.contentById[id]),
+    ];
+
+    const libraryAttrs = (this.xml['library'] as Record<string, unknown>)['$'];
+    const doc = {library: {$: libraryAttrs, content}};
+    return new xml2js.Builder().buildObject(doc);
   }
 
   /**

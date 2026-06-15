@@ -11,7 +11,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
 import type {ContentFileSystemProvider} from './content-fs-provider.js';
-import {generateContentXML, importLibraryXML} from './content-fs-provider.js';
+import {importLibraryXML} from './content-fs-provider.js';
 import type {ContentTreeDataProvider, ContentTreeItem} from './content-tree-provider.js';
 import {openJobLog} from '../job-log-viewer.js';
 import {registerSafeCommand} from '../safety.js';
@@ -270,10 +270,12 @@ export function registerContentCommands(
   });
 
   // Convert a component (assigned inline to a page/region) into a shared content
-  // block. On the platform this rewrites the element's <type> from component.* to
-  // fragment.* and adds a <display-name> on the SAME content object — no new id,
-  // no link rewiring (the parent link-type follows the parent's type). We mirror
-  // that exact mutation and re-import the single element.
+  // block. Reproduces Page Designer's in-place conversion: the SDK builds a
+  // delete+recreate archive that re-types the element to fragment.*, recreates
+  // its descendants, and re-imports every referrer so existing content-links
+  // survive (a plain merge import would silently ignore the <type> change, and a
+  // bare delete would orphan the element from its pages). Verified byte-for-byte
+  // against a manual conversion.
   const convertToBlock = registerSafeCommand('b2c-dx.content.convertToBlock', async (node: ContentTreeItem) => {
     if (!node || node.nodeType !== 'component' || !node.libraryNode) {
       return;
@@ -289,9 +291,7 @@ export function registerContentCommands(
       return;
     }
 
-    const xml = node.libraryNode.xml;
-    const currentType = (xml?.['type'] as string[] | undefined)?.[0];
-    if (!xml || !currentType || !currentType.startsWith('component.')) {
+    if (node.libraryNode.type !== 'COMPONENT') {
       vscode.window.showErrorMessage('Only a component can be converted to a content block.');
       return;
     }
@@ -304,13 +304,9 @@ export function registerContentCommands(
     });
     if (displayName === undefined) return; // cancelled
 
-    // Mutate the in-memory xml: component.* -> fragment.* and inject display-name.
-    const fragmentType = `fragment.${currentType.slice('component.'.length)}`;
-    (xml['type'] as string[])[0] = fragmentType;
-    xml['display-name'] = [{$: {'xml:lang': 'x-default'}, _: displayName.trim()}];
-
     try {
-      const contentXML = generateContentXML(library, node.contentId);
+      // The SDK builds the full delete+recreate+relink archive for this conversion.
+      const contentXML = await library.buildContentBlockConversionXML(node.contentId, displayName.trim());
       await vscode.window.withProgress(
         {location: vscode.ProgressLocation.Notification, title: `Converting ${node.contentId} to a content block...`},
         async () => {
@@ -321,8 +317,7 @@ export function registerContentCommands(
       await showJobError(err, instance, 'Convert to content block failed');
       return;
     } finally {
-      // Discard the transient in-place mutation; the tree re-fetches fresh state
-      // (whether the import succeeded or failed).
+      // Re-fetch fresh state from the instance on the next expand.
       configProvider.invalidateLibrary(node.libraryId);
     }
 
