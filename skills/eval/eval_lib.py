@@ -33,7 +33,12 @@ def find_eval_project() -> Path:
     """
     eval_dir = Path(__file__).resolve().parent
     project_dir = eval_dir / "project"
-    if project_dir.is_dir() and (project_dir / ".claude").is_dir():
+    # Detect the eval project by a stable, committed marker (dw.json).
+    # The .claude/skills/ dir is gitignored and created here at runtime, so
+    # it must not be used as the guard — otherwise a fresh checkout silently
+    # falls back to the main repo root and no skills get installed.
+    if project_dir.is_dir() and (project_dir / "dw.json").is_file():
+        (project_dir / ".claude").mkdir(exist_ok=True)
         _ensure_git_repo(project_dir)
         _sync_skills(eval_dir, project_dir)
         return project_dir
