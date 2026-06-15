@@ -26,7 +26,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [22.x, 24.x]
+        node-version: [22.x, 24.x, 26.x]
 
     steps:
       - name: Checkout code
@@ -159,7 +159,11 @@ jobs:
         # that aborts with `Assertion failed: !_wcsnicmp(filename, dir, dirlen)`
         # in src/win/fs-event.c during chokidar's recursive watch tests.
         # Revisit when upstream Node ships a fix.
-        node-version: [22.x, 24.15.0]
+        #
+        # Node 26 is floating (26.x) here; this job is continue-on-error so any
+        # Windows-specific 26 regression surfaces without blocking CI. Pin it
+        # like 24 above if it hits the same libuv/chokidar assertion.
+        node-version: [22.x, 24.15.0, 26.x]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -172,22 +176,27 @@ jobs:
       - name: Run SDK tests
         id: sdk-test
         working-directory: packages/b2c-tooling-sdk
-        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
+        # Windows-specific script (test:ci:win) bypasses c8's coverage
+        # threshold check. Under the tsx ESM loader, V8 coverage on Windows
+        # mis-attributes TS source files (distinct file:// URL casing/format
+        # vs. the Linux paths c8 remaps against), so reported coverage is
+        # unreliable on Windows even though the tests pass. Thresholds are
+        # enforced on Linux, where the numbers are accurate; coverage is still
+        # generated and uploaded on Windows for inspection.
+        run: pnpm run pretest && pnpm run test:ci:win && pnpm run lint
       - name: Run MCP tests
         id: mcp-test
         if: always() && steps.sdk-test.conclusion != 'cancelled'
         working-directory: packages/b2c-dx-mcp
-        run: pnpm run pretest && pnpm run test:ci && pnpm run lint
+        # See the SDK step above: test:ci:win bypasses the coverage gate on
+        # Windows (unreliable V8 attribution under the tsx loader).
+        run: pnpm run pretest && pnpm run test:ci:win && pnpm run lint
       - name: Run CLI tests
         id: cli-test
         if: always() && steps.mcp-test.conclusion != 'cancelled'
         working-directory: packages/b2c-cli
-        # Use the Windows-specific script (test:ci:win) to bypass c8's
-        # coverage threshold check. V8 coverage on Windows double-counts
-        # some TS source files (distinct URL casing emitted by the tsx
-        # loader), which drops the reported function-coverage number below
-        # the Linux-calibrated 70% threshold even though the tests pass.
-        # Coverage is still generated and uploaded for inspection.
+        # See the SDK step above: test:ci:win bypasses the coverage gate on
+        # Windows (unreliable V8 attribution under the tsx loader).
         run: pnpm run pretest && pnpm run test:ci:win && pnpm run lint
       - name: Run MRT Utilities tests
         id: mrt-test

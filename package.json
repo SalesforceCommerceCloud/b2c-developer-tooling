@@ -37,6 +37,9 @@
   "pnpm": {
     "overrides": {
       "@smithy/types": "4.14.3"
+    },
+    "patchedDependencies": {
+      "yargs@17.7.2": "patches/yargs@17.7.2.patch"
     }
   }
 }
