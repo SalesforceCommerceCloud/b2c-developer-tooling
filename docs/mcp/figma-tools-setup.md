@@ -6,8 +6,6 @@ description: Prerequisites and setup for Figma-to-component tools (workflow orch
 
 Prerequisites and setup for using the Figma workflow tools: `sfnext_start_figma_workflow`, `sfnext_analyze_component`, and `sfnext_match_tokens_to_theme`.
 
-> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
-
 ## Overview
 
 The Figma-to-component workflow requires an **external Figma MCP server** to fetch design data from Figma. The b2c-dx-mcp server handles workflow orchestration, component analysis, and token mapping, but it needs the Figma MCP server to access Figma designs.
@@ -53,4 +51,5 @@ If the Figma MCP server is not enabled, the workflow tool will still return inst
 - [sfnext_analyze_component](./tools/sfnext-analyze-component) - REUSE/EXTEND/CREATE recommendation
 - [sfnext_match_tokens_to_theme](./tools/sfnext-match-tokens-to-theme) - Token mapping
 - [STOREFRONTNEXT Toolset](./toolsets#storefrontnext) - Overview of Storefront Next tools
+- [`storefront-next-figma` plugin](/guide/agent-skills#available-plugins) - Agent skills for managing the Figma design kit (duplicate the kit, sync brand variables, publish Code Connect); also requires the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server)
 - [Figma MCP Server Documentation](https://developers.figma.com/docs/figma-mcp-server) - Official Figma MCP setup

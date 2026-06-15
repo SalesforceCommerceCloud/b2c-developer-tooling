@@ -20,12 +20,6 @@ All log tools that read from the instance (`logs_list_files`, `logs_get_recent`,
 
 See [Configuration](../configuration) for credential setup.
 
-## When to use which tool
-
-- Quick lookup of recent errors → **`logs_get_recent`**.
-- Discover what log prefixes are active on the instance → **`logs_list_files`**.
-- Monitor logs across a multi-step action you trigger (storefront request, job, debug session) → start a watch with **`logs_watch_start`**, then drain it with **`logs_watch_poll`**, and finish with **`logs_watch_stop`**. The watch buffers entries between calls so nothing is lost between agent turns.
-
 ## Recovery from orphaned watches
 
 Log watches are stateful and live in the MCP server process. Only one watch is allowed per hostname. If an agent loses track of an active watch:

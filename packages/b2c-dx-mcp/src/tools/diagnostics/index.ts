@@ -26,9 +26,7 @@ import {createLogsWatchStopTool} from './logs-watch-stop.js';
 import {createLogsWatchListTool} from './logs-watch-list.js';
 
 export interface DiagnosticsToolInjections
-  extends LogsGetRecentInjections,
-    LogsListFilesInjections,
-    LogsWatchStartInjections {}
+  extends LogsGetRecentInjections, LogsListFilesInjections, LogsWatchStartInjections {}
 
 export function createDiagnosticsTools(
   loadServices: () => Promise<Services> | Services,

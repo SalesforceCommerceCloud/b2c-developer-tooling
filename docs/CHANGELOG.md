@@ -1,5 +1,29 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.6
+
+### Patch Changes
+
+- [#492](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/492) [`5af7cae`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5af7caeb66c78196fad647b51dbdb184b8bee844) - Removed pilot note for Storefront Next (Thanks [@knhage](https://github.com/knhage)!)
+
+- [`19f059e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/19f059e7ba928d1070d7960920770f1256dfae73) - Document the new `storefront-next-figma` plugin in the Agent Skills guide, the install snippets (homepage, setup), and the Figma tools setup page. The plugin requires the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server) and can be installed from the plugin marketplace or with `b2c setup skills storefront-next-figma`. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.3.5
+
+### Patch Changes
+
+- [`39dc19d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/39dc19d5c91ea537b18fd57ef8373250b74a3b83) - Document the `storefront-next` and `b2c-dx-mcp` plugins in the homepage and Agent Skills install snippets, and note that `b2c-dx-mcp` installs the MCP server. Removed the agent-facing "When to use which tool" sections from the MCP log and docs tool reference pages. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.3.4
+
+### Patch Changes
+
+- [#473](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/473) [`b723939`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b72393951bb95b64f3291cd3cb76197e280a6a37) - Documentation audit and repair pass: corrected stale CLI flag and command references across the CLI reference and guides, fixed broken examples (e.g. eCDN mTLS, sandbox `--no-*` flags, WebDAV `get` arguments), aligned SDK JSDoc with current signatures, and added the missing `operations/cap` typedoc entry point so the Commerce App SDK module appears in the API reference. Filled in JSDoc for previously undocumented public exports across the SDK (auth, clients, instance, logging, ods, mrt, cap, cip, debug, scaffold, schemas, skills, etc.) so the generated API docs cover the full public surface. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#478](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/478) [`d19802f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d19802f26b5e1c0a609a2a27daa60dd1763b6786) - Document the GitHub Actions install behavior change. The high-level actions (`code-deploy`, `data-import`, `job-run`, `mrt-deploy`, `webdav-upload`) now reuse an already-installed CLI and install one only when none is present — so a deploy that follows a setup step, and repeated operations on a persistent self-hosted runner, no longer trigger a redundant reinstall or an unexpected upgrade. The `setup` action called directly still installs the version you request (a new `skip-if-present` input opts into reuse). The actions no longer cache the npm download directory, which had grown to gigabytes on long-lived self-hosted runners and slowed restores. Plugin installs are skipped by exact name match. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#431](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/431) [`80d594f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/80d594f741b6eb9c8ac76a4bb954403518497478) - Document deploying to staging environments (two-factor mTLS) from CI/CD. The `setup` GitHub Action now accepts `webdav-server`, `certificate`, `certificate-passphrase`, and `selfsigned` inputs so workflows can target staging instances that require a separate WebDAV hostname and a client certificate. The CI/CD guide includes a full GitHub Actions example using a base64-encoded `.p12` secret. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.3
 
 ### Patch Changes
