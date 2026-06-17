@@ -13,6 +13,12 @@ import type {Logger} from '../logging/types.js';
  */
 const SUPPORTED_HOOKS = ['b2c:config-sources', 'b2c:http-middleware', 'b2c:auth-middleware'] as const;
 
+/**
+ * Union type of all supported hook names in the plugin system.
+ *
+ * Represents any of the hook names that the plugin discovery system recognizes:
+ * `b2c:config-sources`, `b2c:http-middleware`, or `b2c:auth-middleware`.
+ */
 export type SupportedHookName = (typeof SUPPORTED_HOOKS)[number];
 
 /**

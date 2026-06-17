@@ -8,7 +8,17 @@ import sinon from 'sinon';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import appInsights from 'applicationinsights';
+// Namespace import (not default): `applicationinsights` is a legacy CommonJS
+// module whose default-export interop is not synthesized when the file is
+// loaded as native ESM (mocha 11's tsx loader), leaving the default binding
+// `undefined`. The namespace form resolves `TelemetryClient` correctly.
+//
+// Stubbing `TelemetryClient.prototype` methods works (the class prototype is
+// mutable), but the constructor itself cannot be spied through this binding —
+// the ESM namespace exposes it as a non-configurable getter. Tests that need to
+// observe client construction spy the SDK's own `Telemetry.prototype.createClient`
+// seam instead (see the `start` suite below).
+import * as appInsights from 'applicationinsights';
 import {Telemetry, createTelemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {configureLogger, resetLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
@@ -516,8 +526,14 @@ describe('telemetry/telemetry', () => {
   });
 
   describe('start', () => {
+    // The AppInsights TelemetryClient is constructed inside the private
+    // `createClient` method. Spying that seam (a normal class prototype, always
+    // mutable) lets us assert construction behaviour without spying the
+    // `applicationinsights` constructor export, which is not replaceable under
+    // the native-ESM test loader. The constructed client's resolved
+    // `config.instrumentationKey` confirms the connection string was forwarded.
     it('does nothing when already started', async () => {
-      const constructorSpy = sandbox.spy(appInsights, 'TelemetryClient');
+      const createClientSpy = sandbox.spy(Telemetry.prototype, 'createClient' as never);
 
       const telemetry = new Telemetry({
         project: 'test-project',
@@ -527,21 +543,21 @@ describe('telemetry/telemetry', () => {
       await telemetry.start();
       await telemetry.start();
 
-      // TelemetryClient constructed only once
-      expect(constructorSpy.calledOnce).to.be.true;
+      // Client constructed only once
+      expect(createClientSpy.calledOnce).to.be.true;
     });
 
     it('does not create client when appInsightsKey is not provided', async () => {
-      const constructorSpy = sandbox.spy(appInsights, 'TelemetryClient');
+      const createClientSpy = sandbox.spy(Telemetry.prototype, 'createClient' as never);
 
       const telemetry = new Telemetry({project: 'test-project'});
       await telemetry.start();
 
-      expect(constructorSpy.called).to.be.false;
+      expect(createClientSpy.called).to.be.false;
     });
 
     it('creates client with correct connection string', async () => {
-      const constructorSpy = sandbox.spy(appInsights, 'TelemetryClient');
+      const createClientSpy = sandbox.spy(Telemetry.prototype, 'createClient' as never);
 
       const telemetry = new Telemetry({
         project: 'test-project',
@@ -550,8 +566,11 @@ describe('telemetry/telemetry', () => {
 
       await telemetry.start();
 
-      expect(constructorSpy.calledOnce).to.be.true;
-      expect(constructorSpy.firstCall.args[0]).to.equal('InstrumentationKey=11111111-1111-1111-1111-111111111111');
+      expect(createClientSpy.calledOnce).to.be.true;
+      // The AppInsights client parses the connection string into its config;
+      // assert the instrumentation key was extracted from the supplied string.
+      const client = (telemetry as unknown as {client?: {config?: {instrumentationKey?: string}}}).client;
+      expect(client?.config?.instrumentationKey).to.equal('11111111-1111-1111-1111-111111111111');
     });
   });
 

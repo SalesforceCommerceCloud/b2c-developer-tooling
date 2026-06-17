@@ -1,0 +1,12 @@
+[
+  {"query": "We're launching a new beauty brand storefront on top of our existing Storefront Next template. I need to set up a brand new vertical with its own color palette, a green primary accent, and a dark header. Where do I change the brand tokens?", "should_trigger": true},
+  {"query": "Create a new furniture vertical for our storefront — different brand colors, a serif heading font, and its own logo treatment, without forking the shared components.", "should_trigger": true},
+  {"query": "I want to re-skin the whole storefront for a second brand. How do I change the brand palette and verify the primary button still passes WCAG contrast in both light and dark mode?", "should_trigger": true},
+  {"query": "Our designer gave me a new brand theme. I need to update src/theme/tokens/brand.css with the new palette and keep local dev rendering with fixtures since we don't have SCAPI credentials yet.", "should_trigger": true},
+  {"query": "How do I spin up a new storefront variant (a vertical) and decide which changes belong in tokens versus an extension versus a base component slot?", "should_trigger": true},
+  {"query": "Add a new route with a loader that fetches product recommendations from SCAPI and streams them with Suspense.", "should_trigger": false},
+  {"query": "My storefront build is failing the bundle size check after adding a charting library. How do I code-split it and get back under the limit?", "should_trigger": false},
+  {"query": "How do I configure i18next namespaces and add a new locale to my Storefront Next project?", "should_trigger": false},
+  {"query": "I need to deploy my storefront to Managed Runtime and promote the new bundle to production.", "should_trigger": false},
+  {"query": "Write a Vitest unit test and a Storybook interaction test for my new product tile component.", "should_trigger": false}
+]

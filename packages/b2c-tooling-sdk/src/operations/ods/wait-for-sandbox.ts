@@ -7,8 +7,28 @@
 import type {OdsClient} from '../../clients/ods.js';
 import {getLogger} from '../../logging/logger.js';
 
+/**
+ * State of a sandbox in the ODS system.
+ *
+ * Standard states:
+ * - `deleted` - Sandbox has been deleted
+ * - `failed` - Sandbox creation or operation failed
+ * - `started` - Sandbox is running
+ * - `stopped` - Sandbox is stopped
+ *
+ * Also accepts any other string value via `(string & {})` for forward compatibility
+ * with future ODS API states.
+ */
 export type SandboxState = 'deleted' | 'failed' | 'started' | 'stopped' | (string & {});
 
+/**
+ * Error thrown when a sandbox does not reach its target state within the specified timeout period.
+ *
+ * @param sandboxId - ID of the sandbox being monitored
+ * @param targetState - The desired state that was not reached before timeout
+ * @param timeoutSeconds - Timeout duration in seconds that was exceeded
+ * @param lastState - Optional last observed state before timeout occurred
+ */
 export class SandboxPollingTimeoutError extends Error {
   constructor(
     public readonly sandboxId: string,
@@ -25,6 +45,12 @@ export class SandboxPollingTimeoutError extends Error {
   }
 }
 
+/**
+ * Error thrown when fetching sandbox status fails during polling.
+ *
+ * @param sandboxId - ID of the sandbox being polled
+ * @param message - Error message or details from the API response
+ */
 export class SandboxPollingError extends Error {
   constructor(
     public readonly sandboxId: string,
@@ -35,6 +61,13 @@ export class SandboxPollingError extends Error {
   }
 }
 
+/**
+ * Error thrown when a sandbox reaches a terminal error state (failed or deleted) during polling.
+ *
+ * @param sandboxId - ID of the sandbox that reached a terminal state
+ * @param targetState - The desired state that was being waited for
+ * @param state - The terminal state that was reached
+ */
 export class SandboxTerminalStateError extends Error {
   constructor(
     public readonly sandboxId: string,
@@ -46,12 +79,29 @@ export class SandboxTerminalStateError extends Error {
   }
 }
 
+/**
+ * Information provided to the `onPoll` callback on each poll during sandbox state monitoring.
+ *
+ * @property sandboxId - ID of the sandbox being monitored
+ * @property elapsedSeconds - Total elapsed time in seconds since polling started
+ * @property state - Current observed state of the sandbox
+ */
 export interface WaitForSandboxPollInfo {
   sandboxId: string;
   elapsedSeconds: number;
   state: SandboxState;
 }
 
+/**
+ * Configuration options for {@link waitForSandbox} sandbox state polling.
+ *
+ * @property sandboxId - ID of the sandbox to monitor
+ * @property targetState - Desired sandbox state to wait for
+ * @property pollIntervalSeconds - Interval between status checks in seconds
+ * @property timeoutSeconds - Maximum time to wait in seconds (0 = no timeout)
+ * @property onPoll - Optional callback invoked on each poll with current state
+ * @property sleep - Optional custom sleep function (primarily for testing)
+ */
 export interface WaitForSandboxOptions {
   sandboxId: string;
   targetState: SandboxState;

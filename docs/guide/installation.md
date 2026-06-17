@@ -1,5 +1,5 @@
 ---
-description: Install the B2C CLI via npm, Homebrew, or GitHub releases, and optionally install the SDK for programmatic use.
+description: Install the B2C CLI via npm or GitHub releases, and optionally install the SDK for programmatic use.
 ---
 
 # Installation
@@ -28,21 +28,6 @@ yarn global add @salesforce/b2c-cli
 ```
 
 :::
-
-## Install via Homebrew
-
-On macOS or Linux, you can install via Homebrew:
-
-```bash
-brew install salesforcecommercecloud/tools/b2c-cli
-```
-
-Or tap the repository first:
-
-```bash
-brew tap salesforcecommercecloud/tools
-brew install b2c-cli
-```
 
 ## Verify Installation
 

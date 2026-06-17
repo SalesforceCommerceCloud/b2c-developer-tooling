@@ -153,7 +153,7 @@ b2c sandbox create --realm <REALM>
 | `--wait`, `-w` | Wait for sandbox to reach started or failed state | `false` |
 | `--poll-interval` | Polling interval in seconds when using --wait | `10` |
 | `--timeout` | Maximum wait time in seconds (0 for no timeout) | `600` |
-| `--set-permissions` / `--no-set-permissions` | Automatically set OCAPI and WebDAV permissions | `true` |
+| `--set-permissions` | Automatically set OCAPI and WebDAV permissions for the client ID used to create the sandbox | `true` |
 | `--permissions-client-id` | Client ID to use for default OCAPI/WebDAV permissions (defaults to auth client ID) | |
 | `--ocapi-settings` | Custom OCAPI settings JSON array (replaces defaults) | |
 | `--webdav-settings` | Custom WebDAV settings JSON array (replaces defaults) | |
@@ -182,7 +182,7 @@ b2c sandbox create --realm abcd --auto-scheduled
 b2c sandbox create --realm abcd --emails dev@example.com,ops@example.com
 
 # Create without automatic permissions
-b2c sandbox create --realm abcd --no-set-permissions
+b2c sandbox create --realm abcd --set-permissions=false
 
 # Use a different client ID for permissions
 b2c sandbox create --realm abcd --permissions-client-id my-other-client
@@ -651,12 +651,14 @@ b2c sandbox update <SANDBOXID> [FLAGS]
 | Flag | Description |
 |------|-------------|
 | `--ttl` | Number of hours to add to sandbox lifetime (0 or less for infinite). Must adhere to the maximum TTL configuration together with previous extensions. |
-| `--auto-scheduled` / `--no-auto-scheduled` | Enable or disable automatic start/stop scheduling |
+| `--auto-scheduled` | Enable or disable automatic start/stop scheduling |
 | `--resource-profile` | Resource profile (`medium`, `large`, `xlarge`, `xxlarge`) |
 | `--tags` | Comma-separated list of tags |
 | `--emails` | Comma-separated list of notification email addresses |
-| `--start-scheduler` | Start schedule JSON (or `"null"` to remove existing scheduler) |
-| `--stop-scheduler` | Stop schedule JSON (or `"null"` to remove existing scheduler) |
+| `--start-scheduler` | Start schedule JSON |
+| `--stop-scheduler` | Stop schedule JSON |
+| `--clear-start-scheduler` | Remove existing start scheduler |
+| `--clear-stop-scheduler` | Remove existing stop scheduler |
 
 At least one flag is required.
 
@@ -673,7 +675,7 @@ b2c sandbox update zzzv-123 --ttl 0
 b2c sandbox update zzzv-123 --auto-scheduled
 
 # Disable auto-scheduling
-b2c sandbox update zzzv-123 --no-auto-scheduled
+b2c sandbox update zzzv-123 --auto-scheduled=false
 
 # Set tags
 b2c sandbox update zzzv-123 --tags ci,nightly
@@ -684,8 +686,8 @@ b2c sandbox update zzzv-123 --resource-profile large
 # Set notification emails
 b2c sandbox update zzzv-123 --emails dev@example.com,qa@example.com
 
-# Enable automatic scheduling and set scheduler values
-b2c sandbox update zzzv-123 --auto-scheduled --start-scheduler '{"weekdays":["MONDAY"],"time":"08:00:00Z"}' --stop-scheduler "null"
+# Enable automatic scheduling, set a start scheduler, and remove the stop scheduler
+b2c sandbox update zzzv-123 --auto-scheduled --start-scheduler '{"weekdays":["MONDAY"],"time":"08:00:00Z"}' --clear-stop-scheduler
 
 # Combine multiple updates
 b2c sandbox update zzzv-123 --ttl 48 --resource-profile xlarge --tags ci,nightly
@@ -700,6 +702,7 @@ b2c sandbox update zzzv-123 --ttl 48 --json
 - Setting `--ttl` to 0 or less gives the sandbox an infinite lifetime (subject to realm configuration).
 - `--auto-scheduled` controls whether automatic start/stop behavior is enabled for the sandbox.
 - `--start-scheduler` and `--stop-scheduler` define scheduler values, but scheduler automation is effective only when `--auto-scheduled` is enabled.
+- Use `--clear-start-scheduler` and `--clear-stop-scheduler` to remove an existing scheduler.
 
 ---
 
@@ -1355,16 +1358,18 @@ b2c sandbox realm update <REALM> [FLAGS]
 |------|-------------|
 | `--max-sandbox-ttl` | Maximum sandbox TTL in hours (`0` for unlimited, subject to quotas) |
 | `--default-sandbox-ttl` | Default sandbox TTL in hours when no TTL is specified at creation |
-| `--start-scheduler` | Start schedule JSON for sandboxes in this realm (use `"null"` to remove) |
-| `--stop-scheduler` | Stop schedule JSON for sandboxes in this realm (use `"null"` to remove) |
+| `--start-scheduler` | Start schedule JSON for sandboxes in this realm |
+| `--stop-scheduler` | Stop schedule JSON for sandboxes in this realm |
+| `--clear-start-scheduler` | Remove existing start scheduler for sandboxes in this realm |
+| `--clear-stop-scheduler` | Remove existing stop scheduler for sandboxes in this realm |
 | `--emails` | Comma-separated list of realm notification email addresses |
-| `--local-users-allowed` / `--no-local-users-allowed` | Enable or disable local users in realm sandbox configuration |
+| `--local-users-allowed` | Enable or disable local user management for sandboxes in realm configuration |
 
-The scheduler flags expect a JSON value or the literal string `"null"`:
+The scheduler flags expect a JSON value; use the dedicated `--clear-*` flags to remove an existing scheduler:
 
 ```bash
 --start-scheduler '{"weekdays":["MONDAY"],"time":"08:00:00Z"}'
---stop-scheduler "null"    # remove existing stop scheduler
+--clear-stop-scheduler    # remove existing stop scheduler
 ```
 
 #### Examples
@@ -1379,7 +1384,7 @@ b2c sandbox realm update zzzz \
   --stop-scheduler '{"weekdays":["MONDAY","TUESDAY"],"time":"19:00:00Z"}'
 
 # Remove an existing stop scheduler
-b2c sandbox realm update zzzz --stop-scheduler "null"
+b2c sandbox realm update zzzz --clear-stop-scheduler
 
 # Update realm emails and local user setting
 b2c sandbox realm update zzzz --emails dev@example.com,ops@example.com --local-users-allowed

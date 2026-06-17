@@ -115,7 +115,7 @@ b2c bm roles list [--count <n>] [--start <n>] [--columns <cols>] [--extended]
 |------|-------------|
 | `--count`, `-n` | Number of roles to return (default 25) |
 | `--start` | Start index for pagination (default 0) |
-| `--columns`, `-c` | Comma-separated columns to display |
+| `--columns`, `-c` | Comma-separated columns to display. Available: `id`, `description`, `userCount`, `userManager` |
 | `--extended`, `-x` | Show all columns including extended fields |
 
 ```bash
@@ -303,7 +303,7 @@ b2c bm users list [--count <n>] [--start <n>] [--columns <cols>] [--extended]
 |------|-------------|
 | `--count`, `-n` | Number of users to return (default 25) |
 | `--start` | Start index for pagination (default 0) |
-| `--columns`, `-c` | Comma-separated columns to display |
+| `--columns`, `-c` | Comma-separated columns to display. Available: `login`, `email`, `name`, `disabled`, `locked`, `lastLogin`, `externalId` |
 | `--extended`, `-x` | Include extended columns (`lastLogin`, `externalId`) |
 
 ```bash
@@ -346,6 +346,10 @@ b2c bm users search [--search-phrase <text>] [--login <login>] [--email <email>]
 | `--sort-by` | Sort field (e.g. `last_login_date`) |
 | `--sort-order` | `asc` or `desc` |
 | `--query` | Raw OCAPI query JSON (overrides convenience flags) |
+| `--count`, `-n` | Number of users to return (default 25) |
+| `--start` | Start index for pagination (default 0) |
+| `--columns`, `-c` | Comma-separated columns to display. Available: `login`, `email`, `name`, `disabled`, `locked`, `lastLogin`, `externalId` |
+| `--extended`, `-x` | Include extended columns (`lastLogin`, `externalId`) |
 
 ```bash
 b2c bm users search --search-phrase smith

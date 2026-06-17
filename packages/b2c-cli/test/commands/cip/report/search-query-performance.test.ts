@@ -24,18 +24,22 @@ describe('cip report search-query-performance', () => {
     return createTestCommand(SearchQueryPerformance, hooks.getConfig(), flags, {});
   }
 
-  it('throws error when has-results flag is missing', async () => {
-    const command = await createCommand({});
+  it('throws a missing-required-parameter error when has-results is omitted', async () => {
+    const command = await createCommand({
+      'site-id': 'Sites-test-Site',
+      from: '2025-01-01',
+      to: '2025-01-31',
+    });
 
     sinon.stub(command, 'validateCipAuthMethods').returns(void 0);
 
-    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
-
+    // The SDK enforces required params (including the enum hasResults) at SQL-build
+    // time, so omitting --has-results surfaces a missing-required-parameter error.
     try {
-      await command.run();
+      await runSilent(() => command.run());
       expect.fail('Should have thrown');
-    } catch {
-      expect(errorStub.calledWith('--has-results is required for this report. Use true or false.')).to.be.true;
+    } catch (error) {
+      expect((error as Error).message).to.include('hasResults');
     }
   });
 

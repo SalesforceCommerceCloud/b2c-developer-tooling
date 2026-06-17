@@ -19,6 +19,24 @@ export interface CipReportParamDefinition {
   required?: boolean;
   min?: number;
   max?: number;
+  /**
+   * Allowed values for an enum-style parameter (for example `['4xx', '5xx']`).
+   * When set, {@link CipReportParamType} should be `string` and the value is
+   * validated against this set before the report's SQL builder runs.
+   */
+  options?: string[];
+  /**
+   * When true, the parameter accepts multiple comma-separated values, suitable
+   * for a SQL `IN (...)` clause. Each value is validated against `options` when
+   * both are set.
+   */
+  multiple?: boolean;
+  /**
+   * Default value applied when the parameter is omitted. For `multiple`
+   * parameters this may be a comma-separated string. Defaults are injected
+   * before validation so a report can rely on the value being present.
+   */
+  default?: string;
 }
 
 /**
@@ -30,6 +48,11 @@ export interface CipReportDefinition {
   category: string;
   parameters: CipReportParamDefinition[];
   buildSql: (params: Record<string, string>) => string;
+  /**
+   * Optional list of warehouse tables the report reads, for discoverability in
+   * `--describe` output and the report listing command. Does not affect SQL.
+   */
+  tablesUsed?: string[];
 }
 
 /**

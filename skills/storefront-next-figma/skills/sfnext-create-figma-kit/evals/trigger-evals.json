@@ -1,0 +1,12 @@
+[
+  {"query": "I just finished defining the brand tokens for our new beauty vertical in brand.css. Now I need to duplicate the official Storefront Next Figma kit and update its Brand variable collection to match. How do I do that?", "should_trigger": true},
+  {"query": "Our brand.css primary color changed. How do I sync that into the Figma kit's Brand variables and republish the library so designers pick it up?", "should_trigger": true},
+  {"query": "Set up a Figma design kit for my new storefront brand — duplicate the base kit, swap the logo wordmark, and bind all fills to variables instead of raw hex.", "should_trigger": true},
+  {"query": "I edited the Button component and added a variant. How do I update the Figma Code Connect mapping (.figma.ts) and publish it so the Figma component links to the code?", "should_trigger": true},
+  {"query": "How do I keep my Storefront Next design tokens and the Figma kit in sync when I create a new vertical, using the Figma MCP server?", "should_trigger": true},
+  {"query": "I need to change the primary color of my storefront. Which token file in the code do I edit for a new vertical?", "should_trigger": false},
+  {"query": "Author a new ProductTile React component with CVA variants, data-slot attributes, and a Storybook story.", "should_trigger": false},
+  {"query": "How do I deploy my storefront bundle to Managed Runtime?", "should_trigger": false},
+  {"query": "Add an extension that injects a promo banner into the header target point.", "should_trigger": false},
+  {"query": "How do I set up i18next namespaces for a new locale in my storefront?", "should_trigger": false}
+]

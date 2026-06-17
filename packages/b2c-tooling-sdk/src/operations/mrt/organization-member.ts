@@ -61,6 +61,26 @@ export interface ListOrgMembersResult {
   members: MrtOrgMember[];
 }
 
+/**
+ * Lists members of an MRT organization.
+ *
+ * @param options - List options including organization slug and optional pagination/filtering parameters
+ * @param auth - Authentication strategy (ApiKeyStrategy or other AuthStrategy implementation)
+ * @returns Promise resolving to paginated list of organization members with count, next, previous, and members array
+ * @throws Error if the request fails
+ *
+ * @example
+ * ```typescript
+ * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ * import { listOrgMembers } from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ *
+ * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
+ *
+ * const result = await listOrgMembers({
+ *   organizationSlug: 'my-org'
+ * }, auth);
+ * ```
+ */
 export async function listOrgMembers(
   options: ListOrgMembersOptions,
   auth: AuthStrategy,
@@ -98,6 +118,34 @@ export interface AddOrgMemberOptions {
   origin?: string;
 }
 
+/**
+ * Adds a member to an MRT organization.
+ *
+ * @param options - Add member options
+ * @param options.organizationSlug - Organization slug identifier
+ * @param options.email - Email of the member to add
+ * @param options.role - Role value (0 = Owner, 1 = Member)
+ * @param options.canViewAllProjects - Optional: grant permission to view all projects
+ * @param options.customDomainCertPermission - Optional: custom domain certificate permission (1 = Disabled, 2 = Enabled)
+ * @param options.origin - Optional: MRT API origin endpoint
+ * @param auth - Authentication strategy (e.g., ApiKeyStrategy)
+ * @returns The created organization member
+ * @throws Error if the request fails
+ *
+ * @example
+ * ```typescript
+ * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ * import { addOrgMember } from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ *
+ * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
+ *
+ * const member = await addOrgMember({
+ *   organizationSlug: 'my-org',
+ *   email: 'user@example.com',
+ *   role: 1  // Member
+ * }, auth);
+ * ```
+ */
 export async function addOrgMember(options: AddOrgMemberOptions, auth: AuthStrategy): Promise<MrtOrgMember> {
   const logger = getLogger();
   const {organizationSlug, email, role, canViewAllProjects, customDomainCertPermission, origin} = options;
@@ -127,6 +175,29 @@ export interface GetOrgMemberOptions {
   origin?: string;
 }
 
+/**
+ * Gets an organization member by email.
+ *
+ * @param options - Get options including organization slug and email
+ * @param auth - Authentication strategy (ApiKeyStrategy)
+ * @returns The organization member details
+ * @throws Error if the request fails or member is not found
+ *
+ * @example
+ * ```typescript
+ * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ * import { getOrgMember } from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ *
+ * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
+ *
+ * const member = await getOrgMember({
+ *   organizationSlug: 'my-org',
+ *   email: 'user@example.com'
+ * }, auth);
+ *
+ * console.log(`Member role: ${member.role}`);
+ * ```
+ */
 export async function getOrgMember(options: GetOrgMemberOptions, auth: AuthStrategy): Promise<MrtOrgMember> {
   const {organizationSlug, email, origin} = options;
   const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, auth);
@@ -148,6 +219,14 @@ export interface UpdateOrgMemberOptions {
   origin?: string;
 }
 
+/**
+ * Updates an organization member's permissions and settings.
+ *
+ * @param options - Update options with organizationSlug, email, and optional canViewAllProjects and customDomainCertPermission
+ * @param auth - Authentication strategy (required for API authorization)
+ * @returns Promise resolving to the updated organization member with full member details
+ * @throws Error if the API request fails
+ */
 export async function updateOrgMember(options: UpdateOrgMemberOptions, auth: AuthStrategy): Promise<MrtOrgMember> {
   const {organizationSlug, email, canViewAllProjects, customDomainCertPermission, origin} = options;
   const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, auth);
@@ -173,6 +252,16 @@ export interface RemoveOrgMemberOptions {
   origin?: string;
 }
 
+/**
+ * Removes a member from an MRT organization.
+ *
+ * @param options - Remove options
+ * @param options.organizationSlug - Slug of the organization
+ * @param options.email - Email address of the member to remove
+ * @param options.origin - Optional MRT API origin (defaults to DEFAULT_MRT_ORIGIN)
+ * @param auth - Authentication strategy
+ * @throws {Error} If the API request fails
+ */
 export async function removeOrgMember(options: RemoveOrgMemberOptions, auth: AuthStrategy): Promise<void> {
   const {organizationSlug, email, origin} = options;
   const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, auth);

@@ -12,6 +12,12 @@ import {Validator, type ValidatorResult, type Schema} from 'jsonschema';
 // Resolve the content-schemas data directory from the package root
 const require = createRequire(import.meta.url);
 const packageRoot = path.dirname(require.resolve('@salesforce/b2c-tooling-sdk/package.json'));
+/**
+ * Absolute path to the directory containing JSON schema definitions for content metadefinitions.
+ *
+ * Used internally to load and register schemas for validation of pagetype, componenttype,
+ * aspecttype, and other content asset definitions.
+ */
 export const CONTENT_SCHEMAS_DIR = path.join(packageRoot, 'data/content-schemas');
 
 /** Top-level schema types that users validate files against. */
@@ -191,6 +197,9 @@ function toValidationError(err: ValidatorResult['errors'][number]): MetaDefiniti
 /**
  * Validate a parsed JSON object against a content metadefinition schema.
  *
+ * @param data - The JSON object to validate against the detected or specified schema type
+ * @param options - Validation options including optional schema type override
+ * @returns A validation result containing the valid flag, detected schema type, and any validation errors
  * @throws {MetaDefinitionDetectionError} When the schema type cannot be detected and no explicit type is provided.
  */
 export function validateMetaDefinition(
@@ -218,6 +227,9 @@ export function validateMetaDefinition(
  *
  * Uses file path conventions for type detection before falling back to property heuristics.
  *
+ * @param filePath - Absolute or relative path to the JSON metadefinition file
+ * @param options - Optional validation options including explicit schema type override
+ * @returns Validation result with valid flag, detected schema type, errors array, and source file path
  * @throws {MetaDefinitionDetectionError} When the schema type cannot be detected and no explicit type is provided.
  */
 export function validateMetaDefinitionFile(

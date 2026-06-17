@@ -291,6 +291,12 @@ For instances that require client certificate authentication:
 
 The certificate must be in PKCS12 format (`.p12` or `.pfx`). The `self-signed` option is often needed for staging environments with internal certificates.
 
+The same fields are available as CLI flags (`--webdav-server`, `--certificate`, `--passphrase`, `--selfsigned`) and as environment variables (`SFCC_WEBDAV_SERVER`, `SFCC_CERTIFICATE`, `SFCC_CERTIFICATE_PASSPHRASE`, `SFCC_SELFSIGNED`).
+
+::: tip Running staging deploys in CI/CD
+For GitHub Actions workflows that target staging — including how to handle the `.p12` certificate as a base64-encoded secret — see [Staging Environments (Two-Factor mTLS)](/guide/ci-cd#staging-environments-two-factor-mtls).
+:::
+
 ::: tip MRT Configuration
 MRT API key can also be loaded from `~/.mobify`. See [MRT API Key](#mrt-api-key) below.
 :::

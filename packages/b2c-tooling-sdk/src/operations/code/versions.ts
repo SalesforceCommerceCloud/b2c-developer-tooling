@@ -62,6 +62,7 @@ export async function getActiveCodeVersion(instance: B2CInstance): Promise<CodeV
  *
  * @param instance - B2C instance
  * @param codeVersionId - Code version ID to activate
+ * @returns Promise that resolves when the code version is activated
  * @throws Error if activation fails
  *
  * @example
@@ -91,6 +92,7 @@ export async function activateCodeVersion(instance: B2CInstance, codeVersionId: 
  *
  * @param instance - B2C instance
  * @param codeVersionId - Code version ID to delete
+ * @returns Promise that resolves when the code version is successfully deleted
  * @throws Error if deletion fails (e.g., trying to delete active version)
  *
  * @example
@@ -119,6 +121,7 @@ export async function deleteCodeVersion(instance: B2CInstance, codeVersionId: st
  *
  * @param instance - B2C instance
  * @param codeVersionId - Code version ID to create
+ * @returns Promise that resolves when the code version is successfully created
  * @throws Error if creation fails
  *
  * @example

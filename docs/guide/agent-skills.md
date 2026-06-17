@@ -18,6 +18,24 @@ claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 claude plugin install b2c-cli
 claude plugin install b2c
 claude plugin install storefront-next
+# Install storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma
+# Install b2c-dx-mcp if you want the MCP server installed
+claude plugin install b2c-dx-mcp
+```
+
+```bash [Codex]
+codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+# Then in Codex, run /plugins, select the "B2C Developer Tooling"
+# marketplace, and select and install the desired plugins.
+```
+
+```bash [Cursor]
+# Cursor reads skills from .cursor/skills/, .agents/skills/, and from
+# Claude Code / Codex skill paths (.claude/skills/, .codex/skills/).
+# If you've already installed via the Claude Code marketplace, Cursor
+# will auto-discover those skills. Otherwise, install with the B2C CLI:
+npx @salesforce/b2c-cli setup skills --ide cursor
 ```
 
 ```text [Copilot (VS Code)]
@@ -32,12 +50,7 @@ copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 copilot plugin install b2c-cli@b2c-developer-tooling
 copilot plugin install b2c@b2c-developer-tooling
 copilot plugin install storefront-next@b2c-developer-tooling
-```
-
-```bash [Codex]
-codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-# Then in Codex, run /plugins, select the "B2C Developer Tooling"
-# marketplace, and select and install the desired plugins.
+copilot plugin install storefront-next-figma@b2c-developer-tooling
 ```
 
 ```bash [Agentforce Vibes]
@@ -75,6 +88,10 @@ npx @salesforce/b2c-cli setup skills
       <td>Storefront Next development — project setup, routing, data fetching, components, Page Designer, authentication, i18n, extensions, testing, and deployment to Managed Runtime</td>
     </tr>
     <tr>
+      <td><a href="https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/storefront-next-figma/skills"><code>storefront-next-figma</code></a></td>
+      <td>Figma design-kit workflows for Storefront Next verticals — duplicate the kit, sync brand variables from <code>brand.css</code>, edit components, and publish Code Connect. Requires the <a href="https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server">Figma MCP server</a></td>
+    </tr>
+    <tr>
       <td><a href="/mcp/"><code>b2c-dx-mcp</code></a></td>
       <td>Automatic project type detection and B2C Commerce workflows for your AI assistant. See <a href="/mcp/installation">MCP Installation</a></td>
     </tr>
@@ -97,6 +114,9 @@ Install plugins at your preferred scope:
 claude plugin install b2c-cli
 claude plugin install b2c
 claude plugin install storefront-next
+# Install storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma
+# Install b2c-dx-mcp if you want the MCP server installed
 claude plugin install b2c-dx-mcp
 ```
 
@@ -104,6 +124,9 @@ claude plugin install b2c-dx-mcp
 claude plugin install b2c-cli --scope project
 claude plugin install b2c --scope project
 claude plugin install storefront-next --scope project
+# Install storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma --scope project
+# Install b2c-dx-mcp if you want the MCP server installed
 claude plugin install b2c-dx-mcp --scope project
 ```
 
@@ -141,6 +164,62 @@ codex plugin marketplace remove b2c-developer-tooling
 
 > **Note:** The `b2c-dx-mcp` plugin is available only for Claude Code. For other clients, install the MCP server directly — see [MCP Installation](/mcp/installation).
 
+> **Note:** The `storefront-next-figma` plugin requires the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server) to be configured in your AI tool — its skills drive the Figma design kit (duplicating the kit, syncing brand variables, and publishing Code Connect) through Figma's MCP tools. Install it alongside `storefront-next` when you also manage the design system in Figma.
+
+## Cursor
+
+Cursor follows the open [Agent Skills](https://cursor.com/docs/skills) standard. Each skill is a folder containing a `SKILL.md` file with YAML frontmatter (`name`, `description`, optional `paths` for glob scoping, and optional `disable-model-invocation`). Optional `scripts/`, `references/`, and `assets/` subdirectories live alongside `SKILL.md`.
+
+### Skill Discovery Locations
+
+Cursor automatically loads skills from these locations:
+
+| Path | Scope | Source |
+|------|-------|--------|
+| `.cursor/skills/` | Project | Native Cursor |
+| `.agents/skills/` | Project | Native Cursor |
+| `~/.cursor/skills/` | User | Native Cursor |
+| `~/.agents/skills/` | User | Native Cursor |
+| `.claude/skills/` | Project | Claude Code compatibility |
+| `~/.claude/skills/` | User | Claude Code compatibility |
+| `.codex/skills/` | Project | Codex compatibility |
+| `~/.codex/skills/` | User | Codex compatibility |
+
+Because Cursor reads from Claude Code and Codex paths too, **any plugin you've already installed via `claude plugin install` or `codex plugin install` is automatically picked up by Cursor** — no separate install needed.
+
+### Install with the B2C CLI
+
+::: code-group
+
+```bash [Project Scope]
+b2c setup skills b2c --ide cursor
+b2c setup skills b2c-cli --ide cursor
+b2c setup skills storefront-next --ide cursor
+```
+
+```bash [User Scope]
+b2c setup skills b2c --ide cursor --global
+b2c setup skills b2c-cli --ide cursor --global
+b2c setup skills storefront-next --ide cursor --global
+```
+
+:::
+
+This writes skills to `.cursor/skills/` (project) or `~/.cursor/skills/` (user). For monorepos, a `.cursor/skills/` folder placed in a nested project directory is auto-scoped to files within that directory — no `paths` field required in `SKILL.md`.
+
+### Reuse Claude Code Plugin Installs
+
+If you also use Claude Code, install once and Cursor will see the same skills:
+
+```bash
+claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+claude plugin install b2c-cli
+claude plugin install b2c
+claude plugin install storefront-next
+# Add storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma
+```
+
 ## Copilot
 
 GitHub Copilot supports skills in both VS Code and the Copilot CLI.
@@ -164,6 +243,7 @@ copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 copilot plugin install b2c-cli@b2c-developer-tooling
 copilot plugin install b2c@b2c-developer-tooling
 copilot plugin install storefront-next@b2c-developer-tooling
+copilot plugin install storefront-next-figma@b2c-developer-tooling
 ```
 
 ## B2C CLI
@@ -180,6 +260,7 @@ List available skills:
 b2c setup skills b2c --list
 b2c setup skills b2c-cli --list
 b2c setup skills storefront-next --list
+b2c setup skills storefront-next-figma --list
 ```
 
 Install to specific IDEs:
@@ -237,7 +318,7 @@ Use [`b2c setup skills`](/cli/setup) for any supported IDE.
 
 | IDE | Flag |
 |-----|------|
-| [Cursor](https://cursor.com/docs/context/skills) | `--ide cursor` |
+| [Cursor](https://cursor.com/docs/skills) | `--ide cursor` |
 | [Windsurf](https://docs.windsurf.com/) | `--ide windsurf` |
 | [VS Code / Copilot](https://code.visualstudio.com/docs/copilot/customization/agent-skills) | `--ide vscode` |
 | [Codex CLI](https://github.com/openai/codex) | `--ide codex` |

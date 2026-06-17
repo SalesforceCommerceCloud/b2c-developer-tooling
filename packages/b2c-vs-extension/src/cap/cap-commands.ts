@@ -71,13 +71,20 @@ export function registerCapCommands(
         {
           location: vscode.ProgressLocation.Notification,
           title: `Installing Commerce App: ${capName}`,
-          cancellable: false,
+          cancellable: true,
         },
-        async (progress) => {
+        async (progress, token) => {
+          // The Cancel button is surfaced, but the SDK does not currently
+          // accept an AbortSignal — the install will continue server-side
+          // until it completes or fails. We only check the token at the
+          // poll boundary to abandon the local wait early.
           await commerceAppInstall(instance, capPath, {
             siteId,
             waitOptions: {
               onPoll: (info) => {
+                if (token.isCancellationRequested) {
+                  throw new vscode.CancellationError();
+                }
                 progress.report({message: `Status: ${info.status}`});
               },
             },
@@ -87,6 +94,10 @@ export function registerCapCommands(
 
       vscode.window.showInformationMessage(`Commerce App "${capName}" installed successfully on site "${siteId}".`);
     } catch (err) {
+      if (err instanceof vscode.CancellationError) {
+        // Operation cancelled — local wait stopped; server-side install continues.
+        return;
+      }
       await showJobError(err, instance, 'Commerce App install failed');
     }
   });

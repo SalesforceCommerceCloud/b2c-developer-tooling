@@ -12,7 +12,6 @@ import {
   type CartridgePosition,
 } from '@salesforce/b2c-tooling-sdk/operations/sites';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
-import * as fs from 'fs';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {registerSafeCommand} from '../safety.js';
@@ -89,20 +88,6 @@ function createDownloadCartridgeCommand(
         }
       },
     );
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Diff with Instance (TODO: disabled — needs optimization for large cartridges)
-// ---------------------------------------------------------------------------
-
-function createDiffCartridgeCommand(
-  _configProvider: B2CExtensionConfig,
-  _outputChannel: vscode.OutputChannel,
-  _tempDirs: string[],
-): (item: CartridgeItem) => Promise<void> {
-  return async () => {
-    vscode.window.showInformationMessage('B2C DX: Compare with Instance is not yet available.');
   };
 }
 
@@ -413,16 +398,14 @@ export function registerCartridgeCommands(
   treeView: vscode.TreeView<CartridgeTreeItem>,
   outputChannel: vscode.OutputChannel,
 ): vscode.Disposable[] {
-  const tempDirs: string[] = [];
-
   const disposables = [
+    registerSafeCommand('b2c-dx.codeSync.revealCartridge', async (item: CartridgeItem) => {
+      if (!item?.cartridge?.src) return;
+      await vscode.commands.executeCommand('revealInExplorer', vscode.Uri.file(item.cartridge.src));
+    }),
     registerSafeCommand(
       'b2c-dx.codeSync.downloadCartridge',
       createDownloadCartridgeCommand(configProvider, outputChannel),
-    ),
-    registerSafeCommand(
-      'b2c-dx.codeSync.diffCartridge',
-      createDiffCartridgeCommand(configProvider, outputChannel, tempDirs),
     ),
     registerSafeCommand('b2c-dx.codeSync.addToSitePath', createAddToSitePathCommand(configProvider, outputChannel)),
     registerSafeCommand(
@@ -441,16 +424,6 @@ export function registerCartridgeCommands(
       'b2c-dx.codeSync.activateCodeVersion',
       createActivateCodeVersionCommand(configProvider, treeView, outputChannel),
     ),
-    // Cleanup temp dirs on dispose
-    new vscode.Disposable(() => {
-      for (const dir of tempDirs) {
-        try {
-          fs.rmSync(dir, {recursive: true, force: true});
-        } catch {
-          // best effort
-        }
-      }
-    }),
   ];
 
   return disposables;

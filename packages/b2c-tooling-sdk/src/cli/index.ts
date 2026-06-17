@@ -140,6 +140,13 @@ export type {
   B2COperationLifecycleHookOptions,
   B2COperationLifecycleHookResult,
   B2COperationLifecycleHook,
+  // Cartridge provider hook types
+  CartridgeDiscoveryOptions,
+  CartridgeProvider,
+  CartridgeTransformer,
+  CartridgeProvidersHookOptions,
+  CartridgeProvidersHookResult,
+  CartridgeProvidersHook,
 } from './hooks.js';
 export {createB2COperationContext, B2CLifecycleRunner} from './hooks.js';
 // Re-export module augmentation for @oclif/core Hooks interface

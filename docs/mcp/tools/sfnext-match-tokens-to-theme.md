@@ -4,9 +4,11 @@ description: Match Figma design tokens to existing theme tokens in app.css with 
 
 # sfnext_match_tokens_to_theme
 
-Matches Figma design tokens (colors, spacing, radius, etc.) to your Storefront Next theme tokens in `app.css`. Helps you identify which design tokens match existing theme variables and suggests new token names for values that don't have matches.
+::: warning DEPRECATED — use the agent-skills plugins instead
+This tool is **deprecated** and **not compatible with the Storefront Next 1.0 GA release**. It has been superseded by the [`storefront-next` and `storefront-next-figma`](../../guide/agent-skills) agent-skills plugins, which stay current with the GA release. It now lives in the opt-in [`STOREFRONTNEXT_DEPRECATED`](../toolsets#storefrontnext-deprecated) toolset (never auto-enabled, excluded from `--toolsets ALL`) and **will be removed in a future release**. Install the skills plugins instead — see the [Agent Skills guide](../../guide/agent-skills).
+:::
 
-> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
+Matches Figma design tokens (colors, spacing, radius, etc.) to your Storefront Next theme tokens in `app.css`. Helps you identify which design tokens match existing theme variables and suggests new token names for values that don't have matches.
 
 ## Overview
 

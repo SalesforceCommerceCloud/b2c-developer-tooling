@@ -20,10 +20,12 @@ b2c setup inspect [FLAGS]
 
 ### Flags
 
-| Flag       | Description                                                   | Default |
-| ---------- | ------------------------------------------------------------- | ------- |
-| `--unmask` | Show sensitive values unmasked (passwords, secrets, API keys) | `false` |
-| `--json`   | Output results as JSON                                        | `false` |
+| Flag                     | Description                                                   | Default                  |
+| ------------------------ | ------------------------------------------------------------- | ------------------------ |
+| `--unmask`               | Show sensitive values unmasked (passwords, secrets, API keys) | `false`                  |
+| `--account-manager-host` | Account Manager hostname for OAuth                            | `account.demandware.com` |
+| `--cloud-origin`         | MRT cloud origin URL                                          | `https://cloud.mobify.com` |
+| `--json`                 | Output results as JSON                                        | `false`                  |
 
 ### Examples
 
@@ -121,9 +123,101 @@ b2c setup ide
 # Show setup ide subcommands
 b2c setup ide --help
 
+# Vendor Script API TypeScript definitions for IDE IntelliSense
+b2c setup ide vscode-types
+
+# Print TS Server plugin path for LSP-based editors (Neovim, Helix, Zed, etc.)
+b2c setup ide tsserver-plugin --json
+
 # Generate Prophet integration script
 b2c setup ide prophet
 ```
+
+## b2c setup ide vscode-types
+
+Vendor B2C Commerce Script API TypeScript definitions and write a `jsconfig.json` into the workspace so any IDE that drives `tsserver` (plain VS Code, WebStorm, IntelliJ Ultimate, Neovim, Helix, Zed, Sublime Text) gets `dw/*` IntelliSense, hover docs, and signature help in cartridge JavaScript files.
+
+The B2C DX VS Code extension does not need this command — it injects the same TypeScript Server plugin at runtime without writing files into your repo. Use this command only when you're not running the extension.
+
+### Usage
+
+```bash
+b2c setup ide vscode-types [FLAGS]
+```
+
+### Flags
+
+| Flag             | Description                                                       | Default          |
+| ---------------- | ----------------------------------------------------------------- | ---------------- |
+| `--output`, `-o` | Path for the generated `jsconfig.json` (relative to project root) | `jsconfig.json`  |
+| `--force`, `-f`  | Overwrite output files if they already exist                      | `false`          |
+| `--[no-]copy`    | Copy bundled types into `./.b2c-script-types/`                    | `true`           |
+| `--json`         | Output results as JSON                                            | `false`          |
+
+The generated `paths` mappings are written relative to the repo root, so `--output` is only intended for renaming the file itself (e.g., `--output jsconfig.cartridges.json`), not for relocating it into a subdirectory.
+
+### Examples
+
+```bash
+# Default: write ./jsconfig.json and ./.b2c-script-types/types/ at the repo root
+b2c setup ide vscode-types
+
+# Re-vendor after upgrading the CLI
+b2c setup ide vscode-types --force
+
+# Regenerate jsconfig only (skip the type bundle copy; types must already be vendored)
+b2c setup ide vscode-types --no-copy --force
+```
+
+### Output
+
+The command produces:
+
+- `./.b2c-script-types/types/` — vendored copy of the Script API definitions, version-pinned to the CLI release. Safe to commit.
+- `./jsconfig.json` (or the path passed to `--output`) — TypeScript Language Service configuration mapping `dw/*` to the vendored types. Cartridge-relative requires (`~/cartridge/...`, `*/cartridge/...`) can't be expressed in standalone TypeScript `paths` mappings and will appear unresolved without the B2C DX VS Code extension.
+
+See the [IDE Integration guide](/guide/ide-integration#script-api-intellisense) for editor-specific setup notes (Neovim, Helix, Zed, etc.).
+
+## b2c setup ide tsserver-plugin
+
+Print absolute paths to the bundled `@salesforce/b2c-script-types` TypeScript Server plugin and types directory. Use this when configuring an LSP-based editor (Neovim, Helix, Zed, Sublime, etc.) to load the plugin via `init_options.plugins[]` — full feature parity with the B2C DX VS Code extension, including cartridge-relative require resolution.
+
+The command performs no filesystem writes; it just resolves and prints paths.
+
+### Usage
+
+```bash
+b2c setup ide tsserver-plugin [FLAGS]
+```
+
+### Flags
+
+| Flag     | Description            | Default |
+| -------- | ---------------------- | ------- |
+| `--json` | Output results as JSON | `false` |
+
+### Examples
+
+```bash
+# Human-readable
+b2c setup ide tsserver-plugin
+
+# JSON for tooling (e.g. nvim-sfcc)
+b2c setup ide tsserver-plugin --json
+```
+
+### Output
+
+```json
+{
+  "pluginName": "@salesforce/b2c-script-types",
+  "pluginPath": "/usr/local/lib/node_modules/@salesforce/b2c-cli/dist/script-types",
+  "typesPath": "/usr/local/lib/node_modules/@salesforce/b2c-cli/dist/script-types/types",
+  "version": "26.7.0"
+}
+```
+
+Pass `pluginName` as `name` and `pluginPath` as `location` in your editor's `tsserver` `init_options.plugins[]` entry. The plugin auto-discovers cartridges in the project root and honors `dw.json`'s `cartridges` field for ordering — no host-side wiring needed.
 
 ## b2c setup ide prophet
 
@@ -187,9 +281,11 @@ b2c setup instance list [FLAGS]
 
 ### Flags
 
-| Flag     | Description            | Default |
-| -------- | ---------------------- | ------- |
-| `--json` | Output results as JSON | `false` |
+| Flag               | Description                                                          | Default |
+| ------------------ | -------------------------------------------------------------------- | ------- |
+| `--columns`, `-c`  | Columns to display (comma-separated): name, hostname, source, active | All     |
+| `--extended`, `-x` | Show all columns including extended fields                           | `false` |
+| `--json`           | Output results as JSON                                               | `false` |
 
 ### Examples
 
@@ -385,6 +481,8 @@ b2c setup skills [SKILLSET]
 | `--update`, `-u`      | Update existing skills (overwrite)                                                             | `false`     |
 | `--version`           | Specific release version                                                                       | `latest`    |
 | `--force`             | Skip confirmation prompts (non-interactive)                                                    | `false`     |
+| `--columns`, `-c`     | Columns to display (comma-separated): name, description, skillSet, hasReferences               |             |
+| `--extended`, `-x`    | Show all columns including extended fields                                                     | `false`     |
 | `--json`              | Output results as JSON                                                                         | `false`     |
 
 ### Supported IDEs
@@ -467,6 +565,8 @@ claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 claude plugin install b2c-cli
 claude plugin install b2c
 claude plugin install storefront-next
+# Add storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma
 ```
 
 The marketplace provides:
@@ -479,12 +579,13 @@ Use `--ide manual` if you prefer manual installation, or `--ide agentforce-vibes
 
 ### Skill Sets
 
-| Skill Set          | Description                                                    |
-| ------------------ | -------------------------------------------------------------- |
-| `b2c`              | B2C Commerce development patterns and practices                |
-| `b2c-cli`          | B2C CLI commands and operations                                |
-| `storefront-next`  | Storefront Next development — routing, components, deployment  |
-| `cap-dev`          | Commerce App Package scaffolding, validation, and submission   |
+| Skill Set               | Description                                                         |
+| ----------------------- | ------------------------------------------------------------------- |
+| `b2c`                   | B2C Commerce development patterns and practices                     |
+| `b2c-cli`               | B2C CLI commands and operations                                     |
+| `storefront-next`       | Storefront Next development — routing, components, deployment       |
+| `storefront-next-figma` | Storefront Next Figma design-kit workflows (requires Figma MCP server) |
+| `cap-dev`               | Commerce App Package scaffolding, validation, and submission        |
 
 ### Output
 
@@ -522,4 +623,4 @@ Downloaded artifacts are cached locally at: `~/.cache/b2c-cli/skills/{version}/{
 
 - [Agent Skills & Plugins Guide](/guide/agent-skills) - Overview of available skills
 - [Claude Code Skills Documentation](https://claude.ai/code) - Claude Code skill format
-- [Cursor Skills Documentation](https://cursor.com/docs/context/skills) - Cursor skill format
+- [Cursor Skills Documentation](https://cursor.com/docs/skills) - Cursor skill format. Cursor also auto-loads skills from `.claude/skills/` and `~/.claude/skills/`, so `--ide claude-code` installs are picked up by Cursor automatically.

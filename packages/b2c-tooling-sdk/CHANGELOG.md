@@ -1,5 +1,39 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.13.0
+
+### Minor Changes
+
+- [`19f059e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/19f059e7ba928d1070d7960920770f1256dfae73) - Add `storefront-next-figma` as a skill set for `b2c setup skills`. You can now install the Figma design-kit skills with `b2c setup skills storefront-next-figma` (or select it interactively) for any supported IDE. These skills require the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server) to be configured in your AI tool. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.12.0
+
+### Minor Changes
+
+- [#420](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/420) [`de8d40b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/de8d40b54dc923c5805fac2ef587db8b86349a6b) - Add MCP tools for log inspection and documentation lookup. Logs: `logs_list_files`, `logs_get_recent`, and a `logs_watch_start` / `logs_watch_poll` / `logs_watch_stop` / `logs_watch_list` lifecycle that buffers entries between polls so agents don't miss logs produced between tool calls. Docs: `docs_search`, `docs_read`, `docs_list`, `docs_schema_search`, `docs_schema_read`, `docs_schema_list` for the bundled Script API and XSD schema corpora. Adds a new `DIAGNOSTICS` toolset that groups the script debugger and log tools; like `SCAPI`, it is always enabled (auto-discovered for every project type). SDK now also exports the log filter helpers (`parseSinceTime`, `filterBySince`, `filterByLevel`, `filterBySearch`, `matchesLevel`, `matchesSearch`) for reuse. (Thanks [@clavery](https://github.com/clavery)!)
+
+  The log watch buffers `logs_watch_start` defaults to `last_entries: 0` (capture only new entries, matching the "start before triggering" workflow), bounds the entry buffer by bytes as well as count, reports each discovered file only once per poll, stops the underlying tail if a concurrent-start hostname race loses registration, and makes `logs_watch_stop` truly idempotent.
+
+- [#484](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/484) [`80e63fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/80e63fca888d9b83efd53c9c0054247fb2aa31b3) - `b2c job import` now supports `--split` for importing directories larger than the instance archive size limit. With `--split` (and optional `--max-size`, default `190mb`), the import is broken into several smaller archives: order-sensitive metadata/XML is imported first — kept together when it fits, otherwise split at data-unit boundaries in dependency order — followed by static assets packed by compressed size. A normal import that exceeds the limit now warns and recommends `--split`. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Example: `b2c job import ./big-site-data --split --max-size 150mb`
+
+  The SDK adds a corresponding `siteArchiveImportSplit()` operation.
+
+### Patch Changes
+
+- [#473](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/473) [`b723939`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b72393951bb95b64f3291cd3cb76197e280a6a37) - Documentation audit and repair pass: corrected stale CLI flag and command references across the CLI reference and guides, fixed broken examples (e.g. eCDN mTLS, sandbox `--no-*` flags, WebDAV `get` arguments), aligned SDK JSDoc with current signatures, and added the missing `operations/cap` typedoc entry point so the Commerce App SDK module appears in the API reference. Filled in JSDoc for previously undocumented public exports across the SDK (auth, clients, instance, logging, ods, mrt, cap, cip, debug, scaffold, schemas, skills, etc.) so the generated API docs cover the full public surface. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#474](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/474) [`21bbed0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/21bbed0ea1b42e8750d4259669370f8bcf562c10) - Make mTLS / self-signed client certificates robust against Node's bundled undici version. The TLS dispatcher is an undici `Agent` from the `undici` npm package, but it was handed to `global.fetch`, which is backed by whatever undici Node bundles internally — a version that drifts across Node releases and can be a different major than the npm package. Because undici's request-handler interface changed across majors (and the cross-version compatibility shim is removed in undici 8), pairing a foreign Agent with `global.fetch` can fail and silently drop the client certificate. Requests that carry a dispatcher now use undici's own `fetch` so the Agent and fetch always share one undici instance, regardless of Node version. Applies to all auth strategies (basic, client-credentials, JWT, implicit, API key), so staging deploys with `--certificate`/`--selfsigned` keep working as Node updates its bundled undici. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#470](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/470) [`c8e0b60`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c8e0b602e1a8da88f7e6620e5d5614f3a55689bd) - Remove the CAP validation warning that flagged a root directory not matching the `{id}-v{version}` naming convention. This convention is no longer required, so the check has been dropped from `b2c cap validate` (and `b2c cap install`). (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.11.1
+
+### Patch Changes
+
+- [`b8dcf74`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b8dcf741c253fee0df4219400bfa10a79c704e98) - Document Cursor as a first-class skills target, including its compatibility with Claude Code and Codex skill paths so plugins installed via `claude plugin install` are auto-picked-up by Cursor. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.11.0
 
 ### Minor Changes

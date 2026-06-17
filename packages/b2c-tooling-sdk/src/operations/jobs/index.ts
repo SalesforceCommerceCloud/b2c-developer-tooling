@@ -57,6 +57,7 @@ export {mapOcapiExecution, mapOcapiSearchResult} from './ocapi-mapping.js';
 // Site archive import/export (uses OCAPI WebDAV path)
 export {
   siteArchiveImport,
+  siteArchiveImportSplit,
   siteArchiveExport,
   siteArchiveExportToBuffer,
   siteArchiveExportToPath,
@@ -65,6 +66,9 @@ export {
 export type {
   SiteArchiveImportOptions,
   SiteArchiveImportResult,
+  SiteArchiveImportSplitOptions,
+  SplitImportPlanInfo,
+  SplitImportPartInfo,
   SiteArchiveExportOptions,
   SiteArchiveExportResult,
   ExportDataUnitsConfiguration,

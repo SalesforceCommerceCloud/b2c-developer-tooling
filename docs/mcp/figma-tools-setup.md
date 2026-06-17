@@ -4,9 +4,11 @@ description: Prerequisites and setup for Figma-to-component tools (workflow orch
 
 # Figma-to-Component Tools Setup
 
-Prerequisites and setup for using the Figma workflow tools: `sfnext_start_figma_workflow`, `sfnext_analyze_component`, and `sfnext_match_tokens_to_theme`.
+::: warning DEPRECATED — use the agent-skills plugins instead
+The Figma workflow MCP tools described on this page are **deprecated** and **not compatible with the Storefront Next 1.0 GA release**. They have been superseded by the [`storefront-next` and `storefront-next-figma`](../guide/agent-skills) agent-skills plugins, which stay current with the GA release. They now live in the opt-in [`STOREFRONTNEXT_DEPRECATED`](./toolsets#storefrontnext-deprecated) toolset and **will be removed in a future release**. For Figma design-kit workflows, install the [`storefront-next-figma` plugin](../guide/agent-skills) instead.
+:::
 
-> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
+Prerequisites and setup for using the Figma workflow tools: `sfnext_start_figma_workflow`, `sfnext_analyze_component`, and `sfnext_match_tokens_to_theme`.
 
 ## Overview
 
@@ -53,4 +55,5 @@ If the Figma MCP server is not enabled, the workflow tool will still return inst
 - [sfnext_analyze_component](./tools/sfnext-analyze-component) - REUSE/EXTEND/CREATE recommendation
 - [sfnext_match_tokens_to_theme](./tools/sfnext-match-tokens-to-theme) - Token mapping
 - [STOREFRONTNEXT Toolset](./toolsets#storefrontnext) - Overview of Storefront Next tools
+- [`storefront-next-figma` plugin](/guide/agent-skills#available-plugins) - Agent skills for managing the Figma design kit (duplicate the kit, sync brand variables, publish Code Connect); also requires the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server)
 - [Figma MCP Server Documentation](https://developers.figma.com/docs/figma-mcp-server) - Official Figma MCP setup

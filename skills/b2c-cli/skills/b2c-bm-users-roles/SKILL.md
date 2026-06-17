@@ -29,6 +29,8 @@ OCAPI-only commands (no SCAPI equivalent): `bm users search`, `bm whoami`, `bm a
 
 ## Authentication
 
+The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables, `dw.json` in the current or parent directories, `~/.mobify`, `package.json`, and configuration plugins. **Flags like `--server`, `--client-id`, and `--client-secret` are usually unnecessary** — only pass them to override what's auto-detected. Run `b2c setup inspect` to see the resolved configuration and which source provided each value. For precedence and troubleshooting, see the `b2c-cli:b2c-config` skill.
+
 Most BM commands accept either client credentials or browser-based user auth. A handful require a *real BM user identity* and the CLI defaults those to user-auth automatically.
 
 | Command group | Default auth | Why |

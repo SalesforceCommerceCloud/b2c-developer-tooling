@@ -87,7 +87,7 @@ brew install SalesforceCommerceCloud/tools/b2c-cli
 
 ## Install Agent Skills
 
-Detailed setup: [Claude Code](/guide/agent-skills#claude-code) · [Codex](/guide/agent-skills#codex) · [Copilot](/guide/agent-skills#copilot) · [Agentforce Vibes](/guide/agent-skills#agentforce-vibes) · [All IDEs](/guide/agent-skills)
+Detailed setup: [Claude Code](/guide/agent-skills#claude-code) · [Codex](/guide/agent-skills#codex) · [Cursor](/guide/agent-skills#cursor) · [Copilot](/guide/agent-skills#copilot) · [Agentforce Vibes](/guide/agent-skills#agentforce-vibes) · [All IDEs](/guide/agent-skills)
 
 ::: code-group
 
@@ -96,6 +96,24 @@ claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 # Use --scope project to install for current project only
 claude plugin install b2c-cli
 claude plugin install b2c
+claude plugin install storefront-next
+# Install storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma
+# Install b2c-dx-mcp if you want the MCP server installed
+claude plugin install b2c-dx-mcp
+```
+
+```bash [Codex]
+codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+# Then in Codex, run /plugins, select the "B2C Developer Tooling"
+# marketplace, and select and install the desired plugins.
+```
+
+```bash [Cursor]
+# Cursor auto-loads skills from Claude Code paths — if you've already
+# installed via `claude plugin install`, Cursor picks them up too.
+# Otherwise, install directly to .cursor/skills/:
+npx @salesforce/b2c-cli setup skills --ide cursor
 ```
 
 ```text [Copilot (VS Code)]
@@ -109,12 +127,8 @@ Then enter:
 copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 copilot plugin install b2c-cli@b2c-developer-tooling
 copilot plugin install b2c@b2c-developer-tooling
-```
-
-```bash [Codex]
-codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-# Then in Codex, run /plugins, select the "B2C Developer Tooling"
-# marketplace, and select and install the desired plugins.
+copilot plugin install storefront-next@b2c-developer-tooling
+copilot plugin install storefront-next-figma@b2c-developer-tooling
 ```
 
 ```bash [Agentforce Vibes]

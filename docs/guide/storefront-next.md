@@ -4,11 +4,9 @@ description: Set up Storefront Next development environments using the B2C CLI t
 
 # Storefront Next
 
-::: warning Important
-Storefront Next is currently in a closed pilot. Access to Storefront Next is limited to pilot customers. Features and configuration may change.
-:::
-
 Set up Storefront Next development environments using the B2C CLI to create sandboxes, SLAS clients, MRT environments, and deploy.
+
+To learn more about Storefront Next, see the [Storefront Next](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-get-started.html) documentation.
 
 ## Prerequisites
 
@@ -199,7 +197,7 @@ b2c mrt tail-logs -p <PROJECT> -e <ENVIRONMENT> --level ERROR --level WARN
 b2c mrt tail-logs -p <PROJECT> -e <ENVIRONMENT> --search "timeout|500"
 ```
 
-This is useful for diagnosing deployment failures, SSR errors, and API connectivity issues. See [MRT Commands](/cli/mrt#tail-logs) for all options.
+This is useful for diagnosing deployment failures, SSR errors, and API connectivity issues. See [MRT Commands](/cli/mrt#b2c-mrt-tail-logs) for all options.
 
 ## Summary
 

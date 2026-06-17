@@ -6,8 +6,6 @@ description: MCP Server for Salesforce B2C Commerce - AI-assisted development to
 
 The B2C DX MCP Server enables AI assistants (like Claude Code, Cursor, GitHub Copilot, and others) to help with B2C Commerce development tasks. It provides toolsets for **SCAPI**, **CARTRIDGES**, **MRT**, **PWAV3**, and **STOREFRONTNEXT** development.
 
-> **Note:** 🚧 The STOREFRONTNEXT MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
-
 ## Quick Start
 
 1. **Install** — set up the MCP server for your client. See the [Installation Guide](./installation) for Claude Code, Cursor, GitHub Copilot, and other clients.
@@ -31,12 +29,16 @@ The server analyzes your project directory and enables toolsets based on what it
 
 With auto-discovery, the **SCAPI** toolset is always included. Hybrid projects (e.g., cartridges + PWA Kit) get combined toolsets. You can also [manually select toolsets](./configuration#toolset-selection).
 
+::: warning Storefront Next `sfnext_*` tools are deprecated
+The legacy Storefront Next MCP tools (`sfnext_*`) are **not compatible with the Storefront Next 1.0 GA release** and have been superseded by the [`storefront-next` and `storefront-next-figma` agent-skills plugins](../guide/agent-skills). They no longer auto-enable for Storefront Next projects and have moved to the opt-in [`STOREFRONTNEXT_DEPRECATED`](./toolsets#storefrontnext-deprecated) toolset. Install the skills plugins instead — see the [Agent Skills guide](../guide/agent-skills).
+:::
+
 ## Prompting Tips
 
 > ⚠️ **Explicitly mention "Use the MCP tool"** in your prompts for reliable tool usage. This ensures the assistant prioritizes MCP tools over general knowledge.
 
 **Examples:**
-- "I'm new to Storefront Next. **Use the MCP tool** to show me the critical rules I need to know."
+- "**Use the MCP tool** to build and push my Storefront Next bundle to staging."
 - "**Use the MCP tool** to list all available SCAPI schemas."
 - "**Use the MCP tool** to deploy my cartridges to the sandbox instance."
 - "**Use the MCP tool** to build and push my Storefront Next bundle to staging."

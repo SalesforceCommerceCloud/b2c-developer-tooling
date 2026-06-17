@@ -1,6 +1,6 @@
 ---
 name: sfnext-extensions
-description: Build extensions for Storefront Next using target-config.json, target points, extension routes, and translation namespaces. Use when creating modular features, inserting components into UI targets, adding extension routes, or using SFDC_EXT_ integration markers. Covers extension structure, targetId configuration, and extension registration in src/extensions/config.json.
+description: Build extensions for Storefront Next using target-config.json, target points, extension routes, and translation namespaces. Use when creating modular features, inserting components into UI targets, adding extension routes, adding a section to an existing page, or using SFDC_EXT_ integration markers. Covers the base-audit decision gate (deciding whether to extend at all vs token/variant override), extension structure, targetId configuration, and extension registration in src/extensions/config.json.
 ---
 
 # Extensions Skill
@@ -10,6 +10,31 @@ This skill covers the Storefront Next extension system — modular features that
 ## Overview
 
 Extensions are self-contained feature modules that add components, routes, translations, and providers to a Storefront Next storefront without modifying core code.
+
+## Before You Build — Audit the Base First (Decision Gate)
+
+An extension is the right tool for adding something the storefront does **not already render**. Before scaffolding one, confirm you actually need it — a duplicated section costs you on every page load, every test, and every design sync.
+
+Run this gate **before writing any extension code**:
+
+1. **Find the base.** Open the relevant route in `src/routes/` and trace every component it renders.
+2. **Check each section you intend to add.** Does the base already render equivalent content at that location (a description, accordion, badge, banner, title…)?
+   - **YES** → do not create a parallel component. Restyle it through the token/brand layer (a CVA variant or `brand.css` value), or inject into a UITarget slot on the existing content. Adding a duplicate section is a bug, not a feature.
+   - **NO** → an extension is justified. Continue to the structure below and register it at the correct `targetId`.
+3. **Decide the layer for what's missing:**
+
+   ```
+   Is the change purely visual (color, font, spacing)?
+     └─ YES → Token / CVA change (brand.css or a component variant). No extension needed.
+     └─ NO  → Is the new structure needed by only one storefront/vertical?
+                 └─ YES → Extension at a UITarget slot (this skill). Never edit core.
+                 └─ NO  → It's a shared pattern — add a slot/render-prop to the BASE
+                          component instead, and let each consumer fill it.
+   ```
+
+**Rule of thumb:** extensions *add what is missing*; they never recreate what already exists. When in doubt, prefer a UITarget slot or a token override over a new component.
+
+See [Base Audit Reference](references/BASE-AUDIT.md) for worked examples of the gate.
 
 ## Extension Structure
 
@@ -113,4 +138,5 @@ See [Extension Examples Reference](references/EXTENSION-EXAMPLES.md) for complet
 
 ## Reference Documentation
 
+- [Base Audit Reference](references/BASE-AUDIT.md) - Worked examples of the decision gate (extend vs token/variant vs base slot)
 - [Extension Examples Reference](references/EXTENSION-EXAMPLES.md) - Complete extension examples
