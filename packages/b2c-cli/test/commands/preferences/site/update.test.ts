@@ -28,7 +28,14 @@ describe('preferences site update', () => {
       sinon.restore();
     });
 
-    it('errors when neither --file nor --body is provided', async () => {
+    function setupOAuth(command: any): void {
+      sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+      sinon.stub(command, 'getOAuthStrategy').returns({getAuthorizationHeader: async () => 'Bearer test'});
+    }
+
+    it('errors when neither assignments nor --file/--body is provided', async () => {
       const command: any = new PreferencesSiteUpdate([], config);
       stubParse(
         command,
@@ -46,7 +53,7 @@ describe('preferences site update', () => {
         expect.fail('Should have thrown');
       } catch {
         expect(errorStub.calledOnce).to.equal(true);
-        expect(String(errorStub.firstCall.args[0])).to.match(/--file or --body/);
+        expect(String(errorStub.firstCall.args[0])).to.match(/assignments or --file\/--body/);
       }
     });
 
@@ -93,10 +100,7 @@ describe('preferences site update', () => {
       );
       await command.init();
 
-      sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-      sinon.stub(command, 'jsonEnabled').returns(true);
-      sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
-      sinon.stub(command, 'getOAuthStrategy').returns({getAuthorizationHeader: async () => 'Bearer test'});
+      setupOAuth(command);
 
       const fetchStub = sinon.stub(globalThis, 'fetch').callsFake(async (input: Request | string | URL) => {
         const req = input as Request;
@@ -108,6 +112,36 @@ describe('preferences site update', () => {
           status: 200,
           headers: {'content-type': 'application/json'},
         });
+      });
+
+      await command.run();
+      expect(fetchStub.called).to.equal(true);
+    });
+
+    it('builds typed body from KEY=value / KEY:=json assignments and uses the development default', async () => {
+      const command: any = new PreferencesSiteUpdate([], config);
+      stubParse(
+        command,
+        {
+          'tenant-id': 'zzxy_prd',
+          'instance-type': 'development',
+          'site-id': 'RefArch',
+          'mask-passwords': false,
+        },
+        {'group-id': 'CustomGroupId'},
+        ['CustomGroupId', 'c_name=hello', 'c_count:=5'],
+      );
+      await command.init();
+
+      setupOAuth(command);
+
+      const fetchStub = sinon.stub(globalThis, 'fetch').callsFake(async (input: Request | string | URL) => {
+        const req = input as Request;
+        expect(req.url).to.include('/site-preference-groups/CustomGroupId/development');
+        expect(req.url).to.include('siteId=RefArch');
+        const json = (await req.clone().json()) as Record<string, unknown>;
+        expect(json).to.deep.equal({c_name: 'hello', c_count: 5});
+        return new Response(JSON.stringify(json), {status: 200, headers: {'content-type': 'application/json'}});
       });
 
       await command.run();

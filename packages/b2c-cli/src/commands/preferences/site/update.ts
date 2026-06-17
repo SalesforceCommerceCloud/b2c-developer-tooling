@@ -5,7 +5,12 @@
  */
 import fs from 'node:fs';
 import {Args, Flags, ux} from '@oclif/core';
-import {PreferencesCommand, instanceTypeFlag, maskPasswordsFlag} from '../../../utils/preferences.js';
+import {
+  PreferencesCommand,
+  buildAssignmentMap,
+  instanceTypeFlag,
+  maskPasswordsFlag,
+} from '../../../utils/preferences.js';
 import {getApiErrorMessage, type SitePreferences, type PreferenceInstanceType} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../../i18n/index.js';
 
@@ -20,7 +25,7 @@ export default class PreferencesSiteUpdate extends PreferencesCommand<typeof Pre
   static description = withDocs(
     t(
       'commands.preferences.site.update.description',
-      'Update custom preferences in a site preference group for a given instance type',
+      'Update custom preferences in a site preference group. Pass attribute assignments (KEY=value, KEY:=json, KEY=@file, KEY:=@file, KEY=) or use --file/--body for bulk edits.',
     ),
     '/cli/preferences.html#update-site',
   );
@@ -28,8 +33,9 @@ export default class PreferencesSiteUpdate extends PreferencesCommand<typeof Pre
   static enableJsonFlag = true;
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> CustomGroupId --site-id RefArch --file prefs.json --tenant-id zzxy_prd',
-    '<%= config.bin %> <%= command.id %> CustomGroupId --instance-type staging --site-id RefArch --body \'{"c_attr":"value"}\' --tenant-id zzxy_prd',
+    '<%= config.bin %> <%= command.id %> CustomGroupId --site-id RefArch c_name=hello c_count:=5 --tenant-id zzxy_prd',
+    '<%= config.bin %> <%= command.id %> CustomGroupId --site-id RefArch c_banner=@banner.html --tenant-id zzxy_prd',
+    '<%= config.bin %> <%= command.id %> CustomGroupId -I staging --site-id RefArch --file prefs.json --tenant-id zzxy_prd',
   ];
 
   static flags = {
@@ -51,6 +57,9 @@ export default class PreferencesSiteUpdate extends PreferencesCommand<typeof Pre
     'mask-passwords': maskPasswordsFlag,
   };
 
+  // Allow variadic KEY=value / KEY:=json assignments after <group-id>.
+  static strict = false;
+
   async run(): Promise<SitePreferences> {
     this.requireOAuthCredentials();
 
@@ -58,25 +67,50 @@ export default class PreferencesSiteUpdate extends PreferencesCommand<typeof Pre
     const {'instance-type': instanceType, 'site-id': siteId, file, body, 'mask-passwords': maskPasswords} = this.flags;
     const organizationId = this.getOrganizationId();
 
-    if (!file && !body) {
-      this.error(t('commands.preferences.bodyRequired', 'Provide --file or --body with the preferences to update.'));
+    const {argv} = await this.parse(PreferencesSiteUpdate);
+    const assignments = (argv as string[]).slice(1);
+    const haveAssignments = assignments.length > 0;
+
+    if (haveAssignments && (file || body)) {
+      this.error(
+        t(
+          'commands.preferences.assignmentsAndBodyExclusive',
+          'Provide either KEY=value assignments or --file/--body, not both.',
+        ),
+      );
     }
 
-    let raw: string;
-    if (file) {
-      if (!fs.existsSync(file)) {
-        this.error(t('commands.preferences.fileNotFound', 'File not found: {{file}}', {file}));
-      }
-      raw = fs.readFileSync(file, 'utf8');
-    } else {
-      raw = body!;
+    if (!haveAssignments && !file && !body) {
+      this.error(
+        t(
+          'commands.preferences.bodyRequired',
+          'Provide KEY=value assignments or --file/--body with the preferences to update.',
+        ),
+      );
     }
 
     let requestBody: SitePreferences;
-    try {
-      requestBody = JSON.parse(raw) as SitePreferences;
-    } catch {
-      this.error(t('commands.preferences.parseError', 'Failed to parse JSON body'));
+    if (haveAssignments) {
+      try {
+        requestBody = buildAssignmentMap(assignments) as SitePreferences;
+      } catch (error) {
+        this.error((error as Error).message);
+      }
+    } else {
+      let raw: string;
+      if (file) {
+        if (!fs.existsSync(file)) {
+          this.error(t('commands.preferences.fileNotFound', 'File not found: {{file}}', {file}));
+        }
+        raw = fs.readFileSync(file, 'utf8');
+      } else {
+        raw = body!;
+      }
+      try {
+        requestBody = JSON.parse(raw) as SitePreferences;
+      } catch {
+        this.error(t('commands.preferences.parseError', 'Failed to parse JSON body'));
+      }
     }
 
     const result = await this.preferencesRwClient.PATCH(
