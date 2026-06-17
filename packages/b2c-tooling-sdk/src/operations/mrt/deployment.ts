@@ -253,12 +253,10 @@ export async function createDeployment(
   }
 
   // Defensive: the deploy endpoint response shape is not strongly typed and may not
-  // include `warnings`; default to [] so nothing breaks.
+  // include `warnings`; default to [] so nothing breaks. We return these for the caller
+  // (e.g. the CLI) to surface — we don't log them here, to avoid double-printing.
   const deployData = (data ?? {}) as {warnings?: string[]};
   const warnings = deployData.warnings ?? [];
-  for (const warning of warnings) {
-    logger.warn(warning);
-  }
 
   logger.debug({bundleId}, '[MRT] Deployment created');
 

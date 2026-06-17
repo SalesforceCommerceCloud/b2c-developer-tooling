@@ -202,17 +202,14 @@ export async function uploadBundle(
 
     const buildData = data as unknown as BuildPushResponse;
 
-    const warnings = buildData.warnings ?? [];
-    for (const warning of warnings) {
-      logger.warn(warning);
-    }
-
+    // Return warnings for the caller (e.g. the CLI) to surface — we don't log them
+    // here, to avoid double-printing.
     return {
       bundleId: buildData.bundle_id,
       projectSlug,
       deployed: false,
       message: bundle.message,
-      warnings,
+      warnings: buildData.warnings ?? [],
     };
   }
 }
