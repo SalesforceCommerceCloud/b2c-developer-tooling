@@ -62,6 +62,11 @@ export interface PushResult {
    * The bundle message.
    */
   message: string;
+
+  /**
+   * Non-blocking warnings returned by MRT for this push/deploy (e.g. x86 deprecation).
+   */
+  warnings?: string[];
 }
 
 /**
@@ -170,6 +175,7 @@ export async function uploadBundle(
       target,
       deployed: true,
       message: bundle.message,
+      warnings: buildData.warnings ?? [],
     };
   } else {
     logger.debug({projectSlug}, '[MRT] Uploading bundle (no deployment)');
@@ -196,15 +202,17 @@ export async function uploadBundle(
 
     const buildData = data as unknown as BuildPushResponse;
 
-    buildData.warnings.forEach((warning: string) => {
+    const warnings = buildData.warnings ?? [];
+    for (const warning of warnings) {
       logger.warn(warning);
-    });
+    }
 
     return {
       bundleId: buildData.bundle_id,
       projectSlug,
       deployed: false,
       message: bundle.message,
+      warnings,
     };
   }
 }
