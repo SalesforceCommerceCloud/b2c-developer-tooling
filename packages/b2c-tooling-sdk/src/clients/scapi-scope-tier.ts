@@ -20,6 +20,8 @@
  * @module clients/scapi-scope-tier
  */
 
+import {isInvalidScopeError, ScapiCapabilityUnsupportedError} from './scapi-backend-utils.js';
+
 export type ScopeTier = 'rw' | 'read-only';
 
 export interface ScopeTierManagerOptions<C> {
@@ -59,10 +61,15 @@ export class ScopeTierManager<C> {
   /**
    * Returns a client suitable for write operations. Throws if we've already
    * downgraded to read-only — the API client doesn't have the rw scope.
+   *
+   * Throws {@link ScapiCapabilityUnsupportedError} so the SCAPI/OCAPI
+   * fallback wrapper recognizes this as a capability gap and routes the
+   * write through OCAPI in `auto` mode (instead of pinning to SCAPI after
+   * a successful read and then failing the write).
    */
   getClientForWrite(): C {
     if (this.resolved === 'read-only') {
-      throw new Error(
+      throw new ScapiCapabilityUnsupportedError(
         `SCAPI ${this.opts.domainName} API requires the "${this.opts.rwScopes.join(' ')}" scope. ` +
           `Add this scope to your API client in Account Manager.`,
       );
@@ -98,5 +105,27 @@ export class ScopeTierManager<C> {
   downgradeToReadOnly(): void {
     this.resolved = 'read-only';
     this.readClient = this.opts.buildClient(this.opts.readScopes);
+  }
+
+  /**
+   * Runs a read operation, downgrading to the read-only client and retrying
+   * once if the rw attempt fails with `invalid_scope`. Backends should wrap
+   * their reads with this so an API client provisioned with only the
+   * read-only scope (e.g. `sfcc.scripts`) can still read through SCAPI.
+   *
+   * Writes do not go through this helper — they always require rw, and
+   * `getClientForWrite()` already throws after a downgrade.
+   */
+  async tryRead<R>(fn: (client: C) => Promise<R>): Promise<R> {
+    const client = this.getClientForRead();
+    try {
+      return await fn(client);
+    } catch (error) {
+      if (this.resolved === 'read-only' || !isInvalidScopeError(error)) {
+        throw error;
+      }
+      this.downgradeToReadOnly();
+      return fn(this.readClient!);
+    }
   }
 }

@@ -13,8 +13,10 @@ The CLI uses different authentication mechanisms depending on the operation:
 | Operation                                                                                          | Auth Method                  | Setup Required                                                                           |
 | -------------------------------------------------------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------- |
 | [Code](/cli/code) deploy, watch (file upload)                                                      | WebDAV (Basic Auth or OAuth) | [WebDAV Access](#webdav-access)                                                          |
-| [Code](/cli/code) list, activate, delete                                                           | OAuth + OCAPI                | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration)                |
-| [Jobs](/cli/jobs), [Sites](/cli/sites)                                                             | OAuth + OCAPI                | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration)                |
+| [Code](/cli/code) list, activate, delete                                                           | OAuth + OCAPI **or** SCAPI (`sfcc.scripts` / `sfcc.scripts.rw`) | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration) or [SCAPI Scopes](#scapi-authentication) |
+| [Jobs](/cli/jobs)                                                                                  | OAuth + OCAPI **or** SCAPI (`sfcc.jobs` / `sfcc.jobs.rw`)       | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration) or [SCAPI Scopes](#scapi-authentication) |
+| [BM users / roles](/cli/bm)                                                                        | OAuth + OCAPI **or** SCAPI (`sfcc.users(.rw)` / `sfcc.roles(.rw)`) | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration) or [SCAPI Scopes](#scapi-authentication) |
+| [Sites](/cli/sites)                                                                                | OAuth + OCAPI                | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration)                |
 | SCAPI commands ([schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis), [eCDN](/cli/ecdn)) | OAuth + SCAPI scopes         | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication)        |
 | [CIP analytics](/cli/cip) (`cip query`, `cip report`)                                              | OAuth + Client Credentials   | [API Client](#account-manager-api-client) + Salesforce Commerce API role + tenant filter |
 | [SLAS](/cli/slas) client management                                                                | OAuth                        | None (uses built-in client) or [API Client](#account-manager-api-client)                 |
@@ -478,14 +480,24 @@ SCAPI commands (eCDN, SCAPI schemas, custom APIs) require OAuth authentication w
 
 ### Scopes by Command
 
-| Command                       | Required Scope       | Reference                           |
-| ----------------------------- | -------------------- | ----------------------------------- |
-| `b2c scapi schemas list/get`  | `sfcc.scapi-schemas` | [SCAPI Schemas](/cli/scapi-schemas) |
-| `b2c scapi custom status`     | `sfcc.custom-apis`   | [Custom APIs](/cli/custom-apis)     |
-| `b2c ecdn` (read operations)  | `sfcc.cdn-zones`     | [eCDN](/cli/ecdn)                   |
-| `b2c ecdn` (write operations) | `sfcc.cdn-zones.rw`  | [eCDN](/cli/ecdn)                   |
+| Command                                                | Required Scope                       | Reference                           |
+| ------------------------------------------------------ | ------------------------------------ | ----------------------------------- |
+| `b2c scapi schemas list/get`                           | `sfcc.scapi-schemas`                 | [SCAPI Schemas](/cli/scapi-schemas) |
+| `b2c scapi custom status`                              | `sfcc.custom-apis`                   | [Custom APIs](/cli/custom-apis)     |
+| `b2c ecdn` (read operations)                           | `sfcc.cdn-zones`                     | [eCDN](/cli/ecdn)                   |
+| `b2c ecdn` (write operations)                          | `sfcc.cdn-zones.rw`                  | [eCDN](/cli/ecdn)                   |
+| `b2c jobs` (read; e.g. `list`, `get`, `wait`)          | `sfcc.jobs` or `sfcc.jobs.rw`        | [Jobs](/cli/jobs)                   |
+| `b2c jobs` (write; e.g. `run`, `delete`)               | `sfcc.jobs.rw`                       | [Jobs](/cli/jobs)                   |
+| `b2c code list`                                        | `sfcc.scripts` or `sfcc.scripts.rw`  | [Code](/cli/code)                   |
+| `b2c code activate`, `code delete`                     | `sfcc.scripts.rw`                    | [Code](/cli/code)                   |
+| `b2c bm users list/get`                                | `sfcc.users` or `sfcc.users.rw`      | [BM](/cli/bm)                       |
+| `b2c bm users create/update/delete`                    | `sfcc.users.rw`                      | [BM](/cli/bm)                       |
+| `b2c bm roles list/get`                                | `sfcc.roles` or `sfcc.roles.rw`      | [BM](/cli/bm)                       |
+| `b2c bm roles create/delete/grant/revoke/permissions`  | `sfcc.roles.rw`                      | [BM](/cli/bm)                       |
 
 The CLI automatically requests these scopes. Your API client must have them in the Default Scopes list.
+
+For commands that have both an OCAPI and a SCAPI implementation (`code`, `jobs`, `bm users`, `bm roles`), the CLI defaults to `--api-backend auto`: it tries SCAPI when shortCode + tenantId are configured and the API client has the required `sfcc.*` scope, otherwise it falls back to OCAPI. Use `--api-backend ocapi` or `--api-backend scapi` to force a backend explicitly.
 
 ::: tip
 For detailed authentication requirements including specific scopes for each command, see the individual [CLI command reference pages](/cli/).
@@ -594,11 +606,12 @@ Here's a complete example for setting up CLI access:
      - `Salesforce Commerce API` - add tenant filter with your tenant IDs
      - `Sandbox API User` - if using ODS (add tenant filter)
    - **Default Scopes**: `mail roles tenantFilter openid sfcc.cdn-zones`
+   - For SCAPI-backed dual commands, also add the relevant `sfcc.jobs(.rw)`, `sfcc.scripts(.rw)`, `sfcc.users(.rw)`, `sfcc.roles(.rw)` scopes — see [Scopes by Command](#scopes-by-command).
    - **Redirect URLs**: `http://localhost:8080` (for user authentication)
 
-### 2. Configure OCAPI (for code list/activate/delete, jobs, sites)
+### 2. Configure OCAPI (for `sites` and as the auto-mode fallback for code/jobs/bm)
 
-Add the JSON configuration shown in [OCAPI Configuration](#ocapi-configuration) to enable code version and job APIs.
+Add the JSON configuration shown in [OCAPI Configuration](#ocapi-configuration). With the SCAPI scopes above also configured on your client, `code list/activate/delete`, `code deploy --activate/--reload`, `jobs`, and `bm users/roles` will prefer SCAPI in `auto` mode and fall back to OCAPI if a scope is missing.
 
 ### 3. Configure WebDAV Access (for code deploy/watch, webdav commands)
 
@@ -614,10 +627,11 @@ Either:
 export SFCC_CLIENT_ID=your-client-id
 export SFCC_CLIENT_SECRET=your-client-secret
 
-# Instance (for OCAPI commands)
+# Instance hostname (used by WebDAV and OCAPI)
 export SFCC_SERVER=your-instance.demandware.net
 
-# SCAPI (for eCDN, schemas, custom-apis)
+# SCAPI — required for SCAPI-only commands (eCDN, schemas, custom-apis) and
+# enables `auto` mode to prefer SCAPI for code/jobs/bm commands.
 export SFCC_TENANT_ID=zzxy_prd
 export SFCC_SHORTCODE=kv7kzm78
 

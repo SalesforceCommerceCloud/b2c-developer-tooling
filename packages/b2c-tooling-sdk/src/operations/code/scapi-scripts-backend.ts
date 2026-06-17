@@ -57,15 +57,16 @@ export class ScapiScriptsBackend implements ScriptsBackend {
   }
 
   async listCodeVersions(): Promise<CodeVersionInfo[]> {
-    const client = this.scopeTier.getClientForRead();
-    const {data, error} = await client.GET('/organizations/{organizationId}/code-versions', {
-      params: {path: {organizationId: this.organizationId}},
+    return this.scopeTier.tryRead(async (client) => {
+      const {data, error} = await client.GET('/organizations/{organizationId}/code-versions', {
+        params: {path: {organizationId: this.organizationId}},
+      });
+      if (error || !data) {
+        throw new Error(toErrorMessage(error, 'Failed to list code versions'));
+      }
+      const result = data as unknown as {data?: ScapiCodeVersion[]};
+      return (result.data ?? []).map(mapScapiCodeVersion);
     });
-    if (error || !data) {
-      throw new Error(toErrorMessage(error, 'Failed to list code versions'));
-    }
-    const result = data as unknown as {data?: ScapiCodeVersion[]};
-    return (result.data ?? []).map(mapScapiCodeVersion);
   }
 
   async getActiveCodeVersion(): Promise<CodeVersionInfo | undefined> {

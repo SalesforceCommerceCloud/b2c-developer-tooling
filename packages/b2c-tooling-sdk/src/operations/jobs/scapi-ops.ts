@@ -161,6 +161,11 @@ export async function searchJobExecutions(
   const organizationId = toOrganizationId(options.tenantId);
   const {jobId, status, count = 25, start = 0, sortBy = 'start_time', sortOrder = 'desc'} = options;
 
+  // The SCAPI search DSL uses camelCase wrapper names (`termQuery`, `boolQuery`),
+  // but the underlying searchable/sortable field names on this endpoint are
+  // the legacy OCAPI snake_case identifiers (`job_id`, `status`, `start_time`).
+  // Don't rename these to camelCase to "match the response schema" — the
+  // request side wouldn't match anything. See scapi-ops.test.ts.
   const queries: unknown[] = [];
   if (jobId) {
     queries.push({termQuery: {fields: ['job_id'], operator: 'is', values: [jobId]}});

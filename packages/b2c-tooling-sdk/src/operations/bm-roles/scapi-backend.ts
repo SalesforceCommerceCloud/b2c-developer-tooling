@@ -60,39 +60,41 @@ export class ScapiRolesBackend implements RolesBackend {
   }
 
   async listRoles(options: ListRolesOptions = {}): Promise<ListRolesResult> {
-    const client = this.scopeTier.getClientForRead();
     const {start = 0, count = 25, expand} = options;
 
-    const {data, error} = await client.GET('/organizations/{organizationId}/roles', {
-      params: {
-        path: {organizationId: this.organizationId},
-        query: {limit: count, offset: start, expand},
-      },
+    return this.scopeTier.tryRead(async (client) => {
+      const {data, error} = await client.GET('/organizations/{organizationId}/roles', {
+        params: {
+          path: {organizationId: this.organizationId},
+          query: {limit: count, offset: start, expand},
+        },
+      });
+      if (error || !data) {
+        throw new Error(toErrorMessage(error, 'Failed to list roles'));
+      }
+      const result = data as RoleSearch;
+      return {
+        total: result.total ?? 0,
+        start: result.offset ?? start,
+        count: result.limit ?? count,
+        hits: (result.data ?? []).map(mapScapiRole),
+      };
     });
-    if (error || !data) {
-      throw new Error(toErrorMessage(error, 'Failed to list roles'));
-    }
-    const result = data as RoleSearch;
-    return {
-      total: result.total ?? 0,
-      start: result.offset ?? start,
-      count: result.limit ?? count,
-      hits: (result.data ?? []).map(mapScapiRole),
-    };
   }
 
   async getRole(roleId: string, options?: {expand?: ('users' | 'permissions')[]}): Promise<RoleInfo> {
-    const client = this.scopeTier.getClientForRead();
-    const {data, error} = await client.GET('/organizations/{organizationId}/roles/{roleId}', {
-      params: {
-        path: {organizationId: this.organizationId, roleId},
-        query: {expand: options?.expand},
-      },
+    return this.scopeTier.tryRead(async (client) => {
+      const {data, error} = await client.GET('/organizations/{organizationId}/roles/{roleId}', {
+        params: {
+          path: {organizationId: this.organizationId, roleId},
+          query: {expand: options?.expand},
+        },
+      });
+      if (error || !data) {
+        throw new Error(toErrorMessage(error, `Failed to get role ${roleId}`));
+      }
+      return mapScapiRole(data);
     });
-    if (error || !data) {
-      throw new Error(toErrorMessage(error, `Failed to get role ${roleId}`));
-    }
-    return mapScapiRole(data);
   }
 
   async createRole(roleId: string, input?: CreateRoleInput): Promise<RoleInfo> {
@@ -122,14 +124,15 @@ export class ScapiRolesBackend implements RolesBackend {
   }
 
   async getPermissions(roleId: string): Promise<RolePermissionsInfo> {
-    const client = this.scopeTier.getClientForRead();
-    const {data, error} = await client.GET('/organizations/{organizationId}/roles/{roleId}/permissions', {
-      params: {path: {organizationId: this.organizationId, roleId}},
+    return this.scopeTier.tryRead(async (client) => {
+      const {data, error} = await client.GET('/organizations/{organizationId}/roles/{roleId}/permissions', {
+        params: {path: {organizationId: this.organizationId, roleId}},
+      });
+      if (error || !data) {
+        throw new Error(toErrorMessage(error, `Failed to get permissions for role ${roleId}`));
+      }
+      return data;
     });
-    if (error || !data) {
-      throw new Error(toErrorMessage(error, `Failed to get permissions for role ${roleId}`));
-    }
-    return data;
   }
 
   async setPermissions(roleId: string, permissions: RolePermissionsInfo): Promise<RolePermissionsInfo> {

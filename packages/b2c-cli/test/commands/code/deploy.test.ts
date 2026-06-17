@@ -23,13 +23,22 @@ describe('code deploy', () => {
 
   function stubCommon(command: any) {
     const instance = {config: {hostname: 'example.com', codeVersion: 'v1'}};
+    const scriptsBackend = {
+      name: 'ocapi' as const,
+      listCodeVersions: sinon.stub().resolves([]),
+      getActiveCodeVersion: sinon.stub().resolves(undefined),
+      activateCodeVersion: sinon.stub().resolves(undefined),
+      deleteCodeVersion: sinon.stub().resolves(undefined),
+      createCodeVersion: sinon.stub().resolves(undefined),
+    };
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
     sinon.stub(command, 'hasOAuthCredentials').returns(true);
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'warn').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: 'v1'}}));
     sinon.stub(command, 'instance').get(() => instance);
-    return instance;
+    sinon.stub(command, 'scriptsBackend').get(() => scriptsBackend);
+    return {instance, scriptsBackend};
   }
 
   it('runs before hooks and returns early when skipped', async () => {
@@ -62,7 +71,7 @@ describe('code deploy', () => {
 
   it('calls delete + upload and reload when flags are set', async () => {
     const command: any = await createCommand({delete: true, reload: true}, {cartridgePath: '.'});
-    const instance = stubCommon(command);
+    const {instance, scriptsBackend} = stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     const afterHooksStub = sinon.stub(command, 'runAfterHooks').resolves(void 0);
@@ -87,8 +96,8 @@ describe('code deploy', () => {
     expect(uploadStub.firstCall.args[0]).to.equal(instance);
     expect(uploadStub.firstCall.args[1]).to.equal(cartridges);
     expect(reloadStub.calledOnce).to.be.true;
-    // First arg is now a ScriptsBackend (OcapiScriptsBackend wrapping the instance), not the instance directly
-    expect(reloadStub.firstCall.args[0]).to.have.property('listCodeVersions');
+    // First arg is the ScriptsBackend abstraction, not the OCAPI instance directly.
+    expect(reloadStub.firstCall.args[0]).to.equal(scriptsBackend);
     expect(reloadStub.firstCall.args[1]).to.equal('v1');
 
     expect(result).to.deep.include({codeVersion: 'v1', activated: true, reloaded: true});
@@ -98,7 +107,7 @@ describe('code deploy', () => {
 
   it('calls activate after deploy when --activate is set', async () => {
     const command: any = await createCommand({activate: true}, {cartridgePath: '.'});
-    const instance = stubCommon(command);
+    const {instance, scriptsBackend} = stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
@@ -107,12 +116,11 @@ describe('code deploy', () => {
     sinon.stub(command, 'findCartridgesWithProviders').resolves(cartridges);
 
     const uploadStub = sinon.stub().resolves(void 0);
-    const activateStub = sinon.stub().resolves(void 0);
-    command.operations = {...command.operations, uploadCartridges: uploadStub, activateCodeVersion: activateStub};
+    command.operations = {...command.operations, uploadCartridges: uploadStub};
 
     const result = await command.run();
 
-    expect(activateStub.calledOnceWithExactly(instance, 'v1')).to.be.true;
+    expect(scriptsBackend.activateCodeVersion.calledOnceWithExactly('v1')).to.be.true;
     expect(uploadStub.calledOnce).to.be.true;
     expect(uploadStub.firstCall.args[0]).to.equal(instance);
     expect(uploadStub.firstCall.args[1]).to.equal(cartridges);
@@ -121,7 +129,8 @@ describe('code deploy', () => {
 
   it('errors when activate fails', async () => {
     const command: any = await createCommand({activate: true}, {cartridgePath: '.'});
-    stubCommon(command);
+    const {scriptsBackend} = stubCommon(command);
+    scriptsBackend.activateCodeVersion = sinon.stub().rejects(new Error('activate failed'));
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
@@ -130,8 +139,7 @@ describe('code deploy', () => {
     sinon.stub(command, 'findCartridgesWithProviders').resolves(cartridges);
 
     const uploadStub = sinon.stub().resolves(void 0);
-    const activateStub = sinon.stub().rejects(new Error('activate failed'));
-    command.operations = {...command.operations, uploadCartridges: uploadStub, activateCodeVersion: activateStub};
+    command.operations = {...command.operations, uploadCartridges: uploadStub};
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
@@ -235,20 +243,27 @@ describe('code deploy', () => {
     const instance = {config: instanceConfig};
     sinon.stub(command, 'instance').get(() => instance);
 
+    const scriptsBackend = {
+      name: 'ocapi' as const,
+      listCodeVersions: sinon.stub().resolves([]),
+      getActiveCodeVersion: sinon.stub().resolves({id: 'active', active: true}),
+      activateCodeVersion: sinon.stub().resolves(undefined),
+      deleteCodeVersion: sinon.stub().resolves(undefined),
+      createCodeVersion: sinon.stub().resolves(undefined),
+    };
+    sinon.stub(command, 'scriptsBackend').get(() => scriptsBackend);
+
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
-
-    const activeStub = sinon.stub().resolves({id: 'active', active: true});
 
     const cartridges = [{name: 'c1', src: '/tmp/c1', dest: 'c1'}];
     sinon.stub(command, 'findCartridgesWithProviders').resolves(cartridges);
     const uploadStub = sinon.stub().resolves(void 0);
-    command.operations = {...command.operations, getActiveCodeVersion: activeStub, uploadCartridges: uploadStub};
+    command.operations = {...command.operations, uploadCartridges: uploadStub};
 
     const result = await command.run();
 
-    expect(activeStub.getCall(0).args[0]).to.equal(instance);
-
+    expect(scriptsBackend.getActiveCodeVersion.calledOnce).to.be.true;
     expect(instanceConfig.codeVersion).to.equal('active');
     expect(result.codeVersion).to.equal('active');
   });

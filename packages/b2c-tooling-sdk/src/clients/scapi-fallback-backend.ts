@@ -8,14 +8,19 @@
  *
  * Builds a Proxy that implements the same interface as the underlying
  * backends. Each method call routes through {@link withFallback}: try SCAPI
- * first; on `invalid_scope`, fall back to OCAPI and cache the choice for the
- * lifetime of the wrapper. The `name` property reflects the currently-active
- * backend ('scapi' before the first call resolves, then whichever survived).
+ * first; on a recognized fallback trigger (e.g. `invalid_scope` or a
+ * SCAPI-side capability gap such as a downgraded scope tier), fall back to
+ * OCAPI for that call and pin to OCAPI for the rest of the wrapper's life.
+ * Note that a successful SCAPI call only pins *softly* — a later call that
+ * trips a fallback trigger still routes to OCAPI and re-pins, so a flow
+ * that reads under a read-only scope and then needs to write isn't stuck.
+ * The `name` property reflects the currently-active backend ('scapi' before
+ * the first call resolves, then whichever survived).
  *
  * @module clients/scapi-fallback-backend
  */
 import {getLogger} from '../logging/logger.js';
-import {isInvalidScopeError, type BackendBase} from './scapi-backend-utils.js';
+import {isFallbackTrigger, type BackendBase} from './scapi-backend-utils.js';
 
 /**
  * Internal state shared by all method invocations on a Proxy. Holds the
@@ -30,7 +35,8 @@ interface FallbackState<T extends BackendBase> {
 }
 
 /**
- * Wraps a SCAPI call with automatic OCAPI fallback on `invalid_scope`.
+ * Wraps a SCAPI call with automatic OCAPI fallback on a recognized
+ * fallback trigger ({@link isFallbackTrigger}).
  *
  * Standalone helper so the Proxy traps and any future direct callers share
  * one definition.
@@ -39,17 +45,26 @@ async function withFallback<T extends BackendBase, R>(
   state: FallbackState<T>,
   fn: (backend: T) => Promise<R>,
 ): Promise<R> {
-  if (state.resolved) {
-    return fn(state.resolved);
+  // Once we've fallen back to OCAPI, stay there — there's no SCAPI surface to
+  // re-attempt. Errors propagate from OCAPI directly.
+  if (state.resolved === state.ocapi) {
+    return fn(state.ocapi);
   }
 
+  // Either unresolved (first call), or already pinned to SCAPI by a prior
+  // successful call. We still try SCAPI, but a fallback-trigger error here
+  // routes this call through OCAPI and re-pins. This handles the case where
+  // a read succeeds (pinning SCAPI) and then a write fails because the
+  // ScopeTierManager has been downgraded to read-only — the write should
+  // still satisfy through OCAPI rather than throwing.
+  const target = state.resolved ?? state.scapi;
   try {
-    const result = await fn(state.scapi);
-    state.resolved = state.scapi;
+    const result = await fn(target);
+    if (!state.resolved) state.resolved = state.scapi;
     return result;
   } catch (error) {
-    if (isInvalidScopeError(error)) {
-      getLogger().info(`SCAPI ${state.domainName} scope unavailable, falling back to OCAPI`);
+    if (isFallbackTrigger(error)) {
+      getLogger().info(`SCAPI ${state.domainName} unavailable for this operation, falling back to OCAPI`);
       state.resolved = state.ocapi;
       return fn(state.ocapi);
     }

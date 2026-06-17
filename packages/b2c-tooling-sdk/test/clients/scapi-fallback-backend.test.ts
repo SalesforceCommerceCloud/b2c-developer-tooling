@@ -5,6 +5,7 @@
  */
 import {expect} from 'chai';
 import {createFallbackBackend} from '../../src/clients/scapi-fallback-backend.js';
+import {ScapiCapabilityUnsupportedError} from '../../src/clients/scapi-backend-utils.js';
 
 interface TestBackend {
   readonly name: 'ocapi' | 'scapi';
@@ -120,6 +121,39 @@ describe('createFallbackBackend', () => {
       await backend.doRead();
       await backend.doWrite('payload');
       expect(ocapiWriteCalls).to.equal(1);
+    });
+  });
+
+  describe('fallback after SCAPI was pinned by a prior success', () => {
+    it('falls back to OCAPI when a later SCAPI call hits a capability gap', async () => {
+      // Simulates: read succeeds under SCAPI → wrapper pins SCAPI → write
+      // fails because the scope tier downgraded to read-only → wrapper must
+      // still route the write through OCAPI rather than propagating.
+      let scapiWriteCalls = 0;
+      let ocapiWriteCalls = 0;
+      const scapi = makeBackend('scapi', {
+        doRead: async () => 'scapi-read',
+        doWrite: async () => {
+          scapiWriteCalls++;
+          throw new ScapiCapabilityUnsupportedError('downgraded to read-only');
+        },
+      });
+      const ocapi = makeBackend('ocapi', {
+        doWrite: async () => {
+          ocapiWriteCalls++;
+        },
+      });
+
+      const backend = createFallbackBackend<TestBackend>(scapi, ocapi, 'test');
+      // First call resolves to SCAPI.
+      expect(await backend.doRead()).to.equal('scapi-read');
+      expect(backend.name).to.equal('scapi');
+
+      // Write hits a capability gap under SCAPI; wrapper routes to OCAPI.
+      await backend.doWrite('payload');
+      expect(scapiWriteCalls).to.equal(1);
+      expect(ocapiWriteCalls).to.equal(1);
+      expect(backend.name).to.equal('ocapi');
     });
   });
 

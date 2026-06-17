@@ -8,13 +8,14 @@ import {
   uploadFiles,
   fileToCartridgePath,
   uploadCartridges,
-  getActiveCodeVersion,
   type CartridgeMapping,
   type FileChange,
 } from '@salesforce/b2c-tooling-sdk/operations/code';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import type {B2CExtensionConfig} from '../config-provider.js';
+import {createScriptsBackendFromExtension} from './scripts-backend.js';
 
 const DEBOUNCE_MS = 150;
 const ERROR_RATE_LIMIT_MS = 5000;
@@ -36,7 +37,10 @@ export class CodeSyncManager implements vscode.Disposable {
   private isProcessing = false;
   private lastErrorTime = 0;
 
-  constructor(private readonly workspaceState: vscode.Memento) {
+  constructor(
+    private readonly workspaceState: vscode.Memento,
+    private readonly configProvider: B2CExtensionConfig,
+  ) {
     this.outputChannel = vscode.window.createOutputChannel('B2C Code Upload');
     this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
     this.updateStatusBar();
@@ -69,7 +73,7 @@ export class CodeSyncManager implements vscode.Disposable {
     this.codeVersion = instance.config.codeVersion;
     if (!this.codeVersion) {
       try {
-        const active = await getActiveCodeVersion(instance);
+        const active = await createScriptsBackendFromExtension(this.configProvider, instance).getActiveCodeVersion();
         if (active?.id) {
           this.codeVersion = active.id;
           instance.config.codeVersion = this.codeVersion;
@@ -190,7 +194,7 @@ export class CodeSyncManager implements vscode.Disposable {
     let codeVersion = instance.config.codeVersion;
     if (!codeVersion) {
       try {
-        const active = await getActiveCodeVersion(instance);
+        const active = await createScriptsBackendFromExtension(this.configProvider, instance).getActiveCodeVersion();
         if (active?.id) {
           codeVersion = active.id;
           instance.config.codeVersion = codeVersion;
@@ -229,7 +233,7 @@ export class CodeSyncManager implements vscode.Disposable {
     let codeVersion = instance.config.codeVersion;
     if (!codeVersion) {
       try {
-        const active = await getActiveCodeVersion(instance);
+        const active = await createScriptsBackendFromExtension(this.configProvider, instance).getActiveCodeVersion();
         if (active?.id) {
           codeVersion = active.id;
           instance.config.codeVersion = codeVersion;

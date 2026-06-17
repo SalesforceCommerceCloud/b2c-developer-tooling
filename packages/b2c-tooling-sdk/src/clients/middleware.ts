@@ -44,6 +44,11 @@ const retriedRequests = new WeakSet<Request>();
 // Store cloned request bodies for potential retry (body can only be read once)
 const requestBodies = new WeakMap<Request, ArrayBuffer | null>();
 
+// Remembers the SCAPI scope mode ('read' or 'write') a request was authorized
+// with, so the 401 retry path can re-authorize at the same tier instead of
+// hard-coding write.
+const requestScopeModes = new WeakMap<Request, 'read' | 'write'>();
+
 /**
  * Creates authentication middleware for openapi-fetch.
  *
@@ -177,6 +182,7 @@ export function createScapiAuthMiddleware(auth: AuthStrategy, cascade: ScopeCasc
     request.headers.delete(SCOPE_MODE_HEADER);
 
     if (mode && auth.getAccessTokenForCascade) {
+      requestScopeModes.set(request, mode);
       const candidates = cascade[mode];
       const token = await auth.getAccessTokenForCascade(candidates);
       request.headers.set('Authorization', `Bearer ${token}`);
@@ -213,10 +219,10 @@ export function createScapiAuthMiddleware(auth: AuthStrategy, cascade: ScopeCasc
         auth.invalidateToken();
 
         const newHeaders = new Headers(request.headers);
-        // The original request headers no longer include the scope-mode
-        // header (we stripped it on the way in). Synthesize a retry by
-        // re-running the cascade as a read attempt — writes that 401 likely
-        // need rw, which the cascade already prefers.
+        // The original scope-mode header was stripped on the way in. Re-run
+        // the cascade at the same tier the original request used so a
+        // read-only request doesn't get retried as a write (which would fail
+        // for clients that only have the read scope).
         const retryRequest = new Request(request.url, {
           method: request.method,
           headers: newHeaders,
@@ -225,7 +231,8 @@ export function createScapiAuthMiddleware(auth: AuthStrategy, cascade: ScopeCasc
         } as RequestInit);
 
         if (auth.getAccessTokenForCascade) {
-          const token = await auth.getAccessTokenForCascade(cascade.write);
+          const originalMode = requestScopeModes.get(request) ?? 'write';
+          const token = await auth.getAccessTokenForCascade(cascade[originalMode]);
           retryRequest.headers.set('Authorization', `Bearer ${token}`);
         } else if (auth.getAuthorizationHeader) {
           retryRequest.headers.set('Authorization', await auth.getAuthorizationHeader());

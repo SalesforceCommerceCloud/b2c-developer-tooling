@@ -23,6 +23,7 @@ import {
   type UserSearch,
 } from '../../clients/scapi-merchant-users.js';
 import {buildTenantScope, toOrganizationId} from '../../clients/custom-apis.js';
+import {ScapiCapabilityUnsupportedError} from '../../clients/scapi-backend-utils.js';
 import {ScopeTierManager} from '../../clients/scapi-scope-tier.js';
 
 function mapScapiUser(scapi: ScapiUser): UserInfo {
@@ -69,36 +70,38 @@ export class ScapiUsersBackend implements UsersBackend {
   }
 
   async listUsers(options: ListUsersOptions = {}): Promise<ListUsersResult> {
-    const client = this.scopeTier.getClientForRead();
     const {start = 0, count = 25} = options;
 
-    const {data, error} = await client.GET('/organizations/{organizationId}/users', {
-      params: {
-        path: {organizationId: this.organizationId},
-        query: {limit: count, offset: start},
-      },
+    return this.scopeTier.tryRead(async (client) => {
+      const {data, error} = await client.GET('/organizations/{organizationId}/users', {
+        params: {
+          path: {organizationId: this.organizationId},
+          query: {limit: count, offset: start},
+        },
+      });
+      if (error || !data) {
+        throw new Error(toErrorMessage(error, 'Failed to list users'));
+      }
+      const result = data as UserSearch;
+      return {
+        total: result.total ?? 0,
+        start: result.offset ?? start,
+        count: result.limit ?? count,
+        hits: (result.data ?? []).map(mapScapiUser),
+      };
     });
-    if (error || !data) {
-      throw new Error(toErrorMessage(error, 'Failed to list users'));
-    }
-    const result = data as UserSearch;
-    return {
-      total: result.total ?? 0,
-      start: result.offset ?? start,
-      count: result.limit ?? count,
-      hits: (result.data ?? []).map(mapScapiUser),
-    };
   }
 
   async getUser(login: string): Promise<UserInfo> {
-    const client = this.scopeTier.getClientForRead();
-    const {data, error} = await client.GET('/organizations/{organizationId}/users/{login}', {
-      params: {path: {organizationId: this.organizationId, login}},
+    return this.scopeTier.tryRead(async (client) => {
+      const {data, error} = await client.GET('/organizations/{organizationId}/users/{login}', {
+        params: {path: {organizationId: this.organizationId, login}},
+      });
+      if (error || !data) {
+        throw new Error(toErrorMessage(error, `Failed to get user ${login}`));
+      }
+      return mapScapiUser(data);
     });
-    if (error || !data) {
-      throw new Error(toErrorMessage(error, `Failed to get user ${login}`));
-    }
-    return mapScapiUser(data);
   }
 
   async createOrReplaceUser(login: string, input: CreateUserInput): Promise<UserInfo> {
@@ -138,9 +141,12 @@ export class ScapiUsersBackend implements UsersBackend {
       preferredUiLocale: changes.preferredUiLocale,
     };
     if (changes.disabled !== undefined) {
-      throw new Error(
+      // Recognized as a fallback trigger by the SCAPI/OCAPI fallback wrapper:
+      // in `auto` mode this transparently routes the update through OCAPI;
+      // in explicit `scapi` mode the message surfaces to the user.
+      throw new ScapiCapabilityUnsupportedError(
         'SCAPI Users API does not support updating the `disabled` flag via PATCH. ' +
-          'Use --api-backend ocapi to change disabled status.',
+          'Use --api-backend ocapi (or auto) to change disabled status.',
       );
     }
     const {data, error} = await client.PATCH('/organizations/{organizationId}/users/{login}', {

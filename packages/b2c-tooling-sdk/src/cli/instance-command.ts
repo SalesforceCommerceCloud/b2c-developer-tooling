@@ -212,10 +212,32 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
     return this.resolvedConfig.values.apiBackend ?? 'auto';
   }
 
-  /** True iff shortCode + tenantId + OAuth credentials are all available. */
+  /**
+   * True iff shortCode + tenantId are available AND the configured auth
+   * strategy can request the SCAPI scopes (`sfcc.*` plus the tenant scope)
+   * each domain needs.
+   *
+   * Only the stateless OAuth flows (client-credentials, JWT bearer) qualify:
+   * those go back to Account Manager per request and can ask for whatever
+   * scopes the operation requires. Stateful and implicit flows hold a fixed
+   * token whose scopes were chosen at acquisition; under `auto` they would
+   * route through SCAPI with a token that AM never granted SCAPI scopes (or
+   * the right tenant scope) for, and the SCAPI 403 isn't a fallback
+   * trigger.
+   *
+   * Users running stateful or implicit auth who *do* want SCAPI can opt in
+   * with `--api-backend scapi` (provided the stored token genuinely covers
+   * the required scopes). Auto mode stays conservative.
+   */
   protected hasScapiConfig(): boolean {
-    return Boolean(
-      this.resolvedConfig.values.shortCode && this.resolvedConfig.values.tenantId && this.hasOAuthCredentials(),
+    const values = this.resolvedConfig.values;
+    if (!values.shortCode || !values.tenantId || !this.hasOAuthCredentials()) {
+      return false;
+    }
+
+    return (
+      Boolean(values.clientId && values.clientSecret) ||
+      Boolean(values.clientId && values.jwtCertPath && values.jwtKeyPath)
     );
   }
 
@@ -230,12 +252,18 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
   protected createBackend<T>(
     factory: (config: import('../clients/dual-backend-factory.js').DualBackendConfig) => T,
   ): T {
+    // Gate auth on hasScapiConfig() — not just hasOAuthCredentials() — so the
+    // dual-backend factory's "is SCAPI available" check (auth presence)
+    // matches the dispatcher path's capability guard. Otherwise stateful or
+    // implicit auth can route auto-mode to SCAPI with a token that AM never
+    // granted SCAPI scopes for, and the resulting 403 isn't a fallback
+    // trigger.
     return factory({
       preference: this.apiBackendPreference,
       instance: this.instance,
       shortCode: this.resolvedConfig.values.shortCode,
       tenantId: this.resolvedConfig.values.tenantId,
-      auth: this.hasOAuthCredentials() ? this.getOAuthStrategy() : undefined,
+      auth: this.hasScapiConfig() ? this.getOAuthStrategy() : undefined,
     });
   }
 

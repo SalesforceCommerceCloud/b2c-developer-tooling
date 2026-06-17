@@ -7,13 +7,11 @@ import {
   findCartridges,
   uploadCartridges,
   deleteCartridges,
-  getActiveCodeVersion,
-  activateCodeVersion,
   reloadCodeVersion,
-  OcapiScriptsBackend,
 } from '@salesforce/b2c-tooling-sdk/operations/code';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
+import {createScriptsBackendFromExtension} from './scripts-backend.js';
 
 export function createDeployCommand(
   configProvider: B2CExtensionConfig,
@@ -26,11 +24,12 @@ export function createDeployCommand(
       return;
     }
 
-    // Resolve code version
+    // Resolve code version through the configured Scripts backend (SCAPI or OCAPI)
+    const scriptsBackend = createScriptsBackendFromExtension(configProvider, instance);
     let codeVersion = instance.config.codeVersion;
     if (!codeVersion) {
       try {
-        const active = await getActiveCodeVersion(instance);
+        const active = await scriptsBackend.getActiveCodeVersion();
         if (active?.id) {
           codeVersion = active.id;
           instance.config.codeVersion = codeVersion;
@@ -95,11 +94,11 @@ export function createDeployCommand(
 
           if (actionPick.action === 'activate') {
             progress.report({message: 'Activating code version...'});
-            await activateCodeVersion(instance, codeVersion);
+            await scriptsBackend.activateCodeVersion(codeVersion);
             outputChannel.appendLine(`Code version "${codeVersion}" activated`);
           } else if (actionPick.action === 'reload') {
             progress.report({message: 'Reloading code version...'});
-            await reloadCodeVersion(new OcapiScriptsBackend(instance), codeVersion);
+            await reloadCodeVersion(scriptsBackend, codeVersion);
             outputChannel.appendLine(`Code version "${codeVersion}" reloaded`);
           }
 
@@ -135,7 +134,7 @@ export function createDeleteAndDeployCommand(
     let codeVersion = instance.config.codeVersion;
     if (!codeVersion) {
       try {
-        const active = await getActiveCodeVersion(instance);
+        const active = await createScriptsBackendFromExtension(configProvider, instance).getActiveCodeVersion();
         if (active?.id) {
           codeVersion = active.id;
           instance.config.codeVersion = codeVersion;

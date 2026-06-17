@@ -62,6 +62,30 @@ export function isInvalidScopeError(error: unknown): boolean {
 }
 
 /**
+ * Thrown by SCAPI backends when a requested operation cannot be expressed on
+ * SCAPI (e.g., toggling the `disabled` flag via the SCAPI Users PATCH, which
+ * the SCAPI schema does not include). The fallback wrapper recognizes this
+ * and falls back to OCAPI; in explicit `scapi` mode it propagates so the
+ * caller sees the limitation.
+ */
+export class ScapiCapabilityUnsupportedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ScapiCapabilityUnsupportedError';
+  }
+}
+
+/**
+ * Detects whether an error should trigger an OCAPI fallback. Currently:
+ *   - {@link isInvalidScopeError}: AM rejected the requested scope.
+ *   - {@link ScapiCapabilityUnsupportedError}: the SCAPI surface lacks the
+ *     capability the caller asked for.
+ */
+export function isFallbackTrigger(error: unknown): boolean {
+  return isInvalidScopeError(error) || error instanceof ScapiCapabilityUnsupportedError;
+}
+
+/**
  * Inputs to `resolveScapiOrOcapi`.
  */
 export interface ResolveBackendOptions {
