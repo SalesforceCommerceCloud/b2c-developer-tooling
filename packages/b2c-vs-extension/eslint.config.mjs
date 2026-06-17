@@ -46,4 +46,10 @@ export default [
       '@typescript-eslint/no-unused-expressions': 'off',
     },
   },
+  {
+    files: ['test-workspace/**/*.js'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
 ];

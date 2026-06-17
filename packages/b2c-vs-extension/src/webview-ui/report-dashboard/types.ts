@@ -15,6 +15,9 @@ export interface ReportParamDefinition {
   required?: boolean;
   min?: number;
   max?: number;
+  options?: string[];
+  multiple?: boolean;
+  default?: string;
 }
 
 export interface ReportDefinitionLite {

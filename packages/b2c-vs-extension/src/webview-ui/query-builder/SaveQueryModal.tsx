@@ -22,11 +22,17 @@ interface Props {
   state: SaveModalState;
   defaultName: string;
   error: string | null;
+  /**
+   * Names already used by saved queries under the active tenant. Drives the
+   * inline "name in use" hint and keeps Submit disabled while the collision
+   * is unresolved. Comparison is case-insensitive on trimmed names.
+   */
+  existingNames: string[];
   onClose: () => void;
   onSubmit: (payload: {mode: 'save' | 'rename'; id?: string; name: string; description: string; sql: string}) => void;
 }
 
-export function SaveQueryModal({state, defaultName, error, onClose, onSubmit}: Props) {
+export function SaveQueryModal({state, defaultName, error, existingNames, onClose, onSubmit}: Props) {
   const open = state.mode !== null;
   const isRename = state.mode === 'rename';
 
@@ -47,6 +53,17 @@ export function SaveQueryModal({state, defaultName, error, onClose, onSubmit}: P
     }
   }, [open, isRename, state.query, state.sql, defaultName]);
 
+  // Local duplicate-name check against the active-tenant saved-query list.
+  // Excludes the entry being renamed so reopening rename without changing
+  // the name doesn't flag itself. The host enforces the same rule
+  // server-side; this is a UX pre-flight that catches it before submit.
+  const trimmedName = name.trim().toLowerCase();
+  const ownName = isRename ? (state.query?.name.trim().toLowerCase() ?? '') : '';
+  const nameInUse =
+    trimmedName.length > 0 &&
+    trimmedName !== ownName &&
+    existingNames.some((n) => n.trim().toLowerCase() === trimmedName);
+
   if (!open) return null;
 
   return (
@@ -59,7 +76,12 @@ export function SaveQueryModal({state, defaultName, error, onClose, onSubmit}: P
           <button type="button" className="btn btn-secondary" onClick={onClose}>
             Cancel
           </button>
-          <button type="submit" form="saveQueryForm" className="btn btn-primary">
+          <button
+            type="submit"
+            form="saveQueryForm"
+            className="btn btn-primary"
+            disabled={nameInUse || !name.trim() || !sql.trim()}
+          >
             {isRename ? 'Update' : 'Save'}
           </button>
         </>
@@ -72,6 +94,7 @@ export function SaveQueryModal({state, defaultName, error, onClose, onSubmit}: P
           e.preventDefault();
           if (!name.trim()) return;
           if (!sql.trim()) return;
+          if (nameInUse) return;
           onSubmit({
             mode: isRename ? 'rename' : 'save',
             id: isRename ? state.query?.id : undefined,
@@ -88,14 +111,20 @@ export function SaveQueryModal({state, defaultName, error, onClose, onSubmit}: P
           <input
             type="text"
             id="saveQueryName"
-            className="input"
+            className={`input${nameInUse ? ' input--invalid' : ''}`}
             placeholder="e.g. Top SKUs last 7 days"
             maxLength={120}
             required
+            aria-invalid={nameInUse || undefined}
             value={name}
             onChange={(e) => setName(e.currentTarget.value)}
             autoFocus
           />
+          {nameInUse ? (
+            <span className="qb-modal__hint qb-modal__hint--error">
+              A saved query with this name already exists for this tenant. Choose a different name.
+            </span>
+          ) : null}
         </div>
         <div className="field">
           <label className="label" htmlFor="saveQueryDesc">
