@@ -241,6 +241,8 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * Use this when you need to pass custom initial attributes or use a different connection string.
    *
    * @param options - Telemetry options
+   * @param options.appInsightsKey - Optional Application Insights connection string (overrides pjson config)
+   * @param options.initialAttributes - Custom attributes to add to telemetry events
    * @returns The telemetry instance, or undefined if telemetry is disabled
    */
   protected async initTelemetry(options: {

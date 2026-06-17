@@ -30,9 +30,11 @@ Skills covering the full Storefront Next development lifecycle:
 - **`sfnext-routing`** — React Router 7 file-based routing with flat-routes conventions
 - **`sfnext-data-fetching`** — server-side loaders, actions, useScapiFetcher
 - **`sfnext-components`** — UI components, createPage HOC, shadcn/ui, Tailwind CSS v4
+- **`sfnext-create-component`** — design-system component authoring: layer model, CVA variants, data-slot, accessibility, Storybook coverage
+- **`sfnext-create-vertical`** — create a new brand theme / storefront variant via the brand token layer, typography, dark mode, and fixtures
 - **`sfnext-configuration`** — config.server.ts, environment variables, multi-site setup
 - **`sfnext-page-designer`** — Page Designer integration with React decorators and component registry
-- **`sfnext-extensions`** — extension system, target points, extension routes
+- **`sfnext-extensions`** — extension system, target points, extension routes, and the base-audit decision gate (extend vs token/variant override)
 - **`sfnext-authentication`** — split-cookie SLAS architecture, auth middleware, session management
 - **`sfnext-i18n`** — internationalization with i18next, dual-instance server/client, namespaces
 - **`sfnext-state-management`** — React context, Zustand stores, basket provider
@@ -42,6 +44,10 @@ Skills covering the full Storefront Next development lifecycle:
 - **`sfnext-hybrid-storefronts`** — hybrid setup with SFRA/SiteGenesis, gradual migration, session bridging
 
 See [`skills/`](./skills/) for the full list.
+
+## Related plugins
+
+- **[`storefront-next-figma`](../storefront-next-figma)** — design-kit companion: duplicate the Figma kit for a vertical and sync brand tokens. Pairs with `sfnext-create-vertical`. Requires the Figma MCP server.
 
 ## License
 

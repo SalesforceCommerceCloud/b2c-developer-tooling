@@ -1,5 +1,41 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.4.0
+
+### Minor Changes
+
+- [#489](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/489) [`0b19efe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/0b19efec7d361ae0a5c226fc71d66368c3a3e1aa) - Add Storefront Next design-system skills and a new `storefront-next-figma` plugin. (Thanks [@pav-ui](https://github.com/pav-ui)!)
+  - New `sfnext-create-vertical` skill (storefront-next): create a brand theme / storefront variant through the brand token layer, with typography, dark-mode contrast checks, fixture-based local development, and the extension-vs-base decision.
+  - New `sfnext-create-component` skill (storefront-next): design-system component authoring — layer model, extend-before-create gate, CVA variants bound to semantic tokens, `data-slot`, accessibility, and Storybook coverage (complements `sfnext-components`).
+  - Enhanced `sfnext-extensions` skill with a base-audit decision gate (deciding whether to extend at all vs a token/variant override or a base slot) plus a `BASE-AUDIT.md` reference.
+  - New `storefront-next-figma` plugin with the `sfnext-create-figma-kit` skill: duplicate the Figma kit for a vertical, sync Brand variables from `brand.css`, edit components at the correct layer, and publish Code Connect. Requires the Figma MCP server.
+
+  Together these add the design-system / theming / Figma layer that the existing `storefront-next` plugin did not cover.
+
+### Patch Changes
+
+- [`0c9eeab`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/0c9eeab3aae624eb8e834e81620b0bc82e3356f3) - Release packaging now reads the list of agent plugins from `skills/plugins.json`. To publish a new plugin, add its `skills/<name>/` directory and list its name in that manifest — no changes to the publish workflow are required. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`aa48c8e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/aa48c8e441cb5c85eb94d9d63bb0d92d0e68baf0) - Fix the Business Manager extensions skill (`b2c-business-manager-extensions`) to match the authoritative `bmext.xsd` schema. The previous guidance used the wrong namespace and element shapes (resource-key `name`/`icon` attributes, `xp-ref`, a `bm_extensions.properties` bundle) that would not load on a real instance. The skill now documents the `bmmodules/2007-12-11` schema with inline localized `name`/`description` elements, correct `dialogaction`/`formextension` structures, the `NoPermissionCheck` idiom for permission-free endpoints, ascending `position` ordering, and the core BM menu-id table for attaching to existing menus. All XML examples validate against the schema. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#493](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/493) [`e803346`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e8033465e50d57dd7d87afa400d8caadb82280aa) - Skills now consistently document that the CLI auto-discovers configuration (instance, credentials, tenantId, etc.) from `dw.json`, `SFCC_*` env vars, `~/.mobify`, and `package.json` — flags like `--server`, `--client-id`, and `--client-secret` are usually unnecessary. Each instance-touching skill points agents at `b2c setup inspect` for resolved values and sources, and back to `b2c-config` for setup troubleshooting. (Thanks [@clavery](https://github.com/clavery)!)
+
+  The `b2c-config` skill has been broadened to be the fallback whenever CLI setup or authentication is unclear, with general configuration guidance (including the fact that `dw.json` keys accept both camelCase and kebab-case) and a richer troubleshooting section.
+
+  The `b2c-custom-api-development` skill now describes Custom API cartridge-path lookup correctly: storefront `siteId` resolves through that site's cartridge path, while `siteId=Sites-Site` (the system-defined BM/organization site identifier) and an omitted `siteId` resolve through the Business Manager cartridge path. The skill shows how to manage paths with `b2c sites cartridges` and clarifies when `b2c code deploy --reload` is required (registration, contract, or cartridge-path changes) versus when a plain redeploy suffices (implementation-only edits to an already-registered endpoint).
+
+## 1.3.3
+
+### Patch Changes
+
+- [#485](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/485) [`e6cec0a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e6cec0a704c65d9f0241fa9771fed37017eb7b1a) - Fix `value-definition` element order in the b2c-metadata and b2c-site-import-export skills. The B2C `metadata.xsd` requires `<display>` to appear before `<value>` inside each `<value-definition>`; the skill examples had them reversed, which caused enum/set attribute imports to fail site-archive validation with `cvc-complex-type.2.4.d`. Examples now use the correct order and call out the requirement. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#484](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/484) [`80e63fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/80e63fca888d9b83efd53c9c0054247fb2aa31b3) - `b2c job import` now supports `--split` for importing directories larger than the instance archive size limit. With `--split` (and optional `--max-size`, default `190mb`), the import is broken into several smaller archives: order-sensitive metadata/XML is imported first — kept together when it fits, otherwise split at data-unit boundaries in dependency order — followed by static assets packed by compressed size. A normal import that exceeds the limit now warns and recommends `--split`. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Example: `b2c job import ./big-site-data --split --max-size 150mb`
+
+  The SDK adds a corresponding `siteArchiveImportSplit()` operation.
+
 ## 1.3.2
 
 ### Patch Changes

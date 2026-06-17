@@ -7,8 +7,25 @@
  * Logging types.
  */
 
+/**
+ * Valid log level values, ordered from most verbose to least verbose.
+ *
+ * - `trace`: Most verbose, detailed debugging information
+ * - `debug`: Debugging information
+ * - `info`: General informational messages (default)
+ * - `warn`: Warning messages
+ * - `error`: Error messages
+ * - `fatal`: Fatal errors
+ * - `silent`: Suppress all output
+ */
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal' | 'silent';
 
+/**
+ * Context object for structured logging entries.
+ *
+ * A dictionary where any string key can hold any value,
+ * used to attach contextual metadata to log messages.
+ */
 export interface LogContext {
   [key: string]: unknown;
 }
@@ -21,6 +38,12 @@ export interface LogDestination {
   emit?(event: string, ...args: unknown[]): boolean;
 }
 
+/**
+ * Configuration options for creating or configuring a logger.
+ *
+ * All options are optional and have sensible defaults.
+ * Options provided to {@link createLogger} merge with global defaults set via {@link configureLogger}.
+ */
 export interface LoggerOptions {
   /** Log level. Default: 'info' */
   level?: LogLevel;
@@ -38,6 +61,15 @@ export interface LoggerOptions {
   colorize?: boolean;
 }
 
+/**
+ * Logger interface for structured logging with support for multiple log levels.
+ *
+ * Each log method supports two overloads:
+ * - `method(message: string, context?: LogContext)` - message-first format
+ * - `method(context: LogContext, message: string)` - context-first format for structured logging
+ *
+ * Use {@link Logger.child} to create a child logger with bound context that will be included in all subsequent log entries.
+ */
 export interface Logger {
   trace(message: string, context?: LogContext): void;
   trace(context: LogContext, message: string): void;

@@ -160,7 +160,7 @@ const referenceSidebar = [
         ],
       },
       {
-        text: 'Storefront Next',
+        text: 'Storefront Next (deprecated)',
         collapsed: true,
         items: [
           {text: 'sfnext_get_guidelines', link: '/mcp/tools/sfnext-get-guidelines'},
@@ -174,7 +174,16 @@ const referenceSidebar = [
       {
         text: 'Diagnostics',
         collapsed: true,
-        items: [{text: 'Script Debugger', link: '/mcp/tools/diagnostics'}],
+        items: [
+          {text: 'Script Debugger', link: '/mcp/tools/diagnostics'},
+          {text: 'Logs', link: '/mcp/tools/logs'},
+          {text: 'MRT Logs', link: '/mcp/tools/mrt-logs'},
+        ],
+      },
+      {
+        text: 'Documentation',
+        collapsed: true,
+        items: [{text: 'Script API & Schemas', link: '/mcp/tools/docs'}],
       },
     ],
   },

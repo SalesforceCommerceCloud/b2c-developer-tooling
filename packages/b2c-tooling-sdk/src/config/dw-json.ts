@@ -174,7 +174,7 @@ export interface LoadDwJsonResult {
  * Finds dw.json by searching upward from the starting directory.
  *
  * @param projectDirectory - Directory to start searching from (defaults to cwd)
- * @returns Path to dw.json if found, undefined otherwise
+ * @returns A Promise that resolves to the path to dw.json if found, or undefined if not found
  *
  * @example
  * const dwPath = findDwJson();
@@ -266,7 +266,7 @@ function selectConfig(json: DwJsonMultiConfig, instanceName?: string): DwJsonCon
  * with the full configs array.
  *
  * @param options - Loading options
- * @returns The raw multi-config structure and path, or undefined if not found
+ * @returns A Promise that resolves to the raw multi-config structure and path, or undefined if not found
  */
 export async function loadFullDwJson(
   options: LoadDwJsonOptions = {},

@@ -7,7 +7,12 @@
 import {randomBytes} from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import appInsights from 'applicationinsights';
+// Namespace import (not default): `applicationinsights` is a legacy CommonJS
+// module whose default-export interop is not synthesized when the file is
+// loaded as native ESM (e.g. mocha 11's tsx loader), leaving the default
+// binding `undefined`. The namespace form resolves `TelemetryClient` correctly
+// under every loader — mocha, tsx, and the production ESM build.
+import * as appInsights from 'applicationinsights';
 import type {TelemetryAttributes, TelemetryEventProperties, TelemetryOptions} from './types.js';
 import {getLogger, type Logger} from '../logging/index.js';
 

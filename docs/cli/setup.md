@@ -20,10 +20,12 @@ b2c setup inspect [FLAGS]
 
 ### Flags
 
-| Flag       | Description                                                   | Default |
-| ---------- | ------------------------------------------------------------- | ------- |
-| `--unmask` | Show sensitive values unmasked (passwords, secrets, API keys) | `false` |
-| `--json`   | Output results as JSON                                        | `false` |
+| Flag                     | Description                                                   | Default                  |
+| ------------------------ | ------------------------------------------------------------- | ------------------------ |
+| `--unmask`               | Show sensitive values unmasked (passwords, secrets, API keys) | `false`                  |
+| `--account-manager-host` | Account Manager hostname for OAuth                            | `account.demandware.com` |
+| `--cloud-origin`         | MRT cloud origin URL                                          | `https://cloud.mobify.com` |
+| `--json`                 | Output results as JSON                                        | `false`                  |
 
 ### Examples
 
@@ -279,9 +281,11 @@ b2c setup instance list [FLAGS]
 
 ### Flags
 
-| Flag     | Description            | Default |
-| -------- | ---------------------- | ------- |
-| `--json` | Output results as JSON | `false` |
+| Flag               | Description                                                          | Default |
+| ------------------ | -------------------------------------------------------------------- | ------- |
+| `--columns`, `-c`  | Columns to display (comma-separated): name, hostname, source, active | All     |
+| `--extended`, `-x` | Show all columns including extended fields                           | `false` |
+| `--json`           | Output results as JSON                                               | `false` |
 
 ### Examples
 
@@ -477,6 +481,8 @@ b2c setup skills [SKILLSET]
 | `--update`, `-u`      | Update existing skills (overwrite)                                                             | `false`     |
 | `--version`           | Specific release version                                                                       | `latest`    |
 | `--force`             | Skip confirmation prompts (non-interactive)                                                    | `false`     |
+| `--columns`, `-c`     | Columns to display (comma-separated): name, description, skillSet, hasReferences               |             |
+| `--extended`, `-x`    | Show all columns including extended fields                                                     | `false`     |
 | `--json`              | Output results as JSON                                                                         | `false`     |
 
 ### Supported IDEs
@@ -559,6 +565,8 @@ claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 claude plugin install b2c-cli
 claude plugin install b2c
 claude plugin install storefront-next
+# Add storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma
 ```
 
 The marketplace provides:
@@ -571,12 +579,13 @@ Use `--ide manual` if you prefer manual installation, or `--ide agentforce-vibes
 
 ### Skill Sets
 
-| Skill Set          | Description                                                    |
-| ------------------ | -------------------------------------------------------------- |
-| `b2c`              | B2C Commerce development patterns and practices                |
-| `b2c-cli`          | B2C CLI commands and operations                                |
-| `storefront-next`  | Storefront Next development — routing, components, deployment  |
-| `cap-dev`          | Commerce App Package scaffolding, validation, and submission   |
+| Skill Set               | Description                                                         |
+| ----------------------- | ------------------------------------------------------------------- |
+| `b2c`                   | B2C Commerce development patterns and practices                     |
+| `b2c-cli`               | B2C CLI commands and operations                                     |
+| `storefront-next`       | Storefront Next development — routing, components, deployment       |
+| `storefront-next-figma` | Storefront Next Figma design-kit workflows (requires Figma MCP server) |
+| `cap-dev`               | Commerce App Package scaffolding, validation, and submission        |
 
 ### Output
 

@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce B2C Commerce CLI",
-  "version": "1.13.0",
+  "version": "1.15.0",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -316,6 +316,9 @@
               }
             }
           },
+          "rate-limit": {
+            "description": "Manage rate limiting rules\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
+          },
           "mtls": {
             "description": "Manage mTLS certificates for code deployment\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html"
           },
@@ -353,15 +356,15 @@
     "format:check": "prettier --check src",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "pnpm run lint",
-    "prepack": "oclif manifest --jit && oclif readme",
+    "prepack": "oclif manifest --no-jit && oclif readme",
     "pretest": "tsc --noEmit -p test",
     "test": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
     "test:ci": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:ci:win": "c8 --check-coverage=false env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:unit": "env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
     "test:agent": "env OCLIF_TEST_ROOT=. mocha --forbid-only --parallel --jobs 4 --reporter min --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
-    "test:e2e": "env TEST_USE_SHARED_SANDBOX=true OCLIF_TEST_ROOT=. mocha --forbid-only --require test/functional/e2e/hooks.ts --node-option import=tsx --timeout 30000 --retries 2 --reporter spec \"test/functional/e2e/**/*.test.ts\"",
-    "test:e2e:ci": "env TEST_USE_SHARED_SANDBOX=true OCLIF_TEST_ROOT=. mocha --forbid-only --require test/functional/e2e/hooks.ts --node-option import=tsx --timeout 30000 --retries 2 --reporter json --reporter-option output=test-results.json \"test/functional/e2e/**/*.test.ts\"",
+    "test:e2e": "env TEST_USE_SHARED_SANDBOX=true OCLIF_TEST_ROOT=. mocha --forbid-only --require test/functional/e2e/hooks.ts --node-option import=tsx/esm --timeout 30000 --retries 2 --reporter spec \"test/functional/e2e/**/*.test.ts\"",
+    "test:e2e:ci": "env TEST_USE_SHARED_SANDBOX=true OCLIF_TEST_ROOT=. mocha --forbid-only --require test/functional/e2e/hooks.ts --node-option import=tsx/esm --timeout 30000 --retries 2 --reporter json --reporter-option output=test-results.json \"test/functional/e2e/**/*.test.ts\"",
     "test:e2e:auth": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/auth-token.test.ts\"",
     "test:e2e:code": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/code-lifecycle.test.ts\"",
     "test:e2e:jobs": "env OCLIF_TEST_ROOT=. mocha --forbid-only \"test/functional/e2e/job-execution.test.ts\"",

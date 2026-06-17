@@ -1,5 +1,44 @@
 # @salesforce/b2c-cli
 
+## 1.15.0
+
+### Minor Changes
+
+- [`19f059e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/19f059e7ba928d1070d7960920770f1256dfae73) - Add `storefront-next-figma` as a skill set for `b2c setup skills`. You can now install the Figma design-kit skills with `b2c setup skills storefront-next-figma` (or select it interactively) for any supported IDE. These skills require the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server) to be configured in your AI tool. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`19f059e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/19f059e7ba928d1070d7960920770f1256dfae73)]:
+  - @salesforce/b2c-tooling-sdk@1.13.0
+
+## 1.14.1
+
+### Patch Changes
+
+- [`76f1059`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/76f10593646b94b0f3560614ef63bf987ca0e184) - Fix the npm publish failing during `prepack`. `oclif manifest` defaults to `--jit`, which downloads each JIT plugin and reads its `oclif.manifest.json`; the `@salesforce/storefront-next-dev` JIT plugin does not ship that file, so manifest generation aborted and the CLI failed to publish. The prepack now runs `oclif manifest --no-jit`. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.14.0
+
+### Minor Changes
+
+- [#452](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/452) [`9e44bee`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9e44bee20a6a1aa1439b530e37965e35594189a9) - Add `ecdn firewall` commands (`list`, `get`, `create`, `update`, `delete`, (Thanks [@charithaT07](https://github.com/charithaT07)!)
+  `reorder`) for managing custom firewall rules on a CDN zone via the existing
+  cdn-zones v1 APIs (`/firewall-custom/rules`). Supports partial updates,
+  `--json` output (with table column flags on `list`), and routes destructive
+  operations (`delete`, `reorder`) through the same safety guard the rest of
+  the CLI uses.
+
+- [#484](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/484) [`80e63fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/80e63fca888d9b83efd53c9c0054247fb2aa31b3) - `b2c job import` now supports `--split` for importing directories larger than the instance archive size limit. With `--split` (and optional `--max-size`, default `190mb`), the import is broken into several smaller archives: order-sensitive metadata/XML is imported first — kept together when it fits, otherwise split at data-unit boundaries in dependency order — followed by static assets packed by compressed size. A normal import that exceeds the limit now warns and recommends `--split`. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Example: `b2c job import ./big-site-data --split --max-size 150mb`
+
+  The SDK adds a corresponding `siteArchiveImportSplit()` operation.
+
+### Patch Changes
+
+- Updated dependencies [[`b723939`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b72393951bb95b64f3291cd3cb76197e280a6a37), [`21bbed0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/21bbed0ea1b42e8750d4259669370f8bcf562c10), [`de8d40b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/de8d40b54dc923c5805fac2ef587db8b86349a6b), [`80e63fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/80e63fca888d9b83efd53c9c0054247fb2aa31b3), [`c8e0b60`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c8e0b602e1a8da88f7e6620e5d5614f3a55689bd)]:
+  - @salesforce/b2c-tooling-sdk@1.12.0
+
 ## 1.13.0
 
 ### Minor Changes

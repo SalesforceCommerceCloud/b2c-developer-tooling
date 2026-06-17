@@ -6,7 +6,14 @@
 
 import {withDocs} from '../../../i18n/index.js';
 import {CipReportCommand} from '../../../utils/cip/report-command.js';
+import {buildReportFlags, requireReport} from '../../../utils/cip/report-flags.js';
 
+const REPORT_NAME = 'promotion-discount-analysis';
+
+/**
+ * `b2c cip report promotion-discount-analysis` — flags are auto-derived from the catalog
+ * definition; param parsing/validation lives in {@link CipReportCommand} and the SDK.
+ */
 export default class CipReportPromotionDiscountAnalysis extends CipReportCommand<
   typeof CipReportPromotionDiscountAnalysis
 > {
@@ -20,11 +27,8 @@ export default class CipReportPromotionDiscountAnalysis extends CipReportCommand
   static flags = {
     ...CipReportCommand.baseFlags,
     ...CipReportCommand.reportFlags,
+    ...buildReportFlags(requireReport(REPORT_NAME)),
   };
 
-  protected readonly reportName = 'promotion-discount-analysis';
-
-  protected getReportParams(): Record<string, string> {
-    return this.getBaseReportParams();
-  }
+  protected readonly reportName = REPORT_NAME;
 }

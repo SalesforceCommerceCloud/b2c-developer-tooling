@@ -47,11 +47,15 @@ const LOG_ENTRY_START = /^\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d+\s+\w+\]/;
  * - The content portion from the first line (after LEVEL)
  * - Plus any continuation lines (stack traces, etc.)
  *
+ * If the standard B2C log format is not matched, returns an unparsed entry with only
+ * the file, message, and raw fields. The timestamp and level fields will be undefined
+ * in this case, but the raw log line is preserved for debugging or recovery purposes.
+ *
  * @param firstLine - First line of the log entry
  * @param file - File name the entry came from
  * @param fullMessage - Complete raw message including all lines
  * @param pathNormalizer - Optional function to normalize paths in the message
- * @returns Parsed log entry
+ * @returns Parsed log entry; fields timestamp and level may be undefined if format doesn't match
  */
 export function parseLogEntry(
   firstLine: string,

@@ -11,7 +11,9 @@ Use the `b2c` CLI plugin to manage eCDN (embedded Content Delivery Network) zone
 
 ## Configuration
 
-Values like `tenantId` resolve from `dw.json` / `SFCC_*` env vars / the active instance. Examples below show minimal usage; add flags only to override configured values. If a required value is missing, the CLI emits an actionable error pointing at the flag, env var, and config key. See the `b2c-config` skill for precedence details.
+Values like `tenantId`, `clientId`, and `clientSecret` resolve from `dw.json` / `SFCC_*` env vars / the active instance / configuration plugins. Examples below show minimal usage; **add flags only to override configured values** — passing `--client-id`/`--client-secret`/`--tenant-id` is usually unnecessary. If a required value is missing, the CLI emits an actionable error pointing at the flag, env var, and config key.
+
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (`--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 ## Prerequisites
 
@@ -62,6 +64,25 @@ b2c ecdn certificates add --zone my-zone --hostname www.example.com --certificat
 
 # validate a custom hostname
 b2c ecdn certificates validate --zone my-zone --certificate-id abc123
+```
+
+### Manage Rate Limiting Rules
+
+```bash
+# list rate limiting rules
+b2c ecdn rate-limit list --zone my-zone
+
+# create a rate limiting rule
+b2c ecdn rate-limit create --zone my-zone --description "Rate limit /checkout" --expression '(http.request.uri.path matches "^/checkout")' --characteristics cf.unique_visitor_id --action block --period 60 --requests-per-period 50 --mitigation-timeout 600
+
+# get a rule
+b2c ecdn rate-limit get --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e
+
+# update a rule
+b2c ecdn rate-limit update --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --requests-per-period 100
+
+# delete a rule
+b2c ecdn rate-limit delete --zone my-zone --rule-id 2c0fc9fa937b11eaa1b71c4d701ab86e --force
 ```
 
 ### Security Settings

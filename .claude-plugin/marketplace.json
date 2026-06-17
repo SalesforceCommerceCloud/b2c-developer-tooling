@@ -17,7 +17,7 @@
       "source": "./skills/b2c-cli",
       "category": "productivity",
       "strict": false,
-      "version": "1.3.2"
+      "version": "1.4.0"
     },
     {
       "name": "b2c",
@@ -29,7 +29,7 @@
       "source": "./skills/b2c",
       "category": "productivity",
       "strict": false,
-      "version": "1.3.2"
+      "version": "1.4.0"
     },
     {
       "name": "b2c-dx-mcp",
@@ -52,7 +52,19 @@
       "source": "./skills/storefront-next",
       "category": "productivity",
       "strict": false,
-      "version": "1.3.2"
+      "version": "1.4.0"
+    },
+    {
+      "name": "storefront-next-figma",
+      "description": "Figma design-kit skills for Storefront Next verticals — duplicate the kit, sync brand variables, and publish Code Connect. Requires the Figma MCP server.",
+      "author": {
+        "name": "Salesforce"
+      },
+      "license": "Apache-2.0",
+      "source": "./skills/storefront-next-figma",
+      "category": "productivity",
+      "strict": false,
+      "version": "1.3.3"
     },
     {
       "name": "cap-dev",

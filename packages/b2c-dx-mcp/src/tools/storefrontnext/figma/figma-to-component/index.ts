@@ -339,6 +339,7 @@ export function createFigmaToComponentTool(loadServices: () => Promise<Services>
     {
       name: 'sfnext_start_figma_workflow',
       description:
+        '[DEPRECATED] Superseded by the storefront-next and storefront-next-figma agent-skills plugins and NOT compatible with the Storefront Next 1.0 GA release. Will be removed in a future release. ' +
         'WORKFLOW ORCHESTRATOR: Call this tool FIRST when converting Figma designs. ' +
         'Parses Figma URL to extract fileKey and nodeId, returns step-by-step workflow instructions ' +
         'and parameters for subsequent tool calls. ' +
@@ -346,7 +347,7 @@ export function createFigmaToComponentTool(loadServices: () => Promise<Services>
         'the complete workflow: 1) Call Figma MCP tools, 2) Discover similar components, ' +
         '3) Call sfnext_analyze_component tool, 4) Call sfnext_match_tokens_to_theme tool, ' +
         '5) Show both outputs to the user then implement the recommended approach.',
-      toolsets: ['STOREFRONTNEXT'],
+      toolsets: ['STOREFRONTNEXT_DEPRECATED'],
       isGA: false,
       requiresInstance: false,
       inputSchema: figmaToComponentSchema.shape,

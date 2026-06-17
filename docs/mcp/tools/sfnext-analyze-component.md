@@ -4,9 +4,11 @@ description: Analyze design and discovered components to recommend REUSE, EXTEND
 
 # sfnext_analyze_component
 
-Analyzes design and discovered components to recommend a component generation strategy. Returns a REUSE, EXTEND, or CREATE action with confidence score, key differences, and suggested implementation approach.
+::: warning DEPRECATED — use the agent-skills plugins instead
+This tool is **deprecated** and **not compatible with the Storefront Next 1.0 GA release**. It has been superseded by the [`storefront-next` and `storefront-next-figma`](../../guide/agent-skills) agent-skills plugins, which stay current with the GA release. It now lives in the opt-in [`STOREFRONTNEXT_DEPRECATED`](../toolsets#storefrontnext-deprecated) toolset (never auto-enabled, excluded from `--toolsets ALL`) and **will be removed in a future release**. Install the skills plugins instead — see the [Agent Skills guide](../../guide/agent-skills).
+:::
 
-> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
+Analyzes design and discovered components to recommend a component generation strategy. Returns a REUSE, EXTEND, or CREATE action with confidence score, key differences, and suggested implementation approach.
 
 ## Overview
 

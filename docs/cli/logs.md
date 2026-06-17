@@ -121,6 +121,8 @@ b2c logs list
 | `--filter`, `-f` | Filter by log prefix (can specify multiple) | All logs |
 | `--sort` | Sort field: `name`, `date`, `size` | `date` |
 | `--order`, `-o` | Sort order: `asc`, `desc` | `desc` |
+| `--columns`, `-c` | Columns to display (comma-separated). Available: name, prefix, size, modified | - |
+| `--extended`, `-x` | Show all columns including extended fields | `false` |
 | `--json` | Output as JSON | `false` |
 
 ### Examples

@@ -43,7 +43,7 @@ export function createDebugStartSessionTool(
         'Returns a session_id for use with other debug tools, plus discovered cartridge mappings. ' +
         'WARNING: Debug sessions halt remote request threads on the instance. Always call debug_end_session when finished. ' +
         'Requires Basic auth credentials (username/password) and the script debugger enabled in Business Manager.',
-      toolsets: ['CARTRIDGES', 'SCAPI'],
+      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         cartridge_directory: z
           .string()

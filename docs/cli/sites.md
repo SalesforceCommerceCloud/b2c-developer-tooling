@@ -181,7 +181,7 @@ b2c sites cartridges add bm_extension --bm --position first
 Remove a cartridge from a site's cartridge path.
 
 ::: warning Destructive Operation
-This command modifies the site cartridge path. It is blocked in safe mode — use `--safety-level off` to allow it.
+This command modifies the site cartridge path. It is blocked in safe mode — set the `SFCC_SAFETY_LEVEL=NONE` environment variable or update the "safety" section in your `dw.json` configuration file to allow it.
 :::
 
 #### Usage
@@ -218,7 +218,7 @@ b2c sites cartridges remove bm_extension --bm
 Replace the entire cartridge path for a site.
 
 ::: warning Destructive Operation
-This command replaces the entire cartridge path. It is blocked in safe mode — use `--safety-level off` to allow it.
+This command replaces the entire cartridge path. It is blocked in safe mode — set the `SFCC_SAFETY_LEVEL=NONE` environment variable or configure `"safety": {"level": "NONE"}` in your `dw.json` to allow it.
 :::
 
 #### Usage
