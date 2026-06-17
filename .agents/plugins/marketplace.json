@@ -60,8 +60,7 @@
       "source": {
         "source": "git-subdir",
         "url": "SalesforceCommerceCloud/commerce-apps",
-        "path": ".claude",
-        "ref": "main"
+        "path": ".claude"
       },
       "interface": {
         "displayName": "Commerce Apps Dev",
