@@ -65,7 +65,7 @@ suite('jobs menu contributions (package.json)', () => {
     }
   });
 
-  test('jobs explorer view and settings are declared', () => {
+  test('job history view and settings are declared', () => {
     const views = Object.values(pkg.contributes.views).flatMap((items) => items);
     assert.ok(
       views.some((view) => view.id === 'b2cJobsExplorer'),
@@ -74,7 +74,7 @@ suite('jobs menu contributions (package.json)', () => {
 
     assert.ok(
       Object.hasOwn(pkg.contributes.configuration.properties, 'b2c-dx.features.jobsExplorer'),
-      'jobs explorer feature flag should be declared',
+      'job history feature flag should be declared',
     );
     assert.ok(
       Object.hasOwn(pkg.contributes.configuration.properties, 'b2c-dx.jobs.refreshInterval'),
@@ -89,6 +89,10 @@ suite('jobs menu contributions (package.json)', () => {
       'jobs history limit setting should be declared',
     );
     assert.ok(
+      Object.hasOwn(pkg.contributes.configuration.properties, 'b2c-dx.jobs.defaultStatusFilter'),
+      'jobs default status filter setting should be declared',
+    );
+    assert.ok(
       Object.hasOwn(pkg.contributes.configuration.properties, 'b2c-dx.jobs.knownJobIds'),
       'jobs known job IDs setting should be declared',
     );
@@ -96,13 +100,21 @@ suite('jobs menu contributions (package.json)', () => {
 
   test('jobs commands are declared and hidden from command palette where appropriate', () => {
     const expectedCommands = [
+      'b2c-dx.jobs.openFilters',
       'b2c-dx.jobs.refresh',
+      'b2c-dx.jobs.setStatusFilter',
+      'b2c-dx.jobs.setHistoryFilters',
+      'b2c-dx.jobs.openHistoryTable',
+      'b2c-dx.jobs.exportFilteredHistory',
+      'b2c-dx.jobs.importSiteArchive',
+      'b2c-dx.jobs.exportSiteArchive',
       'b2c-dx.jobs.run',
       'b2c-dx.jobs.createScaffold',
       'b2c-dx.jobs.deployScaffold',
       'b2c-dx.jobs.rerun',
       'b2c-dx.jobs.stop',
       'b2c-dx.jobs.viewExecutionDetails',
+      'b2c-dx.jobs.openExecutionInBM',
       'b2c-dx.jobs.openExecutionLog',
       'b2c-dx.jobs.openFailureLog',
     ];
@@ -124,6 +136,7 @@ suite('jobs menu contributions (package.json)', () => {
       'b2c-dx.jobs.rerun',
       'b2c-dx.jobs.stop',
       'b2c-dx.jobs.viewExecutionDetails',
+      'b2c-dx.jobs.openExecutionInBM',
       'b2c-dx.jobs.openExecutionLog',
       'b2c-dx.jobs.openFailureLog',
     ]) {

@@ -8,7 +8,23 @@ import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {showThrottledError} from '../notify.js';
 
-export type JobsTreeNode = JobTreeItem | JobExecutionTreeItem | JobStepTreeItem;
+export type JobStatusFilter = 'active' | 'all' | 'running' | 'scheduled' | 'failed' | 'completed';
+type ExecutionStatus = 'running' | 'failed' | 'completed' | 'scheduled';
+
+export interface JobHistoryFilters {
+  jobIdContains: string;
+  executedBy: string;
+  startFrom: string;
+  endTo: string;
+}
+
+export interface JobHistoryExecutionRow {
+  jobId: string;
+  status: 'running' | 'failed' | 'completed' | 'scheduled';
+  execution: JobExecution;
+}
+
+export type JobsTreeNode = JobTreeItem | JobExecutionTreeItem | JobStepTreeItem | JobsEmptyStateTreeItem;
 
 const JOBS_FETCH_LIMIT = 200;
 const DEFAULT_DISCOVERY_SCAN_LIMIT = 2000;
@@ -20,6 +36,22 @@ const MAX_EXECUTION_HISTORY_LIMIT = 200;
 const DEFAULT_POLLING_INTERVAL_SECONDS = 30;
 const MIN_POLLING_INTERVAL_SECONDS = 5;
 const MAX_POLLING_INTERVAL_SECONDS = 300;
+const DEFAULT_STATUS_FILTER: JobStatusFilter = 'active';
+const EMPTY_HISTORY_FILTERS: JobHistoryFilters = {
+  jobIdContains: '',
+  executedBy: '',
+  startFrom: '',
+  endTo: '',
+};
+
+const STATUS_FILTER_OPTIONS: JobStatusFilter[] = ['active', 'all', 'running', 'scheduled', 'failed', 'completed'];
+
+const ALL_FILTER_STATUS_PRIORITY: Record<ExecutionStatus, number> = {
+  running: 0,
+  scheduled: 1,
+  failed: 2,
+  completed: 3,
+};
 
 function getJobsPollingIntervalMs(): number {
   const configured = vscode.workspace
@@ -27,6 +59,96 @@ function getJobsPollingIntervalMs(): number {
     .get<number>('jobs.refreshInterval', DEFAULT_POLLING_INTERVAL_SECONDS);
   const bounded = Math.min(MAX_POLLING_INTERVAL_SECONDS, Math.max(MIN_POLLING_INTERVAL_SECONDS, configured));
   return bounded * 1000;
+}
+
+function normalizeHistoryFilters(filters: Partial<JobHistoryFilters>): JobHistoryFilters {
+  return {
+    jobIdContains: filters.jobIdContains?.trim() ?? '',
+    executedBy: filters.executedBy?.trim() ?? '',
+    startFrom: filters.startFrom?.trim() ?? '',
+    endTo: filters.endTo?.trim() ?? '',
+  };
+}
+
+function hasHistoryFilters(filters: JobHistoryFilters): boolean {
+  return Boolean(filters.jobIdContains || filters.executedBy || filters.startFrom || filters.endTo);
+}
+
+function parseTimestamp(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+function getExecutionUsers(execution: JobExecution): string[] {
+  const record = execution as Record<string, unknown>;
+  return [record.created_by, record.executed_by, record.triggered_by]
+    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    .map((value) => value.trim());
+}
+
+function matchesHistoryFilters(jobId: string, execution: JobExecution, filters: JobHistoryFilters): boolean {
+  if (filters.jobIdContains && !jobId.toLowerCase().includes(filters.jobIdContains.toLowerCase())) {
+    return false;
+  }
+
+  if (filters.executedBy) {
+    const users = getExecutionUsers(execution);
+    const needle = filters.executedBy.toLowerCase();
+    if (!users.some((user) => user.toLowerCase().includes(needle))) {
+      return false;
+    }
+  }
+
+  if (filters.startFrom) {
+    const fromMs = parseTimestamp(filters.startFrom);
+    const startMs = parseTimestamp(execution.start_time);
+    if (fromMs !== undefined && (startMs === undefined || startMs < fromMs)) {
+      return false;
+    }
+  }
+
+  if (filters.endTo) {
+    const toMs = parseTimestamp(filters.endTo);
+    const endMs = parseTimestamp(execution.end_time);
+    if (toMs !== undefined && (endMs === undefined || endMs > toMs)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function matchesStatusFilter(status: ExecutionStatus, filter: JobStatusFilter): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'active') return status === 'running' || status === 'scheduled';
+  return status === filter;
+}
+
+function statusFilterLabel(filter: JobStatusFilter): string {
+  if (filter === 'all') return 'All';
+  if (filter === 'active') return 'Active';
+  if (filter === 'running') return 'Running';
+  if (filter === 'scheduled') return 'Scheduled';
+  if (filter === 'failed') return 'Failed';
+  return 'Completed';
+}
+
+function emptyStateTitle(filter: JobStatusFilter): string {
+  if (filter === 'active') return 'No active jobs right now';
+  if (filter === 'running') return 'No actively running jobs';
+  if (filter === 'scheduled') return 'No scheduled jobs right now';
+  if (filter === 'failed') return 'No failed jobs in the current window';
+  if (filter === 'completed') return 'No completed jobs in the current window';
+  return 'No discovered jobs yet';
+}
+
+function emptyStateDescription(filter: JobStatusFilter): string {
+  if (filter === 'all') {
+    return 'No execution history yet. Run a job in Business Manager or use Run Job, then refresh.';
+  }
+
+  return `Current history filter: ${statusFilterLabel(filter)}. Use Filters or a quick preset to adjust.`;
 }
 
 function getJobDiscoveryScanLimit(): number {
@@ -43,16 +165,43 @@ function getExecutionHistoryLimit(): number {
   return Math.min(MAX_EXECUTION_HISTORY_LIMIT, Math.max(MIN_EXECUTION_HISTORY_LIMIT, configured));
 }
 
+function getDefaultJobsStatusFilter(): JobStatusFilter {
+  const configured = vscode.workspace
+    .getConfiguration('b2c-dx')
+    .get<string>('jobs.defaultStatusFilter', DEFAULT_STATUS_FILTER)
+    .toLowerCase();
+
+  if (STATUS_FILTER_OPTIONS.includes(configured as JobStatusFilter)) {
+    return configured as JobStatusFilter;
+  }
+
+  return DEFAULT_STATUS_FILTER;
+}
+
 function formatJobsFetchError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   const lowered = message.toLowerCase();
 
-  if (lowered.includes('fetch failed') || lowered.includes('network') || lowered.includes('enotfound')) {
-    return 'Unable to fetch jobs from the configured instance. Verify dw.json host, network/VPN access, and OAuth credentials.';
+  if (
+    lowered.includes('forbidden') ||
+    lowered.includes('unauthorized') ||
+    lowered.includes('access denied') ||
+    lowered.includes('http 401') ||
+    lowered.includes('http 403')
+  ) {
+    return 'Unable to fetch jobs due to missing OCAPI scopes or client permissions. Ensure API client access to /job_execution_search and /jobs/*/executions*.';
   }
 
-  if (lowered.includes('forbidden') || lowered.includes('unauthorized') || lowered.includes('access denied')) {
-    return 'Unable to fetch jobs due to missing OCAPI scopes. Ensure API client access to /job_execution_search and /jobs/*/executions*.';
+  if (
+    lowered.includes('fetch failed') ||
+    lowered.includes('network') ||
+    lowered.includes('enotfound') ||
+    lowered.includes('econnrefused') ||
+    lowered.includes('econnreset') ||
+    lowered.includes('certificate') ||
+    lowered.includes('self-signed')
+  ) {
+    return `Unable to fetch jobs from the configured instance. Verify dw.json host, network/VPN access, TLS settings (selfsigned), and OAuth credentials. Details: ${message}`;
   }
 
   return message;
@@ -80,7 +229,7 @@ function formatDuration(durationMs: number | undefined): string {
   return `${seconds}s`;
 }
 
-function normalizeExecutionStatus(execution: JobExecution): 'running' | 'failed' | 'completed' | 'scheduled' {
+function normalizeExecutionStatus(execution: JobExecution): ExecutionStatus {
   const raw = (execution.execution_status ?? '').toLowerCase();
   if (raw === 'running') return 'running';
   if (raw === 'pending') return 'scheduled';
@@ -158,12 +307,6 @@ export class JobExecutionTreeItem extends vscode.TreeItem {
     this.iconPath = jobStatusIcon(status);
     this.description = `${status} · ${formatDateTime(execution.start_time)} · ${formatDuration(execution.duration)}`;
     this.tooltip = buildExecutionTooltip(execution);
-
-    this.command = {
-      command: 'b2c-dx.jobs.viewExecutionDetails',
-      title: 'View Execution Details',
-      arguments: [this],
-    };
   }
 }
 
@@ -193,15 +336,106 @@ export class JobStepTreeItem extends vscode.TreeItem {
   }
 }
 
+export class JobsEmptyStateTreeItem extends vscode.TreeItem {
+  readonly nodeType = 'emptyState' as const;
+
+  constructor(filter: JobStatusFilter, filtersApplied: boolean) {
+    super(emptyStateTitle(filter), vscode.TreeItemCollapsibleState.None);
+    this.id = `jobs-empty-state:${filter}`;
+    this.contextValue = 'jobs-empty-state';
+    this.iconPath = new vscode.ThemeIcon('filter');
+    this.description = filtersApplied
+      ? `${emptyStateDescription(filter)} Additional filters are active.`
+      : emptyStateDescription(filter);
+    this.tooltip = new vscode.MarkdownString(
+      `No job history entries match **${statusFilterLabel(filter)}** right now.\n\nUse **Filters** (funnel action in the Job History view title bar) to adjust status, presets, or advanced filters.`,
+    );
+  }
+}
+
 export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNode> {
   private readonly onDidChangeTreeDataEmitter = new vscode.EventEmitter<JobsTreeNode | undefined | void>();
   readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
 
   private jobCache: Map<string, JobExecution> | undefined;
+  private discoveryExecutionCache: JobExecution[] | undefined;
   private executionCache = new Map<string, JobExecution[]>();
   private pollingTimer: ReturnType<typeof setInterval> | undefined;
+  private statusFilter: JobStatusFilter;
+  private historyFilters: JobHistoryFilters = EMPTY_HISTORY_FILTERS;
+  private lastSuccessfulRefreshAt: Date | undefined;
 
-  constructor(private readonly configProvider: B2CExtensionConfig) {}
+  constructor(private readonly configProvider: B2CExtensionConfig) {
+    this.statusFilter = getDefaultJobsStatusFilter();
+    this.updateStatusFilterContext();
+  }
+
+  getStatusFilter(): JobStatusFilter {
+    return this.statusFilter;
+  }
+
+  getHistoryFilters(): JobHistoryFilters {
+    return {...this.historyFilters};
+  }
+
+  setHistoryFilters(filters: Partial<JobHistoryFilters>): void {
+    const normalized = normalizeHistoryFilters(filters);
+    const unchanged =
+      this.historyFilters.jobIdContains === normalized.jobIdContains &&
+      this.historyFilters.executedBy === normalized.executedBy &&
+      this.historyFilters.startFrom === normalized.startFrom &&
+      this.historyFilters.endTo === normalized.endTo;
+    if (unchanged) return;
+
+    this.historyFilters = normalized;
+    this.onDidChangeTreeDataEmitter.fire();
+  }
+
+  clearHistoryFilters(): void {
+    this.setHistoryFilters(EMPTY_HISTORY_FILTERS);
+  }
+
+  hasHistoryFilters(): boolean {
+    return hasHistoryFilters(this.historyFilters);
+  }
+
+  getLastSuccessfulRefreshAt(): Date | undefined {
+    return this.lastSuccessfulRefreshAt;
+  }
+
+  isPollingEnabled(): boolean {
+    return Boolean(this.pollingTimer);
+  }
+
+  getPollingIntervalSeconds(): number {
+    return Math.round(getJobsPollingIntervalMs() / 1000);
+  }
+
+  async getFilteredExecutionHistoryRows(): Promise<JobHistoryExecutionRow[]> {
+    await this.getJobNodes(true);
+    const executions = this.discoveryExecutionCache ?? [];
+
+    return executions
+      .map((execution) => {
+        const jobId = execution.job_id;
+        if (!jobId) return undefined;
+        const status = normalizeExecutionStatus(execution);
+        return {jobId, status, execution};
+      })
+      .filter((row): row is JobHistoryExecutionRow => Boolean(row))
+      .filter(
+        (row) =>
+          matchesStatusFilter(row.status, this.statusFilter) &&
+          matchesHistoryFilters(row.jobId, row.execution, this.historyFilters),
+      );
+  }
+
+  setStatusFilter(filter: JobStatusFilter): void {
+    if (this.statusFilter === filter) return;
+    this.statusFilter = filter;
+    this.updateStatusFilterContext();
+    this.onDidChangeTreeDataEmitter.fire();
+  }
 
   getTreeItem(element: JobsTreeNode): vscode.TreeItem {
     return element;
@@ -216,13 +450,14 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
 
   refresh(): void {
     this.jobCache = undefined;
+    this.discoveryExecutionCache = undefined;
     this.executionCache.clear();
     this.onDidChangeTreeDataEmitter.fire();
   }
 
   async getDiscoveredJobIds(): Promise<string[]> {
-    const nodes = await this.getJobNodes();
-    return nodes.map((node) => node.jobId);
+    const nodes = await this.getJobNodes(true);
+    return nodes.filter((node): node is JobTreeItem => node instanceof JobTreeItem).map((node) => node.jobId);
   }
 
   startPolling(): void {
@@ -240,13 +475,18 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
     this.pollingTimer = undefined;
   }
 
-  private async getJobNodes(): Promise<JobTreeItem[]> {
+  private updateStatusFilterContext(): void {
+    void vscode.commands.executeCommand('setContext', 'b2c-dx.jobs.statusFilter', this.statusFilter);
+  }
+
+  private async getJobNodes(ignoreFilter = false): Promise<JobsTreeNode[]> {
     const instance = this.configProvider.getInstance();
     if (!instance) return [];
 
     if (!this.jobCache) {
       try {
         const grouped = new Map<string, JobExecution>();
+        const discoveredExecutions: JobExecution[] = [];
         const scanLimit = getJobDiscoveryScanLimit();
         let start = 0;
 
@@ -260,6 +500,7 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
           });
 
           for (const execution of result.hits) {
+            discoveredExecutions.push(execution);
             const jobId = execution.job_id;
             if (!jobId) continue;
             if (!grouped.has(jobId)) grouped.set(jobId, execution);
@@ -273,15 +514,41 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
         }
 
         this.jobCache = grouped;
+        this.discoveryExecutionCache = discoveredExecutions;
+        this.lastSuccessfulRefreshAt = new Date();
       } catch (error) {
         showThrottledError(`Jobs: ${formatJobsFetchError(error)}`, 'jobs:root');
         return [];
       }
     }
 
-    return [...this.jobCache.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([jobId, latestExecution]) => new JobTreeItem(jobId, latestExecution));
+    const entries = [...this.jobCache.entries()].map(([jobId, latestExecution]) => ({
+      jobId,
+      latestExecution,
+      status: normalizeExecutionStatus(latestExecution),
+    }));
+
+    const filteredEntries = ignoreFilter
+      ? entries
+      : entries.filter(
+          (entry) =>
+            matchesStatusFilter(entry.status, this.statusFilter) &&
+            matchesHistoryFilters(entry.jobId, entry.latestExecution, this.historyFilters),
+        );
+
+    if (filteredEntries.length === 0 && !ignoreFilter && entries.length > 0) {
+      return [new JobsEmptyStateTreeItem(this.statusFilter, this.hasHistoryFilters())];
+    }
+
+    return filteredEntries
+      .sort((left, right) => {
+        if (this.statusFilter === 'all') {
+          const statusDiff = ALL_FILTER_STATUS_PRIORITY[left.status] - ALL_FILTER_STATUS_PRIORITY[right.status];
+          if (statusDiff !== 0) return statusDiff;
+        }
+        return left.jobId.localeCompare(right.jobId);
+      })
+      .map((entry) => new JobTreeItem(entry.jobId, entry.latestExecution));
   }
 
   private async getExecutionNodes(jobId: string): Promise<JobExecutionTreeItem[]> {
@@ -305,7 +572,9 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
       }
     }
 
-    return executions.map((execution) => new JobExecutionTreeItem(jobId, execution));
+    return executions
+      .filter((execution) => matchesHistoryFilters(jobId, execution, this.historyFilters))
+      .map((execution) => new JobExecutionTreeItem(jobId, execution));
   }
 
   private getStepNodes(executionNode: JobExecutionTreeItem): JobStepTreeItem[] {

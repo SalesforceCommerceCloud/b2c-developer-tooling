@@ -746,7 +746,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     });
   }
   if (settings.get<boolean>('features.jobsExplorer', true)) {
-    runActivationStep(log, 'Jobs Explorer registration', () => {
+    runActivationStep(log, 'Job History registration', () => {
       registerJobs(context, configProvider);
     });
   }
