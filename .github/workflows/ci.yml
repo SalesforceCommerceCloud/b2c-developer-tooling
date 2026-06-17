@@ -160,10 +160,13 @@ jobs:
         # in src/win/fs-event.c during chokidar's recursive watch tests.
         # Revisit when upstream Node ships a fix.
         #
-        # Node 26 is floating (26.x) here; this job is continue-on-error so any
-        # Windows-specific 26 regression surfaces without blocking CI. Pin it
-        # like 24 above if it hits the same libuv/chokidar assertion.
-        node-version: [22.x, 24.15.0, 26.x]
+        # Node 26 is intentionally absent from the Windows matrix: every 26.x
+        # release ships the same broken libuv (1.52.1) and aborts with that
+        # fs-event.c assertion during chokidar's recursive watch tests, so
+        # there is no 26.x to pin to (unlike 24, where 24.15.0 is safe). Node
+        # 26 is exercised on the Linux matrix above; add it back here once
+        # upstream libuv ships a fix.
+        node-version: [22.x, 24.15.0]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
