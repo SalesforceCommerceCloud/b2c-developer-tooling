@@ -1,6 +1,9 @@
 ---
 name: b2c-config
 description: Inspect, configure, and troubleshoot the B2C CLI's setup, authentication, and instance connections. Use this skill as the **fallback whenever CLI setup, configuration, or authentication is unclear or failing** — including "command can't find my instance/credentials", auth errors (401/403, "client credentials required"), wrong sandbox being targeted, env var vs dw.json precedence, hostname mismatch warnings, missing tenantId/shortCode, OAuth scope errors, multi-instance switching, retrieving access tokens for scripts, and IDE/Prophet integration. Also use when the user needs to check what `dw.json` looks like, what fields it accepts (camelCase or kebab-case keys), or where the CLI is reading config from. Triggers include "why is the CLI connecting to the wrong instance", "auth keeps failing", "what config does the CLI see", "I need an OAuth token", "my dw.json isn't being picked up", or any general "how do I configure the CLI" question.
+persona: developer
+category: Getting Started & Scaffolding
+tags: [configuration, authentication, cli, onboarding, docs]
 ---
 
 # B2C Config Skill

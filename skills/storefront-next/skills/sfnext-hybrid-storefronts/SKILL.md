@@ -1,6 +1,9 @@
 ---
 name: sfnext-hybrid-storefronts
 description: Implement hybrid storefronts that run Storefront Next alongside SFRA or SiteGenesis. Use when planning gradual migration from SFRA, configuring hybrid proxy for local development, setting up session bridging between storefronts, or routing traffic between old and new implementations.
+persona: developer
+category: Headless Storefront (Storefront Next)
+tags: [headless, storefront-next, storefront, sfra, routing, authentication]
 ---
 
 # Hybrid Storefronts Skill

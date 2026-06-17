@@ -1,6 +1,9 @@
 ---
 name: b2c-logging
 description: Implement server-side logging with dw.system.Logger, custom log categories, and named log files. Use this skill whenever the user needs to add debug or error logging to Commerce scripts, write to a dedicated log file, configure log categories and levels, or use nested diagnostic context for tracing. Also use when setting up logging in controllers, hooks, or job scripts -- even if they just say 'add logging to my script' or 'write to a custom log file'.
+persona: developer
+category: Backend & Cartridge Development
+tags: [logging, debugging, diagnostics]
 ---
 
 # Logging Skill

@@ -1,6 +1,9 @@
 ---
 name: b2c-webservices
 description: Implement web service integrations in B2C Commerce using LocalServiceRegistry. Use this skill whenever the user needs to call external REST or SOAP APIs from a cartridge, configure service credentials and profiles in services.xml, handle HTTP requests with createRequest/parseResponse callbacks, set up FTP or SFTP file transfers, or troubleshoot circuit breaker errors. Also use when connecting to payment gateways, shipping providers, or third-party services -- even if they just say 'call an external API from my controller' or 'my service keeps timing out'.
+persona: developer
+category: APIs & Integrations
+tags: [web-services, integrations, debugging, caching]
 ---
 
 # Web Services Skill

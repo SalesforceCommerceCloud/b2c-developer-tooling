@@ -34,7 +34,11 @@ if (!version) {
 // b2c-dx-mcp is NOT part of b2c-agent-plugins — it tracks @salesforce/b2c-dx-mcp separately.
 const marketplacePath = join(repoRoot, '.claude-plugin/marketplace.json');
 const marketplace = readJson(marketplacePath);
-const claudeTargets = new Set(['b2c-cli', 'b2c', 'storefront-next']);
+// Persona bundles (e.g. b2c-operator) are included here so their marketplace
+// version stays in lockstep. Their Codex manifest version is stamped by
+// scripts/assemble-personas.mjs (which generates the manifest), so they are
+// intentionally NOT in codexTargets below.
+const claudeTargets = new Set(['b2c-cli', 'b2c', 'storefront-next', 'b2c-operator']);
 for (const plugin of marketplace.plugins) {
   if (claudeTargets.has(plugin.name)) {
     plugin.version = version;

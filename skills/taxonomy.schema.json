@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Closed vocabulary for B2C agent-skill taxonomy. Per-skill assignments (persona/category/tags) live in each SKILL.md frontmatter; this file is the single source of truth for WHICH buckets exist. CI (scripts/validate-skills.mjs --check) fails the build if any skill uses a persona/category/tag not defined here, or a category that does not belong to its persona, or persona: <inactive>. To add a bucket, edit this file and the relevant SKILL.md frontmatter in the same PR.",
+  "version": 1,
+  "personas": {
+    "developer": {
+      "label": "Developer",
+      "active": true,
+      "description": "Engineers writing and shipping code that runs the commerce platform: server-side cartridge code, headless React storefronts, and the integrations and auth that connect them.",
+      "categories": [
+        "Backend & Cartridge Development",
+        "APIs & Integrations",
+        "Headless Storefront (Storefront Next)",
+        "Authentication & Identity",
+        "Platform Configuration & Metadata",
+        "Getting Started & Scaffolding"
+      ]
+    },
+    "operator": {
+      "label": "Operator / Admin",
+      "active": true,
+      "description": "Practitioners who run, deploy, and keep instances healthy rather than author feature code: deploys and version activation, sandbox lifecycle, jobs, logs and live debugging, file ops, edge/MRT, site and content administration, and Account/Business Manager access administration.",
+      "categories": [
+        "Deployment & Release",
+        "Environments & Sandboxes",
+        "Jobs & Automation",
+        "Observability & Diagnostics",
+        "Edge & Delivery (eCDN / MRT)",
+        "Access & Identity Administration",
+        "Site & Content Administration"
+      ]
+    },
+    "merchant": {
+      "label": "Merchant / Business User",
+      "active": false,
+      "description": "Business-facing roles who manage what shoppers see and the data behind it: Page Designer content, site configuration, and commerce analytics. Defined but not yet active — its skills are interim-homed under Operator. Activate by setting active: true and moving the relevant skills' persona to merchant.",
+      "categories": [
+        "Content & Page Designer",
+        "Analytics & Insights",
+        "Site & Catalog Management"
+      ]
+    }
+  },
+  "tags": [
+    "diagnostics",
+    "metadata",
+    "content",
+    "page-designer",
+    "authentication",
+    "slas",
+    "ci-cd",
+    "deployment",
+    "headless",
+    "storefront",
+    "sfra",
+    "storefront-next",
+    "scapi",
+    "ocapi",
+    "custom-api",
+    "performance",
+    "localization",
+    "i18n",
+    "logging",
+    "debugging",
+    "jobs",
+    "sandbox",
+    "webdav",
+    "ecdn",
+    "mrt",
+    "analytics",
+    "catalog",
+    "ordering",
+    "querying",
+    "custom-objects",
+    "hooks",
+    "isml",
+    "forms",
+    "controllers",
+    "caching",
+    "integrations",
+    "web-services",
+    "business-manager",
+    "account-manager",
+    "access-control",
+    "site-config",
+    "scaffolding",
+    "onboarding",
+    "testing",
+    "design-system",
+    "figma",
+    "routing",
+    "data-fetching",
+    "state-management",
+    "cli",
+    "docs",
+    "configuration"
+  ]
+}

@@ -1,6 +1,9 @@
 ---
 name: b2c-scapi-shopper
 description: Call Shopper Commerce APIs (SCAPI) from headless storefronts and composable commerce apps. Use this skill whenever the user is building with PWA Kit, Storefront Next (SFNext), or a headless frontend and needs to search products, manage baskets, submit orders, access customer data, or set shopper context. Also use when they ask about Shopper API authentication, checkout flows from a frontend app, or performance optimization for API calls — even if they just say "search products from my PWA" or "build a headless checkout".
+persona: developer
+category: APIs & Integrations
+tags: [scapi, headless, storefront, storefront-next, authentication, slas, ordering, catalog, performance]
 ---
 
 # Shopper Commerce APIs (SCAPI)
@@ -56,7 +59,7 @@ b2c slas client create \
   --redirect-uri http://localhost:3000/callback
 ```
 
-See [b2c-slas skill](../../b2c-cli/skills/b2c-slas/SKILL.md) for full client management.
+See [b2c-slas skill](../../../b2c-cli/skills/b2c-slas/SKILL.md) for full client management.
 
 ### Get Guest Token
 
@@ -330,9 +333,9 @@ Find logs in Log Center under `scapi.verbose` category.
 
 ## Related Skills
 
-- [b2c-slas](../../b2c-cli/skills/b2c-slas/SKILL.md) - Create and manage SLAS clients
+- [b2c-slas](../../../b2c-cli/skills/b2c-slas/SKILL.md) - Create and manage SLAS clients
 - [b2c-slas-auth-patterns](../b2c-slas-auth-patterns/SKILL.md) - Advanced auth: OTP, passkeys, session bridge
-- [b2c-scapi-schemas](../../b2c-cli/skills/b2c-scapi-schemas/SKILL.md) - Browse OpenAPI schemas
+- [b2c-scapi-schemas](../../../b2c-cli/skills/b2c-scapi-schemas/SKILL.md) - Browse OpenAPI schemas
 - [b2c-custom-api-development](../b2c-custom-api-development/SKILL.md) - Create custom endpoints
 
 ## Reference Documentation

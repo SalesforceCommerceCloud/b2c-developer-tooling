@@ -1,6 +1,9 @@
 ---
 name: b2c-metadata
 description: Define custom attributes, custom object types, and site preferences for B2C Commerce using metadata XML. Use this skill whenever the user needs to add a field to products, orders, or customers, create a new custom object type, set up site preferences, or extend the B2C data model. Also use when they ask about system-objecttype-extensions.xml, custom-objecttype-definitions.xml, attribute groups in Business Manager, or data model definitions — even if they just say "add a field to products" or "I need a new object type".
+persona: developer
+category: Platform Configuration & Metadata
+tags: [metadata, custom-objects, site-config, business-manager]
 ---
 
 # Metadata Skill

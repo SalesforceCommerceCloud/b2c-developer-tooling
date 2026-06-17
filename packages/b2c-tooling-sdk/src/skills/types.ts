@@ -19,8 +19,12 @@ export type IdeType =
 
 /**
  * Skill set categories matching the plugins directory structure.
+ *
+ * `b2c-operator` is a curated persona bundle assembled from skills authored in
+ * `b2c-cli`/`b2c`/`storefront-next` (see scripts/assemble-personas.mjs); it is
+ * published as its own release artifact like the other release-artifact sets.
  */
-export type SkillSet = 'b2c' | 'b2c-cli' | 'cap-dev' | 'storefront-next' | 'storefront-next-figma';
+export type SkillSet = 'b2c' | 'b2c-cli' | 'b2c-operator' | 'cap-dev' | 'storefront-next' | 'storefront-next-figma';
 
 /**
  * Configuration for a skill source — defines how to fetch skills from a particular repository.
@@ -94,6 +98,8 @@ export interface ReleaseInfo {
   b2cCliSkillsAssetUrl: string | null;
   /** Download URL for storefront-next-skills.zip asset, or null if not present */
   storefrontNextSkillsAssetUrl: string | null;
+  /** Download URL for b2c-operator-skills.zip asset, or null if not present */
+  b2cOperatorSkillsAssetUrl: string | null;
 }
 
 /**

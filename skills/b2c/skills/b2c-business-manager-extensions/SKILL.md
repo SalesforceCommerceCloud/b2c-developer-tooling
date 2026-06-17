@@ -1,6 +1,9 @@
 ---
 name: b2c-business-manager-extensions
 description: Build Business Manager extension cartridges with custom admin tools, menu items, and dialog actions. Use this skill whenever the user needs to create bm_* cartridges, add menu actions or dialog buttons in BM, configure bm_extensions.xml, or extend admin pages with form overlays. Also use when customizing the BM interface for back-office workflows -- even if they just say 'add a button to BM' or 'custom admin page'.
+persona: developer
+category: Backend & Cartridge Development
+tags: [business-manager, controllers, isml, forms, metadata]
 ---
 
 # Business Manager Extensions Skill

@@ -1,6 +1,9 @@
 ---
 name: b2c-localization
 description: Add translations and multi-language support to B2C Commerce storefronts. Use this skill whenever the user needs to translate a storefront, add a new locale, create or edit .properties resource bundles, display translated strings in templates, format dates or currencies for different regions, or build a language switcher. Also use when they mention Resource.msg, Resource.msgf, locale fallback, or i18n — even if they just say "we need French translations" or "make this page work in multiple languages".
+persona: developer
+category: Backend & Cartridge Development
+tags: [localization, i18n, isml, storefront]
 ---
 
 # Localization Skill

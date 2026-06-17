@@ -1,6 +1,9 @@
 ---
 name: b2c-scapi-custom
 description: Check custom SCAPI endpoint registration status using the b2c CLI. Use this skill whenever the user needs to verify that their custom API endpoints are registered and working, debug 404 or "endpoint not found" errors on custom APIs, or list custom API endpoints and their deployment status — even if they just say "my custom API returns 404" or "is my endpoint deployed".
+persona: developer
+category: APIs & Integrations
+tags: [scapi, custom-api, diagnostics, debugging, cli]
 ---
 
 # B2C SCAPI Custom APIs Skill

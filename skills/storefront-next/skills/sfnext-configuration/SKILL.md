@@ -1,6 +1,9 @@
 ---
 name: sfnext-configuration
 description: Manage Storefront Next application configuration using config.server.ts, schema types, environment variables, and multi-site setup. Use when editing config.server.ts, adding PUBLIC__ environment variables, using useConfig or getConfig, or configuring multiple sites. NOT for initial project creation — see sfnext-project-setup.
+persona: developer
+category: Headless Storefront (Storefront Next)
+tags: [headless, storefront-next, storefront, configuration, site-config]
 ---
 
 # Configuration Skill

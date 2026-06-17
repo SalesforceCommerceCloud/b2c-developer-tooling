@@ -1,6 +1,9 @@
 ---
 name: b2c-onboarding
 description: Get started with Salesforce B2C Commerce development. Use this skill when the user is new to B2C Commerce, wants to set up a fresh development environment, is asking "how do I get started", needs to install the B2C CLI for the first time, wants to connect a sandbox, or wants to deploy their first cartridge. Triggers on phrases like "help me get started", "set up B2C Commerce", "I'm new to this", "onboard me", or "first-time setup". NOT for users who already have a configured environment and are asking about specific commands — those should go to the specific skill (b2c-code, b2c-sandbox, b2c-config, etc.).
+persona: developer
+category: Getting Started & Scaffolding
+tags: [onboarding, scaffolding, cli, sandbox, deployment, configuration]
 ---
 
 # B2C Commerce Onboarding Skill

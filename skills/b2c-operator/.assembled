@@ -1,0 +1,5 @@
+# GENERATED — DO NOT EDIT
+#
+# This persona plugin is assembled by scripts/assemble-personas.mjs from
+# skills authored in their home plugins (b2c-cli / b2c / storefront-next).
+# Edit the source skill or skills/personas.json, then run `pnpm run skills:assemble`.

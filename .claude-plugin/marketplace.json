@@ -65,6 +65,18 @@
       "category": "productivity",
       "strict": false,
       "version": "1.3.3"
+    },
+    {
+      "name": "b2c-operator",
+      "description": "Operator/Admin bundle — curated operational B2C Commerce skills (deploys, sandboxes, jobs, logs, debugging, edge/MRT, access administration). A curated subset of b2c-cli/b2c; install instead of those plugins, not alongside.",
+      "author": {
+        "name": "Salesforce"
+      },
+      "license": "Apache-2.0",
+      "source": "./skills/b2c-operator",
+      "category": "productivity",
+      "strict": false,
+      "version": "1.4.0"
     }
   ]
 }

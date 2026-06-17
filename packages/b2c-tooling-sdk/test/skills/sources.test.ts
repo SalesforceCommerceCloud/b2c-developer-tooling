@@ -30,6 +30,13 @@ describe('skill sources', () => {
       expect(source.assetName).to.equal('storefront-next-skills.zip');
     });
 
+    it('contains b2c-operator as release-artifact', () => {
+      const source = SKILL_SOURCES['b2c-operator'];
+      expect(source.type).to.equal('release-artifact');
+      expect(source.assetName).to.equal('b2c-operator-skills.zip');
+      expect(source.tagPattern!('1.2.3')).to.equal('b2c-agent-plugins@1.2.3');
+    });
+
     it('contains storefront-next-figma as release-artifact', () => {
       const source = SKILL_SOURCES['storefront-next-figma'];
       expect(source.type).to.equal('release-artifact');
@@ -61,10 +68,11 @@ describe('skill sources', () => {
     it('contains all registered skill sets', () => {
       expect(ALL_SKILL_SETS).to.include('b2c');
       expect(ALL_SKILL_SETS).to.include('b2c-cli');
+      expect(ALL_SKILL_SETS).to.include('b2c-operator');
       expect(ALL_SKILL_SETS).to.include('cap-dev');
       expect(ALL_SKILL_SETS).to.include('storefront-next');
       expect(ALL_SKILL_SETS).to.include('storefront-next-figma');
-      expect(ALL_SKILL_SETS).to.have.lengthOf(5);
+      expect(ALL_SKILL_SETS).to.have.lengthOf(6);
     });
   });
 
