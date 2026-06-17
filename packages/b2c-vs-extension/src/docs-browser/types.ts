@@ -1,0 +1,106 @@
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+/**
+ * Runtime mirror of the schema produced by `scripts/build-docs-index/schema.mjs`.
+ * Keep these types in lockstep — bumping the build-time schemaVersion is a
+ * breaking change for this module.
+ */
+
+/**
+ * Currently the docs index only emits Script API entries. The discriminated
+ * union exists so future doc sources (e.g. an ISML grammar parser) can be
+ * added without touching the runtime contract — they would extend this union
+ * and ship their own builder.
+ */
+export type DocSource = 'script-api';
+
+export type DocEntryKind = 'package' | 'class' | 'interface' | 'enum' | 'method' | 'property' | 'constant';
+
+export interface DocParam {
+  name: string;
+  type?: string;
+  description?: string;
+  optional?: boolean;
+}
+
+export interface DocSection {
+  heading: string;
+  body: string;
+}
+
+export interface DocReturn {
+  type?: string;
+  description?: string;
+}
+
+export interface DocThrows {
+  type: string;
+  description?: string;
+}
+
+export interface DocDeprecation {
+  since?: string;
+  message?: string;
+}
+
+export interface DocEntry {
+  id: string;
+  source: DocSource;
+  kind: DocEntryKind;
+  title: string;
+  qualifiedName: string;
+  parentId?: string;
+  packagePath?: string;
+  signature?: string;
+  description?: string;
+  params?: DocParam[];
+  returns?: DocReturn;
+  throws?: DocThrows[];
+  sinceApiVersion?: string;
+  deprecated?: DocDeprecation;
+  sections?: DocSection[];
+  examples?: string[];
+  tags?: string[];
+}
+
+/**
+ * Lightweight entry shape used by the search dictionary. Every field is also
+ * present on the full DocEntry; this subset is what gets loaded eagerly so
+ * that the runtime never blocks the UI thread on the multi-megabyte full
+ * source file.
+ *
+ * The `signature`, `description`, `deprecated`, and `sinceApiVersion` fields
+ * are populated for class members so the class-page renderer can show
+ * Methods/Properties tables without resolving each child to its full entry.
+ */
+export interface SearchEntry {
+  id: string;
+  title: string;
+  qualifiedName: string;
+  kind: DocEntryKind;
+  packagePath?: string;
+  parentId?: string;
+  tags?: string[];
+  signature?: string;
+  description?: string;
+  deprecated?: boolean;
+  sinceApiVersion?: string;
+}
+
+export interface IndexCounts {
+  scriptApi: number;
+}
+
+export interface IndexManifest {
+  schemaVersion: 1;
+  scriptApiVersion: string;
+  generatedAt: string;
+  counts: IndexCounts;
+  checksum: string;
+}
+
+export const SUPPORTED_SCHEMA_VERSION = 1 as const;

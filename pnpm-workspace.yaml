@@ -30,6 +30,7 @@ catalog:
   prettier: ^3.8.3
   shx: ^0.3.3
   sinon: ^21.0.1
+  ts-morph: 27.0.2
   tsx: ^4
   typescript: ^5
   typescript-eslint: ^8

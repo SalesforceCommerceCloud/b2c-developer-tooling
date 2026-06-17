@@ -35,6 +35,7 @@
     "onView:b2cApiBrowser",
     "onView:b2cSandboxExplorer",
     "onView:b2cCartridgeExplorer",
+    "onView:b2cDocsBrowser",
     "onDebugResolve:b2c-script",
     "workspaceContains:**/commerce-app.json"
   ],
@@ -730,6 +731,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable the B2C-DX Analytics (CIP) sidebar for browsing tables and running curated reports."
+        },
+        "b2c-dx.features.docsBrowser": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the in-editor Docs Browser for the SFCC Script API reference."
         }
       }
     },
@@ -780,6 +786,12 @@
         {
           "id": "b2cCartridgeExplorer",
           "name": "Cartridges",
+          "icon": "media/b2c-icon.svg",
+          "contextualTitle": "B2C-DX"
+        },
+        {
+          "id": "b2cDocsBrowser",
+          "name": "Docs",
           "icon": "media/b2c-icon.svg",
           "contextualTitle": "B2C-DX"
         }
@@ -838,6 +850,10 @@
       {
         "view": "b2cCipAnalytics",
         "contents": "Explore Commerce Intelligence Platform (CIP) data — build SQL queries visually, browse tables, and run curated reports.\n\n[Open Query Builder](command:b2c-dx.cipAnalytics.queryBuilder)\n[Browse Tables](command:b2c-dx.cipAnalytics.browseTables)\n\nRequires OAuth credentials (clientId, clientSecret) in dw.json.\n\n[Refresh](command:b2c-dx.cipAnalytics.refresh)"
+      },
+      {
+        "view": "b2cDocsBrowser",
+        "contents": "Docs index not built.\n\nRun `pnpm --filter b2c-vs-extension run build:docs-index` from the repo root, then refresh.\n\n[Refresh](command:b2c-dx.docs.refresh)"
       }
     ],
     "debuggers": [
@@ -1466,6 +1482,28 @@
         "command": "b2c-dx.walkthrough.showTelemetry",
         "title": "Show Walkthrough Telemetry",
         "category": "B2C DX - Development"
+      },
+      {
+        "command": "b2c-dx.docs.search",
+        "title": "Search Docs",
+        "icon": "$(search)",
+        "category": "B2C DX - Docs"
+      },
+      {
+        "command": "b2c-dx.docs.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C DX - Docs"
+      },
+      {
+        "command": "b2c-dx.docs.open",
+        "title": "Open Docs Entry",
+        "category": "B2C DX - Docs"
+      },
+      {
+        "command": "b2c-dx.docs.viewSymbolDocs",
+        "title": "View B2C Docs",
+        "category": "B2C DX - Docs"
       }
     ],
     "walkthroughs": [
@@ -1646,6 +1684,16 @@
           "command": "b2c-dx.codeSync.activateCodeVersion",
           "when": "view == b2cCartridgeExplorer",
           "group": "1_versions"
+        },
+        {
+          "command": "b2c-dx.docs.search",
+          "when": "view == b2cDocsBrowser",
+          "group": "navigation@0"
+        },
+        {
+          "command": "b2c-dx.docs.refresh",
+          "when": "view == b2cDocsBrowser",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [
@@ -1872,6 +1920,13 @@
           "when": "workspaceFolderCount > 0"
         }
       ],
+      "editor/context": [
+        {
+          "command": "b2c-dx.docs.viewSymbolDocs",
+          "when": "config.b2c-dx.features.docsBrowser && (editorLangId == javascript || editorLangId == typescript)",
+          "group": "navigation@9"
+        }
+      ],
       "explorer/context": [
         {
           "command": "b2c-dx.webdav.download",
@@ -1924,6 +1979,22 @@
         {
           "command": "b2c-dx.isml.showReferences",
           "when": "editorLangId == isml"
+        },
+        {
+          "command": "b2c-dx.docs.open",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.docs.search",
+          "when": "config.b2c-dx.features.docsBrowser"
+        },
+        {
+          "command": "b2c-dx.docs.refresh",
+          "when": "config.b2c-dx.features.docsBrowser"
+        },
+        {
+          "command": "b2c-dx.docs.viewSymbolDocs",
+          "when": "config.b2c-dx.features.docsBrowser && (editorLangId == javascript || editorLangId == typescript)"
         },
         {
           "command": "b2c-dx.cipAnalytics.refresh",
@@ -2132,14 +2203,28 @@
         "command": "b2c-dx.webdav.rename",
         "key": "f2",
         "when": "focusedView == b2cWebdavExplorer"
+      },
+      {
+        "command": "b2c-dx.docs.search",
+        "key": "alt+d",
+        "mac": "alt+d",
+        "when": "config.b2c-dx.features.docsBrowser"
+      },
+      {
+        "command": "b2c-dx.docs.viewSymbolDocs",
+        "key": "alt+shift+d",
+        "mac": "alt+shift+d",
+        "when": "config.b2c-dx.features.docsBrowser && editorTextFocus && (editorLangId == javascript || editorLangId == typescript) && resourcePath =~ /\\/cartridge\\//"
       }
     ]
   },
   "scripts": {
     "sync:xsd": "node scripts/sync-xsd.mjs",
     "build": "node scripts/esbuild-bundle.mjs",
+    "build:docs-index": "node scripts/build-docs-index/run.mjs",
+    "verify:docs-browser-assets": "node scripts/verify-docs-browser-assets.mjs",
     "watch": "node scripts/esbuild-bundle.mjs --watch",
-    "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-script-types run build && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
+    "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-script-types run build && pnpm --filter @salesforce/b2c-tooling-sdk run build && pnpm run build:docs-index && pnpm run verify:docs-browser-assets && node scripts/esbuild-bundle.mjs",
     "package": "pnpm run build && pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
@@ -2170,6 +2255,7 @@
     "eslint-plugin-header": "catalog:",
     "eslint-plugin-prettier": "catalog:",
     "prettier": "catalog:",
+    "ts-morph": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:"
   }

@@ -24,6 +24,7 @@ import {registerScaffold} from './scaffold/index.js';
 import {registerApiBrowser} from './api-browser/index.js';
 import {registerDebugger} from './debugger/index.js';
 import {registerCodeSync} from './code-sync/index.js';
+import {registerDocsBrowser} from './docs-browser/index.js';
 import {registerIsml} from './isml/index.js';
 import {registerScriptTypes} from './script-types/index.js';
 import {registerWebDavTree} from './webdav-tree/index.js';
@@ -725,6 +726,10 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
 
   if (settings.get<boolean>('features.cipAnalytics', true)) {
     registerCipAnalytics(context, configProvider, log);
+  }
+
+  if (settings.get<boolean>('features.docsBrowser', true)) {
+    registerDocsBrowser(context, log);
   }
 
   registerIsml(context, cartridgeService);
