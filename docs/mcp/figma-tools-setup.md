@@ -4,6 +4,10 @@ description: Prerequisites and setup for Figma-to-component tools (workflow orch
 
 # Figma-to-Component Tools Setup
 
+::: warning DEPRECATED — use the agent-skills plugins instead
+The Figma workflow MCP tools described on this page are **deprecated** and **not compatible with the Storefront Next 1.0 GA release**. They have been superseded by the [`storefront-next` and `storefront-next-figma`](../guide/agent-skills) agent-skills plugins, which stay current with the GA release. They now live in the opt-in [`STOREFRONTNEXT_DEPRECATED`](./toolsets#storefrontnext-deprecated) toolset and **will be removed in a future release**. For Figma design-kit workflows, install the [`storefront-next-figma` plugin](../guide/agent-skills) instead.
+:::
+
 Prerequisites and setup for using the Figma workflow tools: `sfnext_start_figma_workflow`, `sfnext_analyze_component`, and `sfnext_match_tokens_to_theme`.
 
 ## Overview

@@ -4,7 +4,7 @@ description: Available toolsets and tools in the B2C DX MCP Server for SCAPI, CA
 
 # Toolsets & Tools
 
-The B2C DX MCP Server provides six toolsets with specialized tools for different B2C Commerce development workflows.
+The B2C DX MCP Server provides six toolsets with specialized tools for different B2C Commerce development workflows, plus one deprecated toolset retained for backward compatibility.
 
 
 ## Overview
@@ -17,7 +17,10 @@ Toolsets are collections of related tools that work together to support specific
 - [MRT](#mrt) - Managed Runtime bundle operations
 - [PWAV3](#pwav3) - PWA Kit v3 development tools
 - [SCAPI](#scapi) - Salesforce Commerce API discovery
-- [STOREFRONTNEXT](#storefrontnext) - Storefront Next development tools
+- [STOREFRONTNEXT](#storefrontnext) - Storefront Next development support (MRT, SCAPI, cartridges)
+
+**Deprecated toolset:**
+- [STOREFRONTNEXT_DEPRECATED](#storefrontnext-deprecated) - Legacy `sfnext_*` tools, superseded by the [`storefront-next`/`storefront-next-figma` agent-skills plugins](../guide/agent-skills). Opt-in only; never auto-enabled and excluded from `--toolsets ALL`.
 
 **Note:** With auto-discovery, the `SCAPI` and `DIAGNOSTICS` toolsets are always included. When using `--toolsets` or `--tools`, only the specified toolsets/tools are enabled.
 
@@ -122,11 +125,39 @@ Salesforce Commerce API discovery and exploration.
 
 ## STOREFRONTNEXT
 
-Storefront Next development tools for building modern storefronts.
+Storefront Next development support.
 
-**Status:** 🚧 Preview — requires `--allow-non-ga-tools` flag.
+**Status:** ✅ Generally Available
 
 **Auto-enabled for:** Storefront Next projects (detected by `@salesforce/storefront-next*` dependencies, package name starting with `storefront-next`, or workspace packages with these indicators)
+
+When a Storefront Next project is detected, the server enables `MRT` and `CARTRIDGES` (plus the base `SCAPI` and `DIAGNOSTICS` toolsets), giving you `mrt_bundle_push`, SCAPI discovery/scaffolding, and the shared diagnostics tools. The legacy `sfnext_*` tools have moved to the deprecated [STOREFRONTNEXT_DEPRECATED](#storefrontnext-deprecated) toolset (see below) — use the agent-skills plugins instead.
+
+### Tools
+
+| Tool | Description | Documentation |
+|------|-------------|---------------|
+| [`mrt_bundle_push`](./tools/mrt-bundle-push) | Build, push bundle (optionally deploy) | [View details](./tools/mrt-bundle-push) |
+| `mrt_logs_watch_start` / `mrt_logs_watch_poll` / `mrt_logs_watch_stop` / `mrt_logs_watch_list` | Tail Managed Runtime application logs over a WebSocket | [View details](./tools/mrt-logs) |
+| [`scapi_schemas_list`](./tools/scapi-schemas-list) | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. | [View details](./tools/scapi-schemas-list) |
+| [`scapi_custom_api_generate_scaffold`](./tools/scapi-custom-api-generate-scaffold) | Generate a new custom SCAPI endpoint (schema, api.json, script.js) in an existing cartridge. | [View details](./tools/scapi-custom-api-generate-scaffold) |
+| [`scapi_custom_apis_get_status`](./tools/scapi-custom-apis-get-status) | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. | [View details](./tools/scapi-custom-apis-get-status) |
+
+## STOREFRONTNEXT_DEPRECATED
+
+::: warning DEPRECATED — use the agent-skills plugins instead
+The `sfnext_*` MCP tools below are **deprecated** and **not compatible with the Storefront Next 1.0 GA release**. They have been superseded by the [`storefront-next`](../guide/agent-skills) and [`storefront-next-figma`](../guide/agent-skills) agent-skills plugins, which are kept up to date with the GA release. **These tools will be removed in a future release.**
+
+Migrate to the skills plugins — see the [Agent Skills guide](../guide/agent-skills) for installation. This toolset is **never auto-enabled** and is **excluded from `--toolsets ALL`**; to use it you must request it explicitly _and_ pass `--allow-non-ga-tools`:
+
+```json
+{ "args": ["--toolsets", "STOREFRONTNEXT_DEPRECATED", "--allow-non-ga-tools"] }
+```
+:::
+
+**Status:** ⛔ Deprecated — opt-in only, requires `--allow-non-ga-tools`.
+
+**Auto-enabled for:** Never. Must be explicitly requested via `--toolsets STOREFRONTNEXT_DEPRECATED`.
 
 ### Tools
 
@@ -138,13 +169,6 @@ Storefront Next development tools for building modern storefronts.
 | [`sfnext_match_tokens_to_theme`](./tools/sfnext-match-tokens-to-theme) | Map design tokens to existing theme tokens in app.css with confidence scores and suggestions | [View details](./tools/sfnext-match-tokens-to-theme) |
 | [`sfnext_add_page_designer_decorator`](./tools/sfnext-add-page-designer-decorator) | Add Page Designer decorators to Storefront Next components | [View details](./tools/sfnext-add-page-designer-decorator) |
 | [`sfnext_configure_theme`](./tools/sfnext-configure-theme) | Get theming guidelines, questions, and WCAG color validation for Storefront Next | [View details](./tools/sfnext-configure-theme) |
-| [`scapi_schemas_list`](./tools/scapi-schemas-list) | List or fetch SCAPI schemas (standard and custom). Use apiFamily: "custom" for custom APIs. | [View details](./tools/scapi-schemas-list) |
-| [`scapi_custom_api_generate_scaffold`](./tools/scapi-custom-api-generate-scaffold) | Generate a new custom SCAPI endpoint (schema, api.json, script.js) in an existing cartridge. | [View details](./tools/scapi-custom-api-generate-scaffold) |
-| [`scapi_custom_apis_get_status`](./tools/scapi-custom-apis-get-status) | Get registration status of custom API endpoints (active/not_registered). Remote only, requires OAuth. | [View details](./tools/scapi-custom-apis-get-status) |
-| [`mrt_bundle_push`](./tools/mrt-bundle-push) | Build, push bundle (optionally deploy) | [View details](./tools/mrt-bundle-push) |
-| `mrt_logs_watch_start` / `mrt_logs_watch_poll` / `mrt_logs_watch_stop` / `mrt_logs_watch_list` | Tail Managed Runtime application logs over a WebSocket | [View details](./tools/mrt-logs) |
-
-**Figma-to-component tools** (`sfnext_start_figma_workflow`, `sfnext_analyze_component`, `sfnext_match_tokens_to_theme`) require additional setup: an external Figma MCP server and a valid Figma URL with `node-id`. See [Figma-to-Component Tools Setup](./figma-tools-setup) for prerequisites and configuration.
 
 ## Tool Deduplication
 

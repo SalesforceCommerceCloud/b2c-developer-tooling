@@ -114,6 +114,8 @@ Override auto-discovery with `--toolsets` or `SFCC_TOOLSETS`:
 
 **Available toolsets:** `CARTRIDGES`, `MRT`, `PWAV3`, `SCAPI`, `STOREFRONTNEXT`, `all`
 
+**Deprecated toolset:** `STOREFRONTNEXT_DEPRECATED` holds the legacy `sfnext_*` tools, which are not compatible with the Storefront Next 1.0 GA release and are superseded by the [`storefront-next`/`storefront-next-figma` agent-skills plugins](../guide/agent-skills). It is **never auto-enabled** and **not included in `all`** — request it explicitly with `--toolsets STOREFRONTNEXT_DEPRECATED --allow-non-ga-tools`. See [Toolsets](./toolsets#storefrontnext-deprecated).
+
 With auto-discovery, the `SCAPI` toolset is always included. When using `--toolsets` or `--tools`, only the specified toolsets/tools are enabled.
 
 ### Individual Tool Selection
