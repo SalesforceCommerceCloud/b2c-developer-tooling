@@ -61,7 +61,7 @@
         "source": "git-subdir",
         "url": "SalesforceCommerceCloud/commerce-apps",
         "path": ".claude",
-        "ref": "feature/codex-copilot-plugin-docs"
+        "ref": "main"
       },
       "interface": {
         "displayName": "Commerce Apps Dev",
