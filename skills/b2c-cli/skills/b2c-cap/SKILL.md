@@ -101,6 +101,10 @@ b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site-id RefArch --skip-valid
 
 # remove the uploaded archive after install
 b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site-id RefArch --clean-archive
+
+# create a Storefront Next pull request for the app's storefront content
+# (requires a repository connected to the storefront; off by default)
+b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site-id RefArch --create-pr
 ```
 
 ### Uninstall a CAP
