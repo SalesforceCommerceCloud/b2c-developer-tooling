@@ -273,7 +273,6 @@
   },
   "dependencies": {
     "@vscode/debugadapter": "1.68.0",
-    "applicationinsights": "3.15.0",
     "chokidar": "5.0.0",
     "cliui": "catalog:",
     "ejs": "3.1.10",
