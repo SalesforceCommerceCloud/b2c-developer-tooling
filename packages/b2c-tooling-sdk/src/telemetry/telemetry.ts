@@ -249,9 +249,8 @@ export class Telemetry {
   async flush(): Promise<void> {
     if (!this.started || !this.client) return;
 
-    await new Promise<void>((resolve) => {
-      this.client!.flush({callback: () => resolve()});
-    });
+    // applicationinsights 3.x: flush() returns a Promise and no longer takes a callback.
+    await this.client.flush();
   }
 
   /**
@@ -264,9 +263,8 @@ export class Telemetry {
     this.started = false;
 
     if (this.client) {
-      await new Promise<void>((resolve) => {
-        this.client!.flush({callback: () => resolve()});
-      });
+      // applicationinsights 3.x: flush() returns a Promise and no longer takes a callback.
+      await this.client.flush();
       this.client = undefined;
     }
 
@@ -297,6 +295,11 @@ export class Telemetry {
   }
 
   private createClient(): void {
+    // applicationinsights 3.x removed the `disableStatsbeat` config flag; statsbeat
+    // is now opted out via this environment variable (read by the Azure Monitor
+    // exporter at client construction). Set it before constructing the client.
+    process.env.APPLICATIONINSIGHTS_STATSBEAT_DISABLED = 'true';
+
     const client = new appInsights.TelemetryClient(this.appInsightsKey);
 
     // Disable all auto-collection — we only do manual event tracking
@@ -311,7 +314,6 @@ export class Telemetry {
     client.config.enableAutoCollectIncomingRequestAzureFunctions = false;
     client.config.enableSendLiveMetrics = false;
     client.config.enableUseDiskRetryCaching = false;
-    client.config.disableStatsbeat = true;
     client.config.enableInternalDebugLogging = false;
     client.config.enableInternalWarningLogging = false;
 
