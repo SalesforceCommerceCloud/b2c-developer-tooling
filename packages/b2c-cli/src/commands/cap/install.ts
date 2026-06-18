@@ -32,6 +32,7 @@ export default class CapInstall extends JobCommand<typeof CapInstall> {
     '<%= config.bin %> <%= command.id %> ./commerce-avalara-tax-app-v0.2.5 --site RefArch',
     '<%= config.bin %> <%= command.id %> ./commerce-avalara-tax-app-v0.2.5.zip --site RefArch',
     '<%= config.bin %> <%= command.id %> ./commerce-avalara-tax-app-v0.2.5 --site RefArch --skip-validate',
+    '<%= config.bin %> <%= command.id %> ./commerce-avalara-tax-app-v0.2.5 --site RefArch --create-pr',
   ];
 
   static flags = {
@@ -54,6 +55,11 @@ export default class CapInstall extends JobCommand<typeof CapInstall> {
       description: 'Skip CAP structure validation before install',
       default: false,
     }),
+    'create-pr': Flags.boolean({
+      description:
+        'Create a pull request against the connected Storefront Next repository when the app includes storefront content',
+      default: false,
+    }),
   };
 
   protected operations = {
@@ -66,7 +72,13 @@ export default class CapInstall extends JobCommand<typeof CapInstall> {
     this.requireWebDavCredentials();
 
     const {path} = this.args;
-    const {'site-id': site, 'clean-archive': cleanArchive, timeout, 'skip-validate': skipValidate} = this.flags;
+    const {
+      'site-id': site,
+      'clean-archive': cleanArchive,
+      timeout,
+      'skip-validate': skipValidate,
+      'create-pr': createPr,
+    } = this.flags;
     const hostname = this.resolvedConfig.values.hostname!;
 
     // Validate first unless skipped
@@ -118,6 +130,7 @@ export default class CapInstall extends JobCommand<typeof CapInstall> {
       const result = await this.operations.commerceAppInstall(this.instance, path, {
         siteId: site,
         keepArchive: !cleanArchive,
+        shouldCreatePr: createPr,
         waitOptions: {
           timeoutSeconds: timeout || undefined,
           onPoll: (info) => {
