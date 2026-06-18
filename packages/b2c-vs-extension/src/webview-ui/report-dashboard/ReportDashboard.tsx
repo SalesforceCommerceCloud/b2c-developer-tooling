@@ -54,6 +54,10 @@ function buildTableText(columns: string[], rows: Array<Record<string, unknown>>)
   return header + '\n' + dataRows;
 }
 
+function hasUserValue(value: string | undefined): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
 export function ReportDashboard() {
   const reportCtx = getReportContext();
   if (!reportCtx) {
@@ -88,6 +92,36 @@ function ReportDashboardInner({report}: {report: NonNullable<ReturnType<typeof g
       report.parameters.some((p) => p.name === 'to' && p.type === 'date'),
     [report.parameters],
   );
+
+  // Apply report-defined defaults once per report context without clobbering
+  // any value the user already entered. As a low-click fallback, if a required
+  // enum parameter has only one allowed option, preselect it automatically.
+  useEffect(() => {
+    setValues((current) => {
+      const next = {...current};
+      let changed = false;
+
+      for (const parameter of report.parameters) {
+        if (hasUserValue(next[parameter.name])) {
+          continue;
+        }
+
+        const defaultValue = parameter.default;
+        if (hasUserValue(defaultValue)) {
+          next[parameter.name] = defaultValue;
+          changed = true;
+          continue;
+        }
+
+        if (parameter.required && parameter.options && parameter.options.length === 1) {
+          next[parameter.name] = parameter.options[0] ?? '';
+          changed = true;
+        }
+      }
+
+      return changed ? next : current;
+    });
+  }, [report.parameters]);
 
   const onMessage = useCallback((msg: import('../shared/bridge/vscode.js').InboundMessage) => {
     switch (msg.command) {

@@ -565,6 +565,8 @@ claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 claude plugin install b2c-cli
 claude plugin install b2c
 claude plugin install storefront-next
+# Add storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma
 ```
 
 The marketplace provides:
@@ -577,12 +579,13 @@ Use `--ide manual` if you prefer manual installation, or `--ide agentforce-vibes
 
 ### Skill Sets
 
-| Skill Set          | Description                                                    |
-| ------------------ | -------------------------------------------------------------- |
-| `b2c`              | B2C Commerce development patterns and practices                |
-| `b2c-cli`          | B2C CLI commands and operations                                |
-| `storefront-next`  | Storefront Next development — routing, components, deployment  |
-| `cap-dev`          | Commerce App Package scaffolding, validation, and submission   |
+| Skill Set               | Description                                                         |
+| ----------------------- | ------------------------------------------------------------------- |
+| `b2c`                   | B2C Commerce development patterns and practices                     |
+| `b2c-cli`               | B2C CLI commands and operations                                     |
+| `storefront-next`       | Storefront Next development — routing, components, deployment       |
+| `storefront-next-figma` | Storefront Next Figma design-kit workflows (requires Figma MCP server) |
+| `cap-dev`               | Commerce App Package scaffolding, validation, and submission        |
 
 ### Output
 

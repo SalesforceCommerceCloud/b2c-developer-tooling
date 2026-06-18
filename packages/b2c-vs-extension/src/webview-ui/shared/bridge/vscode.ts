@@ -27,6 +27,9 @@ export interface ReportContext {
     required?: boolean;
     min?: number;
     max?: number;
+    options?: string[];
+    multiple?: boolean;
+    default?: string;
   }>;
 }
 
@@ -59,20 +62,23 @@ export type InboundMessage =
   | {command: 'connectionState'; connection: ConnectionState}
   | {command: 'tablesLoading'}
   | {command: 'tablesLoaded'; tables: string[]; tableCount: number}
-  | {command: 'tablesLoadError'; error: string}
+  | {command: 'tablesLoadError'; error: string; headline?: string; details?: string}
   | {command: 'tableDescribing'; tableName: string}
   | {command: 'tableDescribed'; tableName?: string; schema: SchemaInfo}
-  | {command: 'tableDescribeError'; tableName?: string; error: string}
+  | {command: 'tableDescribeError'; tableName?: string; error: string; headline?: string; details?: string}
   | {command: 'queryExecuting'}
   | {command: 'queryResult'; data: QueryResultData}
   | {command: 'queryResults'; data: QueryResultData}
-  | {command: 'queryError'; error: string}
+  | {command: 'queryError'; error: string; headline?: string; details?: string}
   | {command: 'sitesLoaded'; sites: string[]}
   | {command: 'savedQueries'; queries: SavedQuery[]; activeTenantId: string}
   | {command: 'savedQuerySaved'}
   | {command: 'savedQueryUpdated'}
   | {command: 'savedQueryDeleted'}
-  | {command: 'savedQueryError'; error: string};
+  | {command: 'savedQueryError'; error: string}
+  // Sidebar → Query Builder one-shot intents.
+  | {command: 'loadSavedQuery'; query: SavedQuery}
+  | {command: 'renameSavedQuery'; query: SavedQuery};
 
 let cached: VsCodeApi | null = null;
 

@@ -21,6 +21,7 @@
  * ## System Jobs
  *
  * - {@link siteArchiveImport} - Import a site archive
+ * - {@link siteArchiveImportSplit} - Import a large site archive in multiple parts
  * - {@link siteArchiveExport} - Export a site archive
  * - {@link siteArchiveExportToPath} - Export and save to local path
  *
@@ -93,6 +94,7 @@ export type {
 // Site archive import/export
 export {
   siteArchiveImport,
+  siteArchiveImportSplit,
   siteArchiveExport,
   siteArchiveExportToBuffer,
   siteArchiveExportToPath,
@@ -101,6 +103,9 @@ export {
 export type {
   SiteArchiveImportOptions,
   SiteArchiveImportResult,
+  SiteArchiveImportSplitOptions,
+  SplitImportPlanInfo,
+  SplitImportPartInfo,
   SiteArchiveExportOptions,
   SiteArchiveExportResult,
   ExportDataUnitsConfiguration,

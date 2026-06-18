@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "B2C DX VSCE",
   "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.8.2",
+  "version": "0.9.1",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -1056,6 +1056,23 @@
         "category": "B2C-DX Analytics"
       },
       {
+        "command": "b2c-dx.cipAnalytics.openSavedQuery",
+        "title": "Open Saved Query",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.renameSavedQuery",
+        "title": "Edit Saved Query…",
+        "icon": "$(edit)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.deleteSavedQuery",
+        "title": "Delete Saved Query…",
+        "icon": "$(trash)",
+        "category": "B2C-DX Analytics"
+      },
+      {
         "command": "b2c-dx.apiBrowser.scapiAdd",
         "title": "Add to Storefront (sfnext scapi add)",
         "icon": "$(add)",
@@ -1930,6 +1947,31 @@
           "group": "inline@1"
         },
         {
+          "command": "b2c-dx.cipAnalytics.renameSavedQuery",
+          "when": "view == b2cCipAnalytics && viewItem == cipSavedQuery",
+          "group": "inline@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.deleteSavedQuery",
+          "when": "view == b2cCipAnalytics && viewItem == cipSavedQuery",
+          "group": "inline@1"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.openSavedQuery",
+          "when": "view == b2cCipAnalytics && viewItem == cipSavedQuery",
+          "group": "1_open@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.renameSavedQuery",
+          "when": "view == b2cCipAnalytics && viewItem == cipSavedQuery",
+          "group": "2_modify@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.deleteSavedQuery",
+          "when": "view == b2cCipAnalytics && viewItem == cipSavedQuery",
+          "group": "2_modify@1"
+        },
+        {
           "command": "b2c-dx.apiBrowser.scapiAdd",
           "when": "view == b2cApiBrowser && viewItem == apiSchema-shopper && b2c-dx.isStorefrontNext",
           "group": "1_storefront@1"
@@ -2268,6 +2310,18 @@
         {
           "command": "b2c-dx.cipAnalytics.removeRealm",
           "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.openSavedQuery",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.renameSavedQuery",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.deleteSavedQuery",
+          "when": "false"
         },
         {
           "command": "b2c-dx.apiBrowser.openSwagger",

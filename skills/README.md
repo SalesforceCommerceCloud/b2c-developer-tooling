@@ -1,132 +1,77 @@
-# B2C Agent Skills & Claude Code Plugins
+# B2C Agent Skills & Plugins
 
-This directory contains agent skills and skills-based [Claude Code](https://claude.ai/code) plugins that enhance AI-assisted development for Salesforce B2C Commerce projects.
+This directory contains the agent skills and skills-based plugins that turn an AI coding agent into a Salesforce B2C Commerce specialist — covering storefront and headless development, operational CLI workflows, and the Figma design-system layer.
 
-These skills follow the [Agent Skills](https://agentskills.io/home) format and can be used with multiple agentic IDEs including Claude Code, Cursor, GitHub Copilot, and OpenAI Codex.
+These skills follow the open [Agent Skills](https://agentskills.io/home) standard and work with multiple agentic tools including Claude Code, Cursor, GitHub Copilot (VS Code and CLI), OpenAI Codex, OpenCode, and Salesforce Agentforce Vibes.
 
-## Available Skills Plugins
+> **Full user documentation:** [Agent Skills & Plugins guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills). This README is the contributor-facing overview of what lives in this directory.
+
+## Available Plugins
 
 | Plugin | Description |
 |--------|-------------|
-| `b2c-cli` | Skills for Salesforce B2C Commerce CLI operations |
-| `b2c` | B2C Commerce development skills including Custom API development guides |
+| [`b2c`](./b2c) | B2C Commerce development patterns — controllers, ISML, forms, hooks, localization, logging, metadata, web services, custom job steps, custom objects/caches, Page Designer, Business Manager extensions, SCAPI/Custom APIs, querying, ordering, and SLAS auth patterns |
+| [`b2c-cli`](./b2c-cli) | B2C CLI commands and operations — code deployment, jobs, site import/export, WebDAV, On-Demand Sandboxes, log streaming, MRT, SLAS, Account Manager, eCDN, CIP, and SCAPI custom APIs/schemas |
+| [`storefront-next`](./storefront-next) | Storefront Next development — project setup, routing, data fetching, components, design-system component authoring, vertical/theme creation, Page Designer, authentication, hybrid storefronts, i18n, state management, extensions, performance, testing, and Managed Runtime deployment |
+| [`storefront-next-figma`](./storefront-next-figma) | Figma design-kit workflows for Storefront Next verticals — duplicate the kit, sync Brand variables from `brand.css`, edit components at the correct layer, and publish Code Connect. **Requires the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server).** |
 
-## MCP Plugin
+`b2c-dx-mcp` is also published as a plugin from this repository, but it is an **MCP server plugin**, not a skills plugin — its skills are not in this directory. For installation and configuration, see the [MCP Installation Guide](../docs/mcp/installation.md) and [MCP Overview](../docs/mcp/index.md).
 
-`b2c-dx-mcp` is an MCP server plugin, not a skills plugin. For installation and configuration, see:
-
-- [MCP Installation Guide](../docs/mcp/installation.md)
-- [MCP Overview](../docs/mcp/index.md)
+The `cap-dev` skill set (Commerce App Package development) is installable via the B2C CLI and the marketplace but lives in the [`commerce-apps`](https://github.com/SalesforceCommerceCloud/commerce-apps) repository, not here.
 
 ## Installation
 
-### 1. Add the Marketplace
+End users install these plugins from their IDE's plugin marketplace or with the B2C CLI. See the [Agent Skills & Plugins guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills) for per-IDE instructions.
 
-First, add the B2C Developer Tooling marketplace to Claude Code:
+### Claude Code (marketplace)
 
 ```bash
 claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+# Use --scope project to install for the current project only
+claude plugin install b2c-cli
+claude plugin install b2c
+claude plugin install storefront-next
+# Requires the Figma MCP server (see plugin note above)
+claude plugin install storefront-next-figma
 ```
 
-### 2. Install the Plugin
-
-Install the plugins at your preferred scope:
+### B2C CLI (any supported IDE)
 
 ```bash
-# Install for the current project only
-claude plugin install b2c-cli --scope project
-claude plugin install b2c --scope project
+# Interactive — pick skill sets and IDEs
+b2c setup skills
 
-# Install for the current user (available in all projects)
-claude plugin install b2c-cli --scope user
-claude plugin install b2c --scope user
-
-# Install locally (development/testing)
-claude plugin install b2c-cli --scope local
-claude plugin install b2c --scope local
+# Or install a specific skill set to a specific IDE
+b2c setup skills storefront-next --ide cursor
+b2c setup skills storefront-next-figma --ide cursor
 ```
 
-### 3. Verify Installation
+## Repository Layout
 
-```bash
-claude plugin list
-```
-
-## Plugin: b2c-cli
-
-The `b2c-cli` plugin provides skills that teach Claude about B2C Commerce CLI commands and best practices. When installed, Claude can help you with:
-
-- **Code Deployment** (`b2c-code`) - Deploy cartridges and manage code versions
-- **Job Execution** (`b2c-job`) - Run jobs and import/export site archives
-- **Site Management** (`b2c-sites`) - List and inspect storefront sites
-- **WebDAV Operations** (`b2c-webdav`) - File operations on instances
-- **Sandbox Management** (`b2c-sandbox`) - Manage On-Demand Sandboxes
-- **MRT Management** (`b2c-mrt`) - Manage Managed Runtime projects and deployments
-- **SLAS Configuration** (`b2c-slas`) - Manage SLAS API clients and credentials
-
-### Skills
-
-Each skill is defined in the `b2c-cli/skills/` directory:
+Each plugin is a directory containing a `.codex-plugin/plugin.json` manifest and a `skills/` subdirectory. Every skill is a folder with a `SKILL.md` file (instructions + frontmatter), optionally alongside `references/`, `assets/`, and `evals/`.
 
 ```
-skills/b2c-cli/skills/
-├── b2c-code/SKILL.md      # Code deployment commands
-├── b2c-job/SKILL.md       # Job execution commands
-├── b2c-mrt/SKILL.md       # Managed Runtime commands
-├── b2c-sandbox/SKILL.md   # On-Demand Sandbox commands
-├── b2c-sites/SKILL.md     # Sites commands
-├── b2c-slas/SKILL.md      # SLAS commands
-└── b2c-webdav/SKILL.md    # WebDAV commands
+skills/
+├── plugins.json                    # Manifest of plugins packaged on release
+├── b2c/skills/                     # B2C Commerce development skills
+├── b2c-cli/skills/                 # B2C CLI operation skills
+├── storefront-next/skills/         # Storefront Next skills
+└── storefront-next-figma/skills/   # Figma design-kit skill(s)
 ```
 
-## Plugin: b2c
-
-The `b2c` plugin provides skills for B2C Commerce development practices and patterns. When installed, Claude can help you with:
-
-- **Custom API Development** (`b2c-custom-api-development`) - Build SCAPI Custom APIs with contracts, implementations, and mappings
-
-### Skills
-
-Each skill is defined in the `b2c/skills/` directory:
-
-```
-skills/b2c/skills/
-└── b2c-custom-api-development/SKILL.md    # Custom API development guide
-```
+Plugins listed in [`plugins.json`](./plugins.json) are zipped to `<name>-skills.zip` and attached to the `b2c-agent-plugins` GitHub release; the B2C CLI downloads those artifacts for `b2c setup skills`. Adding a plugin there is all that's needed for the release workflow to package it.
 
 ## For Contributors
 
-When modifying CLI commands, update the corresponding skill in `skills/b2c-cli/skills/b2c-<topic>/SKILL.md` to keep documentation in sync.
+- When modifying CLI commands, update the corresponding skill in `b2c-cli/skills/b2c-<topic>/SKILL.md` to keep guidance in sync.
+- When changing development patterns, update the relevant `b2c/skills/<topic>/SKILL.md`.
+- To make a new plugin installable via the B2C CLI, add it to [`plugins.json`](./plugins.json) and register a source in `packages/b2c-tooling-sdk/src/skills/sources.ts` (plus the `SkillSet` type in `types.ts`).
+- Add a changeset targeting `@salesforce/b2c-agent-plugins` for any skill content changes.
 
-## Using Skills with Other Agentic IDEs
-
-The skills in this plugin follow the [Agent Skills](https://agentskills.io/home) standard and can be used with other AI-powered development tools like Cursor, GitHub Copilot, and OpenAI Codex.
-
-### Option 1: CLI Setup Command
-
-::: warning Coming Soon
-The `b2c setup skills` command is not yet available. Use the manual method below for now.
-:::
-
-```bash
-# Configure skills for your IDE (coming soon)
-b2c setup skills --ide cursor
-b2c setup skills --ide copilot
-```
-
-### Option 2: Manual Setup
-
-Copy the skill files from [`skills/b2c-cli/skills/`](./b2c-cli/skills/) to your IDE's rules or instructions directory:
-
-- **Cursor**: Copy to `.cursor/rules/` or configure in Cursor settings
-- **GitHub Copilot**: Add to `.github/copilot-instructions.md`
-- **Codex**: Configure per OpenAI Codex documentation
-
-Each skill is a Markdown file (`SKILL.md`) containing instructions and examples that teach the AI about B2C Commerce CLI commands.
+See the repository [CLAUDE.md](../CLAUDE.md) and the [documentation skill](../.claude/skills/documentation/SKILL.md) for full contributor guidance.
 
 ## Learn More
 
 - [Agent Skills Standard](https://agentskills.io/home)
 - [Claude Code Plugin Documentation](https://code.claude.com/docs/en/plugins)
-- [Plugin Marketplaces](https://code.claude.com/docs/en/plugin-marketplaces)
-- [B2C CLI Documentation](https://salesforcecommercecloud.github.io/b2c-developer-tooling/)
+- [B2C Developer Tooling Documentation](https://salesforcecommercecloud.github.io/b2c-developer-tooling/)

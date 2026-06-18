@@ -30,6 +30,14 @@ function humanizeName(name: string): string {
     .replace(/\bId\b/g, 'ID');
 }
 
+function splitMultiValue(value: string): string[] {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+}
+
 export function ReportForm({parameters, values, onChange, siteOptions, hasDateRange, onDateRangeChange}: Props) {
   return (
     <div className="config-grid">
@@ -60,6 +68,49 @@ export function ReportForm({parameters, values, onChange, siteOptions, hasDateRa
                 {(siteOptions ?? []).map((s) => (
                   <option key={s} value={s}>
                     {s}
+                  </option>
+                ))}
+              </select>
+            );
+          } else if (param.options && param.options.length > 0 && param.multiple) {
+            fieldClass += ' full';
+            const selected = splitMultiValue(value);
+            input = (
+              <select
+                id={param.name}
+                name={param.name}
+                required={required}
+                multiple
+                size={Math.min(Math.max(param.options.length, 3), 8)}
+                className="select"
+                value={selected}
+                onChange={(e) => {
+                  const values = Array.from(e.currentTarget.selectedOptions).map((option) => option.value);
+                  onChange(param.name, values.join(','));
+                }}
+              >
+                {param.options.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            );
+          } else if (param.options && param.options.length > 0) {
+            fieldClass += ' full';
+            input = (
+              <select
+                id={param.name}
+                name={param.name}
+                required={required}
+                className="select"
+                value={value}
+                onChange={(e) => onChange(param.name, e.currentTarget.value)}
+              >
+                <option value="">— Select —</option>
+                {param.options.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
                   </option>
                 ))}
               </select>

@@ -53,6 +53,7 @@ export type FilterOperator =
   | '<'
   | '>='
   | '<='
+  | 'BETWEEN'
   | 'LIKE'
   | 'NOT LIKE'
   | 'IN'
@@ -60,13 +61,27 @@ export type FilterOperator =
   | 'IS NULL'
   | 'IS NOT NULL';
 
+/** Quick date preset chosen in Query Builder's WHERE clause. */
+export type DateQuickPreset = 'last-week' | 'last-month' | 'last-6-months' | 'today' | 'custom';
+
 export interface FilterCondition {
   column: string;
   operator: FilterOperator;
   value: string;
+  /** Upper bound for the `BETWEEN` operator. Ignored for every other operator. */
+  valueTo?: string;
+  /** Optional UI hint so explicit preset clicks (especially Custom) stay selected. */
+  datePreset?: DateQuickPreset;
 }
 
 export interface OrderClause {
   column: string;
   direction: 'ASC' | 'DESC';
 }
+
+/**
+ * Aggregate functions that can be applied to a SELECT column once a GROUP BY
+ * is in play. Mirrors what the curated CIP reports use most often (SUM,
+ * COUNT, AVG, MIN, MAX).
+ */
+export type AggregateFn = 'SUM' | 'COUNT' | 'AVG' | 'MIN' | 'MAX';
