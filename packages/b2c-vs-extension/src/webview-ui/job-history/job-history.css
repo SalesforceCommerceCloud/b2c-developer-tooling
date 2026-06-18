@@ -1,0 +1,284 @@
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
+ */
+/* Job History webview styles. Loaded alongside the shared CIP stylesheet (which
+ * provides the page shell, PageHeader, buttons, and base icon system). These
+ * .jh-* rules and the three extra .ic-* masks are scoped to this panel so the
+ * CIP Analytics UI is never affected. */
+
+/* --- Extra icons (log / rerun / details) not in the shared icon set --- */
+.ic-output {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='2' y='2.5' width='12' height='11' rx='1' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M4.5 6h7M4.5 8.5h7M4.5 11h4' stroke='currentColor' stroke-width='1.2'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='2' y='2.5' width='12' height='11' rx='1' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M4.5 6h7M4.5 8.5h7M4.5 11h4' stroke='currentColor' stroke-width='1.2'/></svg>");
+}
+.ic-debug-restart {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 8a5 5 0 1 1 1.6 3.7' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M3 12V8.5h3.5' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 8a5 5 0 1 1 1.6 3.7' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M3 12V8.5h3.5' stroke='currentColor' stroke-width='1.3' fill='none' stroke-linejoin='round'/></svg>");
+}
+.ic-info {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='6' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M8 7.5v3.5M8 5v.01' stroke='currentColor' stroke-width='1.4' stroke-linecap='round'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='6' stroke='currentColor' stroke-width='1.3' fill='none'/><path d='M8 7.5v3.5M8 5v.01' stroke='currentColor' stroke-width='1.4' stroke-linecap='round'/></svg>");
+}
+
+/* --- Page --- */
+.jh-page {
+  padding: 0 16px 20px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* --- Summary stat chips --- */
+.jh-summary {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0;
+  flex-wrap: wrap;
+}
+.jh-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 92px;
+  padding: 10px 14px;
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: 8px;
+  background: var(--vscode-sideBar-background);
+}
+/* Filter chips (Failed / Running) read as interactive: pointer + hover + a
+ * focus-blue active state when their status is the current filter. */
+button.jh-stat--filter {
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  position: relative;
+}
+button.jh-stat--filter:hover {
+  border-color: var(--vscode-focusBorder);
+}
+.jh-stat--active {
+  border-color: var(--vscode-focusBorder);
+  box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+}
+/* Read-only stats (Jobs / Executions) are counts, not filters. Drop the card
+ * chrome entirely so they read as plain text metrics and can't be mistaken for
+ * the clickable Failed/Running/Completed chips. */
+.jh-stat--readonly {
+  cursor: default;
+  border: none;
+  background: transparent;
+  padding: 10px 6px;
+}
+.jh-stat--readonly .jh-stat__value {
+  opacity: 0.85;
+}
+/* A subtle divider sets the read-only metrics apart from the filter chips. */
+.jh-stat--readonly:first-of-type {
+  margin-left: 6px;
+  padding-left: 18px;
+  border-left: 1px solid var(--vscode-editorWidget-border);
+}
+.jh-stat__value {
+  font-size: 20px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.jh-stat__label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+.jh-stat--alert .jh-stat__value {
+  color: var(--vscode-testing-iconFailed, #f85149);
+}
+
+/* --- Toolbar --- */
+.jh-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: 8px;
+  background: var(--vscode-sideBar-background);
+  margin-bottom: 10px;
+}
+.jh-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 240px;
+  min-width: 200px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-editorWidget-border));
+  background: var(--vscode-input-background);
+}
+.jh-search .ic {
+  opacity: 0.7;
+}
+.jh-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--vscode-input-foreground);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 0;
+}
+.jh-toolbar select,
+.jh-toolbar input[type='datetime-local'] {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-editorWidget-border));
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  font-family: inherit;
+  font-size: 12px;
+}
+.jh-toolbar select:focus,
+.jh-toolbar input:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+}
+.jh-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.jh-meta {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-bottom: 10px;
+}
+
+/* --- Table --- */
+.jh-table-wrap {
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: 8px;
+  overflow: auto;
+  max-height: calc(100vh - 280px);
+}
+.jh-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+.jh-table th,
+.jh-table td {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 12px;
+  border-bottom: 1px solid var(--vscode-editorWidget-border);
+  white-space: nowrap;
+}
+.jh-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--vscode-sideBar-background);
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+.jh-table thead th:hover {
+  color: var(--vscode-textLink-foreground);
+}
+.jh-sort {
+  opacity: 0.5;
+  font-size: 10px;
+  margin-left: 4px;
+}
+.jh-table tbody tr:nth-child(odd) {
+  background: color-mix(in srgb, var(--vscode-editor-background) 92%, var(--vscode-sideBar-background));
+}
+.jh-table tbody tr:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+.jh-row--failed td:first-child {
+  box-shadow: inset 3px 0 0 var(--vscode-testing-iconFailed, #f85149);
+}
+.jh-num {
+  font-variant-numeric: tabular-nums;
+}
+.jh-jobid {
+  font-weight: 500;
+}
+.jh-message {
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.85;
+}
+
+/* --- Status badges --- */
+.jh-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+.jh-badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.jh-badge--completed {
+  color: var(--vscode-testing-iconPassed, #3fb950);
+  background: color-mix(in srgb, var(--vscode-testing-iconPassed, #3fb950) 16%, transparent);
+}
+.jh-badge--failed {
+  color: var(--vscode-testing-iconFailed, #f85149);
+  background: color-mix(in srgb, var(--vscode-testing-iconFailed, #f85149) 16%, transparent);
+}
+.jh-badge--running {
+  color: var(--vscode-charts-yellow, #d29922);
+  background: color-mix(in srgb, var(--vscode-charts-yellow, #d29922) 16%, transparent);
+}
+.jh-badge--scheduled {
+  color: var(--vscode-charts-blue, #58a6ff);
+  background: color-mix(in srgb, var(--vscode-charts-blue, #58a6ff) 16%, transparent);
+}
+
+/* --- Row actions --- */
+.jh-actions-col {
+  width: 1%;
+  cursor: default !important;
+}
+.jh-actions {
+  display: flex;
+  gap: 4px;
+}
+.jh-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  opacity: 0.75;
+}
+.jh-icon-btn:hover {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+  border-color: var(--vscode-editorWidget-border);
+}

@@ -58,8 +58,11 @@ suite('jobs menu contributions (package.json)', () => {
   suiteSetup(() => {
     pkg = loadPackageJson();
     contextEntries = {};
+    // Key by command for the History view only. Some commands (e.g. run) are
+    // contributed to both the History and Definitions views; the execution-state
+    // assertions below target the History contributions.
     for (const entry of pkg.contributes.menus['view/item/context']) {
-      if (entry.command?.startsWith('b2c-dx.jobs.')) {
+      if (entry.command?.startsWith('b2c-dx.jobs.') && entry.when?.includes('b2cJobsExplorer')) {
         contextEntries[entry.command] = entry;
       }
     }
@@ -70,6 +73,10 @@ suite('jobs menu contributions (package.json)', () => {
     assert.ok(
       views.some((view) => view.id === 'b2cJobsExplorer'),
       'b2cJobsExplorer view should be declared',
+    );
+    assert.ok(
+      views.some((view) => view.id === 'b2cJobDefinitionsExplorer'),
+      'b2cJobDefinitionsExplorer view should be declared',
     );
 
     assert.ok(
@@ -96,6 +103,10 @@ suite('jobs menu contributions (package.json)', () => {
       Object.hasOwn(pkg.contributes.configuration.properties, 'b2c-dx.jobs.knownJobIds'),
       'jobs known job IDs setting should be declared',
     );
+    assert.ok(
+      Object.hasOwn(pkg.contributes.configuration.properties, 'b2c-dx.jobs.definitionGlobs'),
+      'jobs definition globs setting should be declared',
+    );
   });
 
   test('jobs commands are declared and hidden from command palette where appropriate', () => {
@@ -117,6 +128,10 @@ suite('jobs menu contributions (package.json)', () => {
       'b2c-dx.jobs.openExecutionInBM',
       'b2c-dx.jobs.openExecutionLog',
       'b2c-dx.jobs.openFailureLog',
+      'b2c-dx.jobs.refreshDefinitions',
+      'b2c-dx.jobs.deployDefinition',
+      'b2c-dx.jobs.openDefinitionFile',
+      'b2c-dx.jobs.openBmDefinitions',
     ];
 
     for (const command of expectedCommands) {
@@ -139,9 +154,37 @@ suite('jobs menu contributions (package.json)', () => {
       'b2c-dx.jobs.openExecutionInBM',
       'b2c-dx.jobs.openExecutionLog',
       'b2c-dx.jobs.openFailureLog',
+      'b2c-dx.jobs.deployDefinition',
+      'b2c-dx.jobs.openDefinitionFile',
     ]) {
       assert.ok(hiddenInPalette.has(command), `${command} should be hidden from command palette`);
     }
+  });
+
+  test('job definitions context menu visibility aligns with node types', () => {
+    const runWhen = contextEntries['b2c-dx.jobs.run']?.when;
+    // Run is shared between History (job-*) and Definitions (jobDefinition) views;
+    // assert the History clause still matches and a Definitions clause exists.
+    const definitionsEntries = pkg.contributes.menus['view/item/context'].filter((entry) =>
+      entry.when?.includes('b2cJobDefinitionsExplorer'),
+    );
+    assert.ok(
+      definitionsEntries.some((entry) => entry.command === 'b2c-dx.jobs.run' && entry.when?.includes('jobDefinition')),
+      'Run should be available on jobDefinition nodes',
+    );
+    assert.ok(
+      definitionsEntries.some(
+        (entry) => entry.command === 'b2c-dx.jobs.deployDefinition' && entry.when?.includes('jobDefinition'),
+      ),
+      'Deploy Definition should be available on jobDefinition nodes',
+    );
+    assert.ok(
+      definitionsEntries.some(
+        (entry) => entry.command === 'b2c-dx.jobs.openDefinitionFile' && entry.when?.includes('jobStepType'),
+      ),
+      'Open Definition File should be available on jobStepType nodes',
+    );
+    assert.ok(runWhen, 'run command should still have a History when-clause');
   });
 
   test('jobs context menu visibility aligns with execution states', () => {

@@ -430,6 +430,26 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
       );
   }
 
+  /**
+   * Returns every discovered execution row, ignoring the tree's status/history
+   * filters. The History Table is a self-contained exploration surface that owns
+   * its own filtering, so it must start from the full dataset rather than
+   * inheriting whatever filter the tree happens to have applied.
+   */
+  async getAllExecutionHistoryRows(): Promise<JobHistoryExecutionRow[]> {
+    await this.getJobNodes(true);
+    const executions = this.discoveryExecutionCache ?? [];
+
+    return executions
+      .map((execution) => {
+        const jobId = execution.job_id;
+        if (!jobId) return undefined;
+        const status = normalizeExecutionStatus(execution);
+        return {jobId, status, execution};
+      })
+      .filter((row): row is JobHistoryExecutionRow => Boolean(row));
+  }
+
   setStatusFilter(filter: JobStatusFilter): void {
     if (this.statusFilter === filter) return;
     this.statusFilter = filter;

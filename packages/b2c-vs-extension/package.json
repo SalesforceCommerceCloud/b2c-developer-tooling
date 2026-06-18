@@ -758,6 +758,16 @@
           },
           "description": "Optional list of known job IDs shown as quick picks when running a job from VS Code."
         },
+        "b2c-dx.jobs.definitionGlobs": {
+          "type": "array",
+          "default": [
+            "**/jobs.xml"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Glob patterns used to discover job definition files for the Job Definitions view. Defaults to jobs.xml at any path (the conventional name for impex/site-import job definitions). Add patterns here if your project uses non-standard filenames (e.g. '**/data/**/*-jobs.xml'). Files that are not in the B2C jobs namespace are ignored automatically."
+        },
         "b2c-dx.features.codeSync": {
           "type": "boolean",
           "default": true,
@@ -862,6 +872,12 @@
       ],
       "b2c-dx-operations": [
         {
+          "id": "b2cJobDefinitionsExplorer",
+          "name": "Job Definitions",
+          "icon": "$(briefcase)",
+          "contextualTitle": "B2C-DX Operations"
+        },
+        {
           "id": "b2cJobsExplorer",
           "name": "Job History",
           "icon": "$(list-unordered)",
@@ -901,6 +917,10 @@
         "view": "b2cJobsExplorer",
         "when": "!b2c-dx.jobs.needsOAuth",
         "contents": "No recent job executions found.\n\nExecution history is grouped by Job ID in this view.\n\nRun a job from this view or from Business Manager to populate execution history.\n\n[Run Job](command:b2c-dx.jobs.run)\n\n[Refresh](command:b2c-dx.jobs.refresh)"
+      },
+      {
+        "view": "b2cJobDefinitionsExplorer",
+        "contents": "No local job definitions found.\n\nJob definitions are discovered from `jobs.xml` and `steptypes.json` files in your workspace cartridges.\n\n[Create Job Scaffold](command:b2c-dx.jobs.createScaffold)\n\n[Open Job Definitions in Business Manager](command:b2c-dx.jobs.openBmDefinitions)\n\n[Refresh](command:b2c-dx.jobs.refreshDefinitions)"
       },
       {
         "view": "b2cCartridgeExplorer",
@@ -1220,6 +1240,30 @@
         "title": "Open Failure Log",
         "icon": "$(warning)",
         "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.refreshDefinitions",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C DX - Job Definitions"
+      },
+      {
+        "command": "b2c-dx.jobs.deployDefinition",
+        "title": "Deploy Job Definition",
+        "icon": "$(cloud-upload)",
+        "category": "B2C DX - Job Definitions"
+      },
+      {
+        "command": "b2c-dx.jobs.openDefinitionFile",
+        "title": "Open Definition File",
+        "icon": "$(go-to-file)",
+        "category": "B2C DX - Job Definitions"
+      },
+      {
+        "command": "b2c-dx.jobs.openBmDefinitions",
+        "title": "Open Job Definitions in Business Manager",
+        "icon": "$(link-external)",
+        "category": "B2C DX - Job Definitions"
       },
       {
         "command": "b2c-dx.instance.inspect",
@@ -1804,6 +1848,21 @@
           "group": "navigation@9"
         },
         {
+          "command": "b2c-dx.jobs.createScaffold",
+          "when": "view == b2cJobDefinitionsExplorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "b2c-dx.jobs.openBmDefinitions",
+          "when": "view == b2cJobDefinitionsExplorer",
+          "group": "navigation@2"
+        },
+        {
+          "command": "b2c-dx.jobs.refreshDefinitions",
+          "when": "view == b2cJobDefinitionsExplorer",
+          "group": "navigation@3"
+        },
+        {
           "command": "b2c-dx.codeSync.refreshCartridges",
           "when": "view == b2cCartridgeExplorer",
           "group": "navigation"
@@ -2061,6 +2120,26 @@
           "group": "2_logs@2"
         },
         {
+          "command": "b2c-dx.jobs.run",
+          "when": "view == b2cJobDefinitionsExplorer && viewItem == jobDefinition",
+          "group": "1_lifecycle@1"
+        },
+        {
+          "command": "b2c-dx.jobs.deployDefinition",
+          "when": "view == b2cJobDefinitionsExplorer && viewItem == jobDefinition",
+          "group": "1_lifecycle@2"
+        },
+        {
+          "command": "b2c-dx.jobs.openDefinitionFile",
+          "when": "view == b2cJobDefinitionsExplorer && viewItem == jobDefinition",
+          "group": "2_open@1"
+        },
+        {
+          "command": "b2c-dx.jobs.openDefinitionFile",
+          "when": "view == b2cJobDefinitionsExplorer && viewItem == jobStepType",
+          "group": "2_open@1"
+        },
+        {
           "command": "b2c-dx.codeSync.revealCartridge",
           "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
           "group": "0_navigation@1"
@@ -2256,6 +2335,14 @@
         },
         {
           "command": "b2c-dx.jobs.openFailureLog",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.deployDefinition",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.openDefinitionFile",
           "when": "false"
         },
         {

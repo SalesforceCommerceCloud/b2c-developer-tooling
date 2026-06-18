@@ -187,6 +187,20 @@ function copyCipStyles() {
   console.log('[cip-styles] Copied cip-styles.css to dist/cip-analytics/');
 }
 
+/**
+ * Copy the Job History webview stylesheet into dist/ so the packaged extension
+ * never reaches back into src/. Loaded alongside cip-styles.css by the Job
+ * History panel; kept separate so the CIP stylesheet stays untouched.
+ */
+function copyJobHistoryStyles() {
+  const src = path.join(pkgRoot, 'src', 'webview-ui', 'job-history', 'job-history.css');
+  if (!fs.existsSync(src)) return;
+  const destDir = path.join(pkgRoot, 'dist', 'webview-ui');
+  fs.mkdirSync(destDir, {recursive: true});
+  fs.copyFileSync(src, path.join(destDir, 'job-history.css'));
+  console.log('[job-history] Copied job-history.css to dist/webview-ui/');
+}
+
 /** Copy Swagger UI assets to dist/swagger-ui/ for the API Browser webview. */
 function copySwaggerUiAssets() {
   const swaggerUiIndex = fileURLToPath(import.meta.resolve('swagger-ui-dist'));
@@ -206,6 +220,7 @@ function syncStaticAssets() {
   copyScriptTypesPlugin();
   copySwaggerUiAssets();
   copyCipStyles();
+  copyJobHistoryStyles();
 }
 
 const buildOptions = {
@@ -245,6 +260,7 @@ const webviewBuildOptions = {
     'query-builder': path.join(webviewUiSrc, 'query-builder', 'index.tsx'),
     'tables-browser': path.join(webviewUiSrc, 'tables-browser', 'index.tsx'),
     'report-dashboard': path.join(webviewUiSrc, 'report-dashboard', 'index.tsx'),
+    'job-history': path.join(webviewUiSrc, 'job-history', 'index.tsx'),
   },
   outdir: path.join(pkgRoot, 'dist', 'webview-ui'),
   bundle: true,

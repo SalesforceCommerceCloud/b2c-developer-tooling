@@ -5,13 +5,20 @@
  */
 import {
   executeJob,
+  getJobErrorMessage,
   getJobLog,
   siteArchiveExportToPath,
   siteArchiveImport,
+  waitForJob,
   type ExportDataUnitsConfiguration,
+  type JobExecution,
+  type JobExecutionParameter,
   JobExecutionError,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
+import {createScaffoldRegistry, generateFromScaffold} from '@salesforce/b2c-tooling-sdk/scaffold';
+import {findCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {randomBytes} from 'node:crypto';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import JSZip from 'jszip';
@@ -19,6 +26,8 @@ import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {openJobLog} from '../job-log-viewer.js';
 import {registerSafeCommand} from '../safety.js';
+import {referencedStepTypes} from './job-definitions-parser.js';
+import type {JobDefinitionsTreeDataProvider} from './job-definitions-tree-provider.js';
 import type {
   JobExecutionTreeItem,
   JobHistoryExecutionRow,
@@ -29,8 +38,8 @@ import type {
 } from './jobs-tree-provider.js';
 
 const JOB_DETAILS_SCHEME = 'b2c-job-details';
-const JOB_SCAFFOLD_DIR = 'b2c-jobs';
-const MODULE_PATH_ALLOWED_CHARS_REGEX = /^[A-Za-z0-9_./-]+$/;
+/** Built-in SDK scaffold that generates a custom job step + steptypes.json registration. */
+const JOB_STEP_SCAFFOLD_ID = 'job-step';
 
 const STATUS_FILTER_ITEMS: Array<{
   readonly filter: JobStatusFilter;
@@ -70,28 +79,23 @@ const STATUS_FILTER_ITEMS: Array<{
 ];
 
 interface JobScaffoldSpec {
+  /** Unique job-id written to jobs.xml and shown in Business Manager. */
   jobId: string;
   description: string;
+  /** Registered custom step type id (e.g. `custom.MyStep`). */
   stepTypeId: string;
+  /** Step instance id within the job flow. */
   stepId: string;
-  modulePath: string;
-  functionName: string;
+  /** Optional site-id; blank = organization scope. */
   siteContext: string;
-  scheduleIntent: string;
-  parameters: Array<{name: string; value: string}>;
+  /** Execution model of the generated cartridge step. */
+  stepKind: 'task' | 'chunk';
+  /** Cartridge that will own the step code and steptypes.json registration. */
+  cartridgeName: string;
 }
 
 function csvCell(value: string): string {
   return `"${value.replaceAll('"', '""')}"`;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -129,15 +133,6 @@ function formatDuration(durationMs: number | undefined): string {
   return `${seconds}s`;
 }
 
-function statusFilterLabel(filter: JobStatusFilter): string {
-  if (filter === 'all') return 'All';
-  if (filter === 'active') return 'Active';
-  if (filter === 'running') return 'Running';
-  if (filter === 'scheduled') return 'Scheduled';
-  if (filter === 'failed') return 'Failed';
-  return 'Completed';
-}
-
 function renderHistoryRowsAsCsv(rows: JobHistoryExecutionRow[]): string {
   const header = ['jobId', 'executionId', 'status', 'startTime', 'endTime', 'duration', 'user'];
   const lines = [header.join(',')];
@@ -165,106 +160,94 @@ function getDefaultExportDataUnits(): Partial<ExportDataUnitsConfiguration> {
   return {global_data: {meta_data: true}};
 }
 
-function buildJobsHistoryHtml(rows: JobHistoryExecutionRow[], statusFilter: JobStatusFilter): string {
-  const escapedRows = rows
-    .map((row) => {
-      const executionId = row.execution.id ?? 'unknown';
-      const searchIndex = [
-        row.jobId,
-        executionId,
-        row.status,
-        formatDateTime(row.execution.start_time),
-        formatDateTime(row.execution.end_time),
-        formatDuration(row.execution.duration),
-        getExecutionUser(row.execution),
-      ]
-        .join(' ')
-        .toLowerCase();
+/** System jobs are platform housekeeping (sfcc-*) that developers rarely act on. */
+function isSystemJobId(jobId: string): boolean {
+  return jobId.startsWith('sfcc-');
+}
 
-      return [
-        `<tr data-search="${escapeHtml(searchIndex)}">`,
-        `<td>${escapeHtml(row.jobId)}</td>`,
-        `<td>${escapeHtml(executionId)}</td>`,
-        `<td>${escapeHtml(row.status)}</td>`,
-        `<td>${escapeHtml(formatDateTime(row.execution.start_time))}</td>`,
-        `<td>${escapeHtml(formatDateTime(row.execution.end_time))}</td>`,
-        `<td>${escapeHtml(formatDuration(row.execution.duration))}</td>`,
-        `<td>${escapeHtml(getExecutionUser(row.execution))}</td>`,
-        '</tr>',
-      ].join('');
-    })
-    .join('\n');
+interface HistoryTableRow {
+  jobId: string;
+  executionId: string;
+  status: string;
+  start: string;
+  startMs: number | null;
+  duration: string;
+  durationMs: number | null;
+  message: string;
+  isSystem: boolean;
+}
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Job History Table</title>
-  <style>
-    body { font-family: var(--vscode-font-family); margin: 12px; color: var(--vscode-foreground); background: var(--vscode-editor-background); }
-    .meta { margin-bottom: 10px; opacity: 0.9; }
-    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
-    .search { flex: 1 1 280px; min-width: 220px; max-width: 520px; padding: 7px 10px; border-radius: 6px; border: 2px solid var(--vscode-focusBorder); color: var(--vscode-input-foreground); background: var(--vscode-input-background); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vscode-editor-background) 70%, var(--vscode-focusBorder)); }
-    .search:focus { outline: none; border-color: var(--vscode-focusBorder); box-shadow: 0 0 0 2px color-mix(in srgb, var(--vscode-focusBorder) 45%, transparent); }
-    .search-count { font-size: 12px; opacity: 0.9; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid var(--vscode-editorWidget-border); padding: 6px 8px; text-align: left; font-size: 12px; }
-    th { background: var(--vscode-sideBar-background); position: sticky; top: 0; }
-    tbody tr:nth-child(odd) { background: color-mix(in srgb, var(--vscode-editor-background) 90%, var(--vscode-sideBar-background)); }
-    #emptySearchRow td { text-align: center; opacity: 0.85; }
-  </style>
-</head>
-<body>
-  <div class="meta">Filtered execution rows: <strong>${rows.length}</strong> · Status filter: <strong>${statusFilterLabel(statusFilter)}</strong></div>
-  <div class="toolbar">
-    <input id="jobSearch" class="search" type="search" placeholder="Search by Job ID, execution ID, status, user, date..." autocomplete="off" />
-    <span class="search-count">Visible rows: <strong id="visibleCount">${rows.length}</strong></span>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Job ID</th>
-        <th>Execution ID</th>
-        <th>Status</th>
-        <th>Start</th>
-        <th>End</th>
-        <th>Duration</th>
-        <th>User</th>
-      </tr>
-    </thead>
-    <tbody id="historyRows">
-      ${escapedRows || '<tr><td colspan="7">No executions match current filters.</td></tr>'}
-      <tr id="emptySearchRow" style="display:none;"><td colspan="7">No rows match your search.</td></tr>
-    </tbody>
-  </table>
-  <script>
-    const searchInput = document.getElementById('jobSearch');
-    const visibleCount = document.getElementById('visibleCount');
-    const rows = [...document.querySelectorAll('#historyRows tr[data-search]')];
-    const emptySearchRow = document.getElementById('emptySearchRow');
+function toHistoryTableRow(row: JobHistoryExecutionRow): HistoryTableRow {
+  const start = row.execution.start_time;
+  const startMs = start ? Date.parse(start) : NaN;
+  const message =
+    row.execution.exit_status?.message?.trim() ??
+    (row.execution.step_executions ?? [])
+      .map((step) => step.exit_status?.message?.trim())
+      .find((value): value is string => Boolean(value)) ??
+    '';
+  return {
+    jobId: row.jobId,
+    executionId: row.execution.id ?? 'unknown',
+    status: row.status,
+    start: formatDateTime(start),
+    startMs: Number.isNaN(startMs) ? null : startMs,
+    duration: formatDuration(row.execution.duration),
+    durationMs: typeof row.execution.duration === 'number' ? row.execution.duration : null,
+    message,
+    isSystem: isSystemJobId(row.jobId),
+  };
+}
 
-    const applySearch = () => {
-      const query = searchInput.value.trim().toLowerCase();
-      let visible = 0;
+/** Messages the Job History webview posts back to the extension host. */
+type HistoryWebviewMessage =
+  | {command: 'openLog'; jobId: string; executionId: string}
+  | {command: 'rerun'; jobId: string}
+  | {command: 'viewDetails'; jobId: string; executionId: string}
+  | {command: 'openInBusinessManager'}
+  | {command: 'refresh'};
 
-      for (const row of rows) {
-        const haystack = row.getAttribute('data-search') || '';
-        const matched = !query || haystack.includes(query);
-        row.style.display = matched ? '' : 'none';
-        if (matched) visible += 1;
-      }
+/**
+ * Renders the HTML shell that mounts the Job History React app.
+ *
+ * Follows the repo's standard webview pattern (see CIP Analytics'
+ * renderReactShell): a tiny CSP-locked shell loads the esbuild-bundled React app
+ * from dist/webview-ui/ and the shared CIP stylesheet plus the Job-History
+ * stylesheet. The full unfiltered dataset is seeded on `window.__JOB_HISTORY__`;
+ * the React app owns filtering, sorting, and row actions from there.
+ */
+function renderJobHistoryShell(
+  webview: vscode.Webview,
+  extensionUri: vscode.Uri,
+  rows: JobHistoryExecutionRow[],
+): string {
+  const nonce = randomBytes(16).toString('hex');
+  const webviewUiUri = vscode.Uri.joinPath(extensionUri, 'dist', 'webview-ui');
+  const cipUri = vscode.Uri.joinPath(extensionUri, 'dist', 'cip-analytics');
+  const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(webviewUiUri, 'job-history.js')).toString();
+  const sharedStyles = webview.asWebviewUri(vscode.Uri.joinPath(cipUri, 'cip-styles.css')).toString();
+  const jobStyles = webview.asWebviewUri(vscode.Uri.joinPath(webviewUiUri, 'job-history.css')).toString();
+  const cspSource = webview.cspSource;
+  const seed = JSON.stringify(rows.map(toHistoryTableRow)).replaceAll('<', '\\u003c');
 
-      visibleCount.textContent = String(visible);
-      if (emptySearchRow) {
-        emptySearchRow.style.display = visible === 0 && rows.length > 0 ? '' : 'none';
-      }
-    };
-
-    searchInput.addEventListener('input', applySearch);
-  </script>
-</body>
-</html>`;
+  return [
+    '<!doctype html>',
+    '<html lang="en">',
+    '  <head>',
+    '    <meta charset="UTF-8" />',
+    '    <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
+    `    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src ${cspSource}; img-src ${cspSource} data:; font-src ${cspSource};" />`,
+    '    <title>Job History</title>',
+    `    <link rel="stylesheet" href="${sharedStyles}" />`,
+    `    <link rel="stylesheet" href="${jobStyles}" />`,
+    '  </head>',
+    '  <body>',
+    '    <div id="root"></div>',
+    `    <script nonce="${nonce}">window.__JOB_HISTORY__ = ${seed};</script>`,
+    `    <script type="module" nonce="${nonce}" src="${scriptUri}"></script>`,
+    '  </body>',
+    '</html>',
+  ].join('\n');
 }
 
 async function chooseUnifiedFilterAction(
@@ -298,38 +281,6 @@ async function chooseUnifiedFilterAction(
   );
 
   return picked?.action;
-}
-
-function getDefaultModulePath(jobId: string): string {
-  const jobSegment = jobId.trim().replaceAll(/[^A-Za-z0-9_.-]+/g, '-');
-  return `app_custom_core/cartridge/scripts/jobs/${jobSegment}`;
-}
-
-function validateModulePathInput(value: string): string | null {
-  const trimmed = value.trim();
-  if (!trimmed) return 'Module path is required';
-  if (trimmed.endsWith('.js')) return 'Enter module path without the .js extension';
-  if (trimmed.startsWith('/') || trimmed.startsWith('./')) {
-    return 'Use a cartridge-relative path (no leading / or ./)';
-  }
-  if (trimmed.includes('\\')) return 'Use forward slashes (/), not backslashes';
-  if (trimmed.includes(' ')) return 'Module path cannot contain spaces';
-  if (!trimmed.includes('/cartridge/scripts/')) {
-    return 'Expected format: <cartridge>/cartridge/scripts/<folder>/<scriptName>';
-  }
-  if (!MODULE_PATH_ALLOWED_CHARS_REGEX.test(trimmed)) {
-    return 'Use letters, numbers, slash (/), dot (.), dash (-), and underscore (_) only';
-  }
-
-  const parts = trimmed.split('/');
-  if (parts.some((part) => part.length === 0)) return 'Path cannot contain empty segments (//)';
-  if (parts.some((part) => part === '..')) return 'Path cannot contain parent directory segments (..)';
-
-  return null;
-}
-
-function modulePathToScriptRelativeFile(modulePath: string): string {
-  return `${modulePath.trim()}.js`;
 }
 
 function parseMissingScope(message: string): string | undefined {
@@ -450,19 +401,74 @@ function parseParameterInput(value: string | undefined): Array<{name: string; va
     });
 }
 
+/**
+ * Prompts for optional job execution parameters (one `key=value` per line).
+ *
+ * Returns the parsed parameters, an empty array when the user submits nothing,
+ * or `undefined` when the user cancels (Escape). Invalid input is re-validated
+ * inline so the user can correct it without losing the dialog.
+ */
+async function promptForJobParameters(jobId: string): Promise<JobExecutionParameter[] | undefined> {
+  const input = await vscode.window.showInputBox({
+    title: `Run Job: ${jobId}`,
+    prompt: 'Optional execution parameters (one key=value per line). Leave blank for none.',
+    placeHolder: 'SiteScope={"all_storefront_sites":true}',
+    ignoreFocusOut: true,
+    validateInput: (value) => {
+      try {
+        parseParameterInput(value);
+        return null;
+      } catch (error) {
+        return error instanceof Error ? error.message : String(error);
+      }
+    },
+  });
+  if (input === undefined) return undefined;
+
+  return parseParameterInput(input).map(({name, value}) => ({name, value}));
+}
+
+/**
+ * Reveals the first matching error message from a failed execution in the
+ * active editor (assumed to be the just-opened job log) so the user lands on
+ * the relevant line. No-op when nothing matches.
+ */
+function revealExecutionErrorInActiveEditor(execution: JobExecution): void {
+  const candidates = [
+    getJobErrorMessage(execution),
+    execution.exit_status?.message?.trim(),
+    ...(execution.step_executions ?? [])
+      .map((step) => step.exit_status?.message?.trim())
+      .filter((value): value is string => Boolean(value)),
+  ].filter((value): value is string => Boolean(value));
+  if (candidates.length === 0) return;
+
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) return;
+
+  const fullText = editor.document.getText();
+  for (const candidate of candidates) {
+    const index = fullText.indexOf(candidate);
+    if (index < 0) continue;
+
+    const start = editor.document.positionAt(index);
+    const end = editor.document.positionAt(index + candidate.length);
+    editor.selection = new vscode.Selection(start, end);
+    editor.revealRange(new vscode.Range(start, end), vscode.TextEditorRevealType.InCenter);
+    return;
+  }
+}
+
+/**
+ * Builds a `jobs.xml` document that validates against `resources/xsd/jobs.xsd`.
+ *
+ * Element order is mandated by the schema: `description` → `flow` (with optional
+ * `context` then `step`) → `triggers` (required, last). The step references the
+ * custom step type registered in `steptypes.json`; custom steps source their
+ * parameters from that registration, so no `Module`/`Function` parameters are
+ * emitted here (that was the cause of the previous "invalid job" deploys).
+ */
 function buildJobsXml(spec: JobScaffoldSpec): string {
-  const parameters = [
-    {name: 'Module', value: spec.modulePath},
-    {name: 'Function', value: spec.functionName},
-    ...spec.parameters,
-  ];
-
-  const parametersXml = parameters
-    .map((parameter) => {
-      return `          <parameter name="${escapeXml(parameter.name)}">${escapeXml(parameter.value)}</parameter>`;
-    })
-    .join('\n');
-
   const contextXml = spec.siteContext ? `      <context site-id="${escapeXml(spec.siteContext)}"/>` : undefined;
 
   return [
@@ -470,19 +476,17 @@ function buildJobsXml(spec: JobScaffoldSpec): string {
     '<jobs xmlns="http://www.demandware.com/xml/impex/jobs/2015-07-01">',
     `  <job job-id="${escapeXml(spec.jobId)}">`,
     `    <description>${escapeXml(spec.description)}</description>`,
-    '    <triggers/>',
     '    <flow>',
     contextXml,
-    `      <step step-id="${escapeXml(spec.stepId)}" type="${escapeXml(spec.stepTypeId)}">`,
-    '        <parameters>',
-    parametersXml,
-    '        </parameters>',
-    '      </step>',
+    `      <step step-id="${escapeXml(spec.stepId)}" type="${escapeXml(spec.stepTypeId)}"/>`,
     '    </flow>',
+    '    <triggers/>',
     '  </job>',
     '</jobs>',
     '',
-  ].join('\n');
+  ]
+    .filter((line) => line !== undefined)
+    .join('\n');
 }
 
 function getDefaultScaffoldRoot(): vscode.Uri | undefined {
@@ -495,152 +499,187 @@ function getBusinessManagerJobsUrl(configProvider: B2CExtensionConfig): string |
 
   const normalizedHost =
     hostname.startsWith('http://') || hostname.startsWith('https://') ? hostname : `https://${hostname}`;
-  return `${normalizedHost.replace(/\/$/, '')}/on/demandware.store/Sites-Site/default/ViewApplication-ProcessJobs`;
+  // Open the Business Manager entry point rather than a deep link to the jobs
+  // page. The legacy `ViewApplication-ProcessJobs` pipeline is removed/disabled
+  // on modern instances (throws a "General error" page), and the modern jobs UI
+  // is a hash-routed SPA with no stable, version-safe deep link. The Sites-Site
+  // landing page always loads for an authenticated user; from there: Administration
+  // > Operations > Jobs.
+  return `${normalizedHost.replace(/\/$/, '')}/on/demandware.store/Sites-Site`;
 }
 
-async function promptForJobScaffoldSpec(jobIdHint?: string): Promise<JobScaffoldSpec | undefined> {
+/**
+ * Result of the cartridge discovery + prompt phase of job scaffolding.
+ */
+interface JobScaffoldPlan {
+  spec: JobScaffoldSpec;
+  /** Absolute path to the chosen cartridge directory (the `.project` folder). */
+  cartridgeDir: string;
+  /** Bare step id without the `custom.` prefix, used for the script filename. */
+  stepIdBare: string;
+}
+
+const STEP_ID_REGEX = /^[a-z][a-zA-Z0-9.]*$/;
+const JOB_ID_REGEX = /^[A-Za-z0-9_.-]+$/;
+
+/**
+ * Prompts for everything needed to scaffold a real custom job step plus a
+ * matching `jobs.xml`. Returns `undefined` if the user cancels at any step or
+ * if the workspace has no cartridges to host the step.
+ */
+async function promptForJobScaffoldPlan(jobIdHint?: string): Promise<JobScaffoldPlan | undefined> {
+  const root = getDefaultScaffoldRoot();
+  if (!root) {
+    void vscode.window.showWarningMessage('Open a workspace folder before creating a job scaffold.');
+    return undefined;
+  }
+
+  const cartridges = findCartridges(root.fsPath);
+  if (cartridges.length === 0) {
+    const choice = await vscode.window.showWarningMessage(
+      'No cartridges found in this workspace. A custom job step must live in a cartridge. Create one first?',
+      'Create Cartridge',
+    );
+    if (choice === 'Create Cartridge') {
+      await vscode.commands.executeCommand('b2c-dx.scaffold.generate');
+    }
+    return undefined;
+  }
+
+  const cartridgePick = await vscode.window.showQuickPick(
+    cartridges.map((c) => ({label: c.name, description: vscode.workspace.asRelativePath(c.src), cartridge: c})),
+    {
+      title: 'Create Job Scaffold (1/5)',
+      placeHolder: 'Select the cartridge that will own the job step',
+      matchOnDescription: true,
+      ignoreFocusOut: true,
+    },
+  );
+  if (!cartridgePick) return undefined;
+
   const jobId = await vscode.window.showInputBox({
-    title: 'Create Job Scaffold',
-    prompt: 'Enter a unique job ID',
+    title: 'Create Job Scaffold (2/5)',
+    prompt: 'Unique job ID (shown in Business Manager > Jobs)',
     value: jobIdHint ?? '',
+    ignoreFocusOut: true,
     validateInput: (value) => {
       if (!value.trim()) return 'Job ID is required';
-      return /^[A-Za-z0-9_.-]+$/.test(value.trim()) ? null : 'Use letters, numbers, dot, dash, or underscore';
+      return JOB_ID_REGEX.test(value.trim()) ? null : 'Use letters, numbers, dot, dash, or underscore';
     },
   });
   if (!jobId) return undefined;
 
-  const description =
-    (await vscode.window.showInputBox({
-      title: 'Create Job Scaffold',
-      prompt: 'Description (shown in Business Manager)',
-      value: `Generated scaffold for ${jobId.trim()}`,
-    })) ?? `Generated scaffold for ${jobId.trim()}`;
+  const stepKindPick = await vscode.window.showQuickPick(
+    [
+      {
+        label: 'Task-oriented',
+        detail: 'Single execution (FTP, file generation, import/export)',
+        stepKind: 'task' as const,
+      },
+      {
+        label: 'Chunk-oriented',
+        detail: 'Bulk processing with read/process/write and progress tracking',
+        stepKind: 'chunk' as const,
+      },
+    ],
+    {
+      title: 'Create Job Scaffold (3/5)',
+      placeHolder: 'Choose the execution model for the custom step',
+      ignoreFocusOut: true,
+    },
+  );
+  if (!stepKindPick) return undefined;
 
-  const scheduleIntent = await vscode.window.showQuickPick(['Manual', 'Hourly', 'Daily', 'Weekly'], {
-    title: 'Create Job Scaffold',
-    placeHolder: 'Schedule intent (documentation hint in scaffold README)',
+  const stepIdBareInput = await vscode.window.showInputBox({
+    title: 'Create Job Scaffold (4/5)',
+    prompt: 'Step ID (a "custom." prefix is added automatically)',
+    value: 'MyStep',
+    ignoreFocusOut: true,
+    validateInput: (value) => {
+      const trimmed = value.trim().replace(/^custom\./, '');
+      if (!trimmed) return 'Step ID is required';
+      return STEP_ID_REGEX.test(trimmed) ? null : 'Start with a lowercase letter; letters, numbers, and dots only';
+    },
   });
-  if (!scheduleIntent) return undefined;
+  if (stepIdBareInput === undefined) return undefined;
+  const stepIdBare = stepIdBareInput.trim().replace(/^custom\./, '');
+  const stepTypeId = `custom.${stepIdBare}`;
 
-  const stepTypeId =
-    (await vscode.window.showInputBox({
-      title: 'Create Job Scaffold',
-      prompt: 'Step type ID (for script module steps use ExecuteScriptModule)',
-      value: 'ExecuteScriptModule',
-      validateInput: (value) => (value.trim() ? null : 'Step type ID is required'),
-    })) ?? 'ExecuteScriptModule';
-
-  const stepId =
-    (await vscode.window.showInputBox({
-      title: 'Create Job Scaffold',
-      prompt: 'Step ID',
-      value: `${jobId.trim()}-step`,
-      validateInput: (value) => (value.trim() ? null : 'Step ID is required'),
-    })) ?? `${jobId.trim()}-step`;
-
-  const defaultModulePath = getDefaultModulePath(jobId);
-
-  const modulePath = await vscode.window.showInputBox({
-    title: 'Create Job Scaffold',
-    prompt: 'Module path used by ExecuteScriptModule (without .js extension)',
-    placeHolder: 'app_custom_core/cartridge/scripts/jobs/myJob',
-    value: defaultModulePath,
-    valueSelection: [0, defaultModulePath.length],
-    validateInput: validateModulePathInput,
-  });
-  if (!modulePath) return undefined;
-
-  const functionName =
-    (await vscode.window.showInputBox({
-      title: 'Create Job Scaffold',
-      prompt: 'Script function name',
-      value: 'execute',
-      validateInput: (value) => (value.trim() ? null : 'Function name is required'),
-    })) ?? 'execute';
-
-  const siteContext =
-    (await vscode.window.showInputBox({
-      title: 'Create Job Scaffold',
-      prompt: 'Site context (blank = organization scope)',
-      placeHolder: 'RefArch',
-      value: '',
-    })) ?? '';
-
-  const parameterInput = await vscode.window.showInputBox({
-    title: 'Create Job Scaffold',
-    prompt: 'Optional additional step parameters (one key=value pair per line)',
-    placeHolder: 'foo=bar',
+  const siteContextInput = await vscode.window.showInputBox({
+    title: 'Create Job Scaffold (5/5)',
+    prompt: 'Site context (blank = organization scope)',
+    placeHolder: 'RefArch',
+    value: '',
     ignoreFocusOut: true,
   });
+  if (siteContextInput === undefined) return undefined;
 
-  const parameters = parseParameterInput(parameterInput);
+  const descriptionInput = await vscode.window.showInputBox({
+    title: 'Create Job Scaffold',
+    prompt: 'Description (shown in Business Manager)',
+    value: `Custom job ${jobId.trim()}`,
+    ignoreFocusOut: true,
+  });
+  if (descriptionInput === undefined) return undefined;
+
   return {
-    jobId: jobId.trim(),
-    description: description.trim() || `Generated scaffold for ${jobId.trim()}`,
-    stepTypeId: stepTypeId.trim(),
-    stepId: stepId.trim(),
-    modulePath: modulePath.trim(),
-    functionName: functionName.trim(),
-    siteContext: siteContext.trim(),
-    scheduleIntent,
-    parameters,
+    cartridgeDir: cartridgePick.cartridge.src,
+    stepIdBare,
+    spec: {
+      jobId: jobId.trim(),
+      description: descriptionInput.trim() || `Custom job ${jobId.trim()}`,
+      stepTypeId,
+      stepId: `${jobId.trim()}-step`,
+      siteContext: siteContextInput.trim(),
+      stepKind: stepKindPick.stepKind,
+      cartridgeName: cartridgePick.cartridge.name,
+    },
   };
 }
 
-async function writeJobScaffold(spec: JobScaffoldSpec): Promise<{scaffoldDir: string; jobsXmlPath: string}> {
+/**
+ * Generates the custom step (script + steptypes.json registration) via the SDK
+ * `job-step` scaffold, then writes a matching `jobs.xml` at the cartridge root.
+ *
+ * Returns the created/updated paths for follow-up actions (open, reveal).
+ */
+async function writeJobScaffold(
+  plan: JobScaffoldPlan,
+  builtInScaffoldsDir: string,
+): Promise<{jobsXmlPath: string; stepTypesPath: string; scriptPaths: string[]}> {
   const root = getDefaultScaffoldRoot();
   if (!root) {
     throw new Error('Open a workspace folder before creating a job scaffold.');
   }
 
-  const scaffoldDir = path.join(root.fsPath, JOB_SCAFFOLD_DIR, spec.jobId);
-  await fs.mkdir(scaffoldDir, {recursive: true});
+  const registry = createScaffoldRegistry({builtInScaffoldsDir});
+  const scaffold = await registry.getScaffold(JOB_STEP_SCAFFOLD_ID, {projectRoot: root.fsPath});
+  if (!scaffold) {
+    throw new Error(`Built-in "${JOB_STEP_SCAFFOLD_ID}" scaffold not found. Reinstall or rebuild the extension.`);
+  }
 
-  const jobsXmlPath = path.join(scaffoldDir, 'jobs.xml');
-  const readmePath = path.join(scaffoldDir, 'README.md');
-  const scriptStubRelativePath = modulePathToScriptRelativeFile(spec.modulePath);
-  const scriptStubPath = path.join(scaffoldDir, scriptStubRelativePath);
+  // The job-step scaffold writes paths relative to {{cartridgeNamePath}}, which
+  // is the cartridge directory relative to the output dir (the workspace root).
+  const cartridgeNamePath = path.relative(root.fsPath, plan.cartridgeDir);
+  const result = await generateFromScaffold(scaffold, {
+    outputDir: root.fsPath,
+    variables: {
+      stepId: plan.spec.stepTypeId,
+      stepType: plan.spec.stepKind,
+      stepDescription: plan.spec.description,
+      cartridgeName: plan.spec.cartridgeName,
+      cartridgeNamePath,
+    },
+  });
 
-  await fs.writeFile(jobsXmlPath, buildJobsXml(spec), 'utf-8');
-  await fs.writeFile(
-    readmePath,
-    [
-      `# Job Scaffold: ${spec.jobId}`,
-      '',
-      `- Schedule intent: ${spec.scheduleIntent}`,
-      `- Step type ID: ${spec.stepTypeId}`,
-      `- Module parameter: ${spec.modulePath}`,
-      `- Function parameter: ${spec.functionName}`,
-      `- Generated script stub: ${scriptStubRelativePath}`,
-      '',
-      'Review `jobs.xml` before deploy, then run **Deploy Job Scaffold** from the Job History view.',
-      'Copy the generated script stub into the matching cartridge path in your codebase before running the job.',
-      '',
-      'After deploy, open Business Manager Jobs to enable/schedule the job.',
-      '',
-    ].join('\n'),
-    'utf-8',
-  );
-  await fs.mkdir(path.dirname(scriptStubPath), {recursive: true});
-  await fs.writeFile(
-    scriptStubPath,
-    [
-      `'use strict';`,
-      '',
-      'function execute() {',
-      "  return new (require('dw/system/Status'))(require('dw/system/Status').OK);",
-      '}',
-      '',
-      'module.exports = {',
-      '  execute,',
-      '};',
-      '',
-    ].join('\n'),
-    'utf-8',
-  );
+  const scriptPaths = result.files.filter((file) => file.absolutePath.endsWith('.js')).map((file) => file.absolutePath);
+  const stepTypesPath = path.join(plan.cartridgeDir, 'steptypes.json');
 
-  return {scaffoldDir, jobsXmlPath};
+  // Write the matching jobs.xml at the cartridge root (alongside steptypes.json).
+  const jobsXmlPath = path.join(plan.cartridgeDir, 'jobs.xml');
+  await fs.writeFile(jobsXmlPath, buildJobsXml(plan.spec), 'utf-8');
+
+  return {jobsXmlPath, stepTypesPath, scriptPaths};
 }
 
 async function selectJobsXmlForDeploy(): Promise<string | undefined> {
@@ -676,18 +715,28 @@ function getConfiguredKnownJobIds(): string[] {
   return [...new Set(sanitized)].sort((a, b) => a.localeCompare(b));
 }
 
-async function promptForJobId(treeProvider: JobsTreeDataProvider): Promise<string | undefined> {
+async function promptForJobId(treeProvider: JobsTreeDataProvider, hintedJobId?: string): Promise<string | undefined> {
   const discovered = await treeProvider.getDiscoveredJobIds();
   const known = getConfiguredKnownJobIds();
-  const options = [...new Set([...discovered, ...known])].sort((a, b) => a.localeCompare(b));
+  const hint = hintedJobId?.trim();
+  const options = [...new Set([...(hint ? [hint] : []), ...discovered, ...known])].sort((a, b) => a.localeCompare(b));
 
   if (options.length > 0) {
     const customLabel = '$(edit) Enter job ID manually...';
     const picked = await vscode.window.showQuickPick(
-      [...options.map((jobId) => ({label: jobId})), {label: customLabel}],
+      [
+        ...options.map((jobId) => ({
+          label: jobId,
+          description: jobId === hint ? 'Selected job' : undefined,
+          picked: jobId === hint,
+        })),
+        {label: customLabel, description: undefined, picked: false},
+      ],
       {
         title: 'Run Job',
-        placeHolder: 'Select a discovered/configured job ID, or enter manually',
+        placeHolder: hint
+          ? `Confirm the job to run (default: ${hint}), or enter another`
+          : 'Select a discovered/configured job ID, or enter manually',
         matchOnDescription: true,
       },
     );
@@ -698,6 +747,7 @@ async function promptForJobId(treeProvider: JobsTreeDataProvider): Promise<strin
 
   const typed = await vscode.window.showInputBox({
     title: 'Run Job',
+    value: hint ?? '',
     prompt:
       'Enter the job ID to run (from Business Manager > Administration > Operations > Jobs). Tip: configure b2c-dx.jobs.knownJobIds for quick picks.',
     validateInput: (value) => (value.trim() ? null : 'Job ID is required'),
@@ -747,7 +797,15 @@ function getLogUnavailableMessage(error: unknown): string | undefined {
 export function registerJobsCommands(
   configProvider: B2CExtensionConfig,
   treeProvider: JobsTreeDataProvider,
+  options: {
+    builtInScaffoldsDir: string;
+    definitionsProvider?: JobDefinitionsTreeDataProvider;
+    extensionUri?: vscode.Uri;
+  } = {
+    builtInScaffoldsDir: '',
+  },
 ): vscode.Disposable[] {
+  const {builtInScaffoldsDir, definitionsProvider, extensionUri} = options;
   const details = new Map<string, string>();
   const detailsProvider = vscode.workspace.registerTextDocumentContentProvider(JOB_DETAILS_SCHEME, {
     provideTextDocumentContent(uri: vscode.Uri): string {
@@ -759,10 +817,10 @@ export function registerJobsCommands(
     treeProvider.refresh();
   });
 
-  const openExecutionDetailsDocument = async (node: JobExecutionTreeItem): Promise<void> => {
-    const content = JSON.stringify(node.execution, null, 2);
-    const executionId = node.execution.id ?? 'execution';
-    const uri = vscode.Uri.parse(`${JOB_DETAILS_SCHEME}:${node.jobId}-${executionId}.json`);
+  const openExecutionDetails = async (jobId: string, execution: JobExecution): Promise<void> => {
+    const content = JSON.stringify(execution, null, 2);
+    const executionId = execution.id ?? 'execution';
+    const uri = vscode.Uri.parse(`${JOB_DETAILS_SCHEME}:${jobId}-${executionId}.json`);
     details.set(uri.toString(), content);
 
     const doc = await vscode.workspace.openTextDocument(uri);
@@ -777,6 +835,9 @@ export function registerJobsCommands(
       viewColumn: existingEditor?.viewColumn ?? vscode.ViewColumn.Active,
     });
   };
+
+  const openExecutionDetailsDocument = (node: JobExecutionTreeItem): Promise<void> =>
+    openExecutionDetails(node.jobId, node.execution);
 
   const openDetailsWithLogUnavailableWarning = async (node: JobExecutionTreeItem, error: unknown): Promise<void> => {
     await openExecutionDetailsDocument(node);
@@ -799,6 +860,62 @@ export function registerJobsCommands(
     }
 
     await vscode.env.openExternal(vscode.Uri.parse(bmUrl));
+  };
+
+  /**
+   * Triggers a job, polls it to completion, and tails the resulting log.
+   *
+   * Shared by Run Job and Re-Run so both flows behave identically: trigger →
+   * progress with live status → auto-open the execution log on completion. On
+   * failure the log is opened and the editor jumps to the error message. The
+   * history view is always refreshed afterwards.
+   */
+  const runJobAndTail = async (jobId: string, parameters: JobExecutionParameter[]): Promise<void> => {
+    const instance = configProvider.getInstance();
+    if (!instance) {
+      void vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured. Configure dw.json first.');
+      return;
+    }
+
+    try {
+      const finished = await vscode.window.withProgress(
+        {location: vscode.ProgressLocation.Notification, title: `Running job ${jobId}...`, cancellable: false},
+        async (progress) => {
+          const execution = await executeJob(instance, jobId, {parameters});
+          const executionId = execution.id;
+          if (!executionId) return execution;
+
+          progress.report({message: `Execution ${executionId} started`});
+          return waitForJob(instance, jobId, executionId, {
+            onPoll: (info) => progress.report({message: `${info.status} · ${info.elapsedSeconds}s elapsed`}),
+          });
+        },
+      );
+
+      try {
+        const log = await getJobLog(instance, finished);
+        await openJobLog(finished.id ?? jobId, log);
+      } catch {
+        // Log may not be available yet; the success notification still applies.
+      }
+      void vscode.window.showInformationMessage(`Job ${jobId} finished successfully.`);
+    } catch (error) {
+      if (error instanceof JobExecutionError) {
+        try {
+          const log = await getJobLog(instance, error.execution);
+          await openJobLog(error.execution.id ?? jobId, log);
+          revealExecutionErrorInActiveEditor(error.execution);
+        } catch {
+          // Fall through to the generic error toast when the log is unavailable.
+        }
+        const detail = getJobErrorMessage(error.execution) ?? error.execution.exit_status?.message;
+        void vscode.window.showErrorMessage(`Job ${jobId} failed${detail ? `: ${detail}` : '.'}`);
+      } else {
+        showScopeAwareError(`Failed to run job ${jobId}`, error);
+      }
+    } finally {
+      treeProvider.refresh();
+    }
   };
 
   const setStatusFilter = registerSafeCommand('b2c-dx.jobs.setStatusFilter', async () => {
@@ -855,25 +972,94 @@ export function registerJobsCommands(
     void vscode.window.showInformationMessage('Job history filters cleared.');
   });
 
+  const findExecution = async (jobId: string, executionId: string): Promise<JobExecution | undefined> => {
+    const rows = await treeProvider.getAllExecutionHistoryRows();
+    return rows.find((row) => row.jobId === jobId && (row.execution.id ?? 'unknown') === executionId)?.execution;
+  };
+
+  const openExecutionLogByIds = async (jobId: string, executionId: string): Promise<void> => {
+    const instance = configProvider.getInstance();
+    if (!instance) {
+      void vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured. Configure dw.json first.');
+      return;
+    }
+    const execution = await findExecution(jobId, executionId);
+    if (!execution) {
+      void vscode.window.showWarningMessage(`Execution ${executionId} for job ${jobId} is no longer in history.`);
+      return;
+    }
+    try {
+      const log = await getJobLog(instance, execution);
+      await openJobLog(execution.id ?? jobId, log);
+      // On a failed run, jump straight to the error so the user lands on it.
+      if (execution.exit_status?.code === 'ERROR' || execution.execution_status === 'aborted') {
+        revealExecutionErrorInActiveEditor(execution);
+      }
+    } catch (error) {
+      const reason = getLogUnavailableMessage(error);
+      if (reason) {
+        await openExecutionDetails(jobId, execution);
+        void vscode.window.showWarningMessage(`Execution ${executionId}: ${reason} Opened execution details instead.`);
+        return;
+      }
+      showScopeAwareError(`Failed to fetch log for execution ${executionId}`, error);
+    }
+  };
+
   let historyTablePanel: vscode.WebviewPanel | undefined;
+  const refreshHistoryTable = async (): Promise<void> => {
+    if (!historyTablePanel) return;
+    const rows = await treeProvider.getAllExecutionHistoryRows();
+    void historyTablePanel.webview.postMessage({command: 'data', rows: rows.map(toHistoryTableRow)});
+  };
+
   const openHistoryTable = registerSafeCommand('b2c-dx.jobs.openHistoryTable', async () => {
+    if (!extensionUri) {
+      void vscode.window.showErrorMessage('B2C DX: Job History table is unavailable (extension context missing).');
+      return;
+    }
+
+    // The table is the primary exploration surface: load the full dataset and
+    // let the webview own filtering, rather than inheriting the tree's filters.
     const rows = await vscode.window.withProgress(
-      {location: vscode.ProgressLocation.Notification, title: 'Loading filtered job history...'},
-      async () => treeProvider.getFilteredExecutionHistoryRows(),
+      {location: vscode.ProgressLocation.Notification, title: 'Loading job history...'},
+      async () => treeProvider.getAllExecutionHistoryRows(),
     );
+
     if (!historyTablePanel) {
+      const webviewUiUri = vscode.Uri.joinPath(extensionUri, 'dist', 'webview-ui');
+      const cipUri = vscode.Uri.joinPath(extensionUri, 'dist', 'cip-analytics');
       historyTablePanel = vscode.window.createWebviewPanel(
         'b2c-dx.jobs.historyTable',
-        'B2C DX · Job History Table',
+        'B2C DX · Job History',
         vscode.ViewColumn.Active,
-        {enableScripts: true, retainContextWhenHidden: true},
+        {enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [webviewUiUri, cipUri]},
       );
       historyTablePanel.onDidDispose(() => {
         historyTablePanel = undefined;
       });
+
+      // Row actions post back here. Re-run routes through the full Run flow
+      // (confirm + params + log tail) so behavior is identical to the tree.
+      historyTablePanel.webview.onDidReceiveMessage(async (msg: HistoryWebviewMessage) => {
+        if (msg.command === 'openLog') {
+          await openExecutionLogByIds(msg.jobId, msg.executionId);
+        } else if (msg.command === 'viewDetails') {
+          const execution = await findExecution(msg.jobId, msg.executionId);
+          if (execution) await openExecutionDetails(msg.jobId, execution);
+        } else if (msg.command === 'rerun') {
+          await vscode.commands.executeCommand('b2c-dx.jobs.run', msg.jobId);
+          await refreshHistoryTable();
+        } else if (msg.command === 'openInBusinessManager') {
+          await vscode.commands.executeCommand('b2c-dx.jobs.openBmDefinitions');
+        } else if (msg.command === 'refresh') {
+          treeProvider.refresh();
+          await refreshHistoryTable();
+        }
+      });
     }
 
-    historyTablePanel.webview.html = buildJobsHistoryHtml(rows, treeProvider.getStatusFilter());
+    historyTablePanel.webview.html = renderJobHistoryShell(historyTablePanel.webview, extensionUri, rows);
     historyTablePanel.reveal(vscode.ViewColumn.Active);
   });
 
@@ -929,7 +1115,7 @@ export function registerJobsCommands(
 
       await vscode.env.openExternal(vscode.Uri.parse(bmUrl));
       void vscode.window.showInformationMessage(
-        `Opened Business Manager Jobs. Execution ID: ${node.execution.id ?? 'unknown'} for job ${node.jobId}`,
+        `Opened Business Manager. Go to Administration > Operations > Jobs to find execution ${node.execution.id ?? 'unknown'} for job ${node.jobId}.`,
       );
     },
   );
@@ -1018,52 +1204,68 @@ export function registerJobsCommands(
     }
   });
 
-  const runJob = registerSafeCommand('b2c-dx.jobs.run', async (node?: JobTreeItem | JobExecutionTreeItem) => {
-    const jobId = node instanceof Object && 'jobId' in node ? node.jobId : undefined;
-    const chosenJobId = jobId ?? (await promptForJobId(treeProvider));
-
-    if (!chosenJobId) return;
-
+  const runJob = registerSafeCommand('b2c-dx.jobs.run', async (node?: JobTreeItem | JobExecutionTreeItem | string) => {
     const instance = configProvider.getInstance();
     if (!instance) {
       void vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured. Configure dw.json first.');
       return;
     }
 
-    try {
-      await vscode.window.withProgress(
-        {location: vscode.ProgressLocation.Notification, title: `Running job ${chosenJobId}...`},
-        async () => {
-          await executeJob(instance, chosenJobId);
-        },
-      );
-      void vscode.window.showInformationMessage(`Job ${chosenJobId} triggered.`);
-      treeProvider.refresh();
-    } catch (error) {
-      showScopeAwareError(`Failed to run job ${chosenJobId}`, error);
-    }
+    // Accept a job id from a tree node, a definition node's string arg, or
+    // nothing (toolbar). Always confirm the selection rather than auto-running
+    // so a click never silently triggers the wrong job.
+    const hintedJobId =
+      typeof node === 'string' ? node : node && typeof node === 'object' && 'jobId' in node ? node.jobId : undefined;
+    const chosenJobId = await promptForJobId(treeProvider, hintedJobId);
+    if (!chosenJobId) return;
+
+    const parameters = await promptForJobParameters(chosenJobId);
+    if (parameters === undefined) return;
+
+    const hostname = configProvider.getConfig()?.values.hostname ?? 'the configured instance';
+    const paramSummary =
+      parameters.length > 0 ? `\n\nParameters:\n${parameters.map((p) => `  ${p.name}=${p.value}`).join('\n')}` : '';
+    const confirm = await vscode.window.showWarningMessage(
+      `Run job "${chosenJobId}" on ${hostname}?${paramSummary}`,
+      {modal: true},
+      'Run',
+    );
+    if (confirm !== 'Run') return;
+
+    await runJobAndTail(chosenJobId, parameters);
   });
 
   const createScaffold = registerSafeCommand('b2c-dx.jobs.createScaffold', async (node?: JobTreeItem) => {
     try {
-      const spec = await promptForJobScaffoldSpec(node?.jobId);
-      if (!spec) return;
+      const plan = await promptForJobScaffoldPlan(node?.jobId);
+      if (!plan) return;
 
-      const {scaffoldDir, jobsXmlPath} = await writeJobScaffold(spec);
-      const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-      const displayPath = workspaceRoot ? path.relative(workspaceRoot, scaffoldDir) : scaffoldDir;
-      const open = await vscode.window.showInformationMessage(
-        `Job scaffold created at ${displayPath}.`,
-        'Open jobs.xml',
-        'Reveal Folder',
+      const {jobsXmlPath, stepTypesPath, scriptPaths} = await vscode.window.withProgress(
+        {location: vscode.ProgressLocation.Notification, title: `Scaffolding job ${plan.spec.jobId}...`},
+        () => writeJobScaffold(plan, builtInScaffoldsDir),
       );
 
-      if (open === 'Open jobs.xml') {
+      const openTarget = scriptPaths[0] ?? jobsXmlPath;
+      const choice = await vscode.window.showInformationMessage(
+        `Created custom step "${plan.spec.stepTypeId}" in ${plan.spec.cartridgeName} (script, steptypes.json) and ${vscode.workspace.asRelativePath(jobsXmlPath)}. ` +
+          'Deploy the cartridge first, then Deploy Definition to register the job.',
+        'Open Step Script',
+        'Open jobs.xml',
+        'Deploy Cartridge',
+      );
+
+      if (choice === 'Open Step Script') {
+        const doc = await vscode.workspace.openTextDocument(openTarget);
+        await vscode.window.showTextDocument(doc, {preview: false});
+      } else if (choice === 'Open jobs.xml') {
         const doc = await vscode.workspace.openTextDocument(jobsXmlPath);
         await vscode.window.showTextDocument(doc, {preview: false});
-      } else if (open === 'Reveal Folder') {
-        await vscode.commands.executeCommand('revealInExplorer', vscode.Uri.file(scaffoldDir));
+      } else if (choice === 'Deploy Cartridge') {
+        await vscode.commands.executeCommand('b2c-dx.codeSync.deploy');
       }
+
+      // steptypes.json reference kept for clarity in tooltips/logs.
+      void stepTypesPath;
     } catch (error) {
       void vscode.window.showErrorMessage(
         `Failed to create job scaffold: ${error instanceof Error ? error.message : String(error)}`,
@@ -1071,15 +1273,21 @@ export function registerJobsCommands(
     }
   });
 
-  const deployScaffold = registerSafeCommand('b2c-dx.jobs.deployScaffold', async () => {
+  /**
+   * Deploys a single `jobs.xml` to the configured instance via the
+   * site-archive-import system job. Shared by the Deploy Job Scaffold command
+   * (file picker) and Deploy Definition (Job Definitions view).
+   *
+   * Performs a pre-flight check: if the job references a `custom.*` step type,
+   * that step's cartridge code must already be deployed or the import will land
+   * an "invalid" job. We warn and offer to deploy the cartridge first.
+   */
+  const deployJobsXml = async (jobsXmlPath: string): Promise<void> => {
     const instance = configProvider.getInstance();
     if (!instance) {
       void vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured. Configure dw.json first.');
       return;
     }
-
-    const jobsXmlPath = await selectJobsXmlForDeploy();
-    if (!jobsXmlPath) return;
 
     let jobsXmlContent = '';
     try {
@@ -1097,18 +1305,35 @@ export function registerJobsCommands(
     }
 
     const jobId = extractJobIdFromXml(jobsXmlContent) ?? 'unknown';
-    const hostname = configProvider.getConfig()?.values.hostname ?? 'configured instance';
+
+    // Pre-flight: custom step types must be deployed as cartridge code first.
+    const customStepTypes = referencedStepTypes(jobsXmlContent).filter((type) => type.startsWith('custom.'));
+    if (customStepTypes.length > 0) {
+      const proceed = await vscode.window.showWarningMessage(
+        `Job "${jobId}" uses custom step type(s): ${customStepTypes.join(', ')}. ` +
+          'These must already be deployed as cartridge code, or Business Manager will show the job as invalid.',
+        {modal: true},
+        'Deploy Cartridge First',
+        'Deploy Job Anyway',
+      );
+      if (!proceed) return;
+      if (proceed === 'Deploy Cartridge First') {
+        await vscode.commands.executeCommand('b2c-dx.codeSync.deploy');
+        return;
+      }
+    }
+
+    const hostname = configProvider.getConfig()?.values.hostname ?? 'the configured instance';
     const confirm = await vscode.window.showWarningMessage(
-      `Deploy job scaffold (${jobId}) to ${hostname}?`,
+      `Deploy job definition "${jobId}" to ${hostname}?`,
       {modal: true},
       'Deploy',
-      'Cancel',
     );
     if (confirm !== 'Deploy') return;
 
     try {
       await vscode.window.withProgress(
-        {location: vscode.ProgressLocation.Notification, title: `Deploying job scaffold ${jobId}...`},
+        {location: vscode.ProgressLocation.Notification, title: `Deploying job definition ${jobId}...`},
         async () => {
           const zip = new JSZip();
           zip.file('jobs.xml', jobsXmlContent);
@@ -1118,17 +1343,16 @@ export function registerJobsCommands(
       );
 
       const openBm = await vscode.window.showInformationMessage(
-        `Job scaffold ${jobId} deployed successfully.`,
+        `Job definition ${jobId} deployed successfully.`,
         'Open Business Manager Jobs',
       );
       if (openBm === 'Open Business Manager Jobs') {
         const bmUrl = getBusinessManagerJobsUrl(configProvider);
-        if (!bmUrl) {
+        if (bmUrl) {
+          await vscode.env.openExternal(vscode.Uri.parse(bmUrl));
+        } else {
           void vscode.window.showWarningMessage('Unable to build Business Manager URL from current configuration.');
-          return;
         }
-
-        await vscode.env.openExternal(vscode.Uri.parse(bmUrl));
       }
 
       treeProvider.refresh();
@@ -1141,31 +1365,67 @@ export function registerJobsCommands(
           // no-op
         }
       }
-      showScopeAwareError(`Failed to deploy job scaffold ${jobId}`, error);
+      showScopeAwareError(`Failed to deploy job definition ${jobId}`, error);
     }
+  };
+
+  const deployScaffold = registerSafeCommand('b2c-dx.jobs.deployScaffold', async () => {
+    const jobsXmlPath = await selectJobsXmlForDeploy();
+    if (!jobsXmlPath) return;
+    await deployJobsXml(jobsXmlPath);
+  });
+
+  const deployDefinition = registerSafeCommand(
+    'b2c-dx.jobs.deployDefinition',
+    async (node?: {sourceFile?: vscode.Uri}) => {
+      const jobsXmlPath = node?.sourceFile?.fsPath ?? (await selectJobsXmlForDeploy());
+      if (!jobsXmlPath) return;
+      await deployJobsXml(jobsXmlPath);
+    },
+  );
+
+  const openDefinitionFile = registerSafeCommand(
+    'b2c-dx.jobs.openDefinitionFile',
+    async (node?: {sourceFile?: vscode.Uri}) => {
+      if (!node?.sourceFile) return;
+      const doc = await vscode.workspace.openTextDocument(node.sourceFile);
+      await vscode.window.showTextDocument(doc, {preview: true});
+    },
+  );
+
+  const openBmDefinitions = registerSafeCommand('b2c-dx.jobs.openBmDefinitions', async () => {
+    const bmUrl = getBusinessManagerJobsUrl(configProvider);
+    if (!bmUrl) {
+      void vscode.window.showWarningMessage('Unable to build Business Manager URL from current configuration.');
+      return;
+    }
+    await vscode.env.openExternal(vscode.Uri.parse(bmUrl));
+    // Set expectations: BM lists every server-side job, so the user will likely
+    // see more there than in the local-only Job Definitions view.
+    void vscode.window.showInformationMessage(
+      'Opened Business Manager (Administration > Operations > Jobs). It lists all jobs on the server, including ones not in your workspace.',
+    );
+  });
+
+  const refreshDefinitions = registerSafeCommand('b2c-dx.jobs.refreshDefinitions', () => {
+    definitionsProvider?.refresh();
   });
 
   const rerunExecution = registerSafeCommand('b2c-dx.jobs.rerun', async (node: JobExecutionTreeItem) => {
     if (!node) return;
 
-    const instance = configProvider.getInstance();
-    if (!instance) {
-      void vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured. Configure dw.json first.');
-      return;
-    }
+    const reusedParameters = (node.execution.parameters ?? [])
+      .map((parameter) => ({name: parameter.name ?? '', value: parameter.value ?? ''}))
+      .filter((parameter): parameter is JobExecutionParameter => Boolean(parameter.name));
 
-    try {
-      await vscode.window.withProgress(
-        {location: vscode.ProgressLocation.Notification, title: `Re-running job ${node.jobId}...`},
-        async () => {
-          await executeJob(instance, node.jobId);
-        },
-      );
-      void vscode.window.showInformationMessage(`Job ${node.jobId} triggered again.`);
-      treeProvider.refresh();
-    } catch (error) {
-      showScopeAwareError(`Failed to re-run job ${node.jobId}`, error);
-    }
+    const confirm = await vscode.window.showWarningMessage(
+      `Re-run job "${node.jobId}"${reusedParameters.length > 0 ? ' with the same parameters' : ''}?`,
+      {modal: true},
+      'Run',
+    );
+    if (confirm !== 'Run') return;
+
+    await runJobAndTail(node.jobId, reusedParameters);
   });
 
   const stopExecution = registerSafeCommand('b2c-dx.jobs.stop', async (node: JobExecutionTreeItem) => {
@@ -1305,6 +1565,10 @@ export function registerJobsCommands(
     exportSiteArchive,
     createScaffold,
     deployScaffold,
+    deployDefinition,
+    openDefinitionFile,
+    openBmDefinitions,
+    refreshDefinitions,
     rerunExecution,
     stopExecution,
     viewExecutionDetails,
