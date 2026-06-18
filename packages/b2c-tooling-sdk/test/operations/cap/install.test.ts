@@ -11,6 +11,7 @@ import {setupServer} from 'msw/node';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import JSZip from 'jszip';
 import {WebDavClient} from '../../../src/clients/webdav.js';
 import {createOcapiClient} from '../../../src/clients/ocapi.js';
@@ -26,7 +27,7 @@ const INSTALL_EXECUTIONS = `${OCAPI_BASE}/jobs/sfcc-install-commerce-app/executi
 const FAST_WAIT_OPTIONS = {pollIntervalSeconds: 1, sleep: () => Promise.resolve()};
 
 const FIXTURE_CAP = path.join(
-  path.dirname(new URL(import.meta.url).pathname),
+  path.dirname(fileURLToPath(import.meta.url)),
   '../../fixtures/commerce-avalara-tax-app-v0.2.5',
 );
 
