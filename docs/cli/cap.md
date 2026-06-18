@@ -151,6 +151,7 @@ b2c cap install PATH --site-id SITE_ID
 | `--clean-archive` | | Delete the uploaded zip from the instance after install |
 | `--timeout SECONDS` | `-t` | Timeout in seconds (default: no timeout) |
 | `--skip-validate` | | Skip CAP structure validation before install |
+| `--create-pr` | | Create a pull request against the Storefront Next storefront when the app includes storefront content and a repository is connected to the storefront (default: off) |
 | `--json` | | Output result as JSON |
 
 ### Install Process
@@ -176,6 +177,19 @@ b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site-id RefArch --skip-valid
 
 # Remove the uploaded archive after install
 b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site-id RefArch --clean-archive
+
+# Create a Storefront Next pull request for the app's storefront content
+b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site-id RefArch --create-pr
+```
+
+### Creating a Storefront Pull Request
+
+When a Commerce App includes Storefront Next content, the `--create-pr` flag instructs the install job to automatically open a pull request against the related Storefront Next storefront — provided a repository is also connected to the storefront. The pull request contains the storefront changes the app provides, so a developer can review and merge them rather than having them applied directly.
+
+This flag is **off by default**. If the app has no storefront content, or no repository is connected to the storefront, the flag has no effect and the install proceeds normally.
+
+```bash
+b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site-id RefArch --create-pr
 ```
 
 ---

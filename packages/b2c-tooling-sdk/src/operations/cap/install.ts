@@ -27,6 +27,11 @@ export interface CommerceAppInstallOptions {
   siteId: string;
   /** Keep the uploaded zip on the instance after install (default: false). */
   keepArchive?: boolean;
+  /**
+   * Create a pull request against the connected Storefront Next repository
+   * when the app includes storefront content (default: false).
+   */
+  shouldCreatePr?: boolean;
   /** Wait options for job completion. */
   waitOptions?: WaitForJobOptions;
 }
@@ -73,7 +78,7 @@ export async function commerceAppInstall(
   options: CommerceAppInstallOptions,
 ): Promise<CommerceAppInstallResult> {
   const logger = getLogger();
-  const {siteId: rawSiteId, keepArchive = false, waitOptions} = options;
+  const {siteId: rawSiteId, keepArchive = false, shouldCreatePr = false, waitOptions} = options;
   const siteId = normalizeSiteId(rawSiteId);
 
   if (!fs.existsSync(target)) {
@@ -121,6 +126,7 @@ export async function commerceAppInstall(
       app_domain: manifest.domain,
       site_id: siteId,
       app_path: appPath,
+      should_create_pr: shouldCreatePr,
     } as unknown as string,
   });
 
@@ -140,6 +146,7 @@ export async function commerceAppInstall(
           {name: 'AppDomain', value: manifest.domain},
           {name: 'SiteId', value: siteId},
           {name: 'AppPath', value: appPath},
+          {name: 'ShouldCreatePR', value: String(shouldCreatePr)},
         ],
       } as unknown as string,
     });
