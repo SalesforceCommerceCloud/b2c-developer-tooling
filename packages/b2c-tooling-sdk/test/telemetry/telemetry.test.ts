@@ -47,9 +47,8 @@ describe('telemetry/telemetry', () => {
     sandbox = sinon.createSandbox();
     trackEventStub = sandbox.stub(appInsights.TelemetryClient.prototype, 'trackEvent');
     trackExceptionStub = sandbox.stub(appInsights.TelemetryClient.prototype, 'trackException');
-    flushStub = sandbox
-      .stub(appInsights.TelemetryClient.prototype, 'flush')
-      .callsFake((opts?: {callback?: (v: string) => void}) => opts?.callback?.(''));
+    // applicationinsights 3.x: flush() takes no arguments and returns a Promise.
+    flushStub = sandbox.stub(appInsights.TelemetryClient.prototype, 'flush').resolves();
   });
 
   afterEach(() => {
@@ -567,10 +566,11 @@ describe('telemetry/telemetry', () => {
       await telemetry.start();
 
       expect(createClientSpy.calledOnce).to.be.true;
-      // The AppInsights client parses the connection string into its config;
-      // assert the instrumentation key was extracted from the supplied string.
-      const client = (telemetry as unknown as {client?: {config?: {instrumentationKey?: string}}}).client;
-      expect(client?.config?.instrumentationKey).to.equal('11111111-1111-1111-1111-111111111111');
+      // The AppInsights client stores the supplied connection string on its config.
+      // applicationinsights 3.x no longer exposes a parsed `instrumentationKey`
+      // property — the full connection string is retained on `config.connectionString`.
+      const client = (telemetry as unknown as {client?: {config?: {connectionString?: string}}}).client;
+      expect(client?.config?.connectionString).to.equal('InstrumentationKey=11111111-1111-1111-1111-111111111111');
     });
   });
 
@@ -624,8 +624,10 @@ describe('telemetry/telemetry', () => {
       await telemetry.start();
       await telemetry.flush();
 
+      // applicationinsights 3.x: flush() takes no arguments and returns a Promise
+      // (the 2.x callback-option form was removed).
       expect(flushStub.calledOnce).to.be.true;
-      expect(flushStub.firstCall.args[0]).to.have.property('callback');
+      expect(flushStub.firstCall.args).to.have.length(0);
     });
 
     it('allows sending events after flush', async () => {
