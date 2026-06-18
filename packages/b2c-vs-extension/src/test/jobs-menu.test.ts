@@ -116,7 +116,6 @@ suite('jobs menu contributions (package.json)', () => {
       'b2c-dx.jobs.setStatusFilter',
       'b2c-dx.jobs.setHistoryFilters',
       'b2c-dx.jobs.openHistoryTable',
-      'b2c-dx.jobs.exportFilteredHistory',
       'b2c-dx.jobs.importSiteArchive',
       'b2c-dx.jobs.exportSiteArchive',
       'b2c-dx.jobs.run',
@@ -192,13 +191,16 @@ suite('jobs menu contributions (package.json)', () => {
     assert.ok(whenClauseMatches(runWhen, 'job-running'));
     assert.ok(whenClauseMatches(runWhen, 'job-completed'));
 
-    const createScaffoldWhen = contextEntries['b2c-dx.jobs.createScaffold']?.when;
-    assert.ok(whenClauseMatches(createScaffoldWhen, 'job-running'));
-    assert.ok(whenClauseMatches(createScaffoldWhen, 'job-completed'));
-
-    const deployScaffoldWhen = contextEntries['b2c-dx.jobs.deployScaffold']?.when;
-    assert.ok(whenClauseMatches(deployScaffoldWhen, 'job-running'));
-    assert.ok(whenClauseMatches(deployScaffoldWhen, 'job-completed'));
+    // Scaffold + deploy were moved off Job History onto the Job Definitions
+    // view, so they should NOT appear in the job-history (job-*) context menu.
+    assert.ok(
+      !contextEntries['b2c-dx.jobs.createScaffold'],
+      'createScaffold should no longer be in the Job History context menu',
+    );
+    assert.ok(
+      !contextEntries['b2c-dx.jobs.deployScaffold'],
+      'deployScaffold should no longer be in the Job History context menu',
+    );
 
     const stopWhen = contextEntries['b2c-dx.jobs.stop']?.when;
     assert.ok(whenClauseMatches(stopWhen, 'jobExecution-running'));

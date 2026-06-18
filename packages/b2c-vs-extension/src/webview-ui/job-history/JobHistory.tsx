@@ -22,6 +22,40 @@ import {getInitialRows, postMessage, useInboundMessages, type JobHistoryRow} fro
 
 type SortKey = 'jobId' | 'executionId' | 'status' | 'startMs' | 'durationMs';
 
+// Some sfcc-* system jobs CAN be triggered via the API, but only with specific
+// inputs (a file to import, data units to export, an index to rebuild) — a blind
+// re-run from history would have nothing to send. They're driven by dedicated
+// commands instead, so Re-run from the table stays disabled with a clear reason.
+function isInvokableSystemJob(jobId: string): boolean {
+  return (
+    jobId === 'sfcc-site-archive-import' ||
+    jobId === 'sfcc-site-archive-export' ||
+    jobId.startsWith('sfcc-search-index-')
+  );
+}
+
+function systemRerunReason(jobId: string): string {
+  return isInvokableSystemJob(jobId)
+    ? 'This system job needs specific inputs to run (file, data units, or index) — start it from the Command Palette, not a re-run.'
+    : 'This is a platform system job run by the instance scheduler — it cannot be triggered via the API.';
+}
+
+// Time-window presets a Commerce developer reaches for most: the last hour
+// (frequent/hourly jobs), the overnight batch (24h — the common case), the
+// past week (flakiness check), and All. Values are hours; null clears the range.
+const TIME_PRESETS: ReadonlyArray<{key: string; label: string; hours: number | null}> = [
+  {key: '1h', label: 'Last hour', hours: 1},
+  {key: '24h', label: 'Last 24h', hours: 24},
+  {key: '7d', label: 'Last 7 days', hours: 24 * 7},
+  {key: 'all', label: 'All time', hours: null},
+];
+
+/** Formats a Date into the `YYYY-MM-DDTHH:mm` string an <input type=datetime-local> expects (local time). */
+function toDatetimeLocal(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 // Failed first, then running, then scheduled, then completed — matches what a
 // developer wants to triage in order of urgency.
 const STATUS_RANK: Record<JobHistoryRow['status'], number> = {failed: 0, running: 1, scheduled: 2, completed: 3};
@@ -29,13 +63,14 @@ const STATUS_RANK: Record<JobHistoryRow['status'], number> = {failed: 0, running
 export function JobHistory() {
   const [rows, setRows] = useState<JobHistoryRow[]>(getInitialRows());
   const [search, setSearch] = useState('');
-  // Default to Failed: the top reason a developer opens job history is "what
-  // broke?". They can clear it (or pick another status) immediately.
-  const [statusFilter, setStatusFilter] = useState('failed');
+  // Default to all statuses; the user filters down (Failed/Running/Completed
+  // chips) as needed rather than starting pre-filtered.
+  const [statusFilter, setStatusFilter] = useState('');
   const [jobFilter, setJobFilter] = useState('');
   const [userVisibleOnly, setUserVisibleOnly] = useState(true);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [timePreset, setTimePreset] = useState<string>('all');
   const [sortKey, setSortKey] = useState<SortKey>('startMs');
   const [sortDir, setSortDir] = useState<1 | -1>(-1);
 
@@ -108,12 +143,37 @@ export function JobHistory() {
     }
   }
 
+  // Apply a relative time window: set `from` to now − N hours (and clear `to`),
+  // or clear the range entirely for "All time". Marks the preset active so the
+  // chip highlights; picking a manual date below deselects the preset.
+  function applyTimePreset(preset: (typeof TIME_PRESETS)[number]) {
+    setTimePreset(preset.key);
+    if (preset.hours == null) {
+      setFrom('');
+      setTo('');
+      return;
+    }
+    setFrom(toDatetimeLocal(new Date(Date.now() - preset.hours * 60 * 60 * 1000)));
+    setTo('');
+  }
+
+  function setFromManual(value: string) {
+    setFrom(value);
+    setTimePreset('');
+  }
+
+  function setToManual(value: string) {
+    setTo(value);
+    setTimePreset('');
+  }
+
   function clearFilters() {
     setSearch('');
     setStatusFilter('');
     setJobFilter('');
     setFrom('');
     setTo('');
+    setTimePreset('all');
   }
 
   const sortIndicator = (key: SortKey) => (sortKey === key ? (sortDir === 1 ? '↑' : '↓') : '⇅');
@@ -205,31 +265,74 @@ export function JobHistory() {
               </option>
             ))}
           </select>
+          <div className="jh-presets" role="group" aria-label="Time range presets">
+            {TIME_PRESETS.map((p) => (
+              <button
+                key={p.key}
+                type="button"
+                className={`jh-preset${timePreset === p.key ? ' jh-preset--active' : ''}`}
+                onClick={() => applyTimePreset(p)}
+                title={`Show executions started within the ${p.label.toLowerCase()}`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
           <input
             type="datetime-local"
             value={from}
-            onChange={(e) => setFrom(e.currentTarget.value)}
+            onChange={(e) => setFromManual(e.currentTarget.value)}
             aria-label="Start from"
-            title="Start from"
+            title="Custom start (from)"
           />
           <input
             type="datetime-local"
             value={to}
-            onChange={(e) => setTo(e.currentTarget.value)}
+            onChange={(e) => setToManual(e.currentTarget.value)}
             aria-label="Start to"
-            title="Start to"
+            title="Custom start (to)"
           />
-          <label className="jh-toggle" title="System (sfcc-*) jobs are platform housekeeping you usually can't act on">
-            <input
-              type="checkbox"
-              checked={userVisibleOnly}
-              onChange={(e) => setUserVisibleOnly(e.currentTarget.checked)}
-            />
-            <span>Hide system jobs</span>
-          </label>
-          <button type="button" className="btn btn-secondary" onClick={clearFilters}>
-            Clear
-          </button>
+
+          {/* Second row within the same toolbar container: toggle + Clear on the
+              left, Export on the right. flex-basis:100% forces it onto its own line. */}
+          <div className="jh-toolbar__row2">
+            <label
+              className="jh-toggle"
+              title="System (sfcc-*) jobs are platform housekeeping you usually can't act on"
+            >
+              <input
+                type="checkbox"
+                checked={userVisibleOnly}
+                onChange={(e) => setUserVisibleOnly(e.currentTarget.checked)}
+              />
+              <span>Hide system jobs</span>
+            </label>
+            <button type="button" className="btn btn-secondary" onClick={clearFilters}>
+              Clear
+            </button>
+            {/* Export acts on exactly what's shown — the current filtered/sorted rows. */}
+            <div className="jh-export">
+              <span className="jh-export__label">Export {visibleRows.length} shown:</span>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={visibleRows.length === 0}
+                onClick={() => postMessage({command: 'export', format: 'csv', rows: visibleRows})}
+              >
+                <Icon name="download" />
+                <span>CSV</span>
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={visibleRows.length === 0}
+                onClick={() => postMessage({command: 'export', format: 'json', rows: visibleRows})}
+              >
+                <Icon name="download" />
+                <span>JSON</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="jh-meta" aria-live="polite">
@@ -289,29 +392,38 @@ export function JobHistory() {
                     <td className="jh-actions">
                       <button
                         type="button"
-                        className="jh-icon-btn"
-                        title="Open log"
+                        className="jh-action jh-action--log"
+                        disabled={!r.hasLog}
+                        title={
+                          r.hasLog
+                            ? 'Open the execution log (opens beside this table)'
+                            : 'No log file for this execution (common for system jobs)'
+                        }
                         onClick={() => postMessage({command: 'openLog', jobId: r.jobId, executionId: r.executionId})}
                       >
                         <Icon name="output" />
+                        <span>Log</span>
                       </button>
                       <button
                         type="button"
-                        className="jh-icon-btn"
-                        title={`Re-run ${r.jobId}`}
+                        className="jh-action jh-action--rerun"
+                        disabled={r.isSystem}
+                        title={r.isSystem ? systemRerunReason(r.jobId) : `Re-run ${r.jobId}`}
                         onClick={() => postMessage({command: 'rerun', jobId: r.jobId})}
                       >
                         <Icon name="debug-restart" />
+                        <span>Re-run</span>
                       </button>
                       <button
                         type="button"
-                        className="jh-icon-btn"
-                        title="View execution details"
+                        className="jh-action jh-action--details"
+                        title="View execution details JSON (opens beside this table)"
                         onClick={() =>
                           postMessage({command: 'viewDetails', jobId: r.jobId, executionId: r.executionId})
                         }
                       >
                         <Icon name="info" />
+                        <span>Details</span>
                       </button>
                     </td>
                   </tr>

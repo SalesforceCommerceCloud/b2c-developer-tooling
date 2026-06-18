@@ -32,11 +32,8 @@ export function registerJobs(context: vscode.ExtensionContext, configProvider: B
 
   const updateJobHistoryMessage = (): void => {
     const lastRefresh = treeProvider.getLastSuccessfulRefreshAt();
-    const refreshLabel = lastRefresh ? lastRefresh.toLocaleTimeString() : 'not yet loaded';
-    const autoRefresh = treeProvider.isPollingEnabled()
-      ? `Auto-refresh: every ${treeProvider.getPollingIntervalSeconds()}s`
-      : 'Auto-refresh: paused (view hidden)';
-    treeView.message = `Execution history grouped by Job ID. Last refresh: ${refreshLabel}. ${autoRefresh}.`;
+    const refreshLabel = lastRefresh ? lastRefresh.toLocaleTimeString() : '—';
+    treeView.message = `Updated ${refreshLabel}. Open the History Table to filter & export.`;
   };
   updateJobHistoryMessage();
 

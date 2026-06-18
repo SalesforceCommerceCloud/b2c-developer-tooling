@@ -916,7 +916,7 @@
       {
         "view": "b2cJobsExplorer",
         "when": "!b2c-dx.jobs.needsOAuth",
-        "contents": "No recent job executions found.\n\nExecution history is grouped by Job ID in this view.\n\nRun a job from this view or from Business Manager to populate execution history.\n\n[Run Job](command:b2c-dx.jobs.run)\n\n[Refresh](command:b2c-dx.jobs.refresh)"
+        "contents": "No recent job executions found.\n\nThis tree gives a quick monitor and drill-down (job → execution → step). For filtering, sorting, and exporting, open the full Job History table.\n\n[Open Job History Table](command:b2c-dx.jobs.openHistoryTable)\n\n[Run Job](command:b2c-dx.jobs.run)\n\n[Refresh](command:b2c-dx.jobs.refresh)"
       },
       {
         "view": "b2cJobDefinitionsExplorer",
@@ -1182,14 +1182,8 @@
       },
       {
         "command": "b2c-dx.jobs.openHistoryTable",
-        "title": "History Table",
+        "title": "Open Job History Table",
         "icon": "$(table)",
-        "category": "B2C DX - Job History"
-      },
-      {
-        "command": "b2c-dx.jobs.exportFilteredHistory",
-        "title": "Export History",
-        "icon": "$(export)",
         "category": "B2C DX - Job History"
       },
       {
@@ -1214,13 +1208,13 @@
         "command": "b2c-dx.jobs.createScaffold",
         "title": "Create Job Scaffold",
         "icon": "$(new-file)",
-        "category": "B2C DX - Job History"
+        "category": "B2C DX - Job Definitions"
       },
       {
         "command": "b2c-dx.jobs.deployScaffold",
-        "title": "Deploy Job Scaffold",
+        "title": "Deploy Job Definition (Pick jobs.xml)",
         "icon": "$(cloud-upload)",
-        "category": "B2C DX - Job History"
+        "category": "B2C DX - Job Definitions"
       },
       {
         "command": "b2c-dx.jobs.rerun",
@@ -1820,6 +1814,11 @@
           "group": "navigation"
         },
         {
+          "command": "b2c-dx.jobs.openHistoryTable",
+          "when": "view == b2cJobsExplorer",
+          "group": "navigation@0"
+        },
+        {
           "command": "b2c-dx.jobs.openFilters",
           "when": "view == b2cJobsExplorer",
           "group": "navigation@1"
@@ -1830,39 +1829,9 @@
           "group": "navigation@2"
         },
         {
-          "command": "b2c-dx.jobs.openHistoryTable",
-          "when": "view == b2cJobsExplorer",
-          "group": "navigation@3"
-        },
-        {
-          "command": "b2c-dx.jobs.exportFilteredHistory",
-          "when": "view == b2cJobsExplorer",
-          "group": "navigation@4"
-        },
-        {
           "command": "b2c-dx.jobs.run",
           "when": "view == b2cJobsExplorer",
           "group": "navigation@5"
-        },
-        {
-          "command": "b2c-dx.jobs.importSiteArchive",
-          "when": "view == b2cJobsExplorer",
-          "group": "navigation@6"
-        },
-        {
-          "command": "b2c-dx.jobs.exportSiteArchive",
-          "when": "view == b2cJobsExplorer",
-          "group": "navigation@7"
-        },
-        {
-          "command": "b2c-dx.jobs.createScaffold",
-          "when": "view == b2cJobsExplorer",
-          "group": "navigation@8"
-        },
-        {
-          "command": "b2c-dx.jobs.deployScaffold",
-          "when": "view == b2cJobsExplorer",
-          "group": "navigation@9"
         },
         {
           "command": "b2c-dx.jobs.createScaffold",
@@ -1870,14 +1839,19 @@
           "group": "navigation@1"
         },
         {
-          "command": "b2c-dx.jobs.openBmDefinitions",
+          "command": "b2c-dx.jobs.deployScaffold",
           "when": "view == b2cJobDefinitionsExplorer",
           "group": "navigation@2"
         },
         {
-          "command": "b2c-dx.jobs.refreshDefinitions",
+          "command": "b2c-dx.jobs.openBmDefinitions",
           "when": "view == b2cJobDefinitionsExplorer",
           "group": "navigation@3"
+        },
+        {
+          "command": "b2c-dx.jobs.refreshDefinitions",
+          "when": "view == b2cJobDefinitionsExplorer",
+          "group": "navigation@4"
         },
         {
           "command": "b2c-dx.codeSync.refreshCartridges",
@@ -2120,16 +2094,6 @@
           "command": "b2c-dx.jobs.run",
           "when": "view == b2cJobsExplorer && viewItem =~ /^job-/",
           "group": "1_lifecycle@1"
-        },
-        {
-          "command": "b2c-dx.jobs.createScaffold",
-          "when": "view == b2cJobsExplorer && viewItem =~ /^job-/",
-          "group": "1_lifecycle@4"
-        },
-        {
-          "command": "b2c-dx.jobs.deployScaffold",
-          "when": "view == b2cJobsExplorer && viewItem =~ /^job-/",
-          "group": "2_logs@3"
         },
         {
           "command": "b2c-dx.jobs.viewExecutionDetails",

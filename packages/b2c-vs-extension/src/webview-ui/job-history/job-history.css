@@ -107,6 +107,72 @@ button.jh-stat--filter:hover {
   background: var(--vscode-sideBar-background);
   margin-bottom: 10px;
 }
+/* Second row living inside the same toolbar card. flex-basis:100% forces it
+ * onto its own line; a top divider separates it from the filter controls. */
+.jh-toolbar__row2 {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+  margin-top: 2px;
+  border-top: 1px solid var(--vscode-editorWidget-border);
+}
+/* Export controls sit at the far right of the second row. */
+.jh-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.jh-export__label {
+  font-size: 12px;
+  opacity: 0.7;
+}
+.jh-export .btn .ic {
+  --cip-icon-size: 13px;
+  margin-right: 4px;
+}
+
+/* Time-range preset chips (Last hour / 24h / 7 days / All). */
+.jh-presets {
+  display: inline-flex;
+  gap: 4px;
+  padding: 2px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--vscode-editor-background) 60%, var(--vscode-sideBar-background));
+}
+.jh-preset {
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.jh-preset:hover {
+  background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+}
+/* Suppress the lingering click outline (the stray orange box); keep a clean
+ * keyboard-only focus ring for accessibility. */
+.jh-preset:focus {
+  outline: none;
+}
+.jh-preset:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+.jh-preset--active,
+.jh-preset--active:hover {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-color: var(--vscode-button-background);
+}
+
 .jh-search {
   display: flex;
   align-items: center;
@@ -261,24 +327,57 @@ button.jh-stat--filter:hover {
 }
 .jh-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
-.jh-icon-btn {
+/* Labeled, color-coded action buttons. Labels make the action obvious without
+ * relying on hover tooltips (which were flaky and ambiguous when icon-only). */
+.jh-action {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  border: 1px solid transparent;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1px solid var(--vscode-editorWidget-border);
   border-radius: 6px;
   background: transparent;
   color: var(--vscode-foreground);
   cursor: pointer;
-  opacity: 0.75;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
 }
-.jh-icon-btn:hover {
-  opacity: 1;
+.jh-action .ic {
+  --cip-icon-size: 13px;
+}
+.jh-action:hover {
   background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+}
+.jh-action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  color: var(--vscode-disabledForeground, var(--vscode-descriptionForeground));
   border-color: var(--vscode-editorWidget-border);
+}
+.jh-action:disabled:hover {
+  background: transparent;
+}
+/* Log = neutral/blue (informational), Re-run = green (the primary action),
+ * Details = muted grey (secondary). Colors give each button an at-a-glance identity. */
+.jh-action--log {
+  color: var(--vscode-charts-blue, #58a6ff);
+  border-color: color-mix(in srgb, var(--vscode-charts-blue, #58a6ff) 40%, var(--vscode-editorWidget-border));
+}
+.jh-action--rerun {
+  color: var(--vscode-testing-iconPassed, #3fb950);
+  border-color: color-mix(in srgb, var(--vscode-testing-iconPassed, #3fb950) 40%, var(--vscode-editorWidget-border));
+}
+.jh-action--details {
+  color: var(--vscode-descriptionForeground, var(--vscode-foreground));
+  opacity: 0.9;
+}
+.jh-action--log:hover {
+  background: color-mix(in srgb, var(--vscode-charts-blue, #58a6ff) 14%, transparent);
+}
+.jh-action--rerun:hover {
+  background: color-mix(in srgb, var(--vscode-testing-iconPassed, #3fb950) 14%, transparent);
 }

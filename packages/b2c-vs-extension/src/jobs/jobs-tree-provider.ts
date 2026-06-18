@@ -135,20 +135,20 @@ function statusFilterLabel(filter: JobStatusFilter): string {
 }
 
 function emptyStateTitle(filter: JobStatusFilter): string {
-  if (filter === 'active') return 'No active jobs right now';
-  if (filter === 'running') return 'No actively running jobs';
-  if (filter === 'scheduled') return 'No scheduled jobs right now';
-  if (filter === 'failed') return 'No failed jobs in the current window';
-  if (filter === 'completed') return 'No completed jobs in the current window';
-  return 'No discovered jobs yet';
+  if (filter === 'active') return 'No jobs running';
+  if (filter === 'running') return 'No jobs running';
+  if (filter === 'scheduled') return 'No scheduled jobs';
+  if (filter === 'failed') return 'No failed jobs';
+  if (filter === 'completed') return 'No completed jobs';
+  return 'No jobs yet';
 }
 
 function emptyStateDescription(filter: JobStatusFilter): string {
   if (filter === 'all') {
-    return 'No execution history yet. Run a job in Business Manager or use Run Job, then refresh.';
+    return 'Run a job to populate history.';
   }
 
-  return `Current history filter: ${statusFilterLabel(filter)}. Use Filters or a quick preset to adjust.`;
+  return 'Open the History Table to see all runs.';
 }
 
 function getJobDiscoveryScanLimit(): number {
@@ -231,12 +231,26 @@ function formatDuration(durationMs: number | undefined): string {
 
 function normalizeExecutionStatus(execution: JobExecution): ExecutionStatus {
   const raw = (execution.execution_status ?? '').toLowerCase();
-  if (raw === 'running') return 'running';
+  // Active states.
+  if (raw === 'running' || raw === 'pausing' || raw === 'resuming' || raw === 'restarting' || raw === 'retrying') {
+    return 'running';
+  }
   if (raw === 'pending') return 'scheduled';
-  if (raw === 'aborted') return 'failed';
+  if (raw === 'aborted' || raw === 'aborting') return 'failed';
 
+  // Terminal: a run is "completed" ONLY on a clean OK exit. Anything else that
+  // isn't actively running is a failure — including invalid jobs, which finish
+  // with no exit code but a non-OK top-level `status` (e.g. "invalid"). Treating
+  // the fall-through as "completed" previously made invalid/failed runs look green.
   const exitCode = (execution.exit_status?.code ?? '').toUpperCase();
+  if (exitCode === 'OK') return 'completed';
   if (exitCode === 'ERROR') return 'failed';
+
+  // No exit code yet (e.g. just started, or invalid). If it's still finishing,
+  // show running; otherwise the top-level status decides — OK ⇒ completed, else failed.
+  const topStatus = ((execution as Record<string, unknown>).status as string | undefined)?.toUpperCase() ?? '';
+  if (topStatus === 'OK') return 'completed';
+  if (raw === 'finished' || topStatus) return 'failed';
   return 'completed';
 }
 
@@ -343,9 +357,9 @@ export class JobsEmptyStateTreeItem extends vscode.TreeItem {
     super(emptyStateTitle(filter), vscode.TreeItemCollapsibleState.None);
     this.id = `jobs-empty-state:${filter}`;
     this.contextValue = 'jobs-empty-state';
-    this.iconPath = new vscode.ThemeIcon('filter');
+    this.iconPath = new vscode.ThemeIcon('info');
     this.description = filtersApplied
-      ? `${emptyStateDescription(filter)} Additional filters are active.`
+      ? `${emptyStateDescription(filter)} (filters active)`
       : emptyStateDescription(filter);
     this.tooltip = new vscode.MarkdownString(
       `No job history entries match **${statusFilterLabel(filter)}** right now.\n\nUse **Filters** (funnel action in the Job History view title bar) to adjust status, presets, or advanced filters.`,

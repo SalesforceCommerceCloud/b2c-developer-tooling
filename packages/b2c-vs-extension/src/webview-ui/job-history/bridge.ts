@@ -22,6 +22,8 @@ export interface JobHistoryRow {
   durationMs: number | null;
   message: string;
   isSystem: boolean;
+  /** Whether OCAPI reports an existing log file for this execution. */
+  hasLog: boolean;
 }
 
 export type OutboundMessage =
@@ -29,7 +31,8 @@ export type OutboundMessage =
   | {command: 'rerun'; jobId: string}
   | {command: 'viewDetails'; jobId: string; executionId: string}
   | {command: 'openInBusinessManager'}
-  | {command: 'refresh'};
+  | {command: 'refresh'}
+  | {command: 'export'; format: 'csv' | 'json'; rows: JobHistoryRow[]};
 
 export type InboundMessage = {command: 'data'; rows: JobHistoryRow[]};
 

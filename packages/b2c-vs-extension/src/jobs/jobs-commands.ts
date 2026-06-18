@@ -98,19 +98,6 @@ function csvCell(value: string): string {
   return `"${value.replaceAll('"', '""')}"`;
 }
 
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
-}
-
-function getExecutionUser(execution: JobHistoryExecutionRow['execution']): string {
-  const record = asRecord(execution);
-  for (const key of ['executed_by', 'created_by', 'triggered_by']) {
-    const value = record[key];
-    if (typeof value === 'string' && value.trim()) return value.trim();
-  }
-  return '—';
-}
-
 function formatDateTime(value: string | undefined): string {
   if (!value) return '—';
   const date = new Date(value);
@@ -133,29 +120,6 @@ function formatDuration(durationMs: number | undefined): string {
   return `${seconds}s`;
 }
 
-function renderHistoryRowsAsCsv(rows: JobHistoryExecutionRow[]): string {
-  const header = ['jobId', 'executionId', 'status', 'startTime', 'endTime', 'duration', 'user'];
-  const lines = [header.join(',')];
-
-  for (const row of rows) {
-    lines.push(
-      [
-        row.jobId,
-        row.execution.id ?? '',
-        row.status,
-        row.execution.start_time ?? '',
-        row.execution.end_time ?? '',
-        String(row.execution.duration ?? ''),
-        getExecutionUser(row.execution),
-      ]
-        .map(csvCell)
-        .join(','),
-    );
-  }
-
-  return `${lines.join('\n')}\n`;
-}
-
 function getDefaultExportDataUnits(): Partial<ExportDataUnitsConfiguration> {
   return {global_data: {meta_data: true}};
 }
@@ -175,6 +139,7 @@ interface HistoryTableRow {
   durationMs: number | null;
   message: string;
   isSystem: boolean;
+  hasLog: boolean;
 }
 
 function toHistoryTableRow(row: JobHistoryExecutionRow): HistoryTableRow {
@@ -196,6 +161,7 @@ function toHistoryTableRow(row: JobHistoryExecutionRow): HistoryTableRow {
     durationMs: typeof row.execution.duration === 'number' ? row.execution.duration : null,
     message,
     isSystem: isSystemJobId(row.jobId),
+    hasLog: Boolean(row.execution.is_log_file_existing && row.execution.log_file_path),
   };
 }
 
@@ -205,7 +171,21 @@ type HistoryWebviewMessage =
   | {command: 'rerun'; jobId: string}
   | {command: 'viewDetails'; jobId: string; executionId: string}
   | {command: 'openInBusinessManager'}
-  | {command: 'refresh'};
+  | {command: 'refresh'}
+  | {command: 'export'; format: 'csv' | 'json'; rows: HistoryTableRow[]};
+
+/** Serializes the table's currently-shown rows for CSV/JSON export. */
+function renderHistoryTableRowsForExport(rows: HistoryTableRow[], format: 'csv' | 'json'): string {
+  if (format === 'json') {
+    return `${JSON.stringify(rows, null, 2)}\n`;
+  }
+  const header = ['jobId', 'executionId', 'status', 'start', 'duration', 'message'];
+  const lines = [header.join(',')];
+  for (const row of rows) {
+    lines.push([row.jobId, row.executionId, row.status, row.start, row.duration, row.message].map(csvCell).join(','));
+  }
+  return `${lines.join('\n')}\n`;
+}
 
 /**
  * Renders the HTML shell that mounts the Job History React app.
@@ -468,12 +448,11 @@ function revealExecutionErrorInActiveEditor(execution: JobExecution): void {
  * parameters from that registration, so no `Module`/`Function` parameters are
  * emitted here (that was the cause of the previous "invalid job" deploys).
  */
-function buildJobsXml(spec: JobScaffoldSpec): string {
+/** Builds just the `<job>…</job>` block (no document wrapper), indented for jobs.xml. */
+function buildJobBlockXml(spec: JobScaffoldSpec): string {
   const contextXml = spec.siteContext ? `      <context site-id="${escapeXml(spec.siteContext)}"/>` : undefined;
 
   return [
-    '<?xml version="1.0" encoding="UTF-8"?>',
-    '<jobs xmlns="http://www.demandware.com/xml/impex/jobs/2015-07-01">',
     `  <job job-id="${escapeXml(spec.jobId)}">`,
     `    <description>${escapeXml(spec.description)}</description>`,
     '    <flow>',
@@ -482,11 +461,19 @@ function buildJobsXml(spec: JobScaffoldSpec): string {
     '    </flow>',
     '    <triggers/>',
     '  </job>',
-    '</jobs>',
-    '',
   ]
     .filter((line) => line !== undefined)
     .join('\n');
+}
+
+function buildJobsXml(spec: JobScaffoldSpec): string {
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<jobs xmlns="http://www.demandware.com/xml/impex/jobs/2015-07-01">',
+    buildJobBlockXml(spec),
+    '</jobs>',
+    '',
+  ].join('\n');
 }
 
 function getDefaultScaffoldRoot(): vscode.Uri | undefined {
@@ -660,11 +647,18 @@ async function writeJobScaffold(
 
   // The job-step scaffold writes paths relative to {{cartridgeNamePath}}, which
   // is the cartridge directory relative to the output dir (the workspace root).
+  //
+  // Pass the BARE step id (e.g. "helloworld") as `stepId`, not the full
+  // "custom.helloworld" type id. The scaffold derives the script filename and
+  // module path from stepId via camelCase, which does NOT strip dots — so a
+  // dotted type id produced "custom.helloworld.js", a module name B2C fails to
+  // load ("invalid step in script module"). The "custom." prefix is restored on
+  // the @type-id during normalization below.
   const cartridgeNamePath = path.relative(root.fsPath, plan.cartridgeDir);
   const result = await generateFromScaffold(scaffold, {
     outputDir: root.fsPath,
     variables: {
-      stepId: plan.spec.stepTypeId,
+      stepId: plan.stepIdBare,
       stepType: plan.spec.stepKind,
       stepDescription: plan.spec.description,
       cartridgeName: plan.spec.cartridgeName,
@@ -675,11 +669,139 @@ async function writeJobScaffold(
   const scriptPaths = result.files.filter((file) => file.absolutePath.endsWith('.js')).map((file) => file.absolutePath);
   const stepTypesPath = path.join(plan.cartridgeDir, 'steptypes.json');
 
-  // Write the matching jobs.xml at the cartridge root (alongside steptypes.json).
+  // Normalize the generated steptypes.json into the exact shape B2C requires:
+  // keyed `step-types` object, context flags matching the job scope, a
+  // cartridge-prefixed module path, and the `custom.` type-id prefix restored.
+  await normalizeStepTypesJson(
+    stepTypesPath,
+    plan.spec.stepKind,
+    plan.spec.siteContext,
+    plan.spec.cartridgeName,
+    plan.stepIdBare,
+    plan.spec.stepTypeId,
+  );
+
+  // Merge the matching job into jobs.xml at the cartridge root. A cartridge can
+  // define many jobs, so we append (or replace by job-id) rather than overwrite
+  // the whole file — otherwise scaffolding a second job would delete the first.
   const jobsXmlPath = path.join(plan.cartridgeDir, 'jobs.xml');
-  await fs.writeFile(jobsXmlPath, buildJobsXml(plan.spec), 'utf-8');
+  await mergeJobIntoJobsXml(jobsXmlPath, plan.spec);
 
   return {jobsXmlPath, stepTypesPath, scriptPaths};
+}
+
+/**
+ * Adds (or replaces) a single `<job>` in a cartridge's jobs.xml.
+ *
+ * If the file doesn't exist, a fresh document with just this job is written. If
+ * it exists, the job block for this job-id is replaced in place (re-scaffold),
+ * or appended before `</jobs>` (new job-id) — preserving every other job already
+ * defined in the cartridge.
+ */
+async function mergeJobIntoJobsXml(jobsXmlPath: string, spec: JobScaffoldSpec): Promise<void> {
+  let existing: string | undefined;
+  try {
+    existing = await fs.readFile(jobsXmlPath, 'utf-8');
+  } catch {
+    existing = undefined;
+  }
+
+  // No existing file (or unreadable) → write a complete document.
+  if (!existing || !existing.includes('<jobs')) {
+    await fs.writeFile(jobsXmlPath, buildJobsXml(spec), 'utf-8');
+    return;
+  }
+
+  const jobBlock = buildJobBlockXml(spec);
+  const jobIdPattern = escapeRegExp(spec.jobId);
+  // Match an existing <job job-id="<this id>"> … </job> block (any attribute order).
+  const existingJobRegex = new RegExp(`[ \\t]*<job\\b[^>]*\\bjob-id="${jobIdPattern}"[\\s\\S]*?</job>\\n?`, 'i');
+
+  let updated: string;
+  if (existingJobRegex.test(existing)) {
+    // Re-scaffold of the same job-id → replace that block in place.
+    updated = existing.replace(existingJobRegex, `${jobBlock}\n`);
+  } else {
+    // New job-id → insert before the closing </jobs>.
+    updated = existing.replace(/<\/jobs>\s*$/, `${jobBlock}\n</jobs>\n`);
+  }
+
+  await fs.writeFile(jobsXmlPath, updated, 'utf-8');
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Rewrites a generated steptypes.json into the structure B2C actually loads.
+ *
+ * B2C requires `step-types` to be an object keyed by step category
+ * (`script-module-step` for task steps, `chunk-script-module-step` for chunk
+ * steps) — not a flat array. It also requires exactly one of site/organization
+ * context to be true (a site-only step can't be used by an org-scoped job), and
+ * the `module` path must be prefixed with the cartridge name
+ * (`<cartridge>/cartridge/scripts/...`) so it resolves at runtime. Existing step
+ * categories in the file are preserved.
+ */
+async function normalizeStepTypesJson(
+  stepTypesPath: string,
+  stepKind: 'task' | 'chunk',
+  siteContext: string,
+  cartridgeName: string,
+  stepIdBare: string,
+  stepTypeId: string,
+): Promise<void> {
+  const raw = JSON.parse(await fs.readFile(stepTypesPath, 'utf-8')) as Record<string, unknown>;
+  const categoryKey = stepKind === 'chunk' ? 'chunk-script-module-step' : 'script-module-step';
+  const stepTypes = raw['step-types'];
+
+  // Collect step entries from whichever shape the scaffold produced.
+  let entries: Array<Record<string, unknown>> = [];
+  let existingCategories: Record<string, unknown> = {};
+  if (Array.isArray(stepTypes)) {
+    entries = stepTypes as Array<Record<string, unknown>>;
+  } else if (stepTypes && typeof stepTypes === 'object') {
+    existingCategories = stepTypes as Record<string, unknown>;
+    const current = existingCategories[categoryKey];
+    entries = Array.isArray(current) ? (current as Array<Record<string, unknown>>) : [];
+  }
+
+  // Align context flags with the job scope: blank site context = org-scoped.
+  const orgScoped = siteContext.trim().length === 0;
+  for (const entry of entries) {
+    // Restore the custom. type-id prefix. The scaffold was given the BARE id
+    // (so the script filename/module stay dot-free), but the registered type id
+    // must be "custom.<id>" to be a valid custom step type.
+    if (entry['@type-id'] === stepIdBare) {
+      entry['@type-id'] = stepTypeId;
+    }
+
+    entry['@supports-site-context'] = orgScoped ? 'false' : 'true';
+    entry['@supports-organization-context'] = orgScoped ? 'true' : 'false';
+
+    // The module path must be cartridge-relative *including* the cartridge name,
+    // e.g. "app_custom_core/cartridge/scripts/jobsteps/myStep.js". The template
+    // emits it without the cartridge prefix, which fails module resolution.
+    const moduleValue = entry.module;
+    if (typeof moduleValue === 'string' && moduleValue.startsWith('cartridge/')) {
+      entry.module = `${cartridgeName}/${moduleValue}`;
+    }
+  }
+
+  // De-duplicate by @type-id (last write wins). The SDK's array merge dedupes by
+  // deep object equality, so re-scaffolding the same step id appends a second
+  // entry once our normalization changes its shape — yielding two registrations
+  // for one type id, which is invalid. Collapse to one entry per type id.
+  const byTypeId = new Map<string, Record<string, unknown>>();
+  for (const entry of entries) {
+    const typeId = String(entry['@type-id'] ?? '');
+    byTypeId.set(typeId, entry);
+  }
+  const deduped = [...byTypeId.values()];
+
+  const merged = {...existingCategories, [categoryKey]: deduped};
+  await fs.writeFile(stepTypesPath, `${JSON.stringify({...raw, 'step-types': merged}, null, 2)}\n`, 'utf-8');
 }
 
 async function selectJobsXmlForDeploy(): Promise<string | undefined> {
@@ -794,6 +916,16 @@ function getLogUnavailableMessage(error: unknown): string | undefined {
   return undefined;
 }
 
+/** True when OCAPI rejects a run because the job id isn't a runnable/defined job. */
+function isJobNotRunnableError(error: unknown): boolean {
+  const lowered = (error instanceof Error ? error.message : String(error)).toLowerCase();
+  return (
+    (lowered.includes('no job with id') && lowered.includes('could be found')) ||
+    lowered.includes('jobnotfound') ||
+    (lowered.includes('job') && lowered.includes('not found'))
+  );
+}
+
 export function registerJobsCommands(
   configProvider: B2CExtensionConfig,
   treeProvider: JobsTreeDataProvider,
@@ -817,7 +949,11 @@ export function registerJobsCommands(
     treeProvider.refresh();
   });
 
-  const openExecutionDetails = async (jobId: string, execution: JobExecution): Promise<void> => {
+  const openExecutionDetails = async (
+    jobId: string,
+    execution: JobExecution,
+    viewColumn?: vscode.ViewColumn,
+  ): Promise<void> => {
     const content = JSON.stringify(execution, null, 2);
     const executionId = execution.id ?? 'execution';
     const uri = vscode.Uri.parse(`${JOB_DETAILS_SCHEME}:${jobId}-${executionId}.json`);
@@ -832,7 +968,9 @@ export function registerJobsCommands(
     await vscode.window.showTextDocument(doc, {
       preview: false,
       preserveFocus: false,
-      viewColumn: existingEditor?.viewColumn ?? vscode.ViewColumn.Active,
+      // Prefer the caller-requested column (e.g. Beside the History Table so it
+      // isn't replaced), then any existing editor for this doc, else Active.
+      viewColumn: viewColumn ?? existingEditor?.viewColumn ?? vscode.ViewColumn.Active,
     });
   };
 
@@ -886,6 +1024,10 @@ export function registerJobsCommands(
           if (!executionId) return execution;
 
           progress.report({message: `Execution ${executionId} started`});
+          // Surface the running execution in the views immediately (jobs can
+          // finish in <1s, so without this the "running" state is never seen).
+          treeProvider.refresh();
+          void refreshHistoryTable();
           return waitForJob(instance, jobId, executionId, {
             onPoll: (info) => progress.report({message: `${info.status} · ${info.elapsedSeconds}s elapsed`}),
           });
@@ -910,11 +1052,18 @@ export function registerJobsCommands(
         }
         const detail = getJobErrorMessage(error.execution) ?? error.execution.exit_status?.message;
         void vscode.window.showErrorMessage(`Job ${jobId} failed${detail ? `: ${detail}` : '.'}`);
+      } else if (isJobNotRunnableError(error)) {
+        // System (sfcc-*) jobs appear in execution history but aren't exposed as
+        // runnable definitions via OCAPI. Explain rather than surface the raw fault.
+        void vscode.window.showWarningMessage(
+          `"${jobId}" can't be run from here. ${isSystemJobId(jobId) ? 'It is a platform system job that runs on the instance scheduler' : 'No runnable job with this ID is defined in Business Manager'} — only custom/BM-defined jobs can be triggered via the API.`,
+        );
       } else {
         showScopeAwareError(`Failed to run job ${jobId}`, error);
       }
     } finally {
       treeProvider.refresh();
+      void refreshHistoryTable();
     }
   };
 
@@ -977,7 +1126,11 @@ export function registerJobsCommands(
     return rows.find((row) => row.jobId === jobId && (row.execution.id ?? 'unknown') === executionId)?.execution;
   };
 
-  const openExecutionLogByIds = async (jobId: string, executionId: string): Promise<void> => {
+  const openExecutionLogByIds = async (
+    jobId: string,
+    executionId: string,
+    viewColumn?: vscode.ViewColumn,
+  ): Promise<void> => {
     const instance = configProvider.getInstance();
     if (!instance) {
       void vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured. Configure dw.json first.');
@@ -990,7 +1143,7 @@ export function registerJobsCommands(
     }
     try {
       const log = await getJobLog(instance, execution);
-      await openJobLog(execution.id ?? jobId, log);
+      await openJobLog(execution.id ?? jobId, log, viewColumn);
       // On a failed run, jump straight to the error so the user lands on it.
       if (execution.exit_status?.code === 'ERROR' || execution.execution_status === 'aborted') {
         revealExecutionErrorInActiveEditor(execution);
@@ -998,8 +1151,12 @@ export function registerJobsCommands(
     } catch (error) {
       const reason = getLogUnavailableMessage(error);
       if (reason) {
-        await openExecutionDetails(jobId, execution);
-        void vscode.window.showWarningMessage(`Execution ${executionId}: ${reason} Opened execution details instead.`);
+        // No log file exists (common for sfcc-* system jobs, which don't emit a
+        // job-scoped log). Tell the user plainly rather than silently opening the
+        // execution JSON — that made "Log" look identical to "Details".
+        void vscode.window.showInformationMessage(
+          `No log file for ${jobId} (execution ${executionId}). ${reason} System jobs often have no log; custom job steps that log via dw/system/Logger do. Use Details to inspect the execution.`,
+        );
         return;
       }
       showScopeAwareError(`Failed to fetch log for execution ${executionId}`, error);
@@ -1011,6 +1168,29 @@ export function registerJobsCommands(
     if (!historyTablePanel) return;
     const rows = await treeProvider.getAllExecutionHistoryRows();
     void historyTablePanel.webview.postMessage({command: 'data', rows: rows.map(toHistoryTableRow)});
+  };
+
+  // Export exactly the rows the table currently shows (already filtered/sorted in
+  // the webview). The table is the place with a visible, intentional row set —
+  // which is why export lives here rather than on the tree.
+  const exportHistoryTableRows = async (rows: HistoryTableRow[], format: 'csv' | 'json'): Promise<void> => {
+    if (rows.length === 0) {
+      void vscode.window.showWarningMessage('No rows to export.');
+      return;
+    }
+    const ext = format === 'csv' ? 'csv' : 'json';
+    const uri = await vscode.window.showSaveDialog({
+      title: 'Export Job History',
+      filters: {[format.toUpperCase()]: [ext]},
+      saveLabel: 'Export',
+      defaultUri: vscode.Uri.file(
+        path.join(vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd(), `job-history.${ext}`),
+      ),
+    });
+    if (!uri) return;
+
+    await fs.writeFile(uri.fsPath, renderHistoryTableRowsForExport(rows, format), 'utf-8');
+    void vscode.window.showInformationMessage(`Exported ${rows.length} rows to ${uri.fsPath}`);
   };
 
   const openHistoryTable = registerSafeCommand('b2c-dx.jobs.openHistoryTable', async () => {
@@ -1042,65 +1222,38 @@ export function registerJobsCommands(
       // Row actions post back here. Re-run routes through the full Run flow
       // (confirm + params + log tail) so behavior is identical to the tree.
       historyTablePanel.webview.onDidReceiveMessage(async (msg: HistoryWebviewMessage) => {
+        // Open logs/details Beside the table so the webview panel isn't replaced
+        // in its own editor group (which forced the user to reopen + re-filter).
         if (msg.command === 'openLog') {
-          await openExecutionLogByIds(msg.jobId, msg.executionId);
+          await openExecutionLogByIds(msg.jobId, msg.executionId, vscode.ViewColumn.Beside);
         } else if (msg.command === 'viewDetails') {
           const execution = await findExecution(msg.jobId, msg.executionId);
-          if (execution) await openExecutionDetails(msg.jobId, execution);
+          if (execution) await openExecutionDetails(msg.jobId, execution, vscode.ViewColumn.Beside);
         } else if (msg.command === 'rerun') {
-          await vscode.commands.executeCommand('b2c-dx.jobs.run', msg.jobId);
-          await refreshHistoryTable();
+          // Only custom/BM-defined jobs are runnable. The webview disables Re-run
+          // for system jobs, so this path is reached only for custom jobs; guard
+          // anyway in case it's invoked programmatically.
+          if (isSystemJobId(msg.jobId)) {
+            void vscode.window.showInformationMessage(
+              `"${msg.jobId}" is a platform system job run by the instance scheduler — it can't be re-run.`,
+            );
+          } else {
+            await vscode.commands.executeCommand('b2c-dx.jobs.run', msg.jobId);
+            await refreshHistoryTable();
+          }
         } else if (msg.command === 'openInBusinessManager') {
           await vscode.commands.executeCommand('b2c-dx.jobs.openBmDefinitions');
         } else if (msg.command === 'refresh') {
           treeProvider.refresh();
           await refreshHistoryTable();
+        } else if (msg.command === 'export') {
+          await exportHistoryTableRows(msg.rows, msg.format);
         }
       });
     }
 
     historyTablePanel.webview.html = renderJobHistoryShell(historyTablePanel.webview, extensionUri, rows);
     historyTablePanel.reveal(vscode.ViewColumn.Active);
-  });
-
-  const exportFilteredHistory = registerSafeCommand('b2c-dx.jobs.exportFilteredHistory', async () => {
-    const format = await vscode.window.showQuickPick(['JSON', 'CSV'], {
-      title: 'Export Filtered Job History',
-      placeHolder: 'Choose export format',
-    });
-    if (!format) return;
-
-    const ext = format === 'CSV' ? 'csv' : 'json';
-    const uri = await vscode.window.showSaveDialog({
-      title: 'Export Filtered Job History',
-      filters: {[format]: [ext]},
-      saveLabel: 'Export',
-      defaultUri: vscode.Uri.file(
-        path.join(vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd(), `job-history.${ext}`),
-      ),
-    });
-    if (!uri) return;
-
-    const rows = await vscode.window.withProgress(
-      {location: vscode.ProgressLocation.Notification, title: 'Preparing filtered job history export...'},
-      async () => treeProvider.getFilteredExecutionHistoryRows(),
-    );
-
-    const payload =
-      format === 'CSV'
-        ? renderHistoryRowsAsCsv(rows)
-        : JSON.stringify(
-            rows.map((row) => ({
-              jobId: row.jobId,
-              status: row.status,
-              user: getExecutionUser(row.execution),
-              execution: row.execution,
-            })),
-            null,
-            2,
-          );
-    await fs.writeFile(uri.fsPath, payload, 'utf-8');
-    void vscode.window.showInformationMessage(`Exported ${rows.length} rows to ${uri.fsPath}`);
   });
 
   const openExecutionInBusinessManager = registerSafeCommand(
@@ -1212,11 +1365,13 @@ export function registerJobsCommands(
     }
 
     // Accept a job id from a tree node, a definition node's string arg, or
-    // nothing (toolbar). Always confirm the selection rather than auto-running
-    // so a click never silently triggers the wrong job.
+    // nothing (toolbar). When invoked from a specific job we already know which
+    // job to run, so skip the picker (showing 60 sfcc-* alternatives is noise)
+    // and go straight to params + confirm. The picker is only for the toolbar
+    // entry point where no job is known.
     const hintedJobId =
       typeof node === 'string' ? node : node && typeof node === 'object' && 'jobId' in node ? node.jobId : undefined;
-    const chosenJobId = await promptForJobId(treeProvider, hintedJobId);
+    const chosenJobId = hintedJobId?.trim() || (await promptForJobId(treeProvider));
     if (!chosenJobId) return;
 
     const parameters = await promptForJobParameters(chosenJobId);
@@ -1559,7 +1714,6 @@ export function registerJobsCommands(
     setStatusFilter,
     setHistoryFilters,
     openHistoryTable,
-    exportFilteredHistory,
     runJob,
     importSiteArchive,
     exportSiteArchive,
