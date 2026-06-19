@@ -160,7 +160,7 @@ const referenceSidebar = [
         ],
       },
       {
-        text: 'Storefront Next',
+        text: 'Storefront Next (deprecated)',
         collapsed: true,
         items: [
           {text: 'sfnext_get_guidelines', link: '/mcp/tools/sfnext-get-guidelines'},
@@ -177,6 +177,7 @@ const referenceSidebar = [
         items: [
           {text: 'Script Debugger', link: '/mcp/tools/diagnostics'},
           {text: 'Logs', link: '/mcp/tools/logs'},
+          {text: 'MRT Logs', link: '/mcp/tools/mrt-logs'},
         ],
       },
       {

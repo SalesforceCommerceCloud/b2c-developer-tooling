@@ -206,6 +206,8 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
         }
       }
 
+      for (const w of result.warnings ?? []) this.warn(w);
+
       if (this.flags.wait) {
         return this.waitForDeployment(project, environment);
       }
@@ -283,6 +285,8 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
           },
         ),
       );
+
+      for (const w of result.warnings ?? []) this.warn(w);
 
       if (this.flags.wait) {
         if (!target) {

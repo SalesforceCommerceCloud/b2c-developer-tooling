@@ -1,5 +1,37 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.15.0
+
+### Minor Changes
+
+- [#512](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/512) [`3bce44e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3bce44e2e6d4cea3cf64e34eff1246d86e459b73) - Add a `--create-pr` flag to `cap install`. When a Commerce App includes Storefront Next content and a repository is connected to the storefront, this opens a pull request with the app's storefront changes instead of applying them directly. Off by default. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#514](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/514) [`0d97ad1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/0d97ad1856d6a45d9349a3609c7e425d2b5e874a) - Replace the `applicationinsights` dependency with a tiny built-in telemetry client that posts directly to the Application Insights ingestion endpoint using Node's native `fetch`. This removes ~270 transitive packages (the OpenTelemetry, Azure SDK, and gRPC trees that the v3 SDK pulled in for auto-collection features we never used) and shrinks the published packages and the VS Code extension bundle. Telemetry behavior is unchanged — the same events and exceptions are reported — and the machine-identifying cloud role instance is now correctly suppressed for GDPR. A new optional `flushIntervalMs` option enables periodic delivery for long-lived hosts; the VS Code extension uses it so a session's usage events are not lost on a non-clean shutdown. No public SDK API change. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.14.1
+
+### Patch Changes
+
+- [#510](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/510) [`1575070`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/15750709ca6b23838bb9fd954d6c09e8dbb67ed3) - Resolve all critical and high severity dependency advisories reported by `pnpm audit`. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Direct dependencies of the published packages were bumped in package.json so that consumers installing the SDK, CLI, or MCP server receive the patched versions: the SDK raises `js-yaml`, `minimatch`, `protobufjs`, and `undici`, and the MCP server raises `yaml` and `postcss`. The SDK also upgrades `applicationinsights` from 2.x to 3.x to pick up a non-vulnerable `@opentelemetry/core`; this is an internal telemetry change with no public API impact.
+
+  Remaining transitive advisories with no direct-dependency lever are pinned to patched releases (within their existing major versions) via workspace overrides: fast-xml-parser, hono, @hono/node-server, ws, vite, rollup, form-data, http-proxy-middleware, path-to-regexp, serialize-javascript, lodash, underscore, flatted, fast-uri, tmp, express-rate-limit, brace-expansion, shell-quote, and @opentelemetry/core.
+
+## 1.14.0
+
+### Minor Changes
+
+- [#494](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/494) [`f630103`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f630103e4c55fbdf68896db2f870851efe390ac1) - Expand the curated CIP analytics report catalog with 16 new pre-built reports, with a focus on technical/developer analytics. New reports include SCAPI traffic & latency, SCAPI error rate by status class, SCAPI latency distribution (slow-tail/SLA percentage from the response-time histogram), SCAPI cache hit ratio, OCAPI usage by client, SFRA controller health scorecard, controller error-rate trend, and remote-include performance — plus revenue-by-channel, new-vs-returning buyer revenue, discount-depth breakdown, promotion ROI leaderboard, recommender effectiveness, zero-result searches, checkout funnel drop-off, and inventory stockout by location. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Also adds `b2c cip report list` to discover the catalog grouped by category (no credentials required), and report parameters now support enum (`--status-class 4xx|5xx`) and default values. Run `b2c cip report <name> --describe` to see each report's flags.
+
+### Patch Changes
+
+- [#494](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/494) [`f630103`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f630103e4c55fbdf68896db2f870851efe390ac1) - Fix `cip tables` and `cip describe` returning empty rows on some tenants. The CIP metadata mapping assumed camelCase JDBC column labels (`tableName`, `columnName`), but some tenants' drivers return the standard uppercase labels (`TABLE_NAME`, `COLUMN_NAME`), which produced blank table names, schemas, types, and column metadata. Metadata columns are now matched case-insensitively. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.13.0
 
 ### Minor Changes

@@ -91,7 +91,17 @@ b2c cap install ./commerce-my-integration-v1.0.0 --site RefArch
 b2c cap install ./dist/my-integration-v1.0.0.zip --site RefArch
 ```
 
-The CLI uploads the package to WebDAV (`Temp/`) and triggers the `sfcc-install-commerce-app` platform job, which deploys cartridges, imports IMPEX data, and creates a Storefront Next PR (if applicable).
+The CLI uploads the package to WebDAV (`Temp/`) and triggers the `sfcc-install-commerce-app` platform job, which deploys cartridges and imports IMPEX data.
+
+### Creating a Storefront Pull Request
+
+If a CAP includes Storefront Next content, pass `--create-pr` to have the install job automatically open a pull request against the related Storefront Next storefront — provided a repository is also connected to the storefront:
+
+```bash
+b2c cap install ./commerce-my-integration-v1.0.0 --site RefArch --create-pr
+```
+
+The pull request contains the storefront changes the app provides, so a developer can review and merge them rather than having them applied directly. The flag is **off by default**; if the app has no storefront content or no repository is connected to the storefront, it has no effect.
 
 ### 5. Complete Configuration Tasks
 
