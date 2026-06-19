@@ -50,9 +50,11 @@ function isExtensionTelemetryEnabled(): boolean {
  *   - A connection string is available (from `telemetry.connectionString` in
  *     this package's package.json, or from the `SFCC_APP_INSIGHTS_KEY` env var).
  *
- * Initialization runs in the background and never blocks activation. The HTTP
- * client used by Application Insights buffers events in memory and flushes via
- * a background timer, so subsequent `sendEvent` calls are non-blocking too.
+ * Initialization runs in the background and never blocks activation. The
+ * telemetry client buffers events in memory, so `sendEvent` calls are
+ * non-blocking. Because the extension host is long-lived and may not get a
+ * clean `deactivate()` flush, we enable a periodic auto-flush (see
+ * `flushIntervalMs`) so a dirty shutdown loses at most one interval of events.
  * Failure to initialize is silent — the extension continues without telemetry.
  */
 export function initTelemetry(context: vscode.ExtensionContext): void {
@@ -70,6 +72,9 @@ export function initTelemetry(context: vscode.ExtensionContext): void {
     appInsightsKey: connectionString,
     version: __EXT_VERSION__,
     dataDir: context.globalStorageUri.fsPath,
+    // Long-lived host: deliver buffered events every 30s so a non-clean
+    // shutdown (window force-close, host crash) loses at most one interval.
+    flushIntervalMs: 30_000,
     initialAttributes: {
       host: vscode.env.appName,
       uiKind: vscode.env.uiKind === vscode.UIKind.Web ? 'web' : 'desktop',
@@ -88,8 +93,9 @@ export function initTelemetry(context: vscode.ExtensionContext): void {
 }
 
 /**
- * Send an event. Fire-and-forget — writes into the App Insights in-memory
- * buffer, no HTTP I/O on the calling stack. No-ops when telemetry is disabled.
+ * Send an event. Fire-and-forget — writes into the in-memory buffer, no HTTP
+ * I/O on the calling stack; delivery happens on the periodic flush or at
+ * dispose. No-ops when telemetry is disabled.
  */
 export function sendEvent(eventName: string, attributes: TelemetryAttributes = {}): void {
   instance?.sendEvent(eventName, attributes);
