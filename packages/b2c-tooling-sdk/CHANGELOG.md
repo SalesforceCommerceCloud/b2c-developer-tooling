@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.15.1
+
+### Patch Changes
+
+- [#509](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/509) [`3bc78c4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3bc78c422d57b590b2435fd6ae0a31fffc4bd7e7) - Surface Managed Runtime deploy warnings (including the x86 environment deprecation notice) when pushing or deploying a bundle. The warning is informational and does not block the deploy. (Thanks [@sf-rahul-kumawat](https://github.com/sf-rahul-kumawat)!)
+
 ## 1.15.0
 
 ### Minor Changes
