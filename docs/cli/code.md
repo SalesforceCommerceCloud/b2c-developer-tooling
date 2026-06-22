@@ -8,20 +8,24 @@ Commands for managing cartridge code on B2C Commerce instances.
 
 ## API Backend
 
-The `code list`, `code activate`, and `code delete` commands support both OCAPI and SCAPI backends. By default (`auto` mode), SCAPI is preferred when `shortCode` and `tenantId` are configured. If SCAPI scopes are unavailable, the CLI falls back to OCAPI transparently.
+`code list`, `code activate`, and `code delete` run over SCAPI (the `dx/scripts` API). Configure `shortCode`, `tenantId`, and the `sfcc.scripts` / `sfcc.scripts.rw` scopes on your API client and these commands work out of the box.
 
 ```bash
-# Force SCAPI
-b2c code list --api-backend scapi
-
-# Force OCAPI
-b2c code list --api-backend ocapi
+# Default — uses SCAPI
+b2c code list
 ```
 
-Or set in `dw.json`: `"api-backend": "scapi"`. Or `SFCC_API_BACKEND=scapi` env var.
+::: details Legacy OCAPI backend (deprecated)
+OCAPI is deprecated and disabled on newer instances. The CLI defaults to `--api-backend auto`, which falls back to the OCAPI Data API (`/code_versions`) only when SCAPI scopes are not configured. You can force a backend if needed:
 
-::: tip
-The `code activate --reload` flag forces an OCAPI call regardless of `--api-backend`, since SCAPI does not expose the cache-rebuild operation.
+```bash
+b2c code list --api-backend scapi   # force SCAPI
+b2c code list --api-backend ocapi   # force the legacy OCAPI backend
+```
+
+Or set `"api-backend": "scapi"` in `dw.json`, or `SFCC_API_BACKEND=scapi`.
+
+The `code activate --reload` flag uses an OCAPI call regardless of `--api-backend`, since SCAPI does not expose the cache-rebuild operation. On OCAPI-disabled instances, `--reload` is unavailable.
 :::
 
 ::: tip
@@ -35,8 +39,7 @@ Code commands use different authentication depending on the operation:
 | Operation | Auth Required |
 |-----------|--------------|
 | `code deploy`, `code download`, `code watch` | WebDAV (Basic Auth or OAuth) |
-| `code list`, `code activate`, `code delete` (SCAPI) | OAuth + `sfcc.scripts` (read) or `sfcc.scripts.rw` (write) + tenant scope |
-| `code list`, `code activate`, `code delete` (OCAPI) | OAuth + OCAPI permissions for `/code_versions` |
+| `code list`, `code activate`, `code delete` | OAuth + `sfcc.scripts` (read) or `sfcc.scripts.rw` (write) + tenant scope |
 
 ### WebDAV Operations (deploy, download, watch)
 
@@ -47,16 +50,18 @@ export SFCC_USERNAME=your-bm-username
 export SFCC_PASSWORD=your-webdav-access-key
 ```
 
-### SCAPI / OCAPI Operations (list, activate, delete)
+### Code Version Operations (list, activate, delete)
 
-These commands require OAuth authentication. For SCAPI, configure the `sfcc.scripts.rw` scope on your API client in Account Manager. For OCAPI, configure permissions for the `/code_versions` resource in Business Manager.
+These commands require OAuth authentication. Configure the `sfcc.scripts` / `sfcc.scripts.rw` scope on your API client in Account Manager, along with `shortCode` and `tenantId`.
 
 ```bash
 export SFCC_CLIENT_ID=your-client-id
 export SFCC_CLIENT_SECRET=your-client-secret
+export SFCC_TENANT_ID=zzxy_prd
+export SFCC_SHORTCODE=kv7kzm78
 ```
 
-For complete setup instructions, see the [Authentication Guide](/guide/authentication).
+On instances where OCAPI is still enabled, these commands also work with OCAPI `/code_versions` permissions as a [deprecated fallback](/guide/authentication#ocapi-configuration). For complete setup instructions, see the [Authentication Guide](/guide/authentication).
 
 ---
 
@@ -253,7 +258,7 @@ If a cartridge exists remotely but not locally, it is extracted to the output di
 
 ### Notes
 
-- If no `--code-version` is specified, the command auto-discovers the active code version via OCAPI (requires OAuth credentials)
+- If no `--code-version` is specified, the command auto-discovers the active code version (requires OAuth credentials)
 - Existing file permissions are preserved when overwriting files
 - The server-side zip is cleaned up automatically after download
 

@@ -209,7 +209,7 @@ b2c setup instance create staging \
   --force
 ```
 
-The interactive mode auto-detects the active code version via OCAPI when OAuth credentials are provided, and the first instance you create is automatically set as active.
+The interactive mode auto-detects the active code version when OAuth credentials are provided, and the first instance you create is automatically set as active.
 
 #### Switching Instances
 
@@ -271,7 +271,7 @@ For the full command reference with all flags, see [Setup Commands](/cli/setup).
 | `certificate`            | Path to PKCS12 certificate for two-factor auth (mTLS)                                                                               |
 | `certificate-passphrase` | Passphrase for the certificate. Also accepts `passphrase`.                                                                          |
 | `self-signed`            | Allow self-signed server certificates. Also accepts `selfsigned`.                                                                   |
-| `api-backend`            | API backend for `job`, `code`, `bm users`, and `bm roles` commands: `ocapi`, `scapi`, or `auto` (default). Auto prefers SCAPI when `shortCode` and `tenant-id` are set, falling back to OCAPI on missing scopes. |
+| `api-backend`            | API backend for `job`, `code`, `bm users`, and `bm roles` commands: `scapi`, `auto` (default), or `ocapi`. These commands use SCAPI; `auto` falls back to the deprecated OCAPI backend only when SCAPI scopes are not configured. Set `ocapi` to force the [deprecated](./authentication#ocapi-configuration) backend. |
 
 ### Two-Factor Authentication (mTLS)
 

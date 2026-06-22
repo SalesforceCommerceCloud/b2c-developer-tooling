@@ -202,26 +202,15 @@ b2c job search --json
 b2c job execution delete my-job abc123-def456
 ```
 
-### API Backend Selection
+### API Backend
 
-Job commands support both OCAPI and SCAPI backends. By default, SCAPI is preferred when `shortCode` and `tenantId` are configured.
-
-```bash
-# force SCAPI backend
-b2c job run my-job --api-backend scapi
-
-# force OCAPI backend
-b2c job run my-job --api-backend ocapi
-
-# auto-detect (default) - prefers SCAPI when configured, falls back to OCAPI
-b2c job run my-job --api-backend auto
-```
-
-Set via dw.json: `"api-backend": "scapi"` or env: `SFCC_API_BACKEND=scapi`.
+Job commands run over SCAPI. Configure `shortCode`, `tenantId`, and the SCAPI scopes and `job run`, `job search`, `job wait`, and `job log` work out of the box.
 
 **SCAPI scopes**: `sfcc.jobs.rw` (recommended) for full access, or `sfcc.jobs` for read-only (search, wait, log).
 
-> **Note:** `job import` and `job export` currently always use OCAPI regardless of `--api-backend`.
+OCAPI is deprecated and disabled on newer instances. `--api-backend auto` (the default) falls back to the OCAPI Data API only when SCAPI scopes are not configured; force a backend with `--api-backend scapi|ocapi`, dw.json `"api-backend": "scapi"`, or `SFCC_API_BACKEND=scapi`.
+
+> **Note:** `job import` and `job export` trigger system jobs via OCAPI and transfer files over WebDAV; they are not yet available over SCAPI and won't work on OCAPI-disabled instances.
 
 ### Wait for Job Completion
 

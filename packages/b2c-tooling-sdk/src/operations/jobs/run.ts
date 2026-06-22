@@ -10,6 +10,7 @@
  */
 import {B2CInstance} from '../../instance/index.js';
 import type {components} from '../../clients/ocapi.generated.js';
+import {isOcapiDeprecatedFault, OcapiDeprecatedError, redactTokens} from '../../clients/error-utils.js';
 import {getLogger} from '../../logging/logger.js';
 
 /**
@@ -151,8 +152,9 @@ export async function executeJob(
   }
 
   if (error || !data) {
-    const message = error?.fault?.message ?? `Failed to execute job ${jobId}`;
-    throw new Error(message);
+    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError(error);
+    const message = redactTokens(error?.fault?.message ?? `Failed to execute job ${jobId}`);
+    throw new Error(message, {cause: error});
   }
 
   logger.debug({jobId, executionId: data.id, status: data.execution_status}, `Job ${jobId} started: ${data.id}`);
@@ -185,8 +187,9 @@ export async function getJobExecution(
   });
 
   if (error || !data) {
-    const message = error?.fault?.message ?? `Failed to get job execution ${executionId}`;
-    throw new Error(message);
+    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError(error);
+    const message = redactTokens(error?.fault?.message ?? `Failed to get job execution ${executionId}`);
+    throw new Error(message, {cause: error});
   }
 
   return data;
@@ -416,8 +419,9 @@ export async function searchJobExecutions(
   });
 
   if (error || !data) {
-    const message = error?.fault?.message ?? 'Failed to search job executions';
-    throw new Error(message);
+    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError(error);
+    const message = redactTokens(error?.fault?.message ?? 'Failed to search job executions');
+    throw new Error(message, {cause: error});
   }
 
   return {

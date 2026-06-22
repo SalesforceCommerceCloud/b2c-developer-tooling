@@ -272,7 +272,8 @@ For complete authentication setup instructions, see the [Authentication Setup Gu
 | Operation | Auth Required |
 |-----------|--------------|
 | [Code](/cli/code) deploy/watch | WebDAV credentials |
-| [Code](/cli/code) list/activate/delete, [Jobs](/cli/jobs), [Sites](/cli/sites) | OAuth + OCAPI configuration |
+| [Code](/cli/code) list/activate/delete, [Jobs](/cli/jobs), [BM](/cli/bm) users/roles | OAuth + SCAPI scopes (OCAPI fallback; OCAPI is [deprecated](/guide/authentication#ocapi-configuration)) |
+| [Sites](/cli/sites) | OAuth + OCAPI configuration |
 | SCAPI commands ([eCDN](/cli/ecdn), [schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis)) | OAuth + SCAPI scopes |
 | [Sandbox](/cli/sandbox), [SLAS](/cli/slas) | OAuth + appropriate roles |
 | [MRT](/cli/mrt) | API Key |

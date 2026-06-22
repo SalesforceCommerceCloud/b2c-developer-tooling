@@ -14,6 +14,7 @@ import * as path from 'node:path';
 import JSZip from 'jszip';
 import * as xml2js from 'xml2js';
 import {B2CInstance} from '../../instance/index.js';
+import {isOcapiDeprecatedFault, OcapiDeprecatedError, redactTokens} from '../../clients/error-utils.js';
 import {getLogger} from '../../logging/logger.js';
 import {siteArchiveExportToBuffer} from '../jobs/site-archive.js';
 import type {JobExecution, WaitForJobOptions} from '../jobs/run.js';
@@ -168,7 +169,8 @@ export async function listInstalledApps(
       params: {query: {select: '(**)'}},
     });
     if (error || !data) {
-      throw new Error(error?.fault?.message ?? 'Failed to list sites');
+      if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError(error);
+      throw new Error(redactTokens(error?.fault?.message ?? 'Failed to list sites'), {cause: error});
     }
     siteIds = (data.data ?? []).map((s) => s.id).filter((id): id is string => !!id);
     logger.debug({siteIds}, `Discovered ${siteIds.length} site(s)`);

@@ -9,6 +9,7 @@ import path from 'node:path';
 import {findCartridges} from '../operations/code/cartridges.js';
 import type {B2CInstance} from '../instance/index.js';
 import type {OcapiComponents} from '../clients/index.js';
+import {isOcapiDeprecatedFault, OcapiDeprecatedError} from '../clients/error-utils.js';
 import type {ScaffoldChoice, ScaffoldParameter, DynamicParameterSource, SourceResult} from './types.js';
 
 /**
@@ -153,7 +154,8 @@ export async function resolveRemoteSource(
       });
 
       if (error) {
-        throw new Error('Failed to fetch sites from B2C instance');
+        if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError(error);
+        throw new Error('Failed to fetch sites from B2C instance', {cause: error});
       }
 
       const sites = data as OcapiComponents['schemas']['sites'];

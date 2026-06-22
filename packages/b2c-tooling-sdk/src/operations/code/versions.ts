@@ -5,6 +5,7 @@
  */
 import type {B2CInstance} from '../../instance/index.js';
 import {type OcapiComponents} from '../../clients/index.js';
+import {throwOcapiError} from '../../clients/error-utils.js';
 import {getLogger} from '../../logging/logger.js';
 
 /** Code version type from OCAPI */
@@ -29,10 +30,10 @@ export type CodeVersionResult = OcapiComponents['schemas']['code_version_result'
  * ```
  */
 export async function listCodeVersions(instance: B2CInstance): Promise<CodeVersion[]> {
-  const {data, error} = await instance.ocapi.GET('/code_versions', {});
+  const {data, error, response} = await instance.ocapi.GET('/code_versions', {});
 
   if (error) {
-    throw new Error('Failed to list code versions', {cause: error});
+    throwOcapiError(error, response, 'Failed to list code versions');
   }
 
   return (data as CodeVersionResult).data ?? [];
@@ -75,13 +76,13 @@ export async function activateCodeVersion(instance: B2CInstance, codeVersionId: 
   const logger = getLogger();
   logger.debug({codeVersionId}, `Activating code version ${codeVersionId}`);
 
-  const {error} = await instance.ocapi.PATCH('/code_versions/{code_version_id}', {
+  const {error, response} = await instance.ocapi.PATCH('/code_versions/{code_version_id}', {
     params: {path: {code_version_id: codeVersionId}},
     body: {active: true},
   });
 
   if (error) {
-    throw new Error('Failed to activate code version', {cause: error});
+    throwOcapiError(error, response, 'Failed to activate code version');
   }
 
   logger.debug({codeVersionId}, `Code version ${codeVersionId} activated`);
@@ -105,12 +106,12 @@ export async function deleteCodeVersion(instance: B2CInstance, codeVersionId: st
   const logger = getLogger();
   logger.debug({codeVersionId}, `Deleting code version ${codeVersionId}`);
 
-  const {error} = await instance.ocapi.DELETE('/code_versions/{code_version_id}', {
+  const {error, response} = await instance.ocapi.DELETE('/code_versions/{code_version_id}', {
     params: {path: {code_version_id: codeVersionId}},
   });
 
   if (error) {
-    throw new Error('Failed to delete code version', {cause: error});
+    throwOcapiError(error, response, 'Failed to delete code version');
   }
 
   logger.debug({codeVersionId}, `Code version ${codeVersionId} deleted`);
@@ -134,12 +135,12 @@ export async function createCodeVersion(instance: B2CInstance, codeVersionId: st
   const logger = getLogger();
   logger.debug({codeVersionId}, `Creating code version ${codeVersionId}`);
 
-  const {error} = await instance.ocapi.PUT('/code_versions/{code_version_id}', {
+  const {error, response} = await instance.ocapi.PUT('/code_versions/{code_version_id}', {
     params: {path: {code_version_id: codeVersionId}},
   });
 
   if (error) {
-    throw new Error('Failed to create code version', {cause: error});
+    throwOcapiError(error, response, 'Failed to create code version');
   }
 
   logger.debug({codeVersionId}, `Code version ${codeVersionId} created`);

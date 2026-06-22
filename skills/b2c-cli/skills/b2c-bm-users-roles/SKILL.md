@@ -5,7 +5,7 @@ description: Manage Business Manager users, access roles, role permissions, and 
 
 # B2C Business Manager Users, Roles, and Access Keys
 
-Use the `b2c bm` commands to administer instance-level Business Manager resources via the OCAPI Data API. These commands target a specific Commerce Cloud instance — pass `--server`/`-s` or set the active instance in `dw.json` first.
+Use the `b2c bm` commands to administer instance-level Business Manager resources (users, roles, access keys) over SCAPI. These commands target a specific Commerce Cloud instance — pass `--server`/`-s` or set the active instance in `dw.json` first.
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli bm whoami`).
 
@@ -13,19 +13,11 @@ For **Account Manager** user/role/client management (cross-instance, scoped to t
 
 ## API Backend
 
-`bm users` (list, get, update, delete) and `bm roles` (all subcommands including permissions) support both the OCAPI Data API and the SCAPI Merchant Users / Merchant Roles APIs. Auto mode (default) prefers SCAPI when `shortCode` and `tenantId` are configured.
+`bm users` (list, get, update, delete) and `bm roles` (all subcommands including permissions) run over the SCAPI Merchant Users / Merchant Roles APIs. Configure `shortCode`, `tenantId`, and the `sfcc.users(.rw)` / `sfcc.roles(.rw)` scopes and they work out of the box.
 
-```bash
-# force SCAPI (requires sfcc.users.rw / sfcc.roles.rw scope)
-b2c bm users list --api-backend scapi
+OCAPI-only commands (no SCAPI equivalent, unavailable on OCAPI-disabled instances): `bm users search`, `bm whoami`, `bm access-key *`.
 
-# force OCAPI
-b2c bm roles get Administrator --api-backend ocapi
-```
-
-OCAPI-only commands (no SCAPI equivalent): `bm users search`, `bm whoami`, `bm access-key *`.
-
-`bm users update --disabled` requires OCAPI (SCAPI's PATCH endpoint doesn't support changing `disabled`). Auto mode falls back to OCAPI for that case.
+OCAPI is deprecated and disabled on newer instances. `--api-backend auto` (the default) falls back to the OCAPI Data API only when SCAPI scopes are not configured; force a backend with `--api-backend scapi|ocapi` if needed. `bm users update --disabled` is the one write that requires OCAPI (SCAPI's PATCH endpoint can't change `disabled`), so it is unavailable on OCAPI-disabled instances.
 
 ## Authentication
 

@@ -4,7 +4,18 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
-import {getApiErrorMessage} from '../../src/clients/error-utils.js';
+import {
+  getApiErrorMessage,
+  redactTokens,
+  isOcapiDeprecatedFault,
+  throwOcapiError,
+  OcapiDeprecatedError,
+  OCAPI_DEPRECATED_MESSAGE,
+} from '../../src/clients/error-utils.js';
+
+// A syntactically valid (fake) JWT: three base64url segments, first starts eyJ.
+const FAKE_JWT =
+  'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJzY29wZSI6InNmY2Muc2NyaXB0cyJ9.c2lnbmF0dXJlLXBheWxvYWQtaGVyZQ';
 
 describe('getApiErrorMessage', () => {
   // Mock response object for testing
@@ -166,6 +177,101 @@ describe('getApiErrorMessage', () => {
         headers: new Headers(),
       };
       expect(getApiErrorMessage(error, response as Response)).to.equal('HTTP 521 Web Server Is Down');
+    });
+  });
+
+  describe('token redaction (SEC1)', () => {
+    it('redacts a bearer JWT embedded in an OCAPI InvalidAccessTokenException fault', () => {
+      const error = {
+        fault: {
+          type: 'InvalidAccessTokenException',
+          message: `Unauthorized request! The access token '${FAKE_JWT}' is invalid.`,
+        },
+      };
+      const message = getApiErrorMessage(error, mockResponse(401, 'Unauthorized'));
+      expect(message).to.not.include(FAKE_JWT);
+      expect(message).to.include('eyJ…[REDACTED-TOKEN]');
+      expect(message).to.include('is invalid.');
+    });
+
+    it('redacts tokens from ODS/SLAS and detail/title/message variants too', () => {
+      expect(getApiErrorMessage({error: {message: `tok ${FAKE_JWT}`}}, mockResponse(401, 'x'))).to.not.include(
+        FAKE_JWT,
+      );
+      expect(getApiErrorMessage({detail: `tok ${FAKE_JWT}`}, mockResponse(401, 'x'))).to.not.include(FAKE_JWT);
+      expect(getApiErrorMessage({title: `tok ${FAKE_JWT}`}, mockResponse(401, 'x'))).to.not.include(FAKE_JWT);
+      expect(getApiErrorMessage({message: `tok ${FAKE_JWT}`}, mockResponse(401, 'x'))).to.not.include(FAKE_JWT);
+    });
+  });
+
+  describe('redactTokens', () => {
+    it('replaces JWTs while preserving surrounding text', () => {
+      expect(redactTokens(`before ${FAKE_JWT} after`)).to.equal('before eyJ…[REDACTED-TOKEN] after');
+    });
+
+    it('redacts multiple tokens in one string', () => {
+      const out = redactTokens(`${FAKE_JWT} and ${FAKE_JWT}`);
+      expect(out).to.not.include(FAKE_JWT);
+      expect(out.match(/REDACTED-TOKEN/g)).to.have.length(2);
+    });
+
+    it('leaves token-free text untouched', () => {
+      expect(redactTokens('No secrets here')).to.equal('No secrets here');
+    });
+  });
+
+  describe('OCAPI deprecation (D1)', () => {
+    const deprecatedFault = {
+      fault: {
+        type: 'OcapiDeprecatedException',
+        message: 'OCAPI has been deprecated. Access is not available for this instance.',
+      },
+    };
+
+    it('isOcapiDeprecatedFault matches the deprecation fault type', () => {
+      expect(isOcapiDeprecatedFault(deprecatedFault)).to.equal(true);
+    });
+
+    it('isOcapiDeprecatedFault is false for other faults and non-objects', () => {
+      expect(isOcapiDeprecatedFault({fault: {type: 'NotFoundException', message: 'x'}})).to.equal(false);
+      expect(isOcapiDeprecatedFault({fault: {type: 'InvalidAccessTokenException'}})).to.equal(false);
+      expect(isOcapiDeprecatedFault(null)).to.equal(false);
+      expect(isOcapiDeprecatedFault('string')).to.equal(false);
+      expect(isOcapiDeprecatedFault({})).to.equal(false);
+    });
+
+    it('getApiErrorMessage substitutes actionable SCAPI guidance for the deprecation fault', () => {
+      const message = getApiErrorMessage(deprecatedFault, mockResponse(403, 'Forbidden'));
+      expect(message).to.equal(OCAPI_DEPRECATED_MESSAGE);
+      expect(message).to.include('OCAPI is deprecated');
+      expect(message).to.include('#scapi-authentication');
+      // The original opaque fault message must not be what the user sees.
+      expect(message).to.not.include('Access is not available');
+    });
+  });
+
+  describe('throwOcapiError', () => {
+    it('throws OcapiDeprecatedError for the deprecation fault', () => {
+      const fault = {fault: {type: 'OcapiDeprecatedException', message: 'deprecated'}};
+      expect(() => throwOcapiError(fault, mockResponse(403, 'Forbidden'), 'Failed to do thing')).to.throw(
+        OcapiDeprecatedError,
+      );
+    });
+
+    it('prefixes and redacts non-deprecation errors, attaching cause', () => {
+      const fault = {fault: {type: 'InvalidAccessTokenException', message: `token ${FAKE_JWT}`}};
+      try {
+        throwOcapiError(fault, mockResponse(401, 'Unauthorized'), 'Failed to list code versions');
+        expect.fail('should have thrown');
+      } catch (e) {
+        const err = e as Error;
+        expect(err).to.be.instanceOf(Error);
+        expect(err).to.not.be.instanceOf(OcapiDeprecatedError);
+        expect(err.message).to.match(/^Failed to list code versions: /);
+        expect(err.message).to.not.include(FAKE_JWT);
+        expect(err.message).to.include('eyJ…[REDACTED-TOKEN]');
+        expect(err.cause).to.equal(fault);
+      }
     });
   });
 });

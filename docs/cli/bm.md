@@ -8,30 +8,37 @@ Commands for administering instance-level Business Manager resources. These are 
 
 ## API Backend
 
-Most `bm users` and `bm roles` commands support both the OCAPI Data API and the SCAPI Merchant Users / Merchant Roles APIs. By default (`auto` mode), SCAPI is preferred when `shortCode` and `tenantId` are configured. If the SCAPI scopes aren't granted on your API client, the CLI silently falls back to OCAPI.
+`bm users` and `bm roles` run over the SCAPI Merchant Users / Merchant Roles APIs. Configure `shortCode`, `tenantId`, and the `sfcc.users(.rw)` / `sfcc.roles(.rw)` scopes on your API client and these commands work over SCAPI. A few commands have no SCAPI equivalent and use the OCAPI Data API (see the table below).
 
 ```bash
-# Force SCAPI backend
-b2c bm users list --api-backend scapi
-
-# Force OCAPI backend
-b2c bm roles get Administrator --api-backend ocapi
+# Default — uses SCAPI for users/roles
+b2c bm users list
+b2c bm roles get Administrator
 ```
 
-Or set in `dw.json`: `"api-backend": "scapi"`. Or `SFCC_API_BACKEND=scapi` env var.
-
-| Command | SCAPI | OCAPI |
+| Command | Backend | Scope |
 |---|---|---|
-| `bm users list/get/update/delete` | ✓ (`sfcc.users.rw`) | ✓ |
-| `bm users search` | ✗ — OCAPI only | ✓ |
-| `bm whoami` | ✗ — OCAPI only | ✓ |
-| `bm access-key *` | ✗ — OCAPI only | ✓ |
-| `bm roles list/get/create/delete` | ✓ (`sfcc.roles.rw`) | ✓ |
-| `bm roles grant/revoke` | ✓ (`sfcc.roles.rw`) | ✓ |
-| `bm roles permissions get/set` | ✓ (`sfcc.roles.rw`) | ✓ |
+| `bm users list/get/update/delete` | SCAPI | `sfcc.users.rw` |
+| `bm roles list/get/create/delete` | SCAPI | `sfcc.roles.rw` |
+| `bm roles grant/revoke` | SCAPI | `sfcc.roles.rw` |
+| `bm roles permissions get/set` | SCAPI | `sfcc.roles.rw` |
+| `bm users search` | OCAPI only | — |
+| `bm whoami` | OCAPI only | — |
+| `bm access-key *` | OCAPI only | — |
+
+::: details Legacy OCAPI backend (deprecated)
+OCAPI is deprecated and disabled on newer instances. The CLI defaults to `--api-backend auto`, which falls back to the OCAPI Data API only when SCAPI scopes are not configured. Force a backend if needed:
+
+```bash
+b2c bm users list --api-backend scapi          # force SCAPI
+b2c bm roles get Administrator --api-backend ocapi   # force the legacy OCAPI backend
+```
+
+Or set `"api-backend": "scapi"` in `dw.json`, or `SFCC_API_BACKEND=scapi`. The OCAPI-only commands (`bm users search`, `bm whoami`, `bm access-key`) are unavailable on OCAPI-disabled instances.
+:::
 
 ::: warning
-The SCAPI Users PATCH endpoint does not support changing the `disabled` flag. `bm users update --disabled` falls back to OCAPI in auto mode; with `--api-backend scapi` it errors with a clear message.
+The SCAPI Users PATCH endpoint does not support changing the `disabled` flag. `bm users update --disabled` falls back to OCAPI in auto mode (unavailable on OCAPI-disabled instances); with `--api-backend scapi` it errors with a clear message.
 :::
 
 ## Authentication

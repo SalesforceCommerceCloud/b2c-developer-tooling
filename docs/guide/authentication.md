@@ -1,5 +1,5 @@
 ---
-description: Set up authentication for the B2C CLI including Account Manager API clients, OCAPI permissions, and WebDAV access keys.
+description: Set up authentication for the B2C CLI including Account Manager API clients, SCAPI scopes, OCAPI permissions, and WebDAV access keys.
 ---
 
 # Authentication Setup
@@ -13,9 +13,9 @@ The CLI uses different authentication mechanisms depending on the operation:
 | Operation                                                                                          | Auth Method                  | Setup Required                                                                           |
 | -------------------------------------------------------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------- |
 | [Code](/cli/code) deploy, watch (file upload)                                                      | WebDAV (Basic Auth or OAuth) | [WebDAV Access](#webdav-access)                                                          |
-| [Code](/cli/code) list, activate, delete                                                           | OAuth + OCAPI **or** SCAPI (`sfcc.scripts` / `sfcc.scripts.rw`) | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration) or [SCAPI Scopes](#scapi-authentication) |
-| [Jobs](/cli/jobs)                                                                                  | OAuth + OCAPI **or** SCAPI (`sfcc.jobs` / `sfcc.jobs.rw`)       | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration) or [SCAPI Scopes](#scapi-authentication) |
-| [BM users / roles](/cli/bm)                                                                        | OAuth + OCAPI **or** SCAPI (`sfcc.users(.rw)` / `sfcc.roles(.rw)`) | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration) or [SCAPI Scopes](#scapi-authentication) |
+| [Code](/cli/code) list, activate, delete                                                           | OAuth + SCAPI (`sfcc.scripts` / `sfcc.scripts.rw`), OCAPI fallback | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) (or [OCAPI](#ocapi-configuration)) |
+| [Jobs](/cli/jobs)                                                                                  | OAuth + SCAPI (`sfcc.jobs` / `sfcc.jobs.rw`), OCAPI fallback       | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) (or [OCAPI](#ocapi-configuration)) |
+| [BM users / roles](/cli/bm)                                                                        | OAuth + SCAPI (`sfcc.users(.rw)` / `sfcc.roles(.rw)`), OCAPI fallback | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) (or [OCAPI](#ocapi-configuration)) |
 | [Sites](/cli/sites)                                                                                | OAuth + OCAPI                | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration)                |
 | SCAPI commands ([schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis), [eCDN](/cli/ecdn)) | OAuth + SCAPI scopes         | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication)        |
 | [CIP analytics](/cli/cip) (`cip query`, `cip report`)                                              | OAuth + Client Credentials   | [API Client](#account-manager-api-client) + Salesforce Commerce API role + tenant filter |
@@ -309,6 +309,12 @@ b2c code list --auth-methods jwt
 
 ## OCAPI Configuration
 
+::: warning OCAPI is deprecated
+OCAPI (the Open Commerce API / Data API) is **deprecated** and is being disabled across instances. Newer instances reject OCAPI calls entirely (`OcapiDeprecatedException`). Prefer [SCAPI](#scapi-authentication) for code, jobs, and BM users/roles — the CLI uses SCAPI first and only falls back to OCAPI when SCAPI scopes are not configured. Configure OCAPI only for instances that still support it or for the few OCAPI-only operations (e.g. [Sites](/cli/sites)).
+
+If a command fails with "OCAPI is deprecated and disabled for this instance," configure [SCAPI scopes](#scapi-authentication) on your API client instead.
+:::
+
 For operations that interact with B2C Commerce instances (code deployment, jobs, sites), you need to configure OCAPI permissions on each instance.
 
 ### Configuring OCAPI in Business Manager
@@ -471,7 +477,7 @@ For operations that interact with B2C Commerce instances (code deployment, jobs,
 
 ## SCAPI Authentication
 
-SCAPI commands (eCDN, SCAPI schemas, custom APIs) require OAuth authentication with specific roles and scopes.
+SCAPI (the Salesforce Commerce API) is the **preferred, modern** API surface and the CLI's default for every operation that supports it. SCAPI-native commands (eCDN, SCAPI schemas, custom APIs) require it, and the dual-backend commands (`code`, `jobs`, `bm users`, `bm roles`) use it first, [falling back to the deprecated OCAPI](#ocapi-configuration) only when SCAPI scopes are not configured. All require OAuth authentication with specific roles and scopes.
 
 ### Required Setup
 
@@ -497,7 +503,7 @@ SCAPI commands (eCDN, SCAPI schemas, custom APIs) require OAuth authentication w
 
 The CLI automatically requests these scopes. Your API client must have them in the Default Scopes list.
 
-For commands that have both an OCAPI and a SCAPI implementation (`code`, `jobs`, `bm users`, `bm roles`), the CLI defaults to `--api-backend auto`: it tries SCAPI when shortCode + tenantId are configured and the API client has the required `sfcc.*` scope, otherwise it falls back to OCAPI. Use `--api-backend ocapi` or `--api-backend scapi` to force a backend explicitly.
+The `code`, `jobs`, `bm users`, and `bm roles` commands run over SCAPI. The CLI defaults to `--api-backend auto`, which falls back to the [deprecated OCAPI backend](#ocapi-configuration) only when the SCAPI scopes above are not configured (or not yet provisioned on the API client). Use `--api-backend scapi` or `--api-backend ocapi` to force a backend explicitly.
 
 ::: tip
 For detailed authentication requirements including specific scopes for each command, see the individual [CLI command reference pages](/cli/).
@@ -609,9 +615,9 @@ Here's a complete example for setting up CLI access:
    - For SCAPI-backed dual commands, also add the relevant `sfcc.jobs(.rw)`, `sfcc.scripts(.rw)`, `sfcc.users(.rw)`, `sfcc.roles(.rw)` scopes — see [Scopes by Command](#scopes-by-command).
    - **Redirect URLs**: `http://localhost:8080` (for user authentication)
 
-### 2. Configure OCAPI (for `sites` and as the auto-mode fallback for code/jobs/bm)
+### 2. (Optional) Configure OCAPI fallback
 
-Add the JSON configuration shown in [OCAPI Configuration](#ocapi-configuration). With the SCAPI scopes above also configured on your client, `code list/activate/delete`, `code deploy --activate/--reload`, `jobs`, and `bm users/roles` will prefer SCAPI in `auto` mode and fall back to OCAPI if a scope is missing.
+With the SCAPI scopes above configured, `code`, `jobs`, and `bm users/roles` run entirely over SCAPI — no OCAPI setup is needed. Configure OCAPI only for the OCAPI-only [`sites`](/cli/sites) command, or to provide a fallback on instances where SCAPI scopes are not yet provisioned. Note that OCAPI is [deprecated](#ocapi-configuration) and disabled on newer instances. To set it up, add the JSON configuration shown in [OCAPI Configuration](#ocapi-configuration).
 
 ### 3. Configure WebDAV Access (for code deploy/watch, webdav commands)
 
@@ -643,7 +649,7 @@ export SFCC_PASSWORD=your-webdav-access-key
 ### 5. Test the Configuration
 
 ```bash
-# Test OAuth + OCAPI
+# Test OAuth + SCAPI (code uses SCAPI when sfcc.scripts is configured)
 b2c code list
 
 # Test WebDAV

@@ -388,7 +388,14 @@ export type {BuildScapiClientOptions, ScapiClientConfig} from './scapi-client-fa
 export {ScopeTierManager} from './scapi-scope-tier.js';
 export type {ScopeTier, ScopeTierManagerOptions} from './scapi-scope-tier.js';
 
-export {getApiErrorMessage} from './error-utils.js';
+export {
+  getApiErrorMessage,
+  redactTokens,
+  isOcapiDeprecatedFault,
+  throwOcapiError,
+  OcapiDeprecatedError,
+  OCAPI_DEPRECATED_MESSAGE,
+} from './error-utils.js';
 
 export {createTlsDispatcher} from './tls-dispatcher.js';
 export type {TlsOptions} from './tls-dispatcher.js';

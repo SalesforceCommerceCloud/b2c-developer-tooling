@@ -8,33 +8,26 @@ Commands for executing and monitoring jobs on B2C Commerce instances.
 
 ## API Backend
 
-Job commands support both OCAPI and SCAPI backends. By default (`auto` mode), SCAPI is preferred when `shortCode` and `tenantId` are configured. If SCAPI scopes are unavailable, the CLI falls back to OCAPI transparently.
-
-Use `--api-backend` to control explicitly:
+Job commands run over SCAPI (the `operation/jobs` API). Configure `shortCode`, `tenantId`, and the `sfcc.jobs` / `sfcc.jobs.rw` scopes on your API client and `job run`, `job search`, `job wait`, and `job log` work out of the box.
 
 ```bash
-# Force SCAPI
-b2c job run my-job --api-backend scapi
-
-# Force OCAPI
-b2c job run my-job --api-backend ocapi
-
-# Auto-detect (default)
-b2c job run my-job --api-backend auto
+# Default — uses SCAPI
+b2c job run my-job
 ```
 
-Or set in `dw.json`:
+::: details Legacy OCAPI backend (deprecated)
+OCAPI is deprecated and disabled on newer instances. The CLI defaults to `--api-backend auto`, which falls back to the OCAPI Data API only when SCAPI scopes are not configured. Force a backend if needed:
 
-```json
-{
-  "api-backend": "scapi"
-}
+```bash
+b2c job run my-job --api-backend scapi   # force SCAPI
+b2c job run my-job --api-backend ocapi   # force the legacy OCAPI backend
 ```
 
-Or via environment variable: `SFCC_API_BACKEND=scapi`.
+Or set `"api-backend": "scapi"` in `dw.json`, or `SFCC_API_BACKEND=scapi`.
+:::
 
 ::: tip
-The `job import` and `job export` commands currently use OCAPI only, regardless of the `--api-backend` setting.
+The `job import` and `job export` commands trigger the `sfcc-site-archive-import`/`-export` system jobs and transfer files over WebDAV. The job-execution trigger currently uses OCAPI; on OCAPI-disabled instances these subcommands are not yet available over SCAPI.
 :::
 
 ## Authentication

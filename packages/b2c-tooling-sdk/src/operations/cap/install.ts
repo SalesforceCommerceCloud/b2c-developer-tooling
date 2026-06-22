@@ -12,6 +12,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import JSZip from 'jszip';
 import {B2CInstance} from '../../instance/index.js';
+import {isOcapiDeprecatedFault, OcapiDeprecatedError, redactTokens} from '../../clients/error-utils.js';
 import {getLogger} from '../../logging/logger.js';
 import {waitForJob, JobExecutionError, getJobLog, type JobExecution, type WaitForJobOptions} from '../jobs/run.js';
 import {addDirectoryToZip} from '../util/zip.js';
@@ -152,12 +153,14 @@ export async function commerceAppInstall(
     });
 
     if (retryError || !retryData) {
-      throw new Error(retryError?.fault?.message ?? 'Failed to start install job');
+      if (isOcapiDeprecatedFault(retryError)) throw new OcapiDeprecatedError(retryError);
+      throw new Error(redactTokens(retryError?.fault?.message ?? 'Failed to start install job'), {cause: retryError});
     }
 
     execution = retryData;
   } else if (error || !data) {
-    throw new Error(error?.fault?.message ?? 'Failed to start install job');
+    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError(error);
+    throw new Error(redactTokens(error?.fault?.message ?? 'Failed to start install job'), {cause: error});
   } else {
     execution = data;
   }

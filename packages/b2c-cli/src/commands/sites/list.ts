@@ -11,7 +11,11 @@ import {
   selectColumns,
   type ColumnDef,
 } from '@salesforce/b2c-tooling-sdk/cli';
-import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk/clients';
+import {
+  getApiErrorMessage,
+  isOcapiDeprecatedFault,
+  OCAPI_DEPRECATED_MESSAGE,
+} from '@salesforce/b2c-tooling-sdk/clients';
 import type {OcapiComponents} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -69,6 +73,9 @@ export default class SitesList extends InstanceCommand<typeof SitesList> {
     });
 
     if (error) {
+      if (isOcapiDeprecatedFault(error)) {
+        this.error(OCAPI_DEPRECATED_MESSAGE);
+      }
       this.error(
         t('commands.sites.list.error', 'Failed to fetch sites: {{message}}', {
           message: getApiErrorMessage(error, response),
