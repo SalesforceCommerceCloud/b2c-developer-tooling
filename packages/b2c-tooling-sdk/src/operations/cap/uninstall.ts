@@ -9,7 +9,7 @@
  * Runs the sfcc-uninstall-commerce-app system job to remove an installed CAP.
  */
 import {B2CInstance} from '../../instance/index.js';
-import {isOcapiDeprecatedFault, OcapiDeprecatedError, redactTokens} from '../../clients/error-utils.js';
+import {isOcapiDeprecatedFault, OcapiDeprecatedError} from '../../clients/error-utils.js';
 import {getLogger} from '../../logging/logger.js';
 import {waitForJob, JobExecutionError, getJobLog, type JobExecution, type WaitForJobOptions} from '../jobs/run.js';
 import {normalizeSiteId} from './install.js';
@@ -99,14 +99,14 @@ export async function commerceAppUninstall(
     });
 
     if (retryError || !retryData) {
-      if (isOcapiDeprecatedFault(retryError)) throw new OcapiDeprecatedError(retryError);
-      throw new Error(redactTokens(retryError?.fault?.message ?? 'Failed to start uninstall job'), {cause: retryError});
+      if (isOcapiDeprecatedFault(retryError)) throw new OcapiDeprecatedError({cause: retryError});
+      throw new Error(retryError?.fault?.message ?? 'Failed to start uninstall job', {cause: retryError});
     }
 
     execution = retryData;
   } else if (error || !data) {
-    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError(error);
-    throw new Error(redactTokens(error?.fault?.message ?? 'Failed to start uninstall job'), {cause: error});
+    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError({cause: error});
+    throw new Error(error?.fault?.message ?? 'Failed to start uninstall job', {cause: error});
   } else {
     execution = data;
   }

@@ -154,7 +154,7 @@ export async function resolveRemoteSource(
       });
 
       if (error) {
-        if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError(error);
+        if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError({cause: error});
         throw new Error('Failed to fetch sites from B2C instance', {cause: error});
       }
 

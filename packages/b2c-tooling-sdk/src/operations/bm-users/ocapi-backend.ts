@@ -19,7 +19,8 @@ import {
   deleteBmUser as ocapiDeleteBmUser,
   type BmUser,
 } from './users.js';
-import {getApiErrorMessage} from '../../clients/error-utils.js';
+import {throwOcapiError} from '../../clients/error-utils.js';
+import {SCAPI_MERCHANT_USERS_RW_SCOPES} from '../../clients/scapi-merchant-users.js';
 import type {components} from '../../clients/ocapi.generated.js';
 
 function mapOcapiUser(ocapi: BmUser): UserInfo {
@@ -81,7 +82,7 @@ export class OcapiUsersBackend implements UsersBackend {
       body: body as components['schemas']['user'],
     });
     if (error) {
-      throw new Error(`Failed to create user ${login}: ${getApiErrorMessage(error, response)}`);
+      throwOcapiError(error, response, `Failed to create user ${login}`, SCAPI_MERCHANT_USERS_RW_SCOPES);
     }
     return mapOcapiUser(data as BmUser);
   }

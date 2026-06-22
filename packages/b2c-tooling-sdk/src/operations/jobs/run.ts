@@ -10,8 +10,15 @@
  */
 import {B2CInstance} from '../../instance/index.js';
 import type {components} from '../../clients/ocapi.generated.js';
-import {isOcapiDeprecatedFault, OcapiDeprecatedError, redactTokens} from '../../clients/error-utils.js';
+import {isOcapiDeprecatedFault, OcapiDeprecatedError} from '../../clients/error-utils.js';
+import {SCAPI_JOBS_CASCADE} from '../../clients/scapi-jobs.js';
 import {getLogger} from '../../logging/logger.js';
+
+// SCAPI Jobs scopes named in the OCAPI-deprecation message, derived from the
+// canonical cascade so they can't drift. Reads accept either tier; writes
+// (execute) require the rw scope.
+const JOBS_READ_SCOPES = [...new Set(SCAPI_JOBS_CASCADE.read.flat())];
+const JOBS_RW_SCOPES = [...new Set(SCAPI_JOBS_CASCADE.write.flat())];
 
 /**
  * Job execution from OCAPI.
@@ -152,8 +159,8 @@ export async function executeJob(
   }
 
   if (error || !data) {
-    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError(error);
-    const message = redactTokens(error?.fault?.message ?? `Failed to execute job ${jobId}`);
+    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError({cause: error, requiredScopes: JOBS_RW_SCOPES});
+    const message = error?.fault?.message ?? `Failed to execute job ${jobId}`;
     throw new Error(message, {cause: error});
   }
 
@@ -187,8 +194,8 @@ export async function getJobExecution(
   });
 
   if (error || !data) {
-    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError(error);
-    const message = redactTokens(error?.fault?.message ?? `Failed to get job execution ${executionId}`);
+    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError({cause: error, requiredScopes: JOBS_READ_SCOPES});
+    const message = error?.fault?.message ?? `Failed to get job execution ${executionId}`;
     throw new Error(message, {cause: error});
   }
 
@@ -419,8 +426,8 @@ export async function searchJobExecutions(
   });
 
   if (error || !data) {
-    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError(error);
-    const message = redactTokens(error?.fault?.message ?? 'Failed to search job executions');
+    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError({cause: error, requiredScopes: JOBS_READ_SCOPES});
+    const message = error?.fault?.message ?? 'Failed to search job executions';
     throw new Error(message, {cause: error});
   }
 

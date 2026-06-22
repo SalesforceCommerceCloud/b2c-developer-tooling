@@ -15,10 +15,14 @@ import * as zlib from 'node:zlib';
 import {glob, hasMagic} from 'glob';
 import JSZip from 'jszip';
 import {B2CInstance} from '../../instance/index.js';
-import {isOcapiDeprecatedFault, OcapiDeprecatedError, redactTokens} from '../../clients/error-utils.js';
+import {isOcapiDeprecatedFault, OcapiDeprecatedError} from '../../clients/error-utils.js';
+import {SCAPI_JOBS_CASCADE} from '../../clients/scapi-jobs.js';
 import {getLogger} from '../../logging/logger.js';
 import {addDirectoryToZip} from '../util/zip.js';
 import {waitForJob, JobExecutionError, getJobLog, type JobExecution, type WaitForJobOptions} from './run.js';
+
+// Import/export trigger system jobs via the job-execution write surface.
+const JOBS_RW_SCOPES = [...new Set(SCAPI_JOBS_CASCADE.write.flat())];
 
 const IMPORT_JOB_ID = 'sfcc-site-archive-import';
 const EXPORT_JOB_ID = 'sfcc-site-archive-export';
@@ -247,14 +251,15 @@ export async function siteArchiveImport(
     });
 
     if (retryError || !retryData) {
-      if (isOcapiDeprecatedFault(retryError)) throw new OcapiDeprecatedError(retryError);
-      throw new Error(redactTokens(retryError?.fault?.message ?? 'Failed to execute import job'), {cause: retryError});
+      if (isOcapiDeprecatedFault(retryError))
+        throw new OcapiDeprecatedError({cause: retryError, requiredScopes: JOBS_RW_SCOPES});
+      throw new Error(retryError?.fault?.message ?? 'Failed to execute import job', {cause: retryError});
     }
 
     execution = retryData;
   } else if (error || !data) {
-    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError(error);
-    throw new Error(redactTokens(error?.fault?.message ?? 'Failed to execute import job'), {cause: error});
+    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError({cause: error, requiredScopes: JOBS_RW_SCOPES});
+    throw new Error(error?.fault?.message ?? 'Failed to execute import job', {cause: error});
   } else {
     execution = data;
   }
@@ -1056,16 +1061,17 @@ export async function siteArchiveExport(
       });
 
       if (retryError || !retryData) {
-        if (isOcapiDeprecatedFault(retryError)) throw new OcapiDeprecatedError(retryError);
-        throw new Error(redactTokens(retryError?.fault?.message ?? 'Failed to execute export job'), {
+        if (isOcapiDeprecatedFault(retryError))
+          throw new OcapiDeprecatedError({cause: retryError, requiredScopes: JOBS_RW_SCOPES});
+        throw new Error(retryError?.fault?.message ?? 'Failed to execute export job', {
           cause: retryError,
         });
       }
 
       execution = retryData;
     } else if (error || !data) {
-      if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError(error);
-      throw new Error(redactTokens(error?.fault?.message ?? 'Failed to execute export job'), {cause: error});
+      if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError({cause: error, requiredScopes: JOBS_RW_SCOPES});
+      throw new Error(error?.fault?.message ?? 'Failed to execute export job', {cause: error});
     } else {
       execution = data;
     }

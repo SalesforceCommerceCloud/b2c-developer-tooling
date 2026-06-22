@@ -6,16 +6,12 @@
 import {expect} from 'chai';
 import {
   getApiErrorMessage,
-  redactTokens,
   isOcapiDeprecatedFault,
   throwOcapiError,
   OcapiDeprecatedError,
   OCAPI_DEPRECATED_MESSAGE,
+  ocapiDeprecatedMessage,
 } from '../../src/clients/error-utils.js';
-
-// A syntactically valid (fake) JWT: three base64url segments, first starts eyJ.
-const FAKE_JWT =
-  'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJzY29wZSI6InNmY2Muc2NyaXB0cyJ9.c2lnbmF0dXJlLXBheWxvYWQtaGVyZQ';
 
 describe('getApiErrorMessage', () => {
   // Mock response object for testing
@@ -180,46 +176,6 @@ describe('getApiErrorMessage', () => {
     });
   });
 
-  describe('token redaction (SEC1)', () => {
-    it('redacts a bearer JWT embedded in an OCAPI InvalidAccessTokenException fault', () => {
-      const error = {
-        fault: {
-          type: 'InvalidAccessTokenException',
-          message: `Unauthorized request! The access token '${FAKE_JWT}' is invalid.`,
-        },
-      };
-      const message = getApiErrorMessage(error, mockResponse(401, 'Unauthorized'));
-      expect(message).to.not.include(FAKE_JWT);
-      expect(message).to.include('eyJ…[REDACTED-TOKEN]');
-      expect(message).to.include('is invalid.');
-    });
-
-    it('redacts tokens from ODS/SLAS and detail/title/message variants too', () => {
-      expect(getApiErrorMessage({error: {message: `tok ${FAKE_JWT}`}}, mockResponse(401, 'x'))).to.not.include(
-        FAKE_JWT,
-      );
-      expect(getApiErrorMessage({detail: `tok ${FAKE_JWT}`}, mockResponse(401, 'x'))).to.not.include(FAKE_JWT);
-      expect(getApiErrorMessage({title: `tok ${FAKE_JWT}`}, mockResponse(401, 'x'))).to.not.include(FAKE_JWT);
-      expect(getApiErrorMessage({message: `tok ${FAKE_JWT}`}, mockResponse(401, 'x'))).to.not.include(FAKE_JWT);
-    });
-  });
-
-  describe('redactTokens', () => {
-    it('replaces JWTs while preserving surrounding text', () => {
-      expect(redactTokens(`before ${FAKE_JWT} after`)).to.equal('before eyJ…[REDACTED-TOKEN] after');
-    });
-
-    it('redacts multiple tokens in one string', () => {
-      const out = redactTokens(`${FAKE_JWT} and ${FAKE_JWT}`);
-      expect(out).to.not.include(FAKE_JWT);
-      expect(out.match(/REDACTED-TOKEN/g)).to.have.length(2);
-    });
-
-    it('leaves token-free text untouched', () => {
-      expect(redactTokens('No secrets here')).to.equal('No secrets here');
-    });
-  });
-
   describe('OCAPI deprecation (D1)', () => {
     const deprecatedFault = {
       fault: {
@@ -240,36 +196,71 @@ describe('getApiErrorMessage', () => {
       expect(isOcapiDeprecatedFault({})).to.equal(false);
     });
 
-    it('getApiErrorMessage substitutes actionable SCAPI guidance for the deprecation fault', () => {
+    it('getApiErrorMessage is a pure extractor — it does NOT substitute the deprecation fault', () => {
+      // Deprecation handling lives at the OCAPI-terminal call sites (throwOcapiError),
+      // not in the extractor, so the raw fault message comes through here.
       const message = getApiErrorMessage(deprecatedFault, mockResponse(403, 'Forbidden'));
-      expect(message).to.equal(OCAPI_DEPRECATED_MESSAGE);
-      expect(message).to.include('OCAPI is deprecated');
-      expect(message).to.include('#scapi-authentication');
-      // The original opaque fault message must not be what the user sees.
-      expect(message).to.not.include('Access is not available');
+      expect(message).to.equal('OCAPI has been deprecated. Access is not available for this instance.');
+    });
+  });
+
+  describe('ocapiDeprecatedMessage', () => {
+    it('uses generic sfcc.* phrasing when no scopes are given', () => {
+      const msg = ocapiDeprecatedMessage();
+      expect(msg).to.equal(OCAPI_DEPRECATED_MESSAGE);
+      expect(msg).to.include('OCAPI is deprecated');
+      expect(msg).to.include('the required sfcc.* scopes');
+      expect(msg).to.include('#scapi-authentication');
+    });
+
+    it('names a single required scope', () => {
+      const msg = ocapiDeprecatedMessage(['sfcc.scripts.rw']);
+      expect(msg).to.include('the "sfcc.scripts.rw" scope');
+    });
+
+    it('lists multiple scopes with "or"', () => {
+      const msg = ocapiDeprecatedMessage(['sfcc.scripts', 'sfcc.scripts.rw']);
+      expect(msg).to.include('the "sfcc.scripts" or "sfcc.scripts.rw" scope');
     });
   });
 
   describe('throwOcapiError', () => {
-    it('throws OcapiDeprecatedError for the deprecation fault', () => {
+    it('throws OcapiDeprecatedError for the deprecation fault, naming the operation scope', () => {
       const fault = {fault: {type: 'OcapiDeprecatedException', message: 'deprecated'}};
-      expect(() => throwOcapiError(fault, mockResponse(403, 'Forbidden'), 'Failed to do thing')).to.throw(
-        OcapiDeprecatedError,
-      );
+      try {
+        throwOcapiError(fault, mockResponse(403, 'Forbidden'), 'Failed to list code versions', [
+          'sfcc.scripts',
+          'sfcc.scripts.rw',
+        ]);
+        expect.fail('should have thrown');
+      } catch (e) {
+        expect(e).to.be.instanceOf(OcapiDeprecatedError);
+        expect((e as Error).message).to.include('the "sfcc.scripts" or "sfcc.scripts.rw" scope');
+        expect((e as Error).cause).to.equal(fault);
+      }
     });
 
-    it('prefixes and redacts non-deprecation errors, attaching cause', () => {
-      const fault = {fault: {type: 'InvalidAccessTokenException', message: `token ${FAKE_JWT}`}};
+    it('uses the generic message when no scopes are supplied (OCAPI-only operations)', () => {
+      const fault = {fault: {type: 'OcapiDeprecatedException', message: 'deprecated'}};
       try {
-        throwOcapiError(fault, mockResponse(401, 'Unauthorized'), 'Failed to list code versions');
+        throwOcapiError(fault, mockResponse(403, 'Forbidden'), 'Failed to search users');
+        expect.fail('should have thrown');
+      } catch (e) {
+        expect(e).to.be.instanceOf(OcapiDeprecatedError);
+        expect((e as Error).message).to.include('the required sfcc.* scopes');
+      }
+    });
+
+    it('prefixes non-deprecation errors with the fault message and attaches cause', () => {
+      const fault = {fault: {type: 'NotFoundException', message: 'Site not found'}};
+      try {
+        throwOcapiError(fault, mockResponse(404, 'Not Found'), 'Failed to list code versions');
         expect.fail('should have thrown');
       } catch (e) {
         const err = e as Error;
         expect(err).to.be.instanceOf(Error);
         expect(err).to.not.be.instanceOf(OcapiDeprecatedError);
-        expect(err.message).to.match(/^Failed to list code versions: /);
-        expect(err.message).to.not.include(FAKE_JWT);
-        expect(err.message).to.include('eyJ…[REDACTED-TOKEN]');
+        expect(err.message).to.equal('Failed to list code versions: Site not found');
         expect(err.cause).to.equal(fault);
       }
     });

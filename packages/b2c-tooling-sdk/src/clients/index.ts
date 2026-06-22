@@ -390,11 +390,11 @@ export type {ScopeTier, ScopeTierManagerOptions} from './scapi-scope-tier.js';
 
 export {
   getApiErrorMessage,
-  redactTokens,
   isOcapiDeprecatedFault,
   throwOcapiError,
   OcapiDeprecatedError,
   OCAPI_DEPRECATED_MESSAGE,
+  ocapiDeprecatedMessage,
 } from './error-utils.js';
 
 export {createTlsDispatcher} from './tls-dispatcher.js';

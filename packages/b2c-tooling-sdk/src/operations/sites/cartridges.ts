@@ -13,7 +13,7 @@
 import JSZip from 'jszip';
 import type {B2CInstance} from '../../instance/index.js';
 import type {components} from '../../clients/ocapi.generated.js';
-import {getApiErrorMessage} from '../../clients/error-utils.js';
+import {getApiErrorMessage, isOcapiDeprecatedFault, OcapiDeprecatedError} from '../../clients/error-utils.js';
 import {getLogger} from '../../logging/logger.js';
 import {siteArchiveImport, siteArchiveExportToBuffer} from '../jobs/site-archive.js';
 import type {WaitForJobOptions} from '../jobs/run.js';
@@ -91,6 +91,7 @@ export async function getCartridgePath(instance: B2CInstance, siteId: string): P
   });
 
   if (error) {
+    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError({cause: error});
     throw new Error(`Failed to get cartridge path for site "${siteId}": ${getApiErrorMessage(error, response)}`, {
       cause: error,
     });

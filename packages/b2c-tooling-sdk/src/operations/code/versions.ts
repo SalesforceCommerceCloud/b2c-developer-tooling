@@ -6,6 +6,7 @@
 import type {B2CInstance} from '../../instance/index.js';
 import {type OcapiComponents} from '../../clients/index.js';
 import {throwOcapiError} from '../../clients/error-utils.js';
+import {SCAPI_SCRIPTS_READ_SCOPES, SCAPI_SCRIPTS_RW_SCOPES} from '../../clients/scapi-scripts.js';
 import {getLogger} from '../../logging/logger.js';
 
 /** Code version type from OCAPI */
@@ -33,7 +34,10 @@ export async function listCodeVersions(instance: B2CInstance): Promise<CodeVersi
   const {data, error, response} = await instance.ocapi.GET('/code_versions', {});
 
   if (error) {
-    throwOcapiError(error, response, 'Failed to list code versions');
+    throwOcapiError(error, response, 'Failed to list code versions', [
+      ...SCAPI_SCRIPTS_READ_SCOPES,
+      ...SCAPI_SCRIPTS_RW_SCOPES,
+    ]);
   }
 
   return (data as CodeVersionResult).data ?? [];
@@ -82,7 +86,7 @@ export async function activateCodeVersion(instance: B2CInstance, codeVersionId: 
   });
 
   if (error) {
-    throwOcapiError(error, response, 'Failed to activate code version');
+    throwOcapiError(error, response, 'Failed to activate code version', SCAPI_SCRIPTS_RW_SCOPES);
   }
 
   logger.debug({codeVersionId}, `Code version ${codeVersionId} activated`);
@@ -111,7 +115,7 @@ export async function deleteCodeVersion(instance: B2CInstance, codeVersionId: st
   });
 
   if (error) {
-    throwOcapiError(error, response, 'Failed to delete code version');
+    throwOcapiError(error, response, 'Failed to delete code version', SCAPI_SCRIPTS_RW_SCOPES);
   }
 
   logger.debug({codeVersionId}, `Code version ${codeVersionId} deleted`);
@@ -140,7 +144,7 @@ export async function createCodeVersion(instance: B2CInstance, codeVersionId: st
   });
 
   if (error) {
-    throwOcapiError(error, response, 'Failed to create code version');
+    throwOcapiError(error, response, 'Failed to create code version', SCAPI_SCRIPTS_RW_SCOPES);
   }
 
   logger.debug({codeVersionId}, `Code version ${codeVersionId} created`);

@@ -10,7 +10,12 @@
  */
 import type {B2CInstance} from '../../instance/index.js';
 import type {components} from '../../clients/ocapi.generated.js';
-import {getApiErrorMessage} from '../../clients/error-utils.js';
+import {throwOcapiError} from '../../clients/error-utils.js';
+import {SCAPI_MERCHANT_ROLES_READ_SCOPES, SCAPI_MERCHANT_ROLES_RW_SCOPES} from '../../clients/scapi-merchant-roles.js';
+
+// SCAPI Merchant Roles scopes named in the OCAPI-deprecation message.
+const ROLES_READ_SCOPES = [...SCAPI_MERCHANT_ROLES_READ_SCOPES, ...SCAPI_MERCHANT_ROLES_RW_SCOPES];
+const ROLES_RW_SCOPES = SCAPI_MERCHANT_ROLES_RW_SCOPES;
 
 /**
  * BM access role from OCAPI.
@@ -68,7 +73,7 @@ export async function listBmRoles(instance: B2CInstance, options: ListBmRolesOpt
   });
 
   if (error) {
-    throw new Error(`Failed to list roles: ${getApiErrorMessage(error, response)}`, {cause: error});
+    throwOcapiError(error, response, 'Failed to list roles', ROLES_READ_SCOPES);
   }
 
   return data as BmRoles;
@@ -100,7 +105,7 @@ export async function getBmRole(
   });
 
   if (error) {
-    throw new Error(`Failed to get role ${roleId}: ${getApiErrorMessage(error, response)}`, {cause: error});
+    throwOcapiError(error, response, `Failed to get role ${roleId}`, ROLES_READ_SCOPES);
   }
 
   return data as BmRole;
@@ -130,7 +135,7 @@ export async function createBmRole(
   });
 
   if (error) {
-    throw new Error(`Failed to create role ${roleId}: ${getApiErrorMessage(error, response)}`, {cause: error});
+    throwOcapiError(error, response, `Failed to create role ${roleId}`, ROLES_RW_SCOPES);
   }
 
   return data as BmRole;
@@ -155,7 +160,7 @@ export async function deleteBmRole(instance: B2CInstance, roleId: string): Promi
   });
 
   if (error) {
-    throw new Error(`Failed to delete role ${roleId}: ${getApiErrorMessage(error, response)}`, {cause: error});
+    throwOcapiError(error, response, `Failed to delete role ${roleId}`, ROLES_RW_SCOPES);
   }
 }
 
@@ -182,9 +187,7 @@ export async function grantBmRole(
   });
 
   if (error) {
-    throw new Error(`Failed to grant role ${roleId} to ${login}: ${getApiErrorMessage(error, response)}`, {
-      cause: error,
-    });
+    throwOcapiError(error, response, `Failed to grant role ${roleId} to ${login}`, ROLES_RW_SCOPES);
   }
 
   return data as components['schemas']['user'];
@@ -208,9 +211,7 @@ export async function revokeBmRole(instance: B2CInstance, roleId: string, login:
   });
 
   if (error) {
-    throw new Error(`Failed to revoke role ${roleId} from ${login}: ${getApiErrorMessage(error, response)}`, {
-      cause: error,
-    });
+    throwOcapiError(error, response, `Failed to revoke role ${roleId} from ${login}`, ROLES_RW_SCOPES);
   }
 }
 
@@ -233,9 +234,7 @@ export async function getBmRolePermissions(instance: B2CInstance, roleId: string
   });
 
   if (error) {
-    throw new Error(`Failed to get permissions for role ${roleId}: ${getApiErrorMessage(error, response)}`, {
-      cause: error,
-    });
+    throwOcapiError(error, response, `Failed to get permissions for role ${roleId}`, ROLES_READ_SCOPES);
   }
 
   return data as BmRolePermissions;
@@ -269,9 +268,7 @@ export async function setBmRolePermissions(
   });
 
   if (error) {
-    throw new Error(`Failed to set permissions for role ${roleId}: ${getApiErrorMessage(error, response)}`, {
-      cause: error,
-    });
+    throwOcapiError(error, response, `Failed to set permissions for role ${roleId}`, ROLES_RW_SCOPES);
   }
 
   return data as BmRolePermissions;
