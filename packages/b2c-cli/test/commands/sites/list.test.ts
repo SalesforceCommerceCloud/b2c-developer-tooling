@@ -22,14 +22,21 @@ describe('sites list', () => {
     return createTestCommand(SitesList, hooks.getConfig(), flags, args);
   }
 
-  // With no shortCode/tenantId/auth configured, the dual-backend factory
-  // resolves to the OCAPI backend, which reads `/sites?select=(**)`.
+  // The instance carries SCAPI resolution now: a stub instance with no
+  // `scapiClientConfig` (and `apiBackend: 'auto'`) makes the dual-backend
+  // factory resolve to the OCAPI backend, which reads `/sites?select=(**)`.
+  function stubInstance(command: any, ocapiGet: sinon.SinonStub) {
+    sinon.stub(command, 'instance').get(() => ({
+      ocapi: {GET: ocapiGet},
+      apiBackend: 'auto',
+      scapiClientConfig: undefined,
+    }));
+  }
+
   function stubCommon(command: any, {jsonEnabled}: {jsonEnabled: boolean}) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'jsonEnabled').returns(jsonEnabled);
-    sinon.stub(command, 'hasScapiConfig').returns(false);
-    sinon.stub(command, 'apiBackendPreference').get(() => 'auto');
   }
 
   it('returns data in JSON mode', async () => {
@@ -42,7 +49,7 @@ describe('sites list', () => {
       error: undefined,
       response: {status: 200},
     });
-    sinon.stub(command, 'instance').get(() => ({ocapi: {GET: ocapiGet}}));
+    stubInstance(command, ocapiGet);
 
     const result = await command.run();
     expect(result.count).to.equal(1);
@@ -57,7 +64,7 @@ describe('sites list', () => {
     sinon.stub(command, 'log').returns(void 0);
 
     const ocapiGet = sinon.stub().resolves({data: {count: 0, data: []}, error: undefined, response: {status: 200}});
-    sinon.stub(command, 'instance').get(() => ({ocapi: {GET: ocapiGet}}));
+    stubInstance(command, ocapiGet);
 
     const stdoutStub = sinon.stub(ux, 'stdout').returns(void 0 as any);
 
@@ -80,7 +87,7 @@ describe('sites list', () => {
     const ocapiGet = sinon
       .stub()
       .resolves({data: undefined, error: {fault: {message: 'boom'}}, response: {status: 500}});
-    sinon.stub(command, 'instance').get(() => ({ocapi: {GET: ocapiGet}}));
+    stubInstance(command, ocapiGet);
 
     // The OCAPI backend throws on error; the command surfaces it via catch().
     try {

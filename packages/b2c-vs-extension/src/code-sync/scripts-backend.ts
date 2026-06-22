@@ -9,24 +9,15 @@
  * In `auto` mode this lets SCAPI-only setups manage code versions through
  * `sfcc.scripts(.rw)` instead of OCAPI, with transparent OCAPI fallback on
  * `invalid_scope`.
+ *
+ * SCAPI coordinates, auth, and the `apiBackend` preference all come from the
+ * instance ({@link B2CInstance.scapiClientConfig} / {@link B2CInstance.apiBackend}),
+ * which the extension builds from resolved config — so nothing extra needs to
+ * be threaded here.
  */
 import {createScriptsBackend, type ScriptsBackend} from '@salesforce/b2c-tooling-sdk/operations/code';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
-import type {B2CExtensionConfig} from '../config-provider.js';
 
-export function createScriptsBackendFromExtension(
-  configProvider: B2CExtensionConfig,
-  instance: B2CInstance,
-): ScriptsBackend {
-  const resolved = configProvider.getConfig();
-  const preference = resolved?.values.apiBackend ?? 'auto';
-  const auth = resolved?.hasOAuthConfig() ? resolved.createOAuth() : undefined;
-
-  return createScriptsBackend({
-    preference,
-    instance,
-    shortCode: resolved?.values.shortCode,
-    tenantId: resolved?.values.tenantId,
-    auth,
-  });
+export function createScriptsBackendFromExtension(instance: B2CInstance): ScriptsBackend {
+  return createScriptsBackend({instance});
 }

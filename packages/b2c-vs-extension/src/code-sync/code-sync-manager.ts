@@ -73,7 +73,7 @@ export class CodeSyncManager implements vscode.Disposable {
     this.codeVersion = instance.config.codeVersion;
     if (!this.codeVersion) {
       try {
-        const active = await createScriptsBackendFromExtension(this.configProvider, instance).getActiveCodeVersion();
+        const active = await createScriptsBackendFromExtension(instance).getActiveCodeVersion();
         if (active?.id) {
           this.codeVersion = active.id;
           instance.config.codeVersion = this.codeVersion;
@@ -194,7 +194,7 @@ export class CodeSyncManager implements vscode.Disposable {
     let codeVersion = instance.config.codeVersion;
     if (!codeVersion) {
       try {
-        const active = await createScriptsBackendFromExtension(this.configProvider, instance).getActiveCodeVersion();
+        const active = await createScriptsBackendFromExtension(instance).getActiveCodeVersion();
         if (active?.id) {
           codeVersion = active.id;
           instance.config.codeVersion = codeVersion;
@@ -233,7 +233,7 @@ export class CodeSyncManager implements vscode.Disposable {
     let codeVersion = instance.config.codeVersion;
     if (!codeVersion) {
       try {
-        const active = await createScriptsBackendFromExtension(this.configProvider, instance).getActiveCodeVersion();
+        const active = await createScriptsBackendFromExtension(instance).getActiveCodeVersion();
         if (active?.id) {
           codeVersion = active.id;
           instance.config.codeVersion = codeVersion;

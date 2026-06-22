@@ -63,13 +63,7 @@ export default class SitesList extends InstanceCommand<typeof SitesList> {
     this.requireOAuthCredentials();
 
     const hostname = this.resolvedConfig.values.hostname!;
-    const backend = createSitesBackend({
-      preference: this.apiBackendPreference,
-      instance: this.instance,
-      shortCode: this.resolvedConfig.values.shortCode,
-      tenantId: this.resolvedConfig.values.tenantId,
-      auth: this.hasScapiConfig() ? this.getOAuthStrategy() : undefined,
-    });
+    const backend = createSitesBackend({instance: this.instance});
     this.logger.debug(`Using ${backend.name} backend for sites list`);
 
     this.log(t('commands.sites.list.fetching', 'Fetching sites from {{hostname}}...', {hostname}));

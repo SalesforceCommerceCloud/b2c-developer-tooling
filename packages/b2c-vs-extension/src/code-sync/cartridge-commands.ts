@@ -49,7 +49,7 @@ function createDownloadCartridgeCommand(
     let codeVersion = instance.config.codeVersion;
     if (!codeVersion) {
       try {
-        const active = await createScriptsBackendFromExtension(configProvider, instance).getActiveCodeVersion();
+        const active = await createScriptsBackendFromExtension(instance).getActiveCodeVersion();
         if (active?.id) codeVersion = active.id;
       } catch {
         // fall through
@@ -226,7 +226,7 @@ function createListCodeVersionsCommand(
     if (!instance) return;
 
     try {
-      const scriptsBackend = createScriptsBackendFromExtension(configProvider, instance);
+      const scriptsBackend = createScriptsBackendFromExtension(instance);
       const versions = await scriptsBackend.listCodeVersions();
       const items = versions.map((v) => ({
         label: `${v.active ? '$(star-full) ' : ''}${v.id ?? 'unknown'}`,
@@ -308,7 +308,7 @@ function createCreateCodeVersionCommand(
     if (!name) return;
 
     try {
-      await createScriptsBackendFromExtension(configProvider, instance).createCodeVersion(name.trim());
+      await createScriptsBackendFromExtension(instance).createCodeVersion(name.trim());
       outputChannel.appendLine(`[Code Version] Created "${name.trim()}"`);
       vscode.window.showInformationMessage(`B2C DX: Code version "${name.trim()}" created.`);
       treeProvider.refresh();
@@ -328,7 +328,7 @@ function createActivateCodeVersionCommand(
     if (!instance) return;
 
     try {
-      const scriptsBackend = createScriptsBackendFromExtension(configProvider, instance);
+      const scriptsBackend = createScriptsBackendFromExtension(instance);
       const versions = await scriptsBackend.listCodeVersions();
       const items = versions.map((v) => ({
         label: v.id ?? 'unknown',
@@ -381,7 +381,7 @@ export async function updateCodeVersionDisplay(
     return;
   }
   try {
-    const active = await createScriptsBackendFromExtension(configProvider, instance).getActiveCodeVersion();
+    const active = await createScriptsBackendFromExtension(instance).getActiveCodeVersion();
     treeView.description = active?.id ? `v: ${active.id}` : '';
   } catch {
     treeView.description = '';

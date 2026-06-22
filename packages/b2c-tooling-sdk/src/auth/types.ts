@@ -89,6 +89,12 @@ export interface OAuthAuthConfig {
   clientSecret?: string;
   scopes?: string[];
   accountManagerHost?: string;
+  /** Path to JWT certificate file (cert.pem) for the JWT Bearer flow */
+  jwtCertPath?: string;
+  /** Path to JWT private key file (key.pem) for the JWT Bearer flow */
+  jwtKeyPath?: string;
+  /** Optional passphrase for an encrypted JWT private key */
+  jwtPassphrase?: string;
   /** Override redirect URI for implicit OAuth flow (e.g., for port forwarding in remote environments) */
   redirectUri?: string;
   /** Custom browser opener for implicit OAuth flow. Receives the authorization URL. */

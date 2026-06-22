@@ -20,7 +20,7 @@ export function createDeployCommand(
     }
 
     // Resolve code version through the configured Scripts backend (SCAPI or OCAPI)
-    const scriptsBackend = createScriptsBackendFromExtension(configProvider, instance);
+    const scriptsBackend = createScriptsBackendFromExtension(instance);
     let codeVersion = instance.config.codeVersion;
     if (!codeVersion) {
       try {

@@ -558,6 +558,9 @@ export function buildAuthConfigFromNormalized(config: NormalizedConfig): AuthCon
       clientSecret: config.clientSecret,
       scopes: config.scopes,
       accountManagerHost: config.accountManagerHost,
+      jwtCertPath: config.jwtCertPath,
+      jwtKeyPath: config.jwtKeyPath,
+      jwtPassphrase: config.jwtPassphrase,
     };
   }
 
@@ -596,6 +599,11 @@ export function createInstanceFromConfig(
     hostname: config.hostname,
     codeVersion: config.codeVersion,
     webdavHostname: config.webdavHostname,
+    // SCAPI coordinates + backend preference so SCAPI operations can be driven
+    // from the instance alone (see B2CInstance.scapiClientConfig).
+    shortCode: config.shortCode,
+    tenantId: config.tenantId,
+    apiBackend: config.apiBackend,
     // Include TLS options if certificate or self-signed mode is configured
     tlsOptions:
       config.certificate || config.selfSigned

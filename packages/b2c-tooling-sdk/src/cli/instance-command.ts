@@ -213,32 +213,24 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
   }
 
   /**
-   * True iff shortCode + tenantId are available AND the configured auth
-   * strategy can request the SCAPI scopes (`sfcc.*` plus the tenant scope)
+   * True iff this instance can reach SCAPI under `auto` mode: shortCode +
+   * tenantId are configured AND the auth flow can request the `sfcc.*` scopes
    * each domain needs.
    *
-   * Only the stateless OAuth flows (client-credentials, JWT bearer) qualify:
-   * those go back to Account Manager per request and can ask for whatever
-   * scopes the operation requires. Stateful and implicit flows hold a fixed
-   * token whose scopes were chosen at acquisition; under `auto` they would
-   * route through SCAPI with a token that AM never granted SCAPI scopes (or
-   * the right tenant scope) for, and the SCAPI 403 isn't a fallback
-   * trigger.
-   *
-   * Users running stateful or implicit auth who *do* want SCAPI can opt in
-   * with `--api-backend scapi` (provided the stored token genuinely covers
-   * the required scopes). Auto mode stays conservative.
+   * Delegates to {@link B2CInstance.scapiClientConfig} so the eligibility rule
+   * lives in exactly one place. Only the stateless OAuth flows (client-
+   * credentials, JWT Bearer) qualify — they go back to Account Manager per
+   * request and can ask for whatever scopes the operation requires. Stateful
+   * and implicit flows hold a fixed token whose scopes were chosen at
+   * acquisition; under `auto` they would route through SCAPI with a token that
+   * AM never granted SCAPI scopes for, and the SCAPI 403 isn't a fallback
+   * trigger. Those users opt in explicitly with `--api-backend scapi`.
    */
   protected hasScapiConfig(): boolean {
-    const values = this.resolvedConfig.values;
-    if (!values.shortCode || !values.tenantId || !this.hasOAuthCredentials()) {
+    if (!this.resolvedConfig.hasB2CInstanceConfig()) {
       return false;
     }
-
-    return (
-      Boolean(values.clientId && values.clientSecret) ||
-      Boolean(values.clientId && values.jwtCertPath && values.jwtKeyPath)
-    );
+    return this.instance.scapiClientConfig !== undefined;
   }
 
   /**
@@ -246,25 +238,18 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
    * that have not yet migrated to the dispatcher pattern. Will be removed
    * once those domains move to SCAPI ops + dispatcher branches in CLI.
    *
+   * SCAPI coordinates and auth are sourced from the instance
+   * ({@link B2CInstance.scapiClientConfig}); the factory honors the instance's
+   * `apiBackend` preference. The CLI flag flows into the instance via resolved
+   * config, so passing it again here is unnecessary.
+   *
    * @deprecated Use {@link createDispatcher} and call SCAPI ops / OCAPI
    * functions directly from CLI commands.
    */
   protected createBackend<T>(
     factory: (config: import('../clients/dual-backend-factory.js').DualBackendConfig) => T,
   ): T {
-    // Gate auth on hasScapiConfig() — not just hasOAuthCredentials() — so the
-    // dual-backend factory's "is SCAPI available" check (auth presence)
-    // matches the dispatcher path's capability guard. Otherwise stateful or
-    // implicit auth can route auto-mode to SCAPI with a token that AM never
-    // granted SCAPI scopes for, and the resulting 403 isn't a fallback
-    // trigger.
-    return factory({
-      preference: this.apiBackendPreference,
-      instance: this.instance,
-      shortCode: this.resolvedConfig.values.shortCode,
-      tenantId: this.resolvedConfig.values.tenantId,
-      auth: this.hasScapiConfig() ? this.getOAuthStrategy() : undefined,
-    });
+    return factory({instance: this.instance});
   }
 
   /**

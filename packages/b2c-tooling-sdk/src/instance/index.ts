@@ -44,10 +44,30 @@
  */
 import type {AuthConfig, AuthStrategy, AuthMethod, AuthCredentials} from '../auth/types.js';
 import {BasicAuthStrategy} from '../auth/basic.js';
+import {OAuthStrategy} from '../auth/oauth.js';
+import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
 import {resolveAuthStrategy} from '../auth/resolve.js';
 import {WebDavClient} from '../clients/webdav.js';
 import {createOcapiClient, type OcapiClient} from '../clients/ocapi.js';
 import {createTlsDispatcher, type TlsOptions} from '../clients/tls-dispatcher.js';
+import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
+
+/**
+ * SCAPI connection coordinates plus an auth strategy able to request the
+ * `sfcc.*` scopes each Commerce API operation needs.
+ *
+ * Returned by {@link B2CInstance.scapiClientConfig} when — and only when — the
+ * instance carries both a shortCode and tenantId and is configured with a
+ * stateless OAuth flow (client-credentials or JWT Bearer) that can go back to
+ * Account Manager per request for arbitrary scopes. This is the single handle
+ * every SCAPI client factory consumes, so SCAPI operations need nothing beyond
+ * a {@link B2CInstance}.
+ */
+export interface ScapiClientConfig {
+  shortCode: string;
+  tenantId: string;
+  auth: AuthStrategy;
+}
 
 /**
  * Instance configuration (hostname, code version, etc.)
@@ -61,6 +81,22 @@ export interface InstanceConfig {
   webdavHostname?: string;
   /** TLS options for mTLS/self-signed certificate support */
   tlsOptions?: TlsOptions;
+  /**
+   * SCAPI short code (e.g. `kv7kzm78`). Required, together with {@link tenantId},
+   * to reach the Salesforce Commerce API. Populated from resolved configuration.
+   */
+  shortCode?: string;
+  /**
+   * SCAPI tenant/organization ID (e.g. `zzxy_prd`). Required, together with
+   * {@link shortCode}, to reach the Salesforce Commerce API.
+   */
+  tenantId?: string;
+  /**
+   * Backend preference for operations that support both OCAPI (legacy) and
+   * SCAPI. Defaults to `'auto'` when unset. Lets the instance answer "should
+   * this operation prefer SCAPI?" without the caller re-reading config.
+   */
+  apiBackend?: 'ocapi' | 'scapi' | 'auto';
 }
 
 /**
@@ -106,6 +142,49 @@ export class B2CInstance {
    */
   get webdavHostname(): string {
     return this.config.webdavHostname || this.config.hostname;
+  }
+
+  /**
+   * Backend preference for operations that support both OCAPI and SCAPI.
+   * Defaults to `'auto'` when not configured.
+   */
+  get apiBackend(): 'ocapi' | 'scapi' | 'auto' {
+    return this.config.apiBackend ?? 'auto';
+  }
+
+  /**
+   * SCAPI connection coordinates + a scope-flexible auth strategy, or
+   * `undefined` when this instance cannot reach SCAPI under `auto` mode.
+   *
+   * This is the forward-looking seam for the OCAPI → SCAPI transition: a SCAPI
+   * client factory (jobs, sites, scripts, …) needs only a {@link B2CInstance},
+   * not a separately-threaded shortCode/tenantId/auth bundle. When OCAPI is
+   * eventually removed, the OCAPI accessors disappear and this stays.
+   *
+   * Returns `undefined` unless **all** of the following hold:
+   *   1. `shortCode` and `tenantId` are configured, and
+   *   2. the configured OAuth flow is stateless and scope-flexible —
+   *      client-credentials (clientId + clientSecret) or JWT Bearer
+   *      (clientId + cert/key).
+   *
+   * Stateful and implicit flows are excluded on purpose: they hold a fixed
+   * token whose scopes were chosen at acquisition, so under `auto` they would
+   * route to SCAPI with a token AM never granted the required scopes for, and
+   * that 403 is not a fallback trigger. Callers wanting SCAPI on those flows
+   * opt in explicitly via `--api-backend scapi` and build the client directly.
+   */
+  get scapiClientConfig(): ScapiClientConfig | undefined {
+    const {shortCode, tenantId} = this.config;
+    if (!shortCode || !tenantId) {
+      return undefined;
+    }
+
+    const auth = this.buildScapiAuthStrategy();
+    if (!auth) {
+      return undefined;
+    }
+
+    return {shortCode, tenantId, auth};
   }
 
   /**
@@ -203,8 +282,57 @@ export class B2CInstance {
 
     return resolveAuthStrategy(credentials, {allowedMethods: oauthMethods});
   }
+
+  /**
+   * Builds the scope-flexible OAuth strategy used for SCAPI, or `undefined`
+   * when the configured credentials are not eligible for `auto`-mode SCAPI.
+   *
+   * Only the stateless flows qualify, because only they can request arbitrary
+   * `sfcc.*` scopes from Account Manager per call (via the cascade / additional
+   * scopes hooks the SCAPI client factories rely on):
+   *   - **client-credentials**: clientId + clientSecret.
+   *   - **JWT Bearer**: clientId + cert/key paths.
+   *
+   * Honors `authMethods` ordering, defaulting to client-credentials before JWT
+   * to match the CLI's auth priority. Returns `undefined` for implicit- or
+   * basic-only configs.
+   */
+  private buildScapiAuthStrategy(): AuthStrategy | undefined {
+    const oauth = this.auth.oauth;
+    if (!oauth) {
+      return undefined;
+    }
+
+    const accountManagerHost = oauth.accountManagerHost ?? DEFAULT_ACCOUNT_MANAGER_HOST;
+    const methods = this.auth.authMethods ?? (['client-credentials', 'jwt'] as AuthMethod[]);
+
+    for (const method of methods) {
+      if (method === 'client-credentials' && oauth.clientSecret) {
+        return new OAuthStrategy({
+          clientId: oauth.clientId,
+          clientSecret: oauth.clientSecret,
+          scopes: oauth.scopes,
+          accountManagerHost,
+        });
+      }
+
+      if (method === 'jwt' && oauth.jwtCertPath && oauth.jwtKeyPath) {
+        return new JwtOAuthStrategy({
+          clientId: oauth.clientId,
+          certPath: oauth.jwtCertPath,
+          keyPath: oauth.jwtKeyPath,
+          passphrase: oauth.jwtPassphrase,
+          accountManagerHost,
+          scopes: oauth.scopes,
+        });
+      }
+    }
+
+    return undefined;
+  }
 }
 
 // Re-export types for convenience
 export type {AuthConfig};
 export type {TlsOptions};
+export type {AuthStrategy};

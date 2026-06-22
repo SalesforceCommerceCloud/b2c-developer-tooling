@@ -10,20 +10,33 @@ import {OcapiSitesBackend} from '../../../src/operations/sites/ocapi-sites-backe
 import {ScapiSitesBackend} from '../../../src/operations/sites/scapi-sites-backend.js';
 import {SCAPI_SITES_READ_AND_RW_SCOPES} from '../../../src/operations/sites/sites-scopes.js';
 import {OcapiDeprecatedError} from '../../../src/clients/error-utils.js';
-import type {B2CInstance} from '../../../src/instance/index.js';
+import type {B2CInstance, ScapiClientConfig} from '../../../src/instance/index.js';
 import type {AuthStrategy} from '../../../src/auth/types.js';
 
-function fakeInstance(getImpl: (path: string, init: unknown) => unknown): B2CInstance {
-  return {ocapi: {GET: async (path: string, init: unknown) => getImpl(path, init)}} as unknown as B2CInstance;
+const fakeAuth = {} as AuthStrategy;
+
+/**
+ * Builds a fake {@link B2CInstance}. SCAPI resolution now flows from the
+ * instance: `apiBackend` is the preference and `scapiClientConfig` carries the
+ * shortCode/tenantId/auth (undefined → SCAPI not available).
+ */
+function fakeInstance(
+  getImpl: (path: string, init: unknown) => unknown,
+  opts: {apiBackend?: 'ocapi' | 'scapi' | 'auto'; scapiClientConfig?: ScapiClientConfig} = {},
+): B2CInstance {
+  return {
+    ocapi: {GET: async (path: string, init: unknown) => getImpl(path, init)},
+    apiBackend: opts.apiBackend ?? 'auto',
+    scapiClientConfig: opts.scapiClientConfig,
+  } as unknown as B2CInstance;
 }
 
-const fakeAuth = {} as AuthStrategy;
+const fakeScapiConfig: ScapiClientConfig = {shortCode: 'abcd1234', tenantId: 'zzxy_dev', auth: fakeAuth};
 
 describe('operations/sites backend', () => {
   describe('createSitesBackend resolution', () => {
     it('resolves to OCAPI when no SCAPI config is present', () => {
       const backend = createSitesBackend({
-        preference: 'auto',
         instance: fakeInstance(() => ({data: {data: []}, error: undefined, response: {status: 200}})),
       });
       expect(backend.name).to.equal('ocapi');
@@ -31,11 +44,9 @@ describe('operations/sites backend', () => {
 
     it('resolves to SCAPI (with OCAPI fallback wrapper) when SCAPI config is present', () => {
       const backend = createSitesBackend({
-        preference: 'auto',
-        instance: fakeInstance(() => ({data: {data: []}, error: undefined, response: {status: 200}})),
-        shortCode: 'abcd1234',
-        tenantId: 'zzxy_dev',
-        auth: fakeAuth,
+        instance: fakeInstance(() => ({data: {data: []}, error: undefined, response: {status: 200}}), {
+          scapiClientConfig: fakeScapiConfig,
+        }),
       });
       // Before any call resolves, the fallback wrapper reports the SCAPI name.
       expect(backend.name).to.equal('scapi');
@@ -44,11 +55,21 @@ describe('operations/sites backend', () => {
     it('honors explicit ocapi preference even with SCAPI config', () => {
       const backend = createSitesBackend({
         preference: 'ocapi',
-        instance: fakeInstance(() => ({data: {data: []}, error: undefined, response: {status: 200}})),
-        shortCode: 'abcd1234',
-        tenantId: 'zzxy_dev',
-        auth: fakeAuth,
+        instance: fakeInstance(() => ({data: {data: []}, error: undefined, response: {status: 200}}), {
+          scapiClientConfig: fakeScapiConfig,
+        }),
       });
+      expect(backend.name).to.equal('ocapi');
+    });
+
+    it("defaults the preference to the instance's apiBackend when omitted", () => {
+      const backend = createSitesBackend({
+        instance: fakeInstance(() => ({data: {data: []}, error: undefined, response: {status: 200}}), {
+          apiBackend: 'ocapi',
+          scapiClientConfig: fakeScapiConfig,
+        }),
+      });
+      // Instance prefers OCAPI, and no explicit preference overrides it.
       expect(backend.name).to.equal('ocapi');
     });
   });

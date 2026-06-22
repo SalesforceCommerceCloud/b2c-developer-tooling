@@ -48,13 +48,7 @@ export default class SitesCartridgesList extends InstanceCommand<typeof SitesCar
       }),
     );
 
-    const backend = createSitesBackend({
-      preference: this.apiBackendPreference,
-      instance: this.instance,
-      shortCode: this.resolvedConfig.values.shortCode,
-      tenantId: this.resolvedConfig.values.tenantId,
-      auth: this.hasScapiConfig() ? this.getOAuthStrategy() : undefined,
-    });
+    const backend = createSitesBackend({instance: this.instance});
     this.logger.debug(`Using ${backend.name} backend for cartridge path read`);
 
     const site = await backend.getSite(siteId);

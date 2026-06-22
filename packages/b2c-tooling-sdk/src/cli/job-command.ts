@@ -44,16 +44,15 @@ export abstract class JobCommand<T extends typeof Command> extends InstanceComma
    * Builds a SCAPI Jobs client, or `undefined` if SCAPI is not configured.
    * Used both as the dispatcher's SCAPI factory and directly by SCAPI-only
    * commands (e.g. `job execution delete`) that don't use the dispatcher.
+   *
+   * The shortCode/tenantId and the scope-flexible auth strategy come from the
+   * instance ({@link B2CInstance.scapiClientConfig}), which already encodes the
+   * "only stateless OAuth qualifies for auto-SCAPI" gating.
    */
   protected buildScapiJobsClient(): ScapiJobsClient | undefined {
-    if (!this.hasScapiConfig()) return undefined;
-    return createScapiJobsClient(
-      {
-        shortCode: this.resolvedConfig.values.shortCode!,
-        tenantId: this.resolvedConfig.values.tenantId!,
-      },
-      this.getOAuthStrategy(),
-    );
+    const scapi = this.instance.scapiClientConfig;
+    if (!scapi) return undefined;
+    return createScapiJobsClient({shortCode: scapi.shortCode, tenantId: scapi.tenantId}, scapi.auth);
   }
 
   /**

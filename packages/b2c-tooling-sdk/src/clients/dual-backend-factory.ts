@@ -19,13 +19,20 @@ import {resolveScapiOrOcapi, type ApiBackendPreference, type BackendBase} from '
 
 /**
  * Common shape of every dual-backend factory's input.
+ *
+ * SCAPI coordinates (shortCode/tenantId) and the scope-flexible auth strategy
+ * are no longer threaded in separately — they are sourced from the instance
+ * via {@link B2CInstance.scapiClientConfig}. A backend is "SCAPI-capable" iff
+ * that getter returns a value (shortCode + tenantId present, and a stateless
+ * OAuth flow that can request the required scopes).
+ *
+ * `preference` is optional: when omitted it falls back to the instance's own
+ * {@link B2CInstance.apiBackend} (default `'auto'`), so callers that already
+ * resolved the instance from config don't have to re-plumb the flag.
  */
 export interface DualBackendConfig {
-  preference: ApiBackendPreference;
+  preference?: ApiBackendPreference;
   instance: B2CInstance;
-  shortCode?: string;
-  tenantId?: string;
-  auth?: AuthStrategy;
 }
 
 /**
@@ -71,29 +78,31 @@ export interface DualBackendCtors<T extends BackendBase> {
  * ```
  */
 export function createDualBackend<T extends BackendBase>(config: DualBackendConfig, ctors: DualBackendCtors<T>): T {
-  const hasScapiConfig = Boolean(config.shortCode && config.tenantId && config.auth);
+  const {instance} = config;
+  const preference = config.preference ?? instance.apiBackend;
+  const scapiClientConfig = instance.scapiClientConfig;
   const resolved = resolveScapiOrOcapi({
-    preference: config.preference,
-    hasScapiConfig,
+    preference,
+    hasScapiConfig: scapiClientConfig !== undefined,
     domainName: ctors.domainName,
   });
 
   if (resolved === 'ocapi') {
-    return new ctors.Ocapi(config.instance);
+    return new ctors.Ocapi(instance);
   }
 
   const scapiBackend = new ctors.Scapi({
-    shortCode: config.shortCode!,
-    tenantId: config.tenantId!,
-    auth: config.auth!,
-    instance: config.instance,
+    shortCode: scapiClientConfig!.shortCode,
+    tenantId: scapiClientConfig!.tenantId,
+    auth: scapiClientConfig!.auth,
+    instance,
   });
 
-  if (config.preference === 'scapi') {
+  if (preference === 'scapi') {
     return scapiBackend;
   }
 
   // Auto mode: wrap with fallback
-  const ocapiBackend = new ctors.Ocapi(config.instance);
+  const ocapiBackend = new ctors.Ocapi(instance);
   return createFallbackBackend<T>(scapiBackend, ocapiBackend, ctors.domainName.toLowerCase());
 }
