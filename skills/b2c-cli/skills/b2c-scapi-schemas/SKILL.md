@@ -141,3 +141,15 @@ The tenant ID and short code can be overridden via flags or environment variable
 ### More Commands
 
 See `b2c scapi schemas --help` for a full list of available commands and options.
+
+## Schema vs. Runtime Behavior (Caveats)
+
+The OpenAPI spec describes the *shape* of a request, not every runtime constraint the platform enforces. Some accepted values and rejections are **not expressed in the schema** and can only be learned empirically. A notable example:
+
+**Checkout Orders Admin API (`checkout / orders / v1`), `GET /orders` `status` filter:**
+
+- The spec types the `status` query parameter as a bare `string` with **no `enum`** — so the schema does not tell you which values are valid. (The `OrderStatus` data-model schema *does* carry an enum, but the query parameter does not reference it.)
+- In practice the filter only accepts **`new`**, **`completed`**, or **`cancelled`**. **`status=failed` returns HTTP 400.**
+- The collection does **not** surface `CREATED` orders, and there is **no server-side way to enumerate `FAILED` orders** via this API — a failed-order blind spot. To find failed/created orders, use the Script API (`OrderMgr`) in a job step or your own instrumentation.
+
+See the `b2c:b2c-scapi-admin` skill (Orders API section) for the full explanation and the Script API workaround. When a `string`-typed parameter has no `enum` in a schema, treat the accepted values as unverified until confirmed against a real instance.

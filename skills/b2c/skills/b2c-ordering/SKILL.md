@@ -78,6 +78,8 @@ function createOrder(basket) {
 
 ### Async Flow (SCAPI Pattern)
 
+> **Critical — transaction context depends on *where* this code runs.** The `Transaction.wrap()` calls below are correct when you drive placement from a **controller, job step, or custom endpoint** (code that runs *outside* a platform transaction). But the headless SCAPI Shopper Orders API creates the order in **`CREATED`** status and hands it to the **`dw.ocapi.shop.order.afterPOST` hook**, which **already runs inside a platform transaction**. If you call `OrderMgr.placeOrder()` / `OrderMgr.failOrder()` from `afterPOST`, call them **directly with NO `Transaction.wrap`** — a nested transaction rolls back your change and surfaces an opaque `HTTP 400: An error occurred in ExtensionPoint dw.ocapi.shop.order.afterPOST`. See the canonical `afterPOST` example in [b2c-hooks](../b2c-hooks/SKILL.md).
+
 For SCAPI/headless, create the order before payment authorization:
 
 ```javascript
@@ -178,6 +180,28 @@ while (orders.hasNext()) {
     // Process order
 }
 orders.close();
+```
+
+### Enumerate FAILED Orders (the Script-API workaround)
+
+The SCAPI Admin Orders API **cannot list `FAILED` (or `CREATED`) orders** — its `status` filter only accepts `new|completed|cancelled` (see [b2c-scapi-admin](../b2c-scapi-admin/SKILL.md)). To find failed orders for triage or reporting, query them server-side with `OrderMgr` (typically from a custom job step — see [b2c-custom-job-steps](../b2c-custom-job-steps/SKILL.md)):
+
+```javascript
+var OrderMgr = require('dw/order/OrderMgr');
+var Order = require('dw/order/Order');
+
+// status = {0} matches FAILED orders (the positive filter the Admin API lacks)
+var failed = OrderMgr.searchOrders(
+    'status = {0}',
+    'creationDate desc',
+    Order.ORDER_STATUS_FAILED
+);
+
+while (failed.hasNext()) {
+    var order = failed.next();
+    // Triage / report the failed order
+}
+failed.close();
 ```
 
 ### Query by Date Range
