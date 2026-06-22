@@ -5,6 +5,7 @@
  */
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
 import {dispatchFetch} from './dispatch-fetch.js';
+import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {globalAuthMiddlewareRegistry, applyAuthRequestMiddleware, applyAuthResponseMiddleware} from './middleware.js';
@@ -318,7 +319,13 @@ export class OAuthStrategy implements AuthStrategy {
     logger.trace({method, url, headers: requestHeaders, body: params.toString()}, `[Auth REQ BODY] ${method} ${url}`);
 
     const startTime = Date.now();
-    let response = await fetch(request);
+    let response: Response;
+    try {
+      response = await fetch(request);
+    } catch (err) {
+      const host = new URL(url).host;
+      throw wrapNetworkError(err, {operation: 'OAuth token request', host});
+    }
 
     // Apply response middleware
     response = await applyAuthResponseMiddleware(request, response, middleware);

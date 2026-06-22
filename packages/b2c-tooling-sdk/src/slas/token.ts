@@ -12,6 +12,7 @@
  *
  * @module slas/token
  */
+import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {generateCodeChallenge, generateCodeVerifier} from './pkce.js';
 import type {SlasTokenConfig, SlasTokenResponse, SlasRegisteredLoginConfig} from './types.js';
@@ -80,7 +81,13 @@ async function loggedFetch(url: string, init: RequestInit): Promise<{response: R
   logger.trace({method, url, headers: init.headers, body: init.body?.toString()}, `[SLAS REQ BODY] ${method} ${url}`);
 
   const startTime = Date.now();
-  const response = await fetch(url, init);
+  let response: Response;
+  try {
+    response = await fetch(url, init);
+  } catch (err) {
+    const host = new URL(url).host;
+    throw wrapNetworkError(err, {operation: 'SLAS token request', host});
+  }
   const duration = Date.now() - startTime;
 
   logger.debug(
