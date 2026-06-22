@@ -1,5 +1,51 @@
 # @salesforce/b2c-cli
 
+## 1.17.1
+
+### Patch Changes
+
+- [#509](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/509) [`3bc78c4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3bc78c422d57b590b2435fd6ae0a31fffc4bd7e7) - Surface Managed Runtime deploy warnings (including the x86 environment deprecation notice) when pushing or deploying a bundle. The warning is informational and does not block the deploy. (Thanks [@sf-rahul-kumawat](https://github.com/sf-rahul-kumawat)!)
+
+- Updated dependencies [[`3bc78c4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3bc78c422d57b590b2435fd6ae0a31fffc4bd7e7)]:
+  - @salesforce/b2c-tooling-sdk@1.15.1
+
+## 1.17.0
+
+### Minor Changes
+
+- [#512](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/512) [`3bce44e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3bce44e2e6d4cea3cf64e34eff1246d86e459b73) - Add a `--create-pr` flag to `cap install`. When a Commerce App includes Storefront Next content and a repository is connected to the storefront, this opens a pull request with the app's storefront changes instead of applying them directly. Off by default. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`3bce44e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3bce44e2e6d4cea3cf64e34eff1246d86e459b73), [`0d97ad1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/0d97ad1856d6a45d9349a3609c7e425d2b5e874a)]:
+  - @salesforce/b2c-tooling-sdk@1.15.0
+
+## 1.16.1
+
+### Patch Changes
+
+- [#510](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/510) [`1575070`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/15750709ca6b23838bb9fd954d6c09e8dbb67ed3) - Resolve all critical and high severity dependency advisories reported by `pnpm audit`. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Direct dependencies of the published packages were bumped in package.json so that consumers installing the SDK, CLI, or MCP server receive the patched versions: the SDK raises `js-yaml`, `minimatch`, `protobufjs`, and `undici`, and the MCP server raises `yaml` and `postcss`. The SDK also upgrades `applicationinsights` from 2.x to 3.x to pick up a non-vulnerable `@opentelemetry/core`; this is an internal telemetry change with no public API impact.
+
+  Remaining transitive advisories with no direct-dependency lever are pinned to patched releases (within their existing major versions) via workspace overrides: fast-xml-parser, hono, @hono/node-server, ws, vite, rollup, form-data, http-proxy-middleware, path-to-regexp, serialize-javascript, lodash, underscore, flatted, fast-uri, tmp, express-rate-limit, brace-expansion, shell-quote, and @opentelemetry/core.
+
+- Updated dependencies [[`1575070`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/15750709ca6b23838bb9fd954d6c09e8dbb67ed3)]:
+  - @salesforce/b2c-tooling-sdk@1.14.1
+
+## 1.16.0
+
+### Minor Changes
+
+- [#494](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/494) [`f630103`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f630103e4c55fbdf68896db2f870851efe390ac1) - Expand the curated CIP analytics report catalog with 16 new pre-built reports, with a focus on technical/developer analytics. New reports include SCAPI traffic & latency, SCAPI error rate by status class, SCAPI latency distribution (slow-tail/SLA percentage from the response-time histogram), SCAPI cache hit ratio, OCAPI usage by client, SFRA controller health scorecard, controller error-rate trend, and remote-include performance — plus revenue-by-channel, new-vs-returning buyer revenue, discount-depth breakdown, promotion ROI leaderboard, recommender effectiveness, zero-result searches, checkout funnel drop-off, and inventory stockout by location. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Also adds `b2c cip report list` to discover the catalog grouped by category (no credentials required), and report parameters now support enum (`--status-class 4xx|5xx`) and default values. Run `b2c cip report <name> --describe` to see each report's flags.
+
+### Patch Changes
+
+- Updated dependencies [[`f630103`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f630103e4c55fbdf68896db2f870851efe390ac1), [`f630103`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f630103e4c55fbdf68896db2f870851efe390ac1)]:
+  - @salesforce/b2c-tooling-sdk@1.14.0
+
 ## 1.15.0
 
 ### Minor Changes

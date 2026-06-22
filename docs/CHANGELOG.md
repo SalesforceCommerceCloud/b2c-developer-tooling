@@ -1,5 +1,19 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.8
+
+### Patch Changes
+
+- [#518](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/518) [`7a55915`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7a5591524e8374413cc92303b907e164f1b172f3) - Refocus the Commerce Apps (CAP) documentation on the B2C CLI workflow and recommend the `b2c-cli`, `b2c`, and `cap-dev` agent skills plugins (the latter from the `SalesforceCommerceCloud/commerce-apps` marketplace). The guide now links to the official Commerce Apps ISV Developer Guide as the authoritative spec rather than duplicating it, and corrects several details against canon and the CLI source: the tax extension point is `sfcc.app.tax.calculate`, the install upload path is `Impex/commerce-apps/`, the lifecycle states are `INSTALLING → INSTALLED → NOT_CONFIGURED → CONFIGURING → CONFIGURED`, and `cap package` produces `{id}-v{version}.zip`. The `b2c-cap` skill and CAP CLI reference gain WebDAV auth, icon-naming, and registry-vs-local-validation clarifications. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.3.7
+
+### Patch Changes
+
+- [#498](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/498) [`c58924d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c58924d643dc80251ff0cf35dbf8a647fb16d662) - Deprecate the Storefront Next MCP tools (`sfnext_*`) in favor of the `storefront-next` and `storefront-next-figma` agent-skills plugins. These tools are not compatible with the Storefront Next 1.0 GA release and will be removed in a future release. (Thanks [@clavery](https://github.com/clavery)!)
+
+  The six `sfnext_*` tools have moved to a new `STOREFRONTNEXT_DEPRECATED` toolset that is never auto-enabled by project detection and is excluded from `--toolsets all`. To keep using them, request the toolset explicitly: `--toolsets STOREFRONTNEXT_DEPRECATED --allow-non-ga-tools`. Storefront Next projects still auto-enable the `STOREFRONTNEXT` toolset (MRT bundle push, SCAPI discovery/scaffolding, and diagnostics). Migrate to the agent-skills plugins — see the Agent Skills guide for installation.
+
 ## 0.3.6
 
 ### Patch Changes
