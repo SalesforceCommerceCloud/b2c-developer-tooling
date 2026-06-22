@@ -84,7 +84,9 @@ When OCAPI direct permissions for `/sites/*/cartridges` are unavailable, cartrid
 
 **Output columns:** ID, Display Name, Status (storefront_status).
 
-**JSON output** returns the full OCAPI sites response including all site properties (useful for extracting channel IDs, custom preferences, and other site metadata not shown in the table).
+**JSON output** returns the full site objects including all properties (useful for extracting channel IDs, custom preferences, and other site metadata not shown in the table).
+
+`sites list` and `sites cartridges list` run over SCAPI (the `site/sites` API) when `shortCode`, `tenantId`, and the `sfcc.sites` / `sfcc.sites.rw` scopes are configured; otherwise they fall back to the deprecated OCAPI Data API. Cartridge-path **writes** (`add`/`remove`/`set`) have no SCAPI equivalent and always use OCAPI / site-archive import.
 
 ## Common Use Cases
 

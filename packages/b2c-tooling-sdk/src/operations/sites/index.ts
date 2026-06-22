@@ -55,3 +55,10 @@ export type {
   CartridgePosition,
   CartridgeUpdateOptions,
 } from './cartridges.js';
+
+// Site read operations (list/get) — SCAPI with OCAPI fallback
+export {createSitesBackend} from './sites-backend.js';
+export type {SitesBackendConfig} from './sites-backend.js';
+export {ScapiSitesBackend} from './scapi-sites-backend.js';
+export {OcapiSitesBackend} from './ocapi-sites-backend.js';
+export type {SitesBackend, SiteInfo, ListSitesOptions} from './sites-types.js';

@@ -377,6 +377,19 @@ export type {
   components as ScapiScriptsComponents,
 } from './scapi-scripts.js';
 
+// SCAPI Sites
+export {createScapiSitesClient, SCAPI_SITES_CASCADE} from './scapi-sites.js';
+export type {
+  ScapiSitesClient,
+  ScapiSitesClientConfig,
+  ScapiSitesError,
+  Site as ScapiSite,
+  Sites as ScapiSites,
+  SiteSearchResult as ScapiSiteSearchResult,
+  paths as ScapiSitesPaths,
+  components as ScapiSitesComponents,
+} from './scapi-sites.js';
+
 // SCAPI dual-backend utilities (shared across SCAPI/OCAPI domains)
 export {isInvalidScopeError, resolveScapiOrOcapi, withScopes} from './scapi-backend-utils.js';
 export type {ApiBackendPreference, BackendBase, ResolveBackendOptions} from './scapi-backend-utils.js';

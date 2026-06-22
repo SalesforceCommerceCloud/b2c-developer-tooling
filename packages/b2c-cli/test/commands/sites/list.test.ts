@@ -22,14 +22,14 @@ describe('sites list', () => {
     return createTestCommand(SitesList, hooks.getConfig(), flags, args);
   }
 
+  // With no shortCode/tenantId/auth configured, the dual-backend factory
+  // resolves to the OCAPI backend, which reads `/sites?select=(**)`.
   function stubCommon(command: any, {jsonEnabled}: {jsonEnabled: boolean}) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'jsonEnabled').returns(jsonEnabled);
-  }
-
-  function stubErrorToThrow(command: any) {
-    return sinon.stub(command, 'error').throws(new Error('Expected error'));
+    sinon.stub(command, 'hasScapiConfig').returns(false);
+    sinon.stub(command, 'apiBackendPreference').get(() => 'auto');
   }
 
   it('returns data in JSON mode', async () => {
@@ -37,21 +37,26 @@ describe('sites list', () => {
 
     stubCommon(command, {jsonEnabled: true});
 
-    const ocapiGet = sinon.stub().resolves({data: {count: 1, data: [{id: 'site1'}]}, error: undefined});
+    const ocapiGet = sinon.stub().resolves({
+      data: {count: 1, data: [{id: 'site1', display_name: {default: 'Site One'}, storefront_status: 'online'}]},
+      error: undefined,
+      response: {status: 200},
+    });
     sinon.stub(command, 'instance').get(() => ({ocapi: {GET: ocapiGet}}));
 
     const result = await command.run();
     expect(result.count).to.equal(1);
+    expect(result.data[0].id).to.equal('site1');
     expect(ocapiGet.calledOnce).to.equal(true);
   });
 
-  it('prints "no sites" message when count is 0 in non-JSON mode', async () => {
+  it('prints "no sites" message when there are no sites in non-JSON mode', async () => {
     const command: any = await createCommand();
 
     stubCommon(command, {jsonEnabled: false});
     sinon.stub(command, 'log').returns(void 0);
 
-    const ocapiGet = sinon.stub().resolves({data: {count: 0, data: []}, error: undefined});
+    const ocapiGet = sinon.stub().resolves({data: {count: 0, data: []}, error: undefined, response: {status: 200}});
     sinon.stub(command, 'instance').get(() => ({ocapi: {GET: ocapiGet}}));
 
     const stdoutStub = sinon.stub(ux, 'stdout').returns(void 0 as any);
@@ -66,22 +71,23 @@ describe('sites list', () => {
     expect(stdoutOutput).to.include('No sites found');
   });
 
-  it('calls command.error when ocapi returns error', async () => {
+  it('throws when the backend returns an error', async () => {
     const command: any = await createCommand();
 
-    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    stubCommon(command, {jsonEnabled: false});
+    sinon.stub(command, 'log').returns(void 0);
 
-    const ocapiGet = sinon.stub().resolves({data: undefined, error: {message: 'boom'}});
+    const ocapiGet = sinon
+      .stub()
+      .resolves({data: undefined, error: {fault: {message: 'boom'}}, response: {status: 500}});
     sinon.stub(command, 'instance').get(() => ({ocapi: {GET: ocapiGet}}));
 
-    const errorStub = stubErrorToThrow(command);
-
+    // The OCAPI backend throws on error; the command surfaces it via catch().
     try {
       await command.run();
-      expect.fail('Expected error');
-    } catch {
-      expect(errorStub.calledOnce).to.equal(true);
+      expect.fail('Expected the run to throw');
+    } catch (error) {
+      expect((error as Error).message).to.include('boom');
     }
   });
 });

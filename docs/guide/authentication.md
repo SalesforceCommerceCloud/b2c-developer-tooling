@@ -16,7 +16,8 @@ The CLI uses different authentication mechanisms depending on the operation:
 | [Code](/cli/code) list, activate, delete                                                           | OAuth + SCAPI (`sfcc.scripts` / `sfcc.scripts.rw`), OCAPI fallback | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) (or [OCAPI](#ocapi-configuration)) |
 | [Jobs](/cli/jobs)                                                                                  | OAuth + SCAPI (`sfcc.jobs` / `sfcc.jobs.rw`), OCAPI fallback       | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) (or [OCAPI](#ocapi-configuration)) |
 | [BM users / roles](/cli/bm)                                                                        | OAuth + SCAPI (`sfcc.users(.rw)` / `sfcc.roles(.rw)`), OCAPI fallback | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) (or [OCAPI](#ocapi-configuration)) |
-| [Sites](/cli/sites)                                                                                | OAuth + OCAPI                | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration)                |
+| [Sites](/cli/sites) list, cartridge path (read)                                                    | OAuth + SCAPI (`sfcc.sites` / `sfcc.sites.rw`), OCAPI fallback | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) (or [OCAPI](#ocapi-configuration)) |
+| [Sites](/cli/sites) cartridge path (add/remove/set)                                                | OAuth + OCAPI / site import  | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration)                |
 | SCAPI commands ([schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis), [eCDN](/cli/ecdn)) | OAuth + SCAPI scopes         | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication)        |
 | [CIP analytics](/cli/cip) (`cip query`, `cip report`)                                              | OAuth + Client Credentials   | [API Client](#account-manager-api-client) + Salesforce Commerce API role + tenant filter |
 | [SLAS](/cli/slas) client management                                                                | OAuth                        | None (uses built-in client) or [API Client](#account-manager-api-client)                 |
@@ -500,10 +501,11 @@ SCAPI (the Salesforce Commerce API) is the **preferred, modern** API surface and
 | `b2c bm users create/update/delete`                    | `sfcc.users.rw`                      | [BM](/cli/bm)                       |
 | `b2c bm roles list/get`                                | `sfcc.roles` or `sfcc.roles.rw`      | [BM](/cli/bm)                       |
 | `b2c bm roles create/delete/grant/revoke/permissions`  | `sfcc.roles.rw`                      | [BM](/cli/bm)                       |
+| `b2c sites list`, `sites cartridges list`              | `sfcc.sites` or `sfcc.sites.rw`      | [Sites](/cli/sites)                 |
 
 The CLI automatically requests these scopes. Your API client must have them in the Default Scopes list.
 
-The `code`, `jobs`, `bm users`, and `bm roles` commands run over SCAPI. The CLI defaults to `--api-backend auto`, which falls back to the [deprecated OCAPI backend](#ocapi-configuration) only when the SCAPI scopes above are not configured (or not yet provisioned on the API client). Use `--api-backend scapi` or `--api-backend ocapi` to force a backend explicitly.
+The `code`, `jobs`, `bm users`, `bm roles`, and `sites` (list + cartridge-path read) commands run over SCAPI. The CLI defaults to `--api-backend auto`, which falls back to the [deprecated OCAPI backend](#ocapi-configuration) only when the SCAPI scopes above are not configured (or not yet provisioned on the API client). Use `--api-backend scapi` or `--api-backend ocapi` to force a backend explicitly. (Cartridge-path **writes** have no SCAPI equivalent and always use OCAPI / site-archive import.)
 
 ::: tip
 For detailed authentication requirements including specific scopes for each command, see the individual [CLI command reference pages](/cli/).

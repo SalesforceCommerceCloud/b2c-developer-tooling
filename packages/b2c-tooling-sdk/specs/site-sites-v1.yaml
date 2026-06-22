@@ -1,0 +1,571 @@
+openapi: 3.0.3
+info:
+    title: Sites
+    version: 1.2.0
+    x-api-type: Admin
+    x-api-family: Site
+servers:
+  -     url: "https://{shortCode}.api.commercecloud.salesforce.com/site/sites/v1"
+        variables:
+                shortCode:
+                          default: shortCode
+paths:
+    /organizations/{organizationId}/site-search:
+          post:
+                  operationId: searchSites
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                  requestBody:
+                            content:
+                                        application/json:
+                                                      schema:
+                                                                      $ref: "#/components/schemas/SiteSearchRequest"
+                            required: true
+                  responses:
+                            200:
+                                        description: Returns site search results
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/SiteSearchResult"
+                            400:
+                                        description: Bad Request - Malformed search query or invalid parameters
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            401:
+                                        description: Your access token is invalid or expired and can’t be used to identify a user.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            403:
+                                        description: Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.sites, sfcc.sites.rw]
+    /organizations/{organizationId}/sites:
+          get:
+                  operationId: getSites
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: select
+                                in: query
+                                required: false
+                                style: form
+                                explode: true
+                                schema:
+                                              $ref: "#/components/schemas/Select"
+                    -           name: limit
+                                in: query
+                                required: false
+                                style: form
+                                explode: true
+                                schema:
+                                              type: integer
+                                              format: int32
+                                              default: 25
+                                              maximum: 50
+                                              minimum: 1
+                    -           name: offset
+                                in: query
+                                required: false
+                                style: form
+                                explode: true
+                                schema:
+                                              type: integer
+                                              format: int32
+                                              default: 0
+                                              minimum: 0
+                  responses:
+                            200:
+                                        description: Returns a paginated list of sites
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/Sites"
+                            401:
+                                        description: Your access token is invalid or expired and can’t be used to identify a user.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            403:
+                                        description: Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.sites, sfcc.sites.rw]
+    /organizations/{organizationId}/sites/{siteId}:
+          get:
+                  operationId: getSiteById
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: siteId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/SiteId"
+                  responses:
+                            200:
+                                        description: Returns the requested site
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/Site"
+                            401:
+                                        description: Your access token is invalid or expired and can’t be used to identify a user.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            403:
+                                        description: Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            404:
+                                        description: Site Not Found - The requested site ID does not exist
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.sites, sfcc.sites.rw]
+components:
+    schemas:
+          OrganizationId:
+                  type: string
+                  maxLength: 32
+                  minLength: 1
+          Query:
+                  type: object
+                  additionalProperties: false
+                  maxProperties: 1
+                  minProperties: 1
+                  properties:
+                            boolQuery:
+                                        $ref: "#/components/schemas/BoolQuery"
+                            filteredQuery:
+                                        $ref: "#/components/schemas/FilteredQuery"
+                            matchAllQuery:
+                                        $ref: "#/components/schemas/MatchAllQuery"
+                            nestedQuery:
+                                        $ref: "#/components/schemas/NestedQuery"
+                            termQuery:
+                                        $ref: "#/components/schemas/TermQuery"
+                            textQuery:
+                                        $ref: "#/components/schemas/TextQuery"
+          BoolQuery:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            must:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Query"
+                                                      type: string
+                            mustNot:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Query"
+                                                      type: string
+                            should:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Query"
+                                                      type: string
+          Filter:
+                  type: object
+                  additionalProperties: false
+                  maxProperties: 1
+                  minProperties: 1
+                  properties:
+                            boolFilter:
+                                        $ref: "#/components/schemas/BoolFilter"
+                            queryFilter:
+                                        $ref: "#/components/schemas/QueryFilter"
+                            range2Filter:
+                                        $ref: "#/components/schemas/Range2Filter"
+                            rangeFilter:
+                                        $ref: "#/components/schemas/RangeFilter"
+                            termFilter:
+                                        $ref: "#/components/schemas/TermFilter"
+          BoolFilter:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            filters:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Filter"
+                                                      type: string
+                            operator:
+                                        type: string
+                                        enum: [and, or, not]
+                  required: [operator]
+          QueryFilter:
+                  type: object
+                  properties:
+                            query:
+                                        $ref: "#/components/schemas/Query"
+                  required: [query]
+          Field:
+                  type: string
+                  maxLength: 260
+          Range2Filter:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            filterMode:
+                                        type: string
+                                        default: overlap
+                                        enum: [overlap, containing, contained]
+                            fromField:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/Field"
+                            fromInclusive:
+                                        type: boolean
+                                        default: true
+                            fromValue: {}
+                            toField:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/Field"
+                            toInclusive:
+                                        type: boolean
+                                        default: true
+                            toValue: {}
+                  required: [fromField, toField]
+          RangeFilter:
+                  type: object
+                  properties:
+                            field:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/Field"
+                            from:
+                                        oneOf:
+                                          -               type: string
+                                                          format: date-time
+                                          -               type: integer
+                                          -               type: number
+                            fromInclusive:
+                                        type: boolean
+                                        default: true
+                            to:
+                                        oneOf:
+                                          -               type: string
+                                                          format: date-time
+                                          -               type: integer
+                                          -               type: number
+                            toInclusive:
+                                        type: boolean
+                                        default: true
+                  required: [field]
+          TermFilter:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            field:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/Field"
+                            operator:
+                                        type: string
+                                        enum: [is, one_of, is_null, is_not_null, less, greater, not_in, neq]
+                            values:
+                                        type: array
+                                        items:
+                                                      type: string
+                  required: [field, operator]
+          FilteredQuery:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            filter:
+                                        $ref: "#/components/schemas/Filter"
+                            query:
+                                        $ref: "#/components/schemas/Query"
+                  required: [filter, query]
+          MatchAllQuery:
+                  type: object
+          NestedQuery:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            path:
+                                        type: string
+                                        maxLength: 2048
+                            query:
+                                        $ref: "#/components/schemas/Query"
+                            scoreMode:
+                                        type: string
+                                        enum: [avg, total, max, none]
+                  required: [path, query]
+          TermQuery:
+                  type: object
+                  properties:
+                            fields:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Field"
+                                                      type: string
+                                        minItems: 1
+                            operator:
+                                        type: string
+                                        enum: [is, one_of, is_null, is_not_null, less, greater, not_in, neq]
+                            values:
+                                        type: array
+                                        items:
+                                                      oneOf:
+                                                        -                 type: string
+                                                        -                 type: number
+                                                        -                 type: boolean
+                                                        -                 type: integer
+                                                      type: string
+                  required: [fields, operator]
+          TextQuery:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            fields:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Field"
+                                                      type: string
+                                        minItems: 1
+                            searchPhrase:
+                                        type: string
+                  required: [fields, searchPhrase]
+          Sort:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            field:
+                                        type: string
+                                        maxLength: 256
+                            sortOrder:
+                                        type: string
+                                        default: asc
+                                        enum: [asc, desc]
+                  required: [field]
+          Offset:
+                  type: integer
+                  format: int32
+                  default: 0
+                  minimum: 0
+          SearchRequest:
+                  type: object
+                  properties:
+                            limit:
+                                        type: integer
+                                        format: int32
+                                        maximum: 200
+                                        minimum: 1
+                            query:
+                                        $ref: "#/components/schemas/Query"
+                            sorts:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Sort"
+                                                      type: string
+                            offset:
+                                        $ref: "#/components/schemas/Offset"
+                  required: [query]
+          SiteSearchRequest:
+                  allOf:
+                    -           $ref: "#/components/schemas/SearchRequest"
+          Total:
+                  type: integer
+                  format: int32
+                  default: 0
+                  minimum: 0
+          ResultBase:
+                  type: object
+                  properties:
+                            limit:
+                                        type: integer
+                                        format: int32
+                            total:
+                                        $ref: "#/components/schemas/Total"
+                  required: [limit, total]
+          PaginatedResultBase:
+                  allOf:
+                    -           $ref: "#/components/schemas/ResultBase"
+                  properties:
+                            offset:
+                                        $ref: "#/components/schemas/Offset"
+                  required: [limit, offset, total]
+          PaginatedSearchResult:
+                  additionalProperties: false
+                  allOf:
+                    -           $ref: "#/components/schemas/PaginatedResultBase"
+                  properties:
+                            query:
+                                        $ref: "#/components/schemas/Query"
+                            sorts:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Sort"
+                                                      type: string
+                            hits:
+                                        type: array
+                                        items:
+                                                      type: object
+                  required: [query]
+          SiteId:
+                  type: string
+                  maxLength: 32
+                  minLength: 1
+          CustomerListLink:
+                  type: object
+                  properties:
+                            customerListId:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            title:
+                                        type: string
+                                        maxLength: 256
+          Site:
+                  type: object
+                  properties:
+                            id:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/SiteId"
+                            displayName:
+                                        type: object
+                                        additionalProperties:
+                                                      type: string
+                                                      maxLength: 4000
+                            description:
+                                        type: object
+                                        additionalProperties:
+                                                      type: string
+                                                      maxLength: 4000
+                            customerListLink:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/CustomerListLink"
+                            inDeletion:
+                                        type: boolean
+                            storefrontStatus:
+                                        type: string
+                                        enum: [online, maintenance, to_be_deleted, protected]
+                            siteCatalogId:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            cartridges:
+                                        type: string
+                                        maxLength: 4000
+                            creationDate:
+                                        type: string
+                                        format: date-time
+                            lastModified:
+                                        type: string
+                                        format: date-time
+                  required: [id]
+          SiteSearchResult:
+                  allOf:
+                    -           $ref: "#/components/schemas/PaginatedSearchResult"
+                  properties:
+                            hits:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Site"
+                                                      type: string
+                  required: [hits, query]
+          ErrorResponse:
+                  type: object
+                  additionalProperties: true
+                  properties:
+                            title:
+                                        type: string
+                                        maxLength: 256
+                            type:
+                                        type: string
+                                        maxLength: 2048
+                            detail:
+                                        type: string
+                            instance:
+                                        type: string
+                                        maxLength: 2048
+                  required: [detail, title, type]
+          Select:
+                  type: string
+                  minLength: 1
+                  pattern: ^[(].*[)]$
+          Sites:
+                  allOf:
+                    -           $ref: "#/components/schemas/PaginatedResultBase"
+                  properties:
+                            data:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Site"
+                                                      type: string
+                  required: [data]
+    responses:
+          401unauthorized:
+                  description: Your access token is invalid or expired and can’t be used to identify a user.
+                  content:
+                            application/problem+json:
+                                        schema:
+                                                      $ref: "#/components/schemas/ErrorResponse"
+          403forbidden:
+                  description: Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.
+                  content:
+                            application/problem+json:
+                                        schema:
+                                                      $ref: "#/components/schemas/ErrorResponse"
+    parameters:
+          organizationId:
+                  name: organizationId
+                  in: path
+                  required: true
+                  style: simple
+                  explode: false
+                  schema:
+                            $ref: "#/components/schemas/OrganizationId"
+          select:
+                  name: select
+                  in: query
+                  required: false
+                  style: form
+                  explode: true
+                  schema:
+                            $ref: "#/components/schemas/Select"
+    securitySchemes:
+          AmOAuth2:
+                  type: oauth2
+                  flows:
+                            clientCredentials:
+                                        tokenUrl: "https://account.demandware.com/dw/oauth2/access_token"
+                                        scopes:
+                                                      sfcc.sites: Access to site resources
+                                                      sfcc.sites.rw: Read and write access to site resources

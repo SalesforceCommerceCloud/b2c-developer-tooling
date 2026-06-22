@@ -8,24 +8,20 @@ Commands for managing sites on B2C Commerce instances.
 
 ## Authentication
 
-Sites commands require OAuth authentication with OCAPI permissions for the `/sites` resource.
+`sites list` and `sites cartridges list` (reads) run over SCAPI (the `site/sites` API). Configure `shortCode`, `tenantId`, and the `sfcc.sites` / `sfcc.sites.rw` scopes on your API client and they work out of the box.
 
-### Required OCAPI Permissions
-
-| Resource | Methods |
-|----------|---------|
-| `/sites` | GET |
-| `/sites/*` | GET |
-| `/sites/*/cartridges` | POST, PUT, DELETE |
-
-Cartridge path commands also work without the cartridge-specific OCAPI permissions — they automatically fall back to site archive import/export when direct OCAPI access is unavailable. The fallback requires job execution permissions for `sfcc-site-archive-import` and WebDAV write access to `Impex/`.
-
-### Configuration
+Cartridge-path **writes** (`add`/`remove`/`set`) have no SCAPI equivalent. They use the OCAPI Data API `/sites/*/cartridges` resource, automatically falling back to site archive import/export when direct OCAPI access is unavailable (which requires job execution permissions for `sfcc-site-archive-import` and WebDAV write access to `Impex/`).
 
 ```bash
 export SFCC_CLIENT_ID=your-client-id
 export SFCC_CLIENT_SECRET=your-client-secret
+export SFCC_TENANT_ID=zzxy_prd
+export SFCC_SHORTCODE=kv7kzm78
 ```
+
+::: details Legacy OCAPI backend (deprecated)
+OCAPI is deprecated and disabled on newer instances. The read commands default to `--api-backend auto`, falling back to the OCAPI `/sites` resource only when SCAPI scopes are not configured; force a backend with `--api-backend scapi|ocapi`. For the OCAPI path, grant GET on `/sites` and `/sites/*`, and POST/PUT/DELETE on `/sites/*/cartridges` for cartridge-path writes.
+:::
 
 For complete setup instructions, see the [Authentication Guide](/guide/authentication).
 
