@@ -1,0 +1,2910 @@
+{
+  "version": "2.0.0",
+  "provenance": {
+    "description": "Catalog of standard (system) B2C Commerce job step type IDs available in Business Manager job flows and jobs.xml site-import flows.",
+    "derivation": "Generated from the public B2C Commerce Job Step API documentation (the jobstepapi section of the Script API documentation archive obtained via `b2c docs download`). Each step lists its purpose, execution scope, and input parameters (required, description, allowed values, default) as published in that documentation.",
+    "platformDocVersion": "DWAPP 26.7",
+    "regenerate": "pnpm --filter @salesforce/b2c-tooling-sdk run build:job-steps-dataset -- <jobstep-html-dir>; then run generate:job-steps-docs"
+  },
+  "steps": [
+    {
+      "typeId": "CatalogDeltaExport",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Creates Delta Export for Catalogs. Support must be contacted to enable delta exports.",
+      "parameters": [
+        {
+          "name": "CatalogIDs",
+          "required": true,
+          "description": "Comma Separated list of Catalog Ids to be exported. Character limit 1000"
+        },
+        {
+          "name": "Consumers",
+          "required": true,
+          "description": "Comma Separated List of consumers. Character limit 1000"
+        },
+        {
+          "name": "ExportFile",
+          "required": true,
+          "description": "Delta Export name and Export file name and path relative to 'IMPEX/src'."
+        },
+        {
+          "name": "MasterProductExport",
+          "required": false,
+          "description": "If selected, the option exports all changes with the master product.",
+          "default": "false"
+        }
+      ]
+    },
+    {
+      "typeId": "CustomerListsDeltaExport",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Creates Delta Export for Customer Lists. Support must be contacted to enable delta exports.",
+      "parameters": [
+        {
+          "name": "Consumers",
+          "required": true,
+          "description": "Comma separated List of consumers, Character limit 1000"
+        },
+        {
+          "name": "CustomerLists",
+          "required": true,
+          "description": "Comma separated list of Customers, Character limit 1000"
+        },
+        {
+          "name": "ExportFile",
+          "required": true,
+          "description": "Delta Export name and Export file name and path relative to 'IMPEX/src'."
+        }
+      ]
+    },
+    {
+      "typeId": "ExportABTests",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Exports A/B tests.",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportAssignments",
+      "kind": "Export",
+      "scope": "Organization",
+      "purpose": "Exports all assignments in the system.",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportCatalog",
+      "kind": "Export",
+      "scope": "Organization",
+      "purpose": "Exports catalog data.",
+      "parameters": [
+        {
+          "name": "CatalogID",
+          "required": true,
+          "description": "The ID of the catalog which will be exported."
+        },
+        {
+          "name": "ExportCategories",
+          "required": false,
+          "description": "Optional flag indicating whether to export categories or not.",
+          "default": "true"
+        },
+        {
+          "name": "ExportCategoryAssignments",
+          "required": false,
+          "description": "Optional flag indicating whether to export category assignments or not.",
+          "default": "true"
+        },
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "ExportProductOptions",
+          "required": false,
+          "description": "Optional flag indicating whether to export product options or not.",
+          "default": "true"
+        },
+        {
+          "name": "ExportProducts",
+          "required": false,
+          "description": "Optional flag indicating whether to export products or not.",
+          "default": "true"
+        },
+        {
+          "name": "ExportRecommendations",
+          "required": false,
+          "description": "Optional flag indicating whether to export recommendations or not.",
+          "default": "true"
+        },
+        {
+          "name": "ExportVariationAttributes",
+          "required": false,
+          "description": "Optional flag indicating whether to export variation attributes or not.",
+          "default": "true"
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportContent",
+      "kind": "Export",
+      "scope": "Organization & Sites",
+      "purpose": "Exports the folders in the specified content Library.",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "LibraryID",
+          "required": true,
+          "description": "Content Library Id of the library to export."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportContentSlots",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Exports all content slot data.",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportCouponCodes",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Exports the codes of a specified coupon.",
+      "parameters": [
+        {
+          "name": "CouponID",
+          "required": true,
+          "description": "The ID of the coupon whose codes being exported."
+        },
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "NumberOfCodes",
+          "required": false,
+          "description": "The number of coupon codes being exported."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        },
+        {
+          "name": "StartFrom",
+          "required": false,
+          "description": "The start from position for coupon codes being exported."
+        }
+      ]
+    },
+    {
+      "typeId": "ExportCoupons",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Exports coupons.",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportCustomerGroups",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Exports all customer groups.",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportCustomerList",
+      "kind": "Export",
+      "scope": "Organization",
+      "purpose": "Exports a customer list, it's preferences as well as the customers assigned to the customer list.",
+      "parameters": [
+        {
+          "name": "CustomerListID",
+          "required": true,
+          "description": "The ID of the customer list which will be exported."
+        },
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportCustomers",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Exports the customer profiles from the default customer list of the given site.",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportCustomObjects",
+      "kind": "Export",
+      "scope": "Organization & Sites",
+      "purpose": "Exports custom objects of a specified type and scope. The scope of the job flow (Organization or Sites) must match the scope of the custom object type.",
+      "parameters": [
+        {
+          "name": "CustomObjectTypeID",
+          "required": true,
+          "description": "The ID of the custom object type."
+        },
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportFacebookFeed",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Exports Catalog Feed for Facebook.",
+      "parameters": []
+    },
+    {
+      "typeId": "ExportGiftCertificates",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Exports Gift Certificates.",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportInventoryLists",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Exports inventory lists.",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "InventoryListIDs",
+          "required": false,
+          "description": "Optional comma separated list of inventory list ids to be exported. If not specified, the inventory list assigned to the Site is exported."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportMetaData",
+      "kind": "Export",
+      "scope": "Organization",
+      "purpose": "Export System Object Type extensions and Custom Object Type definitions.",
+      "parameters": [
+        {
+          "name": "ExportCustomTypes",
+          "required": true,
+          "description": "Export Custom Object Type definitions.",
+          "default": "true"
+        },
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "ExportSystemTypes",
+          "required": true,
+          "description": "Export System Object Type extensions.",
+          "default": "true"
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportOrders",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Exports all orders matching the selected criteria using Search Service, with a maximum of 1000 orders per run. After an order has been exported successfully, its export status is EXPORTED. If an order did not export successfully, its order export status is FAILED. It is important to note that an asynchronous write action performed on an order by another process can result in an optimistic locking exception during order export.",
+      "parameters": [
+        {
+          "name": "Canceled",
+          "required": false,
+          "description": "Include orders in order status CANCELED.",
+          "default": "true"
+        },
+        {
+          "name": "Completed",
+          "required": false,
+          "description": "Include orders in order status COMPLETED.",
+          "default": "true"
+        },
+        {
+          "name": "Confirmation Status",
+          "required": true,
+          "description": "The confirmation status.",
+          "default": "All",
+          "allowedValues": [
+            "All",
+            "Not Confirmed",
+            "Confirmed"
+          ]
+        },
+        {
+          "name": "Created",
+          "required": false,
+          "description": "Deprecated. Created orders cannot be exported.",
+          "default": "true"
+        },
+        {
+          "name": "Export Status",
+          "required": true,
+          "description": "The export status. Recommendation is to use READY FOR EXPORT to signal the export is needed.",
+          "default": "Ready for Export",
+          "allowedValues": [
+            "All",
+            "Not Exported",
+            "Exported",
+            "Ready for Export",
+            "Export Failed"
+          ]
+        },
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "Failed",
+          "required": false,
+          "description": "Deprecated. Failed orders cannot be exported.",
+          "default": "true"
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "New",
+          "required": false,
+          "description": "Include orders in order status NEW.",
+          "default": "true"
+        },
+        {
+          "name": "Open",
+          "required": false,
+          "description": "Include orders in order status OPEN.",
+          "default": "true"
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        },
+        {
+          "name": "Payment Status",
+          "required": true,
+          "description": "The payment status.",
+          "default": "All",
+          "allowedValues": [
+            "All",
+            "Not Paid",
+            "Partially Paid",
+            "Paid"
+          ]
+        },
+        {
+          "name": "Replaced",
+          "required": false,
+          "description": "Include orders in order status REPLACED.",
+          "default": "true"
+        },
+        {
+          "name": "Shipment Status",
+          "required": true,
+          "description": "The shipment status.",
+          "default": "All",
+          "allowedValues": [
+            "All",
+            "Not Shipped",
+            "Partially Shipped",
+            "Shipped"
+          ]
+        },
+        {
+          "name": "Use Order Export Delay",
+          "required": false,
+          "description": "See 'Order Export Delay' at 'Site Preferences' -> 'Order Preferences' -> 'Order Export Settings'",
+          "default": "false"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportPageLocalization",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Export page content for localization purposes",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileFormat",
+          "required": true,
+          "description": "The format in which the data will be exported.",
+          "allowedValues": [
+            "JSON",
+            "RESOURCE"
+          ]
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "Locale",
+          "required": true,
+          "description": "The locale for which the Page data will be exported."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        },
+        {
+          "name": "PageIDs",
+          "required": false,
+          "description": "A JSON object containing the single property 'page_ids', which is an array of Page IDs. When not specified, 'PageIDsFile' must be used."
+        },
+        {
+          "name": "PageIDsFile",
+          "required": false,
+          "description": "When no 'PageIDs parameter is supplied, this is the name of a file containing one Page ID per line. Its is referenced relative to the 'Impex/src' folder.'"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportPriceBook",
+      "kind": "Export",
+      "scope": "Organization",
+      "purpose": "Exports price data.",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        },
+        {
+          "name": "PriceBookID",
+          "required": true,
+          "description": "The ID of the Pricebook which will be exported."
+        }
+      ]
+    },
+    {
+      "typeId": "ExportProductLists",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Exports product lists of a site. If all the options are selected, all product lists that were created by anonymous or registered customers, either empty or non-empty, that are either new (has never been exported) or modified (changed since the last time it was exported) will be exported. If none of the options are selected, all non-empty product lists that are owned by a registered customer will be exported.",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "IncludeAnonymousLists",
+          "required": false,
+          "description": "Includes anonymous product lists in the export. An anonymous product list is a product list that does not belong to a registered user.",
+          "default": "true"
+        },
+        {
+          "name": "IncludeEmptyLists",
+          "required": false,
+          "description": "Includes empty product lists. Empty product lists do not have any items added to them. When disabled, these lists are excluded from the export.",
+          "default": "true"
+        },
+        {
+          "name": "ModifedListsOnly",
+          "required": false,
+          "description": "Limits the export to modified lists only. A modified product list is a list that has changed in some way since it was last exported. If the NewListsOnly option is also set, the export will contain new or modified product lists only.",
+          "default": "false"
+        },
+        {
+          "name": "NewListsOnly",
+          "required": false,
+          "description": "Limits the export to new lists only. A new product list is a list that has never been exported previously. If the ModifedListsOnly option is also set, the export will contain new or modified product lists only.",
+          "default": "false"
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportPromotions",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Exports promotions.",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportShippingMethods",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Exports shipping methods.",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportSourceCodeGroups",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Exports source code groups.",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "ExportStores",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Exports stores.",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        },
+        {
+          "name": "StoreID",
+          "required": true,
+          "description": "Define the ID of the store to be exported or '*' to export all stores."
+        }
+      ]
+    },
+    {
+      "typeId": "ExportTaxTable",
+      "kind": "Export",
+      "scope": "Site",
+      "purpose": "Exports tax data.",
+      "parameters": [
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. A timestamp is appended and site information as applicable. To order the files chronologically, sort alphanumerically. Path is relative to 'IMPEX/src' and can include a subdirectory. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": false,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job step exits and reports an error.",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "typeId": "LibraryDeltaExport",
+      "kind": "Export",
+      "scope": "Organization",
+      "purpose": "Creates Delta Export for Libraries. Support must be contacted to enable delta exports.",
+      "parameters": [
+        {
+          "name": "Consumers",
+          "required": true,
+          "description": "Comma Separated List of consumers. Limit of 1000 characters"
+        },
+        {
+          "name": "ExportFile",
+          "required": true,
+          "description": "Delta Export name and Export file name and path relative to 'IMPEX/src'."
+        },
+        {
+          "name": "LibraryIDs",
+          "required": true,
+          "description": "Comma Separated list of Library Content Ids to be exported. Limit of 1000 characters"
+        }
+      ]
+    },
+    {
+      "typeId": "SiteExport",
+      "kind": "Export",
+      "scope": "Organization",
+      "purpose": "Exports site data. The DataUnits parameter defines which objects are included in the export. Its function is similar to the Data Units to Export field on the Business Manager Site Import & Export page. The parameter requires a string in JSON format that describes the data to be exported. Units not included in the JSON are not included in the export.",
+      "parameters": [
+        {
+          "name": "DataUnits",
+          "required": true,
+          "description": "String in JSON format that describes the data to be exported."
+        },
+        {
+          "name": "ExportFile",
+          "required": false,
+          "description": "Export file name and path relative to 'IMPEX/src/instance'. Required if not using FileNamePrefix."
+        },
+        {
+          "name": "FileNamePrefix",
+          "required": false,
+          "description": "Prefix for the export file. Can include a path relative to 'IMPEX/src/instance'. The timestamp is appended. To order the files chronologically, sort alphabetically. Required if not using ExportFile."
+        },
+        {
+          "name": "OverwriteExportFile",
+          "required": true,
+          "description": "If selected, the option overwrites an existing file. If not selected and a file exists, the job exits and reports an error.",
+          "default": "true"
+        },
+        {
+          "name": "SaveOnRealm",
+          "required": true,
+          "description": "If selected, the export file will be saved in the global realm directory.",
+          "default": "false"
+        }
+      ]
+    },
+    {
+      "typeId": "ImportABTests",
+      "kind": "Import",
+      "scope": "Site",
+      "purpose": "Imports A/B tests.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportActiveData",
+      "kind": "Import",
+      "scope": "Site",
+      "purpose": "Imports active data from the provided CSV files.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.csv'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportAssignments",
+      "kind": "Import",
+      "scope": "Organization",
+      "purpose": "Imports assignments",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined, all files in the working folder are imported.",
+          "default": ".*\\.xml"
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportCatalog",
+      "kind": "Import",
+      "scope": "Organization",
+      "purpose": "Imports catalog data.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportContent",
+      "kind": "Import",
+      "scope": "Site",
+      "purpose": "Imports content. If no library-id is specified in the import file, the data is imported into the private library of the current site. If a library-id is specified in the import file, the data is imported into the specified shared library. There is no way to specify a private library using the \"library-id\" attribute in the import file.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportContentSlots",
+      "kind": "Import",
+      "scope": "Site",
+      "purpose": "Imports content slot configurations in the specified mode.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportCouponCodeRedemptions",
+      "kind": "Import",
+      "scope": "Site",
+      "purpose": "Imports the coupon code redemptions based on the couponredemption.xsd. Note: Coupon redemptions are evaluated during checkout. A large number of coupon redemptions negatively impacts order creation performance and scale. Avoid importing unnecessary coupon redemptions. Clean up coupon codes and related redemptions when they are no longer required.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined, all files in the working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportCoupons",
+      "kind": "Import",
+      "scope": "Site",
+      "purpose": "Imports coupons in the specified mode.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportCustomerGroups",
+      "kind": "Import",
+      "scope": "Site",
+      "purpose": "Imports customer groups in the specified mode.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined, all files in the working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportCustomerList",
+      "kind": "Import",
+      "scope": "Organization",
+      "purpose": "Deprecated. Imports customer list data. Use ImportCustomerLists instead.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportCustomerLists",
+      "kind": "Import",
+      "scope": "Organization",
+      "purpose": "Imports customer lists.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportCustomers",
+      "kind": "Import",
+      "scope": "Site",
+      "purpose": "Imports Customers based on customer.xsd",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined, all files in the working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportCustomObjects",
+      "kind": "Import",
+      "scope": "Organization & Sites",
+      "purpose": "Imports Custom Objects.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined, all files in the working folder are imported.",
+          "default": ".*\\.xml"
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportGiftCertificates",
+      "kind": "Import",
+      "scope": "Site",
+      "purpose": "Import the Gift Certificates contained in ImportFile in the specified mode.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportInventoryLists",
+      "kind": "Import",
+      "scope": "Organization",
+      "purpose": "Imports inventory data.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "InventoryListLockWaitSeconds",
+          "required": false,
+          "description": "The time in seconds to attempt to gain a lock on an inventory list to be imported before timing out, defaults to 10 seconds."
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportKeyValueMapping",
+      "kind": "Import",
+      "scope": "Organization",
+      "purpose": "Import or delete a key/value mapping in the Generic Mapping high-performance data store. Key/value mappings are exposed through Script API class dw.util.MappingMgr. See Generic Mapping",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if ImportFailedHandling is ERROR and the file failed to validate. Ignored if using import mode 'Delete'.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX' folder. If not defined, 'IMPEX/archive' is used. Ignored if using import mode 'Delete'.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select the import files, e.g. 'import_.*\\.csv'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported. Ignored if using import mode 'Delete'."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "WARN - Skip malformed files. Perform action specified by AfterImportFileHandling on files. Use Exit Status WARN. ERROR - If invalid file is found, do not perform action specified by AfterImportFileHandling and abort immediately with Exit Status ERROR. Ignored if using import mode 'Delete'.",
+          "default": "WARN",
+          "allowedValues": [
+            "WARN",
+            "ERROR"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "Replace - Create new mapping or replace existing mapping, Merge - Create new mapping or update/create values in existing mapping, Delete - Delete specified mapping. All import file related parameters are ignored.",
+          "default": "Replace",
+          "allowedValues": [
+            "Replace",
+            "Merge",
+            "Delete"
+          ]
+        },
+        {
+          "name": "KeyCount",
+          "required": false,
+          "description": "Number of columns in CSV file that are composite key columns, from left to right. Default is 1, which indicates that the first column in CSV file is a key. All other columns are an aggregated list of values. Ignored if using import mode 'Delete'.",
+          "default": "1"
+        },
+        {
+          "name": "MappingName",
+          "required": true,
+          "description": "Name used to access the mapping. Example: 'backend-to-web-skus' or 'web-products-to-backend'."
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "Folder containing import files, relative to 'IMPEX/src'. If not defined, working folder is 'IMPEX/src'. Ignored if using import mode 'Delete'."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportPageLocalization",
+      "kind": "Import",
+      "scope": "Site",
+      "purpose": "Import translated page content for localization purposes",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileFormat",
+          "required": true,
+          "description": "The format in which the data is provided.",
+          "allowedValues": [
+            "JSON",
+            "RESOURCE"
+          ]
+        },
+        {
+          "name": "FileName",
+          "required": true,
+          "description": "File name for the file to be imported (relative to the 'WorkingFolder')."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": true,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportPriceBook",
+      "kind": "Import",
+      "scope": "Organization",
+      "purpose": "Imports price data.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportProductLists",
+      "kind": "Import",
+      "scope": "Site",
+      "purpose": "Imports product lists.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportPromotions",
+      "kind": "Import",
+      "scope": "Site",
+      "purpose": "Imports promotions in the specified mode.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportShippingMethods",
+      "kind": "Import",
+      "scope": "Site",
+      "purpose": "Imports shipping methods in the specified mode.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportSiteArchive",
+      "kind": "Import",
+      "scope": "Organization",
+      "purpose": "Imports a site import archive file into the current instance.",
+      "parameters": [
+        {
+          "name": "ImportFile",
+          "required": true,
+          "description": "Import file name located directly under 'IMPEX/src/instance' folder."
+        },
+        {
+          "name": "ImportFromRealm",
+          "required": false,
+          "description": "If selected, the import file lookup will be taken in the global realm directory.",
+          "default": "false"
+        },
+        {
+          "name": "ImportMode",
+          "required": false,
+          "description": "The import mode.",
+          "default": "merge",
+          "allowedValues": [
+            "merge"
+          ]
+        }
+      ]
+    },
+    {
+      "typeId": "ImportSourceCodeGroups",
+      "kind": "Import",
+      "scope": "Site",
+      "purpose": "Imports source code groups in the specified mode.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportStores",
+      "kind": "Import",
+      "scope": "Site",
+      "purpose": "Imports Stores based on store.xsd",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined, all files in the working folder are imported.",
+          "default": ".*\\.xml"
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "ImportTaxTable",
+      "kind": "Import",
+      "scope": "Site",
+      "purpose": "Imports Tax Classes, Tax Jurisdictions and Tax Rates from the given ImportFile in the specified mode.",
+      "parameters": [
+        {
+          "name": "AfterImportFileHandling",
+          "required": true,
+          "description": "What to do with the import file after successful or failed import. The handling is not performed if there was a locking problem, or if ImportFailedHandling is ERROR and the file failed to validate.",
+          "default": "Archive",
+          "allowedValues": [
+            "Keep",
+            "Delete",
+            "Archive",
+            "Archive Zipped",
+            "Archive In Subfolders",
+            "Archive Overwrite Existing"
+          ]
+        },
+        {
+          "name": "ArchiveFolder",
+          "required": false,
+          "description": "Folder to store archived import files. Used when 'AfterImportFileHandling' is 'Archive' or 'Archive Zipped'. Folder location relative to 'IMPEX/' folder. If not defined 'IMPEX/archive/' is used.",
+          "default": "archive"
+        },
+        {
+          "name": "FileNamePattern",
+          "required": false,
+          "description": "Regular expression pattern to select import files, e.g. 'import_.*\\.xml'. Matching files are imported in alphanumerical order. If not defined all files in working folder are imported."
+        },
+        {
+          "name": "ImportFailedHandling",
+          "required": true,
+          "description": "The step exit status that will be used when the import process failed.",
+          "default": "WARN",
+          "allowedValues": [
+            "ERROR",
+            "WARN"
+          ]
+        },
+        {
+          "name": "ImportMode",
+          "required": true,
+          "description": "The import mode.",
+          "default": "Merge",
+          "allowedValues": [
+            "Merge",
+            "Delete",
+            "Replace",
+            "Update"
+          ]
+        },
+        {
+          "name": "NoFilesFoundHandling",
+          "required": true,
+          "description": "The step exit status that will be used when no matching files were found.",
+          "default": "NO_FILES_FOUND",
+          "allowedValues": [
+            "OK",
+            "ERROR",
+            "WARN",
+            "NO_FILES_FOUND"
+          ]
+        },
+        {
+          "name": "WorkingFolder",
+          "required": false,
+          "description": "The folder that contains the import files, relative to the 'IMPEX/src/' folder. If not defined 'IMPEX/src/' is used as working folder."
+        }
+      ]
+    },
+    {
+      "typeId": "CreateSitemap",
+      "kind": "Process",
+      "scope": "Site",
+      "purpose": "Creates Sitemap.",
+      "parameters": []
+    },
+    {
+      "typeId": "DownloadActiveDataFromStorage",
+      "kind": "Process",
+      "scope": "Site",
+      "purpose": "Download active data from storage system to current site. This step downloads active data to the new site from storage system during a site move if active data is required to migrate to the new site. Before this step can run, set the new site to 'Online' mode. This prevents premature migration for the new site. The StorageFolderName parameter needs to use the value from UploadActiveDataToStorageStep's log.",
+      "parameters": [
+        {
+          "name": "StorageFolderName",
+          "required": true,
+          "description": "This is the storage folder name created by the UploadActiveDataToStorage step."
+        }
+      ]
+    },
+    {
+      "typeId": "ExecuteCategorizationRules",
+      "kind": "Process",
+      "scope": "Organization",
+      "purpose": "Executes the Categorization based on the Categorization Rules and Conditions defined on a CatalogCategory.",
+      "parameters": [
+        {
+          "name": "CatalogID",
+          "required": true,
+          "description": "The Catalog Id which needs Categorization."
+        },
+        {
+          "name": "CategoryID",
+          "required": true,
+          "description": "The Category Id which needs Categorization. If we need to run the Categorization for all Categories, this should be set as 'ALL'."
+        }
+      ]
+    },
+    {
+      "typeId": "ExecuteDataReplication",
+      "kind": "Process",
+      "scope": "Organization",
+      "purpose": "Replicates data to a target system. The ReplicationConfiguration parameter requires a string in JSON format that describes the replication process and its tasks that will be executed. The parameter section that describes the tasks is similar to the Replication Tasks step of the Business Manager Data Replication wizard. Replication tasks not included in the JSON are not included in the data replication process. Replication tasks set to 'false' are also not included in the data replication process.",
+      "parameters": [
+        {
+          "name": "ReplicationConfiguration",
+          "required": true,
+          "description": "Describes the replication process and its replication tasks that will be executed."
+        }
+      ]
+    },
+    {
+      "typeId": "ExecutePipeline",
+      "kind": "Process",
+      "scope": "Organization & Sites",
+      "purpose": "Executes a pipeline. The name and start node of the pipeline has to be configured at parameter 'ExecutePipeline.Pipeline'. This step has been provided to ease the transition from pipeline based jobs to the new job framework. To fully leverage the new framework use system or custom job steps. Deprecated: This job step is deprecated. We recommend you replace pipelines with system job steps and custom job steps.",
+      "parameters": [
+        {
+          "name": "ExecutePipeline.Pipeline",
+          "required": true,
+          "description": "The process pipeline to execute, e.g. 'MyProcessPipeline-Start'."
+        }
+      ]
+    },
+    {
+      "typeId": "ExecutePreconfiguredCodeReplicationProcess",
+      "kind": "Process",
+      "scope": "Organization",
+      "purpose": "Executes the preconfigured code replication process with the ID defined at parameter 'ReplicationProcessID'. The code replication process has to be created / configured using the BM UI for code replication, with activation set to 'Job Step' and type 'Code Transfer & Activation'.",
+      "parameters": [
+        {
+          "name": "ReplicationProcessID",
+          "required": true,
+          "description": "The ID of the preconfigured replication process."
+        }
+      ]
+    },
+    {
+      "typeId": "ExecutePreconfiguredDataReplicationProcess",
+      "kind": "Process",
+      "scope": "Organization",
+      "purpose": "Executes the preconfigured data replication process with the ID defined at parameter 'ReplicationProcessID'. The data replication process has to be created / configured using the BM UI for data replication, with activation set to 'Job Step' and type 'Transfer & Publication'.",
+      "parameters": [
+        {
+          "name": "ReplicationProcessID",
+          "required": true,
+          "description": "The ID of the preconfigured replication process."
+        }
+      ]
+    },
+    {
+      "typeId": "ExecuteScriptModule",
+      "kind": "Process",
+      "scope": "Organization & Sites",
+      "purpose": "Executes a function exported by a script module. The module ID has to be configured at parameter 'ExecuteScriptModule.Module'. Deprecated: This job step is deprecated. We recommend that you use the steptypes.json file to execute a script.",
+      "parameters": [
+        {
+          "name": "ExecuteScriptModule.Module",
+          "required": true,
+          "description": "The ID of the script module, e.g. my_cartridge/cartridge/scripts/job/myScriptModule.js"
+        },
+        {
+          "name": "ExecuteScriptModule.FunctionName",
+          "required": false,
+          "description": "The name of the script module's exported function to execute. If not defined teh script is supposed to export a function named 'execute'.",
+          "default": "execute"
+        },
+        {
+          "name": "ExecuteScriptModule.TimeoutInSeconds",
+          "required": false,
+          "description": "The timeout in seconds for the script module's function. If not defined the batch processing framework applies the default timeout."
+        },
+        {
+          "name": "ExecuteScriptModule.Transactional",
+          "required": false,
+          "description": "Indicates if the script module's function requires transaction handling. The default value is 'false'. To avoid a negative impact on system performance and allow more granular transaction control, keep the default setting of 'false'. Implement transaction handling within the job step using the dw.system.Transaction API.",
+          "default": "false"
+        }
+      ]
+    },
+    {
+      "typeId": "IncludeStepsFromJob",
+      "kind": "Process",
+      "scope": "Organization & Sites",
+      "purpose": "Includes steps from another job. This step makes it easy to create a set of standard steps that you can execute in multiple jobs. It is recommended to use the IncludeStepsFromJob step in single execution scope flows only (Organization or one specific Storefront Site). If the IncludeStepsFromJob step is used in multi-site execution scope flows (more than one specific Storefront Site, All Storefront Sites) inclusion of the steps is done multiple times.",
+      "parameters": [
+        {
+          "name": "JobID",
+          "required": true,
+          "description": "The ID of the job to import steps from."
+        }
+      ]
+    },
+    {
+      "typeId": "InvalidateCache",
+      "kind": "Process",
+      "scope": "Site",
+      "purpose": "Invalidate Page and Static Content Cache Invalidates the page cache and/or static content cache (images, styles, etc.) of the sites specified for the job flow. Portions of the page cache may be invalidated by specifying a set of page cache partition IDs, which will invalidate only the page cache that matches the controllers/pipelines specified with these partitions.",
+      "parameters": [
+        {
+          "name": "InvalidatePageCache",
+          "required": true,
+          "description": "If selected, then pages in the page cache are deleted. If the PageCachePartitionIDs parameters is specified, only those partitions are invalidated, otherwise the entire page cache.",
+          "default": "true"
+        },
+        {
+          "name": "InvalidateStaticCache",
+          "required": true,
+          "description": "If selected, then all files in the static content cache are invalidated. Page cache should be invalidated at the same time to refresh static content URLs.",
+          "default": "true"
+        },
+        {
+          "name": "PageCachePartitionIDs",
+          "required": false,
+          "description": "A comma separated list of page cache partition IDs to invalidate in the page cache. If specified, only the portion of the page cache specified by the partitions is invalidated, as opposed to the entire page cache."
+        }
+      ]
+    },
+    {
+      "typeId": "SearchReindex",
+      "kind": "Process",
+      "scope": "Site",
+      "purpose": "Rebuilds or updates search indexes. The number of search indexes that can be rebuilt or updated in parallel is globally limited. If the limit is exceeded, any rebuild or update action will be queued and executed once resources are available again.",
+      "parameters": [
+        {
+          "name": "Active data search index",
+          "required": false,
+          "description": "Reindex active data search indexes.",
+          "default": "false"
+        },
+        {
+          "name": "Content search index",
+          "required": false,
+          "description": "Reindex content search indexes.",
+          "default": "false"
+        },
+        {
+          "name": "Indexer Type",
+          "required": true,
+          "description": "Determines whether to rebuild or update incrementally.",
+          "default": "Full Index Rebuild",
+          "allowedValues": [
+            "Full Index Rebuild",
+            "Incremental Index Update"
+          ]
+        },
+        {
+          "name": "Product related search indexes",
+          "required": false,
+          "description": "Reindex product related search indexes which contain 'Product', 'Suggest' and 'Synonym' search indexes.",
+          "default": "false"
+        }
+      ]
+    },
+    {
+      "typeId": "UndoPreconfiguredCodeReplicationProcess",
+      "kind": "Process",
+      "scope": "Organization",
+      "purpose": "Undo the preconfigured code replication process with the ID defined at parameter 'ReplicationProcessID'. The given code replication process must have been executed using a step of type 'ExecutePreconfiguredCodeReplicationProcess' by this job.",
+      "parameters": [
+        {
+          "name": "ReplicationProcessID",
+          "required": true,
+          "description": "The ID of the preconfigured replication process."
+        }
+      ]
+    },
+    {
+      "typeId": "UndoPreconfiguredDataReplicationProcess",
+      "kind": "Process",
+      "scope": "Organization",
+      "purpose": "Undo the preconfigured data replication process with the ID defined at parameter 'ReplicationProcessID'. The given data replication process must have been executed using a step of type 'ExecutePreconfiguredDataReplicationProcess' by the same job.",
+      "parameters": [
+        {
+          "name": "ReplicationProcessID",
+          "required": true,
+          "description": "The ID of the preconfigured replication process."
+        }
+      ]
+    },
+    {
+      "typeId": "UpdateStorefrontURLs",
+      "kind": "Process",
+      "scope": "Site",
+      "purpose": "Updates the Storefront URLs for objects like categories, products, folders and content assets. This will update the URLs for all sites assigned under 'Scope'. This job step will not work in production instances and the storefront URLs are to be replicated from STG.",
+      "parameters": []
+    },
+    {
+      "typeId": "UploadActiveDataBackupToStorage",
+      "kind": "Process",
+      "scope": "Site",
+      "purpose": "Upload current site's active data to storage system (as a backup). This step uploads active data as a backup to storage system during a site move if active data is required to migrate to the new site.",
+      "parameters": []
+    },
+    {
+      "typeId": "UploadActiveDataToStorage",
+      "kind": "Process",
+      "scope": "Site",
+      "purpose": "Upload current site's active data to storage system. This step uploads active data from an old site to storage system during a site move if active data is required to migrate to the new site. Before this step can run, put the old site in 'Maintenance' mode for at least 90 minutes. This lets the old site fully process active data before the migration happens. When the job finishes, copy the storage folder name from the job log.",
+      "parameters": [
+        {
+          "name": "TargetRealm",
+          "required": true,
+          "description": "The 4-letter target realm where the Active Data is intended to be downloaded by the DownoadActiveDataFromStorage step."
+        }
+      ]
+    }
+  ]
+}

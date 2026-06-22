@@ -52,6 +52,23 @@ b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":{
 
 Note: `--body` and `-P` are mutually exclusive.
 
+### Standard (System) Job Steps
+
+B2C Commerce ships a catalog of **standard job steps** — built-in step **type IDs** (for example `ImportCatalog`, `ExportCatalog`, `ImportInventoryLists`) that are added to job flows in **Business Manager → Administration → Operations → Jobs**, or referenced by type ID in a `jobs.xml` flow inside a site-import archive. They are the building blocks of the multi-step jobs you run with `b2c job run`.
+
+Look up the catalog and any step's configuration parameters via the `b2c-cli:b2c-docs` skill — these docs are bundled with the CLI, so no instance connection is needed:
+
+```bash
+# Browse the standard step catalog
+b2c docs read job-steps
+
+# Look up a specific step's purpose + parameters
+b2c docs read ImportCatalog
+b2c docs search "export inventory"
+```
+
+**In-flow standard step vs. CLI command.** Some standard steps overlap with CLI commands — for instance, the standard catalog/site import steps vs. `b2c job import` (which itself runs the `sfcc-site-archive-import` system job). Use an **in-flow standard step** when the file is already staged on the instance or produced by an earlier step in the same flow (no round-trip, runs on a BM schedule). Use the **CLI** when moving data between your machine and the instance (uploading a local archive, downloading an export, or scripting from CI). For chaining custom + standard steps and IMPEX file hand-off, see the `b2c:b2c-custom-job-steps` skill.
+
 ### Import Site Archives
 
 The `job import` command waits for the import job to complete by default.
@@ -210,5 +227,6 @@ b2c job wait <job-id> <execution-id> --poll-interval 5
 
 ## Related Skills
 
-- `b2c:b2c-custom-job-steps` - For **creating** new custom job steps (batch processing scripts, scheduled tasks, data sync jobs)
+- `b2c:b2c-custom-job-steps` - For **creating** new custom job steps and **chaining them with standard steps** (includes the standard step catalog, IMPEX hand-off, and in-flow-vs-CLI guidance)
+- `b2c-cli:b2c-docs` - To look up standard job step type IDs and their parameters (`b2c docs read job-steps`)
 - `b2c-cli:b2c-site-import-export` - For site archive structure and metadata XML patterns
