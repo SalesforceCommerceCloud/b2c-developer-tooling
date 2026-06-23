@@ -106,6 +106,40 @@ describe('mrt bundle deploy', () => {
       expect(result.bundleId).to.equal(123);
     });
 
+    it('prints warnings returned by pushBundle', async () => {
+      const command = createCommand();
+      const warning = 'x86 support ends January 31, 2027. Switch to ARM in environment settings to avoid disruptions';
+
+      stubParse(
+        command,
+        {project: 'my-project', environment: 'staging', 'build-dir': 'dist', 'ssr-param': [], wait: false},
+        {},
+      );
+      await command.init();
+
+      stubCommonAuth(command);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      const warnStub = sinon.stub(command, 'warn').returns(void 0);
+      sinon
+        .stub(command, 'resolvedConfig')
+        .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
+
+      const pushStub = sinon.stub().resolves({
+        bundleId: 123,
+        deployed: true,
+        message: 'Test push',
+        projectSlug: 'my-project',
+        target: 'staging',
+        warnings: [warning],
+      } as any);
+      command.operations = {...command.operations, pushBundle: pushStub};
+
+      await command.run();
+
+      expect(warnStub.calledWith(warning)).to.equal(true);
+    });
+
     it('throws error when ssr-param has invalid format', async () => {
       const command = createCommand();
 
@@ -193,6 +227,34 @@ describe('mrt bundle deploy', () => {
       expect(input.targetSlug).to.equal('staging');
       expect(input.bundleId).to.equal(12_345);
       expect(result.bundleId).to.equal(12_345);
+    });
+
+    it('prints warnings returned by createDeployment', async () => {
+      const command = createCommand();
+      const warning = 'x86 support ends January 31, 2027. Switch to ARM in environment settings to avoid disruptions';
+
+      stubParse(command, {project: 'my-project', environment: 'staging', wait: false}, {bundleId: 12_345});
+      await command.init();
+
+      stubCommonAuth(command);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      const warnStub = sinon.stub(command, 'warn').returns(void 0);
+      sinon
+        .stub(command, 'resolvedConfig')
+        .get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'}}));
+
+      const deployStub = sinon.stub().resolves({
+        bundleId: 12_345,
+        targetSlug: 'staging',
+        status: 'pending',
+        warnings: [warning],
+      } as any);
+      command.operations = {...command.operations, createDeployment: deployStub};
+
+      await command.run();
+
+      expect(warnStub.calledWith(warning)).to.equal(true);
     });
   });
 

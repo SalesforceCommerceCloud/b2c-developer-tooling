@@ -83,6 +83,7 @@ function createMockManager(overrides?: Record<string, unknown>): MockDebugSessio
     stepInto: sinon.stub().resolves(),
     stepOut: sinon.stub().resolves(),
     getKnownThreads: sinon.stub().returns([]),
+    getSessionCookie: sinon.stub().returns('dwsid-value-123'),
     ...overrides,
   } as unknown as MockDebugSessionManager;
 }
@@ -151,13 +152,35 @@ describe('tools/diagnostics', () => {
       const tool = createDebugListSessionsTool(loadServices, serverContext);
       const result = await tool.handler({});
       const json = getResultJson<{
-        sessions: Array<{session_id: string; halted_threads: number[]; breakpoints: unknown[]}>;
+        sessions: Array<{
+          session_id: string;
+          halted_threads: number[];
+          breakpoints: unknown[];
+          session_cookie: null | {name: string; value: string};
+        }>;
       }>(result);
 
       expect(json.sessions).to.have.lengthOf(1);
       expect(json.sessions[0].session_id).to.equal(entry.sessionId);
       expect(json.sessions[0].halted_threads).to.deep.equal([5]);
       expect(json.sessions[0].breakpoints).to.have.lengthOf(1);
+      expect(json.sessions[0].session_cookie).to.deep.equal({name: 'dwsid', value: 'dwsid-value-123'});
+    });
+
+    it('should report session_cookie as null when no dwsid is set', async () => {
+      const manager = createMockManager({getSessionCookie: sinon.stub().returns(undefined)});
+      serverContext.debugSessions.registerSession({
+        hostname: 'host.example.com',
+        clientId: 'c1',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
+
+      const tool = createDebugListSessionsTool(loadServices, serverContext);
+      const result = await tool.handler({});
+      const json = getResultJson<{sessions: Array<{session_cookie: unknown}>}>(result);
+      expect(json.sessions[0].session_cookie).to.be.null;
     });
 
     it('should error when server context is missing', async () => {
@@ -1027,6 +1050,7 @@ describe('tools/diagnostics', () => {
       // Stub the manager's network calls
       connectStub = sinon.stub(DebugSessionManager.prototype, 'connect').resolves();
       sinon.stub(DebugSessionManager.prototype, 'disconnect').resolves();
+      sinon.stub(DebugSessionManager.prototype, 'getSessionCookie').returns('dwsid-abc');
     });
 
     afterEach(() => {
@@ -1044,6 +1068,7 @@ describe('tools/diagnostics', () => {
         hostname: string;
         cartridges: string[];
         cartridge_mappings: Record<string, string>;
+        session_cookie: null | {name: string; value: string};
         warnings: string[];
       }>(result);
 
@@ -1051,7 +1076,18 @@ describe('tools/diagnostics', () => {
       expect(json.hostname).to.equal('test.example.com');
       expect(json.cartridges).to.deep.equal(['app_test']);
       expect(json.cartridge_mappings).to.have.property('app_test');
+      expect(json.session_cookie).to.deep.equal({name: 'dwsid', value: 'dwsid-abc'});
       expect(connectStub.calledOnce).to.be.true;
+    });
+
+    it('should return null session_cookie and warn when no dwsid is set', async () => {
+      (DebugSessionManager.prototype.getSessionCookie as sinon.SinonStub).returns(undefined);
+      const tool = createDebugStartSessionTool(loadServices, serverContext);
+      const result = await tool.handler({cartridge_directory: tmpDir});
+
+      const json = getResultJson<{session_cookie: unknown; warnings: string[]}>(result);
+      expect(json.session_cookie).to.be.null;
+      expect(json.warnings.some((w) => w.includes('dwsid'))).to.be.true;
     });
 
     it('should warn when no cartridges found', async () => {

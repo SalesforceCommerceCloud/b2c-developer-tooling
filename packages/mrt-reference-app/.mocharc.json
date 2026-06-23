@@ -1,5 +1,5 @@
 {
-  "node-option": ["import=tsx", "conditions=development"],
+  "node-option": ["import=tsx/esm", "conditions=development"],
   "timeout": 30000,
   "recursive": true,
   "extension": ["ts"]

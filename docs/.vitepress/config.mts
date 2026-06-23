@@ -68,6 +68,7 @@ const guidesSidebar = [
       {text: 'Account Manager', link: '/guide/account-manager'},
       {text: 'Analytics Reports (CIP/CCAC)', link: '/guide/analytics-reports-cip-ccac'},
       {text: 'IDE Integration', link: '/guide/ide-integration'},
+      {text: 'Script Debugger', link: '/guide/script-debugger'},
       {text: 'Scaffolding', link: '/guide/scaffolding'},
       {text: 'Safety Mode', link: '/guide/safety'},
       {text: 'Security', link: '/guide/security'},
@@ -160,7 +161,7 @@ const referenceSidebar = [
         ],
       },
       {
-        text: 'Storefront Next',
+        text: 'Storefront Next (deprecated)',
         collapsed: true,
         items: [
           {text: 'sfnext_get_guidelines', link: '/mcp/tools/sfnext-get-guidelines'},
@@ -177,6 +178,7 @@ const referenceSidebar = [
         items: [
           {text: 'Script Debugger', link: '/mcp/tools/diagnostics'},
           {text: 'Logs', link: '/mcp/tools/logs'},
+          {text: 'MRT Logs', link: '/mcp/tools/mrt-logs'},
         ],
       },
       {
@@ -214,7 +216,8 @@ document.addEventListener('click', (e) => {
 
 export default defineConfig({
   title: 'B2C Developer Toolkit',
-  description: 'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and the B2C DX VS Code Extension for Salesforce B2C Commerce',
+  description:
+    'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and the B2C DX VS Code Extension for Salesforce B2C Commerce',
   base: basePath,
 
   head: [['script', {}, versionSwitchScript]],

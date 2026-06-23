@@ -158,9 +158,9 @@ describe('tools/storefrontnext/page-designer-decorator', () => {
       expect(desc).to.include('@AttributeDefinition');
     });
 
-    it('should be in STOREFRONTNEXT toolset', () => {
+    it('should be in STOREFRONTNEXT_DEPRECATED toolset', () => {
       const tool = createPageDesignerDecoratorTool(getServices);
-      expect(tool.toolsets).to.include('STOREFRONTNEXT');
+      expect(tool.toolsets).to.include('STOREFRONTNEXT_DEPRECATED');
       expect(tool.toolsets).to.have.lengthOf(1);
     });
 
