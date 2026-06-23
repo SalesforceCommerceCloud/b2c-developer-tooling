@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "B2C DX VSCE",
   "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -240,6 +240,11 @@
       }
     ],
     "commands": [
+      {
+        "command": "b2c-dx.debug.copySessionCookie",
+        "title": "Copy Debugger Session ID (dwsid)",
+        "category": "B2C DX"
+      },
       {
         "command": "b2c-dx.promptAgent",
         "title": "Prompt Agent",
@@ -909,6 +914,10 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "b2c-dx.debug.copySessionCookie",
+          "when": "inDebugMode && debugType == 'b2c-script'"
+        },
         {
           "command": "b2c-dx.apiBrowser.openSwagger",
           "when": "false"

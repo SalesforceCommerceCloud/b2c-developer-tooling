@@ -219,6 +219,45 @@ describe('operations/debug/dap-adapter (integration)', () => {
     });
   });
 
+  describe('b2c/sessionCookie custom request', () => {
+    it('returns the dwsid cookie established on connect', async () => {
+      server.use(
+        http.delete(`${BASE_URL}/client`, () => new HttpResponse(null, {status: 204})),
+        http.post(
+          `${BASE_URL}/client`,
+          () => new HttpResponse(null, {status: 204, headers: {'Set-Cookie': 'dwsid=affinity-xyz; Path=/; HttpOnly'}}),
+        ),
+        http.get(`${BASE_URL}/threads`, () => HttpResponse.json({_v: '2.0', script_threads: []})),
+      );
+
+      const adapter = new B2CScriptDebugAdapter(makeConfig());
+      const client = createDAPClient(adapter);
+
+      await client.send('initialize', {adapterID: 'b2c-script', pathFormat: 'path'});
+      await client.send('launch', {});
+
+      const response = await client.send('b2c/sessionCookie');
+      expect(response.success).to.be.true;
+      expect(response.body).to.deep.equal({name: 'dwsid', value: 'affinity-xyz'});
+
+      await client.send('disconnect', {});
+      client.dispose();
+    });
+
+    it('returns a null value when not connected', async () => {
+      const adapter = new B2CScriptDebugAdapter(makeConfig());
+      const client = createDAPClient(adapter);
+
+      await client.send('initialize', {adapterID: 'b2c-script', pathFormat: 'path'});
+
+      const response = await client.send('b2c/sessionCookie');
+      expect(response.success).to.be.true;
+      expect(response.body).to.deep.equal({name: 'dwsid', value: null});
+
+      client.dispose();
+    });
+  });
+
   describe('breakpoints', () => {
     it('sets breakpoints and returns verified results', async () => {
       server.use(

@@ -26,6 +26,17 @@ import type {
 } from './types.js';
 
 /**
+ * Converts a Headers object to a plain object for trace logging.
+ */
+function headersToObject(headers: Headers): Record<string, string> {
+  const result: Record<string, string> = {};
+  headers.forEach((value, key) => {
+    result[key] = value;
+  });
+  return result;
+}
+
+/**
  * Error thrown when the SDAPI returns a fault response.
  */
 export class SdapiError extends Error {
@@ -58,6 +69,17 @@ export class SdapiClient {
   private readonly baseUrl: string;
   private readonly headers: Record<string, string>;
   private readonly logger = getLogger();
+  /**
+   * Cookies (name -> value) returned by the SDAPI via Set-Cookie, replayed on
+   * subsequent requests. The debugger establishes a session (e.g. `dwsid`) on
+   * the first request that must be honored for the lifetime of this client.
+   *
+   * Replaying these cookies is required for server affinity: in multi-app
+   * server instances/environments the `dwsid` pins the session to the app
+   * server that holds the debugger state, so without it subsequent requests may
+   * be routed to a different app server with no knowledge of the session.
+   */
+  private readonly cookies = new Map<string, string>();
 
   constructor(config: SdapiClientConfig) {
     this.baseUrl = `https://${config.hostname}/s/-/dw/debugger/v2_0`;
@@ -206,19 +228,26 @@ export class SdapiClient {
 
   private async request<T>(method: string, path: string, options?: {body?: unknown; expect204?: boolean}): Promise<T> {
     const url = `${this.baseUrl}${path}`;
-    this.logger.trace({method, path}, 'SDAPI request');
+    const headers = {...this.headers, ...this.cookieHeader()};
+    this.logger.trace({method, url, headers, body: options?.body}, `[SDAPI REQ] ${method} ${url}`);
 
     let response: Response;
     try {
       response = await fetch(url, {
         method,
-        headers: this.headers,
+        headers,
         body: options?.body ? JSON.stringify(options.body) : undefined,
       });
     } catch (err) {
       const host = new URL(url).host;
       throw wrapNetworkError(err, {operation: 'Script Debugger API request', host});
     }
+
+    this.storeCookies(response.headers);
+    this.logger.trace(
+      {method, url, status: response.status, headers: headersToObject(response.headers)},
+      `[SDAPI RESP] ${method} ${url} ${response.status}`,
+    );
 
     if (options?.expect204) {
       if (!response.ok) {
@@ -249,5 +278,50 @@ export class SdapiClient {
       fault = {_v: '2.0', type: 'UnknownError', message: `HTTP ${response.status} ${response.statusText}`};
     }
     throw new SdapiError(fault, response.status);
+  }
+
+  /**
+   * Returns the value of a stored session cookie, or `undefined` if it has not
+   * been set yet. The session cookie (`dwsid`) pins requests to the app server
+   * holding the debugger session — callers may need it to route external
+   * requests (e.g. a storefront browser) to the same app server.
+   */
+  getCookie(name: string): string | undefined {
+    return this.cookies.get(name);
+  }
+
+  /**
+   * Builds the `Cookie` request header from stored session cookies, or an empty
+   * object if none have been set yet.
+   */
+  private cookieHeader(): Record<string, string> {
+    if (this.cookies.size === 0) {
+      return {};
+    }
+    const cookie = Array.from(this.cookies, ([name, value]) => `${name}=${value}`).join('; ');
+    return {Cookie: cookie};
+  }
+
+  /**
+   * Parses `Set-Cookie` headers from a response and stores them for replay on
+   * subsequent requests (only the name=value pair is retained, attributes are
+   * ignored). Uses `Headers.getSetCookie()` so multiple cookies are not
+   * collapsed into a single comma-joined value.
+   */
+  private storeCookies(headers: Headers): void {
+    const setCookies = typeof headers.getSetCookie === 'function' ? headers.getSetCookie() : ([] as string[]);
+    for (const setCookie of setCookies) {
+      const pair = setCookie.split(';', 1)[0]?.trim();
+      if (!pair) {
+        continue;
+      }
+      const eq = pair.indexOf('=');
+      if (eq <= 0) {
+        continue;
+      }
+      const name = pair.slice(0, eq).trim();
+      const value = pair.slice(eq + 1).trim();
+      this.cookies.set(name, value);
+    }
   }
 }
