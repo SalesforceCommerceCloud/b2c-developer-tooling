@@ -88,54 +88,6 @@ export async function activateCodeVersion(instance: B2CInstance, codeVersionId: 
 }
 
 /**
- * Reloads (re-activates) the current code version.
- *
- * This performs a "toggle" activation - first activating a different code version,
- * then re-activating the target version. This forces the instance to reload the code.
- *
- * @param instance - B2C instance
- * @param codeVersionId - Code version to reload (defaults to current active)
- * @throws Error if reload fails or no alternate version is available
- *
- * @example
- * ```typescript
- * // Reload the currently active code version
- * await reloadCodeVersion(instance);
- *
- * // Reload a specific code version
- * await reloadCodeVersion(instance, 'v1');
- * ```
- */
-export async function reloadCodeVersion(instance: B2CInstance, codeVersionId?: string): Promise<void> {
-  const logger = getLogger();
-  const versions = await listCodeVersions(instance);
-
-  const activeVersion = versions.find((v) => v.active);
-  const targetVersion = codeVersionId ?? activeVersion?.id;
-
-  if (!targetVersion) {
-    throw new Error('No code version specified and no active version found');
-  }
-
-  logger.debug({codeVersionId: targetVersion}, `Reloading code version ${targetVersion}`);
-
-  // If the target is already active, we need to toggle to another version first
-  if (activeVersion?.id === targetVersion) {
-    const alternateVersion = versions.find((v) => v.id !== targetVersion);
-    if (!alternateVersion) {
-      throw new Error('Cannot reload: no alternate code version available for toggle');
-    }
-
-    logger.debug({codeVersionId: alternateVersion.id}, `Temporarily activating ${alternateVersion.id}`);
-    await activateCodeVersion(instance, alternateVersion.id!);
-  }
-
-  // Now activate the target version
-  await activateCodeVersion(instance, targetVersion);
-  logger.debug({codeVersionId: targetVersion}, `Code version ${targetVersion} reloaded`);
-}
-
-/**
  * Deletes a code version from an instance.
  *
  * @param instance - B2C instance

@@ -21,6 +21,7 @@ import {
   getCachedOAuthToken,
   setCachedOAuthToken,
   invalidateCachedOAuthToken,
+  findCachedTokenSatisfying,
   decodeJWT,
 } from './oauth.js';
 import {globalAuthMiddlewareRegistry, applyAuthRequestMiddleware, applyAuthResponseMiddleware} from './middleware.js';
@@ -265,6 +266,49 @@ export class JwtOAuthStrategy implements AuthStrategy {
   }
 
   /**
+   * Resolves a scope cascade. See {@link AuthStrategy.getAccessTokenForCascade}.
+   * Mirrors `OAuthStrategy.getAccessTokenForCascade` for the JWT bearer flow.
+   */
+  async getAccessTokenForCascade(candidates: string[][]): Promise<string> {
+    const baseScopes = this.config.scopes ?? [];
+    const identityPrefix = `${this.config.accountManagerHost}:${this.config.clientId}:jwt:`;
+
+    for (const candidate of candidates) {
+      const required = [...new Set([...baseScopes, ...candidate])];
+      const cached = findCachedTokenSatisfying(identityPrefix, required);
+      if (cached) {
+        this.logger.debug(
+          {required, cachedScopes: cached.scopes},
+          `[JwtOAuthStrategy] Cache hit: cached token satisfies cascade candidate ${JSON.stringify(candidate)}`,
+        );
+        return cached.accessToken;
+      }
+    }
+
+    let lastError: unknown;
+    for (const candidate of candidates) {
+      const merged = [...new Set([...baseScopes, ...candidate])];
+      try {
+        this.logger.debug({scopes: merged}, `[JwtOAuthStrategy] Cascade trying scopes ${JSON.stringify(candidate)}`);
+        const tokenResponse = await this.requestNewTokenForScopes(merged);
+        return tokenResponse.accessToken;
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('invalid_scope')) {
+          this.logger.debug(
+            {scopes: merged},
+            `[JwtOAuthStrategy] Cascade candidate ${JSON.stringify(candidate)} rejected (invalid_scope), trying next`,
+          );
+          lastError = error;
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    throw lastError ?? new Error('All scope cascade candidates failed');
+  }
+
+  /**
    * Gets the full token response including expiration and scopes.
    * Useful for commands that need to display or return token metadata.
    */
@@ -305,10 +349,17 @@ export class JwtOAuthStrategy implements AuthStrategy {
   }
 
   /**
-   * Requests a new access token from Account Manager using JWT Bearer flow.
-   * Returns the full token response and caches it.
+   * Requests a new access token using the strategy's configured scopes.
    */
   private async requestNewToken(): Promise<AccessTokenResponse> {
+    return this.requestNewTokenForScopes(this.config.scopes);
+  }
+
+  /**
+   * Requests a new access token from Account Manager using JWT Bearer flow,
+   * for the given scope set. Caches under a key derived from `scopes`.
+   */
+  private async requestNewTokenForScopes(scopes: string[] | undefined): Promise<AccessTokenResponse> {
     this.logger.trace('[JwtOAuthStrategy] Requesting new access token with JWT Bearer flow');
 
     // Generate signed JWT
@@ -325,15 +376,15 @@ export class JwtOAuthStrategy implements AuthStrategy {
       client_assertion: jwt, // ← JWT in body, not header
     });
 
-    if (this.config.scopes && this.config.scopes.length > 0) {
-      params.append('scope', this.config.scopes.join(' '));
+    if (scopes && scopes.length > 0) {
+      params.append('scope', scopes.join(' '));
     }
 
     this.logger.trace(
       {
         tokenUrl,
         clientId: this.config.clientId,
-        scopes: this.config.scopes,
+        scopes,
       },
       '[JwtOAuthStrategy] Sending JWT Bearer token request',
     );
@@ -390,24 +441,27 @@ export class JwtOAuthStrategy implements AuthStrategy {
     const expiresInSeconds = data.expires_in ?? 1800;
     const expiryDate = new Date(Date.now() + expiresInSeconds * 1000);
 
-    // Decode JWT to extract scopes (scope can be string or array)
+    // Decode JWT to extract scopes (scope can be string or array). Fall back
+    // to the requested scopes if the token doesn't carry a `scope` claim, so
+    // cache satisfies-checks still work for cascade resolution.
     const decoded = decodeJWT(data.access_token);
     const scope = decoded.payload.scope as string | string[] | undefined;
-    const scopes = Array.isArray(scope) ? scope : scope?.split(' ') || this.config.scopes || [];
+    const tokenScopes = Array.isArray(scope) ? scope : scope?.split(' ') || scopes || [];
 
-    // Build and cache token response
     const tokenResponse: AccessTokenResponse = {
       accessToken: data.access_token,
       expires: expiryDate,
-      scopes,
+      scopes: tokenScopes,
     };
-    setCachedOAuthToken(this.cacheKey, tokenResponse);
+    // Cache under a key derived from the requested scopes (matches OAuthStrategy).
+    const cacheKey = getOAuthCacheKey(this.config.clientId, 'jwt', this.config.accountManagerHost, scopes);
+    setCachedOAuthToken(cacheKey, tokenResponse);
 
     this.logger.trace(
       {
         expiresIn: expiresInSeconds,
         expiresAt: expiryDate.toISOString(),
-        scopes,
+        scopes: tokenScopes,
       },
       '[JwtOAuthStrategy] Access token obtained successfully',
     );

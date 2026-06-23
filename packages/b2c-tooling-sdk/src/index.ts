@@ -204,6 +204,41 @@ export type {
   WatchResult,
 } from './operations/code/index.js';
 
+// Scripts (code versions) backend abstraction
+export {createScriptsBackend, OcapiScriptsBackend, ScapiScriptsBackend} from './operations/code/index.js';
+export type {
+  ScriptsBackend,
+  ScriptsBackendConfig,
+  CodeVersionInfo,
+  ScapiScriptsBackendConfig,
+} from './operations/code/index.js';
+
+// Users (BM) backend abstraction
+export {createUsersBackend, OcapiUsersBackend, ScapiUsersBackend} from './operations/bm-users/index.js';
+export type {
+  UsersBackend,
+  UsersBackendConfig,
+  UserInfo,
+  ListUsersResult,
+  ListUsersOptions,
+  CreateUserInput,
+  UpdateUserChanges,
+  ScapiUsersBackendConfig,
+} from './operations/bm-users/index.js';
+
+// Roles (BM) backend abstraction
+export {createRolesBackend, OcapiRolesBackend, ScapiRolesBackend} from './operations/bm-roles/index.js';
+export type {
+  RolesBackend,
+  RolesBackendConfig,
+  RoleInfo,
+  RolePermissionsInfo,
+  ListRolesResult,
+  ListRolesOptions as ListBmRolesScopedOptions,
+  CreateRoleInput,
+  ScapiRolesBackendConfig,
+} from './operations/bm-roles/index.js';
+
 // Operations - Jobs
 export {
   executeJob,
@@ -217,6 +252,14 @@ export {
   siteArchiveImport,
   siteArchiveExport,
   siteArchiveExportToPath,
+  // Canonical surface (SCAPI free functions + canonical helpers)
+  scapiExecuteJob,
+  scapiGetJobExecution,
+  scapiSearchJobExecutions,
+  scapiDeleteJobExecution,
+  scapiGetJobLog,
+  waitForJobExecution,
+  CanonicalJobExecutionError,
 } from './operations/jobs/index.js';
 export type {
   JobExecution,
@@ -228,6 +271,12 @@ export type {
   WaitForJobPollInfo,
   SearchJobExecutionsOptions,
   JobExecutionSearchResult,
+  // Canonical types
+  JobExecutionInfo,
+  JobStepExecutionResult,
+  JobExecutionSearchResults,
+  ExecuteJobScapiOptions,
+  SearchJobExecutionsScapiOptions,
   SiteArchiveImportOptions,
   SiteArchiveImportResult,
   SiteArchiveExportOptions,

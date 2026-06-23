@@ -4,7 +4,35 @@ description: Commands for administering Business Manager resources on a B2C Comm
 
 # Business Manager Commands
 
-Commands for administering instance-level Business Manager resources via the OCAPI Data API. These are distinct from [Account Manager commands](/cli/account-manager) which manage cross-instance identity.
+Commands for administering instance-level Business Manager resources. These are distinct from [Account Manager commands](/cli/account-manager) which manage cross-instance identity.
+
+## API Backend
+
+Most `bm users` and `bm roles` commands support both the OCAPI Data API and the SCAPI Merchant Users / Merchant Roles APIs. By default (`auto` mode), SCAPI is preferred when `shortCode` and `tenantId` are configured. If the SCAPI scopes aren't granted on your API client, the CLI silently falls back to OCAPI.
+
+```bash
+# Force SCAPI backend
+b2c bm users list --api-backend scapi
+
+# Force OCAPI backend
+b2c bm roles get Administrator --api-backend ocapi
+```
+
+Or set in `dw.json`: `"api-backend": "scapi"`. Or `SFCC_API_BACKEND=scapi` env var.
+
+| Command | SCAPI | OCAPI |
+|---|---|---|
+| `bm users list/get/update/delete` | ✓ (`sfcc.users.rw`) | ✓ |
+| `bm users search` | ✗ — OCAPI only | ✓ |
+| `bm whoami` | ✗ — OCAPI only | ✓ |
+| `bm access-key *` | ✗ — OCAPI only | ✓ |
+| `bm roles list/get/create/delete` | ✓ (`sfcc.roles.rw`) | ✓ |
+| `bm roles grant/revoke` | ✓ (`sfcc.roles.rw`) | ✓ |
+| `bm roles permissions get/set` | ✓ (`sfcc.roles.rw`) | ✓ |
+
+::: warning
+The SCAPI Users PATCH endpoint does not support changing the `disabled` flag. `bm users update --disabled` falls back to OCAPI in auto mode; with `--api-backend scapi` it errors with a clear message.
+:::
 
 ## Authentication
 

@@ -9,7 +9,9 @@ import JSZip from 'jszip';
 import type {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
 import {findCartridges, type CartridgeMapping, type FindCartridgesOptions} from './cartridges.js';
-import {activateCodeVersion, reloadCodeVersion} from './versions.js';
+import {activateCodeVersion} from './versions.js';
+import {reloadCodeVersion} from './scripts-backend.js';
+import {OcapiScriptsBackend} from './ocapi-scripts-backend.js';
 
 const UNZIP_BODY = new URLSearchParams({method: 'UNZIP'}).toString();
 
@@ -320,7 +322,7 @@ export async function findAndDeployCartridges(
     activated = true;
   } else if (options.reload) {
     logger.debug('Reloading code version...');
-    await reloadCodeVersion(instance, codeVersion);
+    await reloadCodeVersion(new OcapiScriptsBackend(instance), codeVersion);
     activated = true;
     reloaded = true;
   }

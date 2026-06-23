@@ -3,15 +3,8 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {
-  downloadSingleCartridge,
-  listCodeVersions,
-  getActiveCodeVersion,
-  activateCodeVersion,
-  createCodeVersion,
-  reloadCodeVersion,
-  deleteCodeVersion,
-} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {downloadSingleCartridge, reloadCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {createScriptsBackendFromExtension} from './scripts-backend.js';
 import {
   addCartridge,
   removeCartridge,
@@ -56,7 +49,7 @@ function createDownloadCartridgeCommand(
     let codeVersion = instance.config.codeVersion;
     if (!codeVersion) {
       try {
-        const active = await getActiveCodeVersion(instance);
+        const active = await createScriptsBackendFromExtension(configProvider, instance).getActiveCodeVersion();
         if (active?.id) codeVersion = active.id;
       } catch {
         // fall through
@@ -233,7 +226,8 @@ function createListCodeVersionsCommand(
     if (!instance) return;
 
     try {
-      const versions = await listCodeVersions(instance);
+      const scriptsBackend = createScriptsBackendFromExtension(configProvider, instance);
+      const versions = await scriptsBackend.listCodeVersions();
       const items = versions.map((v) => ({
         label: `${v.active ? '$(star-full) ' : ''}${v.id ?? 'unknown'}`,
         description: v.active ? 'Active' : '',
@@ -266,7 +260,7 @@ function createListCodeVersionsCommand(
         await vscode.window.withProgress(
           {location: vscode.ProgressLocation.Notification, title: `Activating "${versionId}"...`},
           async () => {
-            await activateCodeVersion(instance, versionId);
+            await scriptsBackend.activateCodeVersion(versionId);
             treeView.description = `v: ${versionId}`;
           },
         );
@@ -274,7 +268,7 @@ function createListCodeVersionsCommand(
       } else if (actionPick.action === 'reload') {
         await vscode.window.withProgress(
           {location: vscode.ProgressLocation.Notification, title: `Reloading "${versionId}"...`},
-          () => reloadCodeVersion(instance, versionId),
+          () => reloadCodeVersion(scriptsBackend, versionId),
         );
         vscode.window.showInformationMessage(`B2C DX: Code version "${versionId}" reloaded.`);
       } else if (actionPick.action === 'delete') {
@@ -286,7 +280,7 @@ function createListCodeVersionsCommand(
         if (confirm === 'Delete') {
           await vscode.window.withProgress(
             {location: vscode.ProgressLocation.Notification, title: `Deleting "${versionId}"...`},
-            () => deleteCodeVersion(instance, versionId),
+            () => scriptsBackend.deleteCodeVersion(versionId),
           );
           vscode.window.showInformationMessage(`B2C DX: Code version "${versionId}" deleted.`);
         }
@@ -314,7 +308,7 @@ function createCreateCodeVersionCommand(
     if (!name) return;
 
     try {
-      await createCodeVersion(instance, name.trim());
+      await createScriptsBackendFromExtension(configProvider, instance).createCodeVersion(name.trim());
       outputChannel.appendLine(`[Code Version] Created "${name.trim()}"`);
       vscode.window.showInformationMessage(`B2C DX: Code version "${name.trim()}" created.`);
       treeProvider.refresh();
@@ -334,7 +328,8 @@ function createActivateCodeVersionCommand(
     if (!instance) return;
 
     try {
-      const versions = await listCodeVersions(instance);
+      const scriptsBackend = createScriptsBackendFromExtension(configProvider, instance);
+      const versions = await scriptsBackend.listCodeVersions();
       const items = versions.map((v) => ({
         label: v.id ?? 'unknown',
         description: v.active ? '$(star-full) Active' : '',
@@ -350,7 +345,7 @@ function createActivateCodeVersionCommand(
       await vscode.window.withProgress(
         {location: vscode.ProgressLocation.Notification, title: `Activating "${picked.version.id}"...`},
         async () => {
-          await activateCodeVersion(instance, picked.version.id!);
+          await scriptsBackend.activateCodeVersion(picked.version.id!);
           treeView.description = `v: ${picked.version.id}`;
         },
       );
@@ -380,13 +375,13 @@ export async function updateCodeVersionDisplay(
     return;
   }
 
-  // Fall back to OCAPI discovery if available
+  // Fall back to backend discovery (SCAPI or OCAPI based on apiBackend) if available
   if (!instance) {
     treeView.description = '';
     return;
   }
   try {
-    const active = await getActiveCodeVersion(instance);
+    const active = await createScriptsBackendFromExtension(configProvider, instance).getActiveCodeVersion();
     treeView.description = active?.id ? `v: ${active.id}` : '';
   } catch {
     treeView.description = '';

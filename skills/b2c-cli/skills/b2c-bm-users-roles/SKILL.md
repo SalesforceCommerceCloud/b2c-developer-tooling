@@ -11,6 +11,22 @@ Use the `b2c bm` commands to administer instance-level Business Manager resource
 
 For **Account Manager** user/role/client management (cross-instance, scoped to tenants), see the `b2c-cli:b2c-am` skill instead.
 
+## API Backend
+
+`bm users` (list, get, update, delete) and `bm roles` (all subcommands including permissions) support both the OCAPI Data API and the SCAPI Merchant Users / Merchant Roles APIs. Auto mode (default) prefers SCAPI when `shortCode` and `tenantId` are configured.
+
+```bash
+# force SCAPI (requires sfcc.users.rw / sfcc.roles.rw scope)
+b2c bm users list --api-backend scapi
+
+# force OCAPI
+b2c bm roles get Administrator --api-backend ocapi
+```
+
+OCAPI-only commands (no SCAPI equivalent): `bm users search`, `bm whoami`, `bm access-key *`.
+
+`bm users update --disabled` requires OCAPI (SCAPI's PATCH endpoint doesn't support changing `disabled`). Auto mode falls back to OCAPI for that case.
+
 ## Authentication
 
 The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables, `dw.json` in the current or parent directories, `~/.mobify`, `package.json`, and configuration plugins. **Flags like `--server`, `--client-id`, and `--client-secret` are usually unnecessary** — only pass them to override what's auto-detected. Run `b2c setup inspect` to see the resolved configuration and which source provided each value. For precedence and troubleshooting, see the `b2c-cli:b2c-config` skill.

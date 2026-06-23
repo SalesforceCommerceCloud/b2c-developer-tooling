@@ -30,7 +30,10 @@ import {createMrtLogsWatchStopTool} from './mrt-logs-watch-stop.js';
 import {createMrtLogsWatchListTool} from './mrt-logs-watch-list.js';
 
 export interface DiagnosticsToolInjections
-  extends LogsGetRecentInjections, LogsListFilesInjections, LogsWatchStartInjections, MrtLogsWatchStartInjections {}
+  extends LogsGetRecentInjections,
+    LogsListFilesInjections,
+    LogsWatchStartInjections,
+    MrtLogsWatchStartInjections {}
 
 export function createDiagnosticsTools(
   loadServices: () => Promise<Services> | Services,

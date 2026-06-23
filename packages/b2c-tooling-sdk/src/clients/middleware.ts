@@ -44,6 +44,11 @@ const retriedRequests = new WeakSet<Request>();
 // Store cloned request bodies for potential retry (body can only be read once)
 const requestBodies = new WeakMap<Request, ArrayBuffer | null>();
 
+// Remembers the SCAPI scope mode ('read' or 'write') a request was authorized
+// with, so the 401 retry path can re-authorize at the same tier instead of
+// hard-coding write.
+const requestScopeModes = new WeakMap<Request, 'read' | 'write'>();
+
 /**
  * Creates authentication middleware for openapi-fetch.
  *
@@ -122,6 +127,119 @@ export function createAuthMiddleware(auth: AuthStrategy): Middleware {
 
         logger.debug({status: retryResponse.status}, `[AuthMiddleware] Retry response: ${retryResponse.status}`);
 
+        return retryResponse;
+      }
+
+      return response;
+    },
+  };
+}
+
+/**
+ * Scope cascade for a SCAPI domain. The auth middleware picks `read` or
+ * `write` based on the per-operation `scopeMode` hint and walks the chosen
+ * cascade through the auth strategy until one candidate survives at AM.
+ *
+ * Each candidate is an array of scopes; the auth strategy adds any base
+ * scopes (e.g. tenant scope) automatically.
+ */
+export interface ScopeCascade {
+  /** Scope candidates to try for read operations, in order of preference. */
+  read: string[][];
+  /** Scope candidates to try for write operations, in order of preference. */
+  write: string[][];
+}
+
+/**
+ * Internal request header read by {@link createScapiAuthMiddleware} to choose
+ * a cascade tier. Operations attach `'read'` or `'write'`; the header is
+ * stripped before the request leaves the middleware.
+ */
+export const SCOPE_MODE_HEADER = 'x-b2c-scope-mode';
+
+/**
+ * Auth middleware for SCAPI clients with a configured {@link ScopeCascade}.
+ *
+ * Reads the {@link SCOPE_MODE_HEADER} from the request, picks the matching
+ * cascade, and asks the auth strategy to resolve it (cache-first, then AM
+ * with `invalid_scope` fallback). Strips the header before the request is
+ * sent.
+ *
+ * Falls back to `getAuthorizationHeader()` when:
+ *   - the strategy doesn't implement `getAccessTokenForCascade` (e.g.
+ *     stateful sessions, basic auth), or
+ *   - the request didn't supply a `scopeMode` header.
+ *
+ * 401 retry behavior matches {@link createAuthMiddleware}: on a 401 after a
+ * prior success, invalidate the token and retry once.
+ */
+export function createScapiAuthMiddleware(auth: AuthStrategy, cascade: ScopeCascade): Middleware {
+  const logger = getLogger();
+  let hasHadSuccess = false;
+
+  async function authorize(request: Request): Promise<void> {
+    const mode = request.headers.get(SCOPE_MODE_HEADER) as 'read' | 'write' | null;
+    request.headers.delete(SCOPE_MODE_HEADER);
+
+    if (mode && auth.getAccessTokenForCascade) {
+      requestScopeModes.set(request, mode);
+      const candidates = cascade[mode];
+      const token = await auth.getAccessTokenForCascade(candidates);
+      request.headers.set('Authorization', `Bearer ${token}`);
+      return;
+    }
+
+    if (auth.getAuthorizationHeader) {
+      request.headers.set('Authorization', await auth.getAuthorizationHeader());
+    }
+  }
+
+  return {
+    async onRequest({request}) {
+      await authorize(request);
+
+      // Clone body for potential 401 retry (body is single-use).
+      if (request.body && auth.invalidateToken) {
+        const cloned = request.clone();
+        const bodyBuffer = await cloned.arrayBuffer();
+        requestBodies.set(request, bodyBuffer);
+      }
+
+      return request;
+    },
+
+    async onResponse({request, response}) {
+      if (response.status !== 401) {
+        hasHadSuccess = true;
+      }
+
+      if (response.status === 401 && hasHadSuccess && !retriedRequests.has(request) && auth.invalidateToken) {
+        logger.debug('[ScapiAuthMiddleware] Received 401, invalidating token and retrying');
+        retriedRequests.add(request);
+        auth.invalidateToken();
+
+        const newHeaders = new Headers(request.headers);
+        // The original scope-mode header was stripped on the way in. Re-run
+        // the cascade at the same tier the original request used so a
+        // read-only request doesn't get retried as a write (which would fail
+        // for clients that only have the read scope).
+        const retryRequest = new Request(request.url, {
+          method: request.method,
+          headers: newHeaders,
+          body: requestBodies.get(request) ?? undefined,
+          ...(requestBodies.get(request) ? {duplex: 'half'} : {}),
+        } as RequestInit);
+
+        if (auth.getAccessTokenForCascade) {
+          const originalMode = requestScopeModes.get(request) ?? 'write';
+          const token = await auth.getAccessTokenForCascade(cascade[originalMode]);
+          retryRequest.headers.set('Authorization', `Bearer ${token}`);
+        } else if (auth.getAuthorizationHeader) {
+          retryRequest.headers.set('Authorization', await auth.getAuthorizationHeader());
+        }
+
+        const retryResponse = await fetch(retryRequest);
+        logger.debug({status: retryResponse.status}, `[ScapiAuthMiddleware] Retry response: ${retryResponse.status}`);
         return retryResponse;
       }
 

@@ -75,3 +75,18 @@ export type {
   SearchBmUsersOptions,
   UpdateBmUserChanges,
 } from './users.js';
+
+// Users backend abstraction — supports OCAPI + SCAPI
+export {createUsersBackend} from './backend.js';
+export type {UsersBackendConfig} from './backend.js';
+export {OcapiUsersBackend} from './ocapi-backend.js';
+export {ScapiUsersBackend} from './scapi-backend.js';
+export type {ScapiUsersBackendConfig} from './scapi-backend.js';
+export type {
+  UsersBackend,
+  UserInfo,
+  ListUsersResult,
+  ListUsersOptions,
+  CreateUserInput,
+  UpdateUserChanges,
+} from './types.js';

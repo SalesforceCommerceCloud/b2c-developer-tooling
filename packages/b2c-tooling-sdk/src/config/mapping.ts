@@ -83,6 +83,7 @@ export const CONFIG_KEY_ALIASES: Record<string, string> = {
   'oauth-scopes': 'oauthScopes',
   'auth-methods': 'authMethods',
   'cip-host': 'cipHost',
+  'api-backend': 'apiBackend',
 };
 
 /**
@@ -186,6 +187,8 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     certificate: json.certificate,
     certificatePassphrase: json.certificatePassphrase,
     selfSigned: json.selfSigned,
+    // API backend
+    apiBackend: json.apiBackend,
     // JWT Bearer auth options
     jwtCertPath: json.jwtCertPath,
     jwtKeyPath: json.jwtKeyPath,
@@ -327,6 +330,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.selfSigned !== undefined) {
     result.selfSigned = config.selfSigned;
+  }
+  if (config.apiBackend !== undefined) {
+    result.apiBackend = config.apiBackend;
   }
   if (config.jwtCertPath !== undefined) {
     result.jwtCertPath = config.jwtCertPath;
@@ -473,6 +479,8 @@ export function mergeConfigsWithProtection(
       certificate: overrides.certificate ?? base.certificate,
       certificatePassphrase: overrides.certificatePassphrase ?? base.certificatePassphrase,
       selfSigned: overrides.selfSigned ?? base.selfSigned,
+      // API backend
+      apiBackend: overrides.apiBackend ?? base.apiBackend,
       // JWT Bearer auth options
       jwtCertPath: overrides.jwtCertPath ?? base.jwtCertPath,
       jwtKeyPath: overrides.jwtKeyPath ?? base.jwtKeyPath,

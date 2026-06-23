@@ -7,10 +7,10 @@ import {Flags} from '@oclif/core';
 import {
   uploadCartridges,
   deleteCartridges,
-  getActiveCodeVersion,
-  activateCodeVersion,
   reloadCodeVersion,
+  createScriptsBackend,
   type DeployResult,
+  type ScriptsBackend,
 } from '@salesforce/b2c-tooling-sdk/operations/code';
 import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {t, withDocs} from '../../i18n/index.js';
@@ -64,10 +64,20 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
   protected operations = {
     uploadCartridges,
     deleteCartridges,
-    getActiveCodeVersion,
-    activateCodeVersion,
     reloadCodeVersion,
   };
+
+  /**
+   * Lazily-created Scripts backend. Honors `--api-backend` so SCAPI-only
+   * users can discover, activate, and reload code versions without OCAPI.
+   */
+  private _scriptsBackend?: ScriptsBackend;
+  protected get scriptsBackend(): ScriptsBackend {
+    if (!this._scriptsBackend) {
+      this._scriptsBackend = this.createBackend(createScriptsBackend);
+    }
+    return this._scriptsBackend;
+  }
 
   async run(): Promise<DeployResult> {
     this.requireWebDavCredentials();
@@ -103,7 +113,7 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       this.warn(
         t('commands.code.deploy.noCodeVersion', 'No code version specified, discovering active code version...'),
       );
-      const activeVersion = await this.operations.getActiveCodeVersion(this.instance);
+      const activeVersion = await this.scriptsBackend.getActiveCodeVersion();
       if (!activeVersion?.id) {
         this.error(
           t('commands.code.deploy.noActiveVersion', 'No active code version found. Specify one with --code-version.'),
@@ -200,10 +210,10 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       let reloaded = false;
       try {
         if (this.flags.activate) {
-          await this.operations.activateCodeVersion(this.instance, version);
+          await this.scriptsBackend.activateCodeVersion(version);
           activated = true;
         } else if (this.flags.reload) {
-          await this.operations.reloadCodeVersion(this.instance, version);
+          await this.operations.reloadCodeVersion(this.scriptsBackend, version);
           activated = true;
           reloaded = true;
         }

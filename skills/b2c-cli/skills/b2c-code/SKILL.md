@@ -112,6 +112,20 @@ b2c code activate --reload
 b2c code delete <version-name>
 ```
 
+### API Backend Selection
+
+`code list`, `code activate`, `code delete`, and the active-version discovery / activate / reload steps in `code deploy` all honor `--api-backend`. Auto mode (the default) prefers SCAPI when `shortCode` and `tenantId` are configured.
+
+```bash
+# force SCAPI (requires sfcc.scripts or sfcc.scripts.rw scope)
+b2c code list --api-backend scapi
+
+# force OCAPI
+b2c code list --api-backend ocapi
+```
+
+Read scopes (`sfcc.scripts`) cover `code list` / discovery; write scopes (`sfcc.scripts.rw`) cover activate, delete, reload, and the `--activate` / `--reload` flags on deploy. `code reload` is implemented backend-agnostically as activate(alternate) + activate(target), so it works under either OCAPI or SCAPI. `code deploy` (file upload itself), `code download`, and `code watch` always use WebDAV — only the surrounding code-version operations route through `apiBackend`.
+
 ### More Commands
 
 See `b2c code --help` for a full list of available commands and options in the `code` topic.

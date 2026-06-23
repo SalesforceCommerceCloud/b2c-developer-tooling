@@ -6,11 +6,51 @@ description: Commands for executing jobs, importing and exporting site archives,
 
 Commands for executing and monitoring jobs on B2C Commerce instances.
 
+## API Backend
+
+Job commands support both OCAPI and SCAPI backends. By default (`auto` mode), SCAPI is preferred when `shortCode` and `tenantId` are configured. If SCAPI scopes are unavailable, the CLI falls back to OCAPI transparently.
+
+Use `--api-backend` to control explicitly:
+
+```bash
+# Force SCAPI
+b2c job run my-job --api-backend scapi
+
+# Force OCAPI
+b2c job run my-job --api-backend ocapi
+
+# Auto-detect (default)
+b2c job run my-job --api-backend auto
+```
+
+Or set in `dw.json`:
+
+```json
+{
+  "api-backend": "scapi"
+}
+```
+
+Or via environment variable: `SFCC_API_BACKEND=scapi`.
+
+::: tip
+The `job import` and `job export` commands currently use OCAPI only, regardless of the `--api-backend` setting.
+:::
+
 ## Authentication
 
-Job commands require OAuth authentication with OCAPI permissions.
+### SCAPI (recommended)
 
-### Required OCAPI Permissions
+When using SCAPI, your API client needs the appropriate scopes in Account Manager:
+
+| Scope | Operations |
+|-------|------------|
+| `sfcc.jobs.rw` | Execute, delete, search, and get job executions (recommended) |
+| `sfcc.jobs` | Search and get job executions (read-only) |
+
+You also need `shortCode` and `tenantId` configured (in `dw.json` or via flags).
+
+### OCAPI
 
 Configure these resources in Business Manager under **Administration** > **Site Development** > **Open Commerce API Settings**:
 
@@ -252,6 +292,37 @@ b2c job log my-custom-job > job.log
 - Log content is written to stdout, making it easy to pipe to a file or other tools.
 - Status messages are written to stderr so they don't interfere with piped output.
 - The `job log` command requires WebDAV access to retrieve log files.
+
+---
+
+## b2c job execution delete
+
+Delete a job execution record. This command requires the SCAPI backend (`sfcc.jobs.rw` scope).
+
+### Usage
+
+```bash
+b2c job execution delete JOBID EXECUTIONID
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `JOBID` | Job ID | Yes |
+| `EXECUTIONID` | Execution ID to delete | Yes |
+
+### Examples
+
+```bash
+# Delete a specific execution
+b2c job execution delete my-job abc123-def456
+```
+
+### Notes
+
+- Requires SCAPI backend — not available via OCAPI.
+- Requires the `sfcc.jobs.rw` scope on your API client.
 
 ---
 
