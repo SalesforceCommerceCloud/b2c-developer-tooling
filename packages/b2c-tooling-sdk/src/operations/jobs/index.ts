@@ -52,7 +52,9 @@ export type {JobExecutionInfo, JobStepExecutionResult, JobExecutionSearchResults
 
 // Backend-agnostic helpers
 export {waitForJobExecution, CanonicalJobExecutionError} from './wait-canonical.js';
-export {mapOcapiExecution, mapOcapiSearchResult} from './ocapi-mapping.js';
+export {mapOcapiExecution, mapOcapiSearchResult, mapCanonicalToOcapiExecution} from './ocapi-mapping.js';
+export {runSystemJob} from './run-system-job.js';
+export type {SystemJobSpec} from './run-system-job.js';
 
 // Site archive import/export (uses OCAPI WebDAV path)
 export {

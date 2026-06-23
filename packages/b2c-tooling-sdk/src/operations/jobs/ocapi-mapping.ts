@@ -55,6 +55,61 @@ export function mapOcapiExecution(ocapi: JobExecution): JobExecutionInfo {
   };
 }
 
+function mapCanonicalStepExecution(step: JobStepExecutionResult): JobStepExecution {
+  return {
+    id: step.id,
+    step_id: step.stepId,
+    execution_status: step.executionStatus as JobStepExecution['execution_status'],
+    exit_status: step.exitStatus
+      ? {
+          code: step.exitStatus.code,
+          message: step.exitStatus.message,
+          status: step.exitStatus.status,
+        }
+      : undefined,
+    duration: step.duration,
+  } as JobStepExecution;
+}
+
+/**
+ * Map a canonical {@link JobExecutionInfo} back into the raw OCAPI
+ * {@link JobExecution} (snake_case) shape.
+ *
+ * The reverse of {@link mapOcapiExecution}. System-job operations
+ * (site-archive import/export, CAP install/uninstall) expose the raw OCAPI
+ * `JobExecution` in their public result/error types; when those operations are
+ * served over SCAPI, the canonical result is mapped back through this so the
+ * public contract stays identical across backends.
+ *
+ * Prefers the original OCAPI payload when present in `_raw` (lossless
+ * round-trip for the OCAPI path); otherwise projects the canonical fields.
+ */
+export function mapCanonicalToOcapiExecution(canonical: JobExecutionInfo): JobExecution {
+  if (canonical._raw && typeof canonical._raw === 'object' && 'execution_status' in canonical._raw) {
+    return canonical._raw as JobExecution;
+  }
+
+  return {
+    id: canonical.id,
+    job_id: canonical.jobId,
+    execution_status: canonical.executionStatus as JobExecution['execution_status'],
+    exit_status: canonical.exitStatus
+      ? {
+          code: canonical.exitStatus.code,
+          message: canonical.exitStatus.message,
+          status: canonical.exitStatus.status,
+        }
+      : undefined,
+    start_time: canonical.startTime,
+    end_time: canonical.endTime,
+    duration: canonical.duration,
+    step_executions: canonical.stepExecutions?.map(mapCanonicalStepExecution),
+    log_file_path: canonical.logFilePath,
+    is_log_file_existing: canonical.isLogFileExisting,
+    parameters: canonical.parameters,
+  } as JobExecution;
+}
+
 /** Map a raw OCAPI search result into the canonical shape. */
 export function mapOcapiSearchResult(result: {
   total: number;

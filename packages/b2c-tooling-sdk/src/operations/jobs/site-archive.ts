@@ -15,17 +15,36 @@ import * as zlib from 'node:zlib';
 import {glob, hasMagic} from 'glob';
 import JSZip from 'jszip';
 import {B2CInstance} from '../../instance/index.js';
-import {isOcapiDeprecatedFault, OcapiDeprecatedError} from '../../clients/error-utils.js';
 import {SCAPI_JOBS_CASCADE} from '../../clients/scapi-jobs.js';
 import {getLogger} from '../../logging/logger.js';
 import {addDirectoryToZip} from '../util/zip.js';
-import {waitForJob, JobExecutionError, getJobLog, type JobExecution, type WaitForJobOptions} from './run.js';
+import {JobExecutionError, getJobLog, type JobExecution, type WaitForJobOptions} from './run.js';
+import {runSystemJob} from './run-system-job.js';
 
 // Import/export trigger system jobs via the job-execution write surface.
 const JOBS_RW_SCOPES = [...new Set(SCAPI_JOBS_CASCADE.write.flat())];
 
 const IMPORT_JOB_ID = 'sfcc-site-archive-import';
 const EXPORT_JOB_ID = 'sfcc-site-archive-export';
+
+/**
+ * On a {@link JobExecutionError}, fetch and log the job log over WebDAV.
+ * Shared by import/export; the log lives under `/Sites/LOGS` for both backends,
+ * so a single WebDAV-based `getJobLog` works regardless of which served the job.
+ * Non-{@link JobExecutionError} errors (timeout, network) are left alone.
+ */
+async function logJobFailure(instance: B2CInstance, jobId: string, error: unknown): Promise<void> {
+  if (!(error instanceof JobExecutionError)) {
+    return;
+  }
+  const logger = getLogger();
+  try {
+    const log = await getJobLog(instance, error.execution);
+    logger.error({jobId, logFile: error.execution.log_file_path, log}, `Job log:\n${log}`);
+  } catch {
+    logger.error({jobId}, 'Could not retrieve job log');
+  }
+}
 
 /**
  * Options for site archive import.
@@ -222,72 +241,32 @@ export async function siteArchiveImport(
     logger.debug({path: uploadPath}, `Archive uploaded: ${uploadPath}`);
   }
 
-  // Execute the import job with file_name parameter
+  // Execute the import job (SCAPI when configured, OCAPI fallback in auto).
   logger.debug(
     {jobId: IMPORT_JOB_ID, file: zipFilename},
     `Executing ${IMPORT_JOB_ID} job with file_name: ${zipFilename}`,
   );
 
   let execution: JobExecution;
-
-  // Try file_name format first (standard OCAPI format)
-  const {data, error} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
-    params: {path: {job_id: IMPORT_JOB_ID}},
-    body: {file_name: zipFilename} as unknown as string,
-  });
-
-  if (
-    error?.fault?.type === 'UnknownPropertyException' &&
-    (error.fault.arguments as Record<string, unknown>)?.document === 'job_execution_request'
-  ) {
-    // Retry with parameters format (internal/support users)
-    logger.warn('Retrying with parameters format for internal users');
-
-    const {data: retryData, error: retryError} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
-      params: {path: {job_id: IMPORT_JOB_ID}},
-      body: {
-        parameters: [{name: 'ImportFile', value: zipFilename}],
-      } as unknown as string,
+  try {
+    execution = await runSystemJob(instance, {
+      jobId: IMPORT_JOB_ID,
+      ocapiBody: {file_name: zipFilename},
+      parameters: [{name: 'ImportFile', value: zipFilename}],
+      deprecatedScopes: JOBS_RW_SCOPES,
+      wait,
+      waitOptions,
+      failVerb: 'execute import job',
     });
-
-    if (retryError || !retryData) {
-      if (isOcapiDeprecatedFault(retryError))
-        throw new OcapiDeprecatedError({cause: retryError, requiredScopes: JOBS_RW_SCOPES});
-      throw new Error(retryError?.fault?.message ?? 'Failed to execute import job', {cause: retryError});
-    }
-
-    execution = retryData;
-  } else if (error || !data) {
-    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError({cause: error, requiredScopes: JOBS_RW_SCOPES});
-    throw new Error(error?.fault?.message ?? 'Failed to execute import job', {cause: error});
-  } else {
-    execution = data;
+  } catch (error) {
+    await logJobFailure(instance, IMPORT_JOB_ID, error);
+    throw error;
   }
 
-  logger.debug({jobId: IMPORT_JOB_ID, executionId: execution.id}, `Import job started: ${execution.id}`);
-
-  if (wait) {
-    // Wait for completion
-    try {
-      execution = await waitForJob(instance, IMPORT_JOB_ID, execution.id!, waitOptions);
-    } catch (error) {
-      if (error instanceof JobExecutionError) {
-        // Try to get log file
-        try {
-          const log = await getJobLog(instance, error.execution);
-          logger.error({jobId: IMPORT_JOB_ID, logFile: error.execution.log_file_path, log}, `Job log:\n${log}`);
-        } catch {
-          logger.error({jobId: IMPORT_JOB_ID}, 'Could not retrieve job log');
-        }
-      }
-      throw error;
-    }
-
-    // Clean up archive if not keeping
-    if (!keepArchive && needsUpload) {
-      await instance.webdav.delete(uploadPath);
-      logger.debug({path: uploadPath}, `Archive deleted: ${uploadPath}`);
-    }
+  // Clean up archive if not keeping (only when we waited for completion)
+  if (wait && !keepArchive && needsUpload) {
+    await instance.webdav.delete(uploadPath);
+    logger.debug({path: uploadPath}, `Archive deleted: ${uploadPath}`);
   }
 
   return {
@@ -1031,67 +1010,22 @@ export async function siteArchiveExport(
 
   logger.debug({jobId: EXPORT_JOB_ID, dataUnits}, `Executing ${EXPORT_JOB_ID} job`);
 
+  // Execute export job (SCAPI when configured, OCAPI fallback in auto).
   let execution: JobExecution;
-
-  // Execute export job - try export_file format first
-  {
-    const {data, error} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
-      params: {path: {job_id: EXPORT_JOB_ID}},
-      body: {
-        export_file: zipFilename,
-        data_units: dataUnits,
-      } as unknown as string,
-    });
-
-    if (
-      error?.fault?.type === 'UnknownPropertyException' &&
-      (error.fault.arguments as Record<string, unknown>)?.document === 'job_execution_request'
-    ) {
-      // Retry with parameters format (internal/support users)
-      logger.warn('Retrying with parameters format for internal users');
-
-      const {data: retryData, error: retryError} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
-        params: {path: {job_id: EXPORT_JOB_ID}},
-        body: {
-          parameters: [
-            {name: 'ExportFile', value: zipFilename},
-            {name: 'DataUnits', value: JSON.stringify(dataUnits)},
-          ],
-        } as unknown as string,
-      });
-
-      if (retryError || !retryData) {
-        if (isOcapiDeprecatedFault(retryError))
-          throw new OcapiDeprecatedError({cause: retryError, requiredScopes: JOBS_RW_SCOPES});
-        throw new Error(retryError?.fault?.message ?? 'Failed to execute export job', {
-          cause: retryError,
-        });
-      }
-
-      execution = retryData;
-    } else if (error || !data) {
-      if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError({cause: error, requiredScopes: JOBS_RW_SCOPES});
-      throw new Error(error?.fault?.message ?? 'Failed to execute export job', {cause: error});
-    } else {
-      execution = data;
-    }
-  }
-
-  logger.debug({jobId: EXPORT_JOB_ID, executionId: execution.id}, `Export job started: ${execution.id}`);
-
-  // Wait for completion
   try {
-    execution = await waitForJob(instance, EXPORT_JOB_ID, execution.id!, waitOptions);
+    execution = await runSystemJob(instance, {
+      jobId: EXPORT_JOB_ID,
+      ocapiBody: {export_file: zipFilename, data_units: dataUnits},
+      parameters: [
+        {name: 'ExportFile', value: zipFilename},
+        {name: 'DataUnits', value: JSON.stringify(dataUnits)},
+      ],
+      deprecatedScopes: JOBS_RW_SCOPES,
+      waitOptions,
+      failVerb: 'execute export job',
+    });
   } catch (error) {
-    if (error instanceof JobExecutionError) {
-      // Try to get log file
-      try {
-        const log = await getJobLog(instance, error.execution);
-        logger.error({jobId: EXPORT_JOB_ID, logFile: error.execution.log_file_path, log}, `Job log:\n${log}`);
-      } catch {
-        logger.error({jobId: EXPORT_JOB_ID}, 'Could not retrieve job log');
-      }
-    }
+    await logJobFailure(instance, EXPORT_JOB_ID, error);
     throw error;
   }
 

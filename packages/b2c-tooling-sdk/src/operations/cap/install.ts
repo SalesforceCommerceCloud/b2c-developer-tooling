@@ -12,9 +12,9 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import JSZip from 'jszip';
 import {B2CInstance} from '../../instance/index.js';
-import {isOcapiDeprecatedFault, OcapiDeprecatedError} from '../../clients/error-utils.js';
 import {getLogger} from '../../logging/logger.js';
-import {waitForJob, JobExecutionError, getJobLog, type JobExecution, type WaitForJobOptions} from '../jobs/run.js';
+import {JobExecutionError, getJobLog, type JobExecution, type WaitForJobOptions} from '../jobs/run.js';
+import {runSystemJob} from '../jobs/run-system-job.js';
 import {addDirectoryToZip} from '../util/zip.js';
 import {type CommerceAppManifest} from './validate.js';
 
@@ -113,63 +113,32 @@ export async function commerceAppInstall(
   await instance.webdav.put(webdavUploadPath, archiveContent, 'application/zip');
   logger.debug({path: webdavUploadPath}, `CAP uploaded: ${webdavUploadPath}`);
 
-  // Execute the install job
+  // Execute the install job (SCAPI when configured, OCAPI fallback in auto).
   logger.debug({jobId: INSTALL_JOB_ID, appName: manifest.id, siteId}, `Executing ${INSTALL_JOB_ID} job`);
 
-  let execution: JobExecution;
-
-  // Try direct body format first (standard OCAPI format)
-  const {data, error} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
-    params: {path: {job_id: INSTALL_JOB_ID}},
-    body: {
-      app_name: manifest.id,
-      app_source: 'WebDAV',
-      app_domain: manifest.domain,
-      site_id: siteId,
-      app_path: appPath,
-      should_create_pr: shouldCreatePr,
-    } as unknown as string,
-  });
-
-  if (
-    error?.fault?.type === 'UnknownPropertyException' &&
-    (error.fault.arguments as Record<string, unknown>)?.document === 'job_execution_request'
-  ) {
-    // Retry with parameters format (internal/support users)
-    logger.warn('Retrying with parameters format for internal users');
-
-    const {data: retryData, error: retryError} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
-      params: {path: {job_id: INSTALL_JOB_ID}},
-      body: {
-        parameters: [
-          {name: 'AppName', value: manifest.id},
-          {name: 'AppSource', value: 'WebDAV'},
-          {name: 'AppDomain', value: manifest.domain},
-          {name: 'SiteId', value: siteId},
-          {name: 'AppPath', value: appPath},
-          {name: 'ShouldCreatePR', value: String(shouldCreatePr)},
-        ],
-      } as unknown as string,
-    });
-
-    if (retryError || !retryData) {
-      if (isOcapiDeprecatedFault(retryError)) throw new OcapiDeprecatedError({cause: retryError});
-      throw new Error(retryError?.fault?.message ?? 'Failed to start install job', {cause: retryError});
-    }
-
-    execution = retryData;
-  } else if (error || !data) {
-    if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError({cause: error});
-    throw new Error(error?.fault?.message ?? 'Failed to start install job', {cause: error});
-  } else {
-    execution = data;
-  }
-  logger.debug({jobId: INSTALL_JOB_ID, executionId: execution.id}, `Install job started: ${execution.id}`);
-
-  // Wait for job completion
   let finalExecution: JobExecution;
   try {
-    finalExecution = await waitForJob(instance, INSTALL_JOB_ID, execution.id!, waitOptions);
+    finalExecution = await runSystemJob(instance, {
+      jobId: INSTALL_JOB_ID,
+      ocapiBody: {
+        app_name: manifest.id,
+        app_source: 'WebDAV',
+        app_domain: manifest.domain,
+        site_id: siteId,
+        app_path: appPath,
+        should_create_pr: shouldCreatePr,
+      },
+      parameters: [
+        {name: 'AppName', value: manifest.id},
+        {name: 'AppSource', value: 'WebDAV'},
+        {name: 'AppDomain', value: manifest.domain},
+        {name: 'SiteId', value: siteId},
+        {name: 'AppPath', value: appPath},
+        {name: 'ShouldCreatePR', value: String(shouldCreatePr)},
+      ],
+      waitOptions,
+      failVerb: 'start install job',
+    });
   } catch (err) {
     if (err instanceof JobExecutionError) {
       try {
