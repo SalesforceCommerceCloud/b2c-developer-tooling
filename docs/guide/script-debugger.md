@@ -1,12 +1,13 @@
 ---
-description: Debug server-side B2C Commerce scripts (controllers, hooks, jobs, custom APIs) with the Script Debugger via the CLI DAP adapter, interactive REPL, or MCP diagnostics tools.
+description: Debug server-side B2C Commerce scripts (controllers, hooks, jobs, custom APIs) with the Script Debugger — via the VS Code extension, the CLI DAP adapter and REPL, or the MCP diagnostics tools.
 ---
 
 # Script Debugger
 
-The B2C Commerce **Script Debugger** lets you set breakpoints, step through code, and inspect variables in server-side scripts — SFRA controllers, hooks, jobs, custom SCAPI endpoints, or any `dw/*` cartridge code — running live on an instance. The tooling connects to the instance's Script Debugger API (SDAPI) and surfaces it three ways:
+The B2C Commerce **Script Debugger** lets you set breakpoints, step through code, and inspect variables in server-side scripts — SFRA controllers, hooks, jobs, custom SCAPI endpoints, or any `dw/*` cartridge code — running live on an instance. The tooling connects to the instance's Script Debugger API (SDAPI) and surfaces it several ways:
 
-- **IDE debugging** via a [Debug Adapter Protocol (DAP)](https://microsoft.github.io/debug-adapter-protocol/) adapter — `b2c debug`.
+- **VS Code (recommended)** — the [B2C DX VS Code Extension](/vscode-extension/#b2c-script-debugger) provides the full graphical debugger: breakpoints, log points, watch expressions, and step controls, just like any other Node project. This is the primary interface for interactive debugging.
+- **Other IDEs (JetBrains, etc.)** via the [Debug Adapter Protocol (DAP)](https://microsoft.github.io/debug-adapter-protocol/) adapter — `b2c debug`.
 - **Headless/terminal debugging** via an interactive REPL or JSONL-over-stdio RPC — `b2c debug cli`.
 - **AI-agent debugging** via the [MCP diagnostics tools](/mcp/tools/diagnostics) — `debug_start_session`, `debug_set_breakpoints`, etc.
 
@@ -33,13 +34,14 @@ See [CLI Configuration](/guide/configuration) for the full resolution order and 
 
 ## Choosing an interface
 
-| Use case                            | Interface                            | Reference                                   |
-| ----------------------------------- | ------------------------------------ | ------------------------------------------- |
-| Debug from VS Code / JetBrains      | `b2c debug` (DAP adapter over stdio) | [Debug Commands](/cli/debug#b2c-debug)      |
-| Debug from the terminal or a script | `b2c debug cli` (REPL or JSONL RPC)  | [Debug Commands](/cli/debug#b2c-debug-cli)  |
-| Let an AI agent drive the debugger  | MCP diagnostics tools                | [Diagnostics Tools](/mcp/tools/diagnostics) |
+| Use case                            | Interface                            | Reference                                                   |
+| ----------------------------------- | ------------------------------------ | ----------------------------------------------------------- |
+| Debug from VS Code (recommended)    | B2C DX VS Code Extension             | [VS Code Extension](/vscode-extension/#b2c-script-debugger) |
+| Debug from another IDE (JetBrains)  | `b2c debug` (DAP adapter over stdio) | [Debug Commands](/cli/debug#b2c-debug)                      |
+| Debug from the terminal or a script | `b2c debug cli` (REPL or JSONL RPC)  | [Debug Commands](/cli/debug#b2c-debug-cli)                  |
+| Let an AI agent drive the debugger  | MCP diagnostics tools                | [Diagnostics Tools](/mcp/tools/diagnostics)                 |
 
-All three share the same underlying workflow: connect a session, set breakpoints (by local file path, cartridge-prefixed path, or server path), trigger the code on the instance, then inspect the halted thread.
+They all share the same underlying workflow: connect a session, set breakpoints (by local file path, cartridge-prefixed path, or server path), trigger the code on the instance, then inspect the halted thread.
 
 ## Server affinity (hitting breakpoints)
 
@@ -56,7 +58,8 @@ If you cannot control the cookie on the triggering request, you may need to retr
 
 ## See Also
 
+- [VS Code Extension](/vscode-extension/#b2c-script-debugger) — the recommended graphical debugger
 - [Debug Commands](/cli/debug) — `b2c debug` DAP adapter and `b2c debug cli` REPL/RPC reference
 - [Diagnostics Tools](/mcp/tools/diagnostics) — MCP tools for agent-driven debugging
 - [Authentication Setup](/guide/authentication) — WebDAV access key configuration
-- [IDE Integration](/guide/ide-integration) — connecting IDEs to your CLI configuration
+- [IDE Integration](/guide/ide-integration) — connecting other IDEs to your CLI configuration
