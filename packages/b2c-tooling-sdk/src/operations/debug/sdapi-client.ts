@@ -12,6 +12,7 @@
  *
  * @module operations/debug/sdapi-client
  */
+import {wrapNetworkError} from '../../errors/network-error.js';
 import {getLogger} from '../../logging/logger.js';
 import type {
   SdapiBreakpoint,
@@ -230,11 +231,17 @@ export class SdapiClient {
     const headers = {...this.headers, ...this.cookieHeader()};
     this.logger.trace({method, url, headers, body: options?.body}, `[SDAPI REQ] ${method} ${url}`);
 
-    const response = await fetch(url, {
-      method,
-      headers,
-      body: options?.body ? JSON.stringify(options.body) : undefined,
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method,
+        headers,
+        body: options?.body ? JSON.stringify(options.body) : undefined,
+      });
+    } catch (err) {
+      const host = new URL(url).host;
+      throw wrapNetworkError(err, {operation: 'Script Debugger API request', host});
+    }
 
     this.storeCookies(response.headers);
     this.logger.trace(
