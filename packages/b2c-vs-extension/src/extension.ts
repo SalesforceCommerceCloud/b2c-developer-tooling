@@ -17,6 +17,7 @@ import {registerCap} from './cap/index.js';
 import {registerJobLogViewer} from './job-log-viewer.js';
 import {registerContentTree} from './content-tree/index.js';
 import {registerLogs} from './logs/index.js';
+import {registerJobs} from './jobs/index.js';
 import {initializePlugins} from './plugins.js';
 import {registerSafeCommand, registerSafety} from './safety.js';
 import {registerSandboxTree} from './sandbox-tree/index.js';
@@ -60,6 +61,18 @@ function applyLogLevel(log: vscode.OutputChannel): void {
   } catch (err) {
     const detail = err instanceof Error ? `${err.message}\n${err.stack}` : String(err);
     log.appendLine(`Warning: Failed to configure SDK logger; SDK logs will not appear in this panel.\n${detail}`);
+  }
+}
+
+function formatErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function runActivationStep(log: vscode.OutputChannel, label: string, step: () => void): void {
+  try {
+    step();
+  } catch (err) {
+    log.appendLine(`Warning: ${label} failed: ${formatErrorMessage(err)}`);
   }
 }
 
@@ -195,7 +208,11 @@ export async function activate(context: vscode.ExtensionContext) {
   // Best-effort telemetry init. Non-blocking: client.start() runs in the
   // background. No-ops entirely when the user has telemetry disabled or no
   // connection string is configured.
-  initTelemetry(context);
+  try {
+    initTelemetry(context);
+  } catch (err) {
+    log.appendLine(`Warning: Telemetry initialization failed: ${formatErrorMessage(err)}`);
+  }
 
   try {
     const result = await activateInner(context, log);
@@ -214,10 +231,21 @@ export async function activate(context: vscode.ExtensionContext) {
       log.show();
       vscode.window.showErrorMessage(`B2C DX activation error: ${message}`);
     };
-    context.subscriptions.push(
-      vscode.commands.registerCommand('b2c-dx.promptAgent', showActivationError),
-      vscode.commands.registerCommand('b2c-dx.listWebDav', showActivationError),
-    );
+
+    const registerFallbackCommand = async (commandId: string): Promise<void> => {
+      try {
+        const registered = await vscode.commands.getCommands(true);
+        if (registered.includes(commandId)) {
+          return;
+        }
+        context.subscriptions.push(vscode.commands.registerCommand(commandId, showActivationError));
+      } catch (registerErr) {
+        log.appendLine(`Warning: Failed to register fallback command ${commandId}: ${formatErrorMessage(registerErr)}`);
+      }
+    };
+
+    await registerFallbackCommand('b2c-dx.promptAgent');
+    await registerFallbackCommand('b2c-dx.listWebDav');
   }
 }
 
@@ -236,7 +264,9 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   const walkthroughTelemetry = initializeTelemetry(log);
 
   // Register walkthrough commands early so they're available for first-time users
-  registerWalkthroughCommands(context);
+  runActivationStep(log, 'Walkthrough command registration', () => {
+    registerWalkthroughCommands(context);
+  });
 
   // Onboarding (next-gen walkthrough) state + panel.
   // The configProvider is created later (line ~480), so we expose a lazy getter
@@ -696,40 +726,69 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   const settings = vscode.workspace.getConfiguration('b2c-dx');
 
   if (settings.get<boolean>('features.webdavBrowser', true)) {
-    registerWebDavTree(context, configProvider);
+    runActivationStep(log, 'WebDAV Explorer registration', () => {
+      registerWebDavTree(context, configProvider);
+    });
   }
   if (settings.get<boolean>('features.contentLibraries', true)) {
-    registerContentTree(context, configProvider);
+    runActivationStep(log, 'Content Libraries registration', () => {
+      registerContentTree(context, configProvider);
+    });
   }
   if (settings.get<boolean>('features.sandboxExplorer', true)) {
-    registerSandboxTree(context, configProvider);
+    runActivationStep(log, 'Sandbox Explorer registration', () => {
+      registerSandboxTree(context, configProvider);
+    });
   }
   if (settings.get<boolean>('features.logTailing', true)) {
-    registerLogs(context, configProvider);
+    runActivationStep(log, 'Logs registration', () => {
+      registerLogs(context, configProvider);
+    });
+  }
+  if (settings.get<boolean>('features.jobsExplorer', true)) {
+    runActivationStep(log, 'Job History registration', () => {
+      registerJobs(context, configProvider);
+    });
   }
   if (settings.get<boolean>('features.scaffold', true)) {
-    registerScaffold(context, configProvider, log);
+    runActivationStep(log, 'Scaffold registration', () => {
+      registerScaffold(context, configProvider, log);
+    });
   }
   if (settings.get<boolean>('features.apiBrowser', true)) {
-    registerApiBrowser(context, configProvider, log);
+    runActivationStep(log, 'API Browser registration', () => {
+      registerApiBrowser(context, configProvider, log);
+    });
   }
   if (settings.get<boolean>('features.cap', true)) {
-    registerCap(context, configProvider, log);
+    runActivationStep(log, 'CAP registration', () => {
+      registerCap(context, configProvider, log);
+    });
   }
   if (settings.get<boolean>('features.codeSync', true)) {
-    registerCodeSync(context, configProvider, cartridgeService, log);
+    runActivationStep(log, 'Code Sync registration', () => {
+      registerCodeSync(context, configProvider, cartridgeService, log);
+    });
   }
   if (settings.get<boolean>('features.scriptTypes', true)) {
-    registerScriptTypes(context, cartridgeService, log);
+    runActivationStep(log, 'Script Types registration', () => {
+      registerScriptTypes(context, cartridgeService, log);
+    });
   }
 
   if (settings.get<boolean>('features.cipAnalytics', true)) {
-    registerCipAnalytics(context, configProvider, log);
+    runActivationStep(log, 'CIP Analytics registration', () => {
+      registerCipAnalytics(context, configProvider, log);
+    });
   }
 
-  registerIsml(context, cartridgeService);
+  runActivationStep(log, 'ISML registration', () => {
+    registerIsml(context, cartridgeService);
+  });
 
-  registerDebugger(context, configProvider);
+  runActivationStep(log, 'Debugger registration', () => {
+    registerDebugger(context, configProvider);
+  });
 
   // React to configuration changes
   const configChangeListener = vscode.workspace.onDidChangeConfiguration((e) => {

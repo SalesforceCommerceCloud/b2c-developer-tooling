@@ -17,7 +17,11 @@ headerPlugin.rules.header.meta.schema = false;
 export default [
   includeIgnoreFile(gitignorePath),
   {
-    ignores: ['src/template/**'],
+    // src/template/** holds raw template assets; test-workspace/** holds sample
+    // SFCC cartridges used for dev-host testing — their .js controllers/services
+    // legitimately use CommonJS require() (the B2C Commerce runtime style) and
+    // are not extension source, so they must not be linted by our TS rules.
+    ignores: ['src/template/**', 'test-workspace/**'],
   },
   ...tseslint.configs.recommended,
   prettierPlugin,
