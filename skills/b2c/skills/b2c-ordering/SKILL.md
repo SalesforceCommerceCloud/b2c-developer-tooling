@@ -182,28 +182,6 @@ while (orders.hasNext()) {
 orders.close();
 ```
 
-### Enumerate FAILED Orders (the Script-API workaround)
-
-The SCAPI Admin Orders API **cannot list `FAILED` (or `CREATED`) orders** — its `status` filter only accepts `new|completed|cancelled` (see [b2c-scapi-admin](../b2c-scapi-admin/SKILL.md)). To find failed orders for triage or reporting, query them server-side with `OrderMgr` (typically from a custom job step — see [b2c-custom-job-steps](../b2c-custom-job-steps/SKILL.md)):
-
-```javascript
-var OrderMgr = require('dw/order/OrderMgr');
-var Order = require('dw/order/Order');
-
-// status = {0} matches FAILED orders (the positive filter the Admin API lacks)
-var failed = OrderMgr.searchOrders(
-    'status = {0}',
-    'creationDate desc',
-    Order.ORDER_STATUS_FAILED
-);
-
-while (failed.hasNext()) {
-    var order = failed.next();
-    // Triage / report the failed order
-}
-failed.close();
-```
-
 ### Query by Date Range
 
 ```javascript

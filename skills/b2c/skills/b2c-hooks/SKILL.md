@@ -254,7 +254,7 @@ The `dw.ocapi.shop.order.afterPOST(order): Status` hook is the extension point f
    - `OrderMgr.placeOrder(order)` to advance **`CREATED → NEW`** on success, or
    - `OrderMgr.failOrder(order, true|false)` to advance to **`FAILED`** on decline (`true` reopens the basket so the shopper can retry; `false` discards it).
 
-   If the hook does neither, the order is **stranded in `CREATED` indefinitely** — invisible to most reporting and to the Admin Orders API (which does not surface `CREATED` orders). Never leave the hook without resolving the order.
+   If the hook does neither, the order is **stranded in `CREATED` indefinitely** — never placed and invisible to most order reporting. Never leave the hook without resolving the order.
 
 3. **Returning `Status.ERROR` is how the hook declines the request**, but the platform reports it to the caller as the same generic *"An error occurred in ExtensionPoint…"* message — the decline reason is **not** propagated. Therefore **log the meaningful detail yourself** (`Logger.error(...)`) before returning, or you will have no record of *why* an order failed.
 

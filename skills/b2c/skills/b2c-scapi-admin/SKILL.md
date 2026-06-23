@@ -198,25 +198,6 @@ await fetch(
 - Read: `sfcc.orders`
 - Write: `sfcc.orders.rw`
 
-#### Listing Orders & the `status` Filter (important limitations)
-
-`GET /checkout/orders/v1/organizations/{orgId}/orders?siteId={siteId}` lists orders and accepts a `status` query parameter — but its behavior is **narrower than it looks**, and the OpenAPI spec types `status` as a bare `string` with no enum, so these constraints are **not discoverable from the schema** (you must know them):
-
-- The `status` filter only accepts **`new`**, **`completed`**, or **`cancelled`**.
-- **`status=failed` is rejected with HTTP 400** — there is no "failed" filter value.
-- The collection **does not surface `CREATED` orders** (e.g. headless orders left in `CREATED` by an `afterPOST` hook that never placed or failed them — see [b2c-hooks](../b2c-hooks/SKILL.md)).
-- There is **no server-side way to enumerate `FAILED` orders** through this API. It exposes only the status-filtered list above and `GET`/`PATCH` on an individual order by number — there is no status-based search that returns failed or created orders.
-
-```bash
-# OK — returns NEW orders
-GET .../orders?siteId=RefArch&status=new
-
-# HTTP 400 Bad Request — "failed" is not an accepted status filter value
-GET .../orders?siteId=RefArch&status=failed
-```
-
-**Consequence — the failed-order blind spot:** if you need to find failed (or stranded `CREATED`) orders for triage or reporting, the Admin Orders API cannot do it. Use the **Script API** — `OrderMgr.searchOrders('status = {0}', ..., Order.ORDER_STATUS_FAILED)` in a custom job step (see the ready-made example in [b2c-ordering › Enumerate FAILED Orders](../b2c-ordering/SKILL.md#enumerate-failed-orders-the-script-api-workaround) and [b2c-custom-job-steps](../b2c-custom-job-steps/SKILL.md)) — or emit your own instrumentation from the `afterPOST` hook on decline. This is the same blind spot that affects Commerce Intelligence (CIP) order reporting. You *can* fetch a known failed order directly by number (`GET .../orders/{orderNo}`) — the limitation is only on **enumeration**.
-
 ### Inventory Availability API
 
 Manage product inventory.
