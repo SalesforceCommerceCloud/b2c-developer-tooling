@@ -91,7 +91,11 @@ export async function activate(context: vscode.ExtensionContext) {
     if (stack) log.appendLine(stack);
     console.error('B2C DX extension activation failed:', err);
     if (err instanceof Error) sendException(err, {phase: 'activate'});
-    sendEvent('ACTIVATION_FAILED');
+    sendEvent('ACTIVATION_FAILED', {
+      phase: 'activate',
+      errorMessage: message,
+      ...(err instanceof Error && err.cause ? {errorCause: String(err.cause)} : {}),
+    });
     vscode.window.showErrorMessage(`B2C DX: Extension failed to activate. See Output > B2C DX. Error: ${message}`);
     const showActivationError = () => {
       log.show();
