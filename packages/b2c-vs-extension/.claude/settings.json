@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install *)",
+      "Bash(pnpm --filter @salesforce/b2c-tooling-sdk run build)",
+      "Bash(grep -nA40 'getSites:' src/clients/ocapi.generated.ts)",
+      "Bash(grep -nA3 '\"/libraries\":' src/clients/ocapi.generated.ts)",
+      "Bash(grep -nA2 '    getLibraries:\\\\|    getCustomerLists:\\\\|    getCatalogs:\\\\|    getInventoryLists:' src/clients/ocapi.generated.ts)",
+      "Bash(awk '/^    __TRACKED_VAR__: \\\\{/{f=1} f&&/application\\\\/json/{print; c++} c==1&&f{exit}' src/clients/ocapi.generated.ts)",
+      "Bash(grep -nA12 __TRACKED_VAR__: src/clients/ocapi.generated.ts)",
+      "Bash(grep -nA30 \"^        sites: {\" src/clients/ocapi.generated.ts)",
+      "Bash(grep -nA12 \"^        site: {\" src/clients/ocapi.generated.ts)",
+      "Bash(grep -nA10 \"^        catalog: {\" src/clients/ocapi.generated.ts)",
+      "Bash(grep -nA8 \"^        inventory_list: {\" src/clients/ocapi.generated.ts)",
+      "Bash(awk '/^        __TRACKED_VAR__: \\\\{/{f=1} f&&/\"?id\"?[?]?:/{print NR\": \"$0; c++} c==1{exit}' src/clients/ocapi.generated.ts)",
+      "Bash(pnpm --filter @salesforce/b2c-tooling-sdk run test:agent)",
+      "Bash(pnpm --filter @salesforce/b2c-tooling-sdk run test)",
+      "Bash(grep -nA15 \"export function registerSafeCommand\" src/safety.ts)",
+      "Bash(pnpm --filter b2c-vs-extension exec eslint --fix src/export-tree/)",
+      "Bash(rm -f /tmp/run-export-test.mjs)",
+      "Bash(pkill -f \"vscode-test\")",
+      "Bash(pnpm --filter @salesforce/b2c-tooling-sdk run lint:agent)",
+      "Bash(pnpm --filter b2c-vs-extension --filter @salesforce/b2c-tooling-sdk run format:check)"
+    ],
+    "additionalDirectories": [
+      "/Users/ctadakanti/b2c-developer-tooling/packages/b2c-tooling-sdk/src/operations/jobs",
+      "/Users/ctadakanti/b2c-developer-tooling/packages/b2c-tooling-sdk/test/operations/jobs",
+      "/Users/ctadakanti/b2c-developer-tooling/.changeset"
+    ]
+  }
+}
