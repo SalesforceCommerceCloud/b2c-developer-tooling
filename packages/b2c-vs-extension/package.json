@@ -241,6 +241,11 @@
     ],
     "commands": [
       {
+        "command": "b2c-dx.debug.copySessionCookie",
+        "title": "Copy Debugger Session ID (dwsid)",
+        "category": "B2C DX"
+      },
+      {
         "command": "b2c-dx.promptAgent",
         "title": "Prompt Agent",
         "category": "B2C DX"
@@ -909,6 +914,10 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "b2c-dx.debug.copySessionCookie",
+          "when": "inDebugMode && debugType == 'b2c-script'"
+        },
         {
           "command": "b2c-dx.apiBrowser.openSwagger",
           "when": "false"
