@@ -477,6 +477,8 @@ jobs:
           {
             echo "Agent skills plugin artifacts for b2c-agent-plugins v${PLUGINS_VERSION}. Download the \`*-skills.zip\` files below."
             echo ""
+            echo "See the [Agent Skills & Plugins guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills.html) for installation and usage."
+            echo ""
             if [ -n "$PLUGINS_CHANGELOG" ]; then
               echo "### Changelog"
               echo ""
