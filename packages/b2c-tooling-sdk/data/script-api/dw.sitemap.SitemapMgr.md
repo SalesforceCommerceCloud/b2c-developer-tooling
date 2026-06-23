@@ -42,6 +42,7 @@ This class does not have a constructor, so you cannot create it directly.
 | static [deleteCustomSitemapFiles](dw.sitemap.SitemapMgr.md#deletecustomsitemapfiles)() | Deletes all custom sitemap files for all hostnames from the appservers shared file system. |
 | static [deleteCustomSitemapFiles](dw.sitemap.SitemapMgr.md#deletecustomsitemapfilesstring)([String](TopLevel.String.md)) | Deletes all custom sitemap files for the given hostname from the appservers shared file system. |
 | static [getCustomSitemapFiles](dw.sitemap.SitemapMgr.md#getcustomsitemapfiles)() | Reads all existing custom sitemap files from files system of the appservers custom sitemap directory into memory  and returns them in a Map containing mappings like  <ul>  <li>Hostname 1 => \[SitemapFile hostname1\_sitemapfile1, SitemapFile hostname1\_sitemapfile2\]</li>  <li>Hostname 2 => \[SitemapFile hostname2\_sitemapfile1\]</li>  </ul> |
+| static [getSitemap](dw.sitemap.SitemapMgr.md#getsitemapstring)([String](TopLevel.String.md)) | Reads the content of the specified sitemap file and returns it as a String. |
 
 ### Methods inherited from class Object
 
@@ -135,6 +136,28 @@ This class does not have a constructor, so you cannot create it directly.
 
     **Returns:**
     - The created map containing the list of SitemapFiles.
+
+
+---
+
+### getSitemap(String)
+- static getSitemap(fileName: [String](TopLevel.String.md)): [String](TopLevel.String.md)
+  - : Reads the content of the specified sitemap file and returns it as a String.
+      
+      
+      The file is looked up in the shared sitemap directory for the current site,
+      using the hostname from the current storefront request. If the file is not found
+      in the new framework location ({@code .../sitemaps/<hostname>/}), the old
+      location ({@code .../sitemaps/}) is used as a fallback.
+
+
+    **Parameters:**
+    - fileName - The name of the sitemap file to read (e.g. "sitemap\_index.xml").             Must not be {@code null}, empty, or contain path traversal sequences.
+
+    **Returns:**
+    - The sitemap file content as a String, or {@code null} if the fileName is
+              invalid, the file does not exist, or the request context is unavailable.
+
 
 
 ---

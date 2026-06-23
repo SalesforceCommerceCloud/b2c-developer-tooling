@@ -291,6 +291,8 @@ Hook types: `before<METHOD>`, `after<METHOD>`, `modify<METHOD>Response`, `valida
 | `dw.ocapi.shop.order.modifyPOSTResponse` | `modifyPOSTResponse(order: Order, response): Status` |
 | `dw.ocapi.shop.order.validateOrder` | `validateOrder(response, duringPlace: boolean): Status` |
 
+> **`order.afterPOST` is the headless order-placement hook.** SCAPI creates the order in `CREATED` status; this hook authorizes payment and must call `OrderMgr.placeOrder` (→ `NEW`) or `OrderMgr.failOrder` (→ `FAILED`) **without** a nested `Transaction.wrap` (the hook already runs in a transaction). See the canonical example in [SKILL.md](../SKILL.md#order-afterpost-headless-order-placement).
+
 ### Order Payment Instrument
 
 | Hook | Signature |

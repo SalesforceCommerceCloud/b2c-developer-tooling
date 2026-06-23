@@ -4,7 +4,9 @@ description: Search, read, and download B2C Commerce Script API documentation an
 
 # Docs Commands
 
-Commands for searching and reading Script API documentation (`dw.*` classes/modules), reading bundled XSD schemas, and downloading fresh documentation from an instance.
+Commands for searching and reading Script API documentation (`dw.*` classes/modules), the **standard (system) job step** catalog, bundled XSD schemas, and downloading fresh documentation from an instance.
+
+The bundled corpus searched by `docs search` / `docs read` includes the catalog of built-in job step **type IDs** (for example `ImportCatalog`, `ExportCatalog`, `ImportInventoryLists`) that you add to Business Manager job flows. Read the catalog overview with `b2c docs read job-steps`, or a specific step with `b2c docs read <TypeID>`. See the `b2c-cli:b2c-job` and `b2c:b2c-custom-job-steps` skills for how standard steps fit into job flows.
 
 ## Authentication
 
@@ -64,9 +66,14 @@ b2c docs search "catalog product"
 # Limit result count
 b2c docs search status --limit 5
 
+# Find a standard job step by name
+b2c docs search ImportCatalog
+
 # List all available entries
 b2c docs search --list
 ```
+
+> The same index also covers the standard job step catalog. Search by step type ID (for example `b2c docs search ExportInventoryLists`) or `b2c docs search job steps` for the catalog overview.
 
 ### Output
 
@@ -104,6 +111,12 @@ b2c docs read ProductMgr
 
 # Read by fully qualified name
 b2c docs read dw.catalog.ProductMgr
+
+# Read a standard job step's purpose + configuration parameters
+b2c docs read ImportCatalog
+
+# Read the standard job step catalog overview
+b2c docs read job-steps
 
 # Output raw markdown for piping
 b2c docs read ProductMgr --raw
