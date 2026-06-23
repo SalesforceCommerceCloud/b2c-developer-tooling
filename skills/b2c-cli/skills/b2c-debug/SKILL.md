@@ -134,7 +134,7 @@ This starts a DAP debug adapter over stdio, used by IDE launch configurations.
 
 A breakpoint only fires when the triggering code runs on the **same application server** the debugger is attached to. Some **Production Instance Group (PIG)** environments run **multiple application servers** behind a load balancer, so a request that should hit your breakpoint may land on a different app server and the breakpoint never fires.
 
-> **Sandboxes (ODS) are single-app-server and are not affected.** This only matters on multi-app-server PIG environments (typically staging/production). If breakpoints are not hitting on a sandbox, the cause is something else (wrong path mapping, code version, or the code simply not running).
+> **Sandboxes (ODS) are single-app-server and are not affected.** This only matters on certain multi-app-server PIG environments. If breakpoints are not hitting on a sandbox, the cause is something else (wrong path mapping, code version, or the code simply not running).
 
 To pin a triggering request to the correct app server, send it with the debugger's session cookie (`dwsid`):
 

@@ -47,14 +47,23 @@ They all share the same underlying workflow: connect a session, set breakpoints 
 
 A breakpoint only fires when the code runs on the **same application server** the debugger is attached to. On a single-app-server environment this is automatic. But some **Production Instance Group (PIG)** environments run **multiple application servers** behind a load balancer — there, a request that triggers your code may land on a different app server than the debugger, and the breakpoint never fires.
 
-> **Sandboxes (ODS) are single-app-server and are not affected.** This only matters on multi-app-server PIG environments (typically staging/production).
+> **Sandboxes (ODS) are single-app-server and are not affected.** This only matters on certain multi-app-server PIG environments.
 
-To pin a triggering request to the correct app server, route it with the debugger's session cookie (`dwsid`). The CLI and SDK manage this cookie automatically for the debugger's own requests; to apply it to **your** triggering request:
+To pin a triggering request to the correct app server, route it with the debugger's session cookie (`dwsid`). The CLI and SDK manage this cookie automatically for the debugger's own requests — so the way you obtain the value depends on the interface:
 
-- **MCP:** `debug_start_session` and `debug_list_sessions` return a `session_cookie` (`{name, value}`). Send your storefront page load or SCAPI/OCAPI call with `Cookie: dwsid=<value>` so it reaches the right app server. See [Diagnostics Tools → Server affinity](/mcp/tools/diagnostics#server-affinity-hitting-breakpoints).
-- **General:** any request you make to trigger the breakpoint — a browser session, `curl`, an integration test — must carry the same `dwsid` cookie value.
+- **MCP:** `debug_start_session` and `debug_list_sessions` return a `session_cookie` (`{name, value}`). This is the most direct source. See [Diagnostics Tools → Server affinity](/mcp/tools/diagnostics#server-affinity-hitting-breakpoints).
+- **VS Code:** the cookie is logged to the **B2C DX** output channel when the session connects, and the **Copy Debugger Session ID (dwsid)** command copies it to your clipboard.
+- **CLI:** the cookie is logged at info level when the session connects (`Debug session cookie: dwsid=…`).
 
-If you cannot control the cookie on the triggering request, you may need to retry until the load balancer happens to route to the attached app server.
+Once you have the value, send the request that triggers your code — a browser session, `curl`, an integration test — with that cookie:
+
+```
+Cookie: dwsid=<value>
+```
+
+If you cannot set the cookie on the triggering request, you may need to retry until the load balancer happens to route to the attached app server.
+
+> A future enhancement will let the VS Code extension launch a browser pre-seeded with the debug session's cookie, removing this manual step.
 
 ## See Also
 
