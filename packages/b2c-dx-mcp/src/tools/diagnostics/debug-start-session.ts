@@ -28,6 +28,7 @@ interface StartSessionOutput {
   hostname: string;
   cartridges: string[];
   cartridge_mappings: Record<string, string>;
+  session_cookie: null | {name: string; value: string};
   warnings: string[];
 }
 
@@ -41,6 +42,7 @@ export function createDebugStartSessionTool(
       description:
         'Start a script debugger session on a B2C Commerce instance to debug SFRA controllers, custom API scripts, hooks, jobs, or any server-side script. ' +
         'Returns a session_id for use with other debug tools, plus discovered cartridge mappings. ' +
+        'Also returns session_cookie (e.g. dwsid): to reliably hit a breakpoint on a multi-app-server instance, send the request that triggers your code (storefront page load, SCAPI/OCAPI call) with this cookie (Cookie: <name>=<value>) so it lands on the same app server holding the debug session. ' +
         'WARNING: Debug sessions halt remote request threads on the instance. Always call debug_end_session when finished. ' +
         'Requires Basic auth credentials (username/password) and the script debugger enabled in Business Manager.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
@@ -103,11 +105,19 @@ export function createDebugStartSessionTool(
         const cartridgeMappings: Record<string, string> = {};
         for (const c of cartridges) cartridgeMappings[c.name] = c.src;
 
+        const dwsid = manager.getSessionCookie();
+        if (!dwsid) {
+          warnings.push(
+            'No session cookie (dwsid) was returned by the debugger. Requests cannot be pinned to this app server; breakpoints may not be hit on multi-app-server instances.',
+          );
+        }
+
         return {
           session_id: entry.sessionId,
           hostname,
           cartridges: cartridges.map((c) => c.name),
           cartridge_mappings: cartridgeMappings,
+          session_cookie: dwsid ? {name: 'dwsid', value: dwsid} : null,
           warnings,
         };
       },

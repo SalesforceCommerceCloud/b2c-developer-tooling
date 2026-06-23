@@ -9,6 +9,14 @@
  * @module errors
  */
 export {HTTPError} from './http-error.js';
+export {
+  NetworkError,
+  classifyNetworkError,
+  describeNetworkErrorKind,
+  isNetworkError,
+  wrapNetworkError,
+  type NetworkErrorKind,
+} from './network-error.js';
 export {JobExecutionError} from '../operations/jobs/run.js';
 export {SafetyBlockedError} from '../safety/safety-middleware.js';
 export {MetaDefinitionDetectionError} from '../operations/content/validate.js';
