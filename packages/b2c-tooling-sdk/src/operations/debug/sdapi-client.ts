@@ -274,6 +274,16 @@ export class SdapiClient {
   }
 
   /**
+   * Returns the value of a stored session cookie, or `undefined` if it has not
+   * been set yet. The session cookie (`dwsid`) pins requests to the app server
+   * holding the debugger session — callers may need it to route external
+   * requests (e.g. a storefront browser) to the same app server.
+   */
+  getCookie(name: string): string | undefined {
+    return this.cookies.get(name);
+  }
+
+  /**
    * Builds the `Cookie` request header from stored session cookies, or an empty
    * object if none have been set yet.
    */

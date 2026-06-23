@@ -286,6 +286,15 @@ describe('operations/debug/sdapi-client', () => {
       expect(cookieHeaders[1]).to.equal('dwsid=abc123');
     });
 
+    it('exposes a stored cookie value via getCookie', async () => {
+      stubFetch([{setCookie: 'dwsid=abc123; Path=/; HttpOnly', status: 204}]);
+
+      expect(client.getCookie('dwsid')).to.be.undefined;
+      await client.createClient();
+      expect(client.getCookie('dwsid')).to.equal('abc123');
+      expect(client.getCookie('missing')).to.be.undefined;
+    });
+
     it('updates a stored cookie when the server sets a new value', async () => {
       const {cookieHeaders} = stubFetch([
         {setCookie: 'dwsid=first; Path=/', status: 204},

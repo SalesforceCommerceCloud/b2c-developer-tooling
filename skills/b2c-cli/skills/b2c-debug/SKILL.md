@@ -5,7 +5,11 @@ description: Debug B2C Commerce server-side scripts using the b2c CLI. Use this 
 
 # B2C Debug Skill
 
-Use the `b2c` CLI to debug server-side scripts on Salesforce B2C Commerce instances. The `debug cli` command provides an interactive REPL for terminal debugging, with an `--rpc` mode for headless/programmatic use.
+Debug server-side scripts on Salesforce B2C Commerce instances — set breakpoints, step through code, and inspect variables in SFRA controllers, hooks, jobs, and custom APIs.
+
+> **Prefer the MCP diagnostics tools when available.** If the B2C DX MCP server is installed (tools named `debug_start_session`, `debug_set_breakpoints`, `debug_wait_for_stop`, `debug_capture_at_breakpoint`, etc.), **use them instead of the RPC-based `b2c debug cli --rpc` workflow.** The MCP tools manage session state for you, return structured JSON, and support a non-blocking poll workflow (`debug_list_sessions` / `debug_wait_for_stop`) that is far more reliable for agents than driving JSONL over stdio. Only fall back to `b2c debug cli` (REPL or `--rpc`) when the MCP server is not installed, or when a human wants an interactive terminal session.
+
+The `b2c debug cli` command provides an interactive REPL for terminal debugging, with an `--rpc` mode for headless/programmatic use. `b2c debug` provides a DAP adapter for IDEs.
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli debug cli`).
 
@@ -125,6 +129,19 @@ b2c debug
 ```
 
 This starts a DAP adapter over stdio, used by IDE launch configurations.
+
+## Server Affinity (Hitting Breakpoints)
+
+A breakpoint only fires when the triggering code runs on the **same application server** the debugger is attached to. Some **Production Instance Group (PIG)** environments run **multiple application servers** behind a load balancer, so a request that should hit your breakpoint may land on a different app server and the breakpoint never fires.
+
+> **Sandboxes (ODS) are single-app-server and are not affected.** This only matters on multi-app-server PIG environments (typically staging/production). If breakpoints are not hitting on a sandbox, the cause is something else (wrong path mapping, code version, or the code simply not running).
+
+To pin a triggering request to the correct app server, send it with the debugger's session cookie (`dwsid`):
+
+- **MCP:** `debug_start_session` and `debug_list_sessions` return a `session_cookie` (`{name, value}`). Send the request that triggers your code (storefront page load, SCAPI/OCAPI call) with `Cookie: dwsid=<value>`.
+- **Any trigger:** whatever issues the request — a browser, `curl`, an integration test — must carry the same `dwsid` value.
+
+If the cookie cannot be set on the triggering request, retry until the load balancer routes to the attached app server.
 
 ## Related Skills
 

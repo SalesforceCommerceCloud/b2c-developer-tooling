@@ -154,6 +154,17 @@ export class DebugSessionManager {
     return [...this.knownThreads.values()];
   }
 
+  /**
+   * Returns the session cookie (`dwsid`) established with the debugger, or
+   * `undefined` if not yet connected. This cookie pins requests to the app
+   * server holding the debugger session; callers can use it to route an
+   * external request (e.g. a storefront browser) to the same app server so
+   * breakpoints are hit.
+   */
+  getSessionCookie(name = 'dwsid'): string | undefined {
+    return this.client.getCookie(name);
+  }
+
   // -----------------------------------------------------------------------
   // Internal
   // -----------------------------------------------------------------------
