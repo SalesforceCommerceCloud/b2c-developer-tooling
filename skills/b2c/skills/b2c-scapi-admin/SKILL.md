@@ -1,6 +1,9 @@
 ---
 name: b2c-scapi-admin
 description: Build backend integrations that sync data between B2C Commerce and external systems like ERPs, OMS, WMS, or CRMs using SCAPI Admin APIs. Use this skill whenever the user needs to pull or push orders, products, inventory, or customer data programmatically from a backend service, set up server-to-server authentication with Account Manager client credentials and admin OAuth scopes, implement bulk inventory imports with NDJSON, or call any Commerce API from a script or pipeline (not a storefront). Also use when building nightly data exports, warehouse sync jobs, or customer data integrations — even if they just say "pull orders into our ERP" or "sync inventory from the warehouse".
+persona: developer
+category: APIs & Integrations
+tags: [scapi, integrations, authentication, account-manager, ordering, catalog]
 ---
 
 # SCAPI Admin APIs
@@ -48,7 +51,7 @@ b2c auth token --auth-scope sfcc.orders --auth-scope sfcc.products
 b2c auth token --json
 ```
 
-See [b2c-config skill](../../b2c-cli/skills/b2c-config/SKILL.md) for configuration details.
+See [b2c-config skill](../../../b2c-cli/skills/b2c-config/SKILL.md) for configuration details.
 
 ### Get Token Programmatically
 
@@ -423,9 +426,9 @@ Admin APIs have lower rate limits than Shopper APIs. For bulk operations:
 
 ## Related Skills
 
-- [b2c-config](../../b2c-cli/skills/b2c-config/SKILL.md) - Get admin tokens via CLI
+- [b2c-config](../../../b2c-cli/skills/b2c-config/SKILL.md) - Get admin tokens via CLI
 - [b2c-scapi-shopper](../b2c-scapi-shopper/SKILL.md) - Shopper-facing APIs
-- [b2c-scapi-schemas](../../b2c-cli/skills/b2c-scapi-schemas/SKILL.md) - Browse OpenAPI schemas
+- [b2c-scapi-schemas](../../../b2c-cli/skills/b2c-scapi-schemas/SKILL.md) - Browse OpenAPI schemas
 
 ## Reference Documentation
 

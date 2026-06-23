@@ -1,6 +1,9 @@
 ---
 name: b2c-docs
 description: Search and read B2C Commerce Script API documentation and XSD schemas using the b2c CLI. Use this skill whenever the user needs to look up class methods, understand API signatures, find available properties on commerce objects (baskets, orders, products, customers), or check XML schema formats for imports. Also use when writing server-side scripts and needing API reference — even if they just say "what methods does Basket have" or "what fields can I import for products".
+persona: developer
+category: Getting Started & Scaffolding
+tags: [docs, metadata, cli, scapi, ocapi]
 ---
 
 # B2C Docs Skill

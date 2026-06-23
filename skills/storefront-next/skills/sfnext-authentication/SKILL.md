@@ -1,6 +1,9 @@
 ---
 name: sfnext-authentication
 description: Implement authentication in Storefront Next using split-cookie architecture, SLAS tokens, and auth middleware. Use when accessing user identity in loaders, detecting guest vs registered users, using getAuth or useAuth, or understanding session management and token refresh.
+persona: developer
+category: Authentication & Identity
+tags: [authentication, slas, headless, storefront-next, storefront, state-management]
 ---
 
 # Authentication Skill

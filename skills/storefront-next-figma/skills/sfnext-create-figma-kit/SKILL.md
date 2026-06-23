@@ -1,6 +1,9 @@
 ---
 name: sfnext-create-figma-kit
 description: Build or sync a Storefront Next vertical's Figma design kit — duplicate the official kit, update Brand variable collections from brand.css, edit components at the correct layer, and publish Figma Code Connect mappings. Use when asked to set up, duplicate, or sync a Figma kit, update Figma brand variables, or keep design and code tokens aligned. Requires the Figma MCP server.
+persona: developer
+category: Headless Storefront (Storefront Next)
+tags: [design-system, figma, headless, storefront-next, storefront]
 ---
 
 # Create a Figma Kit Skill

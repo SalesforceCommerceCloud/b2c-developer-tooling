@@ -255,7 +255,7 @@ To download the complete log file for deeper investigation, use `b2c webdav get`
 b2c webdav get error-odspod-0-appserver-20260126.log --root=logs -o -
 ```
 
-See [WebDAV Commands](/cli/webdav#reading-log-files) for more details on log file access.
+See [WebDAV Commands](/cli/webdav) for more details on log file access.
 
 ---
 

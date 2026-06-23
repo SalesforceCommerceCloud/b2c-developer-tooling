@@ -1,6 +1,9 @@
 ---
 name: b2c-custom-objects
 description: Store and query custom business data using CustomObjectMgr, OCAPI Data API, and Shopper Custom Objects API. Use this skill whenever the user needs to create, read, update, or search custom object instances, build processing queues with status fields, choose between site-scoped and organization-scoped storage, or query custom objects with bool/term filters. Also use when persisting non-standard data -- even if they just say 'store config per site' or 'query my custom data'.
+persona: developer
+category: Platform Configuration & Metadata
+tags: [custom-objects, metadata, querying, ocapi, scapi]
 ---
 
 # B2C Custom Objects

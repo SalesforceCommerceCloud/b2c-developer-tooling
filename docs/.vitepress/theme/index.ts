@@ -4,6 +4,7 @@ import './custom.css';
 import 'virtual:group-icons.css';
 import HomeLayout from './HomeLayout.vue';
 import MarkdownActions from './MarkdownActions.vue';
+import SkillsCatalog from './skills-catalog/SkillsCatalog.vue';
 
 export default {
   extends: DefaultTheme,
@@ -15,5 +16,6 @@ export default {
   },
   enhanceApp({app}) {
     app.component('b2c-home', HomeLayout);
+    app.component('skills-catalog', SkillsCatalog);
   },
 };

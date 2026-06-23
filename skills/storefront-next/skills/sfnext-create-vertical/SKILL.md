@@ -1,6 +1,9 @@
 ---
 name: sfnext-create-vertical
 description: Create a new Storefront Next vertical (brand theme / storefront variant) by editing brand design tokens, typography, dark mode, and the Figma kit. Use when asked to create a new vertical, brand, theme, or storefront variant, re-skin the storefront, or change the brand palette. Covers the brand.css token layer, semantic token rules, fixture-based local development, and the extension-vs-base decision. NOT for engineering component patterns — see sfnext-components.
+persona: developer
+category: Headless Storefront (Storefront Next)
+tags: [headless, storefront-next, storefront, design-system, figma, scaffolding]
 ---
 
 # Create a Vertical Skill

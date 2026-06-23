@@ -1,5 +1,5 @@
 {
-  "description": "Manifest of agent skill plugins packaged and uploaded on release. Each entry corresponds to a skills/<name>/ directory whose skills/ subfolder is zipped into <name>-skills.zip and attached to the b2c-agent-plugins GitHub release. Add a plugin here to have it published — the publish workflow reads this file and requires no edits.",
+  "description": "Manifest of agent skill plugins packaged and uploaded on release. Each entry corresponds to a skills/<name>/ directory whose skills/ subfolder is zipped into <name>-skills.zip and attached to the b2c-agent-plugins GitHub release. Add a plugin here to have it published — the publish workflow reads this file and requires no edits. Entries with \"generated\": true are persona bundles assembled by scripts/assemble-personas.mjs from skills authored in other plugins; they are still zipped and published, but the taxonomy validator, docs hosting/index, and catalog skip them to avoid double-counting the same skill content.",
   "plugins": [
     {
       "name": "b2c"
@@ -12,6 +12,10 @@
     },
     {
       "name": "storefront-next-figma"
+    },
+    {
+      "name": "b2c-operator",
+      "generated": true
     }
   ]
 }

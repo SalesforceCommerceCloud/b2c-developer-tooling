@@ -1,6 +1,9 @@
 ---
 name: b2c-querying-data
 description: Write efficient data queries in B2C Commerce for products, customers, and orders. Use this skill whenever the user needs to search products on a storefront page, look up customer profiles, query orders, paginate search results, or fix slow category pages. Also use when they ask about performance problems with data access, replacing database-intensive APIs with index-backed alternatives, or choosing between search vs query methods — even if they just say "my category page is slow" or "how do I find customers by email".
+persona: developer
+category: Backend & Cartridge Development
+tags: [querying, performance, catalog, ordering, debugging]
 ---
 
 # Querying Data in B2C Commerce

@@ -1,0 +1,39 @@
+{
+  "name": "b2c-operator",
+  "version": "1.4.0",
+  "description": "Operator/Admin bundle — curated operational B2C Commerce skills (deploys, sandboxes, jobs, logs, debugging, edge/MRT, access administration) for those who run instances rather than author feature code. A curated subset of b2c-cli/b2c — install instead of those plugins, not alongside.",
+  "author": {
+    "name": "Salesforce"
+  },
+  "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
+  "repository": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling",
+  "license": "Apache-2.0",
+  "keywords": [
+    "salesforce",
+    "b2c-commerce",
+    "commerce-cloud",
+    "operations",
+    "devops"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "B2C Operator / Admin",
+    "shortDescription": "Run and operate Salesforce B2C Commerce instances from your AI assistant.",
+    "longDescription": "Curated operational skills for Salesforce B2C Commerce — deploy code and activate versions, manage On-Demand Sandboxes, run and monitor jobs, retrieve and debug logs, manage eCDN/MRT edge delivery, and administer Account Manager / Business Manager access. A persona bundle drawn from the b2c-cli and b2c plugins; install instead of those, not alongside, to avoid duplicating skills.",
+    "developerName": "Salesforce",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "logo": "./assets/logo.svg",
+    "composerIcon": "./assets/logo.svg",
+    "brandColor": "#0D9DDA",
+    "websiteURL": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
+    "defaultPrompt": [
+      "Deploy the cartridges in ./cartridges to my sandbox and activate the version",
+      "Tail the latest error logs from my instance",
+      "Run the reindex job on my sandbox and wait for it to finish",
+      "Why is my custom API returning 404 — check the logs and registration status"
+    ]
+  }
+}

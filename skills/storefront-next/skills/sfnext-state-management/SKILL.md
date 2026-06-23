@@ -1,6 +1,9 @@
 ---
 name: sfnext-state-management
 description: Manage client-side state in Storefront Next using React context providers and feature-level Zustand stores. Use when handling basket/auth UI state, creating extension stores (for example store locator), or syncing client-visible state after server mutations. NOT for server-side data loading — see sfnext-data-fetching for loader patterns.
+persona: developer
+category: Headless Storefront (Storefront Next)
+tags: [headless, storefront-next, storefront, state-management]
 ---
 
 # State Management Skill

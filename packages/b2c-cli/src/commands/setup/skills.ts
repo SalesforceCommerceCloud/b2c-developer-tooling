@@ -144,7 +144,7 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       this.error(
         t(
           'commands.setup.skills.skillsetRequired',
-          'Skillset argument required in non-interactive mode. Specify b2c, b2c-cli, storefront-next, storefront-next-figma, or cap-dev.',
+          'Skillset argument required in non-interactive mode. Specify b2c, b2c-cli, b2c-operator, storefront-next, storefront-next-figma, or cap-dev.',
         ),
       );
     } else {
@@ -158,6 +158,27 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       if (skillsets.length === 0) {
         ux.stdout(t('commands.setup.skills.noSkillsetsSelected', 'No skill sets selected.'));
         return {};
+      }
+    }
+
+    // Persona bundles (e.g. b2c-operator) are curated subsets of the broad
+    // plugins. Warn if a persona is installed alongside its source plugins,
+    // since the same skills (and their always-on context) would be duplicated.
+    const PERSONA_SOURCES: Partial<Record<SkillSet, SkillSet[]>> = {
+      'b2c-operator': ['b2c-cli', 'b2c', 'storefront-next'],
+    };
+    for (const set of skillsets) {
+      const sources = PERSONA_SOURCES[set];
+      if (!sources) continue;
+      const overlap = sources.filter((s) => skillsets.includes(s));
+      if (overlap.length > 0) {
+        this.warn(
+          t(
+            'commands.setup.skills.personaOverlap',
+            "'{{persona}}' is a curated subset of {{sources}} — installing both duplicates the same skills. Install the persona bundle instead of, not alongside, those plugins.",
+            {persona: set, sources: overlap.join(', ')},
+          ),
+        );
       }
     }
 

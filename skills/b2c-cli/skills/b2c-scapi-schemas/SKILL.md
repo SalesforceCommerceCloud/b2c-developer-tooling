@@ -1,6 +1,9 @@
 ---
 name: b2c-scapi-schemas
 description: Browse and retrieve SCAPI OpenAPI schema specifications. Use this skill whenever the user needs to list available SCAPI APIs, inspect endpoint paths or request/response shapes, explore data models for products or orders, check which fields an API returns, or understand SCAPI versioning. Also use when looking up API details before building an integration -- even if they just say 'what fields does the product API return' or 'show me the SCAPI endpoints'.
+persona: developer
+category: APIs & Integrations
+tags: [scapi, docs, catalog, ordering, cli]
 ---
 
 # B2C SCAPI Schemas Skill

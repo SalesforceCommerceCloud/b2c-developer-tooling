@@ -1,6 +1,9 @@
 ---
 name: sfnext-create-component
 description: Author a new Storefront Next design-system component the right way — pick the correct layer (primitive vs composite), reuse-or-extend before creating, define CVA variants bound to semantic tokens, add data-slot attributes, satisfy the accessibility checklist, and ship a Storybook story. Use when asked to create, add, or build a new UI component, button/badge/tile/card variant, or design-system primitive. This is the design-system authoring discipline; for createPage/Suspense/shadcn page-rendering patterns see sfnext-components.
+persona: developer
+category: Headless Storefront (Storefront Next)
+tags: [headless, storefront-next, storefront, design-system, scaffolding, testing]
 ---
 
 # Create a Component Skill

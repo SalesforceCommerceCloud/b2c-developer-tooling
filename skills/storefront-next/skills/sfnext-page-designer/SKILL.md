@@ -1,6 +1,9 @@
 ---
 name: sfnext-page-designer
 description: Integrate Page Designer with Storefront Next using React decorators, component registry, and Region rendering. Use when creating merchant-editable pages, adding Page Designer components with @Component/@AttributeDefinition decorators, using fetchPageFromLoader, or rendering Regions. This is for the React/Storefront Next implementation — for classic ISML Page Designer, see b2c:b2c-page-designer.
+persona: developer
+category: Headless Storefront (Storefront Next)
+tags: [headless, storefront-next, storefront, page-designer, content, data-fetching]
 ---
 
 # Page Designer Skill

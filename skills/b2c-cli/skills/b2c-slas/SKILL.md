@@ -1,6 +1,9 @@
 ---
 name: b2c-slas
 description: Create, update, and manage SLAS (Shopper Login and API Access Service) clients using the b2c CLI. Use this skill whenever the user needs to provision a SLAS client, update OAuth scopes, rotate client secrets, get a shopper access token, or configure shopper authentication for headless, PWA, or Storefront Next (SFNext) storefronts — even if they just say "I need a shopper token" or "set up auth for my storefront".
+persona: developer
+category: Authentication & Identity
+tags: [slas, authentication, headless, storefront, storefront-next, cli]
 ---
 
 # B2C SLAS Skill

@@ -1,6 +1,9 @@
 ---
 name: sfnext-routing
 description: Implement file-based routing in Storefront Next with React Router 7. Use when adding new pages, creating layout routes, defining route parameters, or understanding route module exports (loader, action, component, meta). Covers flat-routes conventions, nested layouts, and the _app prefix.
+persona: developer
+category: Headless Storefront (Storefront Next)
+tags: [headless, storefront-next, storefront, routing]
 ---
 
 # Routing Skill
