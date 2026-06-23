@@ -105,6 +105,32 @@ b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":[
 
 ---
 
+## Standard (system) job steps
+
+B2C Commerce ships a catalog of **standard job steps** — built-in step **type IDs** (for example `ImportCatalog`, `ExportCatalog`, `ImportInventoryLists`) that you add to a job flow in **Business Manager → Administration → Operations → Jobs**, or reference by type ID in a `jobs.xml` flow inside a site-import archive. These are distinct from **custom** job steps, which you author yourself (see the `b2c:b2c-custom-job-steps` skill).
+
+The full catalog — each step's purpose and its configuration parameters — is bundled with the CLI and searchable through the [docs commands](/cli/docs):
+
+```bash
+# Browse the standard step catalog
+b2c docs read job-steps
+
+# Look up a specific step's parameters
+b2c docs read ImportCatalog
+b2c docs search ExportInventoryLists
+```
+
+### In-flow system step vs. the CLI equivalent
+
+Some standard steps overlap with CLI commands. Use whichever fits the workflow:
+
+- **In-flow system step** (for example the standard `ImportCatalog` step, or the `sfcc-site-archive-import` job behind `b2c job import`): runs entirely on the instance, against a file already staged in IMPEX. Choose this when the file is produced by an earlier step in the **same** job flow (no round-trip to your machine), when operations should run on a Business Manager schedule, or when you want catalog/inventory imports to follow your custom processing without leaving the server.
+- **CLI command** (`b2c job import`, `b2c job export`): drives the operation from your machine — uploading a local archive, downloading an export, or scripting a one-off from CI. Choose this for local-to-instance transfer, ad-hoc runs, and pipelines that originate outside the instance.
+
+In short: keep it an **in-flow standard step** when the data already lives on (or is generated on) the instance and should stay there; reach for the **CLI** when you are moving data between your machine and the instance. For chaining custom and standard steps in one flow — and handing a custom-generated IMPEX file to a standard import step — see the `b2c:b2c-custom-job-steps` skill.
+
+---
+
 ## b2c job wait
 
 Wait for a job execution to complete.

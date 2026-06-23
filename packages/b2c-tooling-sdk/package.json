@@ -227,6 +227,8 @@
     "coverage": "c8 report",
     "posttest": "pnpm run lint",
     "generate:docs-index": "tsx scripts/generate-docs-index.ts",
+    "build:job-steps-dataset": "tsx scripts/build-job-steps-dataset.ts",
+    "generate:job-steps-docs": "tsx scripts/generate-job-steps-docs.ts",
     "prepack": "node scripts/strip-dev-exports.cjs",
     "postpack": "git checkout package.json"
   },
