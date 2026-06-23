@@ -8,10 +8,6 @@ import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {createScapiSchemasClient, type ScapiSchemasClient} from '@salesforce/b2c-tooling-sdk/clients';
 import {t} from '../../i18n/index.js';
 
-// Backwards-compatible alias for SDK's getApiErrorMessage; existing call sites
-// use this name. New code should import getApiErrorMessage from the SDK directly.
-export {getApiErrorMessage as formatApiError} from '@salesforce/b2c-tooling-sdk/clients';
-
 /**
  * Base command for SCAPI Schemas operations.
  * Provides common flags and helper methods for interacting with the SCAPI Schemas API.

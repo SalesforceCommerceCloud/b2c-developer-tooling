@@ -82,4 +82,15 @@ export default [
       'import/no-unresolved': 'off',
     },
   },
+  {
+    // Commands must route output through oclif (this.log/this.error/ux.stdout) so that
+    // --json mode, log redirection, and test stdout silencing work. Bare console.* breaks
+    // these contracts. The prophet IDE script is exempt because it serializes JS source
+    // that runs outside the CLI process.
+    files: ['src/commands/**/*.ts'],
+    ignores: ['src/commands/setup/ide/prophet.ts'],
+    rules: {
+      'no-console': 'error',
+    },
+  },
 ];

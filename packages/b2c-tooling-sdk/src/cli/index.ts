@@ -151,3 +151,6 @@ export {columnFlagsFor, selectColumns} from './columns.js';
 export type {ColumnFlags, ColumnFlagsOptions, WarnFn} from './columns.js';
 export {printFieldsBlock} from './details.js';
 export type {DetailField, DetailFieldObject, DetailSection, DetailValue, PrintFieldsBlockOptions} from './details.js';
+
+// ANSI color palette and helpers — single source of truth for log/level colors
+export {ANSI, LEVEL_COLORS, colorHighlight, colorLevel, colorDim} from './ansi.js';

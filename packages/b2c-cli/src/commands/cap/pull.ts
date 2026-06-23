@@ -5,7 +5,7 @@
  */
 import path from 'node:path';
 import {Args, Flags} from '@oclif/core';
-import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {JobCommand, ANSI} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   listInstalledApps,
   pullCommerceApps,
@@ -125,12 +125,7 @@ export default class CapPull extends JobCommand<typeof CapPull> {
     });
 
     if (!this.jsonEnabled()) {
-      const bold = '[1m';
-      const dim = '[2m';
-      const cyan = '[36m';
-      const yellow = '[33m';
-      const red = '[31m';
-      const reset = '[0m';
+      const {BOLD: bold, DIM: dim, CYAN: cyan, YELLOW: yellow, RED: red, RESET: reset} = ANSI;
 
       for (const app of result.pulled) {
         const relativePath = path.relative(process.cwd(), app.extractedPath);

@@ -49,19 +49,25 @@ export interface DownloadResult {
   outputDirectory: string;
 }
 
-// Progress helper: fires immediately (0s) then every 5s until stopped
+// Progress helper: fires immediately (0s) then every 5s for the duration of `body`.
+// Always tears down the interval, even if `body` throws.
 const PROGRESS_INTERVAL_MS = 5_000;
-function startProgress(
+async function withProgress<T>(
   phase: DownloadProgressInfo['phase'],
-  onProgress?: (info: DownloadProgressInfo) => void,
-): () => void {
+  onProgress: ((info: DownloadProgressInfo) => void) | undefined,
+  body: () => Promise<T>,
+): Promise<T> {
   const start = Date.now();
   onProgress?.({phase, elapsedSeconds: 0});
-  if (!onProgress) return () => {};
+  if (!onProgress) return body();
   const interval = setInterval(() => {
     onProgress({phase, elapsedSeconds: Math.round((Date.now() - start) / 1000)});
   }, PROGRESS_INTERVAL_MS);
-  return () => clearInterval(interval);
+  try {
+    return await body();
+  } finally {
+    clearInterval(interval);
+  }
 }
 
 /**
@@ -142,8 +148,9 @@ async function extractZip(
     }
 
     let targetPath: string;
-    if (options.mirror?.has(cartridgeName)) {
-      targetPath = path.join(options.mirror.get(cartridgeName)!, relativePath);
+    const mirrorPath = options.mirror?.get(cartridgeName);
+    if (mirrorPath !== undefined) {
+      targetPath = path.join(mirrorPath, relativePath);
     } else {
       targetPath = path.join(options.outputDirectory, cartridgeName, relativePath);
     }
@@ -196,28 +203,29 @@ export async function downloadSingleCartridge(
   const cartridgePath = `Cartridges/${codeVersion}/${cartridgeName}`;
   const zipPath = `${cartridgePath}.zip`;
 
-  let stopProgress = startProgress('zipping', onProgress);
   logger.debug({cartridgeName, codeVersion}, 'Requesting server-side zip for single cartridge...');
-  let zipResponse: Response;
-  try {
-    zipResponse = await webdav.request(cartridgePath, {
+  const zipResponse = await withProgress('zipping', onProgress, () =>
+    webdav.request(cartridgePath, {
       method: 'POST',
       body: ZIP_BODY,
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
-    });
-  } finally {
-    stopProgress();
-  }
+    }),
+  );
 
   if (!zipResponse.ok) {
-    const text = await zipResponse.text();
-    throw new Error(`Failed to create server-side zip: ${zipResponse.status} ${zipResponse.statusText} - ${text}`);
+    let text = '';
+    try {
+      text = await zipResponse.text();
+    } catch (err) {
+      logger.debug({err}, 'Failed to read response body for server-zip error');
+    }
+    throw new Error(
+      `Failed to create server-side zip: ${zipResponse.status} ${zipResponse.statusText}${text ? ' - ' + text : ''}`,
+    );
   }
 
-  stopProgress = startProgress('downloading', onProgress);
-  let buffer: ArrayBuffer;
-  try {
+  const buffer = await withProgress('downloading', onProgress, async () => {
     const dlResponse = await webdav.request(zipPath, {
       method: 'GET',
       signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
@@ -225,10 +233,8 @@ export async function downloadSingleCartridge(
     if (!dlResponse.ok) {
       throw new Error(`Failed to download zip: ${dlResponse.status} ${dlResponse.statusText}`);
     }
-    buffer = await dlResponse.arrayBuffer();
-  } finally {
-    stopProgress();
-  }
+    return dlResponse.arrayBuffer();
+  });
   logger.debug({size: buffer.byteLength}, `Archive downloaded: ${buffer.byteLength} bytes`);
 
   // Cleanup server-side zip (best effort)
@@ -300,9 +306,8 @@ export async function downloadCartridges(
     for (const cartridgeName of include) {
       if (exclude?.length && exclude.includes(cartridgeName)) continue;
 
-      const outputPath = mirror?.has(cartridgeName)
-        ? mirror.get(cartridgeName)!
-        : path.join(resolvedOutput, cartridgeName);
+      const mirrorPath = mirror?.get(cartridgeName);
+      const outputPath = mirrorPath ?? path.join(resolvedOutput, cartridgeName);
 
       await downloadSingleCartridge(instance, codeVersion, cartridgeName, outputPath, onProgress);
       allExtracted.add(cartridgeName);
@@ -316,32 +321,33 @@ export async function downloadCartridges(
   const webdav = instance.webdav;
   const zipPath = `Cartridges/${codeVersion}.zip`;
 
-  let stopProgress = startProgress('zipping', onProgress);
   logger.debug({codeVersion}, 'Requesting server-side zip...');
-  let zipResponse: Response;
-  try {
-    zipResponse = await webdav.request(`Cartridges/${codeVersion}`, {
+  const zipResponse = await withProgress('zipping', onProgress, () =>
+    webdav.request(`Cartridges/${codeVersion}`, {
       method: 'POST',
       body: ZIP_BODY,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
-    });
-  } finally {
-    stopProgress();
-  }
+    }),
+  );
 
   if (!zipResponse.ok) {
-    const text = await zipResponse.text();
-    throw new Error(`Failed to create server-side zip: ${zipResponse.status} ${zipResponse.statusText} - ${text}`);
+    let text = '';
+    try {
+      text = await zipResponse.text();
+    } catch (err) {
+      logger.debug({err}, 'Failed to read response body for server-zip error');
+    }
+    throw new Error(
+      `Failed to create server-side zip: ${zipResponse.status} ${zipResponse.statusText}${text ? ' - ' + text : ''}`,
+    );
   }
   logger.debug('Server-side zip created');
 
-  stopProgress = startProgress('downloading', onProgress);
   logger.debug({zipPath}, 'Downloading zip archive...');
-  let buffer: ArrayBuffer;
-  try {
+  const buffer = await withProgress('downloading', onProgress, async () => {
     const downloadResponse = await webdav.request(zipPath, {
       method: 'GET',
       signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
@@ -349,10 +355,8 @@ export async function downloadCartridges(
     if (!downloadResponse.ok) {
       throw new Error(`Failed to download zip: ${downloadResponse.status} ${downloadResponse.statusText}`);
     }
-    buffer = await downloadResponse.arrayBuffer();
-  } finally {
-    stopProgress();
-  }
+    return downloadResponse.arrayBuffer();
+  });
   logger.debug({size: buffer.byteLength}, `Archive downloaded: ${buffer.byteLength} bytes`);
 
   // Cleanup server-side zip (best-effort)

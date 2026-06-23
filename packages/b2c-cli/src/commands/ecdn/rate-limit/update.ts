@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import cliui from 'cliui';
+import {printFieldsBlock} from '@salesforce/b2c-tooling-sdk/cli';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
 import {t, withDocs} from '../../../i18n/index.js';
@@ -230,20 +230,18 @@ export default class EcdnRateLimitUpdate extends EcdnZoneCommand<typeof EcdnRate
       return output;
     }
 
-    const ui = cliui({width: process.stdout.columns || 80});
-    const labelWidth = 22;
-
-    ui.div('');
-    ui.div({text: t('commands.ecdn.rate-limit.update.success', 'Rate limiting rule updated successfully!')});
-    ui.div('');
-    ui.div({text: 'Rule ID:', width: labelWidth}, {text: rule.ruleId});
-    ui.div({text: 'Description:', width: labelWidth}, {text: rule.description});
-    ui.div({text: 'Action:', width: labelWidth}, {text: rule.action});
-    ui.div({text: 'Period (seconds):', width: labelWidth}, {text: String(rule.period)});
-    ui.div({text: 'Requests Per Period:', width: labelWidth}, {text: String(rule.requestsPerPeriod)});
-    ui.div({text: 'Enabled:', width: labelWidth}, {text: rule.enabled ? 'yes' : 'no'});
-
-    this.log(ui.toString());
+    printFieldsBlock(
+      t('commands.ecdn.rate-limit.update.success', 'Rate limiting rule updated successfully!'),
+      [
+        ['Rule ID', rule.ruleId],
+        ['Description', rule.description],
+        ['Action', rule.action],
+        ['Period (seconds)', String(rule.period)],
+        ['Requests Per Period', String(rule.requestsPerPeriod)],
+        ['Enabled', rule.enabled ? 'yes' : 'no'],
+      ],
+      {labelWidth: 22},
+    );
 
     return output;
   }

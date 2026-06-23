@@ -4,12 +4,12 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {
   SlasClientCommand,
   type Client,
   type ClientOutput,
   normalizeClientResponse,
-  formatApiError,
 } from '../../../utils/slas/client.js';
 import {t, withDocs} from '../../../i18n/index.js';
 
@@ -76,7 +76,7 @@ export default class SlasClientList extends SlasClientCommand<typeof SlasClientL
       if (tenantExists) {
         this.error(
           t('commands.slas.client.list.error', 'Failed to list SLAS clients: {{message}}', {
-            message: formatApiError(error, response),
+            message: getApiErrorMessage(error, response),
           }),
         );
       }

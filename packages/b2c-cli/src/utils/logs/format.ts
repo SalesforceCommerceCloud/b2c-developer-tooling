@@ -6,27 +6,14 @@
 
 import type {LogEntry} from '@salesforce/b2c-tooling-sdk/operations/logs';
 import {createPathNormalizer, discoverAndCreateNormalizer} from '@salesforce/b2c-tooling-sdk/operations/logs';
+import {ANSI, LEVEL_COLORS} from '@salesforce/b2c-tooling-sdk/cli';
 
 /**
  * Default log prefixes to retrieve/tail.
  */
 export const DEFAULT_PREFIXES = ['error', 'customerror'];
 
-/**
- * ANSI color codes for log levels.
- */
-const LEVEL_COLORS: Record<string, string> = {
-  ERROR: '\u001B[31m', // Red
-  FATAL: '\u001B[35m', // Magenta
-  WARN: '\u001B[33m', // Yellow
-  INFO: '\u001B[36m', // Cyan
-  DEBUG: '\u001B[90m', // Gray
-  TRACE: '\u001B[90m', // Gray
-};
-
-const RESET = '\u001B[0m';
-const DIM = '\u001B[2m';
-const BOLD = '\u001B[1m';
+const {RESET, DIM, BOLD} = ANSI;
 
 /**
  * Formats a log entry for human-readable output.

@@ -338,9 +338,16 @@ export class OAuthStrategy implements AuthStrategy {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
+      let errorText = '';
+      try {
+        errorText = await response.text();
+      } catch (err) {
+        logger.debug({err, method, url}, 'Failed to read response body for OAuth error');
+      }
       logger.trace({method, url, headers: responseHeaders, body: errorText}, `[Auth RESP BODY] ${method} ${url}`);
-      throw new Error(`Failed to get access token: ${response.status} ${response.statusText} - ${errorText}`);
+      throw new Error(
+        `Failed to get access token: ${response.status} ${response.statusText}${errorText ? ' - ' + errorText : ''}`,
+      );
     }
 
     const data = (await response.json()) as {

@@ -84,24 +84,24 @@ export default class SandboxIps extends OdsCommand<typeof SandboxIps> {
   private printIps(system: SystemInfoSpec, realm?: string): void {
     const context = realm ? t('commands.sandbox.ips.realmLabel', ' (for realm {{realm}})', {realm}) : '';
 
-    console.log(t('commands.sandbox.ips.inboundHeader', 'Inbound IP addresses{{context}}:', {context}));
+    this.log(t('commands.sandbox.ips.inboundHeader', 'Inbound IP addresses{{context}}:', {context}));
     for (const ip of system.inboundIps ?? []) {
-      console.log(`  - ${ip}`);
+      this.log(`  - ${ip}`);
     }
 
-    console.log();
+    this.log('');
 
-    console.log(t('commands.sandbox.ips.outboundHeader', 'Outbound IP addresses{{context}}:', {context}));
+    this.log(t('commands.sandbox.ips.outboundHeader', 'Outbound IP addresses{{context}}:', {context}));
     for (const ip of system.outboundIps ?? []) {
-      console.log(`  - ${ip}`);
+      this.log(`  - ${ip}`);
     }
 
     if (system.sandboxIps && system.sandboxIps.length > 0) {
-      console.log();
+      this.log('');
 
-      console.log(t('commands.sandbox.ips.sandboxHeader', 'Sandbox IP addresses{{context}}:', {context}));
+      this.log(t('commands.sandbox.ips.sandboxHeader', 'Sandbox IP addresses{{context}}:', {context}));
       for (const ip of system.sandboxIps) {
-        console.log(`  - ${ip}`);
+        this.log(`  - ${ip}`);
       }
     }
   }

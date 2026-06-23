@@ -122,10 +122,6 @@ export function parseRedirectUris(redirectUri: string): string[] {
     .filter(Boolean);
 }
 
-// Backwards-compatible alias for SDK's getApiErrorMessage; existing call sites
-// use this name. New code should import getApiErrorMessage from the SDK directly.
-export {getApiErrorMessage as formatApiError} from '@salesforce/b2c-tooling-sdk/clients';
-
 /**
  * Base command for SLAS client operations.
  * Provides common flags and helper methods.

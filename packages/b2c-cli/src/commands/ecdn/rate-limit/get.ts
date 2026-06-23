@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import cliui from 'cliui';
+import {printFieldsBlock} from '@salesforce/b2c-tooling-sdk/cli';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
 import {t, withDocs} from '../../../i18n/index.js';
@@ -77,29 +77,23 @@ export default class EcdnRateLimitGet extends EcdnZoneCommand<typeof EcdnRateLim
       return output;
     }
 
-    const ui = cliui({width: process.stdout.columns || 80});
-    const labelWidth = 22;
-
-    ui.div('');
-    ui.div({text: t('commands.ecdn.rate-limit.get.success', 'Rate limiting rule details:')});
-    ui.div('');
-    ui.div({text: 'Rule ID:', width: labelWidth}, {text: rule.ruleId});
-    ui.div({text: 'Description:', width: labelWidth}, {text: rule.description});
-    ui.div({text: 'Expression:', width: labelWidth}, {text: rule.expression});
-    ui.div({text: 'Action:', width: labelWidth}, {text: rule.action});
-    ui.div({text: 'Period (seconds):', width: labelWidth}, {text: String(rule.period)});
-    ui.div({text: 'Requests Per Period:', width: labelWidth}, {text: String(rule.requestsPerPeriod)});
-    ui.div({text: 'Mitigation Timeout:', width: labelWidth}, {text: String(rule.mitigationTimeout)});
-    ui.div({text: 'Enabled:', width: labelWidth}, {text: rule.enabled ? 'yes' : 'no'});
-    ui.div({text: 'Characteristics:', width: labelWidth}, {text: rule.characteristics.join(', ')});
-
-    if (rule.countingExpression) {
-      ui.div({text: 'Counting Expression:', width: labelWidth}, {text: rule.countingExpression});
-    }
-
-    ui.div({text: 'Last Updated:', width: labelWidth}, {text: rule.lastUpdated});
-
-    this.log(ui.toString());
+    printFieldsBlock(
+      t('commands.ecdn.rate-limit.get.success', 'Rate limiting rule details:'),
+      [
+        ['Rule ID', rule.ruleId],
+        ['Description', rule.description],
+        ['Expression', rule.expression],
+        ['Action', rule.action],
+        ['Period (seconds)', String(rule.period)],
+        ['Requests Per Period', String(rule.requestsPerPeriod)],
+        ['Mitigation Timeout', String(rule.mitigationTimeout)],
+        ['Enabled', rule.enabled ? 'yes' : 'no'],
+        ['Characteristics', rule.characteristics.join(', ')],
+        ['Counting Expression', rule.countingExpression ?? null],
+        ['Last Updated', rule.lastUpdated],
+      ],
+      {labelWidth: 22},
+    );
 
     return output;
   }

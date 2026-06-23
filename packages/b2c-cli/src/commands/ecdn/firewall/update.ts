@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import cliui from 'cliui';
+import {printFieldsBlock} from '@salesforce/b2c-tooling-sdk/cli';
 import type {CdnZonesComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnZoneCommand, formatApiError} from '../../../utils/ecdn/index.js';
 import {t, withDocs} from '../../../i18n/index.js';
@@ -129,18 +129,16 @@ export default class EcdnFirewallUpdate extends EcdnZoneCommand<typeof EcdnFirew
       return output;
     }
 
-    const ui = cliui({width: process.stdout.columns || 80});
-    const labelWidth = 18;
-
-    ui.div('');
-    ui.div({text: t('commands.ecdn.firewall.update.success', 'Custom firewall rule updated successfully!')});
-    ui.div('');
-    ui.div({text: 'Rule ID:', width: labelWidth}, {text: rule.ruleId});
-    ui.div({text: 'Description:', width: labelWidth}, {text: rule.description});
-    ui.div({text: 'Actions:', width: labelWidth}, {text: rule.actions?.join(', ') ?? '-'});
-    ui.div({text: 'Enabled:', width: labelWidth}, {text: rule.enabled ? 'yes' : 'no'});
-
-    this.log(ui.toString());
+    printFieldsBlock(
+      t('commands.ecdn.firewall.update.success', 'Custom firewall rule updated successfully!'),
+      [
+        ['Rule ID', rule.ruleId],
+        ['Description', rule.description],
+        ['Actions', rule.actions?.join(', ') ?? '-'],
+        ['Enabled', rule.enabled ? 'yes' : 'no'],
+      ],
+      {labelWidth: 18},
+    );
 
     return output;
   }

@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {JobCommand, ANSI} from '@salesforce/b2c-tooling-sdk/cli';
 import {listInstalledApps, type CommerceFeatureState} from '@salesforce/b2c-tooling-sdk/operations/cap';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -107,10 +107,7 @@ export default class CapTasks extends JobCommand<typeof CapTasks> {
     );
 
     if (!this.jsonEnabled()) {
-      const bold = '[1m';
-      const dim = '[2m';
-      const cyan = '[36m';
-      const reset = '[0m';
+      const {BOLD: bold, DIM: dim, CYAN: cyan, RESET: reset} = ANSI;
 
       for (const task of tasks) {
         process.stdout.write(`\n  ${bold}${task.taskNumber}. ${task.name}${reset}\n`);

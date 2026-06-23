@@ -4,9 +4,10 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
+import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {SchemaListItem} from '@salesforce/b2c-tooling-sdk/clients';
-import {ScapiSchemasCommand, formatApiError} from '../../../utils/scapi/schemas.js';
+import {ScapiSchemasCommand} from '../../../utils/scapi/schemas.js';
 import {t, withDocs} from '../../../i18n/index.js';
 
 /**
@@ -116,7 +117,7 @@ export default class ScapiSchemasList extends ScapiSchemasCommand<typeof ScapiSc
     if (error) {
       this.error(
         t('commands.scapi.schemas.list.error', 'Failed to fetch SCAPI schemas: {{message}}', {
-          message: formatApiError(error, response),
+          message: getApiErrorMessage(error, response),
         }),
       );
     }
