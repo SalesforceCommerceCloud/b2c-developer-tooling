@@ -80,6 +80,12 @@ Send your triggering request — a storefront page load, a SCAPI/OCAPI call, etc
 Cookie: dwsid=abc123...
 ```
 
+For headless server-to-server requests that trigger hooks, custom APIs, or SCAPI/OCAPI endpoints — where setting a cookie is awkward — pass the same value as the `sfdc_dwsid` request header instead:
+
+```
+sfdc_dwsid: abc123...
+```
+
 If `session_cookie` is `null`, the debugger did not establish a session cookie; a warning is included and breakpoints may not be reliably hit on multi-app-server instances.
 
 ---

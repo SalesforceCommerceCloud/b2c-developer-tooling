@@ -140,8 +140,9 @@ To pin a triggering request to the correct app server, send it with the debugger
 
 - **MCP:** `debug_start_session` and `debug_list_sessions` return a `session_cookie` (`{name, value}`). Send the request that triggers your code (storefront page load, SCAPI/OCAPI call) with `Cookie: dwsid=<value>`.
 - **Any trigger:** whatever issues the request — a browser, `curl`, an integration test — must carry the same `dwsid` value.
+- **Headless requests (hooks, custom APIs, server-to-server SCAPI/OCAPI):** instead of a cookie, pass the value as the `sfdc_dwsid` request header (`sfdc_dwsid: <value>`).
 
-If the cookie cannot be set on the triggering request, retry until the load balancer routes to the attached app server.
+If the cookie or header cannot be set on the triggering request, retry until the load balancer routes to the attached app server.
 
 ## Related Skills
 

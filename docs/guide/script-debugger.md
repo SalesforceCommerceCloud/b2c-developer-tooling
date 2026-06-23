@@ -61,7 +61,13 @@ Once you have the value, send the request that triggers your code — a browser 
 Cookie: dwsid=<value>
 ```
 
-If you cannot set the cookie on the triggering request, you may need to retry until the load balancer happens to route to the attached app server.
+For headless requests where you can't (or don't want to) set a cookie — server-to-server calls that trigger hooks, custom APIs, or SCAPI/OCAPI endpoints — pass the same value as the `sfdc_dwsid` request header instead:
+
+```
+sfdc_dwsid: <value>
+```
+
+If you cannot set the cookie or header on the triggering request, you may need to retry until the load balancer happens to route to the attached app server.
 
 > A future enhancement will let the VS Code extension launch a browser pre-seeded with the debug session's cookie, removing this manual step.
 
