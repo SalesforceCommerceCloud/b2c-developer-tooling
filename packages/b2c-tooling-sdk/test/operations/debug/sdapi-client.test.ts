@@ -6,6 +6,7 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
+import sinon from 'sinon';
 import {SdapiClient, SdapiError} from '@salesforce/b2c-tooling-sdk/operations/debug';
 
 const TEST_HOST = 'test.demandware.net';
@@ -241,6 +242,63 @@ describe('operations/debug/sdapi-client', () => {
 
       const result = await client.evaluate(1, 0, 'basket.getProductLineItems().size()');
       expect(result.result).to.equal('3');
+    });
+  });
+
+  // These tests stub `fetch` directly rather than going through MSW: MSW
+  // maintains its own tough-cookie jar that auto-replays Set-Cookie values
+  // (with attributes) on subsequent requests, which would mask what the client
+  // itself sends. Stubbing fetch isolates the client's cookie handling.
+  describe('session cookies', () => {
+    afterEach(() => sinon.restore());
+
+    function stubFetch(responses: Array<{setCookie?: string; status?: number; body?: unknown}>): {
+      cookieHeaders: (string | null)[];
+    } {
+      const cookieHeaders: (string | null)[] = [];
+      let call = 0;
+      sinon.stub(globalThis, 'fetch').callsFake(async (_url, init) => {
+        const headers = new Headers((init as RequestInit | undefined)?.headers);
+        cookieHeaders.push(headers.get('Cookie'));
+        const spec = responses[call++] ?? {};
+        const respHeaders = new Headers();
+        if (spec.setCookie) {
+          respHeaders.append('Set-Cookie', spec.setCookie);
+        }
+        const status = spec.status ?? 200;
+        const body = spec.body === undefined ? null : JSON.stringify(spec.body);
+        return new Response(body, {status, headers: respHeaders});
+      });
+      return {cookieHeaders};
+    }
+
+    it('replays Set-Cookie values on subsequent requests for server affinity', async () => {
+      const {cookieHeaders} = stubFetch([
+        {setCookie: 'dwsid=abc123; Path=/; HttpOnly', status: 204},
+        {body: {_v: '2.0', script_threads: []}},
+      ]);
+
+      await client.createClient();
+      await client.getThreads();
+
+      // First request has no cookie; second replays the dwsid from the response.
+      expect(cookieHeaders[0]).to.equal(null);
+      expect(cookieHeaders[1]).to.equal('dwsid=abc123');
+    });
+
+    it('updates a stored cookie when the server sets a new value', async () => {
+      const {cookieHeaders} = stubFetch([
+        {setCookie: 'dwsid=first; Path=/', status: 204},
+        {setCookie: 'dwsid=second; Path=/', body: {_v: '2.0', script_threads: []}},
+        {body: {_v: '2.0', script_threads: []}},
+      ]);
+
+      await client.createClient();
+      await client.getThreads();
+      await client.getThreads();
+
+      expect(cookieHeaders[1]).to.equal('dwsid=first');
+      expect(cookieHeaders[2]).to.equal('dwsid=second');
     });
   });
 
