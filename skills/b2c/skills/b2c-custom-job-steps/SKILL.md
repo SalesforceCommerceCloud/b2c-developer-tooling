@@ -1,6 +1,6 @@
 ---
 name: b2c-custom-job-steps
-description: Create custom job steps for B2C Commerce batch processing. Use this skill whenever the user needs to write a batch job, data export script, scheduled cleanup task, or any server-side processing that runs on a schedule. Also use when they ask about steptypes.json, chunk-oriented vs task-oriented job steps, read/process/write patterns, or how to get a custom job to appear in Business Manager — even if they just say "I need a script that runs nightly" or "batch process orders".
+description: Create custom job steps for B2C Commerce batch processing. Use this skill whenever the user needs to write a batch job, data export script, scheduled cleanup task, or any server-side processing that runs on a schedule. Also use when they ask about steptypes.json, chunk-oriented vs task-oriented job steps, read/process/write patterns, how to get a custom job to appear in Business Manager, or how to author and import a jobs.xml job definition (job/flow/step structure, step type, the required triggers element) so a step type becomes a runnable, schedulable job — even if they just say "I need a script that runs nightly" or "batch process orders".
 ---
 
 # Custom Job Steps Skill
@@ -122,6 +122,48 @@ my_cartridge/
     }
 }
 ```
+
+## From Step Type to Runnable Job (jobs.xml)
+
+`steptypes.json` only *declares* a step type — it does not create a job. To get a job that `b2c job run` can execute and Business Manager can schedule, author a **job definition** (`jobs.xml`) that references your step type, then import it:
+
+```bash
+b2c job import ./my-job-archive   # jobs.xml at the archive root
+```
+
+A minimal valid definition wires one step into a flow and includes the **required `<triggers>`** element:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs xmlns="http://www.demandware.com/xml/impex/jobs/2015-07-01">
+    <job job-id="MyNightlyExport">
+        <flow>
+            <context site-id="RefArch"/>
+            <!-- type="..." matches the @type-id declared in steptypes.json -->
+            <step step-id="ExportStep" type="custom.ProductExport">
+                <parameters>
+                    <parameter name="OutputFile">/export/products.csv</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <triggers>
+            <run-once enabled="false">
+                <date>2025-01-01</date>
+                <time>00:00:00.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+</jobs>
+```
+
+Key rules (full details in the [jobs.xml Reference](references/JOBS-XML.md)):
+
+- **`<triggers>` is required** by the schema — a `jobs.xml` without it fails import validation. Use `<run-once enabled="false">` for an on-demand/manually-run job, or `<run-recurring>` to schedule it.
+- The `<step>` **`type`** attribute references the step type; its value must match the **`@type-id`** you declared in `steptypes.json` (don't confuse the two — `steptypes.json` uses `@type-id`, `jobs.xml` uses `type`).
+- `<job>` children must appear in order: `description → parameters → flow/split → rules → triggers`.
+- The cartridge carrying the step's `steptypes.json` + module must be deployed and on the cartridge path before the job can resolve the step type.
+
+After import, run it with `b2c job run MyNightlyExport --wait` (see the `b2c-cli:b2c-job` skill).
 
 ## Task-Oriented Steps
 
@@ -363,3 +405,4 @@ exports.afterStep = function (success, parameters, stepExecution) {
 - [Task-Oriented Steps](references/TASK-ORIENTED.md) - Full task step patterns
 - [Chunk-Oriented Steps](references/CHUNK-ORIENTED.md) - Full chunk step patterns
 - [steptypes.json Reference](references/STEPTYPES-JSON.md) - Complete schema
+- [jobs.xml Reference](references/JOBS-XML.md) - Authoring & importing a job definition (flows, steps, required triggers)

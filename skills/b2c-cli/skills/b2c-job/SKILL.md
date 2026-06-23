@@ -9,7 +9,7 @@ Use the `b2c` CLI plugin to **run existing jobs** and import/export site archive
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli job run`).
 
-> **Creating a new job?** If you need to write custom job step code (batch processing, scheduled tasks, data sync), use the `b2c:b2c-custom-job-steps` skill instead.
+> **Creating a new job?** If you need to write custom job step *code* (batch processing, scheduled tasks, data sync) **or author the `jobs.xml` job definition** that makes a job exist (so it can be run/scheduled), use the `b2c:b2c-custom-job-steps` skill — see its [jobs.xml Reference](../../../b2c/skills/b2c-custom-job-steps/references/JOBS-XML.md). `b2c job run` only executes jobs that already exist on the instance.
 
 ## Configuration & Authentication
 
@@ -54,7 +54,7 @@ Note: `--body` and `-P` are mutually exclusive.
 
 ### Import Site Archives
 
-The `job import` command waits for the import job to complete by default.
+The `job import` command waits for the import job to complete by default. The same command imports a **job definition** (`jobs.xml` at the archive root) that registers a new runnable job on the instance — for the `jobs.xml` structure (job/flow/step, step `type`, the required `<triggers>` element), see the [jobs.xml Reference](../../../b2c/skills/b2c-custom-job-steps/references/JOBS-XML.md).
 
 ```bash
 # import a local directory as a site archive (waits for completion by default)
