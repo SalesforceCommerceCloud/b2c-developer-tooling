@@ -794,8 +794,9 @@ This class does not have a constructor, so you cannot create it directly.
       [LineItemCtnr.CHANNEL_TYPE_INSTAGRAMCOMMERCE](dw.order.LineItemCtnr.md#channel_type_instagramcommerce), [LineItemCtnr.CHANNEL_TYPE_GOOGLE](dw.order.LineItemCtnr.md#channel_type_google),
       [LineItemCtnr.CHANNEL_TYPE_YOUTUBE](dw.order.LineItemCtnr.md#channel_type_youtube), [LineItemCtnr.CHANNEL_TYPE_TIKTOK](dw.order.LineItemCtnr.md#channel_type_tiktok),
       [LineItemCtnr.CHANNEL_TYPE_SNAPCHAT](dw.order.LineItemCtnr.md#channel_type_snapchat), [LineItemCtnr.CHANNEL_TYPE_WHATSAPP](dw.order.LineItemCtnr.md#channel_type_whatsapp) The
-      value for [LineItemCtnr.CHANNEL_TYPE_CUSTOMERSERVICECENTER](dw.order.LineItemCtnr.md#channel_type_customerservicecenter) is also available, but it can not be
-      set by the scripting API, it is set only internally.
+      value for [LineItemCtnr.CHANNEL_TYPE_CUSTOMERSERVICECENTER](dw.order.LineItemCtnr.md#channel_type_customerservicecenter) and
+      [LineItemCtnr.CHANNEL_TYPE_CHATGPT](dw.order.LineItemCtnr.md#channel_type_chatgpt) and [LineItemCtnr.CHANNEL_TYPE_GEMINI](dw.order.LineItemCtnr.md#channel_type_gemini) are also
+      available, but it can not be set by the scripting API, it is set only internally.
 
 
     **Parameters:**

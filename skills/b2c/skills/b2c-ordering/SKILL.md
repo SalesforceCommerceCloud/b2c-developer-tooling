@@ -78,6 +78,8 @@ function createOrder(basket) {
 
 ### Async Flow (SCAPI Pattern)
 
+> **Critical — transaction context depends on *where* this code runs.** The `Transaction.wrap()` calls below are correct when you drive placement from a **controller, job step, or custom endpoint** (code that runs *outside* a platform transaction). But the headless SCAPI Shopper Orders API creates the order in **`CREATED`** status and hands it to the **`dw.ocapi.shop.order.afterPOST` hook**, which **already runs inside a platform transaction**. If you call `OrderMgr.placeOrder()` / `OrderMgr.failOrder()` from `afterPOST`, call them **directly with NO `Transaction.wrap`** — a nested transaction rolls back your change and surfaces an opaque `HTTP 400: An error occurred in ExtensionPoint dw.ocapi.shop.order.afterPOST`. See the canonical `afterPOST` example in [b2c-hooks](../b2c-hooks/SKILL.md).
+
 For SCAPI/headless, create the order before payment authorization:
 
 ```javascript
