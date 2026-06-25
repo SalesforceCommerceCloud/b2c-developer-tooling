@@ -311,8 +311,9 @@ b2c auth token
 # Get token with browser-based auth
 b2c auth token --user-auth
 
-# Get token with specific scopes
+# Get token with specific scopes (accepts multiple: repeat --auth-scope or comma-separate)
 b2c auth token --auth-scope sfcc.orders --auth-scope sfcc.products
+b2c auth token --auth-scope "sfcc.orders,sfcc.products"
 
 # Get token as JSON (includes expiration and scopes)
 b2c auth token --json
@@ -325,6 +326,16 @@ curl -H "Authorization: Bearer $(b2c auth token)" \
 The token is obtained using the `clientId` and `clientSecret` from your configuration (dw.json or environment variables). If only `clientId` is configured, or `--user-auth` is used, an implicit OAuth flow is used (browser-based).
 
 **Note:** This command returns **admin** tokens for OCAPI/Admin APIs. For **shopper** tokens (SLAS), see the [b2c-slas skill](../b2c-slas/SKILL.md).
+
+> **Calling SCAPI Admin APIs (system or custom)?** The token must carry the tenant scope `SALESFORCE_COMMERCE_API:<tenant_id>` **plus** the API-specific scopes. `b2c auth token` does not add the tenant scope for you (unlike the SCAPI subcommands such as `b2c scapi custom status`), so pass it explicitly:
+>
+> ```bash
+> b2c auth token \
+>   --auth-scope "SALESFORCE_COMMERCE_API:zzpq_013" \
+>   --auth-scope sfcc.orders --auth-scope sfcc.products.rw
+> ```
+>
+> See the `b2c:b2c-scapi-admin` and `b2c:b2c-custom-api-development` skills for details.
 
 ## More Commands
 

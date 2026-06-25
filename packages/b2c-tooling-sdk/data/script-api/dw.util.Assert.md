@@ -16,6 +16,8 @@ This class does not have a constructor, so you cannot create it directly.
 | --- | --- |
 | static [areEqual](dw.util.Assert.md#areequalobject-object)([Object](TopLevel.Object.md), [Object](TopLevel.Object.md)) | Propagates an assertion  if the specified objects are not equal. |
 | static [areEqual](dw.util.Assert.md#areequalobject-object-string)([Object](TopLevel.Object.md), [Object](TopLevel.Object.md), [String](TopLevel.String.md)) | Propagates an assertion using the specified message  if the specified objects are not equal. |
+| static [areNotEqual](dw.util.Assert.md#arenotequalobject-object)([Object](TopLevel.Object.md), [Object](TopLevel.Object.md)) | Propagates an assertion  if the specified objects are equal. |
+| static [areNotEqual](dw.util.Assert.md#arenotequalobject-object-string)([Object](TopLevel.Object.md), [Object](TopLevel.Object.md), [String](TopLevel.String.md)) | Propagates an assertion using the specified message  if the specified objects are equal. |
 | static [areSame](dw.util.Assert.md#aresameobject-object)([Object](TopLevel.Object.md), [Object](TopLevel.Object.md)) | Propagates an assertion  if the specified objects are not the same. |
 | static [areSame](dw.util.Assert.md#aresameobject-object-string)([Object](TopLevel.Object.md), [Object](TopLevel.Object.md), [String](TopLevel.String.md)) | Propagates an assertion using the specified message  if the specified objects are not the same. |
 | static [fail](dw.util.Assert.md#fail)() | Propagates a failure assertion. |
@@ -57,6 +59,33 @@ This class does not have a constructor, so you cannot create it directly.
 - static areEqual(arg1: [Object](TopLevel.Object.md), arg2: [Object](TopLevel.Object.md), msg: [String](TopLevel.String.md)): void
   - : Propagates an assertion using the specified message
       if the specified objects are not equal.
+
+
+    **Parameters:**
+    - arg1 - the first object to check.
+    - arg2 - the second object to check.
+    - msg - the assertion message.
+
+
+---
+
+### areNotEqual(Object, Object)
+- static areNotEqual(arg1: [Object](TopLevel.Object.md), arg2: [Object](TopLevel.Object.md)): void
+  - : Propagates an assertion
+      if the specified objects are equal.
+
+
+    **Parameters:**
+    - arg1 - the first object to check.
+    - arg2 - the second object to check.
+
+
+---
+
+### areNotEqual(Object, Object, String)
+- static areNotEqual(arg1: [Object](TopLevel.Object.md), arg2: [Object](TopLevel.Object.md), msg: [String](TopLevel.String.md)): void
+  - : Propagates an assertion using the specified message
+      if the specified objects are equal.
 
 
     **Parameters:**

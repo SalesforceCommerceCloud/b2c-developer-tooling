@@ -99,7 +99,6 @@ This method is maintained for backward compatibility only. Cookie comments were 
 :::
     **API Version:**
 :::note
-No longer available as of version 99.2.
 This method is deprecated and will be removed in the next API version.
 :::
 
@@ -172,7 +171,6 @@ This method is maintained for backward compatibility only. The version property 
 :::
     **API Version:**
 :::note
-No longer available as of version 99.2.
 This method is deprecated and will be removed in the next API version.
 :::
 
@@ -212,7 +210,6 @@ This method is maintained for backward compatibility only. Cookie comments were 
 :::
     **API Version:**
 :::note
-No longer available as of version 99.2.
 This method is deprecated and will be removed in the next API version.
 :::
 
@@ -301,7 +298,6 @@ This method is maintained for backward compatibility only. The version property 
 :::
     **API Version:**
 :::note
-No longer available as of version 99.2.
 This method is deprecated and will be removed in the next API version.
 :::
 
@@ -334,7 +330,6 @@ This method is maintained for backward compatibility only. Cookie comments were 
 :::
     **API Version:**
 :::note
-No longer available as of version 99.2.
 This method is deprecated and will be removed in the next API version.
 :::
 
@@ -428,7 +423,6 @@ This method is maintained for backward compatibility only. The version property 
 :::
     **API Version:**
 :::note
-No longer available as of version 99.2.
 This method is deprecated and will be removed in the next API version.
 :::
 

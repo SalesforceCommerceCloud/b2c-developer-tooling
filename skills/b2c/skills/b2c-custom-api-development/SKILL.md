@@ -207,9 +207,21 @@ So during normal iteration on the *implementation* of an endpoint that's already
 
 ### For Admin APIs
 
-1. Configure custom scope in Account Manager
-2. Obtain token via Account Manager OAuth
-3. Omit `siteId` from requests
+1. Configure your custom scope (`c_my_admin_scope`) on the Account Manager API Client (Role: "Salesforce Commerce API")
+2. Obtain a token via Account Manager OAuth with **both** required scope types:
+   - **Tenant scope**: `SALESFORCE_COMMERCE_API:<tenant_id>` — grants access to the tenant
+   - **Custom Admin scope(s)**: `c_my_admin_scope` — as declared in `schema.yaml`
+3. Omit `siteId` from requests (or use `siteId=Sites-Site`) for org context
+
+```bash
+# b2c auth token accepts multiple scopes (repeat --auth-scope or comma-separate).
+# It does NOT auto-inject the tenant scope, so list it explicitly:
+TOKEN=$(b2c auth token \
+  --auth-scope "SALESFORCE_COMMERCE_API:zzpq_013" \
+  --auth-scope c_my_admin_scope)
+```
+
+> **Why the tenant scope matters:** the SCAPI subcommands (`b2c scapi custom status`, `b2c scapi schemas list`) inject `SALESFORCE_COMMERCE_API:<tenant_id>` for you, but `b2c auth token` and raw curl send only the scopes you pass. A token missing the tenant scope returns 403 against any Admin API (custom or system).
 
 See [Testing Reference](references/TESTING.md) for curl examples and authentication setup.
 
@@ -219,7 +231,7 @@ See [Testing Reference](references/TESTING.md) for curl examples and authenticat
 |-------|-------|----------|
 | 400 Bad Request | Invalid/unknown params | Define all params in schema |
 | 401 Unauthorized | Invalid token | Check token validity |
-| 403 Forbidden | Missing scope | Verify scope in token |
+| 403 Forbidden | Missing scope | Verify scope in token. For Admin APIs the token needs **both** `SALESFORCE_COMMERCE_API:<tenant_id>` and your custom scope(s) |
 | 404 Not Found | Not registered | Check `b2c scapi custom status` |
 | 500 Internal Error | Script error | Check `b2c logs get --level ERROR` |
 | 503 Service Unavailable | Circuit breaker open | Fix errors, wait for reset |
