@@ -96,6 +96,45 @@ describe('proxying', () => {
       expect(mockProxyRequest.setHeader.called).to.be.false;
       expect(mockProxyRequest.removeHeader.called).to.be.false;
     });
+
+    it('forwards x-sfdc-access-control when hostname matches forwarding list', () => {
+      mockIncomingRequest.headers = {
+        'x-sfdc-access-control': 'test-value',
+        'content-type': 'application/json',
+      };
+
+      applyProxyRequestHeaders({
+        proxyRequest: mockProxyRequest as unknown as ClientRequest,
+        incomingRequest: mockIncomingRequest as unknown as IncomingMessage,
+        caching: false,
+        proxyPath: '/api',
+        targetHost: 'api.commercecloud.salesforce.com',
+        targetProtocol: 'https',
+        accessControlHeaderForwardingHostnames: ['.commercecloud.salesforce.com'],
+      });
+
+      expect(mockProxyRequest.setHeader.calledWith('x-sfdc-access-control', 'test-value')).to.be.true;
+      expect(mockProxyRequest.removeHeader.calledWith('x-sfdc-access-control')).to.be.false;
+    });
+
+    it('strips x-sfdc-access-control when hostname does not match forwarding list', () => {
+      mockIncomingRequest.headers = {
+        'x-sfdc-access-control': 'test-value',
+        'content-type': 'application/json',
+      };
+
+      applyProxyRequestHeaders({
+        proxyRequest: mockProxyRequest as unknown as ClientRequest,
+        incomingRequest: mockIncomingRequest as unknown as IncomingMessage,
+        caching: false,
+        proxyPath: '/api',
+        targetHost: 'other.example.com',
+        targetProtocol: 'https',
+        accessControlHeaderForwardingHostnames: ['.commercecloud.salesforce.com'],
+      });
+
+      expect(mockProxyRequest.removeHeader.calledWith('x-sfdc-access-control')).to.be.true;
+    });
   });
 
   describe('configureProxy', () => {

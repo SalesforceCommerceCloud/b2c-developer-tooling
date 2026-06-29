@@ -193,6 +193,8 @@ const order = await fetch(
 ).then(r => r.json());
 ```
 
+> **The POST does not finish the order.** SCAPI creates the order in **`CREATED`** status — payment is *not* authorized and the order is *not* placed by this call. A server-side **`dw.ocapi.shop.order.afterPOST` hook** is responsible for authorizing payment and advancing the order to `NEW` (`OrderMgr.placeOrder`) or `FAILED` (`OrderMgr.failOrder`). Without that hook the order is stranded in `CREATED`. If your headless checkout "succeeds" but the order never appears as placed (or never fails visibly), this is almost always the missing piece — see the canonical example in [b2c-hooks › Order afterPOST](../b2c-hooks/SKILL.md#order-afterpost-headless-order-placement) and the order lifecycle in [b2c-ordering](../b2c-ordering/SKILL.md).
+
 ### Shopper Customers
 
 Customer registration, login, and account management.
@@ -334,6 +336,8 @@ Find logs in Log Center under `scapi.verbose` category.
 - [b2c-slas-auth-patterns](../b2c-slas-auth-patterns/SKILL.md) - Advanced auth: OTP, passkeys, session bridge
 - [b2c-scapi-schemas](../../b2c-cli/skills/b2c-scapi-schemas/SKILL.md) - Browse OpenAPI schemas
 - [b2c-custom-api-development](../b2c-custom-api-development/SKILL.md) - Create custom endpoints
+- [b2c-hooks](../b2c-hooks/SKILL.md) - The `order.afterPOST` hook that authorizes payment and places/fails a headless order
+- [b2c-ordering](../b2c-ordering/SKILL.md) - Order lifecycle, status transitions, and failure handling
 
 ## Reference Documentation
 

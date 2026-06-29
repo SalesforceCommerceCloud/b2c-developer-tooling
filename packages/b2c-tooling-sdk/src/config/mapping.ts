@@ -118,6 +118,20 @@ export function normalizeConfigKeys(raw: Record<string, unknown>): Record<string
 }
 
 /**
+ * Parses a cartridges value that may be a colon-separated string,
+ * comma-separated string, or already an array.
+ */
+function parseCartridges(value: string | string[] | undefined): string[] | undefined {
+  if (value === undefined) return undefined;
+  if (Array.isArray(value)) return value.length > 0 ? value : undefined;
+  const items = value
+    .split(/[,:]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return items.length > 0 ? items : undefined;
+}
+
+/**
  * Maps dw.json fields to normalized config format.
  *
  * This is the SINGLE place where dw.json field mapping happens.
@@ -137,20 +151,6 @@ export function normalizeConfigKeys(raw: Record<string, unknown>): Record<string
  * // { hostname: 'example.com', codeVersion: 'v1' }
  * ```
  */
-/**
- * Parses a cartridges value that may be a colon-separated string,
- * comma-separated string, or already an array.
- */
-function parseCartridges(value: string | string[] | undefined): string[] | undefined {
-  if (value === undefined) return undefined;
-  if (Array.isArray(value)) return value.length > 0 ? value : undefined;
-  const items = value
-    .split(/[,:]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return items.length > 0 ? items : undefined;
-}
-
 export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfig {
   // `user-auth: true` is shorthand for `"auth-methods": ["user"]`. Setting
   // both in the same dw.json is ambiguous; reject it the same way the CLI

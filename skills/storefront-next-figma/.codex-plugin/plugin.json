@@ -1,0 +1,40 @@
+{
+  "name": "storefront-next-figma",
+  "version": "1.3.3",
+  "description": "Figma design-kit skills for Storefront Next verticals — duplicate the kit, sync brand variables, and publish Code Connect. Requires the Figma MCP server.",
+  "author": {
+    "name": "Salesforce"
+  },
+  "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
+  "repository": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling",
+  "license": "Apache-2.0",
+  "keywords": [
+    "salesforce",
+    "storefront-next",
+    "figma",
+    "design-system",
+    "b2c-commerce",
+    "commerce-cloud"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Storefront Next Figma",
+    "shortDescription": "Sync Storefront Next brand tokens with the Figma design kit.",
+    "longDescription": "Skills for keeping the Storefront Next design system in sync with Figma — duplicate the official kit for a new vertical, update Brand variable collections from brand.css, edit components at the correct layer, and publish Figma Code Connect mappings. Requires the Figma MCP server to be configured in your AI tool.",
+    "developerName": "Salesforce",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "logo": "./assets/logo.svg",
+    "composerIcon": "./assets/logo.svg",
+    "brandColor": "#0D9DDA",
+    "websiteURL": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
+    "defaultPrompt": [
+      "Duplicate the Storefront Next Figma kit for a new vertical",
+      "Sync my brand.css tokens into the Figma Brand variables",
+      "Update a component in the Figma kit and publish Code Connect",
+      "Set up the Figma kit for my new storefront brand"
+    ]
+  }
+}

@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "B2C DX VSCE",
   "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.7.0",
+  "version": "0.10.0",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -13,6 +13,7 @@
   ],
   "type": "module",
   "dependencies": {
+    "@salesforce/b2c-script-types": "workspace:*",
     "@salesforce/b2c-tooling-sdk": "workspace:*"
   },
   "engines": {
@@ -35,6 +36,13 @@
   ],
   "main": "./dist/extension.cjs",
   "contributes": {
+    "typescriptServerPlugins": [
+      {
+        "name": "@salesforce/b2c-script-types",
+        "enableForWorkspaceTypeScriptVersions": true,
+        "configNamespace": "b2c-dx"
+      }
+    ],
     "configuration": {
       "title": "B2C DX",
       "properties": {
@@ -97,6 +105,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable Code Sync (watch and deploy cartridges)."
+        },
+        "b2c-dx.features.scriptTypes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Provide Script API IntelliSense (dw/*) in cartridge JavaScript via the bundled TypeScript Server plugin. No files are written to your workspace."
         },
         "b2c-dx.telemetry.enabled": {
           "type": "boolean",
@@ -228,9 +241,9 @@
     ],
     "commands": [
       {
-        "command": "b2c-dx.openUI",
-        "title": "Open Page Designer Assistant UI",
-        "category": "B2C DX - Page Designer Assistant"
+        "command": "b2c-dx.debug.copySessionCookie",
+        "title": "Copy Debugger Session ID (dwsid)",
+        "category": "B2C DX"
       },
       {
         "command": "b2c-dx.promptAgent",
@@ -251,6 +264,12 @@
       {
         "command": "b2c-dx.apiBrowser.openSwagger",
         "title": "Open API Documentation",
+        "category": "B2C DX - API Browser"
+      },
+      {
+        "command": "b2c-dx.apiBrowser.scapiAdd",
+        "title": "Add to Storefront (sfnext scapi add)",
+        "icon": "$(add)",
         "category": "B2C DX - API Browser"
       },
       {
@@ -375,6 +394,11 @@
         "command": "b2c-dx.webdav.delete",
         "title": "Delete",
         "icon": "$(trash)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.webdav.rename",
+        "title": "Rename",
         "category": "B2C DX"
       },
       {
@@ -538,6 +562,12 @@
         "category": "B2C DX - Code Sync"
       },
       {
+        "command": "b2c-dx.codeSync.revealCartridge",
+        "title": "Reveal in Explorer",
+        "icon": "$(folder-opened)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
         "command": "b2c-dx.codeSync.uploadCartridge",
         "title": "Upload Cartridge",
         "icon": "$(cloud-upload)",
@@ -553,12 +583,6 @@
         "command": "b2c-dx.codeSync.downloadCartridge",
         "title": "Download from Instance",
         "icon": "$(cloud-download)",
-        "category": "B2C DX - Code Sync"
-      },
-      {
-        "command": "b2c-dx.codeSync.diffCartridge",
-        "title": "Compare with Instance",
-        "icon": "$(diff)",
         "category": "B2C DX - Code Sync"
       },
       {
@@ -590,6 +614,12 @@
         "title": "Activate Code Version",
         "icon": "$(check)",
         "category": "B2C DX - Code Sync"
+      },
+      {
+        "command": "b2c-dx.scriptTypes.refresh",
+        "title": "Refresh Script API IntelliSense",
+        "icon": "$(refresh)",
+        "category": "B2C DX"
       }
     ],
     "menus": {
@@ -662,6 +692,11 @@
       ],
       "view/item/context": [
         {
+          "command": "b2c-dx.apiBrowser.scapiAdd",
+          "when": "view == b2cApiBrowser && viewItem == apiSchema-shopper && b2c-dx.isStorefrontNext",
+          "group": "1_storefront@1"
+        },
+        {
           "command": "b2c-dx.webdav.addCatalog",
           "when": "view == b2cWebdavExplorer && viewItem == virtual-root-catalogs",
           "group": "0_add@0"
@@ -705,6 +740,11 @@
           "command": "b2c-dx.webdav.download",
           "when": "view == b2cWebdavExplorer && viewItem == file",
           "group": "1_open@2"
+        },
+        {
+          "command": "b2c-dx.webdav.rename",
+          "when": "view == b2cWebdavExplorer && viewItem =~ /^(directory|file)$/",
+          "group": "2_destructive@0"
         },
         {
           "command": "b2c-dx.webdav.delete",
@@ -797,6 +837,11 @@
           "group": "3_destructive@1"
         },
         {
+          "command": "b2c-dx.codeSync.revealCartridge",
+          "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
+          "group": "0_navigation@1"
+        },
+        {
           "command": "b2c-dx.codeSync.uploadCartridge",
           "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
           "group": "1_upload@1"
@@ -870,7 +915,15 @@
       ],
       "commandPalette": [
         {
+          "command": "b2c-dx.debug.copySessionCookie",
+          "when": "inDebugMode && debugType == 'b2c-script'"
+        },
+        {
           "command": "b2c-dx.apiBrowser.openSwagger",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.apiBrowser.scapiAdd",
           "when": "false"
         },
         {
@@ -938,6 +991,10 @@
           "when": "false"
         },
         {
+          "command": "b2c-dx.webdav.rename",
+          "when": "false"
+        },
+        {
           "command": "b2c-dx.webdav.download",
           "when": "false"
         },
@@ -998,10 +1055,6 @@
           "when": "false"
         },
         {
-          "command": "b2c-dx.codeSync.diffCartridge",
-          "when": "false"
-        },
-        {
           "command": "b2c-dx.codeSync.addToSitePath",
           "when": "false"
         },
@@ -1010,13 +1063,20 @@
           "when": "false"
         }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "b2c-dx.webdav.rename",
+        "key": "f2",
+        "when": "focusedView == b2cWebdavExplorer"
+      }
+    ]
   },
   "scripts": {
     "build": "node scripts/esbuild-bundle.mjs",
     "watch": "node scripts/esbuild-bundle.mjs --watch",
-    "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
-    "package": "pnpm exec vsce package --no-dependencies",
+    "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-script-types run build && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
+    "package": "pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
     "typecheck:agent": "tsc -p . --noEmit --pretty false",
@@ -1037,6 +1097,7 @@
     "@vscode/vsce": "^3.9.1",
     "c8": "catalog:",
     "esbuild": "^0.24.0",
+    "jszip": "3.10.1",
     "swagger-ui-dist": "^5.18.0",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",

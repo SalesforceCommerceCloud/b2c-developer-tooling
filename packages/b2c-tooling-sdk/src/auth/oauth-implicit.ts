@@ -7,6 +7,7 @@ import {createServer, type Server, type IncomingMessage, type ServerResponse} fr
 import type {Socket} from 'node:net';
 import {URL} from 'node:url';
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
+import {dispatchFetch} from './dispatch-fetch.js';
 import {getLogger} from '../logging/logger.js';
 import {decodeJWT} from './oauth.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
@@ -127,6 +128,11 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
   private _sub = '';
   private _hydrated = false;
 
+  /**
+   * Creates a new ImplicitOAuthStrategy instance.
+   *
+   * @param config - OAuth implicit flow configuration containing clientId, optional scopes, accountManagerHost, localPort, redirectUri, and openBrowser callback.
+   */
   constructor(private config: ImplicitOAuthConfig) {
     this.accountManagerHost = config.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST;
     this.localPort = config.localPort || parseInt(process.env.SFCC_OAUTH_LOCAL_PORT || '', 10) || DEFAULT_LOCAL_PORT;
@@ -220,8 +226,8 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
     headers.set('x-dw-client-id', this.config.clientId);
 
     const startTime = Date.now();
-    // Pass through dispatcher for TLS/mTLS support
-    let res = await fetch(url, {...init, headers} as RequestInit);
+    // Pass through dispatcher for TLS/mTLS support (see dispatchFetch)
+    let res = await dispatchFetch(url, {...init, headers});
     const duration = Date.now() - startTime;
 
     logger.debug({method, url, status: res.status, duration}, '[Auth] Response');
@@ -240,7 +246,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
       headers.set('Authorization', `Bearer ${newToken}`);
 
       const retryStart = Date.now();
-      res = await fetch(url, {...init, headers} as RequestInit);
+      res = await dispatchFetch(url, {...init, headers});
       const retryDuration = Date.now() - retryStart;
 
       logger.debug({method, url, status: res.status, duration: retryDuration}, '[Auth] Retry response');

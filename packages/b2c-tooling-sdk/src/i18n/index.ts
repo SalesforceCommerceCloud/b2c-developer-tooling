@@ -60,7 +60,17 @@
  */
 import i18next, {type TOptions, type Resource} from 'i18next';
 
-// Re-export TOptions for consumers
+/**
+ * Options for i18next translation string interpolation.
+ *
+ * Passed as the third parameter to {@link t | t()} to provide dynamic values
+ * for placeholder variables in translation strings (i18next double-brace syntax).
+ *
+ * @example
+ * t('error.fileNotFound', 'File {{path}} not found.', { path: '/foo/bar' })
+ *
+ * @see https://www.i18next.com/interpolation.html
+ */
 export type {TOptions} from 'i18next';
 import {locales} from './locales/index.js';
 
@@ -196,6 +206,7 @@ export function t(key: string, defaultValue: string, options?: TOptions): string
  * Call this early in CLI initialization if --lang flag is provided.
  *
  * @param lang - Language code (e.g., 'en', 'de')
+ * @returns void
  *
  * @example
  * // In BaseCommand.init()
@@ -209,6 +220,8 @@ export function setLanguage(lang: string): void {
 
 /**
  * Get the currently active language.
+ *
+ * @returns The currently active language code (e.g., 'en', 'de')
  */
 export function getLanguage(): string {
   return instance.language;
@@ -236,6 +249,8 @@ export function getLanguage(): string {
  *     serverRequired: 'Le serveur est requis.'
  *   }
  * })
+ *
+ * @returns The i18next instance for advanced usage
  */
 export function getI18nInstance() {
   return instance;

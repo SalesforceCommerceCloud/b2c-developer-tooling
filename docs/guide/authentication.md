@@ -52,7 +52,7 @@ In dw.json, the same shorthand is available as `"user-auth": true`. It is mutual
 
 **Client Credentials** uses the API client's secret for non-interactive authentication. This is ideal for CI/CD pipelines and automation.
 
-**JWT Bearer** uses a public/private certificate pair for secure authentication without storing client secrets. This is ideal for production environments and CI/CD where you want stronger security. See [JWT Authentication](#jwt-authentication-certificate-based) for details.
+**JWT Bearer** uses a public/private certificate pair for authentication without storing client secrets. See [JWT Authentication](#jwt-authentication-certificate-based) for details.
 
 **Stateful User Auth** uses `b2c auth login` to open a browser for interactive login once (Authorization Code + PKCE). The CLI persists both the access token *and* a long-lived refresh token, so subsequent commands silently refresh expired access tokens without re-opening the browser. Clear the session with `b2c auth logout`. See [Auth Commands](/cli/auth#b2c-auth-login) for details.
 
@@ -81,10 +81,6 @@ For Account Manager operations that require user-level roles (organization and A
 5. Configure the **Token Endpoint Auth Method**:
    - `client_secret_basic` for client credentials flow
    - `private_key_jwt` for JWT Bearer authentication (certificate-based)
-
-::: tip Certificate-Based Authentication
-For enhanced security, use JWT Bearer authentication instead of client secrets. This requires uploading a certificate to the API client and using the `--jwt-cert` and `--jwt-key` flags. See [JWT Authentication](#jwt-authentication-certificate-based) for setup instructions.
-:::
 
 ::: info
 For client credentials with secrets, use `client_secret_basic` (the default). `client_secret_post` is not currently supported.
@@ -168,7 +164,7 @@ If you're running the CLI behind a proxy where `localhost:8080` isn't reachable 
 
 ## JWT Authentication (Certificate-Based)
 
-JWT Bearer authentication (RFC 7523) provides a more secure alternative to client secrets by using public/private certificate pairs. This is ideal for production environments and CI/CD pipelines where you want to avoid storing sensitive secrets.
+JWT Bearer authentication (RFC 7523) is an alternative to client secrets that uses public/private certificate pairs. This can be useful in environments where you want to avoid storing client secrets.
 
 ### How It Works
 
@@ -179,9 +175,8 @@ JWT Bearer authentication (RFC 7523) provides a more secure alternative to clien
 
 ### Benefits
 
-- **More secure**: Private key never leaves your machine
-- **No secrets to leak**: No client secret to store or compromise
-- **Better for CI/CD**: Certificates can be rotated without updating secrets across pipelines
+- **No client secret required**: Authenticate without storing a client secret
+- **Rotation**: Certificates can be rotated without updating secrets across pipelines
 - **Industry standard**: Implements OAuth 2.0 JWT Bearer (RFC 7523)
 
 ### Setup Instructions
@@ -515,11 +510,14 @@ b2c scapi schemas list
 
 ## WebDAV Access
 
-WebDAV is required for file upload operations (`code deploy`, `code watch`, `webdav` commands).
+WebDAV is required for file upload operations (`code deploy`, `code watch`, `webdav` commands). There are two ways to authenticate, depending on who (or what) is connecting:
 
-### Option A: Basic Authentication (Recommended)
+- **Basic Authentication** — for individual developers using their own Business Manager account during interactive, local development.
+- **OAuth** — for API clients and automation (CI/CD pipelines, scripts) where no human is logging in.
 
-Use your Business Manager username and a WebDAV access key. These credentials provide better performance for file operations.
+### Option A: Basic Authentication (user access)
+
+Use your Business Manager username and a WebDAV access key. This is the simplest option for interactive, user-based access during local development.
 
 1. In Business Manager, go to **Administration** > **Organization** > **Users**
 2. Select your user
@@ -532,9 +530,9 @@ export SFCC_USERNAME=your-bm-username
 export SFCC_PASSWORD=your-webdav-access-key
 ```
 
-### Option B: OAuth-based WebDAV
+### Option B: OAuth-based WebDAV (API client access)
 
-If you prefer to use OAuth credentials for WebDAV (instead of basic auth), you must configure WebDAV Client Permissions:
+For API clients and automation (CI/CD), use OAuth credentials instead of a user's basic auth. This requires configuring WebDAV Client Permissions for the API client:
 
 1. Log in to Business Manager
 2. Navigate to **Administration** > **Organization** > **WebDAV Client Permissions**
@@ -613,8 +611,8 @@ Add the JSON configuration shown in [OCAPI Configuration](#ocapi-configuration) 
 
 Either:
 
-- Use your BM username + WebDAV access key (recommended), or
-- Configure WebDAV Client Permissions for OAuth
+- Use your BM username + WebDAV access key (for user-based, interactive development), or
+- Configure WebDAV Client Permissions for OAuth (for API clients and CI/CD)
 
 ### 4. Set Environment Variables
 

@@ -14,7 +14,7 @@ These flags are available on all WebDAV commands:
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--root`, `-r` | WebDAV root directory | `impex` |
+| `--root`, `-r` | WebDAV root directory | `IMPEX` |
 
 Available roots:
 
@@ -90,6 +90,13 @@ b2c webdav ls [PATH]
 |----------|-------------|---------|
 | `PATH` | Path relative to root | Root directory |
 
+### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-c, --columns` | Columns to display (comma-separated). Available: name, type, size, modified, contentType | name, type, size |
+| `-x, --extended` | Show all columns including extended fields | `false` |
+
 ### Examples
 
 ```bash
@@ -128,7 +135,7 @@ Download a file from WebDAV.
 ### Usage
 
 ```bash
-b2c webdav get <REMOTE> [LOCAL]
+b2c webdav get <REMOTE>
 ```
 
 ### Arguments
@@ -136,7 +143,12 @@ b2c webdav get <REMOTE> [LOCAL]
 | Argument | Description | Required |
 |----------|-------------|----------|
 | `REMOTE` | Remote file path relative to root | Yes |
-| `LOCAL` | Local destination path | No (uses filename in current directory) |
+
+### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-o, --output` | Output file path (use `-` for stdout) | Filename in current directory |
 
 ### Examples
 
@@ -145,7 +157,7 @@ b2c webdav get <REMOTE> [LOCAL]
 b2c webdav get src/instance/export.zip
 
 # Download to specific location
-b2c webdav get src/instance/export.zip ./downloads/export.zip
+b2c webdav get src/instance/export.zip -o ./downloads/export.zip
 
 # Download a log file
 b2c webdav get --root=logs customerror.log

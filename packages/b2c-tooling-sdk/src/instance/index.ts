@@ -19,7 +19,7 @@
  * ```typescript
  * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
  *
- * const config = resolveConfig({
+ * const config = await resolveConfig({
  *   clientId: process.env.SFCC_CLIENT_ID,
  *   clientSecret: process.env.SFCC_CLIENT_SECRET,
  * });
@@ -73,7 +73,7 @@ export interface InstanceConfig {
  * // From configuration (recommended)
  * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
  *
- * const config = resolveConfig({
+ * const config = await resolveConfig({
  *   clientId: process.env.SFCC_CLIENT_ID,
  *   clientSecret: process.env.SFCC_CLIENT_SECRET,
  * });
@@ -114,6 +114,8 @@ export class B2CInstance {
    * Uses Basic auth if username/password are configured,
    * otherwise falls back to OAuth.
    *
+   * @returns The lazy-initialized WebDAV client for file operations.
+   *
    * @example
    * await instance.webdav.mkcol('Cartridges/v1');
    * await instance.webdav.put('Cartridges/v1/app.zip', content);
@@ -135,6 +137,8 @@ export class B2CInstance {
    *
    * Returns the openapi-fetch client directly with full type safety.
    * Always uses OAuth authentication.
+   *
+   * @returns The OCAPI Data API client (openapi-fetch Client with full type safety).
    *
    * @example
    * const { data, error } = await instance.ocapi.GET('/sites', {});

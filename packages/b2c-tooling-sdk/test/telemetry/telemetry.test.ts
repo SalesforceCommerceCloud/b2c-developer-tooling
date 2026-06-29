@@ -8,7 +8,12 @@ import sinon from 'sinon';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import appInsights from 'applicationinsights';
+// The Telemetry wrapper delegates to our zero-dependency AppInsightsClient.
+// Stubbing its prototype methods (the class prototype is mutable) lets us assert
+// the {name, properties, measurements} contract Telemetry passes down without
+// hitting the network. Tests that observe client construction spy the SDK's own
+// `Telemetry.prototype.createClient` seam instead (see the `start` suite below).
+import {AppInsightsClient} from '../../src/telemetry/app-insights-client.js';
 import {Telemetry, createTelemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {configureLogger, resetLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
@@ -35,11 +40,10 @@ describe('telemetry/telemetry', () => {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-    trackEventStub = sandbox.stub(appInsights.TelemetryClient.prototype, 'trackEvent');
-    trackExceptionStub = sandbox.stub(appInsights.TelemetryClient.prototype, 'trackException');
-    flushStub = sandbox
-      .stub(appInsights.TelemetryClient.prototype, 'flush')
-      .callsFake((opts?: {callback?: (v: string) => void}) => opts?.callback?.(''));
+    trackEventStub = sandbox.stub(AppInsightsClient.prototype, 'trackEvent');
+    trackExceptionStub = sandbox.stub(AppInsightsClient.prototype, 'trackException');
+    // flush() takes no arguments and returns a Promise.
+    flushStub = sandbox.stub(AppInsightsClient.prototype, 'flush').resolves();
   });
 
   afterEach(() => {
@@ -348,6 +352,26 @@ describe('telemetry/telemetry', () => {
       expect(properties.key).to.equal('event');
     });
 
+    it('redacts the home directory ($HOME -> ~) in string property values for GDPR', async () => {
+      const originalHome = process.env.HOME;
+      process.env.HOME = '/Users/testuser';
+      try {
+        const telemetry = new Telemetry({
+          project: 'test-project',
+          appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
+        });
+
+        await telemetry.start();
+        telemetry.sendEvent('TEST_EVENT', {projectPath: '/Users/testuser/projects/x'});
+
+        const {properties} = trackEventStub.firstCall.args[0];
+        expect(properties.projectPath).to.equal('~/projects/x');
+      } finally {
+        if (originalHome !== undefined) process.env.HOME = originalHome;
+        else delete process.env.HOME;
+      }
+    });
+
     it('silently catches errors during send', async () => {
       trackEventStub.throws(new Error('Send failed'));
 
@@ -516,8 +540,12 @@ describe('telemetry/telemetry', () => {
   });
 
   describe('start', () => {
+    // The AppInsightsClient is constructed inside the private `createClient`
+    // method. Spying that seam (a normal class prototype, always mutable) lets
+    // us assert construction behaviour. The constructed client retains the
+    // supplied connection string on `config.connectionString`.
     it('does nothing when already started', async () => {
-      const constructorSpy = sandbox.spy(appInsights, 'TelemetryClient');
+      const createClientSpy = sandbox.spy(Telemetry.prototype, 'createClient' as never);
 
       const telemetry = new Telemetry({
         project: 'test-project',
@@ -527,21 +555,21 @@ describe('telemetry/telemetry', () => {
       await telemetry.start();
       await telemetry.start();
 
-      // TelemetryClient constructed only once
-      expect(constructorSpy.calledOnce).to.be.true;
+      // Client constructed only once
+      expect(createClientSpy.calledOnce).to.be.true;
     });
 
     it('does not create client when appInsightsKey is not provided', async () => {
-      const constructorSpy = sandbox.spy(appInsights, 'TelemetryClient');
+      const createClientSpy = sandbox.spy(Telemetry.prototype, 'createClient' as never);
 
       const telemetry = new Telemetry({project: 'test-project'});
       await telemetry.start();
 
-      expect(constructorSpy.called).to.be.false;
+      expect(createClientSpy.called).to.be.false;
     });
 
     it('creates client with correct connection string', async () => {
-      const constructorSpy = sandbox.spy(appInsights, 'TelemetryClient');
+      const createClientSpy = sandbox.spy(Telemetry.prototype, 'createClient' as never);
 
       const telemetry = new Telemetry({
         project: 'test-project',
@@ -550,8 +578,25 @@ describe('telemetry/telemetry', () => {
 
       await telemetry.start();
 
-      expect(constructorSpy.calledOnce).to.be.true;
-      expect(constructorSpy.firstCall.args[0]).to.equal('InstrumentationKey=11111111-1111-1111-1111-111111111111');
+      expect(createClientSpy.calledOnce).to.be.true;
+      // The client retains the supplied connection string on `config.connectionString`.
+      const client = (telemetry as unknown as {client?: {config?: {connectionString?: string}}}).client;
+      expect(client?.config?.connectionString).to.equal('InstrumentationKey=11111111-1111-1111-1111-111111111111');
+    });
+
+    it('sets GDPR context tags on the client (user id + suppressed cloud role instance)', async () => {
+      const telemetry = new Telemetry({
+        project: 'test-project',
+        appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
+      });
+
+      await telemetry.start();
+
+      const client = (telemetry as unknown as {client?: {context?: {tags?: Record<string, string>}}}).client;
+      // Machine-identifying cloud role instance must be suppressed (GDPR).
+      expect(client?.context?.tags?.['ai.cloud.roleInstance']).to.equal('');
+      // User id carries the persistent (pseudonymous) cliId.
+      expect(client?.context?.tags?.['ai.user.id']).to.be.a('string').and.not.be.empty;
     });
   });
 
@@ -605,8 +650,9 @@ describe('telemetry/telemetry', () => {
       await telemetry.start();
       await telemetry.flush();
 
+      // AppInsightsClient.flush() takes no arguments and returns a Promise.
       expect(flushStub.calledOnce).to.be.true;
-      expect(flushStub.firstCall.args[0]).to.have.property('callback');
+      expect(flushStub.firstCall.args).to.have.length(0);
     });
 
     it('allows sending events after flush', async () => {
@@ -624,6 +670,67 @@ describe('telemetry/telemetry', () => {
       expect(trackEventStub.calledTwice).to.be.true;
       expect(trackEventStub.firstCall.args[0].name).to.equal('test-project/BEFORE_FLUSH');
       expect(trackEventStub.secondCall.args[0].name).to.equal('test-project/AFTER_FLUSH');
+    });
+  });
+
+  describe('periodic auto-flush (flushIntervalMs)', () => {
+    it('flushes on the configured interval for long-lived hosts', async () => {
+      const clock = sinon.useFakeTimers();
+      try {
+        const telemetry = new Telemetry({
+          project: 'test-project',
+          appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
+          flushIntervalMs: 1000,
+        });
+
+        await telemetry.start();
+        expect(flushStub.called).to.be.false;
+
+        await clock.tickAsync(1000);
+        expect(flushStub.calledOnce).to.be.true;
+
+        await clock.tickAsync(1000);
+        expect(flushStub.calledTwice).to.be.true;
+      } finally {
+        clock.restore();
+      }
+    });
+
+    it('does not start a timer when flushIntervalMs is not set', async () => {
+      const setIntervalSpy = sinon.spy(global, 'setInterval');
+      try {
+        const telemetry = new Telemetry({
+          project: 'test-project',
+          appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
+        });
+        await telemetry.start();
+        expect(setIntervalSpy.called).to.be.false;
+      } finally {
+        setIntervalSpy.restore();
+      }
+    });
+
+    it('clears the interval timer on stop', async () => {
+      const clock = sinon.useFakeTimers();
+      try {
+        const telemetry = new Telemetry({
+          project: 'test-project',
+          appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
+          flushIntervalMs: 1000,
+        });
+
+        await telemetry.start();
+        const stopPromise = telemetry.stop();
+        await clock.tickAsync(300); // drain delay in stop()
+        await stopPromise;
+
+        const flushesAfterStop = flushStub.callCount;
+        await clock.tickAsync(5000);
+        // No further periodic flushes once stopped.
+        expect(flushStub.callCount).to.equal(flushesAfterStop);
+      } finally {
+        clock.restore();
+      }
     });
   });
 

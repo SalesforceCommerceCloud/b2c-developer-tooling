@@ -4,6 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
+import {dispatchFetch} from './dispatch-fetch.js';
+import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {globalAuthMiddlewareRegistry, applyAuthRequestMiddleware, applyAuthResponseMiddleware} from './middleware.js';
@@ -98,11 +100,37 @@ export function invalidateCachedOAuthToken(cacheKey: string): void {
   ACCESS_TOKEN_CACHE.delete(cacheKey);
 }
 
+/**
+ * OAuth 2.0 Client Credentials authentication strategy.
+ *
+ * Implements the client credentials flow for automated/server-side authentication
+ * with no user interaction required. Automatically manages token caching, expiration,
+ * and 401 retry logic with single-flight token requests to prevent thundering herd
+ * on the token endpoint.
+ *
+ * @example
+ * ```typescript
+ * import { OAuthStrategy } from '@salesforce/b2c-tooling-sdk';
+ *
+ * const auth = new OAuthStrategy({
+ *   clientId: 'your-client-id',
+ *   clientSecret: 'your-client-secret',
+ *   scopes: ['sfcc.products'],
+ * });
+ *
+ * const response = await auth.fetch('https://api.example.com/products');
+ * ```
+ */
 export class OAuthStrategy implements AuthStrategy {
   private accountManagerHost: string;
   private _hasHadSuccess = false;
   private cacheKey: string;
 
+  /**
+   * Creates a new OAuthStrategy instance with the provided OAuth configuration.
+   *
+   * @param config - OAuth client credentials and optional configuration
+   */
   constructor(private config: OAuthConfig) {
     this.accountManagerHost = config.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST;
     this.cacheKey = getOAuthCacheKey(
@@ -113,6 +141,18 @@ export class OAuthStrategy implements AuthStrategy {
     );
   }
 
+  /**
+   * Performs a fetch request with OAuth bearer token authentication.
+   *
+   * Automatically injects the Authorization header and client ID header with a valid
+   * access token. Implements 401 retry logic: if a previously-successful request
+   * returns 401, invalidates the cached token and retries once with a fresh token.
+   * Does not retry on initial 401 to avoid retrying with bad credentials.
+   *
+   * @param url - The URL to fetch
+   * @param init - Optional fetch init options (headers, body, method, etc.)
+   * @returns The fetch response
+   */
   async fetch(url: string, init: FetchInit = {}): Promise<Response> {
     const token = await this.getAccessToken();
 
@@ -120,9 +160,8 @@ export class OAuthStrategy implements AuthStrategy {
     headers.set('Authorization', `Bearer ${token}`);
     headers.set('x-dw-client-id', this.config.clientId);
 
-    // Pass through dispatcher for TLS/mTLS support
-    // Node.js fetch accepts dispatcher as an undocumented option
-    let res = await fetch(url, {...init, headers} as RequestInit);
+    // Pass through dispatcher for TLS/mTLS support (see dispatchFetch)
+    let res = await dispatchFetch(url, {...init, headers});
 
     if (res.status !== 401) {
       this._hasHadSuccess = true;
@@ -135,7 +174,7 @@ export class OAuthStrategy implements AuthStrategy {
       this.invalidateToken();
       const newToken = await this.getAccessToken();
       headers.set('Authorization', `Bearer ${newToken}`);
-      res = await fetch(url, {...init, headers} as RequestInit);
+      res = await dispatchFetch(url, {...init, headers});
     }
 
     return res;
@@ -280,7 +319,13 @@ export class OAuthStrategy implements AuthStrategy {
     logger.trace({method, url, headers: requestHeaders, body: params.toString()}, `[Auth REQ BODY] ${method} ${url}`);
 
     const startTime = Date.now();
-    let response = await fetch(request);
+    let response: Response;
+    try {
+      response = await fetch(request);
+    } catch (err) {
+      const host = new URL(url).host;
+      throw wrapNetworkError(err, {operation: 'OAuth token request', host});
+    }
 
     // Apply response middleware
     response = await applyAuthResponseMiddleware(request, response, middleware);

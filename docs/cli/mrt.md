@@ -103,8 +103,9 @@ b2c mrt project list --json
 Create a new MRT project.
 
 ```bash
-b2c mrt project create my-storefront --name "My Storefront"
-b2c mrt project create my-storefront --name "My Storefront" --organization my-org
+b2c mrt project create "My Storefront" --organization my-org
+b2c mrt project create "My Storefront" -o my-org --slug my-storefront
+b2c mrt project create "My Storefront" -o my-org --region us-east-1
 ```
 
 ### b2c mrt project get
@@ -313,6 +314,20 @@ Update an environment.
 b2c mrt env update -p my-storefront -e staging --name "Updated Staging"
 b2c mrt env update -p my-storefront -e production --allow-cookies
 ```
+
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `--name`, `-n` | Display name for the environment |
+| `--production` | Mark as a production environment |
+| `--hostname` | Hostname pattern for V8 Tag loading (use empty string to clear) |
+| `--external-hostname` | Full external hostname (use empty string to clear) |
+| `--external-domain` | External domain for Universal PWA SSR (use empty string to clear) |
+| `--allow-cookies` | Forward HTTP cookies to origin |
+| `--enable-source-maps` | Enable source map support in the environment |
+| `--log-level` | Log level for the environment (`DEBUG`, `INFO`, `WARN`, `ERROR`, `TRACE`, `FATAL`) |
+| `--whitelisted-ips` | IP whitelist (CIDR blocks, space-separated; use empty string to clear) |
+| `--proxy` | Proxy configuration in format `path=host` (repeatable) |
 
 ### b2c mrt env delete
 

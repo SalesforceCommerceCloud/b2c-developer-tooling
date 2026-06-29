@@ -5,7 +5,7 @@ description: Search and read B2C Commerce Script API documentation and XSD schem
 
 # B2C Docs Skill
 
-Use the `b2c` CLI to search and read bundled Script API documentation and XSD schemas for Salesforce B2C Commerce.
+Use the `b2c` CLI to search and read bundled Script API documentation, the **standard (system) job step catalog**, and XSD schemas for Salesforce B2C Commerce.
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli docs search ProductMgr`).
 
@@ -22,6 +22,9 @@ b2c docs search "catalog product"
 
 # Limit results
 b2c docs search status --limit 5
+
+# Find a standard job step by type ID
+b2c docs search ImportCatalog
 
 # List all available documentation
 b2c docs search --list
@@ -43,15 +46,32 @@ b2c docs read ProductMgr --raw
 b2c docs read ProductMgr --json
 ```
 
-### Download Documentation
+### Standard Job Step Catalog
 
-Download the latest Script API documentation from a B2C Commerce instance:
+The same bundled corpus includes the catalog of **standard (system) job step type IDs** — the built-in steps (for example `ImportCatalog`, `ExportCatalog`, `ImportInventoryLists`) added to Business Manager job flows. Each step's page lists its purpose and configuration parameters (required, defaults, allowed values).
 
 ```bash
-# Download to a directory
+# Read the catalog overview (all standard step type IDs)
+b2c docs read job-steps
+
+# Read a specific step's purpose + configuration parameters
+b2c docs read ImportCatalog
+
+# Search for a step
+b2c docs search "import price"
+```
+
+For how standard steps fit into job flows — chaining with custom steps, IMPEX file hand-off, and when to use an in-flow step vs. the CLI equivalent — see the `b2c:b2c-custom-job-steps` and `b2c-cli:b2c-job` skills.
+
+### Download Documentation
+
+Download the latest Script API documentation from a B2C Commerce instance. The CLI auto-discovers the target server and credentials from `dw.json`, `SFCC_*` env vars, and configuration plugins — `--server` is only needed to override. Run `b2c setup inspect` to confirm what the CLI sees; see the `b2c-cli:b2c-config` skill for troubleshooting.
+
+```bash
+# Download to a directory (uses configured instance)
 b2c docs download ./my-docs
 
-# Download with specific server
+# Override server explicitly
 b2c docs download ./docs --server sandbox.demandware.net
 
 # Keep the original archive

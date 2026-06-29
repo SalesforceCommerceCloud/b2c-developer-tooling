@@ -42,6 +42,7 @@ describe('registry', () => {
       expect(registry).to.have.property('PWAV3');
       expect(registry).to.have.property('SCAPI');
       expect(registry).to.have.property('STOREFRONTNEXT');
+      expect(registry).to.have.property('STOREFRONTNEXT_DEPRECATED');
     });
 
     it('should create CARTRIDGES tools', () => {
@@ -89,7 +90,7 @@ describe('registry', () => {
       expect(toolNames).to.include('scapi_custom_api_generate_scaffold');
     });
 
-    it('should create STOREFRONTNEXT tools', () => {
+    it('should create STOREFRONTNEXT tools (shared GA tools only; sfnext_* are deprecated)', () => {
       const loadServices = createMockLoadServicesWrapper();
       const registry = createToolRegistry(loadServices);
 
@@ -97,10 +98,28 @@ describe('registry', () => {
       expect(registry.STOREFRONTNEXT.length).to.be.greaterThan(0);
 
       const toolNames = registry.STOREFRONTNEXT.map((t) => t.name);
+      // mrt_bundle_push and scapi tools appear in STOREFRONTNEXT (multi-toolset, GA)
+      expect(toolNames).to.include('mrt_bundle_push');
+      expect(toolNames).to.include('scapi_schemas_list');
+      // The legacy sfnext_* tools have moved to STOREFRONTNEXT_DEPRECATED
+      expect(toolNames).to.not.include('sfnext_get_guidelines');
+      expect(toolNames).to.not.include('sfnext_add_page_designer_decorator');
+    });
+
+    it('should create STOREFRONTNEXT_DEPRECATED tools (legacy sfnext_* tools)', () => {
+      const loadServices = createMockLoadServicesWrapper();
+      const registry = createToolRegistry(loadServices);
+
+      expect(registry.STOREFRONTNEXT_DEPRECATED).to.be.an('array');
+      expect(registry.STOREFRONTNEXT_DEPRECATED.length).to.be.greaterThan(0);
+
+      const toolNames = registry.STOREFRONTNEXT_DEPRECATED.map((t) => t.name);
       expect(toolNames).to.include('sfnext_get_guidelines');
       expect(toolNames).to.include('sfnext_add_page_designer_decorator');
-      // mrt_bundle_push should also appear in STOREFRONTNEXT (multi-toolset)
-      expect(toolNames).to.include('mrt_bundle_push');
+      expect(toolNames).to.include('sfnext_configure_theme');
+      expect(toolNames).to.include('sfnext_start_figma_workflow');
+      expect(toolNames).to.include('sfnext_analyze_component');
+      expect(toolNames).to.include('sfnext_match_tokens_to_theme');
     });
 
     it('should assign correct toolsets to each tool', () => {
@@ -123,6 +142,9 @@ describe('registry', () => {
       for (const tool of registry.STOREFRONTNEXT) {
         expect(tool.toolsets).to.include('STOREFRONTNEXT');
       }
+      for (const tool of registry.STOREFRONTNEXT_DEPRECATED) {
+        expect(tool.toolsets).to.include('STOREFRONTNEXT_DEPRECATED');
+      }
     });
 
     it('registered tool handlers are invokable end-to-end', async () => {
@@ -131,8 +153,8 @@ describe('registry', () => {
       // Uses sfnext_get_guidelines (pure, no network/services needed).
       const loadServices = createMockLoadServicesWrapper();
       const registry = createToolRegistry(loadServices);
-      const tool = registry.STOREFRONTNEXT.find((t) => t.name === 'sfnext_get_guidelines');
-      expect(tool, 'sfnext_get_guidelines must be registered in STOREFRONTNEXT').to.not.be.undefined;
+      const tool = registry.STOREFRONTNEXT_DEPRECATED.find((t) => t.name === 'sfnext_get_guidelines');
+      expect(tool, 'sfnext_get_guidelines must be registered in STOREFRONTNEXT_DEPRECATED').to.not.be.undefined;
 
       const result = await tool!.handler({sections: ['quick-reference']});
       expect(result).to.have.property('content');
@@ -159,6 +181,10 @@ describe('registry', () => {
       expect(server.registeredTools.length).to.be.greaterThan(0);
       // SCAPI tools should be registered as fallback
       expect(server.registeredTools).to.include('scapi_schemas_list');
+      // DIAGNOSTICS is a base toolset too — log/debugger/docs tools are
+      // auto-enabled for every project type, including unknown workspaces.
+      expect(server.registeredTools).to.include('logs_list_files');
+      expect(server.registeredTools).to.include('docs_search');
     });
 
     it('should skip auto-discovery when empty toolsets array is explicitly provided', async () => {
@@ -218,11 +244,55 @@ describe('registry', () => {
       const loadServices = createMockLoadServicesWrapper();
       await registerToolsets(flags, server, loadServices);
 
-      // Should include tools from all toolsets (placeholder tools removed)
+      // Should include tools from all non-deprecated toolsets (placeholder tools removed)
       expect(server.registeredTools).to.include('cartridge_deploy');
       expect(server.registeredTools).to.include('mrt_bundle_push');
       expect(server.registeredTools).to.include('scapi_schemas_list');
+      // ALL excludes the deprecated toolset — sfnext_* tools must NOT be registered
+      expect(server.registeredTools).to.not.include('sfnext_get_guidelines');
+      expect(server.registeredTools).to.not.include('sfnext_add_page_designer_decorator');
+    });
+
+    it('should NOT register deprecated toolset tools when ALL is specified', async () => {
+      const server = createMockServer();
+      const flags: StartupFlags = {
+        toolsets: ['ALL'],
+        allowNonGaTools: true,
+      };
+
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
+
+      // The deprecated toolset is opt-in only and excluded from ALL.
+      for (const toolName of [
+        'sfnext_get_guidelines',
+        'sfnext_add_page_designer_decorator',
+        'sfnext_configure_theme',
+        'sfnext_start_figma_workflow',
+        'sfnext_analyze_component',
+        'sfnext_match_tokens_to_theme',
+      ]) {
+        expect(server.registeredTools).to.not.include(toolName);
+      }
+    });
+
+    it('should register deprecated tools only when STOREFRONTNEXT_DEPRECATED is explicitly requested', async () => {
+      const server = createMockServer();
+      const flags: StartupFlags = {
+        toolsets: ['STOREFRONTNEXT_DEPRECATED'],
+        allowNonGaTools: true,
+      };
+
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
+
+      // All legacy sfnext_* tools should be registered when explicitly requested
       expect(server.registeredTools).to.include('sfnext_get_guidelines');
+      expect(server.registeredTools).to.include('sfnext_add_page_designer_decorator');
+      expect(server.registeredTools).to.include('sfnext_configure_theme');
+      expect(server.registeredTools).to.include('sfnext_start_figma_workflow');
+      expect(server.registeredTools).to.include('sfnext_analyze_component');
+      expect(server.registeredTools).to.include('sfnext_match_tokens_to_theme');
     });
 
     it('should register individual tools via --tools flag', async () => {
@@ -344,15 +414,15 @@ describe('registry', () => {
     it('should skip non-GA tools when allowNonGaTools is false', async () => {
       const server = createMockServer();
       const flags: StartupFlags = {
-        toolsets: ['STOREFRONTNEXT'],
+        toolsets: ['STOREFRONTNEXT_DEPRECATED'],
         allowNonGaTools: false,
       };
 
       const loadServices = createMockLoadServicesWrapper();
       await registerToolsets(flags, server, loadServices);
 
-      // STOREFRONTNEXT-only tools are non-GA (isGA: false), so they should be skipped.
-      // Multi-toolset GA tools (mrt_bundle_push, scapi_*) that appear in STOREFRONTNEXT are still registered.
+      // The deprecated sfnext_* tools are non-GA (isGA: false), so even when the
+      // deprecated toolset is explicitly requested they are skipped without --allow-non-ga-tools.
       const sfnextOnlyTools = ['sfnext_get_guidelines', 'sfnext_add_page_designer_decorator'];
       for (const toolName of sfnextOnlyTools) {
         expect(server.registeredTools).to.not.include(toolName);

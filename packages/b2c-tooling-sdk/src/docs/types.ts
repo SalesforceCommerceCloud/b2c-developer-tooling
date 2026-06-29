@@ -15,6 +15,7 @@ const packageRoot = path.dirname(require.resolve('@salesforce/b2c-tooling-sdk/pa
 
 export const SCRIPT_API_DATA_DIR = path.join(packageRoot, 'data/script-api');
 export const XSD_DATA_DIR = path.join(packageRoot, 'data/xsd');
+export const JOB_STEPS_DATA_DIR = path.join(packageRoot, 'data/job-steps');
 
 /**
  * A documentation entry in the search index.

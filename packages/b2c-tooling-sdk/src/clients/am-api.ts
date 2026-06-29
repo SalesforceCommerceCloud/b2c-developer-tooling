@@ -27,6 +27,7 @@ import type {
 } from './am-apiclients-api.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
+import {wrapNetworkError} from '../errors/network-error.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {getLogger} from '../logging/logger.js';
 
@@ -38,7 +39,13 @@ import {getLogger} from '../logging/logger.js';
 export const ROLE_TENANT_FILTER_PATTERN = /^(\w+:\w{4,}_\w{3,}(,\w{4,}_\w{3,})*(;)?)*$/;
 
 /**
- * Returns true if the value matches the Account Manager role tenant filter format.
+ * Validates whether a string matches the Account Manager role tenant filter format.
+ *
+ * Format: `ROLE_ENUM:realm_instance(,realm_instance)*(;ROLE_ENUM:...)*`
+ * Examples: `SALESFORCE_COMMERCE_API:abcd_prd` or `bm-admin:tenant1,tenant2;ECOM_USER:wxyz_stg`
+ *
+ * @param value - The string to validate
+ * @returns True if the value matches the role tenant filter format, false otherwise
  */
 export function isValidRoleTenantFilter(value: string): boolean {
   return value.length > 0 && ROLE_TENANT_FILTER_PATTERN.test(value);
@@ -746,6 +753,12 @@ export async function listApiClients(
 
 /**
  * Retrieves an API client by ID.
+ *
+ * @param client - Account Manager API Clients client instance
+ * @param apiClientId - ID of the API client to retrieve
+ * @param expand - Optional array of fields to expand in the response
+ * @returns Promise resolving to the API client details
+ * @throws Error if the API client is not found (404) or if the request fails
  */
 export async function getApiClient(
   client: AccountManagerApiClientsClient,
@@ -825,6 +838,12 @@ export async function createApiClient(
 
 /**
  * Updates an existing API client.
+ *
+ * @param client - Account Manager API Clients client
+ * @param apiClientId - API client ID to update
+ * @param body - API client update data
+ * @returns Updated API client
+ * @throws Error if request fails or if the request body contains validation errors
  */
 export async function updateApiClient(
   client: AccountManagerApiClientsClient,
@@ -1121,7 +1140,13 @@ export function createAccountManagerOrgsClient(
     // Apply middleware chain to request
     request = await applyMiddleware(request);
 
-    const response = await fetch(request);
+    let response: Response;
+    try {
+      response = await fetch(request);
+    } catch (err) {
+      const host = new URL(baseUrl).host;
+      throw wrapNetworkError(err, {operation: 'Account Manager API request', host});
+    }
 
     // Apply middleware chain to response
     const processedResponse = await processResponse(request, response);

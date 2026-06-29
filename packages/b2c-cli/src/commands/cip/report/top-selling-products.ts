@@ -6,8 +6,14 @@
 
 import {withDocs} from '../../../i18n/index.js';
 import {CipReportCommand} from '../../../utils/cip/report-command.js';
-import {createSiteIdFlag} from '../../../utils/cip/report-flags.js';
+import {buildReportFlags, requireReport} from '../../../utils/cip/report-flags.js';
 
+const REPORT_NAME = 'top-selling-products';
+
+/**
+ * `b2c cip report top-selling-products` — flags are auto-derived from the catalog
+ * definition; param parsing/validation lives in {@link CipReportCommand} and the SDK.
+ */
 export default class CipReportTopSellingProducts extends CipReportCommand<typeof CipReportTopSellingProducts> {
   static description = withDocs(
     'Identify top selling products across channels',
@@ -19,12 +25,8 @@ export default class CipReportTopSellingProducts extends CipReportCommand<typeof
   static flags = {
     ...CipReportCommand.baseFlags,
     ...CipReportCommand.reportFlags,
-    'site-id': createSiteIdFlag(),
+    ...buildReportFlags(requireReport(REPORT_NAME)),
   };
 
-  protected readonly reportName = 'top-selling-products';
-
-  protected getReportParams(): Record<string, string> {
-    return this.getBaseReportParams();
-  }
+  protected readonly reportName = REPORT_NAME;
 }

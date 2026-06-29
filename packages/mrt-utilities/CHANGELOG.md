@@ -1,5 +1,23 @@
 # @salesforce/mrt-utilities
 
+## 0.2.2
+
+### Patch Changes
+
+- [#450](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/450) [`3a1ec21`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3a1ec21ab0a6e804e3fc1d849a5bf78ddbff9ddd) - Bump qs to 6.15.2 and picomatch to 2.3.2/4.0.4 to resolve CVE-2026-2391 and CVE-2026-33671 (Thanks [@kevinxh](https://github.com/kevinxh)!)
+
+## 0.2.1
+
+### Patch Changes
+
+- [#446](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/446) [`a9a07c4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a9a07c4266eaf1b4f54ae6c1ed936b0d9f79951b) - Bumped @aws-sdk packages to 3.1049.0 to resolve CVE-2026-25128 (fast-xml-parser uncaught exception vulnerability) (Thanks [@kevinxh](https://github.com/kevinxh)!)
+
+## 0.2.0
+
+### Minor Changes
+
+- [#426](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/426) [`3779ebd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3779ebd8fe9e2b791dac32c238b0456888b03a46) - Update proxy to keep user agent and ACH for SCAPI proxy (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
 ## 0.1.7
 
 ### Patch Changes

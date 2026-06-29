@@ -35,6 +35,7 @@ inside the hooks property:
 "hooks": [
      {"name": "dw.extensions.payments.asyncPaymentSucceeded", "script": "./payments.js"},
      {"name": "dw.extensions.payments.adyenNotification", "script": "./payments.js"},
+     {"name": "dw.extensions.payments.adyenFailureNotification", "script": "./payments.js"},
      {"name": "dw.extensions.payments.sendOrderConfirmationEmail", "script": "./emails.js"}
 ]
 ```
@@ -54,6 +55,7 @@ A hook entry has a 'name' and a 'script' property.
 
 | Constant | Description |
 | --- | --- |
+| [extensionPointAdyenFailureNotification](#extensionpointadyenfailurenotification): [String](TopLevel.String.md) = "dw.extensions.payments.adyenFailureNotification" | The extension point name dw.extensions.payments.adyenFailureNotification. |
 | [extensionPointAdyenNotification](#extensionpointadyennotification): [String](TopLevel.String.md) = "dw.extensions.payments.adyenNotification" | The extension point name dw.extensions.payments.adyenNotification. |
 | [extensionPointAsyncPaymentSucceeded](#extensionpointasyncpaymentsucceeded): [String](TopLevel.String.md) = "dw.extensions.payments.asyncPaymentSucceeded" | The extension point name dw.extensions.payments.asyncPaymentSucceeded. |
 | [extensionPointSendOrderConfirmationEmail](#extensionpointsendorderconfirmationemail): [String](TopLevel.String.md) = "dw.extensions.payments.sendOrderConfirmationEmail" | The extension point name dw.extensions.payments.sendOrderConfirmationEmail. |
@@ -66,6 +68,7 @@ This class does not have a constructor, so you cannot create it directly.
 
 | Method | Description |
 | --- | --- |
+| [adyenFailureNotification](dw.extensions.payments.SalesforcePaymentsHooks.md#adyenfailurenotificationorder)([Order](dw.order.Order.md)) | Called when an Adyen webhook notification with a failed payment is received for the given order. |
 | [adyenNotification](dw.extensions.payments.SalesforcePaymentsHooks.md#adyennotificationorder)([Order](dw.order.Order.md)) | Called when an Adyen webhook notification is received for the given order. |
 | [asyncPaymentSucceeded](dw.extensions.payments.SalesforcePaymentsHooks.md#asyncpaymentsucceededorder)([Order](dw.order.Order.md)) | Called when asynchronous payment succeeded for the given order. |
 | [sendOrderConfirmationEmail](dw.extensions.payments.SalesforcePaymentsHooks.md#sendorderconfirmationemailorder)([Order](dw.order.Order.md)) | Called to send order confirmation email after successful payment processing. |
@@ -75,6 +78,14 @@ This class does not have a constructor, so you cannot create it directly.
 
 [assign](TopLevel.Object.md#assignobject-object), [create](TopLevel.Object.md#createobject), [create](TopLevel.Object.md#createobject-object), [defineProperties](TopLevel.Object.md#definepropertiesobject-object), [defineProperty](TopLevel.Object.md#definepropertyobject-object-object), [entries](TopLevel.Object.md#entriesobject), [freeze](TopLevel.Object.md#freezeobject), [fromEntries](TopLevel.Object.md#fromentriesiterable), [getOwnPropertyDescriptor](TopLevel.Object.md#getownpropertydescriptorobject-object), [getOwnPropertyNames](TopLevel.Object.md#getownpropertynamesobject), [getOwnPropertySymbols](TopLevel.Object.md#getownpropertysymbolsobject), [getPrototypeOf](TopLevel.Object.md#getprototypeofobject), [hasOwnProperty](TopLevel.Object.md#hasownpropertystring), [is](TopLevel.Object.md#isobject-object), [isExtensible](TopLevel.Object.md#isextensibleobject), [isFrozen](TopLevel.Object.md#isfrozenobject), [isPrototypeOf](TopLevel.Object.md#isprototypeofobject), [isSealed](TopLevel.Object.md#issealedobject), [keys](TopLevel.Object.md#keysobject), [preventExtensions](TopLevel.Object.md#preventextensionsobject), [propertyIsEnumerable](TopLevel.Object.md#propertyisenumerablestring), [seal](TopLevel.Object.md#sealobject), [setPrototypeOf](TopLevel.Object.md#setprototypeofobject-object), [toLocaleString](TopLevel.Object.md#tolocalestring), [toString](TopLevel.Object.md#tostring), [valueOf](TopLevel.Object.md#valueof), [values](TopLevel.Object.md#valuesobject)
 ## Constant Details
+
+### extensionPointAdyenFailureNotification
+
+- extensionPointAdyenFailureNotification: [String](TopLevel.String.md) = "dw.extensions.payments.adyenFailureNotification"
+  - : The extension point name dw.extensions.payments.adyenFailureNotification.
+
+
+---
 
 ### extensionPointAdyenNotification
 
@@ -109,6 +120,19 @@ This class does not have a constructor, so you cannot create it directly.
 ---
 
 ## Method Details
+
+### adyenFailureNotification(Order)
+- adyenFailureNotification(order: [Order](dw.order.Order.md)): [Status](dw.system.Status.md)
+  - : Called when an Adyen webhook notification with a failed payment is received for the given order.
+
+    **Parameters:**
+    - order - the order for which the failure notification was received
+
+    **Returns:**
+    - a non-null result ends the hook execution, and is ignored
+
+
+---
 
 ### adyenNotification(Order)
 - adyenNotification(order: [Order](dw.order.Order.md)): [Status](dw.system.Status.md)

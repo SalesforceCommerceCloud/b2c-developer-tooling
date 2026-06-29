@@ -1,5 +1,133 @@
 # @salesforce/b2c-cli
 
+## 1.17.2
+
+### Patch Changes
+
+- [#519](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/519) [`3958d6e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3958d6eb568a1e91061f4203c986a124c480e12f) - Network errors during `b2c code deploy` and other WebDAV operations are now classified (timeout, connection reset, DNS, TLS, etc.) with actionable error messages including the operation, host, and remediation hints — no more bare "fetch failed". The server-side unzip step now has an explicit timeout, and if the connection drops it reports a clear error noting the server may still be extracting the archive (so it is not silently re-run, which could corrupt the code version) and leaves the uploaded archive in place for verification. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`11b84b1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/11b84b19da380cd02f5049babd8cf2794d8ca019), [`3958d6e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3958d6eb568a1e91061f4203c986a124c480e12f), [`11b84b1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/11b84b19da380cd02f5049babd8cf2794d8ca019)]:
+  - @salesforce/b2c-tooling-sdk@1.16.0
+
+## 1.17.1
+
+### Patch Changes
+
+- [#509](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/509) [`3bc78c4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3bc78c422d57b590b2435fd6ae0a31fffc4bd7e7) - Surface Managed Runtime deploy warnings (including the x86 environment deprecation notice) when pushing or deploying a bundle. The warning is informational and does not block the deploy. (Thanks [@sf-rahul-kumawat](https://github.com/sf-rahul-kumawat)!)
+
+- Updated dependencies [[`3bc78c4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3bc78c422d57b590b2435fd6ae0a31fffc4bd7e7)]:
+  - @salesforce/b2c-tooling-sdk@1.15.1
+
+## 1.17.0
+
+### Minor Changes
+
+- [#512](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/512) [`3bce44e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3bce44e2e6d4cea3cf64e34eff1246d86e459b73) - Add a `--create-pr` flag to `cap install`. When a Commerce App includes Storefront Next content and a repository is connected to the storefront, this opens a pull request with the app's storefront changes instead of applying them directly. Off by default. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`3bce44e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3bce44e2e6d4cea3cf64e34eff1246d86e459b73), [`0d97ad1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/0d97ad1856d6a45d9349a3609c7e425d2b5e874a)]:
+  - @salesforce/b2c-tooling-sdk@1.15.0
+
+## 1.16.1
+
+### Patch Changes
+
+- [#510](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/510) [`1575070`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/15750709ca6b23838bb9fd954d6c09e8dbb67ed3) - Resolve all critical and high severity dependency advisories reported by `pnpm audit`. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Direct dependencies of the published packages were bumped in package.json so that consumers installing the SDK, CLI, or MCP server receive the patched versions: the SDK raises `js-yaml`, `minimatch`, `protobufjs`, and `undici`, and the MCP server raises `yaml` and `postcss`. The SDK also upgrades `applicationinsights` from 2.x to 3.x to pick up a non-vulnerable `@opentelemetry/core`; this is an internal telemetry change with no public API impact.
+
+  Remaining transitive advisories with no direct-dependency lever are pinned to patched releases (within their existing major versions) via workspace overrides: fast-xml-parser, hono, @hono/node-server, ws, vite, rollup, form-data, http-proxy-middleware, path-to-regexp, serialize-javascript, lodash, underscore, flatted, fast-uri, tmp, express-rate-limit, brace-expansion, shell-quote, and @opentelemetry/core.
+
+- Updated dependencies [[`1575070`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/15750709ca6b23838bb9fd954d6c09e8dbb67ed3)]:
+  - @salesforce/b2c-tooling-sdk@1.14.1
+
+## 1.16.0
+
+### Minor Changes
+
+- [#494](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/494) [`f630103`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f630103e4c55fbdf68896db2f870851efe390ac1) - Expand the curated CIP analytics report catalog with 16 new pre-built reports, with a focus on technical/developer analytics. New reports include SCAPI traffic & latency, SCAPI error rate by status class, SCAPI latency distribution (slow-tail/SLA percentage from the response-time histogram), SCAPI cache hit ratio, OCAPI usage by client, SFRA controller health scorecard, controller error-rate trend, and remote-include performance — plus revenue-by-channel, new-vs-returning buyer revenue, discount-depth breakdown, promotion ROI leaderboard, recommender effectiveness, zero-result searches, checkout funnel drop-off, and inventory stockout by location. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Also adds `b2c cip report list` to discover the catalog grouped by category (no credentials required), and report parameters now support enum (`--status-class 4xx|5xx`) and default values. Run `b2c cip report <name> --describe` to see each report's flags.
+
+### Patch Changes
+
+- Updated dependencies [[`f630103`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f630103e4c55fbdf68896db2f870851efe390ac1), [`f630103`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f630103e4c55fbdf68896db2f870851efe390ac1)]:
+  - @salesforce/b2c-tooling-sdk@1.14.0
+
+## 1.15.0
+
+### Minor Changes
+
+- [`19f059e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/19f059e7ba928d1070d7960920770f1256dfae73) - Add `storefront-next-figma` as a skill set for `b2c setup skills`. You can now install the Figma design-kit skills with `b2c setup skills storefront-next-figma` (or select it interactively) for any supported IDE. These skills require the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server) to be configured in your AI tool. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`19f059e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/19f059e7ba928d1070d7960920770f1256dfae73)]:
+  - @salesforce/b2c-tooling-sdk@1.13.0
+
+## 1.14.1
+
+### Patch Changes
+
+- [`76f1059`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/76f10593646b94b0f3560614ef63bf987ca0e184) - Fix the npm publish failing during `prepack`. `oclif manifest` defaults to `--jit`, which downloads each JIT plugin and reads its `oclif.manifest.json`; the `@salesforce/storefront-next-dev` JIT plugin does not ship that file, so manifest generation aborted and the CLI failed to publish. The prepack now runs `oclif manifest --no-jit`. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.14.0
+
+### Minor Changes
+
+- [#452](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/452) [`9e44bee`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9e44bee20a6a1aa1439b530e37965e35594189a9) - Add `ecdn firewall` commands (`list`, `get`, `create`, `update`, `delete`, (Thanks [@charithaT07](https://github.com/charithaT07)!)
+  `reorder`) for managing custom firewall rules on a CDN zone via the existing
+  cdn-zones v1 APIs (`/firewall-custom/rules`). Supports partial updates,
+  `--json` output (with table column flags on `list`), and routes destructive
+  operations (`delete`, `reorder`) through the same safety guard the rest of
+  the CLI uses.
+
+- [#484](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/484) [`80e63fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/80e63fca888d9b83efd53c9c0054247fb2aa31b3) - `b2c job import` now supports `--split` for importing directories larger than the instance archive size limit. With `--split` (and optional `--max-size`, default `190mb`), the import is broken into several smaller archives: order-sensitive metadata/XML is imported first — kept together when it fits, otherwise split at data-unit boundaries in dependency order — followed by static assets packed by compressed size. A normal import that exceeds the limit now warns and recommends `--split`. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Example: `b2c job import ./big-site-data --split --max-size 150mb`
+
+  The SDK adds a corresponding `siteArchiveImportSplit()` operation.
+
+### Patch Changes
+
+- Updated dependencies [[`b723939`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b72393951bb95b64f3291cd3cb76197e280a6a37), [`21bbed0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/21bbed0ea1b42e8750d4259669370f8bcf562c10), [`de8d40b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/de8d40b54dc923c5805fac2ef587db8b86349a6b), [`80e63fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/80e63fca888d9b83efd53c9c0054247fb2aa31b3), [`c8e0b60`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c8e0b602e1a8da88f7e6620e5d5614f3a55689bd)]:
+  - @salesforce/b2c-tooling-sdk@1.12.0
+
+## 1.13.0
+
+### Minor Changes
+
+- [#455](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/455) [`420400a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/420400a28b17549717956f8c47adc2043fe3bfea) - Add `b2c sfnext` topic via JIT plugin (`@salesforce/storefront-next-dev`). On first use the plugin auto-installs at the latest published version; inside a scaffolded Storefront Next project the project-pinned version is preferred automatically. Bootstrap a new project with `npx @salesforce/b2c-cli sfnext create-storefront`. Update later with `b2c plugins update`. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.12.1
+
+### Patch Changes
+
+- Updated dependencies [[`b8dcf74`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b8dcf741c253fee0df4219400bfa10a79c704e98)]:
+  - @salesforce/b2c-tooling-sdk@1.11.1
+
+## 1.12.0
+
+### Minor Changes
+
+- [#451](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/451) [`665b2a1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/665b2a1144aa4c66ab7bf4f98294662bd55877a0) - Add Script API IntelliSense for cartridge JavaScript: `dw/*`, cartridge-style requires, and SFCC globals (`session`, `request`, `response`, `customer`, etc.) are typed automatically. The VS Code extension wires this up out of the box; for other editors, run `b2c setup ide tsserver-plugin` (LSP plugin) or `b2c setup ide vscode-types` (jsconfig). See the IDE Integration guide for details. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.11.0
+
+### Minor Changes
+
+- [#428](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/428) [`db7b330`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/db7b330cf60debf05d681b9e1dbb4e025d8eec02) - `b2c job import` now accepts an optional list of paths or globs after the directory `TARGET`, allowing you to import a subset of a site export. Paths are resolved literally first (so shell-expanded globs work) and fall back to root-relative or internal glob expansion when the literal path doesn't exist. The archive preserves each path's layout under `TARGET`. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Example: `b2c job import ./my-site-data sites/RefArch libraries/mylib`
+
+  The SDK's `siteArchiveImport` operation gains a corresponding `paths` option for directory targets.
+
+### Patch Changes
+
+- Updated dependencies [[`5d62ac2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5d62ac21a505c3ae4c58507fe0ffe65a5ee89087), [`db7b330`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/db7b330cf60debf05d681b9e1dbb4e025d8eec02), [`5e43132`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5e43132ab1b10da33517a697b32e22737d2f9bb4)]:
+  - @salesforce/b2c-tooling-sdk@1.11.0
+
 ## 1.10.0
 
 ### Minor Changes

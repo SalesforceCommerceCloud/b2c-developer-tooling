@@ -11,13 +11,23 @@ import {
   type CreateOAuthOptions,
 } from '@salesforce/b2c-tooling-sdk/config';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
-import * as fs from 'fs';
+import {readFile} from 'fs/promises';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
 const DW_JSON = 'dw.json';
 const DOT_ENV = '.env';
 const PROJECT_ROOT_KEY = 'b2c-dx.projectRoot';
+
+/** Async existence check via vscode.workspace.fs (no sync IO on the hot path). */
+async function pathExists(p: string): Promise<boolean> {
+  try {
+    await vscode.workspace.fs.stat(vscode.Uri.file(p));
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Detect the best workspace folder for B2C config resolution.
@@ -30,7 +40,7 @@ const PROJECT_ROOT_KEY = 'b2c-dx.projectRoot';
  *
  * Single-folder workspaces skip scanning (fast path).
  */
-function detectWorkingDirectory(log: vscode.OutputChannel): string {
+async function detectWorkingDirectory(log: vscode.OutputChannel): Promise<string> {
   const folders = vscode.workspace.workspaceFolders;
   if (!folders || folders.length === 0) {
     log.appendLine('[Config] No workspace folders open, falling back to process.cwd()');
@@ -50,7 +60,7 @@ function detectWorkingDirectory(log: vscode.OutputChannel): string {
 
   for (const folder of folders) {
     const dwJsonPath = path.join(folder.uri.fsPath, DW_JSON);
-    if (fs.existsSync(dwJsonPath)) {
+    if (await pathExists(dwJsonPath)) {
       log.appendLine(`[Config] Selected workspace folder via dw.json: ${folder.uri.fsPath}`);
       return folder.uri.fsPath;
     }
@@ -59,30 +69,26 @@ function detectWorkingDirectory(log: vscode.OutputChannel): string {
   for (const folder of folders) {
     const envPath = path.join(folder.uri.fsPath, DOT_ENV);
     try {
-      if (fs.existsSync(envPath)) {
-        const content = fs.readFileSync(envPath, 'utf-8');
-        if (/^SFCC_/m.test(content)) {
-          log.appendLine(`[Config] Selected workspace folder via .env with SFCC_* vars: ${folder.uri.fsPath}`);
-          return folder.uri.fsPath;
-        }
+      const content = await readFile(envPath, 'utf-8');
+      if (/^SFCC_/m.test(content)) {
+        log.appendLine(`[Config] Selected workspace folder via .env with SFCC_* vars: ${folder.uri.fsPath}`);
+        return folder.uri.fsPath;
       }
     } catch {
-      // Ignore read errors
+      // Ignore missing or unreadable files
     }
   }
 
   for (const folder of folders) {
     const pkgPath = path.join(folder.uri.fsPath, 'package.json');
     try {
-      if (fs.existsSync(pkgPath)) {
-        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-        if (pkg && typeof pkg === 'object' && 'b2c' in pkg) {
-          log.appendLine(`[Config] Selected workspace folder via package.json "b2c" key: ${folder.uri.fsPath}`);
-          return folder.uri.fsPath;
-        }
+      const pkg = JSON.parse(await readFile(pkgPath, 'utf-8'));
+      if (pkg && typeof pkg === 'object' && 'b2c' in pkg) {
+        log.appendLine(`[Config] Selected workspace folder via package.json "b2c" key: ${folder.uri.fsPath}`);
+        return folder.uri.fsPath;
       }
     } catch {
-      // Ignore parse errors
+      // Ignore missing files or parse errors
     }
   }
 
@@ -278,7 +284,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
       // Check for pinned project root first
       const pinnedRoot = this.workspaceState?.get<string>(PROJECT_ROOT_KEY);
       let workingDirectory: string;
-      if (pinnedRoot && fs.existsSync(pinnedRoot)) {
+      if (pinnedRoot && (await pathExists(pinnedRoot))) {
         workingDirectory = pinnedRoot;
         this.pinned = true;
         this.log.appendLine(`[Config] Using pinned project root: ${pinnedRoot}`);
@@ -288,20 +294,22 @@ export class B2CExtensionConfig implements vscode.Disposable {
           this.log.appendLine(`[Config] Pinned project root no longer exists, clearing: ${pinnedRoot}`);
           void this.workspaceState?.update(PROJECT_ROOT_KEY, undefined);
         }
-        workingDirectory = detectWorkingDirectory(this.log);
+        workingDirectory = await detectWorkingDirectory(this.log);
         this.pinned = false;
       }
-      if (!workingDirectory || workingDirectory === '/' || !fs.existsSync(workingDirectory)) {
+      if (!workingDirectory || workingDirectory === '/' || !(await pathExists(workingDirectory))) {
         workingDirectory = '';
       }
       this.detectedDirectory = workingDirectory;
       this.log.appendLine(`[Config] Resolving config from ${workingDirectory || '(no working directory)'}`);
 
-      // Load .env file if present (same as CLI's bin/run.js)
+      // Load .env file if present (same as CLI's bin/run.js).
+      // process.loadEnvFile is intentionally synchronous (Node API); we just gate
+      // it on an async existence check so we don't hit the disk twice on the hot path.
       if (workingDirectory) {
         const envFilePath = path.join(workingDirectory, DOT_ENV);
         try {
-          if (typeof process.loadEnvFile === 'function' && fs.existsSync(envFilePath)) {
+          if (typeof process.loadEnvFile === 'function' && (await pathExists(envFilePath))) {
             process.loadEnvFile(envFilePath);
             this.log.appendLine(`[Config] Loaded .env file: ${envFilePath}`);
           }

@@ -70,12 +70,12 @@ Placed orders.
             <type>enum-of-string</type>
             <value-definitions>
                 <value-definition>
-                    <value>pending</value>
                     <display xml:lang="x-default">Pending</display>
+                    <value>pending</value>
                 </value-definition>
                 <value-definition>
-                    <value>exported</value>
                     <display xml:lang="x-default">Exported</display>
+                    <value>exported</value>
                 </value-definition>
             </value-definitions>
         </attribute-definition>
@@ -131,16 +131,16 @@ Customer profiles (registered customers).
             <type>enum-of-string</type>
             <value-definitions>
                 <value-definition>
-                    <value>email</value>
                     <display xml:lang="x-default">Email</display>
+                    <value>email</value>
                 </value-definition>
                 <value-definition>
-                    <value>phone</value>
                     <display xml:lang="x-default">Phone</display>
+                    <value>phone</value>
                 </value-definition>
                 <value-definition>
-                    <value>sms</value>
                     <display xml:lang="x-default">SMS</display>
+                    <value>sms</value>
                 </value-definition>
             </value-definitions>
         </attribute-definition>
@@ -160,12 +160,12 @@ Customer address book entries.
             <type>enum-of-string</type>
             <value-definitions>
                 <value-definition>
-                    <value>residential</value>
                     <display xml:lang="x-default">Residential</display>
+                    <value>residential</value>
                 </value-definition>
                 <value-definition>
-                    <value>commercial</value>
                     <display xml:lang="x-default">Commercial</display>
+                    <value>commercial</value>
                 </value-definition>
             </value-definitions>
         </attribute-definition>

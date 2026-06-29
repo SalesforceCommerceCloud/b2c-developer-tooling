@@ -10,6 +10,14 @@
       "$ref": "common.json#/definitions/arch_type"
     },
     "group": {"$ref":"common.json#/definitions/id"},
+    "embedded": {
+      "type": "boolean"
+    },
+    "component_id": {
+      "type": "string",
+      "maxLength": 256,
+      "pattern": "^[\\w][\\w-]*$"
+    },
     "region_definitions": {
       "type": "array",
       "items": {"$ref": "regiondefinition.json"}
@@ -20,5 +28,34 @@
     }
   },
   "required": ["region_definitions","attribute_definition_groups", "group"],
+  "allOf": [
+    {
+      "anyOf": [
+        {
+          "not": {
+            "properties": {"embedded": {"enum": [true]}},
+            "required": ["embedded"]
+          }
+        },
+        {
+          "required": ["component_id"]
+        }
+      ]
+    },
+    {
+      "anyOf": [
+        {
+          "not": {
+            "properties": {"embedded": {"enum": [true]}},
+            "required": ["embedded"]
+          }
+        },
+        {
+          "properties": {"arch_type": {"enum": ["headless"]}},
+          "required": ["arch_type"]
+        }
+      ]
+    }
+  ],
   "additionalProperties": false
 }

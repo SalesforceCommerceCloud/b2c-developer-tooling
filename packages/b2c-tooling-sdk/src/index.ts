@@ -285,12 +285,20 @@ export type {CloneState, WaitForCloneOptions, WaitForClonePollInfo} from './oper
 
 // Operations - CIP
 export {
+  booleanLiteral,
   buildCipReportSql,
+  dateLiteral,
   describeCipTable,
+  escapeSqlString,
   executeCipReport,
   getCipReportByName,
+  integerLiteral,
+  isReservedIdentifier,
   listCipReports,
   listCipTables,
+  quoteIdentifierIfReserved,
+  stringInList,
+  stringLiteral,
 } from './operations/cip/index.js';
 export type {
   CipColumnMetadata,

@@ -33,7 +33,7 @@ export const TIMEOUTS = {
   /** Standard CLI operation (list, get, etc.) */
   DEFAULT: 30_000,
   /** ODS operations (create, start, stop with --wait) */
-  ODS_OPERATION: 720_000, // 12 minutes
+  ODS_OPERATION: 1_440_000, // 24 minutes
   /** Job execution with --wait */
   JOB_EXECUTION: 600_000, // 10 minutes
   /** WebDAV upload/download */

@@ -33,7 +33,7 @@ export abstract class JobCommand<T extends typeof Command> extends InstanceComma
    * Display a job's log file content and error message if available.
    * Outputs to stderr since this is typically shown for failed jobs.
    *
-   * @param execution - Job execution with log file info
+   * @param execution - Failed job execution object with log file information
    */
   protected async showJobLog(execution: JobExecution): Promise<void> {
     // Extract error message from failed step executions

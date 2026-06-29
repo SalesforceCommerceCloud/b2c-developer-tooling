@@ -179,6 +179,8 @@ In addition to [global flags](./index#global-flags):
 | `--components` | Include components in table output | `false` |
 | `--tree` | Show tree structure instead of table | `false` |
 | `--timeout` | Job timeout in seconds | |
+| `--columns`, `-c` | Columns to display (comma-separated). Available: id, type, typeId, children | All columns |
+| `--extended`, `-x` | Show all columns including extended fields | `false` |
 
 ### Examples
 
@@ -244,7 +246,7 @@ With `--json`, returns `{ data: [...] }` with each item containing `id`, `type`,
 
 ## b2c content validate
 
-Validate Page Designer metadefinition JSON files against bundled JSON schemas. This is a local-only command — no instance connection or authentication is required.
+Validate Page Designer metadefinition JSON files against schemas. This is a local-only command — no instance connection or authentication is required.
 
 The command auto-detects the schema type using file path conventions (`experience/pages/` → pagetype, `experience/components/` → componenttype) and falls back to inspecting the JSON properties. You can also specify the type explicitly with `--type`.
 

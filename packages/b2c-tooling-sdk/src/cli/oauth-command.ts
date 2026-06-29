@@ -169,6 +169,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    * For the implicit flow, falls back to getDefaultClientId() when no client ID
    * is explicitly configured.
    *
+   * @returns An OAuth strategy instance ({@link OAuthStrategy}, {@link JwtOAuthStrategy}, {@link ImplicitOAuthStrategy}, or {@link StatefulOAuthStrategy}) based on configured credentials and allowed authentication methods.
    * @throws Error if no allowed method has the required credentials configured
    */
   protected getOAuthStrategy():

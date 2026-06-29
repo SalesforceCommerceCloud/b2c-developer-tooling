@@ -151,8 +151,6 @@ Most sfcc-ci environment variables are supported directly or through backward-co
 | `SFCC_OAUTH_USER_NAME` | `SFCC_OAUTH_USER_NAME` | Same |
 | `SFCC_OAUTH_USER_PASSWORD` | `SFCC_OAUTH_USER_PASSWORD` | Same |
 | `SFCC_SANDBOX_API_HOST` | `SFCC_SANDBOX_API_HOST` | Same |
-| `SFCC_SCAPI_SHORTCODE` | `SFCC_SHORTCODE` | Renamed |
-| `SFCC_SCAPI_TENANTID` | `SFCC_TENANT_ID` | Renamed |
 
 The B2C CLI also introduces new environment variables not present in sfcc-ci:
 
@@ -162,6 +160,8 @@ The B2C CLI also introduces new environment variables not present in sfcc-ci:
 | `SFCC_USERNAME` | WebDAV / Basic auth username |
 | `SFCC_PASSWORD` | WebDAV / Basic auth password |
 | `SFCC_CODE_VERSION` | Code version for deployments |
+| `SFCC_SHORTCODE` | SCAPI short code |
+| `SFCC_TENANT_ID` | SCAPI tenant ID |
 | `SFCC_AUTH_METHODS` | Auth method priority (comma-separated) |
 
 See the [Configuration guide](./configuration) for the complete list of environment variables and configuration sources.

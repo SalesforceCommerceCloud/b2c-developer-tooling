@@ -1,15 +1,56 @@
+---
+description: Commands for listing and retrieving Salesforce Commerce API (SCAPI) OpenAPI schemas, with selective path, schema, and example expansion for LLM context.
+---
+
 # SCAPI Schemas
 
 Commands for browsing and retrieving SCAPI (Salesforce Commerce API) schema specifications.
 
 ## Global SCAPI Schemas Flags
 
-These flags are available on all SCAPI Schemas commands:
+These flags are available on all SCAPI Schemas commands.
+
+### Tenant Flags
 
 | Flag | Environment Variable | Description |
 |------|---------------------|-------------|
 | `--tenant-id` | `SFCC_TENANT_ID` | (Required) Organization/tenant ID |
 | `--short-code` | `SFCC_SHORTCODE` | SCAPI short code |
+
+### Authentication Flags
+
+| Flag | Environment Variable | Description |
+|------|---------------------|-------------|
+| `--client-id` | `SFCC_CLIENT_ID` | Client ID for OAuth |
+| `--client-secret` | `SFCC_CLIENT_SECRET` | Client Secret for OAuth |
+| `--auth-scope` | `SFCC_OAUTH_SCOPES` | OAuth scopes to request (comma-separated, repeatable) |
+| `--auth-methods` | `SFCC_AUTH_METHODS` | Allowed auth methods in priority order (`client-credentials`, `jwt`, `implicit`, `basic`, `api-key`) |
+| `--user-auth` | | Use browser-based user authentication (implicit OAuth flow) |
+| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname for OAuth (default: `account.demandware.com`) |
+| `--jwt-cert` | `SFCC_JWT_CERT` | Path to JWT certificate file (`cert.pem`) for JWT Bearer authentication |
+| `--jwt-key` | `SFCC_JWT_KEY` | Path to JWT private key file (`key.pem`) for JWT Bearer authentication |
+| `--jwt-passphrase` | `SFCC_JWT_PASSPHRASE` | Passphrase for encrypted JWT private key |
+
+### Common Flags
+
+| Flag | Environment Variable | Description |
+|------|---------------------|-------------|
+| `--config` | `SFCC_CONFIG` | Path to config file (in `dw.json` format; defaults to `./dw.json`) |
+| `-i`, `--instance` | `SFCC_INSTANCE` | Instance name from configuration file (e.g. `dw.json`) |
+| `--project-directory` | `SFCC_PROJECT_DIRECTORY` | Project directory |
+| `-L`, `--lang` | | Language for messages (e.g., `en`, `de`). Also respects `LANGUAGE` env var |
+| `--log-level` | `SFCC_LOG_LEVEL` | Set logging verbosity (`trace`, `debug`, `info`, `warn`, `error`, `silent`) |
+| `-D`, `--debug` | `SFCC_DEBUG` | Enable debug logging (shorthand for `--log-level debug`) |
+| `--extra-query` | `SFCC_EXTRA_QUERY` | Extra query parameters as JSON (e.g., `'{"debug":"true"}'`) |
+| `--extra-body` | `SFCC_EXTRA_BODY` | Extra body fields to merge as JSON (e.g., `'{"_internal":true}'`) |
+| `--extra-headers` | `SFCC_EXTRA_HEADERS` | Extra HTTP headers as JSON (e.g., `'{"X-Custom-Header": "value"}'`) |
+
+### Output Flags
+
+| Flag | Environment Variable | Description |
+|------|---------------------|-------------|
+| `--json` | | Output result as JSON |
+| `--jsonl` | `SFCC_JSON_LOGS` | Output log messages as JSON lines |
 
 ## Authentication
 
@@ -137,8 +178,7 @@ b2c scapi schemas get <apiFamily> <apiName> <apiVersion> --tenant-id <TENANT_ID>
 | `--expand-paths` | Paths to fully expand (comma-separated) | |
 | `--expand-schemas` | Schema names to fully expand (comma-separated) | |
 | `--expand-examples` | Example names to fully expand (comma-separated) | |
-| `--expand-custom-properties` | Expand custom properties | `true` |
-| `--no-expand-custom-properties` | Do not expand custom properties | |
+| `--expand-custom-properties` | Expand custom properties (boolean — use `--no-expand-custom-properties` to disable) | `true` |
 | `--expand-all` | Return full schema without collapsing | `false` |
 | `--list-paths` | List available paths and exit | `false` |
 | `--list-schemas` | List available schema names and exit | `false` |
