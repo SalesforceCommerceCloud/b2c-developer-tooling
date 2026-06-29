@@ -27,7 +27,7 @@ GitHub Actions for automating Salesforce B2C Commerce operations with the [`@sal
 ### One-step code deploy
 
 ```yaml
-- uses: actions/checkout@v4
+- uses: actions/checkout@v6
 - uses: SalesforceCommerceCloud/b2c-developer-tooling@v1
   with:
     client-id: ${{ secrets.SFCC_CLIENT_ID }}
@@ -40,7 +40,7 @@ GitHub Actions for automating Salesforce B2C Commerce operations with the [`@sal
 ### High-level code deploy
 
 ```yaml
-- uses: actions/checkout@v4
+- uses: actions/checkout@v6
 - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/code-deploy@v1
   with:
     client-id: ${{ secrets.SFCC_CLIENT_ID }}
@@ -54,7 +54,7 @@ GitHub Actions for automating Salesforce B2C Commerce operations with the [`@sal
 ### Data import
 
 ```yaml
-- uses: actions/checkout@v4
+- uses: actions/checkout@v6
 - uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/data-import@v1
   with:
     client-id: ${{ secrets.SFCC_CLIENT_ID }}
