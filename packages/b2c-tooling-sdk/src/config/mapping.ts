@@ -11,7 +11,7 @@
  *
  * @module config/mapping
  */
-import type {AuthConfig} from '../auth/types.js';
+import type {AuthConfig, AuthMethod} from '../auth/types.js';
 import {B2CInstance, type InstanceConfig} from '../instance/index.js';
 import {parseSafetyLevelString} from '../safety/safety-middleware.js';
 import {isValidSafetyAction} from '../safety/types.js';
@@ -152,6 +152,17 @@ function parseCartridges(value: string | string[] | undefined): string[] | undef
 }
 
 export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfig {
+  // `user-auth: true` is shorthand for `"auth-methods": ["user"]`. Setting
+  // both in the same dw.json is ambiguous; reject it the same way the CLI
+  // rejects passing `--user-auth` together with `--auth-methods`.
+  if (json.userAuth !== undefined && json.authMethods !== undefined) {
+    throw new Error(
+      'dw.json: `user-auth` and `auth-methods` are mutually exclusive. ' +
+        '`user-auth: true` is shorthand for `"auth-methods": ["user"]` — set one or the other.',
+    );
+  }
+  const authMethods: AuthMethod[] | undefined = json.userAuth === true ? ['user'] : json.authMethods;
+
   return {
     hostname: json.hostname,
     webdavHostname: json.webdavHostname,
@@ -176,7 +187,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     assetQuery: json.assetQuery,
     cipHost: json.cipHost,
     instanceName: json.name,
-    authMethods: json.authMethods,
+    authMethods,
     accountManagerHost: json.accountManagerHost,
     mrtProject: json.mrtProject,
     mrtEnvironment: json.mrtEnvironment,

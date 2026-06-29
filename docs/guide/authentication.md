@@ -23,7 +23,7 @@ The CLI uses different authentication mechanisms depending on the operation:
 | [MRT](/cli/mrt) commands                                                                           | MRT API Key                  | [MRT API Key](#managed-runtime-api-key)                                                  |
 
 ::: tip Zero-Config for Platform Commands
-Sandbox, SLAS, and Account Manager commands work out of the box without any client configuration. The CLI includes a built-in public client that authenticates via browser login (implicit flow). You only need to configure an API client if you want to use client credentials for automation/CI or need specific scopes.
+Sandbox, SLAS, and Account Manager commands work out of the box without any client configuration. The CLI includes a built-in public client that authenticates via browser login (Authorization Code + PKCE). You only need to configure an API client if you want to use client credentials for automation/CI or need specific scopes.
 :::
 
 ::: tip
@@ -46,7 +46,9 @@ The CLI supports five authentication methods:
 | **Stateful User Authentication**   | After running `b2c auth login` — browser-based login, token stored and reused                  | Roles configured on your **user account** |
 | **Stateful Client Authentication** | After running `b2c auth client` — client credentials login, token stored and reused            | Roles configured on the **API client**    |
 
-**User Authentication** opens a browser for interactive login and uses roles assigned to your user account. This is ideal for development and manual operations. Use `--user-auth` as a shorthand for `--auth-methods implicit` on any OAuth command.
+**User Authentication** opens a browser for interactive login and uses roles assigned to your user account. This is ideal for development and manual operations. Use `--user-auth` as a shorthand for `--auth-methods user` on any OAuth command — both select the Authorization Code + PKCE flow.
+
+In dw.json, the same shorthand is available as `"user-auth": true`. It is mutually exclusive with `"auth-methods"` — set one or the other, not both.
 
 **Client Credentials** uses the API client's secret for non-interactive authentication. This is ideal for CI/CD pipelines and automation.
 
@@ -151,7 +153,7 @@ The tenant filter restricts which tenants/realms the role applies to.
 
 ### Redirect URLs
 
-For **User Authentication** (implicit flow), configure redirect URLs in your API client:
+For **User Authentication** (Authorization Code + PKCE), configure redirect URLs in your API client:
 
 | Redirect URL                                                         | Purpose                                                   |
 | -------------------------------------------------------------------- | --------------------------------------------------------- |
@@ -271,11 +273,13 @@ export SFCC_JWT_PASSPHRASE=your-passphrase
 
 ### Authentication Priority
 
-JWT authentication is tried **after** client credentials (if client secret is available) but **before** implicit flow:
+JWT authentication is tried **after** client credentials (if client secret is available) but **before** the user (browser) flow:
 
 1. `client-credentials` - Uses client secret if available
 2. `jwt` - Uses JWT certificate if configured (no client secret)
-3. `implicit` - Opens browser for user authentication
+3. `user` - Opens browser for Authorization Code + PKCE login
+
+The legacy `implicit` flow has been removed from the default chain. It is still selectable via `--auth-methods implicit` for backwards compatibility, but emits a deprecation warning; OAuth 2.1 deprecates implicit for public clients.
 
 To force JWT authentication even when a client secret is configured:
 

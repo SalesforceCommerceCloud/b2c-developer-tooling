@@ -8,7 +8,7 @@ Commands for authentication and token management.
 
 ## Stateful vs stateless auth
 
-The CLI supports **stateful auth** (session stored on disk) in addition to **stateless auth** (client credentials or one-off implicit flow):
+The CLI supports **stateful auth** (session stored on disk) in addition to **stateless auth** (client credentials or one-off browser login):
 
 - **Stateful (browser)**: After you run `b2c auth login`, your access token *and* a long-lived refresh token are stored on disk in the CLI data directory. Subsequent commands silently refresh the access token without re-prompting. If both tokens are missing/expired, the CLI falls back to stateless auth.
 - **Stateful (client credentials)**: Use `b2c auth client` to authenticate with client ID and secret (or user/password) for non-interactive/automation use. Only the access token is persisted — the client secret is never stored. When the access token expires, re-run `b2c auth client` with the same credentials. There is no automatic refresh.
@@ -40,6 +40,28 @@ b2c auth login
 ```
 
 After a successful login, subsequent commands use the stored token until it expires or you run `b2c auth logout`.
+
+### Flags
+
+| Flag | Environment Variable | Description |
+|------|---------------------|-------------|
+| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname |
+| `--auth-scope` | `SFCC_OAUTH_SCOPES` | OAuth scopes to request (can be repeated) |
+| `--auth-methods` | | Browser-based flow to use: `user` (default — Authorization Code + PKCE) or `implicit` (deprecated) |
+
+### Choosing a flow
+
+`auth login` defaults to **Authorization Code + PKCE**, which is the recommended browser flow for public clients. The legacy implicit flow is still selectable for clients that haven't been migrated:
+
+```bash
+# Default: Authorization Code + PKCE
+b2c auth login your-client-id
+
+# Legacy implicit flow (emits a deprecation warning)
+b2c auth login your-client-id --auth-methods implicit
+```
+
+OAuth 2.1 deprecates the implicit flow for public clients. Configure your Account Manager API client as a public client and use the default PKCE flow when possible.
 
 ## b2c auth logout
 

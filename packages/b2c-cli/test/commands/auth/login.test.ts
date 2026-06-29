@@ -6,7 +6,7 @@
 
 import {expect} from 'chai';
 import sinon from 'sinon';
-import {PkceOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {ImplicitOAuthStrategy, PkceOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import AuthLogin from '../../../src/commands/auth/login.js';
 import {createIsolatedConfigHooks, makeCommandThrowOnError} from '../../helpers/test-setup.js';
 
@@ -60,5 +60,28 @@ describe('auth login', () => {
     expect(getTokenResponseStub.calledOnce).to.be.true;
     expect(logStub.calledOnce).to.be.true;
     expect(logStub.firstCall.args[0]).to.include('Login succeeded');
+  });
+
+  it('routes to ImplicitOAuthStrategy when --auth-methods implicit is passed', async () => {
+    const pkceStub = sinon.stub(PkceOAuthStrategy.prototype, 'getTokenResponse').resolves({
+      accessToken: 'should-not-be-used',
+      expires: new Date(Date.now() + 30 * 60 * 1000),
+      scopes: [],
+    });
+    const implicitStub = sinon.stub(ImplicitOAuthStrategy.prototype, 'getTokenResponse').resolves({
+      accessToken: 'fake-implicit-token',
+      expires: new Date(Date.now() + 30 * 60 * 1000),
+      scopes: ['sfcc.products'],
+    });
+
+    const command = createCommand(['my-client-id', '--auth-methods', 'implicit']);
+    await command.init();
+    sinon.stub(command, 'log');
+    sinon.stub(command, 'warn');
+
+    await command.run();
+
+    expect(implicitStub.calledOnce).to.be.true;
+    expect(pkceStub.called).to.be.false;
   });
 });
