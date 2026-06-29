@@ -341,6 +341,28 @@ describe('content metadefinition validation', () => {
       );
       expect(result.valid).to.equal(true);
     });
+
+    it('passes when region definition includes a description', () => {
+      const result = validateMetaDefinition(
+        {
+          group: 'content',
+          region_definitions: [{id: 'main', name: 'Main', description: 'The main content region'}],
+          attribute_definition_groups: [],
+        },
+        {type: 'componenttype'},
+      );
+      expect(result.valid).to.equal(true);
+    });
+
+    it('passes when pagetype region definition includes a description', () => {
+      const result = validateMetaDefinition(
+        {
+          region_definitions: [{id: 'hero', name: 'Hero', description: 'Top hero region'}],
+        },
+        {type: 'pagetype'},
+      );
+      expect(result.valid).to.equal(true);
+    });
   });
 
   describe('error message formatting', () => {
