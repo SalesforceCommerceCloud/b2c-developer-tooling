@@ -158,6 +158,8 @@ For **User Authentication** (Authorization Code + PKCE), configure redirect URLs
 
 **Note:** Redirect URLs are not required for API clients using only Client Credentials or JWT Bearer authentication.
 
+**Register the client as a public client.** The Authorization Code + PKCE flow requires the API client to be registered in Account Manager as a **public client** (not a confidential client). Public clients have no secret and selecting that type configures the Authorization Code + PKCE grant automatically. If a client is still registered as implicit-only, the `user` flow falls back to the implicit flow and logs a deprecation warning until the client is migrated; set `SFCC_DISABLE_PKCE_FALLBACK=1` to disable that fallback.
+
 ::: tip Running Behind a Proxy
 If you're running the CLI behind a proxy where `localhost:8080` isn't reachable by the browser, set `SFCC_REDIRECT_URI` to the proxy URL (e.g., `https://proxy.example.com:8080`). The proxy should forward traffic to the CLI's local server. You can also change the local server port with `SFCC_OAUTH_LOCAL_PORT`. Make sure to add your proxy URL to the API client's redirect URLs in Account Manager.
 :::

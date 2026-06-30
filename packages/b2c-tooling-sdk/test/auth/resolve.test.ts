@@ -11,7 +11,7 @@ import {
   BasicAuthStrategy,
   ImplicitOAuthStrategy,
   OAuthStrategy,
-  PkceOAuthStrategy,
+  PkceWithImplicitFallbackStrategy,
   checkAvailableAuthMethods,
   resolveAuthStrategy,
 } from '@salesforce/b2c-tooling-sdk/auth';
@@ -128,13 +128,14 @@ describe('auth/resolve', () => {
       expect(strategy).to.be.instanceOf(OAuthStrategy);
     });
 
-    it('returns PkceOAuthStrategy when only clientId is provided', () => {
+    it('returns the PKCE user strategy when only clientId is provided', () => {
       const strategy = resolveAuthStrategy({
         clientId: 'test-client',
         scopes: ['scope-a'],
       });
 
-      expect(strategy).to.be.instanceOf(PkceOAuthStrategy);
+      // The default 'user' strategy is the transitional PKCE→implicit fallback wrapper.
+      expect(strategy).to.be.instanceOf(PkceWithImplicitFallbackStrategy);
     });
 
     it('returns ImplicitOAuthStrategy when implicit is explicitly selected', () => {

@@ -70,6 +70,12 @@ b2c auth login your-client-id --auth-methods implicit
 
 OAuth 2.1 deprecates the implicit flow for public clients. Configure your Account Manager API client as a public client and use the default PKCE flow when possible.
 
+#### Account Manager prerequisites
+
+To use the browser-based `user` flow with your own client, register it in Account Manager as a **public client** (not a confidential client — public clients have no secret, and selecting that type configures the Authorization Code + PKCE grant automatically). Add the CLI's redirect URI to the client's allowed redirect URIs — by default `http://localhost:8080` (override the port with `SFCC_OAUTH_LOCAL_PORT` or the whole URI with `SFCC_REDIRECT_URI`).
+
+If a client is still registered as implicit-only, the `user` flow automatically falls back to the implicit flow and logs a deprecation warning. Re-register it as a public client to silence the warning, or set `SFCC_DISABLE_PKCE_FALLBACK=1` to disable the fallback.
+
 ## b2c auth logout
 
 Clear the stored OAuth session (stateful auth). After logout, commands use stateless auth when configured.
@@ -183,8 +189,8 @@ b2c auth token
 | `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (default: account.demandware.com) |
 | `--short-code` | `SFCC_SHORTCODE` | SCAPI short code |
 | `--tenant-id` | `SFCC_TENANT_ID` | Organization/tenant ID |
-| `--auth-methods` | `SFCC_AUTH_METHODS` | Allowed auth methods in priority order (comma-separated): client-credentials, jwt, implicit, basic, api-key |
-| `--user-auth` | | Use browser-based user authentication (implicit OAuth flow) |
+| `--auth-methods` | `SFCC_AUTH_METHODS` | Allowed auth methods in priority order (comma-separated): client-credentials, jwt, user, implicit, basic, api-key |
+| `--user-auth` | | Use browser-based user authentication (Authorization Code + PKCE flow) |
 | `--jwt-cert` | `SFCC_JWT_CERT` | Path to JWT certificate file (cert.pem) for JWT Bearer authentication |
 | `--jwt-key` | `SFCC_JWT_KEY` | Path to JWT private key file (key.pem) for JWT Bearer authentication |
 | `--jwt-passphrase` | `SFCC_JWT_PASSPHRASE` | Passphrase for encrypted JWT private key |

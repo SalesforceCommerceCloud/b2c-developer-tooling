@@ -8,9 +8,10 @@ import {BaseCommand} from './base-command.js';
 import {loadConfig, extractOAuthFlags, ALL_AUTH_METHODS} from './config.js';
 import type {AuthMethod} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
+import type {UserAuthStrategy} from '../auth/types.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {ImplicitOAuthStrategy} from '../auth/oauth-implicit.js';
-import {PkceOAuthStrategy} from '../auth/oauth-pkce.js';
+import {createUserAuthStrategy} from '../auth/oauth-pkce-fallback.js';
 import {StatefulOAuthStrategy} from '../auth/stateful-oauth-strategy.js';
 import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
 import {findAuthSession, isAuthSessionTokenValid, listAuthSessions} from '../auth/session-store.js';
@@ -176,8 +177,8 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     | OAuthStrategy
     | JwtOAuthStrategy
     | ImplicitOAuthStrategy
-    | PkceOAuthStrategy
-    | StatefulOAuthStrategy {
+    | StatefulOAuthStrategy
+    | UserAuthStrategy {
     const config = this.resolvedConfig.values;
     const accountManagerHost = this.accountManagerHost;
     const requiredScopes = config.scopes ?? [];
@@ -267,7 +268,9 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
             if (!config.clientId && defaultClientId) {
               this.logger.debug('Using default B2C CLI public client for user authentication');
             }
-            return new PkceOAuthStrategy({
+            // PKCE with an automatic, WARN-logged fallback to the implicit flow
+            // for clients not yet registered for PKCE (see oauth-pkce-fallback).
+            return createUserAuthStrategy({
               clientId: effectiveClientId,
               scopes: config.scopes,
               accountManagerHost,

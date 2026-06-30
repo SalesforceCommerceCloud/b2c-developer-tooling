@@ -148,10 +148,15 @@ export class FileAuthSessionBackend implements AuthSessionBackend {
   private write(store: SessionFile): void {
     const filePath = this.filePath();
     if (!existsSync(this.dataDir)) {
-      mkdirSync(this.dataDir, {recursive: true});
+      // 0o700: the session file holds long-lived PKCE refresh tokens, so keep
+      // the containing directory owner-only too.
+      mkdirSync(this.dataDir, {recursive: true, mode: 0o700});
     }
+    // Write the temp file 0o600 (owner read/write only). renameSync preserves
+    // the temp inode's mode, so the final file is always 0o600 even when it
+    // replaces an existing world-readable file written by an older version.
     const tmpPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
-    writeFileSync(tmpPath, JSON.stringify(store, null, 2), 'utf8');
+    writeFileSync(tmpPath, JSON.stringify(store, null, 2), {encoding: 'utf8', mode: 0o600});
     renameSync(tmpPath, filePath);
   }
 }

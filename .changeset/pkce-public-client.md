@@ -10,4 +10,8 @@ Add Authorization Code + PKCE support for browser-based OAuth (public clients) a
 
 dw.json gains a `"user-auth": true` shorthand for `"auth-methods": ["user"]`. It is mutually exclusive with `"auth-methods"` — setting both is rejected during config mapping.
 
+To smooth the migration, the `user` flow includes a transitional safety net: if the configured Account Manager client is not yet registered for PKCE, it automatically falls back to the implicit flow for that client and logs a deprecation warning telling you to re-register it as a public (PKCE) client. Set `SFCC_DISABLE_PKCE_FALLBACK=1` to disable the fallback and surface PKCE failures directly. This fallback is temporary and will be removed once public clients have migrated.
+
+Persisted browser-auth sessions (which now hold long-lived PKCE refresh tokens) are written `0o600` in a `0o700` directory, so they are no longer world-readable.
+
 The VS Code extension persists PKCE refresh tokens via OS-keychain-backed `SecretStorage` (with a sync-snapshot/async-write-through cache), keeping behavior compatible with the unified `AuthSessionBackend` used by the CLI.

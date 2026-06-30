@@ -5,7 +5,7 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
-import {ImplicitOAuthStrategy, PkceOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {ImplicitOAuthStrategy, createUserAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -102,7 +102,9 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
       const strategy = new ImplicitOAuthStrategy({clientId, scopes, accountManagerHost});
       await strategy.getTokenResponse();
     } else {
-      const strategy = new PkceOAuthStrategy({clientId, scopes, accountManagerHost});
+      // PKCE with an automatic, WARN-logged fallback to the implicit flow for
+      // clients not yet registered for PKCE (see oauth-pkce-fallback in the SDK).
+      const strategy = createUserAuthStrategy({clientId, scopes, accountManagerHost});
       await strategy.getTokenResponse();
     }
 

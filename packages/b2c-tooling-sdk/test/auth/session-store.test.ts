@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {mkdtempSync, rmSync} from 'node:fs';
+import {mkdtempSync, rmSync, statSync, writeFileSync, chmodSync, existsSync, mkdirSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {expect} from 'chai';
@@ -102,6 +102,35 @@ describe('auth/session-store', () => {
       saveAuthSession({clientId: 'b', flow: 'pkce', accessToken: 't', refreshToken: null});
       clearAllAuthSessions();
       expect(listAuthSessions()).to.have.length(0);
+    });
+  });
+
+  // The session file holds long-lived PKCE refresh tokens, so it must never be
+  // world-readable. Mode bits are a POSIX concept — skip on Windows.
+  describe('file permissions (POSIX)', () => {
+    const isWindows = process.platform === 'win32';
+    const sessionFilePath = () => join(testDir, 'auth-sessions.json');
+
+    it('writes the session file as 0o600 (owner read/write only)', function () {
+      if (isWindows) this.skip();
+      saveAuthSession({clientId: 'perm', flow: 'pkce', accessToken: 't', refreshToken: 'rt'});
+      const mode = statSync(sessionFilePath()).mode & 0o777;
+      expect(mode).to.equal(0o600);
+    });
+
+    it('hardens an existing world-readable file back to 0o600 on the next write', function () {
+      if (isWindows) this.skip();
+      // Simulate a file written by an older, insecure version of the SDK.
+      const filePath = sessionFilePath();
+      if (!existsSync(testDir)) mkdirSync(testDir, {recursive: true});
+      writeFileSync(filePath, JSON.stringify({version: 1, sessions: []}), 'utf8');
+      chmodSync(filePath, 0o644);
+      expect(statSync(filePath).mode & 0o777).to.equal(0o644);
+
+      saveAuthSession({clientId: 'perm2', flow: 'pkce', accessToken: 't', refreshToken: 'rt'});
+
+      // The atomic tmp+rename write replaces the inode with a 0o600 one.
+      expect(statSync(filePath).mode & 0o777).to.equal(0o600);
     });
   });
 

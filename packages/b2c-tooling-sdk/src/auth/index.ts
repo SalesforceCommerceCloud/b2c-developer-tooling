@@ -63,6 +63,7 @@
 // Types
 export type {
   AuthStrategy,
+  UserAuthStrategy,
   FetchInit,
   AccessTokenResponse,
   DecodedJWT,
@@ -81,8 +82,13 @@ export {OAuthStrategy, decodeJWT} from './oauth.js';
 export type {OAuthConfig} from './oauth.js';
 export {ImplicitOAuthStrategy} from './oauth-implicit.js';
 export type {ImplicitOAuthConfig} from './oauth-implicit.js';
-export {PkceOAuthStrategy} from './oauth-pkce.js';
+export {PkceOAuthStrategy, PkceGrantUnsupportedError} from './oauth-pkce.js';
 export type {PkceOAuthConfig} from './oauth-pkce.js';
+export {
+  PkceWithImplicitFallbackStrategy,
+  createUserAuthStrategy,
+  isPkceFallbackDisabled,
+} from './oauth-pkce-fallback.js';
 export {JwtOAuthStrategy} from './oauth-jwt.js';
 export type {JwtOAuthConfig} from './oauth-jwt.js';
 export {ApiKeyStrategy} from './api-key.js';

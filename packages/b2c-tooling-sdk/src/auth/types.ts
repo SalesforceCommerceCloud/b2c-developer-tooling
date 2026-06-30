@@ -34,6 +34,22 @@ export interface AuthStrategy {
 }
 
 /**
+ * An interactive, token-bearing OAuth strategy — the "user" auth flow
+ * (Authorization Code + PKCE, with the legacy implicit flow as fallback).
+ *
+ * Unlike the base {@link AuthStrategy}, these always expose the access token /
+ * decoded JWT so callers like `auth token` can surface them. Implemented by
+ * `PkceOAuthStrategy`, `ImplicitOAuthStrategy`, and the transitional
+ * `PkceWithImplicitFallbackStrategy`.
+ */
+export interface UserAuthStrategy extends AuthStrategy {
+  getAuthorizationHeader(): Promise<string>;
+  getJWT(): Promise<DecodedJWT>;
+  getTokenResponse(): Promise<AccessTokenResponse>;
+  invalidateToken(): void;
+}
+
+/**
  * Configuration for Basic authentication (username/access-key).
  * Used primarily for WebDAV operations.
  */

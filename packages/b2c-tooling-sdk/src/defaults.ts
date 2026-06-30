@@ -50,11 +50,12 @@ export const LEGACY_IMPLICIT_PUBLIC_CLIENT_ID = '7eee11e3-375b-498f-a087-e450a33
  * Host-specific overrides for the default public client ID.
  * Some Account Manager instances require a different public client registration.
  *
- * NOTE: pod5 still points at its legacy implicit client; a PKCE-capable client
- * for pod5 will replace this entry when registered.
+ * The pod5 entry is a PKCE-capable public client, so the default `user` flow
+ * completes via Authorization Code + PKCE without engaging the transitional
+ * implicit fallback (see `auth/oauth-pkce-fallback`).
  */
 const HOST_CLIENT_ID_OVERRIDES: Record<string, string> = {
-  'account-pod5.demandware.net': 'c44527fe-66ff-4455-9eec-7287b2c66485',
+  'account-pod5.demandware.net': '3f41a930-b2bb-42c9-907d-f06a33c85849',
 };
 
 /**

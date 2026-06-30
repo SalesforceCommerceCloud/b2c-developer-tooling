@@ -31,7 +31,7 @@ import type {AuthStrategy, AuthMethod, AuthCredentials} from './types.js';
 import {ALL_AUTH_METHODS} from './types.js';
 import {OAuthStrategy} from './oauth.js';
 import {ImplicitOAuthStrategy} from './oauth-implicit.js';
-import {PkceOAuthStrategy} from './oauth-pkce.js';
+import {createUserAuthStrategy} from './oauth-pkce-fallback.js';
 import {BasicAuthStrategy} from './basic.js';
 import {ApiKeyStrategy} from './api-key.js';
 
@@ -186,7 +186,9 @@ export function resolveAuthStrategy(
 
       case 'user':
         if (credentials.clientId) {
-          return new PkceOAuthStrategy({
+          // PKCE with an automatic, WARN-logged fallback to the implicit flow
+          // for clients not yet registered for PKCE (see oauth-pkce-fallback).
+          return createUserAuthStrategy({
             clientId: credentials.clientId,
             scopes: credentials.scopes,
             accountManagerHost: credentials.accountManagerHost,

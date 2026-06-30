@@ -91,6 +91,7 @@ You can configure the CLI using environment variables:
 | `SFCC_ACCOUNT_MANAGER_HOST`   | Account Manager hostname for OAuth                             |
 | `SFCC_REDIRECT_URI`           | Override redirect URI for browser-based OAuth flows (e.g., when behind a proxy) |
 | `SFCC_OAUTH_LOCAL_PORT`       | Local port for the browser-based OAuth redirect server (default: `8080`) |
+| `SFCC_DISABLE_PKCE_FALLBACK`  | Disable the automatic PKCE→implicit fallback for clients not yet registered for PKCE (set to `1`) |
 | `SFCC_USERNAME`               | Basic auth username                                            |
 | `SFCC_PASSWORD`               | Basic auth password                                            |
 | `SFCC_CERTIFICATE`            | Path to PKCS12 certificate for two-factor auth (mTLS)          |

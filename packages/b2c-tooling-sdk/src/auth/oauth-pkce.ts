@@ -19,6 +19,33 @@ const ACCESS_TOKEN_CACHE: Map<string, AccessTokenResponse> = new Map();
 const PENDING_AUTH: Map<string, Promise<AccessTokenResponse>> = new Map();
 
 /**
+ * Thrown when the Authorization Code + PKCE flow fails in a way that indicates
+ * the Account Manager client is not registered for this grant (e.g. an old
+ * implicit-only public client, or a missing/mismatched redirect URI) rather
+ * than a transient or user-driven failure.
+ *
+ * {@link PkceWithImplicitFallbackStrategy} keys its automatic fallback off this
+ * type so it retries with the legacy implicit flow ONLY for grant/registration
+ * failures — never for user-cancel, state mismatch, or a port-in-use error.
+ *
+ * @remarks Part of the implicit→PKCE migration safety net. Remove together with
+ * the fallback strategy once all public clients are PKCE-capable.
+ */
+export class PkceGrantUnsupportedError extends Error {
+  /** The OAuth 2.0 `error` code from the authorize redirect or token response, when available. */
+  readonly oauthError?: string;
+  /** The OAuth stage at which the failure occurred. */
+  readonly stage: 'authorize' | 'token';
+
+  constructor(message: string, stage: 'authorize' | 'token', oauthError?: string) {
+    super(message);
+    this.name = 'PkceGrantUnsupportedError';
+    this.stage = stage;
+    this.oauthError = oauthError;
+  }
+}
+
+/**
  * Configuration for the OAuth Authorization Code + PKCE flow.
  */
 export interface PkceOAuthConfig {
@@ -184,8 +211,12 @@ export class PkceOAuthStrategy implements AuthStrategy {
   }
 
   invalidateToken(): void {
+    // Only drop the cached access token. The refresh token is preserved so the
+    // next getAccessToken() can silently mint a new access token via
+    // tryRefresh() instead of re-opening the browser. tryRefresh() forgets the
+    // refresh token on its own when the exchange genuinely fails (revoked /
+    // expired), which is the only case where we fall back to the browser flow.
     ACCESS_TOKEN_CACHE.delete(this.config.clientId);
-    this._refreshToken = null;
   }
 
   private isCachedTokenUsable(cached: AccessTokenResponse): boolean {
@@ -380,7 +411,21 @@ export class PkceOAuthStrategy implements AuthStrategy {
     });
     const rawText = await tokenRes.text();
     if (!tokenRes.ok) {
-      throw new Error(`PKCE token exchange failed (${tokenRes.status}): ${rawText}`);
+      // A 4xx here typically means the client is not registered for the
+      // authorization_code grant or the redirect_uri does not match — i.e. a
+      // grant/registration problem the implicit fallback can rescue. Surface a
+      // typed error carrying the OAuth `error` code when present.
+      let oauthError: string | undefined;
+      try {
+        oauthError = (JSON.parse(rawText) as {error?: string}).error;
+      } catch {
+        // non-JSON body; leave oauthError undefined
+      }
+      throw new PkceGrantUnsupportedError(
+        `PKCE token exchange failed (${tokenRes.status}): ${rawText}`,
+        'token',
+        oauthError,
+      );
     }
 
     let parsed: {
@@ -433,7 +478,11 @@ export class PkceOAuthStrategy implements AuthStrategy {
         if (error) {
           res.writeHead(500, {'Content-Type': 'text/plain'});
           res.end(`Authentication failed: ${errorDescription ?? error}`);
-          reject(new Error(`OAuth error: ${errorDescription ?? error}`));
+          // An OAuth error at the authorize step (e.g. unsupported_response_type,
+          // unauthorized_client) indicates the client is not registered for the
+          // authorization_code grant — a grant/registration failure the implicit
+          // fallback can rescue. Mark it typed so the fallback strategy retries.
+          reject(new PkceGrantUnsupportedError(`OAuth error: ${errorDescription ?? error}`, 'authorize', error));
           cleanup();
           return;
         }

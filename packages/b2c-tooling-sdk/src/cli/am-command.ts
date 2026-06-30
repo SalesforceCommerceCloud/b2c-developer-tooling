@@ -7,9 +7,11 @@ import {Command} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
 import {createAccountManagerClient} from '../clients/am-api.js';
 import type {AccountManagerClient} from '../clients/am-api.js';
+import type {UserAuthStrategy} from '../auth/types.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {ImplicitOAuthStrategy} from '../auth/oauth-implicit.js';
 import {PkceOAuthStrategy} from '../auth/oauth-pkce.js';
+import {PkceWithImplicitFallbackStrategy} from '../auth/oauth-pkce-fallback.js';
 import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
 import {StatefulOAuthStrategy} from '../auth/stateful-oauth-strategy.js';
 import {getDefaultPublicClientId} from '../defaults.js';
@@ -65,15 +67,21 @@ export abstract class AmCommand<T extends typeof Command> extends OAuthCommand<T
     | OAuthStrategy
     | JwtOAuthStrategy
     | ImplicitOAuthStrategy
-    | PkceOAuthStrategy
-    | StatefulOAuthStrategy;
+    | StatefulOAuthStrategy
+    | UserAuthStrategy;
 
   /**
    * Gets the auth method type that was used, based on the stored strategy.
    */
   protected get authMethodUsed(): 'user' | 'implicit' | 'client-credentials' | 'jwt' | 'stateful' | undefined {
     if (!this._authStrategy) return undefined;
-    if (this._authStrategy instanceof PkceOAuthStrategy) return 'user';
+    // PkceWithImplicitFallbackStrategy wraps PKCE (it is the 'user' method even
+    // when it has internally fallen back to implicit).
+    if (
+      this._authStrategy instanceof PkceOAuthStrategy ||
+      this._authStrategy instanceof PkceWithImplicitFallbackStrategy
+    )
+      return 'user';
     if (this._authStrategy instanceof ImplicitOAuthStrategy) return 'implicit';
     if (this._authStrategy instanceof StatefulOAuthStrategy) return 'stateful';
     if (this._authStrategy instanceof JwtOAuthStrategy) return 'jwt';

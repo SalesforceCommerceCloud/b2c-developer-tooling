@@ -13,6 +13,7 @@ import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   ImplicitOAuthStrategy,
   PkceOAuthStrategy,
+  PkceWithImplicitFallbackStrategy,
   StatefulOAuthStrategy,
   initializeFileAuthSessionStore,
   saveAuthSession,
@@ -163,9 +164,10 @@ describe('cli/oauth-command', () => {
       await command.init();
 
       // With --user-auth, even though client-secret is provided,
-      // user auth (PKCE) should be used
+      // user auth (PKCE) should be used. The default 'user' strategy is the
+      // transitional PKCE→implicit fallback wrapper.
       const strategy = command.testGetOAuthStrategy();
-      expect(strategy).to.be.instanceOf(PkceOAuthStrategy);
+      expect(strategy).to.be.instanceOf(PkceWithImplicitFallbackStrategy);
     });
 
     it('should use client-credentials when --user-auth is not set and secret is provided', async () => {
@@ -320,12 +322,12 @@ describe('cli/oauth-command', () => {
         commandWithDefault.testRequireOAuthCredentials();
       });
 
-      it('getOAuthStrategy returns PkceOAuthStrategy using default client', async () => {
+      it('getOAuthStrategy returns the PKCE user strategy using default client', async () => {
         stubParse(commandWithDefault);
         await commandWithDefault.init();
 
         const strategy = commandWithDefault.testGetOAuthStrategy();
-        expect(strategy).to.be.instanceOf(PkceOAuthStrategy);
+        expect(strategy).to.be.instanceOf(PkceWithImplicitFallbackStrategy);
       });
 
       it('uses explicit clientId over default when provided', async () => {
@@ -333,7 +335,7 @@ describe('cli/oauth-command', () => {
         await commandWithDefault.init();
 
         const strategy = commandWithDefault.testGetOAuthStrategy();
-        expect(strategy).to.be.instanceOf(PkceOAuthStrategy);
+        expect(strategy).to.be.instanceOf(PkceWithImplicitFallbackStrategy);
       });
 
       it('uses client-credentials when both clientId and clientSecret are provided', async () => {
@@ -350,7 +352,7 @@ describe('cli/oauth-command', () => {
         stubParse(commandWithDefault, {'account-manager-host': 'account-pod5.demandware.net'});
         await commandWithDefault.init();
 
-        expect(commandWithDefault.testGetDefaultClientId()).to.equal('c44527fe-66ff-4455-9eec-7287b2c66485');
+        expect(commandWithDefault.testGetDefaultClientId()).to.equal('3f41a930-b2bb-42c9-907d-f06a33c85849');
       });
     });
   });
@@ -361,7 +363,7 @@ describe('cli/oauth-command', () => {
     });
 
     it('returns pod5 client ID for account-pod5.demandware.net', () => {
-      expect(getDefaultPublicClientId('account-pod5.demandware.net')).to.equal('c44527fe-66ff-4455-9eec-7287b2c66485');
+      expect(getDefaultPublicClientId('account-pod5.demandware.net')).to.equal('3f41a930-b2bb-42c9-907d-f06a33c85849');
     });
 
     it('returns standard default when host is undefined', () => {
