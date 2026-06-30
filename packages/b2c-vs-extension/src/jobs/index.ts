@@ -6,34 +6,42 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
-import {JobDefinitionsTreeDataProvider} from './job-definitions-tree-provider.js';
 import {registerJobsCommands} from './jobs-commands.js';
 import {JobsTreeDataProvider} from './jobs-tree-provider.js';
 
+const AUTO_REFRESH_CONTEXT_KEY = 'b2c-dx.jobs.autoRefreshEnabled';
+
+/**
+ * Wires the Job History tree view + commands.
+ *
+ * Per the post-W-22653699 review feedback the view is now part of the primary
+ * "B2C-DX" panel (under Cartridges) and is `collapsed` by default. There is no
+ * separate Job Definitions view anymore — the useful scaffold action moved to
+ * the Cartridges right-click menu, and the heavy React webview was removed.
+ *
+ * Loading model: the view starts empty and waits for an explicit Refresh —
+ * fetching job history hits OCAPI and can be slow on instances with thousands
+ * of executions, so we don't pay that cost for users who only opened the side
+ * panel to see Cartridges. Auto-Refresh remains a separate opt-in toggle for
+ * users who want continuous polling once they've loaded the view.
+ */
 export function registerJobs(context: vscode.ExtensionContext, configProvider: B2CExtensionConfig): void {
   const treeProvider = new JobsTreeDataProvider(configProvider);
+  // No `showCollapseAll`: execution rows render as leaves, so there's nothing
+  // to collapse — the button would be a dead control in the title bar.
   const treeView = vscode.window.createTreeView('b2cJobsExplorer', {
     treeDataProvider: treeProvider,
-    showCollapseAll: true,
   });
-
-  // Job Definitions are sourced from local workspace cartridges (jobs.xml +
-  // steptypes.json) because OCAPI/SCAPI does not expose Business Manager's job
-  // definitions. A toolbar action deep-links to the live BM page.
-  const definitionsProvider = new JobDefinitionsTreeDataProvider();
-  const definitionsView = vscode.window.createTreeView('b2cJobDefinitionsExplorer', {
-    treeDataProvider: definitionsProvider,
-    showCollapseAll: true,
-  });
-  // Make the scope explicit: this view reflects local workspace files only,
-  // whereas Business Manager lists every job that exists on the server. Without
-  // this, users see "few here, many in BM" and assume something is broken.
-  definitionsView.message = 'Local workspace definitions only — Business Manager shows all server-side jobs.';
 
   const updateJobHistoryMessage = (): void => {
     const lastRefresh = treeProvider.getLastSuccessfulRefreshAt();
+    if (!treeProvider.isLoaded()) {
+      treeView.message = 'Click Refresh to load job history.';
+      return;
+    }
     const refreshLabel = lastRefresh ? lastRefresh.toLocaleTimeString() : '—';
-    treeView.message = `Updated ${refreshLabel}. Open the History Table to filter & export.`;
+    const autoLabel = treeProvider.isPollingEnabled() ? ' · Auto-Refresh on' : '';
+    treeView.message = `Updated ${refreshLabel}${autoLabel}`;
   };
   updateJobHistoryMessage();
 
@@ -44,69 +52,58 @@ export function registerJobs(context: vscode.ExtensionContext, configProvider: B
   };
   updateNeedsOAuthContext();
 
-  if (treeView.visible) {
+  const setAutoRefreshContext = (enabled: boolean): void => {
+    void vscode.commands.executeCommand('setContext', AUTO_REFRESH_CONTEXT_KEY, enabled);
+  };
+  setAutoRefreshContext(false);
+
+  // Loading is manual by default — the user must click Refresh (or enable
+  // Auto-Refresh) to populate the view. This trades one extra click for a
+  // guarantee that opening the side panel never blocks on OCAPI.
+  //
+  // Auto-refresh setting: if the user has explicitly opted into continuous
+  // polling, treat that as the explicit load signal too — start polling
+  // immediately AND fetch once so the view isn't blank while we wait for the
+  // first interval tick.
+  const autoRefreshSetting = vscode.workspace.getConfiguration('b2c-dx').get<boolean>('jobs.autoRefresh', false);
+  if (autoRefreshSetting) {
     treeProvider.startPolling();
+    if (!treeProvider.isLoaded()) treeProvider.refresh();
+    setAutoRefreshContext(true);
     updateJobHistoryMessage();
   }
-
-  const visibilityListener = treeView.onDidChangeVisibility((event) => {
-    if (event.visible) {
-      treeProvider.startPolling();
-      treeProvider.refresh();
-      updateJobHistoryMessage();
-    } else {
-      treeProvider.stopPolling();
-      updateJobHistoryMessage();
-    }
-  });
-
-  // Refresh the Definitions view when local job artifacts change. Job
-  // definitions may use non-standard filenames (discovery is content-based and
-  // configurable), so watch any .xml plus steptypes.json. Refresh is cheap
-  // (cached + content-filtered); the view also refreshes when it becomes visible.
-  const definitionsWatcher = vscode.workspace.createFileSystemWatcher('**/*.{xml,json}');
-  definitionsWatcher.onDidCreate(() => definitionsProvider.refresh());
-  definitionsWatcher.onDidChange(() => definitionsProvider.refresh());
-  definitionsWatcher.onDidDelete(() => definitionsProvider.refresh());
-
-  const definitionsVisibilityListener = definitionsView.onDidChangeVisibility((event) => {
-    if (event.visible) definitionsProvider.refresh();
-  });
 
   const messageRefreshTimer = setInterval(() => {
     updateJobHistoryMessage();
   }, 5000);
 
+  // Refresh the title-bar message the moment a fetch settles. Without this the
+  // "Updated —" placeholder would linger until the next 5s tick of the timer
+  // above — visible as a noticeable lag after pressing Refresh.
+  const onDidLoadSub = treeProvider.onDidLoad(() => updateJobHistoryMessage());
+
   const builtInScaffoldsDir = path.join(context.extensionPath, 'dist', 'data', 'scaffolds');
   const commandDisposables = registerJobsCommands(configProvider, treeProvider, {
     builtInScaffoldsDir,
-    definitionsProvider,
     extensionUri: context.extensionUri,
+    onAutoRefreshChanged: (enabled) => {
+      setAutoRefreshContext(enabled);
+      updateJobHistoryMessage();
+    },
   });
 
   configProvider.onDidReset(() => {
     treeProvider.stopPolling();
+    setAutoRefreshContext(false);
     updateNeedsOAuthContext();
-    treeProvider.refresh();
-    definitionsProvider.refresh();
-    if (treeView.visible) {
-      treeProvider.startPolling();
-    }
+    treeProvider.resetLoaded();
     updateJobHistoryMessage();
   });
 
-  context.subscriptions.push(
-    treeView,
-    definitionsView,
-    visibilityListener,
-    definitionsVisibilityListener,
-    definitionsWatcher,
-    ...commandDisposables,
-    {
-      dispose: () => {
-        clearInterval(messageRefreshTimer);
-        treeProvider.stopPolling();
-      },
+  context.subscriptions.push(treeView, onDidLoadSub, ...commandDisposables, {
+    dispose: () => {
+      clearInterval(messageRefreshTimer);
+      treeProvider.stopPolling();
     },
-  );
+  });
 }

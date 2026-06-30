@@ -8,8 +8,15 @@ import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {showThrottledError} from '../notify.js';
 
-export type JobStatusFilter = 'active' | 'all' | 'running' | 'scheduled' | 'failed' | 'completed';
+export type JobStatusFilter = 'all' | 'active' | 'running' | 'scheduled' | 'failed' | 'completed';
 type ExecutionStatus = 'running' | 'failed' | 'completed' | 'scheduled';
+
+/**
+ * Default = `chronological` (BM-style timeline). `groupByJobId` collapses
+ * executions under their parent job. The grouping toggle is the only switch
+ * between these two views; the underlying data fetch is identical.
+ */
+export type JobGroupingMode = 'chronological' | 'groupByJobId';
 
 export interface JobHistoryFilters {
   jobIdContains: string;
@@ -24,19 +31,16 @@ export interface JobHistoryExecutionRow {
   execution: JobExecution;
 }
 
-export type JobsTreeNode = JobTreeItem | JobExecutionTreeItem | JobStepTreeItem | JobsEmptyStateTreeItem;
+export type JobsTreeNode = JobTreeItem | JobExecutionTreeItem | JobsEmptyStateTreeItem | JobsLoadHintTreeItem;
 
 const JOBS_FETCH_LIMIT = 200;
 const DEFAULT_DISCOVERY_SCAN_LIMIT = 2000;
 const MIN_DISCOVERY_SCAN_LIMIT = 200;
 const MAX_DISCOVERY_SCAN_LIMIT = 5000;
-const DEFAULT_EXECUTION_HISTORY_LIMIT = 25;
-const MIN_EXECUTION_HISTORY_LIMIT = 5;
-const MAX_EXECUTION_HISTORY_LIMIT = 200;
 const DEFAULT_POLLING_INTERVAL_SECONDS = 30;
 const MIN_POLLING_INTERVAL_SECONDS = 5;
 const MAX_POLLING_INTERVAL_SECONDS = 300;
-const DEFAULT_STATUS_FILTER: JobStatusFilter = 'active';
+const DEFAULT_STATUS_FILTER: JobStatusFilter = 'all';
 const EMPTY_HISTORY_FILTERS: JobHistoryFilters = {
   jobIdContains: '',
   executedBy: '',
@@ -44,14 +48,7 @@ const EMPTY_HISTORY_FILTERS: JobHistoryFilters = {
   endTo: '',
 };
 
-const STATUS_FILTER_OPTIONS: JobStatusFilter[] = ['active', 'all', 'running', 'scheduled', 'failed', 'completed'];
-
-const ALL_FILTER_STATUS_PRIORITY: Record<ExecutionStatus, number> = {
-  running: 0,
-  scheduled: 1,
-  failed: 2,
-  completed: 3,
-};
+const STATUS_FILTER_OPTIONS: JobStatusFilter[] = ['all', 'active', 'running', 'scheduled', 'failed', 'completed'];
 
 function getJobsPollingIntervalMs(): number {
   const configured = vscode.workspace
@@ -140,15 +137,13 @@ function emptyStateTitle(filter: JobStatusFilter): string {
   if (filter === 'scheduled') return 'No scheduled jobs';
   if (filter === 'failed') return 'No failed jobs';
   if (filter === 'completed') return 'No completed jobs';
-  return 'No jobs yet';
+  return 'No jobs found';
 }
 
-function emptyStateDescription(filter: JobStatusFilter): string {
-  if (filter === 'all') {
-    return 'Run a job to populate history.';
-  }
-
-  return 'Open the History Table to see all runs.';
+function emptyStateDescription(filter: JobStatusFilter, filtersApplied: boolean): string {
+  if (filtersApplied) return 'Adjust or clear filters to see more.';
+  if (filter === 'all') return 'Run a job to populate history.';
+  return 'Change the status filter to see other entries.';
 }
 
 function getJobDiscoveryScanLimit(): number {
@@ -156,13 +151,6 @@ function getJobDiscoveryScanLimit(): number {
     .getConfiguration('b2c-dx')
     .get<number>('jobs.discoveryExecutionScanLimit', DEFAULT_DISCOVERY_SCAN_LIMIT);
   return Math.min(MAX_DISCOVERY_SCAN_LIMIT, Math.max(MIN_DISCOVERY_SCAN_LIMIT, configured));
-}
-
-function getExecutionHistoryLimit(): number {
-  const configured = vscode.workspace
-    .getConfiguration('b2c-dx')
-    .get<number>('jobs.historyLimit', DEFAULT_EXECUTION_HISTORY_LIMIT);
-  return Math.min(MAX_EXECUTION_HISTORY_LIMIT, Math.max(MIN_EXECUTION_HISTORY_LIMIT, configured));
 }
 
 function getDefaultJobsStatusFilter(): JobStatusFilter {
@@ -176,6 +164,18 @@ function getDefaultJobsStatusFilter(): JobStatusFilter {
   }
 
   return DEFAULT_STATUS_FILTER;
+}
+
+const GROUPING_MODE_OPTIONS: JobGroupingMode[] = ['chronological', 'groupByJobId'];
+const DEFAULT_GROUPING_MODE: JobGroupingMode = 'chronological';
+
+function getDefaultGroupingMode(): JobGroupingMode {
+  const configured = vscode.workspace
+    .getConfiguration('b2c-dx')
+    .get<string>('jobs.defaultGrouping', DEFAULT_GROUPING_MODE);
+  return GROUPING_MODE_OPTIONS.includes(configured as JobGroupingMode)
+    ? (configured as JobGroupingMode)
+    : DEFAULT_GROUPING_MODE;
 }
 
 function formatJobsFetchError(error: unknown): string {
@@ -274,34 +274,32 @@ function buildExecutionTooltip(execution: JobExecution): vscode.MarkdownString {
   return new vscode.MarkdownString(lines.join('\n\n'));
 }
 
+/**
+ * Job-id parent shown in groupByJobId mode. Holds one or more
+ * JobExecutionTreeItem children. The label is the job id; description shows
+ * the run count and the latest run's status so the row is informative even
+ * collapsed.
+ */
 export class JobTreeItem extends vscode.TreeItem {
   readonly nodeType = 'job' as const;
 
   constructor(
     readonly jobId: string,
-    readonly latestExecution: JobExecution,
+    readonly executions: JobExecution[],
   ) {
     super(jobId, vscode.TreeItemCollapsibleState.Collapsed);
-    const status = normalizeExecutionStatus(latestExecution);
+
+    const latest = executions[0];
+    const latestStatus = latest ? normalizeExecutionStatus(latest) : 'completed';
+    const runCount = executions.length;
 
     this.id = `job:${jobId}`;
-    this.contextValue = `job-${status}`;
-    this.iconPath = jobStatusIcon(status);
-    this.description = `${status} · last ${formatDateTime(latestExecution.start_time)} · ${formatDuration(latestExecution.duration)}`;
-
-    const lines: string[] = [
-      `Job: ${jobId}`,
-      `Status: ${status}`,
-      `Last execution: ${latestExecution.id ?? 'unknown'}`,
-      `Last started: ${formatDateTime(latestExecution.start_time)}`,
-      `Last duration: ${formatDuration(latestExecution.duration)}`,
-    ];
-
-    if (latestExecution.exit_status?.message) {
-      lines.push(`Last message: ${latestExecution.exit_status.message}`);
-    }
-
-    this.tooltip = new vscode.MarkdownString(lines.join('\n\n'));
+    this.contextValue = `job-${latestStatus}`;
+    this.iconPath = jobStatusIcon(latestStatus);
+    this.description = `${runCount} run${runCount === 1 ? '' : 's'} · last: ${latestStatus}`;
+    this.tooltip = new vscode.MarkdownString(
+      `Job: ${jobId}\n\nRuns shown: ${runCount}\n\nLatest run: ${latestStatus} · ${formatDateTime(latest?.start_time)}`,
+    );
   }
 }
 
@@ -311,42 +309,30 @@ export class JobExecutionTreeItem extends vscode.TreeItem {
   constructor(
     readonly jobId: string,
     readonly execution: JobExecution,
+    /**
+     * When true (the default, used by the chronological view) the row label is
+     * the job id so users can scan the timeline by job. Under a JobTreeItem
+     * grouping parent the parent already shows the job id, so callers pass
+     * `false` to surface the start timestamp as the label instead.
+     */
+    showJobIdAsLabel = true,
   ) {
     const executionId = execution.id ?? 'unknown';
     const status = normalizeExecutionStatus(execution);
-    super(executionId, vscode.TreeItemCollapsibleState.Collapsed);
+    const label = showJobIdAsLabel ? jobId : (formatDateTime(execution.start_time) ?? executionId);
+    // Leaf — step-level drill-down lives in **View Execution Details** and the
+    // BM deep-link, so giving each execution a chevron would just open into
+    // nothing. The collapsible affordance now only appears on grouping parents
+    // (JobTreeItem) where it actually represents children.
+    super(label, vscode.TreeItemCollapsibleState.None);
 
     this.id = `execution:${jobId}:${executionId}`;
     this.contextValue = `jobExecution-${status}`;
     this.iconPath = jobStatusIcon(status);
-    this.description = `${status} · ${formatDateTime(execution.start_time)} · ${formatDuration(execution.duration)}`;
+    this.description = showJobIdAsLabel
+      ? `${status} · ${formatDateTime(execution.start_time)} · ${formatDuration(execution.duration)}`
+      : `${status} · ${formatDuration(execution.duration)}`;
     this.tooltip = buildExecutionTooltip(execution);
-  }
-}
-
-export class JobStepTreeItem extends vscode.TreeItem {
-  readonly nodeType = 'step' as const;
-
-  constructor(
-    readonly jobId: string,
-    readonly executionId: string,
-    readonly step: NonNullable<JobExecution['step_executions']>[number],
-  ) {
-    const stepId = step.step_id ?? 'step';
-    const status = (step.exit_status?.code ?? 'UNKNOWN').toUpperCase();
-    super(stepId, vscode.TreeItemCollapsibleState.None);
-
-    const failed = status === 'ERROR';
-    this.id = `step:${jobId}:${executionId}:${stepId}`;
-    this.contextValue = failed ? 'jobStep-failed' : 'jobStep';
-    this.iconPath = failed
-      ? new vscode.ThemeIcon('error', new vscode.ThemeColor('testing.iconFailed'))
-      : new vscode.ThemeIcon('pass', new vscode.ThemeColor('testing.iconPassed'));
-    this.description = `${status} · ${formatDuration(step.duration)}`;
-
-    const lines: string[] = [`Step: ${stepId}`, `Status: ${status}`, `Duration: ${formatDuration(step.duration)}`];
-    if (step.exit_status?.message) lines.push(`Message: ${step.exit_status.message}`);
-    this.tooltip = new vscode.MarkdownString(lines.join('\n\n'));
   }
 }
 
@@ -359,11 +345,31 @@ export class JobsEmptyStateTreeItem extends vscode.TreeItem {
     this.contextValue = 'jobs-empty-state';
     this.iconPath = new vscode.ThemeIcon('info');
     this.description = filtersApplied
-      ? `${emptyStateDescription(filter)} (filters active)`
-      : emptyStateDescription(filter);
+      ? `${emptyStateDescription(filter, filtersApplied)} (filters active)`
+      : emptyStateDescription(filter, filtersApplied);
     this.tooltip = new vscode.MarkdownString(
-      `No job history entries match **${statusFilterLabel(filter)}** right now.\n\nUse **Filters** (funnel action in the Job History view title bar) to adjust status, presets, or advanced filters.`,
+      `No job history entries match **${statusFilterLabel(filter)}** right now.\n\nUse the title-bar actions to change the status filter or clear name/advanced filters.`,
     );
+  }
+}
+
+/** Shown before the user has explicitly loaded job history (or after a config reset). */
+export class JobsLoadHintTreeItem extends vscode.TreeItem {
+  readonly nodeType = 'loadHint' as const;
+
+  constructor() {
+    super('Load job history', vscode.TreeItemCollapsibleState.None);
+    this.id = 'jobs-load-hint';
+    this.contextValue = 'jobs-load-hint';
+    this.iconPath = new vscode.ThemeIcon('cloud-download');
+    this.description = 'Click to fetch from the configured instance';
+    this.tooltip = new vscode.MarkdownString(
+      'Job History is not loaded by default to avoid unwanted OCAPI traffic.\n\nClick to load, or enable **Auto-Refresh** in the title bar to load automatically and refresh on a schedule.',
+    );
+    this.command = {
+      command: 'b2c-dx.jobs.refresh',
+      title: 'Load Job History',
+    };
   }
 }
 
@@ -371,17 +377,29 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
   private readonly onDidChangeTreeDataEmitter = new vscode.EventEmitter<JobsTreeNode | undefined | void>();
   readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
 
-  private jobCache: Map<string, JobExecution> | undefined;
+  /**
+   * Fires the moment a fetch settles (success or failure), so subscribers can
+   * update derived UI immediately. Without this the title-bar timestamp would
+   * stay stale for up to the next 5s timer tick, making "Updated —" linger
+   * after the data already arrived.
+   */
+  private readonly onDidLoadEmitter = new vscode.EventEmitter<void>();
+  readonly onDidLoad = this.onDidLoadEmitter.event;
+
   private discoveryExecutionCache: JobExecution[] | undefined;
-  private executionCache = new Map<string, JobExecution[]>();
   private pollingTimer: ReturnType<typeof setInterval> | undefined;
   private statusFilter: JobStatusFilter;
+  private groupingMode: JobGroupingMode;
   private historyFilters: JobHistoryFilters = EMPTY_HISTORY_FILTERS;
   private lastSuccessfulRefreshAt: Date | undefined;
+  /** Whether the user has explicitly loaded the view at least once. */
+  private loadedOnce = false;
 
   constructor(private readonly configProvider: B2CExtensionConfig) {
     this.statusFilter = getDefaultJobsStatusFilter();
+    this.groupingMode = getDefaultGroupingMode();
     this.updateStatusFilterContext();
+    this.updateGroupingModeContext();
   }
 
   getStatusFilter(): JobStatusFilter {
@@ -417,51 +435,16 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
     return this.lastSuccessfulRefreshAt;
   }
 
+  isLoaded(): boolean {
+    return this.loadedOnce;
+  }
+
   isPollingEnabled(): boolean {
     return Boolean(this.pollingTimer);
   }
 
   getPollingIntervalSeconds(): number {
     return Math.round(getJobsPollingIntervalMs() / 1000);
-  }
-
-  async getFilteredExecutionHistoryRows(): Promise<JobHistoryExecutionRow[]> {
-    await this.getJobNodes(true);
-    const executions = this.discoveryExecutionCache ?? [];
-
-    return executions
-      .map((execution) => {
-        const jobId = execution.job_id;
-        if (!jobId) return undefined;
-        const status = normalizeExecutionStatus(execution);
-        return {jobId, status, execution};
-      })
-      .filter((row): row is JobHistoryExecutionRow => Boolean(row))
-      .filter(
-        (row) =>
-          matchesStatusFilter(row.status, this.statusFilter) &&
-          matchesHistoryFilters(row.jobId, row.execution, this.historyFilters),
-      );
-  }
-
-  /**
-   * Returns every discovered execution row, ignoring the tree's status/history
-   * filters. The History Table is a self-contained exploration surface that owns
-   * its own filtering, so it must start from the full dataset rather than
-   * inheriting whatever filter the tree happens to have applied.
-   */
-  async getAllExecutionHistoryRows(): Promise<JobHistoryExecutionRow[]> {
-    await this.getJobNodes(true);
-    const executions = this.discoveryExecutionCache ?? [];
-
-    return executions
-      .map((execution) => {
-        const jobId = execution.job_id;
-        if (!jobId) return undefined;
-        const status = normalizeExecutionStatus(execution);
-        return {jobId, status, execution};
-      })
-      .filter((row): row is JobHistoryExecutionRow => Boolean(row));
   }
 
   setStatusFilter(filter: JobStatusFilter): void {
@@ -471,27 +454,68 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
     this.onDidChangeTreeDataEmitter.fire();
   }
 
+  getGroupingMode(): JobGroupingMode {
+    return this.groupingMode;
+  }
+
+  /**
+   * Flips between the BM-style timeline and the by-job grouped view. Cycling
+   * is a one-shot mutation that re-renders the tree without re-fetching — the
+   * underlying executions list is the same in both modes.
+   */
+  toggleGroupingMode(): JobGroupingMode {
+    this.groupingMode = this.groupingMode === 'chronological' ? 'groupByJobId' : 'chronological';
+    this.updateGroupingModeContext();
+    this.onDidChangeTreeDataEmitter.fire();
+    return this.groupingMode;
+  }
+
   getTreeItem(element: JobsTreeNode): vscode.TreeItem {
     return element;
   }
 
   async getChildren(element?: JobsTreeNode): Promise<JobsTreeNode[]> {
-    if (!element) return this.getJobNodes();
-    if (element instanceof JobTreeItem) return this.getExecutionNodes(element.jobId);
-    if (element instanceof JobExecutionTreeItem) return this.getStepNodes(element);
+    if (!element) return this.getRootNodes();
+    if (element instanceof JobTreeItem) {
+      // Grouped view: each child execution renders as a leaf labeled by its
+      // start timestamp — the job id is already on the parent row.
+      return element.executions.map((execution) => new JobExecutionTreeItem(element.jobId, execution, false));
+    }
+    // Executions are leaves; step-level drill-down lives in **View Execution
+    // Details** (and the BM deep-link).
     return [];
   }
 
+  /**
+   * Marks the view as loaded and re-fetches. Called from the explicit Refresh action
+   * (and by the polling timer when auto-refresh is on).
+   */
   refresh(): void {
-    this.jobCache = undefined;
+    this.loadedOnce = true;
     this.discoveryExecutionCache = undefined;
-    this.executionCache.clear();
+    this.onDidChangeTreeDataEmitter.fire();
+  }
+
+  /** Soft refresh: re-renders the tree without dropping caches (e.g. filter changes). */
+  rerender(): void {
+    this.onDidChangeTreeDataEmitter.fire();
+  }
+
+  /** Reset to the unloaded state — used on config reset (e.g. instance switch). */
+  resetLoaded(): void {
+    this.loadedOnce = false;
+    this.discoveryExecutionCache = undefined;
     this.onDidChangeTreeDataEmitter.fire();
   }
 
   async getDiscoveredJobIds(): Promise<string[]> {
-    const nodes = await this.getJobNodes(true);
-    return nodes.filter((node): node is JobTreeItem => node instanceof JobTreeItem).map((node) => node.jobId);
+    if (!this.loadedOnce) return [];
+    await this.loadJobs();
+    const ids = new Set<string>();
+    for (const execution of this.discoveryExecutionCache ?? []) {
+      if (execution.job_id) ids.add(execution.job_id);
+    }
+    return [...ids].sort((a, b) => a.localeCompare(b));
   }
 
   startPolling(): void {
@@ -509,112 +533,149 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
     this.pollingTimer = undefined;
   }
 
+  async getFilteredExecutionHistoryRows(): Promise<JobHistoryExecutionRow[]> {
+    if (!this.loadedOnce) return [];
+    await this.loadJobs();
+    const executions = this.discoveryExecutionCache ?? [];
+
+    return executions
+      .map((execution) => {
+        const jobId = execution.job_id;
+        if (!jobId) return undefined;
+        const status = normalizeExecutionStatus(execution);
+        return {jobId, status, execution};
+      })
+      .filter((row): row is JobHistoryExecutionRow => Boolean(row))
+      .filter(
+        (row) =>
+          matchesStatusFilter(row.status, this.statusFilter) &&
+          matchesHistoryFilters(row.jobId, row.execution, this.historyFilters),
+      );
+  }
+
+  async getAllExecutionHistoryRows(): Promise<JobHistoryExecutionRow[]> {
+    if (!this.loadedOnce) return [];
+    await this.loadJobs();
+    const executions = this.discoveryExecutionCache ?? [];
+
+    return executions
+      .map((execution) => {
+        const jobId = execution.job_id;
+        if (!jobId) return undefined;
+        const status = normalizeExecutionStatus(execution);
+        return {jobId, status, execution};
+      })
+      .filter((row): row is JobHistoryExecutionRow => Boolean(row));
+  }
+
   private updateStatusFilterContext(): void {
     void vscode.commands.executeCommand('setContext', 'b2c-dx.jobs.statusFilter', this.statusFilter);
   }
 
-  private async getJobNodes(ignoreFilter = false): Promise<JobsTreeNode[]> {
+  /**
+   * Mirrors the grouping mode into VS Code context so package.json can swap the
+   * title-bar icon between `list-flat` (timeline) and `list-tree` (grouped).
+   */
+  private updateGroupingModeContext(): void {
+    void vscode.commands.executeCommand('setContext', 'b2c-dx.jobs.groupingMode', this.groupingMode);
+  }
+
+  private async getRootNodes(): Promise<JobsTreeNode[]> {
     const instance = this.configProvider.getInstance();
     if (!instance) return [];
 
-    if (!this.jobCache) {
-      try {
-        const grouped = new Map<string, JobExecution>();
-        const discoveredExecutions: JobExecution[] = [];
-        const scanLimit = getJobDiscoveryScanLimit();
-        let start = 0;
-
-        while (start < scanLimit) {
-          const count = Math.min(JOBS_FETCH_LIMIT, scanLimit - start);
-          const result = await searchJobExecutions(instance, {
-            count,
-            start,
-            sortBy: 'start_time',
-            sortOrder: 'desc',
-          });
-
-          for (const execution of result.hits) {
-            discoveredExecutions.push(execution);
-            const jobId = execution.job_id;
-            if (!jobId) continue;
-            if (!grouped.has(jobId)) grouped.set(jobId, execution);
-          }
-
-          const fetchedCount = result.hits.length;
-          if (fetchedCount === 0) break;
-
-          start += fetchedCount;
-          if (start >= result.total) break;
-        }
-
-        this.jobCache = grouped;
-        this.discoveryExecutionCache = discoveredExecutions;
-        this.lastSuccessfulRefreshAt = new Date();
-      } catch (error) {
-        showThrottledError(`Jobs: ${formatJobsFetchError(error)}`, 'jobs:root');
-        return [];
-      }
+    if (!this.loadedOnce) {
+      return [new JobsLoadHintTreeItem()];
     }
 
-    const entries = [...this.jobCache.entries()].map(([jobId, latestExecution]) => ({
-      jobId,
-      latestExecution,
-      status: normalizeExecutionStatus(latestExecution),
-    }));
+    await this.loadJobs();
+    if (!this.discoveryExecutionCache) return [];
 
-    const filteredEntries = ignoreFilter
-      ? entries
-      : entries.filter(
-          (entry) =>
-            matchesStatusFilter(entry.status, this.statusFilter) &&
-            matchesHistoryFilters(entry.jobId, entry.latestExecution, this.historyFilters),
-        );
+    const executions = this.discoveryExecutionCache;
+    const rows = executions
+      .map((execution) => {
+        const jobId = execution.job_id;
+        if (!jobId) return undefined;
+        return {jobId, status: normalizeExecutionStatus(execution), execution};
+      })
+      .filter((row): row is JobHistoryExecutionRow => Boolean(row))
+      .filter(
+        (row) =>
+          matchesStatusFilter(row.status, this.statusFilter) &&
+          matchesHistoryFilters(row.jobId, row.execution, this.historyFilters),
+      );
 
-    if (filteredEntries.length === 0 && !ignoreFilter && entries.length > 0) {
+    if (rows.length === 0) {
       return [new JobsEmptyStateTreeItem(this.statusFilter, this.hasHistoryFilters())];
     }
 
-    return filteredEntries
-      .sort((left, right) => {
-        if (this.statusFilter === 'all') {
-          const statusDiff = ALL_FILTER_STATUS_PRIORITY[left.status] - ALL_FILTER_STATUS_PRIORITY[right.status];
-          if (statusDiff !== 0) return statusDiff;
-        }
-        return left.jobId.localeCompare(right.jobId);
-      })
-      .map((entry) => new JobTreeItem(entry.jobId, entry.latestExecution));
+    if (this.groupingMode === 'groupByJobId') {
+      // Bucket executions per job, preserving the SDK's start_time-desc order
+      // inside each bucket. Jobs are then sorted by their most-recent run so the
+      // currently-active / most-recently-touched jobs float to the top — the
+      // same order BM's Job Definitions sidebar uses.
+      const byJob = new Map<string, JobExecution[]>();
+      for (const row of rows) {
+        const existing = byJob.get(row.jobId);
+        if (existing) existing.push(row.execution);
+        else byJob.set(row.jobId, [row.execution]);
+      }
+
+      const groupNodes = [...byJob.entries()]
+        .sort(([, aRuns], [, bRuns]) => {
+          const aLatest = parseTimestamp(aRuns[0]?.start_time) ?? 0;
+          const bLatest = parseTimestamp(bRuns[0]?.start_time) ?? 0;
+          return bLatest - aLatest;
+        })
+        .map(([jobId, runs]) => new JobTreeItem(jobId, runs));
+
+      return groupNodes;
+    }
+
+    // Chronological view: SDK already returns by start_time desc; preserve that order.
+    return rows.map((row) => new JobExecutionTreeItem(row.jobId, row.execution));
   }
 
-  private async getExecutionNodes(jobId: string): Promise<JobExecutionTreeItem[]> {
+  /** Single fetch path used by both root rendering and lookup APIs. */
+  private async loadJobs(): Promise<void> {
     const instance = this.configProvider.getInstance();
-    if (!instance) return [];
+    if (!instance) return;
+    if (this.discoveryExecutionCache) return;
 
-    let executions = this.executionCache.get(jobId);
-    if (!executions) {
-      try {
+    try {
+      const discoveredExecutions: JobExecution[] = [];
+      const scanLimit = getJobDiscoveryScanLimit();
+      let start = 0;
+
+      while (start < scanLimit) {
+        const count = Math.min(JOBS_FETCH_LIMIT, scanLimit - start);
         const result = await searchJobExecutions(instance, {
-          jobId,
-          count: getExecutionHistoryLimit(),
+          count,
+          start,
           sortBy: 'start_time',
           sortOrder: 'desc',
         });
-        executions = result.hits;
-        this.executionCache.set(jobId, executions);
-      } catch (error) {
-        showThrottledError(`Jobs (${jobId}): ${formatJobsFetchError(error)}`, `jobs:${jobId}`);
-        return [];
+
+        for (const execution of result.hits) {
+          discoveredExecutions.push(execution);
+        }
+
+        const fetchedCount = result.hits.length;
+        if (fetchedCount === 0) break;
+
+        start += fetchedCount;
+        if (start >= result.total) break;
       }
+
+      this.discoveryExecutionCache = discoveredExecutions;
+      this.lastSuccessfulRefreshAt = new Date();
+    } catch (error) {
+      showThrottledError(`Jobs: ${formatJobsFetchError(error)}`, 'jobs:root');
+    } finally {
+      // Notify the index.ts message updater that the fetch settled — it
+      // re-renders "Updated <time>" immediately instead of waiting for the
+      // next 5s tick of the title-bar interval.
+      this.onDidLoadEmitter.fire();
     }
-
-    return executions
-      .filter((execution) => matchesHistoryFilters(jobId, execution, this.historyFilters))
-      .map((execution) => new JobExecutionTreeItem(jobId, execution));
-  }
-
-  private getStepNodes(executionNode: JobExecutionTreeItem): JobStepTreeItem[] {
-    const steps = executionNode.execution.step_executions ?? [];
-    const executionId = executionNode.execution.id ?? 'unknown';
-
-    return steps.map((step) => new JobStepTreeItem(executionNode.jobId, executionId, step));
   }
 }
