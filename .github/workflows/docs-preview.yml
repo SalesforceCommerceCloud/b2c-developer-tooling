@@ -24,6 +24,10 @@ name: Docs Preview
 on:
   pull_request:
     types: [opened, reopened, synchronize, closed]
+    # Only build previews for PRs targeting the long-lived integration branches.
+    branches:
+      - develop
+      - main
     paths:
       - 'docs/**'
   workflow_dispatch:
@@ -223,6 +227,21 @@ jobs:
             const {owner, repo} = context.repo;
             const issue_number = Number.parseInt(PR_NUMBER, 10);
 
+            // Tag the PR so docs previews are easy to filter. addLabels is additive
+            // (it won't clobber other labels); create the label on first use if the
+            // repo doesn't have it yet.
+            const label = 'docs-preview';
+            try {
+              await github.rest.issues.addLabels({owner, repo, issue_number, labels: [label]});
+            } catch (err) {
+              if (err.status === 404) {
+                await github.rest.issues.createLabel({owner, repo, name: label, color: '0e8a16', description: 'Has a live rendered docs-site preview'}).catch(() => {});
+                await github.rest.issues.addLabels({owner, repo, issue_number, labels: [label]});
+              } else {
+                throw err;
+              }
+            }
+
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner,
               repo,
@@ -296,6 +315,12 @@ jobs:
 
             const {owner, repo} = context.repo;
             const issue_number = Number.parseInt(process.env.PR_NUMBER, 10);
+
+            // The preview is gone, so drop the docs-preview label. Ignore a 404
+            // (label was never applied / already removed).
+            await github.rest.issues.removeLabel({owner, repo, issue_number, name: 'docs-preview'}).catch((err) => {
+              if (err.status !== 404) throw err;
+            });
 
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner,
