@@ -23,7 +23,9 @@ name: Docs Preview
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, closed]
+    # ready_for_review is included so a preview builds as soon as a draft PR is
+    # marked ready (draft PRs are skipped in the resolve job below).
+    types: [opened, reopened, synchronize, ready_for_review, closed]
     # Only build previews for PRs targeting the long-lived integration branches.
     branches:
       - develop
@@ -63,6 +65,7 @@ jobs:
       head_sha: ${{ steps.r.outputs.head_sha }}
       action: ${{ steps.r.outputs.action }}
       same_repo: ${{ steps.r.outputs.same_repo }}
+      is_draft: ${{ steps.r.outputs.is_draft }}
     steps:
       - name: Resolve PR number, head SHA, and same-repo status
         id: r
@@ -89,14 +92,21 @@ jobs:
             // and the head SHA we build/comment against, for both triggers.
             const {data: pr} = await github.rest.pulls.get({owner, repo, pull_number: prNumber});
             const sameRepo = Boolean(pr.head.repo) && pr.head.repo.full_name === `${owner}/${repo}`;
+            // Skip draft PRs (build resumes on ready_for_review). A manual dispatch
+            // overrides this so a maintainer can force a preview for a draft.
+            const isDraft = action !== 'manual' && Boolean(pr.draft);
 
             core.setOutput('pr_number', String(prNumber));
             core.setOutput('head_sha', pr.head.sha);
             core.setOutput('action', action);
             core.setOutput('same_repo', sameRepo ? 'true' : 'false');
+            core.setOutput('is_draft', isDraft ? 'true' : 'false');
 
             if (!sameRepo) {
               core.notice(`PR #${prNumber} is from a fork (${pr.head.repo ? pr.head.repo.full_name : 'unknown'}); docs preview is skipped for forks.`);
+            }
+            if (isDraft) {
+              core.notice(`PR #${prNumber} is a draft; docs preview is skipped until it is marked ready for review.`);
             }
 
   deploy:
@@ -104,12 +114,13 @@ jobs:
     needs: resolve
     if: >-
       needs.resolve.outputs.same_repo == 'true' &&
-      needs.resolve.outputs.action != 'closed'
+      needs.resolve.outputs.action != 'closed' &&
+      needs.resolve.outputs.is_draft != 'true'
     runs-on: ubuntu-latest
     # Bind to the environment that holds the AWS preview secrets/vars. Environment
     # secrets are only injected into jobs that declare the environment — without
     # this, secrets.AWS_PREVIEW_ROLE_ARN resolves empty and the deploy is skipped.
-    environment: e2e-dev
+    environment: b2c-docs-preview
     env:
       PR_NUMBER: ${{ needs.resolve.outputs.pr_number }}
       AWS_PREVIEW_ROLE_ARN: ${{ secrets.AWS_PREVIEW_ROLE_ARN }}
@@ -264,7 +275,7 @@ jobs:
       needs.resolve.outputs.action == 'closed'
     runs-on: ubuntu-latest
     # Same environment binding as the deploy job so cleanup can reach the AWS secrets.
-    environment: e2e-dev
+    environment: b2c-docs-preview
     env:
       PR_NUMBER: ${{ needs.resolve.outputs.pr_number }}
       AWS_PREVIEW_ROLE_ARN: ${{ secrets.AWS_PREVIEW_ROLE_ARN }}
