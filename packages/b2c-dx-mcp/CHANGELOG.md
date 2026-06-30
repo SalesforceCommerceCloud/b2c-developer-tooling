@@ -1,5 +1,12 @@
 # @salesforce/b2c-dx-mcp
 
+## 1.4.1
+
+### Patch Changes
+
+- Updated dependencies [[`2f79d71`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2f79d711475add9707ee2474f6dfab416dd88ba6), [`6cfb9bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6cfb9bd4b2a45ad838df86371f85e31c425caf88), [`6cfb9bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6cfb9bd4b2a45ad838df86371f85e31c425caf88)]:
+  - @salesforce/b2c-tooling-sdk@1.17.0
+
 ## 1.4.0
 
 ### Minor Changes

@@ -1,5 +1,17 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.17.0
+
+### Minor Changes
+
+- [#536](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/536) [`2f79d71`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2f79d711475add9707ee2474f6dfab416dd88ba6) - Add optional `description` field to `regiondefinition.json` schema, matching the field added to the ECOM platform schema in W-22617900. (Thanks [@sf-emmyzhang](https://github.com/sf-emmyzhang)!)
+
+- [#530](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/530) [`6cfb9bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6cfb9bd4b2a45ad838df86371f85e31c425caf88) - Document the standard (system) job steps that B2C Commerce ships for Business Manager job flows. The bundled docs corpus now includes the full catalog of standard job step type IDs (e.g. `ImportCatalog`, `ExportCatalog`, `ExecutePreconfiguredDataReplicationProcess`, `SearchReindex`) with each step's purpose, scope, and configuration parameters — sourced from the public B2C Commerce Job Step API documentation and searchable through `b2c docs search`/`b2c docs read` (and the `docs_search`/`docs_read` MCP tools) with no new commands. Read the catalog with `b2c docs read job-steps` or a specific step with `b2c docs read <TypeID>`. The job and custom-job-step skills now cover referencing an IMPEX-staged file from a prior step, chaining custom and standard steps in one flow, and choosing an in-flow system step vs. the CLI equivalent (e.g. a standard catalog import vs. `b2c job import`). (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#530](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/530) [`6cfb9bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6cfb9bd4b2a45ad838df86371f85e31c425caf88) - Update the bundled Script API documentation and XSD schemas to version 26.7. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.16.0
 
 ### Minor Changes
