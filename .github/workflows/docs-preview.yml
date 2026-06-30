@@ -102,6 +102,10 @@ jobs:
       needs.resolve.outputs.same_repo == 'true' &&
       needs.resolve.outputs.action != 'closed'
     runs-on: ubuntu-latest
+    # Bind to the environment that holds the AWS preview secrets/vars. Environment
+    # secrets are only injected into jobs that declare the environment — without
+    # this, secrets.AWS_PREVIEW_ROLE_ARN resolves empty and the deploy is skipped.
+    environment: e2e-dev
     env:
       PR_NUMBER: ${{ needs.resolve.outputs.pr_number }}
       AWS_PREVIEW_ROLE_ARN: ${{ secrets.AWS_PREVIEW_ROLE_ARN }}
@@ -240,6 +244,8 @@ jobs:
       needs.resolve.outputs.same_repo == 'true' &&
       needs.resolve.outputs.action == 'closed'
     runs-on: ubuntu-latest
+    # Same environment binding as the deploy job so cleanup can reach the AWS secrets.
+    environment: e2e-dev
     env:
       PR_NUMBER: ${{ needs.resolve.outputs.pr_number }}
       AWS_PREVIEW_ROLE_ARN: ${{ secrets.AWS_PREVIEW_ROLE_ARN }}
