@@ -25,7 +25,13 @@ interface WaitForStopOutput {
   timed_out?: boolean;
   thread_id?: number;
   location?: MappedLocation;
+  hint?: string;
 }
+
+const TIMEOUT_HINT =
+  'Breakpoint not hit. First confirm the request actually exercised this code path and the breakpoint line is reachable. ' +
+  'In some production instance group configurations (which can run multiple app servers — this never applies to sandboxes), a breakpoint may be missed because the request landed on a different app server than the one holding the debug session. ' +
+  'Only in that specific case, retrieve session_cookie from debug_list_sessions and resend the triggering request with that cookie (Cookie: <name>=<value>) to pin it to the app server holding the session.';
 
 export function createDebugWaitForStopTool(
   loadServices: () => Promise<Services> | Services,
@@ -54,7 +60,7 @@ export function createDebugWaitForStopTool(
         const timeout = Math.min(args.timeout_ms ?? DEFAULT_TIMEOUT_MS, MAX_TIMEOUT_MS);
 
         const thread = await getRegistry(context).waitForHalt(entry, timeout);
-        if (!thread) return {halted: false, timed_out: true};
+        if (!thread) return {halted: false, timed_out: true, hint: TIMEOUT_HINT};
 
         const location = projectThreadLocation(thread, entry.sourceMapper);
         return {

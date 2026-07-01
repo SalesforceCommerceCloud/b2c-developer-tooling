@@ -8,10 +8,7 @@ The B2C Commerce **Script Debugger** lets you set breakpoints, step through code
 
 ## Requirements
 
-The debugger needs two things:
-
-1. **The Script Debugger enabled on the instance.** In Business Manager: **Administration → Development Configuration → Script Debugger → Enable**.
-2. **Basic auth credentials** — a Business Manager username and a WebDAV access key (used as the password). OAuth/client credentials are **not** sufficient.
+The debugger needs **Basic auth credentials** — a Business Manager username and either the account password or a `WebDAV File Access and UX Studio` access key (used as the password). OAuth/client credentials are **not** sufficient.
 
 The debugger uses the same resolved credentials as the rest of the CLI (flags, `SFCC_*` environment variables, or `dw.json`). See the [Authentication Guide](/guide/authentication#webdav-access) for access key setup and [CLI Configuration](/guide/configuration) for how credentials are resolved.
 

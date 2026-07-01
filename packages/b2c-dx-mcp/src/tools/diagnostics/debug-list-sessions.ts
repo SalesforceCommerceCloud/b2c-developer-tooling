@@ -32,8 +32,8 @@ export function createDebugListSessionsTool(
     {
       name: 'debug_list_sessions',
       description:
-        'List active script debugger sessions with their breakpoints, any halted threads, and the session_cookie (e.g. dwsid). ' +
-        'Use this to discover orphaned sessions, check whether breakpoints are armed, poll for halted threads in the non-blocking debug workflow, and retrieve the session cookie to pin a triggering request (Cookie: <name>=<value>) to the app server holding the session.',
+        'List active script debugger sessions with their breakpoints and any halted threads. ' +
+        'Use this to discover orphaned sessions, check whether breakpoints are armed, and poll for halted threads in the non-blocking debug workflow.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {},
       async execute(_args, context) {
