@@ -9,6 +9,11 @@ const {page} = useData();
 const mdUrl = computed(() => {
   const rel = page.value.relativePath;
   if (!rel) return '';
+  // Quickstart pages either render the wizard (sub-pages, just a 3-line
+  // shim) or the topic index (also just a component). Neither raw .md is
+  // useful as Copy-for-LLM, so suppress the buttons sitewide on
+  // /quickstart/. To re-enable per-page, just remove this guard.
+  if (rel.startsWith('quickstart/')) return '';
   return withBase('/' + rel);
 });
 

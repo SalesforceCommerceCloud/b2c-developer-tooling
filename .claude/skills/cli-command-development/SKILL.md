@@ -345,3 +345,12 @@ See [API Client Development](../api-client-development/SKILL.md#error-handling) 
 8. Update skill in `skills/b2c-cli/skills/b2c-<topic>/SKILL.md` if exists
 9. Update CLI reference docs in `docs/cli/<topic>.md`
 10. Build and test: `pnpm run build && pnpm --filter @salesforce/b2c-cli run test`
+11. **Evaluate Quickstart guide impact** — if this command is part of an
+    existing guided workflow (e.g., new `b2c sites cartridges …` flag goes
+    in the `cartridge-path` guide), update
+    `docs/.vitepress/data/adventures/<id>.ts`. If this is a brand-new
+    command surface that benefits from a step-by-step setup wizard,
+    consider adding a new guide (see `PLAN_guides.md` and the
+    [documentation skill](../documentation/SKILL.md)). Run
+    `pnpm --filter @salesforce/b2c-dx-docs run docs:build` afterward — the
+    anchor checker validates every doc link the guides reference.
