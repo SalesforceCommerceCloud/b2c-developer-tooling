@@ -21,8 +21,7 @@ Run `b2c setup inspect` to see the resolved configuration and which source provi
 
 ## Prerequisites
 
-- Basic Auth credentials (username/password) for a BM user with `WebDAV_Manage_Customization`
-- Script Debugger enabled: BM > Administration > Development Configuration > Enable Script Debugger
+- Basic Auth credentials for a BM user with `WebDAV_Manage_Customization`: a username and either the account password or a `WebDAV File Access and UX Studio` access key
 
 ## Interactive Debugging
 

@@ -12,13 +12,11 @@ Requires **Basic Auth** credentials only. OAuth is not supported by the SDAPI.
 
 **Required:**
 
-- **Basic Auth** - `hostname`, `username`, and `password` (WebDAV access key) for a Business Manager user with the `WebDAV_Manage_Customization` permission.
+- **Basic Auth** - `hostname`, `username`, and `password` — either the account password or a `WebDAV File Access and UX Studio` access key — for a user with the `WebDAV_Manage_Customization` permission.
 
 **Configuration priority:** Flags → Environment variables → `dw.json` config file
 
-The script debugger must also be enabled on the instance: Business Manager > Administration > Development Configuration > Script Debugger > Enable.
-
-See [Configuration](../configuration) for complete credential setup details including flags and environment variables. See [Authentication Setup](../../guide/authentication#webdav-access) for WebDAV access key configuration instructions.
+See [Configuration](../configuration) for complete credential setup details including flags and environment variables. See [Authentication Setup](../../guide/authentication#webdav-access) for access key configuration instructions.
 
 ## Recovery from broken or orphaned sessions
 
@@ -66,9 +64,11 @@ No parameters.
 
 ## Server affinity (hitting breakpoints)
 
-B2C Commerce instances may run multiple application servers behind a load balancer. The debugger attaches to **one** app server, and a breakpoint only fires when your code executes on that same server.
+> **Most sessions don't need this.** Set your breakpoint and trigger the request as usual. Only reach for the session cookie when a breakpoint is _never_ hit even though you're sure the request exercises that code — and only in the specific **production instance group** configurations that run multiple app servers. This never applies to sandboxes.
 
-To pin the triggering request to the correct app server, both `debug_start_session` and `debug_list_sessions` return a `session_cookie`:
+Some production instance group configurations run multiple application servers behind a load balancer. The debugger attaches to **one** app server, and a breakpoint only fires when your code executes on that same server. Sandboxes run a single app server, so this never comes up there.
+
+If a breakpoint won't hit for this reason, pin the triggering request to the correct app server using the `session_cookie` returned by `debug_start_session` and `debug_list_sessions`:
 
 ```json
 {"name": "dwsid", "value": "abc123..."}
