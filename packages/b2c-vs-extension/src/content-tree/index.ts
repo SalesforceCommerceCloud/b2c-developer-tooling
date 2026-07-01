@@ -34,7 +34,7 @@ export function registerContentTree(context: vscode.ExtensionContext, configProv
     treeView.description = filter ? `filter: ${filter}` : undefined;
   });
 
-  const commandDisposables = registerContentCommands(context, contentConfig, treeProvider, fsProvider);
+  const commandDisposables = registerContentCommands(context, contentConfig, treeProvider, fsProvider, treeView);
 
   configProvider.onDidReset(() => {
     contentConfig.clearCache();

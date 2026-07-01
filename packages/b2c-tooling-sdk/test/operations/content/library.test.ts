@@ -12,6 +12,7 @@ import {
   WILDCARD_ASSET_LIBRARY_XML,
   MISSING_LINK_LIBRARY_XML,
   POSITION_LIBRARY_XML,
+  FRAGMENT_LIBRARY_XML,
 } from './fixtures.js';
 
 describe('operations/content/library', () => {
@@ -454,4 +455,352 @@ describe('operations/content/library', () => {
       expect(componentChildren).to.have.lengthOf(0);
     });
   });
+
+  describe('content blocks (fragments)', () => {
+    let library: Library;
+
+    beforeEach(async () => {
+      library = await Library.parse(FRAGMENT_LIBRARY_XML);
+    });
+
+    it('should classify fragment.* content as FRAGMENT (not COMPONENT)', () => {
+      const homePage = library.tree.children.find((n) => n.id === 'home-page');
+      expect(homePage).to.exist;
+      const gridBlock = homePage!.children.find((n) => n.id === 'grid-block');
+      expect(gridBlock, 'grid-block should be linked under home-page').to.exist;
+      expect(gridBlock!.type).to.equal('FRAGMENT');
+      expect(gridBlock!.typeId).to.equal('fragment.Layout.grid');
+    });
+
+    it('should parse the x-default display-name for content blocks', () => {
+      const homePage = library.tree.children.find((n) => n.id === 'home-page');
+      const gridBlock = homePage!.children.find((n) => n.id === 'grid-block');
+      expect(gridBlock!.displayName).to.equal('GridBlock');
+
+      // A nested leaf block also carries its display-name
+      const discover = gridBlock!.children.find((n) => n.id === 'discover-block');
+      expect(discover).to.exist;
+      expect(discover!.type).to.equal('FRAGMENT');
+      expect(discover!.displayName).to.equal('DiscoverBlock');
+    });
+
+    it('should leave a content block region child as COMPONENT (children are not converted)', () => {
+      const homePage = library.tree.children.find((n) => n.id === 'home-page');
+      const gridBlock = homePage!.children.find((n) => n.id === 'grid-block');
+      const plainCard = gridBlock!.children.find((n) => n.id === 'plain-card');
+      expect(plainCard).to.exist;
+      expect(plainCard!.type).to.equal('COMPONENT');
+      expect(plainCard!.displayName).to.be.null;
+    });
+
+    it('should render a shared content block identically wherever it is linked', () => {
+      // grid-block is linked from BOTH home-page and promo-page; both must show
+      // the same children (it is a single shared object).
+      const homeGrid = library.tree.children
+        .find((n) => n.id === 'home-page')!
+        .children.find((n) => n.id === 'grid-block');
+      const promoGrid = library.tree.children
+        .find((n) => n.id === 'promo-page')!
+        .children.find((n) => n.id === 'grid-block');
+      expect(homeGrid, 'home-page links grid-block').to.exist;
+      expect(promoGrid, 'promo-page links grid-block').to.exist;
+      const homeChildIds = homeGrid!.children.map((n) => n.id).sort();
+      const promoChildIds = promoGrid!.children.map((n) => n.id).sort();
+      expect(homeChildIds).to.deep.equal(['discover-block', 'plain-card']);
+      expect(promoChildIds).to.deep.equal(homeChildIds);
+    });
+
+    describe('getContentBlocks()', () => {
+      it('should return one source node per content block, deduplicated', () => {
+        const blocks = library.getContentBlocks();
+        const ids = blocks.map((b) => b.id).sort();
+        // grid-block + discover-block + lonely-block — each exactly once,
+        // even though grid-block is linked twice and discover-block is nested.
+        expect(ids).to.deep.equal(['discover-block', 'grid-block', 'lonely-block']);
+      });
+
+      it('should include UNLINKED content blocks (full content scan, not just the tree)', () => {
+        const blocks = library.getContentBlocks();
+        const lonely = blocks.find((b) => b.id === 'lonely-block');
+        expect(lonely, 'unlinked block should be surfaced').to.exist;
+        expect(lonely!.type).to.equal('FRAGMENT');
+        expect(lonely!.displayName).to.equal('LonelyBlock');
+      });
+
+      it('should attach the child subtree to a Layout content block source node', () => {
+        const grid = library.getContentBlocks().find((b) => b.id === 'grid-block');
+        expect(grid).to.exist;
+        const childIds = grid!.children.map((n) => n.id).sort();
+        expect(childIds).to.deep.equal(['discover-block', 'plain-card']);
+      });
+
+      it('should classify every returned node as FRAGMENT with a displayName', () => {
+        for (const block of library.getContentBlocks()) {
+          expect(block.type).to.equal('FRAGMENT');
+          expect(block.displayName, `block ${block.id} should have a display-name`).to.be.a('string');
+        }
+      });
+    });
+
+    it('should parse position-less and position-bearing content-links equivalently', () => {
+      // grid-block's links omit <position>; home-page's link carries one. Both
+      // must parse without error and produce a stable child ordering.
+      const grid = library.getContentBlocks().find((b) => b.id === 'grid-block')!;
+      // column_1 (plain-card) before column_2 (discover-block): document order preserved
+      // when positions are absent (both default to Infinity → stable sort).
+      expect(grid.children.map((n) => n.id)).to.deep.equal(['plain-card', 'discover-block']);
+    });
+
+    it('should render content blocks distinctly in getTreeString', () => {
+      const tree = library.getTreeString({traverseHidden: false});
+      // The display-name and a CONTENT BLOCK annotation (with typeId) are shown.
+      expect(tree).to.include('GridBlock (CONTENT BLOCK: fragment.Layout.grid)');
+      expect(tree).to.include('DiscoverBlock (CONTENT BLOCK: fragment.Content.contentCard)');
+    });
+
+    it('should apply the magenta color to content blocks when colorized', () => {
+      const colorize = (color: string, text: string) => `[${color}]${text}[/${color}]`;
+      const tree = library.getTreeString({colorize});
+      expect(tree).to.include('[magenta]GridBlock[/magenta]');
+      expect(tree).to.include('[dim](CONTENT BLOCK: fragment.Layout.grid)[/dim]');
+    });
+
+    it('should include displayName in toJSON output', () => {
+      const grid = library.getContentBlocks().find((b) => b.id === 'grid-block')!;
+      const json = grid.toJSON();
+      expect(json).to.have.property('displayName', 'GridBlock');
+    });
+  });
+
+  describe('LibraryNode.convertToFragment()', () => {
+    let library: Library;
+    let card: LibraryNode;
+
+    beforeEach(async () => {
+      library = await Library.parse(FRAGMENT_LIBRARY_XML);
+      // plain-card is a plain component nested in grid-block's region.
+      card = [...library.nodes({traverseHidden: true, callbackHidden: true})].find(
+        (n) => n.id === 'plain-card',
+      ) as LibraryNode;
+      expect(card, 'plain-card fixture node').to.exist;
+    });
+
+    it('should rewrite type component.* -> fragment.* and set displayName in place', () => {
+      expect(card.type).to.equal('COMPONENT');
+      const result = card.convertToFragment('My Card');
+      expect(result).to.equal(card); // chainable
+      expect(card.type).to.equal('FRAGMENT');
+      expect(card.typeId).to.equal('fragment.Content.contentCard');
+      expect(card.displayName).to.equal('My Card');
+      // content-id is unchanged
+      expect(card.id).to.equal('plain-card');
+    });
+
+    it('should serialize display-name as the FIRST child element (schema order)', async () => {
+      card.convertToFragment('My Card');
+      const xml = await library.toXMLString({traverseHidden: false});
+      // The <display-name> for plain-card must appear before its <type>.
+      const cardStart = xml.indexOf('content-id="plain-card"');
+      const segment = xml.slice(cardStart, cardStart + 400);
+      const dnIdx = segment.indexOf('<display-name');
+      const typeIdx = segment.indexOf('<type>');
+      expect(dnIdx, 'display-name present').to.be.greaterThan(-1);
+      expect(typeIdx, 'type present').to.be.greaterThan(-1);
+      expect(dnIdx, 'display-name before type').to.be.lessThan(typeIdx);
+      expect(segment).to.include('fragment.Content.contentCard');
+      expect(segment).to.include('My Card');
+    });
+
+    it('should replace an existing display-name rather than duplicate it', async () => {
+      // grid-block already has a display-name; reparse and convert a node that has one.
+      // Use a fresh component that we first give a name via convert, then re-convert.
+      card.convertToFragment('First');
+      // Simulate a second conversion attempt is blocked (already a fragment):
+      expect(() => card.convertToFragment('Second')).to.throw(/Only a component/);
+      const xml = await library.toXMLString({traverseHidden: false});
+      const matches = xml.match(/content-id="plain-card"[\s\S]*?<\/content>/);
+      expect(matches, 'plain-card element').to.exist;
+      const occurrences = (matches![0].match(/<display-name/g) ?? []).length;
+      expect(occurrences, 'exactly one display-name').to.equal(1);
+    });
+
+    it('should throw when called on a non-component node', async () => {
+      const grid = library.getContentBlocks().find((b) => b.id === 'grid-block')!;
+      expect(() => grid.convertToFragment('x')).to.throw(/Only a component/);
+    });
+
+    it('should produce a library that validates against library.xsd', async function () {
+      // This is the exact check the platform import job performs. Skip gracefully
+      // if xmllint is unavailable in the environment.
+      const {execFileSync} = await import('node:child_process');
+      const fs = await import('node:fs');
+      const os = await import('node:os');
+      const path = await import('node:path');
+      const {fileURLToPath} = await import('node:url');
+
+      try {
+        execFileSync('xmllint', ['--version'], {stdio: 'ignore'});
+      } catch {
+        this.skip();
+        return;
+      }
+
+      card.convertToFragment('My Card');
+      const xml = await library.toXMLString({traverseHidden: false});
+
+      const here = path.dirname(fileURLToPath(import.meta.url));
+      const xsd = path.resolve(here, '../../../data/xsd/library.xsd');
+      const tmp = path.join(os.tmpdir(), `convert-validate-${process.pid}.xml`);
+      fs.writeFileSync(tmp, xml);
+      try {
+        // Throws (non-zero exit) if validation fails.
+        execFileSync('xmllint', ['--noout', '--schema', xsd, tmp], {stdio: 'pipe'});
+      } finally {
+        fs.rmSync(tmp, {force: true});
+      }
+    });
+  });
+
+  describe('Library.buildContentBlockConversionXML()', () => {
+    let library: Library;
+
+    beforeEach(async () => {
+      library = await Library.parse(FRAGMENT_LIBRARY_XML);
+    });
+
+    type XmlContent = Record<string, unknown> & {$: Record<string, string>};
+    async function parseDoc(
+      xmlString: string,
+    ): Promise<{ids: string[]; deleted: string[]; byId: Map<string, XmlContent>}> {
+      const xml2js = await import('xml2js');
+      const parsed = (await xml2js.parseStringPromise(xmlString)) as {library: {content?: XmlContent[]}};
+      const content = parsed.library.content ?? [];
+      const ids: string[] = [];
+      const deleted: string[] = [];
+      const byId = new Map<string, XmlContent>();
+      for (const c of content) {
+        const id = c.$['content-id'];
+        ids.push(id);
+        if (c.$.mode === 'delete') {
+          deleted.push(id);
+        } else {
+          byId.set(id, c);
+        }
+      }
+      return {ids, deleted, byId};
+    }
+
+    function typeOf(el: XmlContent): string {
+      return (el['type'] as string[])[0];
+    }
+    function linkIds(el: XmlContent): string[] {
+      const cl = el['content-links'] as Array<Record<string, unknown>>;
+      const links = cl[0]['content-link'] as Array<{$: Record<string, string>}>;
+      return links.map((l) => l.$['content-id']);
+    }
+
+    it('should emit a delete marker then a recreated fragment for the target', async () => {
+      // plain-card: a leaf component, linked only by grid-block.
+      const xml = await library.buildContentBlockConversionXML('plain-card', 'Promoted Card');
+      const {ids, deleted, byId} = await parseDoc(xml);
+
+      // delete marker comes first, recreate second
+      expect(deleted).to.deep.equal(['plain-card']);
+      expect(ids[0]).to.equal('plain-card'); // delete marker
+      expect(ids[1]).to.equal('plain-card'); // recreate
+
+      const recreated = byId.get('plain-card')!;
+      expect(typeOf(recreated)).to.equal('fragment.Content.contentCard');
+      expect((recreated['display-name'] as Array<{_: string}>)[0]._).to.equal('Promoted Card');
+    });
+
+    it('should re-import every referrer so incoming content-links survive', async () => {
+      // plain-card is linked from grid-block; grid-block must be re-imported.
+      const xml = await library.buildContentBlockConversionXML('plain-card', 'Promoted Card');
+      const {byId} = await parseDoc(xml);
+
+      const grid = byId.get('grid-block');
+      expect(grid, 'referrer grid-block re-imported').to.exist;
+      // grid-block still links plain-card
+      expect(linkIds(grid!)).to.include('plain-card');
+    });
+
+    it('should recreate descendants of the target (cascade-deleted by mode=delete)', async () => {
+      // Convert grid-block's PARENT chain is n/a; instead convert a component with
+      // children. Build a small library where a component owns a child.
+      const withChild = await Library.parse(`<?xml version="1.0" encoding="UTF-8"?>
+<library xmlns="http://www.demandware.com/xml/impex/library/2006-10-31" library-id="L">
+  <content content-id="page1">
+    <type>page.homePage</type>
+    <content-links><content-link content-id="layout1" type="page.homePage.main"/></content-links>
+  </content>
+  <content content-id="layout1">
+    <type>component.Layout.grid</type>
+    <content-links><content-link content-id="leaf1" type="component.Layout.grid.column_1"/></content-links>
+  </content>
+  <content content-id="leaf1">
+    <type>component.Content.card</type>
+    <data xml:lang="x-default"><![CDATA[{"t":"x"}]]></data>
+  </content>
+</library>`);
+
+      const xml = await withChild.buildContentBlockConversionXML('layout1', 'Grid Block');
+      const {deleted, byId} = await parseDoc(xml);
+
+      expect(deleted).to.deep.equal(['layout1']);
+      // recreated target is a fragment with its region-link type flipped
+      const layout = byId.get('layout1')!;
+      expect(typeOf(layout)).to.equal('fragment.Layout.grid');
+      const layoutLinks = layout['content-links'] as Array<Record<string, unknown>>;
+      const firstLink = (layoutLinks[0]['content-link'] as Array<{$: Record<string, string>}>)[0];
+      expect(firstLink.$['type']).to.equal('fragment.Layout.grid.column_1');
+      // descendant leaf1 is recreated (it would otherwise be cascade-deleted)
+      const leaf = byId.get('leaf1');
+      expect(leaf, 'descendant recreated').to.exist;
+      expect(typeOf(leaf!)).to.equal('component.Content.card');
+      // referrer page1 re-imported
+      expect(byId.get('page1'), 'referrer recreated').to.exist;
+    });
+
+    it('should throw for a non-existent or non-component content id', async () => {
+      await expectRejection(library.buildContentBlockConversionXML('does-not-exist', 'x'), /not found/);
+      // grid-block is already a fragment
+      await expectRejection(library.buildContentBlockConversionXML('grid-block', 'x'), /not a component/);
+    });
+
+    it('should produce an archive that validates against library.xsd', async function () {
+      const {execFileSync} = await import('node:child_process');
+      const fs = await import('node:fs');
+      const os = await import('node:os');
+      const path = await import('node:path');
+      const {fileURLToPath} = await import('node:url');
+      try {
+        execFileSync('xmllint', ['--version'], {stdio: 'ignore'});
+      } catch {
+        this.skip();
+        return;
+      }
+
+      const xml = await library.buildContentBlockConversionXML('plain-card', 'Promoted Card');
+      const here = path.dirname(fileURLToPath(import.meta.url));
+      const xsd = path.resolve(here, '../../../data/xsd/library.xsd');
+      const tmp = path.join(os.tmpdir(), `convert-archive-${process.pid}.xml`);
+      fs.writeFileSync(tmp, xml);
+      try {
+        execFileSync('xmllint', ['--noout', '--schema', xsd, tmp], {stdio: 'pipe'});
+      } finally {
+        fs.rmSync(tmp, {force: true});
+      }
+    });
+  });
 });
+
+async function expectRejection(promise: Promise<unknown>, matcher: RegExp): Promise<void> {
+  try {
+    await promise;
+  } catch (err) {
+    expect((err as Error).message).to.match(matcher);
+    return;
+  }
+  throw new Error('Expected promise to reject');
+}

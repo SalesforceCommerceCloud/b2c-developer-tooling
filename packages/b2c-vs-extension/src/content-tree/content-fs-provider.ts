@@ -4,10 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as fs from 'node:fs';
-import * as os from 'node:os';
-import * as path from 'node:path';
 import type {Library, LibraryNode} from '@salesforce/b2c-tooling-sdk/operations/content';
+import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import {siteArchiveImport, getJobLog, JobExecutionError} from '@salesforce/b2c-tooling-sdk';
 import JSZip from 'jszip';
 import * as xml2js from 'xml2js';
@@ -45,10 +43,33 @@ export function contentItemUri(libraryId: string, isSiteLibrary: boolean, conten
 }
 
 /**
+ * Import a single library XML payload to an instance.
+ *
+ * Wraps the XML at the correct archive path (site-private vs shared library),
+ * zips it, and runs a site-archive import job. Shared by the content file-system
+ * writeFile flow and the "Convert to Content Block" command.
+ *
+ * @throws Re-throws the underlying error (e.g. JobExecutionError) so callers can
+ *   surface the job log; performs no cache invalidation or UI itself.
+ */
+export async function importLibraryXML(
+  instance: B2CInstance,
+  libraryId: string,
+  isSiteLibrary: boolean,
+  xmlString: string,
+): Promise<void> {
+  const archivePath = isSiteLibrary ? `sites/${libraryId}/library/library.xml` : `libraries/${libraryId}/library.xml`;
+  const zip = new JSZip();
+  zip.file(archivePath, xmlString);
+  const buffer = await zip.generateAsync({type: 'nodebuffer'});
+  await siteArchiveImport(instance, buffer);
+}
+
+/**
  * Generate library XML for a single content item and its descendants,
  * without mutating the cached Library instance.
  */
-function generateContentXML(library: Library, contentId: string): string {
+export function generateContentXML(library: Library, contentId: string): string {
   let target: LibraryNode | undefined;
   for (const node of library.nodes({traverseHidden: true, callbackHidden: true})) {
     if (node.id === contentId) {
@@ -159,22 +180,12 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
     }
 
     const xmlContent = Buffer.from(content).toString('utf-8');
-    const archivePath = isSiteLibrary ? `sites/${libraryId}/library/library.xml` : `libraries/${libraryId}/library.xml`;
 
     try {
       await vscode.window.withProgress(
         {location: vscode.ProgressLocation.Notification, title: `Importing content to ${libraryId}...`},
         async () => {
-          const zip = new JSZip();
-          zip.file(archivePath, xmlContent);
-          const buffer = await zip.generateAsync({type: 'nodebuffer'});
-
-          // DEBUG: write archive to temp dir for inspection
-          const debugPath = path.join(os.tmpdir(), `content-update-${Date.now()}.zip`);
-          await fs.promises.writeFile(debugPath, buffer);
-          console.log(`[content-fs] Debug archive written to: ${debugPath}`);
-
-          await siteArchiveImport(instance, buffer);
+          await importLibraryXML(instance, libraryId, isSiteLibrary, xmlContent);
         },
       );
     } catch (err) {
