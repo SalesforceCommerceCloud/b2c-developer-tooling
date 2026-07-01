@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.17.1
+
+### Patch Changes
+
+- [#543](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/543) [`31324e1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/31324e16fd0fb5402a3da1340f3575708c336661) - Refresh bundled Script API docs, XSD schemas, Page Designer content schemas, and standard job-step data to platform version DWAPP 26.7. The `content validate` command now matches the current platform rules for Page Designer component types — `component_id` accepts the full platform character set and is only valid on embedded components (`embedded: true`). (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.17.0
 
 ### Minor Changes
