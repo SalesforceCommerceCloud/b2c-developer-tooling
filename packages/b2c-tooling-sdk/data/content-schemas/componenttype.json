@@ -1,44 +1,67 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  
-  "type":"object",
-  
+  "type": "object",
   "properties": {
-    "name": {"$ref":"common.json#/definitions/name"},
-    "description": {"$ref":"common.json#/definitions/description"},
+    "name": {
+      "$ref": "common.json#/definitions/name"
+    },
+    "description": {
+      "$ref": "common.json#/definitions/description"
+    },
     "arch_type": {
       "$ref": "common.json#/definitions/arch_type"
     },
-    "group": {"$ref":"common.json#/definitions/id"},
     "embedded": {
       "type": "boolean"
     },
     "component_id": {
       "type": "string",
       "maxLength": 256,
-      "pattern": "^[\\w][\\w-]*$"
+      "pattern": "^[\\w-~:\\[\\]@!'*,;=]+$",
+      "description": "Developer-defined content ID for embedded components. Used as the Content.ID when the component is created."
+    },
+    "group": {
+      "$ref": "common.json#/definitions/id"
     },
     "region_definitions": {
       "type": "array",
-      "items": {"$ref": "regiondefinition.json"}
+      "items": {
+        "$ref": "regiondefinition.json"
+      }
     },
     "attribute_definition_groups": {
       "type": "array",
-      "items": {"$ref": "attributedefinitiongroup.json"}
+      "items": {
+        "$ref": "attributedefinitiongroup.json"
+      }
     }
   },
-  "required": ["region_definitions","attribute_definition_groups", "group"],
+  "required": [
+    "region_definitions",
+    "attribute_definition_groups",
+    "group"
+  ],
   "allOf": [
     {
       "anyOf": [
         {
           "not": {
-            "properties": {"embedded": {"enum": [true]}},
-            "required": ["embedded"]
+            "properties": {
+              "embedded": {
+                "enum": [
+                  true
+                ]
+              }
+            },
+            "required": [
+              "embedded"
+            ]
           }
         },
         {
-          "required": ["component_id"]
+          "required": [
+            "component_id"
+          ]
         }
       ]
     },
@@ -46,13 +69,52 @@
       "anyOf": [
         {
           "not": {
-            "properties": {"embedded": {"enum": [true]}},
-            "required": ["embedded"]
+            "properties": {
+              "embedded": {
+                "enum": [
+                  true
+                ]
+              }
+            },
+            "required": [
+              "embedded"
+            ]
           }
         },
         {
-          "properties": {"arch_type": {"enum": ["headless"]}},
-          "required": ["arch_type"]
+          "properties": {
+            "arch_type": {
+              "enum": [
+                "headless"
+              ]
+            }
+          },
+          "required": [
+            "arch_type"
+          ]
+        }
+      ]
+    },
+    {
+      "anyOf": [
+        {
+          "not": {
+            "required": [
+              "component_id"
+            ]
+          }
+        },
+        {
+          "properties": {
+            "embedded": {
+              "enum": [
+                true
+              ]
+            }
+          },
+          "required": [
+            "embedded"
+          ]
         }
       ]
     }

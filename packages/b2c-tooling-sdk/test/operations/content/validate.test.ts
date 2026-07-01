@@ -334,12 +334,15 @@ describe('content metadefinition validation', () => {
       expect(result.valid).to.equal(true);
     });
 
-    it('passes when component_id is set without embedded', () => {
+    it('fails when component_id is set without embedded', () => {
+      // Per the platform schema, component_id is only valid on embedded
+      // components (embedded:true) — setting it otherwise is rejected.
       const result = validateMetaDefinition(
         {group: 'content', component_id: 'my-comp', region_definitions: [], attribute_definition_groups: []},
         {type: 'componenttype'},
       );
-      expect(result.valid).to.equal(true);
+      expect(result.valid).to.equal(false);
+      expect(result.errors.some((e) => e.message.includes('embedded'))).to.equal(true);
     });
   });
 
