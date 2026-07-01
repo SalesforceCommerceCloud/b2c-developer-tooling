@@ -16,6 +16,10 @@
     "route": {
       "$ref": "common.json#/definitions/route"
     },
+    "preview": {
+      "type": "string",
+      "enum": ["default"]
+    },
     "region_definitions": {
       "type": "array",
       "items": {"$ref": "regiondefinition.json"}

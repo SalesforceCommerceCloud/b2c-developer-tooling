@@ -4,7 +4,7 @@
     "description": "Catalog of standard (system) B2C Commerce job step type IDs available in Business Manager job flows and jobs.xml site-import flows.",
     "derivation": "Generated from the public B2C Commerce Job Step API documentation (the jobstepapi section of the Script API documentation archive obtained via `b2c docs download`). Each step lists its purpose, execution scope, and input parameters (required, description, allowed values, default) as published in that documentation.",
     "platformDocVersion": "DWAPP 26.7",
-    "regenerate": "pnpm --filter @salesforce/b2c-tooling-sdk run build:job-steps-dataset -- <jobstep-html-dir>; then run generate:job-steps-docs"
+    "regenerate": "pnpm --filter @salesforce/b2c-tooling-sdk run refresh:docs-data (or, standalone: build:job-steps-dataset -- <jobstep-html-dir> [version]; then generate:job-steps-docs)"
   },
   "steps": [
     {
