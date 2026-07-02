@@ -63,7 +63,21 @@ describe('docs read', () => {
 
     const result = await command.run();
 
-    expect(readStub.calledOnceWithExactly('ProductMgr')).to.equal(true);
+    expect(readStub.calledOnceWithExactly('ProductMgr', {enabledCategories: undefined})).to.equal(true);
     expect(result.entry.id).to.equal('x');
+  });
+
+  it('passes the --topics allowlist through to readDocByQuery', async () => {
+    const command: any = await createCommand({json: true, topics: 'sfnext, commerce-api'}, {query: 'ProductMgr'});
+
+    const readStub = sinon.stub().returns({entry: {id: 'x', title: 't', filePath: 'x.md'}, content: '# Hello'});
+    command.operations = {...command.operations, readDocByQuery: readStub};
+    sinon.stub(command, 'jsonEnabled').returns(true);
+
+    await command.run();
+
+    expect(readStub.calledOnceWithExactly('ProductMgr', {enabledCategories: ['sfnext', 'commerce-api']})).to.equal(
+      true,
+    );
   });
 });

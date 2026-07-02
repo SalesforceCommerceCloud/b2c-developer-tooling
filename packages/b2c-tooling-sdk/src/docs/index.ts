@@ -65,6 +65,8 @@ export {
   loadSearchIndex,
   resetDocsCache,
   categoriesForStorefront,
+  resolveEnabledCategories,
+  DOC_CATEGORIES,
   type SearchDocsOptions,
   type StorefrontMode,
 } from './search.js';

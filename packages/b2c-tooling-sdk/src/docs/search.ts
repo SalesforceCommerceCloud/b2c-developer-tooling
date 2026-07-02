@@ -65,6 +65,57 @@ const STOREFRONT_CATEGORIES: Record<ProjectType, DocCategory[]> = {
   'storefront-next': ['sfnext'],
 };
 
+/**
+ * The canonical list of documentation categories, in a stable display order.
+ * Exported so the CLI and MCP surfaces validate against a single source of
+ * truth instead of maintaining their own copies.
+ */
+export const DOC_CATEGORIES: readonly DocCategory[] = [
+  'script-api',
+  'job-step',
+  'commerce-api',
+  'pwa-kit-managed-runtime',
+  'sfnext',
+  'sfra',
+  'b2c-commerce',
+  'tooling',
+];
+
+/**
+ * Parses and validates a user-supplied set of documentation categories into a
+ * "topics" allowlist that bounds the entire available corpus (see
+ * {@link SearchDocsOptions.enabledCategories}). Accepts a comma-separated string
+ * or an array; names are trimmed and lower-cased.
+ *
+ * Unknown names are dropped (and reported via `onInvalid`, if provided). Returns
+ * `undefined` when the input is empty or contains no valid categories, which
+ * means "no restriction" — matching the tolerant behavior of the MCP `--toolsets`
+ * flag, so a typo yields a warning and the full corpus rather than a dead tool.
+ *
+ * @param input - Comma-separated category names, or an array of names
+ * @param onInvalid - Optional callback invoked with any unrecognized names
+ * @returns The validated, de-duplicated categories, or `undefined` for no restriction
+ */
+export function resolveEnabledCategories(
+  input: string | readonly string[] | undefined,
+  onInvalid?: (invalid: string[]) => void,
+): DocCategory[] | undefined {
+  if (input == undefined) return undefined;
+  const raw = Array.isArray(input) ? input : String(input).split(',');
+  const names = raw.map((s) => s.trim().toLowerCase()).filter((s) => s.length > 0);
+  if (names.length === 0) return undefined;
+
+  const known = new Set<string>(DOC_CATEGORIES);
+  const valid: DocCategory[] = [];
+  const invalid: string[] = [];
+  for (const name of names) {
+    if (known.has(name)) valid.push(name as DocCategory);
+    else invalid.push(name);
+  }
+  if (invalid.length > 0) onInvalid?.(invalid);
+  return valid.length > 0 ? [...new Set(valid)] : undefined;
+}
+
 /** Normalizes a storefront option to an array of project types. */
 function toStorefrontList(storefront?: ProjectType | ProjectType[]): ProjectType[] | undefined {
   if (!storefront) return undefined;
@@ -243,6 +294,29 @@ export interface SearchDocsOptions {
   storefront?: ProjectType | ProjectType[];
   /** How {@link SearchDocsOptions.storefront} is applied (default: `boost`). */
   storefrontMode?: StorefrontMode;
+  /**
+   * A hard allowlist of categories that bounds the ENTIRE available corpus for
+   * this call — a configuration boundary, distinct from the per-query
+   * {@link SearchDocsOptions.category} filter and the soft storefront boost.
+   *
+   * When set, only entries in these categories are ever eligible; any `category`
+   * or storefront `filter` narrows *within* this set (their intersection wins).
+   * Intended to be resolved once from a launch-time flag/env var (see
+   * {@link resolveEnabledCategories}) so operators can pin the docs surface to
+   * exactly the topics they want exposed. `undefined` means no restriction.
+   */
+  enabledCategories?: readonly DocCategory[];
+}
+
+/** Intersects two category lists; `undefined` on either side means "no constraint on that side". */
+function intersectCategories(
+  a: readonly DocCategory[] | undefined,
+  b: readonly DocCategory[] | undefined,
+): DocCategory[] | undefined {
+  if (!a) return b ? [...b] : undefined;
+  if (!b) return [...a];
+  const bSet = new Set(b);
+  return a.filter((c) => bSet.has(c));
 }
 
 /**
@@ -280,8 +354,12 @@ export function searchDocs(query: string, limitOrOptions?: number | SearchDocsOp
   // Explicit category filter takes precedence; otherwise a storefront in
   // `filter` mode constrains results to that storefront's relevant categories.
   const explicit = opts.category ? (Array.isArray(opts.category) ? opts.category : [opts.category]) : undefined;
-  const filterCategories =
+  const perQueryFilter =
     explicit ?? (storefronts && mode === 'filter' ? categoriesForStorefront(storefronts) : undefined);
+
+  // The launch-time allowlist bounds the whole corpus; the per-query filter
+  // narrows within it. Their intersection is the effective hard filter.
+  const filterCategories = intersectCategories(opts.enabledCategories, perQueryFilter);
 
   // Category weighting: a known storefront (in boost mode) favors its relevant
   // categories and REPLACES the default weights; otherwise use the defaults.
@@ -324,11 +402,18 @@ export function searchDocs(query: string, limitOrOptions?: number | SearchDocsOp
  * Lists documentation entries, optionally filtered by category.
  *
  * @param category - Optional corpus/category (or list) to restrict to
+ * @param enabledCategories - Optional launch-time allowlist that bounds the
+ *   entire corpus (see {@link SearchDocsOptions.enabledCategories}). When set,
+ *   only entries in these categories are eligible; `category` narrows within it.
  * @returns Array of matching documentation entries
  */
-export function listDocs(category?: DocCategory | DocCategory[]): DocEntry[] {
+export function listDocs(
+  category?: DocCategory | DocCategory[],
+  enabledCategories?: readonly DocCategory[],
+): DocEntry[] {
   const index = loadSearchIndex();
-  const categories = category ? (Array.isArray(category) ? category : [category]) : undefined;
+  const explicit = category ? (Array.isArray(category) ? category : [category]) : undefined;
+  const categories = intersectCategories(enabledCategories, explicit);
   const entries = categories
     ? index.entries.filter((e) => e.category && categories.includes(e.category))
     : index.entries;
@@ -431,16 +516,18 @@ export async function readDocByQuery(
   query: string,
   options?: SearchDocsOptions,
 ): Promise<{entry: DocEntry; content: string} | null> {
-  // Prefer an exact id match so precise lookups are deterministic. Honor a
-  // category constraint so an exact id in a non-requested corpus does not win.
+  // Prefer an exact id match so precise lookups are deterministic. Honor both
+  // the per-query category constraint and the launch-time allowlist so an exact
+  // id in a non-requested (or disabled) corpus does not win.
   loadSearchIndex();
   const exact = entryById.get(query);
   if (exact) {
-    const categories = options?.category
+    const perQuery = options?.category
       ? Array.isArray(options.category)
         ? options.category
         : [options.category]
       : undefined;
+    const categories = intersectCategories(options?.enabledCategories, perQuery);
     if (!categories || (exact.category && categories.includes(exact.category))) {
       // Resolve content from the stored entry (keeps headings for offline
       // fallback), but return the public entry (headings stripped).

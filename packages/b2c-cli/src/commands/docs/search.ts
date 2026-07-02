@@ -15,6 +15,7 @@ import {
   searchDocs,
   listDocs,
   categoriesForStorefront,
+  resolveEnabledCategories,
   type DocCategory,
   type SearchResult,
   type DocEntry,
@@ -120,6 +121,12 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
       description: 'Restrict results to a documentation category',
       options: VALID_CATEGORIES,
     }),
+    topics: Flags.string({
+      description:
+        'Limit the available documentation to these categories (comma-separated allowlist that bounds the ' +
+        'whole corpus). --category and --storefront narrow within it. Unknown names are ignored with a warning.',
+      env: 'SFCC_DOCS_TOPICS',
+    }),
     storefront: Flags.string({
       char: 's',
       description:
@@ -128,9 +135,10 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
       options: [...STOREFRONT_FLAG_VALUES],
     }),
     'storefront-mode': Flags.string({
-      description: 'How --storefront is applied: boost (rank higher) or filter (only those docs)',
+      description: 'How --storefront is applied: boost (rank higher, default) or filter (only those docs)',
       options: ['boost', 'filter'],
-      default: 'boost',
+      // No `default` here: an oclif default counts as "provided" and would trip
+      // `dependsOn: ['storefront']` on every invocation. Default to boost in code.
       dependsOn: ['storefront'],
     }),
     // `-c` is used by --category above, so omit the default short flag on --columns.
@@ -147,14 +155,22 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
     const {query} = this.args;
     const {limit, list, category} = this.flags;
     const storefront = await this.resolveStorefront(this.flags.storefront);
-    const storefrontMode = this.flags['storefront-mode'] as 'boost' | 'filter';
+    const storefrontMode = (this.flags['storefront-mode'] as 'boost' | 'filter' | undefined) ?? 'boost';
+    // Launch-time allowlist that bounds the whole corpus (from --topics / SFCC_DOCS_TOPICS).
+    const enabledCategories = resolveEnabledCategories(this.flags.topics, (invalid) =>
+      this.warn(
+        t('commands.docs.search.invalidTopics', 'Ignoring unknown documentation topic(s): {{topics}}', {
+          topics: invalid.join(', '),
+        }),
+      ),
+    );
 
     // List mode
     if (list) {
       // Explicit category wins; otherwise a storefront narrows to its categories.
       const listFilter: DocCategory | DocCategory[] | undefined =
         (category as DocCategory | undefined) ?? (storefront ? categoriesForStorefront(storefront) : undefined);
-      const entries = this.operations.listDocs(listFilter);
+      const entries = this.operations.listDocs(listFilter, enabledCategories);
 
       if (this.jsonEnabled()) {
         return {entries};
@@ -193,6 +209,7 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
       category: category as DocCategory | undefined,
       storefront,
       storefrontMode,
+      enabledCategories,
     });
 
     const response: SearchDocsResponse = {

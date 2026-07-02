@@ -10,19 +10,8 @@ import type {ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import {categoryEnumValues, enabledCategoriesNote} from './topics.js';
 import {STOREFRONT_VALUES, detectedStorefrontNote, resolveStorefront, type StorefrontParam} from './storefront.js';
-
-/** Documentation categories a search can be restricted to. */
-const CATEGORIES = [
-  'script-api',
-  'job-step',
-  'commerce-api',
-  'pwa-kit-managed-runtime',
-  'sfnext',
-  'sfra',
-  'b2c-commerce',
-  'tooling',
-] as const;
 
 /** Default number of results returned when `limit` is not supplied. Kept small to bound payload size for agents. */
 const DEFAULT_LIMIT = 5;
@@ -79,6 +68,7 @@ function leanResult(entry: DocEntry, score: number, verbose: boolean): LeanResul
 export function createDocsSearchTool(
   loadServices: () => Promise<Services> | Services,
   detectedStorefronts: readonly ProjectType[] = [],
+  enabledCategories?: readonly DocCategory[],
 ): McpTool {
   return createToolAdapter<SearchInput, SearchOutput>(
     {
@@ -91,17 +81,12 @@ export function createDocsSearchTool(
         'over docs_list, which only enumerates). Optionally restrict by category or storefront. Returns id, title, ' +
         'category, summary, and score for triage; pass verbose=true for keywords+url. Call this BEFORE docs_read ' +
         'when you do not know the exact id.' +
+        enabledCategoriesNote(enabledCategories) +
         detectedStorefrontNote(detectedStorefronts),
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {
         query: z.string().min(1).describe('Search query (class name, topic, or natural-language phrase).'),
-        category: z
-          .enum(CATEGORIES)
-          .optional()
-          .describe(
-            'Restrict results to one corpus: script-api, job-step, commerce-api, ' +
-              'pwa-kit-managed-runtime, sfnext, sfra, b2c-commerce, or tooling.',
-          ),
+        category: z.enum(categoryEnumValues(enabledCategories)).optional().describe('Restrict results to one corpus.'),
         storefront: z
           .enum(STOREFRONT_VALUES)
           .optional()
@@ -131,6 +116,7 @@ export function createDocsSearchTool(
           category: args.category,
           storefront,
           storefrontMode: args.storefrontMode,
+          enabledCategories,
         });
         return {
           query: args.query,

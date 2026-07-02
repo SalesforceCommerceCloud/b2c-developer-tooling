@@ -5,10 +5,11 @@
  */
 
 import {z} from 'zod';
-import {readDocByQuery, type DocEntry} from '@salesforce/b2c-tooling-sdk/docs';
+import {readDocByQuery, type DocCategory, type DocEntry} from '@salesforce/b2c-tooling-sdk/docs';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, errorResult, jsonResult} from '../adapter.js';
+import {enabledCategoriesNote} from './topics.js';
 
 /** Default maximum characters of content returned per read call, to bound the inline payload. */
 const DEFAULT_MAX_LENGTH = 12_000;
@@ -28,7 +29,10 @@ interface ReadOutput {
   nextOffset?: number;
 }
 
-export function createDocsReadTool(loadServices: () => Promise<Services> | Services): McpTool {
+export function createDocsReadTool(
+  loadServices: () => Promise<Services> | Services,
+  enabledCategories?: readonly DocCategory[],
+): McpTool {
   return createToolAdapter<ReadInput, null | ReadOutput>(
     {
       name: 'docs_read',
@@ -39,7 +43,8 @@ export function createDocsReadTool(loadServices: () => Promise<Services> | Servi
         'content is fetched from its published URL on demand (with a summary/headings fallback if the ' +
         'network is unavailable). If you do not know the id, call docs_search first. Long docs are ' +
         'truncated to maxLength chars; page with offset when truncated=true. The returned entry ' +
-        'includes the canonical url for citation.',
+        'includes the canonical url for citation.' +
+        enabledCategoriesNote(enabledCategories),
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {
         query: z
@@ -60,7 +65,7 @@ export function createDocsReadTool(loadServices: () => Promise<Services> | Servi
           .describe(`Maximum characters of content to return. Defaults to ${DEFAULT_MAX_LENGTH}.`),
       },
       async execute(args) {
-        const found = await readDocByQuery(args.query);
+        const found = await readDocByQuery(args.query, {enabledCategories});
         if (!found) return null;
         const totalLength = found.content.length;
         const offset = Math.min(args.offset ?? 0, totalLength);

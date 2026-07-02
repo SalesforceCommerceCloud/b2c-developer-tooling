@@ -63,6 +63,7 @@ b2c docs search [query]
 | `--category`, `-c`         | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step` | (none)  |
 | `--storefront`, `-s`       | Storefront awareness: `auto` (or `current`) detects project type, `all` disables, or specify `cartridges`, `pwa-kit-v3`, `storefront-next` | `all`   |
 | `--storefront-mode`        | How storefront context affects results: `boost` (rank relevant docs higher) or `filter` (hide irrelevant docs)  | `boost` |
+| `--topics`                 | Allowlist that bounds the whole corpus to these categories (comma-separated; env `SFCC_DOCS_TOPICS`). `--category`/`--storefront` narrow within it; unknown names are ignored with a warning | (all)   |
 | `--list`                   | List all available documentation entries                                                                         | `false` |
 | `--columns`                | Columns to display (comma-separated). Available: id, title, category, summary, keywords, url, score              | (none)  |
 | `--extended`, `-x`         | Show all columns including extended fields                                                                       | `false` |
@@ -105,9 +106,20 @@ b2c docs search "checkout flow" -s cartridges --storefront-mode filter
 
 # Search PWA Kit docs (boost mode — nothing hidden, but PWA Kit docs rank higher)
 b2c docs search "hooks" --storefront pwa-kit-v3
+
+# Bound the whole corpus to specific topics (an allowlist, not a per-query filter)
+b2c docs search "login" --topics sfnext,commerce-api
+
+# Or pin it via the environment (applies to every docs search/read in the shell)
+export SFCC_DOCS_TOPICS=sfra,commerce-api,script-api,tooling
+b2c docs search "checkout"
 ```
 
 > Search is content-aware — it indexes titles, section headings, summaries, and keywords. Developer Center guides have LLM-generated summaries and keywords for improved discoverability.
+
+### Restricting available topics (`--topics`)
+
+`--topics` (or the `SFCC_DOCS_TOPICS` env var) is a **launch-time allowlist that bounds the entire available corpus** — distinct from the per-query `--category` filter and the soft `--storefront` boost. When set, only those categories are ever reachable; `--category` and `--storefront` narrow *within* the allowlist (their intersection wins), and `docs read` will not resolve an id outside it. Unknown category names are ignored with a warning. Use it to pin the docs surface to exactly the topics relevant to your project (for example, an SFRA team can drop PWA Kit and Storefront Next guides entirely). The equivalent for the MCP server is the `--docs-topics` startup flag.
 
 ### Storefront-Aware Search
 
@@ -154,6 +166,7 @@ b2c docs read <query>
 | Flag          | Description                                 | Default |
 | ------------- | ------------------------------------------- | ------- |
 | `--raw`, `-r` | Output raw markdown (no terminal rendering) | `false` |
+| `--topics`    | Allowlist that bounds readable docs to these categories (comma-separated; env `SFCC_DOCS_TOPICS`). An id outside it will not resolve | (all)   |
 
 ### Examples
 

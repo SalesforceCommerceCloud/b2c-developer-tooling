@@ -169,6 +169,7 @@ Flags specific to the MCP server (in addition to the shared CLI flags in the [CL
 | ---- | ---- | ------- | ----------- |
 | `--toolsets` | string | Auto-detect | Toolsets to enable (comma-separated) |
 | `--tools` | string | - | Individual tools to enable (comma-separated) |
+| `--docs-topics` | string | All | Allowlist bounding the docs tools' corpus to these categories (comma-separated): `script-api`, `job-step`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`. Per-call `category`/`storefront` narrow within it |
 | `--allow-non-ga-tools` | boolean | `false` | Enable non-GA (experimental) tools |
 
 Environment variable equivalents for these flags are listed in [MCP Server Environment Variables](#mcp-server-environment-variables).
@@ -185,6 +186,7 @@ MCP-specific environment variables (flag equivalents):
 | ------------ | --------------- | ---- | ------- | ----------- |
 | `SFCC_TOOLSETS` | `--toolsets` | string | Auto-detect | Toolsets to enable (comma-separated) |
 | `SFCC_TOOLS` | `--tools` | string | - | Individual tools to enable (comma-separated) |
+| `SFCC_DOCS_TOPICS` | `--docs-topics` | string | All | Allowlist bounding the docs tools' corpus to these categories (comma-separated) |
 | `SFCC_ALLOW_NON_GA_TOOLS` | `--allow-non-ga-tools` | boolean | `false` | Enable non-GA (experimental) tools |
 
 **B2C instance:**

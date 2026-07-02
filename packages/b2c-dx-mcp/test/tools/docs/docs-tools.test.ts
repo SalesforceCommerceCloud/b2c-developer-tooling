@@ -54,17 +54,55 @@ describe('tools/docs', () => {
     });
 
     it('keeps every tool description within the 1024-char MCP limit (even with all storefronts detected)', () => {
-      // Worst case: every storefront detected → longest appended detection note.
-      const tools = createDocsTools(loadServices, ['cartridges', 'pwa-kit-v3', 'storefront-next']);
+      // Worst case: every storefront detected + a full topic allowlist → longest appended notes.
+      const tools = createDocsTools(loadServices, {
+        detectedStorefronts: ['cartridges', 'pwa-kit-v3', 'storefront-next'],
+        enabledCategories: ['script-api', 'job-step', 'commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra'],
+      });
       for (const tool of tools) {
         expect(tool.description.length, `${tool.name} description too long`).to.be.at.most(1024);
       }
     });
 
     it('surfaces the detected storefront in the search tool description', () => {
-      const [search] = createDocsTools(loadServices, ['storefront-next']);
+      const [search] = createDocsTools(loadServices, {detectedStorefronts: ['storefront-next']});
       expect(search.description).to.contain('Detected storefront');
       expect(search.description).to.contain('Storefront Next');
+    });
+  });
+
+  describe('docs topic allowlist (launch-time)', () => {
+    it('bounds search/list/read to the enabled categories and notes it in descriptions', async () => {
+      const [search, read, list] = createDocsTools(loadServices, {enabledCategories: ['sfnext', 'commerce-api']});
+      for (const tool of [search, read, list]) {
+        expect(tool.description, `${tool.name} should note the restriction`).to.contain('restricted at startup');
+        expect(tool.description).to.contain('sfnext');
+      }
+
+      // Search only returns enabled categories...
+      const searchJson = getResultJson<{results: Array<{category: string}>}>(
+        await search.handler({query: 'login', limit: 50}),
+      );
+      expect(searchJson.results.length).to.be.greaterThan(0);
+      expect(searchJson.results.every((r) => ['commerce-api', 'sfnext'].includes(r.category))).to.be.true;
+
+      // ...and the category enum is narrowed to the allowlist (script-api rejected).
+      const rejected = await search.handler({query: 'catalog', category: 'script-api'});
+      expect(rejected.isError, 'a disabled category must be rejected by the schema').to.be.true;
+
+      // The list directory only shows enabled categories.
+      const dir = getResultJson<{categories: Array<{category: string}>}>(await list.handler({}));
+      expect(dir.categories.every((c) => ['commerce-api', 'sfnext'].includes(c.category))).to.be.true;
+    });
+
+    it('read never returns content outside the allowlist', async () => {
+      const [, read] = createDocsTools(loadServices, {enabledCategories: ['commerce-api']});
+      // A script-api id that would normally resolve must not, since it is disabled.
+      const result = await read.handler({query: 'dw.catalog.ProductMgr'});
+      if (!result.isError) {
+        const json = getResultJson<{entry: {category: string}}>(result);
+        expect(json.entry.category).to.equal('commerce-api');
+      }
     });
   });
 

@@ -66,7 +66,12 @@ b2c docs search --list --category commerce-api
 
 # List docs relevant to current project's storefront
 b2c docs search --list --storefront current
+
+# Bound the entire corpus to specific topics (allowlist; env: SFCC_DOCS_TOPICS)
+b2c docs search "login" --topics sfnext,commerce-api
 ```
+
+> **`--topics` vs `--category`:** `--category` filters a single query; `--topics` (or `SFCC_DOCS_TOPICS`) is an allowlist that bounds the *entire* available corpus — `--category`/`--storefront` narrow within it, and `docs read` won't resolve an id outside it. Pin it to expose only the docs relevant to your project. The MCP server has an equivalent `--docs-topics` startup flag.
 
 ### Storefront-Aware Search
 

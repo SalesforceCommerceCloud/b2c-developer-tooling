@@ -10,6 +10,8 @@ MCP tools for searching and reading B2C Commerce documentation across multiple c
 
 > **Note:** These tools are payload-conscious for agent use. `docs_search` returns a small default result set with only triage fields; `docs_list` returns a table-of-contents (and just a category directory when unfiltered); `docs_read` truncates long content to a bounded length. Each supports opting into more (`verbose`, `limit`/`offset`, `maxLength`).
 
+> **Restricting available topics:** Launch the server with `--docs-topics <categories>` (or the `SFCC_DOCS_TOPICS` env var) to bound the entire documentation corpus to a comma-separated allowlist (e.g. `--docs-topics sfnext,commerce-api,tooling`). This is a hard configuration boundary — the tools' `category` parameter is narrowed to the allowlist, per-call `category`/`storefront` narrow *within* it, and `docs_read` will not resolve an id outside it. Unknown category names are ignored with a warning. Use it to expose only the docs relevant to a given project.
+
 ---
 
 ## Documentation (Multi-Corpus)

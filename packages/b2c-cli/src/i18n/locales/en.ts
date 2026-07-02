@@ -58,10 +58,12 @@ export const en = {
         resultCount: 'Found {{count}} matches for "{{query}}"',
         totalCount: '{{count}} documentation entries available',
         invalidCategory: 'Unknown category "{{category}}". Valid categories: {{valid}}',
+        invalidTopics: 'Ignoring unknown documentation topic(s): {{topics}}',
       },
       read: {
         description: 'Read B2C Commerce documentation (Script API class, guide, or job step)',
         notFound: 'No documentation found matching: {{query}}',
+        invalidTopics: 'Ignoring unknown documentation topic(s): {{topics}}',
       },
       download: {
         description: 'Download Script API documentation from a B2C Commerce instance',

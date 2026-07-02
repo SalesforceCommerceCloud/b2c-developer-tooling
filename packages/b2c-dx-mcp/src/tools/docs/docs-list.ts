@@ -10,19 +10,8 @@ import type {ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import {categoryEnumValues, enabledCategoriesNote} from './topics.js';
 import {STOREFRONT_VALUES, detectedStorefrontNote, resolveStorefront, type StorefrontParam} from './storefront.js';
-
-/** Documentation categories a listing can be restricted to. */
-const CATEGORIES = [
-  'script-api',
-  'job-step',
-  'commerce-api',
-  'pwa-kit-managed-runtime',
-  'sfnext',
-  'sfra',
-  'b2c-commerce',
-  'tooling',
-] as const;
 
 /** Default page size for a filtered listing. Bounds payload size (large corpora hold 500+ entries). */
 const DEFAULT_LIMIT = 100;
@@ -69,6 +58,7 @@ function toListEntry(entry: DocEntry): ListEntry {
 export function createDocsListTool(
   loadServices: () => Promise<Services> | Services,
   detectedStorefronts: readonly ProjectType[] = [],
+  enabledCategories?: readonly DocCategory[],
 ): McpTool {
   return createToolAdapter<ListInput, ListOutput>(
     {
@@ -78,10 +68,14 @@ export function createDocsListTool(
         'Prefer docs_search for questions — this tool is for browsing a known category. Without a category or ' +
         'storefront it returns just a category directory (counts), not the full corpus. Results are a table of ' +
         'contents; paginated via limit/offset. Use docs_read for content.' +
+        enabledCategoriesNote(enabledCategories) +
         detectedStorefrontNote(detectedStorefronts),
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {
-        category: z.enum(CATEGORIES).optional().describe('Restrict the listing to one documentation category.'),
+        category: z
+          .enum(categoryEnumValues(enabledCategories))
+          .optional()
+          .describe('Restrict the listing to one documentation category.'),
         storefront: z
           .enum(STOREFRONT_VALUES)
           .optional()
@@ -103,9 +97,10 @@ export function createDocsListTool(
 
         // No filter at all → return a compact directory of categories + counts,
         // never the whole corpus (which would blow the inline payload budget).
+        // The directory itself is bounded by the launch-time allowlist.
         if (!filter) {
           const counts = new Map<DocCategory, number>();
-          for (const e of listDocs()) {
+          for (const e of listDocs(undefined, enabledCategories)) {
             if (e.category) counts.set(e.category, (counts.get(e.category) ?? 0) + 1);
           }
           const categories = [...counts.entries()]
@@ -119,7 +114,7 @@ export function createDocsListTool(
           };
         }
 
-        const all = listDocs(filter);
+        const all = listDocs(filter, enabledCategories);
         const offset = args.offset ?? 0;
         const limit = args.limit ?? DEFAULT_LIMIT;
         const page = all.slice(offset, offset + limit).map((e) => toListEntry(e));

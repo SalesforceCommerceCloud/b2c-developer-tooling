@@ -14,6 +14,8 @@ import {
   readDocByQuery,
   readEntryContent,
   categoriesForStorefront,
+  resolveEnabledCategories,
+  DOC_CATEGORIES,
   type DocEntry,
 } from '@salesforce/b2c-tooling-sdk/docs';
 
@@ -124,6 +126,51 @@ describe('docs: Developer Center guides corpus', function () {
       const results = searchDocs('login', {storefront: 'cartridges', storefrontMode: 'filter', category: 'sfnext'});
       expect(results.length).to.be.greaterThan(0);
       expect(results.every((r) => r.entry.category === 'sfnext')).to.equal(true);
+    });
+  });
+
+  describe('enabledCategories allowlist (launch-time topics boundary)', () => {
+    it('resolveEnabledCategories parses, lower-cases, de-dupes, and reports unknowns', () => {
+      expect(resolveEnabledCategories('sfnext, Commerce-API , SFNEXT')).to.deep.equal(['sfnext', 'commerce-api']);
+      expect(resolveEnabledCategories(['tooling'])).to.deep.equal(['tooling']);
+      let invalid: string[] = [];
+      expect(resolveEnabledCategories('sfnext,bogus,nope', (i) => (invalid = i))).to.deep.equal(['sfnext']);
+      expect(invalid).to.deep.equal(['bogus', 'nope']);
+      // Empty / all-invalid / undefined → no restriction.
+      expect(resolveEnabledCategories('')).to.equal(undefined);
+      expect(resolveEnabledCategories(undefined)).to.equal(undefined);
+      expect(resolveEnabledCategories('bogus,nope')).to.equal(undefined);
+      expect([...DOC_CATEGORIES]).to.include('sfnext');
+    });
+
+    it('search only returns entries within the allowlist', () => {
+      const results = searchDocs('login', {enabledCategories: ['sfnext', 'commerce-api'], limit: 50});
+      expect(results.length).to.be.greaterThan(0);
+      expect(results.every((r) => ['sfnext', 'commerce-api'].includes(r.entry.category as string))).to.equal(true);
+    });
+
+    it('a per-query category outside the allowlist yields nothing (intersection wins)', () => {
+      const results = searchDocs('login', {enabledCategories: ['sfnext'], category: 'script-api', limit: 50});
+      expect(results.length).to.equal(0);
+    });
+
+    it('list is bounded by the allowlist', () => {
+      const cats = new Set(listDocs(undefined, ['sfnext', 'commerce-api']).map((e) => e.category));
+      expect([...cats].sort()).to.deep.equal(['commerce-api', 'sfnext']);
+      // An explicit category outside the allowlist returns nothing.
+      expect(listDocs('sfra', ['sfnext']).length).to.equal(0);
+    });
+
+    it('read never returns out-of-allowlist content, even for an exact id', async () => {
+      const guide = listDocs('sfnext')[0];
+      // The exact sfnext id must not resolve to that sfnext doc when only
+      // commerce-api is enabled; any fuzzy fallback must stay within the allowlist.
+      const blocked = await readDocByQuery(guide.id, {enabledCategories: ['commerce-api']});
+      expect(blocked?.entry.id, 'must not return the disabled sfnext doc').to.not.equal(guide.id);
+      if (blocked) expect(blocked.entry.category).to.equal('commerce-api');
+      // With sfnext enabled the exact id resolves.
+      const allowed = await readDocByQuery(guide.id, {enabledCategories: ['sfnext']});
+      expect(allowed?.entry.id).to.equal(guide.id);
     });
   });
 

@@ -6,6 +6,7 @@
 
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {detectWorkspaceType, type ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
+import {DOC_CATEGORIES, resolveEnabledCategories, type DocCategory} from '@salesforce/b2c-tooling-sdk/docs';
 import type {McpTool, Toolset, StartupFlags} from './utils/index.js';
 import {ALL_TOOLSETS, DEPRECATED_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES} from './utils/index.js';
 import type {B2CDxMcpServer} from './server.js';
@@ -93,6 +94,7 @@ export function createToolRegistry(
   loadServices: () => Promise<Services> | Services,
   serverContext?: ServerContext,
   detectedStorefronts: readonly ProjectType[] = [],
+  enabledDocCategories?: readonly DocCategory[],
 ): ToolRegistry {
   const registry: ToolRegistry = {
     CARTRIDGES: [],
@@ -108,7 +110,7 @@ export function createToolRegistry(
   const allTools: McpTool[] = [
     ...createCartridgesTools(loadServices),
     ...createDiagnosticsTools(loadServices, serverContext),
-    ...createDocsTools(loadServices, detectedStorefronts),
+    ...createDocsTools(loadServices, {detectedStorefronts, enabledCategories: enabledDocCategories}),
     ...createMrtTools(loadServices),
     ...createPwav3Tools(loadServices),
     ...createScapiTools(loadServices),
@@ -202,8 +204,22 @@ export async function registerToolsets(
   // filesystem a single time.
   const detectedStorefronts = await detectProjectTypes(flags);
 
+  // Resolve the launch-time docs topic allowlist (bounds the whole docs corpus).
+  const enabledDocCategories = resolveEnabledCategories(flags.docsTopics, (invalid) =>
+    logger.warn(
+      {invalidTopics: invalid, validTopics: DOC_CATEGORIES},
+      `Ignoring unknown documentation topic(s) in --docs-topics: "${invalid.join('", "')}"`,
+    ),
+  );
+  if (enabledDocCategories) {
+    logger.info(
+      {docsTopics: enabledDocCategories},
+      `Documentation restricted to topics: ${enabledDocCategories.join(', ')}`,
+    );
+  }
+
   // Create the tool registry (all available tools)
-  const toolRegistry = createToolRegistry(loadServices, serverContext, detectedStorefronts);
+  const toolRegistry = createToolRegistry(loadServices, serverContext, detectedStorefronts, enabledDocCategories);
 
   // Build flat list of all tools for lookup
   const allTools = Object.values(toolRegistry).flat();
