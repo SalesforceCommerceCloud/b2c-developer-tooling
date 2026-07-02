@@ -77,7 +77,7 @@ export function createDocsSearchTool(
         'Developer Center guides (commerce-api, pwa-kit-managed-runtime, sfnext, sfra, b2c-commerce), and this ' +
         "tooling's own guides. Use for ANY B2C Commerce developer or admin question not already grounded in a " +
         'loaded skill or the current project. Content-aware ranking — pass a natural-language query (prefer this ' +
-        'over docs_list, which only enumerates). Optionally restrict by category or storefront. Returns id, title, ' +
+        'over docs_list, which only enumerates). Optionally restrict by category or workspace. Returns id, title, ' +
         'category, summary, and score for triage; pass verbose=true for keywords+url. Call this BEFORE docs_read ' +
         'when you do not know the exact id.' +
         enabledCategoriesNote(enabledCategories) +
