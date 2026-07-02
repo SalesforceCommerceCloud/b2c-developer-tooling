@@ -24,14 +24,46 @@ const CATEGORIES = [
   'tooling',
 ] as const;
 
+/** Default page size for a filtered listing. Bounds payload size (large corpora hold 500+ entries). */
+const DEFAULT_LIMIT = 100;
+
 interface ListInput {
   category?: DocCategory;
   storefront?: StorefrontParam;
+  limit?: number;
+  offset?: number;
 }
 
-interface ListOutput {
+/** A listing row, trimmed to a table-of-contents shape (no summary/keywords/url). */
+interface ListEntry {
+  id: string;
+  title: string;
+  category?: DocCategory;
+}
+
+/** A page of entries within one filter. */
+interface ListPage {
+  category?: DocCategory | DocCategory[];
+  total: number;
+  offset: number;
   count: number;
-  entries: DocEntry[];
+  entries: ListEntry[];
+  truncated?: boolean;
+  nextOffset?: number;
+}
+
+/** The category directory returned when no filter is supplied (avoids dumping the whole corpus). */
+interface CategoryDirectory {
+  note: string;
+  total: number;
+  categories: Array<{category: DocCategory; count: number}>;
+}
+
+type ListOutput = CategoryDirectory | ListPage;
+
+/** Projects a full entry to the table-of-contents shape. */
+function toListEntry(entry: DocEntry): ListEntry {
+  return {id: entry.id, title: entry.title, category: entry.category};
 }
 
 export function createDocsListTool(
@@ -42,10 +74,10 @@ export function createDocsListTool(
     {
       name: 'docs_list',
       description:
-        'List available B2C Commerce documentation entries (id + title + category) across all corpora ' +
-        '(Script API, job steps, Developer Center guides, tooling guides). Output is large; pass a ' +
-        'category, or storefront="current" to limit to the detected storefront\'s relevant docs, or prefer ' +
-        'docs_search for targeted lookups.' +
+        'Enumerate B2C Commerce documentation entries (id + title + category only) for a category or storefront. ' +
+        'Prefer docs_search for questions — this tool is for browsing a known category. Without a category or ' +
+        'storefront it returns just a category directory (counts), not the full corpus. Results are a table of ' +
+        'contents; paginated via limit/offset. Use docs_read for content.' +
         detectedStorefrontNote(detectedStorefronts),
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {
@@ -55,8 +87,10 @@ export function createDocsListTool(
           .optional()
           .describe(
             'Limit to a storefront\'s relevant categories. "current" uses the auto-detected storefront; ' +
-              '"all" (default) lists everything; or name a type.',
+              'or name a type. Omit for the category directory.',
           ),
+        limit: z.number().int().positive().optional().describe(`Max entries per page. Defaults to ${DEFAULT_LIMIT}.`),
+        offset: z.number().int().nonnegative().optional().describe('Number of entries to skip (for pagination).'),
       },
       async execute(args) {
         // Explicit category wins; otherwise a storefront narrows to its relevant categories.
@@ -66,8 +100,39 @@ export function createDocsListTool(
           (args.storefront && args.storefront !== 'all' && storefront
             ? categoriesForStorefront(storefront)
             : undefined);
-        const entries = listDocs(filter);
-        return {count: entries.length, entries};
+
+        // No filter at all → return a compact directory of categories + counts,
+        // never the whole corpus (which would blow the inline payload budget).
+        if (!filter) {
+          const counts = new Map<DocCategory, number>();
+          for (const e of listDocs()) {
+            if (e.category) counts.set(e.category, (counts.get(e.category) ?? 0) + 1);
+          }
+          const categories = [...counts.entries()]
+            .map(([category, count]) => ({category, count}))
+            .sort((a, b) => b.count - a.count);
+          const total = categories.reduce((sum, c) => sum + c.count, 0);
+          return {
+            note: 'Pass a category (or storefront) to list its entries, or use docs_search for a query.',
+            total,
+            categories,
+          };
+        }
+
+        const all = listDocs(filter);
+        const offset = args.offset ?? 0;
+        const limit = args.limit ?? DEFAULT_LIMIT;
+        const page = all.slice(offset, offset + limit).map((e) => toListEntry(e));
+        const end = offset + page.length;
+        const truncated = end < all.length;
+        return {
+          category: filter,
+          total: all.length,
+          offset,
+          count: page.length,
+          entries: page,
+          ...(truncated && {truncated: true, nextOffset: end}),
+        };
       },
       formatOutput: (output) => jsonResult(output),
     },

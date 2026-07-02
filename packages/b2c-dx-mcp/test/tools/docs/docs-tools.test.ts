@@ -72,10 +72,33 @@ describe('tools/docs', () => {
     it('returns matches for a known class', async () => {
       const tool = createDocsSearchTool(loadServices);
       const result = await tool.handler({query: 'ProductMgr', limit: 5});
-      const json = getResultJson<{query: string; results: Array<{entry: {id: string}; score: number}>}>(result);
+      const json = getResultJson<{query: string; results: Array<{id: string; score: number}>}>(result);
       expect(json.query).to.equal('ProductMgr');
       expect(json.results.length).to.be.greaterThan(0);
-      expect(json.results.some((r) => r.entry.id.includes('ProductMgr'))).to.be.true;
+      expect(json.results.some((r) => r.id.includes('ProductMgr'))).to.be.true;
+    });
+
+    it('returns lean results without keywords/url by default, verbose adds them', async () => {
+      const tool = createDocsSearchTool(loadServices);
+      const lean = getResultJson<{results: Array<Record<string, unknown>>}>(
+        await tool.handler({query: 'passwordless login', limit: 3}),
+      );
+      expect(lean.results.length).to.be.greaterThan(0);
+      expect(lean.results.every((r) => !('keywords' in r) && !('url' in r))).to.be.true;
+      // Every result carries the triage fields.
+      expect(lean.results.every((r) => 'id' in r && 'title' in r && 'score' in r)).to.be.true;
+
+      const verbose = getResultJson<{results: Array<Record<string, unknown>>}>(
+        await tool.handler({query: 'passwordless login', limit: 3, verbose: true}),
+      );
+      // At least one verbose result exposes keywords or url (metadata present in the corpus).
+      expect(verbose.results.some((r) => 'keywords' in r || 'url' in r)).to.be.true;
+    });
+
+    it('defaults to a small result set when limit is omitted', async () => {
+      const tool = createDocsSearchTool(loadServices);
+      const json = getResultJson<{results: unknown[]}>(await tool.handler({query: 'login'}));
+      expect(json.results.length).to.be.at.most(5);
     });
 
     it('returns empty results on a miss', async () => {
@@ -94,10 +117,10 @@ describe('tools/docs', () => {
     it('restricts results to a category', async () => {
       const tool = createDocsSearchTool(loadServices);
       const result = await tool.handler({query: 'catalog', category: 'script-api', limit: 10});
-      const json = getResultJson<{category: string; results: Array<{entry: {category: string}}>}>(result);
+      const json = getResultJson<{category: string; results: Array<{category: string}>}>(result);
       expect(json.category).to.equal('script-api');
       expect(json.results.length).to.be.greaterThan(0);
-      expect(json.results.every((r) => r.entry.category === 'script-api')).to.be.true;
+      expect(json.results.every((r) => r.category === 'script-api')).to.be.true;
     });
 
     it('defaults storefront="current" to the detected storefront and echoes it', async () => {
@@ -122,8 +145,8 @@ describe('tools/docs', () => {
         storefrontMode: 'filter',
         limit: 50,
       });
-      const json = getResultJson<{results: Array<{entry: {category: string}}>}>(result);
-      const cats = new Set(json.results.map((r) => r.entry.category));
+      const json = getResultJson<{results: Array<{category: string}>}>(result);
+      const cats = new Set(json.results.map((r) => r.category));
       expect(cats.has('pwa-kit-managed-runtime')).to.be.false;
       expect(cats.has('sfnext')).to.be.false;
     });
@@ -134,9 +157,32 @@ describe('tools/docs', () => {
       const tool = createDocsReadTool(loadServices);
       const result = await tool.handler({query: 'dw.catalog.ProductMgr'});
       expect(result.isError).to.be.undefined;
-      const json = getResultJson<{entry: {id: string}; content: string}>(result);
+      const json = getResultJson<{entry: {id: string}; content: string; totalLength: number}>(result);
       expect(json.entry.id).to.match(/ProductMgr/);
       expect(json.content).to.be.a('string').and.have.length.greaterThan(0);
+      expect(json.totalLength).to.be.a('number');
+    });
+
+    it('truncates long content to maxLength and pages via offset', async () => {
+      const tool = createDocsReadTool(loadServices);
+      const first = getResultJson<{
+        content: string;
+        totalLength: number;
+        offset: number;
+        truncated?: boolean;
+        nextOffset?: number;
+      }>(await tool.handler({query: 'dw.catalog.ProductMgr', maxLength: 200}));
+      expect(first.content.length).to.be.at.most(200);
+      if (first.totalLength > 200) {
+        expect(first.truncated).to.be.true;
+        expect(first.nextOffset).to.equal(200);
+        // Second page starts where the first ended and differs.
+        const second = getResultJson<{content: string; offset: number}>(
+          await tool.handler({query: 'dw.catalog.ProductMgr', maxLength: 200, offset: first.nextOffset}),
+        );
+        expect(second.offset).to.equal(200);
+        expect(second.content).to.not.equal(first.content);
+      }
     });
 
     it('returns errorResult when nothing matches', async () => {
@@ -148,23 +194,51 @@ describe('tools/docs', () => {
   });
 
   describe('docs_list', () => {
-    it('returns full count + entries', async () => {
+    it('returns a category directory (not the whole corpus) when unfiltered', async () => {
       const tool = createDocsListTool(loadServices);
       const result = await tool.handler({});
-      const json = getResultJson<{count: number; entries: unknown[]}>(result);
-      expect(json.count).to.be.greaterThan(0);
-      expect(json.entries).to.have.lengthOf(json.count);
+      const json = getResultJson<{
+        note: string;
+        total: number;
+        categories: Array<{category: string; count: number}>;
+        entries?: unknown;
+      }>(result);
+      expect(json.entries, 'unfiltered list must not dump entries').to.equal(undefined);
+      expect(json.categories.length).to.be.greaterThan(0);
+      expect(json.total).to.equal(json.categories.reduce((s, c) => s + c.count, 0));
     });
 
-    it('filters the listing by category', async () => {
+    it('filters the listing by category and returns lean TOC entries', async () => {
       const tool = createDocsListTool(loadServices);
-      const all = getResultJson<{count: number}>(await tool.handler({}));
-      const scriptApi = getResultJson<{count: number; entries: Array<{category: string}>}>(
-        await tool.handler({category: 'script-api'}),
-      );
-      expect(scriptApi.count).to.be.greaterThan(0);
-      expect(scriptApi.count).to.be.lessThan(all.count);
+      const scriptApi = getResultJson<{
+        total: number;
+        count: number;
+        entries: Array<Record<string, unknown>>;
+      }>(await tool.handler({category: 'script-api', limit: 500}));
+      expect(scriptApi.total).to.be.greaterThan(0);
       expect(scriptApi.entries.every((e) => e.category === 'script-api')).to.be.true;
+      // Table-of-contents shape only — no summary/keywords/url leaking in.
+      expect(scriptApi.entries.every((e) => !('summary' in e) && !('keywords' in e) && !('url' in e))).to.be.true;
+    });
+
+    it('paginates a large category via limit/offset', async () => {
+      const tool = createDocsListTool(loadServices);
+      const page1 = getResultJson<{
+        total: number;
+        count: number;
+        offset: number;
+        entries: Array<{id: string}>;
+        truncated?: boolean;
+        nextOffset?: number;
+      }>(await tool.handler({category: 'script-api', limit: 10}));
+      expect(page1.count).to.equal(10);
+      expect(page1.truncated).to.be.true;
+      expect(page1.nextOffset).to.equal(10);
+      const page2 = getResultJson<{offset: number; entries: Array<{id: string}>}>(
+        await tool.handler({category: 'script-api', limit: 10, offset: page1.nextOffset}),
+      );
+      expect(page2.offset).to.equal(10);
+      expect(page2.entries[0].id).to.not.equal(page1.entries[0].id);
     });
   });
 
