@@ -26,6 +26,21 @@ import {
  */
 const CORPUS_DIRS: readonly string[] = [SCRIPT_API_DATA_DIR, JOB_STEPS_DATA_DIR, GUIDES_DATA_DIR, TOOLING_DATA_DIR];
 
+/**
+ * Per-category relevance multipliers applied at search time via MiniSearch's
+ * `boostDocument`. Nudges the highest-value / most-current corpora up for
+ * ambiguous cross-corpus queries; categories not listed default to `1` (neutral).
+ *
+ * Kept small on purpose: cross-corpus scores are not normalized, so these only
+ * reorder results within a similar score band — a modest boost will not float a
+ * weak prose match above a strong exact-title/class-name hit. Use the `category`
+ * filter (not a large boost) when you need to hard-scope to one corpus.
+ */
+const CATEGORY_WEIGHTS: Partial<Record<DocCategory, number>> = {
+  tooling: 1.3,
+  sfnext: 1.3,
+};
+
 // Singleton caches for the combined index and the MiniSearch instance.
 let cachedIndex: SearchIndex | null = null;
 let cachedMiniSearch: MiniSearch<IndexedDoc> | null = null;
@@ -127,6 +142,9 @@ function getMiniSearch(): MiniSearch<IndexedDoc> {
       // OR-combine: relevance ranking surfaces the best (near-AND) matches first
       // while still finding prose docs from natural-language queries whose
       // stopwords ("how", "the") are not indexed. Verified best recall in eval.
+      // Apply the per-category preference (see CATEGORY_WEIGHTS). `storedFields`
+      // carries `category` because it is a stored field above.
+      boostDocument: (_id, _term, storedFields) => CATEGORY_WEIGHTS[storedFields?.category as DocCategory] ?? 1,
     },
   });
 

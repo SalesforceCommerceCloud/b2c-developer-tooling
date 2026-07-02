@@ -59,6 +59,14 @@ describe('docs: Developer Center guides corpus', function () {
     expect(results[0].entry.id).to.contain('passwordless');
   });
 
+  it('boosts favored categories (sfnext) in cross-corpus results', () => {
+    // Unfiltered "get started" spans several corpora; the sfnext boost should
+    // rank an sfnext guide at the top of the mixed result set.
+    const results = searchDocs('get started', {limit: 10});
+    expect(results.length).to.be.greaterThan(0);
+    expect(results[0].entry.category).to.equal('sfnext');
+  });
+
   it('honors a category constraint on the exact-id read fast path', async () => {
     const guide = listDocs('sfnext')[0];
     // Same id, but constrained to a different corpus -> no exact-id shortcut match.
