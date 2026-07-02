@@ -62,15 +62,24 @@ export interface DocEntry {
   /**
    * Path of the bundled markdown file relative to its corpus data directory.
    * Present for entries whose content ships in the package; absent for entries
-   * whose content is fetched online (see {@link DocEntry.url}).
+   * whose content is fetched online (see {@link DocEntry.sourceUrl}).
    */
   filePath?: string;
   /**
-   * Canonical published URL of the document (e.g., a developer.salesforce.com
-   * page). For online-only entries this is also the source the content is
-   * fetched from at read time.
+   * Canonical human-facing published URL (the rendered `.html` page, e.g. on
+   * developer.salesforce.com). This is the durable link to cite/open in a
+   * browser. Present for every corpus that has a public page (guides, Script
+   * API reference, tooling); absent for corpora with no public page (job steps).
    */
   url?: string;
+  /**
+   * The raw-markdown (`.md`) URL for the same document — the machine-readable
+   * source. For online-only entries (guides) this is what {@link readEntryContent}
+   * fetches at read time. Bundled corpora (Script API, tooling) also carry it so
+   * callers can retrieve the raw source on request even though content ships in
+   * the package. Absent for corpora with no public page (job steps).
+   */
+  sourceUrl?: string;
   /** Section headings joined into a single searchable string (indexed, not for display). */
   headings?: string;
   /** One-line summary describing what task/topic the doc helps with (agent triage). */

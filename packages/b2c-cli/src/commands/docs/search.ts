@@ -75,6 +75,10 @@ const COLUMNS: Record<string, ColumnDef<SearchResult>> = {
     header: 'URL',
     get: (r) => r.entry.url ?? '',
   },
+  sourceUrl: {
+    header: 'Source URL',
+    get: (r) => r.entry.sourceUrl ?? '',
+  },
   score: {
     header: 'Match',
     // Higher is better (MiniSearch). Show the raw relevance score rounded.

@@ -465,31 +465,34 @@ export async function readEntryContent(entry: DocEntry): Promise<string> {
     logger.debug({id: entry.id, source: 'bundled', filePath: entry.filePath}, 'Reading bundled documentation entry');
     return fs.readFileSync(path.join(dataDir, entry.filePath), 'utf-8');
   }
-  if (entry.url) {
-    logger.debug({id: entry.id, source: 'online', url: entry.url}, 'Reading online documentation entry');
-    return fetchOnlineContent(entry);
+  // Online-only entries (guides): fetch the raw markdown. Prefer `sourceUrl`
+  // (the `.md`); fall back to `url` for any entry that only carries one.
+  const fetchUrl = entry.sourceUrl ?? entry.url;
+  if (fetchUrl) {
+    logger.debug({id: entry.id, source: 'online', fetchUrl}, 'Reading online documentation entry');
+    return fetchOnlineContent(entry, fetchUrl);
   }
   throw new Error(`No content source for documentation entry: ${entry.id}`);
 }
 
 /**
- * Fetches a guide's markdown from its published URL, falling back to a summary
+ * Fetches a guide's markdown from `fetchUrl`, falling back to a summary
  * assembled from indexed metadata if the request fails (offline, 404, etc.).
  */
-async function fetchOnlineContent(entry: DocEntry): Promise<string> {
+async function fetchOnlineContent(entry: DocEntry, fetchUrl: string): Promise<string> {
   const logger = getLogger();
   try {
-    logger.trace({url: entry.url}, 'Fetching online documentation content');
-    const res = await fetch(entry.url!, {headers: {accept: 'text/markdown, text/plain, */*'}});
+    logger.trace({fetchUrl}, 'Fetching online documentation content');
+    const res = await fetch(fetchUrl, {headers: {accept: 'text/markdown, text/plain, */*'}});
     if (!res.ok) {
-      logger.debug({url: entry.url, status: res.status}, 'Online doc fetch returned non-OK status');
+      logger.debug({fetchUrl, status: res.status}, 'Online doc fetch returned non-OK status');
       return offlineFallback(entry, `HTTP ${res.status}`);
     }
     const text = await res.text();
-    logger.trace({url: entry.url, bytes: text.length}, 'Fetched online documentation content');
+    logger.trace({fetchUrl, bytes: text.length}, 'Fetched online documentation content');
     return text;
   } catch (err) {
-    logger.debug({url: entry.url, err}, 'Online doc fetch failed');
+    logger.debug({fetchUrl, err}, 'Online doc fetch failed');
     return offlineFallback(entry, err instanceof Error ? err.message : String(err));
   }
 }

@@ -18,9 +18,18 @@ interface DocEntry {
   title: string;
   category?: string;
   filePath: string;
+  url?: string;
+  sourceUrl?: string;
   headings?: string;
   preview?: string;
 }
+
+/**
+ * Base for Script API reference permalinks. The class/module id maps verbatim to
+ * a durable page: `<base>/dw.catalog.ProductMgr.html` (human) and `.md` (raw).
+ * Content stays bundled; these links let callers cite/fetch the source on request.
+ */
+const SCRIPT_API_URL_BASE = 'https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api';
 
 interface SchemaEntry {
   id: string;
@@ -119,6 +128,8 @@ async function generateScriptApiIndex(): Promise<void> {
       title,
       category: 'script-api',
       filePath: file,
+      url: `${SCRIPT_API_URL_BASE}/${id}.html`,
+      sourceUrl: `${SCRIPT_API_URL_BASE}/${id}.md`,
       ...(headings && {headings}),
       ...(preview && {preview}),
     });

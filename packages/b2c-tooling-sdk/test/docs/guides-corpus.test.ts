@@ -39,13 +39,27 @@ describe('docs: Developer Center guides corpus', function () {
     }
   });
 
-  it('namespaces guide ids by category and carries a derived url (no bundled filePath)', () => {
+  it('namespaces guide ids by category and carries both a .html url and a .md sourceUrl (no bundled filePath)', () => {
     const guides = listDocs('sfnext');
     expect(guides.length).to.be.greaterThan(0);
     const entry = guides[0];
     expect(entry.id).to.match(/^sfnext\//);
-    expect(entry.url).to.match(/^https:\/\/developer\.salesforce\.com\/docs\/commerce\/sfnext\/guide\//);
+    // `url` is the human-facing .html page; `sourceUrl` is the raw .md, and they
+    // point at the same page path (just different extensions).
+    expect(entry.url).to.match(/^https:\/\/developer\.salesforce\.com\/docs\/commerce\/sfnext\/guide\/.+\.html$/);
+    expect(entry.sourceUrl).to.match(/^https:\/\/developer\.salesforce\.com\/docs\/commerce\/sfnext\/guide\/.+\.md$/);
+    expect(entry.sourceUrl).to.equal(entry.url!.replace(/\.html$/, '.md'));
     expect(entry.filePath, 'guides are online-only, not bundled').to.equal(undefined);
+  });
+
+  it('bundled Script API entries carry durable .html url + .md sourceUrl permalinks', () => {
+    const scriptApi = listDocs('script-api');
+    expect(scriptApi.length).to.be.greaterThan(0);
+    const entry = scriptApi.find((e) => e.id === 'dw.catalog.ProductMgr') ?? scriptApi[0];
+    expect(entry.url).to.match(/\/references\/b2c-script-api\/.+\.html$/);
+    expect(entry.sourceUrl).to.equal(entry.url!.replace(/\.html$/, '.md'));
+    // Content still ships bundled.
+    expect(entry.filePath, 'Script API content stays bundled').to.be.a('string');
   });
 
   it('filters search by a single category', () => {
@@ -245,7 +259,8 @@ describe('docs: Developer Center guides corpus', function () {
       id: 'sfnext/__test__',
       title: 'Test Guide',
       category: 'sfnext',
-      url: 'https://developer.salesforce.com/docs/commerce/sfnext/guide/__test__.md',
+      url: 'https://developer.salesforce.com/docs/commerce/sfnext/guide/__test__.html',
+      sourceUrl: 'https://developer.salesforce.com/docs/commerce/sfnext/guide/__test__.md',
       headings: 'Section A • Section B',
       summary: 'A test guide used to exercise the offline fallback path.',
     };
@@ -263,19 +278,24 @@ describe('docs: Developer Center guides corpus', function () {
     }
   });
 
-  it('fetches live guide content via a stubbed successful response', async () => {
+  it('fetches live guide content from sourceUrl (the .md), not the .html url', async () => {
     const entry: DocEntry = {
       id: 'sfnext/__test_ok__',
       title: 'Ignored',
       category: 'sfnext',
-      url: 'https://developer.salesforce.com/docs/commerce/sfnext/guide/__test_ok__.md',
+      url: 'https://developer.salesforce.com/docs/commerce/sfnext/guide/__test_ok__.html',
+      sourceUrl: 'https://developer.salesforce.com/docs/commerce/sfnext/guide/__test_ok__.md',
     };
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (() =>
-      Promise.resolve(new Response('# Live Content\n\nfetched body', {status: 200}))) as typeof fetch;
+    let fetchedUrl = '';
+    globalThis.fetch = ((input: RequestInfo | URL) => {
+      fetchedUrl = String(input);
+      return Promise.resolve(new Response('# Live Content\n\nfetched body', {status: 200}));
+    }) as typeof fetch;
     try {
       const content = await readEntryContent(entry);
       expect(content).to.equal('# Live Content\n\nfetched body');
+      expect(fetchedUrl, 'content must be fetched from the .md sourceUrl').to.equal(entry.sourceUrl);
     } finally {
       globalThis.fetch = originalFetch;
     }

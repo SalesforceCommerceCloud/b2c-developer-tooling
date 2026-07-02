@@ -14,11 +14,13 @@
  * published URL on demand. This keeps the package small while still giving agents
  * content-aware search (title + headings + optional LLM-generated summary/keywords).
  *
- * The canonical URL is derived deterministically from the repo path:
+ * The canonical URLs are derived deterministically from the repo path:
  *   {category}/guides/<any/nested/dirs>/<basename>.md
- *     -> https://developer.salesforce.com/docs/commerce/{category}/guide/<basename>.md
- * (`guides` -> `guide`, nested dirs flattened, basename preserved verbatim). Basenames
- * are unique within each category, so flattening does not collide.
+ *     -> url:       https://developer.salesforce.com/docs/commerce/{category}/guide/<basename>.html
+ *     -> sourceUrl: https://developer.salesforce.com/docs/commerce/{category}/guide/<basename>.md
+ * (`guides` -> `guide`, nested dirs flattened, basename preserved verbatim). `url` is the
+ * human-facing .html page; `sourceUrl` is the raw .md fetched for content. Basenames are
+ * unique within each category, so flattening does not collide.
  *
  * Optional enrichment: if `data/guides/enrichment.json` exists (produced by
  * `enrich-docs.ts`), each entry is augmented with an LLM-generated `summary` and
@@ -44,6 +46,7 @@ interface DocEntry {
   title: string;
   category: string;
   url: string;
+  sourceUrl: string;
   headings?: string;
   summary?: string;
   keywords?: string[];
@@ -144,14 +147,18 @@ function main(): void {
       const md = fs.readFileSync(file, 'utf-8');
       const title = extractTitle(md, basename);
       const headings = extractHeadings(md);
-      const url = `https://developer.salesforce.com/docs/commerce/${category}/guide/${basename}.md`;
+      // `url` is the human-facing .html page (durable link); `sourceUrl` is the
+      // raw .md that readEntryContent fetches at read time. Both are served at
+      // the same path by developer.salesforce.com.
+      const pageBase = `https://developer.salesforce.com/docs/commerce/${category}/guide/${basename}`;
       const enr = enrichment.get(id);
 
       entries.push({
         id,
         title,
         category,
-        url,
+        url: `${pageBase}.html`,
+        sourceUrl: `${pageBase}.md`,
         ...(headings && {headings}),
         ...(enr?.summary && {summary: enr.summary}),
         ...(enr?.keywords?.length && {keywords: enr.keywords}),

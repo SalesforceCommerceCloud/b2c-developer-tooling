@@ -34,6 +34,7 @@ interface LeanResult {
   // Only present in verbose mode:
   keywords?: string[];
   url?: string;
+  sourceUrl?: string;
 }
 
 interface SearchOutput {
@@ -60,6 +61,7 @@ function leanResult(entry: DocEntry, score: number, verbose: boolean): LeanResul
   if (verbose) {
     if (entry.keywords && entry.keywords.length > 0) base.keywords = entry.keywords;
     if (entry.url) base.url = entry.url;
+    if (entry.sourceUrl) base.sourceUrl = entry.sourceUrl;
   }
   return base;
 }

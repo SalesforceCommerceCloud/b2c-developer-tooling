@@ -61,6 +61,7 @@ interface DocEntry {
   category: string;
   filePath: string;
   url?: string;
+  sourceUrl?: string;
   headings?: string;
   preview?: string;
 }
@@ -134,7 +135,10 @@ function main(): void {
     const title = extractTitle(body, id);
     const headings = extractHeadings(body);
     const preview = description || firstParagraph(body);
-    const url = `${DOCS_SITE_BASE}/${rel.replace(/\.md$/, '.html')}`;
+    // `url` = human-facing .html page; `sourceUrl` = raw .md (both served by the
+    // docs site at the same path). Content is bundled, but the raw source stays
+    // linkable on request.
+    const pageBase = `${DOCS_SITE_BASE}/${rel.replace(/\.md$/, '')}`;
 
     // Bundle the body (without frontmatter) for offline reads.
     fs.writeFileSync(path.join(TOOLING_DIR, fileName), body);
@@ -144,7 +148,8 @@ function main(): void {
       title,
       category: 'tooling',
       filePath: fileName,
-      url,
+      url: `${pageBase}.html`,
+      sourceUrl: `${pageBase}.md`,
       ...(headings && {headings}),
       ...(preview && {preview}),
     });
