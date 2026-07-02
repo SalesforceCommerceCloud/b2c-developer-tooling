@@ -73,4 +73,37 @@ describe('docs search', () => {
 
     expect(result.results).to.have.length(1);
   });
+
+  it('passes an explicit --storefront through to searchDocs without detection', async () => {
+    const command: any = await createCommand(
+      {json: true, limit: 5, storefront: 'storefront-next', 'storefront-mode': 'boost'},
+      {query: 'x'},
+    );
+
+    const searchStub = sinon.stub().returns([]);
+    const detectStub = sinon.stub().resolves({projectTypes: [], matchedPatterns: [], autoDiscovered: true});
+    command.operations = {...command.operations, searchDocs: searchStub, detectWorkspaceType: detectStub};
+
+    const result = (await runSilent(() => command.run())) as {storefront?: string[]};
+
+    expect(detectStub.called, 'explicit type must not trigger detection').to.equal(false);
+    expect(searchStub.firstCall.args[1]).to.include({storefrontMode: 'boost'});
+    expect(searchStub.firstCall.args[1].storefront).to.deep.equal(['storefront-next']);
+    expect(result.storefront).to.deep.equal(['storefront-next']);
+  });
+
+  it('runs workspace detection when --storefront=auto', async () => {
+    const command: any = await createCommand({json: true, limit: 5, storefront: 'auto'}, {query: 'x'});
+
+    const searchStub = sinon.stub().returns([]);
+    const detectStub = sinon
+      .stub()
+      .resolves({projectTypes: ['cartridges'], matchedPatterns: ['cartridges'], autoDiscovered: true});
+    command.operations = {...command.operations, searchDocs: searchStub, detectWorkspaceType: detectStub};
+
+    const result = (await runSilent(() => command.run())) as {storefront?: string[]};
+
+    expect(detectStub.calledOnce).to.equal(true);
+    expect(result.storefront).to.deep.equal(['cartridges']);
+  });
 });

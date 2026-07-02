@@ -1,9 +1,11 @@
 ---
 name: b2c-docs
-description: Search and read B2C Commerce documentation using the b2c CLI. Covers Script API reference (dw.* classes/modules), Developer Center guides (Commerce API, PWA Kit, SFRA, Storefront Next, B2C Commerce), tooling documentation (CLI/MCP/SDK), standard job steps, and XSD schemas. Use this skill whenever the user needs to look up API signatures, understand commerce concepts, find how-to guides, check job step parameters, or validate XML schemas — even if they just say "how do I implement passwordless login" or "what methods does Basket have" or "how do I deploy a PWA Kit bundle".
+description: Search and read B2C Commerce documentation using the b2c CLI. Covers Script API reference (dw.* classes/modules), Developer Center guides (Commerce API, PWA Kit, SFRA, Storefront Next, B2C Commerce), tooling documentation (CLI/MCP/SDK), standard job steps, and XSD schemas. Use this skill for ANY B2C Commerce developer or administrator question that is not already grounded in a loaded skill or the current project context — even if they just say "how do I implement passwordless login" or "what methods does Basket have" or "how do I deploy a PWA Kit bundle" or "what SCAPI endpoints are available for checkout".
 ---
 
 # B2C Docs Skill
+
+**Use this skill for ANY B2C Commerce developer or administrator question that is not already grounded in a loaded skill or the current project context.** The docs corpus covers Script API reference, Commerce API (SCAPI/OCAPI) integration patterns, storefront framework guides (SFRA, PWA Kit, Storefront Next), job step parameters, authentication flows, and tooling configuration.
 
 Use the `b2c` CLI to search and read B2C Commerce documentation spanning multiple corpora: Script API reference (`dw.*` classes/modules), **Developer Center guides** (conceptual and how-to content across Commerce API, PWA Kit, SFRA, and more), **tooling documentation** (this project's own guides), the **standard (system) job step catalog**, and XSD schemas.
 
@@ -12,6 +14,7 @@ Use the `b2c` CLI to search and read B2C Commerce documentation spanning multipl
 ## Key Features
 
 - **Multi-corpus search** — Search across Script API, Developer Center guides, tooling docs, job steps, and schemas in a unified index
+- **Storefront-aware search** — Auto-detects project type (SFRA, PWA Kit, Storefront Next) and boosts relevant documentation
 - **Category filtering** — Use `--category` to narrow results to a specific corpus (e.g., `commerce-api`, `pwa-kit-managed-runtime`, `sfra`, `script-api`)
 - **Triage metadata** — Search results include `category`, `summary`, `keywords`, and `url` to help identify the right match without reading full content
 - **Online guide content** — Developer Center guides are fetched online when you read them (with graceful offline fallback)
@@ -45,11 +48,55 @@ b2c docs search "authentication setup" --category tooling
 # Limit results
 b2c docs search authentication --limit 5
 
+# Search with storefront awareness (auto-detects project type)
+b2c docs search "components" --storefront current
+b2c docs search "checkout flow" -s auto
+
+# Search SFRA docs only (filter mode hides non-SFRA categories)
+b2c docs search "page designer" --storefront cartridges --storefront-mode filter
+
+# Search PWA Kit docs with boost (nothing hidden, but PWA Kit docs rank higher)
+b2c docs search "hooks" --storefront pwa-kit-v3
+
 # List all available documentation
 b2c docs search --list
 
 # List entries in a specific category
 b2c docs search --list --category commerce-api
+
+# List docs relevant to current project's storefront
+b2c docs search --list --storefront current
+```
+
+### Storefront-Aware Search
+
+The docs search now understands which storefront framework your project uses and automatically favors relevant documentation. This helps surface the right guides for SFRA, PWA Kit, or Storefront Next projects.
+
+**How it works:**
+- **Auto-detection**: Use `--storefront current` (or `-s auto`) to detect the project type based on workspace structure
+- **Explicit targeting**: Specify `--storefront cartridges` (SFRA), `--storefront pwa-kit-v3` (PWA Kit), or `--storefront storefront-next`
+- **Disable awareness**: Use `--storefront all` to search without any storefront preference
+
+**Category mapping:**
+- SFRA/cartridges projects → boosts `sfra` category docs
+- PWA Kit projects → boosts `pwa-kit-managed-runtime` category docs
+- Storefront Next projects → boosts `sfnext` category docs
+- Always-relevant categories (shown for any storefront): `commerce-api`, `script-api`, `job-step`, `b2c-commerce`, `tooling`
+
+**Storefront modes (`--storefront-mode`):**
+- `boost` (default): Relevant docs rank higher in search results, but all categories remain visible
+- `filter`: Only shows categories relevant to the detected or specified storefront (hides framework-specific docs for other frameworks)
+
+**Examples:**
+```bash
+# Auto-detect and boost relevant docs (default behavior)
+b2c docs search "components" --storefront current
+
+# Filter to show only SFRA-relevant docs
+b2c docs search "checkout" -s cartridges --storefront-mode filter
+
+# PWA Kit project: boost MRT docs but keep everything visible
+b2c docs search "deploy" --storefront pwa-kit-v3
 ```
 
 ### Read Documentation

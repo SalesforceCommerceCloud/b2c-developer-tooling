@@ -14,21 +14,27 @@ import {
 import {
   searchDocs,
   listDocs,
+  categoriesForStorefront,
   type DocCategory,
   type SearchResult,
   type DocEntry,
 } from '@salesforce/b2c-tooling-sdk/docs';
+import {detectWorkspaceType, type ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
 import {t} from '../../i18n/index.js';
 
 interface SearchDocsResponse {
   query?: string;
   category?: string;
+  storefront?: ProjectType[];
   results: SearchResult[];
 }
 
 interface ListDocsResponse {
   entries: DocEntry[];
 }
+
+/** Accepted values for the --storefront flag. */
+const STOREFRONT_FLAG_VALUES = ['auto', 'current', 'all', 'cartridges', 'pwa-kit-v3', 'storefront-next'] as const;
 
 /** All valid documentation categories, for --category validation and help text. */
 const VALID_CATEGORIES: DocCategory[] = [
@@ -114,11 +120,25 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
       description: 'Restrict results to a documentation category',
       options: VALID_CATEGORIES,
     }),
+    storefront: Flags.string({
+      char: 's',
+      description:
+        'Favor docs for a storefront. "auto"/"current" detects the workspace type; ' +
+        '"all" applies no preference; or name a type.',
+      options: [...STOREFRONT_FLAG_VALUES],
+    }),
+    'storefront-mode': Flags.string({
+      description: 'How --storefront is applied: boost (rank higher) or filter (only those docs)',
+      options: ['boost', 'filter'],
+      default: 'boost',
+      dependsOn: ['storefront'],
+    }),
     // `-c` is used by --category above, so omit the default short flag on --columns.
     ...columnFlagsFor(COLUMNS, {columnsChar: false}),
   };
 
   protected operations = {
+    detectWorkspaceType,
     listDocs,
     searchDocs,
   };
@@ -126,10 +146,15 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
   async run(): Promise<ListDocsResponse | SearchDocsResponse> {
     const {query} = this.args;
     const {limit, list, category} = this.flags;
+    const storefront = await this.resolveStorefront(this.flags.storefront);
+    const storefrontMode = this.flags['storefront-mode'] as 'boost' | 'filter';
 
     // List mode
     if (list) {
-      const entries = this.operations.listDocs(category as DocCategory | undefined);
+      // Explicit category wins; otherwise a storefront narrows to its categories.
+      const listFilter: DocCategory | DocCategory[] | undefined =
+        (category as DocCategory | undefined) ?? (storefront ? categoriesForStorefront(storefront) : undefined);
+      const entries = this.operations.listDocs(listFilter);
 
       if (this.jsonEnabled()) {
         return {entries};
@@ -166,11 +191,14 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
     const results = this.operations.searchDocs(query, {
       limit,
       category: category as DocCategory | undefined,
+      storefront,
+      storefrontMode,
     });
 
     const response: SearchDocsResponse = {
       query,
       ...(category && {category}),
+      ...(storefront && {storefront}),
       results,
     };
 
@@ -193,5 +221,19 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
     );
 
     return response;
+  }
+
+  /**
+   * Resolves the --storefront flag to concrete project type(s). `auto`/`current`
+   * runs workspace detection; `all` (or unset) yields none; an explicit type is
+   * used verbatim.
+   */
+  private async resolveStorefront(value: string | undefined): Promise<ProjectType[] | undefined> {
+    if (!value || value === 'all') return undefined;
+    if (value === 'auto' || value === 'current') {
+      const detection = await this.operations.detectWorkspaceType(process.cwd());
+      return detection.projectTypes.length > 0 ? detection.projectTypes : undefined;
+    }
+    return [value as ProjectType];
   }
 }

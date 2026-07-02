@@ -7,6 +7,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import MiniSearch from 'minisearch';
+import type {ProjectType} from '../discovery/types.js';
 import {getLogger} from '../logging/logger.js';
 import {
   GUIDES_DATA_DIR,
@@ -41,6 +42,49 @@ const CATEGORY_WEIGHTS: Partial<Record<DocCategory, number>> = {
   sfnext: 1.3,
 };
 
+/** Multiplier applied to a storefront's relevant categories when a storefront context is known. */
+const STOREFRONT_BOOST = 1.4;
+
+/**
+ * Doc categories that are relevant to every project regardless of which
+ * storefront framework it uses (platform APIs, Script API, job steps, general
+ * B2C Commerce guides, and this tooling's own docs).
+ */
+const ALWAYS_RELEVANT: readonly DocCategory[] = ['commerce-api', 'script-api', 'job-step', 'b2c-commerce', 'tooling'];
+
+/**
+ * Maps a detected project/storefront type to the storefront-SPECIFIC doc
+ * categories for it. Combined with {@link ALWAYS_RELEVANT} to form the full set
+ * of relevant categories. Note SFRA is detected as `cartridges` (the default
+ * patterns fold SFRA into the cartridge project type), so `cartridges` maps to
+ * the `sfra` guides.
+ */
+const STOREFRONT_CATEGORIES: Record<ProjectType, DocCategory[]> = {
+  cartridges: ['sfra'],
+  'pwa-kit-v3': ['pwa-kit-managed-runtime'],
+  'storefront-next': ['sfnext'],
+};
+
+/** Normalizes a storefront option to an array of project types. */
+function toStorefrontList(storefront?: ProjectType | ProjectType[]): ProjectType[] | undefined {
+  if (!storefront) return undefined;
+  const list = Array.isArray(storefront) ? storefront : [storefront];
+  return list.length ? list : undefined;
+}
+
+/**
+ * Computes the set of doc categories relevant to the given storefront(s):
+ * the always-relevant categories plus each storefront's specific categories.
+ */
+export function categoriesForStorefront(storefront: ProjectType | ProjectType[]): DocCategory[] {
+  const list = toStorefrontList(storefront) ?? [];
+  const set = new Set<DocCategory>(ALWAYS_RELEVANT);
+  for (const type of list) {
+    for (const cat of STOREFRONT_CATEGORIES[type] ?? []) set.add(cat);
+  }
+  return [...set];
+}
+
 // Singleton caches for the combined index and the MiniSearch instance.
 let cachedIndex: SearchIndex | null = null;
 let cachedMiniSearch: MiniSearch<IndexedDoc> | null = null;
@@ -61,6 +105,16 @@ interface IndexedDoc {
   headings: string;
   summary: string;
   keywords: string;
+}
+
+/**
+ * Projects a stored entry to the shape returned to callers. Drops `headings`,
+ * which exists only to feed the search index (a long ` • `-joined string with
+ * no triage value) and would otherwise bloat search/list payloads for agents.
+ */
+function publicEntry(entry: DocEntry): DocEntry {
+  const {headings: _headings, ...rest} = entry;
+  return rest;
 }
 
 /**
@@ -142,9 +196,8 @@ function getMiniSearch(): MiniSearch<IndexedDoc> {
       // OR-combine: relevance ranking surfaces the best (near-AND) matches first
       // while still finding prose docs from natural-language queries whose
       // stopwords ("how", "the") are not indexed. Verified best recall in eval.
-      // Apply the per-category preference (see CATEGORY_WEIGHTS). `storedFields`
-      // carries `category` because it is a stored field above.
-      boostDocument: (_id, _term, storedFields) => CATEGORY_WEIGHTS[storedFields?.category as DocCategory] ?? 1,
+      // NOTE: the per-document category boost is applied per-search in
+      // searchDocs (it depends on runtime storefront context), not baked here.
     },
   });
 
@@ -166,13 +219,30 @@ function getMiniSearch(): MiniSearch<IndexedDoc> {
 }
 
 /**
+ * How a storefront context influences results.
+ *
+ * - `boost` (default): the storefront's relevant categories rank higher, but
+ *   nothing is hidden — cross-storefront docs still appear lower down.
+ * - `filter`: only the storefront's relevant categories are returned.
+ */
+export type StorefrontMode = 'boost' | 'filter';
+
+/**
  * Options for {@link searchDocs}.
  */
 export interface SearchDocsOptions {
   /** Maximum number of results to return (default: 20). */
   limit?: number;
-  /** Restrict results to one or more corpora/categories. */
+  /** Restrict results to one or more corpora/categories (hard filter). */
   category?: DocCategory | DocCategory[];
+  /**
+   * The current storefront/project type(s). When set, the storefront's relevant
+   * categories are boosted (or filtered to, per {@link SearchDocsOptions.storefrontMode})
+   * and the storefront preference REPLACES the default category weights.
+   */
+  storefront?: ProjectType | ProjectType[];
+  /** How {@link SearchDocsOptions.storefront} is applied (default: `boost`). */
+  storefrontMode?: StorefrontMode;
 }
 
 /**
@@ -182,37 +252,66 @@ export interface SearchDocsOptions {
  * `category`, `summary`, `keywords`, and `url` when available) so callers can
  * triage matches without a follow-up read.
  *
+ * When `storefront` is provided, the relevant categories for that storefront
+ * (e.g. `sfra` for cartridges, `pwa-kit-managed-runtime` for PWA Kit,
+ * `sfnext` for Storefront Next — plus the always-relevant platform/reference
+ * corpora) are favored, and the storefront preference replaces the default
+ * category weights. In `filter` mode, only those categories are returned.
+ *
  * @param query - The search query string
  * @param limitOrOptions - Result limit (number) or {@link SearchDocsOptions}
  * @returns Array of search results sorted by relevance (best first)
  *
  * @example
  * ```typescript
- * const results = searchDocs('passwordless login', {category: 'commerce-api'});
- * results.forEach(r => console.log(r.entry.id, r.score));
+ * // Favor the current storefront's docs (nothing hidden)
+ * searchDocs('deploy bundle', {storefront: 'pwa-kit-v3'});
+ * // Only return docs relevant to a Storefront Next project
+ * searchDocs('components', {storefront: 'storefront-next', storefrontMode: 'filter'});
  * ```
  */
 export function searchDocs(query: string, limitOrOptions?: number | SearchDocsOptions): SearchResult[] {
   const opts: SearchDocsOptions = typeof limitOrOptions === 'number' ? {limit: limitOrOptions} : (limitOrOptions ?? {});
   const limit = opts.limit ?? 20;
-  const categories = opts.category ? (Array.isArray(opts.category) ? opts.category : [opts.category]) : undefined;
+
+  const storefronts = toStorefrontList(opts.storefront);
+  const mode = opts.storefrontMode ?? 'boost';
+
+  // Explicit category filter takes precedence; otherwise a storefront in
+  // `filter` mode constrains results to that storefront's relevant categories.
+  const explicit = opts.category ? (Array.isArray(opts.category) ? opts.category : [opts.category]) : undefined;
+  const filterCategories =
+    explicit ?? (storefronts && mode === 'filter' ? categoriesForStorefront(storefronts) : undefined);
+
+  // Category weighting: a known storefront (in boost mode) favors its relevant
+  // categories and REPLACES the default weights; otherwise use the defaults.
+  const boostSet =
+    storefronts && mode === 'boost' ? new Set<DocCategory>(categoriesForStorefront(storefronts)) : undefined;
 
   const ms = getMiniSearch();
 
   const raw = ms.search(query, {
-    filter: categories ? (r) => categories.includes(r.category as DocCategory) : undefined,
+    filter: filterCategories ? (r) => filterCategories.includes(r.category as DocCategory) : undefined,
+    boostDocument: (_id, _term, storedFields) => {
+      const category = storedFields?.category as DocCategory | undefined;
+      if (boostSet) return category && boostSet.has(category) ? STOREFRONT_BOOST : 1;
+      return (category && CATEGORY_WEIGHTS[category]) ?? 1;
+    },
   });
 
   const results: SearchResult[] = [];
   for (const r of raw) {
     const entry = entryById.get(r.id as string);
     if (!entry) continue;
-    results.push({entry, score: r.score});
+    results.push({entry: publicEntry(entry), score: r.score});
     if (results.length >= limit) break;
   }
 
   const logger = getLogger();
-  logger.debug({query, categories, limit, matched: raw.length, returned: results.length}, 'docs searchDocs completed');
+  logger.debug(
+    {query, filterCategories, storefronts, mode, limit, matched: raw.length, returned: results.length},
+    'docs searchDocs completed',
+  );
   logger.trace(
     {query, top: results.slice(0, 5).map((r) => ({id: r.entry.id, score: r.score}))},
     'docs search top hits',
@@ -229,9 +328,11 @@ export function searchDocs(query: string, limitOrOptions?: number | SearchDocsOp
  */
 export function listDocs(category?: DocCategory | DocCategory[]): DocEntry[] {
   const index = loadSearchIndex();
-  if (!category) return index.entries;
-  const categories = Array.isArray(category) ? category : [category];
-  return index.entries.filter((e) => e.category && categories.includes(e.category));
+  const categories = category ? (Array.isArray(category) ? category : [category]) : undefined;
+  const entries = categories
+    ? index.entries.filter((e) => e.category && categories.includes(e.category))
+    : index.entries;
+  return entries.map(publicEntry);
 }
 
 /**
@@ -341,7 +442,9 @@ export async function readDocByQuery(
         : [options.category]
       : undefined;
     if (!categories || (exact.category && categories.includes(exact.category))) {
-      return {entry: exact, content: await readEntryContent(exact)};
+      // Resolve content from the stored entry (keeps headings for offline
+      // fallback), but return the public entry (headings stripped).
+      return {entry: publicEntry(exact), content: await readEntryContent(exact)};
     }
   }
 
@@ -349,8 +452,8 @@ export async function readDocByQuery(
   if (results.length === 0) {
     return null;
   }
-  const entry = results[0].entry;
-  return {entry, content: await readEntryContent(entry)};
+  const stored = entryById.get(results[0].entry.id) ?? results[0].entry;
+  return {entry: publicEntry(stored), content: await readEntryContent(stored)};
 }
 
 /**

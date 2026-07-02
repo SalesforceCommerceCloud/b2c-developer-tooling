@@ -52,6 +52,20 @@ describe('tools/docs', () => {
       const [search] = createDocsTools(loadServices);
       expect(search.toolsets).to.have.members(['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT']);
     });
+
+    it('keeps every tool description within the 1024-char MCP limit (even with all storefronts detected)', () => {
+      // Worst case: every storefront detected → longest appended detection note.
+      const tools = createDocsTools(loadServices, ['cartridges', 'pwa-kit-v3', 'storefront-next']);
+      for (const tool of tools) {
+        expect(tool.description.length, `${tool.name} description too long`).to.be.at.most(1024);
+      }
+    });
+
+    it('surfaces the detected storefront in the search tool description', () => {
+      const [search] = createDocsTools(loadServices, ['storefront-next']);
+      expect(search.description).to.contain('Detected storefront');
+      expect(search.description).to.contain('Storefront Next');
+    });
   });
 
   describe('docs_search', () => {
@@ -84,6 +98,34 @@ describe('tools/docs', () => {
       expect(json.category).to.equal('script-api');
       expect(json.results.length).to.be.greaterThan(0);
       expect(json.results.every((r) => r.entry.category === 'script-api')).to.be.true;
+    });
+
+    it('defaults storefront="current" to the detected storefront and echoes it', async () => {
+      const tool = createDocsSearchTool(loadServices, ['storefront-next']);
+      const result = await tool.handler({query: 'components', limit: 5});
+      const json = getResultJson<{storefront?: string[]}>(result);
+      expect(json.storefront).to.deep.equal(['storefront-next']);
+    });
+
+    it('storefront="all" disables the detected-storefront preference', async () => {
+      const tool = createDocsSearchTool(loadServices, ['storefront-next']);
+      const result = await tool.handler({query: 'components', storefront: 'all', limit: 5});
+      const json = getResultJson<{storefront?: string[]}>(result);
+      expect(json.storefront).to.equal(undefined);
+    });
+
+    it('storefront filter mode excludes other storefronts', async () => {
+      const tool = createDocsSearchTool(loadServices);
+      const result = await tool.handler({
+        query: 'storefront',
+        storefront: 'cartridges',
+        storefrontMode: 'filter',
+        limit: 50,
+      });
+      const json = getResultJson<{results: Array<{entry: {category: string}}>}>(result);
+      const cats = new Set(json.results.map((r) => r.entry.category));
+      expect(cats.has('pwa-kit-managed-runtime')).to.be.false;
+      expect(cats.has('sfnext')).to.be.false;
     });
   });
 

@@ -8,7 +8,14 @@ import {expect} from 'chai';
 import {createRequire} from 'node:module';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import {listDocs, searchDocs, readDocByQuery, readEntryContent, type DocEntry} from '@salesforce/b2c-tooling-sdk/docs';
+import {
+  listDocs,
+  searchDocs,
+  readDocByQuery,
+  readEntryContent,
+  categoriesForStorefront,
+  type DocEntry,
+} from '@salesforce/b2c-tooling-sdk/docs';
 
 const require = createRequire(import.meta.url);
 const packageRoot = path.dirname(require.resolve('@salesforce/b2c-tooling-sdk/package.json'));
@@ -65,6 +72,59 @@ describe('docs: Developer Center guides corpus', function () {
     const results = searchDocs('get started', {limit: 10});
     expect(results.length).to.be.greaterThan(0);
     expect(results[0].entry.category).to.equal('sfnext');
+  });
+
+  it('omits the internal headings field from search and list results (payload hygiene)', () => {
+    const searched = searchDocs('storefront', {limit: 5});
+    expect(searched.length).to.be.greaterThan(0);
+    expect(
+      searched.every((r) => !('headings' in r.entry)),
+      'headings must not leak into search results',
+    ).to.equal(true);
+    expect(
+      listDocs('sfnext').every((e) => !('headings' in e)),
+      'headings must not leak into list results',
+    ).to.equal(true);
+  });
+
+  describe('storefront awareness', () => {
+    it('maps each storefront to always-relevant + storefront-specific categories', () => {
+      expect(categoriesForStorefront('cartridges')).to.include.members([
+        'sfra',
+        'commerce-api',
+        'script-api',
+        'tooling',
+      ]);
+      expect(categoriesForStorefront('cartridges')).to.not.include('pwa-kit-managed-runtime');
+      expect(categoriesForStorefront('pwa-kit-v3')).to.include('pwa-kit-managed-runtime');
+      expect(categoriesForStorefront('pwa-kit-v3')).to.not.include('sfnext');
+      expect(categoriesForStorefront('storefront-next')).to.include('sfnext');
+    });
+
+    it('boost mode keeps all corpora but favors the storefront (nothing hidden)', () => {
+      const pwa = searchDocs('components', {storefront: 'pwa-kit-v3', limit: 20});
+      // A PWA Kit guide should now rank first for this cross-storefront term...
+      expect(pwa[0].entry.category).to.equal('pwa-kit-managed-runtime');
+      // ...but other storefronts are still present (not filtered out).
+      expect(pwa.some((r) => r.entry.category === 'sfnext')).to.equal(true);
+    });
+
+    it('filter mode returns only the storefront-relevant categories', () => {
+      const results = searchDocs('storefront', {storefront: 'cartridges', storefrontMode: 'filter', limit: 50});
+      const cats = new Set(results.map((r) => r.entry.category));
+      expect(cats.has('pwa-kit-managed-runtime'), 'PWA Kit docs must be excluded for a cartridge storefront').to.equal(
+        false,
+      );
+      expect(cats.has('sfnext'), 'Storefront Next docs must be excluded for a cartridge storefront').to.equal(false);
+      // always-relevant + sfra remain eligible
+      expect([...cats].every((c) => categoriesForStorefront('cartridges').includes(c!))).to.equal(true);
+    });
+
+    it('an explicit category filter overrides the storefront', () => {
+      const results = searchDocs('login', {storefront: 'cartridges', storefrontMode: 'filter', category: 'sfnext'});
+      expect(results.length).to.be.greaterThan(0);
+      expect(results.every((r) => r.entry.category === 'sfnext')).to.equal(true);
+    });
   });
 
   it('honors a category constraint on the exact-id read fast path', async () => {

@@ -51,7 +51,8 @@ export const en = {
     },
     docs: {
       search: {
-        description: 'Search B2C Commerce documentation (Script API, guides, job steps)',
+        description:
+          'Search B2C Commerce documentation (Script API, Developer Center guides, job steps) — use for any B2C dev/admin question',
         queryRequired: 'Query is required for search. Use --list to see all entries.',
         noResults: 'No documentation found matching: {{query}}',
         resultCount: 'Found {{count}} matches for "{{query}}"',

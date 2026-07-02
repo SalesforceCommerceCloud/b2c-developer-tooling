@@ -64,7 +64,9 @@ export {
   listDocs,
   loadSearchIndex,
   resetDocsCache,
+  categoriesForStorefront,
   type SearchDocsOptions,
+  type StorefrontMode,
 } from './search.js';
 
 // Schema operations

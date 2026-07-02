@@ -92,6 +92,7 @@ export type ToolRegistry = Record<Toolset, McpTool[]>;
 export function createToolRegistry(
   loadServices: () => Promise<Services> | Services,
   serverContext?: ServerContext,
+  detectedStorefronts: readonly ProjectType[] = [],
 ): ToolRegistry {
   const registry: ToolRegistry = {
     CARTRIDGES: [],
@@ -107,7 +108,7 @@ export function createToolRegistry(
   const allTools: McpTool[] = [
     ...createCartridgesTools(loadServices),
     ...createDiagnosticsTools(loadServices, serverContext),
-    ...createDocsTools(loadServices),
+    ...createDocsTools(loadServices, detectedStorefronts),
     ...createMrtTools(loadServices),
     ...createPwav3Tools(loadServices),
     ...createScapiTools(loadServices),
@@ -132,7 +133,7 @@ export function createToolRegistry(
  * @param reason - Reason for triggering auto-discovery (for logging)
  * @returns Array of toolsets to enable
  */
-async function performAutoDiscovery(flags: StartupFlags, reason: string): Promise<Toolset[]> {
+async function detectProjectTypes(flags: StartupFlags): Promise<ProjectType[]> {
   const logger = getLogger();
 
   // Project directory from --project-directory flag or SFCC_PROJECT_DIRECTORY env var
@@ -149,22 +150,11 @@ async function performAutoDiscovery(flags: StartupFlags, reason: string): Promis
   }
 
   const detectionResult = await detectWorkspaceType(projectDirectory);
-
-  // Map all detected project types to MCP toolsets (union)
-  // Note: getToolsetsForProjectTypes always includes BASE_TOOLSET
-  const mappedToolsets = getToolsetsForProjectTypes(detectionResult.projectTypes);
-
   logger.info(
-    {
-      reason,
-      projectTypes: detectionResult.projectTypes,
-      matchedPatterns: detectionResult.matchedPatterns,
-      enabledToolsets: mappedToolsets,
-    },
-    `Auto-discovery (${reason}): project types: ${detectionResult.projectTypes.join(', ') || 'none'}`,
+    {projectTypes: detectionResult.projectTypes, matchedPatterns: detectionResult.matchedPatterns},
+    `Workspace detection: project types: ${detectionResult.projectTypes.join(', ') || 'none'}`,
   );
-
-  return mappedToolsets;
+  return detectionResult.projectTypes;
 }
 
 /**
@@ -206,8 +196,14 @@ export async function registerToolsets(
   const allowNonGaTools = flags.allowNonGaTools ?? false;
   const logger = getLogger();
 
+  // Detect the workspace/storefront type once up front. It informs both the
+  // docs tools (favoring the current storefront's docs and surfacing it in the
+  // tool descriptions) and toolset auto-discovery below, so we only hit the
+  // filesystem a single time.
+  const detectedStorefronts = await detectProjectTypes(flags);
+
   // Create the tool registry (all available tools)
-  const toolRegistry = createToolRegistry(loadServices, serverContext);
+  const toolRegistry = createToolRegistry(loadServices, serverContext, detectedStorefronts);
 
   // Build flat list of all tools for lookup
   const allTools = Object.values(toolRegistry).flat();
@@ -246,12 +242,16 @@ export async function registerToolsets(
   );
   const toolsetsToEnable = new Set<Toolset>(toolsets.includes(ALL_TOOLSETS) ? allNonDeprecatedToolsets : validToolsets);
 
-  // Auto-discovery: If no valid toolsets AND no valid individual tools, detect workspace type.
-  // This handles both: (1) no flags provided, and (2) all provided flags are invalid.
-  // Auto-discovery enables appropriate toolsets based on workspace type,
-  // or at minimum the BASE_TOOLSETS if no project types are detected.
+  // Auto-discovery: If no valid toolsets AND no valid individual tools, map the
+  // already-detected workspace type(s) to toolsets. This handles both: (1) no
+  // flags provided, and (2) all provided flags are invalid. Always enables at
+  // least the BASE_TOOLSETS even if no project types are detected.
   if (toolsetsToEnable.size === 0 && validIndividualTools.length === 0) {
-    const discoveredToolsets = await performAutoDiscovery(flags, 'no valid toolsets or tools');
+    const discoveredToolsets = getToolsetsForProjectTypes(detectedStorefronts);
+    logger.info(
+      {projectTypes: detectedStorefronts, enabledToolsets: discoveredToolsets},
+      `Auto-discovery: enabling toolsets ${discoveredToolsets.join(', ')}`,
+    );
     for (const toolset of discoveredToolsets) {
       toolsetsToEnable.add(toolset);
     }

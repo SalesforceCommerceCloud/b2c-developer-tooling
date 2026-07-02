@@ -6,6 +6,8 @@ description: Search, read, and download B2C Commerce documentation including Scr
 
 Commands for searching and reading B2C Commerce documentation spanning multiple corpora: Script API reference (`dw.*` classes/modules), **Developer Center guides** (conceptual/how-to content across Commerce API, PWA Kit, SFRA, and more), **tooling documentation** (this project's own guides), the **standard (system) job step** catalog, and bundled XSD schemas. Download fresh Script API documentation from an instance.
 
+**Use these commands for any B2C Commerce developer or administrator question that is not already grounded in your project context** — from Script API method lookups to SCAPI integration patterns, job step parameters, storefront framework guides, and authentication flows.
+
 The bundled corpus searched by `docs search` / `docs read` includes:
 
 - **Script API reference** — `dw.*` classes/modules for server-side scripting
@@ -55,13 +57,15 @@ b2c docs search [query]
 
 ### Flags
 
-| Flag               | Description                                                                                                      | Default |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------- | ------- |
-| `--limit`, `-l`    | Maximum number of results to display                                                                             | `20`    |
-| `--category`, `-c` | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step` | (none)  |
-| `--list`           | List all available documentation entries                                                                         | `false` |
-| `--columns`        | Columns to display (comma-separated). Available: id, title, category, summary, keywords, url, score              | (none)  |
-| `--extended`, `-x` | Show all columns including extended fields                                                                       | `false` |
+| Flag                       | Description                                                                                                      | Default |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------- |
+| `--limit`, `-l`            | Maximum number of results to display                                                                             | `20`    |
+| `--category`, `-c`         | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step` | (none)  |
+| `--storefront`, `-s`       | Storefront awareness: `auto` (or `current`) detects project type, `all` disables, or specify `cartridges`, `pwa-kit-v3`, `storefront-next` | `all`   |
+| `--storefront-mode`        | How storefront context affects results: `boost` (rank relevant docs higher) or `filter` (hide irrelevant docs)  | `boost` |
+| `--list`                   | List all available documentation entries                                                                         | `false` |
+| `--columns`                | Columns to display (comma-separated). Available: id, title, category, summary, keywords, url, score              | (none)  |
+| `--extended`, `-x`         | Show all columns including extended fields                                                                       | `false` |
 
 ### Examples
 
@@ -92,9 +96,36 @@ b2c docs search --list
 
 # List entries in a specific category
 b2c docs search --list --category tooling
+
+# Search with storefront awareness (auto-detects project type)
+b2c docs search "components" --storefront current
+
+# Search SFRA docs only (filter mode)
+b2c docs search "checkout flow" -s cartridges --storefront-mode filter
+
+# Search PWA Kit docs (boost mode — nothing hidden, but PWA Kit docs rank higher)
+b2c docs search "hooks" --storefront pwa-kit-v3
 ```
 
 > Search is content-aware — it indexes titles, section headings, summaries, and keywords. Developer Center guides have LLM-generated summaries and keywords for improved discoverability.
+
+### Storefront-Aware Search
+
+The `--storefront` flag enables storefront-aware search that favors documentation relevant to your project type:
+
+- **Auto-detection** (`auto` or `current`): Detects the project's storefront framework and boosts relevant documentation categories
+- **Framework-specific**: Specify `cartridges` (SFRA), `pwa-kit-v3` (PWA Kit), or `storefront-next` (Storefront Next) to target a framework
+- **Disable awareness**: Use `all` to search without any storefront preference
+
+**Category mapping:**
+- SFRA/cartridges projects → boosts `sfra` category
+- PWA Kit projects → boosts `pwa-kit-managed-runtime` category  
+- Storefront Next projects → boosts `sfnext` category
+- Always-relevant categories (shown for any storefront): `commerce-api`, `script-api`, `job-step`, `b2c-commerce`, `tooling`
+
+**Storefront modes:**
+- `boost` (default): Relevant docs rank higher, but all categories remain visible
+- `filter`: Only shows categories relevant to the detected or specified storefront
 
 ### Output
 
