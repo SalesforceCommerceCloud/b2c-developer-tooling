@@ -57,16 +57,15 @@ b2c docs search [query]
 
 ### Flags
 
-| Flag                       | Description                                                                                                      | Default |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------- |
-| `--limit`, `-l`            | Maximum number of results to display                                                                             | `20`    |
-| `--category`, `-c`         | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step` | (none)  |
-| `--storefront`, `-s`       | Storefront awareness: `auto` detects the project type, `all` disables it, or specify `cartridges`, `pwa-kit-v3`, `storefront-next`. Defaults to `auto` (storefront-aware) | `auto`  |
-| `--storefront-mode`        | How storefront context affects results: `boost` (rank relevant docs higher) or `filter` (hide irrelevant docs)  | `boost` |
-| `--topics`                 | Allowlist that bounds the whole corpus to these categories (comma-separated; env `SFCC_DOCS_TOPICS`). `--category`/`--storefront` narrow within it; unknown names are ignored with a warning | (all)   |
-| `--list`                   | List all available documentation entries                                                                         | `false` |
-| `--columns`                | Columns to display (comma-separated). Available: id, title, category, summary, keywords, url, score              | (none)  |
-| `--extended`, `-x`         | Show all columns including extended fields                                                                       | `false` |
+| Flag               | Description                                                                                                                                                                                 | Default |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `--limit`, `-l`    | Maximum number of results to display                                                                                                                                                        | `20`    |
+| `--category`, `-c` | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step`                                                        | (none)  |
+| `--workspace`      | Workspace awareness: `auto` (default, auto-detects project type), `all` (disable), or specify one or more types comma-separated: `cartridges`, `sfra`, `pwa-kit-v3`, `storefront-next`      | `auto`  |
+| `--topics`         | Allowlist that bounds the whole corpus to these categories (comma-separated; env `SFCC_DOCS_TOPICS`). `--category`/`--workspace` narrow within it; unknown names are ignored with a warning | (all)   |
+| `--list`           | List all available documentation entries                                                                                                                                                    | `false` |
+| `--columns`        | Columns to display (comma-separated). Available: id, title, category, summary, keywords, url, score                                                                                         | (none)  |
+| `--extended`, `-x` | Show all columns including extended fields                                                                                                                                                  | `false` |
 
 ### Examples
 
@@ -98,17 +97,20 @@ b2c docs search --list
 # List entries in a specific category
 b2c docs search --list --category tooling
 
-# Storefront awareness is ON by default — search auto-detects the project type
+# Workspace awareness is ON by default — search auto-detects the project type
 b2c docs search "components"
 
-# Opt out of storefront awareness entirely
-b2c docs search "components" --storefront all
+# Opt out of workspace awareness entirely
+b2c docs search "components" --workspace all
 
-# Search SFRA docs only (filter mode)
-b2c docs search "checkout flow" -s cartridges --storefront-mode filter
+# Force auto-detection explicitly
+b2c docs search "hooks" --workspace auto
 
-# Search PWA Kit docs (boost mode — nothing hidden, but PWA Kit docs rank higher)
-b2c docs search "hooks" --storefront pwa-kit-v3
+# Search with specific workspace types (boosts relevant docs)
+b2c docs search "checkout flow" --workspace sfra
+
+# Search for multiple workspace types (union of their boost categories)
+b2c docs search "api integration" --workspace cartridges,pwa-kit-v3
 
 # Bound the whole corpus to specific topics (an allowlist, not a per-query filter)
 b2c docs search "login" --topics sfnext,commerce-api
@@ -122,25 +124,27 @@ b2c docs search "checkout"
 
 ### Restricting available topics (`--topics`)
 
-`--topics` (or the `SFCC_DOCS_TOPICS` env var) is a **launch-time allowlist that bounds the entire available corpus** — distinct from the per-query `--category` filter and the soft `--storefront` boost. When set, only those categories are ever reachable; `--category` and `--storefront` narrow *within* the allowlist (their intersection wins), and `docs read` will not resolve an id outside it. Unknown category names are ignored with a warning. Use it to pin the docs surface to exactly the topics relevant to your project (for example, an SFRA team can drop PWA Kit and Storefront Next guides entirely). The equivalent for the MCP server is the `--docs-topics` startup flag.
+`--topics` (or the `SFCC_DOCS_TOPICS` env var) is a **launch-time allowlist that bounds the entire available corpus** — distinct from the per-query `--category` filter and the soft `--workspace` boost. When set, only those categories are ever reachable; `--category` and `--workspace` narrow _within_ the allowlist (their intersection wins), and `docs read` will not resolve an id outside it. Unknown category names are ignored with a warning. Use it to pin the docs surface to exactly the topics relevant to your project (for example, an SFRA team can drop PWA Kit and Storefront Next guides entirely). The equivalent for the MCP server is the `--docs-topics` startup flag.
 
-### Storefront-Aware Search
+### Workspace-Aware Search
 
-Storefront-aware search favors documentation relevant to your project type, and is **on by default** — `docs search` auto-detects the workspace's storefront framework unless you say otherwise:
+Workspace-aware search favors documentation relevant to your project type, and is **on by default** — `docs search` auto-detects the workspace framework unless you say otherwise:
 
-- **Auto-detection (default, or `--storefront auto`)**: Detects the project's storefront framework and boosts relevant documentation categories
-- **Framework-specific**: Specify `cartridges` (SFRA), `pwa-kit-v3` (PWA Kit), or `storefront-next` (Storefront Next) to target a framework
-- **Disable awareness**: Use `--storefront all` to search without any storefront preference
+- **Auto-detection (default, or `--workspace auto`)**: Detects the project type from the workspace structure and boosts relevant documentation categories
+- **Framework-specific**: Specify one or more workspace types comma-separated: `cartridges`, `sfra`, `pwa-kit-v3`, or `storefront-next`. Multiple types union their boost categories (never sum scores)
+- **Disable awareness**: Use `--workspace all` to search without any workspace preference
 
-**Category mapping:**
-- SFRA/cartridges projects → boosts `sfra` category
-- PWA Kit projects → boosts `pwa-kit-managed-runtime` category  
-- Storefront Next projects → boosts `sfnext` category
-- Always-relevant categories (shown for any storefront): `commerce-api`, `script-api`, `job-step`, `b2c-commerce`, `tooling`
+**Category boost mapping:**
 
-**Storefront modes:**
-- `boost` (default): Relevant docs rank higher, but all categories remain visible
-- `filter`: Only shows categories relevant to the detected or specified storefront
+- Always relevant (any workspace): `b2c-commerce`, `tooling`
+- `cartridges` → `script-api`, `job-step`
+- `sfra` → `sfra`
+- `pwa-kit-v3` → `pwa-kit-managed-runtime`, `commerce-api`
+- `storefront-next` → `sfnext`, `commerce-api`
+
+**SFRA vs cartridges distinction:** A SFRA project is detected as both `cartridges` and `sfra` (SFRA is a refinement — it has the `app_storefront_base` cartridge). A cartridge project that is not SFRA (custom API cartridges, or a PWA Kit / Storefront Next repo that also ships cartridges) is `cartridges` only — so it will not boost `sfra` docs.
+
+A detected or specified workspace always **boosts** relevant docs (ranks them higher) but never hides categories. To hard-scope results to a category, use `--category` or `--topics`.
 
 ### Output
 
@@ -166,9 +170,9 @@ b2c docs read <query>
 
 ### Flags
 
-| Flag          | Description                                 | Default |
-| ------------- | ------------------------------------------- | ------- |
-| `--raw`, `-r` | Output raw markdown (no terminal rendering) | `false` |
+| Flag          | Description                                                                                                                          | Default |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------- |
+| `--raw`, `-r` | Output raw markdown (no terminal rendering)                                                                                          | `false` |
 | `--topics`    | Allowlist that bounds readable docs to these categories (comma-separated; env `SFCC_DOCS_TOPICS`). An id outside it will not resolve | (all)   |
 
 ### Examples

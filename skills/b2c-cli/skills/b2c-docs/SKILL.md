@@ -48,17 +48,20 @@ b2c docs search "authentication setup" --category tooling
 # Limit results
 b2c docs search authentication --limit 5
 
-# Storefront awareness is ON by default — search auto-detects the project type
+# Workspace awareness is ON by default — search auto-detects the project type
 b2c docs search "components"
 
-# Opt out of storefront awareness
-b2c docs search "components" --storefront all
+# Opt out of workspace awareness
+b2c docs search "components" --workspace all
 
-# Search SFRA docs only (filter mode hides non-SFRA categories)
-b2c docs search "page designer" --storefront cartridges --storefront-mode filter
+# Force auto-detection explicitly
+b2c docs search "hooks" --workspace auto
 
-# Search PWA Kit docs with boost (nothing hidden, but PWA Kit docs rank higher)
-b2c docs search "hooks" --storefront pwa-kit-v3
+# Search with specific workspace types (boosts relevant docs)
+b2c docs search "page designer" --workspace sfra
+
+# Search with multiple workspace types (union of their boost categories)
+b2c docs search "checkout" --workspace cartridges,pwa-kit-v3
 
 # List all available documentation
 b2c docs search --list
@@ -66,44 +69,48 @@ b2c docs search --list
 # List entries in a specific category
 b2c docs search --list --category commerce-api
 
-# List docs relevant to a specific storefront (list does not auto-detect)
-b2c docs search --list --storefront cartridges
+# List docs relevant to a specific workspace (list does not auto-detect)
+b2c docs search --list --workspace cartridges
 
 # Bound the entire corpus to specific topics (allowlist; env: SFCC_DOCS_TOPICS)
 b2c docs search "login" --topics sfnext,commerce-api
 ```
 
-> **`--topics` vs `--category`:** `--category` filters a single query; `--topics` (or `SFCC_DOCS_TOPICS`) is an allowlist that bounds the *entire* available corpus — `--category`/`--storefront` narrow within it, and `docs read` won't resolve an id outside it. Pin it to expose only the docs relevant to your project. The MCP server has an equivalent `--docs-topics` startup flag.
+> **`--topics` vs `--category`:** `--category` filters a single query; `--topics` (or `SFCC_DOCS_TOPICS`) is an allowlist that bounds the _entire_ available corpus — `--category`/`--workspace` narrow within it, and `docs read` won't resolve an id outside it. Pin it to expose only the docs relevant to your project. The MCP server has an equivalent `--docs-topics` startup flag.
 
-### Storefront-Aware Search
+### Workspace-Aware Search
 
-The docs search understands which storefront framework your project uses and automatically favors relevant documentation. This helps surface the right guides for SFRA, PWA Kit, or Storefront Next projects, and is **on by default**.
+The docs search understands which workspace framework your project uses and automatically favors relevant documentation. This helps surface the right guides for SFRA, PWA Kit, or Storefront Next projects, and is **on by default**.
 
 **How it works:**
-- **Auto-detection (default)**: `docs search` detects the project type from the workspace structure automatically; pass `--storefront auto` to force it explicitly
-- **Explicit targeting**: Specify `--storefront cartridges` (SFRA), `--storefront pwa-kit-v3` (PWA Kit), or `--storefront storefront-next`
-- **Disable awareness**: Use `--storefront all` to search without any storefront preference
 
-**Category mapping:**
-- SFRA/cartridges projects → boosts `sfra` category docs
-- PWA Kit projects → boosts `pwa-kit-managed-runtime` category docs
-- Storefront Next projects → boosts `sfnext` category docs
-- Always-relevant categories (shown for any storefront): `commerce-api`, `script-api`, `job-step`, `b2c-commerce`, `tooling`
+- **Auto-detection (default)**: `docs search` detects the project type from the workspace structure automatically; pass `--workspace auto` to force it explicitly
+- **Explicit targeting**: Specify one or more workspace types comma-separated: `cartridges`, `sfra`, `pwa-kit-v3`, or `storefront-next`. Multiple types union their boost categories
+- **Disable awareness**: Use `--workspace all` to search without any workspace preference
 
-**Storefront modes (`--storefront-mode`):**
-- `boost` (default): Relevant docs rank higher in search results, but all categories remain visible
-- `filter`: Only shows categories relevant to the detected or specified storefront (hides framework-specific docs for other frameworks)
+**Category boost mapping:**
+
+- Always relevant (any workspace): `b2c-commerce`, `tooling`
+- `cartridges` → `script-api`, `job-step`
+- `sfra` → `sfra`
+- `pwa-kit-v3` → `pwa-kit-managed-runtime`, `commerce-api`
+- `storefront-next` → `sfnext`, `commerce-api`
+
+**SFRA vs cartridges distinction:** A SFRA project is detected as both `cartridges` and `sfra` (SFRA is a refinement — it has the `app_storefront_base` cartridge). A cartridge project that is not SFRA (custom API cartridges, or a PWA Kit / Storefront Next repo that also ships cartridges) is `cartridges` only — so it will not boost `sfra` docs.
+
+A detected or specified workspace always **boosts** relevant docs (ranks them higher) but never hides categories. To hard-scope results to a category, use `--category` or `--topics`.
 
 **Examples:**
+
 ```bash
 # Auto-detect and boost relevant docs (default behavior)
 b2c docs search "components"
 
-# Filter to show only SFRA-relevant docs
-b2c docs search "checkout" -s cartridges --storefront-mode filter
+# Search with specific workspace type
+b2c docs search "checkout" --workspace sfra
 
-# PWA Kit project: boost MRT docs but keep everything visible
-b2c docs search "deploy" --storefront pwa-kit-v3
+# Search with multiple workspace types
+b2c docs search "deploy" --workspace pwa-kit-v3,storefront-next
 ```
 
 ### Read Documentation
@@ -185,41 +192,41 @@ xmllint --schema "$(b2c docs schema catalog --path)" my-catalog.xml --noout
 
 ## Documentation Categories
 
-| Category | Description | Example IDs |
-|----------|-------------|-------------|
-| `script-api` | Server-side Script API reference (`dw.*` classes/modules) | `dw.catalog.ProductMgr`, `dw.order.Basket` |
-| `commerce-api` | Commerce API (SCAPI/OCAPI) conceptual and how-to guides | `commerce-api/slas-passwordless-login-registration` |
-| `pwa-kit-managed-runtime` | PWA Kit and Managed Runtime (MRT) guides | `pwa-kit-managed-runtime/getting-started` |
-| `sfra` | Storefront Reference Architecture (SFRA) guides | `sfra/controllers-and-routes` |
-| `sfnext` | Storefront Next (deprecated) guides | `sfnext/sfnext-get-started` |
-| `b2c-commerce` | General B2C Commerce platform guides | `b2c-commerce/business-manager-overview` |
-| `tooling` | B2C CLI, MCP, SDK, and VS Code extension guides | `guide-authentication`, `guide-configuration` |
-| `job-step` | Standard (system) job step catalog | `ImportCatalog`, `ExportCatalog`, `job-steps` |
+| Category                  | Description                                               | Example IDs                                         |
+| ------------------------- | --------------------------------------------------------- | --------------------------------------------------- |
+| `script-api`              | Server-side Script API reference (`dw.*` classes/modules) | `dw.catalog.ProductMgr`, `dw.order.Basket`          |
+| `commerce-api`            | Commerce API (SCAPI/OCAPI) conceptual and how-to guides   | `commerce-api/slas-passwordless-login-registration` |
+| `pwa-kit-managed-runtime` | PWA Kit and Managed Runtime (MRT) guides                  | `pwa-kit-managed-runtime/getting-started`           |
+| `sfra`                    | Storefront Reference Architecture (SFRA) guides           | `sfra/controllers-and-routes`                       |
+| `sfnext`                  | Storefront Next (deprecated) guides                       | `sfnext/sfnext-get-started`                         |
+| `b2c-commerce`            | General B2C Commerce platform guides                      | `b2c-commerce/business-manager-overview`            |
+| `tooling`                 | B2C CLI, MCP, SDK, and VS Code extension guides           | `guide-authentication`, `guide-configuration`       |
+| `job-step`                | Standard (system) job step catalog                        | `ImportCatalog`, `ExportCatalog`, `job-steps`       |
 
 ## Common Script API Classes
 
-| Class | Description |
-|-------|-------------|
-| `dw.catalog.ProductMgr` | Product management and queries |
-| `dw.catalog.Product` | Product data and attributes |
-| `dw.order.Basket` | Shopping basket operations |
-| `dw.order.Order` | Order processing |
-| `dw.customer.CustomerMgr` | Customer management |
-| `dw.system.Site` | Site configuration |
-| `dw.web.URLUtils` | URL generation utilities |
+| Class                     | Description                    |
+| ------------------------- | ------------------------------ |
+| `dw.catalog.ProductMgr`   | Product management and queries |
+| `dw.catalog.Product`      | Product data and attributes    |
+| `dw.order.Basket`         | Shopping basket operations     |
+| `dw.order.Order`          | Order processing               |
+| `dw.customer.CustomerMgr` | Customer management            |
+| `dw.system.Site`          | Site configuration             |
+| `dw.web.URLUtils`         | URL generation utilities       |
 
 ## Common Schemas
 
-| Schema | Description |
-|--------|-------------|
-| `catalog` | Product catalog import/export |
-| `order` | Order data import/export |
-| `customer` | Customer data import/export |
-| `inventory` | Inventory data import/export |
-| `pricebook` | Price book import/export |
-| `promotion` | Promotion definitions |
-| `coupon` | Coupon codes import/export |
-| `jobs` | Job step definitions |
+| Schema      | Description                   |
+| ----------- | ----------------------------- |
+| `catalog`   | Product catalog import/export |
+| `order`     | Order data import/export      |
+| `customer`  | Customer data import/export   |
+| `inventory` | Inventory data import/export  |
+| `pricebook` | Price book import/export      |
+| `promotion` | Promotion definitions         |
+| `coupon`    | Coupon codes import/export    |
+| `jobs`      | Job step definitions          |
 
 ## More Commands
 
