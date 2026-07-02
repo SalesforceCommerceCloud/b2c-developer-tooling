@@ -20,15 +20,15 @@ import {createDocsSearchTool} from './docs-search.js';
  */
 export interface DocsToolContext {
   /**
-   * Workspace storefront type(s) detected at startup. Baked into the search/list
-   * tool descriptions and used as the default storefront context so results
-   * favor the current storefront.
+   * Workspace type(s) detected at startup. Baked into the search/list
+   * tool descriptions and used as the default workspace context so results
+   * favor the current workspace.
    */
-  detectedStorefronts?: readonly ProjectType[];
+  detectedWorkspaces?: readonly ProjectType[];
   /**
    * A launch-time allowlist of documentation categories (from `--docs-topics`).
    * When set, the docs tools expose ONLY these categories — a hard boundary the
-   * per-call `category`/`storefront` narrowing operates within.
+   * per-call `category`/`workspace` narrowing operates within.
    */
   enabledCategories?: readonly DocCategory[];
 }
@@ -40,11 +40,11 @@ export function createDocsTools(
   loadServices: () => Promise<Services> | Services,
   context: DocsToolContext = {},
 ): McpTool[] {
-  const {detectedStorefronts = [], enabledCategories} = context;
+  const {detectedWorkspaces = [], enabledCategories} = context;
   return [
-    createDocsSearchTool(loadServices, detectedStorefronts, enabledCategories),
+    createDocsSearchTool(loadServices, detectedWorkspaces, enabledCategories),
     createDocsReadTool(loadServices, enabledCategories),
-    createDocsListTool(loadServices, detectedStorefronts, enabledCategories),
+    createDocsListTool(loadServices, detectedWorkspaces, enabledCategories),
     createDocsSchemaSearchTool(loadServices),
     createDocsSchemaReadTool(loadServices),
     createDocsSchemaListTool(loadServices),

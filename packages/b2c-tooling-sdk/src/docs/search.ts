@@ -27,88 +27,60 @@ import {
  */
 const CORPUS_DIRS: readonly string[] = [SCRIPT_API_DATA_DIR, JOB_STEPS_DATA_DIR, GUIDES_DATA_DIR, TOOLING_DATA_DIR];
 
-/** Multiplier applied to a storefront's relevant categories when a storefront context is known. */
-const STOREFRONT_BOOST = 1.4;
+/** Multiplier applied to a detected workspace's relevant categories. */
+const WORKSPACE_BOOST = 1.4;
 
 /**
- * Per-category metadata for the documentation taxonomy.
+ * Canonical per-category metadata, keyed by {@link DocCategory}. Insertion order
+ * defines the display order in {@link DOC_CATEGORIES}. `alwaysRelevant` marks the
+ * categories that are boosted whenever ANY workspace is detected, regardless of
+ * which framework it is (general platform docs + this tooling's own docs).
  *
- * A category is EITHER platform-wide (no `storefront`, relevant to every
- * project) OR specific to exactly one storefront/project type. `boost` is an
- * optional cross-corpus relevance multiplier (default `1`).
+ * Typed `Record<DocCategory, …>`, so adding a new `DocCategory` to the union in
+ * `types.ts` is a compile error until it is listed here (keeps the category list
+ * and its metadata from drifting).
  */
-interface CategoryMeta {
-  /**
-   * The storefront/project type this category is specific to. Omitted for
-   * platform-wide categories (Script API, job steps, Commerce API, general B2C
-   * Commerce, and this tooling's own docs), which are always relevant. Note
-   * SFRA is detected as `cartridges` (the default patterns fold SFRA into the
-   * cartridge project type), so the `sfra` category maps to `cartridges`.
-   */
-  storefront?: ProjectType;
-  /**
-   * Relevance multiplier applied at search time via MiniSearch's
-   * `boostDocument`. Kept small on purpose: cross-corpus scores are not
-   * normalized, so a modest boost only reorders results within a similar score
-   * band — it will not float a weak prose match above a strong exact-title hit.
-   */
-  boost?: number;
-}
-
-/**
- * The single source of truth for the documentation taxonomy. Every field the
- * SDK, CLI, and MCP need about a category is derived from this table:
- * {@link DOC_CATEGORIES} (the category list + display order), the always-relevant
- * vs. storefront-specific split, and per-category search boosts.
- *
- * To add a new corpus/category: add its `DocCategory` to the union in `types.ts`
- * (the `Record` type below then forces an entry here) and a `*_DATA_DIR` +
- * `CORPUS_DIRS` entry — nothing else in this module needs to change.
- *
- * Insertion order defines the canonical display order in {@link DOC_CATEGORIES}.
- */
-const CATEGORY_TAXONOMY: Record<DocCategory, CategoryMeta> = {
+const CATEGORY_TAXONOMY: Record<DocCategory, {alwaysRelevant?: boolean}> = {
   'script-api': {},
   'job-step': {},
   'commerce-api': {},
-  'pwa-kit-managed-runtime': {storefront: 'pwa-kit-v3'},
-  sfnext: {storefront: 'storefront-next', boost: 1.3},
-  sfra: {storefront: 'cartridges'},
-  'b2c-commerce': {},
-  tooling: {boost: 1.3},
+  'pwa-kit-managed-runtime': {},
+  sfnext: {},
+  sfra: {},
+  'b2c-commerce': {alwaysRelevant: true},
+  tooling: {alwaysRelevant: true},
 };
 
 /**
  * The canonical list of documentation categories, in a stable display order.
- * Exported so the CLI and MCP surfaces validate against a single source of
- * truth instead of maintaining their own copies. Derived from
- * {@link CATEGORY_TAXONOMY}.
+ * Exported so the CLI and MCP surfaces validate against a single source of truth
+ * instead of maintaining their own copies. Derived from {@link CATEGORY_TAXONOMY}.
  */
 export const DOC_CATEGORIES: readonly DocCategory[] = Object.keys(CATEGORY_TAXONOMY) as DocCategory[];
 
-/**
- * Doc categories relevant to every project regardless of storefront framework
- * (the platform-wide categories). Derived from {@link CATEGORY_TAXONOMY}.
- */
-const ALWAYS_RELEVANT: readonly DocCategory[] = DOC_CATEGORIES.filter((c) => !CATEGORY_TAXONOMY[c].storefront);
+/** Categories relevant to every detected workspace. Derived from {@link CATEGORY_TAXONOMY}. */
+const ALWAYS_RELEVANT: readonly DocCategory[] = DOC_CATEGORIES.filter((c) => CATEGORY_TAXONOMY[c].alwaysRelevant);
 
 /**
- * Maps a detected project/storefront type to its storefront-SPECIFIC doc
- * categories. Derived from {@link CATEGORY_TAXONOMY}; combined with
- * {@link ALWAYS_RELEVANT} to form the full set of relevant categories.
+ * Maps each workspace marker to the doc categories it makes relevant. The final
+ * relevant set for a workspace is {@link ALWAYS_RELEVANT} plus the union of the
+ * markers' categories (merged, never summed — a category shared by two markers
+ * is still boosted once).
+ *
+ * `sfra` is a refinement of `cartridges`: an SFRA project detects as both, so it
+ * gets the cartridge categories (Script API, job steps) AND the `sfra` guides. A
+ * non-SFRA cartridge project (custom APIs, or a PWA Kit / Storefront Next repo
+ * that also ships cartridges) gets the cartridge categories but NOT `sfra`.
+ *
+ * Typed `Record<ProjectType, …>`, so adding a new workspace marker is a compile
+ * error until its categories are declared here.
  */
-const STOREFRONT_CATEGORIES: Record<ProjectType, DocCategory[]> = (() => {
-  const map: Record<ProjectType, DocCategory[]> = {
-    cartridges: [],
-    'pwa-kit-v3': [],
-    'storefront-next': [],
-  };
-  for (const category of DOC_CATEGORIES) {
-    const {storefront} = CATEGORY_TAXONOMY[category];
-    if (storefront) map[storefront].push(category);
-  }
-  return map;
-})();
+const WORKSPACE_CATEGORIES: Record<ProjectType, readonly DocCategory[]> = {
+  cartridges: ['script-api', 'job-step'],
+  sfra: ['sfra'],
+  'pwa-kit-v3': ['pwa-kit-managed-runtime', 'commerce-api'],
+  'storefront-next': ['sfnext', 'commerce-api'],
+};
 
 /**
  * Parses and validates a user-supplied set of documentation categories into a
@@ -145,22 +117,23 @@ export function resolveEnabledCategories(
   return valid.length > 0 ? [...new Set(valid)] : undefined;
 }
 
-/** Normalizes a storefront option to an array of project types. */
-function toStorefrontList(storefront?: ProjectType | ProjectType[]): ProjectType[] | undefined {
-  if (!storefront) return undefined;
-  const list = Array.isArray(storefront) ? storefront : [storefront];
+/** Normalizes a workspace option to an array of project-type markers. */
+function toWorkspaceList(workspace?: ProjectType | ProjectType[]): ProjectType[] | undefined {
+  if (!workspace) return undefined;
+  const list = Array.isArray(workspace) ? workspace : [workspace];
   return list.length ? list : undefined;
 }
 
 /**
- * Computes the set of doc categories relevant to the given storefront(s):
- * the always-relevant categories plus each storefront's specific categories.
+ * Computes the set of doc categories relevant to the given workspace marker(s):
+ * the always-relevant categories plus the union of each marker's categories
+ * (merged, not summed).
  */
-export function categoriesForStorefront(storefront: ProjectType | ProjectType[]): DocCategory[] {
-  const list = toStorefrontList(storefront) ?? [];
+export function categoriesForWorkspace(workspace: ProjectType | ProjectType[]): DocCategory[] {
+  const list = toWorkspaceList(workspace) ?? [];
   const set = new Set<DocCategory>(ALWAYS_RELEVANT);
-  for (const type of list) {
-    for (const cat of STOREFRONT_CATEGORIES[type] ?? []) set.add(cat);
+  for (const marker of list) {
+    for (const cat of WORKSPACE_CATEGORIES[marker] ?? []) set.add(cat);
   }
   return [...set];
 }
@@ -277,7 +250,7 @@ function getMiniSearch(): MiniSearch<IndexedDoc> {
       // while still finding prose docs from natural-language queries whose
       // stopwords ("how", "the") are not indexed. Verified best recall in eval.
       // NOTE: the per-document category boost is applied per-search in
-      // searchDocs (it depends on runtime storefront context), not baked here.
+      // searchDocs (it depends on runtime workspace context), not baked here.
     },
   });
 
@@ -299,15 +272,6 @@ function getMiniSearch(): MiniSearch<IndexedDoc> {
 }
 
 /**
- * How a storefront context influences results.
- *
- * - `boost` (default): the storefront's relevant categories rank higher, but
- *   nothing is hidden — cross-storefront docs still appear lower down.
- * - `filter`: only the storefront's relevant categories are returned.
- */
-export type StorefrontMode = 'boost' | 'filter';
-
-/**
  * Options for {@link searchDocs}.
  */
 export interface SearchDocsOptions {
@@ -316,23 +280,22 @@ export interface SearchDocsOptions {
   /** Restrict results to one or more corpora/categories (hard filter). */
   category?: DocCategory | DocCategory[];
   /**
-   * The current storefront/project type(s). When set, the storefront's relevant
-   * categories are boosted (or filtered to, per {@link SearchDocsOptions.storefrontMode})
-   * and the storefront preference REPLACES the default category weights.
+   * The current workspace marker(s) (e.g. from workspace detection). When set,
+   * the categories relevant to those markers rank higher (always a boost — never
+   * hides anything). To hard-scope instead, use {@link SearchDocsOptions.category}
+   * or {@link SearchDocsOptions.enabledCategories}.
    */
-  storefront?: ProjectType | ProjectType[];
-  /** How {@link SearchDocsOptions.storefront} is applied (default: `boost`). */
-  storefrontMode?: StorefrontMode;
+  workspace?: ProjectType | ProjectType[];
   /**
    * A hard allowlist of categories that bounds the ENTIRE available corpus for
    * this call — a configuration boundary, distinct from the per-query
-   * {@link SearchDocsOptions.category} filter and the soft storefront boost.
+   * {@link SearchDocsOptions.category} filter and the soft workspace boost.
    *
    * When set, only entries in these categories are ever eligible; any `category`
-   * or storefront `filter` narrows *within* this set (their intersection wins).
-   * Intended to be resolved once from a launch-time flag/env var (see
-   * {@link resolveEnabledCategories}) so operators can pin the docs surface to
-   * exactly the topics they want exposed. `undefined` means no restriction.
+   * narrows *within* this set (their intersection wins). Intended to be resolved
+   * once from a launch-time flag/env var (see {@link resolveEnabledCategories}) so
+   * operators can pin the docs surface to exactly the topics they want exposed.
+   * `undefined` means no restriction.
    */
   enabledCategories?: readonly DocCategory[];
 }
@@ -355,11 +318,11 @@ function intersectCategories(
  * `category`, `summary`, `keywords`, and `url` when available) so callers can
  * triage matches without a follow-up read.
  *
- * When `storefront` is provided, the relevant categories for that storefront
- * (e.g. `sfra` for cartridges, `pwa-kit-managed-runtime` for PWA Kit,
- * `sfnext` for Storefront Next — plus the always-relevant platform/reference
- * corpora) are favored, and the storefront preference replaces the default
- * category weights. In `filter` mode, only those categories are returned.
+ * When `workspace` is provided, the categories relevant to those markers (e.g.
+ * `sfra` for an SFRA project, `script-api`/`job-step` for any cartridge project,
+ * `pwa-kit-managed-runtime`/`commerce-api` for PWA Kit, `sfnext`/`commerce-api`
+ * for Storefront Next — plus the always-relevant docs) are boosted. It only ever
+ * reorders results; use `category`/`enabledCategories` to hard-scope.
  *
  * @param query - The search query string
  * @param limitOrOptions - Result limit (number) or {@link SearchDocsOptions}
@@ -367,33 +330,27 @@ function intersectCategories(
  *
  * @example
  * ```typescript
- * // Favor the current storefront's docs (nothing hidden)
- * searchDocs('deploy bundle', {storefront: 'pwa-kit-v3'});
- * // Only return docs relevant to a Storefront Next project
- * searchDocs('components', {storefront: 'storefront-next', storefrontMode: 'filter'});
+ * // Favor the current workspace's docs (nothing hidden)
+ * searchDocs('deploy bundle', {workspace: 'pwa-kit-v3'});
+ * // Hard-scope to one category instead
+ * searchDocs('components', {category: 'sfnext'});
  * ```
  */
 export function searchDocs(query: string, limitOrOptions?: number | SearchDocsOptions): SearchResult[] {
   const opts: SearchDocsOptions = typeof limitOrOptions === 'number' ? {limit: limitOrOptions} : (limitOrOptions ?? {});
   const limit = opts.limit ?? 20;
 
-  const storefronts = toStorefrontList(opts.storefront);
-  const mode = opts.storefrontMode ?? 'boost';
+  const workspaces = toWorkspaceList(opts.workspace);
 
-  // Explicit category filter takes precedence; otherwise a storefront in
-  // `filter` mode constrains results to that storefront's relevant categories.
+  // Only an explicit category is a hard filter now; a workspace never hides docs.
   const explicit = opts.category ? (Array.isArray(opts.category) ? opts.category : [opts.category]) : undefined;
-  const perQueryFilter =
-    explicit ?? (storefronts && mode === 'filter' ? categoriesForStorefront(storefronts) : undefined);
 
-  // The launch-time allowlist bounds the whole corpus; the per-query filter
+  // The launch-time allowlist bounds the whole corpus; the per-query category
   // narrows within it. Their intersection is the effective hard filter.
-  const filterCategories = intersectCategories(opts.enabledCategories, perQueryFilter);
+  const filterCategories = intersectCategories(opts.enabledCategories, explicit);
 
-  // Category weighting: a known storefront (in boost mode) favors its relevant
-  // categories and REPLACES the default weights; otherwise use the defaults.
-  const boostSet =
-    storefronts && mode === 'boost' ? new Set<DocCategory>(categoriesForStorefront(storefronts)) : undefined;
+  // A known workspace boosts its relevant categories (always a boost, never a filter).
+  const boostSet = workspaces ? new Set<DocCategory>(categoriesForWorkspace(workspaces)) : undefined;
 
   const ms = getMiniSearch();
 
@@ -401,8 +358,7 @@ export function searchDocs(query: string, limitOrOptions?: number | SearchDocsOp
     filter: filterCategories ? (r) => filterCategories.includes(r.category as DocCategory) : undefined,
     boostDocument: (_id, _term, storedFields) => {
       const category = storedFields?.category as DocCategory | undefined;
-      if (boostSet) return category && boostSet.has(category) ? STOREFRONT_BOOST : 1;
-      return (category && CATEGORY_TAXONOMY[category]?.boost) ?? 1;
+      return boostSet && category && boostSet.has(category) ? WORKSPACE_BOOST : 1;
     },
   });
 
@@ -416,7 +372,7 @@ export function searchDocs(query: string, limitOrOptions?: number | SearchDocsOp
 
   const logger = getLogger();
   logger.debug(
-    {query, filterCategories, storefronts, mode, limit, matched: raw.length, returned: results.length},
+    {query, filterCategories, workspaces, limit, matched: raw.length, returned: results.length},
     'docs searchDocs completed',
   );
   logger.trace(

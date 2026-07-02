@@ -59,6 +59,7 @@ export const en = {
         totalCount: '{{count}} documentation entries available',
         invalidCategory: 'Unknown category "{{category}}". Valid categories: {{valid}}',
         invalidTopics: 'Ignoring unknown documentation topic(s): {{topics}}',
+        invalidWorkspace: 'Ignoring unknown workspace type(s): {{types}}',
       },
       read: {
         description: 'Read B2C Commerce documentation (Script API class, guide, or job step)',

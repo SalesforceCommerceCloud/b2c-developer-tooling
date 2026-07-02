@@ -64,11 +64,10 @@ export {
   listDocs,
   loadSearchIndex,
   resetDocsCache,
-  categoriesForStorefront,
+  categoriesForWorkspace,
   resolveEnabledCategories,
   DOC_CATEGORIES,
   type SearchDocsOptions,
-  type StorefrontMode,
 } from './search.js';
 
 // Schema operations

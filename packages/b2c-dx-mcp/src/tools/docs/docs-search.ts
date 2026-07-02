@@ -11,7 +11,7 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import {categoryEnumValues, enabledCategoriesNote} from './topics.js';
-import {STOREFRONT_VALUES, detectedStorefrontNote, resolveStorefront, type StorefrontParam} from './storefront.js';
+import {WORKSPACE_VALUES, detectedWorkspaceNote, resolveWorkspace, type WorkspaceParam} from './storefront.js';
 
 /** Default number of results returned when `limit` is not supplied. Kept small to bound payload size for agents. */
 const DEFAULT_LIMIT = 5;
@@ -20,8 +20,7 @@ interface SearchInput {
   limit?: number;
   query: string;
   category?: DocCategory;
-  storefront?: StorefrontParam;
-  storefrontMode?: 'boost' | 'filter';
+  workspace?: WorkspaceParam;
   verbose?: boolean;
 }
 
@@ -40,7 +39,7 @@ interface LeanResult {
 interface SearchOutput {
   query: string;
   category?: DocCategory;
-  storefront?: ProjectType[];
+  workspace?: ProjectType[];
   results: LeanResult[];
 }
 
@@ -67,7 +66,7 @@ function leanResult(entry: DocEntry, score: number, verbose: boolean): LeanResul
 
 export function createDocsSearchTool(
   loadServices: () => Promise<Services> | Services,
-  detectedStorefronts: readonly ProjectType[] = [],
+  detectedWorkspaces: readonly ProjectType[] = [],
   enabledCategories?: readonly DocCategory[],
 ): McpTool {
   return createToolAdapter<SearchInput, SearchOutput>(
@@ -82,22 +81,18 @@ export function createDocsSearchTool(
         'category, summary, and score for triage; pass verbose=true for keywords+url. Call this BEFORE docs_read ' +
         'when you do not know the exact id.' +
         enabledCategoriesNote(enabledCategories) +
-        detectedStorefrontNote(detectedStorefronts),
+        detectedWorkspaceNote(detectedWorkspaces),
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {
         query: z.string().min(1).describe('Search query (class name, topic, or natural-language phrase).'),
         category: z.enum(categoryEnumValues(enabledCategories)).optional().describe('Restrict results to one corpus.'),
-        storefront: z
-          .enum(STOREFRONT_VALUES)
+        workspace: z
+          .enum(WORKSPACE_VALUES)
           .optional()
           .describe(
-            'Storefront context. "current" (default) favors the auto-detected storefront\'s docs; ' +
-              '"all" disables the preference; or name a type (cartridges, pwa-kit-v3, storefront-next).',
+            'Workspace context. "auto" (default) favors the auto-detected workspace\'s docs; ' +
+              '"all" disables the preference; or name a type (cartridges, sfra, pwa-kit-v3, storefront-next).',
           ),
-        storefrontMode: z
-          .enum(['boost', 'filter'])
-          .optional()
-          .describe('"boost" (default) ranks the storefront higher but hides nothing; "filter" returns only its docs.'),
         limit: z
           .number()
           .int()
@@ -110,18 +105,17 @@ export function createDocsSearchTool(
           .describe('Include keywords and canonical url on each result (larger payload). Defaults to false.'),
       },
       async execute(args) {
-        const storefront = resolveStorefront(args.storefront, detectedStorefronts);
+        const workspace = resolveWorkspace(args.workspace, detectedWorkspaces);
         const results = searchDocs(args.query, {
           limit: args.limit ?? DEFAULT_LIMIT,
           category: args.category,
-          storefront,
-          storefrontMode: args.storefrontMode,
+          workspace,
           enabledCategories,
         });
         return {
           query: args.query,
           ...(args.category && {category: args.category}),
-          ...(storefront && {storefront}),
+          ...(workspace && {workspace}),
           results: results.map((r) => leanResult(r.entry, r.score, args.verbose ?? false)),
         };
       },

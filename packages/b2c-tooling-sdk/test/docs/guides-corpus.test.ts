@@ -13,7 +13,7 @@ import {
   searchDocs,
   readDocByQuery,
   readEntryContent,
-  categoriesForStorefront,
+  categoriesForWorkspace,
   resolveEnabledCategories,
   DOC_CATEGORIES,
   type DocEntry,
@@ -68,10 +68,10 @@ describe('docs: Developer Center guides corpus', function () {
     expect(results[0].entry.id).to.contain('passwordless');
   });
 
-  it('boosts favored categories (sfnext) in cross-corpus results', () => {
-    // Unfiltered "get started" spans several corpora; the sfnext boost should
-    // rank an sfnext guide at the top of the mixed result set.
-    const results = searchDocs('get started', {limit: 10});
+  it('boosts a workspace-relevant category to the top of cross-corpus results', () => {
+    // "components" spans several corpora; a Storefront Next workspace should
+    // float an sfnext guide to the top of the mixed result set.
+    const results = searchDocs('components', {workspace: 'storefront-next', limit: 10});
     expect(results.length).to.be.greaterThan(0);
     expect(results[0].entry.category).to.equal('sfnext');
   });
@@ -89,78 +89,64 @@ describe('docs: Developer Center guides corpus', function () {
     ).to.equal(true);
   });
 
-  describe('category taxonomy (single source of truth)', () => {
-    const STOREFRONTS = ['cartridges', 'pwa-kit-v3', 'storefront-next'] as const;
-
-    it('every storefront-specific category is owned by exactly one storefront; the rest are platform-wide', () => {
-      // A category appears in categoriesForStorefront for a storefront iff it is
-      // that storefront's specific category OR platform-wide (always relevant).
-      const perStorefrontSpecific = new Map<string, string[]>();
-      for (const sf of STOREFRONTS) {
-        // Storefront-specific = categories relevant to THIS storefront but not to the others.
-        const others = STOREFRONTS.filter((s) => s !== sf).flatMap((s) => categoriesForStorefront(s));
-        const specific = categoriesForStorefront(sf).filter((c) => !others.includes(c));
-        perStorefrontSpecific.set(sf, specific);
-      }
-      // Each storefront owns exactly one specific category, and they are distinct.
-      expect(perStorefrontSpecific.get('cartridges')).to.deep.equal(['sfra']);
-      expect(perStorefrontSpecific.get('pwa-kit-v3')).to.deep.equal(['pwa-kit-managed-runtime']);
-      expect(perStorefrontSpecific.get('storefront-next')).to.deep.equal(['sfnext']);
-    });
-
-    it('platform-wide categories are relevant to every storefront', () => {
-      const platformWide = DOC_CATEGORIES.filter(
-        (c) => !['sfra', 'pwa-kit-managed-runtime', 'sfnext'].includes(c as string),
-      );
-      for (const sf of STOREFRONTS) {
-        const relevant = categoriesForStorefront(sf);
-        for (const c of platformWide) {
-          expect(relevant, `${c} should be relevant to ${sf}`).to.include(c);
-        }
+  describe('workspace → category taxonomy', () => {
+    it('always-relevant categories (b2c-commerce, tooling) are relevant to every workspace', () => {
+      for (const ws of ['cartridges', 'sfra', 'pwa-kit-v3', 'storefront-next'] as const) {
+        const relevant = categoriesForWorkspace(ws);
+        expect(relevant, `b2c-commerce should be relevant to ${ws}`).to.include('b2c-commerce');
+        expect(relevant, `tooling should be relevant to ${ws}`).to.include('tooling');
       }
     });
 
-    it('the union of every storefront-relevant category set covers all categories', () => {
-      const covered = new Set(STOREFRONTS.flatMap((sf) => categoriesForStorefront(sf)));
-      expect([...covered].sort()).to.deep.equal([...DOC_CATEGORIES].sort());
+    it('cartridges boosts server-side reference (script-api, job-step) but NOT a storefront framework', () => {
+      const cart = categoriesForWorkspace('cartridges');
+      expect(cart).to.include.members(['script-api', 'job-step']);
+      // A generic cartridge project is not SFRA and not a JS storefront.
+      expect(cart).to.not.include('sfra');
+      expect(cart).to.not.include('pwa-kit-managed-runtime');
+      expect(cart).to.not.include('sfnext');
+    });
+
+    it('sfra is a refinement of cartridges: [cartridges, sfra] boosts sfra AND the cartridge reference', () => {
+      const sfra = categoriesForWorkspace(['cartridges', 'sfra']);
+      expect(sfra).to.include.members(['sfra', 'script-api', 'job-step']);
+    });
+
+    it('JS storefronts boost their guides + commerce-api, and are merged (not summed) across markers', () => {
+      expect(categoriesForWorkspace('pwa-kit-v3')).to.include.members(['pwa-kit-managed-runtime', 'commerce-api']);
+      expect(categoriesForWorkspace('storefront-next')).to.include.members(['sfnext', 'commerce-api']);
+      // commerce-api is shared by both; the union contains it exactly once.
+      const both = categoriesForWorkspace(['pwa-kit-v3', 'storefront-next']);
+      expect(both.filter((c) => c === 'commerce-api')).to.have.length(1);
+    });
+
+    it('a cartridge-bearing Storefront Next project does NOT boost sfra', () => {
+      // The exact scenario from the field: detection yields [storefront-next, cartridges].
+      const relevant = categoriesForWorkspace(['storefront-next', 'cartridges']);
+      expect(relevant, 'sfra must not be boosted for a non-SFRA workspace').to.not.include('sfra');
+      expect(relevant).to.include.members(['sfnext', 'script-api', 'job-step', 'commerce-api']);
     });
   });
 
-  describe('storefront awareness', () => {
-    it('maps each storefront to always-relevant + storefront-specific categories', () => {
-      expect(categoriesForStorefront('cartridges')).to.include.members([
-        'sfra',
-        'commerce-api',
-        'script-api',
-        'tooling',
-      ]);
-      expect(categoriesForStorefront('cartridges')).to.not.include('pwa-kit-managed-runtime');
-      expect(categoriesForStorefront('pwa-kit-v3')).to.include('pwa-kit-managed-runtime');
-      expect(categoriesForStorefront('pwa-kit-v3')).to.not.include('sfnext');
-      expect(categoriesForStorefront('storefront-next')).to.include('sfnext');
-    });
-
-    it('boost mode keeps all corpora but favors the storefront (nothing hidden)', () => {
-      const pwa = searchDocs('components', {storefront: 'pwa-kit-v3', limit: 20});
-      // A PWA Kit guide should now rank first for this cross-storefront term...
+  describe('workspace awareness (search)', () => {
+    it('boosts a workspace-relevant category but hides nothing', () => {
+      const pwa = searchDocs('components', {workspace: 'pwa-kit-v3', limit: 20});
+      // A PWA Kit guide ranks first for this cross-workspace term...
       expect(pwa[0].entry.category).to.equal('pwa-kit-managed-runtime');
-      // ...but other storefronts are still present (not filtered out).
+      // ...but other categories are still present (a workspace never filters).
       expect(pwa.some((r) => r.entry.category === 'sfnext')).to.equal(true);
     });
 
-    it('filter mode returns only the storefront-relevant categories', () => {
-      const results = searchDocs('storefront', {storefront: 'cartridges', storefrontMode: 'filter', limit: 50});
+    it('accepts multiple workspace markers and boosts the union', () => {
+      const results = searchDocs('login', {workspace: ['storefront-next', 'cartridges'], limit: 30});
       const cats = new Set(results.map((r) => r.entry.category));
-      expect(cats.has('pwa-kit-managed-runtime'), 'PWA Kit docs must be excluded for a cartridge storefront').to.equal(
-        false,
-      );
-      expect(cats.has('sfnext'), 'Storefront Next docs must be excluded for a cartridge storefront').to.equal(false);
-      // always-relevant + sfra remain eligible
-      expect([...cats].every((c) => categoriesForStorefront('cartridges').includes(c!))).to.equal(true);
+      // Nothing is filtered out; sfra can still appear (just not boosted).
+      expect(results.length).to.be.greaterThan(0);
+      expect(cats.size).to.be.greaterThan(1);
     });
 
-    it('an explicit category filter overrides the storefront', () => {
-      const results = searchDocs('login', {storefront: 'cartridges', storefrontMode: 'filter', category: 'sfnext'});
+    it('an explicit category filter hard-scopes regardless of workspace', () => {
+      const results = searchDocs('login', {workspace: 'cartridges', category: 'sfnext', limit: 20});
       expect(results.length).to.be.greaterThan(0);
       expect(results.every((r) => r.entry.category === 'sfnext')).to.equal(true);
     });

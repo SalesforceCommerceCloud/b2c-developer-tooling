@@ -14,20 +14,20 @@ import {
 import {
   searchDocs,
   listDocs,
-  categoriesForStorefront,
+  categoriesForWorkspace,
   resolveEnabledCategories,
   DOC_CATEGORIES,
   type DocCategory,
   type SearchResult,
   type DocEntry,
 } from '@salesforce/b2c-tooling-sdk/docs';
-import {detectWorkspaceType, type ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
+import {detectWorkspaceType, PROJECT_TYPES, type ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
 import {t} from '../../i18n/index.js';
 
 interface SearchDocsResponse {
   query?: string;
   category?: string;
-  storefront?: ProjectType[];
+  workspace?: ProjectType[];
   results: SearchResult[];
 }
 
@@ -36,10 +36,13 @@ interface ListDocsResponse {
 }
 
 /**
- * Accepted values for the --storefront flag: `auto` forces detection, `all`
- * opts out, or name a concrete project type. (Unset defaults to `auto`.)
+ * The `--workspace` sentinels plus every concrete workspace marker (from the
+ * SDK's canonical {@link PROJECT_TYPES}). `auto` forces detection, `all` opts
+ * out, or name one or more concrete types (comma-separated). Used for help text
+ * and validation. Not passed as oclif `options`, since that would reject a
+ * comma-separated value before we can split it.
  */
-const STOREFRONT_FLAG_VALUES = ['auto', 'all', 'cartridges', 'pwa-kit-v3', 'storefront-next'] as const;
+const WORKSPACE_FLAG_VALUES = ['auto', 'all', ...PROJECT_TYPES] as const;
 
 /**
  * All valid documentation categories, for --category validation and help text.
@@ -122,22 +125,16 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
     topics: Flags.string({
       description:
         'Limit the available documentation to these categories (comma-separated allowlist that bounds the ' +
-        'whole corpus). --category and --storefront narrow within it. Unknown names are ignored with a warning.',
+        'whole corpus). --category and --workspace narrow within it. Unknown names are ignored with a warning.',
       env: 'SFCC_DOCS_TOPICS',
     }),
-    storefront: Flags.string({
-      char: 's',
+    workspace: Flags.string({
+      // No oclif `options` here: it validates the whole value, so it would reject
+      // a comma-separated list like "cartridges,sfra". Validation happens in
+      // resolveWorkspace instead (unknown names warn, like --topics).
       description:
-        'Favor docs for a storefront. Defaults to auto-detecting the workspace type; ' +
-        '"all" applies no preference; "auto" forces detection; or name a type.',
-      options: [...STOREFRONT_FLAG_VALUES],
-    }),
-    'storefront-mode': Flags.string({
-      description: 'How --storefront is applied: boost (rank higher, default) or filter (only those docs)',
-      options: ['boost', 'filter'],
-      // No `default` here: an oclif default counts as "provided" and would trip
-      // `dependsOn: ['storefront']` on every invocation. Default to boost in code.
-      dependsOn: ['storefront'],
+        `Favor docs for a workspace type (${WORKSPACE_FLAG_VALUES.join('|')}). Defaults to auto-detecting; ` +
+        '"all" applies no preference; "auto" forces detection; or name one or more types (comma-separated).',
     }),
     // `-c` is used by --category above, so omit the default short flag on --columns.
     ...columnFlagsFor(COLUMNS, {columnsChar: false}),
@@ -152,7 +149,6 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
   async run(): Promise<ListDocsResponse | SearchDocsResponse> {
     const {query} = this.args;
     const {limit, list, category} = this.flags;
-    const storefrontMode = (this.flags['storefront-mode'] as 'boost' | 'filter' | undefined) ?? 'boost';
     // Launch-time allowlist that bounds the whole corpus (from --topics / SFCC_DOCS_TOPICS).
     const enabledCategories = resolveEnabledCategories(this.flags.topics, (invalid) =>
       this.warn(
@@ -164,15 +160,15 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
 
     // List mode
     if (list) {
-      // Listing does not auto-detect: a storefront narrows the listing only when
+      // Listing does not auto-detect: a workspace narrows the listing only when
       // the flag is explicitly given (matches the MCP docs_list behavior, where
-      // an unset storefront lists everything). Explicit category still wins.
-      const listStorefront =
-        this.flags.storefront && this.flags.storefront !== 'all'
-          ? await this.resolveStorefront(this.flags.storefront)
+      // an unset workspace lists everything). Explicit category still wins.
+      const listWorkspace =
+        this.flags.workspace && this.flags.workspace !== 'all'
+          ? await this.resolveWorkspace(this.flags.workspace)
           : undefined;
       const listFilter: DocCategory | DocCategory[] | undefined =
-        (category as DocCategory | undefined) ?? (listStorefront ? categoriesForStorefront(listStorefront) : undefined);
+        (category as DocCategory | undefined) ?? (listWorkspace ? categoriesForWorkspace(listWorkspace) : undefined);
       const entries = this.operations.listDocs(listFilter, enabledCategories);
 
       if (this.jsonEnabled()) {
@@ -207,21 +203,20 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
       );
     }
 
-    // Storefront awareness is on by default for search (unset -> auto-detect).
-    const storefront = await this.resolveStorefront(this.flags.storefront);
+    // Workspace awareness is on by default for search (unset -> auto-detect).
+    const workspace = await this.resolveWorkspace(this.flags.workspace);
 
     const results = this.operations.searchDocs(query, {
       limit,
       category: category as DocCategory | undefined,
-      storefront,
-      storefrontMode,
+      workspace,
       enabledCategories,
     });
 
     const response: SearchDocsResponse = {
       query,
       ...(category && {category}),
-      ...(storefront && {storefront}),
+      ...(workspace && {workspace}),
       results,
     };
 
@@ -247,16 +242,16 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
   }
 
   /**
-   * Resolves the --storefront flag to concrete project type(s).
+   * Resolves the --workspace flag to concrete project type(s).
    *
-   * Storefront awareness is ON by default (matching the MCP docs tools): when
+   * Workspace awareness is ON by default (matching the MCP docs tools): when
    * the flag is unset — or explicitly `auto` — workspace detection runs and its
-   * result favors the detected storefront's docs. `all` opts out (no
-   * preference); an explicit type is used verbatim without detection.
+   * result favors the detected workspace's docs. `all` opts out (no
+   * preference); an explicit type (or comma-separated list) is used verbatim without detection.
    */
-  private async resolveStorefront(value: string | undefined): Promise<ProjectType[] | undefined> {
+  private async resolveWorkspace(value: string | undefined): Promise<ProjectType[] | undefined> {
     if (value === 'all') {
-      this.logger.debug('Storefront preference disabled (--storefront all); no detection run');
+      this.logger.debug('Workspace preference disabled (--workspace all); no detection run');
       return undefined;
     }
     if (!value || value === 'auto') {
@@ -266,18 +261,38 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
       this.logger.debug(
         {
           cwd,
-          storefrontFlag: value ?? '(unset, defaults to auto)',
+          workspaceFlag: value ?? '(unset, defaults to auto)',
           matchedPatterns: detection.matchedPatterns,
           projectTypes: detection.projectTypes,
           resolved: resolved ?? null,
         },
         resolved
-          ? `Auto-detected storefront: ${resolved.join(', ')}`
-          : 'No storefront detected in workspace; searching with no storefront preference',
+          ? `Auto-detected workspace: ${resolved.join(', ')}`
+          : 'No workspace detected; searching with no workspace preference',
       );
       return resolved;
     }
-    this.logger.debug({storefront: value}, 'Using explicitly specified storefront');
-    return [value as ProjectType];
+    // Handle one or more comma-separated explicit types. Validate against the
+    // canonical PROJECT_TYPES; warn on (and drop) anything unrecognized.
+    const known = new Set<string>(PROJECT_TYPES);
+    const requested = value
+      .split(',')
+      .map((t) => t.trim().toLowerCase())
+      .filter((t) => t.length > 0);
+    const valid = requested.filter((t) => known.has(t)) as ProjectType[];
+    const invalid = requested.filter((t) => !known.has(t));
+    if (invalid.length > 0) {
+      this.warn(
+        t('commands.docs.search.invalidWorkspace', 'Ignoring unknown workspace type(s): {{types}}', {
+          types: invalid.join(', '),
+        }),
+      );
+    }
+    if (valid.length === 0) {
+      this.logger.debug({requested}, 'No valid workspace types specified; searching with no workspace preference');
+      return undefined;
+    }
+    this.logger.debug({workspace: valid}, 'Using explicitly specified workspace type(s)');
+    return [...new Set(valid)];
   }
 }

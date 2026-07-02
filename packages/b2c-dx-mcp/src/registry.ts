@@ -34,6 +34,9 @@ const BASE_TOOLSETS: Toolset[] = ['SCAPI', 'DIAGNOSTICS'];
  */
 const PROJECT_TYPE_TOOLSETS: Record<ProjectType, Toolset[]> = {
   cartridges: ['CARTRIDGES'],
+  // SFRA is a cartridge project, so it enables the same toolset as `cartridges`.
+  // (A SFRA workspace also matches the `cartridges` marker; the union dedupes.)
+  sfra: ['CARTRIDGES'],
   'pwa-kit-v3': ['PWAV3', 'MRT'],
   // Note: STOREFRONTNEXT_DEPRECATED is intentionally NOT auto-activated. The
   // legacy sfnext_* tools are superseded by the storefront-next agent-skills
@@ -93,7 +96,7 @@ export type ToolRegistry = Record<Toolset, McpTool[]>;
 export function createToolRegistry(
   loadServices: () => Promise<Services> | Services,
   serverContext?: ServerContext,
-  detectedStorefronts: readonly ProjectType[] = [],
+  detectedWorkspaces: readonly ProjectType[] = [],
   enabledDocCategories?: readonly DocCategory[],
 ): ToolRegistry {
   const registry: ToolRegistry = {
@@ -110,7 +113,7 @@ export function createToolRegistry(
   const allTools: McpTool[] = [
     ...createCartridgesTools(loadServices),
     ...createDiagnosticsTools(loadServices, serverContext),
-    ...createDocsTools(loadServices, {detectedStorefronts, enabledCategories: enabledDocCategories}),
+    ...createDocsTools(loadServices, {detectedWorkspaces, enabledCategories: enabledDocCategories}),
     ...createMrtTools(loadServices),
     ...createPwav3Tools(loadServices),
     ...createScapiTools(loadServices),
@@ -198,11 +201,11 @@ export async function registerToolsets(
   const allowNonGaTools = flags.allowNonGaTools ?? false;
   const logger = getLogger();
 
-  // Detect the workspace/storefront type once up front. It informs both the
-  // docs tools (favoring the current storefront's docs and surfacing it in the
+  // Detect the workspace type once up front. It informs both the
+  // docs tools (favoring the current workspace's docs and surfacing it in the
   // tool descriptions) and toolset auto-discovery below, so we only hit the
   // filesystem a single time.
-  const detectedStorefronts = await detectProjectTypes(flags);
+  const detectedWorkspaces = await detectProjectTypes(flags);
 
   // Resolve the launch-time docs topic allowlist (bounds the whole docs corpus).
   const enabledDocCategories = resolveEnabledCategories(flags.docsTopics, (invalid) =>
@@ -219,7 +222,7 @@ export async function registerToolsets(
   }
 
   // Create the tool registry (all available tools)
-  const toolRegistry = createToolRegistry(loadServices, serverContext, detectedStorefronts, enabledDocCategories);
+  const toolRegistry = createToolRegistry(loadServices, serverContext, detectedWorkspaces, enabledDocCategories);
 
   // Build flat list of all tools for lookup
   const allTools = Object.values(toolRegistry).flat();
@@ -263,9 +266,9 @@ export async function registerToolsets(
   // flags provided, and (2) all provided flags are invalid. Always enables at
   // least the BASE_TOOLSETS even if no project types are detected.
   if (toolsetsToEnable.size === 0 && validIndividualTools.length === 0) {
-    const discoveredToolsets = getToolsetsForProjectTypes(detectedStorefronts);
+    const discoveredToolsets = getToolsetsForProjectTypes(detectedWorkspaces);
     logger.info(
-      {projectTypes: detectedStorefronts, enabledToolsets: discoveredToolsets},
+      {projectTypes: detectedWorkspaces, enabledToolsets: discoveredToolsets},
       `Auto-discovery: enabling toolsets ${discoveredToolsets.join(', ')}`,
     );
     for (const toolset of discoveredToolsets) {

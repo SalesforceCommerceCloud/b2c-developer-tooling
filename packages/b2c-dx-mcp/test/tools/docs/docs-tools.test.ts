@@ -53,10 +53,10 @@ describe('tools/docs', () => {
       expect(search.toolsets).to.have.members(['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT']);
     });
 
-    it('keeps every tool description within the 1024-char MCP limit (even with all storefronts detected)', () => {
-      // Worst case: every storefront detected + a full topic allowlist → longest appended notes.
+    it('keeps every tool description within the 1024-char MCP limit (even with all workspaces detected)', () => {
+      // Worst case: every workspace detected + a full topic allowlist → longest appended notes.
       const tools = createDocsTools(loadServices, {
-        detectedStorefronts: ['cartridges', 'pwa-kit-v3', 'storefront-next'],
+        detectedWorkspaces: ['cartridges', 'sfra', 'pwa-kit-v3', 'storefront-next'],
         enabledCategories: ['script-api', 'job-step', 'commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra'],
       });
       for (const tool of tools) {
@@ -64,9 +64,9 @@ describe('tools/docs', () => {
       }
     });
 
-    it('surfaces the detected storefront in the search tool description', () => {
-      const [search] = createDocsTools(loadServices, {detectedStorefronts: ['storefront-next']});
-      expect(search.description).to.contain('Detected storefront');
+    it('surfaces the detected workspace in the search tool description', () => {
+      const [search] = createDocsTools(loadServices, {detectedWorkspaces: ['storefront-next']});
+      expect(search.description).to.contain('Detected workspace');
       expect(search.description).to.contain('Storefront Next');
     });
   });
@@ -161,32 +161,18 @@ describe('tools/docs', () => {
       expect(json.results.every((r) => r.category === 'script-api')).to.be.true;
     });
 
-    it('defaults storefront="current" to the detected storefront and echoes it', async () => {
+    it('defaults workspace (unset/auto) to the detected workspace and echoes it', async () => {
       const tool = createDocsSearchTool(loadServices, ['storefront-next']);
       const result = await tool.handler({query: 'components', limit: 5});
-      const json = getResultJson<{storefront?: string[]}>(result);
-      expect(json.storefront).to.deep.equal(['storefront-next']);
+      const json = getResultJson<{workspace?: string[]}>(result);
+      expect(json.workspace).to.deep.equal(['storefront-next']);
     });
 
-    it('storefront="all" disables the detected-storefront preference', async () => {
+    it('workspace="all" disables the detected-workspace preference', async () => {
       const tool = createDocsSearchTool(loadServices, ['storefront-next']);
-      const result = await tool.handler({query: 'components', storefront: 'all', limit: 5});
-      const json = getResultJson<{storefront?: string[]}>(result);
-      expect(json.storefront).to.equal(undefined);
-    });
-
-    it('storefront filter mode excludes other storefronts', async () => {
-      const tool = createDocsSearchTool(loadServices);
-      const result = await tool.handler({
-        query: 'storefront',
-        storefront: 'cartridges',
-        storefrontMode: 'filter',
-        limit: 50,
-      });
-      const json = getResultJson<{results: Array<{category: string}>}>(result);
-      const cats = new Set(json.results.map((r) => r.category));
-      expect(cats.has('pwa-kit-managed-runtime')).to.be.false;
-      expect(cats.has('sfnext')).to.be.false;
+      const result = await tool.handler({query: 'components', workspace: 'all', limit: 5});
+      const json = getResultJson<{workspace?: string[]}>(result);
+      expect(json.workspace).to.equal(undefined);
     });
   });
 
