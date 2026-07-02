@@ -117,17 +117,17 @@
     "postpack": "git checkout package.json"
   },
   "dependencies": {
-    "@aws-sdk/client-cloudwatch": "3.1049.0",
-    "@aws-sdk/client-dynamodb": "3.1049.0",
-    "@aws-sdk/lib-dynamodb": "3.1049.0",
+    "@aws-sdk/client-cloudwatch": "3.1079.0",
+    "@aws-sdk/client-dynamodb": "3.1079.0",
+    "@aws-sdk/lib-dynamodb": "3.1079.0",
     "@h4ad/serverless-adapter": "4.4.0",
     "change-case": "5.4.4",
     "compressible": "2.0.18",
-    "http-proxy-middleware": "3.0.5",
-    "mime-types": "3.0.1",
+    "http-proxy-middleware": "3.0.7",
+    "mime-types": "3.0.2",
     "negotiator": "1.0.0",
-    "qs": "6.15.2",
-    "set-cookie-parser": "2.7.1"
+    "qs": "6.15.3",
+    "set-cookie-parser": "2.7.2"
   },
   "devDependencies": {
     "@salesforce/dev-config": "catalog:",
@@ -149,8 +149,8 @@
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-header": "catalog:",
     "eslint-plugin-prettier": "catalog:",
-    "express": "5.1.0",
-    "express4": "npm:express@4.21.2",
+    "express": "5.2.1",
+    "express4": "npm:express@4.22.2",
     "mocha": "catalog:",
     "prettier": "catalog:",
     "shx": "catalog:",
@@ -163,6 +163,6 @@
     "express": "^4.0.0 || ^5.0.0"
   },
   "engines": {
-    "node": ">=22.16.0"
+    "node": ">=22.23.1"
   }
 }
