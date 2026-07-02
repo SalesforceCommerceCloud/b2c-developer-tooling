@@ -730,25 +730,36 @@
           "maximum": 5000,
           "description": "Maximum number of recent executions scanned to discover unique jobs in the Jobs view."
         },
-        "b2c-dx.jobs.historyLimit": {
-          "type": "number",
-          "default": 25,
-          "minimum": 5,
-          "maximum": 200,
-          "description": "Number of recent executions shown per job when expanding execution history."
-        },
         "b2c-dx.jobs.defaultStatusFilter": {
           "type": "string",
-          "default": "active",
+          "default": "all",
           "enum": [
-            "active",
             "all",
+            "active",
             "running",
             "scheduled",
             "failed",
             "completed"
           ],
-          "description": "Default status filter for Job History root items. 'active' shows running/scheduled jobs first to reduce noise."
+          "description": "Default status filter for Job History root items. 'all' shows every recent execution (the BM-style timeline view)."
+        },
+        "b2c-dx.jobs.defaultGrouping": {
+          "type": "string",
+          "default": "chronological",
+          "enum": [
+            "chronological",
+            "groupByJobId"
+          ],
+          "enumDescriptions": [
+            "BM-style timeline: every execution is a top-level row, newest first.",
+            "Group executions under their parent Job ID, with the most-recently-run job on top."
+          ],
+          "description": "Default root grouping for Job History. Use the title-bar toggle to switch at runtime."
+        },
+        "b2c-dx.jobs.autoRefresh": {
+          "type": "boolean",
+          "default": false,
+          "description": "Auto-refresh Job History on a schedule (set by b2c-dx.jobs.refreshInterval). Off by default — load manually from the title bar."
         },
         "b2c-dx.jobs.knownJobIds": {
           "type": "array",
@@ -757,16 +768,6 @@
             "type": "string"
           },
           "description": "Optional list of known job IDs shown as quick picks when running a job from VS Code."
-        },
-        "b2c-dx.jobs.definitionGlobs": {
-          "type": "array",
-          "default": [
-            "**/jobs.xml"
-          ],
-          "items": {
-            "type": "string"
-          },
-          "description": "Glob patterns used to discover job definition files for the Job Definitions view. Defaults to jobs.xml at any path (the conventional name for impex/site-import job definitions). Add patterns here if your project uses non-standard filenames (e.g. '**/data/**/*-jobs.xml'). Files that are not in the B2C jobs namespace are ignored automatically."
         },
         "b2c-dx.features.codeSync": {
           "type": "boolean",
@@ -814,11 +815,6 @@
           "icon": "$(server-environment)"
         },
         {
-          "id": "b2c-dx-operations",
-          "title": "B2C-DX Operations",
-          "icon": "$(tools)"
-        },
-        {
           "id": "b2c-dx-analytics",
           "title": "B2C-DX Analytics",
           "icon": "$(graph)"
@@ -844,6 +840,13 @@
           "name": "Cartridges",
           "icon": "media/b2c-icon.svg",
           "contextualTitle": "B2C-DX"
+        },
+        {
+          "id": "b2cJobsExplorer",
+          "name": "Job History",
+          "icon": "media/b2c-icon.svg",
+          "contextualTitle": "B2C-DX",
+          "visibility": "collapsed"
         }
       ],
       "b2c-dx-analytics": [
@@ -868,20 +871,6 @@
           "name": "Realm Explorer",
           "icon": "$(server-environment)",
           "contextualTitle": "B2C-DX"
-        }
-      ],
-      "b2c-dx-operations": [
-        {
-          "id": "b2cJobDefinitionsExplorer",
-          "name": "Job Definitions",
-          "icon": "$(briefcase)",
-          "contextualTitle": "B2C-DX Operations"
-        },
-        {
-          "id": "b2cJobsExplorer",
-          "name": "Job History",
-          "icon": "$(list-unordered)",
-          "contextualTitle": "B2C-DX Operations"
         }
       ]
     },
@@ -916,11 +905,7 @@
       {
         "view": "b2cJobsExplorer",
         "when": "!b2c-dx.jobs.needsOAuth",
-        "contents": "No recent job executions found.\n\nThis tree gives a quick monitor and drill-down (job → execution → step). For filtering, sorting, and exporting, open the full Job History table.\n\n[Open Job History Table](command:b2c-dx.jobs.openHistoryTable)\n\n[Run Job](command:b2c-dx.jobs.run)\n\n[Refresh](command:b2c-dx.jobs.refresh)"
-      },
-      {
-        "view": "b2cJobDefinitionsExplorer",
-        "contents": "No local job definitions found.\n\nJob definitions are discovered from `jobs.xml` and `steptypes.json` files in your workspace cartridges.\n\n[Create Job Scaffold](command:b2c-dx.jobs.createScaffold)\n\n[Open Job Definitions in Business Manager](command:b2c-dx.jobs.openBmDefinitions)\n\n[Refresh](command:b2c-dx.jobs.refreshDefinitions)"
+        "contents": "Job History is not loaded by default to avoid unwanted OCAPI traffic.\n\n[Refresh Now](command:b2c-dx.jobs.refresh)\n[Enable Auto-Refresh](command:b2c-dx.jobs.toggleAutoRefresh)\n[Run Job](command:b2c-dx.jobs.run)\n[Open in Business Manager](command:b2c-dx.jobs.openBmDefinitions)"
       },
       {
         "view": "b2cCartridgeExplorer",
@@ -1186,9 +1171,33 @@
         "category": "B2C DX - Job History"
       },
       {
-        "command": "b2c-dx.jobs.openHistoryTable",
-        "title": "Open Job History Table",
-        "icon": "$(table)",
+        "command": "b2c-dx.jobs.setNameFilter",
+        "title": "Filter by Job Name",
+        "icon": "$(search)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.toggleAutoRefresh",
+        "title": "Toggle Auto-Refresh",
+        "icon": "$(sync-ignored)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.enableAutoRefresh",
+        "title": "Enable Auto-Refresh",
+        "icon": "$(sync-ignored)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.disableAutoRefresh",
+        "title": "Disable Auto-Refresh",
+        "icon": "$(sync)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.toggleGrouping",
+        "title": "Group by Job ID",
+        "icon": "$(list-flat)",
         "category": "B2C DX - Job History"
       },
       {
@@ -1213,12 +1222,6 @@
         "command": "b2c-dx.jobs.createScaffold",
         "title": "Create Job Scaffold",
         "icon": "$(new-file)",
-        "category": "B2C DX - Job Definitions"
-      },
-      {
-        "command": "b2c-dx.jobs.deployScaffold",
-        "title": "Deploy Job Definition (Pick jobs.xml)",
-        "icon": "$(cloud-upload)",
         "category": "B2C DX - Job Definitions"
       },
       {
@@ -1256,24 +1259,6 @@
         "title": "Open Failure Log",
         "icon": "$(warning)",
         "category": "B2C DX - Job History"
-      },
-      {
-        "command": "b2c-dx.jobs.refreshDefinitions",
-        "title": "Refresh",
-        "icon": "$(refresh)",
-        "category": "B2C DX - Job Definitions"
-      },
-      {
-        "command": "b2c-dx.jobs.deployDefinition",
-        "title": "Deploy Job Definition",
-        "icon": "$(cloud-upload)",
-        "category": "B2C DX - Job Definitions"
-      },
-      {
-        "command": "b2c-dx.jobs.openDefinitionFile",
-        "title": "Open Definition File",
-        "icon": "$(go-to-file)",
-        "category": "B2C DX - Job Definitions"
       },
       {
         "command": "b2c-dx.jobs.openBmDefinitions",
@@ -1819,19 +1804,34 @@
           "group": "navigation"
         },
         {
-          "command": "b2c-dx.jobs.openHistoryTable",
+          "command": "b2c-dx.jobs.refresh",
           "when": "view == b2cJobsExplorer",
           "group": "navigation@0"
         },
         {
-          "command": "b2c-dx.jobs.openFilters",
-          "when": "view == b2cJobsExplorer",
+          "command": "b2c-dx.jobs.enableAutoRefresh",
+          "when": "view == b2cJobsExplorer && !b2c-dx.jobs.autoRefreshEnabled",
           "group": "navigation@1"
         },
         {
-          "command": "b2c-dx.jobs.refresh",
+          "command": "b2c-dx.jobs.disableAutoRefresh",
+          "when": "view == b2cJobsExplorer && b2c-dx.jobs.autoRefreshEnabled",
+          "group": "navigation@1"
+        },
+        {
+          "command": "b2c-dx.jobs.toggleGrouping",
           "when": "view == b2cJobsExplorer",
           "group": "navigation@2"
+        },
+        {
+          "command": "b2c-dx.jobs.setNameFilter",
+          "when": "view == b2cJobsExplorer",
+          "group": "navigation@3"
+        },
+        {
+          "command": "b2c-dx.jobs.openFilters",
+          "when": "view == b2cJobsExplorer",
+          "group": "navigation@4"
         },
         {
           "command": "b2c-dx.jobs.run",
@@ -1839,24 +1839,9 @@
           "group": "navigation@5"
         },
         {
-          "command": "b2c-dx.jobs.createScaffold",
-          "when": "view == b2cJobDefinitionsExplorer",
-          "group": "navigation@1"
-        },
-        {
-          "command": "b2c-dx.jobs.deployScaffold",
-          "when": "view == b2cJobDefinitionsExplorer",
-          "group": "navigation@2"
-        },
-        {
           "command": "b2c-dx.jobs.openBmDefinitions",
-          "when": "view == b2cJobDefinitionsExplorer",
-          "group": "navigation@3"
-        },
-        {
-          "command": "b2c-dx.jobs.refreshDefinitions",
-          "when": "view == b2cJobDefinitionsExplorer",
-          "group": "navigation@4"
+          "when": "view == b2cJobsExplorer",
+          "group": "navigation@5"
         },
         {
           "command": "b2c-dx.codeSync.refreshCartridges",
@@ -2097,7 +2082,7 @@
         },
         {
           "command": "b2c-dx.jobs.run",
-          "when": "view == b2cJobsExplorer && viewItem =~ /^job-/",
+          "when": "view == b2cJobsExplorer && viewItem =~ /^jobExecution-/",
           "group": "1_lifecycle@1"
         },
         {
@@ -2131,26 +2116,6 @@
           "group": "2_logs@2"
         },
         {
-          "command": "b2c-dx.jobs.run",
-          "when": "view == b2cJobDefinitionsExplorer && viewItem == jobDefinition",
-          "group": "1_lifecycle@1"
-        },
-        {
-          "command": "b2c-dx.jobs.deployDefinition",
-          "when": "view == b2cJobDefinitionsExplorer && viewItem == jobDefinition",
-          "group": "1_lifecycle@2"
-        },
-        {
-          "command": "b2c-dx.jobs.openDefinitionFile",
-          "when": "view == b2cJobDefinitionsExplorer && viewItem == jobDefinition",
-          "group": "2_open@1"
-        },
-        {
-          "command": "b2c-dx.jobs.openDefinitionFile",
-          "when": "view == b2cJobDefinitionsExplorer && viewItem == jobStepType",
-          "group": "2_open@1"
-        },
-        {
           "command": "b2c-dx.codeSync.revealCartridge",
           "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
           "group": "0_navigation@1"
@@ -2174,6 +2139,11 @@
           "command": "b2c-dx.codeSync.removeFromSitePath",
           "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
           "group": "3_sitepath@2"
+        },
+        {
+          "command": "b2c-dx.jobs.createScaffold",
+          "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
+          "group": "4_scaffold@1"
         }
       ],
       "file/newFile": [
@@ -2365,11 +2335,11 @@
           "when": "false"
         },
         {
-          "command": "b2c-dx.jobs.deployDefinition",
+          "command": "b2c-dx.jobs.enableAutoRefresh",
           "when": "false"
         },
         {
-          "command": "b2c-dx.jobs.openDefinitionFile",
+          "command": "b2c-dx.jobs.disableAutoRefresh",
           "when": "false"
         },
         {
