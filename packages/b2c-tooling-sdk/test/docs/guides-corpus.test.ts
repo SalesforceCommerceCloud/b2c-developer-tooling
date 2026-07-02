@@ -150,6 +150,39 @@ describe('docs: Developer Center guides corpus', function () {
       expect(results.length).to.be.greaterThan(0);
       expect(results.every((r) => r.entry.category === 'sfnext')).to.equal(true);
     });
+
+    it('de-boosts a competing storefront framework below the current one for a shared term', () => {
+      // "seo": sfnext has a strong exact-title hit ("SEO and Metadata") that
+      // out-scores every PWA Kit doc on raw text. For a PWA Kit workspace, the
+      // PWA Kit guide must still rank above the (competing) sfnext guides.
+      const pwa = searchDocs('seo', {workspace: 'pwa-kit-v3', limit: 20});
+      expect(pwa.length).to.be.greaterThan(0);
+      expect(pwa[0].entry.category).to.equal('pwa-kit-managed-runtime');
+      const topPwa = pwa.findIndex((r) => r.entry.category === 'pwa-kit-managed-runtime');
+      const topSfnext = pwa.findIndex((r) => r.entry.category === 'sfnext');
+      expect(topPwa).to.be.greaterThan(-1);
+      // A competing framework (sfnext) is demoted below the current one — but not hidden.
+      if (topSfnext !== -1) expect(topPwa).to.be.lessThan(topSfnext);
+      expect(
+        pwa.some((r) => r.entry.category === 'sfnext'),
+        'competing docs are demoted, not removed',
+      ).to.equal(true);
+    });
+
+    it('does not de-boost shared reference/platform corpora as "competing"', () => {
+      // script-api / commerce-api / b2c-commerce apply across storefronts, so a
+      // PWA Kit workspace must not penalize them.
+      const withWs = searchDocs('order', {workspace: 'pwa-kit-v3', limit: 40});
+      const withoutWs = searchDocs('order', {limit: 40});
+      const scoreOf = (rs: typeof withWs, cat: string) => rs.find((r) => r.entry.category === cat)?.score;
+      for (const cat of ['script-api', 'commerce-api', 'b2c-commerce']) {
+        const a = scoreOf(withoutWs, cat);
+        const b = scoreOf(withWs, cat);
+        if (a !== undefined && b !== undefined) {
+          expect(b, `${cat} must not be de-boosted`).to.be.at.least(a);
+        }
+      }
+    });
   });
 
   describe('enabledCategories allowlist (launch-time topics boundary)', () => {

@@ -31,6 +31,27 @@ const CORPUS_DIRS: readonly string[] = [SCRIPT_API_DATA_DIR, JOB_STEPS_DATA_DIR,
 const WORKSPACE_BOOST = 1.4;
 
 /**
+ * Multiplier applied to a COMPETING storefront framework's guides when a
+ * workspace is known — i.e. the storefront-framework guide categories that are
+ * NOT relevant to the detected workspace (e.g. `sfnext`/`sfra` for a PWA Kit
+ * project). These are mutually exclusive storefront implementations, so their
+ * how-to guides are usually the wrong answer for a different storefront. Kept
+ * as a de-boost (not a hard filter) so the docs still surface, just demoted —
+ * a strong exact-title match (e.g. an "SEO and Metadata" sfnext guide) should
+ * not outrank the current storefront's own guide for the same query.
+ */
+const COMPETING_STOREFRONT_PENALTY = 0.3;
+
+/**
+ * The storefront-FRAMEWORK guide categories: one per mutually-exclusive
+ * storefront implementation. Only these are de-boosted when they belong to a
+ * different storefront than the detected workspace. Reference/platform corpora
+ * (`script-api`, `job-step`, `commerce-api`, `b2c-commerce`, `tooling`) are
+ * never treated as "competing" — they apply across storefronts.
+ */
+const STOREFRONT_FRAMEWORK_CATEGORIES: readonly DocCategory[] = ['sfra', 'pwa-kit-managed-runtime', 'sfnext'];
+
+/**
  * Canonical per-category metadata, keyed by {@link DocCategory}. Insertion order
  * defines the display order in {@link DOC_CATEGORIES}. `alwaysRelevant` marks the
  * categories that are boosted whenever ANY workspace is detected, regardless of
@@ -349,8 +370,13 @@ export function searchDocs(query: string, limitOrOptions?: number | SearchDocsOp
   // narrows within it. Their intersection is the effective hard filter.
   const filterCategories = intersectCategories(opts.enabledCategories, explicit);
 
-  // A known workspace boosts its relevant categories (always a boost, never a filter).
+  // A known workspace boosts its relevant categories, and DE-BOOSTS the guides
+  // of competing storefront frameworks (a different storefront's how-to guides
+  // are usually the wrong answer). Neither hides anything — both only reweight.
   const boostSet = workspaces ? new Set<DocCategory>(categoriesForWorkspace(workspaces)) : undefined;
+  const competingSet = boostSet
+    ? new Set<DocCategory>(STOREFRONT_FRAMEWORK_CATEGORIES.filter((c) => !boostSet.has(c)))
+    : undefined;
 
   const ms = getMiniSearch();
 
@@ -358,7 +384,10 @@ export function searchDocs(query: string, limitOrOptions?: number | SearchDocsOp
     filter: filterCategories ? (r) => filterCategories.includes(r.category as DocCategory) : undefined,
     boostDocument: (_id, _term, storedFields) => {
       const category = storedFields?.category as DocCategory | undefined;
-      return boostSet && category && boostSet.has(category) ? WORKSPACE_BOOST : 1;
+      if (!category) return 1;
+      if (boostSet?.has(category)) return WORKSPACE_BOOST;
+      if (competingSet?.has(category)) return COMPETING_STOREFRONT_PENALTY;
+      return 1;
     },
   });
 
