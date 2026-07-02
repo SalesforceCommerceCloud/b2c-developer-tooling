@@ -96,19 +96,19 @@
     "postpack": "shx rm -f oclif.manifest.json"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.26.0",
+    "@modelcontextprotocol/sdk": "1.29.0",
     "@oclif/core": "catalog:",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "glob": "catalog:",
     "ts-morph": "27.0.2",
     "yaml": "2.9.0",
-    "postcss": "8.5.15",
+    "postcss": "8.5.16",
     "zod": "3.25.76"
   },
   "devDependencies": {
     "@eslint/compat": "catalog:",
     "@eslint/js": "^9",
-    "@modelcontextprotocol/inspector": "^0.18.0",
+    "@modelcontextprotocol/inspector": "^0.22.0",
     "@oclif/prettier-config": "catalog:",
     "@salesforce/dev-config": "catalog:",
     "@types/chai": "catalog:",
@@ -132,6 +132,6 @@
     "typescript-eslint": "catalog:"
   },
   "engines": {
-    "node": ">=22.16.0"
+    "node": ">=22.23.1"
   }
 }
