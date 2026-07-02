@@ -89,6 +89,43 @@ describe('docs: Developer Center guides corpus', function () {
     ).to.equal(true);
   });
 
+  describe('category taxonomy (single source of truth)', () => {
+    const STOREFRONTS = ['cartridges', 'pwa-kit-v3', 'storefront-next'] as const;
+
+    it('every storefront-specific category is owned by exactly one storefront; the rest are platform-wide', () => {
+      // A category appears in categoriesForStorefront for a storefront iff it is
+      // that storefront's specific category OR platform-wide (always relevant).
+      const perStorefrontSpecific = new Map<string, string[]>();
+      for (const sf of STOREFRONTS) {
+        // Storefront-specific = categories relevant to THIS storefront but not to the others.
+        const others = STOREFRONTS.filter((s) => s !== sf).flatMap((s) => categoriesForStorefront(s));
+        const specific = categoriesForStorefront(sf).filter((c) => !others.includes(c));
+        perStorefrontSpecific.set(sf, specific);
+      }
+      // Each storefront owns exactly one specific category, and they are distinct.
+      expect(perStorefrontSpecific.get('cartridges')).to.deep.equal(['sfra']);
+      expect(perStorefrontSpecific.get('pwa-kit-v3')).to.deep.equal(['pwa-kit-managed-runtime']);
+      expect(perStorefrontSpecific.get('storefront-next')).to.deep.equal(['sfnext']);
+    });
+
+    it('platform-wide categories are relevant to every storefront', () => {
+      const platformWide = DOC_CATEGORIES.filter(
+        (c) => !['sfra', 'pwa-kit-managed-runtime', 'sfnext'].includes(c as string),
+      );
+      for (const sf of STOREFRONTS) {
+        const relevant = categoriesForStorefront(sf);
+        for (const c of platformWide) {
+          expect(relevant, `${c} should be relevant to ${sf}`).to.include(c);
+        }
+      }
+    });
+
+    it('the union of every storefront-relevant category set covers all categories', () => {
+      const covered = new Set(STOREFRONTS.flatMap((sf) => categoriesForStorefront(sf)));
+      expect([...covered].sort()).to.deep.equal([...DOC_CATEGORIES].sort());
+    });
+  });
+
   describe('storefront awareness', () => {
     it('maps each storefront to always-relevant + storefront-specific categories', () => {
       expect(categoriesForStorefront('cartridges')).to.include.members([

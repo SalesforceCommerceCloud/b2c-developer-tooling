@@ -27,59 +27,88 @@ import {
  */
 const CORPUS_DIRS: readonly string[] = [SCRIPT_API_DATA_DIR, JOB_STEPS_DATA_DIR, GUIDES_DATA_DIR, TOOLING_DATA_DIR];
 
-/**
- * Per-category relevance multipliers applied at search time via MiniSearch's
- * `boostDocument`. Nudges the highest-value / most-current corpora up for
- * ambiguous cross-corpus queries; categories not listed default to `1` (neutral).
- *
- * Kept small on purpose: cross-corpus scores are not normalized, so these only
- * reorder results within a similar score band — a modest boost will not float a
- * weak prose match above a strong exact-title/class-name hit. Use the `category`
- * filter (not a large boost) when you need to hard-scope to one corpus.
- */
-const CATEGORY_WEIGHTS: Partial<Record<DocCategory, number>> = {
-  tooling: 1.3,
-  sfnext: 1.3,
-};
-
 /** Multiplier applied to a storefront's relevant categories when a storefront context is known. */
 const STOREFRONT_BOOST = 1.4;
 
 /**
- * Doc categories that are relevant to every project regardless of which
- * storefront framework it uses (platform APIs, Script API, job steps, general
- * B2C Commerce guides, and this tooling's own docs).
+ * Per-category metadata for the documentation taxonomy.
+ *
+ * A category is EITHER platform-wide (no `storefront`, relevant to every
+ * project) OR specific to exactly one storefront/project type. `boost` is an
+ * optional cross-corpus relevance multiplier (default `1`).
  */
-const ALWAYS_RELEVANT: readonly DocCategory[] = ['commerce-api', 'script-api', 'job-step', 'b2c-commerce', 'tooling'];
+interface CategoryMeta {
+  /**
+   * The storefront/project type this category is specific to. Omitted for
+   * platform-wide categories (Script API, job steps, Commerce API, general B2C
+   * Commerce, and this tooling's own docs), which are always relevant. Note
+   * SFRA is detected as `cartridges` (the default patterns fold SFRA into the
+   * cartridge project type), so the `sfra` category maps to `cartridges`.
+   */
+  storefront?: ProjectType;
+  /**
+   * Relevance multiplier applied at search time via MiniSearch's
+   * `boostDocument`. Kept small on purpose: cross-corpus scores are not
+   * normalized, so a modest boost only reorders results within a similar score
+   * band — it will not float a weak prose match above a strong exact-title hit.
+   */
+  boost?: number;
+}
 
 /**
- * Maps a detected project/storefront type to the storefront-SPECIFIC doc
- * categories for it. Combined with {@link ALWAYS_RELEVANT} to form the full set
- * of relevant categories. Note SFRA is detected as `cartridges` (the default
- * patterns fold SFRA into the cartridge project type), so `cartridges` maps to
- * the `sfra` guides.
+ * The single source of truth for the documentation taxonomy. Every field the
+ * SDK, CLI, and MCP need about a category is derived from this table:
+ * {@link DOC_CATEGORIES} (the category list + display order), the always-relevant
+ * vs. storefront-specific split, and per-category search boosts.
+ *
+ * To add a new corpus/category: add its `DocCategory` to the union in `types.ts`
+ * (the `Record` type below then forces an entry here) and a `*_DATA_DIR` +
+ * `CORPUS_DIRS` entry — nothing else in this module needs to change.
+ *
+ * Insertion order defines the canonical display order in {@link DOC_CATEGORIES}.
  */
-const STOREFRONT_CATEGORIES: Record<ProjectType, DocCategory[]> = {
-  cartridges: ['sfra'],
-  'pwa-kit-v3': ['pwa-kit-managed-runtime'],
-  'storefront-next': ['sfnext'],
+const CATEGORY_TAXONOMY: Record<DocCategory, CategoryMeta> = {
+  'script-api': {},
+  'job-step': {},
+  'commerce-api': {},
+  'pwa-kit-managed-runtime': {storefront: 'pwa-kit-v3'},
+  sfnext: {storefront: 'storefront-next', boost: 1.3},
+  sfra: {storefront: 'cartridges'},
+  'b2c-commerce': {},
+  tooling: {boost: 1.3},
 };
 
 /**
  * The canonical list of documentation categories, in a stable display order.
  * Exported so the CLI and MCP surfaces validate against a single source of
- * truth instead of maintaining their own copies.
+ * truth instead of maintaining their own copies. Derived from
+ * {@link CATEGORY_TAXONOMY}.
  */
-export const DOC_CATEGORIES: readonly DocCategory[] = [
-  'script-api',
-  'job-step',
-  'commerce-api',
-  'pwa-kit-managed-runtime',
-  'sfnext',
-  'sfra',
-  'b2c-commerce',
-  'tooling',
-];
+export const DOC_CATEGORIES: readonly DocCategory[] = Object.keys(CATEGORY_TAXONOMY) as DocCategory[];
+
+/**
+ * Doc categories relevant to every project regardless of storefront framework
+ * (the platform-wide categories). Derived from {@link CATEGORY_TAXONOMY}.
+ */
+const ALWAYS_RELEVANT: readonly DocCategory[] = DOC_CATEGORIES.filter((c) => !CATEGORY_TAXONOMY[c].storefront);
+
+/**
+ * Maps a detected project/storefront type to its storefront-SPECIFIC doc
+ * categories. Derived from {@link CATEGORY_TAXONOMY}; combined with
+ * {@link ALWAYS_RELEVANT} to form the full set of relevant categories.
+ */
+const STOREFRONT_CATEGORIES: Record<ProjectType, DocCategory[]> = (() => {
+  const map: Record<ProjectType, DocCategory[]> = {
+    cartridges: [],
+    'pwa-kit-v3': [],
+    'storefront-next': [],
+  };
+  for (const category of DOC_CATEGORIES) {
+    const {storefront} = CATEGORY_TAXONOMY[category];
+    if (storefront) map[storefront].push(category);
+  }
+  return map;
+})();
 
 /**
  * Parses and validates a user-supplied set of documentation categories into a
@@ -373,7 +402,7 @@ export function searchDocs(query: string, limitOrOptions?: number | SearchDocsOp
     boostDocument: (_id, _term, storedFields) => {
       const category = storedFields?.category as DocCategory | undefined;
       if (boostSet) return category && boostSet.has(category) ? STOREFRONT_BOOST : 1;
-      return (category && CATEGORY_WEIGHTS[category]) ?? 1;
+      return (category && CATEGORY_TAXONOMY[category]?.boost) ?? 1;
     },
   });
 
