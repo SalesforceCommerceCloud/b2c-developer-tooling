@@ -121,7 +121,9 @@ function main(): void {
   const enrichment = loadEnrichment();
 
   const entries: DocEntry[] = [];
-  const seen = new Set<string>();
+  // Maps an id to the file that first claimed it, so a duplicate warning can
+  // name both the kept and the skipped file (walk order is filesystem-dependent).
+  const seen = new Map<string, string>();
 
   for (const category of CATEGORIES) {
     const guidesDir = path.join(contentDir, category, 'guides');
@@ -130,11 +132,14 @@ function main(): void {
     for (const file of files) {
       const basename = path.basename(file, '.md');
       const id = `${category}/${basename}`;
-      if (seen.has(id)) {
-        console.warn(`Warning: duplicate basename within ${category}: ${basename} (skipping ${file})`);
+      const keptFile = seen.get(id);
+      if (keptFile) {
+        console.warn(
+          `Warning: duplicate basename within ${category}: ${basename}. Kept ${keptFile}, skipping ${file}.`,
+        );
         continue;
       }
-      seen.add(id);
+      seen.set(id, file);
 
       const md = fs.readFileSync(file, 'utf-8');
       const title = extractTitle(md, basename);

@@ -41,6 +41,14 @@
  * step — run `pnpm --filter @salesforce/b2c-tooling-sdk run enrich:docs` before
  * generate:guides-index to include it. It is intentionally not run here so this
  * refresh has no LLM/API-key dependency.
+ *
+ * Partial-failure caveat: this is a maintainer script that mutates the committed
+ * `data/` corpora in place and is NOT transactional. Each corpus's markdown is
+ * replaced before its index is regenerated, so a mid-run failure (auth error,
+ * disk full, corrupt commerce-cloud-docs clone) can leave a corpus and its
+ * index.json out of sync. Always run it in a clean git worktree and, if it
+ * fails partway, `git restore packages/b2c-tooling-sdk/data` before retrying so
+ * the committed data never ships in a half-refreshed state.
  */
 
 import {execFileSync} from 'node:child_process';

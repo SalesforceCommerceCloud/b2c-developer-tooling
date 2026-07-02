@@ -16,6 +16,7 @@ import {
   listDocs,
   categoriesForStorefront,
   resolveEnabledCategories,
+  DOC_CATEGORIES,
   type DocCategory,
   type SearchResult,
   type DocEntry,
@@ -37,17 +38,11 @@ interface ListDocsResponse {
 /** Accepted values for the --storefront flag. */
 const STOREFRONT_FLAG_VALUES = ['auto', 'current', 'all', 'cartridges', 'pwa-kit-v3', 'storefront-next'] as const;
 
-/** All valid documentation categories, for --category validation and help text. */
-const VALID_CATEGORIES: DocCategory[] = [
-  'script-api',
-  'job-step',
-  'commerce-api',
-  'pwa-kit-managed-runtime',
-  'sfnext',
-  'sfra',
-  'b2c-commerce',
-  'tooling',
-];
+/**
+ * All valid documentation categories, for --category validation and help text.
+ * Sourced from the SDK's canonical list so the CLI never drifts from it.
+ */
+const VALID_CATEGORIES: readonly DocCategory[] = DOC_CATEGORIES;
 
 const COLUMNS: Record<string, ColumnDef<SearchResult>> = {
   id: {
@@ -119,7 +114,7 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
     category: Flags.string({
       char: 'c',
       description: 'Restrict results to a documentation category',
-      options: VALID_CATEGORIES,
+      options: [...VALID_CATEGORIES],
     }),
     topics: Flags.string({
       description:

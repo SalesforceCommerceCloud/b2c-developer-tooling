@@ -213,13 +213,16 @@ async function main(): Promise<void> {
     return;
   }
 
-  const result: Record<string, EnrichmentEntry> = full ? {} : {...existing};
+  // Always seed from the existing sidecar: in `--full` mode every entry is
+  // re-attempted and successes overwrite, but a transient failure then falls
+  // back to the prior enrichment instead of dropping it from the sidecar.
+  const result: Record<string, EnrichmentEntry> = {...existing};
   let done = 0;
   let failed = 0;
   await pool(todo, CONCURRENCY, async (src) => {
     const e = await enrichOne(src);
     if (e) result[src.id] = e;
-    else failed++;
+    else if (!result[src.id]) failed++; // only a real gap if there was no prior enrichment
     done++;
     if (done % 25 === 0 || done === todo.length) {
       console.log(`  … ${done}/${todo.length} (${failed} failed)`);
