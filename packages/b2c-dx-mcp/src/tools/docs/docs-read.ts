@@ -24,12 +24,18 @@ export function createDocsReadTool(loadServices: () => Promise<Services> | Servi
     {
       name: 'docs_read',
       description:
-        'Read full Script API documentation (markdown) for a B2C Commerce class or module. ' +
-        'Accepts an exact id (e.g., "dw.catalog.ProductMgr") or fuzzy query — best match wins. ' +
-        'Content can be large; if you do not know the id, call docs_search first to narrow down.',
+        'Read full B2C Commerce documentation (markdown) for a class, module, job step, or guide. ' +
+        'Accepts an exact id (e.g. "dw.catalog.ProductMgr", "sfnext/sfnext-get-started") or a fuzzy ' +
+        'query — best match wins. Script API / job-step content is bundled; Developer Center guide ' +
+        'content is fetched from its published URL on demand (with a summary/headings fallback if the ' +
+        'network is unavailable). Content can be large; if you do not know the id, call docs_search first. ' +
+        'The returned entry includes the canonical url for citation.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {
-        query: z.string().min(1).describe('Exact id ("dw.catalog.ProductMgr") or fuzzy query ("ProductMgr").'),
+        query: z
+          .string()
+          .min(1)
+          .describe('Exact id ("dw.catalog.ProductMgr", "sfnext/sfnext-get-started") or fuzzy query.'),
       },
       async execute(args) {
         return readDocByQuery(args.query);

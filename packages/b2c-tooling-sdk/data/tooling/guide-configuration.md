@@ -1,0 +1,486 @@
+
+# Configuration
+
+The B2C CLI automatically detects and uses available credentials. You can provide credentials via CLI flags, environment variables, or configuration files.
+
+::: tip
+For detailed setup instructions including Account Manager API client creation, role configuration, and OCAPI setup, see the [Authentication Setup](./authentication) guide.
+:::
+
+## CLI Flags
+
+### OAuth (SCAPI/OCAPI)
+
+OAuth is required for API operations (code list/activate/delete, jobs, sites, SCAPI commands, SLAS, ODS) and can also be used for WebDAV file operations when basic auth credentials are not provided.
+
+#### Client Credentials
+
+OAuth client credentials uses a client ID and secret for non-interactive authentication:
+
+```bash
+b2c code deploy \
+  --server abcd-123.dx.commercecloud.salesforce.com \
+  --client-id your-client-id \
+  --client-secret your-client-secret
+```
+
+#### JWT Bearer
+
+JWT Bearer uses certificate-based authentication for enhanced security without storing client secrets:
+
+```bash
+b2c code deploy \
+  --server abcd-123.dx.commercecloud.salesforce.com \
+  --client-id your-client-id \
+  --jwt-cert ./cert.pem \
+  --jwt-key ./key.pem
+```
+
+See [JWT Authentication](./authentication#jwt-authentication-certificate-based) for setup instructions.
+
+#### Implicit Flow
+
+For development without a client secret, use implicit flow which opens a browser for authentication:
+
+```bash
+b2c code deploy \
+  --server abcd-123.dx.commercecloud.salesforce.com \
+  --client-id your-client-id \
+  --auth-methods implicit
+```
+
+### Basic Authentication (WebDAV)
+
+Basic authentication uses your B2C instance username and access key. This method is only used for WebDAV operations (code deployment, file uploads, log access).
+
+```bash
+b2c code deploy \
+  --server abcd-123.dx.commercecloud.salesforce.com \
+  --username your-username \
+  --password your-access-key
+```
+
+See [Configure WebDAV File Access](https://help.salesforce.com/s/articleView?id=cc.b2c_account_manager_sso_use_webdav_file_access.htm&type=5) for instructions on setting up your access key.
+
+## Environment Variables
+
+You can configure the CLI using environment variables:
+
+| Variable                      | Description                                                    |
+| ----------------------------- | -------------------------------------------------------------- |
+| `SFCC_PROJECT_DIRECTORY`      | Project directory                                              |
+| `SFCC_CONFIG`                 | Path to config file (dw.json format)                           |
+| `SFCC_INSTANCE`               | Instance name from config file                                 |
+| `SFCC_SERVER`                 | The B2C instance hostname                                      |
+| `SFCC_WEBDAV_SERVER`          | Separate hostname for WebDAV (if different from main hostname) |
+| `SFCC_CODE_VERSION`           | Code version for deployments                                   |
+| `SFCC_CLIENT_ID`              | OAuth client ID                                                |
+| `SFCC_CLIENT_SECRET`          | OAuth client secret                                            |
+| `SFCC_JWT_CERT`               | Path to JWT certificate file (cert.pem) for JWT Bearer auth    |
+| `SFCC_JWT_KEY`                | Path to JWT private key file (key.pem) for JWT Bearer auth     |
+| `SFCC_JWT_PASSPHRASE`         | Passphrase for encrypted JWT private key                       |
+| `SFCC_OAUTH_SCOPES`           | OAuth scopes to request                                        |
+| `SFCC_AUTH_METHODS`           | Comma-separated list of allowed auth methods                   |
+| `SFCC_SHORTCODE`              | SCAPI short code                                               |
+| `SFCC_TENANT_ID`              | Organization/tenant ID for SCAPI                               |
+| `SFCC_ACCOUNT_MANAGER_HOST`   | Account Manager hostname for OAuth                             |
+| `SFCC_REDIRECT_URI`           | Override redirect URI for implicit OAuth flow (e.g., when behind a proxy) |
+| `SFCC_OAUTH_LOCAL_PORT`       | Local port for the implicit OAuth redirect server (default: `8080`) |
+| `SFCC_USERNAME`               | Basic auth username                                            |
+| `SFCC_PASSWORD`               | Basic auth password                                            |
+| `SFCC_CERTIFICATE`            | Path to PKCS12 certificate for two-factor auth (mTLS)          |
+| `SFCC_CERTIFICATE_PASSPHRASE` | Passphrase for the certificate                                 |
+| `SFCC_SELFSIGNED`             | Allow self-signed server certificates                          |
+| `SFCC_SANDBOX_API_HOST`       | ODS (sandbox) API hostname                                     |
+| `SFCC_CIP_HOST`               | CIP analytics host override                                    |
+| `SFCC_CIP_STAGING`            | Use staging CIP analytics host (`true`/`false`)                |
+| `MRT_API_KEY`                 | MRT API key (`SFCC_MRT_API_KEY` also supported)                |
+| `MRT_PROJECT`                 | MRT project slug (`SFCC_MRT_PROJECT` also supported)           |
+| `MRT_ENVIRONMENT`             | MRT environment name (`SFCC_MRT_ENVIRONMENT`, `MRT_TARGET` also supported) |
+| `MRT_CLOUD_ORIGIN`            | MRT API origin URL override (`SFCC_MRT_CLOUD_ORIGIN` also supported) |
+| `SFCC_SAFETY_LEVEL`           | Safety mode: `NONE`, `NO_DELETE`, `NO_UPDATE`, `READ_ONLY` (see [Safety Mode](/guide/safety)) |
+| `SFCC_SAFETY_CONFIRM`         | Enable confirmation mode for safety: `true` or `1` (see [Safety Mode](/guide/safety#confirmation-mode)) |
+| `SFCC_SAFETY_CONFIG`          | Path to global safety config file (see [Safety Mode](/guide/safety#global-safety-config)) |
+
+## .env File
+
+The CLI automatically loads a `.env` file from the current project directory if present. Use the same `SFCC_*` variable names as environment variables.
+
+```bash
+# .env
+SFCC_SERVER=abcd-123.dx.commercecloud.salesforce.com
+SFCC_CLIENT_ID=your-client-id
+SFCC_CLIENT_SECRET=your-client-secret
+```
+
+::: warning
+Add `.env` to your `.gitignore` to avoid committing credentials.
+:::
+
+## Configuration File
+
+You can create a `dw.json` file to store instance settings. The CLI searches for this file starting from the current directory and walking up the directory tree.
+
+::: tip Flexible Field Names
+Both camelCase and kebab-case are accepted for all field names in `dw.json`. For example, `client-id` and `clientId` are equivalent, as are `code-version` and `codeVersion`. Legacy aliases like `server` (for `hostname`) and `passphrase` (for `certificatePassphrase`) are also still supported.
+:::
+
+### Single Instance
+
+```json
+{
+  "hostname": "abcd-123.dx.commercecloud.salesforce.com",
+  "code-version": "version1",
+  "client-id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "client-secret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "username": "your-username",
+  "password": "your-access-key"
+}
+```
+
+Or with JWT Bearer authentication:
+
+```json
+{
+  "hostname": "abcd-123.dx.commercecloud.salesforce.com",
+  "code-version": "version1",
+  "client-id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "jwt-cert-path": "./cert.pem",
+  "jwt-key-path": "./key.pem"
+}
+```
+
+### Multiple Instances
+
+For projects that work with multiple instances, use the `configs` array:
+
+```json
+{
+  "configs": [
+    {
+      "name": "dev",
+      "active": true,
+      "hostname": "abcd-001.dx.commercecloud.salesforce.com",
+      "code-version": "version1",
+      "client-id": "dev-client-id",
+      "username": "dev-username",
+      "password": "dev-access-key"
+    },
+    {
+      "name": "staging",
+      "hostname": "abcd-002.dx.commercecloud.salesforce.com",
+      "code-version": "version1",
+      "client-id": "staging-client-id",
+      "username": "staging-username",
+      "password": "staging-access-key"
+    }
+  ]
+}
+```
+
+Each instance can have its own `safety` configuration for per-instance operational safety. See [Safety Mode](/guide/safety#per-instance-configuration) for details.
+
+Use the `-i` or `--instance` flag to select a specific configuration:
+
+```bash
+b2c code deploy -i staging
+```
+
+If no instance is specified, the config with `"active": true` is used.
+
+### Managing Instances with the CLI
+
+Instead of editing `dw.json` by hand, you can use `b2c setup instance` commands to create, list, remove, and switch between instance configurations.
+
+#### Quick Setup
+
+```bash
+# Interactive — prompts for hostname, auth, and code version
+b2c setup instance create staging
+
+# Non-interactive
+b2c setup instance create staging \
+  --hostname staging.example.com \
+  --client-id my-client-id \
+  --client-secret my-secret \
+  --force
+```
+
+The interactive mode auto-detects the active code version via OCAPI when OAuth credentials are provided, and the first instance you create is automatically set as active.
+
+#### Switching Instances
+
+```bash
+# Set a different instance as the default
+b2c setup instance set-active production
+
+# Or pick interactively (shows a searchable list)
+b2c setup instance set-active
+
+# Commands now use the active instance by default
+b2c code list                  # Uses production
+b2c code list -i staging       # Override for one command
+```
+
+#### Listing and Removing
+
+```bash
+# See all configured instances
+b2c setup instance list
+
+# Remove an instance
+b2c setup instance remove staging
+```
+
+::: tip
+For the full command reference with all flags, see [Setup Commands](/cli/setup).
+:::
+
+### Supported Fields
+
+| Field                    | Description                                                                                                                         |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `hostname`               | B2C instance hostname. Also accepts `server`.                                                                                       |
+| `webdav-hostname`        | Separate hostname for WebDAV (if different from main hostname). Also accepts `webdav-server`, `secureHostname`, or `secure-server`. |
+| `code-version`           | Code version for deployments                                                                                                        |
+| `client-id`              | OAuth client ID                                                                                                                     |
+| `client-secret`          | OAuth client secret                                                                                                                 |
+| `jwt-cert-path`          | Path to JWT certificate file (cert.pem) for JWT Bearer authentication. Also accepts `jwtCertPath`.                                  |
+| `jwt-key-path`           | Path to JWT private key file (key.pem) for JWT Bearer authentication. Also accepts `jwtKeyPath`.                                    |
+| `jwt-passphrase`         | Passphrase for encrypted JWT private key. Also accepts `jwtPassphrase`.                                                             |
+| `username`               | Basic auth username (WebDAV)                                                                                                        |
+| `password`               | Basic auth access key (WebDAV)                                                                                                      |
+| `oauth-scopes`           | OAuth scopes (array of strings)                                                                                                     |
+| `auth-methods`           | Authentication methods in priority order (array of strings)                                                                         |
+| `account-manager-host`   | Account Manager hostname for OAuth                                                                                                  |
+| `shortCode`              | SCAPI short code. Also accepts `short-code` or `scapi-shortcode`.                                                                   |
+| `content-library`        | Default content library ID for `content export` and `content list` commands                                                         |
+| `libraries`              | Library IDs for the WebDAV browser and Content Libraries tree. Accepts `string[]` or `[{id, siteLibrary?}]`; elements may be mixed  |
+| `asset-query`            | JSON dot-paths used to extract static asset URLs during content library parsing (default `["image.path"]`). Also accepts `assetQuery` |
+| `tenant-id`              | Organization/tenant ID for SCAPI                                                                                                    |
+| `sandbox-api-host`       | ODS (sandbox) API hostname                                                                                                          |
+| `realm`                  | Default ODS realm for sandbox operations                                                                                            |
+| `cip-host`               | CIP analytics host override                                                                                                         |
+| `mrtApiKey`              | MRT API key                                                                                                                         |
+| `mrtProject`             | MRT project slug                                                                                                                    |
+| `mrtEnvironment`         | MRT environment name                                                                                                                |
+| `mrtOrigin`              | MRT API origin URL override. Also accepts `cloudOrigin`.                                                                            |
+| `certificate`            | Path to PKCS12 certificate for two-factor auth (mTLS)                                                                               |
+| `certificate-passphrase` | Passphrase for the certificate. Also accepts `passphrase`.                                                                          |
+| `self-signed`            | Allow self-signed server certificates. Also accepts `selfsigned`.                                                                   |
+
+### Two-Factor Authentication (mTLS)
+
+For instances that require client certificate authentication:
+
+```json
+{
+  "hostname": "cert.staging.example.demandware.net",
+  "code-version": "version1",
+  "username": "your-username",
+  "password": "your-access-key",
+  "certificate": "/path/to/client-cert.p12",
+  "certificate-passphrase": "cert-password",
+  "self-signed": true
+}
+```
+
+The certificate must be in PKCS12 format (`.p12` or `.pfx`). The `self-signed` option is often needed for staging environments with internal certificates.
+
+The same fields are available as CLI flags (`--webdav-server`, `--certificate`, `--passphrase`, `--selfsigned`) and as environment variables (`SFCC_WEBDAV_SERVER`, `SFCC_CERTIFICATE`, `SFCC_CERTIFICATE_PASSPHRASE`, `SFCC_SELFSIGNED`).
+
+::: tip Running staging deploys in CI/CD
+For GitHub Actions workflows that target staging — including how to handle the `.p12` certificate as a base64-encoded secret — see [Staging Environments (Two-Factor mTLS)](/guide/ci-cd#staging-environments-two-factor-mtls).
+:::
+
+::: tip MRT Configuration
+MRT API key can also be loaded from `~/.mobify`. See [MRT API Key](#mrt-api-key) below.
+:::
+
+For multi-instance configurations, each config object also supports:
+
+| Field    | Description                                        |
+| -------- | -------------------------------------------------- |
+| `name`   | Instance name for selection with `-i`/`--instance` |
+| `active` | Set to `true` to use this config by default        |
+
+## Project Configuration (package.json)
+
+You can store project-level defaults in your `package.json` file under the `b2c` key. This is useful for settings that are shared across your entire project and safe to commit to version control.
+
+```json
+{
+  "name": "my-storefront",
+  "version": "1.0.0",
+  "b2c": {
+    "shortCode": "abc123",
+    "clientId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "mrtProject": "my-project",
+    "accountManagerHost": "account.demandware.com"
+  }
+}
+```
+
+### Allowed Fields
+
+Only non-sensitive, project-level fields can be configured in `package.json`. Both camelCase and kebab-case are accepted (e.g., `shortCode` or `short-code`):
+
+| Field                | Description                                                                                                                              |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `shortCode`          | SCAPI short code                                                                                                                         |
+| `clientId`           | OAuth client ID (for implicit login discovery)                                                                                           |
+| `contentLibrary`     | Default content library ID for `content export` and `content list` commands                                                              |
+| `libraries`          | Library IDs for the WebDAV browser and Content Libraries tree. Accepts `string[]` or `[{id, siteLibrary?}]`; elements may be mixed       |
+| `assetQuery`         | JSON dot-paths used to extract static asset URLs during content library parsing (default `["image.path"]`)                               |
+| `mrtProject`         | MRT project slug                                                                                                                         |
+| `mrtOrigin`          | MRT API origin URL override                                                                                                              |
+| `accountManagerHost` | Account Manager hostname for OAuth                                                                                                       |
+| `sandboxApiHost`     | ODS (sandbox) API hostname                                                                                                               |
+| `realm`              | Default ODS realm for sandbox operations                                                                                                 |
+
+::: warning Security Note
+Sensitive fields like `hostname`, `password`, `clientSecret`, `username`, and `mrtApiKey` are intentionally **not** supported in `package.json`. These should be configured via `dw.json` (which should be in `.gitignore`), environment variables, or secure credential stores.
+:::
+
+::: tip Lowest Priority
+`package.json` has the lowest priority of all configuration sources. Values from `dw.json`, environment variables, or CLI flags will always override `package.json` settings. This makes it ideal for project defaults that can be overridden per-environment.
+:::
+
+### Content Libraries Example
+
+The `libraries` field can list the content libraries your project works with so that the VS Code Content Libraries tree auto-loads them and `b2c content list/export` can default `--site-library` based on the entry.
+
+A bare string is treated as a shared library; an object can mark a library as site-private. Both forms can appear in the same array:
+
+```json
+{
+  "b2c": {
+    "libraries": [
+      "RefArchSharedLibrary",
+      { "id": "SiteGenesis", "siteLibrary": true }
+    ]
+  }
+}
+```
+
+With this config:
+
+- `b2c content list --library SiteGenesis` calls the site-library API automatically (no need to pass `--site-library`); the library ID is the site ID.
+- `b2c content list --library RefArchSharedLibrary` treats `RefArchSharedLibrary` as a shared library.
+- `--site-library` / `--no-site-library` on the command line still wins over the config default.
+- The VS Code Content Libraries tree shows both entries on activation, with `SiteGenesis` marked `[site]`.
+
+### Resolution Priority
+
+Configuration is resolved with the following precedence (highest to lowest):
+
+1. **CLI flags and environment variables** - Explicit values always take priority (includes `.env` file)
+2. **Plugin sources (high priority)** - Custom sources with `priority: 'before'` (or priority < 0)
+3. **dw.json** - Project configuration file (priority 0)
+4. **~/.mobify** - Home directory file for MRT API key (priority 0)
+5. **Plugin sources (low priority)** - Custom sources with `priority: 'after'` (or priority 1-999)
+6. **package.json** - Project-level defaults (priority 1000, lowest)
+
+::: tip Extending Configuration
+Plugins can add custom configuration sources like secret managers or environment-specific files. Plugins can use numeric priorities for fine-grained control over ordering. See [Extending the CLI](./extending) for details.
+:::
+
+### Credential Grouping
+
+To prevent mixing credentials from different sources, certain fields are treated as atomic groups:
+
+- **OAuth Client Credentials**: `clientId` and `clientSecret`
+- **OAuth JWT Bearer**: `clientId`, `jwtCertPath`, `jwtKeyPath`, and `jwtPassphrase`
+- **Basic Auth**: `username` and `password`
+
+If any field in a group is set by a higher-priority source, all fields in that group from lower-priority sources are ignored. This ensures credential pairs always come from the same source.
+
+**Example:**
+
+- dw.json provides `clientId` only
+- A plugin provides `clientSecret`
+- Result: Only `clientId` is used; the plugin's `clientSecret` is ignored to prevent mismatched credentials
+
+::: warning Hostname Mismatch Protection
+When you explicitly specify a hostname that differs from the `dw.json` hostname, the CLI ignores all other values from `dw.json` and only uses your explicit overrides. This prevents accidentally using credentials from one instance with a different server.
+:::
+
+## MRT API Key
+
+Managed Runtime (MRT) commands use an API key for authentication. The API key is resolved in this order:
+
+1. `--api-key` flag
+2. `MRT_API_KEY` environment variable (also accepts `SFCC_MRT_API_KEY`)
+3. `~/.mobify` config file
+
+The `~/.mobify` file format:
+
+```json
+{
+  "api_key": "your-mrt-api-key"
+}
+```
+
+When using the `--cloud-origin` flag to specify a different MRT endpoint, the CLI looks for `~/.mobify--{hostname}` instead. For example, `--cloud-origin https://custom.example.com` loads from `~/.mobify--custom.example.com`.
+
+## Overriding Authentication Behavior
+
+By default, the CLI automatically detects available credentials and tries authentication methods in this order: `client-credentials`, then `implicit`. You can override this behavior to control which methods are used.
+
+::: tip Default Public Client
+For platform-level commands (Sandbox, SLAS, and Account Manager), the CLI includes a built-in public client ID. If no `--client-id` is configured, these commands automatically use the built-in client with the implicit flow, opening a browser for authentication. This means you can use these commands with zero configuration.
+:::
+
+### Available Auth Methods
+
+- `client-credentials` - OAuth 2.0 client credentials flow (requires client ID and secret). Used for SCAPI/OCAPI and WebDAV.
+- `jwt` - OAuth 2.0 JWT Bearer flow (requires client ID, certificate, and private key). Used for SCAPI/OCAPI and WebDAV. More secure than client credentials.
+- `implicit` - OAuth 2.0 implicit flow (requires client ID only, opens browser for login). Used for SCAPI/OCAPI and WebDAV.
+- `basic` - Basic authentication with username and access key. Used for WebDAV operations only.
+- `api-key` - API key authentication. Used for MRT commands only.
+
+### Specifying Auth Methods
+
+You can specify allowed auth methods in priority order using comma-separated values or multiple flags:
+
+```bash
+# Comma-separated (preferred)
+b2c code deploy --auth-methods client-credentials,implicit
+
+# Multiple flags (also supported)
+b2c code deploy --auth-methods client-credentials --auth-methods implicit
+
+# Via environment variable
+SFCC_AUTH_METHODS=client-credentials,implicit b2c code deploy
+```
+
+The CLI will try each method in order until one succeeds.
+
+## Debugging Configuration
+
+Use `b2c setup inspect` to view the resolved configuration and see which source provided each value:
+
+```bash
+# Display resolved configuration (sensitive values masked)
+b2c setup inspect
+
+# Show actual sensitive values
+b2c setup inspect --unmask
+
+# Output as JSON
+b2c setup inspect --json
+```
+
+This command helps troubleshoot issues like:
+
+- Verifying which configuration file is being used
+- Checking if environment variables are being read
+- Understanding credential source priority
+- Identifying hostname mismatch protection triggers
+
+See [setup inspect](/cli/setup#b2c-setup-inspect) for full documentation.
+
+## Next Steps
+
+- [CLI Reference](/cli/) - Browse available commands
+- [API Reference](/api/) - Explore the SDK API

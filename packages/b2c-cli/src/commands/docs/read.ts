@@ -65,7 +65,7 @@ export default class DocsRead extends BaseCommand<typeof DocsRead> {
     const {query} = this.args;
     const {raw} = this.flags;
 
-    const result = this.operations.readDocByQuery(query);
+    const result = await this.operations.readDocByQuery(query);
 
     if (!result) {
       this.error(t('commands.docs.read.notFound', 'No documentation found matching: {{query}}', {query}), {

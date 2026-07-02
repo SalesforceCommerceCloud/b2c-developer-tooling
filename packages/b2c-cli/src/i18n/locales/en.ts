@@ -51,14 +51,15 @@ export const en = {
     },
     docs: {
       search: {
-        description: 'Search Script API documentation',
+        description: 'Search B2C Commerce documentation (Script API, guides, job steps)',
         queryRequired: 'Query is required for search. Use --list to see all entries.',
         noResults: 'No documentation found matching: {{query}}',
         resultCount: 'Found {{count}} matches for "{{query}}"',
         totalCount: '{{count}} documentation entries available',
+        invalidCategory: 'Unknown category "{{category}}". Valid categories: {{valid}}',
       },
       read: {
-        description: 'Read Script API documentation for a class or module',
+        description: 'Read B2C Commerce documentation (Script API class, guide, or job step)',
         notFound: 'No documentation found matching: {{query}}',
       },
       download: {

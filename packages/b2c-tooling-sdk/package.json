@@ -231,7 +231,10 @@
     "generate:job-steps-docs": "tsx scripts/generate-job-steps-docs.ts",
     "refresh:docs-data": "tsx scripts/refresh-docs-data.ts",
     "prepack": "node scripts/strip-dev-exports.cjs",
-    "postpack": "git checkout package.json"
+    "postpack": "git checkout package.json",
+    "generate:guides-index": "tsx scripts/generate-guides-index.ts",
+    "generate:tooling-index": "tsx scripts/generate-tooling-index.ts",
+    "enrich:docs": "tsx scripts/enrich-docs.ts"
   },
   "devDependencies": {
     "@eslint/compat": "catalog:",
@@ -286,6 +289,7 @@
     "jsonschema": "catalog:",
     "jszip": "3.10.1",
     "minimatch": "10.2.4",
+    "minisearch": "7.2.0",
     "open": "catalog:",
     "openapi-fetch": "0.15.0",
     "pino": "10.1.0",

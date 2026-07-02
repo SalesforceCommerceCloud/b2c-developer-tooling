@@ -16,7 +16,9 @@ import {fileURLToPath} from 'node:url';
 interface DocEntry {
   id: string;
   title: string;
+  category?: string;
   filePath: string;
+  headings?: string;
   preview?: string;
 }
 
@@ -45,6 +47,17 @@ function extractTitle(content: string): string {
   // Match first # heading
   const match = content.match(/^#\s+(.+)$/m);
   return match?.[1]?.trim() ?? 'Unknown';
+}
+
+/** Collects all markdown section headings (h1-h4) into one searchable string. */
+function extractHeadings(content: string): string {
+  const headings: string[] = [];
+  for (const line of content.split('\n')) {
+    const m = line.match(/^#{1,4}\s+(.+)$/);
+    if (m) headings.push(m[1].trim());
+  }
+  // Drop the first heading (the title) to avoid duplicating it in the index.
+  return headings.slice(1).join(' • ');
 }
 
 function extractPreview(content: string): string | undefined {
@@ -99,11 +112,14 @@ async function generateScriptApiIndex(): Promise<void> {
     const id = file.replace(/\.md$/, '');
     const title = extractTitle(content);
     const preview = extractPreview(content);
+    const headings = extractHeadings(content);
 
     entries.push({
       id,
       title,
+      category: 'script-api',
       filePath: file,
+      ...(headings && {headings}),
       ...(preview && {preview}),
     });
   }

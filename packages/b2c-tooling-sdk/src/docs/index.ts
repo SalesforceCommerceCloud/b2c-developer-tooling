@@ -35,7 +35,7 @@
  * results.forEach(r => console.log(r.entry.id, r.score));
  *
  * // Read a specific doc by fuzzy query
- * const doc = readDocByQuery('dw.catalog.ProductMgr');
+ * const doc = await readDocByQuery('dw.catalog.ProductMgr');
  * if (doc) {
  *   console.log(doc.content);
  * }
@@ -45,10 +45,27 @@
  */
 
 // Types
-export type {DocEntry, SearchIndex, SearchResult, SchemaEntry, SchemaIndex, SchemaSearchResult} from './types.js';
+export type {
+  DocCategory,
+  DocEntry,
+  SearchIndex,
+  SearchResult,
+  SchemaEntry,
+  SchemaIndex,
+  SchemaSearchResult,
+} from './types.js';
 
 // Search operations
-export {searchDocs, readDoc, readDocByQuery, listDocs, loadSearchIndex} from './search.js';
+export {
+  searchDocs,
+  readDoc,
+  readDocByQuery,
+  readEntryContent,
+  listDocs,
+  loadSearchIndex,
+  resetDocsCache,
+  type SearchDocsOptions,
+} from './search.js';
 
 // Schema operations
 export {listSchemas, readSchema, readSchemaByQuery, searchSchemas} from './schema.js';

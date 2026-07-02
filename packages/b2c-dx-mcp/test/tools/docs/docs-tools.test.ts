@@ -66,7 +66,7 @@ describe('tools/docs', () => {
 
     it('returns empty results on a miss', async () => {
       const tool = createDocsSearchTool(loadServices);
-      const result = await tool.handler({query: 'zzzzz_definitely_not_a_class_zzzzz', limit: 5});
+      const result = await tool.handler({query: 'zzzzzqqqqxxxxnomatch', limit: 5});
       const json = getResultJson<{results: unknown[]}>(result);
       expect(json.results).to.deep.equal([]);
     });
@@ -75,6 +75,15 @@ describe('tools/docs', () => {
       const tool = createDocsSearchTool(loadServices);
       const result = await tool.handler({query: ''});
       expect(result.isError).to.be.true;
+    });
+
+    it('restricts results to a category', async () => {
+      const tool = createDocsSearchTool(loadServices);
+      const result = await tool.handler({query: 'catalog', category: 'script-api', limit: 10});
+      const json = getResultJson<{category: string; results: Array<{entry: {category: string}}>}>(result);
+      expect(json.category).to.equal('script-api');
+      expect(json.results.length).to.be.greaterThan(0);
+      expect(json.results.every((r) => r.entry.category === 'script-api')).to.be.true;
     });
   });
 
@@ -90,7 +99,7 @@ describe('tools/docs', () => {
 
     it('returns errorResult when nothing matches', async () => {
       const tool = createDocsReadTool(loadServices);
-      const result = await tool.handler({query: 'zzzzz_no_matches_at_all_zzzzz'});
+      const result = await tool.handler({query: 'zzzzzqqqqxxxxnomatch'});
       expect(result.isError).to.be.true;
       expect(getResultText(result)).to.include('No documentation found');
     });
@@ -103,6 +112,17 @@ describe('tools/docs', () => {
       const json = getResultJson<{count: number; entries: unknown[]}>(result);
       expect(json.count).to.be.greaterThan(0);
       expect(json.entries).to.have.lengthOf(json.count);
+    });
+
+    it('filters the listing by category', async () => {
+      const tool = createDocsListTool(loadServices);
+      const all = getResultJson<{count: number}>(await tool.handler({}));
+      const scriptApi = getResultJson<{count: number; entries: Array<{category: string}>}>(
+        await tool.handler({category: 'script-api'}),
+      );
+      expect(scriptApi.count).to.be.greaterThan(0);
+      expect(scriptApi.count).to.be.lessThan(all.count);
+      expect(scriptApi.entries.every((e) => e.category === 'script-api')).to.be.true;
     });
   });
 

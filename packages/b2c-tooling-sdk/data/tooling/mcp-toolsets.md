@@ -1,6 +1,3 @@
----
-description: Available toolsets and tools in the B2C DX MCP Server for SCAPI, CARTRIDGES, DIAGNOSTICS, MRT, PWAV3, and STOREFRONTNEXT development.
----
 
 # Toolsets & Tools
 
@@ -13,7 +10,7 @@ Toolsets are collections of related tools that work together to support specific
 
 **Available toolsets:**
 - [CARTRIDGES](#cartridges) - Cartridge deployment and code version management
-- [DIAGNOSTICS](#diagnostics) - Script debugger, log inspection, and multi-corpus documentation search
+- [DIAGNOSTICS](#diagnostics) - Script debugger, log inspection, and bundled documentation
 - [MRT](#mrt) - Managed Runtime bundle operations
 - [PWAV3](#pwav3) - PWA Kit v3 development tools
 - [SCAPI](#scapi) - Salesforce Commerce API discovery
@@ -40,7 +37,7 @@ Cartridge development, deployment, and code version management.
 
 ## DIAGNOSTICS
 
-Script debugger, runtime log inspection, and multi-corpus documentation search (Script API, Developer Center guides, tooling docs, job steps, XSD schemas).
+Script debugger, runtime log inspection, and bundled Script API / XSD documentation lookup.
 
 **Status:** ✅ Generally Available
 
@@ -69,7 +66,7 @@ Script debugger, runtime log inspection, and multi-corpus documentation search (
 
 | Tool | Description | Documentation |
 |------|-------------|---------------|
-| `docs_search` / `docs_read` / `docs_list` | Search and read Script API, Developer Center guides, tooling docs, and job steps | [View details](./tools/docs) |
+| `docs_search` / `docs_read` / `docs_list` | Search and read bundled Script API documentation | [View details](./tools/docs) |
 | `docs_schema_search` / `docs_schema_read` / `docs_schema_list` | Search and read bundled XSD schemas | [View details](./tools/docs) |
 
 ## MRT

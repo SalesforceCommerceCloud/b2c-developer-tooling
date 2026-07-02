@@ -1,6 +1,3 @@
----
-description: Community plugins for the B2C CLI including IntelliJ SFCC config integration, credential storage, docs search, catalog reduction, and pipeline visualization.
----
 
 # 3rd Party Plugins
 
@@ -189,7 +186,7 @@ b2c code deploy
 
 **Repository:** [taurgis/b2c-plugin-docs-viewer](https://github.com/taurgis/b2c-plugin-docs-viewer)
 
-Searches Salesforce Help site and fetches Help or Developer docs content directly from the CLI. This plugin complements the built-in `b2c docs` commands, which cover Script API reference, Developer Center guides, tooling docs, and job steps — the plugin focuses on the broader Salesforce Help site.
+Searches Salesforce Help and fetches Help or Developer docs content directly from the CLI. This is useful when you want to look up platform documentation without leaving your terminal.
 
 #### Installation
 
