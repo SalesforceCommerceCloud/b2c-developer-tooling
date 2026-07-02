@@ -62,11 +62,14 @@ export class WorkspaceTypeDetector {
    * @returns Detection result with all project types and matched patterns
    */
   async detect(): Promise<DetectionResult> {
+    // SDK-internal detail is logged at trace: the application layers (CLI/MCP)
+    // surface the resolved storefront at debug/info, so this stays out of the
+    // way on a normal debug run and is available when tracing library internals.
     const logger = getLogger().child({component: 'discovery'});
     const matchedPatterns: string[] = [];
     const projectTypes: ProjectType[] = [];
 
-    logger.debug(
+    logger.trace(
       {workspacePath: this.workspacePath, patternCount: this.patterns.length},
       'Detecting workspace/storefront type',
     );
@@ -74,8 +77,6 @@ export class WorkspaceTypeDetector {
     for (const pattern of this.patterns) {
       try {
         const matched = await pattern.detect(this.workspacePath);
-        // Per-pattern outcome is trace-level: useful when a project isn't
-        // detected as expected, but too chatty for normal debug runs.
         logger.trace({pattern: pattern.name, projectType: pattern.projectType, matched}, 'Detection pattern evaluated');
         if (matched) {
           matchedPatterns.push(pattern.name);
@@ -86,12 +87,12 @@ export class WorkspaceTypeDetector {
         }
       } catch (err) {
         // A pattern that throws is treated as "not matched" so one bad pattern
-        // cannot break detection; surface it at debug so it is diagnosable.
-        logger.debug({pattern: pattern.name, err}, 'Detection pattern threw; treating as no match');
+        // cannot break detection; surface it (previously silently swallowed).
+        logger.trace({pattern: pattern.name, err}, 'Detection pattern threw; treating as no match');
       }
     }
 
-    logger.debug(
+    logger.trace(
       {workspacePath: this.workspacePath, projectTypes, matchedPatterns},
       `Workspace detection complete: ${projectTypes.length > 0 ? projectTypes.join(', ') : 'no project type detected'}`,
     );
