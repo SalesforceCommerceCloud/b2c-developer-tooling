@@ -8,7 +8,7 @@ import type {CartridgeService} from '../cartridges/cartridge-service.js';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {registerSafeCommand} from '../safety.js';
 import {CodeSyncManager} from './code-sync-manager.js';
-import {CartridgeTreeProvider, CartridgeItem} from './cartridge-tree-provider.js';
+import {CartridgeTreeProvider, CartridgeItem, openStepTypeDefinition} from './cartridge-tree-provider.js';
 import {createDeployCommand, createDeployOneCommand} from './deploy-command.js';
 import {registerCartridgeCommands, updateCodeVersionDisplay} from './cartridge-commands.js';
 
@@ -88,6 +88,17 @@ export function registerCodeSync(
       // best-effort
     }
   });
+
+  // Jumps to the @type-id line inside the cartridge's steptypes.json. The
+  // default click on a step type node opens the module (.js) implementation;
+  // this command is the alternative offered via the right-click menu.
+  const openStepTypeDefinitionCmd = registerSafeCommand(
+    'b2c-dx.cartridge.openStepTypeDefinition',
+    async (typeId?: string, stepTypesPath?: string) => {
+      if (!typeId || !stepTypesPath) return;
+      await openStepTypeDefinition(typeId, stepTypesPath);
+    },
+  );
 
   const uploadToInstanceCmd = registerSafeCommand('b2c-dx.codeSync.uploadToInstance', async (uri?: vscode.Uri) => {
     if (!uri) return;
@@ -175,6 +186,7 @@ export function registerCodeSync(
     deployOneCmd,
     refreshCmd,
     uploadCartridgeCmd,
+    openStepTypeDefinitionCmd,
     uploadToInstanceCmd,
     cartridgesSub,
     ...cartridgeCmdDisposables,

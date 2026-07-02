@@ -1225,6 +1225,12 @@
         "category": "B2C DX - Job Definitions"
       },
       {
+        "command": "b2c-dx.cartridge.openStepTypeDefinition",
+        "title": "Show Step Type Definition",
+        "icon": "$(go-to-file)",
+        "category": "B2C DX - Cartridges"
+      },
+      {
         "command": "b2c-dx.jobs.rerun",
         "title": "Re-Run Job",
         "icon": "$(debug-restart)",
@@ -2144,6 +2150,11 @@
           "command": "b2c-dx.jobs.createScaffold",
           "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
           "group": "4_scaffold@1"
+        },
+        {
+          "command": "b2c-dx.cartridge.openStepTypeDefinition",
+          "when": "view == b2cCartridgeExplorer && viewItem == cartridge-step-type",
+          "group": "navigation@1"
         }
       ],
       "file/newFile": [
@@ -2340,6 +2351,10 @@
         },
         {
           "command": "b2c-dx.jobs.disableAutoRefresh",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.cartridge.openStepTypeDefinition",
           "when": "false"
         },
         {
