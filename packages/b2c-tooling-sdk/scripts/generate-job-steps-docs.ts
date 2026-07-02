@@ -43,6 +43,7 @@ interface JobStepsDataset {
 interface DocEntry {
   id: string;
   title: string;
+  category?: string;
   filePath: string;
   preview?: string;
 }
@@ -208,6 +209,7 @@ function generate(): void {
     entries.push({
       id: step.typeId,
       title: `Job Step: ${step.typeId}`,
+      category: 'job-step',
       filePath: fileName,
       preview: truncate(step.purpose || `Standard ${step.kind.toLowerCase()} job step.`),
     });
@@ -218,6 +220,7 @@ function generate(): void {
   entries.push({
     id: 'job-steps',
     title: 'Standard Job Step Catalog',
+    category: 'job-step',
     filePath: 'job-steps.md',
     preview: 'Catalog of built-in standard/system job step type IDs for Business Manager job flows.',
   });

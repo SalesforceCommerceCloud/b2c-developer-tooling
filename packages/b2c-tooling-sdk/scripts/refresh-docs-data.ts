@@ -21,14 +21,34 @@
  *      and extract `jobstepapi/html/api/jobstep.*.html` for the job-step dataset.
  *   3. Regenerate the job-step dataset + markdown (build:job-steps-dataset,
  *      generate:job-steps-docs) and the search indexes (generate:docs-index).
+ *   4. Rebuild the Developer Center guides index (generate:guides-index) from a
+ *      local commerce-cloud-docs clone, and the tooling-docs index
+ *      (generate:tooling-index) from this repo's own docs/. Guides content is
+ *      NOT bundled (fetched online on read); only the metadata index is written.
  *
  * Usage (from repo root or the SDK package):
  *   pnpm --filter @salesforce/b2c-tooling-sdk run refresh:docs-data
  *
  * Options (env vars):
- *   B2C_INSTANCE   forwarded to `b2c docs download --instance <name>` to pick a
- *                  non-default instance.
- *   KEEP_WORKDIR=1 keep the temp download/extract directory for inspection.
+ *   B2C_INSTANCE       forwarded to `b2c docs download --instance <name>` to pick
+ *                      a non-default instance.
+ *   COMMERCE_DOCS_REPO local commerce-cloud-docs clone for the guides index
+ *                      (default ~/code/commerce-cloud-docs). If absent, the
+ *                      guides step is skipped with a warning.
+ *   KEEP_WORKDIR=1     keep the temp download/extract directory for inspection.
+ *
+ * Note: LLM enrichment of the guides (summaries/keywords) is a separate optional
+ * step — run `pnpm --filter @salesforce/b2c-tooling-sdk run enrich:docs` before
+ * generate:guides-index to include it. It is intentionally not run here so this
+ * refresh has no LLM/API-key dependency.
+ *
+ * Partial-failure caveat: this is a maintainer script that mutates the committed
+ * `data/` corpora in place and is NOT transactional. Each corpus's markdown is
+ * replaced before its index is regenerated, so a mid-run failure (auth error,
+ * disk full, corrupt commerce-cloud-docs clone) can leave a corpus and its
+ * index.json out of sync. Always run it in a clean git worktree and, if it
+ * fails partway, `git restore packages/b2c-tooling-sdk/data` before retrying so
+ * the committed data never ships in a half-refreshed state.
  */
 
 import {execFileSync} from 'node:child_process';
@@ -140,6 +160,26 @@ async function main(): Promise<void> {
 
     console.log('→ Generating search indexes...');
     run('pnpm', ['exec', 'tsx', 'scripts/generate-docs-index.ts'], SDK_ROOT);
+
+    // 8. Developer Center guides index (from a local commerce-cloud-docs clone).
+    //    Metadata only — guide content is fetched online at read time.
+    const docsRepo = process.env.COMMERCE_DOCS_REPO;
+    const docsRepoContent = docsRepo
+      ? path.join(path.resolve(docsRepo), 'content', 'en-us')
+      : path.join(os.homedir(), 'code', 'commerce-cloud-docs', 'content', 'en-us');
+    if (fs.existsSync(docsRepoContent)) {
+      console.log('→ Generating Developer Center guides index...');
+      run('pnpm', ['exec', 'tsx', 'scripts/generate-guides-index.ts'], SDK_ROOT);
+    } else {
+      console.log(
+        `→ Skipping guides index: commerce-cloud-docs not found at ${docsRepoContent} ` +
+          '(set COMMERCE_DOCS_REPO to enable).',
+      );
+    }
+
+    // 9. Tooling-docs index (this repo's own conceptual guides).
+    console.log('→ Generating tooling-docs index...');
+    run('pnpm', ['exec', 'tsx', 'scripts/generate-tooling-index.ts'], SDK_ROOT);
 
     console.log(`\n✓ Bundled documentation data refreshed to DWAPP ${version}.`);
     console.log('  Review the diff under packages/b2c-tooling-sdk/data/ before committing.');
