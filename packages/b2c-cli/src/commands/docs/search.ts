@@ -35,8 +35,11 @@ interface ListDocsResponse {
   entries: DocEntry[];
 }
 
-/** Accepted values for the --storefront flag. */
-const STOREFRONT_FLAG_VALUES = ['auto', 'current', 'all', 'cartridges', 'pwa-kit-v3', 'storefront-next'] as const;
+/**
+ * Accepted values for the --storefront flag: `auto` forces detection, `all`
+ * opts out, or name a concrete project type. (Unset defaults to `auto`.)
+ */
+const STOREFRONT_FLAG_VALUES = ['auto', 'all', 'cartridges', 'pwa-kit-v3', 'storefront-next'] as const;
 
 /**
  * All valid documentation categories, for --category validation and help text.
@@ -125,8 +128,8 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
     storefront: Flags.string({
       char: 's',
       description:
-        'Favor docs for a storefront. "auto"/"current" detects the workspace type; ' +
-        '"all" applies no preference; or name a type.',
+        'Favor docs for a storefront. Defaults to auto-detecting the workspace type; ' +
+        '"all" applies no preference; "auto" forces detection; or name a type.',
       options: [...STOREFRONT_FLAG_VALUES],
     }),
     'storefront-mode': Flags.string({
@@ -149,7 +152,6 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
   async run(): Promise<ListDocsResponse | SearchDocsResponse> {
     const {query} = this.args;
     const {limit, list, category} = this.flags;
-    const storefront = await this.resolveStorefront(this.flags.storefront);
     const storefrontMode = (this.flags['storefront-mode'] as 'boost' | 'filter' | undefined) ?? 'boost';
     // Launch-time allowlist that bounds the whole corpus (from --topics / SFCC_DOCS_TOPICS).
     const enabledCategories = resolveEnabledCategories(this.flags.topics, (invalid) =>
@@ -162,9 +164,15 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
 
     // List mode
     if (list) {
-      // Explicit category wins; otherwise a storefront narrows to its categories.
+      // Listing does not auto-detect: a storefront narrows the listing only when
+      // the flag is explicitly given (matches the MCP docs_list behavior, where
+      // an unset storefront lists everything). Explicit category still wins.
+      const listStorefront =
+        this.flags.storefront && this.flags.storefront !== 'all'
+          ? await this.resolveStorefront(this.flags.storefront)
+          : undefined;
       const listFilter: DocCategory | DocCategory[] | undefined =
-        (category as DocCategory | undefined) ?? (storefront ? categoriesForStorefront(storefront) : undefined);
+        (category as DocCategory | undefined) ?? (listStorefront ? categoriesForStorefront(listStorefront) : undefined);
       const entries = this.operations.listDocs(listFilter, enabledCategories);
 
       if (this.jsonEnabled()) {
@@ -198,6 +206,9 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
         t('commands.docs.search.queryRequired', 'Query is required for search. Use --list to see all entries.'),
       );
     }
+
+    // Storefront awareness is on by default for search (unset -> auto-detect).
+    const storefront = await this.resolveStorefront(this.flags.storefront);
 
     const results = this.operations.searchDocs(query, {
       limit,
@@ -236,22 +247,26 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
   }
 
   /**
-   * Resolves the --storefront flag to concrete project type(s). `auto`/`current`
-   * runs workspace detection; `all` (or unset) yields none; an explicit type is
-   * used verbatim.
+   * Resolves the --storefront flag to concrete project type(s).
+   *
+   * Storefront awareness is ON by default (matching the MCP docs tools): when
+   * the flag is unset — or explicitly `auto` — workspace detection runs and its
+   * result favors the detected storefront's docs. `all` opts out (no
+   * preference); an explicit type is used verbatim without detection.
    */
   private async resolveStorefront(value: string | undefined): Promise<ProjectType[] | undefined> {
-    if (!value || value === 'all') {
-      this.logger.debug({storefrontFlag: value ?? '(unset)'}, 'Storefront preference disabled; no detection run');
+    if (value === 'all') {
+      this.logger.debug('Storefront preference disabled (--storefront all); no detection run');
       return undefined;
     }
-    if (value === 'auto' || value === 'current') {
+    if (!value || value === 'auto') {
       const cwd = process.cwd();
       const detection = await this.operations.detectWorkspaceType(cwd);
       const resolved = detection.projectTypes.length > 0 ? detection.projectTypes : undefined;
       this.logger.debug(
         {
           cwd,
+          storefrontFlag: value ?? '(unset, defaults to auto)',
           matchedPatterns: detection.matchedPatterns,
           projectTypes: detection.projectTypes,
           resolved: resolved ?? null,

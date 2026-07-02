@@ -61,7 +61,7 @@ b2c docs search [query]
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------- |
 | `--limit`, `-l`            | Maximum number of results to display                                                                             | `20`    |
 | `--category`, `-c`         | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step` | (none)  |
-| `--storefront`, `-s`       | Storefront awareness: `auto` (or `current`) detects project type, `all` disables, or specify `cartridges`, `pwa-kit-v3`, `storefront-next` | `all`   |
+| `--storefront`, `-s`       | Storefront awareness: `auto` detects the project type, `all` disables it, or specify `cartridges`, `pwa-kit-v3`, `storefront-next`. Defaults to `auto` (storefront-aware) | `auto`  |
 | `--storefront-mode`        | How storefront context affects results: `boost` (rank relevant docs higher) or `filter` (hide irrelevant docs)  | `boost` |
 | `--topics`                 | Allowlist that bounds the whole corpus to these categories (comma-separated; env `SFCC_DOCS_TOPICS`). `--category`/`--storefront` narrow within it; unknown names are ignored with a warning | (all)   |
 | `--list`                   | List all available documentation entries                                                                         | `false` |
@@ -98,8 +98,11 @@ b2c docs search --list
 # List entries in a specific category
 b2c docs search --list --category tooling
 
-# Search with storefront awareness (auto-detects project type)
-b2c docs search "components" --storefront current
+# Storefront awareness is ON by default — search auto-detects the project type
+b2c docs search "components"
+
+# Opt out of storefront awareness entirely
+b2c docs search "components" --storefront all
 
 # Search SFRA docs only (filter mode)
 b2c docs search "checkout flow" -s cartridges --storefront-mode filter
@@ -123,11 +126,11 @@ b2c docs search "checkout"
 
 ### Storefront-Aware Search
 
-The `--storefront` flag enables storefront-aware search that favors documentation relevant to your project type:
+Storefront-aware search favors documentation relevant to your project type, and is **on by default** — `docs search` auto-detects the workspace's storefront framework unless you say otherwise:
 
-- **Auto-detection** (`auto` or `current`): Detects the project's storefront framework and boosts relevant documentation categories
+- **Auto-detection (default, or `--storefront auto`)**: Detects the project's storefront framework and boosts relevant documentation categories
 - **Framework-specific**: Specify `cartridges` (SFRA), `pwa-kit-v3` (PWA Kit), or `storefront-next` (Storefront Next) to target a framework
-- **Disable awareness**: Use `all` to search without any storefront preference
+- **Disable awareness**: Use `--storefront all` to search without any storefront preference
 
 **Category mapping:**
 - SFRA/cartridges projects → boosts `sfra` category

@@ -48,9 +48,11 @@ b2c docs search "authentication setup" --category tooling
 # Limit results
 b2c docs search authentication --limit 5
 
-# Search with storefront awareness (auto-detects project type)
-b2c docs search "components" --storefront current
-b2c docs search "checkout flow" -s auto
+# Storefront awareness is ON by default — search auto-detects the project type
+b2c docs search "components"
+
+# Opt out of storefront awareness
+b2c docs search "components" --storefront all
 
 # Search SFRA docs only (filter mode hides non-SFRA categories)
 b2c docs search "page designer" --storefront cartridges --storefront-mode filter
@@ -64,8 +66,8 @@ b2c docs search --list
 # List entries in a specific category
 b2c docs search --list --category commerce-api
 
-# List docs relevant to current project's storefront
-b2c docs search --list --storefront current
+# List docs relevant to a specific storefront (list does not auto-detect)
+b2c docs search --list --storefront cartridges
 
 # Bound the entire corpus to specific topics (allowlist; env: SFCC_DOCS_TOPICS)
 b2c docs search "login" --topics sfnext,commerce-api
@@ -75,10 +77,10 @@ b2c docs search "login" --topics sfnext,commerce-api
 
 ### Storefront-Aware Search
 
-The docs search now understands which storefront framework your project uses and automatically favors relevant documentation. This helps surface the right guides for SFRA, PWA Kit, or Storefront Next projects.
+The docs search understands which storefront framework your project uses and automatically favors relevant documentation. This helps surface the right guides for SFRA, PWA Kit, or Storefront Next projects, and is **on by default**.
 
 **How it works:**
-- **Auto-detection**: Use `--storefront current` (or `-s auto`) to detect the project type based on workspace structure
+- **Auto-detection (default)**: `docs search` detects the project type from the workspace structure automatically; pass `--storefront auto` to force it explicitly
 - **Explicit targeting**: Specify `--storefront cartridges` (SFRA), `--storefront pwa-kit-v3` (PWA Kit), or `--storefront storefront-next`
 - **Disable awareness**: Use `--storefront all` to search without any storefront preference
 
@@ -95,7 +97,7 @@ The docs search now understands which storefront framework your project uses and
 **Examples:**
 ```bash
 # Auto-detect and boost relevant docs (default behavior)
-b2c docs search "components" --storefront current
+b2c docs search "components"
 
 # Filter to show only SFRA-relevant docs
 b2c docs search "checkout" -s cartridges --storefront-mode filter

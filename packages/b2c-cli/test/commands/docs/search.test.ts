@@ -106,4 +106,48 @@ describe('docs search', () => {
     expect(detectStub.calledOnce).to.equal(true);
     expect(result.storefront).to.deep.equal(['cartridges']);
   });
+
+  it('auto-detects the storefront by default when --storefront is unset (search)', async () => {
+    const command: any = await createCommand({json: true, limit: 5}, {query: 'x'});
+
+    const searchStub = sinon.stub().returns([]);
+    const detectStub = sinon
+      .stub()
+      .resolves({projectTypes: ['cartridges'], matchedPatterns: ['cartridges'], autoDiscovered: true});
+    command.operations = {...command.operations, searchDocs: searchStub, detectWorkspaceType: detectStub};
+
+    const result = (await runSilent(() => command.run())) as {storefront?: string[]};
+
+    expect(detectStub.calledOnce, 'unset --storefront must default to detection').to.equal(true);
+    expect(searchStub.firstCall.args[1].storefront).to.deep.equal(['cartridges']);
+    expect(result.storefront).to.deep.equal(['cartridges']);
+  });
+
+  it('--storefront=all disables detection and applies no preference (search)', async () => {
+    const command: any = await createCommand({json: true, limit: 5, storefront: 'all'}, {query: 'x'});
+
+    const searchStub = sinon.stub().returns([]);
+    const detectStub = sinon.stub().resolves({projectTypes: ['cartridges'], matchedPatterns: [], autoDiscovered: true});
+    command.operations = {...command.operations, searchDocs: searchStub, detectWorkspaceType: detectStub};
+
+    const result = (await runSilent(() => command.run())) as {storefront?: string[]};
+
+    expect(detectStub.called, '--storefront=all must not trigger detection').to.equal(false);
+    expect(searchStub.firstCall.args[1].storefront).to.equal(undefined);
+    expect(result.storefront).to.equal(undefined);
+  });
+
+  it('--list does not auto-detect a storefront when the flag is unset', async () => {
+    const command: any = await createCommand({list: true, json: true}, {});
+
+    const listStub = sinon.stub().returns([{id: 'a', title: 'A', category: 'script-api', filePath: 'a.md'}]);
+    const detectStub = sinon.stub().resolves({projectTypes: ['cartridges'], matchedPatterns: [], autoDiscovered: true});
+    command.operations = {...command.operations, listDocs: listStub, detectWorkspaceType: detectStub};
+
+    await runSilent(() => command.run());
+
+    expect(detectStub.called, 'list must not auto-detect without an explicit --storefront').to.equal(false);
+    // No storefront filter applied -> listDocs called with an undefined category filter.
+    expect(listStub.firstCall.args[0]).to.equal(undefined);
+  });
 });
