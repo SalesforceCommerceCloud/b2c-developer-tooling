@@ -241,11 +241,28 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
    * used verbatim.
    */
   private async resolveStorefront(value: string | undefined): Promise<ProjectType[] | undefined> {
-    if (!value || value === 'all') return undefined;
-    if (value === 'auto' || value === 'current') {
-      const detection = await this.operations.detectWorkspaceType(process.cwd());
-      return detection.projectTypes.length > 0 ? detection.projectTypes : undefined;
+    if (!value || value === 'all') {
+      this.logger.debug({storefrontFlag: value ?? '(unset)'}, 'Storefront preference disabled; no detection run');
+      return undefined;
     }
+    if (value === 'auto' || value === 'current') {
+      const cwd = process.cwd();
+      const detection = await this.operations.detectWorkspaceType(cwd);
+      const resolved = detection.projectTypes.length > 0 ? detection.projectTypes : undefined;
+      this.logger.debug(
+        {
+          cwd,
+          matchedPatterns: detection.matchedPatterns,
+          projectTypes: detection.projectTypes,
+          resolved: resolved ?? null,
+        },
+        resolved
+          ? `Auto-detected storefront: ${resolved.join(', ')}`
+          : 'No storefront detected in workspace; searching with no storefront preference',
+      );
+      return resolved;
+    }
+    this.logger.debug({storefront: value}, 'Using explicitly specified storefront');
     return [value as ProjectType];
   }
 }

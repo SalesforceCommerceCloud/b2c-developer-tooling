@@ -8,6 +8,7 @@
  *
  * @module discovery/detector
  */
+import {getLogger} from '../logging/logger.js';
 import type {DetectionResult, DetectionPattern, DetectOptions, ProjectType} from './types.js';
 import {DEFAULT_PATTERNS} from './patterns/index.js';
 
@@ -61,22 +62,39 @@ export class WorkspaceTypeDetector {
    * @returns Detection result with all project types and matched patterns
    */
   async detect(): Promise<DetectionResult> {
+    const logger = getLogger().child({component: 'discovery'});
     const matchedPatterns: string[] = [];
     const projectTypes: ProjectType[] = [];
 
+    logger.debug(
+      {workspacePath: this.workspacePath, patternCount: this.patterns.length},
+      'Detecting workspace/storefront type',
+    );
+
     for (const pattern of this.patterns) {
       try {
-        if (await pattern.detect(this.workspacePath)) {
+        const matched = await pattern.detect(this.workspacePath);
+        // Per-pattern outcome is trace-level: useful when a project isn't
+        // detected as expected, but too chatty for normal debug runs.
+        logger.trace({pattern: pattern.name, projectType: pattern.projectType, matched}, 'Detection pattern evaluated');
+        if (matched) {
           matchedPatterns.push(pattern.name);
           // Add project type if not already present
           if (!projectTypes.includes(pattern.projectType)) {
             projectTypes.push(pattern.projectType);
           }
         }
-      } catch {
-        // Skip patterns that fail to detect - could log in debug mode
+      } catch (err) {
+        // A pattern that throws is treated as "not matched" so one bad pattern
+        // cannot break detection; surface it at debug so it is diagnosable.
+        logger.debug({pattern: pattern.name, err}, 'Detection pattern threw; treating as no match');
       }
     }
+
+    logger.debug(
+      {workspacePath: this.workspacePath, projectTypes, matchedPatterns},
+      `Workspace detection complete: ${projectTypes.length > 0 ? projectTypes.join(', ') : 'no project type detected'}`,
+    );
 
     return {
       projectTypes,
