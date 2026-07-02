@@ -10,20 +10,20 @@ Commands for searching and reading B2C Commerce documentation spanning multiple 
 
 The bundled corpus searched by `docs search` / `docs read` includes:
 
-- **Script API reference** — `dw.*` classes/modules for server-side scripting
+- **Script API reference** — `dw.*` classes/modules for server-side scripting. Script API entries include durable permalinks to developer.salesforce.com pages (both .html for browsing and .md for content, though the content itself is bundled in the CLI).
 - **Developer Center guides** — conceptual and how-to content from B2C Commerce Developer Center, organized into categories: `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`
 - **Tooling guides** — documentation for this CLI, MCP server, SDK, and VS Code extension (category: `tooling`)
 - **Standard job steps** — built-in job step type IDs (for example `ImportCatalog`, `ExportCatalog`, `ImportInventoryLists`) that you add to Business Manager job flows. Read the catalog overview with `b2c docs read job-steps`, or a specific step with `b2c docs read <TypeID>`. See the `b2c-cli:b2c-job` and `b2c:b2c-custom-job-steps` skills for how standard steps fit into job flows.
 - **XSD schemas** — import/export data format definitions
 
-Search results now include `category`, `summary`, `keywords`, and `url` fields to help triage matches before reading full content. Developer Center guide content is fetched online when you `docs read` a guide entry (with graceful offline fallback).
+Search results include `category`, `summary`, `keywords`, `url`, and `sourceUrl` fields to help triage matches before reading full content. Each documentation entry with a public page carries both `url` (the `.html` page for browser viewing) and `sourceUrl` (the raw `.md` source). When you `docs read` a Developer Center guide, its content is fetched online from the `sourceUrl` (with a graceful offline fallback to the indexed summary + headings).
 
 ## Authentication
 
 | Operation       | Auth Required                     |
 | --------------- | --------------------------------- |
 | `docs search`   | None (uses local bundled docs)    |
-| `docs read`     | None (uses local bundled docs)    |
+| `docs read`     | None (bundled docs + online fetch for guides)    |
 | `docs schema`   | None (uses local bundled schemas) |
 | `docs download` | Instance + WebDAV credentials     |
 
@@ -61,10 +61,10 @@ b2c docs search [query]
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | `--limit`, `-l`    | Maximum number of results to display                                                                                                                                                        | `20`    |
 | `--category`, `-c` | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step`                                                        | (none)  |
-| `--workspace`      | Workspace awareness: `auto` (default, auto-detects project type), `all` (disable), or specify one or more types comma-separated: `cartridges`, `sfra`, `pwa-kit-v3`, `storefront-next`      | `auto`  |
+| `--workspace`      | Workspace awareness: `auto` (default, auto-detects project type), `all` (disable), or specify one or more types comma-separated: `cartridges`, `sfra`, `pwa-kit-v3`, `storefront-next`. Boosts relevant categories and de-boosts competing storefront frameworks      | `auto`  |
 | `--topics`         | Allowlist that bounds the whole corpus to these categories (comma-separated; env `SFCC_DOCS_TOPICS`). `--category`/`--workspace` narrow within it; unknown names are ignored with a warning | (all)   |
 | `--list`           | List all available documentation entries                                                                                                                                                    | `false` |
-| `--columns`        | Columns to display (comma-separated). Available: id, title, category, summary, keywords, url, score                                                                                         | (none)  |
+| `--columns`        | Columns to display (comma-separated). Available: id, title, category, summary, keywords, url, sourceUrl, score                                                                                         | `id, category, title, score`  |
 | `--extended`, `-x` | Show all columns including extended fields                                                                                                                                                  | `false` |
 
 ### Examples
@@ -96,6 +96,9 @@ b2c docs search --list
 
 # List entries in a specific category
 b2c docs search --list --category tooling
+
+# List with workspace awareness — note that --list does NOT auto-detect; it narrows only when --workspace is specified
+b2c docs search --list --workspace sfra
 
 # Workspace awareness is ON by default — search auto-detects the project type
 b2c docs search "components"
@@ -146,9 +149,11 @@ Workspace-aware search favors documentation relevant to your project type, and i
 
 A detected or specified workspace always **boosts** relevant docs (ranks them higher) but never hides categories. To hard-scope results to a category, use `--category` or `--topics`.
 
+Workspace awareness never filters or hides categories — it only reweights results by applying a x1.4 boost to relevant categories and a x0.3 de-boost to competing storefront frameworks (sfra, pwa-kit-managed-runtime, sfnext that are not the detected/specified workspace).
+
 ### Output
 
-Default output is a table with `ID`, `Title`, `Category`, and `Match` score. Use `--extended` or `--columns` to show `Summary`, `Keywords`, and `URL` fields. With `--list`, output shows all entries with their metadata plus a total count.
+Default output is a table with `id`, `category`, `title`, and `score` columns. Use `--extended` or `--columns` to show `summary`, `keywords`, `url`, and `sourceUrl` fields. With `--list`, output shows all entries with their metadata plus a total count.
 
 ---
 
@@ -206,7 +211,7 @@ b2c docs read ProductMgr --json
 
 ### Output
 
-By default, markdown is rendered for terminal display. Raw markdown is emitted when using `--raw` (or when output is not a TTY). For Developer Center guides, the command fetches full content online; if the fetch fails, it displays the locally-indexed summary, section headings, and URL.
+By default, markdown is rendered for terminal display. Raw markdown is emitted when using `--raw` (or when output is not a TTY). For Developer Center guides, the command fetches full content online from the sourceUrl (.md); if the fetch fails, it displays the locally-indexed summary, section headings, and the url (.html) for manual browsing.
 
 ---
 

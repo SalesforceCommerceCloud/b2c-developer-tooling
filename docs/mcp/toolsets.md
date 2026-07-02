@@ -69,7 +69,7 @@ Script debugger, runtime log inspection, and multi-corpus documentation search (
 
 | Tool | Description | Documentation |
 |------|-------------|---------------|
-| `docs_search` / `docs_read` / `docs_list` | Search and read Script API, Developer Center guides, tooling docs, and job steps | [View details](./tools/docs) |
+| `docs_search` / `docs_read` / `docs_list` | Search and read Script API, Developer Center guides, tooling docs, and job steps with workspace-aware ranking. Supports topic allowlist via --docs-topics flag. | [View details](./tools/docs) |
 | `docs_schema_search` / `docs_schema_read` / `docs_schema_list` | Search and read bundled XSD schemas | [View details](./tools/docs) |
 
 ## MRT

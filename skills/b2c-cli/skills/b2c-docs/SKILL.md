@@ -14,11 +14,14 @@ Use the `b2c` CLI to search and read B2C Commerce documentation spanning multipl
 ## Key Features
 
 - **Multi-corpus search** — Search across Script API, Developer Center guides, tooling docs, job steps, and schemas in a unified index
-- **Storefront-aware search** — Auto-detects project type (SFRA, PWA Kit, Storefront Next) and boosts relevant documentation
+- **Workspace-aware search** — Auto-detects project type (cartridges, SFRA, PWA Kit, Storefront Next) and boosts relevant documentation while de-boosting competing storefront frameworks
 - **Category filtering** — Use `--category` to narrow results to a specific corpus (e.g., `commerce-api`, `pwa-kit-managed-runtime`, `sfra`, `script-api`)
 - **Triage metadata** — Search results include `category`, `summary`, `keywords`, and `url` to help identify the right match without reading full content
 - **Online guide content** — Developer Center guides are fetched online when you read them (with graceful offline fallback)
 - **Content-aware ranking** — BM25-style search indexes titles, section headings, summaries, and keywords for better recall on conceptual questions
+- **Dual URLs** — Every publicly-available doc entry carries both `url` (human-facing .html page) and `sourceUrl` (raw .md source); Script API entries have durable developer.salesforce.com permalinks (even though content remains bundled); guides fetch content online via sourceUrl with offline fallback
+- **Topic allowlist** — Bound the entire corpus to chosen categories via `--topics` flag or `SFCC_DOCS_TOPICS` env var (MCP server has `--docs-topics` startup flag)
+- **Payload-conscious defaults** — MCP tools limit result count (5) and return lean fields by default; CLI defaults to 20 results; verbose mode adds extended fields
 
 ## Examples
 
@@ -45,8 +48,13 @@ b2c docs search ImportCatalog
 # Search tooling documentation
 b2c docs search "authentication setup" --category tooling
 
-# Limit results
+# Limit results (CLI default is 20, MCP default is 5)
 b2c docs search authentication --limit 5
+
+# Show extended fields (url, sourceUrl, summary, keywords)
+b2c docs search authentication --columns id,title,category,url,summary
+# or use -x for extended output
+b2c docs search authentication -x
 
 # Workspace awareness is ON by default — search auto-detects the project type
 b2c docs search "components"
@@ -76,7 +84,7 @@ b2c docs search --list --workspace cartridges
 b2c docs search "login" --topics sfnext,commerce-api
 ```
 
-> **`--topics` vs `--category`:** `--category` filters a single query; `--topics` (or `SFCC_DOCS_TOPICS`) is an allowlist that bounds the _entire_ available corpus — `--category`/`--workspace` narrow within it, and `docs read` won't resolve an id outside it. Pin it to expose only the docs relevant to your project. The MCP server has an equivalent `--docs-topics` startup flag.
+> **`--topics` vs `--category`:** `--category` filters a single query; `--topics` (CLI flag or `SFCC_DOCS_TOPICS` env var) is an allowlist that bounds the _entire_ available corpus — `--category`/`--workspace` narrow within it, and `docs read` won't resolve an id outside it. Pin it to expose only the docs relevant to your project. **The MCP server has an equivalent `--docs-topics` startup flag and `SFCC_DOCS_TOPICS` env var.**
 
 ### Workspace-Aware Search
 
@@ -96,9 +104,13 @@ The docs search understands which workspace framework your project uses and auto
 - `pwa-kit-v3` → `pwa-kit-managed-runtime`, `commerce-api`
 - `storefront-next` → `sfnext`, `commerce-api`
 
+**De-boost competing frameworks:** When a workspace is detected or specified, the search engine de-boosts (x0.3) storefront framework guides that are NOT the current one. For example, if workspace is `sfra`, then `pwa-kit-managed-runtime` and `sfnext` categories are de-boosted; this reweights results without hiding them.
+
 **SFRA vs cartridges distinction:** A SFRA project is detected as both `cartridges` and `sfra` (SFRA is a refinement — it has the `app_storefront_base` cartridge). A cartridge project that is not SFRA (custom API cartridges, or a PWA Kit / Storefront Next repo that also ships cartridges) is `cartridges` only — so it will not boost `sfra` docs.
 
 A detected or specified workspace always **boosts** relevant docs (ranks them higher) but never hides categories. To hard-scope results to a category, use `--category` or `--topics`.
+
+**`--list` behavior:** When using `--list` to browse the catalog, workspace auto-detection is **disabled** — the list shows the full corpus unless you explicitly pass `--workspace <type>` to narrow it.
 
 **Examples:**
 
@@ -135,6 +147,10 @@ b2c docs read ProductMgr --raw
 # Output as JSON
 b2c docs read ProductMgr --json
 ```
+
+> **Content sources:** Developer Center guides are fetched **online** from the .md source (sourceUrl) with a graceful offline fallback (summary + headings + link). Script API, job-step, and tooling content is **bundled** in the CLI.
+
+To retrieve the human-facing .html page URL (for citing/opening in browser) or the raw .md source URL, use `--json` output or `--columns url,sourceUrl` in search results.
 
 ### Standard Job Step Catalog
 
@@ -202,6 +218,8 @@ xmllint --schema "$(b2c docs schema catalog --path)" my-catalog.xml --noout
 | `b2c-commerce`            | General B2C Commerce platform guides                      | `b2c-commerce/business-manager-overview`            |
 | `tooling`                 | B2C CLI, MCP, SDK, and VS Code extension guides           | `guide-authentication`, `guide-configuration`       |
 | `job-step`                | Standard (system) job step catalog                        | `ImportCatalog`, `ExportCatalog`, `job-steps`       |
+
+> **URLs:** Entries in `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfra`, `sfnext`, `b2c-commerce`, and `tooling` categories carry both `url` (human .html page) and `sourceUrl` (machine-readable .md). `job-step` entries have neither (content is bundled inline).
 
 ## Common Script API Classes
 
