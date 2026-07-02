@@ -1,0 +1,347 @@
+name: Docs Preview
+
+# Build the VitePress docs site for a pull request and publish it to a per-PR
+# preview location (S3 + CloudFront), then comment the preview URL on the PR.
+# The preview is rebuilt on every push and removed when the PR is closed.
+#
+# Triggers:
+#   - pull_request (docs/** changes): automatic preview build/refresh and cleanup.
+#   - workflow_dispatch (pr_number input): manually (re)build a preview for any PR
+#     in this repo, even one that didn't change docs/**. Dispatching a workflow
+#     already requires write access, so this is inherently maintainer-gated.
+#
+# Scope: previews run only for PRs raised from branches in this repository, not
+# from forks. The `resolve` job fetches the PR's head repo and refuses forks
+# before any code is checked out or credentials are configured (fail-closed).
+# Fork PRs still have their docs build validated by docs.yml — they just don't
+# get a hosted preview.
+#
+# Injection-safety: every workflow value used in run: blocks or github-script is
+# passed through env: and a PR is identified only by its number (validated as a
+# positive integer) and head SHA (from the API) — never by attacker-controllable
+# free text such as the branch name, PR title, or body.
+
+on:
+  pull_request:
+    # ready_for_review is included so a preview builds as soon as a draft PR is
+    # marked ready (draft PRs are skipped in the resolve job below).
+    types: [opened, reopened, synchronize, ready_for_review, closed]
+    # Only build previews for PRs targeting the long-lived integration branches.
+    branches:
+      - develop
+      - main
+    paths:
+      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to build a docs preview for (must be a PR from a branch in this repo, not a fork)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write # upsert the preview comment
+  id-token: write # AWS OIDC role assumption
+
+# One in-flight run per PR, across both triggers. A newer push (or the close
+# event) cancels an in-progress deploy; the cleanup job is idempotent so
+# cancellation is safe. inputs.pr_number covers the manual-dispatch case.
+concurrency:
+  group: docs-preview-${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  # Normalize both triggers into a single set of values and enforce the fork
+  # guard up front. Read-only: no checkout of PR code, no deploy credentials.
+  resolve:
+    name: Resolve PR context
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      pr_number: ${{ steps.r.outputs.pr_number }}
+      head_sha: ${{ steps.r.outputs.head_sha }}
+      action: ${{ steps.r.outputs.action }}
+      same_repo: ${{ steps.r.outputs.same_repo }}
+      is_draft: ${{ steps.r.outputs.is_draft }}
+    steps:
+      - name: Resolve PR number, head SHA, and same-repo status
+        id: r
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const {owner, repo} = context.repo;
+
+            let prNumber;
+            let action;
+            if (context.eventName === 'workflow_dispatch') {
+              action = 'manual';
+              prNumber = Number.parseInt(context.payload.inputs.pr_number, 10);
+              if (!Number.isInteger(prNumber) || prNumber <= 0) {
+                core.setFailed(`Invalid pr_number input: "${context.payload.inputs.pr_number}" (expected a positive integer).`);
+                return;
+              }
+            } else {
+              action = context.payload.action;
+              prNumber = context.payload.pull_request.number;
+            }
+
+            // Authoritative PR data — gives the head repo (for the fork guard)
+            // and the head SHA we build/comment against, for both triggers.
+            const {data: pr} = await github.rest.pulls.get({owner, repo, pull_number: prNumber});
+            const sameRepo = Boolean(pr.head.repo) && pr.head.repo.full_name === `${owner}/${repo}`;
+            // Skip draft PRs (build resumes on ready_for_review). A manual dispatch
+            // overrides this so a maintainer can force a preview for a draft.
+            const isDraft = action !== 'manual' && Boolean(pr.draft);
+
+            core.setOutput('pr_number', String(prNumber));
+            core.setOutput('head_sha', pr.head.sha);
+            core.setOutput('action', action);
+            core.setOutput('same_repo', sameRepo ? 'true' : 'false');
+            core.setOutput('is_draft', isDraft ? 'true' : 'false');
+
+            if (!sameRepo) {
+              core.notice(`PR #${prNumber} is from a fork (${pr.head.repo ? pr.head.repo.full_name : 'unknown'}); docs preview is skipped for forks.`);
+            }
+            if (isDraft) {
+              core.notice(`PR #${prNumber} is a draft; docs preview is skipped until it is marked ready for review.`);
+            }
+
+  deploy:
+    name: Build and publish preview
+    needs: resolve
+    if: >-
+      needs.resolve.outputs.same_repo == 'true' &&
+      needs.resolve.outputs.action != 'closed' &&
+      needs.resolve.outputs.is_draft != 'true'
+    runs-on: ubuntu-latest
+    # Bind to the environment that holds the AWS preview secrets/vars. Environment
+    # secrets are only injected into jobs that declare the environment — without
+    # this, secrets.AWS_PREVIEW_ROLE_ARN resolves empty and the deploy is skipped.
+    environment: b2c-docs-preview
+    env:
+      PR_NUMBER: ${{ needs.resolve.outputs.pr_number }}
+      AWS_PREVIEW_ROLE_ARN: ${{ secrets.AWS_PREVIEW_ROLE_ARN }}
+      DOCS_PREVIEW_BUCKET: ${{ secrets.DOCS_PREVIEW_BUCKET }}
+      DOCS_PREVIEW_CLOUDFRONT_ID: ${{ secrets.DOCS_PREVIEW_CLOUDFRONT_ID }}
+      DOCS_PREVIEW_BASE_URL: ${{ vars.DOCS_PREVIEW_BASE_URL }}
+    steps:
+      # The AWS preview infrastructure is provisioned outside this repo. Until
+      # the role-ARN secret exists, skip the deploy (green no-op) instead of
+      # failing every docs PR red.
+      - name: Check preview infrastructure is configured
+        id: cfg
+        run: |
+          if [ -n "$AWS_PREVIEW_ROLE_ARN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Docs preview infrastructure not configured (AWS_PREVIEW_ROLE_ARN missing); skipping preview deploy."
+          fi
+
+      # Check out the PR's head commit explicitly so the manual (workflow_dispatch)
+      # and automatic paths build the same thing. The SHA comes from the API and
+      # is safe to use as a ref.
+      - name: Checkout PR head
+        if: steps.cfg.outputs.enabled == 'true'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ needs.resolve.outputs.head_sha }}
+
+      - name: Setup pnpm
+        if: steps.cfg.outputs.enabled == 'true'
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        if: steps.cfg.outputs.enabled == 'true'
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 22
+
+      - name: Get pnpm store directory
+        if: steps.cfg.outputs.enabled == 'true'
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - name: Setup pnpm cache
+        if: steps.cfg.outputs.enabled == 'true'
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        if: steps.cfg.outputs.enabled == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        if: steps.cfg.outputs.enabled == 'true'
+        run: pnpm -r run build # builds the SDK that TypeDoc reads for API docs
+
+      # DOCS_BASE_PATH makes VitePress bake in the /pr-<n>/ base so every asset
+      # and link URL is prefixed for the preview subdirectory (see config.mts).
+      # The uxstudio S3 assets used by the production build are intentionally
+      # skipped — no docs source references them.
+      - name: Build documentation (per-PR base path)
+        if: steps.cfg.outputs.enabled == 'true'
+        env:
+          DOCS_BASE_PATH: /pr-${{ env.PR_NUMBER }}/
+        run: pnpm run docs:build
+
+      - name: Configure AWS credentials
+        if: steps.cfg.outputs.enabled == 'true'
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ secrets.AWS_PREVIEW_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_PREVIEW_REGION || 'us-east-1' }}
+
+      - name: Publish to S3
+        if: steps.cfg.outputs.enabled == 'true'
+        run: |
+          aws s3 sync docs/.vitepress/dist "s3://${DOCS_PREVIEW_BUCKET}/pr-${PR_NUMBER}/" --delete
+
+      - name: Invalidate CloudFront
+        if: steps.cfg.outputs.enabled == 'true'
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${DOCS_PREVIEW_CLOUDFRONT_ID}" \
+            --paths "/pr-${PR_NUMBER}/*"
+
+      - name: Comment preview URL on PR
+        if: steps.cfg.outputs.enabled == 'true'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          PREVIEW_URL: ${{ env.DOCS_PREVIEW_BASE_URL }}/pr-${{ env.PR_NUMBER }}/
+          COMMIT_SHA: ${{ needs.resolve.outputs.head_sha }}
+        with:
+          script: |
+            const marker = '<!-- docs-preview -->';
+            const {PREVIEW_URL, COMMIT_SHA, PR_NUMBER} = process.env;
+            const shortSha = COMMIT_SHA.slice(0, 7);
+            const body = [
+              marker,
+              '### 📘 Docs preview',
+              '',
+              'Your documentation changes are published at:',
+              '',
+              `**${PREVIEW_URL}**`,
+              '',
+              `Commit \`${shortSha}\` · ✅ Published`,
+              '',
+              '<sub>This preview updates on every push and is removed when the PR is closed.</sub>',
+            ].join('\n');
+
+            const {owner, repo} = context.repo;
+            const issue_number = Number.parseInt(PR_NUMBER, 10);
+
+            // Tag the PR so docs previews are easy to filter. addLabels is additive
+            // (it won't clobber other labels); create the label on first use if the
+            // repo doesn't have it yet.
+            const label = 'docs-preview';
+            try {
+              await github.rest.issues.addLabels({owner, repo, issue_number, labels: [label]});
+            } catch (err) {
+              if (err.status === 404) {
+                await github.rest.issues.createLabel({owner, repo, name: label, color: '0e8a16', description: 'Has a live rendered docs-site preview'}).catch(() => {});
+                await github.rest.issues.addLabels({owner, repo, issue_number, labels: [label]});
+              } else {
+                throw err;
+              }
+            }
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find((c) => c.body && c.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({owner, repo, comment_id: existing.id, body});
+            } else {
+              await github.rest.issues.createComment({owner, repo, issue_number, body});
+            }
+
+  cleanup:
+    name: Remove preview on close
+    needs: resolve
+    if: >-
+      needs.resolve.outputs.same_repo == 'true' &&
+      needs.resolve.outputs.action == 'closed'
+    runs-on: ubuntu-latest
+    # Same environment binding as the deploy job so cleanup can reach the AWS secrets.
+    environment: b2c-docs-preview
+    env:
+      PR_NUMBER: ${{ needs.resolve.outputs.pr_number }}
+      AWS_PREVIEW_ROLE_ARN: ${{ secrets.AWS_PREVIEW_ROLE_ARN }}
+      DOCS_PREVIEW_BUCKET: ${{ secrets.DOCS_PREVIEW_BUCKET }}
+      DOCS_PREVIEW_CLOUDFRONT_ID: ${{ secrets.DOCS_PREVIEW_CLOUDFRONT_ID }}
+    steps:
+      - name: Check preview infrastructure is configured
+        id: cfg
+        run: |
+          if [ -n "$AWS_PREVIEW_ROLE_ARN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Docs preview infrastructure not configured; nothing to clean up."
+          fi
+
+      - name: Configure AWS credentials
+        if: steps.cfg.outputs.enabled == 'true'
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ secrets.AWS_PREVIEW_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_PREVIEW_REGION || 'us-east-1' }}
+
+      - name: Delete preview from S3
+        if: steps.cfg.outputs.enabled == 'true'
+        run: |
+          aws s3 rm "s3://${DOCS_PREVIEW_BUCKET}/pr-${PR_NUMBER}/" --recursive
+
+      - name: Invalidate CloudFront
+        if: steps.cfg.outputs.enabled == 'true'
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${DOCS_PREVIEW_CLOUDFRONT_ID}" \
+            --paths "/pr-${PR_NUMBER}/*"
+
+      - name: Update PR comment
+        if: steps.cfg.outputs.enabled == 'true'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const marker = '<!-- docs-preview -->';
+            const body = [
+              marker,
+              '### 📘 Docs preview',
+              '',
+              '🧹 The preview for this PR has been removed (PR closed).',
+            ].join('\n');
+
+            const {owner, repo} = context.repo;
+            const issue_number = Number.parseInt(process.env.PR_NUMBER, 10);
+
+            // The preview is gone, so drop the docs-preview label. Ignore a 404
+            // (label was never applied / already removed).
+            await github.rest.issues.removeLabel({owner, repo, issue_number, name: 'docs-preview'}).catch((err) => {
+              if (err.status !== 404) throw err;
+            });
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find((c) => c.body && c.body.includes(marker));
+
+            // Only edit an existing preview comment; don't create one just to say "removed".
+            if (existing) {
+              await github.rest.issues.updateComment({owner, repo, comment_id: existing.id, body});
+            }

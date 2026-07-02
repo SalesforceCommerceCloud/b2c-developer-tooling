@@ -24,14 +24,34 @@ function copyMarkdownSources(srcDir: string, outDir: string) {
 // Build configuration from environment
 const isDevBuild = process.env.IS_DEV_BUILD === 'true';
 
+// Per-PR preview builds (CI) set DOCS_BASE_PATH to an absolute path such as "/pr-123/".
+// When present it overrides the normal base so every asset and link URL is prefixed for
+// the preview's subdirectory. Normalized to always have a single leading/trailing slash.
+const previewBasePath = process.env.DOCS_BASE_PATH
+  ? `/${process.env.DOCS_BASE_PATH.replace(/^\/+|\/+$/g, '')}/`
+  : undefined;
+
+// Public production docs URL — preview builds point their version switcher here because
+// relative links would otherwise resolve under the ephemeral /pr-N/ base.
+const prodDocsUrl = 'https://salesforcecommercecloud.github.io/b2c-developer-tooling/';
+
 // Base paths - dev build lives in /dev/ subdirectory, stable/release is at root
 const siteBase = '/b2c-developer-tooling';
-const basePath = isDevBuild ? `${siteBase}/dev/` : `${siteBase}/`;
+const basePath = previewBasePath ?? (isDevBuild ? `${siteBase}/dev/` : `${siteBase}/`);
 
 // Build version dropdown items
 // VitePress prepends base path to links starting with /, so we use relative paths
 // that work correctly for each build context
 function getVersionItems() {
+  if (previewBasePath) {
+    // Preview build: docs live under an ephemeral /pr-N/ base with no sibling versions.
+    // Link out to the published docs with absolute URLs so the switcher works.
+    return [
+      {text: 'Latest Release', link: prodDocsUrl},
+      {text: 'Development (main)', link: `${prodDocsUrl}dev/`},
+    ];
+  }
+
   if (isDevBuild) {
     // Dev build: base is /b2c-developer-tooling/dev/
     // Use ../ to navigate up to stable docs at root
@@ -294,7 +314,7 @@ export default defineConfig({
       {text: 'Reference', link: '/cli/'},
       {text: 'SDK', link: '/api/'},
       {
-        text: isDevBuild ? 'Dev' : 'Latest',
+        text: previewBasePath ? 'Preview' : isDevBuild ? 'Dev' : 'Latest',
         items: getVersionItems(),
       },
     ],
