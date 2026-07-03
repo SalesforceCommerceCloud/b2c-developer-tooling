@@ -163,6 +163,8 @@ suite('jobs menu contributions (package.json)', () => {
   test('jobs commands are declared and hidden from command palette where appropriate', () => {
     const expectedCommands = [
       'b2c-dx.jobs.openFilters',
+      'b2c-dx.jobs.openFiltersActive',
+      'b2c-dx.jobs.clearAllFilters',
       'b2c-dx.jobs.refresh',
       'b2c-dx.jobs.setStatusFilter',
       'b2c-dx.jobs.setHistoryFilters',
@@ -216,9 +218,31 @@ suite('jobs menu contributions (package.json)', () => {
       'b2c-dx.jobs.viewExecutionDetails',
       'b2c-dx.jobs.openExecutionLog',
       'b2c-dx.jobs.openFailureLog',
+      // Alias command that only exists to render a different title-bar icon
+      // when filters are active; the primary `openFilters` handles palette access.
+      'b2c-dx.jobs.openFiltersActive',
+      // Only invoked from the empty-state tree row; palette entry would be a dead-end.
+      'b2c-dx.jobs.clearAllFilters',
     ]) {
       assert.ok(hiddenInPalette.has(command), `${command} should be hidden from command palette`);
     }
+  });
+
+  test('filter title-bar icon swaps between filled and outlined based on active filters', () => {
+    const titleEntries = pkg.contributes.menus['view/title'].filter((entry) => entry.when?.includes('b2cJobsExplorer'));
+    const outlineEntry = titleEntries.find((entry) => entry.command === 'b2c-dx.jobs.openFilters');
+    const filledEntry = titleEntries.find((entry) => entry.command === 'b2c-dx.jobs.openFiltersActive');
+    assert.ok(outlineEntry, 'outlined filter icon entry must exist');
+    assert.ok(filledEntry, 'filled filter icon entry must exist');
+    assert.ok(
+      outlineEntry.when?.includes('!b2c-dx.jobs.hasActiveFilters'),
+      'outlined variant must be gated on !hasActiveFilters',
+    );
+    assert.ok(
+      filledEntry.when?.includes('b2c-dx.jobs.hasActiveFilters') &&
+        !filledEntry.when.includes('!b2c-dx.jobs.hasActiveFilters'),
+      'filled variant must be gated on hasActiveFilters',
+    );
   });
 
   test('job history title bar exposes the expected actions', () => {

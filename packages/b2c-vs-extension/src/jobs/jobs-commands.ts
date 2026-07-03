@@ -115,8 +115,12 @@ async function chooseUnifiedFilterAction(
         action: {kind: 'advanced'} as const,
       },
       {
-        label: 'Clear History Filters',
-        detail: 'Clear Job ID/user/date filters',
+        label: 'Clear All Filters',
+        // "Clear History Filters" was misleading: it only wiped the advanced
+        // fields, leaving the status filter set. Users expected one "clear"
+        // action to reset everything, so the option now resets status + all
+        // advanced fields together (see JobsTreeDataProvider.clearAllFilters).
+        detail: 'Reset status to All and clear Job ID / user / date filters',
         action: {kind: 'clear'} as const,
       },
     ],
@@ -151,12 +155,16 @@ async function promptForHistoryFilters(current: JobHistoryFilters): Promise<JobH
   const action = await vscode.window.showQuickPick(
     [
       {
-        label: 'Set / Update Filters',
+        label: 'Set / Update Advanced Filters',
         description: 'Filter by Job ID, user, start time, and end time',
       },
       {
-        label: 'Clear All Filters',
-        description: 'Remove job history filters and show all matching status entries',
+        // Scoped to advanced fields only — status is intentionally left alone
+        // here because the caller entered this dialog specifically to edit
+        // advanced filters. Users who want a full reset should pick "Clear All
+        // Filters" from the outer Job History Filters picker.
+        label: 'Clear Advanced Filters',
+        description: 'Remove Job ID / user / date filters (leaves the status filter as-is)',
       },
     ],
     {
@@ -166,7 +174,7 @@ async function promptForHistoryFilters(current: JobHistoryFilters): Promise<JobH
   );
 
   if (!action) return undefined;
-  if (action.label === 'Clear All Filters') {
+  if (action.label === 'Clear Advanced Filters') {
     return {
       jobIdContains: '',
       executedBy: '',
@@ -977,8 +985,12 @@ export function registerJobsCommands(
     }
 
     if (action.kind === 'clear') {
-      treeProvider.clearHistoryFilters();
-      void vscode.window.showInformationMessage('Job history filters cleared.');
+      // "Clear All Filters" resets status AND advanced fields — matches user
+      // mental model (one "clear" wipes everything). The previous behavior
+      // only cleared advanced fields, so the toast lied when a status filter
+      // was still narrowing the tree.
+      treeProvider.clearAllFilters();
+      void vscode.window.showInformationMessage('All job history filters cleared.');
       return;
     }
 
@@ -986,8 +998,28 @@ export function registerJobsCommands(
     if (!nextFilters) return;
     treeProvider.setHistoryFilters(nextFilters);
     void vscode.window.showInformationMessage(
-      treeProvider.hasHistoryFilters() ? 'Job history filters updated.' : 'Job history filters cleared.',
+      treeProvider.hasHistoryFilters() ? 'Job history filters updated.' : 'Advanced job history filters cleared.',
     );
+  });
+
+  // Alias command bound to the filled-filter title-bar icon. VS Code doesn't
+  // support conditional icons on a single command, so the "filters are active"
+  // state is expressed by swapping to a second command entry with the same
+  // handler but a different icon (see `contributes.commands` + `menus.view/title`
+  // in package.json). Hidden from the command palette.
+  const openFiltersActive = registerSafeCommand('b2c-dx.jobs.openFiltersActive', async () => {
+    await vscode.commands.executeCommand('b2c-dx.jobs.openFilters');
+  });
+
+  // One-shot "reset everything" — wired to the empty-state row's click when
+  // filters are hiding results, and exposed as a first-class command for
+  // keyboard/palette use. Silent no-op when nothing is set.
+  const clearAllFilters = registerSafeCommand('b2c-dx.jobs.clearAllFilters', () => {
+    const hadAny = treeProvider.hasAnyActiveFilter();
+    treeProvider.clearAllFilters();
+    if (hadAny) {
+      void vscode.window.showInformationMessage('All job history filters cleared.');
+    }
   });
 
   const setHistoryFilters = registerSafeCommand('b2c-dx.jobs.setHistoryFilters', async () => {
@@ -1406,6 +1438,8 @@ export function registerJobsCommands(
     detailsProvider,
     refresh,
     openFilters,
+    openFiltersActive,
+    clearAllFilters,
     setStatusFilter,
     setHistoryFilters,
     setNameFilter,

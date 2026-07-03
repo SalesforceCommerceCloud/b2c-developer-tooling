@@ -131,17 +131,16 @@ function statusFilterLabel(filter: JobStatusFilter): string {
   return 'Completed';
 }
 
-function emptyStateTitle(filter: JobStatusFilter): string {
-  if (filter === 'active') return 'No jobs running';
-  if (filter === 'running') return 'No jobs running';
-  if (filter === 'scheduled') return 'No scheduled jobs';
-  if (filter === 'failed') return 'No failed jobs';
-  if (filter === 'completed') return 'No completed jobs';
+function emptyStateTitle(filter: JobStatusFilter, filtersApplied: boolean): string {
+  // When ANY filter is narrowing results, lead with "No matching jobs" — the
+  // status label alone (e.g. "No running jobs") wrongly implied that no jobs
+  // are running at all, when in reality other filters were also hiding rows.
+  if (filtersApplied || filter !== 'all') return 'No matching jobs';
   return 'No jobs found';
 }
 
 function emptyStateDescription(filter: JobStatusFilter, filtersApplied: boolean): string {
-  if (filtersApplied) return 'Adjust or clear filters to see more.';
+  if (filtersApplied) return 'Click here to clear all filters.';
   if (filter === 'all') return 'Run a job to populate history.';
   return 'Change the status filter to see other entries.';
 }
@@ -339,17 +338,26 @@ export class JobExecutionTreeItem extends vscode.TreeItem {
 export class JobsEmptyStateTreeItem extends vscode.TreeItem {
   readonly nodeType = 'emptyState' as const;
 
-  constructor(filter: JobStatusFilter, filtersApplied: boolean) {
-    super(emptyStateTitle(filter), vscode.TreeItemCollapsibleState.None);
+  constructor(filter: JobStatusFilter, filtersApplied: boolean, filterSummary?: string) {
+    super(emptyStateTitle(filter, filtersApplied), vscode.TreeItemCollapsibleState.None);
     this.id = `jobs-empty-state:${filter}`;
     this.contextValue = 'jobs-empty-state';
     this.iconPath = new vscode.ThemeIcon('info');
-    this.description = filtersApplied
-      ? `${emptyStateDescription(filter, filtersApplied)} (filters active)`
-      : emptyStateDescription(filter, filtersApplied);
+    this.description = emptyStateDescription(filter, filtersApplied);
     this.tooltip = new vscode.MarkdownString(
-      `No job history entries match **${statusFilterLabel(filter)}** right now.\n\nUse the title-bar actions to change the status filter or clear name/advanced filters.`,
+      filtersApplied
+        ? `No entries match the active filters${filterSummary ? `:\n\n\`${filterSummary}\`` : '.'}\n\nClick this row to clear all filters and show every entry, or use the title-bar filter icon to adjust.`
+        : `No job history entries to show. Run a job in Business Manager or via the extension to populate the timeline.`,
     );
+    // When filters are the reason nothing shows, wire the empty row itself to
+    // clear them — one click undoes the accidental narrowing, no digging
+    // through Quick Pick menus.
+    if (filtersApplied) {
+      this.command = {
+        command: 'b2c-dx.jobs.clearAllFilters',
+        title: 'Clear All Filters',
+      };
+    }
   }
 }
 
@@ -400,6 +408,7 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
     this.groupingMode = getDefaultGroupingMode();
     this.updateStatusFilterContext();
     this.updateGroupingModeContext();
+    this.updateHasActiveFiltersContext();
   }
 
   getStatusFilter(): JobStatusFilter {
@@ -420,6 +429,7 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
     if (unchanged) return;
 
     this.historyFilters = normalized;
+    this.updateHasActiveFiltersContext();
     this.onDidChangeTreeDataEmitter.fire();
   }
 
@@ -429,6 +439,65 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
 
   hasHistoryFilters(): boolean {
     return hasHistoryFilters(this.historyFilters);
+  }
+
+  /**
+   * Whether any filter (status other than `all`, or an advanced field) is
+   * currently narrowing the tree. Used to swap the title-bar filter icon to
+   * a filled variant and to gate the message summary — so users can't miss
+   * that results are being hidden.
+   */
+  hasAnyActiveFilter(): boolean {
+    return this.statusFilter !== 'all' || this.hasHistoryFilters();
+  }
+
+  /**
+   * Compact one-line summary of the currently-active filters, or `undefined`
+   * when none are set. Rendered into the tree view's title-bar message so the
+   * user always sees at a glance which filters are hiding results.
+   *
+   * Each part is explicitly labeled (`Status=`, `Job~=`, etc.) so a bare word
+   * like "Active" can't be mistaken for a state flag (the earlier version
+   * emitted "Filters: Active" for the Active status, which read as if it meant
+   * "filters are active" rather than "showing Active jobs").
+   */
+  describeActiveFilters(): string | undefined {
+    const parts: string[] = [];
+    if (this.statusFilter !== 'all') {
+      parts.push(`Status=${statusFilterLabel(this.statusFilter)}`);
+    }
+    if (this.historyFilters.jobIdContains) {
+      parts.push(`Job~="${this.historyFilters.jobIdContains}"`);
+    }
+    if (this.historyFilters.executedBy) {
+      parts.push(`User~="${this.historyFilters.executedBy}"`);
+    }
+    if (this.historyFilters.startFrom) {
+      parts.push(`From=${this.historyFilters.startFrom}`);
+    }
+    if (this.historyFilters.endTo) {
+      parts.push(`To=${this.historyFilters.endTo}`);
+    }
+    return parts.length > 0 ? parts.join(' | ') : undefined;
+  }
+
+  /**
+   * Clears BOTH the status filter (back to "all") and every advanced filter in
+   * one shot. Exists because users think of "filters" as one concept — the old
+   * "Clear History Filters" only wiped the advanced fields, leaving the status
+   * filter set, which produced the confusing "filters cleared" toast while the
+   * status filter kept hiding results.
+   */
+  clearAllFilters(): void {
+    const statusChanged = this.statusFilter !== 'all';
+    const historyChanged = hasHistoryFilters(this.historyFilters);
+    if (!statusChanged && !historyChanged) return;
+
+    this.statusFilter = 'all';
+    this.historyFilters = EMPTY_HISTORY_FILTERS;
+    this.updateStatusFilterContext();
+    this.updateHasActiveFiltersContext();
+    this.onDidChangeTreeDataEmitter.fire();
   }
 
   getLastSuccessfulRefreshAt(): Date | undefined {
@@ -451,6 +520,7 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
     if (this.statusFilter === filter) return;
     this.statusFilter = filter;
     this.updateStatusFilterContext();
+    this.updateHasActiveFiltersContext();
     this.onDidChangeTreeDataEmitter.fire();
   }
 
@@ -573,6 +643,16 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
   }
 
   /**
+   * Publishes a boolean context key that the title-bar menus watch to swap the
+   * filter icon between the outline (`$(filter)`) and filled (`$(filter-filled)`)
+   * variants. Kept in sync everywhere filters change — including construction —
+   * so the UI never lies about whether results are being narrowed.
+   */
+  private updateHasActiveFiltersContext(): void {
+    void vscode.commands.executeCommand('setContext', 'b2c-dx.jobs.hasActiveFilters', this.hasAnyActiveFilter());
+  }
+
+  /**
    * Mirrors the grouping mode into VS Code context so package.json can swap the
    * title-bar icon between `list-flat` (timeline) and `list-tree` (grouped).
    */
@@ -606,7 +686,11 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
       );
 
     if (rows.length === 0) {
-      return [new JobsEmptyStateTreeItem(this.statusFilter, this.hasHistoryFilters())];
+      // Reflect ANY active filter (status or advanced) — not just the advanced
+      // ones. Previously this only used hasHistoryFilters(), so a status-only
+      // filter (e.g. "Failed") produced the plain "No failed jobs" copy with
+      // no clear-filter affordance, even though a filter was hiding rows.
+      return [new JobsEmptyStateTreeItem(this.statusFilter, this.hasAnyActiveFilter(), this.describeActiveFilters())];
     }
 
     if (this.groupingMode === 'groupByJobId') {

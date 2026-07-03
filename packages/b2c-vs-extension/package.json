@@ -1153,6 +1153,18 @@
         "category": "B2C DX - Job History"
       },
       {
+        "command": "b2c-dx.jobs.openFiltersActive",
+        "title": "Filter Job History (filters active)",
+        "icon": "$(filter-filled)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.clearAllFilters",
+        "title": "Clear All Job History Filters",
+        "icon": "$(clear-all)",
+        "category": "B2C DX - Job History"
+      },
+      {
         "command": "b2c-dx.jobs.refresh",
         "title": "Refresh",
         "icon": "$(refresh)",
@@ -1836,7 +1848,12 @@
         },
         {
           "command": "b2c-dx.jobs.openFilters",
-          "when": "view == b2cJobsExplorer",
+          "when": "view == b2cJobsExplorer && !b2c-dx.jobs.hasActiveFilters",
+          "group": "navigation@4"
+        },
+        {
+          "command": "b2c-dx.jobs.openFiltersActive",
+          "when": "view == b2cJobsExplorer && b2c-dx.jobs.hasActiveFilters",
           "group": "navigation@4"
         },
         {
@@ -2211,6 +2228,14 @@
       "commandPalette": [
         {
           "command": "b2c-dx.isml.createTemplate",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.openFiltersActive",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.clearAllFilters",
           "when": "false"
         },
         {

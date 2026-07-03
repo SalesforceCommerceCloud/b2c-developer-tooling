@@ -41,7 +41,12 @@ export function registerJobs(context: vscode.ExtensionContext, configProvider: B
     }
     const refreshLabel = lastRefresh ? lastRefresh.toLocaleTimeString() : '—';
     const autoLabel = treeProvider.isPollingEnabled() ? ' · Auto-Refresh on' : '';
-    treeView.message = `Updated ${refreshLabel}${autoLabel}`;
+    // Prepend an explicit filter summary whenever any filter is narrowing the
+    // tree. This is the primary "hey, results are being hidden" signal — the
+    // title-bar icon swap alone was too easy to miss.
+    const filterSummary = treeProvider.describeActiveFilters();
+    const filterLabel = filterSummary ? `Filters: ${filterSummary} · ` : '';
+    treeView.message = `${filterLabel}Updated ${refreshLabel}${autoLabel}`;
   };
   updateJobHistoryMessage();
 
@@ -82,6 +87,12 @@ export function registerJobs(context: vscode.ExtensionContext, configProvider: B
   // above — visible as a noticeable lag after pressing Refresh.
   const onDidLoadSub = treeProvider.onDidLoad(() => updateJobHistoryMessage());
 
+  // Filter changes fire onDidChangeTreeData (not onDidLoad), so subscribe there
+  // too — otherwise the "Filters: …" prefix in the message would lag until the
+  // next 5s timer tick (or the next fetch). Fast-path only; the fire itself is
+  // already gated to real state changes inside the provider.
+  const onDidChangeTreeSub = treeProvider.onDidChangeTreeData(() => updateJobHistoryMessage());
+
   const builtInScaffoldsDir = path.join(context.extensionPath, 'dist', 'data', 'scaffolds');
   const commandDisposables = registerJobsCommands(configProvider, treeProvider, {
     builtInScaffoldsDir,
@@ -100,7 +111,7 @@ export function registerJobs(context: vscode.ExtensionContext, configProvider: B
     updateJobHistoryMessage();
   });
 
-  context.subscriptions.push(treeView, onDidLoadSub, ...commandDisposables, {
+  context.subscriptions.push(treeView, onDidLoadSub, onDidChangeTreeSub, ...commandDisposables, {
     dispose: () => {
       clearInterval(messageRefreshTimer);
       treeProvider.stopPolling();
