@@ -11,6 +11,7 @@ MCP tools for connecting to the B2C Commerce Script Debugger API (SDAPI), settin
 Requires **Basic Auth** credentials only. OAuth is not supported by the SDAPI.
 
 **Required:**
+
 - **Basic Auth** - `hostname`, `username`, and `password` (WebDAV access key) for a Business Manager user with the `WebDAV_Manage_Customization` permission.
 
 **Configuration priority:** Flags → Environment variables → `dw.json` config file
@@ -39,27 +40,53 @@ Start a new script debugger session. Connects to the SDAPI, discovers cartridge 
 
 > **Warning:** Debug sessions can halt remote request threads on the instance. Use `debug_end_session` to cleanly disconnect when done.
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `cartridge_directory` | string | No | Project directory | Path to directory containing cartridges |
-| `client_id` | string | No | `b2c-cli` | Client ID for the debugger API. Use a different ID for concurrent sessions on the same host. |
+| Parameter             | Type   | Required | Default           | Description                                                                                  |
+| --------------------- | ------ | -------- | ----------------- | -------------------------------------------------------------------------------------------- |
+| `cartridge_directory` | string | No       | Project directory | Path to directory containing cartridges                                                      |
+| `client_id`           | string | No       | `b2c-cli`         | Client ID for the debugger API. Use a different ID for concurrent sessions on the same host. |
 
-**Returns:** `session_id`, `hostname`, discovered `cartridges`, and `warnings`.
+**Returns:** `session_id`, `hostname`, discovered `cartridges`, `session_cookie` (see [Server affinity](#server-affinity-hitting-breakpoints)), and `warnings`.
 
 ### debug_end_session
 
 End a script debugger session. Disconnects from the SDAPI, stops polling, and cleans up resources.
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `session_id` | string | Yes | | Session ID from `debug_start_session` |
-| `clear_breakpoints` | boolean | No | `false` | Delete all breakpoints before disconnecting |
+| Parameter           | Type    | Required | Default | Description                                 |
+| ------------------- | ------- | -------- | ------- | ------------------------------------------- |
+| `session_id`        | string  | Yes      |         | Session ID from `debug_start_session`       |
+| `clear_breakpoints` | boolean | No       | `false` | Delete all breakpoints before disconnecting |
 
 ### debug_list_sessions
 
-List all active debug sessions. Returns session IDs, connected hostnames, and any currently halted threads.
+List all active debug sessions. Returns session IDs, connected hostnames, any currently halted threads, armed breakpoints, and each session's `session_cookie` (see [Server affinity](#server-affinity-hitting-breakpoints)).
 
 No parameters.
+
+---
+
+## Server affinity (hitting breakpoints)
+
+B2C Commerce instances may run multiple application servers behind a load balancer. The debugger attaches to **one** app server, and a breakpoint only fires when your code executes on that same server.
+
+To pin the triggering request to the correct app server, both `debug_start_session` and `debug_list_sessions` return a `session_cookie`:
+
+```json
+{"name": "dwsid", "value": "abc123..."}
+```
+
+Send your triggering request — a storefront page load, a SCAPI/OCAPI call, etc. — with this cookie so it lands on the app server holding the debug session:
+
+```
+Cookie: dwsid=abc123...
+```
+
+For headless server-to-server requests that trigger hooks, custom APIs, or SCAPI/OCAPI endpoints — where setting a cookie is awkward — pass the same value as the `sfdc_dwsid` request header instead:
+
+```
+sfdc_dwsid: abc123...
+```
+
+If `session_cookie` is `null`, the debugger did not establish a session cookie; a warning is included and breakpoints may not be reliably hit on multi-app-server instances.
 
 ---
 
@@ -71,18 +98,18 @@ Set breakpoints in a debug session. **Replaces** all previously set breakpoints.
 
 Accepts local file paths (mapped to server paths via cartridge discovery), cartridge-prefixed paths (e.g. `app_storefront/cartridge/controllers/Cart.js`), or server paths starting with `/`.
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `session_id` | string | Yes | Session ID from `debug_start_session` |
-| `breakpoints` | array | Yes | Array of `{file, line, condition?}` objects |
+| Parameter     | Type   | Required | Description                                 |
+| ------------- | ------ | -------- | ------------------------------------------- |
+| `session_id`  | string | Yes      | Session ID from `debug_start_session`       |
+| `breakpoints` | array  | Yes      | Array of `{file, line, condition?}` objects |
 
 Each breakpoint object:
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `file` | string | Yes | Local file path, cartridge-prefixed path, or server script path |
-| `line` | number | Yes | Line number |
-| `condition` | string | No | Conditional expression — breakpoint only triggers when true |
+| Field       | Type   | Required | Description                                                     |
+| ----------- | ------ | -------- | --------------------------------------------------------------- |
+| `file`      | string | Yes      | Local file path, cartridge-prefixed path, or server script path |
+| `line`      | number | Yes      | Line number                                                     |
+| `condition` | string | No       | Conditional expression — breakpoint only triggers when true     |
 
 ---
 
@@ -92,10 +119,10 @@ Each breakpoint object:
 
 Wait for a thread to halt at a breakpoint or step. Returns immediately if a thread is already halted. Otherwise **blocks** until a halt occurs or the timeout expires — the user or an external process must trigger a request on the instance while this tool is waiting.
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `session_id` | string | Yes | | Session ID |
-| `timeout_ms` | number | No | 30000 | Timeout in milliseconds (max 120000) |
+| Parameter    | Type   | Required | Default | Description                          |
+| ------------ | ------ | -------- | ------- | ------------------------------------ |
+| `session_id` | string | Yes      |         | Session ID                           |
+| `timeout_ms` | number | No       | 30000   | Timeout in milliseconds (max 120000) |
 
 **Returns:** `{halted, thread_id, location}` or `{halted: false, timed_out: true}`.
 
@@ -103,37 +130,37 @@ Wait for a thread to halt at a breakpoint or step. Returns immediately if a thre
 
 Resume execution of a halted thread.
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `session_id` | string | Yes | Session ID |
-| `thread_id` | number | Yes | Thread ID of the halted thread |
+| Parameter    | Type   | Required | Description                    |
+| ------------ | ------ | -------- | ------------------------------ |
+| `session_id` | string | Yes      | Session ID                     |
+| `thread_id`  | number | Yes      | Thread ID of the halted thread |
 
 ### debug_step_over
 
 Step to the next line in the current function. Follow with `debug_wait_for_stop`.
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `session_id` | string | Yes | Session ID |
-| `thread_id` | number | Yes | Thread ID |
+| Parameter    | Type   | Required | Description |
+| ------------ | ------ | -------- | ----------- |
+| `session_id` | string | Yes      | Session ID  |
+| `thread_id`  | number | Yes      | Thread ID   |
 
 ### debug_step_into
 
 Step into the function call on the current line. Follow with `debug_wait_for_stop`.
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `session_id` | string | Yes | Session ID |
-| `thread_id` | number | Yes | Thread ID |
+| Parameter    | Type   | Required | Description |
+| ------------ | ------ | -------- | ----------- |
+| `session_id` | string | Yes      | Session ID  |
+| `thread_id`  | number | Yes      | Thread ID   |
 
 ### debug_step_out
 
 Step out of the current function, returning to the caller. Follow with `debug_wait_for_stop`.
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `session_id` | string | Yes | Session ID |
-| `thread_id` | number | Yes | Thread ID |
+| Parameter    | Type   | Required | Description |
+| ------------ | ------ | -------- | ----------- |
+| `session_id` | string | Yes      | Session ID  |
+| `thread_id`  | number | Yes      | Thread ID   |
 
 ---
 
@@ -143,22 +170,22 @@ Step out of the current function, returning to the caller. Follow with `debug_wa
 
 Get the call stack for a halted thread. Returns stack frames with mapped local file paths and server script paths.
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `session_id` | string | Yes | Session ID |
-| `thread_id` | number | Yes | Thread ID |
+| Parameter    | Type   | Required | Description |
+| ------------ | ------ | -------- | ----------- |
+| `session_id` | string | Yes      | Session ID  |
+| `thread_id`  | number | Yes      | Thread ID   |
 
 ### debug_get_variables
 
 Get variables for a stack frame in a halted thread.
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `session_id` | string | Yes | | Session ID |
-| `thread_id` | number | Yes | | Thread ID |
-| `frame_index` | number | No | `0` | Stack frame index (0 = top frame) |
-| `scope` | string | No | All scopes | Filter by `local`, `closure`, or `global` |
-| `object_path` | string | No | | Dot-delimited path to drill into an object (e.g. `request.httpParameters`) |
+| Parameter     | Type   | Required | Default    | Description                                                                |
+| ------------- | ------ | -------- | ---------- | -------------------------------------------------------------------------- |
+| `session_id`  | string | Yes      |            | Session ID                                                                 |
+| `thread_id`   | number | Yes      |            | Thread ID                                                                  |
+| `frame_index` | number | No       | `0`        | Stack frame index (0 = top frame)                                          |
+| `scope`       | string | No       | All scopes | Filter by `local`, `closure`, or `global`                                  |
+| `object_path` | string | No       |            | Dot-delimited path to drill into an object (e.g. `request.httpParameters`) |
 
 ### debug_evaluate
 
@@ -166,12 +193,12 @@ Evaluate an expression in the context of a halted thread and stack frame.
 
 > **Warning:** Expressions can have side effects (modify variables, call functions). Use with care.
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `session_id` | string | Yes | | Session ID |
-| `thread_id` | number | Yes | | Thread ID |
-| `frame_index` | number | No | `0` | Stack frame index |
-| `expression` | string | Yes | | JavaScript expression to evaluate |
+| Parameter     | Type   | Required | Default | Description                       |
+| ------------- | ------ | -------- | ------- | --------------------------------- |
+| `session_id`  | string | Yes      |         | Session ID                        |
+| `thread_id`   | number | Yes      |         | Thread ID                         |
+| `frame_index` | number | No       | `0`     | Stack frame index                 |
+| `expression`  | string | Yes      |         | JavaScript expression to evaluate |
 
 ---
 
@@ -183,15 +210,15 @@ Set a breakpoint, wait for it to be hit, and capture a diagnostic snapshot — s
 
 > **Important:** This tool **blocks** until the breakpoint is hit or the timeout expires. The user or an external process must trigger a request on the instance while this tool is waiting.
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `session_id` | string | Yes | | Session ID |
-| `file` | string | Yes | | File path for the breakpoint |
-| `line` | number | Yes | | Line number |
-| `condition` | string | No | | Conditional expression |
-| `expressions` | string[] | No | | Expressions to evaluate when hit |
-| `timeout_ms` | number | No | 30000 | Timeout waiting for the breakpoint (max 120000) |
-| `auto_continue` | boolean | No | `false` | Resume the thread after capturing |
+| Parameter       | Type     | Required | Default | Description                                     |
+| --------------- | -------- | -------- | ------- | ----------------------------------------------- |
+| `session_id`    | string   | Yes      |         | Session ID                                      |
+| `file`          | string   | Yes      |         | File path for the breakpoint                    |
+| `line`          | number   | Yes      |         | Line number                                     |
+| `condition`     | string   | No       |         | Conditional expression                          |
+| `expressions`   | string[] | No       |         | Expressions to evaluate when hit                |
+| `timeout_ms`    | number   | No       | 30000   | Timeout waiting for the breakpoint (max 120000) |
+| `auto_continue` | boolean  | No       | `false` | Resume the thread after capturing               |
 
 ---
 

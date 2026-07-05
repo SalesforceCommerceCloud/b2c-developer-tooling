@@ -99,6 +99,21 @@ The tenant ID and short code can be overridden via flags or environment variable
 
 See `b2c scapi custom --help` for a full list of available commands and options.
 
+## OAuth Scopes (manual token minting)
+
+`b2c scapi custom status` injects the scopes it needs automatically — the domain scope `sfcc.custom-apis` plus the tenant scope `SALESFORCE_COMMERCE_API:<tenant_id>`. You don't pass these for the command itself.
+
+When you mint a token **by hand** (with `b2c auth token` or curl) to call a custom Admin API directly, that injection does **not** happen — you must list both the tenant scope and your scope(s) yourself. `b2c auth token` accepts multiple scopes (repeat `--auth-scope` or comma-separate):
+
+```bash
+# Token for calling a custom Admin API endpoint
+b2c auth token \
+  --auth-scope "SALESFORCE_COMMERCE_API:zzpq_013" \
+  --auth-scope c_my_admin_scope
+```
+
+A token missing the tenant scope returns 403. See `b2c:b2c-custom-api-development` (Testing Reference) for full request examples.
+
 ## Related Skills
 
 - `b2c:b2c-custom-api-development` - Creating Custom API endpoints (schema, script, mapping)

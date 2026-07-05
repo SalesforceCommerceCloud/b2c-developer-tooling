@@ -24,6 +24,7 @@
 | [InvoiceItem](dw.order.InvoiceItem.md) | Represents a specific item in an [Invoice](dw.order.Invoice.md). |
 | [LineItem](dw.order.LineItem.md) | Common line item base class. |
 | [LineItemCtnr](dw.order.LineItemCtnr.md) | A container for line items, such as ProductLineItems, CouponLineItems, GiftCertificateLineItems. |
+| [LineItemTax](dw.order.LineItemTax.md) | A tax on a line item: tax identifier, rate, and optional amount. |
 | [Order](dw.order.Order.md) | The Order class represents an order. |
 | [OrderAddress](dw.order.OrderAddress.md) | The Address class represents a customer's address. |
 | [OrderItem](dw.order.OrderItem.md) | Defines _extensions_ to [ProductLineItem](dw.order.ProductLineItem.md)s and  [ShippingLineItem](dw.order.ShippingLineItem.md)s belonging to an [order](dw.order.Order.md). |

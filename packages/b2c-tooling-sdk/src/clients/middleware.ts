@@ -13,6 +13,7 @@
  */
 import type {Middleware} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
+import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 
 /**
@@ -118,7 +119,13 @@ export function createAuthMiddleware(auth: AuthStrategy): Middleware {
         } as RequestInit);
 
         // Retry the request
-        const retryResponse = await fetch(retryRequest);
+        let retryResponse: Response;
+        try {
+          retryResponse = await fetch(retryRequest);
+        } catch (err) {
+          const host = new URL(request.url).host;
+          throw wrapNetworkError(err, {operation: 'Auth middleware retry', host});
+        }
 
         logger.debug({status: retryResponse.status}, `[AuthMiddleware] Retry response: ${retryResponse.status}`);
 

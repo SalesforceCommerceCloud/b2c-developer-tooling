@@ -20,11 +20,13 @@ Install, uninstall, list, and tasks commands require OAuth authentication with O
 
 Configure these resources in Business Manager under **Administration** > **Site Development** > **Open Commerce API Settings**:
 
-| Resource | Methods | Commands |
-|----------|---------|----------|
-| `/jobs/*/executions` | POST | `cap install`, `cap uninstall`, `cap list`, `cap tasks` |
-| `/jobs/*/executions/*` | GET | `cap install`, `cap uninstall`, `cap list`, `cap tasks` |
-| `/sites` | GET | `cap list` (when no `--site-id` specified) |
+| Resource               | Methods | Commands                                                |
+| ---------------------- | ------- | ------------------------------------------------------- |
+| `/jobs/*/executions`   | POST    | `cap install`, `cap uninstall`, `cap list`, `cap tasks` |
+| `/jobs/*/executions/*` | GET     | `cap install`, `cap uninstall`, `cap list`, `cap tasks` |
+| `/sites`               | GET     | `cap list` (when no `--site-id` specified)              |
+
+The `cap` commands poll job status via `GET /jobs/*/executions/*`. The official [Commerce Apps reference](https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/reference.html) also lists `/job_execution_search` (POST) under the permissions for Commerce App job execution; the `cap` commands don't call it, but granting it lets a single OCAPI client match the full reference set.
 
 ### WebDAV Access
 
@@ -44,14 +46,14 @@ b2c cap validate PATH
 
 ### Arguments
 
-| Argument | Description |
-|----------|-------------|
-| `PATH` | Path to a CAP directory or `.zip` file |
+| Argument | Description                            |
+| -------- | -------------------------------------- |
+| `PATH`   | Path to a CAP directory or `.zip` file |
 
 ### Flags
 
-| Flag | Description |
-|------|-------------|
+| Flag     | Description           |
+| -------- | --------------------- |
 | `--json` | Output result as JSON |
 
 ### Validation Checks
@@ -71,8 +73,10 @@ b2c cap validate PATH
 
 **Warnings** (advisory):
 
-- `icons/icon.png` is recommended for marketplace listing
+- A marketplace icon is recommended. The command looks specifically for `icons/icon.png`; note that the Commerce Apps registry expects the icon to be named after the ISV (`icons/{isv-name}.{ext}`, where `{ext}` is `png`, `svg`, `jpg`, or `jpeg`), so a registry-ready CAP may still warn here.
 - `impex/uninstall/` is recommended for clean removal
+
+> **Note:** `b2c cap validate` performs **local structural checks only** (the items above). It enforces the manifest fields the CLI itself relies on — `id`, `name`, `version`, and `domain` — but the Commerce Apps registry additionally requires `description` and a `publisher` object (`publisher.name`, `publisher.url`, `publisher.support`). A CAP can therefore pass `b2c cap validate` and still be rejected by the registry. For registry-grade validation (manifest completeness, SHA-256, Storefront Next locale coverage, IMPEX install/uninstall pairing), use the `cap-dev` skills' `/validate-app` and the [Testing & Validation guide](https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/testing-validation.html).
 
 ### Examples
 
@@ -101,16 +105,16 @@ b2c cap package PATH [--output PATH]
 
 ### Arguments
 
-| Argument | Description |
-|----------|-------------|
-| `PATH` | Path to the CAP source directory |
+| Argument | Description                      |
+| -------- | -------------------------------- |
+| `PATH`   | Path to the CAP source directory |
 
 ### Flags
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--output PATH` | `-o` | Output path (directory or `.zip` filename). Defaults to current directory. |
-| `--json` | | Output result as JSON |
+| Flag            | Short | Description                                                                |
+| --------------- | ----- | -------------------------------------------------------------------------- |
+| `--output PATH` | `-o`  | Output path (directory or `.zip` filename). Defaults to current directory. |
+| `--json`        |       | Output result as JSON                                                      |
 
 ### Examples
 
@@ -139,19 +143,20 @@ b2c cap install PATH --site-id SITE_ID
 
 ### Arguments
 
-| Argument | Description |
-|----------|-------------|
-| `PATH` | Path to a CAP directory or `.zip` file |
+| Argument | Description                            |
+| -------- | -------------------------------------- |
+| `PATH`   | Path to a CAP directory or `.zip` file |
 
 ### Flags
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--site-id SITE_ID` | `-s` | **Required.** Site ID to install the app on |
-| `--clean-archive` | | Delete the uploaded zip from the instance after install |
-| `--timeout SECONDS` | `-t` | Timeout in seconds (default: no timeout) |
-| `--skip-validate` | | Skip CAP structure validation before install |
-| `--json` | | Output result as JSON |
+| Flag                | Short | Description                                                                                                                                                          |
+| ------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--site-id SITE_ID` | `-s`  | **Required.** Site ID to install the app on                                                                                                                          |
+| `--clean-archive`   |       | Delete the uploaded zip from the instance after install                                                                                                              |
+| `--timeout SECONDS` | `-t`  | Timeout in seconds (default: no timeout)                                                                                                                             |
+| `--skip-validate`   |       | Skip CAP structure validation before install                                                                                                                         |
+| `--create-pr`       |       | Create a pull request against the Storefront Next storefront when the app includes storefront content and a repository is connected to the storefront (default: off) |
+| `--json`            |       | Output result as JSON                                                                                                                                                |
 
 ### Install Process
 
@@ -176,6 +181,19 @@ b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site-id RefArch --skip-valid
 
 # Remove the uploaded archive after install
 b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site-id RefArch --clean-archive
+
+# Create a Storefront Next pull request for the app's storefront content
+b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site-id RefArch --create-pr
+```
+
+### Creating a Storefront Pull Request
+
+When a Commerce App includes Storefront Next content, the `--create-pr` flag instructs the install job to automatically open a pull request against the related Storefront Next storefront — provided a repository is also connected to the storefront. The pull request contains the storefront changes the app provides, so a developer can review and merge them rather than having them applied directly.
+
+This flag is **off by default**. If the app has no storefront content, or no repository is connected to the storefront, the flag has no effect and the install proceeds normally.
+
+```bash
+b2c cap install ./commerce-avalara-tax-app-v0.2.5 --site-id RefArch --create-pr
 ```
 
 ---
@@ -192,17 +210,17 @@ b2c cap uninstall APP_NAME --site-id SITE_ID
 
 ### Arguments
 
-| Argument | Description |
-|----------|-------------|
+| Argument   | Description                                                                     |
+| ---------- | ------------------------------------------------------------------------------- |
 | `APP_NAME` | App ID to uninstall (from `commerce-app.json` `"id"` field, e.g. `avalara-tax`) |
 
 ### Flags
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--site-id SITE_ID` | `-s` | **Required.** Site ID to uninstall the app from |
-| `--timeout SECONDS` | `-t` | Timeout in seconds (default: no timeout) |
-| `--json` | | Output result as JSON |
+| Flag                | Short | Description                                     |
+| ------------------- | ----- | ----------------------------------------------- |
+| `--site-id SITE_ID` | `-s`  | **Required.** Site ID to uninstall the app from |
+| `--timeout SECONDS` | `-t`  | Timeout in seconds (default: no timeout)        |
+| `--json`            |       | Output result as JSON                           |
 
 ### Examples
 
@@ -225,27 +243,27 @@ b2c cap list [--site-id SITE_IDS]
 
 ### Flags
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--site-id SITE_IDS` | `-s` | Site IDs to query (comma-separated). If omitted, queries all sites. |
-| `--timeout SECONDS` | `-t` | Timeout in seconds (default: no timeout) |
-| `--local` | `-l` | List locally detected Commerce App Packages (no instance required) |
-| `--columns COLS` | `-c` | Columns to display (comma-separated). Available columns: `path`, `id`, `name`, `version`, `domain`, `siteId`, `featureName`, `featureType`, `featureSource`, `installStatus`, `configStatus`, `installedAt` |
-| `--extended` | `-x` | Show all columns including extended fields |
-| `--json` | | Output result as JSON |
+| Flag                 | Short | Description                                                                                                                                                                                                 |
+| -------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--site-id SITE_IDS` | `-s`  | Site IDs to query (comma-separated). If omitted, queries all sites.                                                                                                                                         |
+| `--timeout SECONDS`  | `-t`  | Timeout in seconds (default: no timeout)                                                                                                                                                                    |
+| `--local`            | `-l`  | List locally detected Commerce App Packages (no instance required)                                                                                                                                          |
+| `--columns COLS`     | `-c`  | Columns to display (comma-separated). Available columns: `path`, `id`, `name`, `version`, `domain`, `siteId`, `featureName`, `featureType`, `featureSource`, `installStatus`, `configStatus`, `installedAt` |
+| `--extended`         | `-x`  | Show all columns including extended fields                                                                                                                                                                  |
+| `--json`             |       | Output result as JSON                                                                                                                                                                                       |
 
 ### Table Columns
 
-| Column | Description |
-|--------|-------------|
-| Site ID | Site the feature is installed on (includes `Sites-` prefix) |
-| Name | Feature name (e.g. `avalara-tax`) |
-| Type | `ISV_APP`, `NATIVE_APP`, `NATIVE_FEATURE`, or `CUSTOM_FEATURE` |
-| Source | `CUSTOM` (uploaded via WebDAV) or `REGISTRY` (from App Registry) |
-| Install Status | e.g. `INSTALLED` |
-| Config Status | e.g. `NOT_CONFIGURED`, `CONFIGURED` |
-| Version | Feature version if available |
-| Installed At | Installation timestamp |
+| Column         | Description                                                      |
+| -------------- | ---------------------------------------------------------------- |
+| Site ID        | Site the feature is installed on (includes `Sites-` prefix)      |
+| Name           | Feature name (e.g. `avalara-tax`)                                |
+| Type           | `ISV_APP`, `NATIVE_APP`, `NATIVE_FEATURE`, or `CUSTOM_FEATURE`   |
+| Source         | `CUSTOM` (uploaded via WebDAV) or `REGISTRY` (from App Registry) |
+| Install Status | e.g. `INSTALLED`                                                 |
+| Config Status  | e.g. `NOT_CONFIGURED`, `CONFIGURED`                              |
+| Version        | Feature version if available                                     |
+| Installed At   | Installation timestamp                                           |
 
 ### JSON Output
 
@@ -281,17 +299,17 @@ b2c cap tasks APP_NAME --site-id SITE_ID
 
 ### Arguments
 
-| Argument | Description |
-|----------|-------------|
+| Argument   | Description                                    |
+| ---------- | ---------------------------------------------- |
 | `APP_NAME` | Commerce App feature name (e.g. `avalara-tax`) |
 
 ### Flags
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--site-id SITE_ID` | `-s` | **Required.** Site ID to query |
-| `--timeout SECONDS` | `-t` | Timeout in seconds (default: no timeout) |
-| `--json` | | Output result as JSON |
+| Flag                | Short | Description                              |
+| ------------------- | ----- | ---------------------------------------- |
+| `--site-id SITE_ID` | `-s`  | **Required.** Site ID to query           |
+| `--timeout SECONDS` | `-t`  | Timeout in seconds (default: no timeout) |
+| `--json`            |       | Output result as JSON                    |
 
 ### Examples
 
@@ -319,18 +337,18 @@ b2c cap pull [APP_NAME] [--site-id SITE_ID] [--output DIR]
 
 ### Arguments
 
-| Argument | Description |
-|----------|-------------|
-| `APP_NAME` | *(optional)* Commerce App feature name to pull (e.g. `avalara-tax`). If omitted, pulls all registry apps. |
+| Argument   | Description                                                                                               |
+| ---------- | --------------------------------------------------------------------------------------------------------- |
+| `APP_NAME` | _(optional)_ Commerce App feature name to pull (e.g. `avalara-tax`). If omitted, pulls all registry apps. |
 
 ### Flags
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--site-id SITE_ID` | `-s` | Site ID to query for installed apps. If omitted, queries all sites. |
-| `--output DIR` | `-o` | Output directory (default: `./commerce-apps`) |
-| `--timeout SECONDS` | `-t` | Timeout in seconds (default: no timeout) |
-| `--json` | | Output result as JSON |
+| Flag                | Short | Description                                                         |
+| ------------------- | ----- | ------------------------------------------------------------------- |
+| `--site-id SITE_ID` | `-s`  | Site ID to query for installed apps. If omitted, queries all sites. |
+| `--output DIR`      | `-o`  | Output directory (default: `./commerce-apps`)                       |
+| `--timeout SECONDS` | `-t`  | Timeout in seconds (default: no timeout)                            |
+| `--json`            |       | Output result as JSON                                               |
 
 ### Examples
 

@@ -65,12 +65,36 @@ describe('operations/mrt/push', () => {
       expect(result.deployed).to.be.false;
       expect(result.target).to.be.undefined;
       expect(result.message).to.equal('Test bundle');
+      expect(result.warnings).to.deep.equal([]);
 
       expect(receivedBody).to.deep.include({
         message: 'Test bundle',
         encoding: 'base64',
         data: 'dGVzdC1kYXRh',
       });
+    });
+
+    it('returns warnings from the no-target upload response', async () => {
+      const warning = 'x86 support ends January 31, 2027. Switch to ARM in environment settings to avoid disruptions';
+
+      server.use(
+        http.post(`${DEFAULT_BASE_URL}/api/projects/:projectSlug/builds/`, () => {
+          return HttpResponse.json({
+            bundle_id: 123,
+            message: 'Bundle created',
+            url: 'https://runtime.commercecloud.com/...',
+            bundle_preview_url: null,
+            warnings: [warning],
+          });
+        }),
+      );
+
+      const auth = new MockAuthStrategy();
+      const client = createMrtClient({}, auth);
+
+      const result = await uploadBundle(client, 'my-project', testBundle);
+
+      expect(result.warnings).to.deep.equal([warning]);
     });
 
     it('uploads bundle with deployment to target', async () => {
@@ -100,6 +124,7 @@ describe('operations/mrt/push', () => {
       expect(result.projectSlug).to.equal('my-project');
       expect(result.deployed).to.be.true;
       expect(result.target).to.equal('staging');
+      expect(result.warnings).to.deep.equal([]);
       expect(targetSlug).to.equal('staging');
 
       expect(receivedBody).to.deep.include({
@@ -107,6 +132,49 @@ describe('operations/mrt/push', () => {
         ssr_only: ['ssr.js'],
         ssr_shared: ['static/index.html', 'static/app.js'],
       });
+    });
+
+    it('returns warnings from the with-target deploy response', async () => {
+      const warning = 'x86 support ends January 31, 2027. Switch to ARM in environment settings to avoid disruptions';
+
+      server.use(
+        http.post(`${DEFAULT_BASE_URL}/api/projects/:projectSlug/builds/:targetSlug/`, () => {
+          return HttpResponse.json({
+            bundle_id: 456,
+            message: 'Bundle created and deployed',
+            url: 'https://runtime.commercecloud.com/...',
+            bundle_preview_url: null,
+            warnings: [warning],
+          });
+        }),
+      );
+
+      const auth = new MockAuthStrategy();
+      const client = createMrtClient({}, auth);
+
+      const result = await uploadBundle(client, 'my-project', testBundle, 'staging');
+
+      expect(result.warnings).to.deep.equal([warning]);
+    });
+
+    it('defaults warnings to [] when the response omits the field', async () => {
+      server.use(
+        http.post(`${DEFAULT_BASE_URL}/api/projects/:projectSlug/builds/:targetSlug/`, () => {
+          return HttpResponse.json({
+            bundle_id: 789,
+            message: 'Bundle created and deployed',
+            url: 'https://runtime.commercecloud.com/...',
+            bundle_preview_url: null,
+          });
+        }),
+      );
+
+      const auth = new MockAuthStrategy();
+      const client = createMrtClient({}, auth);
+
+      const result = await uploadBundle(client, 'my-project', testBundle, 'staging');
+
+      expect(result.warnings).to.deep.equal([]);
     });
 
     it('throws error on upload failure without target', async () => {

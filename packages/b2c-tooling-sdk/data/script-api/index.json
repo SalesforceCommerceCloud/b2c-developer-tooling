@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-01-31T17:45:14.666Z",
+  "generatedAt": "2026-07-01T00:01:00.856Z",
   "entries": [
     {
       "id": "dw.alert",
@@ -691,6 +691,41 @@
       "title": "Class AuthenticationStatus",
       "filePath": "dw.customer.AuthenticationStatus.md",
       "preview": "- [dw.customer.AuthenticationStatus](dw.customer.AuthenticationStatus.md)"
+    },
+    {
+      "id": "dw.customer.consent",
+      "title": "Package dw.customer.consent",
+      "filePath": "dw.customer.consent.md"
+    },
+    {
+      "id": "dw.customer.consent.ConsentStatusEntry",
+      "title": "Class ConsentStatusEntry",
+      "filePath": "dw.customer.consent.ConsentStatusEntry.md",
+      "preview": "- [dw.customer.consent.ConsentStatusEntry](dw.customer.consent.ConsentStatusEntry.md)"
+    },
+    {
+      "id": "dw.customer.consent.MarketingConsentSubscription",
+      "title": "Class MarketingConsentSubscription",
+      "filePath": "dw.customer.consent.MarketingConsentSubscription.md",
+      "preview": "- [dw.customer.consent.MarketingConsentSubscription](dw.customer.consent.MarketingConsentSubscription.md)"
+    },
+    {
+      "id": "dw.customer.consent.ShopperConsentErrorCodes",
+      "title": "Class ShopperConsentErrorCodes",
+      "filePath": "dw.customer.consent.ShopperConsentErrorCodes.md",
+      "preview": "- [dw.customer.consent.ShopperConsentErrorCodes](dw.customer.consent.ShopperConsentErrorCodes.md)"
+    },
+    {
+      "id": "dw.customer.consent.ShopperConsentException",
+      "title": "Class ShopperConsentException",
+      "filePath": "dw.customer.consent.ShopperConsentException.md",
+      "preview": "- [dw.customer.consent.ShopperConsentException](dw.customer.consent.ShopperConsentException.md)"
+    },
+    {
+      "id": "dw.customer.consent.ShopperConsentMgr",
+      "title": "Class ShopperConsentMgr",
+      "filePath": "dw.customer.consent.ShopperConsentMgr.md",
+      "preview": "- [dw.customer.consent.ShopperConsentMgr](dw.customer.consent.ShopperConsentMgr.md)"
     },
     {
       "id": "dw.customer.Credentials",
@@ -1654,6 +1689,12 @@
       "preview": "- [dw.order.hooks.ShippingOrderHooks](dw.order.hooks.ShippingOrderHooks.md)"
     },
     {
+      "id": "dw.order.hooks.TaxHooks",
+      "title": "Class TaxHooks",
+      "filePath": "dw.order.hooks.TaxHooks.md",
+      "preview": "- [dw.order.hooks.TaxHooks](dw.order.hooks.TaxHooks.md)"
+    },
+    {
       "id": "dw.order.Invoice",
       "title": "Class Invoice",
       "filePath": "dw.order.Invoice.md",
@@ -1676,6 +1717,12 @@
       "title": "Class LineItemCtnr",
       "filePath": "dw.order.LineItemCtnr.md",
       "preview": "- [dw.object.PersistentObject](dw.object.PersistentObject.md)"
+    },
+    {
+      "id": "dw.order.LineItemTax",
+      "title": "Class LineItemTax",
+      "filePath": "dw.order.LineItemTax.md",
+      "preview": "- [dw.order.LineItemTax](dw.order.LineItemTax.md)"
     },
     {
       "id": "dw.order.Order",
@@ -2755,7 +2802,7 @@
     },
     {
       "id": "index",
-      "title": "B2C Commerce Script API 26.2",
+      "title": "B2C Commerce Script API 26.7",
       "filePath": "index.md"
     },
     {

@@ -1,5 +1,38 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.4.4
+
+### Patch Changes
+
+- [#524](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/524) [`2ecbad7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2ecbad7e44d71d15272e497dda16fac487779bfb) - Clarify SCAPI Admin OAuth scopes in the custom API and Account Manager skills. The custom-api-development, scapi-admin, scapi-custom, and config skills now consistently document that Admin API tokens (system and custom) require both the tenant scope `SALESFORCE_COMMERCE_API:<tenant_id>` and the API-specific scopes, that `b2c auth token` accepts multiple `--auth-scope` values, and that — unlike the SCAPI subcommands — `b2c auth token` does not auto-inject the tenant scope. Also fixes a broken admin token curl example and an invalid `--scope` flag reference in the testing docs. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#528](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/528) [`4efd453`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4efd4533afac785934a52b24db623f53dae58cfd) - Document headless order-failure essentials in the `b2c` agent skills. The `b2c-hooks` skill now explains the `dw.ocapi.shop.order.afterPOST` hook in depth — it runs inside a platform transaction (so wrapping `OrderMgr.placeOrder`/`failOrder` in your own `Transaction.wrap` rolls the change back and surfaces an opaque `HTTP 400: An error occurred in ExtensionPoint…`), it owns the `CREATED → NEW`/`FAILED` transition for SCAPI orders, and it must log its own decline reason — plus a canonical example that authorizes payment instruments via `app.payment.processor.*` Authorize hooks, fails the order on decline, and places it when fully paid. `b2c-custom-job-steps` gains a `jobs.xml` reference covering how to author and import (`b2c job import`) a job definition (job/flow/step structure, the `type` vs `@type-id` distinction, and the required `<triggers>` element). (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#530](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/530) [`6cfb9bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6cfb9bd4b2a45ad838df86371f85e31c425caf88) - Document the standard (system) job steps that B2C Commerce ships for Business Manager job flows. The bundled docs corpus now includes the full catalog of standard job step type IDs (e.g. `ImportCatalog`, `ExportCatalog`, `ExecutePreconfiguredDataReplicationProcess`, `SearchReindex`) with each step's purpose, scope, and configuration parameters — sourced from the public B2C Commerce Job Step API documentation and searchable through `b2c docs search`/`b2c docs read` (and the `docs_search`/`docs_read` MCP tools) with no new commands. Read the catalog with `b2c docs read job-steps` or a specific step with `b2c docs read <TypeID>`. The job and custom-job-step skills now cover referencing an IMPEX-staged file from a prior step, chaining custom and standard steps in one flow, and choosing an in-flow system step vs. the CLI equivalent (e.g. a standard catalog import vs. `b2c job import`). (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.4.3
+
+### Patch Changes
+
+- [#522](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/522) [`11b84b1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/11b84b19da380cd02f5049babd8cf2794d8ca019) - Expose the script debugger session cookie (`dwsid`) so you can route a triggering request to the same app server holding the debug session — required to reliably hit breakpoints on multi-app-server instances. (Thanks [@clavery](https://github.com/clavery)!)
+  - **SDK:** new `SdapiClient.getCookie(name)` and `DebugSessionManager.getSessionCookie()`; the cookie is also logged at info level when the session connects.
+  - **MCP:** `debug_start_session` and `debug_list_sessions` now return a `session_cookie` field.
+  - **VS Code:** a new **Copy Debugger Session ID (dwsid)** command (available while a debug session is active) copies the cookie to the clipboard.
+
+  Send your triggering request (storefront page load, SCAPI/OCAPI call) with `Cookie: dwsid=<value>`.
+
+## 1.4.2
+
+### Patch Changes
+
+- [#518](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/518) [`7a55915`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7a5591524e8374413cc92303b907e164f1b172f3) - Refocus the Commerce Apps (CAP) documentation on the B2C CLI workflow and recommend the `b2c-cli`, `b2c`, and `cap-dev` agent skills plugins (the latter from the `SalesforceCommerceCloud/commerce-apps` marketplace). The guide now links to the official Commerce Apps ISV Developer Guide as the authoritative spec rather than duplicating it, and corrects several details against canon and the CLI source: the tax extension point is `sfcc.app.tax.calculate`, the install upload path is `Impex/commerce-apps/`, the lifecycle states are `INSTALLING → INSTALLED → NOT_CONFIGURED → CONFIGURING → CONFIGURED`, and `cap package` produces `{id}-v{version}.zip`. The `b2c-cap` skill and CAP CLI reference gain WebDAV auth, icon-naming, and registry-vs-local-validation clarifications. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.4.1
+
+### Patch Changes
+
+- [#494](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/494) [`f630103`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f630103e4c55fbdf68896db2f870851efe390ac1) - Update the b2c-cip agent skill to cover the new technical/developer CIP reports (SCAPI/OCAPI/controller latency, error-rate, and cache analytics) and the `b2c cip report list` discovery command. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.4.0
 
 ### Minor Changes

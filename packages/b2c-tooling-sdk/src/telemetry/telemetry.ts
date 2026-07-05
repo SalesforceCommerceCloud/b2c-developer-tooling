@@ -7,12 +7,7 @@
 import {randomBytes} from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-// Namespace import (not default): `applicationinsights` is a legacy CommonJS
-// module whose default-export interop is not synthesized when the file is
-// loaded as native ESM (e.g. mocha 11's tsx loader), leaving the default
-// binding `undefined`. The namespace form resolves `TelemetryClient` correctly
-// under every loader — mocha, tsx, and the production ESM build.
-import * as appInsights from 'applicationinsights';
+import {AppInsightsClient} from './app-insights-client.js';
 import type {TelemetryAttributes, TelemetryEventProperties, TelemetryOptions} from './types.js';
 import {getLogger, type Logger} from '../logging/index.js';
 
@@ -120,12 +115,14 @@ export class Telemetry {
   private attributes: TelemetryAttributes;
   private cliId: string;
   private project: string;
-  private client: appInsights.TelemetryClient | undefined;
+  private client: AppInsightsClient | undefined;
   private sessionId: string;
   private started: boolean;
   private version: string;
   private appInsightsKey: string | undefined;
   private traceLog: Logger | undefined;
+  private flushIntervalMs: number | undefined;
+  private flushTimer: ReturnType<typeof setInterval> | undefined;
 
   /**
    * Check if telemetry is disabled via environment variables.
@@ -154,6 +151,7 @@ export class Telemetry {
     this.sessionId = generateRandomId();
     this.started = false;
     this.version = options.version ?? '0.0.0';
+    this.flushIntervalMs = options.flushIntervalMs;
 
     if (process.env.SFCC_TELEMETRY_LOG === 'true') {
       this.traceLog = getLogger().child({component: 'telemetry'});
@@ -240,6 +238,15 @@ export class Telemetry {
     } catch {
       // best-effort — telemetry failure never impacts the application
     }
+
+    // Long-lived hosts (e.g. the VS Code extension) buffer events for a whole
+    // session and may not get a clean shutdown flush. An opt-in periodic flush
+    // delivers events on a cadence so a dirty exit loses at most one interval.
+    // The timer is unref'd so it never keeps a short-lived process alive.
+    if (this.client && this.flushIntervalMs && this.flushIntervalMs > 0) {
+      this.flushTimer = setInterval(() => void this.flush(), this.flushIntervalMs);
+      this.flushTimer.unref?.();
+    }
   }
 
   /**
@@ -249,9 +256,7 @@ export class Telemetry {
   async flush(): Promise<void> {
     if (!this.started || !this.client) return;
 
-    await new Promise<void>((resolve) => {
-      this.client!.flush({callback: () => resolve()});
-    });
+    await this.client.flush();
   }
 
   /**
@@ -263,18 +268,18 @@ export class Telemetry {
     this.traceLog?.debug('telemetry stop');
     this.started = false;
 
+    if (this.flushTimer) {
+      clearInterval(this.flushTimer);
+      this.flushTimer = undefined;
+    }
+
     if (this.client) {
-      await new Promise<void>((resolve) => {
-        this.client!.flush({callback: () => resolve()});
-      });
+      await this.client.flush();
       this.client = undefined;
     }
 
-    // Allow pending HTTP requests to flush before process exits.
-    // Application Insights SDK sends events asynchronously, so we need
-    // a delay to ensure events reach the server on fast exits.
-    // 300ms gives enough time for the HTTP request to complete even on
-    // cold starts when establishing the initial connection.
+    // flush() awaits the ingestion POST directly, but keep a small drain delay
+    // so any in-flight request started elsewhere can settle before a fast exit.
     await new Promise((resolve) => setTimeout(resolve, 300));
   }
 
@@ -297,27 +302,14 @@ export class Telemetry {
   }
 
   private createClient(): void {
-    const client = new appInsights.TelemetryClient(this.appInsightsKey);
+    // Manual event tracking only — no auto-collection, no statsbeat, no
+    // background telemetry. This zero-dependency client POSTs Breeze envelopes
+    // directly, so there is nothing to opt out of.
+    const client = new AppInsightsClient(this.appInsightsKey as string);
 
-    // Disable all auto-collection — we only do manual event tracking
-    client.config.enableAutoCollectConsole = false;
-    client.config.enableAutoCollectExceptions = false;
-    client.config.enableAutoCollectPerformance = false;
-    client.config.enableAutoCollectRequests = false;
-    client.config.enableAutoCollectDependencies = false;
-    client.config.enableAutoDependencyCorrelation = false;
-    client.config.enableAutoCollectHeartbeat = false;
-    client.config.enableAutoCollectPreAggregatedMetrics = false;
-    client.config.enableAutoCollectIncomingRequestAzureFunctions = false;
-    client.config.enableSendLiveMetrics = false;
-    client.config.enableUseDiskRetryCaching = false;
-    client.config.disableStatsbeat = true;
-    client.config.enableInternalDebugLogging = false;
-    client.config.enableInternalWarningLogging = false;
-
-    // Set user ID for session tracking
+    // Set user ID for session tracking.
     client.context.tags[client.context.keys.userId] = this.cliId;
-    // GDPR: hide machine-identifying cloud role instance
+    // GDPR: hide machine-identifying cloud role instance.
     client.context.tags[client.context.keys.cloudRoleInstance] = '';
 
     this.client = client;

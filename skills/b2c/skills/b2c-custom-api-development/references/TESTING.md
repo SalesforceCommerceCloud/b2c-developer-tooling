@@ -51,15 +51,45 @@ curl -s "https://$SHORTCODE.api.commercecloud.salesforce.com/custom/my-api/v1/or
 
 ## Testing Admin APIs
 
-For Admin APIs (AmOAuth2), obtain a token from Account Manager:
+For Admin APIs (`AmOAuth2`), obtain a token from Account Manager with the **two required scope types**:
+
+1. The **tenant scope** `SALESFORCE_COMMERCE_API:<tenant_id>` (grants access to the tenant), and
+2. Your **custom Admin scope(s)** `c_my_admin_scope` (as declared in `schema.yaml`).
+
+> **Important:** Unlike the SCAPI subcommands (`b2c scapi custom status`, `b2c scapi schemas list`), which inject the `SALESFORCE_COMMERCE_API:<tenant_id>` scope for you, a raw token request (`b2c auth token` or curl) sends **only** the scopes you pass. Omitting the tenant scope yields a token that 403s against the Admin API.
+
+### Get an Admin Token via the CLI (recommended)
+
+`b2c auth token` accepts multiple scopes — repeat `--auth-scope` or pass a comma-separated list. List the tenant scope **and** your custom scope(s):
+
+```bash
+TENANT_ID="zzpq_013"
+
+# Repeatable flag form
+TOKEN=$(b2c auth token \
+    --auth-scope "SALESFORCE_COMMERCE_API:$TENANT_ID" \
+    --auth-scope c_my_admin_scope)
+
+# Comma-separated form (equivalent)
+TOKEN=$(b2c auth token --auth-scope "SALESFORCE_COMMERCE_API:$TENANT_ID,c_my_admin_scope")
+
+# Call Admin API (no siteId for org context)
+curl -s "https://$SHORTCODE.api.commercecloud.salesforce.com/custom/my-admin-api/v1/organizations/$ORG/my-endpoint" \
+    -H "Authorization: Bearer $TOKEN" | jq
+```
+
+### Get an Admin Token via curl
 
 ```bash
 AM_CLIENT_ID="your-am-client-id"
 AM_CLIENT_SECRET="your-am-client-secret"
+TENANT_ID="zzpq_013"
 
+# The scope MUST include the tenant scope plus your custom Admin scope(s)
 TOKEN=$(curl -s "https://account.demandware.com/dwsso/oauth2/access_token" \
     -u "$AM_CLIENT_ID:$AM_CLIENT_SECRET" \
-    -d "grant_type=client_credentials" | jq -r '.access_token')
+    -d "grant_type=client_credentials" \
+    --data-urlencode "scope=SALESFORCE_COMMERCE_API:$TENANT_ID c_my_admin_scope" | jq -r '.access_token')
 
 # Call Admin API (no siteId)
 curl -s "https://$SHORTCODE.api.commercecloud.salesforce.com/custom/my-admin-api/v1/organizations/$ORG/my-endpoint" \
@@ -79,6 +109,6 @@ curl -s "https://$SHORTCODE.api.commercecloud.salesforce.com/custom/my-admin-api
 |-------|-------|----------|
 | 400 Bad Request | Missing or invalid parameter | Check schema.yaml parameter definitions |
 | 401 Unauthorized | Invalid/expired token | Get a fresh token |
-| 403 Forbidden | Missing scope | Verify scope in token matches contract |
+| 403 Forbidden | Missing scope | Verify scope in token matches contract. For Admin APIs, confirm the token includes **both** `SALESFORCE_COMMERCE_API:<tenant_id>` and your custom scope(s) |
 | 404 Not Found | Endpoint not registered | Run `b2c scapi custom status` |
 | 500 Internal Error | Script error | Check `b2c logs get --level ERROR` |

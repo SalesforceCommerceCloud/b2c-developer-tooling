@@ -64,7 +64,7 @@ timeout values for Web Service calls.
 | static [addSOAPHeader](dw.ws.WSUtil.md#addsoapheaderobject-object-boolean-string)([Object](TopLevel.Object.md), [Object](TopLevel.Object.md), [Boolean](TopLevel.Boolean.md), [String](TopLevel.String.md)) | Adds a header element to the SOAP Header. |
 | static [addSOAPHeader](dw.ws.WSUtil.md#addsoapheaderobject-string-boolean-string)([Object](TopLevel.Object.md), [String](TopLevel.String.md), [Boolean](TopLevel.Boolean.md), [String](TopLevel.String.md)) | Adds a header element to the SOAP Header. |
 | static [clearSOAPHeaders](dw.ws.WSUtil.md#clearsoapheadersobject)([Object](TopLevel.Object.md)) | Removes all SOAP header elements from the port's request context. |
-| static [createHolder](dw.ws.WSUtil.md#createholderobject)([Object](TopLevel.Object.md)) | Creates an javax.xml.ws.Holder instance that wraps the specified element. |
+| static [createHolder](dw.ws.WSUtil.md#createholderobject)([Object](TopLevel.Object.md)) | Creates an jakarta.xml.ws.Holder instance that wraps the specified element. |
 | static [getConnectionTimeout](dw.ws.WSUtil.md#getconnectiontimeoutobject)([Object](TopLevel.Object.md)) | Returns the connection timeout value for the port. |
 | static [getHTTPRequestHeader](dw.ws.WSUtil.md#gethttprequestheaderobject-string)([Object](TopLevel.Object.md), [String](TopLevel.String.md)) | Returns an HTTP request header property value using the specified key. |
 | static [getProperty](dw.ws.WSUtil.md#getpropertystring-object)([String](TopLevel.String.md), [Object](TopLevel.Object.md)) | Returns the value of the SOAP request property using the specified key on a port  returned from one of the WebReference2 getService methods. |
@@ -489,7 +489,7 @@ timeout values for Web Service calls.
 
 ### createHolder(Object)
 - static createHolder(element: [Object](TopLevel.Object.md)): [Object](TopLevel.Object.md)
-  - : Creates an javax.xml.ws.Holder instance that wraps the specified element. When a WSDL operation is
+  - : Creates an jakarta.xml.ws.Holder instance that wraps the specified element. When a WSDL operation is
       defined to have an input and output message using the same type, the operation may require the operation's
       object to be wrapped in a holder.
 
