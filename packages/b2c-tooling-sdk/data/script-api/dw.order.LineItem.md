@@ -26,6 +26,7 @@ Common line item base class.
 | [taxBasis](#taxbasis): [Money](dw.value.Money.md) `(read-only)` | Get the price used to calculate the tax for this line item. |
 | [taxClassID](#taxclassid): [String](TopLevel.String.md) | Returns the tax class ID for the line item or null if no tax class ID is associated with the line item. |
 | [taxRate](#taxrate): [Number](TopLevel.Number.md) | Returns the tax rate, which is the decimal tax rate to be applied to the product represented by this line item. |
+| [taxes](#taxes): [Collection](dw.util.Collection.md) | Returns the tax items for this line item. |
 
 ## Constructor Summary
 
@@ -45,6 +46,7 @@ This class does not have a constructor, so you cannot create it directly.
 | [getTaxBasis](dw.order.LineItem.md#gettaxbasis)() | Get the price used to calculate the tax for this line item. |
 | [getTaxClassID](dw.order.LineItem.md#gettaxclassid)() | Returns the tax class ID for the line item or null if no tax class ID is associated with the line item. |
 | [getTaxRate](dw.order.LineItem.md#gettaxrate)() | Returns the tax rate, which is the decimal tax rate to be applied to the product represented by this line item. |
+| [getTaxes](dw.order.LineItem.md#gettaxes)() | Returns the tax items for this line item. |
 | ~~[setBasePrice](dw.order.LineItem.md#setbasepricemoney)([Money](dw.value.Money.md))~~ | Sets the base price for the line item, which is the price of the unit before applying adjustments, in the  purchase currency. |
 | ~~[setGrossPrice](dw.order.LineItem.md#setgrosspricemoney)([Money](dw.value.Money.md))~~ | Sets the gross price for the line item, which is the Price of the unit before applying adjustments, in the  purchase currency, including tax. |
 | [setLineItemText](dw.order.LineItem.md#setlineitemtextstring)([String](TopLevel.String.md)) | Sets the display text for the line item. |
@@ -53,6 +55,7 @@ This class does not have a constructor, so you cannot create it directly.
 | [setTax](dw.order.LineItem.md#settaxmoney)([Money](dw.value.Money.md)) | Sets the value for the tax of the line item, which is the the tax of the unit before applying adjustments, in the  purchase currency. |
 | [setTaxClassID](dw.order.LineItem.md#settaxclassidstring)([String](TopLevel.String.md)) | Sets the tax class ID for the line item. |
 | [setTaxRate](dw.order.LineItem.md#settaxratenumber)([Number](TopLevel.Number.md)) | Sets the tax rate, which is the decimal tax rate to be applied to the product represented by this line item. |
+| [setTaxes](dw.order.LineItem.md#settaxescollection)([Collection](dw.util.Collection.md)) | Sets the tax items for this line item. |
 | ~~[updatePrice](dw.order.LineItem.md#updatepricemoney)([Money](dw.value.Money.md))~~ | Updates the price attributes of the line item based on the specified price. |
 | [updateTax](dw.order.LineItem.md#updatetaxnumber)([Number](TopLevel.Number.md)) | Updates the tax-related attributes of the line item based on the specified tax rate, a tax basis determined by  the system and the "Tax Rounding Mode" order preference. |
 | [updateTax](dw.order.LineItem.md#updatetaxnumber-money)([Number](TopLevel.Number.md), [Money](dw.value.Money.md)) | Updates the tax-related attributes of the line item based on the specified tax rate, the passed tax basis and the  "Tax Rounding Mode" order preference. |
@@ -159,6 +162,23 @@ This class does not have a constructor, so you cannot create it directly.
   - : Returns the tax rate, which is the decimal tax rate to be applied to the product represented by this line item. A
       value of 0.175 represents a percentage of 17.5%.
 
+
+
+---
+
+### taxes
+- taxes: [Collection](dw.util.Collection.md)
+  - : Returns the tax items for this line item. When taxes are set via [setTaxes(Collection)](dw.order.LineItem.md#settaxescollection), the line item's
+      tax amount and tax rate are updated as the sum and combined rate of all tax items. The tax items are preserved
+      after order creation and can be retrieved on both baskets and orders.
+      
+      
+      Access is currently restricted to select pilot customers and controlled via feature toggle.
+
+
+    **See Also:**
+    - [setTaxes(Collection)](dw.order.LineItem.md#settaxescollection)
+    - [LineItemTax](dw.order.LineItemTax.md)
 
 
 ---
@@ -294,6 +314,26 @@ This class does not have a constructor, so you cannot create it directly.
 
 ---
 
+### getTaxes()
+- getTaxes(): [Collection](dw.util.Collection.md)
+  - : Returns the tax items for this line item. When taxes are set via [setTaxes(Collection)](dw.order.LineItem.md#settaxescollection), the line item's
+      tax amount and tax rate are updated as the sum and combined rate of all tax items. The tax items are preserved
+      after order creation and can be retrieved on both baskets and orders.
+      
+      
+      Access is currently restricted to select pilot customers and controlled via feature toggle.
+
+
+    **Returns:**
+    - collection of [LineItemTax](dw.order.LineItemTax.md); empty when no tax items are set
+
+    **See Also:**
+    - [setTaxes(Collection)](dw.order.LineItem.md#settaxescollection)
+    - [LineItemTax](dw.order.LineItemTax.md)
+
+
+---
+
 ### setBasePrice(Money)
 - ~~setBasePrice(aValue: [Money](dw.value.Money.md)): void~~
   - : Sets the base price for the line item, which is the price of the unit before applying adjustments, in the
@@ -377,6 +417,9 @@ Use [updatePrice(Money)](dw.order.LineItem.md#updatepricemoney) which sets the b
 - setTax(aValue: [Money](dw.value.Money.md)): void
   - : Sets the value for the tax of the line item, which is the the tax of the unit before applying adjustments, in the
       purchase currency.
+      
+      
+      If tax items are already set (e.g. via [setTaxes(Collection)](dw.order.LineItem.md#settaxescollection)), calling this will clear them.
 
 
     **Parameters:**
@@ -399,10 +442,49 @@ Use [updatePrice(Money)](dw.order.LineItem.md#updatepricemoney) which sets the b
 - setTaxRate(taxRate: [Number](TopLevel.Number.md)): void
   - : Sets the tax rate, which is the decimal tax rate to be applied to the product represented by this line item. A
       value of 0.175 represents a percentage of 17.5%.
+      
+      
+      If tax items are already set (e.g. via [setTaxes(Collection)](dw.order.LineItem.md#settaxescollection)), calling this will clear them.
 
 
     **Parameters:**
     - taxRate - the new value for the tax rate.
+
+
+---
+
+### setTaxes(Collection)
+- setTaxes(taxItems: [Collection](dw.util.Collection.md)): void
+  - : Sets the tax items for this line item. The container must be a basket. Persists the given items, then aggregates
+      them (sum of tax values, combined tax rate) and updates this line item's tax amount and tax rate accordingly.
+      
+      
+      Each element in the collection must be a [LineItemTax](dw.order.LineItemTax.md), for example created via
+      [new LineItemTax(taxId, taxRate, taxValue)](dw.order.LineItemTax.md#lineitemtaxstring-number-money).
+      
+      
+      Use either multilevel tax items via [setTaxes(Collection)](dw.order.LineItem.md#settaxescollection) or
+      [setTax(Money)](dw.order.LineItem.md#settaxmoney)/[setTaxRate(Number)](dw.order.LineItem.md#settaxratenumber)/[updateTax(Number, Money)](dw.order.LineItem.md#updatetaxnumber-money)/[updateTaxAmount(Money)](dw.order.LineItem.md#updatetaxamountmoney),
+      not both.
+      
+      
+      Access is currently restricted to select pilot customers and controlled via feature toggle.
+      
+      
+      
+      
+      The maximum number of tax items allowed per line item is 10.
+
+
+    **Parameters:**
+    - taxItems - the tax items to set; each element must be a [LineItemTax](dw.order.LineItemTax.md). Maximum 10 items allowed.
+
+    **Throws:**
+    - IllegalArgumentException - if the container is not a basket, or if more than 10 tax items are provided
+
+    **See Also:**
+    - [getTaxes()](dw.order.LineItem.md#gettaxes)
+    - [LineItemTax](dw.order.LineItemTax.md)
 
 
 ---
@@ -457,6 +539,9 @@ Use [setPriceValue(Number)](dw.order.LineItem.md#setpricevaluenumber) instead.
   - : Updates the tax-related attributes of the line item based on the specified tax rate, the passed tax basis and the
       "Tax Rounding Mode" order preference. If null is passed as tax rate or tax basis, tax-related attribute fields
       are set to N/A.
+      
+      
+      If tax items are already set (e.g. via [setTaxes(Collection)](dw.order.LineItem.md#settaxescollection)), calling this will clear them.
 
 
     **Parameters:**
@@ -478,6 +563,9 @@ Use [setPriceValue(Number)](dw.order.LineItem.md#setpricevaluenumber) instead.
       
       
       Note that tax rate is not calculated and it is not updated.
+      
+      
+      If tax items are already set (e.g. via [setTaxes(Collection)](dw.order.LineItem.md#settaxescollection)), calling this will clear them.
 
 
     **Parameters:**

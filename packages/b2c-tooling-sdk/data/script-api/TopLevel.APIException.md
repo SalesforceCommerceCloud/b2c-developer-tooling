@@ -23,7 +23,7 @@ access to some more details about this internal Java exception.
 
 
 ## All Known Subclasses
-[AspectAttributeValidationException](dw.experience.AspectAttributeValidationException.md), [CreateAgentBasketLimitExceededException](dw.order.CreateAgentBasketLimitExceededException.md), [CreateBasketFromOrderException](dw.order.CreateBasketFromOrderException.md), [CreateCouponLineItemException](dw.order.CreateCouponLineItemException.md), [CreateOrderException](dw.order.CreateOrderException.md), [CreateTemporaryBasketLimitExceededException](dw.order.CreateTemporaryBasketLimitExceededException.md), [ShopperContextException](dw.customer.shoppercontext.ShopperContextException.md)
+[AspectAttributeValidationException](dw.experience.AspectAttributeValidationException.md), [CreateAgentBasketLimitExceededException](dw.order.CreateAgentBasketLimitExceededException.md), [CreateBasketFromOrderException](dw.order.CreateBasketFromOrderException.md), [CreateCouponLineItemException](dw.order.CreateCouponLineItemException.md), [CreateOrderException](dw.order.CreateOrderException.md), [CreateTemporaryBasketLimitExceededException](dw.order.CreateTemporaryBasketLimitExceededException.md), [ShopperConsentException](dw.customer.consent.ShopperConsentException.md), [ShopperContextException](dw.customer.shoppercontext.ShopperContextException.md)
 ## Property Summary
 
 | Property | Description |

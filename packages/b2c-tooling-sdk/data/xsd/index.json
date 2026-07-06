@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-04-21T18:00:00.000Z",
+  "generatedAt": "2026-07-01T00:01:00.858Z",
   "entries": [
     {
       "id": "abtest",
@@ -77,6 +77,10 @@
     {
       "id": "dcext",
       "filePath": "dcext.xsd"
+    },
+    {
+      "id": "eventrouting",
+      "filePath": "eventrouting.xsd"
     },
     {
       "id": "feed",
