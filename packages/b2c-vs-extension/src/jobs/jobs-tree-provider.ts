@@ -3,10 +3,12 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+import {findCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {searchJobExecutions, type JobExecution} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {showThrottledError} from '../notify.js';
+import {detectCartridgeName, extractJobIdsFromXml} from './jobs-xml-parser.js';
 
 export type JobStatusFilter = 'all' | 'active' | 'running' | 'scheduled' | 'failed' | 'completed';
 type ExecutionStatus = 'running' | 'failed' | 'completed' | 'scheduled';
@@ -31,7 +33,13 @@ export interface JobHistoryExecutionRow {
   execution: JobExecution;
 }
 
-export type JobsTreeNode = JobTreeItem | JobExecutionTreeItem | JobsEmptyStateTreeItem | JobsLoadHintTreeItem;
+export type JobsTreeNode =
+  | JobTreeItem
+  | JobExecutionTreeItem
+  | JobsEmptyStateTreeItem
+  | JobsLoadHintTreeItem
+  | JobsSectionHeaderTreeItem
+  | WorkspaceJobTreeItem;
 
 const JOBS_FETCH_LIMIT = 200;
 const DEFAULT_DISCOVERY_SCAN_LIMIT = 2000;
@@ -131,17 +139,16 @@ function statusFilterLabel(filter: JobStatusFilter): string {
   return 'Completed';
 }
 
-function emptyStateTitle(filter: JobStatusFilter): string {
-  if (filter === 'active') return 'No jobs running';
-  if (filter === 'running') return 'No jobs running';
-  if (filter === 'scheduled') return 'No scheduled jobs';
-  if (filter === 'failed') return 'No failed jobs';
-  if (filter === 'completed') return 'No completed jobs';
+function emptyStateTitle(filter: JobStatusFilter, filtersApplied: boolean): string {
+  // When ANY filter is narrowing results, lead with "No matching jobs" — the
+  // status label alone (e.g. "No running jobs") wrongly implied that no jobs
+  // are running at all, when in reality other filters were also hiding rows.
+  if (filtersApplied || filter !== 'all') return 'No matching jobs';
   return 'No jobs found';
 }
 
 function emptyStateDescription(filter: JobStatusFilter, filtersApplied: boolean): string {
-  if (filtersApplied) return 'Adjust or clear filters to see more.';
+  if (filtersApplied) return 'Click here to clear all filters.';
   if (filter === 'all') return 'Run a job to populate history.';
   return 'Change the status filter to see other entries.';
 }
@@ -339,16 +346,73 @@ export class JobExecutionTreeItem extends vscode.TreeItem {
 export class JobsEmptyStateTreeItem extends vscode.TreeItem {
   readonly nodeType = 'emptyState' as const;
 
-  constructor(filter: JobStatusFilter, filtersApplied: boolean) {
-    super(emptyStateTitle(filter), vscode.TreeItemCollapsibleState.None);
+  constructor(filter: JobStatusFilter, filtersApplied: boolean, filterSummary?: string) {
+    super(emptyStateTitle(filter, filtersApplied), vscode.TreeItemCollapsibleState.None);
     this.id = `jobs-empty-state:${filter}`;
     this.contextValue = 'jobs-empty-state';
     this.iconPath = new vscode.ThemeIcon('info');
-    this.description = filtersApplied
-      ? `${emptyStateDescription(filter, filtersApplied)} (filters active)`
-      : emptyStateDescription(filter, filtersApplied);
+    this.description = emptyStateDescription(filter, filtersApplied);
     this.tooltip = new vscode.MarkdownString(
-      `No job history entries match **${statusFilterLabel(filter)}** right now.\n\nUse the title-bar actions to change the status filter or clear name/advanced filters.`,
+      filtersApplied
+        ? `No entries match the active filters${filterSummary ? `:\n\n\`${filterSummary}\`` : '.'}\n\nClick this row to clear all filters and show every entry, or use the title-bar filter icon to adjust.`
+        : `No job history entries to show. Run a job in Business Manager or via the extension to populate the timeline.`,
+    );
+    // When filters are the reason nothing shows, wire the empty row itself to
+    // clear them — one click undoes the accidental narrowing, no digging
+    // through Quick Pick menus.
+    if (filtersApplied) {
+      this.command = {
+        command: 'b2c-dx.jobs.clearAllFilters',
+        title: 'Clear All Filters',
+      };
+    }
+  }
+}
+
+/**
+ * Non-selectable group heading — used to split the tree into "Workspace Jobs"
+ * and "Job History" without needing two separate views. Section headers are
+ * collapsible so the two lists can be toggled independently.
+ */
+export class JobsSectionHeaderTreeItem extends vscode.TreeItem {
+  readonly nodeType = 'sectionHeader' as const;
+
+  constructor(
+    readonly section: 'workspace' | 'history',
+    label: string,
+    description: string | undefined,
+    initial: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.Expanded,
+  ) {
+    super(label, initial);
+    this.id = `jobs-section:${section}`;
+    this.contextValue = `jobs-section-${section}`;
+    this.iconPath = new vscode.ThemeIcon(section === 'workspace' ? 'file-code' : 'history');
+    this.description = description;
+  }
+}
+
+/**
+ * A job declared in a workspace `jobs.xml` — surfaces custom jobs before they
+ * have any execution history. Right-click "Run Job" targets these directly so
+ * users don't have to type the id or wait for the first run.
+ */
+export class WorkspaceJobTreeItem extends vscode.TreeItem {
+  readonly nodeType = 'workspaceJob' as const;
+
+  constructor(
+    readonly jobId: string,
+    readonly sourcePath: string,
+    readonly cartridgeName: string | undefined,
+  ) {
+    super(jobId, vscode.TreeItemCollapsibleState.None);
+    this.id = `workspaceJob:${jobId}:${sourcePath}`;
+    this.contextValue = 'workspaceJob';
+    this.iconPath = new vscode.ThemeIcon('play-circle');
+    this.description = cartridgeName ?? 'workspace';
+    this.tooltip = new vscode.MarkdownString(
+      `**${jobId}**\n\nDeclared in \`${vscode.workspace.asRelativePath(sourcePath)}\`` +
+        (cartridgeName ? `\n\nCartridge: **${cartridgeName}**` : '') +
+        '\n\nRight-click → Run Job to execute (the extension will auto-deploy the definition if BM does not know it yet).',
     );
   }
 }
@@ -387,6 +451,7 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
   readonly onDidLoad = this.onDidLoadEmitter.event;
 
   private discoveryExecutionCache: JobExecution[] | undefined;
+  private workspaceJobsCache: WorkspaceJobTreeItem[] | undefined;
   private pollingTimer: ReturnType<typeof setInterval> | undefined;
   private statusFilter: JobStatusFilter;
   private groupingMode: JobGroupingMode;
@@ -400,6 +465,7 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
     this.groupingMode = getDefaultGroupingMode();
     this.updateStatusFilterContext();
     this.updateGroupingModeContext();
+    this.updateHasActiveFiltersContext();
   }
 
   getStatusFilter(): JobStatusFilter {
@@ -420,6 +486,7 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
     if (unchanged) return;
 
     this.historyFilters = normalized;
+    this.updateHasActiveFiltersContext();
     this.onDidChangeTreeDataEmitter.fire();
   }
 
@@ -429,6 +496,65 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
 
   hasHistoryFilters(): boolean {
     return hasHistoryFilters(this.historyFilters);
+  }
+
+  /**
+   * Whether any filter (status other than `all`, or an advanced field) is
+   * currently narrowing the tree. Used to swap the title-bar filter icon to
+   * a filled variant and to gate the message summary — so users can't miss
+   * that results are being hidden.
+   */
+  hasAnyActiveFilter(): boolean {
+    return this.statusFilter !== 'all' || this.hasHistoryFilters();
+  }
+
+  /**
+   * Compact one-line summary of the currently-active filters, or `undefined`
+   * when none are set. Rendered into the tree view's title-bar message so the
+   * user always sees at a glance which filters are hiding results.
+   *
+   * Each part is explicitly labeled (`Status=`, `Job~=`, etc.) so a bare word
+   * like "Active" can't be mistaken for a state flag (the earlier version
+   * emitted "Filters: Active" for the Active status, which read as if it meant
+   * "filters are active" rather than "showing Active jobs").
+   */
+  describeActiveFilters(): string | undefined {
+    const parts: string[] = [];
+    if (this.statusFilter !== 'all') {
+      parts.push(`Status=${statusFilterLabel(this.statusFilter)}`);
+    }
+    if (this.historyFilters.jobIdContains) {
+      parts.push(`Job~="${this.historyFilters.jobIdContains}"`);
+    }
+    if (this.historyFilters.executedBy) {
+      parts.push(`User~="${this.historyFilters.executedBy}"`);
+    }
+    if (this.historyFilters.startFrom) {
+      parts.push(`From=${this.historyFilters.startFrom}`);
+    }
+    if (this.historyFilters.endTo) {
+      parts.push(`To=${this.historyFilters.endTo}`);
+    }
+    return parts.length > 0 ? parts.join(' | ') : undefined;
+  }
+
+  /**
+   * Clears BOTH the status filter (back to "all") and every advanced filter in
+   * one shot. Exists because users think of "filters" as one concept — the old
+   * "Clear History Filters" only wiped the advanced fields, leaving the status
+   * filter set, which produced the confusing "filters cleared" toast while the
+   * status filter kept hiding results.
+   */
+  clearAllFilters(): void {
+    const statusChanged = this.statusFilter !== 'all';
+    const historyChanged = hasHistoryFilters(this.historyFilters);
+    if (!statusChanged && !historyChanged) return;
+
+    this.statusFilter = 'all';
+    this.historyFilters = EMPTY_HISTORY_FILTERS;
+    this.updateStatusFilterContext();
+    this.updateHasActiveFiltersContext();
+    this.onDidChangeTreeDataEmitter.fire();
   }
 
   getLastSuccessfulRefreshAt(): Date | undefined {
@@ -451,6 +577,7 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
     if (this.statusFilter === filter) return;
     this.statusFilter = filter;
     this.updateStatusFilterContext();
+    this.updateHasActiveFiltersContext();
     this.onDidChangeTreeDataEmitter.fire();
   }
 
@@ -476,13 +603,16 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
 
   async getChildren(element?: JobsTreeNode): Promise<JobsTreeNode[]> {
     if (!element) return this.getRootNodes();
+    if (element instanceof JobsSectionHeaderTreeItem) {
+      return element.section === 'workspace' ? this.getWorkspaceSectionRows() : this.getHistorySectionRows();
+    }
     if (element instanceof JobTreeItem) {
       // Grouped view: each child execution renders as a leaf labeled by its
       // start timestamp — the job id is already on the parent row.
       return element.executions.map((execution) => new JobExecutionTreeItem(element.jobId, execution, false));
     }
-    // Executions are leaves; step-level drill-down lives in **View Execution
-    // Details** (and the BM deep-link).
+    // Workspace jobs and executions are leaves; step-level drill-down lives in
+    // **View Execution Details** (and the BM deep-link).
     return [];
   }
 
@@ -493,7 +623,62 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
   refresh(): void {
     this.loadedOnce = true;
     this.discoveryExecutionCache = undefined;
+    this.workspaceJobsCache = undefined;
     this.onDidChangeTreeDataEmitter.fire();
+  }
+
+  /**
+   * Refreshes only the workspace-jobs cache. Used by the file-watcher when a
+   * `jobs.xml` is edited/added/removed so the tree updates without paying for
+   * an OCAPI history round-trip.
+   */
+  invalidateWorkspaceJobs(): void {
+    this.workspaceJobsCache = undefined;
+    this.onDidChangeTreeDataEmitter.fire();
+  }
+
+  /**
+   * Scans workspace `jobs.xml` files and returns one row per declared `<job>`.
+   * Cached until an explicit refresh or file-watcher invalidation — cartridges
+   * usually declare a handful of jobs, but re-parsing on every getChildren call
+   * would be wasteful when the user is just expanding/collapsing sections.
+   */
+  private async loadWorkspaceJobs(): Promise<WorkspaceJobTreeItem[]> {
+    if (this.workspaceJobsCache) return this.workspaceJobsCache;
+
+    const uris = await vscode.workspace.findFiles(
+      '**/jobs.xml',
+      '**/{node_modules,dist,out,.vscode-test,coverage,.git}/**',
+    );
+
+    // Prefer the SDK's authoritative cartridge list (walks `.project` markers)
+    // for labeling — it correctly identifies non-standard layouts (cartridge
+    // directly under `src/`, cartridges under a `cartridges/` container, etc.)
+    // that the path-walk heuristic can only approximate. Falls back to the
+    // heuristic when no workspace folder is open or nothing is discovered.
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const knownCartridges = workspaceRoot ? findCartridges(workspaceRoot).map((c) => ({name: c.name, src: c.src})) : [];
+
+    const rows: WorkspaceJobTreeItem[] = [];
+    const seen = new Set<string>();
+    for (const uri of uris) {
+      let content: string;
+      try {
+        content = await vscode.workspace.fs.readFile(uri).then((buf) => Buffer.from(buf).toString('utf-8'));
+      } catch {
+        continue;
+      }
+      const cartridgeName = detectCartridgeName(uri.fsPath, knownCartridges);
+      for (const jobId of extractJobIdsFromXml(content)) {
+        const key = `${jobId}::${uri.fsPath}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        rows.push(new WorkspaceJobTreeItem(jobId, uri.fsPath, cartridgeName));
+      }
+    }
+    rows.sort((a, b) => a.jobId.localeCompare(b.jobId));
+    this.workspaceJobsCache = rows;
+    return rows;
   }
 
   /** Soft refresh: re-renders the tree without dropping caches (e.g. filter changes). */
@@ -505,6 +690,7 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
   resetLoaded(): void {
     this.loadedOnce = false;
     this.discoveryExecutionCache = undefined;
+    this.workspaceJobsCache = undefined;
     this.onDidChangeTreeDataEmitter.fire();
   }
 
@@ -573,6 +759,16 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
   }
 
   /**
+   * Publishes a boolean context key that the title-bar menus watch to swap the
+   * filter icon between the outline (`$(filter)`) and filled (`$(filter-filled)`)
+   * variants. Kept in sync everywhere filters change — including construction —
+   * so the UI never lies about whether results are being narrowed.
+   */
+  private updateHasActiveFiltersContext(): void {
+    void vscode.commands.executeCommand('setContext', 'b2c-dx.jobs.hasActiveFilters', this.hasAnyActiveFilter());
+  }
+
+  /**
    * Mirrors the grouping mode into VS Code context so package.json can swap the
    * title-bar icon between `list-flat` (timeline) and `list-tree` (grouped).
    */
@@ -584,9 +780,28 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
     const instance = this.configProvider.getInstance();
     if (!instance) return [];
 
-    if (!this.loadedOnce) {
-      return [new JobsLoadHintTreeItem()];
-    }
+    // Workspace-jobs section is populated from local files, so it works even
+    // before the user hits Refresh. History still gates behind an explicit
+    // refresh so a passive side-panel open doesn't hit OCAPI.
+    const workspaceRows = await this.loadWorkspaceJobs();
+    const workspaceHeader = new JobsSectionHeaderTreeItem(
+      'workspace',
+      'Workspace Jobs',
+      workspaceRows.length > 0 ? `${workspaceRows.length}` : 'None found',
+    );
+    const historyHeader = new JobsSectionHeaderTreeItem('history', 'Job History', this.describeHistoryHeader());
+
+    return [workspaceHeader, historyHeader];
+  }
+
+  /**
+   * Rows under the "Job History" section — same content the view rendered
+   * pre-section-split. Kept as a private method so the section header can
+   * delegate to it, and any future changes to the history rendering (grouping,
+   * empty-state copy, load hint) live in one place.
+   */
+  private async getHistorySectionRows(): Promise<JobsTreeNode[]> {
+    if (!this.loadedOnce) return [new JobsLoadHintTreeItem()];
 
     await this.loadJobs();
     if (!this.discoveryExecutionCache) return [];
@@ -606,14 +821,10 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
       );
 
     if (rows.length === 0) {
-      return [new JobsEmptyStateTreeItem(this.statusFilter, this.hasHistoryFilters())];
+      return [new JobsEmptyStateTreeItem(this.statusFilter, this.hasAnyActiveFilter(), this.describeActiveFilters())];
     }
 
     if (this.groupingMode === 'groupByJobId') {
-      // Bucket executions per job, preserving the SDK's start_time-desc order
-      // inside each bucket. Jobs are then sorted by their most-recent run so the
-      // currently-active / most-recently-touched jobs float to the top — the
-      // same order BM's Job Definitions sidebar uses.
       const byJob = new Map<string, JobExecution[]>();
       for (const row of rows) {
         const existing = byJob.get(row.jobId);
@@ -621,19 +832,27 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
         else byJob.set(row.jobId, [row.execution]);
       }
 
-      const groupNodes = [...byJob.entries()]
+      return [...byJob.entries()]
         .sort(([, aRuns], [, bRuns]) => {
           const aLatest = parseTimestamp(aRuns[0]?.start_time) ?? 0;
           const bLatest = parseTimestamp(bRuns[0]?.start_time) ?? 0;
           return bLatest - aLatest;
         })
         .map(([jobId, runs]) => new JobTreeItem(jobId, runs));
-
-      return groupNodes;
     }
 
-    // Chronological view: SDK already returns by start_time desc; preserve that order.
     return rows.map((row) => new JobExecutionTreeItem(row.jobId, row.execution));
+  }
+
+  private async getWorkspaceSectionRows(): Promise<JobsTreeNode[]> {
+    const rows = await this.loadWorkspaceJobs();
+    return rows;
+  }
+
+  private describeHistoryHeader(): string | undefined {
+    if (!this.loadedOnce) return 'Click to load';
+    if (this.hasAnyActiveFilter()) return this.describeActiveFilters() ?? undefined;
+    return undefined;
   }
 
   /** Single fetch path used by both root rendering and lookup APIs. */

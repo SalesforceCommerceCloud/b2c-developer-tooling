@@ -18,7 +18,7 @@ interface MenuEntry {
 
 interface PackageJson {
   contributes: {
-    commands: Array<{command: string; title: string}>;
+    commands: Array<{command: string; title: string; icon?: string}>;
     views: Record<string, Array<{id: string; visibility?: string}>>;
     menus: {
       'view/item/context': MenuEntry[];
@@ -58,24 +58,41 @@ function whenClauseMatches(whenClause: string | undefined, viewItem: string): bo
 
 suite('jobs menu contributions (package.json)', () => {
   let pkg: PackageJson;
-  let contextEntries: Record<string, MenuEntry>;
+  /**
+   * Multi-map — a single command can appear more than once in `view/item/context`
+   * with different `when` clauses (e.g. `b2c-dx.jobs.run` is offered on both
+   * execution rows AND workspace-job rows, each with its own context value).
+   * Tests read this list and assert `some(...)` rather than deduping by command,
+   * which would silently drop everything past the first entry.
+   */
+  let contextEntries: Record<string, MenuEntry[]>;
 
   suiteSetup(() => {
     pkg = loadPackageJson();
     contextEntries = {};
     for (const entry of pkg.contributes.menus['view/item/context']) {
       if (entry.command?.startsWith('b2c-dx.jobs.') && entry.when?.includes('b2cJobsExplorer')) {
-        contextEntries[entry.command] = entry;
+        (contextEntries[entry.command] ??= []).push(entry);
       }
     }
   });
 
-  test('job history view lives under the primary b2c-dx container and is collapsed by default', () => {
+  function anyEntryMatches(command: string, viewItem: string): boolean {
+    const entries = contextEntries[command] ?? [];
+    return entries.some((entry) => whenClauseMatches(entry.when, viewItem));
+  }
+
+  test('jobs view lives under the primary b2c-dx container and is collapsed by default', () => {
     const b2cDxViews = pkg.contributes.views['b2c-dx'] ?? [];
-    const historyView = b2cDxViews.find((view) => view.id === 'b2cJobsExplorer');
-    assert.ok(historyView, 'b2cJobsExplorer view should live under the b2c-dx container');
+    const jobsView = b2cDxViews.find((view) => view.id === 'b2cJobsExplorer');
+    assert.ok(jobsView, 'b2cJobsExplorer view should live under the b2c-dx container');
     assert.strictEqual(
-      historyView!.visibility,
+      (jobsView as {name?: string}).name,
+      'Jobs',
+      'b2cJobsExplorer should be labeled "Jobs" — the view surfaces workspace jobs alongside history in one tree',
+    );
+    assert.strictEqual(
+      jobsView!.visibility,
       'collapsed',
       'b2cJobsExplorer should be collapsed by default to stay out of the way until the user opens it',
     );
@@ -163,12 +180,15 @@ suite('jobs menu contributions (package.json)', () => {
   test('jobs commands are declared and hidden from command palette where appropriate', () => {
     const expectedCommands = [
       'b2c-dx.jobs.openFilters',
+      'b2c-dx.jobs.openFiltersActive',
+      'b2c-dx.jobs.clearAllFilters',
       'b2c-dx.jobs.refresh',
       'b2c-dx.jobs.setStatusFilter',
       'b2c-dx.jobs.setHistoryFilters',
       'b2c-dx.jobs.setNameFilter',
       'b2c-dx.jobs.toggleAutoRefresh',
       'b2c-dx.jobs.toggleGrouping',
+      'b2c-dx.jobs.toggleGroupingChronological',
       'b2c-dx.jobs.importSiteArchive',
       'b2c-dx.jobs.exportSiteArchive',
       'b2c-dx.jobs.run',
@@ -180,6 +200,10 @@ suite('jobs menu contributions (package.json)', () => {
       'b2c-dx.jobs.openExecutionLog',
       'b2c-dx.jobs.openFailureLog',
       'b2c-dx.jobs.openBmDefinitions',
+      // Right-click action on Workspace Jobs rows — jumps to the declaring
+      // jobs.xml at the matching <job> block so users can inspect/edit the
+      // definition without hunting for the file.
+      'b2c-dx.jobs.openDefinitionFile',
     ];
     for (const command of expectedCommands) {
       assert.ok(
@@ -196,7 +220,6 @@ suite('jobs menu contributions (package.json)', () => {
       'b2c-dx.jobs.refreshDefinitions',
       'b2c-dx.jobs.deployScaffold',
       'b2c-dx.jobs.deployDefinition',
-      'b2c-dx.jobs.openDefinitionFile',
     ];
     for (const command of removedCommands) {
       assert.ok(
@@ -216,9 +239,59 @@ suite('jobs menu contributions (package.json)', () => {
       'b2c-dx.jobs.viewExecutionDetails',
       'b2c-dx.jobs.openExecutionLog',
       'b2c-dx.jobs.openFailureLog',
+      // Alias command that only exists to render a different title-bar icon
+      // when filters are active; the primary `openFilters` handles palette access.
+      'b2c-dx.jobs.openFiltersActive',
+      // Only invoked from the empty-state tree row; palette entry would be a dead-end.
+      'b2c-dx.jobs.clearAllFilters',
+      // Right-click-only action; requires a workspace-job node to know which
+      // jobs.xml to open, so a bare palette invocation would be a dead-end.
+      'b2c-dx.jobs.openDefinitionFile',
+      // Alias command that only exists to render a different title-bar icon
+      // when grouping is on; the primary `toggleGrouping` handles palette access.
+      'b2c-dx.jobs.toggleGroupingChronological',
     ]) {
       assert.ok(hiddenInPalette.has(command), `${command} should be hidden from command palette`);
     }
+  });
+
+  test('grouping title-bar icon swaps between list-flat and list-tree based on current mode', () => {
+    const titleEntries = pkg.contributes.menus['view/title'].filter((entry) => entry.when?.includes('b2cJobsExplorer'));
+    const flatEntry = titleEntries.find((entry) => entry.command === 'b2c-dx.jobs.toggleGrouping');
+    const treeEntry = titleEntries.find((entry) => entry.command === 'b2c-dx.jobs.toggleGroupingChronological');
+    assert.ok(flatEntry, 'chronological-mode icon entry must exist');
+    assert.ok(treeEntry, 'grouped-mode icon entry must exist');
+    // list-flat is shown while chronological (action = switch to grouped);
+    // list-tree is shown while grouped (action = switch back to chronological).
+    assert.ok(
+      flatEntry.when?.includes('b2c-dx.jobs.groupingMode != groupByJobId'),
+      'chronological variant must be gated when NOT grouped',
+    );
+    assert.ok(
+      treeEntry.when?.includes('b2c-dx.jobs.groupingMode == groupByJobId'),
+      'grouped variant must be gated when grouped',
+    );
+    const flatCmd = pkg.contributes.commands.find((c) => c.command === 'b2c-dx.jobs.toggleGrouping');
+    const treeCmd = pkg.contributes.commands.find((c) => c.command === 'b2c-dx.jobs.toggleGroupingChronological');
+    assert.strictEqual(flatCmd?.icon, '$(list-flat)');
+    assert.strictEqual(treeCmd?.icon, '$(list-tree)');
+  });
+
+  test('filter title-bar icon swaps between filled and outlined based on active filters', () => {
+    const titleEntries = pkg.contributes.menus['view/title'].filter((entry) => entry.when?.includes('b2cJobsExplorer'));
+    const outlineEntry = titleEntries.find((entry) => entry.command === 'b2c-dx.jobs.openFilters');
+    const filledEntry = titleEntries.find((entry) => entry.command === 'b2c-dx.jobs.openFiltersActive');
+    assert.ok(outlineEntry, 'outlined filter icon entry must exist');
+    assert.ok(filledEntry, 'filled filter icon entry must exist');
+    assert.ok(
+      outlineEntry.when?.includes('!b2c-dx.jobs.hasActiveFilters'),
+      'outlined variant must be gated on !hasActiveFilters',
+    );
+    assert.ok(
+      filledEntry.when?.includes('b2c-dx.jobs.hasActiveFilters') &&
+        !filledEntry.when.includes('!b2c-dx.jobs.hasActiveFilters'),
+      'filled variant must be gated on hasActiveFilters',
+    );
   });
 
   test('job history title bar exposes the expected actions', () => {
@@ -233,7 +306,7 @@ suite('jobs menu contributions (package.json)', () => {
       'b2c-dx.jobs.openBmDefinitions',
       'b2c-dx.jobs.run',
     ]) {
-      assert.ok(titleCommands.has(command), `${command} should appear in the Job History title bar`);
+      assert.ok(titleCommands.has(command), `${command} should appear in the Jobs title bar`);
     }
 
     // The two state-specific commands must be gated on opposite sides of the
@@ -263,12 +336,28 @@ suite('jobs menu contributions (package.json)', () => {
     );
   });
 
+  test('workspace-job rows expose Run and Open jobs.xml on right-click', () => {
+    // Workspace jobs are declared in a cartridge's jobs.xml but may not yet be
+    // registered in Business Manager. The right-click menu is the primary
+    // affordance for running them — the extension auto-deploys the definition
+    // when BM doesn't know it yet — and for jumping to the source file for
+    // inspection/edit.
+    const workspaceEntries = pkg.contributes.menus['view/item/context'].filter(
+      (entry) => entry.when?.includes('viewItem == workspaceJob') && entry.when?.includes('b2cJobsExplorer'),
+    );
+    const commands = new Set(workspaceEntries.map((entry) => entry.command));
+    assert.ok(commands.has('b2c-dx.jobs.run'), 'Run must be on the workspace-job right-click menu');
+    assert.ok(
+      commands.has('b2c-dx.jobs.openDefinitionFile'),
+      'Open jobs.xml must be on the workspace-job right-click menu',
+    );
+  });
+
   test('jobs context menu visibility aligns with execution states', () => {
-    const runWhen = contextEntries['b2c-dx.jobs.run']?.when;
-    // Run is now offered on execution rows directly (the chronological feed
-    // is the only level in the tree).
-    assert.ok(whenClauseMatches(runWhen, 'jobExecution-running'));
-    assert.ok(whenClauseMatches(runWhen, 'jobExecution-completed'));
+    // Run is offered on both execution rows (chronological feed) AND workspace-job
+    // rows — anyEntryMatches() checks every declared `when` clause for the command.
+    assert.ok(anyEntryMatches('b2c-dx.jobs.run', 'jobExecution-running'));
+    assert.ok(anyEntryMatches('b2c-dx.jobs.run', 'jobExecution-completed'));
 
     // Scaffold and deploy actions are no longer surfaced on the Job History
     // tree — they belong on cartridges / via the palette.
@@ -277,13 +366,11 @@ suite('jobs menu contributions (package.json)', () => {
       'createScaffold should not be in the Job History context menu',
     );
 
-    const stopWhen = contextEntries['b2c-dx.jobs.stop']?.when;
-    assert.ok(whenClauseMatches(stopWhen, 'jobExecution-running'));
-    assert.ok(!whenClauseMatches(stopWhen, 'jobExecution-completed'));
-    assert.ok(!whenClauseMatches(stopWhen, 'jobExecution-failed'));
+    assert.ok(anyEntryMatches('b2c-dx.jobs.stop', 'jobExecution-running'));
+    assert.ok(!anyEntryMatches('b2c-dx.jobs.stop', 'jobExecution-completed'));
+    assert.ok(!anyEntryMatches('b2c-dx.jobs.stop', 'jobExecution-failed'));
 
-    const failureLogWhen = contextEntries['b2c-dx.jobs.openFailureLog']?.when;
-    assert.ok(whenClauseMatches(failureLogWhen, 'jobExecution-failed'));
-    assert.ok(!whenClauseMatches(failureLogWhen, 'jobExecution-running'));
+    assert.ok(anyEntryMatches('b2c-dx.jobs.openFailureLog', 'jobExecution-failed'));
+    assert.ok(!anyEntryMatches('b2c-dx.jobs.openFailureLog', 'jobExecution-running'));
   });
 });

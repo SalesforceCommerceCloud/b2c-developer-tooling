@@ -41,7 +41,12 @@ export function registerJobs(context: vscode.ExtensionContext, configProvider: B
     }
     const refreshLabel = lastRefresh ? lastRefresh.toLocaleTimeString() : '—';
     const autoLabel = treeProvider.isPollingEnabled() ? ' · Auto-Refresh on' : '';
-    treeView.message = `Updated ${refreshLabel}${autoLabel}`;
+    // Prepend an explicit filter summary whenever any filter is narrowing the
+    // tree. This is the primary "hey, results are being hidden" signal — the
+    // title-bar icon swap alone was too easy to miss.
+    const filterSummary = treeProvider.describeActiveFilters();
+    const filterLabel = filterSummary ? `Filters: ${filterSummary} · ` : '';
+    treeView.message = `${filterLabel}Updated ${refreshLabel}${autoLabel}`;
   };
   updateJobHistoryMessage();
 
@@ -82,8 +87,14 @@ export function registerJobs(context: vscode.ExtensionContext, configProvider: B
   // above — visible as a noticeable lag after pressing Refresh.
   const onDidLoadSub = treeProvider.onDidLoad(() => updateJobHistoryMessage());
 
+  // Filter changes fire onDidChangeTreeData (not onDidLoad), so subscribe there
+  // too — otherwise the "Filters: …" prefix in the message would lag until the
+  // next 5s timer tick (or the next fetch). Fast-path only; the fire itself is
+  // already gated to real state changes inside the provider.
+  const onDidChangeTreeSub = treeProvider.onDidChangeTreeData(() => updateJobHistoryMessage());
+
   const builtInScaffoldsDir = path.join(context.extensionPath, 'dist', 'data', 'scaffolds');
-  const commandDisposables = registerJobsCommands(configProvider, treeProvider, {
+  const commandDisposables = registerJobsCommands(configProvider, treeProvider, treeView, {
     builtInScaffoldsDir,
     extensionUri: context.extensionUri,
     onAutoRefreshChanged: (enabled) => {
@@ -91,6 +102,25 @@ export function registerJobs(context: vscode.ExtensionContext, configProvider: B
       updateJobHistoryMessage();
     },
   });
+
+  // Keep the Workspace Jobs section in sync with the filesystem — edits and
+  // scaffolds appear the moment the underlying jobs.xml is saved instead of
+  // waiting for the next Refresh. Scoped to jobs.xml, so unrelated file churn
+  // never triggers a re-render of the tree.
+  //
+  // Filter out matches inside dependency / build output directories:
+  // `createFileSystemWatcher` doesn't honor `files.exclude`, and a jobs.xml
+  // shipped inside a dependency or a build artifact is not workspace code we
+  // want to surface — those events would cause pointless tree re-renders.
+  const jobsXmlWatcher = vscode.workspace.createFileSystemWatcher('**/jobs.xml');
+  const IGNORED_WATCHER_SEGMENTS = /[/\\](?:node_modules|dist|out|build|\.git)[/\\]/;
+  const onJobsXmlChanged = (uri: vscode.Uri): void => {
+    if (IGNORED_WATCHER_SEGMENTS.test(uri.fsPath)) return;
+    treeProvider.invalidateWorkspaceJobs();
+  };
+  jobsXmlWatcher.onDidCreate(onJobsXmlChanged);
+  jobsXmlWatcher.onDidChange(onJobsXmlChanged);
+  jobsXmlWatcher.onDidDelete(onJobsXmlChanged);
 
   configProvider.onDidReset(() => {
     treeProvider.stopPolling();
@@ -100,7 +130,7 @@ export function registerJobs(context: vscode.ExtensionContext, configProvider: B
     updateJobHistoryMessage();
   });
 
-  context.subscriptions.push(treeView, onDidLoadSub, ...commandDisposables, {
+  context.subscriptions.push(treeView, onDidLoadSub, onDidChangeTreeSub, ...commandDisposables, {
     dispose: () => {
       clearInterval(messageRefreshTimer);
       treeProvider.stopPolling();

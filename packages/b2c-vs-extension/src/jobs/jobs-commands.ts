@@ -18,6 +18,8 @@ import {
 import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {createScaffoldRegistry, generateFromScaffold} from '@salesforce/b2c-tooling-sdk/scaffold';
 import {findCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
+import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
+import JSZip from 'jszip';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
@@ -31,6 +33,7 @@ import type {
   JobTreeItem,
   JobsTreeDataProvider,
 } from './jobs-tree-provider.js';
+import {extractJobBlockXml, extractJobIdsFromXml, findJobBlockOffset, stripXmlComments} from './jobs-xml-parser.js';
 
 const JOB_DETAILS_SCHEME = 'b2c-job-details';
 /** Built-in SDK scaffold that generates a custom job step + steptypes.json registration. */
@@ -115,8 +118,12 @@ async function chooseUnifiedFilterAction(
         action: {kind: 'advanced'} as const,
       },
       {
-        label: 'Clear History Filters',
-        detail: 'Clear Job ID/user/date filters',
+        label: 'Clear All Filters',
+        // "Clear History Filters" was misleading: it only wiped the advanced
+        // fields, leaving the status filter set. Users expected one "clear"
+        // action to reset everything, so the option now resets status + all
+        // advanced fields together (see JobsTreeDataProvider.clearAllFilters).
+        detail: 'Reset status to All and clear Job ID / user / date filters',
         action: {kind: 'clear'} as const,
       },
     ],
@@ -151,12 +158,16 @@ async function promptForHistoryFilters(current: JobHistoryFilters): Promise<JobH
   const action = await vscode.window.showQuickPick(
     [
       {
-        label: 'Set / Update Filters',
+        label: 'Set / Update Advanced Filters',
         description: 'Filter by Job ID, user, start time, and end time',
       },
       {
-        label: 'Clear All Filters',
-        description: 'Remove job history filters and show all matching status entries',
+        // Scoped to advanced fields only — status is intentionally left alone
+        // here because the caller entered this dialog specifically to edit
+        // advanced filters. Users who want a full reset should pick "Clear All
+        // Filters" from the outer Job History Filters picker.
+        label: 'Clear Advanced Filters',
+        description: 'Remove Job ID / user / date filters (leaves the status filter as-is)',
       },
     ],
     {
@@ -166,7 +177,7 @@ async function promptForHistoryFilters(current: JobHistoryFilters): Promise<JobH
   );
 
   if (!action) return undefined;
-  if (action.label === 'Clear All Filters') {
+  if (action.label === 'Clear Advanced Filters') {
     return {
       jobIdContains: '',
       executedBy: '',
@@ -558,6 +569,17 @@ async function writeJobScaffold(
   // load ("invalid step in script module"). The "custom." prefix is restored on
   // the @type-id during normalization below.
   const cartridgeNamePath = path.relative(root.fsPath, plan.cartridgeDir);
+  const stepTypesPath = path.join(plan.cartridgeDir, 'steptypes.json');
+
+  // Snapshot the previously-registered categories BEFORE the SDK scaffold runs.
+  // The scaffold's steptypes-entry.json.ejs template emits a bare array like
+  // `[{new entry}]`, and the SDK's json-merge deep-merges that into the
+  // `step-types` path where the existing value is a keyed object. Array-vs-object
+  // in `deepMerge` falls back to "return source", which silently replaces every
+  // previously-registered category with the new entry's array — wiping earlier
+  // custom step types. Re-injecting the snapshot in normalization keeps history.
+  const preservedCategories = await readExistingStepCategories(stepTypesPath);
+
   const result = await generateFromScaffold(scaffold, {
     outputDir: root.fsPath,
     variables: {
@@ -570,11 +592,11 @@ async function writeJobScaffold(
   });
 
   const scriptPaths = result.files.filter((file) => file.absolutePath.endsWith('.js')).map((file) => file.absolutePath);
-  const stepTypesPath = path.join(plan.cartridgeDir, 'steptypes.json');
 
   // Normalize the generated steptypes.json into the exact shape B2C requires:
   // keyed `step-types` object, context flags matching the job scope, a
   // cartridge-prefixed module path, and the `custom.` type-id prefix restored.
+  // Also restores any categories the SDK merge dropped (see comment above).
   await normalizeStepTypesJson(
     stepTypesPath,
     plan.spec.stepKind,
@@ -582,6 +604,7 @@ async function writeJobScaffold(
     plan.spec.cartridgeName,
     plan.stepIdBare,
     plan.spec.stepTypeId,
+    preservedCategories,
   );
 
   // Merge the matching job into jobs.xml at the cartridge root. A cartridge can
@@ -617,12 +640,20 @@ async function mergeJobIntoJobsXml(jobsXmlPath: string, spec: JobScaffoldSpec): 
 
   const jobBlock = buildJobBlockXml(spec);
   const jobIdPattern = escapeRegExp(spec.jobId);
-  // Match an existing <job job-id="<this id>"> … </job> block (any attribute order).
-  const existingJobRegex = new RegExp(`[ \\t]*<job\\b[^>]*\\bjob-id="${jobIdPattern}"[\\s\\S]*?</job>\\n?`, 'i');
+  // Attribute order isn't guaranteed by the XSD; either quote style is legal.
+  const existingJobRegex = new RegExp(
+    `[ \\t]*<job\\b[^>]*\\bjob-id\\s*=\\s*(["'])${jobIdPattern}\\1[\\s\\S]*?</job>\\n?`,
+    'i',
+  );
+
+  // Detect "already declared" against a comment-stripped copy so a commented-out
+  // block doesn't trigger a replace (which would rewrite the comment away). But
+  // apply the actual write to the raw content so comments and formatting outside
+  // the block are preserved.
+  const alreadyDeclared = existingJobRegex.test(stripXmlComments(existing));
 
   let updated: string;
-  if (existingJobRegex.test(existing)) {
-    // Re-scaffold of the same job-id → replace that block in place.
+  if (alreadyDeclared) {
     updated = existing.replace(existingJobRegex, `${jobBlock}\n`);
   } else {
     // New job-id → insert before the closing </jobs>.
@@ -647,6 +678,27 @@ function escapeRegExp(value: string): string {
  * (`<cartridge>/cartridge/scripts/...`) so it resolves at runtime. Existing step
  * categories in the file are preserved.
  */
+/**
+ * Reads the current `step-types` object from a cartridge's steptypes.json.
+ * Returns `{}` if the file doesn't exist, isn't JSON, or has no `step-types`.
+ *
+ * Callers snapshot this BEFORE the SDK scaffold runs so previously-registered
+ * categories can be re-injected after the SDK's array-vs-object json-merge
+ * clobbers them (see writeJobScaffold for the underlying bug).
+ */
+async function readExistingStepCategories(stepTypesPath: string): Promise<Record<string, unknown>> {
+  try {
+    const raw = JSON.parse(await fs.readFile(stepTypesPath, 'utf-8')) as Record<string, unknown>;
+    const stepTypes = raw['step-types'];
+    if (stepTypes && typeof stepTypes === 'object' && !Array.isArray(stepTypes)) {
+      return stepTypes as Record<string, unknown>;
+    }
+  } catch {
+    // Missing file or invalid JSON — treat as empty snapshot.
+  }
+  return {};
+}
+
 async function normalizeStepTypesJson(
   stepTypesPath: string,
   stepKind: 'task' | 'chunk',
@@ -654,20 +706,37 @@ async function normalizeStepTypesJson(
   cartridgeName: string,
   stepIdBare: string,
   stepTypeId: string,
+  preservedCategories: Record<string, unknown> = {},
 ): Promise<void> {
   const raw = JSON.parse(await fs.readFile(stepTypesPath, 'utf-8')) as Record<string, unknown>;
   const categoryKey = stepKind === 'chunk' ? 'chunk-script-module-step' : 'script-module-step';
   const stepTypes = raw['step-types'];
 
-  // Collect step entries from whichever shape the scaffold produced.
+  // Collect step entries from whichever shape the scaffold produced. Restore any
+  // categories the SDK's array-vs-object merge dropped (see writeJobScaffold).
   let entries: Array<Record<string, unknown>> = [];
-  let existingCategories: Record<string, unknown> = {};
+  let existingCategories: Record<string, unknown> = {...preservedCategories};
   if (Array.isArray(stepTypes)) {
     entries = stepTypes as Array<Record<string, unknown>>;
   } else if (stepTypes && typeof stepTypes === 'object') {
-    existingCategories = stepTypes as Record<string, unknown>;
+    existingCategories = {...preservedCategories, ...(stepTypes as Record<string, unknown>)};
     const current = existingCategories[categoryKey];
     entries = Array.isArray(current) ? (current as Array<Record<string, unknown>>) : [];
+  }
+
+  // The current-run entries also need to survive the categoryKey rebuild below —
+  // append them to whatever the preserved snapshot had for this category so
+  // re-scaffolding a second chunk step doesn't drop the first one.
+  const preservedForCategory = preservedCategories[categoryKey];
+  if (Array.isArray(preservedForCategory)) {
+    const known = new Set(entries.map((entry) => String(entry['@type-id'] ?? '')));
+    for (const preserved of preservedForCategory as Array<Record<string, unknown>>) {
+      const typeId = String(preserved['@type-id'] ?? '');
+      if (typeId && !known.has(typeId)) {
+        entries.push(preserved);
+        known.add(typeId);
+      }
+    }
   }
 
   // Align context flags with the job scope: blank site context = org-scoped.
@@ -719,19 +788,125 @@ function getConfiguredKnownJobIds(): string[] {
   return [...new Set(sanitized)].sort((a, b) => a.localeCompare(b));
 }
 
+/**
+ * Scans every `jobs.xml` in the workspace for `<job job-id="…">` values.
+ *
+ * Execution-history lookup only surfaces jobs that have already run at least
+ * once, so newly-deployed jobs are invisible to the picker until their first
+ * execution — a chicken-and-egg problem for testing. Reading the workspace
+ * cartridges gives us the authoritative list of jobs the user *intends* to run
+ * (they're the same file BM ingests), independent of whether the sandbox has
+ * ever executed them.
+ *
+ * Uses `vscode.workspace.findFiles` so it honors `files.exclude` /
+ * `search.exclude` and works in multi-root workspaces. Excludes node_modules,
+ * `dist`, `out`, `.vscode-test` etc. by default.
+ */
+async function getWorkspaceJobIds(): Promise<string[]> {
+  try {
+    const uris = await vscode.workspace.findFiles(
+      '**/jobs.xml',
+      '**/{node_modules,dist,out,.vscode-test,coverage,.git}/**',
+    );
+    const ids = new Set<string>();
+    for (const uri of uris) {
+      let content: string;
+      try {
+        content = await fs.readFile(uri.fsPath, 'utf-8');
+      } catch {
+        continue;
+      }
+      for (const id of extractJobIdsFromXml(content)) {
+        ids.add(id);
+      }
+    }
+    return [...ids].sort((a, b) => a.localeCompare(b));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Locate the workspace `jobs.xml` that declares `jobId` and extract just that
+ * `<job>` block. Returns `undefined` when the job isn't defined in any workspace
+ * jobs.xml — the caller then knows there's nothing to deploy.
+ *
+ * The single-job archive we build from this is what BM ingests to register the
+ * job definition (OCAPI only lets you *run* jobs that BM already knows about,
+ * not create them). We slice just the one block so the deploy is minimal and
+ * doesn't touch unrelated jobs on the instance.
+ */
+async function findWorkspaceJobDefinition(jobId: string): Promise<{sourcePath: string; jobBlock: string} | undefined> {
+  const uris = await vscode.workspace.findFiles(
+    '**/jobs.xml',
+    '**/{node_modules,dist,out,.vscode-test,coverage,.git}/**',
+  );
+  for (const uri of uris) {
+    let content: string;
+    try {
+      content = await fs.readFile(uri.fsPath, 'utf-8');
+    } catch {
+      continue;
+    }
+    const jobBlock = extractJobBlockXml(content, jobId);
+    if (jobBlock) {
+      return {sourcePath: uri.fsPath, jobBlock};
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Deploys a single job definition to BM by wrapping the extracted `<job>` block
+ * in a minimal `jobs.xml`, zipping it as a site archive, and importing it.
+ *
+ * BM's site-archive-import merges by job-id, so this is safe to call repeatedly
+ * for the same job — existing entries are updated in place, other jobs on the
+ * server are untouched.
+ */
+async function deployJobDefinitionToBm(instance: B2CInstance, jobBlock: string): Promise<void> {
+  const jobsXml = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<jobs xmlns="http://www.demandware.com/xml/impex/jobs/2015-07-01">',
+    jobBlock,
+    '</jobs>',
+    '',
+  ].join('\n');
+
+  const zip = new JSZip();
+  zip.file('jobs.xml', jobsXml);
+  const buffer = await zip.generateAsync({type: 'nodebuffer', compression: 'DEFLATE'});
+
+  await siteArchiveImport(instance, buffer);
+}
+
 async function promptForJobId(treeProvider: JobsTreeDataProvider, hintedJobId?: string): Promise<string | undefined> {
-  const discovered = await treeProvider.getDiscoveredJobIds();
+  const [discovered, workspaceJobs] = await Promise.all([treeProvider.getDiscoveredJobIds(), getWorkspaceJobIds()]);
   const known = getConfiguredKnownJobIds();
   const hint = hintedJobId?.trim();
-  const options = [...new Set([...(hint ? [hint] : []), ...discovered, ...known])].sort((a, b) => a.localeCompare(b));
+  const options = [...new Set([...(hint ? [hint] : []), ...discovered, ...workspaceJobs, ...known])].sort((a, b) =>
+    a.localeCompare(b),
+  );
 
   if (options.length > 0) {
+    const discoveredSet = new Set(discovered);
+    const workspaceSet = new Set(workspaceJobs);
+    const knownSet = new Set(known);
+    const describeSource = (jobId: string): string | undefined => {
+      if (jobId === hint) return 'Selected job';
+      const sources: string[] = [];
+      if (workspaceSet.has(jobId)) sources.push('workspace jobs.xml');
+      if (discoveredSet.has(jobId)) sources.push('run history');
+      if (knownSet.has(jobId)) sources.push('configured');
+      return sources.length > 0 ? sources.join(' · ') : undefined;
+    };
+
     const customLabel = '$(edit) Enter job ID manually...';
     const picked = await vscode.window.showQuickPick(
       [
         ...options.map((jobId) => ({
           label: jobId,
-          description: jobId === hint ? 'Selected job' : undefined,
+          description: describeSource(jobId),
           picked: jobId === hint,
         })),
         {label: customLabel, description: undefined, picked: false},
@@ -740,7 +915,7 @@ async function promptForJobId(treeProvider: JobsTreeDataProvider, hintedJobId?: 
         title: 'Run Job',
         placeHolder: hint
           ? `Confirm the job to run (default: ${hint}), or enter another`
-          : 'Select a discovered/configured job ID, or enter manually',
+          : 'Select a job (workspace jobs.xml, run history, or configured), or enter manually',
         matchOnDescription: true,
       },
     );
@@ -811,6 +986,7 @@ function isJobNotRunnableError(error: unknown): boolean {
 export function registerJobsCommands(
   configProvider: B2CExtensionConfig,
   treeProvider: JobsTreeDataProvider,
+  treeView: vscode.TreeView<unknown>,
   options: {
     builtInScaffoldsDir: string;
     extensionUri?: vscode.Uri;
@@ -899,8 +1075,8 @@ export function registerJobsCommands(
       return;
     }
 
-    try {
-      const finished = await vscode.window.withProgress(
+    const triggerAndWait = async (): Promise<JobExecution> => {
+      return vscode.window.withProgress(
         {location: vscode.ProgressLocation.Notification, title: `Running job ${jobId}...`, cancellable: false},
         async (progress) => {
           const execution = await executeJob(instance, jobId, {parameters});
@@ -908,20 +1084,69 @@ export function registerJobsCommands(
           if (!executionId) return execution;
 
           progress.report({message: `Execution ${executionId} started`});
-          // Surface the running execution in the views immediately (jobs can
-          // finish in <1s, so without this the "running" state is never seen).
           treeProvider.refresh();
           return waitForJob(instance, jobId, executionId, {
             onPoll: (info) => progress.report({message: `${info.status} · ${info.elapsedSeconds}s elapsed`}),
           });
         },
       );
+    };
+
+    try {
+      let finished: JobExecution;
+      try {
+        finished = await triggerAndWait();
+      } catch (firstError) {
+        // OCAPI can only run jobs that BM already knows about. When the job is
+        // defined in the workspace but hasn't been imported yet, transparently
+        // deploy its jobs.xml block via site-archive-import (which BM merges by
+        // job-id) and retry. sfcc-* system jobs and jobs missing from the
+        // workspace stay as hard errors — nothing to deploy.
+        if (!isJobNotRunnableError(firstError) || isSystemJobId(jobId)) {
+          throw firstError;
+        }
+        const definition = await findWorkspaceJobDefinition(jobId);
+        if (!definition) {
+          throw firstError;
+        }
+        const relSource = vscode.workspace.asRelativePath(definition.sourcePath);
+        const confirm = await vscode.window.showInformationMessage(
+          `Job "${jobId}" isn't registered on Business Manager yet. Deploy the definition from ${relSource} and run it?`,
+          {modal: true},
+          'Deploy & Run',
+        );
+        if (confirm !== 'Deploy & Run') return;
+
+        // Isolate the deploy step so its failures don't get mislabelled as run
+        // failures downstream. A site-archive-import fault has a completely
+        // different remediation (fix the jobs.xml, check WebDAV scopes) than a
+        // job-execution fault, and hiding it inside the generic "Failed to run"
+        // toast makes it look like the run failed instead of the deploy.
+        try {
+          await vscode.window.withProgress(
+            {location: vscode.ProgressLocation.Notification, title: `Deploying job definition ${jobId}...`},
+            () => deployJobDefinitionToBm(instance, definition.jobBlock),
+          );
+        } catch (deployError) {
+          const detail = deployError instanceof Error ? deployError.message : String(deployError);
+          showScopeAwareError(`Failed to deploy job definition ${jobId} from ${relSource}`, deployError);
+          // Log to the developer console for the full stack; the toast stays terse.
+          console.error(`[b2c-dx] Deploy of ${jobId} failed:`, detail);
+          return;
+        }
+        finished = await triggerAndWait();
+      }
 
       try {
         const log = await getJobLog(instance, finished);
         await openJobLog(finished.id ?? jobId, log);
-      } catch {
-        // Log may not be available yet; the success notification still applies.
+      } catch (logError) {
+        // The log may not be flushed yet on a just-finished job (BM writes it
+        // asynchronously) — that's expected and doesn't warrant a toast. Log
+        // to the developer console so real failures (permissions on the log
+        // dir, network flap) are still diagnosable when a user reports "job
+        // ran but no log opened."
+        console.warn(`[b2c-dx] Could not open log for ${jobId}:`, logError);
       }
       void vscode.window.showInformationMessage(`Job ${jobId} finished successfully.`);
     } catch (error) {
@@ -930,8 +1155,9 @@ export function registerJobsCommands(
           const log = await getJobLog(instance, error.execution);
           await openJobLog(error.execution.id ?? jobId, log);
           revealExecutionErrorInActiveEditor(error.execution);
-        } catch {
-          // Fall through to the generic error toast when the log is unavailable.
+        } catch (logError) {
+          // Log may still be flushing; fall through to the generic error toast.
+          console.warn(`[b2c-dx] Could not open failure log for ${jobId}:`, logError);
         }
         const detail = getJobErrorMessage(error.execution) ?? error.execution.exit_status?.message;
         void vscode.window.showErrorMessage(`Job ${jobId} failed${detail ? `: ${detail}` : '.'}`);
@@ -939,7 +1165,7 @@ export function registerJobsCommands(
         // System (sfcc-*) jobs appear in execution history but aren't exposed as
         // runnable definitions via OCAPI. Explain rather than surface the raw fault.
         void vscode.window.showWarningMessage(
-          `"${jobId}" can't be run from here. ${isSystemJobId(jobId) ? 'It is a platform system job that runs on the instance scheduler' : 'No runnable job with this ID is defined in Business Manager'} — only custom/BM-defined jobs can be triggered via the API.`,
+          `"${jobId}" can't be run from here. ${isSystemJobId(jobId) ? 'It is a platform system job that runs on the instance scheduler' : 'No runnable job with this ID is defined in Business Manager, and no workspace jobs.xml declares it'} — only custom/BM-defined jobs can be triggered via the API.`,
         );
       } else {
         showScopeAwareError(`Failed to run job ${jobId}`, error);
@@ -977,8 +1203,12 @@ export function registerJobsCommands(
     }
 
     if (action.kind === 'clear') {
-      treeProvider.clearHistoryFilters();
-      void vscode.window.showInformationMessage('Job history filters cleared.');
+      // "Clear All Filters" resets status AND advanced fields — matches user
+      // mental model (one "clear" wipes everything). The previous behavior
+      // only cleared advanced fields, so the toast lied when a status filter
+      // was still narrowing the tree.
+      treeProvider.clearAllFilters();
+      void vscode.window.showInformationMessage('All job history filters cleared.');
       return;
     }
 
@@ -986,8 +1216,28 @@ export function registerJobsCommands(
     if (!nextFilters) return;
     treeProvider.setHistoryFilters(nextFilters);
     void vscode.window.showInformationMessage(
-      treeProvider.hasHistoryFilters() ? 'Job history filters updated.' : 'Job history filters cleared.',
+      treeProvider.hasHistoryFilters() ? 'Job history filters updated.' : 'Advanced job history filters cleared.',
     );
+  });
+
+  // Alias command bound to the filled-filter title-bar icon. VS Code doesn't
+  // support conditional icons on a single command, so the "filters are active"
+  // state is expressed by swapping to a second command entry with the same
+  // handler but a different icon (see `contributes.commands` + `menus.view/title`
+  // in package.json). Hidden from the command palette.
+  const openFiltersActive = registerSafeCommand('b2c-dx.jobs.openFiltersActive', async () => {
+    await vscode.commands.executeCommand('b2c-dx.jobs.openFilters');
+  });
+
+  // One-shot "reset everything" — wired to the empty-state row's click when
+  // filters are hiding results, and exposed as a first-class command for
+  // keyboard/palette use. Silent no-op when nothing is set.
+  const clearAllFilters = registerSafeCommand('b2c-dx.jobs.clearAllFilters', () => {
+    const hadAny = treeProvider.hasAnyActiveFilter();
+    treeProvider.clearAllFilters();
+    if (hadAny) {
+      void vscode.window.showInformationMessage('All job history filters cleared.');
+    }
   });
 
   const setHistoryFilters = registerSafeCommand('b2c-dx.jobs.setHistoryFilters', async () => {
@@ -1111,13 +1361,26 @@ export function registerJobsCommands(
       return;
     }
 
-    // Accept a job id from an execution tree node, a string arg, or nothing
-    // (toolbar). When invoked from a specific execution we already know which
-    // job to run, so skip the picker (showing 60 sfcc-* alternatives is noise)
-    // and go straight to params + confirm. The picker is only for the toolbar
-    // entry point where no job is known.
-    const hintedJobId =
+    // Resolve the target job in this priority order:
+    //   1. explicit arg from a right-click / execution-node invocation
+    //   2. current tree selection (user clicked a row, then the toolbar Run
+    //      icon) — reading `treeView.selection` here rather than trusting the
+    //      arg VS Code passes to the title-bar command, because that arg is
+    //      the *focused* node (VS Code renders the last-focused row with a
+    //      gray outline even after the user clicked away), which users read
+    //      as "nothing selected". `treeView.selection` matches what the user
+    //      sees highlighted.
+    //   3. picker fallback when nothing is selected.
+    const argHint =
       typeof node === 'string' ? node : node && typeof node === 'object' && 'jobId' in node ? node.jobId : undefined;
+    let selectionHint: string | undefined;
+    if (!argHint) {
+      const [selected] = treeView.selection as ReadonlyArray<unknown>;
+      if (selected && typeof selected === 'object' && 'jobId' in selected) {
+        selectionHint = (selected as {jobId?: string}).jobId;
+      }
+    }
+    const hintedJobId = argHint ?? selectionHint;
     const chosenJobId = hintedJobId?.trim() || (await promptForJobId(treeProvider));
     if (!chosenJobId) return;
 
@@ -1135,6 +1398,30 @@ export function registerJobsCommands(
     if (confirm !== 'Run') return;
 
     await runJobAndTail(chosenJobId, parameters);
+  });
+
+  // Right-click on a Workspace Job row → open its declaring jobs.xml at the
+  // matching `<job job-id="...">` line so the user can inspect or edit the
+  // definition. Falls back to opening the file at the top when the regex can't
+  // find the id (shouldn't happen for a row that was parsed out of that file,
+  // but degrades gracefully if the file was edited between scan and click).
+  const openDefinitionFile = registerSafeCommand('b2c-dx.jobs.openDefinitionFile', async (node?: unknown) => {
+    const target =
+      node && typeof node === 'object' && 'sourcePath' in node && 'jobId' in node
+        ? (node as {sourcePath: string; jobId: string})
+        : undefined;
+    if (!target) return;
+
+    const doc = await vscode.workspace.openTextDocument(target.sourcePath);
+    // findJobBlockOffset ignores commented-out blocks and returns an offset in
+    // the ORIGINAL text so we can `positionAt` directly.
+    const offset = findJobBlockOffset(doc.getText(), target.jobId);
+    const options: vscode.TextDocumentShowOptions = {preview: false};
+    if (offset !== undefined) {
+      const position = doc.positionAt(offset);
+      options.selection = new vscode.Range(position, position);
+    }
+    await vscode.window.showTextDocument(doc, options);
   });
 
   const createScaffold = registerSafeCommand(
@@ -1174,9 +1461,12 @@ export function registerJobsCommands(
         // steptypes.json reference kept for clarity in tooltips/logs.
         void stepTypesPath;
       } catch (error) {
-        void vscode.window.showErrorMessage(
-          `Failed to create job scaffold: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        const detail = error instanceof Error ? error.message : String(error);
+        // Toast stays terse; the developer console gets the full stack so a
+        // partial scaffold left on disk is diagnosable (mirrors the deploy
+        // error path).
+        console.error('[b2c-dx] Scaffold failed:', error);
+        void vscode.window.showErrorMessage(`Failed to create job scaffold: ${detail}`);
       }
     },
   );
@@ -1243,11 +1533,12 @@ export function registerJobsCommands(
       return;
     }
 
+    // VS Code auto-adds a Cancel button to modal dialogs — passing an explicit
+    // one produces two Cancel-like actions. Keep only the affirmative.
     const choice = await vscode.window.showWarningMessage(
       `Stop execution ${executionId} for job ${node.jobId}?`,
       {modal: true},
       'Stop',
-      'Cancel',
     );
     if (choice !== 'Stop') return;
 
@@ -1376,13 +1667,24 @@ export function registerJobsCommands(
   /**
    * Cycles the root grouping between BM-style chronological and group-by-job-id.
    * No refetch — the provider just re-renders the same cached executions.
+   *
+   * VS Code can't swap a title-bar icon on a single command based on context, so
+   * the current-state icon is expressed by binding two commands to the same
+   * handler and gating each on `b2c-dx.jobs.groupingMode` (see package.json).
+   * The alias's icon is `list-tree`, shown when we're grouped and clicking will
+   * flatten to chronological.
    */
-  const toggleGrouping = registerSafeCommand('b2c-dx.jobs.toggleGrouping', () => {
+  const handleGroupingToggle = (): void => {
     const next = treeProvider.toggleGroupingMode();
     void vscode.window.showInformationMessage(
       next === 'groupByJobId' ? 'Job history grouped by Job ID.' : 'Job history shown as chronological timeline.',
     );
-  });
+  };
+  const toggleGrouping = registerSafeCommand('b2c-dx.jobs.toggleGrouping', handleGroupingToggle);
+  const toggleGroupingChronological = registerSafeCommand(
+    'b2c-dx.jobs.toggleGroupingChronological',
+    handleGroupingToggle,
+  );
 
   /**
    * Inline name filter, modeled after Business Manager's job-name search box.
@@ -1406,6 +1708,8 @@ export function registerJobsCommands(
     detailsProvider,
     refresh,
     openFilters,
+    openFiltersActive,
+    clearAllFilters,
     setStatusFilter,
     setHistoryFilters,
     setNameFilter,
@@ -1413,7 +1717,9 @@ export function registerJobsCommands(
     enableAutoRefresh,
     disableAutoRefresh,
     toggleGrouping,
+    toggleGroupingChronological,
     runJob,
+    openDefinitionFile,
     importSiteArchive,
     exportSiteArchive,
     createScaffold,
