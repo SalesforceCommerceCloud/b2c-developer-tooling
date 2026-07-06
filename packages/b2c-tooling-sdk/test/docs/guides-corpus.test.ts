@@ -288,7 +288,7 @@ describe('docs: Developer Center guides corpus', function () {
     };
     const originalFetch = globalThis.fetch;
     let fetchedUrl = '';
-    globalThis.fetch = ((input: RequestInfo | URL) => {
+    globalThis.fetch = ((input: Parameters<typeof fetch>[0]) => {
       fetchedUrl = String(input);
       return Promise.resolve(new Response('# Live Content\n\nfetched body', {status: 200}));
     }) as typeof fetch;
