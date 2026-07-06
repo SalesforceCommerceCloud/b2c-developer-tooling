@@ -31,7 +31,13 @@ export interface JobHistoryExecutionRow {
   execution: JobExecution;
 }
 
-export type JobsTreeNode = JobTreeItem | JobExecutionTreeItem | JobsEmptyStateTreeItem | JobsLoadHintTreeItem;
+export type JobsTreeNode =
+  | JobTreeItem
+  | JobExecutionTreeItem
+  | JobsEmptyStateTreeItem
+  | JobsLoadHintTreeItem
+  | JobsSectionHeaderTreeItem
+  | WorkspaceJobTreeItem;
 
 const JOBS_FETCH_LIMIT = 200;
 const DEFAULT_DISCOVERY_SCAN_LIMIT = 2000;
@@ -75,6 +81,26 @@ function parseTimestamp(value: string | undefined): number | undefined {
   if (!value) return undefined;
   const parsed = Date.parse(value);
   return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+/**
+ * Best-effort cartridge name for a jobs.xml path. Walks up looking for a folder
+ * with a `.project` sibling (the canonical B2C cartridge marker). Returns
+ * undefined when the file lives outside any cartridge — surface still works as
+ * a workspace-level row, just without a cartridge label.
+ */
+function detectCartridgeName(jobsXmlPath: string): string | undefined {
+  const parts = jobsXmlPath.split(/[/\\]/);
+  // Look for the segment immediately containing jobs.xml, then walk up. The
+  // last segment is jobs.xml itself, so start from the parent.
+  for (let i = parts.length - 2; i >= 1; i--) {
+    if (parts[i] === 'cartridge' && parts[i - 1]) {
+      return parts[i - 1];
+    }
+  }
+  // Fall back to the immediate parent directory name — good enough for
+  // labeling when the cartridge structure isn't the canonical one.
+  return parts[parts.length - 2];
 }
 
 function getExecutionUsers(execution: JobExecution): string[] {
@@ -361,6 +387,54 @@ export class JobsEmptyStateTreeItem extends vscode.TreeItem {
   }
 }
 
+/**
+ * Non-selectable group heading — used to split the tree into "Workspace Jobs"
+ * and "Job History" without needing two separate views. Section headers are
+ * collapsible so the two lists can be toggled independently.
+ */
+export class JobsSectionHeaderTreeItem extends vscode.TreeItem {
+  readonly nodeType = 'sectionHeader' as const;
+
+  constructor(
+    readonly section: 'workspace' | 'history',
+    label: string,
+    description: string | undefined,
+    initial: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.Expanded,
+  ) {
+    super(label, initial);
+    this.id = `jobs-section:${section}`;
+    this.contextValue = `jobs-section-${section}`;
+    this.iconPath = new vscode.ThemeIcon(section === 'workspace' ? 'file-code' : 'history');
+    this.description = description;
+  }
+}
+
+/**
+ * A job declared in a workspace `jobs.xml` — surfaces custom jobs before they
+ * have any execution history. Right-click "Run Job" targets these directly so
+ * users don't have to type the id or wait for the first run.
+ */
+export class WorkspaceJobTreeItem extends vscode.TreeItem {
+  readonly nodeType = 'workspaceJob' as const;
+
+  constructor(
+    readonly jobId: string,
+    readonly sourcePath: string,
+    readonly cartridgeName: string | undefined,
+  ) {
+    super(jobId, vscode.TreeItemCollapsibleState.None);
+    this.id = `workspaceJob:${jobId}:${sourcePath}`;
+    this.contextValue = 'workspaceJob';
+    this.iconPath = new vscode.ThemeIcon('play-circle');
+    this.description = cartridgeName ?? 'workspace';
+    this.tooltip = new vscode.MarkdownString(
+      `**${jobId}**\n\nDeclared in \`${vscode.workspace.asRelativePath(sourcePath)}\`` +
+        (cartridgeName ? `\n\nCartridge: **${cartridgeName}**` : '') +
+        '\n\nRight-click → Run Job to execute (the extension will auto-deploy the definition if BM does not know it yet).',
+    );
+  }
+}
+
 /** Shown before the user has explicitly loaded job history (or after a config reset). */
 export class JobsLoadHintTreeItem extends vscode.TreeItem {
   readonly nodeType = 'loadHint' as const;
@@ -395,6 +469,7 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
   readonly onDidLoad = this.onDidLoadEmitter.event;
 
   private discoveryExecutionCache: JobExecution[] | undefined;
+  private workspaceJobsCache: WorkspaceJobTreeItem[] | undefined;
   private pollingTimer: ReturnType<typeof setInterval> | undefined;
   private statusFilter: JobStatusFilter;
   private groupingMode: JobGroupingMode;
@@ -546,13 +621,16 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
 
   async getChildren(element?: JobsTreeNode): Promise<JobsTreeNode[]> {
     if (!element) return this.getRootNodes();
+    if (element instanceof JobsSectionHeaderTreeItem) {
+      return element.section === 'workspace' ? this.getWorkspaceSectionRows() : this.getHistorySectionRows();
+    }
     if (element instanceof JobTreeItem) {
       // Grouped view: each child execution renders as a leaf labeled by its
       // start timestamp — the job id is already on the parent row.
       return element.executions.map((execution) => new JobExecutionTreeItem(element.jobId, execution, false));
     }
-    // Executions are leaves; step-level drill-down lives in **View Execution
-    // Details** (and the BM deep-link).
+    // Workspace jobs and executions are leaves; step-level drill-down lives in
+    // **View Execution Details** (and the BM deep-link).
     return [];
   }
 
@@ -563,7 +641,57 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
   refresh(): void {
     this.loadedOnce = true;
     this.discoveryExecutionCache = undefined;
+    this.workspaceJobsCache = undefined;
     this.onDidChangeTreeDataEmitter.fire();
+  }
+
+  /**
+   * Refreshes only the workspace-jobs cache. Used by the file-watcher when a
+   * `jobs.xml` is edited/added/removed so the tree updates without paying for
+   * an OCAPI history round-trip.
+   */
+  invalidateWorkspaceJobs(): void {
+    this.workspaceJobsCache = undefined;
+    this.onDidChangeTreeDataEmitter.fire();
+  }
+
+  /**
+   * Scans workspace `jobs.xml` files and returns one row per declared `<job>`.
+   * Cached until an explicit refresh or file-watcher invalidation — cartridges
+   * usually declare a handful of jobs, but re-parsing on every getChildren call
+   * would be wasteful when the user is just expanding/collapsing sections.
+   */
+  private async loadWorkspaceJobs(): Promise<WorkspaceJobTreeItem[]> {
+    if (this.workspaceJobsCache) return this.workspaceJobsCache;
+
+    const uris = await vscode.workspace.findFiles(
+      '**/jobs.xml',
+      '**/{node_modules,dist,out,.vscode-test,coverage,.git}/**',
+    );
+    const rows: WorkspaceJobTreeItem[] = [];
+    const seen = new Set<string>();
+    for (const uri of uris) {
+      let content: string;
+      try {
+        content = await vscode.workspace.fs.readFile(uri).then((buf) => Buffer.from(buf).toString('utf-8'));
+      } catch {
+        continue;
+      }
+      const cartridgeName = detectCartridgeName(uri.fsPath);
+      const jobRegex = /<job\b[^>]*\bjob-id="([^"]+)"/gi;
+      let match: RegExpExecArray | null;
+      while ((match = jobRegex.exec(content)) !== null) {
+        const jobId = match[1]?.trim();
+        if (!jobId) continue;
+        const key = `${jobId}::${uri.fsPath}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        rows.push(new WorkspaceJobTreeItem(jobId, uri.fsPath, cartridgeName));
+      }
+    }
+    rows.sort((a, b) => a.jobId.localeCompare(b.jobId));
+    this.workspaceJobsCache = rows;
+    return rows;
   }
 
   /** Soft refresh: re-renders the tree without dropping caches (e.g. filter changes). */
@@ -575,6 +703,7 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
   resetLoaded(): void {
     this.loadedOnce = false;
     this.discoveryExecutionCache = undefined;
+    this.workspaceJobsCache = undefined;
     this.onDidChangeTreeDataEmitter.fire();
   }
 
@@ -664,9 +793,28 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
     const instance = this.configProvider.getInstance();
     if (!instance) return [];
 
-    if (!this.loadedOnce) {
-      return [new JobsLoadHintTreeItem()];
-    }
+    // Workspace-jobs section is populated from local files, so it works even
+    // before the user hits Refresh. History still gates behind an explicit
+    // refresh so a passive side-panel open doesn't hit OCAPI.
+    const workspaceRows = await this.loadWorkspaceJobs();
+    const workspaceHeader = new JobsSectionHeaderTreeItem(
+      'workspace',
+      'Workspace Jobs',
+      workspaceRows.length > 0 ? `${workspaceRows.length}` : 'None found',
+    );
+    const historyHeader = new JobsSectionHeaderTreeItem('history', 'Job History', this.describeHistoryHeader());
+
+    return [workspaceHeader, historyHeader];
+  }
+
+  /**
+   * Rows under the "Job History" section — same content the view rendered
+   * pre-section-split. Kept as a private method so the section header can
+   * delegate to it, and any future changes to the history rendering (grouping,
+   * empty-state copy, load hint) live in one place.
+   */
+  private async getHistorySectionRows(): Promise<JobsTreeNode[]> {
+    if (!this.loadedOnce) return [new JobsLoadHintTreeItem()];
 
     await this.loadJobs();
     if (!this.discoveryExecutionCache) return [];
@@ -686,18 +834,10 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
       );
 
     if (rows.length === 0) {
-      // Reflect ANY active filter (status or advanced) — not just the advanced
-      // ones. Previously this only used hasHistoryFilters(), so a status-only
-      // filter (e.g. "Failed") produced the plain "No failed jobs" copy with
-      // no clear-filter affordance, even though a filter was hiding rows.
       return [new JobsEmptyStateTreeItem(this.statusFilter, this.hasAnyActiveFilter(), this.describeActiveFilters())];
     }
 
     if (this.groupingMode === 'groupByJobId') {
-      // Bucket executions per job, preserving the SDK's start_time-desc order
-      // inside each bucket. Jobs are then sorted by their most-recent run so the
-      // currently-active / most-recently-touched jobs float to the top — the
-      // same order BM's Job Definitions sidebar uses.
       const byJob = new Map<string, JobExecution[]>();
       for (const row of rows) {
         const existing = byJob.get(row.jobId);
@@ -705,19 +845,27 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
         else byJob.set(row.jobId, [row.execution]);
       }
 
-      const groupNodes = [...byJob.entries()]
+      return [...byJob.entries()]
         .sort(([, aRuns], [, bRuns]) => {
           const aLatest = parseTimestamp(aRuns[0]?.start_time) ?? 0;
           const bLatest = parseTimestamp(bRuns[0]?.start_time) ?? 0;
           return bLatest - aLatest;
         })
         .map(([jobId, runs]) => new JobTreeItem(jobId, runs));
-
-      return groupNodes;
     }
 
-    // Chronological view: SDK already returns by start_time desc; preserve that order.
     return rows.map((row) => new JobExecutionTreeItem(row.jobId, row.execution));
+  }
+
+  private async getWorkspaceSectionRows(): Promise<JobsTreeNode[]> {
+    const rows = await this.loadWorkspaceJobs();
+    return rows;
+  }
+
+  private describeHistoryHeader(): string | undefined {
+    if (!this.loadedOnce) return 'Click to load';
+    if (this.hasAnyActiveFilter()) return this.describeActiveFilters() ?? undefined;
+    return undefined;
   }
 
   /** Single fetch path used by both root rendering and lookup APIs. */

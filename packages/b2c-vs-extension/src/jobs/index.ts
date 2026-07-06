@@ -94,7 +94,7 @@ export function registerJobs(context: vscode.ExtensionContext, configProvider: B
   const onDidChangeTreeSub = treeProvider.onDidChangeTreeData(() => updateJobHistoryMessage());
 
   const builtInScaffoldsDir = path.join(context.extensionPath, 'dist', 'data', 'scaffolds');
-  const commandDisposables = registerJobsCommands(configProvider, treeProvider, {
+  const commandDisposables = registerJobsCommands(configProvider, treeProvider, treeView, {
     builtInScaffoldsDir,
     extensionUri: context.extensionUri,
     onAutoRefreshChanged: (enabled) => {
@@ -102,6 +102,16 @@ export function registerJobs(context: vscode.ExtensionContext, configProvider: B
       updateJobHistoryMessage();
     },
   });
+
+  // Keep the Workspace Jobs section in sync with the filesystem — edits and
+  // scaffolds appear the moment the underlying jobs.xml is saved instead of
+  // waiting for the next Refresh. Scoped to jobs.xml, so unrelated file churn
+  // never triggers a re-render of the tree.
+  const jobsXmlWatcher = vscode.workspace.createFileSystemWatcher('**/jobs.xml');
+  const onJobsXmlChanged = (): void => treeProvider.invalidateWorkspaceJobs();
+  jobsXmlWatcher.onDidCreate(onJobsXmlChanged);
+  jobsXmlWatcher.onDidChange(onJobsXmlChanged);
+  jobsXmlWatcher.onDidDelete(onJobsXmlChanged);
 
   configProvider.onDidReset(() => {
     treeProvider.stopPolling();

@@ -843,7 +843,7 @@
         },
         {
           "id": "b2cJobsExplorer",
-          "name": "Job History",
+          "name": "Jobs",
           "icon": "media/b2c-icon.svg",
           "contextualTitle": "B2C-DX",
           "visibility": "collapsed"
@@ -905,7 +905,7 @@
       {
         "view": "b2cJobsExplorer",
         "when": "!b2c-dx.jobs.needsOAuth",
-        "contents": "Job History is not loaded by default to avoid unwanted OCAPI traffic.\n\n[Refresh Now](command:b2c-dx.jobs.refresh)\n[Enable Auto-Refresh](command:b2c-dx.jobs.toggleAutoRefresh)\n[Run Job](command:b2c-dx.jobs.run)\n[Open in Business Manager](command:b2c-dx.jobs.openBmDefinitions)"
+        "contents": "Jobs view is not loaded by default to avoid unwanted OCAPI traffic.\n\n[Refresh Now](command:b2c-dx.jobs.refresh)\n[Enable Auto-Refresh](command:b2c-dx.jobs.toggleAutoRefresh)\n[Run Job](command:b2c-dx.jobs.run)\n[Open in Business Manager](command:b2c-dx.jobs.openBmDefinitions)"
       },
       {
         "view": "b2cCartridgeExplorer",
@@ -1228,6 +1228,12 @@
         "command": "b2c-dx.jobs.run",
         "title": "Run Job",
         "icon": "$(play)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.openDefinitionFile",
+        "title": "Open jobs.xml",
+        "icon": "$(go-to-file)",
         "category": "B2C DX - Job History"
       },
       {
@@ -2109,6 +2115,16 @@
           "group": "1_lifecycle@1"
         },
         {
+          "command": "b2c-dx.jobs.run",
+          "when": "view == b2cJobsExplorer && viewItem == workspaceJob",
+          "group": "1_lifecycle@1"
+        },
+        {
+          "command": "b2c-dx.jobs.openDefinitionFile",
+          "when": "view == b2cJobsExplorer && viewItem == workspaceJob",
+          "group": "2_navigation@1"
+        },
+        {
           "command": "b2c-dx.jobs.viewExecutionDetails",
           "when": "view == b2cJobsExplorer && viewItem =~ /^jobExecution-/",
           "group": "1_info@1"
@@ -2236,6 +2252,10 @@
         },
         {
           "command": "b2c-dx.jobs.clearAllFilters",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.openDefinitionFile",
           "when": "false"
         },
         {
