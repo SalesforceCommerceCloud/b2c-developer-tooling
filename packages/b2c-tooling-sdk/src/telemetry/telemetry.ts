@@ -14,6 +14,38 @@ import {getLogger, type Logger} from '../logging/index.js';
 const generateRandomId = (): string => randomBytes(20).toString('hex');
 
 /**
+ * Best-effort detection of a CI / non-interactive automation environment.
+ *
+ * Telemetry analysis showed a small number of automation installs can account
+ * for a large share of events, skewing blended KPIs (e.g. error rates). Tagging
+ * every event with `isCI` lets analytics separate human-developer traffic from
+ * CI without resorting to fragile cliId/IP heuristics after the fact.
+ *
+ * Recognizes the generic `CI` convention plus common provider-specific vars.
+ */
+function detectCI(): boolean {
+  const env = process.env;
+  // Generic convention honored by most CI providers (GitHub Actions, GitLab,
+  // CircleCI, Travis, etc.). `CI=false`/`CI=0`/empty explicitly opt out.
+  if (env.CI !== undefined && env.CI !== 'false' && env.CI !== '0' && env.CI !== '') {
+    return true;
+  }
+  return Boolean(
+    env.CONTINUOUS_INTEGRATION ||
+    env.BUILD_NUMBER ||
+    env.GITHUB_ACTIONS ||
+    env.GITLAB_CI ||
+    env.CIRCLECI ||
+    env.TRAVIS ||
+    env.JENKINS_URL ||
+    env.TEAMCITY_VERSION ||
+    env.TF_BUILD ||
+    env.BITBUCKET_BUILD_NUMBER ||
+    env.CODEBUILD_BUILD_ID,
+  );
+}
+
+/**
  * Sanitize attributes to only include string, number, boolean (App Insights–safe).
  * Aligns with sf CLI telemetry record() validation.
  */
@@ -123,6 +155,7 @@ export class Telemetry {
   private traceLog: Logger | undefined;
   private flushIntervalMs: number | undefined;
   private flushTimer: ReturnType<typeof setInterval> | undefined;
+  private isCI: boolean;
 
   /**
    * Check if telemetry is disabled via environment variables.
@@ -152,6 +185,7 @@ export class Telemetry {
     this.started = false;
     this.version = options.version ?? '0.0.0';
     this.flushIntervalMs = options.flushIntervalMs;
+    this.isCI = detectCI();
 
     if (process.env.SFCC_TELEMETRY_LOG === 'true') {
       this.traceLog = getLogger().child({component: 'telemetry'});
@@ -298,6 +332,7 @@ export class Telemetry {
       date: new Date().toUTCString(),
       timestamp: String(Date.now()),
       processUptime: process.uptime() * 1000,
+      isCI: this.isCI,
     };
   }
 

@@ -91,8 +91,8 @@
  */
 
 // Base command classes
-export {BaseCommand} from './base-command.js';
-export type {Flags, Args} from './base-command.js';
+export {BaseCommand, ERROR_CODE, classifyError} from './base-command.js';
+export type {Flags, Args, ErrorCategory} from './base-command.js';
 export {OAuthCommand} from './oauth-command.js';
 export {InstanceCommand} from './instance-command.js';
 export {CartridgeCommand} from './cartridge-command.js';
