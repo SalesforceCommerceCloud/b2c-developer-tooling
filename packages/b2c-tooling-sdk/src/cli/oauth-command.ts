@@ -71,6 +71,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     'short-code': Flags.string({
       description: 'SCAPI short code',
       env: 'SFCC_SHORTCODE',
+      default: async () => process.env.SFCC_SHORT_CODE || undefined,
       helpGroup: 'AUTH',
     }),
     'tenant-id': Flags.string({

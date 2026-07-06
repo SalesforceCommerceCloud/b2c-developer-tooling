@@ -72,6 +72,18 @@ describe('config/EnvSource', () => {
       expect(result!.config.shortCode).to.equal('abc123');
     });
 
+    it('maps SFCC_SHORT_CODE to shortCode (legacy alias)', () => {
+      const source = new EnvSource({SFCC_SHORT_CODE: 'abc123'});
+      const result = source.load({});
+      expect(result!.config.shortCode).to.equal('abc123');
+    });
+
+    it('SFCC_SHORTCODE takes precedence over SFCC_SHORT_CODE when both set', () => {
+      const source = new EnvSource({SFCC_SHORT_CODE: 'legacy-code', SFCC_SHORTCODE: 'canonical-code'});
+      const result = source.load({});
+      expect(result!.config.shortCode).to.equal('canonical-code');
+    });
+
     it('maps SFCC_TENANT_ID to tenantId', () => {
       const source = new EnvSource({SFCC_TENANT_ID: 'abcd_prd'});
       const result = source.load({});
