@@ -33,7 +33,6 @@ jobs:
       release_type: ${{ steps.release-type.outputs.type }}
       publish_vsx: ${{ steps.packages.outputs.publish_vsx }}
       version_vsx: ${{ steps.packages.outputs.version_vsx }}
-      vsix_sha256: ${{ steps.vsix-hash.outputs.sha256 }}
     if: >-
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
@@ -280,29 +279,38 @@ jobs:
 
       # Trust anchor: hash the exact artifact that will be uploaded to the release
       # and attested below. b2c-dx re-computes and compares this before publishing.
+      # We resolve the filename ONCE here and reuse it for the hash, the attestation
+      # subject, and the release upload — so the hashed bytes, the attested bytes,
+      # and the uploaded bytes are provably the same file. A count!=1 guard fails
+      # closed: if `pnpm run package` ever emits more than one VSIX, a bare glob
+      # would let the hash anchor, the attested set, and the uploaded set diverge.
       - name: Compute VSIX sha256
         id: vsix-hash
         if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
         working-directory: packages/b2c-vs-extension
         run: |
           set -euo pipefail
-          VSIX=$(ls *.vsix 2>/dev/null | head -n1)
-          if [ -z "$VSIX" ]; then
-            echo "::error::No .vsix produced by 'pnpm run package'"
+          COUNT=$(ls *.vsix 2>/dev/null | wc -l | tr -d ' ')
+          if [ "$COUNT" -ne 1 ]; then
+            echo "::error::expected exactly one .vsix from 'pnpm run package', found $COUNT"
             exit 1
           fi
+          VSIX=$(ls *.vsix)
           SHA=$(sha256sum "$VSIX" | awk '{print $1}')
           echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "vsix_file=$VSIX" >> "$GITHUB_OUTPUT"
           echo "::notice::VSIX $VSIX sha256=$SHA"
 
       # SLSA build provenance: cryptographically binds the VSIX to this repo,
       # commit, and workflow run. This is the provenance b2c-dx verifies with
       # `gh attestation verify` before it can publish to the marketplaces.
+      # Attest the exact resolved file (not a glob) so the attested subject is
+      # identical to the hashed and uploaded artifact.
       - name: Attest VSIX build provenance
         if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
         uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
         with:
-          subject-path: packages/b2c-vs-extension/*.vsix
+          subject-path: packages/b2c-vs-extension/${{ steps.vsix-hash.outputs.vsix_file }}
 
       - name: Create git tags
         if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
@@ -551,6 +559,8 @@ jobs:
         run: |
           VSX_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
           VSX_VERSION="${{ steps.packages.outputs.version_vsx }}"
+          # Upload the exact file that was hashed + attested above (not a glob).
+          VSIX_PATH="packages/b2c-vs-extension/${{ steps.vsix-hash.outputs.vsix_file }}"
 
           # Extract extension changelog for the dedicated release
           extract_latest() {
@@ -585,21 +595,24 @@ jobs:
           # Use --clobber on upload in case a previous run partially completed
           if gh release view "$VSX_TAG" >/dev/null 2>&1; then
             echo "Release $VSX_TAG already exists, uploading VSIX to it"
-            gh release upload "$VSX_TAG" packages/b2c-vs-extension/*.vsix --clobber
+            gh release upload "$VSX_TAG" "$VSIX_PATH" --clobber
           else
             gh release create "$VSX_TAG" \
               --title "VS Code Extension ${VSX_VERSION}" \
               --latest=false \
               --notes-file /tmp/vsx-release-notes.md
 
-            gh release upload "$VSX_TAG" packages/b2c-vs-extension/*.vsix
+            gh release upload "$VSX_TAG" "$VSIX_PATH"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # NOTE: Cross-repo delivery to forcedotcom/b2c-dx is handled by the separate
-      # `notify-b2c-dx` job below. It fires a repository_dispatch event instead of
-      # cloning/pushing b2c-dx with a long-lived PAT. See that job for rationale.
+      # NOTE: This monorepo BUILDS + ATTESTS the VSIX and publishes it as a public
+      # GitHub release (above). Cross-repo delivery to forcedotcom/b2c-dx is PULL-based
+      # and lives entirely in b2c-dx: it polls this repo's public releases with its own
+      # GITHUB_TOKEN, re-verifies sha256 + SLSA build provenance, and opens its own
+      # release PR. The monorepo therefore holds NO cross-repo credential and fires no
+      # dispatch — the SLSA attestation is the trust anchor, not a push from here.
 
       - name: Trigger documentation deployment
         if: >-
@@ -644,81 +657,3 @@ jobs:
           [[ "${{ steps.publish-mcp.outcome }}" == "failure" ]] && echo "  - MCP"
           [[ "${{ steps.publish-mrt.outcome }}" == "failure" ]] && echo "  - MRT"
           exit 1
-
-  # ---------------------------------------------------------------------------
-  # Cross-repo delivery to the public OSS repo (forcedotcom/b2c-dx).
-  #
-  # The monorepo BUILDS + ATTESTS the VSIX (above); b2c-dx PUBLISHES it. We do not
-  # clone/push b2c-dx with a long-lived PAT. Instead we fire a repository_dispatch
-  # event and let b2c-dx author its own release PR with its own GITHUB_TOKEN
-  # (separation of duties; precedent: salesforcedx-vscode -> code-builder-web).
-  #
-  # Security properties:
-  #   - Ephemeral credential: a GitHub App installation token (<=1h, auto-revoked),
-  #     scoped to b2c-dx only. No long-lived cross-repo PAT in this repo.
-  #   - No marketplace scope anywhere in the monorepo: the builder physically
-  #     cannot publish.
-  #   - Fail-loud: a dispatch failure is a red check (no continue-on-error). It
-  #     cannot undo the already-successful npm/VSIX publishes (separate job).
-  #   - Safe rollout: skipped (not failed) until an admin sets vars.B2C_DX_APP_ID.
-  #   - No injection: payload is assembled with `jq --arg` and POSTed via stdin.
-  # ---------------------------------------------------------------------------
-  notify-b2c-dx:
-    name: Notify forcedotcom/b2c-dx of new VSIX release
-    needs: publish
-    runs-on: ubuntu-latest
-    if: >-
-      needs.publish.outputs.release_type == 'stable'
-      && needs.publish.outputs.publish_vsx == 'true'
-      && vars.B2C_DX_APP_ID != ''
-    permissions:
-      contents: read
-    steps:
-      - name: Mint short-lived GitHub App token (scoped to b2c-dx)
-        id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: ${{ vars.B2C_DX_APP_ID }}
-          private-key: ${{ secrets.B2C_DX_APP_PRIVATE_KEY }}
-          owner: ${{ vars.B2C_DX_OWNER || 'forcedotcom' }}
-          repositories: ${{ vars.B2C_DX_REPO_NAME || 'b2c-dx' }}
-
-      - name: Fire repository_dispatch to b2c-dx
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          B2C_DX_REPO: ${{ vars.B2C_DX_REPO || 'forcedotcom/b2c-dx' }}
-          VSX_VERSION: ${{ needs.publish.outputs.version_vsx }}
-          VSIX_SHA256: ${{ needs.publish.outputs.vsix_sha256 }}
-          MONOREPO_REPO: ${{ github.repository }}
-          SERVER_URL: ${{ github.server_url }}
-        run: |
-          set -euo pipefail
-
-          MONOREPO_TAG="b2c-vs-extension@${VSX_VERSION}"
-          RELEASE_URL="${SERVER_URL}/${MONOREPO_REPO}/releases/tag/${MONOREPO_TAG}"
-
-          if [ -z "${VSIX_SHA256:-}" ]; then
-            echo "::error::VSIX sha256 was not computed; refusing to dispatch without an integrity anchor"
-            exit 1
-          fi
-
-          # Build the client_payload with jq (--arg is injection-safe) and POST via stdin.
-          jq -n \
-            --arg version "$VSX_VERSION" \
-            --arg repo "$MONOREPO_REPO" \
-            --arg tag "$MONOREPO_TAG" \
-            --arg url "$RELEASE_URL" \
-            --arg sha "$VSIX_SHA256" \
-            '{
-              event_type: "monorepo-vsx-release",
-              client_payload: {
-                version: $version,
-                monorepo_repo: $repo,
-                monorepo_tag: $tag,
-                release_url: $url,
-                vsix_sha256: $sha
-              }
-            }' \
-          | gh api "repos/${B2C_DX_REPO}/dispatches" --method POST --input -
-
-          echo "::notice::Dispatched monorepo-vsx-release for ${MONOREPO_TAG} to ${B2C_DX_REPO}"
