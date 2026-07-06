@@ -503,6 +503,9 @@ importers:
       minimatch:
         specifier: 10.2.4
         version: 10.2.4
+      minisearch:
+        specifier: 7.2.0
+        version: 7.2.0
       open:
         specifier: 'catalog:'
         version: 11.0.0

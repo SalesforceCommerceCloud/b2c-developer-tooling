@@ -6,10 +6,11 @@
 /**
  * SFRA (Storefront Reference Architecture) detection pattern.
  *
- * NOTE: This pattern is NOT included in DEFAULT_PATTERNS.
- * The simpler `cartridgesPattern` is used instead, which detects any cartridge project.
- * This pattern is exported for custom detection scenarios where SFRA-specific
- * detection is needed.
+ * Included in DEFAULT_PATTERNS alongside `cartridgesPattern`. A SFRA workspace
+ * matches BOTH patterns (it has cartridges AND the SFRA base cartridge), so it
+ * detects as `['cartridges', 'sfra']`. A cartridge project that is not SFRA
+ * (custom APIs, integration cartridges, or a PWA Kit / Storefront Next repo that
+ * also ships cartridges) matches only `cartridges`, so `sfra` is not asserted.
  *
  * @module discovery/patterns/sfra
  */
@@ -41,7 +42,7 @@ import {readPackageJson} from '../utils.js';
  */
 export const sfraPattern: DetectionPattern = {
   name: 'sfra',
-  projectType: 'cartridges', // Maps to cartridges project type
+  projectType: 'sfra',
   detect: async (workspacePath) => {
     // Primary check: Look for app_storefront_base cartridge (the core SFRA cartridge)
     // This is the definitive indicator per Salesforce documentation

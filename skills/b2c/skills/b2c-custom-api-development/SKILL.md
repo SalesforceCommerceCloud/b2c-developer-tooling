@@ -9,6 +9,24 @@ This skill guides you through developing Custom APIs for Salesforce B2C Commerce
 
 > **Tip:** If `b2c` CLI is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli code deploy`).
 
+## Scope & grounding
+
+This skill provides CLI-specific workflows and quickstart patterns for Custom API development. It covers OpenAPI 3.0 contract structure, OAuth scope configuration, cartridge-path resolution rules, and circuit breaker behavior. However, platform-specific validation rules, operational limits, security scheme requirements, and Script API integration patterns can drift across Commerce Cloud releases. Before answering questions that reference specific API versions or framework behavior, or before emitting code the user will run, confirm current platform specifics against the official documentation via `b2c docs search` / `b2c docs read` (CLI) or `docs_search` / `docs_read` (MCP). The official documentation is the authoritative source for Custom API contract specifications, runtime behavior, and B2C Commerce platform details not covered here.
+
+**Canonical docs** (confirm platform specifics with these):
+- `commerce-api/custom-apis` - overview, cartridge resolution, operational limits
+- `commerce-api/custom-api-components-references` - schema.yaml and script.js requirements
+- `commerce-api/custom-api-authentication` - OAuth scope rules, security schemes
+- `commerce-api/custom-api-caching` - caching behavior and configuration
+- `commerce-api/custom-api-remote-includes` - remote include patterns
+- `commerce-api/custom-api-circuit-breaker` - current thresholds and behavior
+- `commerce-api/custom-api-troubleshooting` - common issues and solutions
+- `commerce-api/custom-api-status-report` - registration status details
+- `dw.system.RESTResponseMgr` - Script API response manager
+- `dw.system.Request` - Script API request object
+- `dw.system.RESTErrorResponse` - Script API error response
+- `dw.system.RESTSuccessResponse` - Script API success response
+
 ## Overview
 
 A Custom API URL has this structure:
@@ -39,6 +57,8 @@ Three components are required to create a Custom API:
 **Important:** API directory names can only contain alphanumeric lowercase characters and hyphens.
 
 ## Component 1: API Contract (schema.yaml)
+
+> Illustrative minimal example; confirm current schema validation rules, security scheme structure, and scope naming requirements with `b2c docs read commerce-api/custom-api-components-references` and `b2c docs read commerce-api/custom-apis`.
 
 Minimal example:
 
@@ -84,6 +104,8 @@ security:
 
 ### Cartridge path requirements (where the platform looks up your `rest-apis/` folder)
 
+> Illustrative of platform cartridge resolution rules; confirm current runtime behavior and site context handling with `b2c docs read commerce-api/custom-apis`.
+
 | Call shape | Cartridge path searched |
 |---|---|
 | Shopper API (`ShopperToken`) — always site-scoped | The **storefront site's** cartridge path (the site that issued the SLAS token) |
@@ -119,6 +141,8 @@ To set the BM cartridge path manually in Business Manager: **Administration > Si
 See [Contract Reference](references/CONTRACT.md) for full schema examples and Shopper vs Admin API differences.
 
 ## Component 2: Implementation (script.js)
+
+> Illustrative Script API usage; confirm current Custom API integration patterns, RESTResponseMgr requirements, and request object methods with `b2c docs read commerce-api/custom-api-components-references` and Script API docs for `dw.system.RESTResponseMgr` / `dw.system.Request`.
 
 ```javascript
 var RESTResponseMgr = require('dw/system/RESTResponseMgr');

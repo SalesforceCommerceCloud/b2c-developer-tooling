@@ -9,13 +9,29 @@ This skill guides you through consuming Admin APIs for backend integrations, dat
 
 > **Note:** For **shopper-facing** APIs (products, baskets, checkout), see [b2c-scapi-shopper](../b2c-scapi-shopper/SKILL.md). This skill focuses on **admin/backend** operations.
 
+## Scope & grounding
+
+This skill covers **SCAPI Admin APIs (Commerce API) - all API families (Products, Catalogs, Orders, Inventory, Customers, Promotions), Account Manager OAuth authentication, and scopes catalog** through illustrative examples. The code samples and API shapes here drift as Commerce APIs evolve. Before answering questions about specific API contracts (request/response schemas, endpoints, query parameters, headers), or before emitting code the user will run in production, confirm current details against official documentation using `b2c docs search` and `b2c docs read` (CLI) or `docs_search` and `docs_read` (MCP). The docs are the authoritative source for API contracts, OAuth scopes, rate limits, timeouts, error codes, and operational constraints.
+
+**Canonical docs:**
+- `commerce-api/authorization-for-admin-apis` - Account Manager OAuth setup and client credentials flow
+- `commerce-api/auth-z-scope-catalog` - Current OAuth scopes for all Admin APIs
+- `commerce-api/use-admin-api` - Getting started with Admin APIs
+- `commerce-api/base-url` - Base URL structure and shortCode resolution
+- `commerce-api/inventory-impex-best-practices` - IMPEX file size thresholds, NDJSON format, performance tuning
+- `commerce-api/scapi-logs-request-tracking` - Correlation IDs, verbose logging, Log Center search
+- `commerce-api/error-response-codes` - HTTP status codes and error response schema
+- `commerce-api/timeouts-limits` - Request timeout thresholds and limits
+- `commerce-api/throttle-rates` - Rate limits per API family
+- `commerce-api/work-with-baskets-orders` - Orders API patterns
+
 ## Overview
 
 Admin APIs are designed for backend systems and integrations:
 
 - **Client**: Backend services, ETL pipelines, management tools
 - **Authentication**: Account Manager OAuth (client credentials)
-- **Response Time**: < 60 seconds (HTTP 504 if exceeded)
+- **Response Time**: Typical < 60 seconds; see `docs_read commerce-api/timeouts-limits` for current thresholds
 - **Usage**: Moderate frequency, batch operations preferred
 
 ### Base URL Structure
@@ -110,6 +126,8 @@ See [OAuth Scopes Reference](references/OAUTH-SCOPES.md) for the complete scope 
 4. Copy the Client ID
 
 ## API Families
+
+> **Note:** The examples below illustrate typical request patterns and are provided for learning purposes. For authoritative API contracts (current request/response schemas, endpoints, query parameters, headers), use `b2c scapi schemas list` and `b2c scapi schemas read <api-family>/<api-name>` to retrieve OpenAPI specs, or consult the official [Commerce API Reference](https://developer.salesforce.com/docs/commerce/commerce-api) via `b2c docs search` / `docs_search`.
 
 ### Products API
 
@@ -253,6 +271,8 @@ await fetch(
 
 ### Inventory IMPEX API
 
+> Illustrative of the IMPEX flow; confirm file size thresholds, format requirements, and best practices with `docs_read commerce-api/inventory-impex-best-practices`.
+
 High-performance bulk inventory import. Use for 1000+ SKU updates.
 
 **Critical Requirements:**
@@ -370,6 +390,8 @@ await fetch(
 
 ## Request Tracking
 
+> Illustrative of correlation ID and verbose logging mechanisms; confirm current header names and Log Center search syntax with `docs_read commerce-api/scapi-logs-request-tracking`.
+
 ### Correlation IDs
 
 Include correlation IDs for tracking requests across systems:
@@ -421,7 +443,7 @@ Check Log Center under `scapi.verbose` category.
 
 ### Rate Limiting
 
-Admin APIs have lower rate limits than Shopper APIs. For bulk operations:
+Admin APIs have lower rate limits than Shopper APIs. See `docs_read commerce-api/throttle-rates` for specific rate limits per API family. For bulk operations:
 
 - Use batch endpoints when available
 - Implement exponential backoff for 429 responses

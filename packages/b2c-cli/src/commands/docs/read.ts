@@ -8,7 +8,7 @@ import {marked} from 'marked';
 
 import {markedTerminal} from 'marked-terminal';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {readDocByQuery, type DocEntry} from '@salesforce/b2c-tooling-sdk/docs';
+import {readDocByQuery, resolveEnabledCategories, type DocEntry} from '@salesforce/b2c-tooling-sdk/docs';
 import {t} from '../../i18n/index.js';
 
 interface ReadDocsResult {
@@ -55,6 +55,12 @@ export default class DocsRead extends BaseCommand<typeof DocsRead> {
       description: 'Output raw markdown without terminal formatting',
       default: false,
     }),
+    topics: Flags.string({
+      description:
+        'Limit readable documentation to these categories (comma-separated allowlist that bounds the whole ' +
+        'corpus). Unknown names are ignored with a warning.',
+      env: 'SFCC_DOCS_TOPICS',
+    }),
   };
 
   protected operations = {
@@ -64,8 +70,15 @@ export default class DocsRead extends BaseCommand<typeof DocsRead> {
   async run(): Promise<ReadDocsResult> {
     const {query} = this.args;
     const {raw} = this.flags;
+    const enabledCategories = resolveEnabledCategories(this.flags.topics, (invalid) =>
+      this.warn(
+        t('commands.docs.read.invalidTopics', 'Ignoring unknown documentation topic(s): {{topics}}', {
+          topics: invalid.join(', '),
+        }),
+      ),
+    );
 
-    const result = this.operations.readDocByQuery(query);
+    const result = await this.operations.readDocByQuery(query, {enabledCategories});
 
     if (!result) {
       this.error(t('commands.docs.read.notFound', 'No documentation found matching: {{query}}', {query}), {

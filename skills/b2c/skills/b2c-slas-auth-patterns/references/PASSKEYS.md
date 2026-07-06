@@ -1,5 +1,7 @@
 # Passkeys (FIDO2/WebAuthn)
 
+> Illustrative of the flow; confirm current API shape and parameters with `b2c docs read commerce-api/slas-passwordless-login-passkey`.
+
 Enable biometric authentication using passkeys.
 
 **Important:** Passkey registration requires **prior identity verification via OTP**. Users must first verify their email before registering a passkey.
