@@ -1213,6 +1213,12 @@
         "category": "B2C DX - Job History"
       },
       {
+        "command": "b2c-dx.jobs.toggleGroupingChronological",
+        "title": "Show as Chronological Timeline",
+        "icon": "$(list-tree)",
+        "category": "B2C DX - Job History"
+      },
+      {
         "command": "b2c-dx.jobs.importSiteArchive",
         "title": "Import Site Archive",
         "icon": "$(cloud-upload)",
@@ -1844,7 +1850,12 @@
         },
         {
           "command": "b2c-dx.jobs.toggleGrouping",
-          "when": "view == b2cJobsExplorer",
+          "when": "view == b2cJobsExplorer && b2c-dx.jobs.groupingMode != groupByJobId",
+          "group": "navigation@2"
+        },
+        {
+          "command": "b2c-dx.jobs.toggleGroupingChronological",
+          "when": "view == b2cJobsExplorer && b2c-dx.jobs.groupingMode == groupByJobId",
           "group": "navigation@2"
         },
         {
@@ -2186,7 +2197,7 @@
         },
         {
           "command": "b2c-dx.cartridge.openStepTypeDefinition",
-          "when": "view == b2cCartridgeExplorer && viewItem == cartridge-step-type",
+          "when": "view == b2cCartridgeExplorer && viewItem =~ /^cartridge-step-type/",
           "group": "navigation@1"
         }
       ],
@@ -2400,6 +2411,10 @@
         },
         {
           "command": "b2c-dx.cartridge.openStepTypeDefinition",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.toggleGroupingChronological",
           "when": "false"
         },
         {

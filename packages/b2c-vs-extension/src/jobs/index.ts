@@ -107,8 +107,17 @@ export function registerJobs(context: vscode.ExtensionContext, configProvider: B
   // scaffolds appear the moment the underlying jobs.xml is saved instead of
   // waiting for the next Refresh. Scoped to jobs.xml, so unrelated file churn
   // never triggers a re-render of the tree.
+  //
+  // Filter out matches inside dependency / build output directories:
+  // `createFileSystemWatcher` doesn't honor `files.exclude`, and a jobs.xml
+  // shipped inside a dependency or a build artifact is not workspace code we
+  // want to surface — those events would cause pointless tree re-renders.
   const jobsXmlWatcher = vscode.workspace.createFileSystemWatcher('**/jobs.xml');
-  const onJobsXmlChanged = (): void => treeProvider.invalidateWorkspaceJobs();
+  const IGNORED_WATCHER_SEGMENTS = /[/\\](?:node_modules|dist|out|build|\.git)[/\\]/;
+  const onJobsXmlChanged = (uri: vscode.Uri): void => {
+    if (IGNORED_WATCHER_SEGMENTS.test(uri.fsPath)) return;
+    treeProvider.invalidateWorkspaceJobs();
+  };
   jobsXmlWatcher.onDidCreate(onJobsXmlChanged);
   jobsXmlWatcher.onDidChange(onJobsXmlChanged);
   jobsXmlWatcher.onDidDelete(onJobsXmlChanged);

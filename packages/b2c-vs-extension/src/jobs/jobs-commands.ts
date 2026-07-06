@@ -33,6 +33,7 @@ import type {
   JobTreeItem,
   JobsTreeDataProvider,
 } from './jobs-tree-provider.js';
+import {extractJobBlockXml, extractJobIdsFromXml, findJobBlockOffset, stripXmlComments} from './jobs-xml-parser.js';
 
 const JOB_DETAILS_SCHEME = 'b2c-job-details';
 /** Built-in SDK scaffold that generates a custom job step + steptypes.json registration. */
@@ -639,12 +640,20 @@ async function mergeJobIntoJobsXml(jobsXmlPath: string, spec: JobScaffoldSpec): 
 
   const jobBlock = buildJobBlockXml(spec);
   const jobIdPattern = escapeRegExp(spec.jobId);
-  // Match an existing <job job-id="<this id>"> … </job> block (any attribute order).
-  const existingJobRegex = new RegExp(`[ \\t]*<job\\b[^>]*\\bjob-id="${jobIdPattern}"[\\s\\S]*?</job>\\n?`, 'i');
+  // Attribute order isn't guaranteed by the XSD; either quote style is legal.
+  const existingJobRegex = new RegExp(
+    `[ \\t]*<job\\b[^>]*\\bjob-id\\s*=\\s*(["'])${jobIdPattern}\\1[\\s\\S]*?</job>\\n?`,
+    'i',
+  );
+
+  // Detect "already declared" against a comment-stripped copy so a commented-out
+  // block doesn't trigger a replace (which would rewrite the comment away). But
+  // apply the actual write to the raw content so comments and formatting outside
+  // the block are preserved.
+  const alreadyDeclared = existingJobRegex.test(stripXmlComments(existing));
 
   let updated: string;
-  if (existingJobRegex.test(existing)) {
-    // Re-scaffold of the same job-id → replace that block in place.
+  if (alreadyDeclared) {
     updated = existing.replace(existingJobRegex, `${jobBlock}\n`);
   } else {
     // New job-id → insert before the closing </jobs>.
@@ -807,12 +816,8 @@ async function getWorkspaceJobIds(): Promise<string[]> {
       } catch {
         continue;
       }
-      // Match <job job-id="..."> — attribute order is not guaranteed by the XSD.
-      const jobRegex = /<job\b[^>]*\bjob-id="([^"]+)"/gi;
-      let match: RegExpExecArray | null;
-      while ((match = jobRegex.exec(content)) !== null) {
-        const id = match[1]?.trim();
-        if (id) ids.add(id);
+      for (const id of extractJobIdsFromXml(content)) {
+        ids.add(id);
       }
     }
     return [...ids].sort((a, b) => a.localeCompare(b));
@@ -836,8 +841,6 @@ async function findWorkspaceJobDefinition(jobId: string): Promise<{sourcePath: s
     '**/jobs.xml',
     '**/{node_modules,dist,out,.vscode-test,coverage,.git}/**',
   );
-  const jobIdPattern = jobId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const jobRegex = new RegExp(`<job\\b[^>]*\\bjob-id="${jobIdPattern}"[\\s\\S]*?</job>`, 'i');
   for (const uri of uris) {
     let content: string;
     try {
@@ -845,9 +848,9 @@ async function findWorkspaceJobDefinition(jobId: string): Promise<{sourcePath: s
     } catch {
       continue;
     }
-    const match = jobRegex.exec(content);
-    if (match) {
-      return {sourcePath: uri.fsPath, jobBlock: match[0]};
+    const jobBlock = extractJobBlockXml(content, jobId);
+    if (jobBlock) {
+      return {sourcePath: uri.fsPath, jobBlock};
     }
   }
   return undefined;
@@ -1114,18 +1117,36 @@ export function registerJobsCommands(
         );
         if (confirm !== 'Deploy & Run') return;
 
-        await vscode.window.withProgress(
-          {location: vscode.ProgressLocation.Notification, title: `Deploying job definition ${jobId}...`},
-          () => deployJobDefinitionToBm(instance, definition.jobBlock),
-        );
+        // Isolate the deploy step so its failures don't get mislabelled as run
+        // failures downstream. A site-archive-import fault has a completely
+        // different remediation (fix the jobs.xml, check WebDAV scopes) than a
+        // job-execution fault, and hiding it inside the generic "Failed to run"
+        // toast makes it look like the run failed instead of the deploy.
+        try {
+          await vscode.window.withProgress(
+            {location: vscode.ProgressLocation.Notification, title: `Deploying job definition ${jobId}...`},
+            () => deployJobDefinitionToBm(instance, definition.jobBlock),
+          );
+        } catch (deployError) {
+          const detail = deployError instanceof Error ? deployError.message : String(deployError);
+          showScopeAwareError(`Failed to deploy job definition ${jobId} from ${relSource}`, deployError);
+          // Log to the developer console for the full stack; the toast stays terse.
+          console.error(`[b2c-dx] Deploy of ${jobId} failed:`, detail);
+          return;
+        }
         finished = await triggerAndWait();
       }
 
       try {
         const log = await getJobLog(instance, finished);
         await openJobLog(finished.id ?? jobId, log);
-      } catch {
-        // Log may not be available yet; the success notification still applies.
+      } catch (logError) {
+        // The log may not be flushed yet on a just-finished job (BM writes it
+        // asynchronously) — that's expected and doesn't warrant a toast. Log
+        // to the developer console so real failures (permissions on the log
+        // dir, network flap) are still diagnosable when a user reports "job
+        // ran but no log opened."
+        console.warn(`[b2c-dx] Could not open log for ${jobId}:`, logError);
       }
       void vscode.window.showInformationMessage(`Job ${jobId} finished successfully.`);
     } catch (error) {
@@ -1134,8 +1155,9 @@ export function registerJobsCommands(
           const log = await getJobLog(instance, error.execution);
           await openJobLog(error.execution.id ?? jobId, log);
           revealExecutionErrorInActiveEditor(error.execution);
-        } catch {
-          // Fall through to the generic error toast when the log is unavailable.
+        } catch (logError) {
+          // Log may still be flushing; fall through to the generic error toast.
+          console.warn(`[b2c-dx] Could not open failure log for ${jobId}:`, logError);
         }
         const detail = getJobErrorMessage(error.execution) ?? error.execution.exit_status?.message;
         void vscode.window.showErrorMessage(`Job ${jobId} failed${detail ? `: ${detail}` : '.'}`);
@@ -1391,12 +1413,12 @@ export function registerJobsCommands(
     if (!target) return;
 
     const doc = await vscode.workspace.openTextDocument(target.sourcePath);
-    const text = doc.getText();
-    const pattern = new RegExp(`<job\\b[^>]*\\bjob-id="${target.jobId.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}"`);
-    const match = pattern.exec(text);
+    // findJobBlockOffset ignores commented-out blocks and returns an offset in
+    // the ORIGINAL text so we can `positionAt` directly.
+    const offset = findJobBlockOffset(doc.getText(), target.jobId);
     const options: vscode.TextDocumentShowOptions = {preview: false};
-    if (match) {
-      const position = doc.positionAt(match.index);
+    if (offset !== undefined) {
+      const position = doc.positionAt(offset);
       options.selection = new vscode.Range(position, position);
     }
     await vscode.window.showTextDocument(doc, options);
@@ -1439,9 +1461,12 @@ export function registerJobsCommands(
         // steptypes.json reference kept for clarity in tooltips/logs.
         void stepTypesPath;
       } catch (error) {
-        void vscode.window.showErrorMessage(
-          `Failed to create job scaffold: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        const detail = error instanceof Error ? error.message : String(error);
+        // Toast stays terse; the developer console gets the full stack so a
+        // partial scaffold left on disk is diagnosable (mirrors the deploy
+        // error path).
+        console.error('[b2c-dx] Scaffold failed:', error);
+        void vscode.window.showErrorMessage(`Failed to create job scaffold: ${detail}`);
       }
     },
   );
@@ -1508,11 +1533,12 @@ export function registerJobsCommands(
       return;
     }
 
+    // VS Code auto-adds a Cancel button to modal dialogs — passing an explicit
+    // one produces two Cancel-like actions. Keep only the affirmative.
     const choice = await vscode.window.showWarningMessage(
       `Stop execution ${executionId} for job ${node.jobId}?`,
       {modal: true},
       'Stop',
-      'Cancel',
     );
     if (choice !== 'Stop') return;
 
@@ -1641,13 +1667,24 @@ export function registerJobsCommands(
   /**
    * Cycles the root grouping between BM-style chronological and group-by-job-id.
    * No refetch — the provider just re-renders the same cached executions.
+   *
+   * VS Code can't swap a title-bar icon on a single command based on context, so
+   * the current-state icon is expressed by binding two commands to the same
+   * handler and gating each on `b2c-dx.jobs.groupingMode` (see package.json).
+   * The alias's icon is `list-tree`, shown when we're grouped and clicking will
+   * flatten to chronological.
    */
-  const toggleGrouping = registerSafeCommand('b2c-dx.jobs.toggleGrouping', () => {
+  const handleGroupingToggle = (): void => {
     const next = treeProvider.toggleGroupingMode();
     void vscode.window.showInformationMessage(
       next === 'groupByJobId' ? 'Job history grouped by Job ID.' : 'Job history shown as chronological timeline.',
     );
-  });
+  };
+  const toggleGrouping = registerSafeCommand('b2c-dx.jobs.toggleGrouping', handleGroupingToggle);
+  const toggleGroupingChronological = registerSafeCommand(
+    'b2c-dx.jobs.toggleGroupingChronological',
+    handleGroupingToggle,
+  );
 
   /**
    * Inline name filter, modeled after Business Manager's job-name search box.
@@ -1680,6 +1717,7 @@ export function registerJobsCommands(
     enableAutoRefresh,
     disableAutoRefresh,
     toggleGrouping,
+    toggleGroupingChronological,
     runJob,
     openDefinitionFile,
     importSiteArchive,

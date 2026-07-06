@@ -3,10 +3,12 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+import {findCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {searchJobExecutions, type JobExecution} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {showThrottledError} from '../notify.js';
+import {detectCartridgeName, extractJobIdsFromXml} from './jobs-xml-parser.js';
 
 export type JobStatusFilter = 'all' | 'active' | 'running' | 'scheduled' | 'failed' | 'completed';
 type ExecutionStatus = 'running' | 'failed' | 'completed' | 'scheduled';
@@ -81,26 +83,6 @@ function parseTimestamp(value: string | undefined): number | undefined {
   if (!value) return undefined;
   const parsed = Date.parse(value);
   return Number.isNaN(parsed) ? undefined : parsed;
-}
-
-/**
- * Best-effort cartridge name for a jobs.xml path. Walks up looking for a folder
- * with a `.project` sibling (the canonical B2C cartridge marker). Returns
- * undefined when the file lives outside any cartridge — surface still works as
- * a workspace-level row, just without a cartridge label.
- */
-function detectCartridgeName(jobsXmlPath: string): string | undefined {
-  const parts = jobsXmlPath.split(/[/\\]/);
-  // Look for the segment immediately containing jobs.xml, then walk up. The
-  // last segment is jobs.xml itself, so start from the parent.
-  for (let i = parts.length - 2; i >= 1; i--) {
-    if (parts[i] === 'cartridge' && parts[i - 1]) {
-      return parts[i - 1];
-    }
-  }
-  // Fall back to the immediate parent directory name — good enough for
-  // labeling when the cartridge structure isn't the canonical one.
-  return parts[parts.length - 2];
 }
 
 function getExecutionUsers(execution: JobExecution): string[] {
@@ -668,6 +650,15 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
       '**/jobs.xml',
       '**/{node_modules,dist,out,.vscode-test,coverage,.git}/**',
     );
+
+    // Prefer the SDK's authoritative cartridge list (walks `.project` markers)
+    // for labeling — it correctly identifies non-standard layouts (cartridge
+    // directly under `src/`, cartridges under a `cartridges/` container, etc.)
+    // that the path-walk heuristic can only approximate. Falls back to the
+    // heuristic when no workspace folder is open or nothing is discovered.
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const knownCartridges = workspaceRoot ? findCartridges(workspaceRoot).map((c) => ({name: c.name, src: c.src})) : [];
+
     const rows: WorkspaceJobTreeItem[] = [];
     const seen = new Set<string>();
     for (const uri of uris) {
@@ -677,12 +668,8 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
       } catch {
         continue;
       }
-      const cartridgeName = detectCartridgeName(uri.fsPath);
-      const jobRegex = /<job\b[^>]*\bjob-id="([^"]+)"/gi;
-      let match: RegExpExecArray | null;
-      while ((match = jobRegex.exec(content)) !== null) {
-        const jobId = match[1]?.trim();
-        if (!jobId) continue;
+      const cartridgeName = detectCartridgeName(uri.fsPath, knownCartridges);
+      for (const jobId of extractJobIdsFromXml(content)) {
         const key = `${jobId}::${uri.fsPath}`;
         if (seen.has(key)) continue;
         seen.add(key);

@@ -18,7 +18,7 @@ interface MenuEntry {
 
 interface PackageJson {
   contributes: {
-    commands: Array<{command: string; title: string}>;
+    commands: Array<{command: string; title: string; icon?: string}>;
     views: Record<string, Array<{id: string; visibility?: string}>>;
     menus: {
       'view/item/context': MenuEntry[];
@@ -188,6 +188,7 @@ suite('jobs menu contributions (package.json)', () => {
       'b2c-dx.jobs.setNameFilter',
       'b2c-dx.jobs.toggleAutoRefresh',
       'b2c-dx.jobs.toggleGrouping',
+      'b2c-dx.jobs.toggleGroupingChronological',
       'b2c-dx.jobs.importSiteArchive',
       'b2c-dx.jobs.exportSiteArchive',
       'b2c-dx.jobs.run',
@@ -246,9 +247,34 @@ suite('jobs menu contributions (package.json)', () => {
       // Right-click-only action; requires a workspace-job node to know which
       // jobs.xml to open, so a bare palette invocation would be a dead-end.
       'b2c-dx.jobs.openDefinitionFile',
+      // Alias command that only exists to render a different title-bar icon
+      // when grouping is on; the primary `toggleGrouping` handles palette access.
+      'b2c-dx.jobs.toggleGroupingChronological',
     ]) {
       assert.ok(hiddenInPalette.has(command), `${command} should be hidden from command palette`);
     }
+  });
+
+  test('grouping title-bar icon swaps between list-flat and list-tree based on current mode', () => {
+    const titleEntries = pkg.contributes.menus['view/title'].filter((entry) => entry.when?.includes('b2cJobsExplorer'));
+    const flatEntry = titleEntries.find((entry) => entry.command === 'b2c-dx.jobs.toggleGrouping');
+    const treeEntry = titleEntries.find((entry) => entry.command === 'b2c-dx.jobs.toggleGroupingChronological');
+    assert.ok(flatEntry, 'chronological-mode icon entry must exist');
+    assert.ok(treeEntry, 'grouped-mode icon entry must exist');
+    // list-flat is shown while chronological (action = switch to grouped);
+    // list-tree is shown while grouped (action = switch back to chronological).
+    assert.ok(
+      flatEntry.when?.includes('b2c-dx.jobs.groupingMode != groupByJobId'),
+      'chronological variant must be gated when NOT grouped',
+    );
+    assert.ok(
+      treeEntry.when?.includes('b2c-dx.jobs.groupingMode == groupByJobId'),
+      'grouped variant must be gated when grouped',
+    );
+    const flatCmd = pkg.contributes.commands.find((c) => c.command === 'b2c-dx.jobs.toggleGrouping');
+    const treeCmd = pkg.contributes.commands.find((c) => c.command === 'b2c-dx.jobs.toggleGroupingChronological');
+    assert.strictEqual(flatCmd?.icon, '$(list-flat)');
+    assert.strictEqual(treeCmd?.icon, '$(list-tree)');
   });
 
   test('filter title-bar icon swaps between filled and outlined based on active filters', () => {
