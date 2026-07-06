@@ -21,17 +21,27 @@ on:
 env:
   SFCC_DISABLE_TELEMETRY: ${{ vars.SFCC_DISABLE_TELEMETRY }}
 
+# Least-privilege default for every job; each job opts up to only what it needs.
+permissions:
+  contents: read
+
 jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
+    outputs:
+      release_type: ${{ steps.release-type.outputs.type }}
+      publish_vsx: ${{ steps.packages.outputs.publish_vsx }}
+      version_vsx: ${{ steps.packages.outputs.version_vsx }}
+      vsix_sha256: ${{ steps.vsix-hash.outputs.sha256 }}
     if: >-
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
     permissions:
       actions: write # For triggering deploy-docs.yml via workflow_dispatch
       contents: write # For creating GitHub releases and tags
-      id-token: write # Required for npm OIDC trusted publishers
+      id-token: write # Required for npm OIDC trusted publishers AND SLSA build provenance
+      attestations: write # For actions/attest-build-provenance on the VSIX
       pull-requests: write # For creating merge-back PRs
     steps:
       - name: Checkout
@@ -42,8 +52,15 @@ jobs:
 
       - name: Determine release type
         id: release-type
+        env:
+          # Bind untrusted workflow_dispatch input to an env var; do not interpolate
+          # it into the shell. The 'choice' type is a UI hint only — API-driven
+          # dispatches can send an arbitrary string, and this job holds id-token/
+          # attestations/contents write (it is the SLSA signer), so an injection
+          # here would let an attacker forge provenance.
+          RELEASE_TYPE_INPUT: ${{ github.event.inputs.release_type }}
         run: |
-          if [[ "${{ github.event.inputs.release_type }}" == "stable" ]] || [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+          if [[ "$RELEASE_TYPE_INPUT" == "stable" ]] || [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
             echo "type=stable" >> $GITHUB_OUTPUT
             echo "tag=latest" >> $GITHUB_OUTPUT
           else
@@ -260,6 +277,32 @@ jobs:
         if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
         working-directory: packages/b2c-vs-extension
         run: pnpm run package
+
+      # Trust anchor: hash the exact artifact that will be uploaded to the release
+      # and attested below. b2c-dx re-computes and compares this before publishing.
+      - name: Compute VSIX sha256
+        id: vsix-hash
+        if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
+        working-directory: packages/b2c-vs-extension
+        run: |
+          set -euo pipefail
+          VSIX=$(ls *.vsix 2>/dev/null | head -n1)
+          if [ -z "$VSIX" ]; then
+            echo "::error::No .vsix produced by 'pnpm run package'"
+            exit 1
+          fi
+          SHA=$(sha256sum "$VSIX" | awk '{print $1}')
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "::notice::VSIX $VSIX sha256=$SHA"
+
+      # SLSA build provenance: cryptographically binds the VSIX to this repo,
+      # commit, and workflow run. This is the provenance b2c-dx verifies with
+      # `gh attestation verify` before it can publish to the marketplaces.
+      - name: Attest VSIX build provenance
+        if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: packages/b2c-vs-extension/*.vsix
 
       - name: Create git tags
         if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
@@ -554,113 +597,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Open release PR in forcedotcom/b2c-dx
-        if: >-
-          steps.release-type.outputs.type == 'stable'
-          && steps.packages.outputs.publish_vsx == 'true'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.B2C_DX_PUBLISH_TOKEN }}
-        run: |
-          if [ -z "$GH_TOKEN" ]; then
-            echo "::warning::B2C_DX_PUBLISH_TOKEN is not configured; skipping release PR to forcedotcom/b2c-dx"
-            exit 0
-          fi
-
-          VSX_VERSION="${{ steps.packages.outputs.version_vsx }}"
-          MONOREPO_TAG="b2c-vs-extension@${VSX_VERSION}"
-          MONOREPO_REPO="${{ github.repository }}"
-          MONOREPO_SHA="${{ github.sha }}"
-          BRANCH="release/b2c-vs-extension-${VSX_VERSION}"
-
-          # Reuse the dedicated VSX release notes generated above (/tmp/vsx-release-notes.md)
-          if [ ! -f /tmp/vsx-release-notes.md ]; then
-            echo "::error::Expected /tmp/vsx-release-notes.md from the prior 'Create VS Code extension release' step"
-            exit 1
-          fi
-
-          # Extract just the new CHANGELOG section to splice into b2c-dx's CHANGELOG
-          NEW_SECTION_FILE=/tmp/vsx-changelog-section.md
-          {
-            echo "## ${VSX_VERSION}"
-            echo ""
-            awk '/^## / { if (found) exit; found=1; next } found { print }' \
-              packages/b2c-vs-extension/CHANGELOG.md
-          } > "$NEW_SECTION_FILE"
-
-          WORKDIR=$(mktemp -d)
-          git clone --depth=1 \
-            "https://x-access-token:${GH_TOKEN}@github.com/forcedotcom/b2c-dx.git" \
-            "$WORKDIR/b2c-dx"
-          cd "$WORKDIR/b2c-dx"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # If the branch already exists (re-run), update it in place
-          git fetch origin "$BRANCH" 2>/dev/null && git checkout "$BRANCH" || git checkout -b "$BRANCH"
-
-          # Splice the new section into CHANGELOG.md right after the "# Change Log" header.
-          # Idempotent: if the version's section is already present, replace it.
-          python3 - "$NEW_SECTION_FILE" "$VSX_VERSION" <<'PY'
-          import sys, re, pathlib
-          section_path, version = sys.argv[1], sys.argv[2]
-          new_section = pathlib.Path(section_path).read_text().rstrip() + "\n\n"
-          path = pathlib.Path("CHANGELOG.md")
-          text = path.read_text() if path.exists() else "# Change Log\n\n"
-          if not text.startswith("# Change Log"):
-              text = "# Change Log\n\n" + text
-          # Drop existing section for this version, if any
-          pattern = re.compile(rf"^## {re.escape(version)}\b.*?(?=^## |\Z)", re.M | re.S)
-          text = pattern.sub("", text, count=1)
-          # Insert after the top header (and optional blank line)
-          text = re.sub(r"^(# Change Log\n+)", lambda m: m.group(1) + new_section, text, count=1)
-          path.write_text(text)
-          PY
-
-          mkdir -p releases
-          cat > releases/latest.json <<JSON
-          {
-            "version": "${VSX_VERSION}",
-            "monorepoTag": "${MONOREPO_TAG}",
-            "monorepoRepo": "${MONOREPO_REPO}",
-            "monorepoReleaseUrl": "https://github.com/${MONOREPO_REPO}/releases/tag/${MONOREPO_TAG}",
-            "sha": "${MONOREPO_SHA}"
-          }
-          JSON
-
-          git add CHANGELOG.md releases/latest.json
-          if git diff --cached --quiet; then
-            echo "No changes to commit on $BRANCH; PR may already be up to date"
-          else
-            git commit -m "Release b2c-vs-extension ${VSX_VERSION}"
-            git push --force-with-lease origin "$BRANCH"
-          fi
-
-          # PR body: link to monorepo release + the changelog section
-          PR_BODY_FILE=/tmp/b2c-dx-pr-body.md
-          {
-            echo "Releases \`b2c-vs-extension@${VSX_VERSION}\` from [${MONOREPO_REPO}](https://github.com/${MONOREPO_REPO}/releases/tag/${MONOREPO_TAG})."
-            echo ""
-            echo "Merging this PR triggers the on-merge workflow, which downloads the VSIX from the monorepo release, creates a release in this repo, and fires the \`publish-vscode\` and \`publish-openvsx\` workflows."
-            echo ""
-            echo "---"
-            echo ""
-            cat "$NEW_SECTION_FILE"
-          } > "$PR_BODY_FILE"
-
-          # Open or update the PR
-          if gh pr view "$BRANCH" --repo forcedotcom/b2c-dx >/dev/null 2>&1; then
-            gh pr edit "$BRANCH" --repo forcedotcom/b2c-dx \
-              --title "Release b2c-vs-extension ${VSX_VERSION}" \
-              --body-file "$PR_BODY_FILE"
-          else
-            gh pr create --repo forcedotcom/b2c-dx \
-              --base main \
-              --head "$BRANCH" \
-              --title "Release b2c-vs-extension ${VSX_VERSION}" \
-              --body-file "$PR_BODY_FILE"
-          fi
+      # NOTE: Cross-repo delivery to forcedotcom/b2c-dx is handled by the separate
+      # `notify-b2c-dx` job below. It fires a repository_dispatch event instead of
+      # cloning/pushing b2c-dx with a long-lived PAT. See that job for rationale.
 
       - name: Trigger documentation deployment
         if: >-
@@ -705,3 +644,81 @@ jobs:
           [[ "${{ steps.publish-mcp.outcome }}" == "failure" ]] && echo "  - MCP"
           [[ "${{ steps.publish-mrt.outcome }}" == "failure" ]] && echo "  - MRT"
           exit 1
+
+  # ---------------------------------------------------------------------------
+  # Cross-repo delivery to the public OSS repo (forcedotcom/b2c-dx).
+  #
+  # The monorepo BUILDS + ATTESTS the VSIX (above); b2c-dx PUBLISHES it. We do not
+  # clone/push b2c-dx with a long-lived PAT. Instead we fire a repository_dispatch
+  # event and let b2c-dx author its own release PR with its own GITHUB_TOKEN
+  # (separation of duties; precedent: salesforcedx-vscode -> code-builder-web).
+  #
+  # Security properties:
+  #   - Ephemeral credential: a GitHub App installation token (<=1h, auto-revoked),
+  #     scoped to b2c-dx only. No long-lived cross-repo PAT in this repo.
+  #   - No marketplace scope anywhere in the monorepo: the builder physically
+  #     cannot publish.
+  #   - Fail-loud: a dispatch failure is a red check (no continue-on-error). It
+  #     cannot undo the already-successful npm/VSIX publishes (separate job).
+  #   - Safe rollout: skipped (not failed) until an admin sets vars.B2C_DX_APP_ID.
+  #   - No injection: payload is assembled with `jq --arg` and POSTed via stdin.
+  # ---------------------------------------------------------------------------
+  notify-b2c-dx:
+    name: Notify forcedotcom/b2c-dx of new VSIX release
+    needs: publish
+    runs-on: ubuntu-latest
+    if: >-
+      needs.publish.outputs.release_type == 'stable'
+      && needs.publish.outputs.publish_vsx == 'true'
+      && vars.B2C_DX_APP_ID != ''
+    permissions:
+      contents: read
+    steps:
+      - name: Mint short-lived GitHub App token (scoped to b2c-dx)
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.B2C_DX_APP_ID }}
+          private-key: ${{ secrets.B2C_DX_APP_PRIVATE_KEY }}
+          owner: ${{ vars.B2C_DX_OWNER || 'forcedotcom' }}
+          repositories: ${{ vars.B2C_DX_REPO_NAME || 'b2c-dx' }}
+
+      - name: Fire repository_dispatch to b2c-dx
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          B2C_DX_REPO: ${{ vars.B2C_DX_REPO || 'forcedotcom/b2c-dx' }}
+          VSX_VERSION: ${{ needs.publish.outputs.version_vsx }}
+          VSIX_SHA256: ${{ needs.publish.outputs.vsix_sha256 }}
+          MONOREPO_REPO: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+        run: |
+          set -euo pipefail
+
+          MONOREPO_TAG="b2c-vs-extension@${VSX_VERSION}"
+          RELEASE_URL="${SERVER_URL}/${MONOREPO_REPO}/releases/tag/${MONOREPO_TAG}"
+
+          if [ -z "${VSIX_SHA256:-}" ]; then
+            echo "::error::VSIX sha256 was not computed; refusing to dispatch without an integrity anchor"
+            exit 1
+          fi
+
+          # Build the client_payload with jq (--arg is injection-safe) and POST via stdin.
+          jq -n \
+            --arg version "$VSX_VERSION" \
+            --arg repo "$MONOREPO_REPO" \
+            --arg tag "$MONOREPO_TAG" \
+            --arg url "$RELEASE_URL" \
+            --arg sha "$VSIX_SHA256" \
+            '{
+              event_type: "monorepo-vsx-release",
+              client_payload: {
+                version: $version,
+                monorepo_repo: $repo,
+                monorepo_tag: $tag,
+                release_url: $url,
+                vsix_sha256: $sha
+              }
+            }' \
+          | gh api "repos/${B2C_DX_REPO}/dispatches" --method POST --input -
+
+          echo "::notice::Dispatched monorepo-vsx-release for ${MONOREPO_TAG} to ${B2C_DX_REPO}"

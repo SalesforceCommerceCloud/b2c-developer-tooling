@@ -1,6 +1,8 @@
 # Publishing the B2C DX VS Code Extension
 
-The extension is built in this monorepo and published to the marketplaces from a separate Salesforce-owned repository, [`forcedotcom/b2c-dx`](https://github.com/forcedotcom/b2c-dx). The marketplace requires the extension's repository URL to live under that org. Each release goes through a **review PR** in `forcedotcom/b2c-dx` so a human can inspect and approve it before anything reaches the marketplaces.
+The extension is built in this monorepo and published to the marketplaces from a separate Salesforce-owned repository, [`forcedotcom/b2c-dx`](https://github.com/forcedotcom/b2c-dx). The split exists for **open-source governance**: Salesforce OSPO policy requires public, externally consumable OSS to live under a `forcedotcom`/`salesforce` org, and the marketplace listing's "Repository" link must point at that public repo. It is **not** a VS Code Marketplace technical requirement. Each release goes through a **review PR** in `forcedotcom/b2c-dx` so a human can inspect and approve it before anything reaches the marketplaces.
+
+The source never leaves this monorepo. The only artifact that crosses the boundary is the built VSIX, and it carries **SLSA build provenance** (an `actions/attest-build-provenance` attestation). Every workflow on the `b2c-dx` side re-verifies that provenance before acting, so a tampered or foreign VSIX cannot reach the marketplaces.
 
 ## Where things live
 
@@ -8,8 +10,10 @@ The extension is built in this monorepo and published to the marketplaces from a
 |---|---|
 | Source code, dev workflow, issues, PRs | This monorepo (`SalesforceCommerceCloud/b2c-developer-tooling`) |
 | VSIX build (`vsce package` + `inject-script-types.mjs`) | This monorepo's `publish.yml` workflow |
+| VSIX sha256 + SLSA build-provenance attestation | This monorepo's `publish.yml` workflow |
 | Tagged GitHub release with VSIX attached | This monorepo (tag: `b2c-vs-extension@X.Y.Z`) |
-| Release review PR | `forcedotcom/b2c-dx` (branch `release/b2c-vs-extension-X.Y.Z`) |
+| Cross-repo trigger (`repository_dispatch`) | This monorepo's `notify-b2c-dx` job → `forcedotcom/b2c-dx` |
+| Release review PR | `forcedotcom/b2c-dx` (opened by `receive-monorepo-release.yml`) |
 | Marketplace landing page, governance, publish workflows | `forcedotcom/b2c-dx` |
 | Mirrored release with the same VSIX asset | `forcedotcom/b2c-dx` (created on PR merge; tag `b2c-vs-extension@X.Y.Z`) |
 | `vsce publish` to VS Code Marketplace | `forcedotcom/b2c-dx` workflow `publish-vscode.yml` |
@@ -17,19 +21,25 @@ The extension is built in this monorepo and published to the marketplaces from a
 
 ## Automatic flow (the default)
 
+The model is **monorepo builds and attests; `b2c-dx` publishes.** The monorepo never pushes into `b2c-dx`; it fires an event and lets `b2c-dx` author its own PR with its own token (separation of duties).
+
 1. A PR lands in this monorepo containing a changeset that bumps `b2c-vs-extension`.
 2. The Changesets "Version Packages" PR is merged. `publish.yml` runs and:
    - Packages the extension via `pnpm run package` (esbuild + `vsce package` + `inject-script-types.mjs`).
+   - Computes the VSIX **sha256** and produces a **build-provenance attestation** for it (`actions/attest-build-provenance`).
    - Creates the git tag `b2c-vs-extension@X.Y.Z` and a GitHub Release in this repo with the `.vsix` attached.
-   - Runs the **"Open release PR in forcedotcom/b2c-dx"** step, which uses `B2C_DX_PUBLISH_TOKEN` (a fine-grained PAT with `contents: write` and `pull-requests: write` on `forcedotcom/b2c-dx`) to:
-     - Push a branch `release/b2c-vs-extension-X.Y.Z` containing the new `CHANGELOG.md` section and an updated `releases/latest.json` marker pointing at this monorepo's release.
-     - Open a PR titled `Release b2c-vs-extension X.Y.Z`.
-3. **A maintainer reviews and merges that PR in `forcedotcom/b2c-dx`.** This is the manual gate. The PR diff shows exactly what would be released — CHANGELOG + the version/tag in the marker file.
-4. Merging fires `release-on-merge.yml` in `forcedotcom/b2c-dx`, which:
-   - Reads `releases/latest.json` and extracts version + monorepo tag.
-   - Downloads the VSIX from the monorepo release.
+   - Runs the isolated **`notify-b2c-dx`** job, which mints a **short-lived GitHub App installation token** (scoped to `b2c-dx` only, `contents: read`, auto-revoked within ~1h) and fires a `repository_dispatch` event (`monorepo-vsx-release`) carrying the version, monorepo tag, release URL, and VSIX sha256. No long-lived cross-repo PAT is used, and no marketplace credential exists anywhere in this repo.
+3. On `b2c-dx`, **`receive-monorepo-release.yml`** receives the dispatch and, using `b2c-dx`'s own `GITHUB_TOKEN`:
+   - Validates and allowlists the payload (rejects any source that is not this monorepo; strict semver / sha256 / tag checks).
+   - Downloads the VSIX from the monorepo release and **verifies its sha256 and build provenance** (`gh attestation verify --signer-workflow …/publish.yml`). A spoofed dispatch or tampered artifact fails closed here — no PR is opened.
+   - Opens a PR titled `Release b2c-vs-extension X.Y.Z` updating `CHANGELOG.md`, `releases/<version>.json`, and `releases/latest.json`.
+4. **A maintainer reviews and merges that PR in `forcedotcom/b2c-dx`.** This is the manual gate. The PR diff shows exactly what would be released — CHANGELOG + the version/tag/sha256 in the marker files.
+5. Merging fires `release-on-merge.yml` in `forcedotcom/b2c-dx`, which:
+   - Reads the marker and re-checks the source allowlist.
+   - Downloads the VSIX and **re-verifies sha256 + build provenance** (the machine check that backstops the metadata-only human review).
    - Creates a release on `forcedotcom/b2c-dx` with the VSIX attached.
-5. The new release event triggers both publish workflows in parallel:
+   - Explicitly triggers the two publish workflows via `workflow_dispatch`. (A `release` event created with `GITHUB_TOKEN` does **not** trigger other workflows — GitHub's recursion guard — so the publishers are dispatched directly rather than relying on the `release` event.)
+6. Each publish workflow runs in the protected **`publish` environment** (the only place the marketplace tokens are readable), **verifies build provenance one final time**, and then publishes:
    - `publish-vscode.yml` → `vsce publish --skip-duplicate` to VS Code Marketplace using `VSCE_PERSONAL_ACCESS_TOKEN`.
    - `publish-openvsx.yml` → `ovsx publish --skip-duplicate` to Open VSX using `IDEE_OVSX_PAT`.
 
@@ -37,8 +47,9 @@ The extension typically appears on both marketplaces within a few minutes of mer
 
 ### Where to watch each step
 
-- **Build + monorepo release:** Actions tab in this repo → `Publish` workflow run.
-- **PR creation:** the same workflow run, "Open release PR in forcedotcom/b2c-dx" step → follow the link to the PR.
+- **Build + attestation + monorepo release:** Actions tab in this repo → `Publish` workflow run.
+- **Cross-repo dispatch:** the same workflow run, `notify-b2c-dx` job.
+- **PR creation:** `forcedotcom/b2c-dx` Actions tab → `Receive monorepo VSIX release`, then its Pull Requests tab.
 - **PR review/merge:** `forcedotcom/b2c-dx` Pull Requests tab.
 - **Release creation + marketplace publish:** Actions tab in `forcedotcom/b2c-dx` → `Create release on merge`, then `Publish to VS Code Marketplace` and `Publish to Open VSX Registry`.
 - **Listings:**
@@ -47,50 +58,35 @@ The extension typically appears on both marketplaces within a few minutes of mer
 
 ## Manual fallback
 
-Use these when the automatic path fails — typically because a token has expired, a workflow was disabled, or the marketplace returned a non-409 error.
+Use these when the automatic path fails — typically because the App token isn't provisioned, a workflow was disabled, or the marketplace returned a non-409 error.
 
-> **Where to find the tokens.** `VSCE_PERSONAL_ACCESS_TOKEN` and `IDEE_OVSX_PAT` are repo secrets on `forcedotcom/b2c-dx`; `B2C_DX_PUBLISH_TOKEN` is a repo secret on this monorepo. For local manual publishing, request short-lived equivalents from the team that owns the marketplace publisher (do **not** export them into a long-lived shell config).
+> **Where to find the tokens.** `VSCE_PERSONAL_ACCESS_TOKEN` and `IDEE_OVSX_PAT` are secrets in the `publish` environment on `forcedotcom/b2c-dx`. The cross-repo GitHub App credential (`B2C_DX_APP_ID` variable + `B2C_DX_APP_PRIVATE_KEY` secret) lives on this monorepo. For local manual publishing, request short-lived equivalents from the team that owns the marketplace publisher (do **not** export them into a long-lived shell config).
 
-### 1. The "Open release PR" step failed
+### 1. The dispatch didn't reach b2c-dx / no PR was opened
 
-The VSIX is on the monorepo release; just open the PR by hand.
+The VSIX and its attestation are already on the monorepo release. Re-fire the dispatch by re-running the `Publish` workflow's `notify-b2c-dx` job, or trigger the receiver on `b2c-dx` directly (the receiver re-downloads and re-verifies, so this is safe):
 
 ```bash
 VERSION=0.8.2
 TAG="b2c-vs-extension@${VERSION}"
-BRANCH="release/b2c-vs-extension-${VERSION}"
 MONOREPO=SalesforceCommerceCloud/b2c-developer-tooling
+VSIX_SHA256=$(gh release download "$TAG" -R "$MONOREPO" -p '*.vsix' --dir /tmp/vsix >/dev/null 2>&1; sha256sum /tmp/vsix/*.vsix | awk '{print $1}')
 
-# Clone b2c-dx, branch, edit CHANGELOG and marker, push, open PR
-git clone https://github.com/forcedotcom/b2c-dx.git /tmp/b2c-dx
-cd /tmp/b2c-dx
-git checkout -b "$BRANCH"
-
-# 1. Splice the new section into CHANGELOG.md (paste the latest section from
-#    the monorepo's packages/b2c-vs-extension/CHANGELOG.md right under
-#    the "# Change Log" header).
-
-# 2. Update releases/latest.json:
-cat > releases/latest.json <<JSON
+gh api repos/forcedotcom/b2c-dx/dispatches --method POST --input - <<JSON
 {
-  "version": "${VERSION}",
-  "monorepoTag": "${TAG}",
-  "monorepoRepo": "${MONOREPO}",
-  "monorepoReleaseUrl": "https://github.com/${MONOREPO}/releases/tag/${TAG}",
-  "sha": "$(gh api repos/${MONOREPO}/commits/main --jq .sha)"
+  "event_type": "monorepo-vsx-release",
+  "client_payload": {
+    "version": "${VERSION}",
+    "monorepo_repo": "${MONOREPO}",
+    "monorepo_tag": "${TAG}",
+    "release_url": "https://github.com/${MONOREPO}/releases/tag/${TAG}",
+    "vsix_sha256": "${VSIX_SHA256}"
+  }
 }
 JSON
-
-git add CHANGELOG.md releases/latest.json
-git commit -m "Release b2c-vs-extension ${VERSION}"
-git push -u origin "$BRANCH"
-
-gh pr create --base main --head "$BRANCH" \
-  --title "Release b2c-vs-extension ${VERSION}" \
-  --body "Manual release PR for b2c-vs-extension@${VERSION}. See ${MONOREPO}@${TAG} for the source release."
 ```
 
-Merge the PR through the normal review path.
+If the receiver itself is unavailable, open the PR by hand on `b2c-dx`: create branch `release/b2c-vs-extension-${VERSION}`, splice the latest section of `packages/b2c-vs-extension/CHANGELOG.md` into `b2c-dx`'s `CHANGELOG.md`, and write `releases/latest.json` (and `releases/${VERSION}.json`) with `version`, `monorepoTag`, `monorepoRepo`, `monorepoReleaseUrl`, and `vsixSha256` (the sha256 above — the on-merge workflow verifies it, so it must be correct).
 
 ### 2. PR was merged but `release-on-merge.yml` didn't run / failed
 
@@ -100,7 +96,7 @@ Re-run it manually from the b2c-dx Actions tab, or via CLI:
 gh workflow run release-on-merge.yml -R forcedotcom/b2c-dx
 ```
 
-The workflow re-reads `releases/latest.json` and is idempotent — it skips if the release already exists.
+The workflow re-reads `releases/latest.json`, re-verifies the VSIX, and is idempotent — it skips if the release already exists.
 
 ### 3. Release exists in b2c-dx but a publish workflow didn't fire / failed
 
@@ -118,17 +114,20 @@ gh workflow run publish-openvsx.yml \
   -f tag="b2c-vs-extension@${VERSION}"
 ```
 
+Both publishers verify build provenance before publishing, so a manual dispatch of a foreign or tampered tag still fails closed.
+
 ### 4. Last resort: publish the VSIX directly from a workstation
 
-If the GitHub Actions environment is unavailable, publish locally with the marketplace tokens exported into the shell. Do not commit these values; do not put them in a long-lived dotfile.
+If the GitHub Actions environment is unavailable, publish locally with the marketplace tokens exported into the shell. Do not commit these values; do not put them in a long-lived dotfile. Verify provenance first.
 
 ```bash
 VERSION=0.8.2
 VSIX="b2c-vs-extension-${VERSION}.vsix"
+MONOREPO=SalesforceCommerceCloud/b2c-developer-tooling
 
-gh release download "b2c-vs-extension@${VERSION}" \
-  -R SalesforceCommerceCloud/b2c-developer-tooling \
-  -p '*.vsix'
+gh release download "b2c-vs-extension@${VERSION}" -R "$MONOREPO" -p '*.vsix'
+gh attestation verify "$VSIX" --repo "$MONOREPO" \
+  --signer-workflow "$MONOREPO/.github/workflows/publish.yml"
 
 npx --yes @vscode/vsce publish --skip-duplicate --pat "$VSCE_PAT" --packagePath "$VSIX"
 npx --yes ovsx publish --skip-duplicate -p "$OVSX_PAT" "$VSIX"
@@ -138,17 +137,20 @@ npx --yes ovsx publish --skip-duplicate -p "$OVSX_PAT" "$VSIX"
 
 | Symptom | Likely cause | Action |
 |---|---|---|
-| "Open release PR" step shows `B2C_DX_PUBLISH_TOKEN is not configured` | PAT not yet provisioned, or expired | Generate a new fine-grained PAT with `contents: write` + `pull-requests: write` on `forcedotcom/b2c-dx` only; store as `B2C_DX_PUBLISH_TOKEN` in this repo's secrets |
-| PR opens but force-pushes itself on every workflow re-run | Expected — the step uses `--force-with-lease` to keep the branch in sync with the latest CHANGELOG | If the diff looks unstable, check that no one else is editing the branch by hand |
-| `release-on-merge.yml` skipped with "Version unchanged" | The marker version matches the previous commit (e.g. only governance files changed) | Expected; the marker file gates the trigger on real version bumps |
+| `notify-b2c-dx` job skipped | `vars.B2C_DX_APP_ID` not set (safe rollout state) | Expected until the GitHub App is provisioned; provision it to enable cross-repo delivery |
+| `notify-b2c-dx` fails minting a token | App private key/ID wrong, or App not installed on `b2c-dx` | Verify `B2C_DX_APP_ID` + `B2C_DX_APP_PRIVATE_KEY` and that the App is installed on `forcedotcom/b2c-dx` with `contents: write` |
+| Receiver rejects the dispatch (allowlist / validation error) | Source repo not allowlisted, or malformed payload | Expected for spoofed/garbage events; for a legitimate sandbox, set `vars.EXPECTED_MONOREPO` on the receiving repo |
+| `gh attestation verify` fails on b2c-dx | VSIX wasn't attested, or doesn't match the signer workflow | Confirm `publish.yml` ran the "Attest VSIX build provenance" step for this release; a mismatch means the artifact is not trusted — do **not** override |
+| `release-on-merge.yml` skipped with "Version unchanged" | The marker version matches the previous commit | Expected; the marker gates the trigger on real version bumps |
+| Release created but publishers didn't run | Relying on the `release` event under `GITHUB_TOKEN` (recursion guard) | The workflow now dispatches the publishers explicitly; ensure `release-on-merge.yml` has `actions: write` |
 | `vsce publish` returns `409 already exists` | Version already published | Safe; `--skip-duplicate` masks this |
 | Open VSX returns `namespace not verified` / `403` | Publisher token lost access to the `Salesforce` namespace | Coordinate with the team holding the Open VSX publisher account; rotate `IDEE_OVSX_PAT` |
-| `gh release download` (in b2c-dx workflow) fails `release not found` | Monorepo release not yet created, or tag mismatch | Verify the monorepo `publish.yml` run completed and the tag matches `releases/latest.json#monorepoTag` |
+| `gh release download` (in b2c-dx workflow) fails `release not found` | Monorepo release not yet created, or tag mismatch | Verify the monorepo `publish.yml` run completed and the tag matches the marker's `monorepoTag` |
 
-## Token rotation
+## Credentials
 
-Three tokens drive this pipeline. Rotate ahead of expiry; an expired token silently breaks publishing.
+- **GitHub App** (`B2C_DX_APP_ID` variable + `B2C_DX_APP_PRIVATE_KEY` secret, this repo) — org-owned identity used only to fire the cross-repo dispatch. Installation tokens are short-lived (~1h) and auto-revoked; there is no long-lived cross-repo PAT to rotate. Rotate the App private key per org policy.
+- **`VSCE_PERSONAL_ACCESS_TOKEN`** (`publish` environment on `forcedotcom/b2c-dx`) — Azure DevOps PAT for the `Salesforce` marketplace publisher. Scope to Marketplace-publish only; set an expiry and a rotation owner.
+- **`IDEE_OVSX_PAT`** (`publish` environment on `forcedotcom/b2c-dx`) — Open VSX PAT for the `Salesforce` namespace. Set an expiry and a rotation owner.
 
-- **`B2C_DX_PUBLISH_TOKEN`** (this repo's secrets) — fine-grained PAT, `contents: write` + `pull-requests: write` on `forcedotcom/b2c-dx` only.
-- **`VSCE_PERSONAL_ACCESS_TOKEN`** (`forcedotcom/b2c-dx` secrets) — Azure DevOps PAT for the `Salesforce` marketplace publisher.
-- **`IDEE_OVSX_PAT`** (`forcedotcom/b2c-dx` secrets) — Open VSX PAT for the `Salesforce` namespace.
+> The previous long-lived `B2C_DX_PUBLISH_TOKEN` PAT is **removed** by this design. If it still exists as a secret, delete it and revoke the PAT once the App path is confirmed working.
