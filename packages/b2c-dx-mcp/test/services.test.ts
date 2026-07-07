@@ -281,8 +281,8 @@ describe('services', () => {
           return new Response('{}', {status: 200, headers: {'content-type': 'application/json'}});
         },
       });
-      await client.GET('/organizations/{organizationId}/categories/{category}', {
-        params: {path: {organizationId: 'f_ecom_test_tenant', category: 'overall'}},
+      await client.GET('/organizations/{organizationId}/metrics/overall', {
+        params: {path: {organizationId: 'f_ecom_test_tenant'}},
       });
       expect(capturedUrls).to.have.lengthOf(1);
       expect(capturedUrls[0]).to.match(
