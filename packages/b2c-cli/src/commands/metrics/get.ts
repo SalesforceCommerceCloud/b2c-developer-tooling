@@ -46,6 +46,8 @@ interface MetricsQueryEcho {
   toEpochSeconds: number;
   /** True when a bound was derived from the 24-hour default window. */
   defaultedWindow?: boolean;
+  /** True when `from` was clamped forward to stay within the 30-day retention window. */
+  clampedFrom?: boolean;
   thirdPartyServiceId?: string;
   apiFamily?: string;
   apiName?: string;
@@ -212,6 +214,7 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
       fromEpochSeconds: window.fromEpochSeconds,
       toEpochSeconds: window.toEpochSeconds,
       defaultedWindow: window.defaultedWindow || undefined,
+      clampedFrom: window.clampedFrom || undefined,
       thirdPartyServiceId,
       apiFamily,
       apiName,

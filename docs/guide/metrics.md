@@ -242,7 +242,7 @@ With `--json`, the response is wrapped as `{query, data}` where `query` echoes t
 }
 ```
 
-The `query` object always includes both `from`/`to` (and their `fromEpochSeconds`/`toEpochSeconds`). When a bound was derived from the 24-hour default window (e.g. `--from` alone, or no time flags), `query.defaultedWindow` is `true`.
+The `query` object always includes both `from`/`to` (and their `fromEpochSeconds`/`toEpochSeconds`). When a bound was derived from the 24-hour default window (e.g. `--from` alone, or no time flags), `query.defaultedWindow` is `true`; when `--from` was clamped forward off the retention edge, `query.clampedFrom` is `true`.
 
 ## SDK Usage
 

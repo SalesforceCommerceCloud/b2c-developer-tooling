@@ -295,6 +295,31 @@ describe('metrics get', () => {
       expect(result.query.toEpochSeconds).to.equal(to);
     });
 
+    it('echoes clampedFrom in the query when --from is at the retention edge', async () => {
+      const command: any = new MetricsGet(['overall'], config);
+      // 30d ago is exactly the retention floor → clamped forward by the safety margin.
+      stubParse(command, {'tenant-id': 'zzxy_prd', from: '30d'}, {category: 'overall'});
+      await command.init();
+
+      sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+      sinon.stub(command, 'getOAuthStrategy').returns({getAuthorizationHeader: async () => 'Bearer test'});
+      sinon.stub(command, 'requireTenantId').returns('zzxy_prd');
+      // Silence the retention-edge warning so it does not leak to the console.
+      sinon.stub(command, 'warn').returns(void 0);
+
+      sinon
+        .stub(globalThis, 'fetch')
+        .resolves(
+          new Response(JSON.stringify({data: []}), {status: 200, headers: {'content-type': 'application/json'}}),
+        );
+
+      const result = await command.run();
+      expect(result.query.clampedFrom).to.equal(true);
+      expect(result.query.defaultedWindow).to.equal(true);
+    });
+
     it('defaults to the last 24h when no bounds are given', async () => {
       const command: any = new MetricsGet(['overall'], config);
       stubParse(command, {'tenant-id': 'zzxy_prd'}, {category: 'overall'});
