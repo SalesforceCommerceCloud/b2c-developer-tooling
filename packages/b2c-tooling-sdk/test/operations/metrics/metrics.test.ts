@@ -28,7 +28,14 @@ const TENANT_ID = 'zzxy_prd';
 const ORG_ID = 'f_ecom_zzxy_prd';
 const BASE_URL = `https://${SHORT_CODE}.api.commercecloud.salesforce.com/observability/metrics/v1`;
 
-/** A minimal, valid MetricsDataResponse for happy-path assertions. */
+// Data-point timestamps are epoch SECONDS on the wire (as the API sends them).
+const POINT_1_SECONDS = 1_620_735_785;
+const POINT_2_SECONDS = 1_620_735_845;
+
+/**
+ * A minimal, valid MetricsDataResponse as returned by the API, i.e. with data
+ * point timestamps in epoch SECONDS.
+ */
 const SAMPLE_RESPONSE: MetricsDataResponse = {
   data: [
     {
@@ -41,8 +48,8 @@ const SAMPLE_RESPONSE: MetricsDataResponse = {
           id: 'series-1',
           name: '2xx',
           data: [
-            {timestamp: 1_620_735_785_000, value: 42},
-            {timestamp: 1_620_735_845_000, value: 43.5},
+            {timestamp: POINT_1_SECONDS, value: 42},
+            {timestamp: POINT_2_SECONDS, value: 43.5},
           ],
         },
       ],
@@ -87,8 +94,23 @@ describe('Metrics API operations', () => {
     });
   });
 
+  describe('timestamp normalization (seconds → milliseconds)', () => {
+    it('rewrites response data-point timestamps from epoch seconds to milliseconds', async () => {
+      server.use(
+        http.get(`${BASE_URL}/organizations/${ORG_ID}/metrics/overall`, () => HttpResponse.json(SAMPLE_RESPONSE)),
+      );
+
+      const result = await getOverallMetrics(client, TENANT_ID);
+      const points = result.data[0].dataSeries[0].data;
+      // API sent seconds; operations layer returns milliseconds so new Date(...) is correct.
+      expect(points[0].timestamp).to.equal(POINT_1_SECONDS * 1000);
+      expect(points[1].timestamp).to.equal(POINT_2_SECONDS * 1000);
+      expect(new Date(points[0].timestamp).getUTCFullYear()).to.equal(2021);
+    });
+  });
+
   describe('time-window handling', () => {
-    it('serializes from/to as query params when provided', async () => {
+    it('converts millisecond from/to inputs to epoch seconds on the wire', async () => {
       let seenUrl = '';
       server.use(
         http.get(`${BASE_URL}/organizations/${ORG_ID}/metrics/sales`, ({request}) => {
@@ -97,10 +119,29 @@ describe('Metrics API operations', () => {
         }),
       );
 
-      await getSalesMetrics(client, TENANT_ID, {from: 1000, to: 2000});
+      // Inputs are epoch milliseconds (Date.now()-style); the API expects seconds.
+      await getSalesMetrics(client, TENANT_ID, {from: 1_620_000_000_000, to: 1_620_000_600_000});
       const url = new URL(seenUrl);
-      expect(url.searchParams.get('from')).to.equal('1000');
-      expect(url.searchParams.get('to')).to.equal('2000');
+      expect(url.searchParams.get('from')).to.equal('1620000000');
+      expect(url.searchParams.get('to')).to.equal('1620000600');
+    });
+
+    it('accepts Date objects and converts them to epoch seconds', async () => {
+      let seenUrl = '';
+      server.use(
+        http.get(`${BASE_URL}/organizations/${ORG_ID}/metrics/sales`, ({request}) => {
+          seenUrl = request.url;
+          return HttpResponse.json(SAMPLE_RESPONSE);
+        }),
+      );
+
+      await getSalesMetrics(client, TENANT_ID, {
+        from: new Date('2021-05-03T00:00:00.000Z'),
+        to: new Date('2021-05-03T00:10:00.000Z'),
+      });
+      const url = new URL(seenUrl);
+      expect(url.searchParams.get('from')).to.equal(String(Math.floor(Date.parse('2021-05-03T00:00:00.000Z') / 1000)));
+      expect(url.searchParams.get('to')).to.equal(String(Math.floor(Date.parse('2021-05-03T00:10:00.000Z') / 1000)));
     });
 
     it('omits from/to when not provided', async () => {

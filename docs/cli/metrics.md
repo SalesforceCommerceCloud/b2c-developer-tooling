@@ -178,29 +178,35 @@ b2c metrics get <category> [flags]
 
 ### Flags
 
-| Flag                       | Description                                                  | Default |
-| -------------------------- | ------------------------------------------------------------ | ------- |
-| `--tenant-id`              | (Required) Tenant ID                                         |         |
-| `--short-code`             | SCAPI short code                                             |         |
-| `--from`                   | Start of time window (epoch milliseconds)                    |         |
-| `--to`                     | End of time window (epoch milliseconds)                      |         |
-| `--third-party-service-id` | Filter by third-party service ID (third-party category only) |         |
-| `--api-family`             | Filter by SCAPI API family (scapi category only)             |         |
-| `--api-name`               | Filter by SCAPI API name (scapi category only)               |         |
-| `--ocapi-category`         | Filter by OCAPI category (ocapi category only)               |         |
-| `--ocapi-api`              | Filter by OCAPI API (ocapi category only)                    |         |
-| `--json`                   | Output results as JSON                                       | `false` |
+| Flag                       | Description                                                   | Default |
+| -------------------------- | ------------------------------------------------------------- | ------- |
+| `--tenant-id`              | (Required) Tenant ID                                          |         |
+| `--short-code`             | SCAPI short code                                              |         |
+| `--since`                  | Start of time window: relative (`5m`, `1h`, `2d`) or ISO 8601 |         |
+| `--until`                  | End of time window: relative or ISO 8601 (defaults to now)    |         |
+| `--third-party-service-id` | Filter by third-party service ID (third-party category only)  |         |
+| `--api-family`             | Filter by SCAPI API family (scapi category only)              |         |
+| `--api-name`               | Filter by SCAPI API name (scapi category only)                |         |
+| `--ocapi-category`         | Filter by OCAPI category (ocapi category only)                |         |
+| `--ocapi-api`              | Filter by OCAPI API (ocapi category only)                     |         |
+| `--json`                   | Output results as JSON                                        | `false` |
 
 ### Time Windows
 
-Use `--from` and `--to` to specify a time range. Both values are epoch timestamps in **milliseconds** (not seconds):
+Use `--since` (start) and `--until` (end) to specify a time range. Both accept the same values as `b2c logs get --since`: a **relative** duration (`5m`, `1h`, `2d`) or an **ISO 8601** timestamp. `--until` defaults to now.
 
 ```bash
-# Metrics from Jan 1, 2025 00:00:00 to Jan 2, 2025 00:00:00
-b2c metrics get overall --from 1704067200000 --to 1704153600000 --tenant-id zzxy_prd
+# Last hour
+b2c metrics get overall --since 1h --tenant-id zzxy_prd
+
+# Last 7 days
+b2c metrics get sales --since 7d --tenant-id zzxy_prd
+
+# Explicit ISO 8601 window
+b2c metrics get overall --since "2026-01-25T10:00:00" --until "2026-01-25T12:00:00" --tenant-id zzxy_prd
 ```
 
-If omitted, the API returns the default time window (typically recent data).
+If omitted, the API returns the default time window (typically recent data). You work in ordinary local/ISO time — the CLI converts to the API's epoch-seconds wire format for you.
 
 ### Category-Specific Filters
 
@@ -236,8 +242,8 @@ b2c metrics get ocapi --ocapi-category shop --ocapi-api baskets --tenant-id zzxy
 # Get overall metrics
 b2c metrics get overall --tenant-id zzxy_prd
 
-# Get sales metrics with time range
-b2c metrics get sales --from 1704067200000 --to 1704153600000 --tenant-id zzxy_prd
+# Get sales metrics for the last 7 days
+b2c metrics get sales --since 7d --tenant-id zzxy_prd
 
 # Get SCAPI metrics filtered by API family
 b2c metrics get scapi --api-family product --tenant-id zzxy_prd
@@ -267,7 +273,7 @@ The response contains an array of metrics. Each metric includes:
   - **id**: Series identifier
   - **name**: Series name (e.g., `2xx`, `4xx`, `5xx` for HTTP status codes)
   - **data**: Array of timestamped values:
-    - **timestamp**: Epoch milliseconds
+    - **timestamp**: Epoch milliseconds (normalized by the CLI/SDK from the API's epoch-seconds wire format, so `new Date(timestamp)` is correct)
     - **value**: Numeric value
 
 Example JSON output:
@@ -321,7 +327,7 @@ Common error scenarios:
 
 ### Notes
 
-- Time values are epoch timestamps in **milliseconds** (not seconds)
+- Use `--since`/`--until` with relative durations (`5m`, `1h`, `2d`) or ISO 8601 timestamps; the CLI handles conversion to the API's epoch-seconds wire format, and response timestamps are returned in epoch milliseconds
 - The tenant ID may be bare (e.g., `zzxy_prd`) or prefixed (e.g., `f_ecom_zzxy_prd`) — the CLI normalizes it
 - Category-specific filters only apply to their respective categories; they are ignored for other categories
 - The Metrics API is a closed beta feature and must be enabled for your organization

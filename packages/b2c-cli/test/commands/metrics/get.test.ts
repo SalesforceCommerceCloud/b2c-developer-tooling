@@ -43,8 +43,8 @@ describe('metrics get', () => {
 
   it('shows filter flags in help', async () => {
     const {stdout} = await runCommand('metrics get --help');
-    expect(stdout).to.include('--from');
-    expect(stdout).to.include('--to');
+    expect(stdout).to.include('--since');
+    expect(stdout).to.include('--until');
     expect(stdout).to.include('--third-party-service-id');
     expect(stdout).to.include('--api-family');
     expect(stdout).to.include('--api-name');
@@ -85,7 +85,7 @@ describe('metrics get', () => {
               {
                 id: 'series1',
                 name: '2xx',
-                data: [{timestamp: 1_609_459_200_000, value: 100}],
+                data: [{timestamp: 1_609_459_200, value: 100}],
               },
             ],
           },
@@ -143,6 +143,7 @@ describe('metrics get', () => {
       const logStub = sinon.stub(command, 'log');
       const stdoutStub = sinon.stub(ux, 'stdout');
 
+      // API sends data-point timestamps in epoch SECONDS.
       const mockResponse = {
         data: [
           {
@@ -155,8 +156,8 @@ describe('metrics get', () => {
                 id: 'series1',
                 name: '2xx',
                 data: [
-                  {timestamp: 1_609_459_200_000, value: 100},
-                  {timestamp: 1_609_459_260_000, value: 150},
+                  {timestamp: 1_609_459_200, value: 100},
+                  {timestamp: 1_609_459_260, value: 150},
                 ],
               },
             ],
@@ -171,8 +172,10 @@ describe('metrics get', () => {
         }),
       );
 
-      const result = (await command.run()) as {data: unknown[]};
+      const result = (await command.run()) as {data: {dataSeries: {data: {timestamp: number}[]}[]}[]};
       expect(result.data.length).to.equal(1);
+      // Timestamp is normalized to ms; renders as a 2021 date (not 1970).
+      expect(result.data[0].dataSeries[0].data[0].timestamp).to.equal(1_609_459_200_000);
 
       const logOutput = logStub
         .getCalls()
@@ -187,6 +190,7 @@ describe('metrics get', () => {
       expect(logOutput).to.match(/Found\s+1/);
       expect(allOutput).to.include('Total Requests');
       expect(allOutput).to.include('2xx');
+      expect(allOutput).to.include('2021-01-01');
     });
 
     it('handles API errors', async () => {
@@ -216,14 +220,15 @@ describe('metrics get', () => {
       }
     });
 
-    it('supports time window filters', async () => {
+    it('supports time window filters and sends epoch seconds on the wire', async () => {
       const command: any = new MetricsGet(['overall'], config);
+      // ISO 8601 inputs; the API expects epoch SECONDS on the wire.
       stubParse(
         command,
         {
           'tenant-id': 'zzxy_prd',
-          from: 1_609_459_200_000,
-          to: 1_609_545_600_000,
+          since: '2021-01-01T00:00:00.000Z',
+          until: '2021-01-02T00:00:00.000Z',
         },
         {category: 'overall'},
       );
@@ -247,8 +252,33 @@ describe('metrics get', () => {
       expect(fetchStub.calledOnce).to.equal(true);
       const firstArg = fetchStub.firstCall.args[0];
       const url = typeof firstArg === 'string' ? firstArg : (firstArg as Request).url;
-      expect(url).to.include('from=1609459200000');
-      expect(url).to.include('to=1609545600000');
+      // 2021-01-01T00:00:00Z = 1609459200s, 2021-01-02T00:00:00Z = 1609545600s
+      expect(url).to.include('from=1609459200');
+      expect(url).to.include('to=1609545600');
+      expect(url).to.not.include('from=1609459200000');
+    });
+
+    it('rejects a --since that is after --until', async () => {
+      const command: any = new MetricsGet(['overall'], config);
+      stubParse(
+        command,
+        {'tenant-id': 'zzxy_prd', since: '2021-01-02T00:00:00.000Z', until: '2021-01-01T00:00:00.000Z'},
+        {category: 'overall'},
+      );
+      await command.init();
+
+      sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+      const errorStub = sinon.stub(command, 'error').throws(new Error('range error'));
+
+      try {
+        await command.run();
+        expect.fail('Should have thrown');
+      } catch {
+        expect(errorStub.calledOnce).to.equal(true);
+        expect(String(errorStub.firstCall.args[0])).to.match(/must be before/);
+      }
     });
   });
 });

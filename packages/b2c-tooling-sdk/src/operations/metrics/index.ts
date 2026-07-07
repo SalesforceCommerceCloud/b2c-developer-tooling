@@ -91,15 +91,22 @@ export type MetricCategory = (typeof METRIC_CATEGORIES)[number];
 /**
  * Time-window options common to every metrics operation.
  *
- * `from` and `to` are epoch **milliseconds**. Both are optional; when omitted the
- * API applies its default window. When both are supplied, `from` must be before
- * `to` or the API returns a 400.
+ * Accepts either a {@link Date} or a number of **epoch milliseconds** (the same
+ * unit as `Date.now()`), for both `from` and `to`. Both are optional; when
+ * omitted the API applies its default window. When both are supplied, `from`
+ * must be before `to` or the API returns a 400.
+ *
+ * > **Note:** The Metrics API wire format is epoch **seconds**, and the data
+ * > points it returns are timestamped in **seconds**. These operations convert
+ * > millisecond inputs to seconds on the way out and normalize response
+ * > timestamps back to **milliseconds** on the way in, so callers work in
+ * > JS-native millisecond time throughout (e.g. `new Date(point.timestamp)`).
  */
 export interface MetricsTimeWindow {
-  /** Start of the window, epoch milliseconds (inclusive). */
-  from?: number;
-  /** End of the window, epoch milliseconds (inclusive). */
-  to?: number;
+  /** Start of the window — a {@link Date} or epoch milliseconds (inclusive). */
+  from?: Date | number;
+  /** End of the window — a {@link Date} or epoch milliseconds (inclusive). */
+  to?: Date | number;
 }
 
 /**
@@ -140,14 +147,43 @@ export type MetricsQueryOptions = MetricsTimeWindow &
   Partial<Pick<OcapiMetricsOptions, 'ocapiCategory' | 'ocapiApi'>>;
 
 /**
- * Normalizes an optional time-window into the query object openapi-fetch expects,
- * dropping undefined values so they are not serialized.
+ * Converts a millisecond time input ({@link Date} or epoch ms) to the epoch
+ * **seconds** the Metrics API expects on the wire.
+ */
+function toEpochSeconds(value: Date | number): number {
+  const ms = value instanceof Date ? value.getTime() : value;
+  return Math.floor(ms / 1000);
+}
+
+/**
+ * Normalizes an optional time-window into the query object openapi-fetch expects.
+ * Converts millisecond inputs to epoch seconds and drops undefined values so they
+ * are not serialized.
  */
 function timeWindowQuery(options?: MetricsTimeWindow): {from?: number; to?: number} {
   const query: {from?: number; to?: number} = {};
-  if (options?.from !== undefined) query.from = options.from;
-  if (options?.to !== undefined) query.to = options.to;
+  if (options?.from !== undefined) query.from = toEpochSeconds(options.from);
+  if (options?.to !== undefined) query.to = toEpochSeconds(options.to);
   return query;
+}
+
+/**
+ * Normalizes a successful metrics response for JS consumers: rewrites every data
+ * point timestamp from the API's epoch **seconds** to epoch **milliseconds** so
+ * that `new Date(point.timestamp)` yields the correct instant. Returns a new
+ * response object; the input is not mutated.
+ */
+function normalizeResponse(data: MetricsDataResponse): MetricsDataResponse {
+  return {
+    ...data,
+    data: (data.data ?? []).map((metric) => ({
+      ...metric,
+      dataSeries: (metric.dataSeries ?? []).map((series) => ({
+        ...series,
+        data: (series.data ?? []).map((point) => ({...point, timestamp: point.timestamp * 1000})),
+      })),
+    })),
+  };
 }
 
 /**
@@ -176,7 +212,7 @@ export async function getOverallMetrics(
     params: {path: {organizationId: toOrganizationId(tenantId)}, query: timeWindowQuery(options)},
   });
   if (error || !data) throw metricsError('overall', error, response);
-  return data;
+  return normalizeResponse(data);
 }
 
 /**
@@ -198,7 +234,7 @@ export async function getSalesMetrics(
     params: {path: {organizationId: toOrganizationId(tenantId)}, query: timeWindowQuery(options)},
   });
   if (error || !data) throw metricsError('sales', error, response);
-  return data;
+  return normalizeResponse(data);
 }
 
 /**
@@ -220,7 +256,7 @@ export async function getEcdnMetrics(
     params: {path: {organizationId: toOrganizationId(tenantId)}, query: timeWindowQuery(options)},
   });
   if (error || !data) throw metricsError('ecdn', error, response);
-  return data;
+  return normalizeResponse(data);
 }
 
 /**
@@ -245,7 +281,7 @@ export async function getThirdPartyMetrics(
     },
   });
   if (error || !data) throw metricsError('third-party', error, response);
-  return data;
+  return normalizeResponse(data);
 }
 
 /**
@@ -270,7 +306,7 @@ export async function getScapiMetrics(
     },
   });
   if (error || !data) throw metricsError('scapi', error, response);
-  return data;
+  return normalizeResponse(data);
 }
 
 /**
@@ -292,7 +328,7 @@ export async function getScapiHooksMetrics(
     params: {path: {organizationId: toOrganizationId(tenantId)}, query: timeWindowQuery(options)},
   });
   if (error || !data) throw metricsError('scapi-hooks', error, response);
-  return data;
+  return normalizeResponse(data);
 }
 
 /**
@@ -314,7 +350,7 @@ export async function getMrtMetrics(
     params: {path: {organizationId: toOrganizationId(tenantId)}, query: timeWindowQuery(options)},
   });
   if (error || !data) throw metricsError('mrt', error, response);
-  return data;
+  return normalizeResponse(data);
 }
 
 /**
@@ -336,7 +372,7 @@ export async function getControllerMetrics(
     params: {path: {organizationId: toOrganizationId(tenantId)}, query: timeWindowQuery(options)},
   });
   if (error || !data) throw metricsError('controller', error, response);
-  return data;
+  return normalizeResponse(data);
 }
 
 /**
@@ -361,7 +397,7 @@ export async function getOcapiMetrics(
     },
   });
   if (error || !data) throw metricsError('ocapi', error, response);
-  return data;
+  return normalizeResponse(data);
 }
 
 /**

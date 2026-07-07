@@ -12,6 +12,7 @@ import {
   type MetricsDataResponse,
   type MetricDataPoint,
 } from '@salesforce/b2c-tooling-sdk';
+import {parseSinceTime} from '@salesforce/b2c-tooling-sdk/operations/logs';
 import {MetricsCommand} from '../../utils/metrics/index.js';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -88,19 +89,29 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
 
   static examples = [
     '<%= config.bin %> <%= command.id %> overall --tenant-id f_ecom_zzxy_prd',
+    '<%= config.bin %> <%= command.id %> overall --tenant-id f_ecom_zzxy_prd --since 1h',
+    '<%= config.bin %> <%= command.id %> sales --tenant-id f_ecom_zzxy_prd --since 7d',
     '<%= config.bin %> <%= command.id %> scapi --tenant-id f_ecom_zzxy_prd --api-family product',
     '<%= config.bin %> <%= command.id %> third-party --tenant-id f_ecom_zzxy_prd --third-party-service-id my-service',
-    '<%= config.bin %> <%= command.id %> overall --tenant-id f_ecom_zzxy_prd --from 1609459200000 --to 1609545600000',
+    '<%= config.bin %> <%= command.id %> overall --tenant-id f_ecom_zzxy_prd --since "2026-01-25T10:00:00" --until "2026-01-25T12:00:00"',
     '<%= config.bin %> <%= command.id %> overall --tenant-id f_ecom_zzxy_prd --json',
   ];
 
   static flags = {
     ...MetricsCommand.baseFlags,
-    from: Flags.integer({
-      description: t('flags.metrics.from.description', 'Start of time window (epoch milliseconds, inclusive)', {}),
+    since: Flags.string({
+      description: t(
+        'flags.metrics.since.description',
+        'Start of the time window: relative (e.g. "5m", "1h", "2d") or ISO 8601 (e.g. "2026-01-25T10:00:00")',
+        {},
+      ),
     }),
-    to: Flags.integer({
-      description: t('flags.metrics.to.description', 'End of time window (epoch milliseconds, inclusive)', {}),
+    until: Flags.string({
+      description: t(
+        'flags.metrics.until.description',
+        'End of the time window: relative (e.g. "5m", "1h", "2d") or ISO 8601. Defaults to now',
+        {},
+      ),
     }),
     'third-party-service-id': Flags.string({
       description: t('flags.metrics.thirdPartyServiceId.description', 'Filter third-party metrics by service ID', {}),
@@ -125,14 +136,33 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
 
     const {category} = this.args;
     const {
-      from,
-      to,
+      since,
+      until,
       'third-party-service-id': thirdPartyServiceId,
       'api-family': apiFamily,
       'api-name': apiName,
       'ocapi-category': ocapiCategory,
       'ocapi-api': ocapiApi,
     } = this.flags;
+
+    // Parse the time window. Both accept relative ("1h", "2d") or ISO 8601.
+    let from: Date | undefined;
+    let to: Date | undefined;
+    try {
+      if (since) from = parseSinceTime(since);
+      if (until) to = parseSinceTime(until);
+    } catch (error) {
+      this.error(error instanceof Error ? error.message : String(error));
+    }
+
+    if (from && to && from.getTime() > to.getTime()) {
+      this.error(
+        t('commands.metrics.get.invalidRange', '--since ({{since}}) must be before --until ({{until}}).', {
+          since,
+          until,
+        }),
+      );
+    }
 
     if (!this.jsonEnabled()) {
       this.log(
