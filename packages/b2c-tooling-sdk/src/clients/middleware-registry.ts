@@ -53,6 +53,7 @@ export type HttpClientType =
   | 'mrt-b2c'
   | 'custom-apis'
   | 'scapi-schemas'
+  | 'metrics'
   | 'cdn-zones'
   | 'granular-replications'
   | 'webdav'

@@ -308,6 +308,20 @@ export type {
   CipQueryResult,
 } from './cip.js';
 
+export {createMetricsClient, METRICS_DEFAULT_SCOPES} from './metrics.js';
+export type {
+  MetricsClient,
+  MetricsClientConfig,
+  MetricsResponse,
+  MetricsDataResponse,
+  Metric,
+  MetricDataSeries,
+  MetricDataPoint,
+  MetricsError,
+  paths as MetricsPaths,
+  components as MetricsComponents,
+} from './metrics.js';
+
 export {createGranularReplicationsClient} from './granular-replications.js';
 export type {
   GranularReplicationsClient,

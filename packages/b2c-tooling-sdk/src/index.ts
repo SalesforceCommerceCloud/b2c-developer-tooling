@@ -75,6 +75,8 @@ export {
   createCdnZonesClient,
   createGranularReplicationsClient,
   createCipClient,
+  createMetricsClient,
+  METRICS_DEFAULT_SCOPES,
   toOrganizationId,
   normalizeTenantId,
   buildTenantScope,
@@ -177,6 +179,14 @@ export type {
   CipFrame,
   CipQueryOptions,
   CipQueryResult,
+  MetricsClient,
+  MetricsClientConfig,
+  MetricsResponse,
+  MetricsDataResponse,
+  Metric,
+  MetricDataSeries,
+  MetricDataPoint,
+  MetricsError,
 } from './clients/index.js';
 
 // Operations - Code
@@ -313,6 +323,29 @@ export type {
   CipReportSqlResult,
   CipTableMetadata,
 } from './operations/cip/index.js';
+
+// Operations - Metrics (Observability) — CLOSED BETA
+export {
+  getOverallMetrics,
+  getSalesMetrics,
+  getEcdnMetrics,
+  getThirdPartyMetrics,
+  getScapiMetrics,
+  getScapiHooksMetrics,
+  getMrtMetrics,
+  getControllerMetrics,
+  getOcapiMetrics,
+  getMetricsByCategory,
+  METRIC_CATEGORIES,
+} from './operations/metrics/index.js';
+export type {
+  MetricCategory,
+  MetricsTimeWindow,
+  ThirdPartyMetricsOptions,
+  ScapiMetricsOptions,
+  OcapiMetricsOptions,
+  MetricsQueryOptions,
+} from './operations/metrics/index.js';
 
 // Operations - Users
 export {

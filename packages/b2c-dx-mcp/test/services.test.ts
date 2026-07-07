@@ -256,6 +256,66 @@ describe('services', () => {
     });
   });
 
+  describe('getMetricsClient', () => {
+    it('should create a Metrics client wired to createOAuth and the right base URL', async () => {
+      const config = createMockResolvedConfig({
+        shortCode: 'test-shortcode',
+        tenantId: 'test_tenant',
+      });
+      stub(config, 'hasOAuthConfig').returns(true);
+      const createOAuthStub = stub(config, 'createOAuth').returns(mockOAuthStrategy);
+
+      const services = new Services({resolvedConfig: config});
+      const client = services.getMetricsClient();
+
+      expect(createOAuthStub.calledOnce, 'createOAuth must be invoked exactly once').to.be.true;
+      expect(createOAuthStub.firstCall.args).to.deep.equal([]);
+
+      expect(client.GET).to.be.a('function');
+      expect(client.use).to.be.a('function');
+
+      const capturedUrls: string[] = [];
+      client.use({
+        async onRequest({request}) {
+          capturedUrls.push(request.url);
+          return new Response('{}', {status: 200, headers: {'content-type': 'application/json'}});
+        },
+      });
+      await client.GET('/organizations/{organizationId}/categories/{category}', {
+        params: {path: {organizationId: 'f_ecom_test_tenant', category: 'overall'}},
+      });
+      expect(capturedUrls).to.have.lengthOf(1);
+      expect(capturedUrls[0]).to.match(
+        /^https:\/\/test-shortcode\.api\.commercecloud\.salesforce\.com\/observability\/metrics\/v1\//,
+      );
+    });
+
+    it('should throw error when shortCode is missing', () => {
+      const config = createMockResolvedConfig({tenantId: 'test_tenant'});
+      const services = new Services({resolvedConfig: config});
+
+      expect(() => services.getMetricsClient()).to.throw('SCAPI short code required');
+    });
+
+    it('should throw error when tenantId is missing', () => {
+      const config = createMockResolvedConfig({shortCode: 'test-shortcode'});
+      const services = new Services({resolvedConfig: config});
+
+      expect(() => services.getMetricsClient()).to.throw('Tenant ID required');
+    });
+
+    it('should throw error when OAuth is missing', () => {
+      const config = createMockResolvedConfig({
+        shortCode: 'test-shortcode',
+        tenantId: 'test_tenant',
+      });
+      stub(config, 'hasOAuthConfig').returns(false);
+      const services = new Services({resolvedConfig: config});
+
+      expect(() => services.getMetricsClient()).to.throw('OAuth client ID required');
+    });
+  });
+
   describe('getOrganizationId', () => {
     it('should return organization ID with f_ecom_ prefix', () => {
       const config = createMockResolvedConfig({tenantId: 'test_tenant'});

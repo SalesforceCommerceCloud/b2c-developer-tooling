@@ -447,9 +447,29 @@ describe('registry', () => {
       expect(server.registeredTools).to.include('scapi_custom_api_generate_scaffold');
       expect(server.registeredTools).to.include('pwakit_get_guidelines');
 
-      // STOREFRONTNEXT-only tools should NOT be registered (still non-GA)
+      // Non-GA tools should NOT be registered
+      expect(server.registeredTools).to.not.include('metrics_get');
       expect(server.registeredTools).to.not.include('sfnext_get_guidelines');
       expect(server.registeredTools).to.not.include('sfnext_add_page_designer_decorator');
+    });
+
+    it('should register non-GA tools when allowNonGaTools is true', async () => {
+      const server = createMockServer();
+      const flags: StartupFlags = {
+        toolsets: ['SCAPI'],
+        allowNonGaTools: true,
+      };
+
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
+
+      // GA SCAPI tools should be registered
+      expect(server.registeredTools).to.include('scapi_schemas_list');
+      expect(server.registeredTools).to.include('scapi_custom_apis_get_status');
+      expect(server.registeredTools).to.include('scapi_custom_api_generate_scaffold');
+
+      // Non-GA SCAPI tools should also be registered
+      expect(server.registeredTools).to.include('metrics_get');
     });
 
     describe('auto-discovery', () => {
