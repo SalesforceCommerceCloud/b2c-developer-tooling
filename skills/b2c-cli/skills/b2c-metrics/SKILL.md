@@ -18,23 +18,27 @@ Use the `b2c metrics` commands to query observability metrics from the SCAPI Met
 ```text
 metrics
 ├── list                          - list available metric categories
-└── get <category>                - fetch metrics for a category
-    ├── Categories:
-    │   ├── overall                - system-wide aggregate metrics
-    │   ├── sales                  - sales transaction metrics
-    │   ├── ecdn                   - edge CDN performance
-    │   ├── third-party            - third-party service integrations
-    │   ├── scapi                  - SCAPI request volume/latency/errors/cache
-    │   ├── scapi-hooks            - SCAPI hook execution metrics
-    │   ├── mrt                    - Managed Runtime (PWA Kit) metrics
-    │   ├── controller             - SFRA controller performance
-    │   └── ocapi                  - OCAPI request metrics
+├── overall                       - system-wide aggregate metrics
+├── sales                         - sales transaction metrics
+├── ecdn                          - edge CDN performance
+├── third-party                   - third-party service integrations
+│   └── Flags:
+│       └── --third-party-service-id  - filter by service ID
+├── scapi                         - SCAPI request volume/latency/errors/cache
+│   └── Flags:
+│       ├── --api-family          - filter by API family
+│       └── --api-name            - filter by API name
+├── scapi-hooks                   - SCAPI hook execution metrics
+├── mrt                           - Managed Runtime (PWA Kit) metrics
+├── controller                    - SFRA controller performance
+└── ocapi                         - OCAPI request metrics
     └── Flags:
-        ├── --from / --to / --window  - time window (relative "1h"/"7d" or ISO 8601)
-        ├── --third-party-service-id  - filter third-party category
-        ├── --api-family / --api-name - filter SCAPI category
-        ├── --ocapi-category / --ocapi-api - filter OCAPI category
-        └── --tags / --no-tags        - enrich series with structured tags (default: true)
+        ├── --ocapi-category      - filter by OCAPI category
+        └── --ocapi-api           - filter by OCAPI API
+
+Common Flags (all category commands):
+├── --from / --to / --window      - time window (relative "1h"/"7d" or ISO 8601)
+└── --tags / --no-tags            - enrich series with structured tags (default: true)
 ```
 
 ## Configuration
@@ -63,22 +67,26 @@ The Metrics API is a closed beta feature. It must be enabled for your organizati
 ## Quick Workflow
 
 1. List available categories (`b2c metrics list`)
-2. Fetch metrics for a category (`b2c metrics get <category>`)
+2. Fetch metrics using the category command (e.g., `b2c metrics overall`, `b2c metrics scapi`)
 3. Filter by time window (`--from`/`--to`/`--window` — relative like `1h`/`7d` or ISO 8601) or category-specific filters
 
-## Metric Categories
+## Metric Categories and Commands
 
-| Category      | Description                               | Filters                           |
-| ------------- | ----------------------------------------- | --------------------------------- |
-| `overall`     | System-wide aggregate metrics             | None                              |
-| `sales`       | Sales transaction metrics                 | None                              |
-| `ecdn`        | Edge CDN performance                      | None                              |
-| `third-party` | Third-party service integrations          | `--third-party-service-id`        |
-| `scapi`       | SCAPI request volume/latency/errors/cache | `--api-family`, `--api-name`      |
-| `scapi-hooks` | SCAPI hook execution metrics              | None                              |
-| `mrt`         | Managed Runtime (PWA Kit) metrics         | None                              |
-| `controller`  | SFRA controller performance               | None                              |
-| `ocapi`       | OCAPI request metrics                     | `--ocapi-category`, `--ocapi-api` |
+| Command                   | Description                               | Category-Specific Filters         |
+| ------------------------- | ----------------------------------------- | --------------------------------- |
+| `b2c metrics overall`     | System-wide aggregate metrics             | None                              |
+| `b2c metrics sales`       | Sales transaction metrics                 | None                              |
+| `b2c metrics ecdn`        | Edge CDN performance                      | None                              |
+| `b2c metrics third-party` | Third-party service integrations          | `--third-party-service-id`        |
+| `b2c metrics scapi`       | SCAPI request volume/latency/errors/cache | `--api-family`, `--api-name`      |
+| `b2c metrics scapi-hooks` | SCAPI hook execution metrics              | None                              |
+| `b2c metrics mrt`         | Managed Runtime (PWA Kit) metrics         | None                              |
+| `b2c metrics controller`  | SFRA controller performance               | None                              |
+| `b2c metrics ocapi`       | OCAPI request metrics                     | `--ocapi-category`, `--ocapi-api` |
+
+::: warning Filter Validation
+Category-specific filters are only accepted by the command they apply to. For example, `--api-family` is only valid for `b2c metrics scapi`. Passing a filter to a different command results in a "Nonexistent flag" error.
+:::
 
 ## Discovery Examples
 
@@ -97,34 +105,34 @@ b2c metrics list --tenant-id zzxy_prd
 
 ```bash
 # Get overall metrics (last 24 hours by default)
-b2c metrics get overall
+b2c metrics overall
 
 # Get metrics for the last hour
-b2c metrics get overall --window 1h
+b2c metrics overall --window 1h
 
 # Get a 1-hour window from 7 days ago
-b2c metrics get scapi --from 7d --window 1h
+b2c metrics scapi --from 7d --window 1h
 
 # Get metrics for a specific ISO 8601 time range
-b2c metrics get scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00"
+b2c metrics scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00"
 
 # Get SCAPI metrics filtered by API family
-b2c metrics get scapi --api-family product
+b2c metrics scapi --api-family products
 
 # Get SCAPI metrics for a specific API
-b2c metrics get scapi --api-family product --api-name shopper-products
+b2c metrics scapi --api-family products --api-name shopper-products
 
 # Get third-party metrics for a specific service
-b2c metrics get third-party --third-party-service-id my-integration
+b2c metrics third-party --third-party-service-id my-integration
 
 # Get OCAPI metrics filtered by category and API
-b2c metrics get ocapi --ocapi-category shop --ocapi-api baskets
+b2c metrics ocapi --ocapi-category shop --ocapi-api baskets
 
 # Get controller metrics for the last 6 hours
-b2c metrics get controller --window 6h
+b2c metrics controller --window 6h
 
 # Output as JSON
-b2c metrics get overall --json
+b2c metrics overall --json
 ```
 
 ## Time Windows
@@ -153,19 +161,19 @@ You can specify at most two of the three flags.
 
 ```bash
 # Last hour
-b2c metrics get overall --window 1h
+b2c metrics overall --window 1h
 
 # Last 7 days
-b2c metrics get sales --window 7d
+b2c metrics sales --window 7d
 
 # 1-hour window starting 7 days ago
-b2c metrics get scapi --from 7d --window 1h
+b2c metrics scapi --from 7d --window 1h
 
 # Specific ISO 8601 range
-b2c metrics get scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00"
+b2c metrics scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00"
 
 # From 24 hours ago until now (--from alone → default 24h window, capped at now)
-b2c metrics get overall --from 24h
+b2c metrics overall --from 24h
 ```
 
 **Data retention:** The Metrics API retains 30 days of data. If `--from` lands at or beyond the retention edge, the CLI adjusts it forward by a small safety margin (5 minutes) and emits a warning.

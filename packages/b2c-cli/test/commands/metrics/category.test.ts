@@ -7,50 +7,74 @@ import {runCommand} from '@oclif/test';
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config, ux} from '@oclif/core';
-import MetricsGet from '../../../src/commands/metrics/get.js';
+import MetricsOverall from '../../../src/commands/metrics/overall.js';
+import MetricsScapi from '../../../src/commands/metrics/scapi.js';
+import MetricsOcapi from '../../../src/commands/metrics/ocapi.js';
 import {stubParse} from '../../helpers/stub-parse.js';
 import {createIsolatedEnvHooks, runSilent} from '../../helpers/test-setup.js';
 
-describe('metrics get', () => {
+describe('metrics <category> commands', () => {
   const hooks = createIsolatedEnvHooks();
 
   beforeEach(hooks.beforeEach);
 
   afterEach(hooks.afterEach);
 
-  it('shows help without errors', async () => {
-    const {error} = await runCommand('metrics get --help');
-    expect(error).to.be.undefined;
-  });
+  describe('command surface (first-class per-category commands)', () => {
+    it('shows help without errors', async () => {
+      const {error} = await runCommand('metrics overall --help');
+      expect(error).to.be.undefined;
+    });
 
-  it('shows CLOSED BETA in help', async () => {
-    const {stdout} = await runCommand('metrics get --help');
-    expect(stdout).to.include('CLOSED BETA');
-  });
+    it('shows CLOSED BETA in help', async () => {
+      const {stdout} = await runCommand('metrics overall --help');
+      expect(stdout).to.include('CLOSED BETA');
+    });
 
-  it('requires tenant-id flag', async () => {
-    const {error} = await runCommand('metrics get overall --client-id test-client --short-code testcode');
-    expect(error).to.not.be.undefined;
-    expect(error?.message).to.include('tenant-id');
-  });
+    it('requires tenant-id flag', async () => {
+      const {error} = await runCommand('metrics overall --client-id test-client --short-code testcode');
+      expect(error).to.not.be.undefined;
+      expect(error?.message).to.include('tenant-id');
+    });
 
-  it('shows category argument in help', async () => {
-    const {stdout} = await runCommand('metrics get --help');
-    expect(stdout).to.include('category');
-    expect(stdout).to.include('overall');
-    expect(stdout).to.include('scapi');
-  });
+    it('exposes the shared time-window flags on every category', async () => {
+      const {stdout} = await runCommand('metrics overall --help');
+      expect(stdout).to.include('--from');
+      expect(stdout).to.include('--to');
+      expect(stdout).to.include('--window');
+      expect(stdout).to.include('--tags');
+    });
 
-  it('shows filter flags in help', async () => {
-    const {stdout} = await runCommand('metrics get --help');
-    expect(stdout).to.include('--from');
-    expect(stdout).to.include('--to');
-    expect(stdout).to.include('--window');
-    expect(stdout).to.include('--third-party-service-id');
-    expect(stdout).to.include('--api-family');
-    expect(stdout).to.include('--api-name');
-    expect(stdout).to.include('--ocapi-category');
-    expect(stdout).to.include('--ocapi-api');
+    it('only exposes SCAPI filter flags on the scapi command', async () => {
+      const {stdout} = await runCommand('metrics scapi --help');
+      expect(stdout).to.include('--api-family');
+      expect(stdout).to.include('--api-name');
+      // OCAPI/third-party filters must NOT appear on scapi.
+      expect(stdout).to.not.include('--ocapi-category');
+      expect(stdout).to.not.include('--third-party-service-id');
+    });
+
+    it('does NOT expose category-specific filters on overall', async () => {
+      const {stdout} = await runCommand('metrics overall --help');
+      expect(stdout).to.not.include('--api-family');
+      expect(stdout).to.not.include('--ocapi-category');
+      expect(stdout).to.not.include('--third-party-service-id');
+    });
+
+    it('rejects a filter flag that does not belong to the category', async () => {
+      // --api-family is only valid on `metrics scapi`; on overall it must error
+      // rather than be silently ignored.
+      const {error} = await runCommand('metrics overall --api-family products --tenant-id zzxy_prd');
+      expect(error).to.not.be.undefined;
+      expect(error?.message).to.match(/Nonexistent flag|Unexpected argument|--api-family/i);
+    });
+
+    it('only exposes OCAPI filter flags on the ocapi command', async () => {
+      const {stdout} = await runCommand('metrics ocapi --help');
+      expect(stdout).to.include('--ocapi-category');
+      expect(stdout).to.include('--ocapi-api');
+      expect(stdout).to.not.include('--api-family');
+    });
   });
 
   describe('run', () => {
@@ -65,8 +89,8 @@ describe('metrics get', () => {
     });
 
     it('returns metrics in JSON mode', async () => {
-      const command: any = new MetricsGet(['overall'], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd'}, {category: 'overall'});
+      const command: any = new MetricsOverall([], config);
+      stubParse(command, {'tenant-id': 'zzxy_prd'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -104,11 +128,12 @@ describe('metrics get', () => {
       expect(result.data).to.be.an('array');
       expect(result.data.length).to.equal(1);
       expect(result.data[0].metricId).to.equal('requests_total');
+      expect(result.query.category).to.equal('overall');
     });
 
     it('handles empty metrics in non-JSON mode', async () => {
-      const command: any = new MetricsGet(['overall'], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd'}, {category: 'overall'});
+      const command: any = new MetricsOverall([], config);
+      stubParse(command, {'tenant-id': 'zzxy_prd'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -131,8 +156,8 @@ describe('metrics get', () => {
     });
 
     it('displays metrics in non-JSON mode', async () => {
-      const command: any = new MetricsGet(['overall'], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd'}, {category: 'overall'});
+      const command: any = new MetricsOverall([], config);
+      stubParse(command, {'tenant-id': 'zzxy_prd'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -195,8 +220,8 @@ describe('metrics get', () => {
     });
 
     it('handles API errors', async () => {
-      const command: any = new MetricsGet(['overall'], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd'}, {category: 'overall'});
+      const command: any = new MetricsOverall([], config);
+      stubParse(command, {'tenant-id': 'zzxy_prd'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -222,9 +247,9 @@ describe('metrics get', () => {
     });
 
     it('sends epoch seconds on the wire and echoes the resolved bounds (--from + --window)', async () => {
-      const command: any = new MetricsGet(['scapi'], config);
+      const command: any = new MetricsScapi([], config);
       // "1h window, 7 days ago" — the key ergonomic case.
-      stubParse(command, {'tenant-id': 'zzxy_prd', from: '7d', window: '1h'}, {category: 'scapi'});
+      stubParse(command, {'tenant-id': 'zzxy_prd', from: '7d', window: '1h'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -262,10 +287,10 @@ describe('metrics get', () => {
     });
 
     it('derives an explicit 24h window forward when only --from is given', async () => {
-      const command: any = new MetricsGet(['overall'], config);
+      const command: any = new MetricsOverall([], config);
       // 7d ago is within retention; from + 24h is still before now, so a full
       // 24h window is sent (both bounds explicit, no reliance on server default).
-      stubParse(command, {'tenant-id': 'zzxy_prd', from: '7d'}, {category: 'overall'});
+      stubParse(command, {'tenant-id': 'zzxy_prd', from: '7d'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -296,9 +321,9 @@ describe('metrics get', () => {
     });
 
     it('echoes clampedFrom in the query when --from is at the retention edge', async () => {
-      const command: any = new MetricsGet(['overall'], config);
+      const command: any = new MetricsOverall([], config);
       // 30d ago is exactly the retention floor → clamped forward by the safety margin.
-      stubParse(command, {'tenant-id': 'zzxy_prd', from: '30d'}, {category: 'overall'});
+      stubParse(command, {'tenant-id': 'zzxy_prd', from: '30d'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -321,8 +346,8 @@ describe('metrics get', () => {
     });
 
     it('defaults to the last 24h when no bounds are given', async () => {
-      const command: any = new MetricsGet(['overall'], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd'}, {category: 'overall'});
+      const command: any = new MetricsOverall([], config);
+      stubParse(command, {'tenant-id': 'zzxy_prd'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -352,8 +377,8 @@ describe('metrics get', () => {
     });
 
     it('errors on over-specification (--from + --to + --window) before calling the API', async () => {
-      const command: any = new MetricsGet(['overall'], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd', from: '2d', to: '1d', window: '1h'}, {category: 'overall'});
+      const command: any = new MetricsOverall([], config);
+      stubParse(command, {'tenant-id': 'zzxy_prd', from: '2d', to: '1d', window: '1h'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -373,8 +398,8 @@ describe('metrics get', () => {
     });
 
     it('enriches each series with a tags object by default (--tags on)', async () => {
-      const command: any = new MetricsGet(['scapi'], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd', window: '1h', tags: true}, {category: 'scapi'});
+      const command: any = new MetricsScapi([], config);
+      stubParse(command, {'tenant-id': 'zzxy_prd', window: '1h', tags: true});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -408,13 +433,9 @@ describe('metrics get', () => {
     });
 
     it('folds an applied --api-family filter into the tags authoritatively', async () => {
-      const command: any = new MetricsGet(['scapi'], config);
+      const command: any = new MetricsScapi([], config);
       // Drill-down ids like zzxy.shopper.auth.v1 would mis-parse; the filter wins.
-      stubParse(
-        command,
-        {'tenant-id': 'zzxy_prd', window: '1h', tags: true, 'api-family': 'shopper'},
-        {category: 'scapi'},
-      );
+      stubParse(command, {'tenant-id': 'zzxy_prd', window: '1h', tags: true, 'api-family': 'shopper'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -449,8 +470,8 @@ describe('metrics get', () => {
     });
 
     it('omits tags when --no-tags is given (raw API shape)', async () => {
-      const command: any = new MetricsGet(['scapi'], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd', window: '1h', tags: false}, {category: 'scapi'});
+      const command: any = new MetricsScapi([], config);
+      stubParse(command, {'tenant-id': 'zzxy_prd', window: '1h', tags: false});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -480,6 +501,49 @@ describe('metrics get', () => {
         data: {dataSeries: {tags?: Record<string, string>}[]}[];
       };
       expect(result.data[0].dataSeries[0].tags).to.equal(undefined);
+    });
+
+    it('drills down and folds the OCAPI category filter authoritatively', async () => {
+      const command: any = new MetricsOcapi([], config);
+      stubParse(command, {'tenant-id': 'zzxy_prd', window: '1h', tags: true, 'ocapi-category': 'shop'});
+      await command.init();
+
+      sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+      sinon.stub(command, 'getOAuthStrategy').returns({getAuthorizationHeader: async () => 'Bearer test'});
+      sinon.stub(command, 'requireTenantId').returns('zzxy_prd');
+
+      const fetchStub = sinon.stub(globalThis, 'fetch').resolves(
+        new Response(
+          JSON.stringify({
+            data: [
+              {
+                metricId: 'totalCalls',
+                title: 'Total Calls',
+                description: '',
+                unit: '',
+                dataSeries: [{id: 'zzxy.shop', name: 'zzxy.shop', data: [{timestamp: 1, value: 1}]}],
+              },
+            ],
+          }),
+          {status: 200, headers: {'content-type': 'application/json'}},
+        ),
+      );
+
+      const result = (await command.run()) as {
+        query: {ocapiCategory?: string};
+        data: {dataSeries: {tags?: Record<string, string>}[]}[];
+      };
+      // The ocapiCategory filter is sent on the wire and echoed + tagged.
+      const url = new URL(
+        typeof fetchStub.firstCall.args[0] === 'string'
+          ? (fetchStub.firstCall.args[0] as string)
+          : (fetchStub.firstCall.args[0] as Request).url,
+      );
+      expect(url.searchParams.get('ocapiCategory')).to.equal('shop');
+      expect(result.query.ocapiCategory).to.equal('shop');
+      expect(result.data[0].dataSeries[0].tags?.ocapiCategory).to.equal('shop');
     });
   });
 });

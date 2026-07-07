@@ -3,19 +3,24 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Args, Flags} from '@oclif/core';
-import {TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {Command, Flags} from '@oclif/core';
+import {
+  TableRenderer,
+  columnFlagsFor,
+  selectColumns,
+  type ColumnDef,
+  type ColumnFlags,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   getMetricsByCategory,
   resolveMetricsWindow,
   enrichMetricsTags,
-  METRIC_CATEGORIES,
   type MetricCategory,
   type MetricsDataResponse,
   type MetricDataPoint,
 } from '@salesforce/b2c-tooling-sdk';
-import {MetricsCommand} from '../../utils/metrics/index.js';
-import {t, withDocs} from '../../i18n/index.js';
+import {MetricsCommand} from './index.js';
+import {t} from '../../i18n/index.js';
 
 /**
  * Flattened metric data for table display.
@@ -27,7 +32,7 @@ interface MetricRow {
   latestValue: string;
   points: number;
   latestTimestamp: string;
-  /** Compact `key=value` rendering of the series tags, when `--tags` is set. */
+  /** Compact `key=value` rendering of the series tags. */
   tags: string;
 }
 
@@ -35,7 +40,8 @@ interface MetricRow {
  * The effective query parameters echoed back to the caller (JSON mode) so the
  * resolved time bounds and filters actually sent to the API are always visible.
  * Both `from` and `to` are always present: the resolver derives whichever bound
- * was left open from the 24-hour default window.
+ * was left open from the 24-hour default window. Filter fields appear only when
+ * the command defines and receives them.
  */
 interface MetricsQueryEcho {
   category: MetricCategory;
@@ -61,7 +67,7 @@ interface MetricsQueryEcho {
 /**
  * Command output: the metrics response plus the effective query parameters.
  */
-interface MetricsGetOutput extends MetricsDataResponse {
+export interface MetricsGetOutput extends MetricsDataResponse {
   query: MetricsQueryEcho;
 }
 
@@ -104,104 +110,118 @@ const DEFAULT_COLUMNS = ['metric', 'series', 'latestValue', 'latestTimestamp'];
 const tableRenderer = new TableRenderer(COLUMNS);
 
 /**
- * Command to get metrics for a specific category.
+ * The time-window and output flags shared by every `b2c metrics <category>`
+ * command.
  */
-export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
-  static args = {
-    category: Args.string({
-      description: 'Metrics category to retrieve',
-      required: true,
-      options: [...METRIC_CATEGORIES],
-    }),
-  };
-
-  static description = withDocs(
-    t(
-      'commands.metrics.get.description',
-      '[CLOSED BETA] Get metrics for a specific category. The Metrics API must be enabled for your organization.',
+const timeWindowFlags = {
+  from: Flags.string({
+    description: t(
+      'flags.metrics.from.description',
+      'Start of the time window: relative (e.g. "1h", "7d" ago) or ISO 8601 (e.g. "2026-01-25T10:00:00")',
       {},
     ),
-    '/cli/metrics.html#b2c-metrics-get',
-  );
+  }),
+  to: Flags.string({
+    description: t(
+      'flags.metrics.to.description',
+      'End of the time window: relative (e.g. "6h" ago) or ISO 8601. Defaults to 24h after --from (capped at now)',
+      {},
+    ),
+  }),
+  window: Flags.string({
+    aliases: ['for'],
+    description: t(
+      'flags.metrics.window.description',
+      'Window duration (e.g. "1h", "30m", "2d"). With --from: window forward from it; with --to: window back from it; alone: the last <window>. Defaults to 24h',
+      {},
+    ),
+  }),
+  tags: Flags.boolean({
+    allowNo: true,
+    default: true,
+    description: t(
+      'flags.metrics.tags.description',
+      'Add a structured "tags" object (realm, environment, applied filters, and per-series dimensions like apiFamily/host/cacheStatus) to each series. On by default; use --no-tags for the raw API shape',
+      {},
+    ),
+  }),
+};
 
+/**
+ * SCAPI-only filter flags (`b2c metrics scapi`).
+ */
+export const scapiFilterFlags = {
+  'api-family': Flags.string({
+    description: t('flags.metrics.apiFamily.description', 'Filter SCAPI metrics by API family', {}),
+  }),
+  'api-name': Flags.string({
+    description: t('flags.metrics.apiName.description', 'Filter SCAPI metrics by API name', {}),
+  }),
+};
+
+/**
+ * OCAPI-only filter flags (`b2c metrics ocapi`).
+ */
+export const ocapiFilterFlags = {
+  'ocapi-category': Flags.string({
+    description: t('flags.metrics.ocapiCategory.description', 'Filter OCAPI metrics by category', {}),
+  }),
+  'ocapi-api': Flags.string({
+    description: t('flags.metrics.ocapiApi.description', 'Filter OCAPI metrics by API', {}),
+  }),
+};
+
+/**
+ * Third-party-only filter flag (`b2c metrics third-party`).
+ */
+export const thirdPartyFilterFlags = {
+  'third-party-service-id': Flags.string({
+    description: t('flags.metrics.thirdPartyServiceId.description', 'Filter third-party metrics by service ID', {}),
+  }),
+};
+
+/**
+ * Base command for a single metric category (`b2c metrics <category>`).
+ *
+ * Each category is a first-class command — mirroring `b2c cip report <name>` —
+ * so its `--help` shows only the flags that actually apply to it. The base holds
+ * the shared time-window/output flags and the entire run() body (resolve window
+ * → fetch → enrich tags → render); a subclass only declares its `category` and
+ * spreads in any category-specific filter flags. Because filter flags live on the
+ * subclasses, passing e.g. `--api-family` to `b2c metrics overall` is a
+ * "Nonexistent flag" error rather than a silently-ignored no-op.
+ */
+export abstract class MetricsCategoryCommand<T extends typeof Command> extends MetricsCommand<T> {
   static enableJsonFlag = true;
 
-  static examples = [
-    '<%= config.bin %> <%= command.id %> overall --tenant-id f_ecom_zzxy_prd',
-    '<%= config.bin %> <%= command.id %> overall --tenant-id f_ecom_zzxy_prd --window 1h',
-    '<%= config.bin %> <%= command.id %> scapi --tenant-id f_ecom_zzxy_prd --from 7d --window 1h',
-    '<%= config.bin %> <%= command.id %> scapi --tenant-id f_ecom_zzxy_prd --api-family product',
-    '<%= config.bin %> <%= command.id %> third-party --tenant-id f_ecom_zzxy_prd --third-party-service-id my-service',
-    '<%= config.bin %> <%= command.id %> overall --tenant-id f_ecom_zzxy_prd --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00"',
-    '<%= config.bin %> <%= command.id %> overall --tenant-id f_ecom_zzxy_prd --json',
-  ];
-
-  static flags = {
-    ...MetricsCommand.baseFlags,
-    from: Flags.string({
-      description: t(
-        'flags.metrics.from.description',
-        'Start of the time window: relative (e.g. "1h", "7d" ago) or ISO 8601 (e.g. "2026-01-25T10:00:00")',
-        {},
-      ),
-    }),
-    to: Flags.string({
-      description: t(
-        'flags.metrics.to.description',
-        'End of the time window: relative (e.g. "6h" ago) or ISO 8601. Defaults to 24h after --from (capped at now)',
-        {},
-      ),
-    }),
-    window: Flags.string({
-      aliases: ['for'],
-      description: t(
-        'flags.metrics.window.description',
-        'Window duration (e.g. "1h", "30m", "2d"). With --from: window forward from it; with --to: window back from it; alone: the last <window>. Defaults to 24h',
-        {},
-      ),
-    }),
-    tags: Flags.boolean({
-      allowNo: true,
-      default: true,
-      description: t(
-        'flags.metrics.tags.description',
-        'Add a structured "tags" object (realm, environment, applied filters, and per-series dimensions like apiFamily/host/cacheStatus) to each series. On by default; use --no-tags for the raw API shape',
-        {},
-      ),
-    }),
-    'third-party-service-id': Flags.string({
-      description: t('flags.metrics.thirdPartyServiceId.description', 'Filter third-party metrics by service ID', {}),
-    }),
-    'api-family': Flags.string({
-      description: t('flags.metrics.apiFamily.description', 'Filter SCAPI metrics by API family', {}),
-    }),
-    'api-name': Flags.string({
-      description: t('flags.metrics.apiName.description', 'Filter SCAPI metrics by API name', {}),
-    }),
-    'ocapi-category': Flags.string({
-      description: t('flags.metrics.ocapiCategory.description', 'Filter OCAPI metrics by category', {}),
-    }),
-    'ocapi-api': Flags.string({
-      description: t('flags.metrics.ocapiApi.description', 'Filter OCAPI metrics by API', {}),
-    }),
+  /**
+   * The time-window, tag, and column flags shared by every category command.
+   * Subclasses spread this in and add their own filter flags.
+   */
+  static timeWindowFlags = {
+    ...timeWindowFlags,
     ...columnFlagsFor(COLUMNS),
   };
+
+  /** The metric category this command fetches. */
+  protected abstract readonly category: MetricCategory;
 
   async run(): Promise<MetricsGetOutput> {
     this.requireOAuthCredentials();
 
-    const {category} = this.args;
-    const {
-      from: fromFlag,
-      to: toFlag,
-      window: windowFlag,
-      tags: tagsFlag,
-      'third-party-service-id': thirdPartyServiceId,
-      'api-family': apiFamily,
-      'api-name': apiName,
-      'ocapi-category': ocapiCategory,
-      'ocapi-api': ocapiApi,
-    } = this.flags;
+    const {category} = this;
+    // Filter flags are declared per-subclass, so only the relevant ones exist
+    // here; reading a flag a category does not define yields undefined.
+    const flags = this.flags as Record<string, unknown>;
+    const fromFlag = flags.from as string | undefined;
+    const toFlag = flags.to as string | undefined;
+    const windowFlag = flags.window as string | undefined;
+    const tagsFlag = flags.tags as boolean;
+    const thirdPartyServiceId = flags['third-party-service-id'] as string | undefined;
+    const apiFamily = flags['api-family'] as string | undefined;
+    const apiName = flags['api-name'] as string | undefined;
+    const ocapiCategory = flags['ocapi-category'] as string | undefined;
+    const ocapiApi = flags['ocapi-api'] as string | undefined;
 
     // Resolve the requested bounds. --from/--to/--window each accept relative
     // durations ("1h", "7d" ago) or ISO 8601. The resolver always produces an
@@ -226,7 +246,7 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
     }
 
     const query: MetricsQueryEcho = {
-      category: category as MetricCategory,
+      category,
       from: window.fromIso,
       to: window.toIso,
       fromEpochSeconds: window.fromEpochSeconds,
@@ -257,7 +277,7 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
 
     let response: MetricsDataResponse;
     try {
-      response = await getMetricsByCategory(client, tenantId, category as MetricCategory, {
+      response = await getMetricsByCategory(client, tenantId, category, {
         from: window.from,
         to: window.to,
         thirdPartyServiceId,
@@ -280,7 +300,7 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
     // consumers that ignore tags are unaffected. Applied filters are folded into
     // the context so drilled-down series are tagged authoritatively.
     if (tagsFlag) {
-      response = enrichMetricsTags(response, category as MetricCategory, {
+      response = enrichMetricsTags(response, category, {
         tenantId,
         apiFamily,
         apiName,
@@ -338,7 +358,10 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
     // Tags are on by default in JSON/machine output, but kept out of the default
     // human table to avoid clutter; the Tags column is extended-only (shown with
     // -x, or selected explicitly via -c tags).
-    tableRenderer.render(rows, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
+    tableRenderer.render(
+      rows,
+      selectColumns(this.flags as ColumnFlags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
+    );
 
     return output;
   }

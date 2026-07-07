@@ -12,10 +12,18 @@ Use `b2c metrics` commands to query observability metrics from the SCAPI Metrics
 
 ## Command Overview
 
-| Command                      | Description                           |
-| ---------------------------- | ------------------------------------- |
-| `b2c metrics list`           | List available metric categories      |
-| `b2c metrics get <category>` | Fetch metrics for a specific category |
+| Command                   | Description                                                  |
+| ------------------------- | ------------------------------------------------------------ |
+| `b2c metrics list`        | List available metric categories                             |
+| `b2c metrics overall`     | Fetch overall system-wide aggregate metrics                  |
+| `b2c metrics sales`       | Fetch sales transaction metrics                              |
+| `b2c metrics ecdn`        | Fetch edge CDN performance metrics                           |
+| `b2c metrics third-party` | Fetch third-party service integration metrics                |
+| `b2c metrics scapi`       | Fetch SCAPI request volume, latency, errors, cache hit ratio |
+| `b2c metrics scapi-hooks` | Fetch SCAPI hook execution metrics                           |
+| `b2c metrics mrt`         | Fetch Managed Runtime (PWA Kit) metrics                      |
+| `b2c metrics controller`  | Fetch SFRA controller performance metrics                    |
+| `b2c metrics ocapi`       | Fetch OCAPI request metrics                                  |
 
 ## Global Metrics Flags
 
@@ -160,39 +168,22 @@ ocapi         OCAPI request metrics
 
 ---
 
-## b2c metrics get
+## Common Flags (All Metrics Commands)
 
-Fetch metrics for a specific category with optional time range and category-specific filters.
-
-### Usage
-
-```bash
-b2c metrics get <category> [flags]
-```
-
-### Arguments
-
-| Argument   | Description                                                                                                      |
-| ---------- | ---------------------------------------------------------------------------------------------------------------- |
-| `category` | Metric category: `overall`, `sales`, `ecdn`, `third-party`, `scapi`, `scapi-hooks`, `mrt`, `controller`, `ocapi` |
+The following flags are available on all per-category metrics commands (`b2c metrics overall`, `b2c metrics scapi`, etc.).
 
 ### Flags
 
-| Flag                       | Description                                                  | Default |
-| -------------------------- | ------------------------------------------------------------ | ------- |
-| `--tenant-id`              | (Required) Tenant ID                                         |         |
-| `--short-code`             | SCAPI short code                                             |         |
-| `--from`                   | Start bound: relative (`1h`, `7d` ago) or ISO 8601 timestamp |         |
-| `--to`                     | End bound: relative or ISO 8601 timestamp                    |         |
-| `--window` / `--for`       | Window duration (`1h`, `30m`, `2d`)                          |         |
-| `--third-party-service-id` | Filter by third-party service ID (third-party category only) |         |
-| `--api-family`             | Filter by SCAPI API family (scapi category only)             |         |
-| `--api-name`               | Filter by SCAPI API name (scapi category only)               |         |
-| `--ocapi-category`         | Filter by OCAPI category (ocapi category only)               |         |
-| `--ocapi-api`              | Filter by OCAPI API (ocapi category only)                    |         |
-| `--tags`                   | Enrich series with structured tags                           | `true`  |
-| `--no-tags`                | Disable series tag enrichment (return raw API shape)         |         |
-| `--json`                   | Output results as JSON (wrapped as `{query, data}`)          | `false` |
+| Flag                 | Description                                                  | Default |
+| -------------------- | ------------------------------------------------------------ | ------- |
+| `--tenant-id`        | (Required) Tenant ID                                         |         |
+| `--short-code`       | SCAPI short code                                             |         |
+| `--from`             | Start bound: relative (`1h`, `7d` ago) or ISO 8601 timestamp |         |
+| `--to`               | End bound: relative or ISO 8601 timestamp                    |         |
+| `--window` / `--for` | Window duration (`1h`, `30m`, `2d`)                          |         |
+| `--tags`             | Enrich series with structured tags                           | `true`  |
+| `--no-tags`          | Disable series tag enrichment (return raw API shape)         |         |
+| `--json`             | Output results as JSON (wrapped as `{query, data}`)          | `false` |
 
 ### Time Windows
 
@@ -220,83 +211,237 @@ You can specify at most two of the three flags. Specifying all three is an error
 
 ```bash
 # Last hour
-b2c metrics get overall --window 1h --tenant-id zzxy_prd
+b2c metrics overall --window 1h --tenant-id zzxy_prd
 
 # Last 7 days
-b2c metrics get sales --window 7d --tenant-id zzxy_prd
+b2c metrics sales --window 7d --tenant-id zzxy_prd
 
 # 1-hour window starting 7 days ago
-b2c metrics get scapi --from 7d --window 1h --tenant-id zzxy_prd
+b2c metrics scapi --from 7d --window 1h --tenant-id zzxy_prd
 
 # Specific ISO 8601 range
-b2c metrics get scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00" --tenant-id zzxy_prd
+b2c metrics scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00" --tenant-id zzxy_prd
 
 # From 24 hours ago until now (--from alone → default 24h window, capped at now)
-b2c metrics get overall --from 24h --tenant-id zzxy_prd
+b2c metrics overall --from 24h --tenant-id zzxy_prd
 ```
 
 **Data retention:** The Metrics API retains 30 days of data. If `--from` lands at or beyond the retention edge, the CLI adjusts it forward by a small safety margin (5 minutes) to avoid rejection due to clock differences, and emits a warning showing the adjusted start time.
 
 **Wire units:** Request bounds are sent to the API as epoch **seconds**; response data-point timestamps come back as epoch **milliseconds** (JS-native, so `new Date(point.timestamp)` works directly)
 
-### Category-Specific Filters
+---
 
-**Third-party metrics:**
+## b2c metrics overall
 
-```bash
-b2c metrics get third-party --third-party-service-id my-integration --tenant-id zzxy_prd
-```
+Fetch system-wide aggregate metrics.
 
-**SCAPI metrics:**
+### Usage
 
 ```bash
-# Filter by API family
-b2c metrics get scapi --api-family product --tenant-id zzxy_prd
-
-# Filter by API family and name
-b2c metrics get scapi --api-family product --api-name shopper-products --tenant-id zzxy_prd
+b2c metrics overall [flags]
 ```
 
-**OCAPI metrics:**
-
-```bash
-# Filter by OCAPI category
-b2c metrics get ocapi --ocapi-category shop --tenant-id zzxy_prd
-
-# Filter by category and API
-b2c metrics get ocapi --ocapi-category shop --ocapi-api baskets --tenant-id zzxy_prd
-```
+See [Common Flags](#common-flags-all-metrics-commands) for time-window, tags, and output flags.
 
 ### Examples
 
 ```bash
 # Get overall metrics (last 24 hours by default)
-b2c metrics get overall --tenant-id zzxy_prd
+b2c metrics overall --tenant-id zzxy_prd
 
 # Get metrics for the last hour
-b2c metrics get overall --window 1h --tenant-id zzxy_prd
+b2c metrics overall --window 1h --tenant-id zzxy_prd
+
+# Output as JSON
+b2c metrics overall --tenant-id zzxy_prd --json
+```
+
+---
+
+## b2c metrics sales
+
+Fetch sales transaction metrics.
+
+### Usage
+
+```bash
+b2c metrics sales [flags]
+```
+
+See [Common Flags](#common-flags-all-metrics-commands) for time-window, tags, and output flags.
+
+---
+
+## b2c metrics ecdn
+
+Fetch edge CDN performance metrics.
+
+### Usage
+
+```bash
+b2c metrics ecdn [flags]
+```
+
+See [Common Flags](#common-flags-all-metrics-commands) for time-window, tags, and output flags.
+
+---
+
+## b2c metrics third-party
+
+Fetch third-party service integration metrics.
+
+### Usage
+
+```bash
+b2c metrics third-party [flags]
+```
+
+### Additional Flags
+
+| Flag                       | Description                      | Default |
+| -------------------------- | -------------------------------- | ------- |
+| `--third-party-service-id` | Filter by third-party service ID |         |
+
+See [Common Flags](#common-flags-all-metrics-commands) for time-window, tags, and output flags.
+
+### Examples
+
+```bash
+# Get third-party metrics for a specific service
+b2c metrics third-party --third-party-service-id my-service --tenant-id zzxy_prd
+```
+
+::: warning Filter Validation
+Category-specific filters like `--third-party-service-id` are only accepted by the command they apply to. Passing this flag to another metrics command (e.g., `b2c metrics overall`) results in a "Nonexistent flag" error.
+:::
+
+---
+
+## b2c metrics scapi
+
+Fetch SCAPI request volume, latency, errors, and cache hit ratio.
+
+### Usage
+
+```bash
+b2c metrics scapi [flags]
+```
+
+### Additional Flags
+
+| Flag           | Description                | Default |
+| -------------- | -------------------------- | ------- |
+| `--api-family` | Filter by SCAPI API family |         |
+| `--api-name`   | Filter by SCAPI API name   |         |
+
+Valid `--api-family` values: `shopper`, `admin`, `data`, `cdn`, `search`, `orders`, `customers`, `products`, `inventory`, `pricing`, `promotions`, `content`.
+
+See [Common Flags](#common-flags-all-metrics-commands) for time-window, tags, and output flags.
+
+### Examples
+
+```bash
+# Get SCAPI metrics for the last hour
+b2c metrics scapi --window 1h --tenant-id zzxy_prd
+
+# Filter by API family
+b2c metrics scapi --api-family products --tenant-id zzxy_prd
+
+# Filter by API family and name
+b2c metrics scapi --api-family products --api-name shopper-products --tenant-id zzxy_prd
 
 # Get a 1-hour window from 7 days ago
-b2c metrics get scapi --from 7d --window 1h --tenant-id zzxy_prd
+b2c metrics scapi --from 7d --window 1h --tenant-id zzxy_prd
 
-# Get metrics for a specific ISO 8601 time range
-b2c metrics get scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00" --tenant-id zzxy_prd
-
-# Get SCAPI metrics filtered by API family
-b2c metrics get scapi --api-family product --tenant-id zzxy_prd
-
-# Get SCAPI metrics for specific API
-b2c metrics get scapi --api-family product --api-name shopper-products --tenant-id zzxy_prd
-
-# Get third-party metrics for a specific service
-b2c metrics get third-party --third-party-service-id my-service --tenant-id zzxy_prd
-
-# Get OCAPI metrics filtered by category and API
-b2c metrics get ocapi --ocapi-category shop --ocapi-api baskets --tenant-id zzxy_prd
-
-# Output as JSON (wrapped with query echo)
-b2c metrics get overall --tenant-id zzxy_prd --json
+# Specific ISO 8601 range
+b2c metrics scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00" --tenant-id zzxy_prd
 ```
+
+::: warning Filter Validation
+Category-specific filters like `--api-family` and `--api-name` are only accepted by `b2c metrics scapi`. Passing these flags to another metrics command results in a "Nonexistent flag" error.
+:::
+
+---
+
+## b2c metrics scapi-hooks
+
+Fetch SCAPI hook execution metrics.
+
+### Usage
+
+```bash
+b2c metrics scapi-hooks [flags]
+```
+
+See [Common Flags](#common-flags-all-metrics-commands) for time-window, tags, and output flags.
+
+---
+
+## b2c metrics mrt
+
+Fetch Managed Runtime (PWA Kit) metrics.
+
+### Usage
+
+```bash
+b2c metrics mrt [flags]
+```
+
+See [Common Flags](#common-flags-all-metrics-commands) for time-window, tags, and output flags.
+
+---
+
+## b2c metrics controller
+
+Fetch SFRA controller performance metrics.
+
+### Usage
+
+```bash
+b2c metrics controller [flags]
+```
+
+See [Common Flags](#common-flags-all-metrics-commands) for time-window, tags, and output flags.
+
+---
+
+## b2c metrics ocapi
+
+Fetch OCAPI request metrics.
+
+### Usage
+
+```bash
+b2c metrics ocapi [flags]
+```
+
+### Additional Flags
+
+| Flag               | Description              | Default |
+| ------------------ | ------------------------ | ------- |
+| `--ocapi-category` | Filter by OCAPI category |         |
+| `--ocapi-api`      | Filter by OCAPI API      |         |
+
+See [Common Flags](#common-flags-all-metrics-commands) for time-window, tags, and output flags.
+
+### Examples
+
+```bash
+# Filter by OCAPI category
+b2c metrics ocapi --ocapi-category shop --tenant-id zzxy_prd
+
+# Filter by category and API
+b2c metrics ocapi --ocapi-category shop --ocapi-api baskets --tenant-id zzxy_prd
+```
+
+::: warning Filter Validation
+Category-specific filters like `--ocapi-category` and `--ocapi-api` are only accepted by `b2c metrics ocapi`. Passing these flags to another metrics command results in a "Nonexistent flag" error.
+:::
+
+---
+
+## Response Format (All Category Commands)
 
 ### Series Tags
 
@@ -361,9 +506,7 @@ Pass `--no-tags` to disable enrichment and return the raw API shape (no `tags` k
 
 Tag parsing is a **client-side, best-effort bridge** over the API's current packed-string format. It encodes undocumented formats and may mis-parse new or changed ones. The `realm`/`environment` and applied-filter tiers are always reliable; the string-parsed dimensions are heuristic. This feature is intended to be superseded by server-side tags in the Metrics API.
 
-### Response Format
-
-The response contains an array of metrics. Each metric includes:
+All per-category metrics commands return the same response structure. Each response contains an array of metrics, with each metric including:
 
 - **metricId**: Unique identifier (e.g., `requests_total`)
 - **title**: Human-readable title
@@ -419,11 +562,13 @@ With `--json`, the response is wrapped as `{query, data}` where `query` echoes t
 
 The `query` object always includes both `from`/`to` (and `fromEpochSeconds`/`toEpochSeconds`). When a bound was derived from the 24-hour default window (e.g. `--from` alone, or no time flags), `query.defaultedWindow` is `true`; when `--from` was clamped forward off the retention edge, `query.clampedFrom` is `true`.
 
-### Output
+---
+
+## Output
 
 Default table output displays each metric with its data series in a readable format. Use `--json` for machine-readable output.
 
-### Error Responses
+## Error Responses
 
 Common error scenarios:
 
@@ -435,12 +580,12 @@ Common error scenarios:
 | 404    | Category not enabled for your organization                               |
 | 503    | Metrics service temporarily unavailable                                  |
 
-### Notes
+## Notes
 
 - Time values are sent to the API as epoch **seconds**; response data-point timestamps come back as epoch **milliseconds** (JS-native)
 - The Metrics API caps a window at **24 hours** (a request that omits `to` is paired with the server's "now" against this cap) and retains **30 days** of data; both are enforced by the API
 - The CLI always sends an explicit `from`+`to` range, defaulting any open bound to a 24-hour window so the behavior is predictable rather than relying on the server's implicit end. An explicit range wider than 24h is still sent as-is and the API returns its own error
 - When `--from` is at the retention edge (30 days ago), the CLI clamps it forward by 5 minutes to avoid rejection due to clock skew and emits a warning
 - The tenant ID may be bare (e.g., `zzxy_prd`) or prefixed (e.g., `f_ecom_zzxy_prd`) — the CLI normalizes it
-- Category-specific filters only apply to their respective categories; they are ignored for other categories
+- Category-specific filters (`--api-family`, `--api-name`, `--ocapi-category`, `--ocapi-api`, `--third-party-service-id`) are only accepted by the command they apply to. Passing a filter to a different command results in a "Nonexistent flag" error. This ensures clear command boundaries and prevents silent filtering mismatches.
 - The Metrics API is a closed beta feature and must be enabled for your organization

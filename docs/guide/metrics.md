@@ -51,12 +51,20 @@ Like other SCAPI commands, metrics commands resolve `tenantId`, `shortCode`, `cl
 
 ## Commands
 
-The `b2c metrics` topic provides two commands:
+The `b2c metrics` topic provides per-category commands for fetching metrics:
 
-| Command                      | Description                           |
-| ---------------------------- | ------------------------------------- |
-| `b2c metrics list`           | List available metric categories      |
-| `b2c metrics get <category>` | Fetch metrics for a specific category |
+| Command                   | Description                                                  |
+| ------------------------- | ------------------------------------------------------------ |
+| `b2c metrics list`        | List available metric categories                             |
+| `b2c metrics overall`     | Fetch overall system-wide aggregate metrics                  |
+| `b2c metrics sales`       | Fetch sales transaction metrics                              |
+| `b2c metrics ecdn`        | Fetch edge CDN performance metrics                           |
+| `b2c metrics third-party` | Fetch third-party service integration metrics                |
+| `b2c metrics scapi`       | Fetch SCAPI request volume, latency, errors, cache hit ratio |
+| `b2c metrics scapi-hooks` | Fetch SCAPI hook execution metrics                           |
+| `b2c metrics mrt`         | Fetch Managed Runtime (PWA Kit) metrics                      |
+| `b2c metrics controller`  | Fetch SFRA controller performance metrics                    |
+| `b2c metrics ocapi`       | Fetch OCAPI request metrics                                  |
 
 ## Listing Metric Categories
 
@@ -84,32 +92,32 @@ The nine categories are:
 
 ## Fetching Metrics
 
-Use `b2c metrics get <category>` to retrieve metrics for a specific category:
+Each metric category has its own command:
 
 ```bash
 # Get overall metrics (last 24 hours by default)
-b2c metrics get overall
+b2c metrics overall
 
 # Get metrics for the last hour
-b2c metrics get overall --window 1h
+b2c metrics overall --window 1h
 
 # Get a 1-hour window from 7 days ago
-b2c metrics get scapi --from 7d --window 1h
+b2c metrics scapi --from 7d --window 1h
 
 # Get metrics for a specific ISO 8601 time range
-b2c metrics get scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00"
+b2c metrics scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00"
 
 # Get third-party metrics for a specific service
-b2c metrics get third-party --third-party-service-id my-service
+b2c metrics third-party --third-party-service-id my-service
 
 # Get SCAPI metrics filtered by API family and name
-b2c metrics get scapi --api-family product --api-name shopper-products
+b2c metrics scapi --api-family products --api-name shopper-products
 
 # Get OCAPI metrics filtered by category and API
-b2c metrics get ocapi --ocapi-category shop --ocapi-api baskets
+b2c metrics ocapi --ocapi-category shop --ocapi-api baskets
 
 # Output as JSON
-b2c metrics get overall --json
+b2c metrics overall --json
 ```
 
 ### Time Windows
@@ -138,19 +146,19 @@ You can specify at most two of the three flags. Specifying all three is an error
 
 ```bash
 # Last hour
-b2c metrics get overall --window 1h
+b2c metrics overall --window 1h
 
 # Last 6 hours
-b2c metrics get sales --window 6h
+b2c metrics sales --window 6h
 
 # 1-hour window starting 7 days ago
-b2c metrics get scapi --from 7d --window 1h
+b2c metrics scapi --from 7d --window 1h
 
 # Specific ISO 8601 range
-b2c metrics get scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00"
+b2c metrics scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00"
 
 # A 24-hour window starting 7 days ago (--from alone → default 24h window)
-b2c metrics get overall --from 7d
+b2c metrics overall --from 7d
 ```
 
 **Data retention:** The Metrics API retains 30 days of data. If `--from` lands at or beyond the retention edge, the CLI adjusts it forward by a small safety margin (5 minutes) to avoid rejection due to clock differences, and emits a warning showing the adjusted start time.
@@ -159,32 +167,34 @@ b2c metrics get overall --from 7d
 
 ### Category-Specific Filters
 
-Some categories support additional filters:
+Some category commands accept additional filter flags. These filters are only accepted by their respective commands — passing a filter to a different command results in a "Nonexistent flag" error.
 
-**Third-party metrics:**
+**Third-party metrics** (`b2c metrics third-party`):
 
 ```bash
-b2c metrics get third-party --third-party-service-id my-integration
+b2c metrics third-party --third-party-service-id my-integration
 ```
 
-**SCAPI metrics:**
+**SCAPI metrics** (`b2c metrics scapi`):
 
 ```bash
 # Filter by API family
-b2c metrics get scapi --api-family product
+b2c metrics scapi --api-family products
 
 # Filter by API family and name
-b2c metrics get scapi --api-family product --api-name shopper-products
+b2c metrics scapi --api-family products --api-name shopper-products
 ```
 
-**OCAPI metrics:**
+Valid `--api-family` values: `shopper`, `admin`, `data`, `cdn`, `search`, `orders`, `customers`, `products`, `inventory`, `pricing`, `promotions`, `content`.
+
+**OCAPI metrics** (`b2c metrics ocapi`):
 
 ```bash
 # Filter by OCAPI category
-b2c metrics get ocapi --ocapi-category shop
+b2c metrics ocapi --ocapi-category shop
 
 # Filter by category and API
-b2c metrics get ocapi --ocapi-category shop --ocapi-api baskets
+b2c metrics ocapi --ocapi-category shop --ocapi-api baskets
 ```
 
 ### Response Format
