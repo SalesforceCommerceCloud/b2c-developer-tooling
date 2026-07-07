@@ -200,15 +200,17 @@ Metrics commands accept flexible time-window specifications via three flags:
 - `--to` — End bound: relative duration or ISO 8601 timestamp
 - `--window` (alias `--for`) — Window duration (`1h`, `30m`, `2d`)
 
+The commands always send an explicit `from`+`to` range, defaulting to a **24-hour window**. The Metrics API pairs a request that omits `to` with its own "now" and enforces a **24-hour maximum window**, so an open-ended `--from` older than a day would always be rejected; filling the window client-side makes the behavior predictable.
+
 **Resolution rules:**
 
-- `--from` + `--to` → used as given
+- `--from` + `--to` → used as given (a range wider than 24h is sent as-is; the API returns its own error)
 - `--from` + `--window` → end = start + window
 - `--to` + `--window` → start = end − window
 - `--window` alone → the last `<window>` (end = now, start = now − window)
-- `--from` alone → only start is sent; the API applies its own forward window
-- `--to` alone → only end is sent
-- Nothing → no time params sent; the API applies its default window
+- `--from` alone → a 24-hour window forward from it: end = min(start + 24h, now)
+- `--to` alone → a 24-hour window back from it: start = end − 24h
+- Nothing → the last 24 hours (end = now, start = now − 24h)
 
 You can specify at most two of the three flags. Specifying all three is an error.
 
@@ -227,7 +229,7 @@ b2c metrics get scapi --from 7d --window 1h --tenant-id zzxy_prd
 # Specific ISO 8601 range
 b2c metrics get scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00" --tenant-id zzxy_prd
 
-# From 24 hours ago until now (using API's forward window)
+# From 24 hours ago until now (--from alone → default 24h window, capped at now)
 b2c metrics get overall --from 24h --tenant-id zzxy_prd
 ```
 
@@ -266,7 +268,7 @@ b2c metrics get ocapi --ocapi-category shop --ocapi-api baskets --tenant-id zzxy
 ### Examples
 
 ```bash
-# Get overall metrics (API default window)
+# Get overall metrics (last 24 hours by default)
 b2c metrics get overall --tenant-id zzxy_prd
 
 # Get metrics for the last hour
@@ -349,7 +351,7 @@ With `--json`, the response is wrapped as `{query, data}` where `query` echoes t
 }
 ```
 
-The `query` object omits `from`/`to` fields when that bound wasn't sent to the API (e.g., when using `--from` alone, only `from`/`fromEpochSeconds` appear; the API applied its own forward window)
+The `query` object always includes both `from`/`to` (and `fromEpochSeconds`/`toEpochSeconds`). When a bound was derived from the 24-hour default window (e.g. `--from` alone, or no time flags), `query.defaultedWindow` is `true`.
 
 ### Output
 
@@ -370,7 +372,8 @@ Common error scenarios:
 ### Notes
 
 - Time values are sent to the API as epoch **seconds**; response data-point timestamps come back as epoch **milliseconds** (JS-native)
-- The Metrics API enforces a 30-day retention window and a maximum window width; these limits are documented by the API and errors are returned if exceeded
+- The Metrics API caps a window at **24 hours** (a request that omits `to` is paired with the server's "now" against this cap) and retains **30 days** of data; both are enforced by the API
+- The CLI always sends an explicit `from`+`to` range, defaulting any open bound to a 24-hour window so the behavior is predictable rather than relying on the server's implicit end. An explicit range wider than 24h is still sent as-is and the API returns its own error
 - When `--from` is at the retention edge (30 days ago), the CLI clamps it forward by 5 minutes to avoid rejection due to clock skew and emits a warning
 - The tenant ID may be bare (e.g., `zzxy_prd`) or prefixed (e.g., `f_ecom_zzxy_prd`) — the CLI normalizes it
 - Category-specific filters only apply to their respective categories; they are ignored for other categories

@@ -87,7 +87,7 @@ The nine categories are:
 Use `b2c metrics get <category>` to retrieve metrics for a specific category:
 
 ```bash
-# Get overall metrics (API default window)
+# Get overall metrics (last 24 hours by default)
 b2c metrics get overall
 
 # Get metrics for the last hour
@@ -120,15 +120,17 @@ Metrics commands accept flexible time-window specifications via three flags:
 - `--to` — End bound: relative duration or ISO 8601 timestamp
 - `--window` (alias `--for`) — Window duration (`1h`, `30m`, `2d`)
 
+The commands always send an explicit `from`+`to` range, defaulting to a **24-hour window**. This is deliberate: the Metrics API pairs a request that omits `to` with its own "now" and enforces a **24-hour maximum window**, so an open-ended `--from` older than a day would always be rejected. Filling the window client-side makes the behavior predictable.
+
 **Resolution rules:**
 
-- `--from` + `--to` → used as given
+- `--from` + `--to` → used as given (a range wider than 24h is sent as-is; the API returns its own error)
 - `--from` + `--window` → end = start + window (e.g., `--from 7d --window 1h` = a 1-hour window, 7 days ago)
 - `--to` + `--window` → start = end − window
 - `--window` alone → the last `<window>` (end = now, start = now − window)
-- `--from` alone → only start is sent; the API applies its own forward window
-- `--to` alone → only end is sent
-- Nothing → no time params sent; the API applies its default window
+- `--from` alone → a 24-hour window forward from it: end = min(start + 24h, now)
+- `--to` alone → a 24-hour window back from it: start = end − 24h
+- Nothing → the last 24 hours (end = now, start = now − 24h)
 
 You can specify at most two of the three flags. Specifying all three is an error.
 
@@ -147,7 +149,7 @@ b2c metrics get scapi --from 7d --window 1h
 # Specific ISO 8601 range
 b2c metrics get scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00"
 
-# From 7 days ago (API applies its forward window)
+# A 24-hour window starting 7 days ago (--from alone → default 24h window)
 b2c metrics get overall --from 7d
 ```
 
@@ -240,7 +242,7 @@ With `--json`, the response is wrapped as `{query, data}` where `query` echoes t
 }
 ```
 
-The `query` object omits `from`/`to` fields when that bound wasn't sent to the API (e.g., when using `--from` alone, only `from`/`fromEpochSeconds` appear; the API applied its own forward window)
+The `query` object always includes both `from`/`to` (and their `fromEpochSeconds`/`toEpochSeconds`). When a bound was derived from the 24-hour default window (e.g. `--from` alone, or no time flags), `query.defaultedWindow` is `true`.
 
 ## SDK Usage
 

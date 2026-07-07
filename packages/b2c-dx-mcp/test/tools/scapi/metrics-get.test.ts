@@ -45,7 +45,7 @@ describe('tools/scapi/metrics-get', () => {
     restore();
   });
 
-  it('creates tool with correct metadata (SCAPI toolset, non-GA, since/until schema)', () => {
+  it('creates tool with correct metadata (SCAPI toolset, non-GA, from/to/window schema)', () => {
     const tool = createMetricsGetTool(() => services);
 
     expect(tool.name).to.equal('metrics_get');
@@ -81,24 +81,32 @@ describe('tools/scapi/metrics-get', () => {
     expect(query.toEpochSeconds).to.equal(to);
   });
 
-  it('sends only from when only from is given (no invented to)', async () => {
+  it('derives an explicit 24h window forward when only from is given', async () => {
     const tool = createMetricsGetTool(() => services);
-    const result = await tool.handler({category: 'overall', from: '30d'});
+    // 7d ago is within retention; from + 24h is still before now, so a full 24h
+    // window is sent — both bounds explicit, never relying on the server default.
+    const result = await tool.handler({category: 'overall', from: '7d'});
     const {parsed} = parseResultContent(result);
 
-    const callArgs = mockGet.firstCall.args[1] as {params: {query: Record<string, unknown>}};
-    expect(callArgs.params.query).to.have.property('from');
-    expect(callArgs.params.query.to).to.equal(undefined);
-    expect((parsed?.query as Record<string, unknown>).to).to.equal(undefined);
+    const callArgs = mockGet.firstCall.args[1] as {params: {query: {from: number; to: number}}};
+    const {from, to} = callArgs.params.query;
+    expect(from).to.be.a('number');
+    expect(to).to.be.a('number');
+    expect(to - from).to.equal(24 * 60 * 60);
+    expect((parsed?.query as Record<string, unknown>).defaultedWindow).to.equal(true);
   });
 
-  it('sends no time bounds when none are given (API default window)', async () => {
+  it('defaults to the last 24h when no bounds are given', async () => {
     const tool = createMetricsGetTool(() => services);
-    await tool.handler({category: 'sales'});
+    const result = await tool.handler({category: 'sales'});
+    const {parsed} = parseResultContent(result);
 
-    const callArgs = mockGet.firstCall.args[1] as {params: {query: Record<string, unknown>}};
-    expect(callArgs.params.query.from).to.equal(undefined);
-    expect(callArgs.params.query.to).to.equal(undefined);
+    const callArgs = mockGet.firstCall.args[1] as {params: {query: {from: number; to: number}}};
+    const {from, to} = callArgs.params.query;
+    expect(from).to.be.a('number');
+    expect(to).to.be.a('number');
+    expect(to - from).to.equal(24 * 60 * 60);
+    expect((parsed?.query as Record<string, unknown>).defaultedWindow).to.equal(true);
   });
 
   it('rejects over-specification (from + to + window) without calling the API', async () => {

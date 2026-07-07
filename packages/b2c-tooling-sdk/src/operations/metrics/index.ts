@@ -150,6 +150,20 @@ export type MetricsQueryOptions = MetricsTimeWindow &
 export const METRICS_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
 /**
+ * Default (and maximum) width of a metrics time window: 24 hours.
+ *
+ * The Metrics API pairs a request that omits `to` with its own `now` and then
+ * enforces a maximum window of `to - from ≤ 24h`, rejecting anything wider with a
+ * 400. An open-ended `from` older than 24h therefore always fails. To make the
+ * behavior predictable, {@link resolveMetricsWindow} fills in a 24-hour window
+ * (clamped so `to` never exceeds `now`) for any bound the caller leaves open, and
+ * always sends both `from` and `to`. This is only a *default* for derivation — an
+ * explicit `from`+`to` range wider than 24h is still sent as-is, letting the API
+ * remain authoritative and return its own error.
+ */
+export const METRICS_DEFAULT_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/**
  * Safety margin kept *inside* the retention window when clamping `from`. Because
  * the server evaluates retention against its own clock at request time, a `from`
  * computed as exactly "30 days ago" on the client is reliably rejected once
@@ -172,12 +186,9 @@ export type MetricsBoundInput = Date | number | string;
  * Parses a single metrics time bound (`from` or `to`) into a {@link Date}.
  *
  * This is the shared bound parser for the CLI `metrics get` command and the MCP
- * `metrics_get` tool. It intentionally does NOT synthesize a companion bound or
- * apply a default window: each of `from`/`to` is resolved independently and only
- * when the caller supplies it, so the request sent to the API contains exactly
- * the bounds the user asked for. This matches the Metrics API's own `from`/`to`
- * parameters — e.g. passing only `from` lets the API apply its native forward
- * window, rather than the client inventing `to = now`.
+ * `metrics_get` tool. It resolves a single bound in isolation; deriving the
+ * companion bound and applying the 24-hour default window is the job of
+ * {@link resolveMetricsWindow}.
  *
  * @param value - The bound: a Date, epoch milliseconds, a relative duration
  *   (`5m`/`1h`/`2d`, relative to `now`), or an ISO 8601 timestamp
@@ -218,29 +229,37 @@ export interface MetricsWindowInput {
 }
 
 /**
- * A resolved metrics window: the `from`/`to` bounds actually sent to the API
- * (either may be absent when the caller supplied only one and no window), plus
- * epoch-second echoes for reporting.
+ * A resolved metrics window. Both `from` and `to` are always present: the
+ * resolver derives whichever bound the caller left open using the 24-hour
+ * default window (see {@link METRICS_DEFAULT_WINDOW_MS}) and always sends an
+ * explicit range, so the request never depends on the server's implicit `to`.
+ * Epoch-second echoes are included for reporting.
  */
 export interface ResolvedMetricsWindow {
-  /** Resolved start bound, or undefined if not sent. */
-  from?: Date;
-  /** Resolved end bound, or undefined if not sent. */
-  to?: Date;
-  /** ISO 8601 form of {@link from}, or undefined. */
-  fromIso?: string;
-  /** ISO 8601 form of {@link to}, or undefined. */
-  toIso?: string;
-  /** Epoch **seconds** form of {@link from} (the API wire unit), or undefined. */
-  fromEpochSeconds?: number;
-  /** Epoch **seconds** form of {@link to} (the API wire unit), or undefined. */
-  toEpochSeconds?: number;
+  /** Resolved start bound. */
+  from: Date;
+  /** Resolved end bound. */
+  to: Date;
+  /** ISO 8601 form of {@link from}. */
+  fromIso: string;
+  /** ISO 8601 form of {@link to}. */
+  toIso: string;
+  /** Epoch **seconds** form of {@link from} (the API wire unit). */
+  fromEpochSeconds: number;
+  /** Epoch **seconds** form of {@link to} (the API wire unit). */
+  toEpochSeconds: number;
   /**
    * True when `from` was clamped forward to stay inside the retention window
    * (see {@link METRICS_RETENTION_SAFETY_MARGIN_MS}). Surfaced so callers can
    * report that the effective start differs slightly from what was requested.
    */
   clampedFrom: boolean;
+  /**
+   * True when a bound was derived from the 24-hour default window rather than
+   * supplied by the caller (e.g. `from` alone, `to` alone, or nothing at all).
+   * Surfaced so callers can note that the effective range was defaulted.
+   */
+  defaultedWindow: boolean;
 }
 
 /**
@@ -263,32 +282,41 @@ function parseWindowMs(window: number | string): number {
  * Metrics API. This is the shared resolver for the CLI `metrics get` command and
  * the MCP `metrics_get` tool, so both share identical, tested semantics.
  *
+ * The resolver always produces an explicit `from`+`to` pair. The Metrics API
+ * pairs a request that omits `to` with its own `now` and enforces a 24-hour
+ * maximum window, so an open-ended `from` older than 24 hours always fails; to
+ * make the behavior predictable, any bound the caller leaves open is filled from
+ * the 24-hour default window (see {@link METRICS_DEFAULT_WINDOW_MS}) rather than
+ * relying on the server's implicit end.
+ *
  * The `window` duration makes fixed-width lookbacks easy without hand-computing
  * a second timestamp — e.g. "a 1-hour window starting 7 days ago" is
  * `{from: '7d', window: '1h'}`. Resolution rules:
  *
- * - `from` + `to` — used as given; `window` must NOT also be set.
+ * - `from` + `to` — used as given; `window` must NOT also be set. An explicit
+ *   range wider than the 24-hour maximum is still sent as-is, leaving the API to
+ *   return its own error.
  * - `from` + `window` — `to = from + window`.
  * - `to` + `window` — `from = to - window`.
  * - `window` only — the last `window`: `to = now`, `from = now - window`.
- * - `from` only — only `from` is sent; the API applies its own window (the
- *   client does NOT invent `to = now`).
- * - `to` only — only `to` is sent.
- * - nothing — neither bound is sent; the API applies its default window.
+ * - `from` only — a 24-hour window forward from `from`: `to = min(from + 24h, now)`.
+ * - `to` only — a 24-hour window back from `to`: `from = to - 24h`.
+ * - nothing — the last 24 hours: `to = now`, `from = now - 24h`.
  *
- * Validation here is structural (over-specification and `from` after `to`).
- * Additionally, a `from` that lands at or just beyond the 30-day retention floor
- * is clamped *forward* to `now - 30 days + margin` (see
- * {@link METRICS_RETENTION_SAFETY_MARGIN_MS}) so that requests like `--from 30d`
- * are not rejected by the server's own slightly-later clock. Clamping only ever
- * moves `from` toward `now` (never fetches out-of-range data) and is reported via
- * {@link ResolvedMetricsWindow.clampedFrom}. Other API limits (maximum window
- * width, etc.) are left to the API, whose error messages are authoritative.
+ * Bounds filled from the 24-hour default (the last three rules) set
+ * {@link ResolvedMetricsWindow.defaultedWindow}. Validation is structural
+ * (over-specification and `from` after `to`). Additionally, a `from` that lands
+ * at or beyond the 30-day retention floor is clamped *forward* to
+ * `now - 30 days + margin` (see {@link METRICS_RETENTION_SAFETY_MARGIN_MS}) so
+ * requests like `--from 30d` are not rejected by the server's own slightly-later
+ * clock; the clamp is applied before deriving the companion bound so the window
+ * width is preserved, only ever moves `from` toward `now`, and is reported via
+ * {@link ResolvedMetricsWindow.clampedFrom}.
  *
  * @param input - The raw `from`/`to`/`window` inputs
- * @param now - Reference time for relative bounds, window-only mode, and the
+ * @param now - Reference time for relative bounds, default/window modes, and the
  *   retention clamp (defaults to the current time; injectable for deterministic tests)
- * @returns The resolved bounds plus ISO/epoch-second echoes and a clamp flag
+ * @returns The resolved bounds plus ISO/epoch-second echoes and clamp/default flags
  * @throws TypeError if a bound or the window string is unparseable
  * @throws RangeError if all three are supplied, or the resolved `from` is after `to`
  *
@@ -308,8 +336,24 @@ export function resolveMetricsWindow(input: MetricsWindowInput = {}, now: Date =
     throw new RangeError('Specify at most two of from, to, and window — not all three.');
   }
 
-  let from = hasFrom ? parseMetricsBound(input.from!, now) : undefined;
+  // Clamp a `from` forward if it predates the retention floor, to survive the
+  // server evaluating retention against its own (slightly later) clock. Only
+  // ever moves `from` toward `now`, never fetches out-of-range data.
+  const earliestSafe = now.getTime() - METRICS_RETENTION_MS + METRICS_RETENTION_SAFETY_MARGIN_MS;
+  let clampedFrom = false;
+  const clampFrom = (d: Date): Date => {
+    if (d.getTime() < earliestSafe) {
+      clampedFrom = true;
+      return new Date(earliestSafe);
+    }
+    return d;
+  };
+
+  // Clamp a provided `from` up front so a window derived from it stays inside
+  // retention (and a full-width window fits).
+  let from = hasFrom ? clampFrom(parseMetricsBound(input.from!, now)) : undefined;
   let to = hasTo ? parseMetricsBound(input.to!, now) : undefined;
+  let defaultedWindow = false;
 
   if (hasWindow) {
     const windowMs = parseWindowMs(input.window!);
@@ -322,31 +366,42 @@ export function resolveMetricsWindow(input: MetricsWindowInput = {}, now: Date =
       to = now;
       from = new Date(now.getTime() - windowMs);
     }
-  }
-
-  // Clamp `from` forward if it is at/beyond the retention floor, to survive the
-  // server evaluating retention against its own (slightly later) clock.
-  let clampedFrom = false;
-  if (from) {
-    const earliestSafe = now.getTime() - METRICS_RETENTION_MS + METRICS_RETENTION_SAFETY_MARGIN_MS;
-    if (from.getTime() < earliestSafe) {
-      from = new Date(earliestSafe);
-      clampedFrom = true;
+  } else if (!(from && to)) {
+    // No explicit window and at least one bound open → fill it from the 24-hour
+    // default window, sending an explicit range instead of relying on the
+    // server's implicit `to = now` + 24h-maximum behavior.
+    defaultedWindow = true;
+    if (from && !to) {
+      // A window forward from `from`, but never past `now` (no future data).
+      to = new Date(Math.min(from.getTime() + METRICS_DEFAULT_WINDOW_MS, now.getTime()));
+    } else if (to && !from) {
+      from = new Date(to.getTime() - METRICS_DEFAULT_WINDOW_MS);
+    } else {
+      // Nothing supplied → the last 24 hours.
+      to = now;
+      from = new Date(now.getTime() - METRICS_DEFAULT_WINDOW_MS);
     }
   }
 
-  if (from && to && from.getTime() > to.getTime()) {
-    throw new RangeError(`Invalid time window: from (${from.toISOString()}) must be before to (${to.toISOString()}).`);
+  // A `from` derived from `to` (via window or the default) may itself predate
+  // retention; clamp it forward too. Idempotent for an already-clamped bound.
+  from = clampFrom(from!);
+
+  if (from!.getTime() > to!.getTime()) {
+    throw new RangeError(
+      `Invalid time window: from (${from!.toISOString()}) must be before to (${to!.toISOString()}).`,
+    );
   }
 
   return {
-    from,
-    to,
-    fromIso: from?.toISOString(),
-    toIso: to?.toISOString(),
-    fromEpochSeconds: from ? toEpochSeconds(from) : undefined,
-    toEpochSeconds: to ? toEpochSeconds(to) : undefined,
+    from: from!,
+    to: to!,
+    fromIso: from!.toISOString(),
+    toIso: to!.toISOString(),
+    fromEpochSeconds: toEpochSeconds(from!),
+    toEpochSeconds: toEpochSeconds(to!),
     clampedFrom,
+    defaultedWindow,
   };
 }
 

@@ -341,6 +341,7 @@ export {
   METRIC_CATEGORIES,
   METRICS_RETENTION_MS,
   METRICS_RETENTION_SAFETY_MARGIN_MS,
+  METRICS_DEFAULT_WINDOW_MS,
 } from './operations/metrics/index.js';
 export type {
   MetricCategory,

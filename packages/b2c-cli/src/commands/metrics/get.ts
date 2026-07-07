@@ -31,19 +31,21 @@ interface MetricRow {
 /**
  * The effective query parameters echoed back to the caller (JSON mode) so the
  * resolved time bounds and filters actually sent to the API are always visible.
- * `from`/`to` fields are omitted when that bound was not sent (the API then
- * applies its own default/window).
+ * Both `from` and `to` are always present: the resolver derives whichever bound
+ * was left open from the 24-hour default window.
  */
 interface MetricsQueryEcho {
   category: MetricCategory;
-  /** Resolved start bound (ISO 8601), if sent. */
-  from?: string;
-  /** Resolved end bound (ISO 8601), if sent. */
-  to?: string;
-  /** Resolved start bound (epoch seconds — the API wire unit), if sent. */
-  fromEpochSeconds?: number;
-  /** Resolved end bound (epoch seconds — the API wire unit), if sent. */
-  toEpochSeconds?: number;
+  /** Resolved start bound (ISO 8601). */
+  from: string;
+  /** Resolved end bound (ISO 8601). */
+  to: string;
+  /** Resolved start bound (epoch seconds — the API wire unit). */
+  fromEpochSeconds: number;
+  /** Resolved end bound (epoch seconds — the API wire unit). */
+  toEpochSeconds: number;
+  /** True when a bound was derived from the 24-hour default window. */
+  defaultedWindow?: boolean;
   thirdPartyServiceId?: string;
   apiFamily?: string;
   apiName?: string;
@@ -136,7 +138,7 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
     to: Flags.string({
       description: t(
         'flags.metrics.to.description',
-        'End of the time window: relative (e.g. "6h" ago) or ISO 8601. Omit to let the API window forward from --from',
+        'End of the time window: relative (e.g. "6h" ago) or ISO 8601. Defaults to 24h after --from (capped at now)',
         {},
       ),
     }),
@@ -144,7 +146,7 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
       aliases: ['for'],
       description: t(
         'flags.metrics.window.description',
-        'Window duration (e.g. "1h", "30m", "2d"). With --from: window forward from it; with --to: window back from it; alone: the last <window>',
+        'Window duration (e.g. "1h", "30m", "2d"). With --from: window forward from it; with --to: window back from it; alone: the last <window>. Defaults to 24h',
         {},
       ),
     }),
@@ -182,9 +184,10 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
     } = this.flags;
 
     // Resolve the requested bounds. --from/--to/--window each accept relative
-    // durations ("1h", "7d" ago) or ISO 8601. Only the bounds actually provided
-    // (or derived from --window) are sent; we never invent a bound, so the API
-    // applies its own window/default for anything omitted.
+    // durations ("1h", "7d" ago) or ISO 8601. The resolver always produces an
+    // explicit from+to pair, filling any bound left open from the 24-hour default
+    // window — the Metrics API pairs a missing `to` with its own `now` and caps
+    // the window at 24h, so an open-ended `from` older than 24h would 400.
     let window;
     try {
       window = resolveMetricsWindow({from: fromFlag, to: toFlag, window: windowFlag});
@@ -197,7 +200,7 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
         t(
           'commands.metrics.get.clampedFrom',
           'Requested start was at the edge of the 30-day retention window; adjusted to {{from}} to stay within range.',
-          {from: window.fromIso!},
+          {from: window.fromIso},
         ),
       );
     }
@@ -208,6 +211,7 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
       to: window.toIso,
       fromEpochSeconds: window.fromEpochSeconds,
       toEpochSeconds: window.toEpochSeconds,
+      defaultedWindow: window.defaultedWindow || undefined,
       thirdPartyServiceId,
       apiFamily,
       apiName,
@@ -216,14 +220,9 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
     };
 
     if (!this.jsonEnabled()) {
-      const rangeLabel =
-        window.fromIso && window.toIso
-          ? `${window.fromIso} → ${window.toIso}`
-          : window.fromIso
-            ? `from ${window.fromIso} (API default window)`
-            : window.toIso
-              ? `until ${window.toIso} (API default window)`
-              : 'API default window';
+      const rangeLabel = window.defaultedWindow
+        ? `${window.fromIso} → ${window.toIso}, default 24h window`
+        : `${window.fromIso} → ${window.toIso}`;
       this.log(
         t('commands.metrics.get.fetching', 'Fetching {{category}} metrics ({{range}})...', {
           category,

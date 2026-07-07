@@ -261,9 +261,11 @@ describe('metrics get', () => {
       expect(result.query.to).to.be.a('string');
     });
 
-    it('sends only from when only --from is given (no invented to)', async () => {
+    it('derives an explicit 24h window forward when only --from is given', async () => {
       const command: any = new MetricsGet(['overall'], config);
-      stubParse(command, {'tenant-id': 'zzxy_prd', from: '30d'}, {category: 'overall'});
+      // 7d ago is within retention; from + 24h is still before now, so a full
+      // 24h window is sent (both bounds explicit, no reliance on server default).
+      stubParse(command, {'tenant-id': 'zzxy_prd', from: '7d'}, {category: 'overall'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -284,13 +286,16 @@ describe('metrics get', () => {
           ? (fetchStub.firstCall.args[0] as string)
           : (fetchStub.firstCall.args[0] as Request).url,
       );
+      const from = Number(url.searchParams.get('from'));
+      const to = Number(url.searchParams.get('to'));
       expect(url.searchParams.has('from')).to.equal(true);
-      expect(url.searchParams.has('to')).to.equal(false); // NOT invented
-      expect(result.query.to).to.equal(undefined);
-      expect(result.query.toEpochSeconds).to.equal(undefined);
+      expect(url.searchParams.has('to')).to.equal(true); // explicit, derived from the 24h default
+      expect(to - from).to.equal(24 * 60 * 60);
+      expect(result.query.defaultedWindow).to.equal(true);
+      expect(result.query.toEpochSeconds).to.equal(to);
     });
 
-    it('sends no time bounds when none are given (API default window)', async () => {
+    it('defaults to the last 24h when no bounds are given', async () => {
       const command: any = new MetricsGet(['overall'], config);
       stubParse(command, {'tenant-id': 'zzxy_prd'}, {category: 'overall'});
       await command.init();
@@ -313,10 +318,12 @@ describe('metrics get', () => {
           ? (fetchStub.firstCall.args[0] as string)
           : (fetchStub.firstCall.args[0] as Request).url,
       );
-      expect(url.searchParams.has('from')).to.equal(false);
-      expect(url.searchParams.has('to')).to.equal(false);
-      expect(result.query.from).to.equal(undefined);
-      expect(result.query.to).to.equal(undefined);
+      const from = Number(url.searchParams.get('from'));
+      const to = Number(url.searchParams.get('to'));
+      expect(url.searchParams.has('from')).to.equal(true);
+      expect(url.searchParams.has('to')).to.equal(true);
+      expect(to - from).to.equal(24 * 60 * 60);
+      expect(result.query.defaultedWindow).to.equal(true);
     });
 
     it('errors on over-specification (--from + --to + --window) before calling the API', async () => {
