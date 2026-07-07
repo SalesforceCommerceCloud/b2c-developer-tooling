@@ -29,6 +29,7 @@ export type FeatureCategory =
   | 'cap'
   | 'logs'
   | 'instance'
+  | 'cipAnalytics'
   | 'scriptTypes';
 
 /** VS Code 1.86+ telemetry-level signal. Falls back to true on older hosts. */
@@ -38,6 +39,15 @@ function isVsCodeTelemetryEnabled(): boolean {
 
 function isExtensionTelemetryEnabled(): boolean {
   return vscode.workspace.getConfiguration().get<boolean>(SETTING_ENABLED, true);
+}
+
+function resolveBuildConstant(reader: () => string): string | undefined {
+  try {
+    const value = reader();
+    return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -62,7 +72,9 @@ export function initTelemetry(context: vscode.ExtensionContext): void {
   if (!isVsCodeTelemetryEnabled()) return;
   if (!isExtensionTelemetryEnabled()) return;
 
-  const connectionString = Telemetry.getConnectionString(__TELEMETRY_CONNECTION_STRING__ || undefined);
+  const configuredConnectionString = resolveBuildConstant(() => __TELEMETRY_CONNECTION_STRING__);
+  const extensionVersion = resolveBuildConstant(() => __EXT_VERSION__) ?? 'dev';
+  const connectionString = Telemetry.getConnectionString(configuredConnectionString);
   if (!connectionString) return;
 
   // Run start() in the background. Events sent before start() resolves are
@@ -70,7 +82,7 @@ export function initTelemetry(context: vscode.ExtensionContext): void {
   const client = createTelemetry({
     project: TELEMETRY_PROJECT,
     appInsightsKey: connectionString,
-    version: __EXT_VERSION__,
+    version: extensionVersion,
     dataDir: context.globalStorageUri.fsPath,
     // Long-lived host: deliver buffered events every 30s so a non-clean
     // shutdown (window force-close, host crash) loses at most one interval.

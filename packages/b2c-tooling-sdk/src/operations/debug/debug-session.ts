@@ -75,6 +75,18 @@ export class DebugSessionManager {
       this.pollTimer = setInterval(() => void this.pollThreads(), pollInterval);
 
       this.logger.debug('Script debugger connected');
+
+      // Surface the session cookie at info level so users driving the debugger
+      // from the CLI or VS Code (B2C DX output channel) can route a triggering
+      // request to the same app server — required to hit breakpoints on
+      // multi-app-server PIG environments. See getSessionCookie().
+      const dwsid = this.client.getCookie('dwsid');
+      if (dwsid) {
+        this.logger.info(
+          `Debug session cookie: dwsid=${dwsid} — send your triggering request (storefront page, SCAPI/OCAPI call) with this cookie to hit breakpoints on multi-app-server instances.`,
+        );
+      }
+
       this.callbacks.onConnected?.(this.config.hostname);
     } catch (err) {
       // Ensure timers are cleared if anything (incl. onConnected callback) throws
@@ -152,6 +164,17 @@ export class DebugSessionManager {
    */
   getKnownThreads(): SdapiScriptThread[] {
     return [...this.knownThreads.values()];
+  }
+
+  /**
+   * Returns the session cookie (`dwsid`) established with the debugger, or
+   * `undefined` if not yet connected. This cookie pins requests to the app
+   * server holding the debugger session; callers can use it to route an
+   * external request (e.g. a storefront browser) to the same app server so
+   * breakpoints are hit.
+   */
+  getSessionCookie(name = 'dwsid'): string | undefined {
+    return this.client.getCookie(name);
   }
 
   // -----------------------------------------------------------------------

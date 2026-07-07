@@ -7,7 +7,7 @@ import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import {MiddlewareRegistry, WebDavClient} from '@salesforce/b2c-tooling-sdk/clients';
-import {HTTPError} from '@salesforce/b2c-tooling-sdk/errors';
+import {HTTPError, NetworkError} from '@salesforce/b2c-tooling-sdk/errors';
 import {MockAuthStrategy} from '../helpers/mock-auth.js';
 
 const TEST_HOST = 'test.demandware.net';
@@ -530,6 +530,85 @@ describe('clients/webdav', () => {
         const result = await client.exists('Cartridges/nonexistent');
 
         expect(result).to.equal(false);
+      });
+    });
+
+    describe('network error wrapping', () => {
+      it('wraps network error on fetch failure with clear message including operation and host', async () => {
+        server.use(
+          http.all(`${BASE_URL}/*`, () => {
+            // HttpResponse.error() makes fetch reject with TypeError "fetch failed"
+            return HttpResponse.error();
+          }),
+        );
+
+        try {
+          await client.put('Cartridges/v1/test.zip', Buffer.from('content'), 'application/zip');
+          expect.fail('Should have thrown');
+        } catch (error) {
+          expect(error).to.be.instanceOf(NetworkError);
+          const netErr = error as NetworkError;
+          expect(netErr.operation).to.match(/^WebDAV /);
+          expect(netErr.host).to.equal(TEST_HOST);
+          expect(netErr.message).to.include(TEST_HOST);
+          expect(netErr.message).to.not.equal('fetch failed');
+          // Should have a hint
+          expect(netErr.message.length).to.be.greaterThan(50);
+        }
+      });
+
+      it('wraps network error on GET failure', async () => {
+        server.use(
+          http.all(`${BASE_URL}/*`, () => {
+            return HttpResponse.error();
+          }),
+        );
+
+        try {
+          await client.get('Cartridges/v1/test.zip');
+          expect.fail('Should have thrown');
+        } catch (error) {
+          expect(error).to.be.instanceOf(NetworkError);
+          const netErr = error as NetworkError;
+          expect(netErr.operation).to.match(/^WebDAV /);
+          expect(netErr.host).to.equal(TEST_HOST);
+        }
+      });
+
+      it('wraps network error on DELETE failure', async () => {
+        server.use(
+          http.all(`${BASE_URL}/*`, () => {
+            return HttpResponse.error();
+          }),
+        );
+
+        try {
+          await client.delete('Cartridges/v1/test.zip');
+          expect.fail('Should have thrown');
+        } catch (error) {
+          expect(error).to.be.instanceOf(NetworkError);
+          const netErr = error as NetworkError;
+          expect(netErr.operation).to.match(/^WebDAV /);
+          expect(netErr.host).to.equal(TEST_HOST);
+        }
+      });
+
+      it('wraps network error on PROPFIND failure', async () => {
+        server.use(
+          http.all(`${BASE_URL}/*`, () => {
+            return HttpResponse.error();
+          }),
+        );
+
+        try {
+          await client.propfind('Cartridges');
+          expect.fail('Should have thrown');
+        } catch (error) {
+          expect(error).to.be.instanceOf(NetworkError);
+          const netErr = error as NetworkError;
+          expect(netErr.operation).to.match(/^WebDAV /);
+          expect(netErr.host).to.equal(TEST_HOST);
+        }
       });
     });
 

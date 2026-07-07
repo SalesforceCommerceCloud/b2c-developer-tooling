@@ -41,12 +41,19 @@ Admin APIs use Account Manager OAuth with client credentials flow.
 # Get admin token (uses clientId/clientSecret from dw.json)
 b2c auth token
 
-# Get token with specific scopes
-b2c auth token --auth-scope sfcc.orders --auth-scope sfcc.products
+# Get token with specific scopes — b2c auth token accepts multiple scopes
+# (repeat --auth-scope or pass a comma-separated list). It does NOT auto-inject
+# the tenant scope, so include SALESFORCE_COMMERCE_API:<tenant_id> alongside the API scopes.
+b2c auth token \
+  --auth-scope "SALESFORCE_COMMERCE_API:zzte_053" \
+  --auth-scope sfcc.orders \
+  --auth-scope sfcc.products
 
 # Get token as JSON (includes expiration)
 b2c auth token --json
 ```
+
+> **Tenant scope is required.** For any SCAPI Admin call (system APIs *and* custom Admin APIs), the token must carry both the tenant scope `SALESFORCE_COMMERCE_API:<tenant_id>` and the API-specific scopes — see [Dual Scope Requirement](#dual-scope-requirement) below. The SCAPI subcommands (`b2c scapi custom status`, `b2c scapi schemas list`) add the tenant scope automatically; `b2c auth token` and raw curl do not.
 
 See [b2c-config skill](../../b2c-cli/skills/b2c-config/SKILL.md) for configuration details.
 

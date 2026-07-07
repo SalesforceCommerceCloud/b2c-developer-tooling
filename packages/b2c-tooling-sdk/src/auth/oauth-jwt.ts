@@ -15,6 +15,7 @@ import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import type {AuthStrategy, FetchInit, AccessTokenResponse} from './types.js';
 import {dispatchFetch} from './dispatch-fetch.js';
+import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {
   getOAuthCacheKey,
@@ -351,7 +352,13 @@ export class JwtOAuthStrategy implements AuthStrategy {
     const middleware = globalAuthMiddlewareRegistry.getMiddleware();
     request = await applyAuthRequestMiddleware(request, middleware);
 
-    let response = await fetch(request);
+    let response: Response;
+    try {
+      response = await fetch(request);
+    } catch (err) {
+      const host = new URL(tokenUrl).host;
+      throw wrapNetworkError(err, {operation: 'OAuth JWT token request', host});
+    }
 
     // Apply auth response middleware
     response = await applyAuthResponseMiddleware(request, response, middleware);

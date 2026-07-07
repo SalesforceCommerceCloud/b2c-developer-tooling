@@ -1,0 +1,426 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-07-01T00:01:00.492Z",
+  "entries": [
+    {
+      "id": "CatalogDeltaExport",
+      "title": "Job Step: CatalogDeltaExport",
+      "filePath": "CatalogDeltaExport.md",
+      "preview": "Creates Delta Export for Catalogs. Support must be contacted to enable delta exports."
+    },
+    {
+      "id": "CreateSitemap",
+      "title": "Job Step: CreateSitemap",
+      "filePath": "CreateSitemap.md",
+      "preview": "Creates Sitemap."
+    },
+    {
+      "id": "CustomerListsDeltaExport",
+      "title": "Job Step: CustomerListsDeltaExport",
+      "filePath": "CustomerListsDeltaExport.md",
+      "preview": "Creates Delta Export for Customer Lists. Support must be contacted to enable delta exports."
+    },
+    {
+      "id": "DownloadActiveDataFromStorage",
+      "title": "Job Step: DownloadActiveDataFromStorage",
+      "filePath": "DownloadActiveDataFromStorage.md",
+      "preview": "Download active data from storage system to current site. This step downloads active data to the new site from storage system during a site move if active data is required to migrate to the new site...."
+    },
+    {
+      "id": "ExecuteCategorizationRules",
+      "title": "Job Step: ExecuteCategorizationRules",
+      "filePath": "ExecuteCategorizationRules.md",
+      "preview": "Executes the Categorization based on the Categorization Rules and Conditions defined on a CatalogCategory."
+    },
+    {
+      "id": "ExecuteDataReplication",
+      "title": "Job Step: ExecuteDataReplication",
+      "filePath": "ExecuteDataReplication.md",
+      "preview": "Replicates data to a target system. The ReplicationConfiguration parameter requires a string in JSON format that describes the replication process and its tasks that will be executed. The parameter..."
+    },
+    {
+      "id": "ExecutePipeline",
+      "title": "Job Step: ExecutePipeline",
+      "filePath": "ExecutePipeline.md",
+      "preview": "Executes a pipeline. The name and start node of the pipeline has to be configured at parameter 'ExecutePipeline.Pipeline'. This step has been provided to ease the transition from pipeline based jobs..."
+    },
+    {
+      "id": "ExecutePreconfiguredCodeReplicationProcess",
+      "title": "Job Step: ExecutePreconfiguredCodeReplicationProcess",
+      "filePath": "ExecutePreconfiguredCodeReplicationProcess.md",
+      "preview": "Executes the preconfigured code replication process with the ID defined at parameter 'ReplicationProcessID'. The code replication process has to be created / configured using the BM UI for code..."
+    },
+    {
+      "id": "ExecutePreconfiguredDataReplicationProcess",
+      "title": "Job Step: ExecutePreconfiguredDataReplicationProcess",
+      "filePath": "ExecutePreconfiguredDataReplicationProcess.md",
+      "preview": "Executes the preconfigured data replication process with the ID defined at parameter 'ReplicationProcessID'. The data replication process has to be created / configured using the BM UI for data..."
+    },
+    {
+      "id": "ExecuteScriptModule",
+      "title": "Job Step: ExecuteScriptModule",
+      "filePath": "ExecuteScriptModule.md",
+      "preview": "Executes a function exported by a script module. The module ID has to be configured at parameter 'ExecuteScriptModule.Module'. Deprecated: This job step is deprecated. We recommend that you use the..."
+    },
+    {
+      "id": "ExportABTests",
+      "title": "Job Step: ExportABTests",
+      "filePath": "ExportABTests.md",
+      "preview": "Exports A/B tests."
+    },
+    {
+      "id": "ExportAssignments",
+      "title": "Job Step: ExportAssignments",
+      "filePath": "ExportAssignments.md",
+      "preview": "Exports all assignments in the system."
+    },
+    {
+      "id": "ExportCatalog",
+      "title": "Job Step: ExportCatalog",
+      "filePath": "ExportCatalog.md",
+      "preview": "Exports catalog data."
+    },
+    {
+      "id": "ExportContent",
+      "title": "Job Step: ExportContent",
+      "filePath": "ExportContent.md",
+      "preview": "Exports the folders in the specified content Library."
+    },
+    {
+      "id": "ExportContentSlots",
+      "title": "Job Step: ExportContentSlots",
+      "filePath": "ExportContentSlots.md",
+      "preview": "Exports all content slot data."
+    },
+    {
+      "id": "ExportCouponCodes",
+      "title": "Job Step: ExportCouponCodes",
+      "filePath": "ExportCouponCodes.md",
+      "preview": "Exports the codes of a specified coupon."
+    },
+    {
+      "id": "ExportCoupons",
+      "title": "Job Step: ExportCoupons",
+      "filePath": "ExportCoupons.md",
+      "preview": "Exports coupons."
+    },
+    {
+      "id": "ExportCustomerGroups",
+      "title": "Job Step: ExportCustomerGroups",
+      "filePath": "ExportCustomerGroups.md",
+      "preview": "Exports all customer groups."
+    },
+    {
+      "id": "ExportCustomerList",
+      "title": "Job Step: ExportCustomerList",
+      "filePath": "ExportCustomerList.md",
+      "preview": "Exports a customer list, it's preferences as well as the customers assigned to the customer list."
+    },
+    {
+      "id": "ExportCustomers",
+      "title": "Job Step: ExportCustomers",
+      "filePath": "ExportCustomers.md",
+      "preview": "Exports the customer profiles from the default customer list of the given site."
+    },
+    {
+      "id": "ExportCustomObjects",
+      "title": "Job Step: ExportCustomObjects",
+      "filePath": "ExportCustomObjects.md",
+      "preview": "Exports custom objects of a specified type and scope. The scope of the job flow (Organization or Sites) must match the scope of the custom object type."
+    },
+    {
+      "id": "ExportFacebookFeed",
+      "title": "Job Step: ExportFacebookFeed",
+      "filePath": "ExportFacebookFeed.md",
+      "preview": "Exports Catalog Feed for Facebook."
+    },
+    {
+      "id": "ExportGiftCertificates",
+      "title": "Job Step: ExportGiftCertificates",
+      "filePath": "ExportGiftCertificates.md",
+      "preview": "Exports Gift Certificates."
+    },
+    {
+      "id": "ExportInventoryLists",
+      "title": "Job Step: ExportInventoryLists",
+      "filePath": "ExportInventoryLists.md",
+      "preview": "Exports inventory lists."
+    },
+    {
+      "id": "ExportMetaData",
+      "title": "Job Step: ExportMetaData",
+      "filePath": "ExportMetaData.md",
+      "preview": "Export System Object Type extensions and Custom Object Type definitions."
+    },
+    {
+      "id": "ExportOrders",
+      "title": "Job Step: ExportOrders",
+      "filePath": "ExportOrders.md",
+      "preview": "Exports all orders matching the selected criteria using Search Service, with a maximum of 1000 orders per run. After an order has been exported successfully, its export status is EXPORTED. If an..."
+    },
+    {
+      "id": "ExportPageLocalization",
+      "title": "Job Step: ExportPageLocalization",
+      "filePath": "ExportPageLocalization.md",
+      "preview": "Export page content for localization purposes"
+    },
+    {
+      "id": "ExportPriceBook",
+      "title": "Job Step: ExportPriceBook",
+      "filePath": "ExportPriceBook.md",
+      "preview": "Exports price data."
+    },
+    {
+      "id": "ExportProductLists",
+      "title": "Job Step: ExportProductLists",
+      "filePath": "ExportProductLists.md",
+      "preview": "Exports product lists of a site. If all the options are selected, all product lists that were created by anonymous or registered customers, either empty or non-empty, that are either new (has never..."
+    },
+    {
+      "id": "ExportPromotions",
+      "title": "Job Step: ExportPromotions",
+      "filePath": "ExportPromotions.md",
+      "preview": "Exports promotions."
+    },
+    {
+      "id": "ExportShippingMethods",
+      "title": "Job Step: ExportShippingMethods",
+      "filePath": "ExportShippingMethods.md",
+      "preview": "Exports shipping methods."
+    },
+    {
+      "id": "ExportSourceCodeGroups",
+      "title": "Job Step: ExportSourceCodeGroups",
+      "filePath": "ExportSourceCodeGroups.md",
+      "preview": "Exports source code groups."
+    },
+    {
+      "id": "ExportStores",
+      "title": "Job Step: ExportStores",
+      "filePath": "ExportStores.md",
+      "preview": "Exports stores."
+    },
+    {
+      "id": "ExportTaxTable",
+      "title": "Job Step: ExportTaxTable",
+      "filePath": "ExportTaxTable.md",
+      "preview": "Exports tax data."
+    },
+    {
+      "id": "ImportABTests",
+      "title": "Job Step: ImportABTests",
+      "filePath": "ImportABTests.md",
+      "preview": "Imports A/B tests."
+    },
+    {
+      "id": "ImportActiveData",
+      "title": "Job Step: ImportActiveData",
+      "filePath": "ImportActiveData.md",
+      "preview": "Imports active data from the provided CSV files."
+    },
+    {
+      "id": "ImportAssignments",
+      "title": "Job Step: ImportAssignments",
+      "filePath": "ImportAssignments.md",
+      "preview": "Imports assignments"
+    },
+    {
+      "id": "ImportCatalog",
+      "title": "Job Step: ImportCatalog",
+      "filePath": "ImportCatalog.md",
+      "preview": "Imports catalog data."
+    },
+    {
+      "id": "ImportContent",
+      "title": "Job Step: ImportContent",
+      "filePath": "ImportContent.md",
+      "preview": "Imports content. If no library-id is specified in the import file, the data is imported into the private library of the current site. If a library-id is specified in the import file, the data is..."
+    },
+    {
+      "id": "ImportContentSlots",
+      "title": "Job Step: ImportContentSlots",
+      "filePath": "ImportContentSlots.md",
+      "preview": "Imports content slot configurations in the specified mode."
+    },
+    {
+      "id": "ImportCouponCodeRedemptions",
+      "title": "Job Step: ImportCouponCodeRedemptions",
+      "filePath": "ImportCouponCodeRedemptions.md",
+      "preview": "Imports the coupon code redemptions based on the couponredemption.xsd. Note: Coupon redemptions are evaluated during checkout. A large number of coupon redemptions negatively impacts order creation..."
+    },
+    {
+      "id": "ImportCoupons",
+      "title": "Job Step: ImportCoupons",
+      "filePath": "ImportCoupons.md",
+      "preview": "Imports coupons in the specified mode."
+    },
+    {
+      "id": "ImportCustomerGroups",
+      "title": "Job Step: ImportCustomerGroups",
+      "filePath": "ImportCustomerGroups.md",
+      "preview": "Imports customer groups in the specified mode."
+    },
+    {
+      "id": "ImportCustomerList",
+      "title": "Job Step: ImportCustomerList",
+      "filePath": "ImportCustomerList.md",
+      "preview": "Deprecated. Imports customer list data. Use ImportCustomerLists instead."
+    },
+    {
+      "id": "ImportCustomerLists",
+      "title": "Job Step: ImportCustomerLists",
+      "filePath": "ImportCustomerLists.md",
+      "preview": "Imports customer lists."
+    },
+    {
+      "id": "ImportCustomers",
+      "title": "Job Step: ImportCustomers",
+      "filePath": "ImportCustomers.md",
+      "preview": "Imports Customers based on customer.xsd"
+    },
+    {
+      "id": "ImportCustomObjects",
+      "title": "Job Step: ImportCustomObjects",
+      "filePath": "ImportCustomObjects.md",
+      "preview": "Imports Custom Objects."
+    },
+    {
+      "id": "ImportGiftCertificates",
+      "title": "Job Step: ImportGiftCertificates",
+      "filePath": "ImportGiftCertificates.md",
+      "preview": "Import the Gift Certificates contained in ImportFile in the specified mode."
+    },
+    {
+      "id": "ImportInventoryLists",
+      "title": "Job Step: ImportInventoryLists",
+      "filePath": "ImportInventoryLists.md",
+      "preview": "Imports inventory data."
+    },
+    {
+      "id": "ImportKeyValueMapping",
+      "title": "Job Step: ImportKeyValueMapping",
+      "filePath": "ImportKeyValueMapping.md",
+      "preview": "Import or delete a key/value mapping in the Generic Mapping high-performance data store. Key/value mappings are exposed through Script API class dw.util.MappingMgr. See Generic Mapping"
+    },
+    {
+      "id": "ImportPageLocalization",
+      "title": "Job Step: ImportPageLocalization",
+      "filePath": "ImportPageLocalization.md",
+      "preview": "Import translated page content for localization purposes"
+    },
+    {
+      "id": "ImportPriceBook",
+      "title": "Job Step: ImportPriceBook",
+      "filePath": "ImportPriceBook.md",
+      "preview": "Imports price data."
+    },
+    {
+      "id": "ImportProductLists",
+      "title": "Job Step: ImportProductLists",
+      "filePath": "ImportProductLists.md",
+      "preview": "Imports product lists."
+    },
+    {
+      "id": "ImportPromotions",
+      "title": "Job Step: ImportPromotions",
+      "filePath": "ImportPromotions.md",
+      "preview": "Imports promotions in the specified mode."
+    },
+    {
+      "id": "ImportShippingMethods",
+      "title": "Job Step: ImportShippingMethods",
+      "filePath": "ImportShippingMethods.md",
+      "preview": "Imports shipping methods in the specified mode."
+    },
+    {
+      "id": "ImportSiteArchive",
+      "title": "Job Step: ImportSiteArchive",
+      "filePath": "ImportSiteArchive.md",
+      "preview": "Imports a site import archive file into the current instance."
+    },
+    {
+      "id": "ImportSourceCodeGroups",
+      "title": "Job Step: ImportSourceCodeGroups",
+      "filePath": "ImportSourceCodeGroups.md",
+      "preview": "Imports source code groups in the specified mode."
+    },
+    {
+      "id": "ImportStores",
+      "title": "Job Step: ImportStores",
+      "filePath": "ImportStores.md",
+      "preview": "Imports Stores based on store.xsd"
+    },
+    {
+      "id": "ImportTaxTable",
+      "title": "Job Step: ImportTaxTable",
+      "filePath": "ImportTaxTable.md",
+      "preview": "Imports Tax Classes, Tax Jurisdictions and Tax Rates from the given ImportFile in the specified mode."
+    },
+    {
+      "id": "IncludeStepsFromJob",
+      "title": "Job Step: IncludeStepsFromJob",
+      "filePath": "IncludeStepsFromJob.md",
+      "preview": "Includes steps from another job. This step makes it easy to create a set of standard steps that you can execute in multiple jobs. It is recommended to use the IncludeStepsFromJob step in single..."
+    },
+    {
+      "id": "InvalidateCache",
+      "title": "Job Step: InvalidateCache",
+      "filePath": "InvalidateCache.md",
+      "preview": "Invalidate Page and Static Content Cache Invalidates the page cache and/or static content cache (images, styles, etc.) of the sites specified for the job flow. Portions of the page cache may be..."
+    },
+    {
+      "id": "job-steps",
+      "title": "Standard Job Step Catalog",
+      "filePath": "job-steps.md",
+      "preview": "Catalog of built-in standard/system job step type IDs for Business Manager job flows."
+    },
+    {
+      "id": "LibraryDeltaExport",
+      "title": "Job Step: LibraryDeltaExport",
+      "filePath": "LibraryDeltaExport.md",
+      "preview": "Creates Delta Export for Libraries. Support must be contacted to enable delta exports."
+    },
+    {
+      "id": "SearchReindex",
+      "title": "Job Step: SearchReindex",
+      "filePath": "SearchReindex.md",
+      "preview": "Rebuilds or updates search indexes. The number of search indexes that can be rebuilt or updated in parallel is globally limited. If the limit is exceeded, any rebuild or update action will be queued..."
+    },
+    {
+      "id": "SiteExport",
+      "title": "Job Step: SiteExport",
+      "filePath": "SiteExport.md",
+      "preview": "Exports site data. The DataUnits parameter defines which objects are included in the export. Its function is similar to the Data Units to Export field on the Business Manager Site Import & Export..."
+    },
+    {
+      "id": "UndoPreconfiguredCodeReplicationProcess",
+      "title": "Job Step: UndoPreconfiguredCodeReplicationProcess",
+      "filePath": "UndoPreconfiguredCodeReplicationProcess.md",
+      "preview": "Undo the preconfigured code replication process with the ID defined at parameter 'ReplicationProcessID'. The given code replication process must have been executed using a step of type..."
+    },
+    {
+      "id": "UndoPreconfiguredDataReplicationProcess",
+      "title": "Job Step: UndoPreconfiguredDataReplicationProcess",
+      "filePath": "UndoPreconfiguredDataReplicationProcess.md",
+      "preview": "Undo the preconfigured data replication process with the ID defined at parameter 'ReplicationProcessID'. The given data replication process must have been executed using a step of type..."
+    },
+    {
+      "id": "UpdateStorefrontURLs",
+      "title": "Job Step: UpdateStorefrontURLs",
+      "filePath": "UpdateStorefrontURLs.md",
+      "preview": "Updates the Storefront URLs for objects like categories, products, folders and content assets. This will update the URLs for all sites assigned under 'Scope'. This job step will not work in..."
+    },
+    {
+      "id": "UploadActiveDataBackupToStorage",
+      "title": "Job Step: UploadActiveDataBackupToStorage",
+      "filePath": "UploadActiveDataBackupToStorage.md",
+      "preview": "Upload current site's active data to storage system (as a backup). This step uploads active data as a backup to storage system during a site move if active data is required to migrate to the new site."
+    },
+    {
+      "id": "UploadActiveDataToStorage",
+      "title": "Job Step: UploadActiveDataToStorage",
+      "filePath": "UploadActiveDataToStorage.md",
+      "preview": "Upload current site's active data to storage system. This step uploads active data from an old site to storage system during a site move if active data is required to migrate to the new site. Before..."
+    }
+  ]
+}

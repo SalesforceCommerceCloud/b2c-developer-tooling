@@ -11,6 +11,7 @@
  * @module auth/stateful-oauth-strategy
  */
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
+import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {decodeJWT} from './oauth.js';
 import {decodeJwtTokenInfo} from './jwt-utils.js';
@@ -56,7 +57,13 @@ export class StatefulOAuthStrategy implements AuthStrategy {
     headers.set('Authorization', `Bearer ${token}`);
     headers.set('x-dw-client-id', this._session.clientId);
 
-    let res = await fetch(url, {...init, headers} as RequestInit);
+    let res: Response;
+    try {
+      res = await fetch(url, {...init, headers} as RequestInit);
+    } catch (err) {
+      const host = new URL(url).host;
+      throw wrapNetworkError(err, {operation: 'Stateful OAuth request', host});
+    }
 
     if (res.status !== 401) {
       this._hasHadSuccess = true;
@@ -68,7 +75,12 @@ export class StatefulOAuthStrategy implements AuthStrategy {
       if (refreshed) {
         const newToken = await this.getAccessToken();
         headers.set('Authorization', `Bearer ${newToken}`);
-        res = await fetch(url, {...init, headers} as RequestInit);
+        try {
+          res = await fetch(url, {...init, headers} as RequestInit);
+        } catch (err) {
+          const host = new URL(url).host;
+          throw wrapNetworkError(err, {operation: 'Stateful OAuth retry request', host});
+        }
       }
     }
 
@@ -145,9 +157,18 @@ export class StatefulOAuthStrategy implements AuthStrategy {
     let response: Response;
     try {
       response = await fetch(request);
+    } catch (err) {
+      const host = new URL(url).host;
+      const wrappedErr = wrapNetworkError(err, {operation: 'OAuth token refresh', host});
+      logger.debug({err: wrappedErr}, '[StatefulAuth] Refresh request failed');
+      clearStoredSession();
+      return false;
+    }
+
+    try {
       response = await applyAuthResponseMiddleware(request, response, middleware);
     } catch (err) {
-      logger.debug({err}, '[StatefulAuth] Refresh request failed');
+      logger.debug({err}, '[StatefulAuth] Refresh response middleware failed');
       clearStoredSession();
       return false;
     }

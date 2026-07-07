@@ -18,6 +18,7 @@ interface ListSessionsOutput {
     client_id: string;
     halted_threads: number[];
     breakpoints: MappedBreakpoint[];
+    session_cookie: null | {name: string; value: string};
     created_at: string;
     last_activity_at: string;
   }>;
@@ -31,26 +32,30 @@ export function createDebugListSessionsTool(
     {
       name: 'debug_list_sessions',
       description:
-        'List active script debugger sessions with their breakpoints and any halted threads. ' +
-        'Use this to discover orphaned sessions, check whether breakpoints are armed, and poll for halted threads in the non-blocking debug workflow.',
+        'List active script debugger sessions with their breakpoints, any halted threads, and the session_cookie (e.g. dwsid). ' +
+        'Use this to discover orphaned sessions, check whether breakpoints are armed, poll for halted threads in the non-blocking debug workflow, and retrieve the session cookie to pin a triggering request (Cookie: <name>=<value>) to the app server holding the session.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {},
       async execute(_args, context) {
         const registry = getRegistry(context);
         const entries = registry.listSessions();
         return {
-          sessions: entries.map((entry) => ({
-            session_id: entry.sessionId,
-            hostname: entry.hostname,
-            client_id: entry.clientId,
-            halted_threads: entry.manager
-              .getKnownThreads()
-              .filter((t) => t.status === 'halted')
-              .map((t) => t.id),
-            breakpoints: entry.breakpoints.map((bp) => projectBreakpoint(bp, entry.sourceMapper)),
-            created_at: new Date(entry.createdAt).toISOString(),
-            last_activity_at: new Date(entry.lastActivityAt).toISOString(),
-          })),
+          sessions: entries.map((entry) => {
+            const dwsid = entry.manager.getSessionCookie();
+            return {
+              session_id: entry.sessionId,
+              hostname: entry.hostname,
+              client_id: entry.clientId,
+              halted_threads: entry.manager
+                .getKnownThreads()
+                .filter((t) => t.status === 'halted')
+                .map((t) => t.id),
+              breakpoints: entry.breakpoints.map((bp) => projectBreakpoint(bp, entry.sourceMapper)),
+              session_cookie: dwsid ? {name: 'dwsid', value: dwsid} : null,
+              created_at: new Date(entry.createdAt).toISOString(),
+              last_activity_at: new Date(entry.lastActivityAt).toISOString(),
+            };
+          }),
         };
       },
       formatOutput: (output) => jsonResult(output),

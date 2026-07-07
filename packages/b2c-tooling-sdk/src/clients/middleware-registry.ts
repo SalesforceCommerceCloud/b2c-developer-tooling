@@ -55,6 +55,7 @@ export type HttpClientType =
   | 'scapi-schemas'
   | 'cdn-zones'
   | 'granular-replications'
+  | 'preferences'
   | 'webdav'
   | 'am-users-api'
   | 'am-roles-api'

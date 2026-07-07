@@ -7,6 +7,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import JSZip from 'jszip';
 import {B2CInstance} from '../../instance/index.js';
+import {wrapNetworkError} from '../../errors/network-error.js';
 import {getLogger} from '../../logging/logger.js';
 import type {CommerceFeatureState} from './list.js';
 
@@ -127,7 +128,9 @@ export async function pullCommerceApps(
         }
         zipData = Buffer.from(await response.arrayBuffer());
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
+        const host = new URL(githubUrl).host;
+        const wrappedErr = wrapNetworkError(err, {operation: 'Commerce App GitHub download', host});
+        const msg = wrappedErr instanceof Error ? wrappedErr.message : String(wrappedErr);
         failed.push({featureName, error: `GitHub download failed: ${msg}`});
         continue;
       }

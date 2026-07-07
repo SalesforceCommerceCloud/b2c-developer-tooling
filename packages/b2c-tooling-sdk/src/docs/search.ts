@@ -7,24 +7,57 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import Fuse from 'fuse.js';
-import {SCRIPT_API_DATA_DIR, type DocEntry, type SearchIndex, type SearchResult} from './types.js';
+import {JOB_STEPS_DATA_DIR, SCRIPT_API_DATA_DIR, type DocEntry, type SearchIndex, type SearchResult} from './types.js';
 
 // Singleton cache for loaded index and Fuse instance
 let cachedIndex: SearchIndex | null = null;
 let cachedFuse: Fuse<DocEntry> | null = null;
 
+// Maps each entry id to the absolute data directory that holds its file. This
+// lets a single combined index span multiple bundled corpora (Script API docs
+// and the standard job-step reference) without changing the public DocEntry shape.
+const entryDataDir = new Map<string, string>();
+
 /**
- * Loads the pre-built search index from the bundled data directory.
+ * Loads one bundled index.json from the given directory, returning its entries
+ * and recording the directory for each entry id. Missing indexes are ignored.
+ */
+function loadCorpus(dataDir: string): DocEntry[] {
+  const indexPath = path.join(dataDir, 'index.json');
+  if (!fs.existsSync(indexPath)) {
+    return [];
+  }
+  const parsed = JSON.parse(fs.readFileSync(indexPath, 'utf-8')) as SearchIndex;
+  for (const entry of parsed.entries) {
+    // First corpus wins on id collision (Script API is loaded first).
+    if (!entryDataDir.has(entry.id)) {
+      entryDataDir.set(entry.id, dataDir);
+    }
+  }
+  return parsed.entries;
+}
+
+/**
+ * Loads the pre-built search index from the bundled data directories.
  *
- * @returns The search index with all documentation entries
- * @throws Error if the index file cannot be read
+ * Combines the Script API documentation corpus with the standard job-step
+ * reference so both are searchable through the same functions.
+ *
+ * @returns The combined search index with all documentation entries
+ * @throws Error if the Script API index file cannot be read
  */
 export function loadSearchIndex(): SearchIndex {
   if (cachedIndex) return cachedIndex;
 
-  const indexPath = path.join(SCRIPT_API_DATA_DIR, 'index.json');
-  const indexContent = fs.readFileSync(indexPath, 'utf-8');
-  cachedIndex = JSON.parse(indexContent) as SearchIndex;
+  entryDataDir.clear();
+  const scriptApiEntries = loadCorpus(SCRIPT_API_DATA_DIR);
+  const jobStepEntries = loadCorpus(JOB_STEPS_DATA_DIR);
+
+  cachedIndex = {
+    version: '1.0.0',
+    generatedAt: new Date(0).toISOString(),
+    entries: [...scriptApiEntries, ...jobStepEntries],
+  };
   return cachedIndex;
 }
 
@@ -94,7 +127,8 @@ export function readDoc(id: string): string {
     throw new Error(`Documentation not found: ${id}`);
   }
 
-  const filePath = path.join(SCRIPT_API_DATA_DIR, entry.filePath);
+  const dataDir = entryDataDir.get(entry.id) ?? SCRIPT_API_DATA_DIR;
+  const filePath = path.join(dataDir, entry.filePath);
   return fs.readFileSync(filePath, 'utf-8');
 }
 

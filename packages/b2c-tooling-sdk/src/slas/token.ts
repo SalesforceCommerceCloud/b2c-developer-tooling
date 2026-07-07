@@ -12,6 +12,7 @@
  *
  * @module slas/token
  */
+import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {generateCodeChallenge, generateCodeVerifier} from './pkce.js';
 import type {SlasTokenConfig, SlasTokenResponse, SlasRegisteredLoginConfig} from './types.js';
@@ -80,7 +81,13 @@ async function loggedFetch(url: string, init: RequestInit): Promise<{response: R
   logger.trace({method, url, headers: init.headers, body: init.body?.toString()}, `[SLAS REQ BODY] ${method} ${url}`);
 
   const startTime = Date.now();
-  const response = await fetch(url, init);
+  let response: Response;
+  try {
+    response = await fetch(url, init);
+  } catch (err) {
+    const host = new URL(url).host;
+    throw wrapNetworkError(err, {operation: 'SLAS token request', host});
+  }
   const duration = Date.now() - startTime;
 
   logger.debug(
@@ -206,8 +213,15 @@ async function getPrivateClientGuestToken(config: SlasTokenConfig): Promise<Slas
  * Uses the `/oauth2/login` endpoint with shopper credentials, then exchanges
  * the authorization code for an access token.
  *
- * - **Public client**: Uses PKCE for code exchange.
- * - **Private client**: Uses client credentials (Basic auth) for code exchange.
+ * The registered-customer flow is PKCE-protected for **both** public and
+ * private clients: a `code_challenge` is always presented at the
+ * `/oauth2/login` step, so the matching `code_verifier` must always be sent at
+ * the token exchange with the `authorization_code_pkce` grant.
+ *
+ * - **Public client**: PKCE token exchange (no client secret).
+ * - **Private client**: PKCE token exchange, plus HTTP Basic authentication
+ *   using the client secret. The client must NOT drop PKCE, or SLAS rejects the
+ *   exchange with `400 code_verifier is required`.
  *
  * @param config - SLAS token configuration including shopper credentials
  * @returns The token response including access_token and refresh_token
@@ -258,37 +272,16 @@ export async function getRegisteredToken(config: SlasRegisteredLoginConfig): Pro
   const {code, usid} = parseRedirectCode(location);
   logger.debug({usid}, '[SLAS] Got authorization code from login');
 
-  // Step 2: Exchange code for token
+  // Step 2: Exchange code for token.
+  //
+  // The login step always presents a `code_challenge`, so the token exchange
+  // must always send the matching `code_verifier` with the
+  // `authorization_code_pkce` grant — for both public and private clients.
+  // A private client additionally authenticates with HTTP Basic using its
+  // secret; it must NOT downgrade to the plain `authorization_code` grant or
+  // SLAS rejects the exchange with `400 code_verifier is required`.
   const tokenUrl = `${baseUrl}/oauth2/token`;
 
-  if (isPrivate) {
-    const basicAuth = Buffer.from(`${config.slasClientId}:${config.slasClientSecret}`).toString('base64');
-    const tokenBody = new URLSearchParams({
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: config.redirectUri,
-      channel_id: config.siteId,
-      usid,
-    });
-
-    const {response: tokenResponse} = await loggedFetch(tokenUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: `Basic ${basicAuth}`,
-      },
-      body: tokenBody,
-    });
-
-    await checkResponse(tokenResponse, 'token exchange (authorization_code)');
-    const data = (await tokenResponse.json()) as SlasTokenResponse;
-    const respHeaders = serializeHeaders(tokenResponse);
-    logger.trace({headers: respHeaders, body: data}, `[SLAS RESP BODY] POST ${tokenUrl}`);
-
-    return data;
-  }
-
-  // Public client — use PKCE
   const tokenBody = new URLSearchParams({
     grant_type: 'authorization_code_pkce',
     client_id: config.slasClientId,
@@ -299,9 +292,15 @@ export async function getRegisteredToken(config: SlasRegisteredLoginConfig): Pro
     usid,
   });
 
+  const tokenHeaders: Record<string, string> = {'Content-Type': 'application/x-www-form-urlencoded'};
+  if (isPrivate) {
+    const basicAuth = Buffer.from(`${config.slasClientId}:${config.slasClientSecret}`).toString('base64');
+    tokenHeaders.Authorization = `Basic ${basicAuth}`;
+  }
+
   const {response: tokenResponse} = await loggedFetch(tokenUrl, {
     method: 'POST',
-    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    headers: tokenHeaders,
     body: tokenBody,
   });
 

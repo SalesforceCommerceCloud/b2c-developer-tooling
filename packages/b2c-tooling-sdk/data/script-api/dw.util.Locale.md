@@ -35,7 +35,7 @@ This class does not have a constructor, so you cannot create it directly.
 | [getISO3Country](dw.util.Locale.md#getiso3country)() | Returns the uppercase ISO 3166 3-letter country/region code for this Locale. |
 | [getISO3Language](dw.util.Locale.md#getiso3language)() | Returns the 3-letter ISO 639 language code for this Locale. |
 | [getLanguage](dw.util.Locale.md#getlanguage)() | Returns the lowercase ISO 639 language code for this Locale. |
-| static [getLocale](dw.util.Locale.md#getlocalestring)([String](TopLevel.String.md)) | Returns a Locale instance for the given localeId, or  `null` if no such Locale could be found. |
+| static [getLocale](dw.util.Locale.md#getlocalestring---variant-1)([String](TopLevel.String.md)) | Returns a Locale instance for the given localeId, or  `null` if no such Locale could be found. |
 | [toString](dw.util.Locale.md#tostring)() | Returns the String representation of the localeID. |
 
 ### Methods inherited from class Object
@@ -239,7 +239,7 @@ This class does not have a constructor, so you cannot create it directly.
 
 ---
 
-### getLocale(String)
+### getLocale(String) - Variant 1
 - static getLocale(localeId: [String](TopLevel.String.md)): [Locale](dw.util.Locale.md)
   - : Returns a Locale instance for the given localeId, or
       `null` if no such Locale could be found.
@@ -253,6 +253,9 @@ This class does not have a constructor, so you cannot create it directly.
               `null` if no such Locale could be found.
 
 
+    **API Version:**
+:::note
+:::
 
 ---
 

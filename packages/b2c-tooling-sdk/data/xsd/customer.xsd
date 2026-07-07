@@ -76,6 +76,17 @@
             <xsd:element name="company-name" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
             <xsd:element name="job-title" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1" />
             <xsd:element name="email" type="simpleType.Email" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="email-verified-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>Indicates whether the customer's email has been verified. This field is read-only during import; the system ignores input values and determines the status as follows:
+                        * If the Email Verification Site Preference under LoginPreferences is not enabled: the value for this field will be NULL and not included in export.
+                        * If the Email Verification Site Preference under LoginPreferences is enabled:
+                            * If the incoming email value is the same as existing email and email was previously verified, the value for this field will remain unchanged as TRUE.
+                            * If the incoming email value is the same as existing email and email was not previously verified or NULL, the value for this field will remain unchanged.
+                            * If the incoming email value is not the same as existing email, the value for this field will be set to FALSE no matter the previous state.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
             <xsd:element name="phone-home" type="simpleType.PhoneNumber" minOccurs="0" maxOccurs="1" />
             <xsd:element name="phone-business" type="simpleType.PhoneNumber" minOccurs="0" maxOccurs="1" />
             <xsd:element name="phone-mobile" type="simpleType.PhoneNumber" minOccurs="0" maxOccurs="1" />

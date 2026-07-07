@@ -1,5 +1,21 @@
 # @salesforce/b2c-cli
 
+## 1.17.3
+
+### Patch Changes
+
+- Updated dependencies [[`2f79d71`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2f79d711475add9707ee2474f6dfab416dd88ba6), [`6cfb9bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6cfb9bd4b2a45ad838df86371f85e31c425caf88), [`6cfb9bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6cfb9bd4b2a45ad838df86371f85e31c425caf88)]:
+  - @salesforce/b2c-tooling-sdk@1.17.0
+
+## 1.17.2
+
+### Patch Changes
+
+- [#519](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/519) [`3958d6e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3958d6eb568a1e91061f4203c986a124c480e12f) - Network errors during `b2c code deploy` and other WebDAV operations are now classified (timeout, connection reset, DNS, TLS, etc.) with actionable error messages including the operation, host, and remediation hints — no more bare "fetch failed". The server-side unzip step now has an explicit timeout, and if the connection drops it reports a clear error noting the server may still be extracting the archive (so it is not silently re-run, which could corrupt the code version) and leaves the uploaded archive in place for verification. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`11b84b1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/11b84b19da380cd02f5049babd8cf2794d8ca019), [`3958d6e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3958d6eb568a1e91061f4203c986a124c480e12f), [`11b84b1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/11b84b19da380cd02f5049babd8cf2794d8ca019)]:
+  - @salesforce/b2c-tooling-sdk@1.16.0
+
 ## 1.17.1
 
 ### Patch Changes
