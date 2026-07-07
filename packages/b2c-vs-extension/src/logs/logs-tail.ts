@@ -3,7 +3,12 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {tailLogs, type TailLogsResult, discoverAndCreateNormalizer} from '@salesforce/b2c-tooling-sdk/operations/logs';
+import {
+  tailLogs,
+  type TailLogsResult,
+  type LogEntry,
+  discoverAndCreateNormalizer,
+} from '@salesforce/b2c-tooling-sdk/operations/logs';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import * as vscode from 'vscode';
 
@@ -31,13 +36,20 @@ const ALL_PREFIX_OPTIONS = [
  * Manages the log tailing lifecycle: Output Channel, status bar, and SDK integration.
  */
 export class LogTailManager implements vscode.Disposable {
-  private outputChannel: vscode.OutputChannel;
+  private outputChannel: vscode.LogOutputChannel;
   private statusBar: vscode.StatusBarItem;
   private tailResult: TailLogsResult | undefined;
   private entryCount = 0;
+  // Maps a discovered log file name to its prefix (e.g. "error", "customerror")
+  // so each entry can be tagged with its source. onEntry only carries the file
+  // name; the prefix arrives on the LogFile in onFileDiscovered.
+  private fileToPrefix = new Map<string, string>();
 
   constructor() {
-    this.outputChannel = vscode.window.createOutputChannel('B2C Logs');
+    // `{log: true}` makes this a LogOutputChannel: the same single "B2C Logs"
+    // channel, but VS Code renders per-level colors (error/warn/info/debug) and
+    // adds a built-in level-filter dropdown. No extra channel is created.
+    this.outputChannel = vscode.window.createOutputChannel('B2C Logs', {log: true});
     this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 48);
     this.statusBar.command = 'b2c-dx.logs.stopTail';
     this.updateStatusBar();
@@ -75,8 +87,9 @@ export class LogTailManager implements vscode.Disposable {
 
     this.outputChannel.clear();
     this.outputChannel.show(true);
-    this.outputChannel.appendLine(`--- Tailing logs: ${prefixes.join(', ')} ---`);
+    this.outputChannel.info(`--- Tailing logs: ${prefixes.join(', ')} ---`);
     this.entryCount = 0;
+    this.fileToPrefix.clear();
 
     try {
       this.tailResult = await tailLogs(instance, {
@@ -84,19 +97,18 @@ export class LogTailManager implements vscode.Disposable {
         pathNormalizer,
         onEntry: (entry) => {
           this.entryCount++;
-          const level = entry.level ? `[${entry.level}]` : '';
-          const ts = entry.timestamp ?? '';
-          this.outputChannel.appendLine(`${ts} ${level} ${entry.message}`);
+          this.writeEntry(entry);
           this.updateStatusBar();
         },
         onError: (error) => {
-          this.outputChannel.appendLine(`[ERROR] ${error.message}`);
+          this.outputChannel.error(error.message);
         },
         onFileDiscovered: (file) => {
-          this.outputChannel.appendLine(`[LOG] Discovered: ${file.name}`);
+          this.fileToPrefix.set(file.name, file.prefix);
+          this.outputChannel.info(`Discovered: ${file.name}`);
         },
         onFileRotated: (file) => {
-          this.outputChannel.appendLine(`[LOG] File rotated: ${file.name}`);
+          this.outputChannel.info(`File rotated: ${file.name}`);
         },
       });
       this.updateStatusBar();
@@ -118,10 +130,58 @@ export class LogTailManager implements vscode.Disposable {
     } catch {
       // Best effort
     }
-    this.outputChannel.appendLine(`--- Stopped tailing (${this.entryCount} entries) ---`);
+    this.outputChannel.info(`--- Stopped tailing (${this.entryCount} entries) ---`);
     this.tailResult = undefined;
     this.entryCount = 0;
+    this.fileToPrefix.clear();
     this.updateStatusBar();
+  }
+
+  /**
+   * Writes a parsed log entry to the channel, routing by level so VS Code
+   * colors it, tagging it with its source prefix, and indenting continuation
+   * lines (stack traces) so each multi-line entry reads as one block.
+   *
+   * The server's GMT timestamp leads each entry — it is the authoritative time
+   * the event occurred on the instance. (VS Code's LogOutputChannel also adds
+   * its own local timestamp, but that only reflects when the line was polled,
+   * so the server time is shown explicitly as the source of truth.)
+   *
+   * The source prefix is shown only when it adds information beyond the level
+   * VS Code prints (e.g. `[customerror]` for an ERROR entry, but nothing for an
+   * `error` file).
+   */
+  private writeEntry(entry: LogEntry): void {
+    const prefix = this.fileToPrefix.get(entry.file) ?? entry.file;
+    // Skip the tag when it would just duplicate VS Code's level (e.g. an "error"
+    // file emitting an ERROR entry → VS Code already shows "[error]").
+    const showTag = prefix.toLowerCase() !== (entry.level ?? '').toLowerCase();
+    const tag = showTag ? `[${prefix}] ` : '';
+    // Server event time (GMT) — the accurate time the event occurred. Leads the
+    // entry so it is unambiguously the source of truth over VS Code's poll time.
+    const serverTs = entry.timestamp ? `${entry.timestamp} ` : '';
+    // Path normalization is applied in the SDK before onEntry, so entry.message
+    // already carries local cartridge paths — keep it intact for clickable links.
+    const body = entry.message.split('\n').join('\n    ');
+    const line = `${serverTs}${tag}${body}`;
+
+    switch (entry.level) {
+      case 'ERROR':
+      case 'FATAL':
+        this.outputChannel.error(line);
+        break;
+      case 'WARN':
+        this.outputChannel.warn(line);
+        break;
+      case 'DEBUG':
+      case 'TRACE':
+        this.outputChannel.debug(line);
+        break;
+      default:
+        // INFO and unparsed entries (no recognized level)
+        this.outputChannel.info(line);
+        break;
+    }
   }
 
   private updateStatusBar(): void {
