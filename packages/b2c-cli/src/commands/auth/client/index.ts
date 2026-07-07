@@ -5,7 +5,7 @@
  */
 import {Flags} from '@oclif/core';
 import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
-import {setStoredSession, decodeJWT} from '@salesforce/b2c-tooling-sdk/auth';
+import {setStoredSession, decodeJWT, encodeBasicClientCredentials} from '@salesforce/b2c-tooling-sdk/auth';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
 
@@ -131,7 +131,7 @@ export default class AuthClient extends BaseCommand<typeof AuthClient> {
       grantPayload.scope = scopes.join(' ');
     }
 
-    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const credentials = encodeBasicClientCredentials(clientId, clientSecret);
     const url = `https://${accountManagerHost}/dwsso/oauth2/access_token`;
 
     const method = 'POST';

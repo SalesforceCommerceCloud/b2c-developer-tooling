@@ -102,6 +102,27 @@ describe('auth/oauth', () => {
         expect(tokenResponse.expires).to.be.instanceOf(Date);
       });
 
+      it('form-url-encodes client credentials in the Basic header (RFC 6749 §2.3.1)', async () => {
+        // Regression: a secret containing "+" must be encoded to %2B before base64,
+        // otherwise a compliant server form-url-decodes it back to a space and auth fails.
+        const clientId = 'client+id';
+        const clientSecret = 'Xy9+Kq2z';
+        let capturedAuth: null | string = null;
+
+        server.use(
+          http.post(AM_URL, ({request}) => {
+            capturedAuth = request.headers.get('Authorization');
+            return HttpResponse.json({access_token: createMockJWT({sub: clientId}), expires_in: 1800});
+          }),
+        );
+
+        const strategy = new OAuthStrategy({clientId, clientSecret});
+        await strategy.getTokenResponse();
+
+        const expected = `Basic ${Buffer.from('client%2Bid:Xy9%2BKq2z').toString('base64')}`;
+        expect(capturedAuth).to.equal(expected);
+      });
+
       it('should handle token request without scopes', async () => {
         const mockToken = createMockJWT({sub: 'test-client-noscope'});
 

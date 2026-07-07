@@ -12,6 +12,7 @@
  *
  * @module slas/token
  */
+import {encodeBasicClientCredentials} from '../auth/client-credentials.js';
 import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {generateCodeChallenge, generateCodeVerifier} from './pkce.js';
@@ -182,7 +183,7 @@ async function getPrivateClientGuestToken(config: SlasTokenConfig): Promise<Slas
   logger.debug({clientId: config.slasClientId}, '[SLAS] Using private client client_credentials guest flow');
 
   const baseUrl = buildBaseUrl(config.shortCode, config.organizationId);
-  const basicAuth = Buffer.from(`${config.slasClientId}:${config.slasClientSecret}`).toString('base64');
+  const basicAuth = encodeBasicClientCredentials(config.slasClientId, config.slasClientSecret!);
 
   const tokenBody = new URLSearchParams({
     grant_type: 'client_credentials',
@@ -294,7 +295,7 @@ export async function getRegisteredToken(config: SlasRegisteredLoginConfig): Pro
 
   const tokenHeaders: Record<string, string> = {'Content-Type': 'application/x-www-form-urlencoded'};
   if (isPrivate) {
-    const basicAuth = Buffer.from(`${config.slasClientId}:${config.slasClientSecret}`).toString('base64');
+    const basicAuth = encodeBasicClientCredentials(config.slasClientId, config.slasClientSecret!);
     tokenHeaders.Authorization = `Basic ${basicAuth}`;
   }
 
