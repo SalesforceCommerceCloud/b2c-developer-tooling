@@ -30,8 +30,8 @@ metrics
     │   ├── controller             - SFRA controller performance
     │   └── ocapi                  - OCAPI request metrics
     └── Flags:
-        ├── --since / --until      - time window (relative "5m"/"1h"/"2d" or ISO 8601)
-        ├── --third-party-service-id - filter third-party category
+        ├── --from / --to / --window  - time window (relative "1h"/"7d" or ISO 8601)
+        ├── --third-party-service-id  - filter third-party category
         ├── --api-family / --api-name - filter SCAPI category
         └── --ocapi-category / --ocapi-api - filter OCAPI category
 ```
@@ -63,7 +63,7 @@ The Metrics API is a closed beta feature. It must be enabled for your organizati
 
 1. List available categories (`b2c metrics list`)
 2. Fetch metrics for a category (`b2c metrics get <category>`)
-3. Filter by time range (`--since`/`--until` — relative like `1h`/`7d` or ISO 8601) or category-specific filters
+3. Filter by time window (`--from`/`--to`/`--window` — relative like `1h`/`7d` or ISO 8601) or category-specific filters
 
 ## Metric Categories
 
@@ -95,11 +95,17 @@ b2c metrics list --tenant-id zzxy_prd
 ## Fetch Metrics Examples
 
 ```bash
-# Get overall metrics
+# Get overall metrics (API default window)
 b2c metrics get overall
 
-# Get SCAPI metrics for the last hour
-b2c metrics get scapi --since 1h
+# Get metrics for the last hour
+b2c metrics get overall --window 1h
+
+# Get a 1-hour window from 7 days ago
+b2c metrics get scapi --from 7d --window 1h
+
+# Get metrics for a specific ISO 8601 time range
+b2c metrics get scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00"
 
 # Get SCAPI metrics filtered by API family
 b2c metrics get scapi --api-family product
@@ -113,8 +119,8 @@ b2c metrics get third-party --third-party-service-id my-integration
 # Get OCAPI metrics filtered by category and API
 b2c metrics get ocapi --ocapi-category shop --ocapi-api baskets
 
-# Get controller metrics for the last 7 days
-b2c metrics get controller --since 7d
+# Get controller metrics for the last 6 hours
+b2c metrics get controller --window 6h
 
 # Output as JSON
 b2c metrics get overall --json
@@ -122,17 +128,46 @@ b2c metrics get overall --json
 
 ## Time Windows
 
-Use `--since` (start) and `--until` (end) to specify a time range. Both accept the same values as `b2c logs get --since`: a **relative** duration (`5m`, `1h`, `2d`) or an **ISO 8601** timestamp. `--until` defaults to now.
+Metrics commands accept flexible time-window specifications via three flags:
+
+- `--from` — Start bound: relative duration (`1h`, `7d` = that long ago) or ISO 8601 timestamp
+- `--to` — End bound: relative duration or ISO 8601 timestamp
+- `--window` (alias `--for`) — Window duration (`1h`, `30m`, `2d`)
+
+**Resolution rules:**
+
+- `--from` + `--to` → used as given
+- `--from` + `--window` → end = start + window (e.g., `--from 7d --window 1h` = a 1-hour window, 7 days ago)
+- `--to` + `--window` → start = end − window
+- `--window` alone → the last `<window>` (end = now, start = now − window)
+- `--from` alone → only start is sent; the API applies its own forward window
+- `--to` alone → only end is sent
+- Nothing → no time params sent; the API applies its default window
+
+You can specify at most two of the three flags.
+
+**Examples:**
 
 ```bash
-# Last 24 hours
-b2c metrics get sales --since 1d
+# Last hour
+b2c metrics get overall --window 1h
 
-# Explicit ISO 8601 window
-b2c metrics get sales --since "2026-01-25T00:00:00" --until "2026-02-01T00:00:00"
+# Last 7 days
+b2c metrics get sales --window 7d
+
+# 1-hour window starting 7 days ago
+b2c metrics get scapi --from 7d --window 1h
+
+# Specific ISO 8601 range
+b2c metrics get scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00"
+
+# From 24 hours ago until now (using API's forward window)
+b2c metrics get overall --from 24h
 ```
 
-If omitted, the API returns the default time window (typically recent data). The CLI converts your input to the API's epoch-seconds wire format automatically.
+**Data retention:** The Metrics API retains 30 days of data. If `--from` lands at or beyond the retention edge, the CLI adjusts it forward by a small safety margin (5 minutes) and emits a warning.
+
+**Wire units:** Request bounds are sent to the API as epoch **seconds**; response timestamps come back as epoch **milliseconds** (JS-native)
 
 ## Response Format
 
@@ -149,10 +184,17 @@ Metrics responses contain an array of metrics. Each metric includes:
     - **timestamp**: Epoch milliseconds (the CLI normalizes from the API's epoch-seconds wire format)
     - **value**: Numeric value
 
-Example response structure:
+With `--json`, the response is wrapped as `{query, data}` where `query` echoes the resolved time bounds and filters:
 
 ```json
 {
+  "query": {
+    "category": "overall",
+    "from": "2026-01-25T10:00:00.000Z",
+    "to": "2026-01-25T11:00:00.000Z",
+    "fromEpochSeconds": 1737802800,
+    "toEpochSeconds": 1737806400
+  },
   "data": [
     {
       "metricId": "requests_total",
@@ -164,8 +206,8 @@ Example response structure:
           "id": "2xx",
           "name": "2xx",
           "data": [
-            {"timestamp": 1704067200000, "value": 1500},
-            {"timestamp": 1704070800000, "value": 1620}
+            {"timestamp": 1737802800000, "value": 1500},
+            {"timestamp": 1737803400000, "value": 1620}
           ]
         }
       ]
@@ -174,13 +216,15 @@ Example response structure:
 }
 ```
 
+The `query` object omits `from`/`to` fields when that bound wasn't sent to the API (e.g., when using `--from` alone, only `from`/`fromEpochSeconds` appear)
+
 ## SDK Usage
 
 The Metrics API is also available via the SDK:
 
 ```typescript
 import {createMetricsClient} from '@salesforce/b2c-tooling-sdk/clients';
-import {getScapiMetrics, getOverallMetrics} from '@salesforce/b2c-tooling-sdk';
+import {getScapiMetrics, getOverallMetrics, resolveMetricsWindow} from '@salesforce/b2c-tooling-sdk';
 
 // Create client
 const client = createMetricsClient(
@@ -191,23 +235,33 @@ const client = createMetricsClient(
   {clientId: 'xxx', clientSecret: 'xxx'},
 );
 
-// Get overall metrics for the last 24 hours.
+// Get overall metrics
 // `from`/`to` accept a Date or epoch milliseconds; the SDK converts to
 // the API's epoch-seconds wire format.
-const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 const overallMetrics = await getOverallMetrics(client, 'zzxy_prd', {
-  from: dayAgo,
+  from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+  to: new Date(),
 });
 
 // Get SCAPI metrics with filters
 const scapiMetrics = await getScapiMetrics(client, 'zzxy_prd', {
-  from: dayAgo,
+  from: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24 hours ago
   apiFamily: 'product',
   apiName: 'shopper-products',
+});
+
+// Use resolveMetricsWindow to handle from/to/window resolution
+const window = resolveMetricsWindow({from: '7d', window: '1h'});
+const historicalMetrics = await getScapiMetrics(client, 'zzxy_prd', {
+  from: window.from,
+  to: window.to,
+  apiFamily: 'product',
 });
 ```
 
 Available operations: `getOverallMetrics`, `getSalesMetrics`, `getEcdnMetrics`, `getThirdPartyMetrics`, `getScapiMetrics`, `getScapiHooksMetrics`, `getMrtMetrics`, `getControllerMetrics`, `getOcapiMetrics`, `getMetricsByCategory`.
+
+Available helpers: `resolveMetricsWindow({from, to, window})`, `parseMetricsBound(value)`.
 
 All operations accept `(client, tenantId, options?)` and return `Promise<MetricsDataResponse>`. Time-window `from`/`to` accept a `Date` or epoch **milliseconds** (converted to the API's epoch-seconds wire format); response data-point timestamps come back in epoch **milliseconds**. The tenant ID may be bare (e.g., `zzxy_prd`) or prefixed (e.g., `f_ecom_zzxy_prd`) — the SDK normalizes it automatically.
 

@@ -7,12 +7,12 @@ import {Args, Flags} from '@oclif/core';
 import {TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   getMetricsByCategory,
+  resolveMetricsWindow,
   METRIC_CATEGORIES,
   type MetricCategory,
   type MetricsDataResponse,
   type MetricDataPoint,
 } from '@salesforce/b2c-tooling-sdk';
-import {parseSinceTime} from '@salesforce/b2c-tooling-sdk/operations/logs';
 import {MetricsCommand} from '../../utils/metrics/index.js';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -26,6 +26,36 @@ interface MetricRow {
   latestValue: string;
   points: number;
   latestTimestamp: string;
+}
+
+/**
+ * The effective query parameters echoed back to the caller (JSON mode) so the
+ * resolved time bounds and filters actually sent to the API are always visible.
+ * `from`/`to` fields are omitted when that bound was not sent (the API then
+ * applies its own default/window).
+ */
+interface MetricsQueryEcho {
+  category: MetricCategory;
+  /** Resolved start bound (ISO 8601), if sent. */
+  from?: string;
+  /** Resolved end bound (ISO 8601), if sent. */
+  to?: string;
+  /** Resolved start bound (epoch seconds — the API wire unit), if sent. */
+  fromEpochSeconds?: number;
+  /** Resolved end bound (epoch seconds — the API wire unit), if sent. */
+  toEpochSeconds?: number;
+  thirdPartyServiceId?: string;
+  apiFamily?: string;
+  apiName?: string;
+  ocapiCategory?: string;
+  ocapiApi?: string;
+}
+
+/**
+ * Command output: the metrics response plus the effective query parameters.
+ */
+interface MetricsGetOutput extends MetricsDataResponse {
+  query: MetricsQueryEcho;
 }
 
 const COLUMNS: Record<string, ColumnDef<MetricRow>> = {
@@ -63,9 +93,6 @@ const tableRenderer = new TableRenderer(COLUMNS);
 
 /**
  * Command to get metrics for a specific category.
- *
- * ⚠️ **CLOSED BETA:** The Metrics API is a closed beta feature. It must be enabled for your
- * organization, and its behavior, output, and OAuth scopes may change without notice.
  */
 export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
   static args = {
@@ -89,27 +116,35 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
 
   static examples = [
     '<%= config.bin %> <%= command.id %> overall --tenant-id f_ecom_zzxy_prd',
-    '<%= config.bin %> <%= command.id %> overall --tenant-id f_ecom_zzxy_prd --since 1h',
-    '<%= config.bin %> <%= command.id %> sales --tenant-id f_ecom_zzxy_prd --since 7d',
+    '<%= config.bin %> <%= command.id %> overall --tenant-id f_ecom_zzxy_prd --window 1h',
+    '<%= config.bin %> <%= command.id %> scapi --tenant-id f_ecom_zzxy_prd --from 7d --window 1h',
     '<%= config.bin %> <%= command.id %> scapi --tenant-id f_ecom_zzxy_prd --api-family product',
     '<%= config.bin %> <%= command.id %> third-party --tenant-id f_ecom_zzxy_prd --third-party-service-id my-service',
-    '<%= config.bin %> <%= command.id %> overall --tenant-id f_ecom_zzxy_prd --since "2026-01-25T10:00:00" --until "2026-01-25T12:00:00"',
+    '<%= config.bin %> <%= command.id %> overall --tenant-id f_ecom_zzxy_prd --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00"',
     '<%= config.bin %> <%= command.id %> overall --tenant-id f_ecom_zzxy_prd --json',
   ];
 
   static flags = {
     ...MetricsCommand.baseFlags,
-    since: Flags.string({
+    from: Flags.string({
       description: t(
-        'flags.metrics.since.description',
-        'Start of the time window: relative (e.g. "5m", "1h", "2d") or ISO 8601 (e.g. "2026-01-25T10:00:00")',
+        'flags.metrics.from.description',
+        'Start of the time window: relative (e.g. "1h", "7d" ago) or ISO 8601 (e.g. "2026-01-25T10:00:00")',
         {},
       ),
     }),
-    until: Flags.string({
+    to: Flags.string({
       description: t(
-        'flags.metrics.until.description',
-        'End of the time window: relative (e.g. "5m", "1h", "2d") or ISO 8601. Defaults to now',
+        'flags.metrics.to.description',
+        'End of the time window: relative (e.g. "6h" ago) or ISO 8601. Omit to let the API window forward from --from',
+        {},
+      ),
+    }),
+    window: Flags.string({
+      aliases: ['for'],
+      description: t(
+        'flags.metrics.window.description',
+        'Window duration (e.g. "1h", "30m", "2d"). With --from: window forward from it; with --to: window back from it; alone: the last <window>',
         {},
       ),
     }),
@@ -131,13 +166,14 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
     ...columnFlagsFor(COLUMNS),
   };
 
-  async run(): Promise<MetricsDataResponse> {
+  async run(): Promise<MetricsGetOutput> {
     this.requireOAuthCredentials();
 
     const {category} = this.args;
     const {
-      since,
-      until,
+      from: fromFlag,
+      to: toFlag,
+      window: windowFlag,
       'third-party-service-id': thirdPartyServiceId,
       'api-family': apiFamily,
       'api-name': apiName,
@@ -145,29 +181,53 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
       'ocapi-api': ocapiApi,
     } = this.flags;
 
-    // Parse the time window. Both accept relative ("1h", "2d") or ISO 8601.
-    let from: Date | undefined;
-    let to: Date | undefined;
+    // Resolve the requested bounds. --from/--to/--window each accept relative
+    // durations ("1h", "7d" ago) or ISO 8601. Only the bounds actually provided
+    // (or derived from --window) are sent; we never invent a bound, so the API
+    // applies its own window/default for anything omitted.
+    let window;
     try {
-      if (since) from = parseSinceTime(since);
-      if (until) to = parseSinceTime(until);
+      window = resolveMetricsWindow({from: fromFlag, to: toFlag, window: windowFlag});
     } catch (error) {
       this.error(error instanceof Error ? error.message : String(error));
     }
 
-    if (from && to && from.getTime() > to.getTime()) {
-      this.error(
-        t('commands.metrics.get.invalidRange', '--since ({{since}}) must be before --until ({{until}}).', {
-          since,
-          until,
-        }),
+    if (window.clampedFrom) {
+      this.warn(
+        t(
+          'commands.metrics.get.clampedFrom',
+          'Requested start was at the edge of the 30-day retention window; adjusted to {{from}} to stay within range.',
+          {from: window.fromIso!},
+        ),
       );
     }
 
+    const query: MetricsQueryEcho = {
+      category: category as MetricCategory,
+      from: window.fromIso,
+      to: window.toIso,
+      fromEpochSeconds: window.fromEpochSeconds,
+      toEpochSeconds: window.toEpochSeconds,
+      thirdPartyServiceId,
+      apiFamily,
+      apiName,
+      ocapiCategory,
+      ocapiApi,
+    };
+
     if (!this.jsonEnabled()) {
+      const rangeLabel =
+        window.fromIso && window.toIso
+          ? `${window.fromIso} → ${window.toIso}`
+          : window.fromIso
+            ? `from ${window.fromIso} (API default window)`
+            : window.toIso
+              ? `until ${window.toIso} (API default window)`
+              : 'API default window';
       this.log(
-        t('commands.metrics.get.fetching', 'Fetching {{category}} metrics...', {
+        t('commands.metrics.get.fetching', 'Fetching {{category}} metrics ({{range}})...', {
           category,
+          range: rangeLabel,
         }),
       );
     }
@@ -178,8 +238,8 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
     let response: MetricsDataResponse;
     try {
       response = await getMetricsByCategory(client, tenantId, category as MetricCategory, {
-        from,
-        to,
+        from: window.from,
+        to: window.to,
         thirdPartyServiceId,
         apiFamily,
         apiName,
@@ -195,8 +255,10 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
       );
     }
 
+    const output: MetricsGetOutput = {...response, query};
+
     if (this.jsonEnabled()) {
-      return response;
+      return output;
     }
 
     if (!response.data || response.data.length === 0) {
@@ -205,7 +267,7 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
           category,
         }),
       );
-      return response;
+      return output;
     }
 
     // Flatten metrics data for table display
@@ -233,6 +295,6 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
 
     tableRenderer.render(rows, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
-    return response;
+    return output;
   }
 }

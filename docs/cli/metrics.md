@@ -178,35 +178,62 @@ b2c metrics get <category> [flags]
 
 ### Flags
 
-| Flag                       | Description                                                   | Default |
-| -------------------------- | ------------------------------------------------------------- | ------- |
-| `--tenant-id`              | (Required) Tenant ID                                          |         |
-| `--short-code`             | SCAPI short code                                              |         |
-| `--since`                  | Start of time window: relative (`5m`, `1h`, `2d`) or ISO 8601 |         |
-| `--until`                  | End of time window: relative or ISO 8601 (defaults to now)    |         |
-| `--third-party-service-id` | Filter by third-party service ID (third-party category only)  |         |
-| `--api-family`             | Filter by SCAPI API family (scapi category only)              |         |
-| `--api-name`               | Filter by SCAPI API name (scapi category only)                |         |
-| `--ocapi-category`         | Filter by OCAPI category (ocapi category only)                |         |
-| `--ocapi-api`              | Filter by OCAPI API (ocapi category only)                     |         |
-| `--json`                   | Output results as JSON                                        | `false` |
+| Flag                       | Description                                                  | Default |
+| -------------------------- | ------------------------------------------------------------ | ------- |
+| `--tenant-id`              | (Required) Tenant ID                                         |         |
+| `--short-code`             | SCAPI short code                                             |         |
+| `--from`                   | Start bound: relative (`1h`, `7d` ago) or ISO 8601 timestamp |         |
+| `--to`                     | End bound: relative or ISO 8601 timestamp                    |         |
+| `--window` / `--for`       | Window duration (`1h`, `30m`, `2d`)                          |         |
+| `--third-party-service-id` | Filter by third-party service ID (third-party category only) |         |
+| `--api-family`             | Filter by SCAPI API family (scapi category only)             |         |
+| `--api-name`               | Filter by SCAPI API name (scapi category only)               |         |
+| `--ocapi-category`         | Filter by OCAPI category (ocapi category only)               |         |
+| `--ocapi-api`              | Filter by OCAPI API (ocapi category only)                    |         |
+| `--json`                   | Output results as JSON (wrapped as `{query, data}`)          | `false` |
 
 ### Time Windows
 
-Use `--since` (start) and `--until` (end) to specify a time range. Both accept the same values as `b2c logs get --since`: a **relative** duration (`5m`, `1h`, `2d`) or an **ISO 8601** timestamp. `--until` defaults to now.
+Metrics commands accept flexible time-window specifications via three flags:
+
+- `--from` — Start bound: relative duration (`1h`, `7d` = that long ago) or ISO 8601 timestamp
+- `--to` — End bound: relative duration or ISO 8601 timestamp
+- `--window` (alias `--for`) — Window duration (`1h`, `30m`, `2d`)
+
+**Resolution rules:**
+
+- `--from` + `--to` → used as given
+- `--from` + `--window` → end = start + window
+- `--to` + `--window` → start = end − window
+- `--window` alone → the last `<window>` (end = now, start = now − window)
+- `--from` alone → only start is sent; the API applies its own forward window
+- `--to` alone → only end is sent
+- Nothing → no time params sent; the API applies its default window
+
+You can specify at most two of the three flags. Specifying all three is an error.
+
+**Examples:**
 
 ```bash
 # Last hour
-b2c metrics get overall --since 1h --tenant-id zzxy_prd
+b2c metrics get overall --window 1h --tenant-id zzxy_prd
 
 # Last 7 days
-b2c metrics get sales --since 7d --tenant-id zzxy_prd
+b2c metrics get sales --window 7d --tenant-id zzxy_prd
 
-# Explicit ISO 8601 window
-b2c metrics get overall --since "2026-01-25T10:00:00" --until "2026-01-25T12:00:00" --tenant-id zzxy_prd
+# 1-hour window starting 7 days ago
+b2c metrics get scapi --from 7d --window 1h --tenant-id zzxy_prd
+
+# Specific ISO 8601 range
+b2c metrics get scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00" --tenant-id zzxy_prd
+
+# From 24 hours ago until now (using API's forward window)
+b2c metrics get overall --from 24h --tenant-id zzxy_prd
 ```
 
-If omitted, the API returns the default time window (typically recent data). You work in ordinary local/ISO time — the CLI converts to the API's epoch-seconds wire format for you.
+**Data retention:** The Metrics API retains 30 days of data. If `--from` lands at or beyond the retention edge, the CLI adjusts it forward by a small safety margin (5 minutes) to avoid rejection due to clock differences, and emits a warning showing the adjusted start time.
+
+**Wire units:** Request bounds are sent to the API as epoch **seconds**; response data-point timestamps come back as epoch **milliseconds** (JS-native, so `new Date(point.timestamp)` works directly)
 
 ### Category-Specific Filters
 
@@ -239,11 +266,17 @@ b2c metrics get ocapi --ocapi-category shop --ocapi-api baskets --tenant-id zzxy
 ### Examples
 
 ```bash
-# Get overall metrics
+# Get overall metrics (API default window)
 b2c metrics get overall --tenant-id zzxy_prd
 
-# Get sales metrics for the last 7 days
-b2c metrics get sales --since 7d --tenant-id zzxy_prd
+# Get metrics for the last hour
+b2c metrics get overall --window 1h --tenant-id zzxy_prd
+
+# Get a 1-hour window from 7 days ago
+b2c metrics get scapi --from 7d --window 1h --tenant-id zzxy_prd
+
+# Get metrics for a specific ISO 8601 time range
+b2c metrics get scapi --from "2026-01-25T10:00:00" --to "2026-01-25T11:00:00" --tenant-id zzxy_prd
 
 # Get SCAPI metrics filtered by API family
 b2c metrics get scapi --api-family product --tenant-id zzxy_prd
@@ -257,7 +290,7 @@ b2c metrics get third-party --third-party-service-id my-service --tenant-id zzxy
 # Get OCAPI metrics filtered by category and API
 b2c metrics get ocapi --ocapi-category shop --ocapi-api baskets --tenant-id zzxy_prd
 
-# Output as JSON
+# Output as JSON (wrapped with query echo)
 b2c metrics get overall --tenant-id zzxy_prd --json
 ```
 
@@ -276,10 +309,17 @@ The response contains an array of metrics. Each metric includes:
     - **timestamp**: Epoch milliseconds (normalized by the CLI/SDK from the API's epoch-seconds wire format, so `new Date(timestamp)` is correct)
     - **value**: Numeric value
 
-Example JSON output:
+With `--json`, the response is wrapped as `{query, data}` where `query` echoes the resolved time bounds and filters:
 
 ```json
 {
+  "query": {
+    "category": "overall",
+    "from": "2026-01-25T10:00:00.000Z",
+    "to": "2026-01-25T11:00:00.000Z",
+    "fromEpochSeconds": 1737802800,
+    "toEpochSeconds": 1737806400
+  },
   "data": [
     {
       "metricId": "requests_total",
@@ -291,16 +331,16 @@ Example JSON output:
           "id": "2xx",
           "name": "2xx",
           "data": [
-            {"timestamp": 1704067200000, "value": 1500},
-            {"timestamp": 1704070800000, "value": 1620}
+            {"timestamp": 1737802800000, "value": 1500},
+            {"timestamp": 1737803400000, "value": 1620}
           ]
         },
         {
           "id": "4xx",
           "name": "4xx",
           "data": [
-            {"timestamp": 1704067200000, "value": 45},
-            {"timestamp": 1704070800000, "value": 38}
+            {"timestamp": 1737802800000, "value": 45},
+            {"timestamp": 1737803400000, "value": 38}
           ]
         }
       ]
@@ -308,6 +348,8 @@ Example JSON output:
   ]
 }
 ```
+
+The `query` object omits `from`/`to` fields when that bound wasn't sent to the API (e.g., when using `--from` alone, only `from`/`fromEpochSeconds` appear; the API applied its own forward window)
 
 ### Output
 
@@ -327,7 +369,9 @@ Common error scenarios:
 
 ### Notes
 
-- Use `--since`/`--until` with relative durations (`5m`, `1h`, `2d`) or ISO 8601 timestamps; the CLI handles conversion to the API's epoch-seconds wire format, and response timestamps are returned in epoch milliseconds
+- Time values are sent to the API as epoch **seconds**; response data-point timestamps come back as epoch **milliseconds** (JS-native)
+- The Metrics API enforces a 30-day retention window and a maximum window width; these limits are documented by the API and errors are returned if exceeded
+- When `--from` is at the retention edge (30 days ago), the CLI clamps it forward by 5 minutes to avoid rejection due to clock skew and emits a warning
 - The tenant ID may be bare (e.g., `zzxy_prd`) or prefixed (e.g., `f_ecom_zzxy_prd`) — the CLI normalizes it
 - Category-specific filters only apply to their respective categories; they are ignored for other categories
 - The Metrics API is a closed beta feature and must be enabled for your organization

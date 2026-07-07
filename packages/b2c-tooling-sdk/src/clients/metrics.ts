@@ -6,14 +6,11 @@
 /**
  * Metrics API client for B2C Commerce (Observability).
  *
- * > **CLOSED BETA:** The Metrics API (`observability/metrics/v1`) is a closed
- * > beta capability. Availability, request/response shapes, and OAuth scopes may
- * > change without notice, and the API must be enabled for your organization.
- *
- * Provides a fully typed client for the SCAPI Observability Metrics API using
- * openapi-fetch with OAuth authentication middleware. The API exposes
- * time-series operational metrics (overall, sales, eCDN, third-party services,
- * SCAPI, SCAPI hooks, MRT, controllers, and OCAPI) for an organization.
+ * Provides a fully typed client for the SCAPI Observability Metrics API
+ * (`observability/metrics/v1`) using openapi-fetch with OAuth authentication
+ * middleware. The API exposes time-series operational metrics (overall, sales,
+ * eCDN, third-party services, SCAPI, SCAPI hooks, MRT, controllers, and OCAPI)
+ * for an organization.
  *
  * @module clients/metrics
  */
@@ -33,8 +30,6 @@ export type {paths, components};
 
 /**
  * The typed Metrics API client for retrieving observability metrics.
- *
- * **CLOSED BETA** — see the module description.
  *
  * ## Common Endpoints
  *
@@ -127,8 +122,6 @@ export interface MetricsClientConfig {
 
 /**
  * Creates a typed Metrics API client.
- *
- * **CLOSED BETA** — see the module description.
  *
  * Returns the openapi-fetch client directly, with authentication handled via
  * middleware. This gives full access to all openapi-fetch features with

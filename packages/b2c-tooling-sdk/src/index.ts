@@ -324,7 +324,7 @@ export type {
   CipTableMetadata,
 } from './operations/cip/index.js';
 
-// Operations - Metrics (Observability) — CLOSED BETA
+// Operations - Metrics (Observability)
 export {
   getOverallMetrics,
   getSalesMetrics,
@@ -336,11 +336,18 @@ export {
   getControllerMetrics,
   getOcapiMetrics,
   getMetricsByCategory,
+  parseMetricsBound,
+  resolveMetricsWindow,
   METRIC_CATEGORIES,
+  METRICS_RETENTION_MS,
+  METRICS_RETENTION_SAFETY_MARGIN_MS,
 } from './operations/metrics/index.js';
 export type {
   MetricCategory,
   MetricsTimeWindow,
+  MetricsBoundInput,
+  MetricsWindowInput,
+  ResolvedMetricsWindow,
   ThirdPartyMetricsOptions,
   ScapiMetricsOptions,
   OcapiMetricsOptions,

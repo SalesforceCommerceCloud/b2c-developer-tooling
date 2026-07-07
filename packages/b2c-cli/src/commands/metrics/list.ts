@@ -45,9 +45,6 @@ const tableRenderer = new TableRenderer(COLUMNS);
 
 /**
  * Command to list available metrics categories.
- *
- * ⚠️ **CLOSED BETA:** The Metrics API is a closed beta feature. It must be enabled for your
- * organization, and its behavior, output, and OAuth scopes may change without notice.
  */
 export default class MetricsList extends Command {
   static description = withDocs(

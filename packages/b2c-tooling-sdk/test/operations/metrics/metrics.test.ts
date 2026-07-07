@@ -19,6 +19,8 @@ import {
   getControllerMetrics,
   getOcapiMetrics,
   getMetricsByCategory,
+  parseMetricsBound,
+  resolveMetricsWindow,
   METRIC_CATEGORIES,
 } from '../../../src/operations/metrics/index.js';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
@@ -287,5 +289,123 @@ describe('Metrics API operations', () => {
         expect((err as Error).message).to.contain('Metrics temporarily unavailable');
       }
     });
+  });
+});
+
+describe('parseMetricsBound', () => {
+  // Fixed reference "now" for deterministic assertions.
+  const NOW = new Date('2026-07-07T12:00:00.000Z');
+
+  it('parses a relative duration as "ago" against the reference now', () => {
+    expect(parseMetricsBound('2d', NOW).toISOString()).to.equal('2026-07-05T12:00:00.000Z');
+    expect(parseMetricsBound('1h', NOW).toISOString()).to.equal('2026-07-07T11:00:00.000Z');
+    expect(parseMetricsBound('30m', NOW).toISOString()).to.equal('2026-07-07T11:30:00.000Z');
+  });
+
+  it('parses an ISO 8601 timestamp', () => {
+    expect(parseMetricsBound('2026-07-01T00:00:00.000Z', NOW).toISOString()).to.equal('2026-07-01T00:00:00.000Z');
+  });
+
+  it('passes a Date through unchanged', () => {
+    const d = new Date('2026-06-01T00:00:00.000Z');
+    expect(parseMetricsBound(d, NOW)).to.equal(d);
+  });
+
+  it('treats a number as epoch milliseconds', () => {
+    expect(parseMetricsBound(1_620_000_000_000, NOW).getTime()).to.equal(1_620_000_000_000);
+  });
+
+  it('throws on an invalid relative/ISO string', () => {
+    expect(() => parseMetricsBound('not-a-time', NOW)).to.throw(TypeError);
+  });
+});
+
+describe('resolveMetricsWindow', () => {
+  const NOW = new Date('2026-07-07T12:00:00.000Z');
+
+  it('sends nothing when no inputs are given (API applies its default)', () => {
+    const w = resolveMetricsWindow({}, NOW);
+    expect(w.from).to.equal(undefined);
+    expect(w.to).to.equal(undefined);
+    expect(w.fromEpochSeconds).to.equal(undefined);
+    expect(w.toEpochSeconds).to.equal(undefined);
+  });
+
+  it('sends only from when only from is given — does NOT invent to=now', () => {
+    // 7d is comfortably within retention, so no clamping muddies the assertion.
+    const w = resolveMetricsWindow({from: '7d'}, NOW);
+    expect(w.fromIso).to.equal('2026-06-30T12:00:00.000Z');
+    expect(w.clampedFrom).to.equal(false);
+    expect(w.to).to.equal(undefined);
+    expect(w.toEpochSeconds).to.equal(undefined);
+  });
+
+  it('sends only to when only to is given (relative to works)', () => {
+    const w = resolveMetricsWindow({to: '6h'}, NOW);
+    expect(w.toIso).to.equal('2026-07-07T06:00:00.000Z');
+    expect(w.from).to.equal(undefined);
+  });
+
+  it('from + window derives to = from + window (1h window, 7 days ago)', () => {
+    const w = resolveMetricsWindow({from: '7d', window: '1h'}, NOW);
+    expect(w.fromIso).to.equal('2026-06-30T12:00:00.000Z');
+    expect(w.toIso).to.equal('2026-06-30T13:00:00.000Z');
+    expect(w.toEpochSeconds! - w.fromEpochSeconds!).to.equal(3600);
+  });
+
+  it('to + window derives from = to - window', () => {
+    const w = resolveMetricsWindow({to: '2026-07-07T06:00:00.000Z', window: '2h'}, NOW);
+    expect(w.fromIso).to.equal('2026-07-07T04:00:00.000Z');
+    expect(w.toIso).to.equal('2026-07-07T06:00:00.000Z');
+  });
+
+  it('window alone means the last {window}', () => {
+    const w = resolveMetricsWindow({window: '1h'}, NOW);
+    expect(w.toIso).to.equal(NOW.toISOString());
+    expect(w.fromIso).to.equal('2026-07-07T11:00:00.000Z');
+  });
+
+  it('uses explicit from + to as given', () => {
+    const w = resolveMetricsWindow({from: '2026-07-07T00:00:00Z', to: '2026-07-07T06:00:00Z'}, NOW);
+    expect(w.fromEpochSeconds).to.equal(Math.floor(Date.parse('2026-07-07T00:00:00Z') / 1000));
+    expect(w.toEpochSeconds).to.equal(Math.floor(Date.parse('2026-07-07T06:00:00Z') / 1000));
+  });
+
+  it('rejects specifying from, to, and window together', () => {
+    expect(() => resolveMetricsWindow({from: '2d', to: '1d', window: '1h'}, NOW)).to.throw(RangeError, /at most two/);
+  });
+
+  it('rejects from after to', () => {
+    expect(() => resolveMetricsWindow({from: '2026-07-07T06:00:00Z', to: '2026-07-07T00:00:00Z'}, NOW)).to.throw(
+      RangeError,
+      /must be before/,
+    );
+  });
+
+  it('throws on an invalid window duration', () => {
+    expect(() => resolveMetricsWindow({from: '7d', window: 'nope'}, NOW)).to.throw(TypeError, /window/);
+  });
+
+  it('does not clamp a from comfortably within retention', () => {
+    const w = resolveMetricsWindow({from: '7d'}, NOW);
+    expect(w.clampedFrom).to.equal(false);
+    expect(w.fromIso).to.equal('2026-06-30T12:00:00.000Z');
+  });
+
+  it('clamps a from at the 30-day edge forward into the retention window', () => {
+    // "30d ago" on the client is exactly the retention floor; the server's later
+    // clock would reject it, so it is clamped forward by the safety margin.
+    const w = resolveMetricsWindow({from: '30d'}, NOW);
+    expect(w.clampedFrom).to.equal(true);
+    // now - 30d + 5min
+    const expected = new Date(NOW.getTime() - 30 * 24 * 60 * 60 * 1000 + 5 * 60 * 1000).toISOString();
+    expect(w.fromIso).to.equal(expected);
+    // Clamp only ever moves from *forward* (toward now), never earlier.
+    expect(new Date(w.fromIso!).getTime()).to.be.greaterThan(NOW.getTime() - 30 * 24 * 60 * 60 * 1000);
+  });
+
+  it('clamps an explicit ISO from that is older than retention', () => {
+    const w = resolveMetricsWindow({from: '2026-05-01T00:00:00.000Z'}, NOW);
+    expect(w.clampedFrom).to.equal(true);
   });
 });

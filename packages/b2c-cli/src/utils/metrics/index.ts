@@ -14,9 +14,6 @@ export {getApiErrorMessage as formatApiError} from '@salesforce/b2c-tooling-sdk/
 /**
  * Base command for Metrics API operations.
  * Provides common flags and helper methods for interacting with the SCAPI Metrics API.
- *
- * ⚠️ **CLOSED BETA:** The Metrics API is a closed beta feature. It must be enabled for your
- * organization, and its behavior, output, and OAuth scopes may change without notice.
  */
 export abstract class MetricsCommand<T extends typeof Command> extends OAuthCommand<T> {
   /**

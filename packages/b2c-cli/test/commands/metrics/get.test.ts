@@ -43,8 +43,9 @@ describe('metrics get', () => {
 
   it('shows filter flags in help', async () => {
     const {stdout} = await runCommand('metrics get --help');
-    expect(stdout).to.include('--since');
-    expect(stdout).to.include('--until');
+    expect(stdout).to.include('--from');
+    expect(stdout).to.include('--to');
+    expect(stdout).to.include('--window');
     expect(stdout).to.include('--third-party-service-id');
     expect(stdout).to.include('--api-family');
     expect(stdout).to.include('--api-name');
@@ -220,18 +221,10 @@ describe('metrics get', () => {
       }
     });
 
-    it('supports time window filters and sends epoch seconds on the wire', async () => {
-      const command: any = new MetricsGet(['overall'], config);
-      // ISO 8601 inputs; the API expects epoch SECONDS on the wire.
-      stubParse(
-        command,
-        {
-          'tenant-id': 'zzxy_prd',
-          since: '2021-01-01T00:00:00.000Z',
-          until: '2021-01-02T00:00:00.000Z',
-        },
-        {category: 'overall'},
-      );
+    it('sends epoch seconds on the wire and echoes the resolved bounds (--from + --window)', async () => {
+      const command: any = new MetricsGet(['scapi'], config);
+      // "1h window, 7 days ago" — the key ergonomic case.
+      stubParse(command, {'tenant-id': 'zzxy_prd', from: '7d', window: '1h'}, {category: 'scapi'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
@@ -247,37 +240,103 @@ describe('metrics get', () => {
         }),
       );
 
-      await command.run();
+      const result = await command.run();
 
       expect(fetchStub.calledOnce).to.equal(true);
       const firstArg = fetchStub.firstCall.args[0];
       const url = typeof firstArg === 'string' ? firstArg : (firstArg as Request).url;
-      // 2021-01-01T00:00:00Z = 1609459200s, 2021-01-02T00:00:00Z = 1609545600s
-      expect(url).to.include('from=1609459200');
-      expect(url).to.include('to=1609545600');
-      expect(url).to.not.include('from=1609459200000');
+      const params = new URL(url).searchParams;
+      const from = Number(params.get('from'));
+      const to = Number(params.get('to'));
+      // Wire values are epoch SECONDS (10 digits), not milliseconds (13).
+      expect(String(from)).to.have.length(10);
+      // 1h window derived from --from => exactly 3600 seconds.
+      expect(to - from).to.equal(3600);
+
+      // Resolved bounds + filters echoed back to the caller.
+      expect(result.query.category).to.equal('scapi');
+      expect(result.query.fromEpochSeconds).to.equal(from);
+      expect(result.query.toEpochSeconds).to.equal(to);
+      expect(result.query.from).to.be.a('string');
+      expect(result.query.to).to.be.a('string');
     });
 
-    it('rejects a --since that is after --until', async () => {
+    it('sends only from when only --from is given (no invented to)', async () => {
       const command: any = new MetricsGet(['overall'], config);
-      stubParse(
-        command,
-        {'tenant-id': 'zzxy_prd', since: '2021-01-02T00:00:00.000Z', until: '2021-01-01T00:00:00.000Z'},
-        {category: 'overall'},
-      );
+      stubParse(command, {'tenant-id': 'zzxy_prd', from: '30d'}, {category: 'overall'});
       await command.init();
 
       sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
       sinon.stub(command, 'jsonEnabled').returns(true);
       sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
-      const errorStub = sinon.stub(command, 'error').throws(new Error('range error'));
+      sinon.stub(command, 'getOAuthStrategy').returns({getAuthorizationHeader: async () => 'Bearer test'});
+      sinon.stub(command, 'requireTenantId').returns('zzxy_prd');
+
+      const fetchStub = sinon
+        .stub(globalThis, 'fetch')
+        .resolves(
+          new Response(JSON.stringify({data: []}), {status: 200, headers: {'content-type': 'application/json'}}),
+        );
+
+      const result = await command.run();
+      const url = new URL(
+        typeof fetchStub.firstCall.args[0] === 'string'
+          ? (fetchStub.firstCall.args[0] as string)
+          : (fetchStub.firstCall.args[0] as Request).url,
+      );
+      expect(url.searchParams.has('from')).to.equal(true);
+      expect(url.searchParams.has('to')).to.equal(false); // NOT invented
+      expect(result.query.to).to.equal(undefined);
+      expect(result.query.toEpochSeconds).to.equal(undefined);
+    });
+
+    it('sends no time bounds when none are given (API default window)', async () => {
+      const command: any = new MetricsGet(['overall'], config);
+      stubParse(command, {'tenant-id': 'zzxy_prd'}, {category: 'overall'});
+      await command.init();
+
+      sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+      sinon.stub(command, 'getOAuthStrategy').returns({getAuthorizationHeader: async () => 'Bearer test'});
+      sinon.stub(command, 'requireTenantId').returns('zzxy_prd');
+
+      const fetchStub = sinon
+        .stub(globalThis, 'fetch')
+        .resolves(
+          new Response(JSON.stringify({data: []}), {status: 200, headers: {'content-type': 'application/json'}}),
+        );
+
+      const result = await command.run();
+      const url = new URL(
+        typeof fetchStub.firstCall.args[0] === 'string'
+          ? (fetchStub.firstCall.args[0] as string)
+          : (fetchStub.firstCall.args[0] as Request).url,
+      );
+      expect(url.searchParams.has('from')).to.equal(false);
+      expect(url.searchParams.has('to')).to.equal(false);
+      expect(result.query.from).to.equal(undefined);
+      expect(result.query.to).to.equal(undefined);
+    });
+
+    it('errors on over-specification (--from + --to + --window) before calling the API', async () => {
+      const command: any = new MetricsGet(['overall'], config);
+      stubParse(command, {'tenant-id': 'zzxy_prd', from: '2d', to: '1d', window: '1h'}, {category: 'overall'});
+      await command.init();
+
+      sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+      const errorStub = sinon.stub(command, 'error').throws(new Error('over-specified'));
+      const fetchStub = sinon.stub(globalThis, 'fetch');
 
       try {
         await command.run();
         expect.fail('Should have thrown');
       } catch {
         expect(errorStub.calledOnce).to.equal(true);
-        expect(String(errorStub.firstCall.args[0])).to.match(/must be before/);
+        expect(String(errorStub.firstCall.args[0])).to.match(/at most two/);
+        expect(fetchStub.called).to.equal(false);
       }
     });
   });

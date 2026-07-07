@@ -7,9 +7,6 @@
 /**
  * Metrics Get tool.
  *
- * ⚠️ **CLOSED BETA:** The Metrics API is a closed beta feature. It must be enabled for your
- * organization, and its behavior, output, and OAuth scopes may change without notice.
- *
  * Retrieves observability metrics time-series data for B2C Commerce tenants via SCAPI
  * observability/metrics/v1. Returns metrics data grouped by category (overall, sales, ecdn,
  * third-party, scapi, scapi-hooks, mrt, controller, ocapi).
@@ -21,7 +18,7 @@ import {z} from 'zod';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import type {Services} from '../../services.js';
 import type {McpTool} from '../../utils/index.js';
-import {getMetricsByCategory, type MetricsDataResponse} from '@salesforce/b2c-tooling-sdk';
+import {getMetricsByCategory, resolveMetricsWindow, type MetricsDataResponse} from '@salesforce/b2c-tooling-sdk';
 
 /**
  * Input parameters for metrics_get tool.
@@ -29,10 +26,12 @@ import {getMetricsByCategory, type MetricsDataResponse} from '@salesforce/b2c-to
 interface MetricsGetInput {
   /** Metrics category to retrieve */
   category: 'controller' | 'ecdn' | 'mrt' | 'ocapi' | 'overall' | 'sales' | 'scapi' | 'scapi-hooks' | 'third-party';
-  /** Start time in epoch milliseconds (optional) */
-  from?: number;
-  /** End time in epoch milliseconds (optional) */
-  to?: number;
+  /** Start bound: relative ("1h", "7d" ago) or ISO 8601 (optional) */
+  from?: string;
+  /** End bound: relative ("6h" ago) or ISO 8601 (optional) */
+  to?: string;
+  /** Window duration ("1h", "30m", "2d") combined with from/to, or the last <window> alone (optional) */
+  window?: string;
   /** Filter by third-party service ID (third-party category only) */
   thirdPartyServiceId?: string;
   /** Filter by SCAPI API family (scapi category only) */
@@ -46,10 +45,29 @@ interface MetricsGetInput {
 }
 
 /**
+ * Output for metrics_get: the metrics response plus the effective query
+ * parameters (resolved time bounds and filters) so the caller always sees what
+ * was actually sent. `from`/`to` are omitted when that bound was not sent.
+ */
+interface MetricsGetOutput extends MetricsDataResponse {
+  query: {
+    category: MetricsGetInput['category'];
+    from?: string;
+    to?: string;
+    fromEpochSeconds?: number;
+    toEpochSeconds?: number;
+    /** True when `from` was clamped forward to stay within the 30-day retention window. */
+    clampedFrom?: boolean;
+    thirdPartyServiceId?: string;
+    apiFamily?: string;
+    apiName?: string;
+    ocapiCategory?: string;
+    ocapiApi?: string;
+  };
+}
+
+/**
  * Creates the metrics_get tool.
- *
- * ⚠️ **CLOSED BETA:** The Metrics API is a closed beta feature. It must be enabled for your
- * organization, and its behavior, output, and OAuth scopes may change without notice.
  *
  * Retrieves observability metrics time-series for a B2C Commerce tenant by category:
  * - **overall**: Aggregate site metrics (requests, response times, errors)
@@ -71,10 +89,10 @@ interface MetricsGetInput {
  * @returns MCP tool for retrieving metrics
  */
 export function createMetricsGetTool(loadServices: () => Promise<Services> | Services): McpTool {
-  return createToolAdapter<MetricsGetInput, MetricsDataResponse>(
+  return createToolAdapter<MetricsGetInput, MetricsGetOutput>(
     {
       name: 'metrics_get',
-      description: `⚠️ **CLOSED BETA:** The Metrics API is a closed beta feature. It must be enabled for your organization, and its behavior, output, and OAuth scopes may change without notice.
+      description: `CLOSED BETA: the Metrics API must be enabled for your organization, and its behavior, output, and OAuth scopes may change without notice.
 
 Retrieve observability metrics time-series for a B2C Commerce tenant. Returns metrics data grouped by category with time-series data points.
 
@@ -89,7 +107,9 @@ Retrieve observability metrics time-series for a B2C Commerce tenant. Returns me
 - controller: Controller execution metrics
 - ocapi: OCAPI endpoint metrics (use ocapiCategory/ocapiApi filters)
 
-**Response:** MetricsDataResponse with data[] containing metricId, title, description, unit, dataSeries[] with time-series data points (timestamp, value).
+**Time window:** Provide "from" and/or "to" as a relative duration ("1h", "7d" — interpreted as ago) or an ISO 8601 timestamp, and/or "window" as a duration ("1h", "30m"). Combining "window" with one bound derives the other: from + window → to = from + window; to + window → from = to - window; window alone → the last <window>. Pass only "from" to let the API window forward from it; pass nothing for the API default. Do not supply from, to, and window together. The API enforces its own limits (e.g. maximum window width and retention) and returns a clear error if exceeded.
+
+**Response:** { query, data } — "query" echoes the resolved bounds actually sent (from/to ISO + epoch seconds; omitted when not sent) and filters; "data[]" contains metricId, title, description, unit, and dataSeries[] with time-series points (timestamp in epoch milliseconds, value).
 
 **Requirements:** OAuth with sfcc.metrics scope.`,
       toolsets: ['SCAPI'],
@@ -101,8 +121,17 @@ Retrieve observability metrics time-series for a B2C Commerce tenant. Returns me
           .describe(
             'Metrics category: overall (aggregate), sales, ecdn (CDN), third-party (external), scapi (SCAPI APIs), scapi-hooks, mrt (PWA Kit), controller, ocapi',
           ),
-        from: z.number().int().optional().describe('Start time in epoch milliseconds (optional)'),
-        to: z.number().int().optional().describe('End time in epoch milliseconds (optional)'),
+        from: z
+          .string()
+          .optional()
+          .describe('Start bound: relative ("1h", "7d" ago) or ISO 8601. Pass alone to let the API window forward.'),
+        to: z.string().optional().describe('End bound: relative ("6h" ago) or ISO 8601.'),
+        window: z
+          .string()
+          .optional()
+          .describe(
+            'Window duration ("1h", "30m", "2d"). With from → to=from+window; with to → from=to-window; alone → the last <window>.',
+          ),
         thirdPartyServiceId: z
           .string()
           .optional()
@@ -123,26 +152,37 @@ Retrieve observability metrics time-series for a B2C Commerce tenant. Returns me
           );
         }
 
-        // Build options object with category-specific filters
-        const options: {
-          from?: number;
-          to?: number;
-          thirdPartyServiceId?: string;
-          apiFamily?: string;
-          apiName?: string;
-          ocapiCategory?: string;
-          ocapiApi?: string;
-        } = {};
+        // Resolve the requested bounds. Only bounds actually provided (or derived
+        // from window) are sent; anything omitted is left to the API. Throws a
+        // clear error on unparseable/over-specified input before the request.
+        const window = resolveMetricsWindow({from: args.from, to: args.to, window: args.window});
 
-        if (args.from !== undefined) options.from = args.from;
-        if (args.to !== undefined) options.to = args.to;
-        if (args.thirdPartyServiceId !== undefined) options.thirdPartyServiceId = args.thirdPartyServiceId;
-        if (args.apiFamily !== undefined) options.apiFamily = args.apiFamily;
-        if (args.apiName !== undefined) options.apiName = args.apiName;
-        if (args.ocapiCategory !== undefined) options.ocapiCategory = args.ocapiCategory;
-        if (args.ocapiApi !== undefined) options.ocapiApi = args.ocapiApi;
+        const response = await getMetricsByCategory(client, tenantId, args.category, {
+          from: window.from,
+          to: window.to,
+          thirdPartyServiceId: args.thirdPartyServiceId,
+          apiFamily: args.apiFamily,
+          apiName: args.apiName,
+          ocapiCategory: args.ocapiCategory,
+          ocapiApi: args.ocapiApi,
+        });
 
-        return getMetricsByCategory(client, tenantId, args.category, options);
+        return {
+          ...response,
+          query: {
+            category: args.category,
+            from: window.fromIso,
+            to: window.toIso,
+            fromEpochSeconds: window.fromEpochSeconds,
+            toEpochSeconds: window.toEpochSeconds,
+            clampedFrom: window.clampedFrom || undefined,
+            thirdPartyServiceId: args.thirdPartyServiceId,
+            apiFamily: args.apiFamily,
+            apiName: args.apiName,
+            ocapiCategory: args.ocapiCategory,
+            ocapiApi: args.ocapiApi,
+          },
+        };
       },
       formatOutput: (output) => jsonResult(output),
     },

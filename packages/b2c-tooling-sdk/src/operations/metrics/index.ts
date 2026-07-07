@@ -6,10 +6,6 @@
 /**
  * Metrics operations for B2C Commerce (Observability).
  *
- * > **CLOSED BETA:** The Metrics API is a closed beta capability. Availability,
- * > request/response shapes, and OAuth scopes may change without notice, and the
- * > API must be enabled for your organization.
- *
  * This module provides typed, high-level functions for retrieving operational
  * time-series metrics from the SCAPI Observability Metrics API
  * (`observability/metrics/v1`). Each metric *category* has its own function; all
@@ -55,6 +51,7 @@ import type {MetricsClient, MetricsDataResponse} from '../../clients/metrics.js'
 import {toOrganizationId} from '../../clients/custom-apis.js';
 import {getApiErrorMessage} from '../../clients/error-utils.js';
 import {getLogger} from '../../logging/logger.js';
+import {parseSinceTime, parseRelativeTime} from '../logs/filter.js';
 
 export type {
   MetricsClient,
@@ -145,6 +142,213 @@ export type MetricsQueryOptions = MetricsTimeWindow &
   Partial<Pick<ThirdPartyMetricsOptions, 'thirdPartyServiceId'>> &
   Partial<Pick<ScapiMetricsOptions, 'apiFamily' | 'apiName'>> &
   Partial<Pick<OcapiMetricsOptions, 'ocapiCategory' | 'ocapiApi'>>;
+
+/**
+ * How far back the Metrics API retains data: `from` must be no older than
+ * `serverNow - 30 days`, or the API returns 400.
+ */
+export const METRICS_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * Safety margin kept *inside* the retention window when clamping `from`. Because
+ * the server evaluates retention against its own clock at request time, a `from`
+ * computed as exactly "30 days ago" on the client is reliably rejected once
+ * request latency and client/server clock skew are added. {@link resolveMetricsWindow}
+ * therefore clamps a `from` that lands within this margin of the retention floor
+ * up to `now - 30 days + margin`, so edge requests (e.g. `--from 30d`) succeed.
+ * 5 minutes comfortably covers latency and typical skew while costing a
+ * negligible fraction of the 30-day window.
+ */
+export const METRICS_RETENTION_SAFETY_MARGIN_MS = 5 * 60 * 1000;
+
+/**
+ * A metrics bound as accepted from a CLI flag or MCP argument: a {@link Date},
+ * epoch **milliseconds**, or a human string — a relative duration (`5m`, `1h`,
+ * `2d`, interpreted as "ago") or an ISO 8601 timestamp.
+ */
+export type MetricsBoundInput = Date | number | string;
+
+/**
+ * Parses a single metrics time bound (`from` or `to`) into a {@link Date}.
+ *
+ * This is the shared bound parser for the CLI `metrics get` command and the MCP
+ * `metrics_get` tool. It intentionally does NOT synthesize a companion bound or
+ * apply a default window: each of `from`/`to` is resolved independently and only
+ * when the caller supplies it, so the request sent to the API contains exactly
+ * the bounds the user asked for. This matches the Metrics API's own `from`/`to`
+ * parameters — e.g. passing only `from` lets the API apply its native forward
+ * window, rather than the client inventing `to = now`.
+ *
+ * @param value - The bound: a Date, epoch milliseconds, a relative duration
+ *   (`5m`/`1h`/`2d`, relative to `now`), or an ISO 8601 timestamp
+ * @param now - Reference time for relative durations (defaults to the current
+ *   time; injectable for deterministic tests)
+ * @returns The resolved {@link Date}
+ * @throws TypeError if a string value is neither a valid relative duration nor
+ *   a parseable ISO 8601 timestamp
+ *
+ * @example
+ * ```typescript
+ * const from = parseMetricsBound('2d');            // 2 days ago
+ * const to = parseMetricsBound('2026-01-25T12:00:00Z');
+ * await getSalesMetrics(client, tenantId, {from, to});
+ * ```
+ */
+export function parseMetricsBound(value: MetricsBoundInput, now: Date = new Date()): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === 'number') return new Date(value);
+  return parseSinceTime(value, now);
+}
+
+/**
+ * Raw `from`/`to`/`window` inputs, as accepted from CLI flags or MCP arguments,
+ * before resolution. Any subset may be provided.
+ */
+export interface MetricsWindowInput {
+  /** Start bound (Date, epoch ms, relative like `7d`, or ISO 8601). */
+  from?: MetricsBoundInput;
+  /** End bound (Date, epoch ms, relative like `6h`, or ISO 8601). */
+  to?: MetricsBoundInput;
+  /**
+   * Window duration as a relative string (`1h`, `30m`, `2d`) or a number of
+   * **milliseconds**. Combined with exactly one of `from`/`to` it derives the
+   * other bound; supplied alone it means "the last {window}".
+   */
+  window?: number | string;
+}
+
+/**
+ * A resolved metrics window: the `from`/`to` bounds actually sent to the API
+ * (either may be absent when the caller supplied only one and no window), plus
+ * epoch-second echoes for reporting.
+ */
+export interface ResolvedMetricsWindow {
+  /** Resolved start bound, or undefined if not sent. */
+  from?: Date;
+  /** Resolved end bound, or undefined if not sent. */
+  to?: Date;
+  /** ISO 8601 form of {@link from}, or undefined. */
+  fromIso?: string;
+  /** ISO 8601 form of {@link to}, or undefined. */
+  toIso?: string;
+  /** Epoch **seconds** form of {@link from} (the API wire unit), or undefined. */
+  fromEpochSeconds?: number;
+  /** Epoch **seconds** form of {@link to} (the API wire unit), or undefined. */
+  toEpochSeconds?: number;
+  /**
+   * True when `from` was clamped forward to stay inside the retention window
+   * (see {@link METRICS_RETENTION_SAFETY_MARGIN_MS}). Surfaced so callers can
+   * report that the effective start differs slightly from what was requested.
+   */
+  clampedFrom: boolean;
+}
+
+/**
+ * Parses a `--window`/`--for` duration into milliseconds. Accepts a relative
+ * string (`1h`, `30m`, `2d`) or a raw number of milliseconds.
+ *
+ * @throws TypeError if a string is not a valid relative duration
+ */
+function parseWindowMs(window: number | string): number {
+  if (typeof window === 'number') return window;
+  const ms = parseRelativeTime(window);
+  if (ms === null) {
+    throw new TypeError(`Invalid window duration: "${window}". Use a relative duration like "30m", "1h", or "2d".`);
+  }
+  return ms;
+}
+
+/**
+ * Resolves `from`/`to`/`window` inputs into the concrete bounds to send to the
+ * Metrics API. This is the shared resolver for the CLI `metrics get` command and
+ * the MCP `metrics_get` tool, so both share identical, tested semantics.
+ *
+ * The `window` duration makes fixed-width lookbacks easy without hand-computing
+ * a second timestamp — e.g. "a 1-hour window starting 7 days ago" is
+ * `{from: '7d', window: '1h'}`. Resolution rules:
+ *
+ * - `from` + `to` — used as given; `window` must NOT also be set.
+ * - `from` + `window` — `to = from + window`.
+ * - `to` + `window` — `from = to - window`.
+ * - `window` only — the last `window`: `to = now`, `from = now - window`.
+ * - `from` only — only `from` is sent; the API applies its own window (the
+ *   client does NOT invent `to = now`).
+ * - `to` only — only `to` is sent.
+ * - nothing — neither bound is sent; the API applies its default window.
+ *
+ * Validation here is structural (over-specification and `from` after `to`).
+ * Additionally, a `from` that lands at or just beyond the 30-day retention floor
+ * is clamped *forward* to `now - 30 days + margin` (see
+ * {@link METRICS_RETENTION_SAFETY_MARGIN_MS}) so that requests like `--from 30d`
+ * are not rejected by the server's own slightly-later clock. Clamping only ever
+ * moves `from` toward `now` (never fetches out-of-range data) and is reported via
+ * {@link ResolvedMetricsWindow.clampedFrom}. Other API limits (maximum window
+ * width, etc.) are left to the API, whose error messages are authoritative.
+ *
+ * @param input - The raw `from`/`to`/`window` inputs
+ * @param now - Reference time for relative bounds, window-only mode, and the
+ *   retention clamp (defaults to the current time; injectable for deterministic tests)
+ * @returns The resolved bounds plus ISO/epoch-second echoes and a clamp flag
+ * @throws TypeError if a bound or the window string is unparseable
+ * @throws RangeError if all three are supplied, or the resolved `from` is after `to`
+ *
+ * @example
+ * ```typescript
+ * // A 1-hour window starting 7 days ago:
+ * const w = resolveMetricsWindow({from: '7d', window: '1h'});
+ * await getScapiMetrics(client, tenantId, {from: w.from, to: w.to});
+ * ```
+ */
+export function resolveMetricsWindow(input: MetricsWindowInput = {}, now: Date = new Date()): ResolvedMetricsWindow {
+  const hasFrom = input.from !== undefined && input.from !== '';
+  const hasTo = input.to !== undefined && input.to !== '';
+  const hasWindow = input.window !== undefined && input.window !== '';
+
+  if (hasFrom && hasTo && hasWindow) {
+    throw new RangeError('Specify at most two of from, to, and window — not all three.');
+  }
+
+  let from = hasFrom ? parseMetricsBound(input.from!, now) : undefined;
+  let to = hasTo ? parseMetricsBound(input.to!, now) : undefined;
+
+  if (hasWindow) {
+    const windowMs = parseWindowMs(input.window!);
+    if (from && !to) {
+      to = new Date(from.getTime() + windowMs);
+    } else if (to && !from) {
+      from = new Date(to.getTime() - windowMs);
+    } else {
+      // window alone → the last {window}
+      to = now;
+      from = new Date(now.getTime() - windowMs);
+    }
+  }
+
+  // Clamp `from` forward if it is at/beyond the retention floor, to survive the
+  // server evaluating retention against its own (slightly later) clock.
+  let clampedFrom = false;
+  if (from) {
+    const earliestSafe = now.getTime() - METRICS_RETENTION_MS + METRICS_RETENTION_SAFETY_MARGIN_MS;
+    if (from.getTime() < earliestSafe) {
+      from = new Date(earliestSafe);
+      clampedFrom = true;
+    }
+  }
+
+  if (from && to && from.getTime() > to.getTime()) {
+    throw new RangeError(`Invalid time window: from (${from.toISOString()}) must be before to (${to.toISOString()}).`);
+  }
+
+  return {
+    from,
+    to,
+    fromIso: from?.toISOString(),
+    toIso: to?.toISOString(),
+    fromEpochSeconds: from ? toEpochSeconds(from) : undefined,
+    toEpochSeconds: to ? toEpochSeconds(to) : undefined,
+    clampedFrom,
+  };
+}
 
 /**
  * Converts a millisecond time input ({@link Date} or epoch ms) to the epoch
