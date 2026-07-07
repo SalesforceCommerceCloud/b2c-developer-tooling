@@ -307,7 +307,71 @@ describe('telemetry/telemetry', () => {
       expect(properties.cliId).to.be.a('string');
       expect(properties.date).to.be.a('string');
       expect(properties.timestamp).to.be.a('string');
+      expect(properties.isCI).to.be.oneOf(['true', 'false']);
       expect(measurements.processUptime).to.be.a('number');
+    });
+
+    describe('isCI envelope tag', () => {
+      const CI_VARS = [
+        'CI',
+        'CONTINUOUS_INTEGRATION',
+        'BUILD_NUMBER',
+        'GITHUB_ACTIONS',
+        'GITLAB_CI',
+        'CIRCLECI',
+        'TRAVIS',
+        'JENKINS_URL',
+        'TEAMCITY_VERSION',
+        'TF_BUILD',
+        'BITBUCKET_BUILD_NUMBER',
+        'CODEBUILD_BUILD_ID',
+      ];
+      let saved: Record<string, string | undefined>;
+
+      beforeEach(() => {
+        saved = {};
+        for (const v of CI_VARS) {
+          saved[v] = process.env[v];
+          delete process.env[v];
+        }
+      });
+
+      afterEach(() => {
+        for (const v of CI_VARS) {
+          if (saved[v] === undefined) delete process.env[v];
+          else process.env[v] = saved[v];
+        }
+      });
+
+      async function isCIForEvent(): Promise<string> {
+        const telemetry = new Telemetry({
+          project: 'test-project',
+          appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
+        });
+        await telemetry.start();
+        telemetry.sendEvent('TEST_EVENT');
+        const {properties} = trackEventStub.lastCall.args[0];
+        return properties.isCI as string;
+      }
+
+      it('is "false" when no CI env vars are present', async () => {
+        expect(await isCIForEvent()).to.equal('false');
+      });
+
+      it('is "true" when CI=true', async () => {
+        process.env.CI = 'true';
+        expect(await isCIForEvent()).to.equal('true');
+      });
+
+      it('is "false" when CI=false (explicit opt-out)', async () => {
+        process.env.CI = 'false';
+        expect(await isCIForEvent()).to.equal('false');
+      });
+
+      it('is "true" when a provider-specific var is present (GITHUB_ACTIONS)', async () => {
+        process.env.GITHUB_ACTIONS = 'true';
+        expect(await isCIForEvent()).to.equal('true');
+      });
     });
 
     it('includes initial attributes in events', async () => {

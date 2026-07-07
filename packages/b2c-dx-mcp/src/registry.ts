@@ -6,6 +6,7 @@
 
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {detectWorkspaceType, type ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
+import {DOC_CATEGORIES, resolveEnabledCategories, type DocCategory} from '@salesforce/b2c-tooling-sdk/docs';
 import type {McpTool, Toolset, StartupFlags} from './utils/index.js';
 import {ALL_TOOLSETS, DEPRECATED_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES} from './utils/index.js';
 import type {B2CDxMcpServer} from './server.js';
@@ -33,6 +34,9 @@ const BASE_TOOLSETS: Toolset[] = ['SCAPI', 'DIAGNOSTICS'];
  */
 const PROJECT_TYPE_TOOLSETS: Record<ProjectType, Toolset[]> = {
   cartridges: ['CARTRIDGES'],
+  // SFRA is a cartridge project, so it enables the same toolset as `cartridges`.
+  // (A SFRA workspace also matches the `cartridges` marker; the union dedupes.)
+  sfra: ['CARTRIDGES'],
   'pwa-kit-v3': ['PWAV3', 'MRT'],
   // Note: STOREFRONTNEXT_DEPRECATED is intentionally NOT auto-activated. The
   // legacy sfnext_* tools are superseded by the storefront-next agent-skills
@@ -92,6 +96,8 @@ export type ToolRegistry = Record<Toolset, McpTool[]>;
 export function createToolRegistry(
   loadServices: () => Promise<Services> | Services,
   serverContext?: ServerContext,
+  detectedWorkspaces: readonly ProjectType[] = [],
+  enabledDocCategories?: readonly DocCategory[],
 ): ToolRegistry {
   const registry: ToolRegistry = {
     CARTRIDGES: [],
@@ -107,7 +113,7 @@ export function createToolRegistry(
   const allTools: McpTool[] = [
     ...createCartridgesTools(loadServices),
     ...createDiagnosticsTools(loadServices, serverContext),
-    ...createDocsTools(loadServices),
+    ...createDocsTools(loadServices, {detectedWorkspaces, enabledCategories: enabledDocCategories}),
     ...createMrtTools(loadServices),
     ...createPwav3Tools(loadServices),
     ...createScapiTools(loadServices),
@@ -132,7 +138,7 @@ export function createToolRegistry(
  * @param reason - Reason for triggering auto-discovery (for logging)
  * @returns Array of toolsets to enable
  */
-async function performAutoDiscovery(flags: StartupFlags, reason: string): Promise<Toolset[]> {
+async function detectProjectTypes(flags: StartupFlags): Promise<ProjectType[]> {
   const logger = getLogger();
 
   // Project directory from --project-directory flag or SFCC_PROJECT_DIRECTORY env var
@@ -149,22 +155,11 @@ async function performAutoDiscovery(flags: StartupFlags, reason: string): Promis
   }
 
   const detectionResult = await detectWorkspaceType(projectDirectory);
-
-  // Map all detected project types to MCP toolsets (union)
-  // Note: getToolsetsForProjectTypes always includes BASE_TOOLSET
-  const mappedToolsets = getToolsetsForProjectTypes(detectionResult.projectTypes);
-
   logger.info(
-    {
-      reason,
-      projectTypes: detectionResult.projectTypes,
-      matchedPatterns: detectionResult.matchedPatterns,
-      enabledToolsets: mappedToolsets,
-    },
-    `Auto-discovery (${reason}): project types: ${detectionResult.projectTypes.join(', ') || 'none'}`,
+    {projectTypes: detectionResult.projectTypes, matchedPatterns: detectionResult.matchedPatterns},
+    `Workspace detection: project types: ${detectionResult.projectTypes.join(', ') || 'none'}`,
   );
-
-  return mappedToolsets;
+  return detectionResult.projectTypes;
 }
 
 /**
@@ -206,8 +201,28 @@ export async function registerToolsets(
   const allowNonGaTools = flags.allowNonGaTools ?? false;
   const logger = getLogger();
 
+  // Detect the workspace type once up front. It informs both the
+  // docs tools (favoring the current workspace's docs and surfacing it in the
+  // tool descriptions) and toolset auto-discovery below, so we only hit the
+  // filesystem a single time.
+  const detectedWorkspaces = await detectProjectTypes(flags);
+
+  // Resolve the launch-time docs topic allowlist (bounds the whole docs corpus).
+  const enabledDocCategories = resolveEnabledCategories(flags.docsTopics, (invalid) =>
+    logger.warn(
+      {invalidTopics: invalid, validTopics: DOC_CATEGORIES},
+      `Ignoring unknown documentation topic(s) in --docs-topics: "${invalid.join('", "')}"`,
+    ),
+  );
+  if (enabledDocCategories) {
+    logger.info(
+      {docsTopics: enabledDocCategories},
+      `Documentation restricted to topics: ${enabledDocCategories.join(', ')}`,
+    );
+  }
+
   // Create the tool registry (all available tools)
-  const toolRegistry = createToolRegistry(loadServices, serverContext);
+  const toolRegistry = createToolRegistry(loadServices, serverContext, detectedWorkspaces, enabledDocCategories);
 
   // Build flat list of all tools for lookup
   const allTools = Object.values(toolRegistry).flat();
@@ -246,12 +261,16 @@ export async function registerToolsets(
   );
   const toolsetsToEnable = new Set<Toolset>(toolsets.includes(ALL_TOOLSETS) ? allNonDeprecatedToolsets : validToolsets);
 
-  // Auto-discovery: If no valid toolsets AND no valid individual tools, detect workspace type.
-  // This handles both: (1) no flags provided, and (2) all provided flags are invalid.
-  // Auto-discovery enables appropriate toolsets based on workspace type,
-  // or at minimum the BASE_TOOLSETS if no project types are detected.
+  // Auto-discovery: If no valid toolsets AND no valid individual tools, map the
+  // already-detected workspace type(s) to toolsets. This handles both: (1) no
+  // flags provided, and (2) all provided flags are invalid. Always enables at
+  // least the BASE_TOOLSETS even if no project types are detected.
   if (toolsetsToEnable.size === 0 && validIndividualTools.length === 0) {
-    const discoveredToolsets = await performAutoDiscovery(flags, 'no valid toolsets or tools');
+    const discoveredToolsets = getToolsetsForProjectTypes(detectedWorkspaces);
+    logger.info(
+      {projectTypes: detectedWorkspaces, enabledToolsets: discoveredToolsets},
+      `Auto-discovery: enabling toolsets ${discoveredToolsets.join(', ')}`,
+    );
     for (const toolset of discoveredToolsets) {
       toolsetsToEnable.add(toolset);
     }

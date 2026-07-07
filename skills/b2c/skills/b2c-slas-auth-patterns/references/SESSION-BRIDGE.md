@@ -1,5 +1,7 @@
 # Session Bridge Reference
 
+> Illustrative of the flow; confirm platform-agnostic API contract with `b2c docs read commerce-api/slas-session-bridge-auth`. PWA Kit examples use framework-specific convenience wrappers.
+
 Detailed implementation patterns for session bridging between PWA Kit and SFRA.
 
 ## Token Types

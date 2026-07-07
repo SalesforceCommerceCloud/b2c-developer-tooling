@@ -63,6 +63,8 @@ security:
 
 ## Contract Requirements
 
+> Illustrative validation rules; confirm current OpenAPI contract requirements, scope naming constraints, and schema validation rules with `b2c docs read commerce-api/custom-api-components-references`.
+
 - **Version:** Defined in `info.version`, transformed to URL version (e.g., `1.0.1` becomes `v1`)
 - **Security Scheme:** Use `ShopperToken` for Shopper APIs or `AmOAuth2` for Admin APIs
 - **Custom Scopes:** Must start with `c_`, contain only alphanumeric/hyphen/period/underscore, max 25 chars
@@ -71,6 +73,8 @@ security:
 - **No additionalProperties:** The `additionalProperties` attribute is not allowed in request body schemas
 
 ## Shopper vs Admin APIs
+
+> Illustrative operational limits and activity types; confirm current runtime quotas, max body sizes, and timeout values with `b2c docs read commerce-api/custom-apis`.
 
 | Aspect | Shopper API | Admin API |
 |--------|-------------|-----------|
