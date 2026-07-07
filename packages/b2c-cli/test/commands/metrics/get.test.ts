@@ -371,5 +371,115 @@ describe('metrics get', () => {
         expect(fetchStub.called).to.equal(false);
       }
     });
+
+    it('enriches each series with a tags object by default (--tags on)', async () => {
+      const command: any = new MetricsGet(['scapi'], config);
+      stubParse(command, {'tenant-id': 'zzxy_prd', window: '1h', tags: true}, {category: 'scapi'});
+      await command.init();
+
+      sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+      sinon.stub(command, 'getOAuthStrategy').returns({getAuthorizationHeader: async () => 'Bearer test'});
+      sinon.stub(command, 'requireTenantId').returns('zzxy_prd');
+
+      sinon.stub(globalThis, 'fetch').resolves(
+        new Response(
+          JSON.stringify({
+            data: [
+              {
+                metricId: 'cacheHitRate',
+                title: 'Cache Hit Statistics',
+                description: '',
+                unit: '',
+                dataSeries: [{id: 'zzxy.product HIT', name: 'zzxy.product HIT', data: [{timestamp: 1, value: 1}]}],
+              },
+            ],
+          }),
+          {status: 200, headers: {'content-type': 'application/json'}},
+        ),
+      );
+
+      const result = (await command.run()) as {
+        data: {dataSeries: {tags?: Record<string, string>}[]}[];
+      };
+      const tags = result.data[0].dataSeries[0].tags;
+      expect(tags).to.deep.equal({realm: 'zzxy', environment: 'prd', apiFamily: 'product', cacheStatus: 'HIT'});
+    });
+
+    it('folds an applied --api-family filter into the tags authoritatively', async () => {
+      const command: any = new MetricsGet(['scapi'], config);
+      // Drill-down ids like zzxy.shopper.auth.v1 would mis-parse; the filter wins.
+      stubParse(
+        command,
+        {'tenant-id': 'zzxy_prd', window: '1h', tags: true, 'api-family': 'shopper'},
+        {category: 'scapi'},
+      );
+      await command.init();
+
+      sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+      sinon.stub(command, 'getOAuthStrategy').returns({getAuthorizationHeader: async () => 'Bearer test'});
+      sinon.stub(command, 'requireTenantId').returns('zzxy_prd');
+
+      sinon.stub(globalThis, 'fetch').resolves(
+        new Response(
+          JSON.stringify({
+            data: [
+              {
+                metricId: 'totalCalls',
+                title: 'Total Calls',
+                description: '',
+                unit: '',
+                dataSeries: [
+                  {id: 'zzxy.shopper.auth.v1', name: 'zzxy.shopper.auth.v1', data: [{timestamp: 1, value: 1}]},
+                ],
+              },
+            ],
+          }),
+          {status: 200, headers: {'content-type': 'application/json'}},
+        ),
+      );
+
+      const result = (await command.run()) as {
+        data: {dataSeries: {tags?: Record<string, string>}[]}[];
+      };
+      expect(result.data[0].dataSeries[0].tags?.apiFamily).to.equal('shopper');
+    });
+
+    it('omits tags when --no-tags is given (raw API shape)', async () => {
+      const command: any = new MetricsGet(['scapi'], config);
+      stubParse(command, {'tenant-id': 'zzxy_prd', window: '1h', tags: false}, {category: 'scapi'});
+      await command.init();
+
+      sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'resolvedConfig').get(() => ({values: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd'}}));
+      sinon.stub(command, 'getOAuthStrategy').returns({getAuthorizationHeader: async () => 'Bearer test'});
+      sinon.stub(command, 'requireTenantId').returns('zzxy_prd');
+
+      sinon.stub(globalThis, 'fetch').resolves(
+        new Response(
+          JSON.stringify({
+            data: [
+              {
+                metricId: 'totalCalls',
+                title: 'Total Calls',
+                description: '',
+                unit: '',
+                dataSeries: [{id: 'zzxy.product', name: 'zzxy.product', data: [{timestamp: 1, value: 1}]}],
+              },
+            ],
+          }),
+          {status: 200, headers: {'content-type': 'application/json'}},
+        ),
+      );
+
+      const result = (await command.run()) as {
+        data: {dataSeries: {tags?: Record<string, string>}[]}[];
+      };
+      expect(result.data[0].dataSeries[0].tags).to.equal(undefined);
+    });
   });
 });

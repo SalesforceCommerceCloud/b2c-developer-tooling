@@ -32,13 +32,13 @@ describe('tools/scapi/metrics-get', () => {
 
   beforeEach(() => {
     services = new Services({
-      resolvedConfig: createMockResolvedConfig({shortCode: 'test-shortcode', tenantId: 'test_tenant'}),
+      resolvedConfig: createMockResolvedConfig({shortCode: 'test-shortcode', tenantId: 'abcd_prd'}),
     });
 
     mockGet = stub().resolves({data: {data: []}, error: undefined, response: {status: 200}});
     const mockClient = {GET: mockGet} as unknown as MetricsClient;
     stub(services, 'getMetricsClient').returns(mockClient);
-    stub(services, 'getTenantId').returns('test_tenant');
+    stub(services, 'getTenantId').returns('abcd_prd');
   });
 
   afterEach(() => {
@@ -117,5 +117,61 @@ describe('tools/scapi/metrics-get', () => {
     expect(isError).to.equal(true);
     expect(raw).to.match(/at most two/);
     expect(mockGet.called).to.equal(false);
+  });
+
+  it('enriches each series with a tags object (always-on for this machine consumer)', async () => {
+    mockGet.resolves({
+      data: {
+        data: [
+          {
+            metricId: 'cacheHitRate',
+            title: 'Cache Hit Statistics',
+            description: '',
+            unit: '',
+            dataSeries: [{id: 'abcd.product HIT', name: 'abcd.product HIT', data: [{timestamp: 1, value: 1}]}],
+          },
+        ],
+      },
+      error: undefined,
+      response: {status: 200},
+    });
+
+    const tool = createMetricsGetTool(() => services);
+    const result = await tool.handler({category: 'scapi', window: '1h'});
+    const {parsed} = parseResultContent(result);
+
+    const data = parsed?.data as Array<{dataSeries: Array<{tags?: Record<string, string>}>}>;
+    expect(data[0].dataSeries[0].tags).to.deep.equal({
+      realm: 'abcd',
+      environment: 'prd',
+      apiFamily: 'product',
+      cacheStatus: 'HIT',
+    });
+  });
+
+  it('folds an applied apiFamily filter into the tags authoritatively', async () => {
+    mockGet.resolves({
+      data: {
+        data: [
+          {
+            metricId: 'totalCalls',
+            title: 'Total Calls',
+            description: '',
+            unit: '',
+            dataSeries: [{id: 'abcd.shopper.auth.v1', name: 'abcd.shopper.auth.v1', data: [{timestamp: 1, value: 1}]}],
+          },
+        ],
+      },
+      error: undefined,
+      response: {status: 200},
+    });
+
+    const tool = createMetricsGetTool(() => services);
+    const result = await tool.handler({category: 'scapi', window: '1h', apiFamily: 'shopper'});
+    const {parsed} = parseResultContent(result);
+
+    const data = parsed?.data as Array<{dataSeries: Array<{tags?: Record<string, string>}>}>;
+    // Heuristic alone would yield apiFamily="shopper.auth.v1"; the filter corrects it.
+    expect(data[0].dataSeries[0].tags?.apiFamily).to.equal('shopper');
   });
 });

@@ -705,3 +705,8 @@ export async function getMetricsByCategory(
     }
   }
 }
+
+// Client-side dimension/tag extraction for series (interim until the API
+// exposes structured tags server-side). See ./tags.ts.
+export {parseSeriesTags, enrichMetricsTags} from './tags.js';
+export type {MetricSeriesTags, MetricsTagContext, MetricsTaggedResponse} from './tags.js';

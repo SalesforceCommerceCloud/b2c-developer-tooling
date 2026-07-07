@@ -33,7 +33,8 @@ metrics
         ├── --from / --to / --window  - time window (relative "1h"/"7d" or ISO 8601)
         ├── --third-party-service-id  - filter third-party category
         ├── --api-family / --api-name - filter SCAPI category
-        └── --ocapi-category / --ocapi-api - filter OCAPI category
+        ├── --ocapi-category / --ocapi-api - filter OCAPI category
+        └── --tags / --no-tags        - enrich series with structured tags (default: true)
 ```
 
 ## Configuration
@@ -171,6 +172,28 @@ b2c metrics get overall --from 24h
 
 **Wire units:** Request bounds are sent to the API as epoch **seconds**; response timestamps come back as epoch **milliseconds** (JS-native)
 
+## Series Tags
+
+By default, the CLI enriches each data series with a structured `tags` object to make filtering and grouping easier. The Metrics API returns series identifiers that pack multiple dimensions into a single string (e.g., `bdpx.product`, `bdpx.product HIT`, `2xx bdpx.host`). The `tags` object unpacks these into discrete key-value pairs.
+
+**Tag contents (three tiers):**
+
+1. **Realm and environment** — always present, derived from the requested tenant/org ID (`f_ecom_bdpx_prd` → `realm=bdpx`, `environment=prd`).
+2. **Per-series dimensions** — parsed from the packed series ID: `apiFamily`, `apiName`, `host`, `cacheStatus`, `statusClass`, `ocapiCategory`, `controller`, `exceptionType`, `aggregation`.
+3. **Applied filters** — any category-specific filter you passed (`--api-family`, etc.) is folded in authoritatively, overriding heuristic guesses.
+
+**Example:**
+
+- `scapi cacheHitRate` series `bdpx.product HIT` → `{"realm":"bdpx","environment":"prd","apiFamily":"product","cacheStatus":"HIT"}`
+
+**Disabling tags:**
+
+Pass `--no-tags` to disable enrichment and return the raw API shape (no `tags` key on series).
+
+**Important framing:**
+
+Tag parsing is a **client-side, best-effort bridge** over the API's current packed-string format. The `realm`/`environment` and applied-filter tiers are always reliable; the string-parsed dimensions are heuristic.
+
 ## Response Format
 
 Metrics responses contain an array of metrics. Each metric includes:
@@ -182,6 +205,7 @@ Metrics responses contain an array of metrics. Each metric includes:
 - **dataSeries**: Array of data series, each containing:
   - **id**: Series identifier
   - **name**: Series name (e.g., `2xx`, `4xx`, `5xx` for HTTP status codes)
+  - **tags**: Structured dimension tags (enabled by default)
   - **data**: Array of timestamped values:
     - **timestamp**: Epoch milliseconds (the CLI normalizes from the API's epoch-seconds wire format)
     - **value**: Numeric value
@@ -207,6 +231,11 @@ With `--json`, the response is wrapped as `{query, data}` where `query` echoes t
         {
           "id": "2xx",
           "name": "2xx",
+          "tags": {
+            "realm": "bdpx",
+            "environment": "prd",
+            "statusClass": "2xx"
+          },
           "data": [
             {"timestamp": 1737802800000, "value": 1500},
             {"timestamp": 1737803400000, "value": 1620}
@@ -263,7 +292,7 @@ const historicalMetrics = await getScapiMetrics(client, 'zzxy_prd', {
 
 Available operations: `getOverallMetrics`, `getSalesMetrics`, `getEcdnMetrics`, `getThirdPartyMetrics`, `getScapiMetrics`, `getScapiHooksMetrics`, `getMrtMetrics`, `getControllerMetrics`, `getOcapiMetrics`, `getMetricsByCategory`.
 
-Available helpers: `resolveMetricsWindow({from, to, window})`, `parseMetricsBound(value)`.
+Available helpers: `resolveMetricsWindow({from, to, window})`, `parseMetricsBound(value)`, `enrichMetricsTags(response, category, context)`, `parseSeriesTags({category, metricId, seriesId, context})`.
 
 All operations accept `(client, tenantId, options?)` and return `Promise<MetricsDataResponse>`. Time-window `from`/`to` accept a `Date` or epoch **milliseconds** (converted to the API's epoch-seconds wire format); response data-point timestamps come back in epoch **milliseconds**. The tenant ID may be bare (e.g., `zzxy_prd`) or prefixed (e.g., `f_ecom_zzxy_prd`) — the SDK normalizes it automatically.
 

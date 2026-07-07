@@ -8,6 +8,7 @@ import {TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@sal
 import {
   getMetricsByCategory,
   resolveMetricsWindow,
+  enrichMetricsTags,
   METRIC_CATEGORIES,
   type MetricCategory,
   type MetricsDataResponse,
@@ -26,6 +27,8 @@ interface MetricRow {
   latestValue: string;
   points: number;
   latestTimestamp: string;
+  /** Compact `key=value` rendering of the series tags, when `--tags` is set. */
+  tags: string;
 }
 
 /**
@@ -88,6 +91,11 @@ const COLUMNS: Record<string, ColumnDef<MetricRow>> = {
   latestTimestamp: {
     header: 'Latest Timestamp',
     get: (r) => r.latestTimestamp,
+  },
+  tags: {
+    header: 'Tags',
+    get: (r) => r.tags || '-',
+    extended: true,
   },
 };
 
@@ -152,6 +160,15 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
         {},
       ),
     }),
+    tags: Flags.boolean({
+      allowNo: true,
+      default: true,
+      description: t(
+        'flags.metrics.tags.description',
+        'Add a structured "tags" object (realm, environment, applied filters, and per-series dimensions like apiFamily/host/cacheStatus) to each series. On by default; use --no-tags for the raw API shape',
+        {},
+      ),
+    }),
     'third-party-service-id': Flags.string({
       description: t('flags.metrics.thirdPartyServiceId.description', 'Filter third-party metrics by service ID', {}),
     }),
@@ -178,6 +195,7 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
       from: fromFlag,
       to: toFlag,
       window: windowFlag,
+      tags: tagsFlag,
       'third-party-service-id': thirdPartyServiceId,
       'api-family': apiFamily,
       'api-name': apiName,
@@ -257,6 +275,21 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
       );
     }
 
+    // Attach a structured `tags` object to each series (on by default; --no-tags
+    // opts out to the raw API shape). Additive: id/name/data are preserved, so
+    // consumers that ignore tags are unaffected. Applied filters are folded into
+    // the context so drilled-down series are tagged authoritatively.
+    if (tagsFlag) {
+      response = enrichMetricsTags(response, category as MetricCategory, {
+        tenantId,
+        apiFamily,
+        apiName,
+        ocapiCategory,
+        ocapiApi,
+        thirdPartyServiceId,
+      });
+    }
+
     const output: MetricsGetOutput = {...response, query};
 
     if (this.jsonEnabled()) {
@@ -277,6 +310,8 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
     for (const metric of response.data) {
       for (const series of metric.dataSeries) {
         const latestPoint: MetricDataPoint | undefined = series.data.at(-1);
+        // series.tags is present only when --tags enriched the response.
+        const seriesTags = (series as {tags?: Record<string, string>}).tags;
         rows.push({
           metric: metric.title,
           series: series.name,
@@ -284,6 +319,11 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
           latestValue: latestPoint ? String(latestPoint.value) : '-',
           points: series.data.length,
           latestTimestamp: latestPoint ? new Date(latestPoint.timestamp).toISOString() : '-',
+          tags: seriesTags
+            ? Object.entries(seriesTags)
+                .map(([k, v]) => `${k}=${v}`)
+                .join(' ')
+            : '',
         });
       }
     }
@@ -295,6 +335,9 @@ export default class MetricsGet extends MetricsCommand<typeof MetricsGet> {
     );
     this.log('');
 
+    // Tags are on by default in JSON/machine output, but kept out of the default
+    // human table to avoid clutter; the Tags column is extended-only (shown with
+    // -x, or selected explicitly via -c tags).
     tableRenderer.render(rows, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     return output;

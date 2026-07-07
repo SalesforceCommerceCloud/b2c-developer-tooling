@@ -198,6 +198,7 @@ Metrics responses contain an array of metrics. Each metric includes:
 - **dataSeries**: Array of data series, each containing:
   - **id**: Series identifier
   - **name**: Series name (e.g., `2xx`, `4xx`, `5xx` for HTTP status codes)
+  - **tags**: Structured dimension tags (enabled by default; see [Series Tags](#series-tags))
   - **data**: Array of timestamped values:
     - **timestamp**: Epoch milliseconds (normalized by the CLI/SDK from the API's epoch-seconds wire format, so `new Date(timestamp)` gives the correct instant)
     - **value**: Numeric value
@@ -244,6 +245,32 @@ With `--json`, the response is wrapped as `{query, data}` where `query` echoes t
 
 The `query` object always includes both `from`/`to` (and their `fromEpochSeconds`/`toEpochSeconds`). When a bound was derived from the 24-hour default window (e.g. `--from` alone, or no time flags), `query.defaultedWindow` is `true`; when `--from` was clamped forward off the retention edge, `query.clampedFrom` is `true`.
 
+### Series Tags
+
+By default, the CLI enriches each data series with a structured `tags` object to make filtering and grouping easier. The Metrics API currently returns series identifiers that pack multiple dimensions into a single string with inconsistent delimiters (e.g., `bdpx.product`, `bdpx.product HIT`, `2xx bdpx.host`). The `tags` object unpacks these into discrete key-value pairs.
+
+**Tag contents (three tiers):**
+
+1. **Realm and environment** — always present, derived from the requested tenant/org ID (`f_ecom_bdpx_prd` → `realm=bdpx`, `environment=prd`). These are never parsed from the series string.
+
+2. **Per-series dimensions** — parsed from the packed series ID, varying by category/metric: `apiFamily`, `apiName`, `host`, `cacheStatus`, `statusClass`, `ocapiCategory`, `controller`, `exceptionType`, and `aggregation` (for rollup series). Unrecognized IDs keep the raw remainder under a `series` key (nothing is dropped).
+
+3. **Applied filters** — any category-specific filter you passed (`--api-family`, `--api-name`, `--ocapi-category`, `--ocapi-api`, `--third-party-service-id`) is folded in **authoritatively**, overriding heuristic guesses. This matters for drill-down: `--api-family shopper` makes the API return finer IDs like `bdpx.shopper.auth.v1`, which the string heuristic alone would mis-tag as `apiFamily=shopper.auth.v1`; the applied filter restores the correct `apiFamily=shopper`.
+
+**Examples:**
+
+- `scapi cacheHitRate` series `bdpx.product HIT` → `{"realm":"bdpx","environment":"prd","apiFamily":"product","cacheStatus":"HIT"}`
+- `third-party remoteExceptions` series `bdpx.xitgmcd3.api.commercecloud.salesforce.com.socketReadTimeout` → `{"realm":"bdpx","environment":"prd","host":"xitgmcd3.api.commercecloud.salesforce.com","exceptionType":"socketReadTimeout"}`
+- `scapi requestLatency` rollup series `bdpx Average overall latency` → `{"realm":"bdpx","environment":"prd","aggregation":"overall"}`
+
+**Disabling tags:**
+
+Pass `--no-tags` to disable enrichment and return the raw API shape (no `tags` key on series).
+
+**Important framing:**
+
+Tag parsing is a **client-side, best-effort bridge** over the API's current packed-string format. It encodes undocumented formats and may mis-parse new or changed ones. The `realm`/`environment` and applied-filter tiers are always reliable; the string-parsed dimensions are heuristic. This feature is intended to be superseded by server-side tags in the Metrics API.
+
 ## SDK Usage
 
 The Metrics API is also available via the SDK:
@@ -285,9 +312,20 @@ const historicalMetrics = await getScapiMetrics(client, 'zzxy_prd', {
   apiFamily: 'product',
 });
 
+// Enrich series with structured tags (enabled by default in CLI;
+// call explicitly in SDK)
+import {enrichMetricsTags} from '@salesforce/b2c-tooling-sdk';
+
+const enrichedResponse = enrichMetricsTags(scapiMetrics, 'scapi', {
+  tenantId: 'zzxy_prd',
+  apiFamily: 'product',
+  apiName: 'shopper-products',
+});
+
 // Response timestamps are normalized to epoch milliseconds:
-for (const metric of overallMetrics.data) {
+for (const metric of enrichedResponse.data) {
   for (const series of metric.dataSeries) {
+    console.log(series.tags); // {realm, environment, apiFamily, ...}
     for (const point of series.data) {
       console.log(new Date(point.timestamp).toISOString(), point.value);
     }
@@ -299,8 +337,8 @@ The SDK exports:
 
 - **Client factory**: `createMetricsClient(config, auth)`
 - **Operations**: `getOverallMetrics`, `getSalesMetrics`, `getEcdnMetrics`, `getThirdPartyMetrics`, `getScapiMetrics`, `getScapiHooksMetrics`, `getMrtMetrics`, `getControllerMetrics`, `getOcapiMetrics`, `getMetricsByCategory`
-- **Helpers**: `resolveMetricsWindow({from, to, window})`, `parseMetricsBound(value)`
-- **Types**: `MetricsClient`, `MetricsDataResponse`, `Metric`, `MetricDataSeries`, `MetricDataPoint`, `MetricsError`
+- **Helpers**: `resolveMetricsWindow({from, to, window})`, `parseMetricsBound(value)`, `enrichMetricsTags(response, category, context)`, `parseSeriesTags({category, metricId, seriesId, context})`
+- **Types**: `MetricsClient`, `MetricsDataResponse`, `Metric`, `MetricDataSeries`, `MetricDataPoint`, `MetricsError`, `MetricSeriesTags`, `MetricsTagContext`, `MetricsTaggedResponse`
 
 All operations accept `(client, tenantId, options?)` and return `Promise<MetricsDataResponse>`. Time-window `from`/`to` accept a `Date` or epoch **milliseconds** and are converted to the API's epoch-seconds wire format; response data-point timestamps are normalized back to epoch **milliseconds**. The tenant ID may be bare (e.g., `zzxy_prd`) or prefixed (e.g., `f_ecom_zzxy_prd`) — the SDK normalizes it automatically.
 
@@ -317,6 +355,8 @@ See the [SDK API Reference](/api/) for complete details.
 | `--from`          |                      | Start bound: relative (`1h`, `7d` ago) or ISO 8601               |
 | `--to`            |                      | End bound: relative or ISO 8601                                  |
 | `--window`        |                      | Window duration (`1h`, `30m`, `2d`); alias `--for`               |
+| `--tags`          |                      | Enrich series with structured tags (default: `true`)             |
+| `--no-tags`       |                      | Disable series tag enrichment                                    |
 | `--json`          |                      | Output as JSON (wrapped as `{query, data}` with resolved bounds) |
 
 For a complete reference of all commands and flags, see [CLI: Metrics](/cli/metrics).

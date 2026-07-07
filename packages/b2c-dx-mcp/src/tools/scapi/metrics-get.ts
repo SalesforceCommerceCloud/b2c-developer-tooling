@@ -18,7 +18,12 @@ import {z} from 'zod';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import type {Services} from '../../services.js';
 import type {McpTool} from '../../utils/index.js';
-import {getMetricsByCategory, resolveMetricsWindow, type MetricsDataResponse} from '@salesforce/b2c-tooling-sdk';
+import {
+  getMetricsByCategory,
+  resolveMetricsWindow,
+  enrichMetricsTags,
+  type MetricsDataResponse,
+} from '@salesforce/b2c-tooling-sdk';
 
 /**
  * Input parameters for metrics_get tool.
@@ -112,7 +117,7 @@ Retrieve observability metrics time-series for a B2C Commerce tenant. Returns me
 
 **Time window:** Provide "from" and/or "to" as a relative duration ("1h", "7d" — interpreted as ago) or an ISO 8601 timestamp, and/or "window" as a duration ("1h", "30m"). The tool always sends an explicit from+to range, defaulting to a 24-hour window: from + window → to = from + window; to + window → from = to - window; window alone → the last <window>; from alone → 24h forward from it (capped at now); to alone → 24h back from it; nothing → the last 24h. Do not supply from, to, and window together. The API caps a window at 24h and retains 30 days; an explicit range wider than 24h is sent as-is and the API returns a clear error.
 
-**Response:** { query, data } — "query" echoes the resolved from/to (ISO + epoch seconds), filters, and defaultedWindow/clampedFrom flags; "data[]" contains metricId, title, description, unit, and dataSeries[] with time-series points (timestamp in epoch milliseconds, value).
+**Response:** { query, data } — "query" echoes the resolved from/to (ISO + epoch seconds), filters, and defaultedWindow/clampedFrom flags; "data[]" contains metricId, title, description, unit, and dataSeries[] with time-series points (timestamp in epoch milliseconds, value). Each series also carries a structured "tags" object (realm, environment, any applied filters, and per-series dimensions like apiFamily/host/cacheStatus) parsed client-side from the packed series id — use these to group/filter rather than parsing the series id string.
 
 **Requirements:** OAuth with sfcc.metrics scope.`,
       toolsets: ['SCAPI'],
@@ -166,7 +171,7 @@ Retrieve observability metrics time-series for a B2C Commerce tenant. Returns me
         // unparseable/over-specified input before the request.
         const window = resolveMetricsWindow({from: args.from, to: args.to, window: args.window});
 
-        const response = await getMetricsByCategory(client, tenantId, args.category, {
+        const raw = await getMetricsByCategory(client, tenantId, args.category, {
           from: window.from,
           to: window.to,
           thirdPartyServiceId: args.thirdPartyServiceId,
@@ -174,6 +179,18 @@ Retrieve observability metrics time-series for a B2C Commerce tenant. Returns me
           apiName: args.apiName,
           ocapiCategory: args.ocapiCategory,
           ocapiApi: args.ocapiApi,
+        });
+
+        // Enrich each series with a structured `tags` object (realm/environment
+        // from the request, applied filters, and per-series dimensions parsed
+        // from the packed id). Additive and always-on for this machine consumer.
+        const response = enrichMetricsTags(raw, args.category, {
+          tenantId,
+          apiFamily: args.apiFamily,
+          apiName: args.apiName,
+          ocapiCategory: args.ocapiCategory,
+          ocapiApi: args.ocapiApi,
+          thirdPartyServiceId: args.thirdPartyServiceId,
         });
 
         return {

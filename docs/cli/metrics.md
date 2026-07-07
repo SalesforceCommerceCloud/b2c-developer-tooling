@@ -190,6 +190,8 @@ b2c metrics get <category> [flags]
 | `--api-name`               | Filter by SCAPI API name (scapi category only)               |         |
 | `--ocapi-category`         | Filter by OCAPI category (ocapi category only)               |         |
 | `--ocapi-api`              | Filter by OCAPI API (ocapi category only)                    |         |
+| `--tags`                   | Enrich series with structured tags                           | `true`  |
+| `--no-tags`                | Disable series tag enrichment (return raw API shape)         |         |
 | `--json`                   | Output results as JSON (wrapped as `{query, data}`)          | `false` |
 
 ### Time Windows
@@ -296,6 +298,69 @@ b2c metrics get ocapi --ocapi-category shop --ocapi-api baskets --tenant-id zzxy
 b2c metrics get overall --tenant-id zzxy_prd --json
 ```
 
+### Series Tags
+
+By default, the CLI enriches each data series with a structured `tags` object to make filtering and grouping easier. The Metrics API currently returns series identifiers that pack multiple dimensions into a single string with inconsistent delimiters (e.g., `bdpx.product`, `bdpx.product HIT`, `2xx bdpx.host`). The `tags` object unpacks these into discrete key-value pairs.
+
+**Tag contents (three tiers):**
+
+1. **Realm and environment** — always present, derived from the requested tenant/org ID (`f_ecom_bdpx_prd` → `realm=bdpx`, `environment=prd`). These are never parsed from the series string.
+
+2. **Per-series dimensions** — parsed from the packed series ID, varying by category/metric: `apiFamily`, `apiName`, `host`, `cacheStatus`, `statusClass`, `ocapiCategory`, `controller`, `exceptionType`, and `aggregation` (for rollup series). Unrecognized IDs keep the raw remainder under a `series` key.
+
+3. **Applied filters** — any category-specific filter you passed (`--api-family`, `--api-name`, `--ocapi-category`, `--ocapi-api`, `--third-party-service-id`) is folded in **authoritatively**, overriding heuristic guesses. This matters for drill-down: `--api-family shopper` makes the API return finer IDs like `bdpx.shopper.auth.v1`, which the string heuristic alone would mis-tag as `apiFamily=shopper.auth.v1`; the applied filter restores the correct `apiFamily=shopper`.
+
+**Examples:**
+
+- `scapi cacheHitRate` series `bdpx.product HIT` → `{"realm":"bdpx","environment":"prd","apiFamily":"product","cacheStatus":"HIT"}`
+- `third-party remoteExceptions` series `bdpx.xitgmcd3.api.commercecloud.salesforce.com.socketReadTimeout` → `{"realm":"bdpx","environment":"prd","host":"xitgmcd3.api.commercecloud.salesforce.com","exceptionType":"socketReadTimeout"}`
+- `scapi requestLatency` rollup series `bdpx Average overall latency` → `{"realm":"bdpx","environment":"prd","aggregation":"overall"}`
+
+**In the table output:**
+
+The `tags` object is an **extended-only column** — shown with `-x` or `-c tags`. It renders as compact `key=value key=value` format.
+
+**In JSON output:**
+
+Each series gains a `tags` object:
+
+```json
+{
+  "query": {
+    "category": "scapi",
+    "from": "2026-01-25T10:00:00.000Z",
+    "to": "2026-01-25T11:00:00.000Z"
+  },
+  "data": [
+    {
+      "metricId": "cache_hit_rate",
+      "title": "Cache Hit Rate",
+      "dataSeries": [
+        {
+          "id": "bdpx.product HIT",
+          "name": "bdpx.product HIT",
+          "tags": {
+            "realm": "bdpx",
+            "environment": "prd",
+            "apiFamily": "product",
+            "cacheStatus": "HIT"
+          },
+          "data": [{"timestamp": 1737802800000, "value": 92.5}]
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Disabling tags:**
+
+Pass `--no-tags` to disable enrichment and return the raw API shape (no `tags` key on series).
+
+**Important framing:**
+
+Tag parsing is a **client-side, best-effort bridge** over the API's current packed-string format. It encodes undocumented formats and may mis-parse new or changed ones. The `realm`/`environment` and applied-filter tiers are always reliable; the string-parsed dimensions are heuristic. This feature is intended to be superseded by server-side tags in the Metrics API.
+
 ### Response Format
 
 The response contains an array of metrics. Each metric includes:
@@ -307,6 +372,7 @@ The response contains an array of metrics. Each metric includes:
 - **dataSeries**: Array of data series, each containing:
   - **id**: Series identifier
   - **name**: Series name (e.g., `2xx`, `4xx`, `5xx` for HTTP status codes)
+  - **tags**: Structured dimension tags (enabled by default; see [Series Tags](#series-tags))
   - **data**: Array of timestamped values:
     - **timestamp**: Epoch milliseconds (normalized by the CLI/SDK from the API's epoch-seconds wire format, so `new Date(timestamp)` is correct)
     - **value**: Numeric value
