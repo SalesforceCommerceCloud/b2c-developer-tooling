@@ -11,6 +11,8 @@ Use the `b2c` CLI to search and read B2C Commerce documentation spanning multipl
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli docs search ProductMgr`).
 
+> **MCP parity:** If the `b2c-dx-mcp` server is connected, its docs tools — `docs_search`, `docs_read`, `docs_list`, `docs_schema_search`, `docs_schema_read`, and `docs_schema_list` — cover the same corpus with the same search, workspace-awareness, and topic-scoping behavior described here.
+
 ## Key Features
 
 - **Multi-corpus search** — Search across Script API, Developer Center guides, tooling docs, job steps, and schemas in a unified index

@@ -88,7 +88,13 @@ Alternatively, use the "Add to Cursor" link to add to user-level configuration:
   "mcpServers": {
     "b2c-dx-mcp": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+      "args": [
+        "-y",
+        "@salesforce/b2c-dx-mcp@latest",
+        "--project-directory",
+        "${workspaceFolder}",
+        "--allow-non-ga-tools"
+      ]
     }
   }
 }
@@ -149,6 +155,7 @@ This error occurs when npx uses a cached broken version (`0.0.1`) instead of the
 **Solution:**
 
 1. **Update your MCP configuration** to use `@latest`:
+
    ```json
    {
      "mcpServers": {

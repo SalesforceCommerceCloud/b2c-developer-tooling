@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-07-02T15:36:28.682Z",
+  "generatedAt": "2026-07-07T23:53:44.118Z",
   "entries": [
     {
       "id": "guide-account-manager",
@@ -199,7 +199,7 @@
       "filePath": "mcp-configuration.md",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.md",
-      "headings": "Credentials • `dw.json` (Recommended) {#dw-json} • `.env` File {#env-file} • MRT Credentials (`~/.mobify`) {#mrt-credentials} • Configuration Priority • Toolset Selection • Auto-Discovery (Default) • Manual Selection • Individual Tool Selection • Logging • Telemetry • MCP Server Flags Reference {#mcp-server-flags} • Environment Variables Reference {#environment-variables-reference} • MCP Server Environment Variables {#mcp-server-environment-variables} • Next Steps",
+      "headings": "Credentials • `dw.json` (Recommended) {#dw-json} • `.env` File {#env-file} • MRT Credentials (`~/.mobify`) {#mrt-credentials} • Configuration Priority • Toolset Selection • Auto-Discovery (Default) • Manual Selection • Individual Tool Selection • Logging • Telemetry • MCP Server Flags Reference {#mcp-server-flags} • Documentation Tools Restriction • Environment Variables Reference {#environment-variables-reference} • MCP Server Environment Variables {#mcp-server-environment-variables} • Next Steps",
       "preview": "Configure the B2C DX MCP Server with credentials, flags, environment variables, and toolset selection."
     },
     {
@@ -219,7 +219,7 @@
       "filePath": "mcp-index.md",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/index.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/index.md",
-      "headings": "Quick Start • Project Type Detection • Prompting Tips • Plugins • Next Steps",
+      "headings": "Quick Start • Project Type Detection • Plugins • Next Steps",
       "preview": "MCP Server for Salesforce B2C Commerce - AI-assisted development tools for Claude, Cursor, and other AI assistants."
     },
     {
@@ -239,7 +239,7 @@
       "filePath": "mcp-toolsets.md",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.md",
-      "headings": "Overview • CARTRIDGES • Tools • DIAGNOSTICS • Script Debugger • Logs • Documentation • MRT • Tools • PWAV3 • Tools • SCAPI • Tools • STOREFRONTNEXT • Tools • STOREFRONTNEXT_DEPRECATED • Tools • Tool Deduplication • Next Steps",
+      "headings": "CARTRIDGES • DIAGNOSTICS • MRT • PWAV3 • SCAPI • STOREFRONTNEXT • STOREFRONTNEXT_DEPRECATED • Next Steps",
       "preview": "Available toolsets and tools in the B2C DX MCP Server for SCAPI, CARTRIDGES, DIAGNOSTICS, MRT, PWAV3, and STOREFRONTNEXT development."
     }
   ]

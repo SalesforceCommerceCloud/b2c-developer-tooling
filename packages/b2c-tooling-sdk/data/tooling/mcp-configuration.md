@@ -153,14 +153,27 @@ To disable, set either variable in your `.env` file or MCP client `env` object:
 
 Flags specific to the MCP server (in addition to the shared CLI flags in the [CLI Configuration guide](../guide/configuration)):
 
-| Flag                   | Type    | Default     | Description                                                                                                                                                                                                                                         |
-| ---------------------- | ------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--toolsets`           | string  | Auto-detect | Toolsets to enable (comma-separated)                                                                                                                                                                                                                |
-| `--tools`              | string  | -           | Individual tools to enable (comma-separated)                                                                                                                                                                                                        |
-| `--docs-topics`        | string  | All         | Allowlist bounding the docs tools' corpus to these categories (comma-separated): `script-api`, `job-step`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`. Per-call `category`/`workspace` narrow within it |
-| `--allow-non-ga-tools` | boolean | `false`     | Enable non-GA (experimental) tools                                                                                                                                                                                                                  |
+| Flag                   | Type    | Default     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------- | ------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--toolsets`           | string  | Auto-detect | Toolsets to enable (comma-separated)                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `--tools`              | string  | -           | Individual tools to enable (comma-separated)                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `--docs-topics`        | string  | All         | Hard configuration allowlist bounding the docs tools' corpus to these categories (comma-separated): `script-api`, `job-step`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`. Per-call `category` hard-filters within the allowlist; `workspace` (comma-separated multi-value allowed, e.g. `sfra,pwa-kit-v3`) boosts relevant categories and de-boosts competing storefront frameworks within the allowlist |
+| `--allow-non-ga-tools` | boolean | `false`     | Enable non-GA (experimental) tools                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 Environment variable equivalents for these flags are listed in [MCP Server Environment Variables](#mcp-server-environment-variables).
+
+### Documentation Tools Restriction
+
+The `--docs-topics` flag (or `SFCC_DOCS_TOPICS` env var) sets a hard configuration boundary for the entire corpus available to the `docs_*` tools. When set, it affects tool behavior in several ways:
+
+- **Tool schemas** - The `category` parameter enums narrow to only the allowlisted categories
+- **Tool descriptions** - Tools note the restriction in their descriptions shown to the AI agent
+- **ID resolution** - `docs_read` will reject document IDs outside the allowlist
+- **Per-call filtering** - The `category` parameter hard-filters to one allowlisted category; the `workspace` parameter (comma-separated multi-value allowed, e.g. `sfra,pwa-kit-v3`) provides boosting (relevance weighting) and de-boosting within the allowlist, but never hides results
+
+Unknown category names in the allowlist are ignored with a warning at server startup.
+
+Unlike `--docs-topics`, which is a startup-time configuration boundary, the per-call `workspace` parameter only affects ranking and never filters content from view.
 
 ## Environment Variables Reference {#environment-variables-reference}
 
@@ -170,12 +183,12 @@ These can be set in a `.env` file, the MCP client `env` object, or as system env
 
 MCP-specific environment variables (flag equivalents):
 
-| Env Variable              | Equivalent Flag        | Type    | Default     | Description                                                                     |
-| ------------------------- | ---------------------- | ------- | ----------- | ------------------------------------------------------------------------------- |
-| `SFCC_TOOLSETS`           | `--toolsets`           | string  | Auto-detect | Toolsets to enable (comma-separated)                                            |
-| `SFCC_TOOLS`              | `--tools`              | string  | -           | Individual tools to enable (comma-separated)                                    |
-| `SFCC_DOCS_TOPICS`        | `--docs-topics`        | string  | All         | Allowlist bounding the docs tools' corpus to these categories (comma-separated) |
-| `SFCC_ALLOW_NON_GA_TOOLS` | `--allow-non-ga-tools` | boolean | `false`     | Enable non-GA (experimental) tools                                              |
+| Env Variable              | Equivalent Flag        | Type    | Default     | Description                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------- | ---------------------- | ------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SFCC_TOOLSETS`           | `--toolsets`           | string  | Auto-detect | Toolsets to enable (comma-separated)                                                                                                                                                                                                                                                                                                                                                   |
+| `SFCC_TOOLS`              | `--tools`              | string  | -           | Individual tools to enable (comma-separated)                                                                                                                                                                                                                                                                                                                                           |
+| `SFCC_DOCS_TOPICS`        | `--docs-topics`        | string  | All         | Hard configuration allowlist bounding the docs tools' corpus to these categories (comma-separated): `script-api`, `job-step`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`. Per-call `category` hard-filters within the allowlist; `workspace` boosts relevant categories and de-boosts competing storefront frameworks within the allowlist |
+| `SFCC_ALLOW_NON_GA_TOOLS` | `--allow-non-ga-tools` | boolean | `false`     | Enable non-GA (experimental) tools                                                                                                                                                                                                                                                                                                                                                     |
 
 **B2C instance:**
 
