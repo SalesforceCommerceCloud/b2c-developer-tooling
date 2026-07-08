@@ -248,6 +248,9 @@
           }
         }
       },
+      "metrics": {
+        "description": "[CLOSED BETA] Retrieve observability metrics from SCAPI Metrics API\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/metrics.html"
+      },
       "ecdn": {
         "description": "Manage eCDN zones, certificates, WAF, and security settings\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html",
         "subtopics": {
