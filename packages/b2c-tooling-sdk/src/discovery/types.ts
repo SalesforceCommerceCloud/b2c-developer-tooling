@@ -39,6 +39,19 @@ export const PROJECT_TYPES = [
 ] as const satisfies readonly ProjectType[];
 
 /**
+ * Context passed to a detection pattern's `detect` function.
+ */
+export interface DetectionContext {
+  /**
+   * Maximum directory depth (in path segments, relative to the workspace root)
+   * that filesystem-scanning patterns should recurse. Undefined means unbounded.
+   * Bounding this protects against costly walks when the workspace root is broad
+   * (e.g. an MCP server launched from a home directory).
+   */
+  maxDepth?: number;
+}
+
+/**
  * Detection pattern definition.
  */
 export interface DetectionPattern {
@@ -47,7 +60,7 @@ export interface DetectionPattern {
   /** Project type this pattern detects */
   projectType: ProjectType;
   /** Detection function */
-  detect: (workspacePath: string) => Promise<boolean>;
+  detect: (workspacePath: string, context?: DetectionContext) => Promise<boolean>;
 }
 
 /**
@@ -72,4 +85,11 @@ export interface DetectOptions {
   additionalPatterns?: DetectionPattern[];
   /** Patterns to exclude by name */
   excludePatterns?: string[];
+  /**
+   * Maximum directory depth (in path segments, relative to the workspace root)
+   * that filesystem-scanning patterns recurse. Undefined means unbounded.
+   * Passed to each pattern via {@link DetectionContext}. Set this when detecting
+   * from a potentially broad root to keep the scan bounded.
+   */
+  maxDepth?: number;
 }

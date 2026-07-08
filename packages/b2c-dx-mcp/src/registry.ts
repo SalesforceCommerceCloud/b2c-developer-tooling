@@ -4,6 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import os from 'node:os';
+import path from 'node:path';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {detectWorkspaceType, type ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
 import {DOC_CATEGORIES, resolveEnabledCategories, type DocCategory} from '@salesforce/b2c-tooling-sdk/docs';
@@ -131,17 +133,51 @@ export function createToolRegistry(
 }
 
 /**
+ * Maximum directory depth workspace auto-discovery recurses when scanning the
+ * project directory. Bounding this is what keeps startup fast (and safe) when
+ * the server is launched from a broad root: a full `**` walk of a home
+ * directory can take many seconds and blocks the MCP handshake, since detection
+ * runs before the server connects.
+ *
+ * Depth is counted in path segments relative to the project directory. 5 covers
+ * the common layouts — a cartridge at `cartridges/<name>/.project` (depth 3) and
+ * a monorepo cartridge at `packages/<app>/cartridges/<name>/.project` (depth 5) —
+ * without descending into unrelated deep trees.
+ */
+const DISCOVERY_MAX_DEPTH = 5;
+
+/**
+ * Returns true when `dir` is a location that should never be recursively
+ * scanned for a workspace: the user's home directory or a filesystem root.
+ * These are the classic "MCP client spawned the server from ~" cases where an
+ * unbounded (or even bounded) scan is both pointless and expensive.
+ */
+function isUnscannableRoot(dir: string): boolean {
+  const resolved = path.resolve(dir);
+  // Filesystem root: parent equals self (handles `/` and Windows drive roots).
+  if (path.dirname(resolved) === resolved) {
+    return true;
+  }
+  const home = os.homedir();
+  return Boolean(home) && path.resolve(home) === resolved;
+}
+
+/**
  * Performs workspace auto-discovery and returns appropriate toolsets.
  * Always includes the BASE_TOOLSETS even if no project types are detected.
  *
+ * The scan is depth-bounded ({@link DISCOVERY_MAX_DEPTH}) and skipped entirely
+ * for home/root directories so it can never fan out across a whole home tree.
+ *
  * @param flags - Startup flags containing projectDirectory
- * @param reason - Reason for triggering auto-discovery (for logging)
- * @returns Array of toolsets to enable
+ * @returns Array of detected project types (empty if skipped or none found)
  */
 async function detectProjectTypes(flags: StartupFlags): Promise<ProjectType[]> {
   const logger = getLogger();
 
-  // Project directory from --project-directory flag or SFCC_PROJECT_DIRECTORY env var
+  // Project directory from --project-directory flag or SFCC_PROJECT_DIRECTORY env
+  // var, defaulting to cwd. We always attempt detection from cwd rather than
+  // skipping it — the depth bound and home/root guard below make that safe.
   const projectDirectory = flags.projectDirectory ?? process.cwd();
 
   // Warn if project directory wasn't explicitly configured
@@ -154,7 +190,18 @@ async function detectProjectTypes(flags: StartupFlags): Promise<ProjectType[]> {
     );
   }
 
-  const detectionResult = await detectWorkspaceType(projectDirectory);
+  // Never recursively scan a home directory or filesystem root — the scan would
+  // be expensive and would not identify a meaningful workspace anyway.
+  if (isUnscannableRoot(projectDirectory)) {
+    logger.warn(
+      {projectDirectory},
+      'Project directory is a home or root directory; skipping workspace auto-discovery. ' +
+        'Set --project-directory or SFCC_PROJECT_DIRECTORY to the project path to enable it.',
+    );
+    return [];
+  }
+
+  const detectionResult = await detectWorkspaceType(projectDirectory, {maxDepth: DISCOVERY_MAX_DEPTH});
   logger.info(
     {projectTypes: detectionResult.projectTypes, matchedPatterns: detectionResult.matchedPatterns},
     `Workspace detection: project types: ${detectionResult.projectTypes.join(', ') || 'none'}`,
@@ -201,12 +248,6 @@ export async function registerToolsets(
   const allowNonGaTools = flags.allowNonGaTools ?? false;
   const logger = getLogger();
 
-  // Detect the workspace type once up front. It informs both the
-  // docs tools (favoring the current workspace's docs and surfacing it in the
-  // tool descriptions) and toolset auto-discovery below, so we only hit the
-  // filesystem a single time.
-  const detectedWorkspaces = await detectProjectTypes(flags);
-
   // Resolve the launch-time docs topic allowlist (bounds the whole docs corpus).
   const enabledDocCategories = resolveEnabledCategories(flags.docsTopics, (invalid) =>
     logger.warn(
@@ -221,13 +262,18 @@ export async function registerToolsets(
     );
   }
 
-  // Create the tool registry (all available tools)
-  const toolRegistry = createToolRegistry(loadServices, serverContext, detectedWorkspaces, enabledDocCategories);
-
-  // Build flat list of all tools for lookup
-  const allTools = Object.values(toolRegistry).flat();
-  const allToolsByName = new Map(allTools.map((tool) => [tool.name, tool]));
-  const existingToolNames = new Set(allToolsByName.keys());
+  // Build the tool registry to validate flag input. The set of available tools
+  // (names, toolsets) does NOT depend on the detected workspace — only the docs
+  // tool descriptions do — so we can resolve flag validity before deciding
+  // whether workspace detection is even needed. If auto-discovery later runs,
+  // we rebuild the registry with the detected workspaces so the docs tools pick
+  // up the workspace hint.
+  let toolRegistry = createToolRegistry(loadServices, serverContext, [], enabledDocCategories);
+  const existingToolNames = new Set(
+    Object.values(toolRegistry)
+      .flat()
+      .map((tool) => tool.name),
+  );
 
   // Determine valid individual tools
   const invalidTools = individualTools.filter((name) => !existingToolNames.has(name));
@@ -261,11 +307,14 @@ export async function registerToolsets(
   );
   const toolsetsToEnable = new Set<Toolset>(toolsets.includes(ALL_TOOLSETS) ? allNonDeprecatedToolsets : validToolsets);
 
-  // Auto-discovery: If no valid toolsets AND no valid individual tools, map the
-  // already-detected workspace type(s) to toolsets. This handles both: (1) no
-  // flags provided, and (2) all provided flags are invalid. Always enables at
-  // least the BASE_TOOLSETS even if no project types are detected.
+  // Auto-discovery: only when no valid toolsets AND no valid individual tools
+  // were provided. This handles both (1) no flags provided, and (2) all
+  // provided flags are invalid. Skip workspace detection entirely otherwise —
+  // when the user has explicitly chosen toolsets/tools, the filesystem scan
+  // cannot change which tools are registered, so paying for it (and risking a
+  // costly recursive walk) would be pointless.
   if (toolsetsToEnable.size === 0 && validIndividualTools.length === 0) {
+    const detectedWorkspaces = await detectProjectTypes(flags);
     const discoveredToolsets = getToolsetsForProjectTypes(detectedWorkspaces);
     logger.info(
       {projectTypes: detectedWorkspaces, enabledToolsets: discoveredToolsets},
@@ -273,6 +322,11 @@ export async function registerToolsets(
     );
     for (const toolset of discoveredToolsets) {
       toolsetsToEnable.add(toolset);
+    }
+    // Rebuild so the docs tools reflect the detected workspace in their
+    // descriptions and default workspace resolution.
+    if (detectedWorkspaces.length > 0) {
+      toolRegistry = createToolRegistry(loadServices, serverContext, detectedWorkspaces, enabledDocCategories);
     }
   }
 
@@ -292,7 +346,13 @@ export async function registerToolsets(
     }
   }
 
-  // Step 2: Add individual tools from --tools (can be from any toolset)
+  // Step 2: Add individual tools from --tools (can be from any toolset).
+  // Look up against the final registry (which may have been rebuilt above).
+  const allToolsByName = new Map(
+    Object.values(toolRegistry)
+      .flat()
+      .map((tool) => [tool.name, tool]),
+  );
   for (const toolName of validIndividualTools) {
     const tool = allToolsByName.get(toolName);
     if (tool && !registeredToolNames.has(toolName)) {
