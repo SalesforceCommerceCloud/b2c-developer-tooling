@@ -1,7 +1,7 @@
 {
   "name": "b2c-vs-extension",
-  "displayName": "B2C DX VSCE",
-  "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
+  "displayName": "Salesforce B2C Commerce",
+  "description": "Tools for developing on Salesforce B2C Commerce, including cartridge deployment, script debugging and IntelliSense, and sandbox management.",
   "version": "0.10.2",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
