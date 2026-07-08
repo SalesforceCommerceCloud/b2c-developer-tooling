@@ -40,7 +40,8 @@
       "license": "Apache-2.0",
       "source": "./plugins/b2c-dx-mcp",
       "category": "productivity",
-      "strict": false
+      "strict": false,
+      "version": "1.5.0"
     },
     {
       "name": "storefront-next",
