@@ -35,6 +35,22 @@ function makeServices(): Services {
 describe('tools/docs', () => {
   const loadServices = () => makeServices();
 
+  // Online-only guide entries (Developer Center corpus) are read via a live
+  // fetch. Unit tests must never touch the network: an unbounded fetch to a
+  // host the runner can't reach hangs the whole suite (observed hanging Windows
+  // CI for 6h). Stub fetch to fail fast so reads fall back to the offline
+  // summary; individual tests that assert live-fetch behavior can override.
+  let originalFetch: typeof globalThis.fetch;
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch;
+    globalThis.fetch = (() => Promise.reject(new Error('network disabled in test'))) as typeof fetch;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
   describe('createDocsTools', () => {
     it('creates all six tools', () => {
       const tools = createDocsTools(loadServices);

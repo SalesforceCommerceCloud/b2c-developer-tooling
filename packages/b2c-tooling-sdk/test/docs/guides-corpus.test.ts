@@ -307,18 +307,30 @@ describe('docs: tooling corpus', function () {
     if (!hasTooling) this.skip();
   });
 
-  it('includes bundled tooling guides with a category of "tooling"', () => {
+  it('includes tooling guides with a category of "tooling"', () => {
     const tooling = listDocs('tooling');
     expect(tooling.length).to.be.greaterThan(0);
     expect(tooling.every((e) => e.category === 'tooling')).to.equal(true);
-    // tooling docs are bundled on disk
-    expect(tooling.every((e) => !!e.filePath)).to.equal(true);
+    // tooling content is fetched online (like guides), not bundled on disk
+    expect(tooling.every((e) => !e.filePath)).to.equal(true);
+    expect(tooling.every((e) => !!e.sourceUrl)).to.equal(true);
   });
 
-  it('reads bundled tooling content offline', async () => {
+  it('fetches tooling content online from sourceUrl (the .md)', async () => {
     const auth = listDocs('tooling').find((e) => e.id.includes('authentication'));
     expect(auth, 'expected an authentication tooling doc').to.not.equal(undefined);
-    const content = await readEntryContent(auth!);
-    expect(content).to.be.a('string').and.have.length.greaterThan(0);
+    const originalFetch = globalThis.fetch;
+    let fetchedUrl = '';
+    globalThis.fetch = ((input: Parameters<typeof fetch>[0]) => {
+      fetchedUrl = String(input);
+      return Promise.resolve(new Response('# Authentication\n\nfetched body', {status: 200}));
+    }) as typeof fetch;
+    try {
+      const content = await readEntryContent(auth!);
+      expect(content).to.equal('# Authentication\n\nfetched body');
+      expect(fetchedUrl, 'content must be fetched from the .md sourceUrl').to.equal(auth!.sourceUrl);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });
