@@ -23,6 +23,7 @@ import {registerSafeCommand, registerSafety} from './safety.js';
 import {registerSandboxTree} from './sandbox-tree/index.js';
 import {registerScaffold} from './scaffold/index.js';
 import {registerApiBrowser} from './api-browser/index.js';
+import {registerExportTree} from './export-tree/index.js';
 import {registerDebugger} from './debugger/index.js';
 import {registerCodeSync} from './code-sync/index.js';
 import {registerIsml} from './isml/index.js';
@@ -759,6 +760,9 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     runActivationStep(log, 'API Browser registration', () => {
       registerApiBrowser(context, configProvider, log);
     });
+  }
+  if (settings.get<boolean>('features.exportExplorer', true)) {
+    registerExportTree(context, configProvider);
   }
   if (settings.get<boolean>('features.cap', true)) {
     runActivationStep(log, 'CAP registration', () => {

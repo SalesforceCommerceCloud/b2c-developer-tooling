@@ -35,6 +35,7 @@
     "onView:b2cApiBrowser",
     "onView:b2cSandboxExplorer",
     "onView:b2cCartridgeExplorer",
+    "onView:b2cExportExplorer",
     "onDebugResolve:b2c-script",
     "workspaceContains:**/commerce-app.json"
   ],
@@ -691,6 +692,11 @@
           "default": true,
           "description": "Enable the API Browser for exploring SCAPI schemas."
         },
+        "b2c-dx.features.exportExplorer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the Export view for interactively exporting site impex data units."
+        },
         "b2c-dx.features.cap": {
           "type": "boolean",
           "default": true,
@@ -855,6 +861,12 @@
           "name": "CIP Analytics",
           "icon": "$(graph)",
           "contextualTitle": "B2C-DX Analytics"
+        },
+        {
+          "id": "b2cExportExplorer",
+          "name": "Export",
+          "icon": "media/b2c-icon.svg",
+          "contextualTitle": "B2C-DX"
         }
       ],
       "b2c-dx-scapi": [
@@ -914,6 +926,10 @@
       {
         "view": "b2cCipAnalytics",
         "contents": "Explore Commerce Intelligence Platform (CIP) data — build SQL queries visually, browse tables, and run curated reports.\n\n[Open Query Builder](command:b2c-dx.cipAnalytics.queryBuilder)\n[Browse Tables](command:b2c-dx.cipAnalytics.browseTables)\n\nRequires OAuth credentials (clientId, clientSecret) in dw.json.\n\n[Refresh](command:b2c-dx.cipAnalytics.refresh)"
+      },
+      {
+        "view": "b2cExportExplorer",
+        "contents": "Interactively export site impex data units.\n\nRequires OAuth and WebDAV credentials in dw.json. Check the data units you want, then run Export.\n\n[Refresh](command:b2c-dx.export.refresh)"
       }
     ],
     "debuggers": [
@@ -968,6 +984,30 @@
         "command": "b2c-dx.listWebDav",
         "title": "List WebDAV",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.export.run",
+        "title": "Export Selected Data Units",
+        "icon": "$(cloud-download)",
+        "category": "B2C DX - Export"
+      },
+      {
+        "command": "b2c-dx.export.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C DX - Export"
+      },
+      {
+        "command": "b2c-dx.export.addById",
+        "title": "Add by ID",
+        "icon": "$(add)",
+        "category": "B2C DX - Export"
+      },
+      {
+        "command": "b2c-dx.export.clearSelection",
+        "title": "Clear Selection",
+        "icon": "$(clear-all)",
+        "category": "B2C DX - Export"
       },
       {
         "command": "b2c-dx.apiBrowser.refresh",
@@ -1817,6 +1857,26 @@
           "command": "b2c-dx.content.clearFilter",
           "when": "view == b2cContentExplorer && b2cContentFilterActive",
           "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.export.run",
+          "when": "view == b2cExportExplorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "b2c-dx.export.addById",
+          "when": "view == b2cExportExplorer",
+          "group": "navigation@2"
+        },
+        {
+          "command": "b2c-dx.export.clearSelection",
+          "when": "view == b2cExportExplorer",
+          "group": "navigation@3"
+        },
+        {
+          "command": "b2c-dx.export.refresh",
+          "when": "view == b2cExportExplorer",
+          "group": "navigation@4"
         },
         {
           "command": "b2c-dx.apiBrowser.refresh",
