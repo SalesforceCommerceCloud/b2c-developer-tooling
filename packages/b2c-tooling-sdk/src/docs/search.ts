@@ -31,6 +31,13 @@ const CORPUS_DIRS: readonly string[] = [SCRIPT_API_DATA_DIR, JOB_STEPS_DATA_DIR,
 const WORKSPACE_BOOST = 1.4;
 
 /**
+ * Timeout (ms) for fetching an online-only guide's content. Without a bound a
+ * stalled connection hangs the caller indefinitely (observed hanging Windows CI
+ * for 6h); on timeout we fall back to the indexed offline summary instead.
+ */
+const ONLINE_FETCH_TIMEOUT_MS = 10_000;
+
+/**
  * Multiplier applied to a COMPETING storefront framework's guides when a
  * workspace is known — i.e. the storefront-framework guide categories that are
  * NOT relevant to the detected workspace (e.g. `sfnext`/`sfra` for a PWA Kit
@@ -483,7 +490,10 @@ async function fetchOnlineContent(entry: DocEntry, fetchUrl: string): Promise<st
   const logger = getLogger();
   try {
     logger.trace({fetchUrl}, 'Fetching online documentation content');
-    const res = await fetch(fetchUrl, {headers: {accept: 'text/markdown, text/plain, */*'}});
+    const res = await fetch(fetchUrl, {
+      headers: {accept: 'text/markdown, text/plain, */*'},
+      signal: AbortSignal.timeout(ONLINE_FETCH_TIMEOUT_MS),
+    });
     if (!res.ok) {
       logger.debug({fetchUrl, status: res.status}, 'Online doc fetch returned non-OK status');
       return offlineFallback(entry, `HTTP ${res.status}`);
