@@ -14,9 +14,13 @@
  * reference, the changelog, and landing pages are intentionally excluded (they
  * are redundant with `--help` / MCP introspection or carry no teaching content).
  *
- * Content is copied into `data/tooling/` and bundled (the source lives in the
- * same repo and is small), so `docs read` works offline. Each entry also carries
- * the canonical published URL on the docs site.
+ * Like the Developer Center guides corpus, tooling *content* is NOT bundled — the
+ * index stores only lightweight metadata (title, section headings, preview, and
+ * the canonical published URL). `docs read` fetches the full markdown from the
+ * docs site's raw `.md` (`sourceUrl`) on demand, with an offline fallback to the
+ * indexed summary. This avoids duplicating every doc page into the SDK: editing a
+ * tooling doc only changes `index.json` when its title/headings/preview change,
+ * not on every content edit.
  *
  * Run with: pnpm --filter @salesforce/b2c-tooling-sdk run generate:tooling-index
  */
@@ -59,7 +63,6 @@ interface DocEntry {
   id: string;
   title: string;
   category: string;
-  filePath: string;
   url?: string;
   sourceUrl?: string;
   headings?: string;
@@ -113,7 +116,8 @@ function firstParagraph(body: string): string | undefined {
 
 function main(): void {
   fs.mkdirSync(TOOLING_DIR, {recursive: true});
-  // Clear previously bundled markdown so removed docs don't linger.
+  // Remove any previously bundled markdown — tooling content is now fetched
+  // online (like the guides corpus), so only index.json ships in data/tooling/.
   for (const existing of fs.readdirSync(TOOLING_DIR)) {
     if (existing.endsWith('.md')) fs.rmSync(path.join(TOOLING_DIR, existing));
   }
@@ -129,25 +133,21 @@ function main(): void {
     const raw = fs.readFileSync(srcPath, 'utf-8');
     const {description, body} = splitFrontmatter(raw);
 
-    // Flat id/filename: "guide/authentication.md" -> "guide-authentication"
+    // Flat id: "guide/authentication.md" -> "guide-authentication"
     const id = rel.replace(/\.md$/, '').replace(/\//g, '-');
-    const fileName = `${id}.md`;
     const title = extractTitle(body, id);
     const headings = extractHeadings(body);
     const preview = description || firstParagraph(body);
-    // `url` = human-facing .html page; `sourceUrl` = raw .md (both served by the
-    // docs site at the same path). Content is bundled, but the raw source stays
-    // linkable on request.
+    // `url` = human-facing .html page; `sourceUrl` = raw .md fetched at read time.
+    // Both are served by the docs site at the same path. No `filePath`: content
+    // is not bundled, so readEntryContent fetches sourceUrl online (with an
+    // offline fallback to the indexed summary).
     const pageBase = `${DOCS_SITE_BASE}/${rel.replace(/\.md$/, '')}`;
-
-    // Bundle the body (without frontmatter) for offline reads.
-    fs.writeFileSync(path.join(TOOLING_DIR, fileName), body);
 
     entries.push({
       id,
       title,
       category: 'tooling',
-      filePath: fileName,
       url: `${pageBase}.html`,
       sourceUrl: `${pageBase}.md`,
       ...(headings && {headings}),

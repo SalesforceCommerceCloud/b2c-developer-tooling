@@ -1,10 +1,10 @@
 ---
-description: MCP tools for script debugging on B2C Commerce instances.
+description: MCP tools for script debugging on B2C Commerce instances via the Script Debugger API (SDAPI).
 ---
 
-# Diagnostics Tools
+# Script Debugger
 
-MCP tools for connecting to the B2C Commerce Script Debugger API (SDAPI), setting breakpoints, inspecting variables, and stepping through server-side code. These tools are available in the **CARTRIDGES** and **SCAPI** toolsets.
+MCP tools for connecting to the B2C Commerce Script Debugger API (SDAPI), setting breakpoints, inspecting variables, and stepping through server-side code. Part of the **DIAGNOSTICS** toolset (always enabled), and also available in the **CARTRIDGES** and **SCAPI** toolsets.
 
 ## Authentication
 
