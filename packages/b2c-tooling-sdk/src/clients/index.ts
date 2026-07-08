@@ -308,6 +308,17 @@ export type {
   CipQueryResult,
 } from './cip.js';
 
+export {createScapiCorsClient, SCAPI_CORS_READ_SCOPES, SCAPI_CORS_RW_SCOPES} from './scapi-cors.js';
+export type {
+  ScapiCorsClient,
+  ScapiCorsClientConfig,
+  ScapiCorsError,
+  ScapiCorsResponse,
+  CorsPreferences,
+  CorsClientPreferences,
+  paths as ScapiCorsPaths,
+  components as ScapiCorsComponents,
+} from './scapi-cors.js';
 export {createGranularReplicationsClient} from './granular-replications.js';
 export type {
   GranularReplicationsClient,
