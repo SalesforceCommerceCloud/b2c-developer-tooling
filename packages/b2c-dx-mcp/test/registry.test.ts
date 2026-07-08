@@ -8,6 +8,7 @@ import {expect} from 'chai';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {stub, restore} from 'sinon';
 import {createToolRegistry, registerToolsets} from '../src/registry.js';
 import {Services} from '../src/services.js';
 import {B2CDxMcpServer} from '../src/server.js';
@@ -583,19 +584,18 @@ describe('registry', () => {
       });
 
       it('should skip auto-discovery when the project directory is the home directory', async () => {
-        // Place a cartridge in HOME; detection must be skipped so it is not found
-        // and only the base fallback (SCAPI) is registered. Use a temp dir as a
-        // fake HOME to avoid touching the real one.
+        // Place a cartridge in the "home" directory; detection must be skipped so
+        // it is not found and only the base fallback (SCAPI) is registered. Stub
+        // os.homedir() directly rather than overriding an env var — the backing
+        // env differs by platform ($HOME on POSIX, USERPROFILE on Windows) and
+        // Windows may return a short (8.3) path that would not string-match.
         const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-mcp-home-'));
-        const originalHome = os.homedir();
         try {
           const cartridge = path.join(fakeHome, 'cartridges', 'app_storefront_base');
           fs.mkdirSync(cartridge, {recursive: true});
           fs.writeFileSync(path.join(cartridge, '.project'), '<xml/>');
 
-          // os.homedir() reads $HOME on POSIX; override for the duration of the test.
-          process.env.HOME = fakeHome;
-          expect(os.homedir(), 'sanity: os.homedir reflects the overridden HOME').to.equal(fakeHome);
+          stub(os, 'homedir').returns(fakeHome);
 
           const server = createMockServer();
           const flags: StartupFlags = {projectDirectory: fakeHome, allowNonGaTools: true};
@@ -605,7 +605,7 @@ describe('registry', () => {
           expect(server.registeredTools).to.include('scapi_schemas_list');
           expect(server.registeredTools).to.not.include('cartridge_deploy');
         } finally {
-          process.env.HOME = originalHome;
+          restore();
           fs.rmSync(fakeHome, {recursive: true, force: true});
         }
       });
