@@ -4,7 +4,7 @@ description: MCP tools for searching B2C Commerce documentation including Script
 
 # Documentation Tools
 
-MCP tools for searching and reading B2C Commerce documentation across multiple corpora: Script API reference (`dw.*` classes/modules), Developer Center guides (conceptual/how-to content), tooling documentation (CLI/MCP/SDK guides), standard job steps, and XSD schemas. Content is indexed locally (shipped with the SDK); Developer Center guides fetch their full text online when read. No instance configuration or authentication is required. Available in **every toolset**.
+MCP tools for searching and reading B2C Commerce documentation across multiple corpora: Script API reference (`dw.*` classes/modules), Developer Center guides (conceptual/how-to content), tooling documentation (CLI/MCP/SDK guides), standard job steps, and XSD schemas. All corpora are indexed locally (shipped with the SDK); Developer Center guides and tooling docs fetch their full text online when read, while Script API and job-step content is bundled. No instance configuration or authentication is required. Available in **every toolset**.
 
 By default the tools return compact results — `docs_search` returns a short result list with summary fields, `docs_list` returns a table of contents, and `docs_read` returns a bounded slice of long documents. Each accepts options to return more (`verbose`, `limit`/`offset`, `maxLength`).
 
@@ -50,7 +50,7 @@ Content-aware search across all corpora using BM25-style ranking. Results includ
 
 ### docs_read
 
-Read documentation for a specific entry. Developer Center guides fetch content online from the `sourceUrl` (.md) when available, with offline fallback (summary + headings + link). Script API, job-step, and tooling content is bundled (no fetch). Long documents are truncated to `maxLength` characters — page through the rest with `offset` when `truncated` is `true`.
+Read documentation for a specific entry. Developer Center guides and tooling docs fetch content online from the `sourceUrl` (.md) when available, with offline fallback (summary + headings + link). Script API and job-step content is bundled (no fetch). Long documents are truncated to `maxLength` characters — page through the rest with `offset` when `truncated` is `true`.
 
 | Parameter   | Type   | Required | Default | Description                                                                                                                                     |
 | ----------- | ------ | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |

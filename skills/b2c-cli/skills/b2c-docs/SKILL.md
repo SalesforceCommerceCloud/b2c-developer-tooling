@@ -150,7 +150,7 @@ b2c docs read ProductMgr --raw
 b2c docs read ProductMgr --json
 ```
 
-> **Content sources:** Developer Center guides are fetched **online** from the .md source (sourceUrl) with a graceful offline fallback (summary + headings + link). Script API, job-step, and tooling content is **bundled** in the CLI.
+> **Content sources:** Developer Center guides and tooling docs are fetched **online** from the .md source (sourceUrl) with a graceful offline fallback (summary + headings + link). Script API and job-step content is **bundled** in the CLI.
 
 To retrieve the human-facing .html page URL (for citing/opening in browser) or the raw .md source URL, use `--json` output or `--columns url,sourceUrl` in search results.
 
