@@ -48,3 +48,26 @@ export function registerWebDavTree(context: vscode.ExtensionContext, configProvi
 
   context.subscriptions.push(fsRegistration, treeView, ...commandDisposables);
 }
+
+/** Well-known URI for the active instance mounted as a workspace folder root. */
+export function sandboxFilesystemRootUri(): vscode.Uri {
+  return vscode.Uri.from({scheme: WEBDAV_SCHEME, authority: 'active-instance', path: '/'});
+}
+
+/**
+ * Mount the active instance's WebDAV filesystem as a workspace folder, if not
+ * already present. Appends at the end of the folder list so VS Code does not
+ * force a window reload (only mutating index 0, or going single→multi-root,
+ * triggers a reload). Returns true if a folder was added.
+ */
+export function mountSandboxFilesystem(): boolean {
+  const uri = sandboxFilesystemRootUri();
+  const folders = vscode.workspace.workspaceFolders;
+  if (folders?.some((f) => f.uri.scheme === WEBDAV_SCHEME)) {
+    return false;
+  }
+  return vscode.workspace.updateWorkspaceFolders(folders?.length ?? 0, 0, {
+    uri,
+    name: 'B2C Sandbox (WebDAV)',
+  });
+}

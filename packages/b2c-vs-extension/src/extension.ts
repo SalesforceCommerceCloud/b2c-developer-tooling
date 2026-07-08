@@ -23,7 +23,7 @@ import {registerApiBrowser} from './api-browser/index.js';
 import {registerDebugger} from './debugger/index.js';
 import {registerCodeSync} from './code-sync/index.js';
 import {registerScriptTypes} from './script-types/index.js';
-import {registerWebDavTree} from './webdav-tree/index.js';
+import {mountSandboxFilesystem, registerWebDavTree} from './webdav-tree/index.js';
 import {disposeTelemetry, initTelemetry, sendEvent, sendException} from './telemetry.js';
 
 function applyLogLevel(log: vscode.OutputChannel): void {
@@ -300,7 +300,8 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
 
   const settings = vscode.workspace.getConfiguration('b2c-dx');
 
-  if (settings.get<boolean>('features.webdavBrowser', true)) {
+  const webdavBrowserEnabled = settings.get<boolean>('features.webdavBrowser', true);
+  if (webdavBrowserEnabled) {
     registerWebDavTree(context, configProvider);
   }
   if (settings.get<boolean>('features.contentLibraries', true)) {
@@ -329,6 +330,21 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   }
 
   registerDebugger(context, configProvider);
+
+  // Auto-mount the active instance's WebDAV filesystem as a workspace folder.
+  // Requires the WebDAV browser (which registers the b2c-webdav FileSystemProvider)
+  // and must happen after activation so the provider is live before VS Code reads
+  // the folder.
+  if (webdavBrowserEnabled && settings.get<boolean>('features.sandboxFilesystem', false)) {
+    try {
+      if (mountSandboxFilesystem()) {
+        log.appendLine('[Workspace] Mounted active instance WebDAV filesystem as a workspace folder.');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      log.appendLine(`[Workspace] Failed to auto-mount WebDAV filesystem: ${message}`);
+    }
+  }
 
   // React to configuration changes
   const configChangeListener = vscode.workspace.onDidChangeConfiguration((e) => {
