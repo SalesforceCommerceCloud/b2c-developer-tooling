@@ -56,3 +56,29 @@ for (const rel of codexTargets) {
 }
 
 console.log(`Synced plugin manifests to version ${version}`);
+
+// b2c-dx-mcp plugin: pin the npx-launched server to the exact published MCP
+// version. npx reuses a cached package for a floating tag like @latest, so
+// users can get a stale server after an upgrade; an exact version forces a
+// fetch. changeset version has already bumped the MCP package.json by now.
+const mcpVersion = readJson(join(repoRoot, 'packages/b2c-dx-mcp/package.json')).version;
+if (!mcpVersion) {
+  console.error('packages/b2c-dx-mcp/package.json has no version field');
+  process.exit(1);
+}
+const mcpConfigPath = join(repoRoot, 'plugins/b2c-dx-mcp/.mcp.json');
+const mcpConfig = readJson(mcpConfigPath);
+const mcpArgs = mcpConfig.mcpServers?.['b2c-dx-mcp']?.args;
+if (!Array.isArray(mcpArgs)) {
+  console.error('plugins/b2c-dx-mcp/.mcp.json has no mcpServers["b2c-dx-mcp"].args array');
+  process.exit(1);
+}
+const pkgArgIndex = mcpArgs.findIndex((arg) => typeof arg === 'string' && arg.startsWith('@salesforce/b2c-dx-mcp@'));
+if (pkgArgIndex === -1) {
+  console.error('plugins/b2c-dx-mcp/.mcp.json args do not reference @salesforce/b2c-dx-mcp');
+  process.exit(1);
+}
+mcpArgs[pkgArgIndex] = `@salesforce/b2c-dx-mcp@${mcpVersion}`;
+writeJson(mcpConfigPath, mcpConfig);
+
+console.log(`Pinned b2c-dx-mcp plugin to @salesforce/b2c-dx-mcp@${mcpVersion}`);
