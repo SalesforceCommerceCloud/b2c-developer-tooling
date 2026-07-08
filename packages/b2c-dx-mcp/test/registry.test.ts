@@ -5,6 +5,10 @@
  */
 
 import {expect} from 'chai';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {stub, restore} from 'sinon';
 import {createToolRegistry, registerToolsets} from '../src/registry.js';
 import {Services} from '../src/services.js';
 import {B2CDxMcpServer} from '../src/server.js';
@@ -534,6 +538,76 @@ describe('registry', () => {
         expect(server.registeredTools).to.include('cartridge_deploy');
         // Should not have tools from other toolsets unless explicitly requested
         expect(server.registeredTools).to.not.include('pwakit_create_storefront');
+      });
+
+      it('should NOT scan the filesystem when explicit toolsets are provided', async () => {
+        // If detection ran, it would auto-enable CARTRIDGES from the .project
+        // fixture below. With explicit toolsets it must be skipped entirely, so
+        // only SCAPI tools (the requested toolset) are registered.
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-mcp-registry-'));
+        try {
+          const cartridge = path.join(dir, 'cartridges', 'app_storefront_base');
+          fs.mkdirSync(cartridge, {recursive: true});
+          fs.writeFileSync(path.join(cartridge, '.project'), '<xml/>');
+
+          const server = createMockServer();
+          const flags: StartupFlags = {
+            toolsets: ['SCAPI'],
+            projectDirectory: dir,
+            allowNonGaTools: true,
+          };
+          await registerToolsets(flags, server, createMockLoadServicesWrapper());
+
+          expect(server.registeredTools).to.include('scapi_schemas_list');
+          // cartridge_deploy would only appear if detection had auto-enabled CARTRIDGES.
+          expect(server.registeredTools).to.not.include('cartridge_deploy');
+        } finally {
+          fs.rmSync(dir, {recursive: true, force: true});
+        }
+      });
+
+      it('should auto-discover CARTRIDGES from a shallow .project within the depth bound', async () => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-mcp-registry-'));
+        try {
+          const cartridge = path.join(dir, 'cartridges', 'app_storefront_base');
+          fs.mkdirSync(cartridge, {recursive: true});
+          fs.writeFileSync(path.join(cartridge, '.project'), '<xml/>');
+
+          const server = createMockServer();
+          const flags: StartupFlags = {projectDirectory: dir, allowNonGaTools: true};
+          await registerToolsets(flags, server, createMockLoadServicesWrapper());
+
+          expect(server.registeredTools).to.include('cartridge_deploy');
+        } finally {
+          fs.rmSync(dir, {recursive: true, force: true});
+        }
+      });
+
+      it('should skip auto-discovery when the project directory is the home directory', async () => {
+        // Place a cartridge in the "home" directory; detection must be skipped so
+        // it is not found and only the base fallback (SCAPI) is registered. Stub
+        // os.homedir() directly rather than overriding an env var — the backing
+        // env differs by platform ($HOME on POSIX, USERPROFILE on Windows) and
+        // Windows may return a short (8.3) path that would not string-match.
+        const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-mcp-home-'));
+        try {
+          const cartridge = path.join(fakeHome, 'cartridges', 'app_storefront_base');
+          fs.mkdirSync(cartridge, {recursive: true});
+          fs.writeFileSync(path.join(cartridge, '.project'), '<xml/>');
+
+          stub(os, 'homedir').returns(fakeHome);
+
+          const server = createMockServer();
+          const flags: StartupFlags = {projectDirectory: fakeHome, allowNonGaTools: true};
+          await registerToolsets(flags, server, createMockLoadServicesWrapper());
+
+          // Base fallback still registers, but the cartridge was never scanned.
+          expect(server.registeredTools).to.include('scapi_schemas_list');
+          expect(server.registeredTools).to.not.include('cartridge_deploy');
+        } finally {
+          restore();
+          fs.rmSync(fakeHome, {recursive: true, force: true});
+        }
       });
     });
   });
