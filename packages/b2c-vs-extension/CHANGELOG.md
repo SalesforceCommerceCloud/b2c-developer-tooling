@@ -1,5 +1,30 @@
 # Change Log
 
+## 0.10.4
+
+### Patch Changes
+
+- Updated dependencies [[`71dfe3a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/71dfe3a86b7e752ffad9f3d44f1e7c6357e431fa)]:
+  - @salesforce/b2c-tooling-sdk@1.19.1
+
+## 0.10.3
+
+### Patch Changes
+
+- Updated dependencies [[`fdf3c5f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/fdf3c5fe570ff71fddfc4aa0d83c9e3a05be5406)]:
+  - @salesforce/b2c-tooling-sdk@1.19.0
+
+## 0.10.2
+
+### Patch Changes
+
+- [#517](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/517) [`6882d5d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6882d5d3e153bf97191e5e1d494f34f36cbc0f6b) - Improve the B2C Logs view when tailing. Log entries are now color-coded by level (error, warn, info, debug) with a built-in level filter, each entry is tagged with its source log prefix (e.g. `[error]`, `[customerror]`), and multi-line stack traces are indented so each entry reads as a single block. Uses the same "B2C Logs" output channel — no new panel or command. (Thanks [@charithaT07](https://github.com/charithaT07)!)
+
+- [#525](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/525) [`3d0c4aa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3d0c4aae7a2c6c33cd82ad94cde35e4cdb5155ca) - Telemetry for MCP tool failures and VS Code extension activation failures now records the underlying error message (and cause, when present), instead of an empty value. Previously these failure events carried no error detail, which made it impossible to diagnose why a tool call or activation failed. No new data beyond the error text is collected, matching what the CLI already reports for command errors. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`04b02f3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/04b02f3b4b1c1e4c353ad081fc41304276c8bdb2), [`3d0c4aa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3d0c4aae7a2c6c33cd82ad94cde35e4cdb5155ca), [`85e6ca1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/85e6ca110de162d3d574cf425bf3c0fdbb2834f1), [`7055134`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7055134e755c391cd7839c11c99d66df18672866), [`85e6ca1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/85e6ca110de162d3d574cf425bf3c0fdbb2834f1), [`9418f08`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9418f088d7abfff01d41f4339beb62be29df7810), [`85e6ca1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/85e6ca110de162d3d574cf425bf3c0fdbb2834f1), [`31ec679`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/31ec679ca6058d2ba7f453528af873163a5baeff), [`b62b00b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b62b00b47855273dfedea62f932696cc24ef148f), [`31324e1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/31324e16fd0fb5402a3da1340f3575708c336661), [`cab53af`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cab53af8c1190f749adf2ab8d70c01f79d7d2dbc)]:
+  - @salesforce/b2c-tooling-sdk@1.18.0
+
 ## 0.10.1
 
 ### Patch Changes

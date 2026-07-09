@@ -35,6 +35,7 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_CLIENT_ID: 'clientId',
   SFCC_CLIENT_SECRET: 'clientSecret',
   SFCC_OAUTH_SCOPES: 'scopes',
+  SFCC_SHORT_CODE: 'shortCode',
   SFCC_SHORTCODE: 'shortCode',
   SFCC_TENANT_ID: 'tenantId',
   SFCC_CARTRIDGES: 'cartridges',

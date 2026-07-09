@@ -105,7 +105,7 @@ All Account Manager commands are under the `am` topic:
 
 - [Setup Commands](./setup) - Configure instances, install IDE integrations, and install agent skills
 - [Auth Commands](./auth) - Authentication and token management
-- [Docs Commands](./docs) - Search/read Script API docs and XSD schemas, and download docs from an instance
+- [Docs Commands](./docs) - Search/read Script API, Developer Center guides, tooling docs, job steps, and XSD schemas; download docs from an instance
 - [Logging](./logging) - Log levels, output formats, and environment variables
 
 ## Getting Help

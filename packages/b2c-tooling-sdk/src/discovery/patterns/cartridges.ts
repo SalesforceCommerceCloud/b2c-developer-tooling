@@ -23,8 +23,10 @@ import {findCartridges} from '../../operations/code/cartridges.js';
 export const cartridgesPattern: DetectionPattern = {
   name: 'cartridges',
   projectType: 'cartridges',
-  detect: async (workspacePath) => {
-    const cartridges = findCartridges(workspacePath);
+  detect: async (workspacePath, context) => {
+    // Existence check only — stop at the first cartridge and honor the depth
+    // bound so a broad root (e.g. a home directory) is not fully scanned.
+    const cartridges = findCartridges(workspacePath, {firstMatchOnly: true, maxDepth: context?.maxDepth});
     return cartridges.length > 0;
   },
 };

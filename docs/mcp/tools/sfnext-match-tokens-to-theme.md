@@ -27,30 +27,32 @@ See [Figma-to-Component Tools Setup](../figma-tools-setup) for complete prerequi
 
 ## Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `figmaTokens` | array | Yes | Array of design tokens (e.g., from Figma, design system, or style guide). |
-| `themeFilePath` | string | No | Optional absolute path to theme CSS file. If not provided, searches for `app.css` in common locations. |
+| Parameter       | Type   | Required | Description                                                                                            |
+| --------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------ |
+| `figmaTokens`   | array  | Yes      | Array of design tokens (e.g., from Figma, design system, or style guide).                              |
+| `themeFilePath` | string | No       | Optional absolute path to theme CSS file. If not provided, searches for `app.css` in common locations. |
 
 ### Figma Token Schema
 
 Each token in `figmaTokens` must have:
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | Yes | Token name from Figma (e.g., `"Primary/Blue"`, `"Spacing/Large"`). |
-| `value` | string | Yes | Token value (e.g., `"#2563eb"`, `"16px"`, `"0.5rem"`). |
-| `type` | string | Yes | One of: `color`, `spacing`, `radius`, `opacity`, `fontSize`, `fontFamily`, `other`. |
-| `description` | string | No | Optional description from Figma. |
+| Field         | Type   | Required | Description                                                                         |
+| ------------- | ------ | -------- | ----------------------------------------------------------------------------------- |
+| `name`        | string | Yes      | Token name from Figma (e.g., `"Primary/Blue"`, `"Spacing/Large"`).                  |
+| `value`       | string | Yes      | Token value (e.g., `"#2563eb"`, `"16px"`, `"0.5rem"`).                              |
+| `type`        | string | Yes      | One of: `color`, `spacing`, `radius`, `opacity`, `fontSize`, `fontFamily`, `other`. |
+| `description` | string | No       | Optional description from Figma.                                                    |
 
 ## Usage Examples
 
 **Match design tokens to your theme (default app.css):**
+
 ```
 Use the MCP tool to match these design tokens to my theme: Primary/Blue #2563eb (color), Spacing/Large 16px (spacing).
 ```
 
 **Match design tokens with custom theme file path:**
+
 ```
 Use the MCP tool to match these design tokens to my theme at /path/to/app.css:
 - Primary/Blue #2563eb (color)
@@ -60,6 +62,7 @@ Use the MCP tool to match these design tokens to my theme at /path/to/app.css:
 ## Output
 
 Returns a report (does not modify files) showing:
+
 - Which Figma design tokens match existing theme variables (exact matches)
 - Which tokens are similar to existing variables (suggested matches)
 - Which tokens need new theme variables created (with suggested names)

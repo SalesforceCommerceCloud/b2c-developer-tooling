@@ -1,5 +1,7 @@
 # Admin API OAuth Scopes Reference
 
+> **Note:** This reference is a snapshot for quick lookup during development. For the current scope catalog, newly-added scopes, and official scope definitions, consult `docs_read commerce-api/auth-z-scope-catalog`.
+
 Complete reference for OAuth scopes used with Account Manager for Admin APIs.
 
 ## Scope Format

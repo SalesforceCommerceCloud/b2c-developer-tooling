@@ -12,7 +12,7 @@ import {
   DEFAULT_CIP_STAGING_HOST,
   type CipClient,
 } from '@salesforce/b2c-tooling-sdk/clients';
-import {extractOAuthFlags, loadConfig, OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {ERROR_CODE, extractOAuthFlags, loadConfig, OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {t} from '../../i18n/index.js';
 
@@ -144,6 +144,7 @@ export abstract class CipCommand<T extends typeof Command> extends OAuthCommand<
           'error.cipAuthMethodNotSupported',
           'CIP only supports client-credentials auth. Remove --user-auth/--auth-methods overrides and provide --client-id and --client-secret.',
         ),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
   }
