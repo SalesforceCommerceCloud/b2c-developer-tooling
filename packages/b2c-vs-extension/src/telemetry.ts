@@ -30,7 +30,8 @@ export type FeatureCategory =
   | 'logs'
   | 'instance'
   | 'cipAnalytics'
-  | 'scriptTypes';
+  | 'scriptTypes'
+  | 'xmlValidation';
 
 /** VS Code 1.86+ telemetry-level signal. Falls back to true on older hosts. */
 function isVsCodeTelemetryEnabled(): boolean {

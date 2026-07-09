@@ -7,6 +7,7 @@
   "skipped": [
     "bmext.xsd",
     "customeractivedata.xsd",
+    "eventrouting.xsd",
     "customerpaymentinstrument.xsd",
     "feed.xsd",
     "order.xsd",
