@@ -93,9 +93,6 @@ catalogs:
     typescript-eslint:
       specifier: ^8
       version: 8.54.0
-    vscode-html-languageservice:
-      specifier: 5.6.0
-      version: 5.6.0
 
 overrides:
   '@hono/node-server@<1.19.10': '>=1.19.10 <2'
@@ -633,9 +630,6 @@ importers:
       react-dom:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
-      vscode-html-languageservice:
-        specifier: 'catalog:'
-        version: 5.6.0
     devDependencies:
       '@eslint/compat':
         specifier: 'catalog:'
@@ -4316,9 +4310,6 @@ packages:
 
   '@vscode/debugprotocol@1.68.0':
     resolution: {integrity: sha512-2J27dysaXmvnfuhFGhfeuxfHRXunqNPxtBoR3koiTOA9rdxWNDTa1zIFLCFMSHJ9MPTPKFcBeblsyaCJCIlQxg==}
-
-  '@vscode/l10n@0.0.18':
-    resolution: {integrity: sha512-KYSIHVmslkaCDyw013pphY+d7x1qV8IZupYfeIfzNA+nsaWHbn5uPuQRvdRFsa9zFzGeudPuoGoZ1Op4jrJXIQ==}
 
   '@vscode/test-cli@0.0.12':
     resolution: {integrity: sha512-iYN0fDg29+a2Xelle/Y56Xvv7Nc8Thzq4VwpzAF/SIE6918rDicqfsQxV6w1ttr2+SOm+10laGuY9FG2ptEKsQ==}
@@ -8554,18 +8545,6 @@ packages:
         optional: true
       postcss:
         optional: true
-
-  vscode-html-languageservice@5.6.0:
-    resolution: {integrity: sha512-FIVz83oGw2tBkOr8gQPeiREInnineCKGCz3ZD1Pi6opOuX3nSRkc4y4zLLWsuop+6ttYX//XZCI6SLzGhRzLmA==}
-
-  vscode-languageserver-textdocument@1.0.12:
-    resolution: {integrity: sha512-cxWNPesCnQCcMPeenjKKsOCKQZ/L6Tv19DTRIGuLWe32lyzWhihGVJ/rcckZXJxfdKCFvRLS3fpBIsV/ZGX4zA==}
-
-  vscode-languageserver-types@3.17.5:
-    resolution: {integrity: sha512-Ld1VelNuX9pdF39h2Hgaeb5hEZM2Z3jUrrMgWQAu82jMtZp7p3vJT3BzToKtZI7NgQssZje5o0zryOrhQvzQAg==}
-
-  vscode-uri@3.1.0:
-    resolution: {integrity: sha512-/BpdSx+yCQGnCvecbyXdxHDkuk55/G3xwnC0GqY4gmQ3j+A+g8kzzgB4Nk/SINjqn6+waqw3EgbVF2QKExkRxQ==}
 
   vue@3.5.32:
     resolution: {integrity: sha512-vM4z4Q9tTafVfMAK7IVzmxg34rSzTFMyIe0UUEijUCkn9+23lj0WRfA83dg7eQZIUlgOSGrkViIaCfqSAUXsMw==}
@@ -13210,8 +13189,6 @@ snapshots:
       '@vscode/debugprotocol': 1.68.0
 
   '@vscode/debugprotocol@1.68.0': {}
-
-  '@vscode/l10n@0.0.18': {}
 
   '@vscode/test-cli@0.0.12':
     dependencies:
@@ -18023,19 +18000,6 @@ snapshots:
       - typescript
       - universal-cookie
       - yaml
-
-  vscode-html-languageservice@5.6.0:
-    dependencies:
-      '@vscode/l10n': 0.0.18
-      vscode-languageserver-textdocument: 1.0.12
-      vscode-languageserver-types: 3.17.5
-      vscode-uri: 3.1.0
-
-  vscode-languageserver-textdocument@1.0.12: {}
-
-  vscode-languageserver-types@3.17.5: {}
-
-  vscode-uri@3.1.0: {}
 
   vue@3.5.32(typescript@5.9.3):
     dependencies:

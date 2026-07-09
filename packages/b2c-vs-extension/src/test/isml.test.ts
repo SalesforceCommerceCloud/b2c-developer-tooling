@@ -657,6 +657,37 @@ suite('ISML: diagnostics', () => {
     assert.strictEqual(diagnostics[0].severity, 'warning');
     assert.strictEqual(diagnostics[0].message, 'ISML void tag <iselse> should be self-closing.');
   });
+
+  test('treats isslot/ismodule/iscomponent as void (no "not closed" diagnostic)', () => {
+    // These are empty ISML elements — a non-self-closed form is a void-tag
+    // warning, never an unclosed-container error.
+    for (const tag of ['isslot', 'ismodule', 'iscomponent']) {
+      const selfClosed = collectIsmlDiagnostics(`<${tag} id="x"/>`);
+      assert.deepStrictEqual(selfClosed, [], `<${tag}/> should be clean`);
+
+      const open = collectIsmlDiagnostics(`<${tag} id="x">`);
+      assert.strictEqual(open.length, 1, `<${tag}> should yield one diagnostic`);
+      assert.strictEqual(open[0].message, `ISML void tag <${tag}> should be self-closing.`);
+    }
+  });
+
+  test('does not scan markup inside <iscomment> bodies', () => {
+    // Commented-out ISML must not produce diagnostics.
+    const diagnostics = collectIsmlDiagnostics('<iscomment><isif condition="x"></iscomment>');
+    assert.deepStrictEqual(diagnostics, []);
+  });
+
+  test('does not scan "<" inside <isscript> bodies', () => {
+    const diagnostics = collectIsmlDiagnostics('<isscript>var ok = a < b && c<d;</isscript>');
+    assert.deepStrictEqual(diagnostics, []);
+  });
+
+  test('resumes scanning after a raw-content element', () => {
+    // An unclosed <isif> after the </iscomment> must still be reported.
+    const diagnostics = collectIsmlDiagnostics('<iscomment><isloop></iscomment><isif condition="x">');
+    assert.strictEqual(diagnostics.length, 1);
+    assert.strictEqual(diagnostics[0].message, 'Tag <isif> is not closed.');
+  });
 });
 
 suite('ISML: diagnostic quick fixes', () => {

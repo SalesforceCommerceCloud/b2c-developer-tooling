@@ -324,6 +324,16 @@ function registerDocumentLinks(context: vscode.ExtensionContext, cartridgeServic
 
   context.subscriptions.push(
     vscode.commands.registerCommand('b2c-dx.isml.createTemplate', async (template: string) => {
+      // This command is contributed to the palette, so it can be invoked with no
+      // argument. Reject a non-string template before prompting, otherwise the
+      // cartridge QuickPick would render "Create "undefined.isml" in which...".
+      if (typeof template !== 'string' || template.trim().length === 0) {
+        await vscode.window.showErrorMessage(
+          'This command opens an ISML template from a link and cannot be run directly.',
+        );
+        return;
+      }
+
       const cartridges = cartridgeService.getCartridges();
       if (cartridges.length === 0) {
         await vscode.window.showWarningMessage('No cartridges found in this workspace.');
@@ -339,11 +349,6 @@ function registerDocumentLinks(context: vscode.ExtensionContext, cartridgeServic
             );
       if (!picked) return;
       const chosen = 'cartridge' in picked ? picked.cartridge : picked;
-
-      if (typeof template !== 'string') {
-        await vscode.window.showErrorMessage('Invalid template path.');
-        return;
-      }
 
       const normalizedTemplate = template.trim().replace(/\\/g, '/').replace(/^\/+/, '');
       const isInvalidSegment = normalizedTemplate
@@ -418,8 +423,14 @@ function toVscodeSeverity(severity: 'error' | 'warning'): vscode.DiagnosticSever
   return vscode.DiagnosticSeverity.Error;
 }
 
+// Delay before re-linting after a keystroke. collectIsmlDiagnostics does a full
+// O(n) document scan, so re-running it on every content change is wasteful on
+// large templates; coalesce bursts of edits into one pass.
+const DIAGNOSTICS_DEBOUNCE_MS = 250;
+
 function registerDiagnostics(context: vscode.ExtensionContext): void {
   const collection = vscode.languages.createDiagnosticCollection('isml');
+  const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   const update = (document: vscode.TextDocument) => {
     if (document.languageId !== 'isml') {
@@ -437,15 +448,40 @@ function registerDiagnostics(context: vscode.ExtensionContext): void {
     collection.set(document.uri, diagnostics);
   };
 
+  const clearTimer = (key: string) => {
+    const timer = debounceTimers.get(key);
+    if (timer) {
+      clearTimeout(timer);
+      debounceTimers.delete(key);
+    }
+  };
+
+  const scheduleUpdate = (document: vscode.TextDocument) => {
+    const key = document.uri.toString();
+    clearTimer(key);
+    debounceTimers.set(
+      key,
+      setTimeout(() => {
+        debounceTimers.delete(key);
+        update(document);
+      }, DIAGNOSTICS_DEBOUNCE_MS),
+    );
+  };
+
   for (const document of vscode.workspace.textDocuments) {
     update(document);
   }
 
   context.subscriptions.push(
     collection,
+    // Open/initial: lint immediately. Edits: debounce.
     vscode.workspace.onDidOpenTextDocument(update),
-    vscode.workspace.onDidChangeTextDocument((event) => update(event.document)),
-    vscode.workspace.onDidCloseTextDocument((document) => collection.delete(document.uri)),
+    vscode.workspace.onDidChangeTextDocument((event) => scheduleUpdate(event.document)),
+    vscode.workspace.onDidCloseTextDocument((document) => {
+      clearTimer(document.uri.toString());
+      collection.delete(document.uri);
+    }),
+    {dispose: () => debounceTimers.forEach((timer) => clearTimeout(timer))},
   );
 }
 

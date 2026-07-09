@@ -6,9 +6,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import {scanIsml} from './scanner.js';
+import {scanIsmlTags} from './tags.js';
 
 const TEMPLATE_TAGS = new Set(['isinclude', 'isdecorate', 'ismodule']);
+
+// Matches a `template="..."` / `template='...'` / `template=bare` attribute.
+// Capture group 1 is the raw value including any surrounding quotes; the regex
+// is anchored on a word boundary so it never matches a longer attribute name
+// ending in "template". Bounded quantifiers only — no catastrophic backtracking.
+const TEMPLATE_ATTR_RE = /\btemplate\s*=\s*("[^"]*"|'[^']*'|[^\s"'>]+)/gi;
 
 export interface TemplateLink {
   template: string;
@@ -22,63 +28,55 @@ type LocaleCache = Map<string, string[]>;
  * Find every `template="..."` attribute on `<isinclude>`, `<isdecorate>`, or `<ismodule>`
  * in the given document text. Returned offsets cover the unquoted template path so the
  * resulting link only underlines the path itself, not the quotes.
+ *
+ * Uses the hand-written ISML tag scanner (tags.ts) to locate the relevant open
+ * tags, then extracts the `template` attribute from each tag's own text — no
+ * external HTML-language-service dependency, and it inherits the scanner's
+ * comment / iscomment / isscript skipping so template refs inside those are
+ * ignored.
  */
 export function findTemplateLinks(text: string): TemplateLink[] {
   const links: TemplateLink[] = [];
 
-  let currentTagName: string | null = null;
-  let currentAttributeName: string | null = null;
+  for (const tag of scanIsmlTags(text)) {
+    if (tag.isClosing || !TEMPLATE_TAGS.has(tag.name)) continue;
 
-  scanIsml(text, (token) => {
-    if (token.type === 'startTag') {
-      currentTagName = token.text.toLowerCase();
-      currentAttributeName = null;
-      return;
-    }
+    // Scan only the attribute region: after the tag name, up to the closing `>`.
+    const attrsStart = tag.nameEndOffset;
+    const attrsText = text.slice(attrsStart, tag.endOffset);
 
-    if (token.type === 'startTagClose' || token.type === 'startTagSelfClose') {
-      currentTagName = null;
-      currentAttributeName = null;
-      return;
-    }
+    TEMPLATE_ATTR_RE.lastIndex = 0;
+    const match = TEMPLATE_ATTR_RE.exec(attrsText);
+    if (!match) continue;
 
-    if (token.type === 'attributeName') {
-      if (!currentTagName || !TEMPLATE_TAGS.has(currentTagName)) {
-        currentAttributeName = null;
-        return;
-      }
-      currentAttributeName = token.text.toLowerCase();
-      return;
-    }
-
-    if (token.type !== 'attributeValue') return;
-
-    if (!currentTagName || !TEMPLATE_TAGS.has(currentTagName)) return;
-    if (currentAttributeName !== 'template') return;
-
-    const rawValue = token.text;
-    let valueStart = token.offset;
-    let valueEnd = token.offset + token.length;
+    const rawValue = match[1];
+    // Offset of the raw value within the full document.
+    const rawValueStart = attrsStart + match.index + match[0].length - rawValue.length;
+    let valueStart = rawValueStart;
+    let valueEnd = rawValueStart + rawValue.length;
     let value = rawValue;
 
-    if (rawValue.length >= 2) {
-      const first = rawValue[0];
-      const last = rawValue[rawValue.length - 1];
-      if ((first === '"' || first === "'") && first === last) {
-        valueStart++;
+    const first = rawValue[0];
+    const last = rawValue[rawValue.length - 1];
+    if (rawValue.length >= 2 && (first === '"' || first === "'") && first === last) {
+      valueStart++;
+      valueEnd--;
+      value = rawValue.slice(1, -1);
+    } else if (last === '/') {
+      // Unquoted value abutting a self-close, e.g. `template=common/header/>`.
+      // The trailing slash belongs to the tag's `/>`, not the path — the tag
+      // scanner already told us this tag self-closes, so drop that one slash.
+      if (tag.isSelfClosing) {
         valueEnd--;
-        value = rawValue.slice(1, -1);
+        value = rawValue.slice(0, -1);
       }
     }
 
-    if (value.length === 0 || value.startsWith('$') || value.startsWith('${')) {
-      currentAttributeName = null;
-      return;
-    }
+    // Skip dynamic values (expressions) — we can't resolve a path from them.
+    if (value.length === 0 || value.startsWith('$') || value.startsWith('${')) continue;
 
     links.push({template: value, startOffset: valueStart, endOffset: valueEnd});
-    currentAttributeName = null;
-  });
+  }
 
   return links;
 }
@@ -109,7 +107,9 @@ function getOrderedLocales(templatesRoot: string, localeCache: LocaleCache): str
     return undefined;
   }
 
-  const ordered = ['default', ...locales.filter((l) => l !== 'default')];
+  // `default` always wins; remaining locales are sorted so template resolution
+  // is deterministic across platforms (readdir order is filesystem-dependent).
+  const ordered = ['default', ...locales.filter((l) => l !== 'default').sort()];
   localeCache.set(templatesRoot, ordered);
   return ordered;
 }
