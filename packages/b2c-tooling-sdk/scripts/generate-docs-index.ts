@@ -17,7 +17,8 @@ interface DocEntry {
   id: string;
   title: string;
   category?: string;
-  filePath: string;
+  /** Bundled-content path. Absent for corpora read online (e.g. Script API defers to sourceUrl). */
+  filePath?: string;
   url?: string;
   sourceUrl?: string;
   headings?: string;
@@ -127,7 +128,10 @@ async function generateScriptApiIndex(): Promise<void> {
       id,
       title,
       category: 'script-api',
-      filePath: file,
+      // No `filePath`: Script API bodies are NOT shipped in the package (the 527
+      // .md are ~6.6 MB). `docs read` fetches `sourceUrl` (the raw .md on
+      // developer.salesforce.com, which resolves) via the cached online path.
+      // The .md remain in the repo only as input for building this index.
       url: `${SCRIPT_API_URL_BASE}/${id}.html`,
       sourceUrl: `${SCRIPT_API_URL_BASE}/${id}.md`,
       ...(headings && {headings}),

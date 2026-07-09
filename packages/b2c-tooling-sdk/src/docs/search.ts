@@ -7,8 +7,10 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import MiniSearch from 'minisearch';
+import {getUserAgent} from '../clients/user-agent.js';
 import type {ProjectType} from '../discovery/types.js';
 import {getLogger} from '../logging/logger.js';
+import {getCachedContent, setCachedContent} from './content-cache.js';
 import {
   GUIDES_DATA_DIR,
   HELP_DATA_DIR,
@@ -500,10 +502,20 @@ export async function readEntryContent(entry: DocEntry): Promise<string> {
  */
 async function fetchOnlineContent(entry: DocEntry, fetchUrl: string): Promise<string> {
   const logger = getLogger();
+
+  // Serve from the two-tier (memory + on-disk TTL) cache when available, so
+  // repeated reads — within a session or across CLI invocations — avoid the
+  // network. Only successful fetches are cached (offline fallbacks are not).
+  const cached = getCachedContent(fetchUrl);
+  if (cached !== undefined) {
+    logger.trace({fetchUrl}, 'Serving online documentation content from cache');
+    return cached;
+  }
+
   try {
     logger.trace({fetchUrl}, 'Fetching online documentation content');
     const res = await fetch(fetchUrl, {
-      headers: {accept: 'text/markdown, text/plain, */*'},
+      headers: {accept: 'text/markdown, text/plain, */*', 'user-agent': getUserAgent()},
       signal: AbortSignal.timeout(ONLINE_FETCH_TIMEOUT_MS),
     });
     if (!res.ok) {
@@ -512,6 +524,7 @@ async function fetchOnlineContent(entry: DocEntry, fetchUrl: string): Promise<st
     }
     const text = await res.text();
     logger.trace({fetchUrl, bytes: text.length}, 'Fetched online documentation content');
+    setCachedContent(fetchUrl, text);
     return text;
   } catch (err) {
     logger.debug({fetchUrl, err}, 'Online doc fetch failed');

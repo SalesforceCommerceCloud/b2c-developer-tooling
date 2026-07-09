@@ -70,6 +70,9 @@ export {
   type SearchDocsOptions,
 } from './search.js';
 
+// Online-content cache (memory + on-disk TTL) for corpora read from the network
+export {clearContentCache, getCachedContent, setCachedContent, DEFAULT_CACHE_TTL_MS} from './content-cache.js';
+
 // Schema operations
 export {listSchemas, readSchema, readSchemaByQuery, searchSchemas} from './schema.js';
 

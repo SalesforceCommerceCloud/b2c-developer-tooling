@@ -15,6 +15,7 @@ import {
   readEntryContent,
   categoriesForWorkspace,
   resolveEnabledCategories,
+  clearContentCache,
   DOC_CATEGORIES,
   type DocEntry,
 } from '@salesforce/b2c-tooling-sdk/docs';
@@ -52,14 +53,15 @@ describe('docs: Developer Center guides corpus', function () {
     expect(entry.filePath, 'guides are online-only, not bundled').to.equal(undefined);
   });
 
-  it('bundled Script API entries carry durable .html url + .md sourceUrl permalinks', () => {
+  it('Script API entries carry durable .html url + .md sourceUrl and defer content online', () => {
     const scriptApi = listDocs('script-api');
     expect(scriptApi.length).to.be.greaterThan(0);
     const entry = scriptApi.find((e) => e.id === 'dw.catalog.ProductMgr') ?? scriptApi[0];
     expect(entry.url).to.match(/\/references\/b2c-script-api\/.+\.html$/);
     expect(entry.sourceUrl).to.equal(entry.url!.replace(/\.html$/, '.md'));
-    // Content still ships bundled.
-    expect(entry.filePath, 'Script API content stays bundled').to.be.a('string');
+    // Content is NOT bundled: the 527 .md (~6 MB) are not shipped; `read` fetches
+    // sourceUrl (developer.salesforce.com raw .md) via the cached online path.
+    expect(entry.filePath, 'Script API content is read online, not bundled').to.equal(undefined);
   });
 
   it('filters search by a single category', () => {
@@ -293,6 +295,9 @@ describe('docs: Developer Center guides corpus', function () {
       url: 'https://developer.salesforce.com/docs/commerce/sfnext/guide/__test_ok__.html',
       sourceUrl: 'https://developer.salesforce.com/docs/commerce/sfnext/guide/__test_ok__.md',
     };
+    // Clear both cache tiers so the fetch path is actually exercised (a prior
+    // run may have persisted this URL to the on-disk cache).
+    clearContentCache(true);
     const originalFetch = globalThis.fetch;
     let fetchedUrl = '';
     globalThis.fetch = ((input: Parameters<typeof fetch>[0]) => {
@@ -326,6 +331,8 @@ describe('docs: tooling corpus', function () {
   it('fetches tooling content online from sourceUrl (the .md)', async () => {
     const auth = listDocs('tooling').find((e) => e.id.includes('authentication'));
     expect(auth, 'expected an authentication tooling doc').to.not.equal(undefined);
+    // Clear both cache tiers so the fetch path is actually exercised.
+    clearContentCache(true);
     const originalFetch = globalThis.fetch;
     let fetchedUrl = '';
     globalThis.fetch = ((input: Parameters<typeof fetch>[0]) => {
