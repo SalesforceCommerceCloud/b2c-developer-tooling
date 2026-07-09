@@ -805,7 +805,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   // and the on-open prompt are available), but internally respects the
   // b2c-dx.features.xmlValidation setting before suggesting anything.
   runActivationStep(log, 'XML Validation registration', () => {
-    registerXmlValidation(context);
+    registerXmlValidation(context, log);
   });
 
   // Auto-mount the active instance's WebDAV filesystem as a workspace folder.

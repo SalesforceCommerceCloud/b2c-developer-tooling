@@ -1,13 +1,12 @@
 {
   "$schema": "./xsd-mappings.schema.json",
-  "description": "Source-of-truth for XML→XSD validation contributed by this extension. The build step (scripts/sync-xsd.mjs) reads this file to (1) copy the listed schemas from the SDK into resources/xsd/ and (2) regenerate package.json#contributes.xmlValidation. Each `mappings` entry covers two workspace conventions: the canonical SFCC site-archive layout (sites/<id>/, catalogs/<id>/, …) and the exploded `metadata/` workspace convention used by sfcc-ci / prophet-style projects. Every SDK schema must appear in `mappings` (bundled + contributed as fileMatch), `bundleOnly` (bundled because another schema imports it, but never the validation target itself), or `skipped` (excluded entirely). The build fails if any SDK schema is in none of those lists — this prevents new schemas from silently missing validation.",
+  "description": "Source-of-truth for XML→XSD validation contributed by this extension. The build step (scripts/sync-xsd.mjs) reads this file to (1) copy the listed schemas from the SDK into resources/xsd/ and (2) generate resources/xml-validation.generated.json — the runtime config the extension hands to redhat.vscode-xml. That sidecar holds: a `catalog` path (resources/xsd-catalog.xml, an OASIS XML catalog mapping each schema's targetNamespace → its bundled XSD, registered via addXMLCatalogs() so validation is chosen by the document's DECLARED NAMESPACE, path-independent); `fileAssociations` (path-glob → schema, registered via addXMLFileAssociations()) used only for schemas that CANNOT be catalogued by namespace because two mapped schemas share one targetNamespace (a catalog maps a namespace to exactly one file) — such collisions are auto-routed to path-based associations, whose distinct globs disambiguate them; and `detectionGlobs` (all fileMatch globs) used purely to recognize a B2C metadata XML on open for the install prompt. Each `mappings` fileMatch[] covers two workspace conventions: the canonical SFCC site-archive layout (sites/<id>/, catalogs/<id>/, …) and the exploded `metadata/` convention used by sfcc-ci / prophet-style projects. Every SDK schema must appear in `mappings` (bundled + catalogued or associated), `bundleOnly` (bundled because another schema imports it, but never a validation target), or `skipped` (excluded entirely). The build fails if any SDK schema is in none of those lists, or if a mapped schema declares no targetNamespace — preventing schemas from silently missing validation.",
   "bundleOnly": [
     "xml.xsd"
   ],
   "skipped": [
     "bmext.xsd",
     "customeractivedata.xsd",
-    "eventrouting.xsd",
     "customerpaymentinstrument.xsd",
     "feed.xsd",
     "order.xsd",
@@ -137,6 +136,14 @@
         "**/sites/*/dcext.xml",
         "**/metadata/sites/*/dcext.xml",
         "**/metadata/dcext/*.xml"
+      ]
+    },
+    {
+      "schema": "eventrouting.xsd",
+      "fileMatch": [
+        "**/sites/*/event-routing.xml",
+        "**/metadata/sites/*/event-routing.xml",
+        "**/metadata/event-routing/*.xml"
       ]
     },
     {
