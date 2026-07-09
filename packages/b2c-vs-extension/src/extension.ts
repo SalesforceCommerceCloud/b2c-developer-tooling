@@ -752,7 +752,9 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
       registerLogs(context, configProvider);
     });
   }
-  if (settings.get<boolean>('features.jobsExplorer', true)) {
+  // jobsExplorer/exportExplorer/cipAnalytics default OFF (see package.json) —
+  // in-progress develop features held back pending review. Fallback matches.
+  if (settings.get<boolean>('features.jobsExplorer', false)) {
     runActivationStep(log, 'Job History registration', () => {
       registerJobs(context, configProvider);
     });
@@ -767,7 +769,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
       registerApiBrowser(context, configProvider, log);
     });
   }
-  if (settings.get<boolean>('features.exportExplorer', true)) {
+  if (settings.get<boolean>('features.exportExplorer', false)) {
     registerExportTree(context, configProvider);
   }
   if (settings.get<boolean>('features.cap', true)) {
@@ -786,7 +788,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     });
   }
 
-  if (settings.get<boolean>('features.cipAnalytics', true)) {
+  if (settings.get<boolean>('features.cipAnalytics', false)) {
     runActivationStep(log, 'CIP Analytics registration', () => {
       registerCipAnalytics(context, configProvider, log);
     });

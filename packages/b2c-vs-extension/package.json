@@ -141,7 +141,7 @@
         },
         "b2c-dx.features.jobsExplorer": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Enable the Job History view for monitoring Business Manager job execution history."
         },
         "b2c-dx.features.scaffold": {
@@ -156,7 +156,7 @@
         },
         "b2c-dx.features.exportExplorer": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Enable the Export view for interactively exporting site impex data units."
         },
         "b2c-dx.features.cap": {
@@ -254,7 +254,7 @@
         },
         "b2c-dx.features.cipAnalytics": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Enable the B2C-DX Analytics (CIP) sidebar for browsing tables and running curated reports."
         },
         "b2c-dx.features.xmlValidation": {

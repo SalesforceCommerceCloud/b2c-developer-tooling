@@ -54,13 +54,32 @@ suite('extension activation', () => {
   // (extension.ts:117-136) registers only two stub commands on failure
   // (promptAgent, listWebDav), so any swallowed activation error
   // surfaces here as a flood of missing commands.
+  //
+  // Feature-gated commands are only registered when their `features.*` setting
+  // is enabled. Some features default OFF, so their commands are legitimately
+  // absent — exclude them by command-id prefix when the feature is disabled in
+  // the test host's effective config.
   test('every contributed command is registered', async () => {
+    const config = vscode.workspace.getConfiguration('b2c-dx');
+    // command-id prefix -> features.* flag that gates it
+    const featureGatedPrefixes: Array<{prefix: string; feature: string}> = [
+      {prefix: 'b2c-dx.jobs.', feature: 'features.jobsExplorer'},
+      {prefix: 'b2c-dx.export.', feature: 'features.exportExplorer'},
+      {prefix: 'b2c-dx.cipAnalytics.', feature: 'features.cipAnalytics'},
+    ];
+    const disabledPrefixes = featureGatedPrefixes
+      .filter(({feature}) => !config.get<boolean>(feature, false))
+      .map(({prefix}) => prefix);
+    const isFromDisabledFeature = (command: string) => disabledPrefixes.some((p) => command.startsWith(p));
+
     const registered = new Set(await vscode.commands.getCommands(true));
-    const missing = pkg.contributes.commands.filter((c) => !registered.has(c.command));
+    const missing = pkg.contributes.commands.filter(
+      (c) => !registered.has(c.command) && !isFromDisabledFeature(c.command),
+    );
     assert.deepStrictEqual(
       missing.map((c) => c.command),
       [],
-      'all contributed commands must be registered after activation',
+      'all contributed commands (from enabled features) must be registered after activation',
     );
   });
 
