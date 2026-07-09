@@ -145,6 +145,10 @@ b2c docs read sfnext/sfnext-get-started
 b2c docs read commerce-api/slas-passwordless-login-registration
 b2c docs read pwa-kit-managed-runtime/getting-started
 
+# Read Salesforce Help articles by namespaced ID
+b2c docs read help-admin/b2c_site_import_export
+b2c docs read help-merchant/b2c_creating_price_books
+
 # Read tooling guides
 b2c docs read guide-authentication
 b2c docs read guide-configuration
@@ -156,7 +160,9 @@ b2c docs read ProductMgr --raw
 b2c docs read ProductMgr --json
 ```
 
-> **Content sources:** Developer Center guides and tooling docs are fetched **online** from the .md source (sourceUrl) with a graceful offline fallback (summary + headings + link). Script API and job-step content is **bundled** in the CLI.
+> **Exact vs. fuzzy match:** `docs read` resolves an exact id deterministically (e.g. `dw.catalog.ProductMgr`). For a fuzzy query (e.g. `productmgr`) it applies the same workspace-aware ranking as `docs search` — so a fuzzy read resolves the same top hit search ranks first. Pass `--workspace all` to opt out.
+
+> **Content sources:** Script API, Developer Center guides, Salesforce Help, and tooling docs are fetched **online** from the .md source (sourceUrl) and cached locally, with a graceful offline fallback (summary + headings + both URLs). Only standard job steps are **bundled** in the CLI.
 
 To retrieve the human-facing .html page URL (for citing/opening in browser) or the raw .md source URL, use `--json` output or `--columns url,sourceUrl` in search results.
 

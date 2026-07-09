@@ -43,7 +43,7 @@ export function createDocsTools(
   const {detectedWorkspaces = [], enabledCategories} = context;
   return [
     createDocsSearchTool(loadServices, detectedWorkspaces, enabledCategories),
-    createDocsReadTool(loadServices, enabledCategories),
+    createDocsReadTool(loadServices, enabledCategories, detectedWorkspaces),
     createDocsListTool(loadServices, detectedWorkspaces, enabledCategories),
     createDocsSchemaSearchTool(loadServices),
     createDocsSchemaReadTool(loadServices),

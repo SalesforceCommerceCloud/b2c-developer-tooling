@@ -23,6 +23,7 @@ import {
 } from '@salesforce/b2c-tooling-sdk/docs';
 import {detectWorkspaceType, PROJECT_TYPES, type ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
 import {t} from '../../i18n/index.js';
+import {resolveDocsWorkspace} from '../../utils/docs/workspace.js';
 
 interface SearchDocsResponse {
   query?: string;
@@ -249,57 +250,11 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
   }
 
   /**
-   * Resolves the --workspace flag to concrete project type(s).
-   *
-   * Workspace awareness is ON by default (matching the MCP docs tools): when
-   * the flag is unset — or explicitly `auto` — workspace detection runs and its
-   * result favors the detected workspace's docs. `all` opts out (no
-   * preference); an explicit type (or comma-separated list) is used verbatim without detection.
+   * Resolves the --workspace flag to concrete project type(s). Shared with
+   * `docs read` via {@link resolveDocsWorkspace} so both apply the same
+   * workspace-aware ranking.
    */
-  private async resolveWorkspace(value: string | undefined): Promise<ProjectType[] | undefined> {
-    if (value === 'all') {
-      this.logger.debug('Workspace preference disabled (--workspace all); no detection run');
-      return undefined;
-    }
-    if (!value || value === 'auto') {
-      const cwd = process.cwd();
-      const detection = await this.operations.detectWorkspaceType(cwd);
-      const resolved = detection.projectTypes.length > 0 ? detection.projectTypes : undefined;
-      this.logger.debug(
-        {
-          cwd,
-          workspaceFlag: value ?? '(unset, defaults to auto)',
-          matchedPatterns: detection.matchedPatterns,
-          projectTypes: detection.projectTypes,
-          resolved: resolved ?? null,
-        },
-        resolved
-          ? `Auto-detected workspace: ${resolved.join(', ')}`
-          : 'No workspace detected; searching with no workspace preference',
-      );
-      return resolved;
-    }
-    // Handle one or more comma-separated explicit types. Validate against the
-    // canonical PROJECT_TYPES; warn on (and drop) anything unrecognized.
-    const known = new Set<string>(PROJECT_TYPES);
-    const requested = value
-      .split(',')
-      .map((t) => t.trim().toLowerCase())
-      .filter((t) => t.length > 0);
-    const valid = requested.filter((t) => known.has(t)) as ProjectType[];
-    const invalid = requested.filter((t) => !known.has(t));
-    if (invalid.length > 0) {
-      this.warn(
-        t('commands.docs.search.invalidWorkspace', 'Ignoring unknown workspace type(s): {{types}}', {
-          types: invalid.join(', '),
-        }),
-      );
-    }
-    if (valid.length === 0) {
-      this.logger.debug({requested}, 'No valid workspace types specified; searching with no workspace preference');
-      return undefined;
-    }
-    this.logger.debug({workspace: valid}, 'Using explicitly specified workspace type(s)');
-    return [...new Set(valid)];
+  private resolveWorkspace(value: string | undefined): Promise<ProjectType[] | undefined> {
+    return resolveDocsWorkspace(value, this.operations.detectWorkspaceType, this.logger, this.warn.bind(this));
   }
 }

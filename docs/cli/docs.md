@@ -186,6 +186,7 @@ b2c docs read <query>
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------- |
 | `--raw`, `-r` | Output raw markdown (no terminal rendering)                                                                                          | `false` |
 | `--topics`    | Allowlist that bounds readable docs to these categories (comma-separated; env `SFCC_DOCS_TOPICS`). An id outside it will not resolve | (all)   |
+| `--workspace` | Favor a workspace type (`auto`\|`all`\|`cartridges`\|`sfra`\|`pwa-kit-v3`\|`storefront-next`) when resolving a fuzzy query, matching `docs search`. Ignored for an exact id match | `auto`  |
 
 ### Examples
 
@@ -224,7 +225,7 @@ b2c docs read ProductMgr --json
 
 By default, markdown is rendered for terminal display. Raw markdown is emitted when using `--raw` (or when output is not a TTY). For online corpora (Script API, Developer Center guides, Salesforce Help), the command fetches full content from the sourceUrl (.md) and caches it locally; if the fetch fails, it displays the locally-indexed summary, section headings, and both the url (.html) and sourceUrl (.md) so you can retrieve the page yourself.
 
-> **Search score vs. read score:** `docs search` applies a workspace boost (×1.4 to categories relevant to the detected project — see [Workspace-Aware Search](#workspace-aware-search)), so a result's score in `docs search` can be higher than the raw relevance score. `docs read` resolves the best match without a workspace boost, so the same entry may show a lower (unboosted) score. Both reflect the same underlying relevance ranking.
+> **Fuzzy read matches the search ranking:** `docs read` resolves an exact id deterministically (e.g. `dw.catalog.ProductMgr` always reads that class). For a *fuzzy* query (e.g. `productmgr`), it applies the same workspace-aware ranking as `docs search` — auto-detecting the workspace by default, or honoring `--workspace` — so a fuzzy `docs read` resolves the same top hit that `docs search` ranks first. Use `--workspace all` to opt out of the preference.
 
 ---
 
