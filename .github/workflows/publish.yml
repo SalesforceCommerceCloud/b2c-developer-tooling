@@ -118,16 +118,13 @@ jobs:
         if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
-          node-version: '22.22.1'
+          node-version: '24.18.0'
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Upgrade npm for trusted publishing
         if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
-        # Pin to the 11.x line: it supports OIDC trusted publishing (added in
-        # 11.5.x) and is compatible with the pinned Node above. Avoid npm@latest,
-        # which floats to npm@12+ (requires Node ^22.22.2) and breaks this step.
-        run: npm install -g npm@11
+        run: npm install -g npm@latest
 
       - name: Install dependencies
         if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
