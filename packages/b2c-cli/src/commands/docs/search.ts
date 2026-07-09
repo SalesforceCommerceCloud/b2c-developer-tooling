@@ -153,8 +153,11 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
   async run(): Promise<ListDocsResponse | SearchDocsResponse> {
     const {query} = this.args;
     const {limit, list, category} = this.flags;
-    // Launch-time allowlist that bounds the whole corpus (from --topics / SFCC_DOCS_TOPICS).
-    const enabledCategories = resolveEnabledCategories(this.flags.topics, (invalid) =>
+    // Allowlist that bounds the whole corpus. Precedence: --topics /
+    // SFCC_DOCS_TOPICS flag first, else the resolved config's `docsCategories`
+    // (dw.json `docs-categories`, SFCC_DOCS_CATEGORIES, package.json).
+    const topicsInput = this.flags.topics ?? this.resolvedConfig?.values.docsCategories;
+    const enabledCategories = resolveEnabledCategories(topicsInput, (invalid) =>
       this.warn(
         t('commands.docs.search.invalidTopics', 'Ignoring unknown documentation topic(s): {{topics}}', {
           topics: invalid.join(', '),

@@ -70,7 +70,9 @@ export default class DocsRead extends BaseCommand<typeof DocsRead> {
   async run(): Promise<ReadDocsResult> {
     const {query} = this.args;
     const {raw} = this.flags;
-    const enabledCategories = resolveEnabledCategories(this.flags.topics, (invalid) =>
+    // Flag first (--topics / SFCC_DOCS_TOPICS), else config `docsCategories`.
+    const topicsInput = this.flags.topics ?? this.resolvedConfig?.values.docsCategories;
+    const enabledCategories = resolveEnabledCategories(topicsInput, (invalid) =>
       this.warn(
         t('commands.docs.read.invalidTopics', 'Ignoring unknown documentation topic(s): {{topics}}', {
           topics: invalid.join(', '),

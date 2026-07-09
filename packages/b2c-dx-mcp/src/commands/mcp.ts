@@ -214,7 +214,8 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     'docs-topics': Flags.string({
       description:
         'Limit the documentation exposed by the docs tools to these categories (comma-separated allowlist). ' +
-        'Options: script-api, job-step, commerce-api, pwa-kit-managed-runtime, sfnext, sfra, b2c-commerce, tooling. ' +
+        'Options: script-api, job-step, commerce-api, pwa-kit-managed-runtime, sfnext, sfra, b2c-commerce, tooling, ' +
+        'help-admin, help-merchant. ' +
         'Bounds the whole docs corpus; per-call category/storefront narrow within it. Unknown names are ignored.',
       env: 'SFCC_DOCS_TOPICS',
     }),
@@ -339,8 +340,10 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       configPath: this.flags.config,
       // Project directory for auto-discovery. oclif handles flag with env fallback.
       projectDirectory: this.flags['project-directory'],
-      // Docs topic allowlist (bounds the docs corpus at startup).
-      docsTopics: this.flags['docs-topics'],
+      // Docs topic allowlist (bounds the docs corpus at startup). Flag first
+      // (--docs-topics / SFCC_DOCS_TOPICS), else config `docsCategories`
+      // (dw.json `docs-categories`, SFCC_DOCS_CATEGORIES, package.json).
+      docsTopics: this.flags['docs-topics'] ?? this.resolvedConfig?.values.docsCategories?.join(','),
     };
 
     // Add toolsets to telemetry attributes

@@ -11,6 +11,7 @@ import type {ProjectType} from '../discovery/types.js';
 import {getLogger} from '../logging/logger.js';
 import {
   GUIDES_DATA_DIR,
+  HELP_DATA_DIR,
   JOB_STEPS_DATA_DIR,
   SCRIPT_API_DATA_DIR,
   TOOLING_DATA_DIR,
@@ -25,7 +26,13 @@ import {
  * win on id collisions. Each directory holds an `index.json` ({@link SearchIndex})
  * and, for corpora whose content ships in the package, the referenced files.
  */
-const CORPUS_DIRS: readonly string[] = [SCRIPT_API_DATA_DIR, JOB_STEPS_DATA_DIR, GUIDES_DATA_DIR, TOOLING_DATA_DIR];
+const CORPUS_DIRS: readonly string[] = [
+  SCRIPT_API_DATA_DIR,
+  JOB_STEPS_DATA_DIR,
+  GUIDES_DATA_DIR,
+  TOOLING_DATA_DIR,
+  HELP_DATA_DIR,
+];
 
 /** Multiplier applied to a detected workspace's relevant categories. */
 const WORKSPACE_BOOST = 1.4;
@@ -77,6 +84,11 @@ const CATEGORY_TAXONOMY: Record<DocCategory, {alwaysRelevant?: boolean}> = {
   sfra: {},
   'b2c-commerce': {alwaysRelevant: true},
   tooling: {alwaysRelevant: true},
+  // Salesforce Help corpora. Not `alwaysRelevant`: administrative/merchandising
+  // Help is task-specific, so it is boosted only via explicit category/topic
+  // selection, never blanket-boosted for every detected workspace.
+  'help-admin': {},
+  'help-merchant': {},
 };
 
 /**

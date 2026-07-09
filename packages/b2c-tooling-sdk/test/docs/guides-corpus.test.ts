@@ -169,16 +169,23 @@ describe('docs: Developer Center guides corpus', function () {
       // "seo": sfnext has a strong exact-title hit ("SEO and Metadata") that
       // out-scores every PWA Kit doc on raw text. For a PWA Kit workspace, the
       // PWA Kit guide must still rank above the (competing) sfnext guides.
-      const pwa = searchDocs('seo', {workspace: 'pwa-kit-v3', limit: 20});
-      expect(pwa.length).to.be.greaterThan(0);
-      expect(pwa[0].entry.category).to.equal('pwa-kit-managed-runtime');
-      const topPwa = pwa.findIndex((r) => r.entry.category === 'pwa-kit-managed-runtime');
-      const topSfnext = pwa.findIndex((r) => r.entry.category === 'sfnext');
+      // Scope to the mutually-exclusive storefront-framework corpora so the
+      // assertion is about relative framework ranking, not absolute positions
+      // (other corpora — e.g. help-merchant SEO pages — legitimately interleave).
+      const pwa = searchDocs('seo', {workspace: 'pwa-kit-v3', limit: 60});
+      const frameworks = pwa.filter((r) =>
+        ['pwa-kit-managed-runtime', 'sfnext', 'sfra'].includes(r.entry.category ?? ''),
+      );
+      expect(frameworks.length).to.be.greaterThan(0);
+      // The current storefront (PWA Kit) outranks every competing framework doc.
+      expect(frameworks[0].entry.category).to.equal('pwa-kit-managed-runtime');
+      const topPwa = frameworks.findIndex((r) => r.entry.category === 'pwa-kit-managed-runtime');
+      const topSfnext = frameworks.findIndex((r) => r.entry.category === 'sfnext');
       expect(topPwa).to.be.greaterThan(-1);
       // A competing framework (sfnext) is demoted below the current one — but not hidden.
       if (topSfnext !== -1) expect(topPwa).to.be.lessThan(topSfnext);
       expect(
-        pwa.some((r) => r.entry.category === 'sfnext'),
+        frameworks.some((r) => r.entry.category === 'sfnext'),
         'competing docs are demoted, not removed',
       ).to.equal(true);
     });
