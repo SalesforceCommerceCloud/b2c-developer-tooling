@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.11
+
+### Patch Changes
+
+- [`db905f4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/db905f431e89518031aa7ce1fe47be90cbdd5f2d) - Fix stale MCP docs sidebar label ("Script API & Schemas" → "Documentation Tools") to match the renamed multi-corpus documentation reference page. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.10
 
 ### Patch Changes
