@@ -124,7 +124,10 @@ jobs:
 
       - name: Upgrade npm for trusted publishing
         if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
-        run: npm install -g npm@latest
+        # Pin to the 11.x line: it supports OIDC trusted publishing (added in
+        # 11.5.x) and is compatible with the pinned Node above. Avoid npm@latest,
+        # which floats to npm@12+ (requires Node ^22.22.2) and breaks this step.
+        run: npm install -g npm@11
 
       - name: Install dependencies
         if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
