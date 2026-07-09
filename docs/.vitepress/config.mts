@@ -172,7 +172,7 @@ const referenceSidebar = [
       {
         text: 'Documentation',
         collapsed: true,
-        items: [{text: 'Script API & Schemas', link: '/mcp/tools/docs'}],
+        items: [{text: 'Documentation Tools', link: '/mcp/tools/docs'}],
       },
       {
         text: 'Storefront Next (deprecated)',
