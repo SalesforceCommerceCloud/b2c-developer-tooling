@@ -1,14 +1,14 @@
 ---
-description: MCP tools for searching B2C Commerce documentation including Script API reference, Developer Center guides, tooling docs, job steps, and XSD schemas.
+description: MCP tools for searching B2C Commerce documentation including Script API reference, Developer Center guides, Salesforce Help, tooling docs, job steps, and XSD schemas.
 ---
 
 # Documentation Tools
 
-MCP tools for searching and reading B2C Commerce documentation across multiple corpora: Script API reference (`dw.*` classes/modules), Developer Center guides (conceptual/how-to content), tooling documentation (CLI/MCP/SDK guides), standard job steps, and XSD schemas. All corpora are indexed locally (shipped with the SDK); Developer Center guides and tooling docs fetch their full text online when read, while Script API and job-step content is bundled. No instance configuration or authentication is required. Available in **every toolset**.
+MCP tools for searching and reading B2C Commerce documentation across multiple corpora: Script API reference (`dw.*` classes/modules), Developer Center guides (conceptual/how-to content), Salesforce Help (administration and merchandising content), tooling documentation (CLI/MCP/SDK guides), standard job steps, and XSD schemas. All corpora are indexed locally (the index ships with the SDK); Script API, Developer Center guides, Salesforce Help, and tooling docs fetch their full text online when read (cached locally after the first read), while job-step content is bundled. No instance configuration or authentication is required. Available in **every toolset**.
 
 By default the tools return compact results — `docs_search` returns a short result list with summary fields, `docs_list` returns a table of contents, and `docs_read` returns a bounded slice of long documents. Each accepts options to return more (`verbose`, `limit`/`offset`, `maxLength`).
 
-> **Restricting available topics:** Launch the server with `--docs-topics <categories>` (or the `SFCC_DOCS_TOPICS` env var) to bound the entire documentation corpus to a comma-separated allowlist (e.g. `--docs-topics sfnext,commerce-api,tooling`). This is a hard configuration boundary — the `category` parameter is narrowed to the allowlist, per-call `category`/`workspace` narrow _within_ it, and `docs_read` will not resolve an id outside it. Unknown category names are ignored with a warning. The CLI commands (`b2c docs search`/`read`) support the same restriction via the `--topics` flag or `SFCC_DOCS_TOPICS` env var. Use it to expose only the docs relevant to a given project.
+> **Restricting available topics:** Launch the server with `--docs-topics <categories>` (or the `SFCC_DOCS_TOPICS` env var) to bound the entire documentation corpus to a comma-separated allowlist (e.g. `--docs-topics sfnext,commerce-api,tooling` or `--docs-topics help-admin,script-api,tooling` for an admin-focused server). This is a hard configuration boundary — the `category` parameter is narrowed to the allowlist, per-call `category`/`workspace` narrow _within_ it, and `docs_read` will not resolve an id outside it. Unknown category names are ignored with a warning. The CLI commands (`b2c docs search`/`read`) support the same restriction via the `--topics` flag or `SFCC_DOCS_TOPICS` env var; all three surfaces also read the `docsCategories` config field (dw.json `docs-categories`, `SFCC_DOCS_CATEGORIES`, package.json). Use it to expose only the docs relevant to a given project.
 
 ---
 
@@ -23,7 +23,7 @@ Content-aware search across all corpora using BM25-style ranking. Results includ
 | `query`     | string  | Yes      |         | Search query (keywords, class name, or topic)                                                                                                                           |
 | `limit`     | number  | No       | `5`     | Maximum number of results                                                                                                                                               |
 | `verbose`   | boolean | No       | `false` | Include `keywords`, `url`, and `sourceUrl` on each result (larger payload)                                                                                              |
-| `category`  | string  | No       | (all)   | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step`                                    |
+| `category`  | string  | No       | (all)   | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step`, `help-admin`, `help-merchant`                                    |
 | `workspace` | string  | No       | `auto`  | Workspace awareness: `auto` (auto-detected), `all` (no preference), or specify one or more types comma-separated: `cartridges`, `sfra`, `pwa-kit-v3`, `storefront-next` |
 
 **Returns:** `{query, category?, workspace?, results: [{id, title, category, summary?, score, keywords?, url?, sourceUrl?}]}`. Higher `score` = better match (results are pre-sorted best-first). `keywords`, `url`, and `sourceUrl` appear only when `verbose=true`. The `url` field is the .html page for opening in a browser, while `sourceUrl` is the raw .md source. Use `summary` to identify the right entry, then read it with `docs_read`.
@@ -50,7 +50,7 @@ Content-aware search across all corpora using BM25-style ranking. Results includ
 
 ### docs_read
 
-Read documentation for a specific entry. Developer Center guides and tooling docs fetch content online from the `sourceUrl` (.md) when available, with offline fallback (summary + headings + link). Script API and job-step content is bundled (no fetch). Long documents are truncated to `maxLength` characters — page through the rest with `offset` when `truncated` is `true`.
+Read documentation for a specific entry. Script API, Developer Center guides, Salesforce Help, and tooling docs fetch content online from the `sourceUrl` (.md) and cache it locally after the first read, with offline fallback (summary + headings + both URLs). Job-step content is bundled (no fetch). Long documents are truncated to `maxLength` characters — page through the rest with `offset` when `truncated` is `true`.
 
 | Parameter   | Type   | Required | Default | Description                                                                                                                                     |
 | ----------- | ------ | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -58,7 +58,7 @@ Read documentation for a specific entry. Developer Center guides and tooling doc
 | `offset`    | number | No       | `0`     | Character offset to start reading from (for paging long docs)                                                                                   |
 | `maxLength` | number | No       | `12000` | Maximum characters of content to return                                                                                                         |
 
-**Returns:** `{entry: {id, title, category, summary?, keywords?, url?, sourceUrl?, filePath?, preview?}, content: string, totalLength, offset, truncated?, nextOffset?}`. Returns an error result with a hint to use `docs_search` if no match is found. The `url` field is the .html page, while `sourceUrl` is the raw .md source used for fetching guide content. Both fields are populated for guides, script-api, and tooling entries; job-step entries have neither. For guides, `content` is fetched online; offline fallback shows summary + headings.
+**Returns:** `{entry: {id, title, category, summary?, keywords?, url?, sourceUrl?, filePath?, preview?}, content: string, totalLength, offset, truncated?, nextOffset?}`. Returns an error result with a hint to use `docs_search` if no match is found. The `url` field is the .html page, while `sourceUrl` is the raw .md source used for fetching guide content. Both fields are populated for script-api, guides, Salesforce Help, and tooling entries; job-step entries have neither. For those online corpora, `content` is fetched from `sourceUrl` and cached locally; offline fallback shows summary + headings + both URLs.
 
 **Examples:**
 
@@ -73,7 +73,7 @@ Enumerate documentation entries for browsing a known category. Use `docs_search`
 
 | Parameter   | Type   | Required | Default     | Description                                                                                                                                                                      |
 | ----------- | ------ | -------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `category`  | string | No       | (directory) | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step`                                             |
+| `category`  | string | No       | (directory) | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step`, `help-admin`, `help-merchant`                                             |
 | `workspace` | string | No       | (directory) | Workspace awareness: `auto` (auto-detected) or specify one or more types comma-separated: `cartridges`, `sfra`, `pwa-kit-v3`, `storefront-next`. Omit for the category directory |
 | `limit`     | number | No       | `100`       | Maximum entries per page                                                                                                                                                         |
 | `offset`    | number | No       | `0`         | Number of entries to skip (for pagination)                                                                                                                                       |

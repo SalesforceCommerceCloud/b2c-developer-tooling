@@ -9,6 +9,9 @@ import {expect} from 'chai';
 import {
   clearContentCache,
   getCachedContent,
+  getCachedEntry,
+  getContentCacheStats,
+  purgeContentCache,
   setCachedContent,
   DEFAULT_CACHE_TTL_MS,
 } from '@salesforce/b2c-tooling-sdk/docs';
@@ -44,5 +47,30 @@ describe('docs: online content cache', () => {
     clearContentCache(false);
     // Still resolvable from disk within the default TTL.
     expect(getCachedContent(url, DEFAULT_CACHE_TTL_MS)).to.equal('persisted');
+  });
+
+  it('getCachedEntry reports which tier served the hit', () => {
+    const url = `https://example.test/tier-${process.pid}-${performance.now()}.md`;
+    setCachedContent(url, 'x');
+    // Fresh set -> in-memory hit.
+    expect(getCachedEntry(url)?.source).to.equal('memory');
+    // Drop memory -> next hit comes from disk (which also repopulates memory).
+    clearContentCache(false);
+    expect(getCachedEntry(url)?.source).to.equal('disk');
+    // Now back in memory.
+    expect(getCachedEntry(url)?.source).to.equal('memory');
+  });
+
+  it('purgeContentCache empties both tiers and reports pre-purge disk stats', () => {
+    const url = `https://example.test/purge-${process.pid}-${performance.now()}.md`;
+    setCachedContent(url, 'purge-me');
+    const before = getContentCacheStats();
+    expect(before.files).to.be.greaterThan(0);
+    const purged = purgeContentCache();
+    expect(purged.files).to.equal(before.files);
+    expect(purged.bytes).to.equal(before.bytes);
+    // After purge, disk is empty and the entry no longer resolves.
+    expect(getContentCacheStats().files).to.equal(0);
+    expect(getCachedContent(url)).to.equal(undefined);
   });
 });

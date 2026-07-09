@@ -73,10 +73,16 @@ export {
 // Online-content cache (memory + on-disk TTL) for corpora read from the network
 export {
   clearContentCache,
+  purgeContentCache,
+  getContentCacheStats,
   getCachedContent,
+  getCachedEntry,
   setCachedContent,
   initializeContentCache,
   DEFAULT_CACHE_TTL_MS,
+  type CacheSource,
+  type CachedEntry,
+  type ContentCacheStats,
 } from './content-cache.js';
 
 // Schema operations

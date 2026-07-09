@@ -10,7 +10,7 @@ import MiniSearch from 'minisearch';
 import {getUserAgent} from '../clients/user-agent.js';
 import type {ProjectType} from '../discovery/types.js';
 import {getLogger} from '../logging/logger.js';
-import {getCachedContent, setCachedContent} from './content-cache.js';
+import {getCachedEntry, setCachedContent} from './content-cache.js';
 import {
   GUIDES_DATA_DIR,
   HELP_DATA_DIR,
@@ -506,14 +506,17 @@ async function fetchOnlineContent(entry: DocEntry, fetchUrl: string): Promise<st
   // Serve from the two-tier (memory + on-disk TTL) cache when available, so
   // repeated reads — within a session or across CLI invocations — avoid the
   // network. Only successful fetches are cached (offline fallbacks are not).
-  const cached = getCachedContent(fetchUrl);
+  const cached = getCachedEntry(fetchUrl);
   if (cached !== undefined) {
-    logger.trace({fetchUrl}, 'Serving online documentation content from cache');
-    return cached;
+    logger.debug(
+      {id: entry.id, fetchUrl, cache: 'hit', cacheSource: cached.source, bytes: cached.content.length},
+      `Serving online documentation content from ${cached.source} cache`,
+    );
+    return cached.content;
   }
 
   try {
-    logger.trace({fetchUrl}, 'Fetching online documentation content');
+    logger.debug({id: entry.id, fetchUrl, cache: 'miss'}, 'Fetching online documentation content (cache miss)');
     const res = await fetch(fetchUrl, {
       headers: {accept: 'text/markdown, text/plain, */*', 'user-agent': getUserAgent()},
       signal: AbortSignal.timeout(ONLINE_FETCH_TIMEOUT_MS),
@@ -523,8 +526,11 @@ async function fetchOnlineContent(entry: DocEntry, fetchUrl: string): Promise<st
       return offlineFallback(entry, `HTTP ${res.status}`);
     }
     const text = await res.text();
-    logger.trace({fetchUrl, bytes: text.length}, 'Fetched online documentation content');
     setCachedContent(fetchUrl, text);
+    logger.debug(
+      {id: entry.id, fetchUrl, bytes: text.length, cache: 'stored'},
+      'Fetched and cached online documentation content',
+    );
     return text;
   } catch (err) {
     logger.debug({fetchUrl, err}, 'Online doc fetch failed');

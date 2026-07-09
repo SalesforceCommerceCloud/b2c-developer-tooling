@@ -83,16 +83,26 @@ function cacheFileFor(url: string): string {
   return path.join(getCacheDir(), `${hash}.md`);
 }
 
+/** Which cache tier a hit came from. */
+export type CacheSource = 'memory' | 'disk';
+
+/** A cache hit: the content and which tier served it. */
+export interface CachedEntry {
+  content: string;
+  source: CacheSource;
+}
+
 /**
- * Returns cached content for `url` from memory or a fresh-enough disk entry, or
- * `undefined` on a miss. A disk hit repopulates the in-memory tier.
+ * Returns the cached entry for `url` (with the tier that served it) from memory
+ * or a fresh-enough disk entry, or `undefined` on a miss. A disk hit repopulates
+ * the in-memory tier.
  *
  * @param url - The fetch URL used as the cache key
  * @param ttlMs - Max age for a disk entry to count as a hit (default 7 days)
  */
-export function getCachedContent(url: string, ttlMs: number = DEFAULT_CACHE_TTL_MS): string | undefined {
+export function getCachedEntry(url: string, ttlMs: number = DEFAULT_CACHE_TTL_MS): CachedEntry | undefined {
   const mem = memoryCache.get(url);
-  if (mem !== undefined) return mem;
+  if (mem !== undefined) return {content: mem, source: 'memory'};
 
   // A non-positive TTL means "never serve from cache" (force refetch),
   // independent of filesystem clock skew on just-written files.
@@ -106,10 +116,21 @@ export function getCachedContent(url: string, ttlMs: number = DEFAULT_CACHE_TTL_
     if (Date.now() - stat.mtimeMs > ttlMs) return undefined; // stale
     const content = fs.readFileSync(file, 'utf-8');
     memoryCache.set(url, content);
-    return content;
+    return {content, source: 'disk'};
   } catch {
     return undefined; // missing / unreadable -> miss
   }
+}
+
+/**
+ * Returns cached content for `url` from memory or a fresh-enough disk entry, or
+ * `undefined` on a miss. Thin wrapper over {@link getCachedEntry}.
+ *
+ * @param url - The fetch URL used as the cache key
+ * @param ttlMs - Max age for a disk entry to count as a hit (default 7 days)
+ */
+export function getCachedContent(url: string, ttlMs: number = DEFAULT_CACHE_TTL_MS): string | undefined {
+  return getCachedEntry(url, ttlMs)?.content;
 }
 
 /**
@@ -144,4 +165,47 @@ export function clearContentCache(includeDisk = false): void {
       getLogger().trace({err}, 'Failed to clear docs content disk cache (non-fatal)');
     }
   }
+}
+
+/** On-disk cache statistics: number of cached files and their total size in bytes. */
+export interface ContentCacheStats {
+  /** Absolute path to the on-disk cache directory. */
+  dir: string;
+  /** Number of cached `.md` files on disk. */
+  files: number;
+  /** Total size of the cached files, in bytes. */
+  bytes: number;
+}
+
+/** Reports the on-disk cache directory, file count, and total size. */
+export function getContentCacheStats(): ContentCacheStats {
+  const dir = getCacheDir();
+  let files = 0;
+  let bytes = 0;
+  try {
+    for (const name of fs.readdirSync(dir)) {
+      if (!name.endsWith('.md')) continue;
+      try {
+        bytes += fs.statSync(path.join(dir, name)).size;
+        files += 1;
+      } catch {
+        // entry vanished between readdir and stat — ignore
+      }
+    }
+  } catch {
+    // dir missing -> empty cache
+  }
+  return {dir, files, bytes};
+}
+
+/**
+ * Purges the docs content cache (both tiers) and reports what was on disk before
+ * removal, for a user-facing "clear cache" command.
+ *
+ * @returns The pre-purge on-disk stats (files/bytes freed).
+ */
+export function purgeContentCache(): ContentCacheStats {
+  const before = getContentCacheStats();
+  clearContentCache(true);
+  return before;
 }
