@@ -86,8 +86,10 @@ function isB2cMetadataXml(doc: vscode.TextDocument, globs: string[]): boolean {
  * Minimal glob matcher for the `**`/`*` subset used by our fileMatch entries
  * (e.g. `**​/sites/*​/promotions.xml`). We avoid pulling in a glob dependency:
  * the patterns are simple and fully under our control in xsd-mappings.json.
+ *
+ * Exported for unit testing.
  */
-function matchGlob(candidate: string, glob: string): boolean {
+export function matchGlob(candidate: string, glob: string): boolean {
   const normalized = candidate.replace(/\\/g, '/');
   const regex = globToRegExp(glob);
   return regex.test(normalized);
@@ -125,7 +127,9 @@ function globToRegExp(glob: string): RegExp {
 async function ensureXmlExtension(context: vscode.ExtensionContext, interactive: boolean): Promise<void> {
   if (isXmlExtensionInstalled()) {
     if (interactive) {
-      vscode.window.showInformationMessage('B2C DX: Metadata XML validation is active (Red Hat XML extension installed).');
+      vscode.window.showInformationMessage(
+        'B2C DX: Metadata XML validation is active (Red Hat XML extension installed).',
+      );
     }
     return;
   }

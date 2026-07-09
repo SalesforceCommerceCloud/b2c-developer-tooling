@@ -41,9 +41,6 @@
     "workspaceContains:**/.project",
     "workspaceContains:dw.json"
   ],
-  "extensionDependencies": [
-    "redhat.vscode-xml"
-  ],
   "main": "./dist/extension.cjs",
   "contributes": {
     "typescriptServerPlugins": [
@@ -801,6 +798,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable the B2C-DX Analytics (CIP) sidebar for browsing tables and running curated reports."
+        },
+        "b2c-dx.features.xmlValidation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable XSD-based validation, autocomplete, and hover docs for B2C metadata XML files. Requires the Red Hat XML extension (redhat.vscode-xml), which this extension offers to install when you open a metadata XML file."
         }
       }
     },
@@ -980,6 +982,11 @@
       {
         "command": "b2c-dx.debug.copySessionCookie",
         "title": "Copy Debugger Session ID (dwsid)",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.xml.setupValidation",
+        "title": "Set Up Metadata XML Validation",
         "category": "B2C DX"
       },
       {
