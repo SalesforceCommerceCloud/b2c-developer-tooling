@@ -23,7 +23,6 @@
     "connectionString": "InstrumentationKey=6fcc215f-0b11-4864-ad5c-3945ae19e2f3;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=a60f17ec-265a-4dfc-b8df-03a64695697d"
   },
   "activationEvents": [
-    "onStartupFinished",
     "onView:b2cWebdavExplorer",
     "onView:b2cContentExplorer",
     "onFileSystem:b2c-webdav",
@@ -32,7 +31,10 @@
     "onView:b2cSandboxExplorer",
     "onView:b2cCartridgeExplorer",
     "onDebugResolve:b2c-script",
-    "workspaceContains:**/commerce-app.json"
+    "workspaceContains:**/commerce-app.json",
+    "workspaceContains:**/cartridge/*.properties",
+    "workspaceContains:**/.project",
+    "workspaceContains:dw.json"
   ],
   "main": "./dist/extension.cjs",
   "contributes": {
@@ -55,6 +57,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable the WebDAV Browser."
+        },
+        "b2c-dx.features.sandboxFilesystem": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically mount the active instance's WebDAV filesystem as a workspace folder on startup. Requires the WebDAV Browser to be enabled."
         },
         "b2c-dx.features.contentLibraries": {
           "type": "boolean",
