@@ -546,7 +546,13 @@ function offlineFallback(entry: DocEntry, reason: string): string {
         .join('\n'),
       '',
     );
-  if (entry.url) lines.push(`Full documentation: ${entry.url}`, '');
+  // Surface every known URL so the caller (e.g. an agent) can retry retrieval
+  // itself: the human-facing page and, when different, the raw markdown source
+  // that this reader attempts to fetch.
+  if (entry.url) lines.push(`Full documentation (HTML): ${entry.url}`, '');
+  if (entry.sourceUrl && entry.sourceUrl !== entry.url) {
+    lines.push(`Raw markdown source: ${entry.sourceUrl}`, '');
+  }
   lines.push(`> Note: live content could not be fetched (${reason}); showing indexed summary only.`);
   return lines.join('\n');
 }

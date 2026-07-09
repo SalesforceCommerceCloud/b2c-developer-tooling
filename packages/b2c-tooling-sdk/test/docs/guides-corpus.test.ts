@@ -273,6 +273,8 @@ describe('docs: Developer Center guides corpus', function () {
       headings: 'Section A • Section B',
       summary: 'A test guide used to exercise the offline fallback path.',
     };
+    // Clear the cache so the (failing) fetch path is exercised, not a cache hit.
+    clearContentCache(true);
     // Stub fetch to fail deterministically (no real network in tests).
     const originalFetch = globalThis.fetch;
     globalThis.fetch = (() => Promise.reject(new Error('network disabled in test'))) as typeof fetch;
@@ -282,6 +284,9 @@ describe('docs: Developer Center guides corpus', function () {
       expect(content).to.include('A test guide used to exercise the offline fallback path.');
       expect(content).to.include('Section A');
       expect(content).to.include('could not be fetched');
+      // Both retrieval URLs are surfaced so a caller can retry on its own.
+      expect(content, 'fallback includes the HTML page URL').to.include(entry.url!);
+      expect(content, 'fallback includes the raw .md sourceUrl').to.include(entry.sourceUrl!);
     } finally {
       globalThis.fetch = originalFetch;
     }

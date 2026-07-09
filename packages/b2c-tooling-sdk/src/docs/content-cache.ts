@@ -33,20 +33,48 @@ export const DEFAULT_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const memoryCache = new Map<string, string>();
 
 /**
- * OS-appropriate cache directory for the CLI/SDK, mirroring the stateful-store's
- * data-dir logic but under the *cache* location (safe to evict, unlike data).
+ * Base cache directory, injected by the CLI/MCP. When set (via
+ * {@link initializeContentCache}), the on-disk cache lives under
+ * `<cacheDir>/docs-content`. Unset means "use the computed fallback" — for
+ * standalone SDK consumers not running under oclif.
  */
-function getCacheDir(): string {
+let injectedCacheDir: string | undefined;
+
+/**
+ * Points the on-disk content cache at oclif's `cacheDir`.
+ *
+ * The CLI and MCP call this from `BaseCommand.init()` with `this.config.cacheDir`
+ * so cached docs live alongside other oclif cache data (e.g. `~/.cache/b2c` on
+ * Linux, `~/Library/Caches/b2c` on macOS) and honor any oclif dir overrides —
+ * mirroring how {@link initializeStatefulStore} injects `dataDir`. Standalone SDK
+ * use (no oclif) falls back to an OS-idiomatic path.
+ *
+ * @param cacheDir - oclif's resolved `this.config.cacheDir`
+ */
+export function initializeContentCache(cacheDir: string): void {
+  injectedCacheDir = cacheDir;
+}
+
+/**
+ * OS-idiomatic cache directory fallback for standalone SDK use (no oclif). Uses
+ * the oclif `dirname` (`b2c`) so it matches oclif's own `cacheDir` layout.
+ */
+function computeFallbackCacheDir(): string {
   const home = homedir();
-  const name = '@salesforce/b2c-cli';
+  const name = 'b2c';
   switch (platform()) {
     case 'darwin':
-      return path.join(home, 'Library', 'Caches', name, 'docs-content');
+      return path.join(home, 'Library', 'Caches', name);
     case 'win32':
-      return path.join(process.env.LOCALAPPDATA ?? path.join(home, 'AppData', 'Local'), name, 'docs-content');
+      return path.join(process.env.LOCALAPPDATA ?? path.join(home, 'AppData', 'Local'), name);
     default:
-      return path.join(process.env.XDG_CACHE_HOME ?? path.join(home, '.cache'), name, 'docs-content');
+      return path.join(process.env.XDG_CACHE_HOME ?? path.join(home, '.cache'), name);
   }
+}
+
+/** The docs-content cache directory: `<injected|fallback cacheDir>/docs-content`. */
+function getCacheDir(): string {
+  return path.join(injectedCacheDir ?? computeFallbackCacheDir(), 'docs-content');
 }
 
 /** Maps a fetch URL to its on-disk cache file (hashed so the name is filesystem-safe). */
