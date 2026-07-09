@@ -151,7 +151,8 @@ suite('buildSql', () => {
       orderBy: [],
       limit: null,
     });
-    assert.match(sql, /WHERE status IN \('open','paid'\)$/);
+    // `status` is an Apache Calcite reserved word, so it is quoted as an identifier.
+    assert.match(sql, /WHERE "status" IN \('open','paid'\)$/);
   });
 
   test('joins multiple filters with the chosen logic', () => {
@@ -224,7 +225,8 @@ suite('buildSql', () => {
       orderBy: [],
       limit: null,
     });
-    assert.match(sql, /WHERE status = ''$/);
+    // `status` is an Apache Calcite reserved word, so it is quoted as an identifier.
+    assert.match(sql, /WHERE "status" = ''$/);
   });
 
   // ── GROUP BY + aggregates ─────────────────────────────────────────────────
