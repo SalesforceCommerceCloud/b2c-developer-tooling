@@ -16,7 +16,8 @@
     "@salesforce/b2c-script-types": "workspace:*",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "vscode-html-languageservice": "catalog:"
   },
   "engines": {
     "vscode": "^1.105.1"
@@ -260,6 +261,59 @@
           "type": "boolean",
           "default": true,
           "description": "Enable XSD-based validation, autocomplete, and hover docs for B2C metadata XML files. Requires the Red Hat XML extension (redhat.vscode-xml), which this extension offers to install when you open a metadata XML file."
+        },
+        "b2c-dx.features.ismlFormatting": {
+          "type": "boolean",
+          "default": true,
+          "description": "Provide a document formatter for ISML files (Format Document / Format Selection), using the same engine as VS Code's built-in HTML formatter."
+        },
+        "b2c-dx.isml.format.wrapLineLength": {
+          "type": "number",
+          "default": 120,
+          "description": "Maximum line length before ISML formatting wraps. Set to 0 to disable wrapping."
+        },
+        "b2c-dx.isml.format.wrapAttributes": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "force",
+            "force-aligned",
+            "force-expand-multiline",
+            "aligned-multiple",
+            "preserve",
+            "preserve-aligned"
+          ],
+          "description": "How ISML formatting wraps element attributes (mirrors html.format.wrapAttributes)."
+        },
+        "b2c-dx.isml.format.preserveNewLines": {
+          "type": "boolean",
+          "default": true,
+          "description": "Preserve existing blank lines when formatting ISML."
+        },
+        "b2c-dx.isml.format.indentInnerHtml": {
+          "type": "boolean",
+          "default": false,
+          "description": "Indent the content of <head> and <body> sections when formatting ISML (mirrors html.format.indentInnerHtml)."
+        },
+        "b2c-dx.isml.diagnostics.disabledRules": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "unexpected-closing-tag",
+              "mismatched-closing-tag",
+              "unclosed-tag",
+              "void-tag-not-self-closing",
+              "void-closing-tag",
+              "missing-required-attribute",
+              "encoding-off"
+            ]
+          },
+          "default": [
+            "encoding-off"
+          ],
+          "markdownDescription": "ISML diagnostic rule codes to disable globally. Defaults to `encoding-off` (the output-escaping warning is opt-in). Remove a code to enable that rule; add codes to silence others. Individual lines can also be suppressed inline with `<iscomment> b2c-dx-disable-next-line <code> </iscomment>`."
         }
       }
     },
