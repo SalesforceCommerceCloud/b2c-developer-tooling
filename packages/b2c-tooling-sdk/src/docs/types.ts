@@ -16,18 +16,77 @@ const packageRoot = path.dirname(require.resolve('@salesforce/b2c-tooling-sdk/pa
 export const SCRIPT_API_DATA_DIR = path.join(packageRoot, 'data/script-api');
 export const XSD_DATA_DIR = path.join(packageRoot, 'data/xsd');
 export const JOB_STEPS_DATA_DIR = path.join(packageRoot, 'data/job-steps');
+export const GUIDES_DATA_DIR = path.join(packageRoot, 'data/guides');
+export const TOOLING_DATA_DIR = path.join(packageRoot, 'data/tooling');
+
+/**
+ * The corpus a documentation entry belongs to. Used to tag and filter results
+ * so agents can narrow a search to a documentation set (e.g., only Storefront
+ * Next guides, or only the Script API reference).
+ *
+ * - `script-api` — B2C Commerce Script API class/module reference
+ * - `job-step` — standard (system) job step reference
+ * - `commerce-api` / `pwa-kit-managed-runtime` / `sfnext` / `sfra` / `b2c-commerce`
+ *   — Developer Center prose guides, one category per Developer Center project
+ * - `tooling` — this project's own conceptual guides (CLI/MCP/SDK usage)
+ */
+export type DocCategory =
+  | 'script-api'
+  | 'job-step'
+  | 'commerce-api'
+  | 'pwa-kit-managed-runtime'
+  | 'sfnext'
+  | 'sfra'
+  | 'b2c-commerce'
+  | 'tooling';
 
 /**
  * A documentation entry in the search index.
+ *
+ * Entries span multiple corpora (Script API reference, job steps, Developer
+ * Center guides, and this project's own docs). Reference entries are bundled
+ * on disk and read via {@link DocEntry.filePath}; guide entries are indexed
+ * locally but their full content is fetched on demand from {@link DocEntry.url}.
  */
 export interface DocEntry {
-  /** Unique identifier - the filename without .md extension (e.g., "dw.catalog.ProductMgr") */
+  /**
+   * Unique identifier. For bundled reference this is the filename without its
+   * extension (e.g., "dw.catalog.ProductMgr"); for guides it is namespaced by
+   * category to avoid cross-corpus collisions (e.g., "sfnext/sfnext-get-started").
+   */
   id: string;
-  /** The title from the document heading (e.g., "Class ProductMgr") */
+  /** The title from the document's first heading (e.g., "Class ProductMgr"). */
   title: string;
-  /** The filename (e.g., "dw.catalog.ProductMgr.md") */
-  filePath: string;
-  /** Optional preview/excerpt from the document */
+  /** The corpus/category this entry belongs to. */
+  category?: DocCategory;
+  /**
+   * Path of the bundled markdown file relative to its corpus data directory.
+   * Present for entries whose content ships in the package; absent for entries
+   * whose content is fetched online (see {@link DocEntry.sourceUrl}).
+   */
+  filePath?: string;
+  /**
+   * Canonical human-facing published URL (the rendered `.html` page, e.g. on
+   * developer.salesforce.com). This is the durable link to cite/open in a
+   * browser. Present for every corpus that has a public page (guides, Script
+   * API reference, tooling); absent for corpora with no public page (job steps).
+   */
+  url?: string;
+  /**
+   * The raw-markdown (`.md`) URL for the same document — the machine-readable
+   * source. For online-only entries (guides) this is what {@link readEntryContent}
+   * fetches at read time. Bundled corpora (Script API, tooling) also carry it so
+   * callers can retrieve the raw source on request even though content ships in
+   * the package. Absent for corpora with no public page (job steps).
+   */
+  sourceUrl?: string;
+  /** Section headings joined into a single searchable string (indexed, not for display). */
+  headings?: string;
+  /** One-line summary describing what task/topic the doc helps with (agent triage). */
+  summary?: string;
+  /** Search keywords/synonyms an agent or developer might use to find this doc. */
+  keywords?: string[];
+  /** Optional preview/excerpt from the document. */
   preview?: string;
 }
 
@@ -49,7 +108,7 @@ export interface SearchIndex {
 export interface SearchResult {
   /** The matching documentation entry */
   entry: DocEntry;
-  /** Match score (lower is better in Fuse.js, 0 = perfect match) */
+  /** Relevance score (higher is better; scale is engine-relative, not normalized). */
   score: number;
 }
 

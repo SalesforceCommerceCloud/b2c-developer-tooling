@@ -34,10 +34,10 @@ See [Figma-to-Component Tools Setup](../figma-tools-setup) for complete prerequi
 
 ## Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `figmaUrl` | string | Yes | The Figma design URL to convert. Must be a valid URL and include the `node-id` query parameter. |
-| `workflowFilePath` | string | No | Optional absolute path to a custom workflow `.md` file. If not provided, uses the default built-in workflow. |
+| Parameter          | Type   | Required | Description                                                                                                  |
+| ------------------ | ------ | -------- | ------------------------------------------------------------------------------------------------------------ |
+| `figmaUrl`         | string | Yes      | The Figma design URL to convert. Must be a valid URL and include the `node-id` query parameter.              |
+| `workflowFilePath` | string | No       | Optional absolute path to a custom workflow `.md` file. If not provided, uses the default built-in workflow. |
 
 ## Supported Figma URL Formats
 

@@ -87,6 +87,7 @@ const guidesSidebar = [
       {text: 'sfcc-ci SDK Migration', link: '/guide/sdk-migration'},
       {text: 'Account Manager', link: '/guide/account-manager'},
       {text: 'Analytics Reports (CIP/CCAC)', link: '/guide/analytics-reports-cip-ccac'},
+      {text: 'Metrics', link: '/guide/metrics'},
       {text: 'IDE Integration', link: '/guide/ide-integration'},
       {text: 'Script Debugger', link: '/guide/script-debugger'},
       {text: 'Scaffolding', link: '/guide/scaffolding'},
@@ -142,6 +143,7 @@ const referenceSidebar = [
       {text: 'eCDN', link: '/cli/ecdn'},
       {text: 'Jobs', link: '/cli/jobs'},
       {text: 'Logs', link: '/cli/logs'},
+      {text: 'Metrics', link: '/cli/metrics'},
       {text: 'MRT', link: '/cli/mrt'},
       {text: 'Preferences', link: '/cli/preferences'},
       {text: 'Sandbox', link: '/cli/sandbox'},
@@ -162,24 +164,36 @@ const referenceSidebar = [
       {
         text: 'Cartridges',
         collapsed: true,
-        items: [{text: 'cartridge_deploy', link: '/mcp/tools/cartridge-deploy'}],
+        items: [{text: 'Deployment', link: '/mcp/tools/cartridge-deploy'}],
       },
       {
         text: 'SCAPI',
         collapsed: true,
         items: [
-          {text: 'scapi_schemas_list', link: '/mcp/tools/scapi-schemas-list'},
-          {text: 'scapi_custom_api_generate_scaffold', link: '/mcp/tools/scapi-custom-api-generate-scaffold'},
-          {text: 'scapi_custom_apis_get_status', link: '/mcp/tools/scapi-custom-apis-get-status'},
+          {text: 'Schemas', link: '/mcp/tools/scapi-schemas-list'},
+          {text: 'Custom APIs', link: '/mcp/tools/scapi-custom-apis'},
         ],
       },
       {
         text: 'PWA Kit',
         collapsed: true,
         items: [
-          {text: 'mrt_bundle_push', link: '/mcp/tools/mrt-bundle-push'},
-          {text: 'pwakit_get_guidelines', link: '/mcp/tools/pwakit-get-guidelines'},
+          {text: 'Bundle Deployment', link: '/mcp/tools/mrt-bundle-push'},
+          {text: 'Development Guidelines', link: '/mcp/tools/pwakit-get-guidelines'},
         ],
+      },
+      {
+        text: 'Diagnostics',
+        collapsed: true,
+        items: [
+          {text: 'Script Debugger', link: '/mcp/tools/diagnostics'},
+          {text: 'Logs (Instance & MRT)', link: '/mcp/tools/logs'},
+        ],
+      },
+      {
+        text: 'Documentation',
+        collapsed: true,
+        items: [{text: 'Documentation Tools', link: '/mcp/tools/docs'}],
       },
       {
         text: 'Storefront Next (deprecated)',
@@ -192,20 +206,6 @@ const referenceSidebar = [
           {text: 'sfnext_add_page_designer_decorator', link: '/mcp/tools/sfnext-add-page-designer-decorator'},
           {text: 'sfnext_configure_theme', link: '/mcp/tools/sfnext-configure-theme'},
         ],
-      },
-      {
-        text: 'Diagnostics',
-        collapsed: true,
-        items: [
-          {text: 'Script Debugger', link: '/mcp/tools/diagnostics'},
-          {text: 'Logs', link: '/mcp/tools/logs'},
-          {text: 'MRT Logs', link: '/mcp/tools/mrt-logs'},
-        ],
-      },
-      {
-        text: 'Documentation',
-        collapsed: true,
-        items: [{text: 'Script API & Schemas', link: '/mcp/tools/docs'}],
       },
     ],
   },
@@ -308,7 +308,7 @@ export default defineConfig({
     },
     nav: [
       {text: 'Guides', link: '/guide/'},
-      {text: 'Skills', link: '/guide/agent-skills'},
+      {text: 'Agent Plugins', link: '/guide/agent-skills'},
       {text: 'VS Code', link: '/vscode-extension/'},
       {text: 'MCP', link: '/mcp/'},
       {text: 'Reference', link: '/cli/'},

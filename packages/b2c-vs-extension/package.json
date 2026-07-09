@@ -1,8 +1,8 @@
 {
   "name": "b2c-vs-extension",
-  "displayName": "B2C DX VSCE",
-  "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.10.1",
+  "displayName": "Salesforce B2C Commerce",
+  "description": "Tools for developing on Salesforce B2C Commerce, including cartridge deployment, script debugging and IntelliSense, and sandbox management.",
+  "version": "0.10.4",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -26,7 +26,6 @@
     "connectionString": "InstrumentationKey=6fcc215f-0b11-4864-ad5c-3945ae19e2f3;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=a60f17ec-265a-4dfc-b8df-03a64695697d"
   },
   "activationEvents": [
-    "onStartupFinished",
     "onLanguage:isml",
     "onView:b2cWebdavExplorer",
     "onView:b2cContentExplorer",
@@ -37,7 +36,10 @@
     "onView:b2cCartridgeExplorer",
     "onView:b2cExportExplorer",
     "onDebugResolve:b2c-script",
-    "workspaceContains:**/commerce-app.json"
+    "workspaceContains:**/commerce-app.json",
+    "workspaceContains:**/cartridge/*.properties",
+    "workspaceContains:**/.project",
+    "workspaceContains:dw.json"
   ],
   "extensionDependencies": [
     "redhat.vscode-xml"
@@ -666,6 +668,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable the WebDAV Browser."
+        },
+        "b2c-dx.features.sandboxFilesystem": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically mount the active instance's WebDAV filesystem as a workspace folder on startup. Requires the WebDAV Browser to be enabled."
         },
         "b2c-dx.features.contentLibraries": {
           "type": "boolean",

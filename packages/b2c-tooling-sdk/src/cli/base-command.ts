@@ -41,6 +41,52 @@ export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>;
 const LOG_LEVELS = ['trace', 'debug', 'info', 'warn', 'error', 'silent'] as const;
 
 /**
+ * Stable error-code values passed to oclif's `this.error(msg, {code})` so that
+ * {@link classifyError} can categorize the resulting telemetry without parsing
+ * error messages.
+ *
+ * - `VALIDATION` — user/config input error (missing flag, bad value). Expected,
+ *   not a reliability defect.
+ * - `GUARDRAIL` — blocked by the user's own safety configuration. Working as
+ *   intended, not a failure of the tool.
+ */
+export const ERROR_CODE = {
+  VALIDATION: 'VALIDATION',
+  GUARDRAIL: 'GUARDRAIL',
+} as const;
+
+/** Telemetry category recorded on COMMAND_ERROR (see {@link classifyError}). */
+export type ErrorCategory = 'guardrail' | 'runtime' | 'validation';
+
+/** Base URL for the online documentation site. */
+const DOCS_BASE_URL = 'https://salesforcecommercecloud.github.io/b2c-developer-tooling';
+
+/** Configuration guide — how to point the CLI at an instance and authenticate. */
+const DOCS_CONFIGURATION_URL = `${DOCS_BASE_URL}/guide/configuration.html`;
+
+/**
+ * Classify a thrown command error for telemetry so analytics can exclude
+ * expected validation/guardrail errors from reliability (defect-rate) metrics.
+ *
+ * Resolution order:
+ * 1. An explicit oclif `code` of {@link ERROR_CODE.VALIDATION} / `GUARDRAIL`
+ *    (set at the throw site via `this.error(msg, {code})`).
+ * 2. Safety error class names thrown from HTTP/auth middleware that do not flow
+ *    through `this.error` (`SafetyBlockedError`, `SafetyConfirmationRequired`).
+ * 3. Everything else is a genuine `runtime` error (the reliability signal).
+ */
+export function classifyError(err: unknown): ErrorCategory {
+  const code = (err as {code?: unknown} | undefined)?.code;
+  if (code === ERROR_CODE.VALIDATION) return 'validation';
+  if (code === ERROR_CODE.GUARDRAIL) return 'guardrail';
+
+  const name = (err as {name?: unknown} | undefined)?.name;
+  if (name === 'SafetyBlockedError' || name === 'SafetyConfirmationRequired') return 'guardrail';
+
+  return 'runtime';
+}
+
+/**
  * Type for oclif pjson custom telemetry config.
  */
 interface TelemetryConfig {
@@ -423,6 +469,30 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   }
 
   /**
+   * Build a suffix appended to "X is required" config errors.
+   *
+   * When NO config source contributed any values (no dw.json found, no env
+   * vars, no flags — the dominant cause of these errors in telemetry), the user
+   * is almost certainly unconfigured rather than missing one specific field, so
+   * we point them at the configuration guide. When a source DID load, we stay
+   * quiet: the existing message already lists the precise flag/env var to set.
+   *
+   * @returns A "\n\nSee: <url>" suffix, or '' when config is already partially present.
+   */
+  protected configDocsHint(): string {
+    // resolvedConfig may be unset if the error is thrown before loadConfiguration().
+    const sources = this.resolvedConfig?.sources;
+    if (sources && sources.length === 0) {
+      return t(
+        'base.configDocsHint',
+        '\n\nNo configuration was found. See the configuration guide to connect an instance: {{url}}',
+        {url: DOCS_CONFIGURATION_URL},
+      );
+    }
+    return '';
+  }
+
+  /**
    * Collects config sources from plugins via the `b2c:config-sources` hook.
    *
    * This method is called during command initialization, after flags are parsed
@@ -566,15 +636,17 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   protected async catch(err: Error & {exitCode?: number}): Promise<never> {
     const exitCode = err.exitCode ?? 1;
     const duration = this.commandStartTime ? Date.now() - this.commandStartTime : undefined;
+    const errorCategory = classifyError(err);
 
     // Send exception and COMMAND_ERROR event so the error appears in custom events (same view as COMMAND_START)
     // Flush explicitly before stop to ensure events are sent before process exits
     if (this.telemetry) {
-      this.telemetry.sendException(err, {command: this.id, exitCode, duration});
+      this.telemetry.sendException(err, {command: this.id, errorCategory, exitCode, duration});
       this.telemetry.sendEvent('COMMAND_ERROR', {
         command: this.id,
         exitCode,
         duration,
+        errorCategory,
         errorMessage: err.message,
         ...(err.cause ? {errorCause: String(err.cause)} : {}),
       });
@@ -675,7 +747,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
           description: describeSafetyLevel(safetyLevel),
         },
       ),
-      {exit: 1},
+      {code: ERROR_CODE.GUARDRAIL, exit: 1},
     );
   }
 
@@ -776,7 +848,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     });
 
     if (evaluation.action === 'block' && evaluation.rule) {
-      this.error(evaluation.reason, {exit: 1});
+      this.error(evaluation.reason, {code: ERROR_CODE.GUARDRAIL, exit: 1});
     }
     if (evaluation.action === 'confirm' && evaluation.rule) {
       await this.confirmOrBlock(evaluation);
@@ -798,7 +870,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
         `Your safety configuration requires confirmation for this operation, ` +
           `but no interactive session is available.\n\n  ${evaluation.reason}\n\n` +
           `To change this, update the "safety" section in your dw.json or the SFCC_SAFETY_CONFIRM environment variable.`,
-        {exit: 1},
+        {code: ERROR_CODE.GUARDRAIL, exit: 1},
       );
     }
 
@@ -806,7 +878,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       `Your safety configuration requires confirmation for this operation:\n  ${evaluation.reason}\n  Proceed?`,
     );
     if (!confirmed) {
-      this.error('Operation cancelled.', {exit: 1});
+      this.error('Operation cancelled.', {code: ERROR_CODE.GUARDRAIL, exit: 1});
     }
   }
 
