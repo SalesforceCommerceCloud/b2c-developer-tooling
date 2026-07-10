@@ -120,3 +120,48 @@ suite('ISML formatter — larger document (indentation nuances)', () => {
     assert.strictEqual(twice, once, 'second format must be a no-op');
   });
 });
+
+suite('ISML formatter — construct edge cases (from corpus analysis)', () => {
+  test('nested <isloop> inside <isloop> indents each level', () => {
+    const src = [
+      '<isloop items="${cats}" var="cat">',
+      '<isloop items="${cat.products}" var="p">',
+      '<isprint value="${p.name}"/>',
+      '</isloop>',
+      '</isloop>',
+    ].join('\n');
+    const out = formatIsmlText(src, OPTS);
+    assert.strictEqual(
+      out,
+      [
+        '<isloop items="${cats}" var="cat">',
+        '    <isloop items="${cat.products}" var="p">',
+        '        <isprint value="${p.name}"/>',
+        '    </isloop>',
+        '</isloop>',
+      ].join('\n'),
+    );
+  });
+
+  test('a multi-line <isinclude> (attributes across lines) is preserved and idempotent', () => {
+    // Long url= wrapped across lines — the HTML formatter owns the wrap; we must
+    // not corrupt it and must stay idempotent.
+    const src = [
+      '<div>',
+      '<isinclude',
+      "    url=\"${URLUtils.url('Tile-Show', 'pid', productId, 'swatches', false, 'ratings', true)}\" />",
+      '</div>',
+    ].join('\n');
+    const once = formatIsmlText(src, OPTS);
+    const twice = formatIsmlText(once, OPTS);
+    assert.strictEqual(twice, once, 'multi-line isinclude must be idempotent');
+    assert.ok(once.includes("URLUtils.url('Tile-Show'"), 'the include URL expression must be preserved');
+  });
+
+  test('<iscomment> block with markup inside is left untouched', () => {
+    const src = ['<div>', '<iscomment>', '    <isslot id="old" /> disabled', '</iscomment>', '</div>'].join('\n');
+    const out = formatIsmlText(src, OPTS);
+    // Comment content (including the <isslot> markup text) must survive verbatim.
+    assert.ok(out.includes('<isslot id="old" /> disabled'), `iscomment body must be preserved, got:\n${out}`);
+  });
+});

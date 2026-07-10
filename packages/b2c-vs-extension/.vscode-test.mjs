@@ -23,12 +23,15 @@ export default defineConfig([
     version: 'stable',
     workspaceFolder: 'src/test/fixtures/empty-workspace',
     launchArgs: ['--user-data-dir', shortUserDataDir('valid-workspace')],
-    // Forward opt-in corpus/diagnostic paths (used by the idempotency probe and
-    // single-file diag) into the extension host, which otherwise does not inherit
-    // the parent env.
+    // Forward opt-in ISML formatter dev vars into the extension host (which does
+    // not inherit the parent env): B2C_ISML_CORPUS (corpus idempotency probe) and
+    // UPDATE_ISML_SNAPSHOTS (regenerate vendored fixture snapshots).
     env:
-      process.env.B2C_ISML_CORPUS || process.env.B2C_ISML_DIAG_FILE
-        ? {B2C_ISML_CORPUS: process.env.B2C_ISML_CORPUS, B2C_ISML_DIAG_FILE: process.env.B2C_ISML_DIAG_FILE}
+      process.env.B2C_ISML_CORPUS || process.env.UPDATE_ISML_SNAPSHOTS
+        ? {
+            B2C_ISML_CORPUS: process.env.B2C_ISML_CORPUS,
+            UPDATE_ISML_SNAPSHOTS: process.env.UPDATE_ISML_SNAPSHOTS,
+          }
         : undefined,
     mocha: {
       ui: 'tdd',
