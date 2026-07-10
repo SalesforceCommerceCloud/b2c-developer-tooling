@@ -8,8 +8,10 @@ import * as path from 'path';
 
 import type {CartridgeService} from '../cartridges/cartridge-service.js';
 import {VOID_TAGS} from './constants.js';
-import {collectIsmlDiagnostics, getIsmlQuickFixes} from './diagnostics.js';
+import {collectIsmlDiagnostics, getIsmlQuickFixes, DEFAULT_DISABLED_RULES} from './diagnostics.js';
+import type {IsmlDiagnosticCode} from './diagnostics.js';
 import {findTemplateLinks, resolveTemplateWithLocaleCache} from './document-links.js';
+import {registerFormatting} from './formatting.js';
 import {collectIsmlFoldingRanges} from './folding.js';
 import {findIsmlHoverInfo} from './hover.js';
 import {findIsmlLinkedEditingTagNameMatch, findIsmlTagNameMatch} from './matching.js';
@@ -92,37 +94,20 @@ function registerCodeActions(context: vscode.ExtensionContext): void {
 
       for (const diagnostic of codeActionContext.diagnostics) {
         if (diagnostic.source !== 'b2c-dx-isml') continue;
-
-        let payload: {startOffset: number; endOffset: number; message: string} = {
-          startOffset: document.offsetAt(diagnostic.range.start),
-          endOffset: document.offsetAt(diagnostic.range.end),
-          message: diagnostic.message,
-        };
-
-        if (typeof diagnostic.code === 'string') {
-          try {
-            const parsed = JSON.parse(diagnostic.code) as {startOffset?: number; endOffset?: number; message?: string};
-            if (
-              typeof parsed.startOffset === 'number' &&
-              typeof parsed.endOffset === 'number' &&
-              typeof parsed.message === 'string'
-            ) {
-              payload = {
-                startOffset: parsed.startOffset,
-                endOffset: parsed.endOffset,
-                message: parsed.message,
-              };
-            }
-          } catch {
-            // fall back to range/message payload
-          }
-        }
+        // Our diagnostics always carry a string rule code (see registerDiagnostics).
+        if (typeof diagnostic.code !== 'string') continue;
 
         const quickFixes = getIsmlQuickFixes(text, {
-          message: payload.message,
-          startOffset: payload.startOffset,
-          endOffset: payload.endOffset,
-          severity: diagnostic.severity === vscode.DiagnosticSeverity.Warning ? 'warning' : 'error',
+          code: diagnostic.code as IsmlDiagnosticCode,
+          message: diagnostic.message,
+          startOffset: document.offsetAt(diagnostic.range.start),
+          endOffset: document.offsetAt(diagnostic.range.end),
+          severity:
+            diagnostic.severity === vscode.DiagnosticSeverity.Warning
+              ? 'warning'
+              : diagnostic.severity === vscode.DiagnosticSeverity.Information
+                ? 'info'
+                : 'error',
         });
 
         for (const quickFix of quickFixes) {
@@ -324,6 +309,16 @@ function registerDocumentLinks(context: vscode.ExtensionContext, cartridgeServic
 
   context.subscriptions.push(
     vscode.commands.registerCommand('b2c-dx.isml.createTemplate', async (template: string) => {
+      // This command is contributed to the palette, so it can be invoked with no
+      // argument. Reject a non-string template before prompting, otherwise the
+      // cartridge QuickPick would render "Create "undefined.isml" in which...".
+      if (typeof template !== 'string' || template.trim().length === 0) {
+        await vscode.window.showErrorMessage(
+          'This command opens an ISML template from a link and cannot be run directly.',
+        );
+        return;
+      }
+
       const cartridges = cartridgeService.getCartridges();
       if (cartridges.length === 0) {
         await vscode.window.showWarningMessage('No cartridges found in this workspace.');
@@ -339,11 +334,6 @@ function registerDocumentLinks(context: vscode.ExtensionContext, cartridgeServic
             );
       if (!picked) return;
       const chosen = 'cartridge' in picked ? picked.cartridge : picked;
-
-      if (typeof template !== 'string') {
-        await vscode.window.showErrorMessage('Invalid template path.');
-        return;
-      }
 
       const normalizedTemplate = template.trim().replace(/\\/g, '/').replace(/^\/+/, '');
       const isInvalidSegment = normalizedTemplate
@@ -413,13 +403,20 @@ function registerHover(context: vscode.ExtensionContext): void {
   context.subscriptions.push(vscode.languages.registerHoverProvider({language: 'isml'}, provider));
 }
 
-function toVscodeSeverity(severity: 'error' | 'warning'): vscode.DiagnosticSeverity {
+function toVscodeSeverity(severity: 'error' | 'warning' | 'info'): vscode.DiagnosticSeverity {
   if (severity === 'warning') return vscode.DiagnosticSeverity.Warning;
+  if (severity === 'info') return vscode.DiagnosticSeverity.Information;
   return vscode.DiagnosticSeverity.Error;
 }
 
+// Delay before re-linting after a keystroke. collectIsmlDiagnostics does a full
+// O(n) document scan, so re-running it on every content change is wasteful on
+// large templates; coalesce bursts of edits into one pass.
+const DIAGNOSTICS_DEBOUNCE_MS = 250;
+
 function registerDiagnostics(context: vscode.ExtensionContext): void {
   const collection = vscode.languages.createDiagnosticCollection('isml');
+  const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   const update = (document: vscode.TextDocument) => {
     if (document.languageId !== 'isml') {
@@ -427,14 +424,47 @@ function registerDiagnostics(context: vscode.ExtensionContext): void {
       return;
     }
 
-    const diagnostics = collectIsmlDiagnostics(document.getText()).map((entry) => {
-      const range = new vscode.Range(document.positionAt(entry.startOffset), document.positionAt(entry.endOffset));
-      const diagnostic = new vscode.Diagnostic(range, entry.message, toVscodeSeverity(entry.severity));
-      diagnostic.source = 'b2c-dx-isml';
-      return diagnostic;
-    });
+    // Rules the user turned off (defaults to DEFAULT_DISABLED_RULES, e.g.
+    // encoding-off). Global counterpart to inline `b2c-dx-disable-*` comments.
+    const disabledRules = new Set(
+      vscode.workspace
+        .getConfiguration('b2c-dx.isml.diagnostics')
+        .get<string[]>('disabledRules', [...DEFAULT_DISABLED_RULES]),
+    );
+
+    const diagnostics = collectIsmlDiagnostics(document.getText())
+      .filter((entry) => !disabledRules.has(entry.code))
+      .map((entry) => {
+        const range = new vscode.Range(document.positionAt(entry.startOffset), document.positionAt(entry.endOffset));
+        const diagnostic = new vscode.Diagnostic(range, entry.message, toVscodeSeverity(entry.severity));
+        diagnostic.source = 'b2c-dx-isml';
+        // The code (with the docs-less string form) is what the Problems panel
+        // shows and what quick-fixes / suppression directives key off.
+        diagnostic.code = entry.code;
+        return diagnostic;
+      });
 
     collection.set(document.uri, diagnostics);
+  };
+
+  const clearTimer = (key: string) => {
+    const timer = debounceTimers.get(key);
+    if (timer) {
+      clearTimeout(timer);
+      debounceTimers.delete(key);
+    }
+  };
+
+  const scheduleUpdate = (document: vscode.TextDocument) => {
+    const key = document.uri.toString();
+    clearTimer(key);
+    debounceTimers.set(
+      key,
+      setTimeout(() => {
+        debounceTimers.delete(key);
+        update(document);
+      }, DIAGNOSTICS_DEBOUNCE_MS),
+    );
   };
 
   for (const document of vscode.workspace.textDocuments) {
@@ -443,9 +473,14 @@ function registerDiagnostics(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     collection,
+    // Open/initial: lint immediately. Edits: debounce.
     vscode.workspace.onDidOpenTextDocument(update),
-    vscode.workspace.onDidChangeTextDocument((event) => update(event.document)),
-    vscode.workspace.onDidCloseTextDocument((document) => collection.delete(document.uri)),
+    vscode.workspace.onDidChangeTextDocument((event) => scheduleUpdate(event.document)),
+    vscode.workspace.onDidCloseTextDocument((document) => {
+      clearTimer(document.uri.toString());
+      collection.delete(document.uri);
+    }),
+    {dispose: () => debounceTimers.forEach((timer) => clearTimeout(timer))},
   );
 }
 
@@ -660,4 +695,5 @@ export function registerIsml(context: vscode.ExtensionContext, cartridgeService:
   registerDefinitions(context, cartridgeService);
   registerReferences(context, cartridgeService);
   registerReferencePickerCommand(context, cartridgeService);
+  registerFormatting(context);
 }

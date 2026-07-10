@@ -22,6 +22,12 @@ function isNameChar(ch: string): boolean {
   return /[\w-]/.test(ch);
 }
 
+// Raw-content ISML elements: their bodies are not markup, so any `<...>` inside
+// them must not be scanned as tags (e.g. commented-out ISML inside <iscomment>,
+// or `a < b` inside <isscript>). We emit the open and close tokens but skip the
+// content between, mirroring how <!-- --> comments are skipped.
+const RAW_CONTENT_TAGS = new Set(['iscomment', 'isscript']);
+
 export function scanIsmlTags(text: string): IsmlTagToken[] {
   const tokens: IsmlTagToken[] = [];
   let i = 0;
@@ -79,8 +85,10 @@ export function scanIsmlTags(text: string): IsmlTagToken[] {
     const inner = text.slice(cursor, end);
     const isSelfClosing = !isClosing && /\/\s*$/.test(inner);
 
+    const name = rawName.toLowerCase();
+
     tokens.push({
-      name: rawName.toLowerCase(),
+      name,
       isClosing,
       isSelfClosing,
       startOffset: start,
@@ -88,6 +96,22 @@ export function scanIsmlTags(text: string): IsmlTagToken[] {
       nameStartOffset: nameStart,
       nameEndOffset: cursor,
     });
+
+    // For a raw-content element, jump past its body to the matching close tag so
+    // `<...>` inside it is never scanned as markup. If no close tag exists, stop
+    // scanning entirely (the rest of the document is inside the unterminated
+    // raw element). The close tag itself is picked up by the next iteration.
+    if (!isClosing && !isSelfClosing && RAW_CONTENT_TAGS.has(name)) {
+      const closeRe = new RegExp(`</\\s*${name}\\b`, 'i');
+      const rest = text.slice(end + 1);
+      const closeMatch = closeRe.exec(rest);
+      if (closeMatch) {
+        i = end + 1 + closeMatch.index;
+      } else {
+        break;
+      }
+      continue;
+    }
 
     i = end + 1;
   }

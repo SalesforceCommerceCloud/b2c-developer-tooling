@@ -28,6 +28,7 @@ import {registerDebugger} from './debugger/index.js';
 import {registerCodeSync} from './code-sync/index.js';
 import {registerIsml} from './isml/index.js';
 import {registerScriptTypes} from './script-types/index.js';
+import {registerXmlValidation} from './xml-validation/index.js';
 import {mountSandboxFilesystem, registerWebDavTree} from './webdav-tree/index.js';
 import {disposeTelemetry, initTelemetry, sendEvent, sendException} from './telemetry.js';
 import {registerCipAnalytics} from './cip-analytics/index.js';
@@ -751,7 +752,9 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
       registerLogs(context, configProvider);
     });
   }
-  if (settings.get<boolean>('features.jobsExplorer', true)) {
+  // jobsExplorer/exportExplorer/cipAnalytics default OFF (see package.json) —
+  // in-progress develop features held back pending review. Fallback matches.
+  if (settings.get<boolean>('features.jobsExplorer', false)) {
     runActivationStep(log, 'Job History registration', () => {
       registerJobs(context, configProvider);
     });
@@ -766,7 +769,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
       registerApiBrowser(context, configProvider, log);
     });
   }
-  if (settings.get<boolean>('features.exportExplorer', true)) {
+  if (settings.get<boolean>('features.exportExplorer', false)) {
     registerExportTree(context, configProvider);
   }
   if (settings.get<boolean>('features.cap', true)) {
@@ -785,7 +788,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     });
   }
 
-  if (settings.get<boolean>('features.cipAnalytics', true)) {
+  if (settings.get<boolean>('features.cipAnalytics', false)) {
     runActivationStep(log, 'CIP Analytics registration', () => {
       registerCipAnalytics(context, configProvider, log);
     });
@@ -797,6 +800,14 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
 
   runActivationStep(log, 'Debugger registration', () => {
     registerDebugger(context, configProvider);
+  });
+
+  // XML validation is a soft integration with the Red Hat XML extension: this
+  // always registers (so the manual "Set Up Metadata XML Validation" command
+  // and the on-open prompt are available), but internally respects the
+  // b2c-dx.features.xmlValidation setting before suggesting anything.
+  runActivationStep(log, 'XML Validation registration', () => {
+    registerXmlValidation(context, log);
   });
 
   // Auto-mount the active instance's WebDAV filesystem as a workspace folder.

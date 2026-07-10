@@ -9,10 +9,12 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import * as vscode from 'vscode';
 
 import {collectIsmlDiagnostics, getIsmlQuickFixes} from '../isml/diagnostics.js';
 import {findTemplateLinks, resolveTemplate} from '../isml/document-links.js';
 import {collectIsmlFoldingRanges} from '../isml/folding.js';
+import {formatIsmlText, normalizeVoidTagSpacing} from '../isml/formatting.js';
 import {findIsmlHoverInfo} from '../isml/hover.js';
 import {detectAutoCloseTag} from '../isml/index.js';
 import {findIsmlLinkedEditingTagNameMatch, findIsmlTagNameMatch} from '../isml/matching.js';
@@ -657,6 +659,77 @@ suite('ISML: diagnostics', () => {
     assert.strictEqual(diagnostics[0].severity, 'warning');
     assert.strictEqual(diagnostics[0].message, 'ISML void tag <iselse> should be self-closing.');
   });
+
+  test('treats isslot/ismodule/iscomponent as void (no "not closed" diagnostic)', () => {
+    // These are empty ISML elements — a non-self-closed form is a void-tag
+    // warning, never an unclosed-container error. (Checked by code so unrelated
+    // required-attribute diagnostics on these tags don't affect the assertion.)
+    for (const tag of ['isslot', 'ismodule', 'iscomponent']) {
+      const selfClosed = collectIsmlDiagnostics(`<${tag} id="x"/>`);
+      assert.ok(
+        !selfClosed.some((d) => d.code === 'unclosed-tag' || d.code === 'void-tag-not-self-closing'),
+        `<${tag}/> should not be flagged as unclosed`,
+      );
+
+      const open = collectIsmlDiagnostics(`<${tag} id="x">`);
+      assert.ok(
+        open.some((d) => d.code === 'void-tag-not-self-closing'),
+        `<${tag}> should yield a void-tag-not-self-closing warning`,
+      );
+      assert.ok(!open.some((d) => d.code === 'unclosed-tag'), `<${tag}> must not be treated as an unclosed container`);
+    }
+  });
+
+  test('does not scan markup inside <iscomment> bodies', () => {
+    // Commented-out ISML must not produce diagnostics.
+    const diagnostics = collectIsmlDiagnostics('<iscomment><isif condition="x"></iscomment>');
+    assert.deepStrictEqual(diagnostics, []);
+  });
+
+  test('does not scan "<" inside <isscript> bodies', () => {
+    const diagnostics = collectIsmlDiagnostics('<isscript>var ok = a < b && c<d;</isscript>');
+    assert.deepStrictEqual(diagnostics, []);
+  });
+
+  test('resumes scanning after a raw-content element', () => {
+    // An unclosed <isif> after the </iscomment> must still be reported.
+    const diagnostics = collectIsmlDiagnostics('<iscomment><isloop></iscomment><isif condition="x">');
+    assert.strictEqual(diagnostics.length, 1);
+    assert.strictEqual(diagnostics[0].message, 'Tag <isif> is not closed.');
+  });
+
+  test('flags a missing required attribute', () => {
+    const diagnostics = collectIsmlDiagnostics('<isif></isif>');
+    assert.ok(diagnostics.some((d) => d.message === '<isif> is missing required attribute "condition".'));
+  });
+
+  test('accepts any one of alternative required attributes', () => {
+    assert.deepStrictEqual(collectIsmlDiagnostics('<isinclude template="common/x"/>'), []);
+    assert.deepStrictEqual(collectIsmlDiagnostics('<isinclude url="${x}"/>'), []);
+    const missing = collectIsmlDiagnostics('<isinclude/>');
+    assert.ok(missing.some((d) => d.message === '<isinclude> is missing required attribute "template or url".'));
+  });
+
+  test('flags both required attribute groups on a bare isloop', () => {
+    const diagnostics = collectIsmlDiagnostics('<isloop></isloop>');
+    assert.ok(diagnostics.some((d) => d.message.includes('items or iterator or begin')));
+    assert.ok(diagnostics.some((d) => d.message.includes('alias or var or end')));
+  });
+
+  test('accepts alternative isloop attributes (begin/end)', () => {
+    assert.deepStrictEqual(collectIsmlDiagnostics('<isloop begin="0" end="5"></isloop>'), []);
+  });
+
+  test('warns on encoding="off"', () => {
+    const diagnostics = collectIsmlDiagnostics('<isprint value="${x}" encoding="off"/>');
+    assert.strictEqual(diagnostics.length, 1);
+    assert.strictEqual(diagnostics[0].severity, 'warning');
+    assert.ok(diagnostics[0].message.includes('disables output escaping'));
+  });
+
+  test('does not flag required attributes on tags inside <iscomment>', () => {
+    assert.deepStrictEqual(collectIsmlDiagnostics('<iscomment><isif></iscomment>'), []);
+  });
 });
 
 suite('ISML: diagnostic quick fixes', () => {
@@ -665,10 +738,11 @@ suite('ISML: diagnostic quick fixes', () => {
     const diagnostic = collectIsmlDiagnostics(text)[0];
     const fixes = getIsmlQuickFixes(text, diagnostic);
 
-    assert.strictEqual(fixes.length, 1);
-    assert.strictEqual(fixes[0].title, 'Make <iselse> self-closing');
-    assert.strictEqual(fixes[0].edits.length, 1);
-    assert.strictEqual(fixes[0].edits[0].newText, '<iselse/>');
+    // A repair fix plus the always-available suppression fix.
+    const repair = fixes.find((f) => f.title === 'Make <iselse> self-closing');
+    assert.ok(repair, 'expected a self-closing repair fix');
+    assert.strictEqual(repair!.edits.length, 1);
+    assert.strictEqual(repair!.edits[0].newText, '<iselse/>');
   });
 
   test('returns replacement quick fix for invalid void closing tag', () => {
@@ -676,10 +750,10 @@ suite('ISML: diagnostic quick fixes', () => {
     const diagnostic = collectIsmlDiagnostics(text)[0];
     const fixes = getIsmlQuickFixes(text, diagnostic);
 
-    assert.strictEqual(fixes.length, 1);
-    assert.strictEqual(fixes[0].title, 'Replace </iselse> with <iselse/>');
-    assert.strictEqual(fixes[0].edits.length, 1);
-    assert.strictEqual(fixes[0].edits[0].newText, '<iselse/>');
+    const repair = fixes.find((f) => f.title === 'Replace </iselse> with <iselse/>');
+    assert.ok(repair, 'expected a replacement repair fix');
+    assert.strictEqual(repair!.edits.length, 1);
+    assert.strictEqual(repair!.edits[0].newText, '<iselse/>');
   });
 });
 
@@ -743,5 +817,220 @@ suite('ISML: symbols', () => {
     assert.strictEqual(symbols.length, 1);
     assert.strictEqual(symbols[0].children.length, 1);
     assert.strictEqual(symbols[0].children[0].name, 'isprint');
+  });
+});
+
+suite('ISML: normalizeVoidTagSpacing', () => {
+  test('drops the space before /> on void ISML tags', () => {
+    assert.strictEqual(normalizeVoidTagSpacing('<iselse />'), '<iselse/>');
+    assert.strictEqual(normalizeVoidTagSpacing('<isprint value="${x}" />'), '<isprint value="${x}"/>');
+    assert.strictEqual(
+      normalizeVoidTagSpacing('<isslot id="s" context="global" description="d" />'),
+      '<isslot id="s" context="global" description="d"/>',
+    );
+  });
+
+  test('leaves non-void ISML tags and HTML self-close untouched', () => {
+    // isobject is not a void tag; a real self-close should keep its spacing.
+    assert.strictEqual(normalizeVoidTagSpacing('<br />'), '<br />');
+    assert.strictEqual(normalizeVoidTagSpacing('<div class="x" />'), '<div class="x" />');
+  });
+
+  test('leaves already-normalized void tags unchanged', () => {
+    assert.strictEqual(normalizeVoidTagSpacing('<iselse/>'), '<iselse/>');
+  });
+});
+
+suite('ISML: formatting provider (integration)', () => {
+  test('formats an ISML document via the registered provider', async () => {
+    // Use a real .isml file on disk so VS Code assigns the language and the
+    // registered formatting provider engages (untitled docs are less reliable
+    // for executeFormatDocumentProvider).
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'isml-fmt-'));
+    const file = path.join(dir, 'sample.isml');
+    fs.writeFileSync(file, '<isif condition="${x}">\n<div>\n<isprint value="${y}"/>\n</div>\n</isif>\n');
+    const uri = vscode.Uri.file(file);
+
+    try {
+      const doc = await vscode.workspace.openTextDocument(uri);
+      await vscode.window.showTextDocument(doc);
+
+      // Provider registration can lag activation; retry briefly.
+      let edits: vscode.TextEdit[] | undefined;
+      for (let attempt = 0; attempt < 10; attempt++) {
+        edits = (await vscode.commands.executeCommand('vscode.executeFormatDocumentProvider', uri, {
+          tabSize: 2,
+          insertSpaces: true,
+        })) as vscode.TextEdit[] | undefined;
+        if (edits && edits.length > 0) break;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+
+      assert.ok(edits && edits.length > 0, 'expected the ISML formatter to return edits');
+
+      const edited = new vscode.WorkspaceEdit();
+      edits!.forEach((e) => edited.replace(uri, e.range, e.newText));
+      await vscode.workspace.applyEdit(edited);
+      const result = doc.getText();
+      assert.ok(result.includes('  <div>'), `expected indented <div>, got:\n${result}`);
+      assert.ok(result.includes('<isprint value="${y}"/>'), `expected normalized void tag, got:\n${result}`);
+    } finally {
+      fs.rmSync(dir, {recursive: true, force: true});
+    }
+  });
+});
+
+suite('ISML: diagnostic codes and suppression', () => {
+  test('every diagnostic carries a stable rule code', () => {
+    const d = collectIsmlDiagnostics('<isif></isif>');
+    assert.ok(d.length > 0);
+    assert.ok(
+      d.every((x) => typeof x.code === 'string' && x.code.length > 0),
+      'expected every diagnostic to have a code',
+    );
+    assert.ok(d.some((x) => x.code === 'missing-required-attribute'));
+  });
+
+  test('encoding-off is a warning (severity), surfaced by collectIsmlDiagnostics', () => {
+    const d = collectIsmlDiagnostics('<isprint value="${x}" encoding="off"/>');
+    const enc = d.find((x) => x.code === 'encoding-off');
+    assert.ok(enc, 'expected an encoding-off diagnostic');
+    assert.strictEqual(enc!.severity, 'warning');
+  });
+
+  test('disable-next-line suppresses the following line', () => {
+    const text = '<iscomment> b2c-dx-disable-next-line missing-required-attribute </iscomment>\n<isif></isif>';
+    assert.deepStrictEqual(collectIsmlDiagnostics(text), []);
+  });
+
+  test('disable-line suppresses the current line', () => {
+    const text = '<isif></isif> <iscomment> b2c-dx-disable-line missing-required-attribute </iscomment>';
+    assert.deepStrictEqual(collectIsmlDiagnostics(text), []);
+  });
+
+  test('a bare disable directive suppresses all rules on the target line', () => {
+    const text = '<iscomment> b2c-dx-disable-next-line </iscomment>\n<isif></isif>';
+    assert.deepStrictEqual(collectIsmlDiagnostics(text), []);
+  });
+
+  test('a directive for a different code does not suppress', () => {
+    const text = '<iscomment> b2c-dx-disable-next-line encoding-off </iscomment>\n<isif></isif>';
+    const codes = collectIsmlDiagnostics(text).map((x) => x.code);
+    assert.deepStrictEqual(codes, ['missing-required-attribute']);
+  });
+
+  test('offers a suppression quick fix that inserts a disable directive', () => {
+    const text = '<isif></isif>';
+    const diagnostic = collectIsmlDiagnostics(text).find((x) => x.code === 'missing-required-attribute')!;
+    const fixes = getIsmlQuickFixes(text, diagnostic);
+    const suppress = fixes.find((f) => f.title.startsWith('Suppress'));
+    assert.ok(suppress, 'expected a suppression quick fix');
+    assert.ok(suppress!.edits[0].newText.includes('b2c-dx-disable-next-line missing-required-attribute'));
+  });
+});
+
+suite('ISML: formatter (real-world constructs)', () => {
+  const OPTS = {tabSize: 4, insertSpaces: true} as vscode.FormattingOptions;
+  const fmt = (src: string) => formatIsmlText(src, OPTS);
+
+  test('self-closed <iselse/> sits at the parent <isif> level', () => {
+    const out = fmt('<isif condition="${x}">\n<p>a</p>\n<iselse/>\n<p>b</p>\n</isif>\n');
+    assert.strictEqual(
+      out,
+      ['<isif condition="${x}">', '    <p>a</p>', '<iselse/>', '    <p>b</p>', '</isif>'].join('\n'),
+    );
+  });
+
+  test('bare <iselse> (no slash) does not swallow the branch body', () => {
+    // Without the fix, the HTML formatter treats <iselse> as a block opener and
+    // over-indents everything after it, failing to dedent </isif>.
+    const out = fmt('<isif condition="${x}">\n<p>a</p>\n<iselse>\n<p>b</p>\n</isif>\n');
+    assert.strictEqual(
+      out,
+      ['<isif condition="${x}">', '    <p>a</p>', '<iselse/>', '    <p>b</p>', '</isif>'].join('\n'),
+    );
+  });
+
+  test('wrapper <iselse>...</iselse> form: strips the stray close, no blank line', () => {
+    const out = fmt(
+      '<isif condition="${x}">\n<isloop items="${a}" var="i">\n<isinclude template="c/d"/>\n</isloop>\n<iselse>\n<div>empty</div>\n</iselse>\n</isif>\n',
+    );
+    assert.strictEqual(
+      out,
+      [
+        '<isif condition="${x}">',
+        '    <isloop items="${a}" var="i">',
+        '        <isinclude template="c/d"/>',
+        '    </isloop>',
+        '<iselse/>',
+        '    <div>empty</div>',
+        '</isif>',
+      ].join('\n'),
+    );
+    assert.ok(!/\n\s*\n/.test(out), 'should not leave a blank line where </iselse> was');
+  });
+
+  test('iselseif chain dedents each divider to the <isif> level', () => {
+    const out = fmt(
+      '<isif condition="${x}">\n<p>a</p>\n<iselseif condition="${y}"/>\n<p>b</p>\n<iselse/>\n<p>c</p>\n</isif>\n',
+    );
+    assert.strictEqual(
+      out,
+      [
+        '<isif condition="${x}">',
+        '    <p>a</p>',
+        '<iselseif condition="${y}"/>',
+        '    <p>b</p>',
+        '<iselse/>',
+        '    <p>c</p>',
+        '</isif>',
+      ].join('\n'),
+    );
+  });
+
+  test('nested isif: inner and outer iselse each align to their own isif', () => {
+    const out = fmt(
+      '<isif condition="a">\n<isif condition="b">\n<p>x</p>\n<iselse/>\n<p>y</p>\n</isif>\n<iselse/>\n<p>z</p>\n</isif>\n',
+    );
+    assert.strictEqual(
+      out,
+      [
+        '<isif condition="a">',
+        '    <isif condition="b">',
+        '        <p>x</p>',
+        '    <iselse/>',
+        '        <p>y</p>',
+        '    </isif>',
+        '<iselse/>',
+        '    <p>z</p>',
+        '</isif>',
+      ].join('\n'),
+    );
+  });
+
+  test('preserves <isscript> body verbatim', () => {
+    const src = '<isif condition="${e}">\n<isscript>\n    var x=1;   messy( );\n</isscript>\n</isif>\n';
+    const out = fmt(src);
+    assert.ok(out.includes('    var x=1;   messy( );'), `isscript body should be untouched, got:\n${out}`);
+  });
+
+  test('leaves ${} expressions (incl. > operators) verbatim and normalizes void spacing', () => {
+    const out = fmt('<isprint value="${a > b && c.length > 0}" encoding="off" />\n');
+    assert.strictEqual(out, '<isprint value="${a > b && c.length > 0}" encoding="off"/>');
+  });
+
+  // Regression: a context-free regex would delete/mutate `</iselse>`-looking text
+  // inside string literals, attribute values, and comments. The token-gated
+  // passes must leave such content byte-for-byte intact.
+  test('does not corrupt </iselse> inside an <isscript> string literal', () => {
+    const src = '<isscript>\n    var s = "</iselse>";\n</isscript>\n';
+    const out = fmt(src);
+    assert.ok(out.includes('var s = "</iselse>";'), `isscript string literal must be preserved, got:\n${out}`);
+  });
+
+  test('does not corrupt </iselse> inside an <iscomment>', () => {
+    const src = '<iscomment>legacy: </iselse></iscomment>\n';
+    const out = fmt(src);
+    assert.ok(out.includes('legacy: </iselse>'), `iscomment content must be preserved, got:\n${out}`);
   });
 });

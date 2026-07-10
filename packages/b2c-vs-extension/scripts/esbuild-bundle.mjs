@@ -38,6 +38,16 @@ const watchMode = process.argv.includes('--watch');
 
 const extPkg = JSON.parse(fs.readFileSync(path.join(pkgRoot, 'package.json'), 'utf8'));
 
+// Resolve vscode-html-languageservice's ESM entry (its `module` field). We alias
+// the bare import to this so esbuild bundles the statically-importable ESM build
+// rather than the UMD `main` (whose dynamic requires it cannot follow). Resolve
+// the package.json first (always in `exports`), then read `module`.
+const htmlLanguageServicePkgJson = fileURLToPath(import.meta.resolve('vscode-html-languageservice/package.json'));
+const htmlLanguageServiceEsmEntry = path.join(
+  path.dirname(htmlLanguageServicePkgJson),
+  JSON.parse(fs.readFileSync(htmlLanguageServicePkgJson, 'utf8')).module,
+);
+
 // Keep XSDs and package.json#contributes.xmlValidation in lockstep with
 // resources/xsd-mappings.json before any bundling happens.
 syncXsd({pkgRoot});
@@ -219,6 +229,15 @@ const buildOptions = {
   sourcemap: true,
   metafile: true,
   external: ['vscode'],
+  // Force the ESM build of vscode-html-languageservice. Its `main` (UMD) entry
+  // wraps every module in a `factory(require, exports)` shim whose internal
+  // `require('../beautify/...')` calls esbuild cannot follow statically — so
+  // resolving `main` bundles only the top entry and the formatter/beautifier are
+  // missing at runtime (format() throws). The ESM build uses static imports
+  // esbuild inlines correctly. Alias to the package's `module` entry.
+  alias: {
+    'vscode-html-languageservice': htmlLanguageServiceEsmEntry,
+  },
   // In watch mode, include "development" so esbuild resolves the SDK's exports to .ts source files
   // directly (no SDK rebuild needed). Production builds use the built dist/ artifacts.
   conditions: watchMode ? ['development', 'require', 'node', 'default'] : ['require', 'node', 'default'],
