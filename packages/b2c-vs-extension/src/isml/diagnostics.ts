@@ -22,7 +22,11 @@ export type IsmlDiagnosticCode =
   | 'void-tag-not-self-closing'
   | 'void-closing-tag'
   | 'missing-required-attribute'
-  | 'encoding-off';
+  | 'encoding-off'
+  | 'orphaned-branch'
+  | 'loop-control-outside-loop'
+  | 'isreplace-outside-decorator'
+  | 'style-formatter-conflict';
 
 export interface IsmlDiagnostic {
   code: IsmlDiagnosticCode;
@@ -47,8 +51,13 @@ export interface IsmlQuickFix {
  * Rules that are OFF by default. Users opt in by removing them from
  * `b2c-dx.isml.diagnostics.disabledRules` (which defaults to this list). These
  * are legitimate-but-notable patterns that would be noise if always on.
+ *
+ * Currently empty: every rule is on by default. `encoding-off` is a security
+ * lint (stored-XSS risk) and warns out of the box; teams that use trusted
+ * `encoding="off"` output can silence it per-line via `b2c-dx-disable-*`
+ * comments or globally via the `disabledRules` setting.
  */
-export const DEFAULT_DISABLED_RULES: readonly IsmlDiagnosticCode[] = ['encoding-off'];
+export const DEFAULT_DISABLED_RULES: readonly IsmlDiagnosticCode[] = [];
 
 // Inline suppression directives, written inside an ISML comment, e.g.:
 //   <iscomment> b2c-dx-disable-next-line encoding-off </iscomment>
@@ -119,6 +128,40 @@ function describeRequirement(requirement: string | string[]): string {
   return Array.isArray(requirement) ? requirement.join(' or ') : requirement;
 }
 
+// Context rules: a void tag that is only valid inside a specific container.
+// Keyed by the tag; `container` is the ancestor that must be open, `code`/
+// `message` describe the violation. We require the container anywhere in the
+// open stack (an ancestor), which matches ISML's lenient nesting and avoids
+// false positives on tags wrapped in intervening markup.
+const CONTEXT_RULES: Record<string, {container: string; code: IsmlDiagnosticCode; message: string}> = {
+  iselse: {container: 'isif', code: 'orphaned-branch', message: '<iselse> is only valid inside an <isif> block.'},
+  iselseif: {
+    container: 'isif',
+    code: 'orphaned-branch',
+    message: '<iselseif> is only valid inside an <isif> block.',
+  },
+  isbreak: {
+    container: 'isloop',
+    code: 'loop-control-outside-loop',
+    message: '<isbreak> is only valid inside an <isloop>.',
+  },
+  isnext: {
+    container: 'isloop',
+    code: 'loop-control-outside-loop',
+    message: '<isnext> is only valid inside an <isloop>.',
+  },
+  iscontinue: {
+    container: 'isloop',
+    code: 'loop-control-outside-loop',
+    message: '<iscontinue> is only valid inside an <isloop>.',
+  },
+  isreplace: {
+    container: 'isdecorate',
+    code: 'isreplace-outside-decorator',
+    message: '<isreplace> is only valid inside an <isdecorate> block.',
+  },
+};
+
 /**
  * Attribute-level checks for a single open (or self-closing) tag: required
  * attributes and the `encoding="off"` output-encoding warning. Structural
@@ -131,29 +174,30 @@ function collectAttributeDiagnostics(
   endOffset: number,
 ): IsmlDiagnostic[] {
   const diagnostics: IsmlDiagnostic[] = [];
-  const required = REQUIRED_ATTRIBUTES[name];
-  if (!required) return diagnostics;
-
   const {names, values} = parseTagAttributes(tagSource);
 
-  for (const requirement of required) {
-    const satisfied = Array.isArray(requirement) ? requirement.some((alt) => names.has(alt)) : names.has(requirement);
-    if (!satisfied) {
-      diagnostics.push({
-        code: 'missing-required-attribute',
-        message: `<${name}> is missing required attribute "${describeRequirement(requirement)}".`,
-        startOffset,
-        endOffset,
-        severity: 'error',
-      });
+  const required = REQUIRED_ATTRIBUTES[name];
+  if (required) {
+    for (const requirement of required) {
+      const satisfied = Array.isArray(requirement) ? requirement.some((alt) => names.has(alt)) : names.has(requirement);
+      if (!satisfied) {
+        diagnostics.push({
+          code: 'missing-required-attribute',
+          message: `<${name}> is missing required attribute "${describeRequirement(requirement)}".`,
+          startOffset,
+          endOffset,
+          severity: 'error',
+        });
+      }
     }
   }
 
   // Disabling output encoding is a stored-XSS risk; surface it so it is a
   // deliberate, reviewed choice. A warning (idiomatic for a security lint, and
-  // matching Prophet's `encoding-off-warn`), but this rule is disabled by
-  // default (see DEFAULT_DISABLED_RULES) because it is legitimate and common in
-  // real storefronts — teams opt in via disabledRules.
+  // matching Prophet's `encoding-off-warn`). On by default; teams with trusted
+  // `encoding="off"` output silence it via inline `b2c-dx-disable-*` comments
+  // or the `disabledRules` setting. Runs for every tag with an `encoding`
+  // attribute (isprint, isselect, ...), independent of required-attribute checks.
   if (values.get('encoding')?.toLowerCase() === 'off') {
     diagnostics.push({
       code: 'encoding-off',
@@ -161,6 +205,18 @@ function collectAttributeDiagnostics(
       startOffset,
       endOffset,
       severity: 'warning',
+    });
+  }
+
+  // <isprint> accepts `style` OR `formatter`, never both (per the official
+  // docs). Setting both is a bug — the outcome is undefined.
+  if (name === 'isprint' && names.has('style') && names.has('formatter')) {
+    diagnostics.push({
+      code: 'style-formatter-conflict',
+      message: '<isprint> cannot set both "style" and "formatter"; they are mutually exclusive.',
+      startOffset,
+      endOffset,
+      severity: 'error',
     });
   }
 
@@ -256,6 +312,20 @@ export function collectIsmlDiagnostics(text: string): IsmlDiagnostic[] {
           startOffset: token.startOffset,
           endOffset: token.endOffset,
           severity: 'warning',
+        });
+      }
+
+      // Context rules: branch/loop-control/decorator tags must appear inside
+      // their container tag. Containers (isif/isloop/isdecorate) are non-void,
+      // so they are on `stack`; check for the required ancestor there.
+      const contextRule = CONTEXT_RULES[token.name];
+      if (contextRule && !stack.some((open) => open.name === contextRule.container)) {
+        diagnostics.push({
+          code: contextRule.code,
+          message: contextRule.message,
+          startOffset: token.startOffset,
+          endOffset: token.endOffset,
+          severity: 'error',
         });
       }
 

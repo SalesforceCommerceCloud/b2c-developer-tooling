@@ -24,6 +24,7 @@ import {
 } from './semantic.js';
 import {TAG_SNIPPETS, detectCompletionContext} from './snippets.js';
 import {collectIsmlSymbols, type IsmlSymbol} from './symbols.js';
+import {registerTagHighlighting} from './tag-highlight.js';
 import {scanIsmlTags} from './tags.js';
 
 export interface AutoCloseResult {
@@ -696,4 +697,5 @@ export function registerIsml(context: vscode.ExtensionContext, cartridgeService:
   registerReferences(context, cartridgeService);
   registerReferencePickerCommand(context, cartridgeService);
   registerFormatting(context);
+  registerTagHighlighting(context);
 }

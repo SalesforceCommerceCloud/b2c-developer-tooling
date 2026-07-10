@@ -28,7 +28,7 @@ const HOVER_DOCS: Record<string, IsmlHoverDoc> = {
     summary: 'Conditional block. Renders body when `condition` evaluates to true.',
     syntax: '<isif condition="${condition}">...</isif>',
     attributes: ['condition'],
-    tips: ['Use <iselseif/> and <iselse/> for additional branches.'],
+    tips: ['Use `<iselseif/>` and `<iselse/>` for additional branches.'],
   },
   iselseif: {
     summary: 'Branch condition inside an `isif` block.',
@@ -41,8 +41,9 @@ const HOVER_DOCS: Record<string, IsmlHoverDoc> = {
   },
   isloop: {
     summary: 'Iterates over a collection or iterator.',
-    syntax: '<isloop items="${collection}" var="item">...</isloop>',
+    syntax: '<isloop items="${collection}" var="item" status="loopState">...</isloop>',
     attributes: ['items', 'var', 'status', 'begin', 'end', 'step'],
+    tips: ['The `status` object exposes `count`, `index`, `first`, `last`, `odd`, and `even`.'],
   },
   isinclude: {
     summary: 'Includes another template by `template` or `url` attribute.',
@@ -66,14 +67,18 @@ const HOVER_DOCS: Record<string, IsmlHoverDoc> = {
     attributes: ['id', 'description', 'context', 'context-object'],
   },
   isscript: {
-    summary: 'Server-side script block in Demandware Script.',
+    summary: 'Server-side script block in B2C Commerce Script (scriptlet).',
     syntax: '<isscript>\n  var helper = require("*/cartridge/scripts/util/foo");\n</isscript>',
-    tips: ['Use this for server-side logic like `require(...)` and `res.render(...)`.'],
+    tips: [
+      'Top-level variables available in the block: `session`, `request`, `pdict`, `out`.',
+      'Prefer controllers for complex logic; keep inline scripts minimal.',
+    ],
   },
   isprint: {
-    summary: 'Prints a value with optional encoding or formatter.',
+    summary: 'Prints a value with optional encoding, style, or formatter.',
     syntax: '<isprint value="${value}" encoding="htmlcontent"/>',
-    attributes: ['value', 'encoding', 'formatter', 'timezone'],
+    attributes: ['value', 'encoding', 'style', 'formatter', 'timezone', 'padding'],
+    tips: ['Use `style` (e.g. `MONEY_LONG`, `DATE_SHORT`) or `formatter` for output formatting — not both.'],
   },
   isset: {
     summary: 'Assigns a variable in page/request/session scope.',
@@ -83,7 +88,8 @@ const HOVER_DOCS: Record<string, IsmlHoverDoc> = {
   iscontent: {
     summary: 'Sets response content metadata such as type and charset.',
     syntax: '<iscontent type="text/html" charset="UTF-8"/>',
-    attributes: ['type', 'charset', 'compact'],
+    attributes: ['type', 'charset', 'encoding', 'compact'],
+    tips: ['Place first in the template — it must precede any output to take effect.'],
   },
   iscomment: {
     summary: 'ISML comment block not rendered in output.',

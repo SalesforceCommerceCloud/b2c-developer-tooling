@@ -654,10 +654,13 @@ suite('ISML: diagnostics', () => {
   });
 
   test('reports non-self-closing void tags as warning', () => {
-    const diagnostics = collectIsmlDiagnostics('<iselse>');
-    assert.strictEqual(diagnostics.length, 1);
-    assert.strictEqual(diagnostics[0].severity, 'warning');
-    assert.strictEqual(diagnostics[0].message, 'ISML void tag <iselse> should be self-closing.');
+    // Use <isprint> (a void tag with no context rule) to isolate the void-tag
+    // warning. A bare <iselse> would also (correctly) raise orphaned-branch.
+    const diagnostics = collectIsmlDiagnostics('<isprint value="${x}">');
+    const voidWarning = diagnostics.find((d) => d.code === 'void-tag-not-self-closing');
+    assert.ok(voidWarning, 'expected a void-tag-not-self-closing diagnostic');
+    assert.strictEqual(voidWarning!.severity, 'warning');
+    assert.strictEqual(voidWarning!.message, 'ISML void tag <isprint> should be self-closing.');
   });
 
   test('treats isslot/ismodule/iscomponent as void (no "not closed" diagnostic)', () => {
@@ -727,8 +730,65 @@ suite('ISML: diagnostics', () => {
     assert.ok(diagnostics[0].message.includes('disables output escaping'));
   });
 
+  // encoding="off" must be checked for any tag with an encoding attribute, not
+  // only tags that appear in REQUIRED_ATTRIBUTES. isselect has no required-attr
+  // entry, so this regresses if the encoding check is gated behind that table.
+  test('warns on encoding="off" for tags without required-attribute entries (isselect)', () => {
+    const diagnostics = collectIsmlDiagnostics(
+      '<isselect name="c" iterator="${it}" description="d" value="${v}" encoding="off"/>',
+    );
+    const enc = diagnostics.find((d) => d.code === 'encoding-off');
+    assert.ok(enc, 'expected an encoding-off diagnostic on <isselect>');
+    assert.strictEqual(enc!.severity, 'warning');
+  });
+
   test('does not flag required attributes on tags inside <iscomment>', () => {
     assert.deepStrictEqual(collectIsmlDiagnostics('<iscomment><isif></iscomment>'), []);
+  });
+
+  const hasCode = (src: string, code: string) => collectIsmlDiagnostics(src).some((d) => d.code === code);
+
+  // orphaned-branch: <iselse>/<iselseif> only valid inside <isif>
+  test('flags <iselse> / <iselseif> with no enclosing <isif>', () => {
+    assert.ok(hasCode('<iselse/>', 'orphaned-branch'), '<iselse> alone should be orphaned');
+    assert.ok(hasCode('<iselseif condition="${x}"/>', 'orphaned-branch'), '<iselseif> alone should be orphaned');
+  });
+  test('does not flag <iselse> / <iselseif> inside <isif>', () => {
+    assert.ok(!hasCode('<isif condition="${x}"><iselse/></isif>', 'orphaned-branch'));
+    assert.ok(!hasCode('<isif condition="${x}"><iselseif condition="${y}"/></isif>', 'orphaned-branch'));
+  });
+
+  // loop-control-outside-loop: <isbreak>/<isnext>/<iscontinue> only valid inside <isloop>
+  test('flags loop-control tags outside <isloop>', () => {
+    assert.ok(hasCode('<isbreak/>', 'loop-control-outside-loop'));
+    assert.ok(hasCode('<isnext/>', 'loop-control-outside-loop'));
+    assert.ok(hasCode('<iscontinue/>', 'loop-control-outside-loop'));
+  });
+  test('does not flag loop-control tags inside <isloop> (even nested in <isif>)', () => {
+    assert.ok(!hasCode('<isloop items="${c}" var="i"><isbreak/></isloop>', 'loop-control-outside-loop'));
+    assert.ok(
+      !hasCode(
+        '<isloop items="${c}" var="i"><isif condition="${x}"><iscontinue/></isif></isloop>',
+        'loop-control-outside-loop',
+      ),
+    );
+  });
+
+  // isreplace-outside-decorator: <isreplace> only valid inside <isdecorate>
+  test('flags <isreplace> outside <isdecorate>', () => {
+    assert.ok(hasCode('<isreplace/>', 'isreplace-outside-decorator'));
+  });
+  test('does not flag <isreplace> inside <isdecorate>', () => {
+    assert.ok(!hasCode('<isdecorate template="t"><isreplace/></isdecorate>', 'isreplace-outside-decorator'));
+  });
+
+  // style-formatter-conflict: <isprint> cannot set both style and formatter
+  test('flags <isprint> with both style and formatter', () => {
+    assert.ok(hasCode('<isprint value="${x}" style="MONEY_LONG" formatter="#,##0.00"/>', 'style-formatter-conflict'));
+  });
+  test('does not flag <isprint> with only style or only formatter', () => {
+    assert.ok(!hasCode('<isprint value="${x}" style="MONEY_LONG"/>', 'style-formatter-conflict'));
+    assert.ok(!hasCode('<isprint value="${x}" formatter="#,##0.00"/>', 'style-formatter-conflict'));
   });
 });
 
@@ -796,6 +856,31 @@ suite('ISML: hover', () => {
     const offset = text.indexOf('isunknown') + 2;
     const info = findIsmlHoverInfo(text, offset);
     assert.strictEqual(info, undefined);
+  });
+
+  // Hover text is rendered as a MarkdownString, which strips bare `<tag>` HTML.
+  // Tag names in free-text summary/tips must be backtick-wrapped so they survive.
+  test('isif tip references iselseif/iselse as inline code (not markdown-stripped)', () => {
+    const text = '<isif condition="${true}">';
+    const offset = text.indexOf('isif') + 2;
+    const info = findIsmlHoverInfo(text, offset);
+    assert.ok(info);
+    const tip = info!.tips.find((t) => t.includes('iselse'));
+    assert.ok(tip, 'isif should have a tip mentioning iselse branches');
+    assert.ok(tip!.includes('`<iselseif/>`'), 'iselseif must be backtick-wrapped');
+    assert.ok(tip!.includes('`<iselse/>`'), 'iselse must be backtick-wrapped');
+  });
+
+  // isscript hover must not claim `res.render` exists in the scriptlet scope
+  // (it does not); it should document the real top-level variables instead.
+  test('isscript hover documents real script-scope variables, not res.render', () => {
+    const text = '<isscript>';
+    const offset = text.indexOf('isscript') + 2;
+    const info = findIsmlHoverInfo(text, offset);
+    assert.ok(info);
+    const allText = [info!.summary, ...info!.tips].join(' ');
+    assert.ok(!allText.includes('res.render'), 'isscript hover must not reference res.render');
+    assert.ok(allText.includes('pdict') && allText.includes('out'), 'should list real script-scope variables');
   });
 });
 

@@ -86,6 +86,20 @@
         "isml": "html"
       }
     },
+    "semanticTokenTypes": [
+      {
+        "id": "ismlTag",
+        "description": "An ISML tag name (e.g. isloop, isprint), highlighted distinctly from HTML tags."
+      }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "isml",
+        "scopes": {
+          "ismlTag": ["support.class.isml"]
+        }
+      }
+    ],
     "grammars": [
       {
         "language": "isml",
@@ -272,6 +286,11 @@
           "default": true,
           "description": "Provide a document formatter for ISML files (Format Document / Format Selection), using the same engine as VS Code's built-in HTML formatter."
         },
+        "b2c-dx.isml.highlightTags": {
+          "type": "boolean",
+          "default": true,
+          "description": "Highlight ISML tag names (e.g. <isloop>, <isprint>) distinctly from plain HTML tags. Color follows the active theme's `ismlTag` semantic token color; disable to render ISML tags in the normal HTML tag color."
+        },
         "b2c-dx.isml.format.wrapLineLength": {
           "type": "number",
           "default": 120,
@@ -312,13 +331,15 @@
               "void-tag-not-self-closing",
               "void-closing-tag",
               "missing-required-attribute",
-              "encoding-off"
+              "encoding-off",
+              "orphaned-branch",
+              "loop-control-outside-loop",
+              "isreplace-outside-decorator",
+              "style-formatter-conflict"
             ]
           },
-          "default": [
-            "encoding-off"
-          ],
-          "markdownDescription": "ISML diagnostic rule codes to disable globally. Defaults to `encoding-off` (the output-escaping warning is opt-in). Remove a code to enable that rule; add codes to silence others. Individual lines can also be suppressed inline with `<iscomment> b2c-dx-disable-next-line <code> </iscomment>`."
+          "default": [],
+          "markdownDescription": "ISML diagnostic rule codes to disable globally. Empty by default (all rules on, including the `encoding-off` output-escaping security warning). Add a code to silence that rule; individual lines can also be suppressed inline with `<iscomment> b2c-dx-disable-next-line <code> </iscomment>`."
         }
       }
     },
