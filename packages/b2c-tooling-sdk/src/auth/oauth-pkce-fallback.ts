@@ -10,11 +10,12 @@
  *
  * ## Why this exists
  *
- * Switching the default browser-based flow from implicit to PKCE requires every
- * public client in Account Manager to be re-registered as a PKCE-capable
- * "public client". Until that migration is complete, a user whose client is
- * still implicit-only would hit a hard failure on the first request. This
- * wrapper catches that specific failure ({@link PkceGrantUnsupportedError}),
+ * Switching the default browser-based flow from implicit to PKCE requires a
+ * PKCE-capable "public client" in Account Manager. An AM client's type cannot be
+ * changed after creation, so a legacy implicit-only client must be replaced by a
+ * newly-created public client. Until that migration is complete, a user whose
+ * client is still implicit-only would hit a hard failure on the first request.
+ * This wrapper catches that specific failure ({@link PkceGrantUnsupportedError}),
  * logs a deprecation WARN, and transparently retries with the implicit flow so
  * those users keep working.
  *
@@ -136,7 +137,8 @@ export class PkceWithImplicitFallbackStrategy implements UserAuthStrategy {
       {clientId: this.config.clientId, stage: error.stage, oauthError: error.oauthError},
       `[Auth] Authorization Code + PKCE failed for client ${this.config.clientId} ` +
         `(${error.oauthError ?? error.message}). Falling back to the deprecated implicit flow. ` +
-        'Re-register this client as a public (PKCE) client in Account Manager to remove this warning.',
+        'Recommend creating a new public (PKCE) client in Account Manager and using it to remove this warning. ' +
+        'See https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html#implicit-flow-deprecation',
     );
   }
 

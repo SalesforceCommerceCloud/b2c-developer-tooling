@@ -158,7 +158,7 @@ For **User Authentication** (Authorization Code + PKCE), configure redirect URLs
 
 **Note:** Redirect URLs are not required for API clients using only Client Credentials or JWT Bearer authentication.
 
-**Register the client as a public client.** The Authorization Code + PKCE flow requires the API client to be registered in Account Manager as a **public client** (not a confidential client). Public clients have no secret and selecting that type configures the Authorization Code + PKCE grant automatically. If a client is still registered as implicit-only, the `user` flow falls back to the implicit flow and logs a deprecation warning until the client is migrated; set `SFCC_DISABLE_PKCE_FALLBACK=1` to disable that fallback.
+**Use a public client.** The Authorization Code + PKCE flow requires the API client to be registered in Account Manager as a **public client** (not a confidential client). Public clients have no secret and selecting that type configures the Authorization Code + PKCE grant automatically. A client's type can't be changed after creation, so a legacy implicit-only client must be replaced by a newly-created public client, not converted. See [Implicit Flow Deprecation (PKCE Migration)](#implicit-flow-deprecation) for the transitional fallback behavior and how to resolve the deprecation warning.
 
 ::: tip Running Behind a Proxy
 If you're running the CLI behind a proxy where `localhost:8080` isn't reachable by the browser, set `SFCC_REDIRECT_URI` to the proxy URL (e.g., `https://proxy.example.com:8080`). The proxy should forward traffic to the CLI's local server. You can also change the local server port with `SFCC_OAUTH_LOCAL_PORT`. Make sure to add your proxy URL to the API client's redirect URLs in Account Manager.
@@ -667,6 +667,35 @@ b2c scapi schemas list
 - Add the required scopes to your API client's Default Scopes
 - For SCAPI commands, ensure the relevant `sfcc.*` scopes are in Default Scopes
 - Verify that Default Scopes includes `mail roles tenantFilter openid`
+
+## Implicit Flow Deprecation (PKCE Migration) {#implicit-flow-deprecation}
+
+The browser-based `user` authentication method now uses the **Authorization Code flow with PKCE** (Proof Key for Code Exchange). The legacy **implicit** flow is deprecated for public clients per OAuth 2.1 and is no longer the default. Most users are unaffected — this section is for those with a legacy implicit-only client seeing a deprecation warning.
+
+### What changed
+
+- `b2c auth login` and the `user` auth method use Authorization Code + PKCE by default and persist a **refresh token**, so subsequent commands refresh silently without re-opening the browser.
+- The implicit flow is still selectable for backward compatibility via `--auth-methods implicit` (or `"auth-methods": ["implicit"]` in `dw.json`), but it emits a deprecation warning and cannot obtain refresh tokens.
+
+### You must use a public client
+
+PKCE requires the Account Manager client to be a **public client**. Selecting that type in Account Manager configures the Authorization Code + PKCE grant automatically and the client has no secret.
+
+**An Account Manager client's type cannot be changed after it is created.** A legacy implicit-only client therefore has to be **replaced by a newly-created public client** — it cannot be converted in place. Create a new public client, add the CLI's redirect URI (`http://localhost:8080` by default), and use its client ID.
+
+### Transitional automatic fallback
+
+To keep existing users working during the migration, if the configured client is **not** a PKCE-capable public client, the `user` flow automatically falls back to the deprecated implicit flow for that client and logs a warning:
+
+```
+[Auth] Authorization Code + PKCE failed for client <id> (<oauth error>). Falling back to
+the deprecated implicit flow. Recommend creating a new public (PKCE) client in Account
+Manager and using it to remove this warning.
+```
+
+The fallback triggers **only** for OAuth errors that indicate the client is not a public/PKCE client — `invalid_client` (Account Manager requires client authentication at the token exchange; the most common case for legacy implicit clients), `unauthorized_client`, `unsupported_response_type`, and `unsupported_grant_type`. Other failures (for example `invalid_scope` from requesting scopes the client can't have, or a cancelled login) surface directly without falling back, because they would fail identically under the implicit flow.
+
+To resolve the warning, create a new public client as described above and use its client ID. To disable the fallback entirely and surface PKCE failures directly, set `SFCC_DISABLE_PKCE_FALLBACK=1`. The fallback is temporary and will be removed once public clients have migrated.
 
 ## Next Steps
 

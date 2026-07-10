@@ -72,9 +72,9 @@ OAuth 2.1 deprecates the implicit flow for public clients. Configure your Accoun
 
 #### Account Manager prerequisites
 
-To use the browser-based `user` flow with your own client, register it in Account Manager as a **public client** (not a confidential client — public clients have no secret, and selecting that type configures the Authorization Code + PKCE grant automatically). Add the CLI's redirect URI to the client's allowed redirect URIs — by default `http://localhost:8080` (override the port with `SFCC_OAUTH_LOCAL_PORT` or the whole URI with `SFCC_REDIRECT_URI`).
+To use the browser-based `user` flow with your own client, create a **public client** in Account Manager (not a confidential client — public clients have no secret, and selecting that type configures the Authorization Code + PKCE grant automatically). A client's type can't be changed after creation, so an existing implicit-only client must be replaced by a newly-created public client, not converted. Add the CLI's redirect URI to the client's allowed redirect URIs — by default `http://localhost:8080` (override the port with `SFCC_OAUTH_LOCAL_PORT` or the whole URI with `SFCC_REDIRECT_URI`).
 
-If a client is still registered as implicit-only, the `user` flow automatically falls back to the implicit flow and logs a deprecation warning. Re-register it as a public client to silence the warning, or set `SFCC_DISABLE_PKCE_FALLBACK=1` to disable the fallback.
+If a client is still registered as implicit-only, the `user` flow automatically falls back to the implicit flow and logs a deprecation warning. Create a new public client and use it to silence the warning, or set `SFCC_DISABLE_PKCE_FALLBACK=1` to disable the fallback.
 
 ## b2c auth logout
 

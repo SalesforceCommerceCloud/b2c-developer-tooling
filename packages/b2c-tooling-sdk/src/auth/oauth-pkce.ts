@@ -46,6 +46,44 @@ export class PkceGrantUnsupportedError extends Error {
 }
 
 /**
+ * OAuth 2.0 `error` codes that genuinely indicate the client is not registered
+ * as a PKCE-capable public client — the only failures the implicit fallback can
+ * legitimately rescue. Implicit shares the same authorize endpoint and redirect
+ * URI but returns the token on the redirect with NO token-endpoint call and NO
+ * client authentication, so it rescues clients that support implicit but not
+ * the Authorization Code grant:
+ *
+ * - `invalid_client` — at the token exchange, Account Manager demands client
+ *   authentication (e.g. "Parameter client_assertion_type is missing"), i.e. the
+ *   client is confidential/implicit-only, NOT a public/PKCE client. This is the
+ *   primary real-world migration case for legacy implicit clients.
+ * - `unauthorized_client` — client is not permitted to use this grant type.
+ * - `unsupported_response_type` — authorize endpoint rejects `response_type=code`.
+ * - `unsupported_grant_type` — token endpoint rejects `authorization_code`.
+ *
+ * Every other error is a real failure that would fail identically under
+ * implicit and MUST NOT trigger the fallback, e.g. `invalid_scope` (bad
+ * scopes), `access_denied` (user cancelled consent), `invalid_grant`
+ * (expired/replayed code or PKCE verifier mismatch), `invalid_request`.
+ */
+const PKCE_GRANT_UNSUPPORTED_OAUTH_ERRORS = new Set([
+  'invalid_client',
+  'unauthorized_client',
+  'unsupported_response_type',
+  'unsupported_grant_type',
+]);
+
+/**
+ * Returns true only when an OAuth `error` code indicates the client cannot use
+ * the Authorization Code (PKCE) grant — the narrow set of failures the implicit
+ * fallback should rescue. Unknown/absent codes return false so ambiguous
+ * failures surface directly instead of silently downgrading to implicit.
+ */
+function isPkceGrantUnsupportedError(oauthError: string | undefined): boolean {
+  return oauthError !== undefined && PKCE_GRANT_UNSUPPORTED_OAUTH_ERRORS.has(oauthError);
+}
+
+/**
  * Configuration for the OAuth Authorization Code + PKCE flow.
  */
 export interface PkceOAuthConfig {
@@ -411,21 +449,22 @@ export class PkceOAuthStrategy implements AuthStrategy {
     });
     const rawText = await tokenRes.text();
     if (!tokenRes.ok) {
-      // A 4xx here typically means the client is not registered for the
-      // authorization_code grant or the redirect_uri does not match — i.e. a
-      // grant/registration problem the implicit fallback can rescue. Surface a
-      // typed error carrying the OAuth `error` code when present.
+      // Distinguish "this client can't do the code grant" (which the implicit
+      // fallback can rescue) from real errors that would fail identically under
+      // implicit — e.g. invalid_scope, invalid_grant. Only the former is typed
+      // as PkceGrantUnsupportedError; everything else is a plain Error so the
+      // fallback wrapper propagates it instead of silently downgrading.
       let oauthError: string | undefined;
       try {
         oauthError = (JSON.parse(rawText) as {error?: string}).error;
       } catch {
         // non-JSON body; leave oauthError undefined
       }
-      throw new PkceGrantUnsupportedError(
-        `PKCE token exchange failed (${tokenRes.status}): ${rawText}`,
-        'token',
-        oauthError,
-      );
+      const message = `PKCE token exchange failed (${tokenRes.status}): ${rawText}`;
+      if (isPkceGrantUnsupportedError(oauthError)) {
+        throw new PkceGrantUnsupportedError(message, 'token', oauthError);
+      }
+      throw new Error(message);
     }
 
     let parsed: {
@@ -478,11 +517,17 @@ export class PkceOAuthStrategy implements AuthStrategy {
         if (error) {
           res.writeHead(500, {'Content-Type': 'text/plain'});
           res.end(`Authentication failed: ${errorDescription ?? error}`);
-          // An OAuth error at the authorize step (e.g. unsupported_response_type,
-          // unauthorized_client) indicates the client is not registered for the
-          // authorization_code grant — a grant/registration failure the implicit
-          // fallback can rescue. Mark it typed so the fallback strategy retries.
-          reject(new PkceGrantUnsupportedError(`OAuth error: ${errorDescription ?? error}`, 'authorize', error));
+          // Only a grant/registration error (e.g. unsupported_response_type,
+          // unauthorized_client) means the client can't do the code grant — the
+          // implicit fallback can rescue that. A user-driven error like
+          // access_denied (cancelled consent) MUST NOT fall back, so type it
+          // only for the grant-unsupported set; otherwise reject plainly.
+          const message = `OAuth error: ${errorDescription ?? error}`;
+          reject(
+            isPkceGrantUnsupportedError(error)
+              ? new PkceGrantUnsupportedError(message, 'authorize', error)
+              : new Error(message),
+          );
           cleanup();
           return;
         }

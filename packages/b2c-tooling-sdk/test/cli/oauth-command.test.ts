@@ -216,7 +216,9 @@ describe('cli/oauth-command', () => {
       expect(message).to.include('implicit flow is deprecated');
       expect(message).to.include('public OAuth client');
       expect(message).to.include('--user-auth');
-      expect(message).to.include('https://b2c-dx.salesforce.com/cli/auth.html');
+      expect(message).to.include(
+        'https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html#implicit-flow-deprecation',
+      );
     });
 
     it('does not emit the implicit deprecation WARN for PKCE / user auth', async () => {

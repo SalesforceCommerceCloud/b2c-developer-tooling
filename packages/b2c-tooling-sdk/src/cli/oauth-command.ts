@@ -288,9 +288,9 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
             this.warn(
               t(
                 'warning.implicitFlowDeprecated',
-                'The OAuth implicit flow is deprecated. Configure a public OAuth client in Account Manager ' +
+                'The OAuth implicit flow is deprecated. Create a new public OAuth client in Account Manager ' +
                   'and use Authorization Code + PKCE (`--user-auth`) instead. ' +
-                  'See https://b2c-dx.salesforce.com/cli/auth.html for setup.',
+                  'See https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html#implicit-flow-deprecation',
               ),
             );
             return new ImplicitOAuthStrategy({

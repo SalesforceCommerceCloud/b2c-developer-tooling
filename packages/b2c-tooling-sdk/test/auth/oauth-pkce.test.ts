@@ -213,6 +213,76 @@ describe('auth/oauth-pkce', () => {
     });
   });
 
+  // The token/authorize failure classification decides whether the implicit
+  // fallback triggers. Only genuine "not a PKCE-capable public client" errors
+  // (invalid_client / unauthorized_client / unsupported_response_type /
+  // unsupported_grant_type) may be typed PkceGrantUnsupportedError; everything
+  // else (invalid_scope, access_denied, invalid_grant, non-JSON bodies) must
+  // surface as a plain Error so the fallback wrapper propagates it instead of
+  // downgrading.
+  describe('grant-error classification (fallback gating)', () => {
+    // Drive the real runFlow token exchange: stub waitForAuthCode so no browser
+    // or local server is needed, and stub fetch to return the given token
+    // response. Returns the thrown error (or null if the flow unexpectedly
+    // succeeded).
+    async function runTokenExchange(clientId: string, tokenStatus: number, tokenBody: string): Promise<unknown> {
+      const strategy = new PkceOAuthStrategy({clientId, scopes: ['bad.scope'], persistSession: false});
+      (strategy as unknown as {waitForAuthCode: () => Promise<string>}).waitForAuthCode = async () => 'auth-code';
+      globalThis.fetch = (async () => new Response(tokenBody, {status: tokenStatus})) as typeof fetch;
+      try {
+        await strategy.getTokenResponse();
+        return null;
+      } catch (error) {
+        return error;
+      }
+    }
+
+    it('does NOT type invalid_scope as PkceGrantUnsupportedError (bad scopes, not a grant problem)', async () => {
+      const error = await runTokenExchange('pkce-invalid-scope', 400, JSON.stringify({error: 'invalid_scope'}));
+      expect(error).to.be.instanceOf(Error);
+      expect((error as Error).name).to.not.equal('PkceGrantUnsupportedError');
+    });
+
+    it('types invalid_client as PkceGrantUnsupportedError (AM demands client auth → not a public/PKCE client)', async () => {
+      // Exact real-world AM response for a legacy implicit-only client.
+      const error = await runTokenExchange(
+        'pkce-invalid-client',
+        400,
+        JSON.stringify({error: 'invalid_client', error_description: 'Parameter client_assertion_type is missing'}),
+      );
+      expect((error as Error).name).to.equal('PkceGrantUnsupportedError');
+      expect((error as {oauthError?: string}).oauthError).to.equal('invalid_client');
+      expect((error as {stage?: string}).stage).to.equal('token');
+    });
+
+    it('types unauthorized_client as PkceGrantUnsupportedError (client cannot use the code grant)', async () => {
+      const error = await runTokenExchange('pkce-unauthorized', 400, JSON.stringify({error: 'unauthorized_client'}));
+      expect((error as Error).name).to.equal('PkceGrantUnsupportedError');
+      expect((error as {oauthError?: string}).oauthError).to.equal('unauthorized_client');
+      expect((error as {stage?: string}).stage).to.equal('token');
+    });
+
+    it('types unsupported_grant_type as PkceGrantUnsupportedError', async () => {
+      const error = await runTokenExchange(
+        'pkce-unsupported-grant',
+        400,
+        JSON.stringify({error: 'unsupported_grant_type'}),
+      );
+      expect((error as Error).name).to.equal('PkceGrantUnsupportedError');
+    });
+
+    it('does NOT type invalid_grant as PkceGrantUnsupportedError (expired/replayed code or verifier mismatch)', async () => {
+      const error = await runTokenExchange('pkce-invalid-grant', 400, JSON.stringify({error: 'invalid_grant'}));
+      expect((error as Error).name).to.not.equal('PkceGrantUnsupportedError');
+    });
+
+    it('does NOT type a non-JSON error body as PkceGrantUnsupportedError', async () => {
+      const error = await runTokenExchange('pkce-nonjson', 500, 'Internal Server Error');
+      expect(error).to.be.instanceOf(Error);
+      expect((error as Error).name).to.not.equal('PkceGrantUnsupportedError');
+    });
+  });
+
   describe('persistence and refresh', () => {
     let testDir: string;
 

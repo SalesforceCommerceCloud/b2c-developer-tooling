@@ -35,6 +35,12 @@
 #   JWT_KEY               Path to JWT private key PEM (optional).
 #   AM_HOST               Account Manager host. Default: account.demandware.com
 #
+#   ── Default-client use cases (§8a/§8b): the built-in public client, NO --client-id ──
+#   REALM                 Optional realm filter for `sandbox realm list` (§8a), e.g. zzpq.
+#                         Unset → lists all your realms via ODS /me.
+#   SLAS_TENANT_ID        SLAS tenant id for `slas client list` (§8b), e.g. zzpq_019. REQUIRED for §8b.
+#   SLAS_SHORT_CODE       SCAPI short code for the SLAS admin host (§8b). REQUIRED for §8b.
+#
 #   ── Instance operations (§13–§20): exercise WebDAV + OCAPI on a real instance ──
 #   INSTANCE_HOST         Target instance hostname (--server), e.g. zzzz-001.dx.commercecloud.salesforce.com.
 #                         REQUIRED for all instance scenarios; if unset they are skipped.
@@ -77,6 +83,13 @@ WEBDAV_USERNAME="${WEBDAV_USERNAME:-}"
 WEBDAV_PASSWORD="${WEBDAV_PASSWORD:-}"
 SELFSIGNED="${SELFSIGNED:-0}"
 INSTANCE_EXTRA_ARGS="${INSTANCE_EXTRA_ARGS:-}"
+
+# Default-client use cases (§8a/§8b): no --client-id, falls through to user/PKCE
+# with the built-in public client. SLAS_TENANT_ID/SLAS_SHORT_CODE drive the SLAS
+# admin list; REALM (optional) filters the sandbox realm list (omit to call ODS /me).
+REALM="${REALM:-}"
+SLAS_TENANT_ID="${SLAS_TENANT_ID:-}"
+SLAS_SHORT_CODE="${SLAS_SHORT_CODE:-}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -224,6 +237,9 @@ scenario_preflight() {
   info "Implicit client:    ${IMPLICIT_CLIENT_ID:-<unset>}"
   info "Client-creds:       ${CC_CLIENT_ID:+set}${CC_CLIENT_ID:-<unset>}"
   info "JWT client:         ${JWT_CLIENT_ID:-<unset>}"
+  info "Realm (§8a):        ${REALM:-<unset — lists all via ODS /me>}"
+  info "SLAS tenant (§8b):  ${SLAS_TENANT_ID:-<unset — §8b skipped>}"
+  info "SLAS short code:    ${SLAS_SHORT_CODE:-<unset — §8b skipped>}"
   info "Instance host:      ${INSTANCE_HOST:-<unset — §13–§20 skipped>}"
   info "Instance PKCE clnt: ${INSTANCE_PKCE_CLIENT_ID:-<unset>}"
   info "WebDAV Basic user:  ${WEBDAV_USERNAME:-<unset — §18 skipped>}"
@@ -443,6 +459,44 @@ scenario_8_default_public_user() {
   run_cli am users list || true
 }
 
+scenario_8a_default_ods_realm() {
+  title "§8a — Default public client: list a sandbox realm (ODS, no creds)"
+  logout_all
+  info "'sandbox realm list' uses OdsCommand's default public client ($DEFAULT_PUBLIC_CLIENT_ID)."
+  info "With no --client-id, the chain falls through client-creds→jwt→user (PKCE) and calls ODS."
+  if [ -n "$REALM" ]; then
+    info "REALM=$REALM set → lists that realm (no ODS /me call needed once authed)."
+  else
+    note "No REALM set → discovers your realms via ODS /me (a real authenticated call)."
+    note "Tip: set REALM=zzpq (the test realm) to target a specific one."
+  fi
+  expect "Browser PKCE login, then a realm listing from ODS (requires Sandbox API access)."
+  pause "Press Enter to run 'sandbox realm list' (opens browser)…"
+  if [ -n "$REALM" ]; then
+    run_cli sandbox realm list "$REALM" || true
+  else
+    run_cli sandbox realm list || true
+  fi
+  show_session_file
+}
+
+scenario_8b_default_slas_clients() {
+  title "§8b — Default public client: list SLAS clients for a tenant (no creds)"
+  need_var SLAS_TENANT_ID "SLAS tenant id (e.g. zzpq_019)" || return
+  need_var SLAS_SHORT_CODE "SCAPI short code for the SLAS admin host" || {
+    note "SLAS admin host is https://<short-code>.api.commercecloud.salesforce.com — short code is required."
+    return
+  }
+  logout_all
+  info "'slas client list' uses SlasClientCommand's default public client ($DEFAULT_PUBLIC_CLIENT_ID)."
+  info "No --client-id: falls through to user/PKCE, then hits the SLAS Admin API for tenant $SLAS_TENANT_ID."
+  expect "Browser PKCE login, then a table of SLAS clients (Client ID / Name / Private)."
+  expect "An empty/no-clients result still PASSES the migration check — it proves the token was accepted."
+  pause "Press Enter to run 'slas client list' (opens browser)…"
+  run_cli slas client list --tenant-id "$SLAS_TENANT_ID" --short-code "$SLAS_SHORT_CODE" || true
+  show_session_file
+}
+
 scenario_9_client_credentials() {
   title "§9 — Old flow: client-credentials (no browser)"
   need_var CC_CLIENT_ID "client-credentials client id" || return
@@ -636,6 +690,8 @@ declare -a SCENARIOS=(
   "6:scenario_6_dwjson_conflict:§6  dw.json user-auth/auth-methods conflict [NEW]"
   "7:scenario_7_implicit_explicit:§7  Explicit implicit flow [OLD]"
   "8:scenario_8_default_public_user:§8  Default public client user/PKCE (am users list) [OLD]"
+  "8a:scenario_8a_default_ods_realm:§8a Default client: sandbox realm list (ODS) [NEW/critical]"
+  "8b:scenario_8b_default_slas_clients:§8b Default client: slas client list (SLAS admin) [NEW/critical]"
   "9:scenario_9_client_credentials:§9  Client-credentials store+read [OLD]"
   "10:scenario_10_cc_against_am:§10 Client-credentials vs live AM [OLD]"
   "11:scenario_11_jwt:§11 JWT Bearer [OLD]"
