@@ -1,6 +1,7 @@
 out
 dist
 node_modules
+.claude/
 .vscode-test/
 .vsce-stage/
 *.vsix
