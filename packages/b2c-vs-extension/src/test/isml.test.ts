@@ -14,7 +14,7 @@ import * as vscode from 'vscode';
 import {collectIsmlDiagnostics, getIsmlQuickFixes} from '../isml/diagnostics.js';
 import {findTemplateLinks, resolveTemplate} from '../isml/document-links.js';
 import {collectIsmlFoldingRanges} from '../isml/folding.js';
-import {normalizeVoidTagSpacing} from '../isml/formatting.js';
+import {formatIsmlText, normalizeVoidTagSpacing} from '../isml/formatting.js';
 import {findIsmlHoverInfo} from '../isml/hover.js';
 import {detectAutoCloseTag} from '../isml/index.js';
 import {findIsmlLinkedEditingTagNameMatch, findIsmlTagNameMatch} from '../isml/matching.js';
@@ -926,5 +926,111 @@ suite('ISML: diagnostic codes and suppression', () => {
     const suppress = fixes.find((f) => f.title.startsWith('Suppress'));
     assert.ok(suppress, 'expected a suppression quick fix');
     assert.ok(suppress!.edits[0].newText.includes('b2c-dx-disable-next-line missing-required-attribute'));
+  });
+});
+
+suite('ISML: formatter (real-world constructs)', () => {
+  const OPTS = {tabSize: 4, insertSpaces: true} as vscode.FormattingOptions;
+  const fmt = (src: string) => formatIsmlText(src, OPTS);
+
+  test('self-closed <iselse/> sits at the parent <isif> level', () => {
+    const out = fmt('<isif condition="${x}">\n<p>a</p>\n<iselse/>\n<p>b</p>\n</isif>\n');
+    assert.strictEqual(
+      out,
+      ['<isif condition="${x}">', '    <p>a</p>', '<iselse/>', '    <p>b</p>', '</isif>'].join('\n'),
+    );
+  });
+
+  test('bare <iselse> (no slash) does not swallow the branch body', () => {
+    // Without the fix, the HTML formatter treats <iselse> as a block opener and
+    // over-indents everything after it, failing to dedent </isif>.
+    const out = fmt('<isif condition="${x}">\n<p>a</p>\n<iselse>\n<p>b</p>\n</isif>\n');
+    assert.strictEqual(
+      out,
+      ['<isif condition="${x}">', '    <p>a</p>', '<iselse/>', '    <p>b</p>', '</isif>'].join('\n'),
+    );
+  });
+
+  test('wrapper <iselse>...</iselse> form: strips the stray close, no blank line', () => {
+    const out = fmt(
+      '<isif condition="${x}">\n<isloop items="${a}" var="i">\n<isinclude template="c/d"/>\n</isloop>\n<iselse>\n<div>empty</div>\n</iselse>\n</isif>\n',
+    );
+    assert.strictEqual(
+      out,
+      [
+        '<isif condition="${x}">',
+        '    <isloop items="${a}" var="i">',
+        '        <isinclude template="c/d"/>',
+        '    </isloop>',
+        '<iselse/>',
+        '    <div>empty</div>',
+        '</isif>',
+      ].join('\n'),
+    );
+    assert.ok(!/\n\s*\n/.test(out), 'should not leave a blank line where </iselse> was');
+  });
+
+  test('iselseif chain dedents each divider to the <isif> level', () => {
+    const out = fmt(
+      '<isif condition="${x}">\n<p>a</p>\n<iselseif condition="${y}"/>\n<p>b</p>\n<iselse/>\n<p>c</p>\n</isif>\n',
+    );
+    assert.strictEqual(
+      out,
+      [
+        '<isif condition="${x}">',
+        '    <p>a</p>',
+        '<iselseif condition="${y}"/>',
+        '    <p>b</p>',
+        '<iselse/>',
+        '    <p>c</p>',
+        '</isif>',
+      ].join('\n'),
+    );
+  });
+
+  test('nested isif: inner and outer iselse each align to their own isif', () => {
+    const out = fmt(
+      '<isif condition="a">\n<isif condition="b">\n<p>x</p>\n<iselse/>\n<p>y</p>\n</isif>\n<iselse/>\n<p>z</p>\n</isif>\n',
+    );
+    assert.strictEqual(
+      out,
+      [
+        '<isif condition="a">',
+        '    <isif condition="b">',
+        '        <p>x</p>',
+        '    <iselse/>',
+        '        <p>y</p>',
+        '    </isif>',
+        '<iselse/>',
+        '    <p>z</p>',
+        '</isif>',
+      ].join('\n'),
+    );
+  });
+
+  test('preserves <isscript> body verbatim', () => {
+    const src = '<isif condition="${e}">\n<isscript>\n    var x=1;   messy( );\n</isscript>\n</isif>\n';
+    const out = fmt(src);
+    assert.ok(out.includes('    var x=1;   messy( );'), `isscript body should be untouched, got:\n${out}`);
+  });
+
+  test('leaves ${} expressions (incl. > operators) verbatim and normalizes void spacing', () => {
+    const out = fmt('<isprint value="${a > b && c.length > 0}" encoding="off" />\n');
+    assert.strictEqual(out, '<isprint value="${a > b && c.length > 0}" encoding="off"/>');
+  });
+
+  // Regression: a context-free regex would delete/mutate `</iselse>`-looking text
+  // inside string literals, attribute values, and comments. The token-gated
+  // passes must leave such content byte-for-byte intact.
+  test('does not corrupt </iselse> inside an <isscript> string literal', () => {
+    const src = '<isscript>\n    var s = "</iselse>";\n</isscript>\n';
+    const out = fmt(src);
+    assert.ok(out.includes('var s = "</iselse>";'), `isscript string literal must be preserved, got:\n${out}`);
+  });
+
+  test('does not corrupt </iselse> inside an <iscomment>', () => {
+    const src = '<iscomment>legacy: </iselse></iscomment>\n';
+    const out = fmt(src);
+    assert.ok(out.includes('legacy: </iselse>'), `iscomment content must be preserved, got:\n${out}`);
   });
 });
