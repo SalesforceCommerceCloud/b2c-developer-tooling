@@ -3,121 +3,60 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+
+/**
+ * Focused ISML formatter behavior tests. The full before/after examples live as
+ * vendored fixtures (src/test/fixtures/format/*.isml + .expected.isml, checked by
+ * format-fixtures.test.ts) so they read as real ISML and are easy to extend. The
+ * cases here assert *specific behaviors* on those same fixtures (things a plain
+ * snapshot equality doesn't call out) plus a few small inline edge cases.
+ *
+ * ISML source is written as arrays-of-lines, not template literals: ISML is dense
+ * with `${...}` expressions, which collide with JS template-literal interpolation
+ * and would need `\${...}` escaping on nearly every line. Anything worth reading
+ * as real ISML belongs in a fixture file instead.
+ */
 import * as assert from 'assert';
+import * as fs from 'fs';
+import * as path from 'path';
+import {fileURLToPath} from 'url';
 import {formatIsmlText} from '../../isml/formatting.js';
 import type * as vscode from 'vscode';
 
 const OPTS = {tabSize: 4, insertSpaces: true} as vscode.FormattingOptions;
 
-// A deliberately-messy real-world-shaped ISML doc: bad indentation, bare
-// <iselse>, mixed void tags, ${} with > operators, an <isscript> body, and a
-// </iselse>-looking string inside the script that MUST survive.
-const MESSY = [
-  '<isdecorate template="common/layout/page">',
-  '<isscript>',
-  '    var marker = "</iselse>"; // must not be touched',
-  '</isscript>',
-  '<isif condition="${pdict.items.length > 0}">',
-  '<isloop items="${pdict.items}" var="item">',
-  '<isprint value="${item.name}" encoding="off" />',
-  '</isloop>',
-  '<iselse>',
-  '<p>none</p>',
-  '</isif>',
-  '</isdecorate>',
-].join('\n');
+const fixturesDir = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  '..',
+  'src',
+  'test',
+  'fixtures',
+  'format',
+);
+const readFixture = (name: string) => fs.readFileSync(path.join(fixturesDir, name), 'utf8');
 
-suite('ISML formatter — sample reformatting (demo)', () => {
-  test('reformats a messy real-world-shaped document', () => {
-    const out = formatIsmlText(MESSY, OPTS);
-    console.log('\n===== BEFORE =====\n' + MESSY + '\n===== AFTER =====\n' + out + '\n==================\n');
-
-    // Structural expectations:
-    assert.ok(out.includes('\n    <isscript>'), 'isscript indented under isdecorate');
+suite('ISML formatter — key behaviors on vendored fixtures', () => {
+  test('messy-mixed: bare <iselse> aligns to <isif>, void spacing normalized, script string preserved', () => {
+    const out = formatIsmlText(readFixture('messy-mixed.isml'), OPTS);
     assert.ok(out.includes('var marker = "</iselse>";'), 'script string literal preserved verbatim');
-    assert.ok(/\n {4}<isif /.test(out), 'isif indented one level');
-    assert.ok(/\n {8}<isloop /.test(out), 'isloop indented two levels');
     assert.ok(/\n {4}<iselse\/>/.test(out), 'bare <iselse> normalized + aligned to its <isif>');
     assert.ok(out.includes('encoding="off"/>'), 'void tag spacing normalized');
     assert.ok(out.includes('${pdict.items.length > 0}'), 'expression left verbatim');
   });
 
-  test('is idempotent on already-well-formatted output', () => {
-    const once = formatIsmlText(MESSY, OPTS);
-    const twice = formatIsmlText(once, OPTS);
-    assert.strictEqual(twice, once, 'formatting formatted output should be a no-op');
-  });
-});
-
-// Larger, real-world-modeled document (shaped after account/order/orderItems.isml
-// in b2c-commerce-industries): an <iselseif> chain, void control tags
-// (<isbreak/>, <iscontinue/>), an <isscript> block whose body must stay verbatim
-// and whose closer must align to its opener, and multi-level nesting. Asserts the
-// EXACT formatted output so indentation nuances are locked down.
-const ORDER_ITEMS_MESSY = [
-  '<isloop items="${orderItems}" var="orderItem" status="s">',
-  '<isif condition="${s.count > 5}">',
-  '<isbreak/>',
-  '</isif>',
-  '<isif condition="${item.status === P.returned}">',
-  '<isset name="qty" value="${item.qtyReturned}" scope="page"/>',
-  '<iselseif condition="${item.status === P.cancelled}"/>',
-  '<isset name="qty" value="${item.qtyCancelled}" scope="page"/>',
-  '</isif>',
-  '<isscript>',
-  '    var url = null;',
-  '    if (product) {',
-  '        url = URLUtils.url("Product-Show", "pid", product.ID);',
-  '    }',
-  '</isscript>',
-  '<isif condition="${empty(product)}">',
-  '<iscontinue/>',
-  '</isif>',
-  '</isloop>',
-].join('\n');
-
-const ORDER_ITEMS_EXPECTED = [
-  '<isloop items="${orderItems}" var="orderItem" status="s">',
-  '    <isif condition="${s.count > 5}">',
-  '        <isbreak/>',
-  '    </isif>',
-  '    <isif condition="${item.status === P.returned}">',
-  '        <isset name="qty" value="${item.qtyReturned}" scope="page"/>',
-  '    <iselseif condition="${item.status === P.cancelled}"/>',
-  '        <isset name="qty" value="${item.qtyCancelled}" scope="page"/>',
-  '    </isif>',
-  '    <isscript>',
-  '    var url = null;',
-  '    if (product) {',
-  '        url = URLUtils.url("Product-Show", "pid", product.ID);',
-  '    }',
-  '    </isscript>',
-  '    <isif condition="${empty(product)}">',
-  '        <iscontinue/>',
-  '    </isif>',
-  '</isloop>',
-].join('\n');
-
-suite('ISML formatter — larger document (indentation nuances)', () => {
-  test('formats a nested loop with iselseif chain, void tags, and isscript', () => {
-    const out = formatIsmlText(ORDER_ITEMS_MESSY, OPTS);
-    assert.strictEqual(out, ORDER_ITEMS_EXPECTED);
-  });
-
-  test('the <isscript> body is preserved verbatim but its closer aligns to the opener', () => {
-    const out = formatIsmlText(ORDER_ITEMS_MESSY, OPTS);
-    // Opener and closer both at 4 spaces (inside the isloop):
+  test('order-items: <isscript> body is verbatim but its closer aligns to the opener', () => {
+    const out = formatIsmlText(readFixture('order-items.isml'), OPTS);
     assert.ok(out.includes('\n    <isscript>\n'), 'isscript opener aligned');
     assert.ok(out.includes('\n    </isscript>\n'), 'isscript closer aligned to opener');
-    // Body indentation is the author's, untouched (the `if` block keeps its shape):
     assert.ok(out.includes('\n    var url = null;\n'), 'script body line preserved verbatim');
     assert.ok(out.includes('\n        url = URLUtils.url'), 'nested script line preserved verbatim');
   });
 
-  test('is idempotent (our ISML passes do not drift on a second format)', () => {
-    const once = formatIsmlText(ORDER_ITEMS_MESSY, OPTS);
-    const twice = formatIsmlText(once, OPTS);
-    assert.strictEqual(twice, once, 'second format must be a no-op');
+  test('order-items: <iselseif> divider aligns to its <isif>', () => {
+    const out = formatIsmlText(readFixture('order-items.isml'), OPTS);
+    assert.ok(/\n {4}<iselseif /.test(out), 'iselseif at the isif level, not the branch-body level');
   });
 });
 
@@ -144,8 +83,6 @@ suite('ISML formatter — construct edge cases (from corpus analysis)', () => {
   });
 
   test('a multi-line <isinclude> (attributes across lines) is preserved and idempotent', () => {
-    // Long url= wrapped across lines — the HTML formatter owns the wrap; we must
-    // not corrupt it and must stay idempotent.
     const src = [
       '<div>',
       '<isinclude',
@@ -161,7 +98,6 @@ suite('ISML formatter — construct edge cases (from corpus analysis)', () => {
   test('<iscomment> block with markup inside is left untouched', () => {
     const src = ['<div>', '<iscomment>', '    <isslot id="old" /> disabled', '</iscomment>', '</div>'].join('\n');
     const out = formatIsmlText(src, OPTS);
-    // Comment content (including the <isslot> markup text) must survive verbatim.
     assert.ok(out.includes('<isslot id="old" /> disabled'), `iscomment body must be preserved, got:\n${out}`);
   });
 });
