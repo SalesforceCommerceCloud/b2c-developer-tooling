@@ -874,8 +874,13 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   }
 
   // Show walkthrough on first activation (optional, non-blocking)
-  // This runs asynchronously after activation is complete
-  showWalkthroughOnFirstActivation(context).catch((err) => {
-    log.appendLine(`Warning: Failed to show walkthrough: ${err instanceof Error ? err.message : String(err)}`);
-  });
+  // This runs asynchronously after activation is complete. Gated behind the
+  // onboarding feature flag (Preview, off by default) so it does not surface
+  // until the walkthrough is ready to ship.
+  const onboardingEnabled = vscode.workspace.getConfiguration('b2c-dx').get<boolean>('features.onboarding', false);
+  if (onboardingEnabled) {
+    showWalkthroughOnFirstActivation(context).catch((err) => {
+      log.appendLine(`Warning: Failed to show walkthrough: ${err instanceof Error ? err.message : String(err)}`);
+    });
+  }
 }

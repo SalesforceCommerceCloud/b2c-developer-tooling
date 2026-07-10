@@ -27,6 +27,7 @@ interface PackageJson {
     views: Record<string, ContributedView[]>;
     debuggers: Array<{type: string}>;
     menus?: {commandPalette?: Array<{command: string; when?: string}>};
+    walkthroughs?: Array<{id: string; when?: string}>;
   };
 }
 
@@ -115,10 +116,21 @@ suite('extension activation', () => {
       ['b2c-dx.jobs.refresh', 'config.b2c-dx.features.jobsExplorer'],
       ['b2c-dx.export.run', 'config.b2c-dx.features.exportExplorer'],
       ['b2c-dx.cipAnalytics.queryBuilder', 'config.b2c-dx.features.cipAnalytics'],
+      ['b2c-dx.onboarding.open', 'config.b2c-dx.features.onboarding'],
     ];
     for (const [cmd, expected] of cases) {
       assert.strictEqual(whenFor(cmd), expected, `${cmd} must be palette-gated by ${expected}`);
     }
+  });
+
+  test('onboarding walkthrough is gated by its feature setting', () => {
+    const walkthrough = (pkg.contributes.walkthroughs ?? []).find((w) => w.id === 'b2c-dx.gettingStarted');
+    assert.ok(walkthrough, 'the b2c-dx.gettingStarted walkthrough must exist');
+    assert.strictEqual(
+      walkthrough!.when,
+      'config.b2c-dx.features.onboarding',
+      'the onboarding walkthrough must be gated by config.b2c-dx.features.onboarding',
+    );
   });
 
   test('every contributed view has an auto-registered focus command', async () => {

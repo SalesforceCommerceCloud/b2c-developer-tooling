@@ -257,6 +257,11 @@
           "default": false,
           "description": "(Preview) Enable the B2C-DX Analytics (CIP) sidebar for browsing tables and running curated reports. In development — off by default."
         },
+        "b2c-dx.features.onboarding": {
+          "type": "boolean",
+          "default": false,
+          "description": "(Preview) Enable the guided developer onboarding walkthrough and role-based deep-dive panel. In development — off by default."
+        },
         "b2c-dx.features.xmlValidation": {
           "type": "boolean",
           "default": true,
@@ -1273,6 +1278,7 @@
         "title": "B2C DX — Developer Onboarding",
         "description": "A guided 5-phase setup — install, configure, connect, deploy, scaffold — for the Salesforce B2C Commerce Developer Experience extension. Most teams complete this in under 30 minutes.",
         "icon": "media/b2c-icon.svg",
+        "when": "config.b2c-dx.features.onboarding",
         "steps": [
           {
             "id": "pick-start",
@@ -1860,6 +1866,54 @@
         {
           "command": "b2c-dx.isml.showReferences",
           "when": "editorLangId == isml"
+        },
+        {
+          "command": "b2c-dx.onboarding.open",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.onboarding.reset",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.onboarding.changePersona",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.open",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.markAllDone",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.resetProgress",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.createDwJson",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.chooseCredentialStorage",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.inspectSetup",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.validate",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.checkAccessibility",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.showTelemetry",
+          "when": "config.b2c-dx.features.onboarding"
         },
         {
           "command": "b2c-dx.jobs.openFilters",
