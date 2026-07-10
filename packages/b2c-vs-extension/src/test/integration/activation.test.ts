@@ -19,12 +19,14 @@ interface ContributedCommand {
 interface ContributedView {
   id: string;
   name: string;
+  when?: string;
 }
 interface PackageJson {
   contributes: {
     commands: ContributedCommand[];
     views: Record<string, ContributedView[]>;
     debuggers: Array<{type: string}>;
+    menus?: {commandPalette?: Array<{command: string; when?: string}>};
   };
 }
 
@@ -88,13 +90,57 @@ suite('extension activation', () => {
     assert.ok(types.includes('b2c-script'), 'b2c-script debug type must be declared');
   });
 
+  // Preview features are gated so they are invisible (no view, no palette
+  // command) unless their b2c-dx.features.* setting is enabled. Assert the
+  // manifest wiring structurally so it can't silently regress.
+  test('preview-feature views are gated by their feature setting', () => {
+    const gated: Record<string, string> = {
+      b2cJobsExplorer: 'config.b2c-dx.features.jobsExplorer',
+      b2cExportExplorer: 'config.b2c-dx.features.exportExplorer',
+      b2cCipAnalytics: 'config.b2c-dx.features.cipAnalytics',
+    };
+    const allViews = Object.values(pkg.contributes.views).flatMap((v) => v);
+    for (const [id, expected] of Object.entries(gated)) {
+      const view = allViews.find((v) => v.id === id);
+      assert.ok(view, `view ${id} must exist`);
+      assert.strictEqual(view!.when, expected, `view ${id} must be gated by ${expected}`);
+    }
+  });
+
+  test('preview-feature palette commands are gated by their feature setting', () => {
+    const palette: Array<{command: string; when?: string}> = pkg.contributes.menus?.commandPalette ?? [];
+    const whenFor = (cmd: string) => palette.find((e) => e.command === cmd)?.when;
+    const cases: Array<[string, string]> = [
+      ['b2c-dx.jobs.run', 'config.b2c-dx.features.jobsExplorer'],
+      ['b2c-dx.jobs.refresh', 'config.b2c-dx.features.jobsExplorer'],
+      ['b2c-dx.export.run', 'config.b2c-dx.features.exportExplorer'],
+      ['b2c-dx.cipAnalytics.queryBuilder', 'config.b2c-dx.features.cipAnalytics'],
+    ];
+    for (const [cmd, expected] of cases) {
+      assert.strictEqual(whenFor(cmd), expected, `${cmd} must be palette-gated by ${expected}`);
+    }
+  });
+
   test('every contributed view has an auto-registered focus command', async () => {
     const registered = new Set(await vscode.commands.getCommands(true));
-    const viewIds = Object.values(pkg.contributes.views).flatMap((views) => views.map((v) => v.id));
-    assert.ok(viewIds.length > 0, 'expected at least one contributed view');
+    // A view gated by a `when: config.b2c-dx.features.X` clause is not
+    // instantiated (and gets no `.focus` command) when that feature is disabled.
+    // The three preview features default off, so exclude any view whose when
+    // clause references a currently-disabled feature.
+    const config = vscode.workspace.getConfiguration();
+    const viewIsActive = (view: {when?: string}): boolean => {
+      const match = view.when?.match(/config\.(b2c-dx\.features\.[A-Za-z]+)/);
+      if (!match) return true;
+      return config.get<boolean>(match[1], false);
+    };
+    const viewIds = Object.values(pkg.contributes.views)
+      .flatMap((views) => views)
+      .filter(viewIsActive)
+      .map((v) => v.id);
+    assert.ok(viewIds.length > 0, 'expected at least one active contributed view');
 
-    // VS Code auto-registers `<viewId>.focus` for every declared view.
+    // VS Code auto-registers `<viewId>.focus` for every active declared view.
     const missing = viewIds.filter((id) => !registered.has(`${id}.focus`));
-    assert.deepStrictEqual(missing, [], 'every declared view must have an auto-generated focus command');
+    assert.deepStrictEqual(missing, [], 'every active declared view must have an auto-generated focus command');
   });
 });

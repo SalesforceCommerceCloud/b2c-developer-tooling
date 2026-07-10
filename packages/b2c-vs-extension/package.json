@@ -142,7 +142,7 @@
         "b2c-dx.features.jobsExplorer": {
           "type": "boolean",
           "default": false,
-          "description": "Enable the Job History view for monitoring Business Manager job execution history."
+          "description": "(Preview) Enable the Job History view for monitoring Business Manager job execution history. In development — off by default."
         },
         "b2c-dx.features.scaffold": {
           "type": "boolean",
@@ -157,7 +157,7 @@
         "b2c-dx.features.exportExplorer": {
           "type": "boolean",
           "default": false,
-          "description": "Enable the Export view for interactively exporting site impex data units."
+          "description": "(Preview) Enable the Export view for interactively exporting site impex data units. In development — off by default."
         },
         "b2c-dx.features.cap": {
           "type": "boolean",
@@ -255,7 +255,7 @@
         "b2c-dx.features.cipAnalytics": {
           "type": "boolean",
           "default": false,
-          "description": "Enable the B2C-DX Analytics (CIP) sidebar for browsing tables and running curated reports."
+          "description": "(Preview) Enable the B2C-DX Analytics (CIP) sidebar for browsing tables and running curated reports. In development — off by default."
         },
         "b2c-dx.features.xmlValidation": {
           "type": "boolean",
@@ -372,7 +372,8 @@
           "name": "Jobs",
           "icon": "media/b2c-icon.svg",
           "contextualTitle": "B2C-DX",
-          "visibility": "collapsed"
+          "visibility": "collapsed",
+          "when": "config.b2c-dx.features.jobsExplorer"
         }
       ],
       "b2c-dx-analytics": [
@@ -380,13 +381,15 @@
           "id": "b2cCipAnalytics",
           "name": "CIP Analytics",
           "icon": "$(graph)",
-          "contextualTitle": "B2C-DX Analytics"
+          "contextualTitle": "B2C-DX Analytics",
+          "when": "config.b2c-dx.features.cipAnalytics"
         },
         {
           "id": "b2cExportExplorer",
           "name": "Export",
           "icon": "media/b2c-icon.svg",
-          "contextualTitle": "B2C-DX"
+          "contextualTitle": "B2C-DX",
+          "when": "config.b2c-dx.features.exportExplorer"
         }
       ],
       "b2c-dx-scapi": [
@@ -1857,6 +1860,74 @@
         {
           "command": "b2c-dx.isml.showReferences",
           "when": "editorLangId == isml"
+        },
+        {
+          "command": "b2c-dx.jobs.openFilters",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.refresh",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.setStatusFilter",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.setHistoryFilters",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.setNameFilter",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.toggleAutoRefresh",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.toggleGrouping",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.importSiteArchive",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.exportSiteArchive",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.run",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.createScaffold",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.openExecutionInBM",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.openBmDefinitions",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.export.run",
+          "when": "config.b2c-dx.features.exportExplorer"
+        },
+        {
+          "command": "b2c-dx.export.refresh",
+          "when": "config.b2c-dx.features.exportExplorer"
+        },
+        {
+          "command": "b2c-dx.export.addById",
+          "when": "config.b2c-dx.features.exportExplorer"
+        },
+        {
+          "command": "b2c-dx.export.clearSelection",
+          "when": "config.b2c-dx.features.exportExplorer"
         },
         {
           "command": "b2c-dx.cipAnalytics.refresh",
