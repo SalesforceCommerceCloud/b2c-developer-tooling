@@ -1,6 +1,6 @@
 ---
 name: b2c-content
-description: Export, list, and validate Page Designer content from B2C Commerce libraries. Use this skill whenever the user needs to export Page Designer pages or components, list pages in a content library, validate page JSON or metadefinitions, discover page IDs, migrate content between instances, or work with library XML offline. Also use when extracting content for review or building content deployment pipelines -- even if they just say 'export the homepage' or 'what pages are in the shared library'.
+description: Export, list, and validate Page Designer content from B2C Commerce libraries. Use this skill whenever the user needs to export Page Designer pages, components, or content blocks, list pages in a content library, validate page JSON or metadefinitions, discover page IDs, migrate content between instances, or work with library XML offline. Also use when extracting content for review or building content deployment pipelines -- even if they just say 'export the homepage' or 'what pages are in the shared library'.
 ---
 
 # B2C Content Skill
@@ -35,6 +35,9 @@ b2c content export homepage --library SharedLibrary -o ./my-export
 # export a specific component by ID
 b2c content export hero-banner --library SharedLibrary
 
+# export a content block (reusable fragment) by ID
+b2c content export DiscoverContentBlock --library RefArch --site-library
+
 # export from a site-private library
 b2c content export homepage --library RefArch --site-library
 
@@ -66,6 +69,9 @@ b2c content list --library SharedLibrary
 # list only pages
 b2c content list --library SharedLibrary --type page
 
+# list content blocks (reusable fragments; includes unlinked blocks)
+b2c content list --library SharedLibrary --type fragment
+
 # list including components
 b2c content list --library SharedLibrary --components
 
@@ -81,6 +87,10 @@ b2c content list --library SharedLibrary --library-file ./library.xml
 # JSON output
 b2c content list --library SharedLibrary --json
 ```
+
+### Content Blocks
+
+Content blocks are Page Designer "content blocks" — reusable `fragment.*`-typed content that is **shared** across pages (one definition, linked from many places). They are listed distinctly in the tree as `(CONTENT BLOCK)`, counted separately in export summaries, and can be exported by ID like a component (a Layout content block keeps its region children). `b2c content list --type fragment` shows the deduplicated catalog of every content block in a library, including blocks not currently linked to any page.
 
 ### Configuration
 

@@ -26,6 +26,8 @@ Spin up, start, stop, clone, and clean up your on-demand sandboxes from a tree v
 
 Find Page Designer pages and components fast, with one-click export (with assets, without assets, or assets only), live editing of component XML, and round-trip imports of site archives. The library tree is filterable when you have hundreds of pages.
 
+**Content blocks** (reusable, shared `fragment.*` content) get a dedicated **Content Blocks** group under each library — the single source of truth where a block and its full child tree live. Wherever a page or component links a block, it appears as a reference (↗) that reveals the canonical block in the group when clicked, so a shared block is only ever edited in one place. Right-click a component assigned to a page to **Convert to Content Block** and turn it into a reusable, shared block.
+
 [![Library Explorer](./images/library-explorer.png)](./images/library-explorer.png)
 
 ### B2C Script Debugger

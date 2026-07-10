@@ -8,8 +8,13 @@ import type {WaitForJobOptions} from '../jobs/run.js';
 
 /**
  * Node types in a content library tree.
+ *
+ * `FRAGMENT` represents a Page Designer "content block" — a `<content>` element
+ * whose type is `fragment.*`. Unlike a `COMPONENT` (at most one incoming link),
+ * a fragment is a shared/reusable singleton that can be linked from multiple
+ * pages or other content; every placement references the same underlying object.
  */
-export type LibraryNodeType = 'LIBRARY' | 'PAGE' | 'CONTENT' | 'COMPONENT' | 'STATIC';
+export type LibraryNodeType = 'LIBRARY' | 'PAGE' | 'CONTENT' | 'COMPONENT' | 'FRAGMENT' | 'STATIC';
 
 /**
  * Options for parsing a library XML string into a Library tree.
@@ -81,6 +86,8 @@ export interface LibraryNodeData {
   id: string;
   type: LibraryNodeType;
   typeId: string | null;
+  /** Localized display name (x-default), when present. Content blocks (fragments) always have one. */
+  displayName: string | null;
   data: Record<string, unknown> | null;
   parent: LibraryNodeData | null;
   children: LibraryNodeData[];
@@ -157,4 +164,6 @@ export interface ContentExportResult {
   contentCount: number;
   /** Number of components in the filtered export. */
   componentCount: number;
+  /** Number of content blocks (fragments) in the filtered export. */
+  fragmentCount: number;
 }
