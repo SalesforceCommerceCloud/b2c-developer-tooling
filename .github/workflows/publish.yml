@@ -559,6 +559,114 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Open release PR in forcedotcom/b2c-dx
+        if: >-
+          steps.release-type.outputs.type == 'stable'
+          && steps.packages.outputs.publish_vsx == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.B2C_DX_PUBLISH_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::B2C_DX_PUBLISH_TOKEN is not configured; skipping release PR to forcedotcom/b2c-dx"
+            exit 0
+          fi
+
+          VSX_VERSION="${{ steps.packages.outputs.version_vsx }}"
+          MONOREPO_TAG="b2c-vs-extension@${VSX_VERSION}"
+          MONOREPO_REPO="${{ github.repository }}"
+          MONOREPO_SHA="${{ github.sha }}"
+          BRANCH="release/b2c-vs-extension-${VSX_VERSION}"
+
+          # Reuse the dedicated VSX release notes generated above (/tmp/vsx-release-notes.md)
+          if [ ! -f /tmp/vsx-release-notes.md ]; then
+            echo "::error::Expected /tmp/vsx-release-notes.md from the prior 'Create VS Code extension release' step"
+            exit 1
+          fi
+
+          # Extract just the new CHANGELOG section to splice into b2c-dx's CHANGELOG
+          NEW_SECTION_FILE=/tmp/vsx-changelog-section.md
+          {
+            echo "## ${VSX_VERSION}"
+            echo ""
+            awk '/^## / { if (found) exit; found=1; next } found { print }' \
+              packages/b2c-vs-extension/CHANGELOG.md
+          } > "$NEW_SECTION_FILE"
+
+          WORKDIR=$(mktemp -d)
+          git clone --depth=1 \
+            "https://x-access-token:${GH_TOKEN}@github.com/forcedotcom/b2c-dx.git" \
+            "$WORKDIR/b2c-dx"
+          cd "$WORKDIR/b2c-dx"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # If the branch already exists (re-run), update it in place
+          git fetch origin "$BRANCH" 2>/dev/null && git checkout "$BRANCH" || git checkout -b "$BRANCH"
+
+          # Splice the new section into CHANGELOG.md right after the "# Change Log" header.
+          # Idempotent: if the version's section is already present, replace it.
+          python3 - "$NEW_SECTION_FILE" "$VSX_VERSION" <<'PY'
+          import sys, re, pathlib
+          section_path, version = sys.argv[1], sys.argv[2]
+          new_section = pathlib.Path(section_path).read_text().rstrip() + "\n\n"
+          path = pathlib.Path("CHANGELOG.md")
+          text = path.read_text() if path.exists() else "# Change Log\n\n"
+          if not text.startswith("# Change Log"):
+              text = "# Change Log\n\n" + text
+          # Drop existing section for this version, if any
+          pattern = re.compile(rf"^## {re.escape(version)}\b.*?(?=^## |\Z)", re.M | re.S)
+          text = pattern.sub("", text, count=1)
+          # Insert after the top header (and optional blank line)
+          text = re.sub(r"^(# Change Log\n+)", lambda m: m.group(1) + new_section, text, count=1)
+          path.write_text(text)
+          PY
+
+          mkdir -p releases
+          cat > releases/latest.json <<JSON
+          {
+            "version": "${VSX_VERSION}",
+            "monorepoTag": "${MONOREPO_TAG}",
+            "monorepoRepo": "${MONOREPO_REPO}",
+            "monorepoReleaseUrl": "https://github.com/${MONOREPO_REPO}/releases/tag/${MONOREPO_TAG}",
+            "sha": "${MONOREPO_SHA}"
+          }
+          JSON
+
+          git add CHANGELOG.md releases/latest.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit on $BRANCH; PR may already be up to date"
+          else
+            git commit -m "Release b2c-vs-extension ${VSX_VERSION}"
+            git push --force-with-lease origin "$BRANCH"
+          fi
+
+          # PR body: link to monorepo release + the changelog section
+          PR_BODY_FILE=/tmp/b2c-dx-pr-body.md
+          {
+            echo "Releases \`b2c-vs-extension@${VSX_VERSION}\` from [${MONOREPO_REPO}](https://github.com/${MONOREPO_REPO}/releases/tag/${MONOREPO_TAG})."
+            echo ""
+            echo "Merging this PR triggers the on-merge workflow, which downloads the VSIX from the monorepo release, creates a release in this repo, and fires the \`publish-vscode\` and \`publish-openvsx\` workflows."
+            echo ""
+            echo "---"
+            echo ""
+            cat "$NEW_SECTION_FILE"
+          } > "$PR_BODY_FILE"
+
+          # Open or update the PR
+          if gh pr view "$BRANCH" --repo forcedotcom/b2c-dx >/dev/null 2>&1; then
+            gh pr edit "$BRANCH" --repo forcedotcom/b2c-dx \
+              --title "Release b2c-vs-extension ${VSX_VERSION}" \
+              --body-file "$PR_BODY_FILE"
+          else
+            gh pr create --repo forcedotcom/b2c-dx \
+              --base main \
+              --head "$BRANCH" \
+              --title "Release b2c-vs-extension ${VSX_VERSION}" \
+              --body-file "$PR_BODY_FILE"
+          fi
+
       - name: Trigger documentation deployment
         if: >-
           steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
