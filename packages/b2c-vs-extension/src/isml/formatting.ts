@@ -45,6 +45,11 @@ const CONTENT_UNFORMATTED = ['isscript', 'pre'];
 // that follows indented one level in — but they do NOT open/close a block.
 const CONTROL_DIVIDERS = new Set(['iselse', 'iselseif']);
 
+// Raw-content blocks: their closing tag is stranded by content_unformatted (the
+// beautifier preserves the body — including the closer's leading whitespace —
+// verbatim), so we realign the closer to its opener. Mirrors CONTENT_UNFORMATTED.
+const RAW_CONTENT_CLOSERS = new Set(['isscript']);
+
 const htmlLanguageService = getLanguageService();
 
 /**
@@ -135,42 +140,55 @@ function preNormalizeControlTags(text: string): string {
 }
 
 /**
- * Recompute indentation for `<iselse>` / `<iselseif>` divider lines so they align
- * with their enclosing `<isif>` (like an `else`), driven by the ISML token
- * nesting rather than by matching output lines with a regex.
+ * Fix the indentation of ISML tags the HTML formatter can't place correctly,
+ * driven by the ISML token nesting (same push/pop walk used by folding/symbols),
+ * rewriting only each affected tag line's leading whitespace:
  *
- * The HTML formatter has already indented everything; a divider ends up one level
- * too deep (at branch-body level). We compute, per divider token, the indent
- * column of its enclosing `<isif>` opener and set the divider's line to it. The
- * body that follows the divider keeps the formatter's indentation (already one
- * level in), which is what we want.
+ *  - `<iselse>` / `<iselseif>` dividers → aligned to their enclosing `<isif>`
+ *    (they read like an `else`; the formatter leaves them one level too deep).
+ *  - Closing tags of raw-content blocks (`</isscript>`, `</iscomment>`) → aligned
+ *    to their opener. Because the body is `content_unformatted`, the beautifier
+ *    treats the closer's leading whitespace as preserved content and strands it
+ *    at the original column (often 0). The body itself stays verbatim.
  *
- * Block nesting comes from the same push/pop walk used by folding/symbols: any
- * non-void, non-self-closing ISML tag opens a block; a matching close pops it.
+ * Both are whitespace-only, token-anchored edits — never touching tag internals,
+ * string/attribute/comment content, or the (verbatim) script body.
  */
-function reindentControlDividers(text: string): string {
+function reindentIsmlTags(text: string): string {
   const lineStarts = buildLineStarts(text);
   const indentColumnAt = (offset: number): string => {
     const lineStart = lineStarts[lineOfOffset(lineStarts, offset)];
     const lineIndentMatch = /^[ \t]*/.exec(text.slice(lineStart));
     return lineIndentMatch ? lineIndentMatch[0] : '';
   };
+  /** True when `offset` is the first non-whitespace on its line (safe to reindent). */
+  const startsLine = (offset: number): boolean => {
+    const lineStart = lineStarts[lineOfOffset(lineStarts, offset)];
+    return /^[ \t]*$/.test(text.slice(lineStart, offset));
+  };
 
-  // For each divider token, find the indent of its enclosing <isif> opener.
   const stack: IsmlTagToken[] = [];
-  // Map of divider token startOffset -> target indent string.
-  const dividerIndent = new Map<number, string>();
+  // token startOffset -> target indent string.
+  const targetIndent = new Map<number, string>();
 
   for (const token of scanIsmlTags(text)) {
     if (token.isClosing) {
       const matchIndex = stack.map((t) => t.name).lastIndexOf(token.name);
-      if (matchIndex >= 0) stack.length = matchIndex;
+      if (matchIndex >= 0) {
+        const opener = stack[matchIndex];
+        // Raw-content closers get stranded by content_unformatted — realign them
+        // to their opener when they sit on their own line.
+        if (RAW_CONTENT_CLOSERS.has(token.name) && startsLine(token.startOffset)) {
+          targetIndent.set(token.startOffset, indentColumnAt(opener.startOffset));
+        }
+        stack.length = matchIndex;
+      }
       continue;
     }
     if (CONTROL_DIVIDERS.has(token.name)) {
       const enclosing = stack[stack.length - 1];
-      if (enclosing && enclosing.name === 'isif') {
-        dividerIndent.set(token.startOffset, indentColumnAt(enclosing.startOffset));
+      if (enclosing && enclosing.name === 'isif' && startsLine(token.startOffset)) {
+        targetIndent.set(token.startOffset, indentColumnAt(enclosing.startOffset));
       }
       continue;
     }
@@ -179,11 +197,10 @@ function reindentControlDividers(text: string): string {
     }
   }
 
-  if (dividerIndent.size === 0) return text;
+  if (targetIndent.size === 0) return text;
 
-  // Rewrite the leading whitespace of each divider's line.
   const edits: Array<{start: number; end: number; replacement: string}> = [];
-  for (const [offset, indent] of dividerIndent) {
+  for (const [offset, indent] of targetIndent) {
     const lineStart = lineStarts[lineOfOffset(lineStarts, offset)];
     const existing = /^[ \t]*/.exec(text.slice(lineStart))![0];
     if (existing !== indent) {
@@ -226,7 +243,18 @@ export function formatIsmlText(text: string, options: vscode.FormattingOptions):
   const edits = htmlLanguageService.format(lspDoc, undefined, buildFormatConfig(options));
   if (edits.length === 0) return text;
   const formatted = edits[0].newText;
-  return normalizeVoidTagSpacing(reindentControlDividers(formatted));
+  return normalizeVoidTagSpacing(reindentIsmlTags(formatted));
+}
+
+/**
+ * Run ONLY the underlying HTML formatter (no ISML pre/post passes). Exported for
+ * the corpus idempotency probe, which uses it to attribute instability to the
+ * upstream engine vs. our ISML passes. Not used in the extension runtime path.
+ */
+export function rawHtmlFormat(text: string, options: vscode.FormattingOptions): string {
+  const lspDoc = LspTextDocument.create('file:///raw.isml', 'html', 1, text);
+  const edits = htmlLanguageService.format(lspDoc, undefined, buildFormatConfig(options));
+  return edits.length === 0 ? text : edits[0].newText;
 }
 
 /**
@@ -263,7 +291,7 @@ function formatIsml(
         edit.range.end.line,
         edit.range.end.character,
       );
-      return vscode.TextEdit.replace(vscodeRange, normalizeVoidTagSpacing(reindentControlDividers(edit.newText)));
+      return vscode.TextEdit.replace(vscodeRange, normalizeVoidTagSpacing(reindentIsmlTags(edit.newText)));
     });
   } catch {
     return [];
