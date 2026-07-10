@@ -152,8 +152,7 @@ export const PERSONAS: Record<PersonaId, PersonaDefinition> = {
     id: 'storefront',
     label: 'Storefront developer',
     tagline: 'Build SFRA / PWA Kit templates, controllers, and ISML.',
-    description:
-      'Cartridge authoring, fast iteration with Code Sync, and WebDAV. If you used UX Studio or Prophet before, this is your closest map.',
+    description: 'Cartridge authoring, fast iteration with Code Sync, and WebDAV.',
     stepIds: [
       'welcome',
       'install-cli',

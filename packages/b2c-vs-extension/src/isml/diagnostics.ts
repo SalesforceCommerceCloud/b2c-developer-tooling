@@ -193,11 +193,11 @@ function collectAttributeDiagnostics(
   }
 
   // Disabling output encoding is a stored-XSS risk; surface it so it is a
-  // deliberate, reviewed choice. A warning (idiomatic for a security lint, and
-  // matching Prophet's `encoding-off-warn`). On by default; teams with trusted
-  // `encoding="off"` output silence it via inline `b2c-dx-disable-*` comments
-  // or the `disabledRules` setting. Runs for every tag with an `encoding`
-  // attribute (isprint, isselect, ...), independent of required-attribute checks.
+  // deliberate, reviewed choice. A warning is idiomatic for a security lint. On
+  // by default; teams with trusted `encoding="off"` output silence it via inline
+  // `b2c-dx-disable-*` comments or the `disabledRules` setting. Runs for every
+  // tag with an `encoding` attribute (isprint, isselect, ...), independent of
+  // required-attribute checks.
   if (values.get('encoding')?.toLowerCase() === 'off') {
     diagnostics.push({
       code: 'encoding-off',
