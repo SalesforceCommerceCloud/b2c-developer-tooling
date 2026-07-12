@@ -25,6 +25,11 @@ docs/.vitepress/cache
 # TypeDoc generated API docs (regenerated on build)
 docs/api/
 
+# Salesforce Help corpus: the converted .md tree is packed into the committed
+# docs/help-content.tar.gz and extracted into the docs build output at build time
+# (VitePress buildEnd). The generator's staging tree is transient, not committed.
+packages/b2c-tooling-sdk/tmp/
+
 *dw.json*
 !packages/b2c-vs-extension/src/test/fixtures/**/dw.json
 .env

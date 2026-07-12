@@ -1,13 +1,13 @@
 ---
 name: b2c-docs
-description: Search and read B2C Commerce documentation using the b2c CLI. Covers Script API reference (dw.* classes/modules), Developer Center guides (Commerce API, PWA Kit, SFRA, Storefront Next, B2C Commerce), tooling documentation (CLI/MCP/SDK), standard job steps, and XSD schemas. Use this skill for ANY B2C Commerce developer or administrator question that is not already grounded in a loaded skill or the current project context — even if they just say "how do I implement passwordless login" or "what methods does Basket have" or "how do I deploy a PWA Kit bundle" or "what SCAPI endpoints are available for checkout".
+description: Search and read B2C Commerce documentation using the b2c CLI. Covers Script API reference (dw.* classes/modules), Developer Center guides (Commerce API, PWA Kit, SFRA, Storefront Next, B2C Commerce), Salesforce Help (Business Manager administration and merchandising), tooling documentation (CLI/MCP/SDK), standard job steps, and XSD schemas. Use this skill for ANY B2C Commerce developer or administrator question that is not already grounded in a loaded skill or the current project context — even if they just say "how do I implement passwordless login" or "what methods does Basket have" or "how do I deploy a PWA Kit bundle" or "how do I import a site archive" or "what SCAPI endpoints are available for checkout".
 ---
 
 # B2C Docs Skill
 
-**Use this skill for ANY B2C Commerce developer or administrator question that is not already grounded in a loaded skill or the current project context.** The docs corpus covers Script API reference, Commerce API (SCAPI/OCAPI) integration patterns, storefront framework guides (SFRA, PWA Kit, Storefront Next), job step parameters, authentication flows, and tooling configuration.
+**Use this skill for ANY B2C Commerce developer or administrator question that is not already grounded in a loaded skill or the current project context.** The docs corpus covers Script API reference, Commerce API (SCAPI/OCAPI) integration patterns, storefront framework guides (SFRA, PWA Kit, Storefront Next), Business Manager administration and merchandising (Salesforce Help), job step parameters, authentication flows, and tooling configuration.
 
-Use the `b2c` CLI to search and read B2C Commerce documentation spanning multiple corpora: Script API reference (`dw.*` classes/modules), **Developer Center guides** (conceptual and how-to content across Commerce API, PWA Kit, SFRA, and more), **tooling documentation** (this project's own guides), the **standard (system) job step catalog**, and XSD schemas.
+Use the `b2c` CLI to search and read B2C Commerce documentation spanning multiple corpora: Script API reference (`dw.*` classes/modules), **Developer Center guides** (conceptual and how-to content across Commerce API, PWA Kit, SFRA, and more), **Salesforce Help** (Business Manager administration and merchandising content from help.salesforce.com), **tooling documentation** (this project's own guides), the **standard (system) job step catalog**, and XSD schemas.
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli docs search ProductMgr`).
 
@@ -15,14 +15,14 @@ Use the `b2c` CLI to search and read B2C Commerce documentation spanning multipl
 
 ## Key Features
 
-- **Multi-corpus search** — Search across Script API, Developer Center guides, tooling docs, job steps, and schemas in a unified index
+- **Multi-corpus search** — Search across Script API, Developer Center guides, Salesforce Help (admin + merchandising), tooling docs, job steps, and schemas in a unified index
 - **Workspace-aware search** — Auto-detects project type (cartridges, SFRA, PWA Kit, Storefront Next) and boosts relevant documentation while de-boosting competing storefront frameworks
-- **Category filtering** — Use `--category` to narrow results to a specific corpus (e.g., `commerce-api`, `pwa-kit-managed-runtime`, `sfra`, `script-api`)
+- **Category filtering** — Use `--category` to narrow results to a specific corpus (e.g., `commerce-api`, `pwa-kit-managed-runtime`, `sfra`, `script-api`, `help-admin`, `help-merchant`)
 - **Triage metadata** — Search results include `category`, `summary`, `keywords`, and `url` to help identify the right match without reading full content
-- **Online guide content** — Developer Center guides are fetched online when you read them (with graceful offline fallback)
+- **Online content with local cache** — Script API, Developer Center guides, and Salesforce Help are fetched online when you read them and cached locally (memory + on-disk, 7-day TTL) so repeat reads avoid the network; graceful offline fallback shows the summary + headings + both URLs
 - **Content-aware ranking** — BM25-style search indexes titles, section headings, summaries, and keywords for better recall on conceptual questions
-- **Dual URLs** — Every publicly-available doc entry carries both `url` (human-facing .html page) and `sourceUrl` (raw .md source); Script API entries have durable developer.salesforce.com permalinks (even though content remains bundled); guides fetch content online via sourceUrl with offline fallback
-- **Topic allowlist** — Bound the entire corpus to chosen categories via `--topics` flag or `SFCC_DOCS_TOPICS` env var (MCP server has `--docs-topics` startup flag)
+- **Dual URLs** — Every publicly-available doc entry carries both `url` (human-facing .html page) and `sourceUrl` (raw .md source). Script API entries link developer.salesforce.com; Salesforce Help entries link the live help.salesforce.com article while content is served from a raw markdown mirror. Content is fetched via sourceUrl with offline fallback
+- **Topic allowlist** — Bound the entire corpus to chosen categories via `--topics` flag or `SFCC_DOCS_TOPICS` env var, or the `docsCategories` config field (dw.json `docs-categories`, `SFCC_DOCS_CATEGORIES`, package.json). The MCP server has a `--docs-topics` startup flag
 - **Payload-conscious defaults** — MCP tools limit result count (5) and return lean fields by default; CLI defaults to 20 results; verbose mode adds extended fields
 
 ## Examples
@@ -46,6 +46,12 @@ b2c docs search "catalog product"
 
 # Find a standard job step by type ID
 b2c docs search ImportCatalog
+
+# Search Salesforce Help — administration (import/export, jobs, security, Account Manager)
+b2c docs search "site import export" --category help-admin
+
+# Search Salesforce Help — merchandising (catalogs, promotions, search, pricing)
+b2c docs search "price book assignment" --category help-merchant
 
 # Search tooling documentation
 b2c docs search "authentication setup" --category tooling
@@ -139,6 +145,10 @@ b2c docs read sfnext/sfnext-get-started
 b2c docs read commerce-api/slas-passwordless-login-registration
 b2c docs read pwa-kit-managed-runtime/getting-started
 
+# Read Salesforce Help articles by namespaced ID
+b2c docs read help-admin/b2c_site_import_export
+b2c docs read help-merchant/b2c_creating_price_books
+
 # Read tooling guides
 b2c docs read guide-authentication
 b2c docs read guide-configuration
@@ -150,7 +160,9 @@ b2c docs read ProductMgr --raw
 b2c docs read ProductMgr --json
 ```
 
-> **Content sources:** Developer Center guides and tooling docs are fetched **online** from the .md source (sourceUrl) with a graceful offline fallback (summary + headings + link). Script API and job-step content is **bundled** in the CLI.
+> **Exact vs. fuzzy match:** `docs read` resolves an exact id deterministically (e.g. `dw.catalog.ProductMgr`). For a fuzzy query (e.g. `productmgr`) it applies the same workspace-aware ranking as `docs search` — so a fuzzy read resolves the same top hit search ranks first. Pass `--workspace all` to opt out.
+
+> **Content sources:** Script API, Developer Center guides, Salesforce Help, and tooling docs are fetched **online** from the .md source (sourceUrl) and cached locally, with a graceful offline fallback (summary + headings + both URLs). Only standard job steps are **bundled** in the CLI.
 
 To retrieve the human-facing .html page URL (for citing/opening in browser) or the raw .md source URL, use `--json` output or `--columns url,sourceUrl` in search results.
 
@@ -220,8 +232,12 @@ xmllint --schema "$(b2c docs schema catalog --path)" my-catalog.xml --noout
 | `b2c-commerce`            | General B2C Commerce platform guides                      | `b2c-commerce/business-manager-overview`            |
 | `tooling`                 | B2C CLI, MCP, SDK, and VS Code extension guides           | `guide-authentication`, `guide-configuration`       |
 | `job-step`                | Standard (system) job step catalog                        | `ImportCatalog`, `ExportCatalog`, `job-steps`       |
+| `help-admin`              | Salesforce Help — administration/ops (import/export, jobs, replication, security, Account Manager, permissions, logs, inventory) | `help-admin/b2c_site_import_export`                 |
+| `help-merchant`           | Salesforce Help — merchandising (catalogs, products, promotions, search, content, analytics, SEO)                                | `help-merchant/b2c_creating_price_books`            |
 
-> **URLs:** Entries in `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfra`, `sfnext`, `b2c-commerce`, and `tooling` categories carry both `url` (human .html page) and `sourceUrl` (machine-readable .md). `job-step` entries have neither (content is bundled inline).
+> **URLs:** All categories except `job-step` carry both `url` (human .html page) and `sourceUrl` (machine-readable .md). For `help-admin`/`help-merchant`, `url` is the live help.salesforce.com article and content is read from `sourceUrl`. `job-step` entries have neither (content is bundled inline).
+>
+> **Caching:** Content for the online corpora (`script-api`, the guide categories, `help-admin`/`help-merchant`, `tooling`) is fetched on `docs read` and cached locally. Use `b2c docs cache` to inspect it and `b2c docs cache --clear` to purge it (forces a re-fetch).
 
 ## Common Script API Classes
 

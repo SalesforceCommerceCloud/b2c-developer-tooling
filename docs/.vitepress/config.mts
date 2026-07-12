@@ -1,3 +1,4 @@
+import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import {defineConfig} from 'vitepress';
@@ -19,6 +20,21 @@ function copyMarkdownSources(srcDir: string, outDir: string) {
       fs.copyFileSync(src, dest);
     }
   }
+}
+
+// Extract the committed Salesforce Help corpus tarball (docs/help-content.tar.gz)
+// into <outDir>/help so the converted .md pages are served verbatim at
+// <base>/help/<category>/<id>.md. The tarball is the committed artifact (one
+// file instead of ~1000 loose .md); the loose tree is git-ignored. No-op if the
+// tarball is absent so a partial checkout still builds.
+function extractHelpCorpus(srcDir: string, outDir: string) {
+  const tarball = path.join(srcDir, 'help-content.tar.gz');
+  if (!fs.existsSync(tarball)) {
+    console.warn(`[help-corpus] ${tarball} not found; skipping Help corpus extraction`);
+    return;
+  }
+  fs.mkdirSync(outDir, {recursive: true});
+  execFileSync('tar', ['-xzf', tarball, '-C', outDir], {stdio: 'inherit'});
 }
 
 // Build configuration from environment
@@ -251,6 +267,13 @@ export default defineConfig({
 
   buildEnd(siteConfig) {
     copyMarkdownSources(siteConfig.srcDir, siteConfig.outDir);
+    // Extract the Salesforce Help corpus straight into the build output (raw
+    // .md served verbatim; fetched by `b2c docs read` via each entry's
+    // sourceUrl). Done here — in buildEnd — because it only matters for the
+    // deployed production site (dev never serves it), and this hook runs on
+    // `vitepress build` only, after rendering, so nothing lands in the source
+    // tree or the VitePress page graph.
+    extractHelpCorpus(siteConfig.srcDir, siteConfig.outDir);
   },
 
   // Show deeper heading levels in the outline; register group-icons md plugin

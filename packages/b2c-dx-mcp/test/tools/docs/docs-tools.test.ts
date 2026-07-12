@@ -231,6 +231,16 @@ describe('tools/docs', () => {
       expect(result.isError).to.be.true;
       expect(getResultText(result)).to.include('No documentation found');
     });
+
+    it('resolves a fuzzy query with the detected workspace (parity with docs_search)', async () => {
+      // "productmgr" (no dw. prefix) is a fuzzy query — with cartridges detected,
+      // the Script API boost should still resolve the ProductMgr class.
+      const tool = createDocsReadTool(loadServices, undefined, ['cartridges']);
+      const result = await tool.handler({query: 'productmgr'});
+      expect(result.isError).to.be.undefined;
+      const json = getResultJson<{entry: {id: string}}>(result);
+      expect(json.entry.id).to.match(/ProductMgr/);
+    });
   });
 
   describe('docs_list', () => {

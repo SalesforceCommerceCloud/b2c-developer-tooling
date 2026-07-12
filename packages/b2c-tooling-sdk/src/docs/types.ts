@@ -18,6 +18,7 @@ export const XSD_DATA_DIR = path.join(packageRoot, 'data/xsd');
 export const JOB_STEPS_DATA_DIR = path.join(packageRoot, 'data/job-steps');
 export const GUIDES_DATA_DIR = path.join(packageRoot, 'data/guides');
 export const TOOLING_DATA_DIR = path.join(packageRoot, 'data/tooling');
+export const HELP_DATA_DIR = path.join(packageRoot, 'data/help');
 
 /**
  * The corpus a documentation entry belongs to. Used to tag and filter results
@@ -29,6 +30,10 @@ export const TOOLING_DATA_DIR = path.join(packageRoot, 'data/tooling');
  * - `commerce-api` / `pwa-kit-managed-runtime` / `sfnext` / `sfra` / `b2c-commerce`
  *   — Developer Center prose guides, one category per Developer Center project
  * - `tooling` — this project's own conceptual guides (CLI/MCP/SDK usage)
+ * - `help-admin` — Salesforce Help (help.salesforce.com) administration/ops content:
+ *   import/export, jobs, replication, security, Account Manager, permissions, logs
+ * - `help-merchant` — Salesforce Help merchandising content: catalogs, products,
+ *   promotions, search, content, analytics, SEO
  */
 export type DocCategory =
   | 'script-api'
@@ -38,7 +43,9 @@ export type DocCategory =
   | 'sfnext'
   | 'sfra'
   | 'b2c-commerce'
-  | 'tooling';
+  | 'tooling'
+  | 'help-admin'
+  | 'help-merchant';
 
 /**
  * A documentation entry in the search index.
