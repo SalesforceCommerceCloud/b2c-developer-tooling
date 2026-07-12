@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-07-08T01:12:00.365Z",
+  "generatedAt": "2026-07-10T21:10:52.949Z",
   "entries": [
     {
       "id": "guide-account-manager",
@@ -26,7 +26,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/analytics-reports-cip-ccac.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/analytics-reports-cip-ccac.md",
-      "headings": "Authentication and Access • Non-Production Support (26.1+) • Host Selection Behavior • Quick Start • Curated reports (`cip report`) • Raw SQL (`cip query`) • Metadata discovery (`cip tables`, `cip describe`) • Choosing Query vs Report • Rate Limits and Query Discipline • Site ID Parameter Note • JSON Output • SDK Support • Next Steps",
+      "headings": "Authentication and Access • Non-Production Support (26.1+) • Host Selection Behavior • Quick Start • Curated reports (`cip report`) • Raw SQL (`cip query`) • Metadata discovery (`cip tables`, `cip describe`) • Choosing Query vs Report • Rate Limits and Query Discipline • Site ID Parameter Note • JSON Output • SDK Support • VS Code IDE Integration • Available panels • Realm management • Saving queries • Telemetry • Safety mode • Next Steps",
       "preview": "User guide for running CIP/CCAC analytics reports and SQL queries with the B2C CLI."
     },
     {
@@ -80,8 +80,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ide-integration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ide-integration.md",
-      "headings": "Script API IntelliSense • B2C DX VS Code Extension (recommended) • Standalone VS Code, WebStorm, or IntelliJ Ultimate • Neovim, Helix, Zed, Sublime, or other LSP-based editors • Notes • Prophet VS Code Extension • Benefits • Setup • Switching Active Instances • Manual `dw.js` Example • Fields Written by `setup ide prophet` • Notes • IntelliJ SFCC Plugin • Setup",
-      "preview": "Configure IDE tooling like Prophet VS Code extension and IntelliJ SFCC plugin to consume resolved B2C CLI configuration, plus enable Script API IntelliSense via TypeScript definitions."
+      "headings": "Script API IntelliSense • B2C DX VS Code Extension (recommended) • Standalone VS Code, WebStorm, or IntelliJ Ultimate • Neovim, Helix, Zed, Sublime, or other LSP-based editors • Notes • IntelliJ SFCC Plugin • Setup",
+      "preview": "Configure IDE tooling like the IntelliJ SFCC plugin to consume resolved B2C CLI configuration, plus enable Script API IntelliSense via TypeScript definitions."
     },
     {
       "id": "guide-installation",
