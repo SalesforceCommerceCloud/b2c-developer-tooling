@@ -1,5 +1,17 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.12
+
+### Patch Changes
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Add page-specific SEO meta descriptions to the SCAPI Schemas CLI reference and CI/CD guide pages, replacing the site-wide default description. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Add XSD-based validation, autocomplete, and hover docs for B2C metadata XML files, backed by ~50 bundled schemas (catalogs, promotions, jobs, services, A/B tests, page-meta-tags, sorting rules, source codes, content libraries, event routing, and more). (Thanks [@clavery](https://github.com/clavery)!)
+
+  **Namespace-based association.** Validation is matched by the document's declared XML namespace, not by filename or folder layout, so a metadata file validates against the correct schema wherever it lives — in a canonical site-archive (`sites/<id>/…`), an exploded `metadata/` workspace, or anywhere else. The extension ships an XML catalog and registers it with the Red Hat XML language server at runtime; no changes are written to your `settings.json`.
+
+  **Optional companion extension.** Validation is powered by the Red Hat XML extension (`redhat.vscode-xml`), a _soft_ dependency — it is not force-installed and no Java runtime is required. When you open a B2C metadata XML file, the extension offers to install it (with a "Don't ask again" option); until then the extension is unaffected. You can trigger setup any time via the **B2C DX: Set Up Metadata XML Validation** command, and disable the whole feature with the `b2c-dx.features.xmlValidation` setting. Teams whose policies block third-party extensions can simply decline the prompt.
+
 ## 0.3.11
 
 ### Patch Changes
