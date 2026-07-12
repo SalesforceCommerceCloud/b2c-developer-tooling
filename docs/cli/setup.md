@@ -128,9 +128,6 @@ b2c setup ide vscode-types
 
 # Print TS Server plugin path for LSP-based editors (Neovim, Helix, Zed, etc.)
 b2c setup ide tsserver-plugin --json
-
-# Generate Prophet integration script
-b2c setup ide prophet
 ```
 
 ## b2c setup ide vscode-types
@@ -218,56 +215,6 @@ b2c setup ide tsserver-plugin --json
 ```
 
 Pass `pluginName` as `name` and `pluginPath` as `location` in your editor's `tsserver` `init_options.plugins[]` entry. The plugin auto-discovers cartridges in the project root and honors `dw.json`'s `cartridges` field for ordering — no host-side wiring needed.
-
-## b2c setup ide prophet
-
-Generate a `dw.js` script for the [Prophet VS Code extension](https://marketplace.visualstudio.com/items?itemName=SqrTT.prophet).
-
-The script runs `b2c setup inspect --json --unmask` at runtime and maps the resolved configuration into a `dw.json`-compatible structure that Prophet can consume.
-
-### Usage
-
-```bash
-b2c setup ide prophet [FLAGS]
-```
-
-### Flags
-
-| Flag             | Description                                | Default |
-| ---------------- | ------------------------------------------ | ------- |
-| `--output`, `-o` | Path for generated script file             | `dw.js` |
-| `--force`, `-f`  | Overwrite output file if it already exists | `false` |
-| `--json`         | Output results as JSON                     | `false` |
-
-### Examples
-
-```bash
-# Generate ./dw.js
-b2c setup ide prophet
-
-# Overwrite existing dw.js
-b2c setup ide prophet --force
-
-# Generate into .vscode folder
-b2c setup ide prophet --output .vscode/dw.js
-
-# Pin generated script to a specific instance context
-b2c setup ide prophet --instance staging
-```
-
-### Output
-
-The command creates a JavaScript file that:
-
-1. Executes `setup inspect --json --unmask`
-2. Reads resolved config values (including plugin-provided sources)
-3. Falls back to loading `dw.json` from `SFCC_CONFIG` or the `dw.js` directory if inspect cannot run
-4. Exports the final object via `module.exports = dwJson`
-5. Emits Prophet-compatible keys such as:
-   - `hostname`, `username`, `password`
-   - `code-version`
-   - `cartridgesPath`, `siteID`, `storefrontPassword` (when present)
-6. Logs diagnostics to both stdout and stderr when resolution fails
 
 ## b2c setup instance list
 

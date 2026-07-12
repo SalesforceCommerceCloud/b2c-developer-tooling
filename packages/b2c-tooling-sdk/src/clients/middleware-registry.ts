@@ -56,6 +56,7 @@ export type HttpClientType =
   | 'metrics'
   | 'cdn-zones'
   | 'granular-replications'
+  | 'preferences'
   | 'webdav'
   | 'am-users-api'
   | 'am-roles-api'

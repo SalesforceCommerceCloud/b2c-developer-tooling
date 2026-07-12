@@ -40,6 +40,7 @@ export class LogTailManager implements vscode.Disposable {
   private statusBar: vscode.StatusBarItem;
   private tailResult: TailLogsResult | undefined;
   private entryCount = 0;
+  private lastErrorMessage: string | undefined;
   // Maps a discovered log file name to its prefix (e.g. "error", "customerror")
   // so each entry can be tagged with its source. onEntry only carries the file
   // name; the prefix arrives on the LogFile in onFileDiscovered.
@@ -98,9 +99,17 @@ export class LogTailManager implements vscode.Disposable {
         onEntry: (entry) => {
           this.entryCount++;
           this.writeEntry(entry);
+          // A live entry means the instance is reachable again — clear the
+          // dedup latch so the next distinct error is shown.
+          this.lastErrorMessage = undefined;
           this.updateStatusBar();
         },
         onError: (error) => {
+          // Tailing polls on an interval; an unreachable instance produces the
+          // same error every tick. Collapse consecutive identical errors into a
+          // single line so the channel doesn't fill with duplicates.
+          if (error.message === this.lastErrorMessage) return;
+          this.lastErrorMessage = error.message;
           this.outputChannel.error(error.message);
         },
         onFileDiscovered: (file) => {
