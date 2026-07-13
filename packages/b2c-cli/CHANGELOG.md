@@ -1,5 +1,28 @@
 # @salesforce/b2c-cli
 
+## 1.20.0
+
+### Minor Changes
+
+- [#563](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/563) [`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999) - Script API reference content is now read online (from developer.salesforce.com) instead of shipping in the package, reducing the installed SDK/CLI size by ~6 MB. Documentation search is unchanged and still works offline from the bundled index; only `docs read` for a `dw.*` class now fetches its content. (Thanks [@clavery](https://github.com/clavery)!)
+
+  To keep reads fast, fetched documentation content (Script API, Developer Center guides, and Salesforce Help) is cached locally — in memory for the session and on disk (under the CLI cache dir) for 7 days — so repeated reads avoid the network. A new `b2c docs cache` command shows the cache location and size, and `b2c docs cache --clear` empties it. When a fetch fails, `docs read` falls back to the indexed summary and prints both the article URL and the raw markdown URL so you can retrieve the page yourself.
+
+- [#563](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/563) [`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999) - Add a Salesforce Help documentation corpus to `docs search`/`docs read` (and the MCP docs tools), covering Business Manager administration and merchandising content from help.salesforce.com. It is split into two categories — `help-admin` (import/export, jobs, replication, security, Account Manager, permissions, logs, inventory) and `help-merchant` (catalogs, products, promotions, search, content, analytics, SEO) — so you can search platform-administration and merchandising topics alongside the existing Script API, Developer Center, and tooling docs. (Thanks [@clavery](https://github.com/clavery)!)
+
+  You can scope the whole docs corpus to chosen categories with the new `docsCategories` config field, sourced from `dw.json` (`docs-categories`), the `SFCC_DOCS_CATEGORIES` env var, or `package.json` — in addition to the existing `--topics` / `--docs-topics` flags (which still override config). For example, set `"docs-categories": ["script-api", "job-step", "help-admin", "tooling"]` in dw.json to expose only developer + admin docs.
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Add support for the SCAPI Preferences API. The SDK exposes `createPreferencesClient` and the CLI exposes a new `b2c preferences` topic with `global list/get/update`, `site list/get/update/search`, and `site preference get/update` commands. Read scope is `sfcc.preferences`; write scope is `sfcc.preferences.rw`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Remove the `b2c setup ide` third-party `dw.js` bridge subcommand and its documentation. The `setup ide` topic retains `vscode-types` (vendor Script API TypeScript definitions) and `tsserver-plugin` (print the TS Server plugin path for LSP editors). Users of the B2C DX VS Code extension need no setup; other editors can use `setup ide vscode-types` or `setup ide tsserver-plugin`. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#563](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/563) [`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999) - `docs read` / `docs_read` now apply the same workspace-aware ranking as `docs search` when resolving a **fuzzy** query, so a fuzzy read (e.g. `productmgr`) returns the same top result that search ranks first for the current project. Exact id lookups (e.g. `dw.catalog.ProductMgr`) are unaffected — they resolve deterministically. The CLI gains a `--workspace` flag on `docs read` (defaults to auto-detect; `all` opts out); the MCP `docs_read` uses the server's detected workspace. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999), [`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999), [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767), [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767), [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767)]:
+  - @salesforce/b2c-tooling-sdk@1.20.0
+
 ## 1.19.1
 
 ### Patch Changes

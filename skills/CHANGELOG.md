@@ -1,5 +1,13 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.5.1
+
+### Patch Changes
+
+- [#563](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/563) [`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999) - Update the `b2c-docs` skill for the new Salesforce Help corpus (`help-admin`, `help-merchant`), the `docsCategories` config field, and the `b2c docs cache` command (online content caching + purge). (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Update the b2c-config skill's IDE integration section to reference `setup ide vscode-types` and `setup ide tsserver-plugin` for Script API IntelliSense. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.5.0
 
 ### Minor Changes

@@ -1,5 +1,20 @@
 # @salesforce/b2c-dx-mcp
 
+## 1.8.0
+
+### Minor Changes
+
+- [#563](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/563) [`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999) - Add a Salesforce Help documentation corpus to `docs search`/`docs read` (and the MCP docs tools), covering Business Manager administration and merchandising content from help.salesforce.com. It is split into two categories — `help-admin` (import/export, jobs, replication, security, Account Manager, permissions, logs, inventory) and `help-merchant` (catalogs, products, promotions, search, content, analytics, SEO) — so you can search platform-administration and merchandising topics alongside the existing Script API, Developer Center, and tooling docs. (Thanks [@clavery](https://github.com/clavery)!)
+
+  You can scope the whole docs corpus to chosen categories with the new `docsCategories` config field, sourced from `dw.json` (`docs-categories`), the `SFCC_DOCS_CATEGORIES` env var, or `package.json` — in addition to the existing `--topics` / `--docs-topics` flags (which still override config). For example, set `"docs-categories": ["script-api", "job-step", "help-admin", "tooling"]` in dw.json to expose only developer + admin docs.
+
+### Patch Changes
+
+- [#563](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/563) [`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999) - `docs read` / `docs_read` now apply the same workspace-aware ranking as `docs search` when resolving a **fuzzy** query, so a fuzzy read (e.g. `productmgr`) returns the same top result that search ranks first for the current project. Exact id lookups (e.g. `dw.catalog.ProductMgr`) are unaffected — they resolve deterministically. The CLI gains a `--workspace` flag on `docs read` (defaults to auto-detect; `all` opts out); the MCP `docs_read` uses the server's detected workspace. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999), [`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999), [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767), [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767), [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767)]:
+  - @salesforce/b2c-tooling-sdk@1.20.0
+
 ## 1.7.0
 
 ### Minor Changes

@@ -1,5 +1,25 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.20.0
+
+### Minor Changes
+
+- [#563](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/563) [`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999) - Script API reference content is now read online (from developer.salesforce.com) instead of shipping in the package, reducing the installed SDK/CLI size by ~6 MB. Documentation search is unchanged and still works offline from the bundled index; only `docs read` for a `dw.*` class now fetches its content. (Thanks [@clavery](https://github.com/clavery)!)
+
+  To keep reads fast, fetched documentation content (Script API, Developer Center guides, and Salesforce Help) is cached locally — in memory for the session and on disk (under the CLI cache dir) for 7 days — so repeated reads avoid the network. A new `b2c docs cache` command shows the cache location and size, and `b2c docs cache --clear` empties it. When a fetch fails, `docs read` falls back to the indexed summary and prints both the article URL and the raw markdown URL so you can retrieve the page yourself.
+
+- [#563](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/563) [`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999) - Add a Salesforce Help documentation corpus to `docs search`/`docs read` (and the MCP docs tools), covering Business Manager administration and merchandising content from help.salesforce.com. It is split into two categories — `help-admin` (import/export, jobs, replication, security, Account Manager, permissions, logs, inventory) and `help-merchant` (catalogs, products, promotions, search, content, analytics, SEO) — so you can search platform-administration and merchandising topics alongside the existing Script API, Developer Center, and tooling docs. (Thanks [@clavery](https://github.com/clavery)!)
+
+  You can scope the whole docs corpus to chosen categories with the new `docsCategories` config field, sourced from `dw.json` (`docs-categories`), the `SFCC_DOCS_CATEGORIES` env var, or `package.json` — in addition to the existing `--topics` / `--docs-topics` flags (which still override config). For example, set `"docs-categories": ["script-api", "job-step", "help-admin", "tooling"]` in dw.json to expose only developer + admin docs.
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Add an interactive Export view to the VS Code extension for building site impex (site archive) exports. Check the data units you want — sites (with per-site flags), global data, catalogs, inventory lists, libraries, customer lists, and price books — then run Export to download and extract the archive locally. Sites, catalogs, and inventory lists are discovered from the instance automatically; libraries, customer lists, and price books are added by ID. The SDK gains a `discoverExportableUnits` helper that lists the exportable sites, catalogs, and inventory lists on an instance. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Add support for the SCAPI Preferences API. The SDK exposes `createPreferencesClient` and the CLI exposes a new `b2c preferences` topic with `global list/get/update`, `site list/get/update/search`, and `site preference get/update` commands. Read scope is `sfcc.preferences`; write scope is `sfcc.preferences.rw`. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Make the VS Code extension resilient offline and when an instance is unreachable. A malformed `dw.json` no longer prevents the extension from activating, so local code browsing — cartridge discovery, Script API IntelliSense, cartridge-path require resolution, CAP detection, and scaffolding — keeps working without a connection. Connection-dependent views (WebDAV, Content, Sandbox, Logs) now collapse repeated "instance unreachable" errors into a single notification instead of flooding, and the Sandbox view explains when Account Manager OAuth credentials are the missing piece. The SDK's `listInstances()` now tolerates a malformed `dw.json` (returning no instances) rather than throwing. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.19.1
 
 ### Patch Changes

@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "Salesforce B2C Commerce",
   "description": "Tools for developing on Salesforce B2C Commerce, including cartridge deployment, script debugging and IntelliSense, and sandbox management.",
-  "version": "0.10.4",
+  "version": "0.11.0",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -96,7 +96,9 @@
       {
         "language": "isml",
         "scopes": {
-          "ismlTag": ["support.class.isml"]
+          "ismlTag": [
+            "support.class.isml"
+          ]
         }
       }
     ],
