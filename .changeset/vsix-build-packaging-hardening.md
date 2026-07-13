@@ -1,5 +1,0 @@
----
-'b2c-vs-extension': patch
----
-
-Harden the extension build and packaging pipeline. The esbuild bundle now minifies, drops debugger statements, targets Node 22 (matching VS Code 1.105's runtime), and inlines `require('@salesforce/b2c-tooling-sdk/package.json')` at SDK source-load time so minification can no longer break the substitution. SDK data directories that the runtime expects (`cip-proto`, `script-api`, `content-schemas`, `scaffolds`) are all staged into `dist/data/` instead of just `scaffolds`. The `inject-script-types` step that adds the bundled TypeScript Server plugin to the VSIX now uses pure-Node JSZip instead of shelling out to `zip`/`unzip`, removing the host-binary requirement (Windows CI compatibility) and fixing a regression where `[Content_Types].xml` entries for the injected plugin were emitted without their leading dot. The extension version and telemetry connection string are now injected as build-time constants, eliminating a runtime `readFileSync(package.json)`. `vscode:prepublish` now builds `@salesforce/b2c-script-types` before the extension bundle so a stale plugin tree can no longer ship.

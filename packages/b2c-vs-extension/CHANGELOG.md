@@ -1,5 +1,201 @@
 # Change Log
 
+## 0.11.0
+
+### Minor Changes
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Surface **Custom Step Types** as a third category under each cartridge in the **Cartridges** explorer, alongside Hooks and Job Steps. (Thanks [@clavery](https://github.com/clavery)!)
+  - Custom step types are parsed from any `steptypes.json` under the cartridge (both `script-module-step` and `chunk-script-module-step` categories are supported, and the legacy flat-array shape is tolerated).
+  - **Clicking a step type opens its module implementation** (the `.js` file referenced by the `module` field) — resolving across sibling cartridges when the module lives in a different cartridge from where it's registered.
+  - **Right-click → Show Step Type Definition** jumps to the `@type-id` line inside `steptypes.json` for the alternate navigation target.
+  - Nodes for step types whose module cannot be resolved on disk fall back to opening the JSON definition, so the click always does something useful.
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Add B2C-DX Analytics (CIP/CCAC) feature to the VS Code extension. Surfaces three webview panels: (Thanks [@clavery](https://github.com/clavery)!)
+  - **Query Builder** — visual SELECT/FROM/WHERE/ORDER BY/LIMIT composer with raw-SQL toggle and a workspace-scoped Saved Queries library tagged per tenant.
+  - **Tables Browser** — schema explorer for the active CIP warehouse tenant.
+  - **Curated Reports** — parameter forms for every `cip report …` command with date pickers, validation, sortable result grid, and CSV/JSON export.
+
+  Adds multi-realm management (group, add, edit, switch, remove) so a single workspace can target multiple tenants. CIP commands now route through `registerSafeCommand` so SafetyGuard policies are enforced and a `cipAnalytics` feature category is recorded by usage telemetry. The shared webview stylesheet is copied into `dist/cip-analytics/` at build time so the packaged extension no longer reaches into `src/` for runtime assets.
+
+- [#559](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/559) [`91947b0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/91947b0646c04007049ce2bc321ca2ac76aa7a2c) - The extension no longer activates on every VS Code startup. It now activates on demand when you open a B2C Commerce workspace (detected via `dw.json`, `.project`, `cartridge/*.properties`, or `commerce-app.json`), open a B2C view, or run a B2C command — reducing startup overhead in unrelated projects. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Adds an opt-in `b2c-dx.features.sandboxFilesystem` setting (default off) that automatically mounts the active instance's WebDAV filesystem as a workspace folder.
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Add an interactive Export view to the VS Code extension for building site impex (site archive) exports. Check the data units you want — sites (with per-site flags), global data, catalogs, inventory lists, libraries, customer lists, and price books — then run Export to download and extract the archive locally. Sites, catalogs, and inventory lists are discovered from the instance automatically; libraries, customer lists, and price books are added by ID. The SDK gains a `discoverExportableUnits` helper that lists the exportable sites, catalogs, and inventory lists on an instance. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Improve ISML diagnostics and hover help: (Thanks [@clavery](https://github.com/clavery)!)
+  - Add four diagnostics that catch common structural mistakes: `<iselse>`/`<iselseif>` outside an `<isif>`, `<isbreak>`/`<isnext>`/`<iscontinue>` outside an `<isloop>`, `<isreplace>` outside an `<isdecorate>`, and `<isprint>` setting both `style` and `formatter`.
+  - The `encoding="off"` output-escaping warning (stored-XSS risk) is now on by default and fires for every tag with an `encoding` attribute (previously it was opt-in and only checked a subset of tags). Silence it per line with `<iscomment> b2c-dx-disable-next-line encoding-off </iscomment>` or globally via `b2c-dx.isml.diagnostics.disabledRules`.
+  - Correct and expand tag hover text (fixes an inaccurate `<isscript>` tip, documents `<isloop>` status properties, `<isprint>` style/formatter, and `<iscontent>` placement).
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Add ISML document formatting and expand ISML diagnostics. (Thanks [@clavery](https://github.com/clavery)!)
+
+  **Formatting.** ISML files now support Format Document and Format Selection, powered by the same engine as VS Code's built-in HTML formatter (`vscode-html-languageservice`). `<isscript>` bodies and `${...}` expressions are preserved verbatim, and void ISML tags are normalized to `<isxxx/>`. Configurable via `b2c-dx.isml.format.*` and gated by `b2c-dx.features.ismlFormatting`.
+
+  **Diagnostics.** Added required-attribute checks (e.g. `<isif>` needs `condition`, `<isloop>` needs an iterator and an alias, `<isinclude>` needs `template` or `url`) and an opt-in `encoding="off"` output-escaping warning. Every diagnostic now carries a stable rule code shown in the Problems panel.
+
+  **Suppression & configuration.** Individual lines can be suppressed inline with an ISML comment directive — `<iscomment> b2c-dx-disable-next-line <code> </iscomment>` (or `b2c-dx-disable-line`, or no code to suppress all rules on the line) — offered as a quick fix on any diagnostic. Rules can be disabled project-wide via `b2c-dx.isml.diagnostics.disabledRules` (the `encoding-off` warning is disabled by default).
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Highlight ISML tags (`<isif>`, `<isloop>`, `<isprint>`, `<isscript>`, etc.) distinctly from plain HTML tags so ISML directives are easier to spot at a glance. Controlled by the `b2c-dx.isml.highlightTags` setting (on by default); disable it to render ISML tags in the normal HTML tag color. The color follows the active theme and never modifies your settings. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Add ISML language support in the VS Code extension, including `.isml` file association, grammar and snippets, auto-close and linked editing for tags, diagnostics and quick fixes, symbols/folding/hover, semantic completions (`Resource.msg`, `URLUtils`, `res.render`, `require`), and template path links/definitions/references across cartridges. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Consolidate the B2C Operations (Jobs) experience into the primary **B2C-DX** sidebar based on review feedback: (Thanks [@clavery](https://github.com/clavery)!)
+  - **Single Job History view** under the existing `b2c-dx` container (collapsed by default). The standalone "B2C-DX Operations" sidebar and the React-based Job History table webview have been removed — all controls now live in the tree's title bar.
+  - **No fetch on activation.** The view shows a load hint until you press **Refresh** (or enable the new **Auto-Refresh** toggle). A new `b2c-dx.jobs.autoRefresh` setting (off by default) and a title-bar toggle control opt-in polling.
+  - **Chronological-first root view.** Job History now defaults to a BM-style flat timeline of recent executions, with a title-bar toggle to switch to the previous "group by job" view. New `b2c-dx.jobs.defaultGrouping` setting controls the default.
+  - **Default status filter is `all`**, fixing the empty-view-on-first-load defect (previously required clicking the filter before anything appeared).
+  - **Inline name filter** in the title bar (BM-style job-name search).
+  - **Open in Business Manager** deep-links directly to _Administration › Operations › Jobs_ instead of the BM landing page.
+  - **Job Definitions view removed.** Its useful action — **Create Job Scaffold** — moves to a right-click on a cartridge in the **Cartridges** explorer.
+  - **Cartridges explorer broadened** to expand each cartridge into **Hooks** and **Job Steps** child nodes (parsed from `hooks.json` and `cartridge/scripts/jobsteps/`). Click a file to open it.
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Add a B2C Operations (Jobs) experience to the VS Code extension: (Thanks [@clavery](https://github.com/clavery)!)
+  - **Job History** — view execution history from the connected instance, including jobs that are currently running (shown live with a spinner and auto-refresh), with a table to search, filter (status, job, user, date, time presets), sort, and export runs to CSV/JSON. Each run has inline actions to open its log, view details, and re-run.
+  - **Job Definitions** — view the jobs (`jobs.xml`) and custom step types (`steptypes.json`) defined in your workspace cartridges, with actions to run, deploy, and open the source files.
+  - **Run / Re-run** — trigger a job (optionally with parameters), poll it to completion, and open its log automatically. Re-run reuses the original execution's parameters.
+  - **Create Job Scaffold** — generate a custom job step script, its `steptypes.json` registration, and a matching `jobs.xml` that references the registered `custom.*` step type.
+  - **Deploy Job Definition** — deploy a `jobs.xml` to register the job in Business Manager.
+
+  System (`sfcc-*`) jobs are distinguished from custom jobs, and actions that don't apply to them are disabled with an explanation.
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Add XSD-based validation, autocomplete, and hover docs for B2C metadata XML files, backed by ~50 bundled schemas (catalogs, promotions, jobs, services, A/B tests, page-meta-tags, sorting rules, source codes, content libraries, event routing, and more). (Thanks [@clavery](https://github.com/clavery)!)
+
+  **Namespace-based association.** Validation is matched by the document's declared XML namespace, not by filename or folder layout, so a metadata file validates against the correct schema wherever it lives — in a canonical site-archive (`sites/<id>/…`), an exploded `metadata/` workspace, or anywhere else. The extension ships an XML catalog and registers it with the Red Hat XML language server at runtime; no changes are written to your `settings.json`.
+
+  **Optional companion extension.** Validation is powered by the Red Hat XML extension (`redhat.vscode-xml`), a _soft_ dependency — it is not force-installed and no Java runtime is required. When you open a B2C metadata XML file, the extension offers to install it (with a "Don't ask again" option); until then the extension is unaffected. You can trigger setup any time via the **B2C DX: Set Up Metadata XML Validation** command, and disable the whole feature with the `b2c-dx.features.xmlValidation` setting. Teams whose policies block third-party extensions can simply decline the prompt.
+
+### Patch Changes
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Fix the VS Code extension failing to activate when ISML support is enabled. The `src/isml/scanner.ts` module loaded `vscode-html-languageservice` via runtime `require()` calls that esbuild left unbundled. Because the VSIX is packaged with `vsce --no-dependencies`, the deep submodule paths could not be resolved at runtime and activation crashed silently — no "B2C DX" output channel, no instance selector, no commands. Switched to direct ESM imports so esbuild inlines the scanner code into the bundle. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Harden ISML language support: (Thanks [@clavery](https://github.com/clavery)!)
+  - Treat `<isslot>`, `<ismodule>`, and `<iscomponent>` as empty (self-closing) elements, so auto-close no longer inserts invalid closing tags and diagnostics no longer report them as "not closed".
+  - Ignore markup inside `<iscomment>` and `<isscript>` bodies — commented-out ISML and `<` characters in scripts no longer produce false diagnostics, folding, or symbols.
+  - Debounce diagnostics so large templates are not re-linted on every keystroke.
+  - Guard the "create template" command against being run directly from the command palette.
+  - Resolve template links without the `vscode-html-languageservice` dependency, removing a fragile deep import into that package's internals.
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Gate the developer onboarding walkthrough behind a new `b2c-dx.features.onboarding` setting (Preview, off by default). The guided walkthrough, role-based deep-dive panel, and their palette commands no longer appear — and the walkthrough no longer auto-opens on first activation — unless the setting is enabled. Set `b2c-dx.features.onboarding` to `true` to opt in while the feature is still in development. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Make the VS Code extension resilient offline and when an instance is unreachable. A malformed `dw.json` no longer prevents the extension from activating, so local code browsing — cartridge discovery, Script API IntelliSense, cartridge-path require resolution, CAP detection, and scaffolding — keeps working without a connection. Connection-dependent views (WebDAV, Content, Sandbox, Logs) now collapse repeated "instance unreachable" errors into a single notification instead of flooding, and the Sandbox view explains when Account Manager OAuth credentials are the missing piece. The SDK's `listInstances()` now tolerates a malformed `dw.json` (returning no instances) rather than throwing. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Stop bundling development-only files into the published extension. The packaged VSIX no longer includes the `test-workspace/` sample cartridges or local `.claude/` editor settings, reducing package size and removing files that were never meant to ship. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999), [`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999), [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767), [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767), [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767)]:
+  - @salesforce/b2c-tooling-sdk@1.20.0
+
+## 0.10.4
+
+### Patch Changes
+
+- Updated dependencies [[`71dfe3a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/71dfe3a86b7e752ffad9f3d44f1e7c6357e431fa)]:
+  - @salesforce/b2c-tooling-sdk@1.19.1
+
+## 0.10.3
+
+### Patch Changes
+
+- Updated dependencies [[`fdf3c5f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/fdf3c5fe570ff71fddfc4aa0d83c9e3a05be5406)]:
+  - @salesforce/b2c-tooling-sdk@1.19.0
+
+## 0.10.2
+
+### Patch Changes
+
+- [#517](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/517) [`6882d5d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6882d5d3e153bf97191e5e1d494f34f36cbc0f6b) - Improve the B2C Logs view when tailing. Log entries are now color-coded by level (error, warn, info, debug) with a built-in level filter, each entry is tagged with its source log prefix (e.g. `[error]`, `[customerror]`), and multi-line stack traces are indented so each entry reads as a single block. Uses the same "B2C Logs" output channel — no new panel or command. (Thanks [@charithaT07](https://github.com/charithaT07)!)
+
+- [#525](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/525) [`3d0c4aa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3d0c4aae7a2c6c33cd82ad94cde35e4cdb5155ca) - Telemetry for MCP tool failures and VS Code extension activation failures now records the underlying error message (and cause, when present), instead of an empty value. Previously these failure events carried no error detail, which made it impossible to diagnose why a tool call or activation failed. No new data beyond the error text is collected, matching what the CLI already reports for command errors. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`04b02f3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/04b02f3b4b1c1e4c353ad081fc41304276c8bdb2), [`3d0c4aa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3d0c4aae7a2c6c33cd82ad94cde35e4cdb5155ca), [`85e6ca1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/85e6ca110de162d3d574cf425bf3c0fdbb2834f1), [`7055134`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7055134e755c391cd7839c11c99d66df18672866), [`85e6ca1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/85e6ca110de162d3d574cf425bf3c0fdbb2834f1), [`9418f08`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9418f088d7abfff01d41f4339beb62be29df7810), [`85e6ca1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/85e6ca110de162d3d574cf425bf3c0fdbb2834f1), [`31ec679`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/31ec679ca6058d2ba7f453528af873163a5baeff), [`b62b00b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b62b00b47855273dfedea62f932696cc24ef148f), [`31324e1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/31324e16fd0fb5402a3da1340f3575708c336661), [`cab53af`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cab53af8c1190f749adf2ab8d70c01f79d7d2dbc)]:
+  - @salesforce/b2c-tooling-sdk@1.18.0
+
+## 0.10.1
+
+### Patch Changes
+
+- Updated dependencies [[`2f79d71`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2f79d711475add9707ee2474f6dfab416dd88ba6), [`6cfb9bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6cfb9bd4b2a45ad838df86371f85e31c425caf88), [`6cfb9bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6cfb9bd4b2a45ad838df86371f85e31c425caf88)]:
+  - @salesforce/b2c-tooling-sdk@1.17.0
+
+## 0.10.0
+
+### Minor Changes
+
+- [#522](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/522) [`11b84b1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/11b84b19da380cd02f5049babd8cf2794d8ca019) - Expose the script debugger session cookie (`dwsid`) so you can route a triggering request to the same app server holding the debug session — required to reliably hit breakpoints on multi-app-server instances. (Thanks [@clavery](https://github.com/clavery)!)
+  - **SDK:** new `SdapiClient.getCookie(name)` and `DebugSessionManager.getSessionCookie()`; the cookie is also logged at info level when the session connects.
+  - **MCP:** `debug_start_session` and `debug_list_sessions` now return a `session_cookie` field.
+  - **VS Code:** a new **Copy Debugger Session ID (dwsid)** command (available while a debug session is active) copies the cookie to the clipboard.
+
+  Send your triggering request (storefront page load, SCAPI/OCAPI call) with `Cookie: dwsid=<value>`.
+
+### Patch Changes
+
+- Updated dependencies [[`11b84b1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/11b84b19da380cd02f5049babd8cf2794d8ca019), [`3958d6e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3958d6eb568a1e91061f4203c986a124c480e12f), [`11b84b1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/11b84b19da380cd02f5049babd8cf2794d8ca019)]:
+  - @salesforce/b2c-tooling-sdk@1.16.0
+
+## 0.9.5
+
+### Patch Changes
+
+- Updated dependencies [[`3bc78c4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3bc78c422d57b590b2435fd6ae0a31fffc4bd7e7)]:
+  - @salesforce/b2c-tooling-sdk@1.15.1
+
+## 0.9.4
+
+### Patch Changes
+
+- [#514](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/514) [`0d97ad1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/0d97ad1856d6a45d9349a3609c7e425d2b5e874a) - Replace the `applicationinsights` dependency with a tiny built-in telemetry client that posts directly to the Application Insights ingestion endpoint using Node's native `fetch`. This removes ~270 transitive packages (the OpenTelemetry, Azure SDK, and gRPC trees that the v3 SDK pulled in for auto-collection features we never used) and shrinks the published packages and the VS Code extension bundle. Telemetry behavior is unchanged — the same events and exceptions are reported — and the machine-identifying cloud role instance is now correctly suppressed for GDPR. A new optional `flushIntervalMs` option enables periodic delivery for long-lived hosts; the VS Code extension uses it so a session's usage events are not lost on a non-clean shutdown. No public SDK API change. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`3bce44e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3bce44e2e6d4cea3cf64e34eff1246d86e459b73), [`0d97ad1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/0d97ad1856d6a45d9349a3609c7e425d2b5e874a)]:
+  - @salesforce/b2c-tooling-sdk@1.15.0
+
+## 0.9.3
+
+### Patch Changes
+
+- Updated dependencies [[`1575070`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/15750709ca6b23838bb9fd954d6c09e8dbb67ed3)]:
+  - @salesforce/b2c-tooling-sdk@1.14.1
+
+## 0.9.2
+
+### Patch Changes
+
+- Updated dependencies [[`f630103`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f630103e4c55fbdf68896db2f870851efe390ac1), [`f630103`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f630103e4c55fbdf68896db2f870851efe390ac1)]:
+  - @salesforce/b2c-tooling-sdk@1.14.0
+
+## 0.9.1
+
+### Patch Changes
+
+- Updated dependencies [[`19f059e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/19f059e7ba928d1070d7960920770f1256dfae73)]:
+  - @salesforce/b2c-tooling-sdk@1.13.0
+
+## 0.9.0
+
+### Minor Changes
+
+- [#457](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/457) [`8aa076e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8aa076e367b5f99ad3c0a5e7c0926c464a7f5a83) - API Browser: right-click a Shopper schema to run `pnpm sfnext scapi add` in an integrated terminal. The action is only shown when the workspace is detected as a Storefront Next project. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#467](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/467) [`ce0c0b5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ce0c0b5c3961faa86dc446f061316100bf4ecbcc) - Remove the Page Designer Assistant webview and its "Open Page Designer Assistant UI" command from the VS Code extension. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#458](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/458) [`637df9e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/637df9ed4d02d4b9ba6cfb68a149dddce6dba8d5) - Fix VS Code API Browser handling of Custom APIs and shopper-named system APIs. Custom APIs now show endpoint paths with the required `/organizations/{organizationId}/...` prefix, and the Shopper/Admin classification is now derived from the spec's declared security schemes (ShopperToken / AmOAuth2 / BearerToken) rather than the API family name — fixing token selection for shopper-named APIs that live under non-shopper families (e.g. `product/shopper-products`, `checkout/shopper-baskets`) and for Custom APIs which can be either type. Resolves #453. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#475](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/475) [`0363dca`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/0363dca90f1eb3822d0c750d29ace743e82afcaf) - Harden the extension build and packaging pipeline. The esbuild bundle now minifies, drops debugger statements, targets Node 22 (matching VS Code 1.105's runtime), and inlines `require('@salesforce/b2c-tooling-sdk/package.json')` at SDK source-load time so minification can no longer break the substitution. SDK data directories that the runtime expects (`cip-proto`, `script-api`, `content-schemas`, `scaffolds`) are all staged into `dist/data/` instead of just `scaffolds`. The `inject-script-types` step that adds the bundled TypeScript Server plugin to the VSIX now uses pure-Node JSZip instead of shelling out to `zip`/`unzip`, removing the host-binary requirement (Windows CI compatibility) and fixing a regression where `[Content_Types].xml` entries for the injected plugin were emitted without their leading dot. The extension version and telemetry connection string are now injected as build-time constants, eliminating a runtime `readFileSync(package.json)`. `vscode:prepublish` now builds `@salesforce/b2c-script-types` before the extension bundle so a stale plugin tree can no longer ship. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#475](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/475) [`0363dca`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/0363dca90f1eb3822d0c750d29ace743e82afcaf) - Correctness and UX hardening pass across the extension: (Thanks [@clavery](https://github.com/clavery)!)
+  - **Content libraries**: `ContentFileSystemProvider.stat()` now returns a stable `mtime` instead of `Date.now()` per call. VS Code no longer believes content files are constantly mutating, eliminating phantom "file modified externally" prompts and silent buffer reloads that could clobber unsaved edits.
+  - **WebDAV explorer**: F2-rename now works. The `rename()` method delegates to the SDK's `webdav.move` (already used by drag-and-drop) instead of throwing `NoPermissions`. Cross-root attempts and 412 conflicts are mapped to the right `vscode.FileSystemError`.
+  - **Activation performance**: replaced sync `fs.readFileSync` / `existsSync` / `statSync` on the activation hot path (`B2CExtensionConfig`) and in the per-paint CAP file-decoration provider with `vscode.workspace.fs` async equivalents and a Set lookup, respectively. CAP decorations now answer in O(1) without filesystem syscalls.
+  - **Cancellation**: long-running operations (sandbox clone polling, CAP install, deploy, content export, Swagger UI proxy fetches) now show a working Cancel button. Cancelling stops the local poll/wait; aborting the server-side operation requires SDK `AbortSignal` support which is a separate change.
+  - **Tree state stability**: every tree provider (sandbox, WebDAV, content libraries, API browser, cartridges) now sets a stable `TreeItem.id`, so expand/collapse state survives refresh and `treeView.reveal()` works without try/catch fallback.
+  - **Safety + telemetry coverage**: 11 contributed commands previously bypassed `registerSafeCommand`, including `b2c-dx.sandbox.clone` (a billable operation). All now route through the safety guard and feature-usage telemetry. Added a `scriptTypes` feature category and command-prefix mapping.
+  - **Dead code removal**: removed an unused `createDeleteAndDeployCommand`, the unused `tempDirs` cleanup loop in `cartridge-commands`, the dead `openExternal` branch in the Page Designer webview message handler, and the never-implemented `b2c-dx.codeSync.diffCartridge` command.
+
+- Updated dependencies [[`b723939`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b72393951bb95b64f3291cd3cb76197e280a6a37), [`21bbed0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/21bbed0ea1b42e8750d4259669370f8bcf562c10), [`de8d40b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/de8d40b54dc923c5805fac2ef587db8b86349a6b), [`80e63fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/80e63fca888d9b83efd53c9c0054247fb2aa31b3), [`c8e0b60`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c8e0b602e1a8da88f7e6620e5d5614f3a55689bd)]:
+  - @salesforce/b2c-tooling-sdk@1.12.0
+
 ## 0.8.2
 
 ### Patch Changes

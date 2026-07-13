@@ -4,11 +4,16 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {Flags} from '@oclif/core';
 import {withDocs} from '../../../i18n/index.js';
 import {CipReportCommand} from '../../../utils/cip/report-command.js';
-import {createSiteIdFlag} from '../../../utils/cip/report-flags.js';
+import {buildReportFlags, requireReport} from '../../../utils/cip/report-flags.js';
 
+const REPORT_NAME = 'search-query-performance';
+
+/**
+ * `b2c cip report search-query-performance` — flags are auto-derived from the catalog
+ * definition; param parsing/validation lives in {@link CipReportCommand} and the SDK.
+ */
 export default class CipReportSearchQueryPerformance extends CipReportCommand<typeof CipReportSearchQueryPerformance> {
   static description = withDocs(
     'Identify search terms driving revenue and conversion',
@@ -20,25 +25,8 @@ export default class CipReportSearchQueryPerformance extends CipReportCommand<ty
   static flags = {
     ...CipReportCommand.baseFlags,
     ...CipReportCommand.reportFlags,
-    'has-results': Flags.string({
-      description: 'Filter by result-bearing searches',
-      helpGroup: 'QUERY',
-      options: ['false', 'true'],
-      required: false,
-    }),
-    'site-id': createSiteIdFlag(),
+    ...buildReportFlags(requireReport(REPORT_NAME)),
   };
 
-  protected readonly reportName = 'search-query-performance';
-
-  protected getReportParams(): Record<string, string> {
-    if (!this.flags['has-results']) {
-      this.error('--has-results is required for this report. Use true or false.');
-    }
-
-    return {
-      ...this.getBaseReportParams(),
-      hasResults: this.flags['has-results'],
-    };
-  }
+  protected readonly reportName = REPORT_NAME;
 }

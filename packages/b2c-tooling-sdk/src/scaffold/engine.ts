@@ -149,21 +149,29 @@ export class ScaffoldEngine {
   }
 
   /**
-   * Render an EJS template string
+   * Render an EJS template string using the current context.
+   * @param template - The EJS template string to render
+   * @returns The rendered string
    */
   render(template: string): string {
     return renderTemplate(template, this.context);
   }
 
   /**
-   * Render a file path template
+   * Render a file path template using double-brace placeholder syntax.
+   * Supports direct variable references (double-brace name double-brace) and helper
+   * function calls (e.g. double-brace `kebabCase moduleName` double-brace).
+   * @param pathTemplate - The path template string with double-brace placeholders
+   * @returns The rendered path string with placeholders replaced by context values
    */
   renderPath(pathTemplate: string): string {
     return renderPathTemplate(pathTemplate, this.context);
   }
 
   /**
-   * Render an EJS template file
+   * Render an EJS template file asynchronously.
+   * @param filePath - Path to the EJS template file
+   * @returns Promise resolving to the rendered template output as a string
    */
   async renderFile(filePath: string): Promise<string> {
     const result = await ejs.renderFile(filePath, this.context, {

@@ -13,7 +13,9 @@ Use the `b2c` CLI plugin to manage SLAS (Shopper Login and API Access Service) A
 
 ## Configuration
 
-Values like `tenantId`, `shortCode`, `slasClientId`, and `slasClientSecret` resolve from `dw.json` / `SFCC_*` env vars / the active instance. Examples below show minimal usage; add flags only to override configured values. If a required value is missing, the CLI emits an actionable error pointing at the flag, env var, and config key. See the `b2c-config` skill for precedence details.
+Values like `tenantId`, `shortCode`, `slasClientId`, and `slasClientSecret` resolve from `dw.json` / `SFCC_*` env vars / the active instance / configuration plugins. Examples below show minimal usage; **add flags only to override configured values** — passing these as flags is usually unnecessary. If a required value is missing, the CLI emits an actionable error pointing at the flag, env var, and config key.
+
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (`--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 Relevant overrides:
 
@@ -114,6 +116,11 @@ curl -H "Authorization: Bearer $TOKEN" "https://$SHORTCODE.api.commercecloud.sal
 
 # Override the SLAS client explicitly (e.g., targeting a private client for client_credentials flow)
 b2c slas token --site-id RefArch --slas-client-id my-client --slas-client-secret sk_xxx
+
+# Registered customer token against a private client (registered login is always PKCE-protected;
+# the client secret is sent as Basic auth in addition to the PKCE code_verifier)
+b2c slas token --site-id RefArch --slas-client-id my-client --slas-client-secret sk_xxx \
+  --shopper-login user@example.com --shopper-password secret
 ```
 
 ### Update SLAS Client

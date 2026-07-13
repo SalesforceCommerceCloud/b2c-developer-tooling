@@ -37,6 +37,12 @@ export interface TelemetryEventProperties extends TelemetryAttributes {
   timestamp: string;
   /** Process uptime in milliseconds */
   processUptime: number;
+  /**
+   * Whether the event originated from a CI / automation environment.
+   * Allows analytics to separate human-developer traffic from CI runs, which
+   * can otherwise dominate volume and skew blended KPIs.
+   */
+  isCI: boolean;
 }
 
 /**
@@ -71,4 +77,17 @@ export interface TelemetryOptions {
    * If not provided or non-writable, falls back to random ID.
    */
   dataDir?: string;
+
+  /**
+   * Optional periodic auto-flush interval in milliseconds. When set (> 0),
+   * buffered events are delivered on this cadence in addition to explicit
+   * {@link Telemetry.flush}/{@link Telemetry.stop} calls.
+   *
+   * Intended for long-lived hosts (e.g. the VS Code extension) that buffer
+   * events for a whole session and cannot guarantee a clean shutdown flush.
+   * Short-lived processes (CLI, MCP) should leave this unset and flush
+   * deterministically. The interval timer is `unref`'d, so it never keeps a
+   * process alive on its own.
+   */
+  flushIntervalMs?: number;
 }

@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Command, Flags} from '@oclif/core';
-import {BaseCommand} from './base-command.js';
+import {BaseCommand, ERROR_CODE} from './base-command.js';
 import {loadConfig, extractOAuthFlags, ALL_AUTH_METHODS} from './config.js';
 import type {AuthMethod} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
@@ -71,6 +71,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     'short-code': Flags.string({
       description: 'SCAPI short code',
       env: 'SFCC_SHORTCODE',
+      default: async () => process.env.SFCC_SHORT_CODE || undefined,
       helpGroup: 'AUTH',
     }),
     'tenant-id': Flags.string({
@@ -165,6 +166,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    * For the implicit flow, falls back to getDefaultClientId() when no client ID
    * is explicitly configured.
    *
+   * @returns An OAuth strategy instance ({@link OAuthStrategy}, {@link JwtOAuthStrategy}, {@link ImplicitOAuthStrategy}, or {@link StatefulOAuthStrategy}) based on configured credentials and allowed authentication methods.
    * @throws Error if no allowed method has the required credentials configured
    */
   protected getOAuthStrategy(): OAuthStrategy | JwtOAuthStrategy | ImplicitOAuthStrategy | StatefulOAuthStrategy {
@@ -330,7 +332,9 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   protected requireOAuthCredentials(): void {
     if (!this.hasOAuthCredentials()) {
       this.error(
-        t('error.oauthClientIdRequired', 'OAuth client ID required. Provide --client-id or set SFCC_CLIENT_ID.'),
+        t('error.oauthClientIdRequired', 'OAuth client ID required. Provide --client-id or set SFCC_CLIENT_ID.') +
+          this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
   }
@@ -347,7 +351,8 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
         t(
           'error.tenantIdRequired',
           'tenant-id is required. Provide via --tenant-id flag, SFCC_TENANT_ID env var, or tenant-id in dw.json.',
-        ),
+        ) + this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
     return normalizeTenantId(tenantId);

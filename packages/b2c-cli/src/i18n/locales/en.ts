@@ -51,15 +51,20 @@ export const en = {
     },
     docs: {
       search: {
-        description: 'Search Script API documentation',
+        description:
+          'Search B2C Commerce documentation (Script API, Developer Center guides, job steps) — use for any B2C dev/admin question',
         queryRequired: 'Query is required for search. Use --list to see all entries.',
         noResults: 'No documentation found matching: {{query}}',
         resultCount: 'Found {{count}} matches for "{{query}}"',
         totalCount: '{{count}} documentation entries available',
+        invalidCategory: 'Unknown category "{{category}}". Valid categories: {{valid}}',
+        invalidTopics: 'Ignoring unknown documentation topic(s): {{topics}}',
+        invalidWorkspace: 'Ignoring unknown workspace type(s): {{types}}',
       },
       read: {
-        description: 'Read Script API documentation for a class or module',
+        description: 'Read B2C Commerce documentation (Script API class, guide, or job step)',
         notFound: 'No documentation found matching: {{query}}',
+        invalidTopics: 'Ignoring unknown documentation topic(s): {{topics}}',
       },
       download: {
         description: 'Download Script API documentation from a B2C Commerce instance',
@@ -180,7 +185,8 @@ export const en = {
           '  claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling\n' +
           '  claude plugin install b2c-cli\n' +
           '  claude plugin install b2c\n' +
-          '  claude plugin install storefront-next\n\n' +
+          '  claude plugin install storefront-next\n' +
+          '  claude plugin install storefront-next-figma\n\n' +
           'Use --ide manual for manual installation to the same paths.',
         preview: 'Installing {{count}} skills to {{ides}} ({{scope}})',
         cancelled: 'Installation cancelled.',
@@ -188,7 +194,7 @@ export const en = {
         skippedCount: 'Skipped {{count}} skill(s):',
         errorsCount: 'Failed to install {{count}} skill(s):',
         skillsetRequired:
-          'Skillset argument required in non-interactive mode. Specify b2c, b2c-cli, storefront-next, or cap-dev.',
+          'Skillset argument required in non-interactive mode. Specify b2c, b2c-cli, storefront-next, storefront-next-figma, or cap-dev.',
         selectSkillset: 'Select skill set(s) to install:',
         noSkillsetsSelected: 'No skill sets selected.',
         selectIdes: 'Select target IDEs:',

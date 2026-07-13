@@ -6,8 +6,9 @@
 /**
  * Detection patterns for workspace discovery.
  *
- * Simplified to 3 workspace types:
+ * Workspace markers (not mutually exclusive — a workspace can match several):
  * - cartridges: Any project with cartridges
+ * - sfra: Storefront Reference Architecture (also matches `cartridges`)
  * - pwa-kit-v3: PWA Kit v3 storefront
  * - storefront-next: Storefront Next (Odyssey)
  *
@@ -16,19 +17,24 @@
 import type {DetectionPattern} from '../types.js';
 import {cartridgesPattern} from './cartridges.js';
 import {pwaKitV3Pattern} from './pwa-kit.js';
+import {sfraPattern} from './sfra.js';
 import {storefrontNextPattern} from './storefront-next.js';
 
 /**
  * Default detection patterns.
  *
- * All patterns are checked - multiple can match for hybrid projects.
+ * All patterns are checked — multiple can match for hybrid projects. `sfra` is a
+ * refinement of `cartridges`, so a SFRA workspace matches both.
  */
-export const DEFAULT_PATTERNS: DetectionPattern[] = [pwaKitV3Pattern, storefrontNextPattern, cartridgesPattern];
+export const DEFAULT_PATTERNS: DetectionPattern[] = [
+  pwaKitV3Pattern,
+  storefrontNextPattern,
+  sfraPattern,
+  cartridgesPattern,
+];
 
 // Individual pattern exports for customization
 export {cartridgesPattern} from './cartridges.js';
 export {pwaKitV3Pattern} from './pwa-kit.js';
 export {storefrontNextPattern} from './storefront-next.js';
-
-// Additional patterns (not in DEFAULT_PATTERNS, available for custom use)
 export {sfraPattern} from './sfra.js';

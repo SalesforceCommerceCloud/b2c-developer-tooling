@@ -54,6 +54,7 @@
                 </xsd:annotation>
             </xsd:element>
             <xsd:element name="pos-enabled-flag" type="xsd:boolean" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="pos-store-id" type="simpleType.Generic.String.128" minOccurs="0" maxOccurs="1" />
             <xsd:element name="custom-attributes" type="sharedType.CustomAttributes" minOccurs="0" maxOccurs="1" />
         </xsd:sequence>
         <xsd:attribute name="store-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
@@ -125,6 +126,13 @@
         <xsd:restriction base="simpleType.Generic.String">
             <xsd:minLength value="0" />
             <xsd:maxLength value="10" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.128">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="128" />
         </xsd:restriction>
     </xsd:simpleType>
 

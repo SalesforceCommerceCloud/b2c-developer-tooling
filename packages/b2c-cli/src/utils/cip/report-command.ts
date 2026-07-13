@@ -14,6 +14,7 @@ import {
 } from '@salesforce/b2c-tooling-sdk';
 import {CipCommand} from './command.js';
 import {renderTable, writeCsv, writeJson, type CipOutputFormat} from './format.js';
+import {paramNameToFlag} from './report-flags.js';
 import {ux} from '@oclif/core';
 
 function camelToKebab(str: string): string {
@@ -82,7 +83,42 @@ export abstract class CipReportCommand<T extends typeof Command> extends CipComm
     return params;
   }
 
-  protected abstract getReportParams(): Record<string, string>;
+  /**
+   * Derives report params generically from the report's catalog definition by
+   * reading each parameter's kebab-cased flag. Subclasses normally do not need to
+   * override this; the SDK validates and escapes the values when building SQL.
+   * `from`/`to`/`siteId`/`limit` are handled by {@link getBaseReportParams}.
+   */
+  protected getReportParams(): Record<string, string> {
+    const params = this.getBaseReportParams();
+    const report = getCipReportByName(this.reportName);
+    if (!report) {
+      return params;
+    }
+
+    const flags = this.flags as Record<string, unknown>;
+
+    for (const parameter of report.parameters) {
+      if (['from', 'limit', 'siteId', 'to'].includes(parameter.name)) {
+        continue;
+      }
+
+      const value = flags[paramNameToFlag(parameter.name)];
+      if (Array.isArray(value)) {
+        if (value.length > 0) {
+          params[parameter.name] = value.map(String).join(',');
+        }
+      } else if (typeof value === 'number') {
+        params[parameter.name] = String(value);
+      } else if (typeof value === 'string' && value.length > 0) {
+        params[parameter.name] = value;
+      } else if (typeof value === 'boolean') {
+        params[parameter.name] = String(value);
+      }
+    }
+
+    return params;
+  }
 
   async run(): Promise<CipReportDescribeOutput | CipReportQueryOutput | CipReportSqlOutput> {
     this.validateCipAuthMethods();

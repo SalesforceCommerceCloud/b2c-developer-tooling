@@ -112,6 +112,14 @@ export function createDeployCommand(
             `Deployed ${selectedCartridges.length} cartridge(s) to "${codeVersion}" successfully`,
           );
           outputChannel.appendLine(`--- Deploy complete ---`);
+
+          // Refresh the WebDAV browser so newly-uploaded cartridges show up.
+          try {
+            await vscode.commands.executeCommand('b2c-dx.webdav.refresh');
+          } catch {
+            // best-effort — webdav tree may not be registered if feature is disabled
+          }
+
           vscode.window.showInformationMessage(
             `B2C DX: Deployed ${selectedCartridges.length} cartridge(s) to "${codeVersion}".`,
           );
@@ -124,6 +132,112 @@ export function createDeployCommand(
           const message = err instanceof Error ? err.message : String(err);
           outputChannel.appendLine(`[Error] Deploy failed: ${message}`);
           outputChannel.appendLine(`--- Deploy failed ---`);
+          vscode.window.showErrorMessage(`B2C DX: Deploy failed: ${message}`);
+        }
+      },
+    );
+  };
+}
+
+/**
+ * Deploys a single cartridge — defaults the picker to the last-scaffolded
+ * cartridge so users coming from the walkthrough's "Create New Cartridge"
+ * step can deploy what they just made in one click.
+ */
+export function createDeployOneCommand(
+  configProvider: B2CExtensionConfig,
+  outputChannel: vscode.OutputChannel,
+  context: vscode.ExtensionContext,
+): () => Promise<void> {
+  return async () => {
+    const instance = configProvider.getInstance();
+    if (!instance) {
+      vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured.');
+      return;
+    }
+
+    let codeVersion = instance.config.codeVersion;
+    if (!codeVersion) {
+      try {
+        const active = await getActiveCodeVersion(instance);
+        if (active?.id) {
+          codeVersion = active.id;
+          instance.config.codeVersion = codeVersion;
+        }
+      } catch {
+        // fall through
+      }
+    }
+    if (!codeVersion) {
+      vscode.window.showErrorMessage('B2C DX: No code version configured.');
+      return;
+    }
+
+    const directory = configProvider.getWorkingDirectory();
+    const cartridges = findCartridges(directory);
+    if (cartridges.length === 0) {
+      vscode.window.showWarningMessage('B2C DX: No cartridges found.');
+      return;
+    }
+
+    // Default to the last-scaffolded cartridge so the walkthrough flow is
+    // one-click. Falls back to the first cartridge if there's no record.
+    const lastScaffolded = context.workspaceState.get<string>('b2c-dx.scaffold.lastCartridgeName');
+    const recommended = lastScaffolded ? (cartridges.find((c) => c.name === lastScaffolded) ?? null) : null;
+
+    let toDeploy;
+    if (cartridges.length === 1) {
+      toDeploy = cartridges[0];
+    } else {
+      const items = cartridges.map((c) => ({
+        label: c.name === recommended?.name ? `$(star-full) ${c.name}` : c.name,
+        description: c.name === recommended?.name ? 'recently scaffolded' : c.src,
+        detail: c.name === recommended?.name ? c.src : undefined,
+        cartridge: c,
+      }));
+      // Sort the recommended cartridge to the top so it's the default focus.
+      if (recommended) {
+        items.sort((a, b) =>
+          a.cartridge.name === recommended.name ? -1 : b.cartridge.name === recommended.name ? 1 : 0,
+        );
+      }
+      const picked = await vscode.window.showQuickPick(items, {
+        title: 'Deploy a cartridge',
+        placeHolder: recommended
+          ? `Default: ${recommended.name} — choose a cartridge to deploy`
+          : 'Select a cartridge to deploy',
+      });
+      if (!picked) return;
+      toDeploy = picked.cartridge;
+    }
+
+    outputChannel.appendLine(`--- Deploy single started ---`);
+    outputChannel.appendLine(`Cartridge: ${toDeploy.name}`);
+    outputChannel.appendLine(`Code Version: ${codeVersion}`);
+
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: `Deploying ${toDeploy.name}...`,
+        cancellable: false,
+      },
+      async () => {
+        try {
+          await uploadCartridges(instance, [toDeploy]);
+          outputChannel.appendLine(`Deployed "${toDeploy.name}" to "${codeVersion}"`);
+          outputChannel.appendLine(`--- Deploy single complete ---`);
+
+          try {
+            await vscode.commands.executeCommand('b2c-dx.webdav.refresh');
+          } catch {
+            // best-effort
+          }
+
+          vscode.window.showInformationMessage(`B2C DX: Deployed "${toDeploy.name}" to "${codeVersion}".`);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          outputChannel.appendLine(`[Error] Deploy failed: ${message}`);
+          outputChannel.appendLine(`--- Deploy single failed ---`);
           vscode.window.showErrorMessage(`B2C DX: Deploy failed: ${message}`);
         }
       },

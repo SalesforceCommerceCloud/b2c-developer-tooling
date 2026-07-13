@@ -25,7 +25,13 @@ interface WaitForStopOutput {
   timed_out?: boolean;
   thread_id?: number;
   location?: MappedLocation;
+  hint?: string;
 }
+
+const TIMEOUT_HINT =
+  'Breakpoint not hit. First confirm the request actually exercised this code path and the breakpoint line is reachable. ' +
+  'In some production instance group configurations (which can run multiple app servers — this never applies to sandboxes), a breakpoint may be missed because the request landed on a different app server than the one holding the debug session. ' +
+  'Only in that specific case, retrieve session_cookie from debug_list_sessions and resend the triggering request with that cookie (Cookie: <name>=<value>) to pin it to the app server holding the session.';
 
 export function createDebugWaitForStopTool(
   loadServices: () => Promise<Services> | Services,
@@ -38,7 +44,7 @@ export function createDebugWaitForStopTool(
         'Wait for a thread to halt at a breakpoint or step. ' +
         'Returns immediately if a thread is already halted; otherwise BLOCKS until a halt occurs or the timeout expires. ' +
         'Preferred non-blocking alternative: after debug_set_breakpoints, trigger the request yourself, then use debug_list_sessions to check halted_threads before calling debug_get_stack/debug_get_variables.',
-      toolsets: ['CARTRIDGES', 'SCAPI'],
+      toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
         timeout_ms: z
@@ -54,7 +60,7 @@ export function createDebugWaitForStopTool(
         const timeout = Math.min(args.timeout_ms ?? DEFAULT_TIMEOUT_MS, MAX_TIMEOUT_MS);
 
         const thread = await getRegistry(context).waitForHalt(entry, timeout);
-        if (!thread) return {halted: false, timed_out: true};
+        if (!thread) return {halted: false, timed_out: true, hint: TIMEOUT_HINT};
 
         const location = projectThreadLocation(thread, entry.sourceMapper);
         return {

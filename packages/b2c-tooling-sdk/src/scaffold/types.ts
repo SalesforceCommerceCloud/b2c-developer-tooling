@@ -91,7 +91,7 @@ export interface ScaffoldParameter {
 export interface FileMapping {
   /** Template file path relative to the scaffold's files/ directory */
   template: string;
-  /** Destination path (supports {{variable}} substitution) */
+  /** Destination path (supports double-brace variable substitution) */
   destination: string;
   /** Conditional expression: only generate if truthy */
   condition?: string;
@@ -103,7 +103,7 @@ export interface FileMapping {
  * File modification definition for modifying existing files
  */
 export interface FileModification {
-  /** Target file path (supports {{variable}} substitution) */
+  /** Target file path (supports double-brace variable substitution) */
   target: string;
   /** Type of modification */
   type: 'json-merge' | 'insert-after' | 'insert-before' | 'append' | 'prepend';

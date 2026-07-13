@@ -91,8 +91,8 @@
  */
 
 // Base command classes
-export {BaseCommand} from './base-command.js';
-export type {Flags, Args} from './base-command.js';
+export {BaseCommand, ERROR_CODE, classifyError} from './base-command.js';
+export type {Flags, Args, ErrorCategory} from './base-command.js';
 export {OAuthCommand} from './oauth-command.js';
 export {InstanceCommand} from './instance-command.js';
 export {CartridgeCommand} from './cartridge-command.js';
@@ -132,6 +132,13 @@ export type {
   B2COperationLifecycleHookOptions,
   B2COperationLifecycleHookResult,
   B2COperationLifecycleHook,
+  // Cartridge provider hook types
+  CartridgeDiscoveryOptions,
+  CartridgeProvider,
+  CartridgeTransformer,
+  CartridgeProvidersHookOptions,
+  CartridgeProvidersHookResult,
+  CartridgeProvidersHook,
 } from './hooks.js';
 export {createB2COperationContext, B2CLifecycleRunner} from './hooks.js';
 // Re-export module augmentation for @oclif/core Hooks interface

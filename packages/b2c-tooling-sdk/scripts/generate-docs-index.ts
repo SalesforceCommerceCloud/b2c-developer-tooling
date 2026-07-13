@@ -16,9 +16,21 @@ import {fileURLToPath} from 'node:url';
 interface DocEntry {
   id: string;
   title: string;
-  filePath: string;
+  category?: string;
+  /** Bundled-content path. Absent for corpora read online (e.g. Script API defers to sourceUrl). */
+  filePath?: string;
+  url?: string;
+  sourceUrl?: string;
+  headings?: string;
   preview?: string;
 }
+
+/**
+ * Base for Script API reference permalinks. The class/module id maps verbatim to
+ * a durable page: `<base>/dw.catalog.ProductMgr.html` (human) and `.md` (raw).
+ * Content stays bundled; these links let callers cite/fetch the source on request.
+ */
+const SCRIPT_API_URL_BASE = 'https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api';
 
 interface SchemaEntry {
   id: string;
@@ -45,6 +57,17 @@ function extractTitle(content: string): string {
   // Match first # heading
   const match = content.match(/^#\s+(.+)$/m);
   return match?.[1]?.trim() ?? 'Unknown';
+}
+
+/** Collects all markdown section headings (h1-h4) into one searchable string. */
+function extractHeadings(content: string): string {
+  const headings: string[] = [];
+  for (const line of content.split('\n')) {
+    const m = line.match(/^#{1,4}\s+(.+)$/);
+    if (m) headings.push(m[1].trim());
+  }
+  // Drop the first heading (the title) to avoid duplicating it in the index.
+  return headings.slice(1).join(' • ');
 }
 
 function extractPreview(content: string): string | undefined {
@@ -99,11 +122,19 @@ async function generateScriptApiIndex(): Promise<void> {
     const id = file.replace(/\.md$/, '');
     const title = extractTitle(content);
     const preview = extractPreview(content);
+    const headings = extractHeadings(content);
 
     entries.push({
       id,
       title,
-      filePath: file,
+      category: 'script-api',
+      // No `filePath`: Script API bodies are NOT shipped in the package (the 527
+      // .md are ~6.6 MB). `docs read` fetches `sourceUrl` (the raw .md on
+      // developer.salesforce.com, which resolves) via the cached online path.
+      // The .md remain in the repo only as input for building this index.
+      url: `${SCRIPT_API_URL_BASE}/${id}.html`,
+      sourceUrl: `${SCRIPT_API_URL_BASE}/${id}.md`,
+      ...(headings && {headings}),
       ...(preview && {preview}),
     });
   }

@@ -4,9 +4,11 @@ description: Analyze design and discovered components to recommend REUSE, EXTEND
 
 # sfnext_analyze_component
 
-Analyzes design and discovered components to recommend a component generation strategy. Returns a REUSE, EXTEND, or CREATE action with confidence score, key differences, and suggested implementation approach.
+::: warning DEPRECATED — use the agent-skills plugins instead
+This tool is **deprecated** and **not compatible with the Storefront Next 1.0 GA release**. It has been superseded by the [`storefront-next` and `storefront-next-figma`](../../guide/agent-skills) agent-skills plugins, which stay current with the GA release. It now lives in the opt-in [`STOREFRONTNEXT_DEPRECATED`](../toolsets#storefrontnext-deprecated) toolset (never auto-enabled, excluded from `--toolsets ALL`) and **will be removed in a future release**. Install the skills plugins instead — see the [Agent Skills guide](../../guide/agent-skills).
+:::
 
-> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
+Analyzes design and discovered components to recommend a component generation strategy. Returns a REUSE, EXTEND, or CREATE action with confidence score, key differences, and suggested implementation approach.
 
 ## Overview
 
@@ -30,25 +32,25 @@ See [Figma-to-Component Tools Setup](../figma-tools-setup) for complete prerequi
 
 ## Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `figmaMetadata` | string | Yes | JSON string containing design metadata (from Figma MCP or empty). Can be empty string if metadata was not fetched. |
-| `figmaCode` | string | Yes | React code from design (e.g., from Figma `mcp__figma__get_design_context`, or design handoff). |
-| `componentName` | string | Yes | Suggested name for the component extracted from the design. |
-| `discoveredComponents` | array | Yes | Array of similar components discovered using Glob/Grep/Read. Pass empty array if no similar components found. |
-| `workspacePath` | string | No | Optional workspace root path. Defaults to the MCP server project directory. |
+| Parameter              | Type   | Required | Description                                                                                                        |
+| ---------------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------ |
+| `figmaMetadata`        | string | Yes      | JSON string containing design metadata (from Figma MCP or empty). Can be empty string if metadata was not fetched. |
+| `figmaCode`            | string | Yes      | React code from design (e.g., from Figma `mcp__figma__get_design_context`, or design handoff).                     |
+| `componentName`        | string | Yes      | Suggested name for the component extracted from the design.                                                        |
+| `discoveredComponents` | array  | Yes      | Array of similar components discovered using Glob/Grep/Read. Pass empty array if no similar components found.      |
+| `workspacePath`        | string | No       | Optional workspace root path. Defaults to the MCP server project directory.                                        |
 
 ### Discovered Component Schema
 
 Each item in `discoveredComponents` must have:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `path` | string | Absolute file path to the component |
-| `name` | string | Component name |
-| `similarity` | number | Similarity score (0–100) |
-| `matchType` | string | One of `'name'`, `'structure'`, `'visual'` |
-| `code` | string | Full source code of the component |
+| Field        | Type   | Description                                |
+| ------------ | ------ | ------------------------------------------ |
+| `path`       | string | Absolute file path to the component        |
+| `name`       | string | Component name                             |
+| `similarity` | number | Similarity score (0–100)                   |
+| `matchType`  | string | One of `'name'`, `'structure'`, `'visual'` |
+| `code`       | string | Full source code of the component          |
 
 ## Usage Examples
 
