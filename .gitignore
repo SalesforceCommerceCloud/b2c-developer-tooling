@@ -40,3 +40,5 @@ packages/b2c-tooling-sdk/tmp/
 skills/eval/project/.git
 # Eval results
 skills/eval/results-*.json
+# Python bytecode
+__pycache__/

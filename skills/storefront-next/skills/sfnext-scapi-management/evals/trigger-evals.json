@@ -1,0 +1,12 @@
+[
+  {"query": "I just scaffolded a new storefront next project and I need to add the shopper-search API so I can build a search results page. What's the command to add it and how do I verify it's available in my createApiClients factory?", "should_trigger": true},
+  {"query": "How do I run b2c sfnext scapi available to see which APIs I can add to my storefront next project? I want to know what's available before setting up my data fetching.", "should_trigger": true},
+  {"query": "I need to integrate the shopper-baskets-v2 API into my storefront next checkout flow. Can you walk me through the b2c sfnext scapi add command and then checking the schema?", "should_trigger": true},
+  {"query": "I ran b2c sfnext scapi list and see APIs I no longer use in my storefront next project. How do I remove them with scapi remove to reduce my bundle size?",  "should_trigger": true},
+  {"query": "I'm setting up a new storefront next project and want to add the shopper-customers API as a typed client. What does b2c sfnext scapi add do exactly and where does the generated client code end up?", "should_trigger": true},
+  {"query": "I have the shopper-products client already added. Now I need to write a loader function that calls getProduct and returns the data. How do I use createApiClients in a route loader?", "should_trigger": false},
+  {"query": "My storefront next build is failing because of TypeScript errors in my route components. How do I run the typecheck and fix the issues?", "should_trigger": false},
+  {"query": "I want to look at all the SCAPI schemas available across Commerce Cloud without any specific project context. Just need to browse the full API catalog.", "should_trigger": false},
+  {"query": "I need to write the server-side script.js implementation for a custom API endpoint that returns loyalty points from a custom object.", "should_trigger": false},
+  {"query": "How do I set up the initial environment variables and dw.json for a brand new storefront next project before running pnpm dev?", "should_trigger": false}
+]
