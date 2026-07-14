@@ -15,6 +15,7 @@ Prerequisites and setup for using the Figma workflow tools: `sfnext_start_figma_
 The Figma-to-component workflow requires an **external Figma MCP server** to fetch design data from Figma. The b2c-dx-mcp server handles workflow orchestration, component analysis, and token mapping, but it needs the Figma MCP server to access Figma designs.
 
 **Prerequisites:**
+
 - b2c-dx-mcp configured with `--allow-non-ga-tools` flag (Figma tools are preview)
 - Storefront Next project
 - `app.css` theme file (required for `sfnext_match_tokens_to_theme` tool; optional path can be provided)
@@ -27,6 +28,7 @@ See [Installation](./installation) for b2c-dx-mcp setup.
 The workflow requires a **separate Figma MCP server** to fetch design data from Figma. Enable it in your MCP client following the [Figma MCP Server Documentation](https://developers.figma.com/docs/figma-mcp-server).
 
 Figma provides two connection options:
+
 - **Desktop MCP (Local)** - Uses the Figma desktop app (no API token needed)
 - **Remote MCP (Hosted)** - Requires a Figma Personal Access Token
 
@@ -37,6 +39,7 @@ Check the [Figma MCP catalog](https://www.figma.com/mcp-catalog/) to see which o
 You must have **view access** (or higher) to the Figma file. The workflow requires a Figma URL that includes the `node-id` query parameter to identify the specific frame or component to convert.
 
 **To get a URL with node-id:**
+
 1. Open the Figma file
 2. Select the frame or component you want to convert
 3. Right-click → **Copy link to selection**

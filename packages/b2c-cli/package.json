@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce B2C Commerce CLI",
-  "version": "1.15.0",
+  "version": "1.20.0",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -247,6 +247,25 @@
             "description": "Browse and retrieve SCAPI schema specifications\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scapi-schemas.html"
           }
         }
+      },
+      "preferences": {
+        "description": "Commands for managing custom global and site preferences\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/preferences.html",
+        "subtopics": {
+          "global": {
+            "description": "Read and update custom preferences at the organization (global) level"
+          },
+          "site": {
+            "description": "Read, update, and search custom preferences at the site level",
+            "subtopics": {
+              "preference": {
+                "description": "Read and update a single preference value across sites in a site preference group"
+              }
+            }
+          }
+        }
+      },
+      "metrics": {
+        "description": "[CLOSED BETA] Retrieve observability metrics from SCAPI Metrics API\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/metrics.html"
       },
       "ecdn": {
         "description": "Manage eCDN zones, certificates, WAF, and security settings\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html",

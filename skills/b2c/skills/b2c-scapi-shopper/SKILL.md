@@ -12,6 +12,20 @@ This skill guides you through consuming standard Shopper APIs for building headl
 
 > **Note:** For **creating** custom API endpoints, see [b2c-custom-api-development](../b2c-custom-api-development/SKILL.md). This skill focuses on **consuming** standard Shopper APIs.
 
+## Scope & grounding
+
+This skill provides quick-start patterns and examples for B2C Commerce Shopper APIs (SCAPI) used in headless storefronts — authentication, checkout, product APIs, and Shopper Context. The examples are version-agnostic and illustrative. Before answering questions that reference specific API versions, authentication flows, quota limits, default scopes, or before emitting code the user will run, confirm current details via `b2c docs search`/`b2c docs read` (CLI) or the docs_search/docs_read MCP tools. The official Commerce API documentation at developer.salesforce.com is the authoritative source for API specifications, current authentication patterns, and version-specific behavior.
+
+**Canonical docs:**
+- `commerce-api/work-with-baskets-orders` - Build Baskets and Place Orders guide
+- `commerce-api/shopper-context-api` - Shopper Context API reference
+- `commerce-api/shopper-context-best-practices` - Shopper Context best practices
+- `commerce-api/auth-z-scope-catalog` - Authorization Scopes Catalog
+- `commerce-api/slas` - SLAS Overview
+- `commerce-api/hook-method-details` - Hook Method Details
+- `commerce-api/use-shopper-api` - Use Shopper API guide
+- `commerce-api/performance` - Performance optimization guide
+
 ## Overview
 
 Shopper APIs are designed for frontend commerce applications:
@@ -32,7 +46,7 @@ Example:
 https://kv7kzm78.api.commercecloud.salesforce.com/product/shopper-products/v1/organizations/f_ecom_zzte_053/products/25518823M?siteId=RefArchGlobal
 ```
 
-**Note:** Shopper Baskets API supports both `v1` and `v2`. Use `v2` for newer features.
+**Note:** Shopper Baskets API supports both `v1` and `v2`. See [Shopper Baskets API reference](https://developer.salesforce.com/docs/commerce/commerce-api/references/shopper-baskets-v2?meta=Summary) or `b2c docs read commerce-api/work-with-baskets-orders` for current version guidance.
 
 ### Configuration Values
 
@@ -62,6 +76,8 @@ b2c slas client create \
 See [b2c-slas skill](../../../b2c-cli/skills/b2c-slas/SKILL.md) for full client management.
 
 ### Get Guest Token
+
+> Illustrative of the flow; confirm current SLAS authentication patterns (guest/registered, public/private client, PKCE) with `b2c docs read commerce-api/slas`.
 
 ```javascript
 const response = await fetch(
@@ -195,6 +211,8 @@ const order = await fetch(
     }
 ).then(r => r.json());
 ```
+
+> **The POST does not finish the order.** SCAPI creates the order in **`CREATED`** status — payment is *not* authorized and the order is *not* placed by this call. A server-side **`dw.ocapi.shop.order.afterPOST` hook** is responsible for authorizing payment and advancing the order to `NEW` (`OrderMgr.placeOrder`) or `FAILED` (`OrderMgr.failOrder`). Without that hook the order is stranded in `CREATED`. If your headless checkout "succeeds" but the order never appears as placed (or never fails visibly), this is almost always the missing piece — see the canonical example in [b2c-hooks › Order afterPOST](../b2c-hooks/SKILL.md#order-afterpost-headless-order-placement) and the order lifecycle in [b2c-ordering](../b2c-ordering/SKILL.md). Confirm current hook details with `b2c docs read commerce-api/hook-method-details`.
 
 ### Shopper Customers
 
@@ -337,6 +355,8 @@ Find logs in Log Center under `scapi.verbose` category.
 - [b2c-slas-auth-patterns](../b2c-slas-auth-patterns/SKILL.md) - Advanced auth: OTP, passkeys, session bridge
 - [b2c-scapi-schemas](../../../b2c-cli/skills/b2c-scapi-schemas/SKILL.md) - Browse OpenAPI schemas
 - [b2c-custom-api-development](../b2c-custom-api-development/SKILL.md) - Create custom endpoints
+- [b2c-hooks](../b2c-hooks/SKILL.md) - The `order.afterPOST` hook that authorizes payment and places/fails a headless order
+- [b2c-ordering](../b2c-ordering/SKILL.md) - Order lifecycle, status transitions, and failure handling
 
 ## Reference Documentation
 

@@ -44,7 +44,10 @@ This class does not have a constructor, so you cannot create it directly.
 
 ### sortingOptions
 - sortingOptions: [List](dw.util.List.md) `(read-only)`
-  - : Returns a list containing the sorting options configured for this site.
+  - : Returns a list containing the sorting options configured for this site. On a Cimulate-enabled site, restricts
+      the result to the Cimulate-managed rule IDs so the storefront "Sort by" dropdown matches what the buyer
+      actually gets back from Cimulate.
+
 
 
 ---
@@ -119,7 +122,10 @@ This class does not have a constructor, so you cannot create it directly.
 
 ### getSortingOptions()
 - static getSortingOptions(): [List](dw.util.List.md)
-  - : Returns a list containing the sorting options configured for this site.
+  - : Returns a list containing the sorting options configured for this site. On a Cimulate-enabled site, restricts
+      the result to the Cimulate-managed rule IDs so the storefront "Sort by" dropdown matches what the buyer
+      actually gets back from Cimulate.
+
 
     **Returns:**
     - a list of SortingOption objects

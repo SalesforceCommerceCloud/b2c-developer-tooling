@@ -16,9 +16,17 @@ Pick your tool and install the skill plugins. For full per-IDE detail, scopes, t
 
 ```bash [Claude Code]
 claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+# Use --scope project to install for current project only
+
+# Core: CLI + platform skills + MCP server
 claude plugin install b2c-cli
 claude plugin install b2c
+claude plugin install b2c-dx-mcp
+
+# Storefront Next (only for Storefront Next projects)
 claude plugin install storefront-next
+# storefront-next-figma adds Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma
 ```
 
 ```bash [Codex]
@@ -38,7 +46,15 @@ Command Palette (Cmd/Ctrl+Shift+P) → "Chat: Install Plugin from Source"
 
 ```bash [Copilot CLI]
 copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+
+# Core: CLI + platform skills
 copilot plugin install b2c-cli@b2c-developer-tooling
+copilot plugin install b2c@b2c-developer-tooling
+# For the MCP server on Copilot, install it directly — see /mcp/installation
+
+# Storefront Next (only for Storefront Next projects)
+copilot plugin install storefront-next@b2c-developer-tooling
+copilot plugin install storefront-next-figma@b2c-developer-tooling
 ```
 
 ```bash [Agentforce Vibes]

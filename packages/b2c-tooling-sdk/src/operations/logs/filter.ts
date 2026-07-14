@@ -40,11 +40,16 @@ export function parseRelativeTime(timeStr: string): null | number {
  * Supports:
  * - Relative times: "5m", "1h", "2d"
  * - ISO 8601: "2026-01-25T10:00:00"
+ *
+ * @param sinceStr - The value to parse
+ * @param now - Reference time for relative values (defaults to the current time).
+ *   Injectable so callers that resolve several bounds together, or that need
+ *   deterministic behavior in tests, can pin a single "now".
  */
-export function parseSinceTime(sinceStr: string): Date {
+export function parseSinceTime(sinceStr: string, now: Date = new Date()): Date {
   const relativeMs = parseRelativeTime(sinceStr);
   if (relativeMs !== null) {
-    return new Date(Date.now() - relativeMs);
+    return new Date(now.getTime() - relativeMs);
   }
 
   const date = new Date(sinceStr);

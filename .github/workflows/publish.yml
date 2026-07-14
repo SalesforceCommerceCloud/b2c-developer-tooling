@@ -118,13 +118,18 @@ jobs:
         if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
-          node-version: '22.22.1'
+          node-version: '24.18.0'
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Upgrade npm for trusted publishing
         if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
-        run: npm install -g npm@latest
+        # Pin to an exact, known-good npm. It must be >=11.5.1 (the OIDC
+        # trusted-publishing minimum) but NOT npm@latest: npm@12.0.0's global
+        # self-install is broken (prunes modules it needs, e.g. 'sigstore'),
+        # and previously tripped EBADENGINE on Node 22.22.1. 11.16.0 is the
+        # version bundled with the Node 24 above, so it is tested together.
+        run: npm install -g npm@11.16.0
 
       - name: Install dependencies
         if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
@@ -462,15 +467,44 @@ jobs:
       - name: Upload skills to release
         if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true' && steps.packages.outputs.publish_plugins == 'true'
         run: |
-          RELEASE_TAG="b2c-agent-plugins@${{ steps.packages.outputs.version_plugins }}"
+          RELEASE_TAG="b2c-agent-plugins@${PLUGINS_VERSION}"
 
-          gh release create "$RELEASE_TAG" \
-            --title "Agent Plugins ${{ steps.packages.outputs.version_plugins }}" \
-            --notes "Skills artifacts for b2c-agent-plugins v${{ steps.packages.outputs.version_plugins }}"
+          # Extract this version's changelog section for the dedicated release
+          extract_latest() {
+            awk '
+              /^## / { if (found) exit; found=1; next }
+              found { print }
+            ' "$1"
+          }
 
-          gh release upload "$RELEASE_TAG" ${{ steps.package-skills.outputs.zips }}
+          PLUGINS_CHANGELOG=$(extract_latest skills/CHANGELOG.md)
+
+          {
+            echo "Agent skills plugin artifacts for b2c-agent-plugins v${PLUGINS_VERSION}. Download the \`*-skills.zip\` files below."
+            echo ""
+            echo "See the [Agent Skills & Plugins guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills.html) for installation and usage."
+            echo ""
+            if [ -n "$PLUGINS_CHANGELOG" ]; then
+              echo "### Changelog"
+              echo ""
+              echo "$PLUGINS_CHANGELOG"
+            fi
+          } > /tmp/plugins-release-notes.md
+
+          # Idempotent on re-runs: reuse an existing release rather than failing
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists, uploading artifacts to it"
+          else
+            gh release create "$RELEASE_TAG" \
+              --title "Agent Plugins ${PLUGINS_VERSION}" \
+              --latest=false \
+              --notes-file /tmp/plugins-release-notes.md
+          fi
+
+          gh release upload "$RELEASE_TAG" ${{ steps.package-skills.outputs.zips }} --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PLUGINS_VERSION: ${{ steps.packages.outputs.version_plugins }}
 
       - name: Create VS Code extension release
         if: >-

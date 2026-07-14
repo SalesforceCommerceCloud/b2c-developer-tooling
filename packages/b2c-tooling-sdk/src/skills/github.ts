@@ -12,6 +12,7 @@ import {promisify} from 'node:util';
 import JSZip from 'jszip';
 import type {CachedArtifact, DownloadSkillsOptions, ReleaseInfo, SkillSet, SkillSourceConfig} from './types.js';
 import {getSkillSource} from './sources.js';
+import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 
 const execFileAsync = promisify(execFile);
@@ -104,7 +105,13 @@ async function resolveLatestVersion(source: SkillSourceConfig): Promise<string> 
 
   const rawUrl = `${GITHUB_RAW_BASE}/${source.repo}/main/skills/package.json`;
   logger.debug({url: rawUrl}, 'Fetching version from raw.githubusercontent.com');
-  const response = await fetch(rawUrl, {headers: {'User-Agent': 'b2c-cli'}});
+  let response: Response;
+  try {
+    response = await fetch(rawUrl, {headers: {'User-Agent': 'b2c-cli'}});
+  } catch (err) {
+    const host = new URL(rawUrl).host;
+    throw wrapNetworkError(err, {operation: 'Skills version fetch', host});
+  }
   if (!response.ok) {
     throw new Error(
       `Unable to resolve latest skills version: raw fetch failed with ${response.status} ${response.statusText}`,
@@ -181,12 +188,18 @@ export async function getRelease(version: string = 'latest'): Promise<ReleaseInf
   const endpoint = `${GITHUB_API_BASE}/repos/${source.repo}/releases/tags/${encodeURIComponent(tag)}`;
   logger.debug({endpoint}, 'Fetching release info');
 
-  const response = await fetch(endpoint, {
-    headers: {
-      Accept: 'application/vnd.github.v3+json',
-      'User-Agent': 'b2c-cli',
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      headers: {
+        Accept: 'application/vnd.github.v3+json',
+        'User-Agent': 'b2c-cli',
+      },
+    });
+  } catch (err) {
+    const host = new URL(endpoint).host;
+    throw wrapNetworkError(err, {operation: 'GitHub release fetch', host});
+  }
 
   if (!response.ok) {
     clearLatestVersionCache();
@@ -221,12 +234,18 @@ export async function listReleases(limit: number = 10): Promise<ReleaseInfo[]> {
 
   logger.debug({endpoint}, 'Listing releases');
 
-  const response = await fetch(endpoint, {
-    headers: {
-      Accept: 'application/vnd.github.v3+json',
-      'User-Agent': 'b2c-cli',
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      headers: {
+        Accept: 'application/vnd.github.v3+json',
+        'User-Agent': 'b2c-cli',
+      },
+    });
+  } catch (err) {
+    const host = new URL(endpoint).host;
+    throw wrapNetworkError(err, {operation: 'GitHub releases list', host});
+  }
 
   if (!response.ok) {
     throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
@@ -290,10 +309,16 @@ async function downloadReleaseArtifact(
   const downloadUrl = buildDownloadUrl(source.repo, tag, source.assetName!);
   logger.debug({url: downloadUrl, skillSet: source.id}, 'Downloading skills artifact');
 
-  const response = await fetch(downloadUrl, {
-    headers: {'User-Agent': 'b2c-cli'},
-    redirect: 'follow',
-  });
+  let response: Response;
+  try {
+    response = await fetch(downloadUrl, {
+      headers: {'User-Agent': 'b2c-cli'},
+      redirect: 'follow',
+    });
+  } catch (err) {
+    const host = new URL(downloadUrl).host;
+    throw wrapNetworkError(err, {operation: 'Skills artifact download', host});
+  }
 
   if (!response.ok) {
     clearLatestVersionCache();
@@ -349,9 +374,16 @@ async function downloadReleaseArtifact(
  * Resolve a git ref to a commit SHA via the GitHub API.
  */
 async function resolveCommitSha(repo: string, ref: string): Promise<string> {
-  const response = await fetch(`${GITHUB_API_BASE}/repos/${repo}/commits/${encodeURIComponent(ref)}`, {
-    headers: {'User-Agent': 'b2c-cli', Accept: 'application/vnd.github.v3.sha'},
-  });
+  const endpoint = `${GITHUB_API_BASE}/repos/${repo}/commits/${encodeURIComponent(ref)}`;
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      headers: {'User-Agent': 'b2c-cli', Accept: 'application/vnd.github.v3.sha'},
+    });
+  } catch (err) {
+    const host = new URL(endpoint).host;
+    throw wrapNetworkError(err, {operation: 'GitHub commit resolve', host});
+  }
   if (!response.ok) {
     throw new Error(`Failed to resolve ref '${ref}' for ${repo}: ${response.status} ${response.statusText}`);
   }
@@ -372,9 +404,15 @@ async function fetchContentsRecursive(repo: string, repoPath: string, ref: strin
   const logger = getLogger();
   const endpoint = `${GITHUB_API_BASE}/repos/${repo}/contents/${encodeURIComponent(repoPath)}?ref=${encodeURIComponent(ref)}`;
 
-  const response = await fetch(endpoint, {
-    headers: {Accept: 'application/vnd.github.v3+json', 'User-Agent': 'b2c-cli'},
-  });
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      headers: {Accept: 'application/vnd.github.v3+json', 'User-Agent': 'b2c-cli'},
+    });
+  } catch (err) {
+    const host = new URL(endpoint).host;
+    throw wrapNetworkError(err, {operation: 'GitHub contents fetch', host});
+  }
 
   if (!response.ok) {
     if (isRateLimited(response)) {
@@ -394,7 +432,15 @@ async function fetchContentsRecursive(repo: string, repoPath: string, ref: strin
     if (entry.type === 'dir') {
       fileCount += await fetchContentsRecursive(repo, entry.path, ref, targetPath);
     } else if (entry.type === 'file' && entry.download_url) {
-      const fileResponse = await fetch(entry.download_url, {headers: {'User-Agent': 'b2c-cli'}});
+      let fileResponse: Response;
+      try {
+        fileResponse = await fetch(entry.download_url, {headers: {'User-Agent': 'b2c-cli'}});
+      } catch (err) {
+        const host = new URL(entry.download_url).host;
+        const wrappedErr = wrapNetworkError(err, {operation: 'GitHub file download', host});
+        logger.warn({path: entry.path, err: wrappedErr}, 'Failed to download file, skipping');
+        continue;
+      }
       if (!fileResponse.ok) {
         logger.warn({path: entry.path}, 'Failed to download file, skipping');
         continue;

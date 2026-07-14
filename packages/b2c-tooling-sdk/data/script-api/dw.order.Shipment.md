@@ -32,7 +32,7 @@ Represents an order shipment.
 | [adjustedShippingTotalPrice](#adjustedshippingtotalprice): [Money](dw.value.Money.md) `(read-only)` | Returns the adjusted shipping total price. |
 | [adjustedShippingTotalTax](#adjustedshippingtotaltax): [Money](dw.value.Money.md) `(read-only)` | Returns the tax of all shipping line items of the shipment , including shipping adjustments. |
 | [allLineItems](#alllineitems): [Collection](dw.util.Collection.md) `(read-only)` | Returns all line items related to the shipment. |
-| [default](#default): [Boolean](TopLevel.Boolean.md) `(read-only)` | Return `true` if this shipment is the default shipment (shipment ID "me"). |
+| [default](#default): [Boolean](TopLevel.Boolean.md) `(read-only)` | Returns true if this is the default shipment. |
 | [gift](#gift): [Boolean](TopLevel.Boolean.md) | Returns true if this line item represents a gift, false otherwise. |
 | [giftCertificateLineItems](#giftcertificatelineitems): [Collection](dw.util.Collection.md) `(read-only)` | Returns all gift certificate line items of the shipment. |
 | [giftMessage](#giftmessage): [String](TopLevel.String.md) | Returns the value set for gift message or null if no value set. |
@@ -108,7 +108,7 @@ This class does not have a constructor, so you cannot create it directly.
 | [getTotalNetPrice](dw.order.Shipment.md#gettotalnetprice)() | Returns the total net price of the shipment in the purchase currency. |
 | [getTotalTax](dw.order.Shipment.md#gettotaltax)() | Returns the total tax for the shipment in the purchase currency. |
 | [getTrackingNumber](dw.order.Shipment.md#gettrackingnumber)() | Returns the tracking number of this shipment. |
-| [isDefault](dw.order.Shipment.md#isdefault)() | Return `true` if this shipment is the default shipment (shipment ID "me"). |
+| [isDefault](dw.order.Shipment.md#isdefault)() | Returns true if this is the default shipment. |
 | [isGift](dw.order.Shipment.md#isgift)() | Returns true if this line item represents a gift, false otherwise. |
 | [removeShippingLineItem](dw.order.Shipment.md#removeshippinglineitemshippinglineitem)([ShippingLineItem](dw.order.ShippingLineItem.md)) | Removes the specified shipping line item and any of its dependent shipping price adjustments. |
 | ~~[removeShippingPriceAdjustment](dw.order.Shipment.md#removeshippingpriceadjustmentpriceadjustment)([PriceAdjustment](dw.order.PriceAdjustment.md))~~ | Removes the specified shipping price adjustment from the shipment. |
@@ -270,7 +270,11 @@ Use [SHIPPING_STATUS_SHIPPED](dw.order.Shipment.md#shipping_status_shipped) inst
 
 ### default
 - default: [Boolean](TopLevel.Boolean.md) `(read-only)`
-  - : Return `true` if this shipment is the default shipment (shipment ID "me").
+  - : Returns true if this is the default shipment. The default is the shipment with ID "me". If no shipment with
+      ID "me" exists, the shipment with the lowest ID is used as the default. A "me" shipment can be absent if
+      [OrderMgr.createOrder(Basket)](dw.order.OrderMgr.md#createorderbasket) removed it for being empty, in which case another
+      shipment becomes the default.
+
 
 
 ---
@@ -1023,7 +1027,11 @@ Shipments cannot have product price adjustments, therefore this method will alwa
 
 ### isDefault()
 - isDefault(): [Boolean](TopLevel.Boolean.md)
-  - : Return `true` if this shipment is the default shipment (shipment ID "me").
+  - : Returns true if this is the default shipment. The default is the shipment with ID "me". If no shipment with
+      ID "me" exists, the shipment with the lowest ID is used as the default. A "me" shipment can be absent if
+      [OrderMgr.createOrder(Basket)](dw.order.OrderMgr.md#createorderbasket) removed it for being empty, in which case another
+      shipment becomes the default.
+
 
     **Returns:**
     - `true` if this shipment is the default shipment

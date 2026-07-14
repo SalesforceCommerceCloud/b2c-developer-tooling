@@ -25,27 +25,33 @@ Install plugins at your preferred scope:
 ::: code-group
 
 ```bash [User Scope (default)]
+# Core: CLI + platform skills + MCP server
 claude plugin install b2c-cli
 claude plugin install b2c
-claude plugin install storefront-next
-# Install storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
-claude plugin install storefront-next-figma
+claude plugin install b2c-dx-mcp
+
 # Operator/Admin runbooks (pair with b2c-cli for the underlying commands)
 claude plugin install b2c-operator
-# Install b2c-dx-mcp if you want the MCP server installed
-claude plugin install b2c-dx-mcp
+
+# Storefront Next (only for Storefront Next projects)
+claude plugin install storefront-next
+# storefront-next-figma adds Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma
 ```
 
 ```bash [Project Scope]
+# Core: CLI + platform skills + MCP server
 claude plugin install b2c-cli --scope project
 claude plugin install b2c --scope project
-claude plugin install storefront-next --scope project
-# Install storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
-claude plugin install storefront-next-figma --scope project
+claude plugin install b2c-dx-mcp --scope project
+
 # Operator/Admin runbooks (pair with b2c-cli for the underlying commands)
 claude plugin install b2c-operator --scope project
-# Install b2c-dx-mcp if you want the MCP server installed
-claude plugin install b2c-dx-mcp --scope project
+
+# Storefront Next (only for Storefront Next projects)
+claude plugin install storefront-next --scope project
+# storefront-next-figma adds Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma --scope project
 ```
 
 :::

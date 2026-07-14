@@ -468,6 +468,14 @@ Please use [failOrder(Order, Boolean)](dw.order.OrderMgr.md#failorderorder-boole
       
       
       
+      This method does not alter shipments. Note that [createOrder(Basket)](dw.order.OrderMgr.md#createorderbasket) removes empty shipments
+      before creating the order, so a reopened basket might be missing shipments that existed before. If the removed
+      shipment was the default ("me"), the fallback default is the shipment with the lowest ID. See
+      [LineItemCtnr.getDefaultShipment()](dw.order.LineItemCtnr.md#getdefaultshipment) and [Shipment.isDefault()](dw.order.Shipment.md#isdefault).
+      
+      
+      
+      
       A basket can only be reopened if no other basket for the customer exists at the moment of the call to
       `failOrder`, since a customer is limited to 1 storefront basket at a time. If, after order creation, a
       call was made to [BasketMgr.getCurrentOrNewBasket()](dw.order.BasketMgr.md#getcurrentornewbasket) or pipelet GetBasket with parameter Create=true, then

@@ -1,5 +1,61 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.12
+
+### Patch Changes
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Add page-specific SEO meta descriptions to the SCAPI Schemas CLI reference and CI/CD guide pages, replacing the site-wide default description. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Add XSD-based validation, autocomplete, and hover docs for B2C metadata XML files, backed by ~50 bundled schemas (catalogs, promotions, jobs, services, A/B tests, page-meta-tags, sorting rules, source codes, content libraries, event routing, and more). (Thanks [@clavery](https://github.com/clavery)!)
+
+  **Namespace-based association.** Validation is matched by the document's declared XML namespace, not by filename or folder layout, so a metadata file validates against the correct schema wherever it lives — in a canonical site-archive (`sites/<id>/…`), an exploded `metadata/` workspace, or anywhere else. The extension ships an XML catalog and registers it with the Red Hat XML language server at runtime; no changes are written to your `settings.json`.
+
+  **Optional companion extension.** Validation is powered by the Red Hat XML extension (`redhat.vscode-xml`), a _soft_ dependency — it is not force-installed and no Java runtime is required. When you open a B2C metadata XML file, the extension offers to install it (with a "Don't ask again" option); until then the extension is unaffected. You can trigger setup any time via the **B2C DX: Set Up Metadata XML Validation** command, and disable the whole feature with the `b2c-dx.features.xmlValidation` setting. Teams whose policies block third-party extensions can simply decline the prompt.
+
+## 0.3.11
+
+### Patch Changes
+
+- [`db905f4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/db905f431e89518031aa7ce1fe47be90cbdd5f2d) - Fix stale MCP docs sidebar label ("Script API & Schemas" → "Documentation Tools") to match the renamed multi-corpus documentation reference page. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.3.10
+
+### Patch Changes
+
+- [#545](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/545) [`ed1e214`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ed1e21405f69503e693c7bcadb8b9cc1f4a09ddf) - Stop MCP debug tools from routinely suggesting the session cookie (`dwsid`). The cookie is only needed in the rare multi-app-server production instance group case where a breakpoint is never hit — it is now surfaced as a troubleshooting hint on breakpoint timeout instead of in the `debug_start_session`/`debug_list_sessions` descriptions. Also clarifies that the debugger needs standard Basic auth (account password or a `WebDAV File Access and UX Studio` access key) with no separate Business Manager enablement step. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#553](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/553) [`31ec679`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/31ec679ca6058d2ba7f453528af873163a5baeff) - Reworked the MCP Server documentation to be leaner and human-focused: trimmed internal implementation prose from the tool reference pages, reorganized the nav around toolsets and logical tool groups (combined the two log pages and the two SCAPI custom-API pages, with client-side redirects from the old URLs), corrected the project-type auto-detection table, and removed agent-directed prompting guidance. Renamed the homepage/header "Agent Skills" entry to "Agent Plugins" and grouped the MCP plugin with the core plugins in the install instructions. The `b2c-docs` skill now notes that the MCP `docs_*` tools offer the same coverage as the CLI. (Thanks [@clavery](https://github.com/clavery)!)
+
+  The `tooling` documentation corpus (the CLI/MCP/SDK guides available via `docs search`/`read`) no longer bundles a copy of each page's markdown in the SDK — like the Developer Center guides, its content is now fetched online from the docs site at read time (with an offline fallback to the indexed summary). This shrinks the package and stops doc edits from duplicating content into the SDK.
+
+## 0.3.9
+
+### Patch Changes
+
+- [#533](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/533) [`f3d2d9e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f3d2d9ec98fed2b61e47622a9f2ef58ae13ee735) - GitHub Actions: the high-level actions (`code-deploy`, `data-import`, `job-run`, `webdav-upload`) and the root action now forward the full set of auth/config inputs to `setup` — `account-manager-host`, `short-code`, `tenant-id`, `certificate`, `certificate-passphrase`, `selfsigned`, and `webdav-server` (where applicable). Previously these were silently dropped with an "Unexpected input(s)" warning, so a non-default Account Manager host or staging mTLS credentials had to be set via env vars or a separate `setup` step. Also bumped the bundled `setup-node`/`checkout` references to Node 24-capable majors to clear the Node 20 deprecation warning. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#532](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/532) [`76643fa`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/76643fa370ac598ba005dcce69ee2004c43eee79) - Fix the `setup` GitHub Action silently corrupting any credential that contains a `$` (for example an auto-generated WebDAV access key like `abc$FOO123`). The action wrote credentials to the job environment with an inline-interpolated `echo`, so bash re-expanded `$WORD` sequences and stripped them — the altered credential then failed downstream WebDAV auth with an unexplained 401. Credentials are now passed through the step's `env` block and written with GitHub's heredoc env syntax, so values containing `$`, quotes, backticks, `$(...)`, `=`, or even newlines reach the CLI byte-for-byte. No workflow changes are required; re-run with the fixed action version. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#530](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/530) [`6cfb9bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6cfb9bd4b2a45ad838df86371f85e31c425caf88) - Document the standard (system) job steps that B2C Commerce ships for Business Manager job flows. The bundled docs corpus now includes the full catalog of standard job step type IDs (e.g. `ImportCatalog`, `ExportCatalog`, `ExecutePreconfiguredDataReplicationProcess`, `SearchReindex`) with each step's purpose, scope, and configuration parameters — sourced from the public B2C Commerce Job Step API documentation and searchable through `b2c docs search`/`b2c docs read` (and the `docs_search`/`docs_read` MCP tools) with no new commands. Read the catalog with `b2c docs read job-steps` or a specific step with `b2c docs read <TypeID>`. The job and custom-job-step skills now cover referencing an IMPEX-staged file from a prior step, chaining custom and standard steps in one flow, and choosing an in-flow system step vs. the CLI equivalent (e.g. a standard catalog import vs. `b2c job import`). (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#526](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/526) [`fb9fbf9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/fb9fbf9ae20c078c00ca144b25c341e02677da3d) - Trim the Script Debugger guide to remove implementation detail (internal API name, `client_id`, transport plumbing, roadmap note) and a duplicated interface list, keeping it focused on what users need to debug. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`b6d2879`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b6d287992b9a0bd85e1bc80ac2920d1af282ccb5) - Clarify WebDAV authentication guidance: Basic Auth is for interactive user-based access while OAuth is for API clients and CI/CD, rather than labeling Basic Auth as generally "recommended". (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.3.8
+
+### Patch Changes
+
+- [#518](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/518) [`7a55915`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7a5591524e8374413cc92303b907e164f1b172f3) - Refocus the Commerce Apps (CAP) documentation on the B2C CLI workflow and recommend the `b2c-cli`, `b2c`, and `cap-dev` agent skills plugins (the latter from the `SalesforceCommerceCloud/commerce-apps` marketplace). The guide now links to the official Commerce Apps ISV Developer Guide as the authoritative spec rather than duplicating it, and corrects several details against canon and the CLI source: the tax extension point is `sfcc.app.tax.calculate`, the install upload path is `Impex/commerce-apps/`, the lifecycle states are `INSTALLING → INSTALLED → NOT_CONFIGURED → CONFIGURING → CONFIGURED`, and `cap package` produces `{id}-v{version}.zip`. The `b2c-cap` skill and CAP CLI reference gain WebDAV auth, icon-naming, and registry-vs-local-validation clarifications. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.3.7
+
+### Patch Changes
+
+- [#498](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/498) [`c58924d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c58924d643dc80251ff0cf35dbf8a647fb16d662) - Deprecate the Storefront Next MCP tools (`sfnext_*`) in favor of the `storefront-next` and `storefront-next-figma` agent-skills plugins. These tools are not compatible with the Storefront Next 1.0 GA release and will be removed in a future release. (Thanks [@clavery](https://github.com/clavery)!)
+
+  The six `sfnext_*` tools have moved to a new `STOREFRONTNEXT_DEPRECATED` toolset that is never auto-enabled by project detection and is excluded from `--toolsets all`. To keep using them, request the toolset explicitly: `--toolsets STOREFRONTNEXT_DEPRECATED --allow-non-ga-tools`. Storefront Next projects still auto-enable the `STOREFRONTNEXT` toolset (MRT bundle push, SCAPI discovery/scaffolding, and diagnostics). Migrate to the agent-skills plugins — see the Agent Skills guide for installation.
+
 ## 0.3.6
 
 ### Patch Changes

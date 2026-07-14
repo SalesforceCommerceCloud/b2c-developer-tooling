@@ -22,7 +22,7 @@ export default class SetupIndex extends BaseCommand<typeof SetupIndex> {
   static examples = [
     '<%= config.bin %> setup --help',
     '<%= config.bin %> setup instance create',
-    '<%= config.bin %> setup ide prophet',
+    '<%= config.bin %> setup ide tsserver-plugin',
   ];
 
   async run(): Promise<void> {

@@ -12,6 +12,24 @@ This skill guides you through developing Custom APIs for Salesforce B2C Commerce
 
 > **Tip:** If `b2c` CLI is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli code deploy`).
 
+## Scope & grounding
+
+This skill provides CLI-specific workflows and quickstart patterns for Custom API development. It covers OpenAPI 3.0 contract structure, OAuth scope configuration, cartridge-path resolution rules, and circuit breaker behavior. However, platform-specific validation rules, operational limits, security scheme requirements, and Script API integration patterns can drift across Commerce Cloud releases. Before answering questions that reference specific API versions or framework behavior, or before emitting code the user will run, confirm current platform specifics against the official documentation via `b2c docs search` / `b2c docs read` (CLI) or `docs_search` / `docs_read` (MCP). The official documentation is the authoritative source for Custom API contract specifications, runtime behavior, and B2C Commerce platform details not covered here.
+
+**Canonical docs** (confirm platform specifics with these):
+- `commerce-api/custom-apis` - overview, cartridge resolution, operational limits
+- `commerce-api/custom-api-components-references` - schema.yaml and script.js requirements
+- `commerce-api/custom-api-authentication` - OAuth scope rules, security schemes
+- `commerce-api/custom-api-caching` - caching behavior and configuration
+- `commerce-api/custom-api-remote-includes` - remote include patterns
+- `commerce-api/custom-api-circuit-breaker` - current thresholds and behavior
+- `commerce-api/custom-api-troubleshooting` - common issues and solutions
+- `commerce-api/custom-api-status-report` - registration status details
+- `dw.system.RESTResponseMgr` - Script API response manager
+- `dw.system.Request` - Script API request object
+- `dw.system.RESTErrorResponse` - Script API error response
+- `dw.system.RESTSuccessResponse` - Script API success response
+
 ## Overview
 
 A Custom API URL has this structure:
@@ -42,6 +60,8 @@ Three components are required to create a Custom API:
 **Important:** API directory names can only contain alphanumeric lowercase characters and hyphens.
 
 ## Component 1: API Contract (schema.yaml)
+
+> Illustrative minimal example; confirm current schema validation rules, security scheme structure, and scope naming requirements with `b2c docs read commerce-api/custom-api-components-references` and `b2c docs read commerce-api/custom-apis`.
 
 Minimal example:
 
@@ -87,6 +107,8 @@ security:
 
 ### Cartridge path requirements (where the platform looks up your `rest-apis/` folder)
 
+> Illustrative of platform cartridge resolution rules; confirm current runtime behavior and site context handling with `b2c docs read commerce-api/custom-apis`.
+
 | Call shape | Cartridge path searched |
 |---|---|
 | Shopper API (`ShopperToken`) — always site-scoped | The **storefront site's** cartridge path (the site that issued the SLAS token) |
@@ -122,6 +144,8 @@ To set the BM cartridge path manually in Business Manager: **Administration > Si
 See [Contract Reference](references/CONTRACT.md) for full schema examples and Shopper vs Admin API differences.
 
 ## Component 2: Implementation (script.js)
+
+> Illustrative Script API usage; confirm current Custom API integration patterns, RESTResponseMgr requirements, and request object methods with `b2c docs read commerce-api/custom-api-components-references` and Script API docs for `dw.system.RESTResponseMgr` / `dw.system.Request`.
 
 ```javascript
 var RESTResponseMgr = require('dw/system/RESTResponseMgr');
@@ -210,9 +234,21 @@ So during normal iteration on the *implementation* of an endpoint that's already
 
 ### For Admin APIs
 
-1. Configure custom scope in Account Manager
-2. Obtain token via Account Manager OAuth
-3. Omit `siteId` from requests
+1. Configure your custom scope (`c_my_admin_scope`) on the Account Manager API Client (Role: "Salesforce Commerce API")
+2. Obtain a token via Account Manager OAuth with **both** required scope types:
+   - **Tenant scope**: `SALESFORCE_COMMERCE_API:<tenant_id>` — grants access to the tenant
+   - **Custom Admin scope(s)**: `c_my_admin_scope` — as declared in `schema.yaml`
+3. Omit `siteId` from requests (or use `siteId=Sites-Site`) for org context
+
+```bash
+# b2c auth token accepts multiple scopes (repeat --auth-scope or comma-separate).
+# It does NOT auto-inject the tenant scope, so list it explicitly:
+TOKEN=$(b2c auth token \
+  --auth-scope "SALESFORCE_COMMERCE_API:zzpq_013" \
+  --auth-scope c_my_admin_scope)
+```
+
+> **Why the tenant scope matters:** the SCAPI subcommands (`b2c scapi custom status`, `b2c scapi schemas list`) inject `SALESFORCE_COMMERCE_API:<tenant_id>` for you, but `b2c auth token` and raw curl send only the scopes you pass. A token missing the tenant scope returns 403 against any Admin API (custom or system).
 
 See [Testing Reference](references/TESTING.md) for curl examples and authentication setup.
 
@@ -222,7 +258,7 @@ See [Testing Reference](references/TESTING.md) for curl examples and authenticat
 |-------|-------|----------|
 | 400 Bad Request | Invalid/unknown params | Define all params in schema |
 | 401 Unauthorized | Invalid token | Check token validity |
-| 403 Forbidden | Missing scope | Verify scope in token |
+| 403 Forbidden | Missing scope | Verify scope in token. For Admin APIs the token needs **both** `SALESFORCE_COMMERCE_API:<tenant_id>` and your custom scope(s) |
 | 404 Not Found | Not registered | Check `b2c scapi custom status` |
 | 500 Internal Error | Script error | Check `b2c logs get --level ERROR` |
 | 503 Service Unavailable | Circuit breaker open | Fix errors, wait for reset |

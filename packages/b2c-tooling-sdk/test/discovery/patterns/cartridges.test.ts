@@ -71,5 +71,16 @@ describe('discovery/patterns/cartridges', () => {
       const result = await cartridgesPattern.detect(tempDir);
       expect(result).to.equal(true);
     });
+
+    it('should not detect a cartridge deeper than the maxDepth in context', async () => {
+      // a/b/c/deep_cart/.project => depth 5 relative to tempDir
+      const deep = path.join(tempDir, 'a', 'b', 'c', 'deep_cart');
+      fs.mkdirSync(deep, {recursive: true});
+      fs.writeFileSync(path.join(deep, '.project'), '');
+
+      expect(await cartridgesPattern.detect(tempDir, {maxDepth: 3})).to.equal(false);
+      // Without a bound it is found.
+      expect(await cartridgesPattern.detect(tempDir)).to.equal(true);
+    });
   });
 });

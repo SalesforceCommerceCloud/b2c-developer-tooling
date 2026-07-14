@@ -14,12 +14,21 @@ import {echo} from './welcome-routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const decodeHtmlEntities = (s: string): string =>
+  s
+    .replace(/&#34;/g, '"')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+
 const parseJsonFromHtml = (html: string): any => {
   const match = html.match(/<pre class="code">([\s\S]*?)<\/pre>/);
   if (!match || !match[1]) {
     throw new Error('Could not find JSON in HTML response');
   }
-  return JSON.parse(match[1].trim());
+  return JSON.parse(decodeHtmlEntities(match[1].trim()));
 };
 
 describe('welcome-routes', () => {
@@ -88,6 +97,21 @@ describe('welcome-routes', () => {
 
       const json = parseJsonFromHtml(response.text);
       expect(json.ip).to.not.be.undefined;
+    });
+
+    it('should HTML-escape user-controllable input reflected in the response', async () => {
+      app.get('/*splat', echo);
+
+      const response = await request(app).get(
+        '/test?value=%3Ch1%3Esample%20%3Ca%20href=https://example.com%3Elink%3C/a%3E%3C/h1%3E',
+      );
+
+      expect(response.text).to.not.match(/<h1>sample/);
+      expect(response.text).to.not.match(/<a href=https:\/\/example\.com>link<\/a>/);
+      expect(response.text).to.include('&lt;h1&gt;sample');
+
+      const json = parseJsonFromHtml(response.text);
+      expect(json.query.value).to.equal('<h1>sample <a href=https://example.com>link</a></h1>');
     });
   });
 });

@@ -1,6 +1,6 @@
 ---
 name: b2c-custom-job-steps
-description: Create custom job steps for B2C Commerce batch processing. Use this skill whenever the user needs to write a batch job, data export script, scheduled cleanup task, or any server-side processing that runs on a schedule. Also use when they ask about steptypes.json, chunk-oriented vs task-oriented job steps, read/process/write patterns, or how to get a custom job to appear in Business Manager — even if they just say "I need a script that runs nightly" or "batch process orders".
+description: Create custom job steps for B2C Commerce batch processing. Use this skill whenever the user needs to write a batch job, data export script, scheduled cleanup task, or any server-side processing that runs on a schedule. Also use when they ask about steptypes.json, chunk-oriented vs task-oriented job steps, read/process/write patterns, how to get a custom job to appear in Business Manager, or how to author and import a jobs.xml job definition (job/flow/step structure, step type, the required triggers element) so a step type becomes a runnable, schedulable job — even if they just say "I need a script that runs nightly" or "batch process orders".
 persona: developer
 category: Backend & Cartridge Development
 tags: [jobs, business-manager]
@@ -125,6 +125,48 @@ my_cartridge/
     }
 }
 ```
+
+## From Step Type to Runnable Job (jobs.xml)
+
+`steptypes.json` only *declares* a step type — it does not create a job. To get a job that `b2c job run` can execute and Business Manager can schedule, author a **job definition** (`jobs.xml`) that references your step type, then import it:
+
+```bash
+b2c job import ./my-job-archive   # jobs.xml at the archive root
+```
+
+A minimal valid definition wires one step into a flow and includes the **required `<triggers>`** element:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs xmlns="http://www.demandware.com/xml/impex/jobs/2015-07-01">
+    <job job-id="MyNightlyExport">
+        <flow>
+            <context site-id="RefArch"/>
+            <!-- type="..." matches the @type-id declared in steptypes.json -->
+            <step step-id="ExportStep" type="custom.ProductExport">
+                <parameters>
+                    <parameter name="OutputFile">/export/products.csv</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <triggers>
+            <run-once enabled="false">
+                <date>2025-01-01</date>
+                <time>00:00:00.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+</jobs>
+```
+
+Key rules (full details in the [jobs.xml Reference](references/JOBS-XML.md)):
+
+- **`<triggers>` is required** by the schema — a `jobs.xml` without it fails import validation. Use `<run-once enabled="false">` for an on-demand/manually-run job, or `<run-recurring>` to schedule it.
+- The `<step>` **`type`** attribute references the step type; its value must match the **`@type-id`** you declared in `steptypes.json` (don't confuse the two — `steptypes.json` uses `@type-id`, `jobs.xml` uses `type`).
+- `<job>` children must appear in order: `description → parameters → flow/split → rules → triggers`.
+- The cartridge carrying the step's `steptypes.json` + module must be deployed and on the cartridge path before the job can resolve the step type.
+
+After import, run it with `b2c job run MyNightlyExport --wait` (see the `b2c-cli:b2c-job` skill).
 
 ## Task-Oriented Steps
 
@@ -347,6 +389,117 @@ exports.afterStep = function (success, parameters, stepExecution) {
 
 **Context Constraints:** `@supports-site-context` and `@supports-organization-context` cannot both be `true` or both be `false` - one must be `true` and the other `false`.
 
+## Standard (System) Job Steps
+
+Custom steps are only half of a job flow. B2C Commerce also ships **standard (system) job steps** — built-in step **type IDs** you add to a flow in **Business Manager → Administration → Operations → Jobs**, or reference by type ID in a `jobs.xml` flow inside a site-import archive. Unlike custom steps, you do **not** declare these in `steptypes.json`; they are always available. Use them for catalog/inventory/price/content/coupon/custom-object import & export, order export, and similar platform operations — and chain them with your custom steps.
+
+**Do not guess standard step type IDs or their parameters.** The full catalog — every step's purpose plus its configuration parameters (required, defaults, allowed values) — is bundled with the CLI and searchable through the `b2c-cli:b2c-docs` skill:
+
+```bash
+# Browse the catalog of standard step type IDs
+b2c docs read job-steps
+
+# Look up a specific step's purpose + configuration parameters
+b2c docs read ImportCatalog
+b2c docs read ExportInventoryLists
+
+# Fuzzy-search for a step
+b2c docs search "import price"
+```
+
+### Commonly used standard steps
+
+The bundled catalog covers the full set of standard step type IDs shown in the Business Manager job-step picker (import, export, and processing steps). Below is a representative subset — run `b2c docs read job-steps` for the complete list, and `b2c docs read <TypeID>` for any step's full parameters and defaults. **Scope** is the execution scope (Organization, Site, or both).
+
+| Type ID | Scope | Key required params |
+| --- | --- | --- |
+| `ImportCatalog` | Organization | `NoFilesFoundHandling`, `ImportMode`, `ImportFailedHandling` |
+| `ImportInventoryLists` | Organization | `NoFilesFoundHandling`, `ImportMode`, `ImportFailedHandling` |
+| `ImportPriceBook` | Organization | `NoFilesFoundHandling`, `ImportMode`, `ImportFailedHandling` |
+| `ImportContent` | Site | `NoFilesFoundHandling`, `ImportMode`, `ImportFailedHandling` |
+| `ImportCustomObjects` | Organization & Sites | `NoFilesFoundHandling`, `ImportFailedHandling` |
+| `ExportCatalog` | Organization | `CatalogID` |
+| `ExportInventoryLists` | Site | (none) |
+| `ExportPriceBook` | Organization | `PriceBookID` |
+| `ExportContent` | Organization & Sites | `LibraryID` |
+| `ExportOrders` | Site | `Confirmation Status`, `Shipment Status`, `Payment Status` |
+| `ExecutePreconfiguredDataReplicationProcess` | Organization | `ReplicationProcessID` |
+| `SearchReindex` | Site | `Indexer Type` |
+| `ExecuteScriptModule` | Organization & Sites | `ExecuteScriptModule.Module` |
+
+Import steps share a common set of file-handling parameters (`WorkingFolder`, `FileNamePattern`, `ImportMode`, `NoFilesFoundHandling`, `ImportFailedHandling`, `AfterImportFileHandling`, `ArchiveFolder`); export steps share `ExportFile` / `FileNamePrefix` / `OverwriteExportFile`. Processing steps (replication, reindex, cache invalidation, `ExecutePipeline`/`ExecuteScriptModule`/`IncludeStepsFromJob`) have their own parameters. Read any step's doc for the exact list.
+
+### Referencing an IMPEX-staged file from a prior step
+
+Standard import steps read from the instance **IMPEX** area. The `WorkingFolder` parameter is resolved relative to `IMPEX/src/` (and defaults to `IMPEX/src/`); `FileNamePattern` is a regex that selects which file(s) in that folder to import. This is the hand-off contract: **a step that writes a file under `IMPEX/src/...` can be followed by a standard import step that reads it** — no download/upload round-trip.
+
+In a custom step, write to that location with `dw.io.File` using the `IMPEX` constant:
+
+```javascript
+var File = require('dw/io/File');
+
+// Custom step writes a catalog import file into IMPEX/src/jobdata/
+exports.beforeStep = function () {
+    var dir = new File(File.IMPEX + '/src/jobdata');
+    dir.mkdirs();
+    outputFile = new File(dir, 'catalog-' + Date.now() + '.xml');
+    fileWriter = new dw.io.FileWriter(outputFile);
+    // ... write valid catalog XML (validate against the `catalog` XSD:
+    //     b2c docs schema catalog) ...
+};
+```
+
+Then the standard `ImportCatalog` step in the next stage of the flow reads it by pointing `WorkingFolder` at `src/jobdata` (relative to `IMPEX/src/` → use `jobdata`) with a `FileNamePattern` of `catalog-.*\.xml`.
+
+### Chaining custom + standard steps in one flow
+
+A flow can interleave your custom steps with standard ones. Example: a custom step pulls data from an external system and generates a catalog XML in IMPEX; a standard `ImportCatalog` step then applies it; finally a standard replication step publishes the change to production.
+
+```xml
+<!-- jobs.xml — a flow chaining a custom step with standard steps -->
+<job job-id="NightlyCatalogSync">
+  <flow>
+    <!-- 1. Custom step: fetch + write IMPEX/src/jobdata/catalog-*.xml -->
+    <step step-id="generateCatalog" type="custom.GenerateCatalogExport">
+      <parameters>
+        <parameter name="OutputFolder">jobdata</parameter>
+      </parameters>
+    </step>
+
+    <!-- 2. Standard step: import the file the custom step produced -->
+    <step step-id="importCatalog" type="ImportCatalog">
+      <parameters>
+        <parameter name="WorkingFolder">jobdata</parameter>
+        <parameter name="FileNamePattern">catalog-.*\.xml</parameter>
+        <parameter name="ImportMode">Merge</parameter>
+        <parameter name="NoFilesFoundHandling">ERROR</parameter>
+        <parameter name="ImportFailedHandling">ERROR</parameter>
+        <parameter name="AfterImportFileHandling">Archive</parameter>
+      </parameters>
+    </step>
+
+    <!-- 3. Standard step: publish to production via a preconfigured replication
+         process (on Staging only; configured in BM with activation 'Job Step') -->
+    <step step-id="publishCatalog" type="ExecutePreconfiguredDataReplicationProcess">
+      <parameters>
+        <parameter name="ReplicationProcessID">nightly-catalog-publish</parameter>
+      </parameters>
+    </step>
+  </flow>
+</job>
+```
+
+The custom step's `OutputFolder` and the standard step's `WorkingFolder` agree on `jobdata` (i.e. `IMPEX/src/jobdata/`), so the file written in step 1 is exactly what step 2 imports; step 3 then replicates the result. (In Business Manager you build the same flow visually: add your custom step, then the standard `ImportCatalog` step after it, then the replication step, setting each step's parameters in its form.)
+
+### In-flow standard step vs. the CLI equivalent
+
+Some standard steps overlap with `b2c` CLI commands (the CLI's `b2c job import`/`b2c job export` are themselves the `sfcc-site-archive-import`/`-export` system jobs). Choose based on where the data lives:
+
+- **Use an in-flow standard step** when the file is produced or already staged **on the instance** — especially when an earlier step in the same flow generated it (no round-trip), when it should run on a Business Manager schedule, or when it must follow custom processing server-side. Example: the standard `ImportCatalog` step consuming a catalog XML that a prior custom step wrote to IMPEX.
+- **Use the CLI** (`b2c job import`, `b2c job export`) when you are moving data **between your machine and the instance** — uploading a local archive, downloading an export, or scripting a one-off from CI.
+
+Rule of thumb: data already on (or generated on) the instance → in-flow standard step; data crossing the machine/instance boundary → CLI. See the `b2c-cli:b2c-job` skill for the CLI side.
+
 ## Best Practices
 
 1. **Use chunk-oriented** for bulk data - better progress tracking and resumability
@@ -359,6 +512,7 @@ exports.afterStep = function (success, parameters, stepExecution) {
 ## Related Skills
 
 - `b2c-cli:b2c-job` - For **running** existing jobs and importing site archives via CLI
+- `b2c-cli:b2c-docs` - To look up standard job step type IDs and their parameters (`b2c docs read job-steps`, `b2c docs read <TypeID>`)
 - `b2c:b2c-webservices` - When job steps need to call external HTTP services or APIs, use the webservices skill for service configuration and HTTP client patterns
 
 ## Detailed Reference
@@ -366,3 +520,4 @@ exports.afterStep = function (success, parameters, stepExecution) {
 - [Task-Oriented Steps](references/TASK-ORIENTED.md) - Full task step patterns
 - [Chunk-Oriented Steps](references/CHUNK-ORIENTED.md) - Full chunk step patterns
 - [steptypes.json Reference](references/STEPTYPES-JSON.md) - Complete schema
+- [jobs.xml Reference](references/JOBS-XML.md) - Authoring & importing a job definition (flows, steps, required triggers)

@@ -10,6 +10,29 @@ tags: [authentication, slas, scapi, headless, storefront, storefront-next, sfra]
 
 Advanced authentication patterns for SLAS (Shopper Login and API Access Service) beyond basic login. These patterns enable passwordless authentication, hybrid storefront support, and system-to-system integration.
 
+## Scope & grounding
+
+This skill covers SLAS authentication patterns including passwordless login (email OTP, SMS, passkeys), session bridging, hybrid authentication (B2C 25.3+), token management, TSOB, and JWT validation with framework-specific examples for PWA Kit, Storefront Next, and SFRA. Code examples are illustrative of typical flows. Before answering version-specific questions, framework-specific implementations, or providing code the user will run in production, confirm current API contracts, parameters, rate limits, and version requirements against the official documentation via `b2c docs search` and `b2c docs read`. The canonical docs are the authoritative source for B2C platform specifics, API shapes, and configuration requirements.
+
+### Canonical docs
+
+- `commerce-api/slas` - SLAS overview
+- `commerce-api/slas-best-practices` - Security and implementation best practices
+- `commerce-api/slas-passwordless-login-overview` - Passwordless authentication overview
+- `commerce-api/slas-passwordless-login-email` - Email OTP implementation
+- `commerce-api/slas-passwordless-login-passkey` - Passkey/WebAuthn implementation
+- `commerce-api/slas-passwordless-sms` - SMS OTP implementation
+- `commerce-api/slas-session-bridge-overview` - Session bridge overview
+- `commerce-api/slas-session-bridge-auth` - Session bridge implementation
+- `commerce-api/hybrid-authentication` - Hybrid authentication (B2C 25.3+)
+- `commerce-api/hybrid-auth-pwa-kit-v2` - PWA Kit v2 hybrid auth
+- `pwa-kit-managed-runtime/hybrid-auth` - PWA Kit managed runtime hybrid auth
+- `pwa-kit-managed-runtime/plugin-slas-setup` - Plugin SLAS setup
+- `commerce-api/slas-trusted-system` - Trusted system on behalf (TSOB)
+- `commerce-api/slas-public-client` - Public client configuration
+- `commerce-api/slas-private-client` - Private client configuration
+- `commerce-api/slas-validate-jwt-with-jwks` - JWT validation
+
 ## Authentication Methods Overview
 
 | Method | Use Case | User Experience |
@@ -23,6 +46,8 @@ Advanced authentication patterns for SLAS (Shopper Login and API Access Service)
 | TSOB | System integration | Backend service calls |
 
 ## Passwordless Email OTP
+
+> Illustrative of the flow; confirm current API shape, parameters, and rate limits with `b2c docs read commerce-api/slas-passwordless-login-email` and `b2c docs read commerce-api/slas-passwordless-login-overview`.
 
 Send one-time passwords via email for passwordless login.
 
@@ -151,17 +176,23 @@ async function sendOTPSMS(phoneNumber, otp) {
 
 ## Passkeys (FIDO2/WebAuthn)
 
+> Illustrative of the flow; confirm current API shape and parameters with `b2c docs read commerce-api/slas-passwordless-login-passkey`.
+
 Enable biometric authentication using FIDO2/WebAuthn passkeys. Registration requires prior identity verification via OTP. The flow involves starting registration with SLAS, creating a credential via the browser WebAuthn API, then completing registration. Authentication follows a similar start/authenticate/finish pattern.
 
 See [references/PASSKEYS.md](references/PASSKEYS.md) for full registration and authentication code examples.
 
 ## Session Bridge
 
+> Illustrative of the flow; confirm current API shape and platform-agnostic patterns with `b2c docs read commerce-api/slas-session-bridge-overview` and `b2c docs read commerce-api/slas-session-bridge-auth`. PWA Kit examples are framework-specific.
+
 Maintain session continuity between PWA Kit and SFRA storefronts using signed bridge tokens (`dwsgst` for guest, `dwsrst` for registered). Supports both PWA-to-SFRA and SFRA-to-PWA directions. Note that DWSID is deprecated for registered shoppers.
 
 See [references/SESSION-BRIDGE.md](references/SESSION-BRIDGE.md) for full implementation details including token generation, redirect patterns, callback handlers, and error handling.
 
 ## Hybrid Authentication (B2C 25.3+)
+
+> Illustrative of the concept; confirm version requirements and migration guidance with `b2c docs read commerce-api/hybrid-authentication`.
 
 **Hybrid Auth replaces Plugin SLAS** for hybrid PWA/SFRA storefronts. It's built directly into the B2C platform and provides automatic session synchronization.
 
@@ -182,6 +213,8 @@ If using Plugin SLAS, migrate to Hybrid Auth:
 4. Update storefront to use platform auth
 
 ## Token Refresh
+
+> Illustrative of the flow; confirm parameter requirements and token rotation behavior with `b2c docs read commerce-api/slas-public-client` and `b2c docs read commerce-api/slas-private-client`.
 
 **Important:** The `channel_id` parameter is **required** for guest token refresh.
 
@@ -238,6 +271,8 @@ async function refreshTokenPrivate(refreshToken, clientId, clientSecret, siteId)
 ```
 
 ## Trusted System on Behalf (TSOB)
+
+> Illustrative of the flow; confirm current API shape and configuration requirements with `b2c docs read commerce-api/slas-trusted-system`.
 
 Server-to-server authentication to act on behalf of a shopper.
 
@@ -307,6 +342,8 @@ async function getTSOBTokenWithRetry(shopperLoginId, maxRetries = 3) {
 4. Keep `login_id` length under 60 characters
 
 ## JWT Validation
+
+> Illustrative of the flow; confirm current API shape and validation patterns with `b2c docs read commerce-api/slas-validate-jwt-with-jwks`.
 
 Validate SLAS tokens using JWKS (JSON Web Key Set).
 

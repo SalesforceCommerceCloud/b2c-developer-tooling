@@ -24,6 +24,7 @@ import esbuild from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {syncXsd} from './sync-xsd.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,6 +37,20 @@ const scriptTypesRoot = path.join(pkgRoot, '..', 'b2c-script-types');
 const watchMode = process.argv.includes('--watch');
 
 const extPkg = JSON.parse(fs.readFileSync(path.join(pkgRoot, 'package.json'), 'utf8'));
+
+// Resolve vscode-html-languageservice's ESM entry (its `module` field). We alias
+// the bare import to this so esbuild bundles the statically-importable ESM build
+// rather than the UMD `main` (whose dynamic requires it cannot follow). Resolve
+// the package.json first (always in `exports`), then read `module`.
+const htmlLanguageServicePkgJson = fileURLToPath(import.meta.resolve('vscode-html-languageservice/package.json'));
+const htmlLanguageServiceEsmEntry = path.join(
+  path.dirname(htmlLanguageServicePkgJson),
+  JSON.parse(fs.readFileSync(htmlLanguageServicePkgJson, 'utf8')).module,
+);
+
+// Keep XSDs and package.json#contributes.xmlValidation in lockstep with
+// resources/xsd-mappings.json before any bundling happens.
+syncXsd({pkgRoot});
 
 // In CJS there is no import.meta; SDK's version.js uses createRequire(import.meta.url). Shim it.
 // Use globalThis so the value is visible inside all module wrappers in the bundle.
@@ -166,6 +181,22 @@ function copyScriptTypesPlugin() {
   console.log('[script-types] staged', path.relative(pkgRoot, dest));
 }
 
+/**
+ * Copy raw CIP webview stylesheet into dist/ so the packaged extension never
+ * reaches back into src/. Mirrors how the SDK data dirs are copied above.
+ *
+ * The webview UI scripts go through esbuild → dist/webview-ui/. Copying it
+ * keeps the runtime resource layout consistent (everything under dist/).
+ */
+function copyCipStyles() {
+  const src = path.join(pkgRoot, 'src', 'cip-analytics', 'cip-styles.css');
+  if (!fs.existsSync(src)) return;
+  const destDir = path.join(pkgRoot, 'dist', 'cip-analytics');
+  fs.mkdirSync(destDir, {recursive: true});
+  fs.copyFileSync(src, path.join(destDir, 'cip-styles.css'));
+  console.log('[cip-styles] Copied cip-styles.css to dist/cip-analytics/');
+}
+
 /** Copy Swagger UI assets to dist/swagger-ui/ for the API Browser webview. */
 function copySwaggerUiAssets() {
   const swaggerUiIndex = fileURLToPath(import.meta.resolve('swagger-ui-dist'));
@@ -184,6 +215,7 @@ function syncStaticAssets() {
   copySdkDataDirs();
   copyScriptTypesPlugin();
   copySwaggerUiAssets();
+  copyCipStyles();
 }
 
 const buildOptions = {
@@ -197,6 +229,15 @@ const buildOptions = {
   sourcemap: true,
   metafile: true,
   external: ['vscode'],
+  // Force the ESM build of vscode-html-languageservice. Its `main` (UMD) entry
+  // wraps every module in a `factory(require, exports)` shim whose internal
+  // `require('../beautify/...')` calls esbuild cannot follow statically — so
+  // resolving `main` bundles only the top entry and the formatter/beautifier are
+  // missing at runtime (format() throws). The ESM build uses static imports
+  // esbuild inlines correctly. Alias to the package's `module` entry.
+  alias: {
+    'vscode-html-languageservice': htmlLanguageServiceEsmEntry,
+  },
   // In watch mode, include "development" so esbuild resolves the SDK's exports to .ts source files
   // directly (no SDK rebuild needed). Production builds use the built dist/ artifacts.
   conditions: watchMode ? ['development', 'require', 'node', 'default'] : ['require', 'node', 'default'],
@@ -214,15 +255,59 @@ const buildOptions = {
   logLevel: 'info',
 };
 
+// Webview UI bundles. Each entry compiles a React app for one webview panel
+// (Query Builder, Tables Browser, Report Dashboard). Targets the browser since
+// these run inside a VS Code webview, not the extension host.
+const webviewUiSrc = path.join(pkgRoot, 'src', 'webview-ui');
+const webviewBuildOptions = {
+  entryPoints: {
+    'query-builder': path.join(webviewUiSrc, 'query-builder', 'index.tsx'),
+    'tables-browser': path.join(webviewUiSrc, 'tables-browser', 'index.tsx'),
+    'report-dashboard': path.join(webviewUiSrc, 'report-dashboard', 'index.tsx'),
+  },
+  outdir: path.join(pkgRoot, 'dist', 'webview-ui'),
+  bundle: true,
+  platform: 'browser',
+  format: 'esm',
+  target: 'es2022',
+  sourcemap: true,
+  jsx: 'automatic',
+  loader: {'.css': 'text'},
+  define: {
+    'process.env.NODE_ENV': watchMode ? '"development"' : '"production"',
+  },
+  logLevel: 'info',
+};
+
 if (watchMode) {
   syncStaticAssets();
   const ctx = await esbuild.context(buildOptions);
   await ctx.watch();
   console.log('[esbuild] watching for changes...');
+
+  // Watch webview-ui in parallel; failures inside the React bundles must not bring
+  // down the extension host build, so each runs in its own context.
+  if (fs.existsSync(webviewUiSrc)) {
+    const webviewCtx = await esbuild.context(webviewBuildOptions);
+    await webviewCtx.watch();
+    console.log('[esbuild] watching webview-ui for changes...');
+  }
 } else {
   const result = await esbuild.build(buildOptions);
 
   syncStaticAssets();
+
+  if (fs.existsSync(webviewUiSrc)) {
+    try {
+      await esbuild.build(webviewBuildOptions);
+      console.log('[webview-ui] Built webview UI bundles into dist/webview-ui/');
+    } catch (err) {
+      // Surface a clean error so CI logs a single recognisable line instead of
+      // letting esbuild's stack ride out as the top-level rejection.
+      console.error('[webview-ui] Build failed:', err instanceof Error ? err.message : err);
+      process.exit(1);
+    }
+  }
 
   if (result.metafile && process.env.ANALYZE_BUNDLE) {
     const metaPath = path.join(pkgRoot, 'dist', 'meta.json');

@@ -17,17 +17,21 @@ headerPlugin.rules.header.meta.schema = false;
 export default [
   includeIgnoreFile(gitignorePath),
   {
-    ignores: ['src/template/**'],
+    // src/template/** holds raw template assets; test-workspace/** holds sample
+    // SFCC cartridges used for dev-host testing — their .js controllers/services
+    // legitimately use CommonJS require() (the B2C Commerce runtime style) and
+    // are not extension source, so they must not be linted by our TS rules.
+    ignores: ['src/template/**', 'test-workspace/**'],
   },
   ...tseslint.configs.recommended,
   prettierPlugin,
   {
-    files: ['**/*.ts'],
+    files: ['**/*.ts', '**/*.tsx'],
     plugins: {
       header: headerPlugin,
     },
     languageOptions: {
-      parserOptions: {ecmaVersion: 2022, sourceType: 'module'},
+      parserOptions: {ecmaVersion: 2022, sourceType: 'module', ecmaFeatures: {jsx: true}},
     },
     rules: {
       'header/header': ['error', 'block', copyrightHeader],
@@ -40,6 +44,12 @@ export default [
       // Extension tests run in VS Code test env; allow common test patterns
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-expressions': 'off',
+    },
+  },
+  {
+    files: ['test-workspace/**/*.js'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
 ];

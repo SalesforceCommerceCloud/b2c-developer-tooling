@@ -10,6 +10,19 @@ tags: [metadata, custom-objects, site-config, business-manager]
 
 This skill guides you through working with site metadata XML for Salesforce B2C Commerce, including custom attributes, custom objects, and site preferences.
 
+## Scope & grounding
+
+This skill covers B2C Commerce metadata XML system (metadata.xsd namespace http://www.demandware.com/xml/impex/metadata/2006-10-31), including system-objecttype-extensions.xml, custom-objecttype-definitions.xml, and preferences.xml file structures. The examples show attribute types, enum value patterns, and Script API custom attribute access via dw.system.Site and ExtensibleObject.custom. Before answering questions that name specific B2C versions, XSD schema constraints, or emitting code the user will run, confirm current API shape and schema rules via `b2c docs search` and `b2c docs read` (CLI) or docs_search/docs_read (MCP). The canonical B2C Commerce documentation is the grounding source for metadata schema evolution, Script API signatures, and platform object types.
+
+**Canonical docs:**
+- `metadata` - metadata XML schema and structure
+- `dw.system.Site` - Script API for site preferences
+- `dw.system.SitePreferences` - Script API for site preferences access
+- `dw.object.CustomAttributes` - Script API for custom attribute access
+- `b2c-commerce/b2c-create-impex-folder-structure-ds` - site archive folder structure
+- `b2c-commerce/b2c-exporting-active-data` - export guide
+- `b2c-commerce/creatingcustombusinessobjectswithdemandwarebusinessmanager` - custom object creation
+- `b2c-commerce/b2c-business-manager-extension-points` - Business Manager extension points
 
 ## Overview
 
@@ -65,6 +78,8 @@ Add custom attributes to existing system objects.
 
 ### Common System Objects
 
+> Illustrative list; confirm current platform object types with `b2c docs read b2c-commerce/creatingcustombusinessobjectswithdemandwarebusinessmanager` and Business Manager object reference.
+
 | Object Type | Use Case |
 |-------------|----------|
 | `Product` | Product attributes |
@@ -75,7 +90,11 @@ Add custom attributes to existing system objects.
 | `Category` | Category attributes |
 | `Content` | Content asset attributes |
 
+See [System Objects Reference](references/SYSTEM-OBJECTS.md) for more types. The full set of extensible system objects is defined by the B2C platform — check Business Manager and official docs for version-specific availability.
+
 ### Attribute Types
+
+> Per metadata.xsd simpleType.AttributeType — confirm current schema with `b2c docs schema metadata`.
 
 | Type | Description | Example |
 |------|-------------|---------|
@@ -97,9 +116,11 @@ Add custom attributes to existing system objects.
 
 ### Enum Value Definitions
 
+> Illustrative of enum structure; confirm current schema ordering constraints with `b2c docs schema metadata`.
+
 Enum types (`enum-of-string`, `enum-of-int`, `set-of-string`, `set-of-int`) require `value-definitions` with **display/value pairs**:
 
-> **Element order matters.** Inside each `<value-definition>`, the `<display>` element must come **before** `<value>`. The `metadata.xsd` schema enforces this strict ordering — putting `<value>` first fails site import validation with `cvc-complex-type.2.4.d: Invalid content was found starting with element 'display'`.
+> **Element order matters.** The metadata.xsd schema requires `<display>` before `<value>` in each `<value-definition>` — see `b2c docs schema metadata` for current schema constraints.
 
 ```xml
 <attribute-definition attribute-id="warrantyType">
@@ -328,7 +349,10 @@ Preferences can be set per instance type (development, staging, production) or f
 
 ### Access in Code
 
+> Illustrative code; confirm current API signatures and return types with `b2c docs read dw.system.Site`.
+
 ```javascript
+// See dw.system.Site Script API docs for full method signatures and return types
 var Site = require('dw/system/Site');
 
 var enableFeatureX = Site.current.getCustomPreferenceValue('enableFeatureX');
@@ -337,6 +361,8 @@ var maxItems = Site.current.getCustomPreferenceValue('maxItemsPerPage');
 ```
 
 ## Attribute Definition Options
+
+> Illustrative of available flags; confirm current schema elements and deprecation status with `b2c docs schema metadata`.
 
 ```xml
 <attribute-definition attribute-id="myAttribute">
@@ -366,7 +392,7 @@ var maxItems = Site.current.getCustomPreferenceValue('maxItemsPerPage');
 | `visible-flag` | Shown in BM |
 | `site-specific-flag` | Different value per site |
 | `order-required-flag` | Required for order export |
-| `searchable-flag` | Indexed for search |
+| `searchable-flag` | Indexed for search (deprecated per metadata.xsd — use search2.xsd SearchableAttributes instead) |
 
 ## Best Practices
 
@@ -376,7 +402,9 @@ var maxItems = Site.current.getCustomPreferenceValue('maxItemsPerPage');
 4. **Use enums over strings** for controlled vocabularies
 5. **Document with descriptions** - they appear as tooltips
 
-## Detailed Reference
+## Quick Reference
+
+For canonical documentation, see the Scope & Grounding section above. The files below are derived quick-reference summaries.
 
 - [System Objects Reference](references/SYSTEM-OBJECTS.md) - All system object types
 - [XML Examples](references/XML-EXAMPLES.md) - Complete import/export examples
