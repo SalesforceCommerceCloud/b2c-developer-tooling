@@ -63,10 +63,22 @@ export class DwJsonSource implements ConfigSource {
    * List all instances from dw.json.
    */
   async listInstances(options?: ResolveConfigOptions): Promise<InstanceInfo[]> {
-    const result = await loadFullDwJson({
-      path: options?.configPath,
-      projectDirectory: options?.projectDirectory ?? options?.workingDirectory,
-    });
+    let result: Awaited<ReturnType<typeof loadFullDwJson>>;
+    try {
+      result = await loadFullDwJson({
+        path: options?.configPath,
+        projectDirectory: options?.projectDirectory ?? options?.workingDirectory,
+      });
+    } catch (error) {
+      // A malformed dw.json (loadFullDwJson re-throws on JSON.parse failure)
+      // must not crash callers that only want to enumerate instances. Mirror
+      // the resolver's tolerance — log a warning and report no instances —
+      // so an unparseable file degrades gracefully (e.g. the VS Code status
+      // bar / instance switcher) instead of throwing.
+      const message = error instanceof Error ? error.message : String(error);
+      getLogger().warn({error: message}, '[DwJsonSource] Failed to read dw.json while listing instances');
+      return [];
+    }
 
     if (!result) {
       return [];

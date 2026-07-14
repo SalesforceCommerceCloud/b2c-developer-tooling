@@ -104,6 +104,8 @@ export interface DwJsonConfig {
   assetQuery?: string[];
   /** Optional CIP analytics host override */
   cipHost?: string;
+  /** Documentation categories to expose (allowlist); dw.json key `docs-categories` */
+  docsCategories?: string[];
   /** Path to PKCS12 certificate file for mTLS (two-factor auth) */
   certificate?: string;
   /** Passphrase for the certificate */

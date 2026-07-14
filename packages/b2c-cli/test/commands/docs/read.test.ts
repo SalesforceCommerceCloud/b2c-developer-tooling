@@ -25,7 +25,8 @@ describe('docs read', () => {
     const command: any = await createCommand({}, {query: 'Nope'});
 
     const readStub = sinon.stub().returns(null);
-    command.operations = {...command.operations, readDocByQuery: readStub};
+    const detectStub = sinon.stub().resolves({projectTypes: [], matchedPatterns: []});
+    command.operations = {...command.operations, readDocByQuery: readStub, detectWorkspaceType: detectStub};
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
@@ -43,7 +44,8 @@ describe('docs read', () => {
     const command: any = await createCommand({raw: true}, {query: 'ProductMgr'});
 
     const readStub = sinon.stub().returns({entry: {id: 'x', title: 't', filePath: 'x.md'}, content: '# Hello'});
-    command.operations = {...command.operations, readDocByQuery: readStub};
+    const detectStub = sinon.stub().resolves({projectTypes: [], matchedPatterns: []});
+    command.operations = {...command.operations, readDocByQuery: readStub, detectWorkspaceType: detectStub};
     sinon.stub(command, 'jsonEnabled').returns(false);
 
     const writeStub = sinon.stub(process.stdout, 'write');
@@ -58,12 +60,66 @@ describe('docs read', () => {
     const command: any = await createCommand({json: true}, {query: 'ProductMgr'});
 
     const readStub = sinon.stub().returns({entry: {id: 'x', title: 't', filePath: 'x.md'}, content: '# Hello'});
-    command.operations = {...command.operations, readDocByQuery: readStub};
+    const detectStub = sinon.stub().resolves({projectTypes: [], matchedPatterns: []});
+    command.operations = {...command.operations, readDocByQuery: readStub, detectWorkspaceType: detectStub};
     sinon.stub(command, 'jsonEnabled').returns(true);
 
     const result = await command.run();
 
-    expect(readStub.calledOnceWithExactly('ProductMgr')).to.equal(true);
+    // No workspace detected -> workspace is undefined (still passed through).
+    expect(readStub.calledOnceWithExactly('ProductMgr', {enabledCategories: undefined, workspace: undefined})).to.equal(
+      true,
+    );
     expect(result.entry.id).to.equal('x');
+  });
+
+  it('passes the --topics allowlist through to readDocByQuery', async () => {
+    const command: any = await createCommand({json: true, topics: 'sfnext, commerce-api'}, {query: 'ProductMgr'});
+
+    const readStub = sinon.stub().returns({entry: {id: 'x', title: 't', filePath: 'x.md'}, content: '# Hello'});
+    const detectStub = sinon.stub().resolves({projectTypes: [], matchedPatterns: []});
+    command.operations = {...command.operations, readDocByQuery: readStub, detectWorkspaceType: detectStub};
+    sinon.stub(command, 'jsonEnabled').returns(true);
+
+    await command.run();
+
+    expect(
+      readStub.calledOnceWithExactly('ProductMgr', {
+        enabledCategories: ['sfnext', 'commerce-api'],
+        workspace: undefined,
+      }),
+    ).to.equal(true);
+  });
+
+  it('favors the auto-detected workspace when resolving a fuzzy query', async () => {
+    const command: any = await createCommand({json: true}, {query: 'ProductMgr'});
+
+    const readStub = sinon.stub().returns({entry: {id: 'x', title: 't', filePath: 'x.md'}, content: '# Hello'});
+    const detectStub = sinon.stub().resolves({projectTypes: ['cartridges'], matchedPatterns: []});
+    command.operations = {...command.operations, readDocByQuery: readStub, detectWorkspaceType: detectStub};
+    sinon.stub(command, 'jsonEnabled').returns(true);
+
+    await command.run();
+
+    expect(
+      readStub.calledOnceWithExactly('ProductMgr', {enabledCategories: undefined, workspace: ['cartridges']}),
+    ).to.equal(true);
+  });
+
+  it('opts out of workspace preference with --workspace all', async () => {
+    const command: any = await createCommand({json: true, workspace: 'all'}, {query: 'ProductMgr'});
+
+    const readStub = sinon.stub().returns({entry: {id: 'x', title: 't', filePath: 'x.md'}, content: '# Hello'});
+    const detectStub = sinon.stub().resolves({projectTypes: ['cartridges'], matchedPatterns: []});
+    command.operations = {...command.operations, readDocByQuery: readStub, detectWorkspaceType: detectStub};
+    sinon.stub(command, 'jsonEnabled').returns(true);
+
+    await command.run();
+
+    // --workspace all skips detection entirely -> no preference.
+    expect(detectStub.called).to.equal(false);
+    expect(readStub.calledOnceWithExactly('ProductMgr', {enabledCategories: undefined, workspace: undefined})).to.equal(
+      true,
+    );
   });
 });

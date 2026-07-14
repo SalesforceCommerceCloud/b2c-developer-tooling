@@ -35,7 +35,7 @@
  * results.forEach(r => console.log(r.entry.id, r.score));
  *
  * // Read a specific doc by fuzzy query
- * const doc = readDocByQuery('dw.catalog.ProductMgr');
+ * const doc = await readDocByQuery('dw.catalog.ProductMgr');
  * if (doc) {
  *   console.log(doc.content);
  * }
@@ -45,10 +45,45 @@
  */
 
 // Types
-export type {DocEntry, SearchIndex, SearchResult, SchemaEntry, SchemaIndex, SchemaSearchResult} from './types.js';
+export type {
+  DocCategory,
+  DocEntry,
+  SearchIndex,
+  SearchResult,
+  SchemaEntry,
+  SchemaIndex,
+  SchemaSearchResult,
+} from './types.js';
 
 // Search operations
-export {searchDocs, readDoc, readDocByQuery, listDocs, loadSearchIndex} from './search.js';
+export {
+  searchDocs,
+  readDoc,
+  readDocByQuery,
+  readEntryContent,
+  listDocs,
+  loadSearchIndex,
+  resetDocsCache,
+  categoriesForWorkspace,
+  resolveEnabledCategories,
+  DOC_CATEGORIES,
+  type SearchDocsOptions,
+} from './search.js';
+
+// Online-content cache (memory + on-disk TTL) for corpora read from the network
+export {
+  clearContentCache,
+  purgeContentCache,
+  getContentCacheStats,
+  getCachedContent,
+  getCachedEntry,
+  setCachedContent,
+  initializeContentCache,
+  DEFAULT_CACHE_TTL_MS,
+  type CacheSource,
+  type CachedEntry,
+  type ContentCacheStats,
+} from './content-cache.js';
 
 // Schema operations
 export {listSchemas, readSchema, readSchemaByQuery, searchSchemas} from './schema.js';

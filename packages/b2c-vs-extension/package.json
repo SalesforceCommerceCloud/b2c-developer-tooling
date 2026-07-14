@@ -1,8 +1,8 @@
 {
   "name": "b2c-vs-extension",
-  "displayName": "B2C DX VSCE",
-  "description": "VS Code extension for B2C Commerce developer experience (Page Designer assistant, B2C CLI integration)",
-  "version": "0.10.0",
+  "displayName": "Salesforce B2C Commerce",
+  "description": "Tools for developing on Salesforce B2C Commerce, including cartridge deployment, script debugging and IntelliSense, and sandbox management.",
+  "version": "0.11.0",
   "publisher": "Salesforce",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -14,7 +14,10 @@
   "type": "module",
   "dependencies": {
     "@salesforce/b2c-script-types": "workspace:*",
-    "@salesforce/b2c-tooling-sdk": "workspace:*"
+    "@salesforce/b2c-tooling-sdk": "workspace:*",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "vscode-html-languageservice": "catalog:"
   },
   "engines": {
     "vscode": "^1.105.1"
@@ -23,7 +26,7 @@
     "connectionString": "InstrumentationKey=6fcc215f-0b11-4864-ad5c-3945ae19e2f3;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=a60f17ec-265a-4dfc-b8df-03a64695697d"
   },
   "activationEvents": [
-    "onStartupFinished",
+    "onLanguage:isml",
     "onView:b2cWebdavExplorer",
     "onView:b2cContentExplorer",
     "onFileSystem:b2c-webdav",
@@ -31,8 +34,12 @@
     "onView:b2cApiBrowser",
     "onView:b2cSandboxExplorer",
     "onView:b2cCartridgeExplorer",
+    "onView:b2cExportExplorer",
     "onDebugResolve:b2c-script",
-    "workspaceContains:**/commerce-app.json"
+    "workspaceContains:**/commerce-app.json",
+    "workspaceContains:**/cartridge/*.properties",
+    "workspaceContains:**/.project",
+    "workspaceContains:dw.json"
   ],
   "main": "./dist/extension.cjs",
   "contributes": {
@@ -41,6 +48,83 @@
         "name": "@salesforce/b2c-script-types",
         "enableForWorkspaceTypeScriptVersions": true,
         "configNamespace": "b2c-dx"
+      }
+    ],
+    "languages": [
+      {
+        "id": "isml",
+        "aliases": [
+          "ISML"
+        ],
+        "extensions": [
+          ".isml"
+        ],
+        "configuration": "./language/isml/language-configuration.json"
+      }
+    ],
+    "configurationDefaults": {
+      "[isml]": {
+        "editor.linkedEditing": true,
+        "editor.suggest.insertMode": "replace",
+        "editor.wordWrap": "off"
+      },
+      "[json]": {
+        "editor.quickSuggestions": {
+          "other": true,
+          "comments": false,
+          "strings": true
+        }
+      },
+      "[jsonc]": {
+        "editor.quickSuggestions": {
+          "other": true,
+          "comments": false,
+          "strings": true
+        }
+      },
+      "emmet.includeLanguages": {
+        "isml": "html"
+      }
+    },
+    "semanticTokenTypes": [
+      {
+        "id": "ismlTag",
+        "description": "An ISML tag name (e.g. isloop, isprint), highlighted distinctly from HTML tags."
+      }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "isml",
+        "scopes": {
+          "ismlTag": [
+            "support.class.isml"
+          ]
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "isml",
+        "scopeName": "text.html.isml",
+        "path": "./language/isml/isml.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.isml.isscript": "javascript",
+          "meta.embedded.expression.isml": "javascript"
+        }
+      }
+    ],
+    "snippets": [
+      {
+        "language": "isml",
+        "path": "./language/isml/isml.snippets.json"
+      }
+    ],
+    "breakpoints": [
+      {
+        "language": "isml"
+      },
+      {
+        "language": "javascript"
       }
     ],
     "configuration": {
@@ -56,6 +140,11 @@
           "default": true,
           "description": "Enable the WebDAV Browser."
         },
+        "b2c-dx.features.sandboxFilesystem": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically mount the active instance's WebDAV filesystem as a workspace folder on startup. Requires the WebDAV Browser to be enabled."
+        },
         "b2c-dx.features.contentLibraries": {
           "type": "boolean",
           "default": true,
@@ -66,6 +155,11 @@
           "default": true,
           "description": "Enable log tailing commands."
         },
+        "b2c-dx.features.jobsExplorer": {
+          "type": "boolean",
+          "default": false,
+          "description": "(Preview) Enable the Job History view for monitoring Business Manager job execution history. In development — off by default."
+        },
         "b2c-dx.features.scaffold": {
           "type": "boolean",
           "default": true,
@@ -75,6 +169,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable the API Browser for exploring SCAPI schemas."
+        },
+        "b2c-dx.features.exportExplorer": {
+          "type": "boolean",
+          "default": false,
+          "description": "(Preview) Enable the Export view for interactively exporting site impex data units. In development — off by default."
         },
         "b2c-dx.features.cap": {
           "type": "boolean",
@@ -101,6 +200,59 @@
           "maximum": 300,
           "description": "Seconds between polls during sandbox state transitions."
         },
+        "b2c-dx.jobs.refreshInterval": {
+          "type": "number",
+          "default": 30,
+          "minimum": 5,
+          "maximum": 300,
+          "description": "Seconds between background refreshes for the Jobs view."
+        },
+        "b2c-dx.jobs.discoveryExecutionScanLimit": {
+          "type": "number",
+          "default": 2000,
+          "minimum": 200,
+          "maximum": 5000,
+          "description": "Maximum number of recent executions scanned to discover unique jobs in the Jobs view."
+        },
+        "b2c-dx.jobs.defaultStatusFilter": {
+          "type": "string",
+          "default": "all",
+          "enum": [
+            "all",
+            "active",
+            "running",
+            "scheduled",
+            "failed",
+            "completed"
+          ],
+          "description": "Default status filter for Job History root items. 'all' shows every recent execution (the BM-style timeline view)."
+        },
+        "b2c-dx.jobs.defaultGrouping": {
+          "type": "string",
+          "default": "chronological",
+          "enum": [
+            "chronological",
+            "groupByJobId"
+          ],
+          "enumDescriptions": [
+            "BM-style timeline: every execution is a top-level row, newest first.",
+            "Group executions under their parent Job ID, with the most-recently-run job on top."
+          ],
+          "description": "Default root grouping for Job History. Use the title-bar toggle to switch at runtime."
+        },
+        "b2c-dx.jobs.autoRefresh": {
+          "type": "boolean",
+          "default": false,
+          "description": "Auto-refresh Job History on a schedule (set by b2c-dx.jobs.refreshInterval). Off by default — load manually from the title bar."
+        },
+        "b2c-dx.jobs.knownJobIds": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Optional list of known job IDs shown as quick picks when running a job from VS Code."
+        },
         "b2c-dx.features.codeSync": {
           "type": "boolean",
           "default": true,
@@ -115,6 +267,81 @@
           "type": "boolean",
           "default": true,
           "description": "Send anonymous usage telemetry (extension lifecycle and broad feature-category events). Honors VS Code's telemetry.telemetryLevel — disabling that disables this regardless of this setting."
+        },
+        "b2c-dx.features.cipAnalytics": {
+          "type": "boolean",
+          "default": false,
+          "description": "(Preview) Enable the B2C-DX Analytics (CIP) sidebar for browsing tables and running curated reports. In development — off by default."
+        },
+        "b2c-dx.features.onboarding": {
+          "type": "boolean",
+          "default": false,
+          "description": "(Preview) Enable the guided developer onboarding walkthrough and role-based deep-dive panel. In development — off by default."
+        },
+        "b2c-dx.features.xmlValidation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable XSD-based validation, autocomplete, and hover docs for B2C metadata XML files. Requires the Red Hat XML extension (redhat.vscode-xml), which this extension offers to install when you open a metadata XML file."
+        },
+        "b2c-dx.features.ismlFormatting": {
+          "type": "boolean",
+          "default": true,
+          "description": "Provide a document formatter for ISML files (Format Document / Format Selection), using the same engine as VS Code's built-in HTML formatter."
+        },
+        "b2c-dx.isml.highlightTags": {
+          "type": "boolean",
+          "default": true,
+          "description": "Highlight ISML tag names (e.g. <isloop>, <isprint>) distinctly from plain HTML tags. Color follows the active theme's `ismlTag` semantic token color; disable to render ISML tags in the normal HTML tag color."
+        },
+        "b2c-dx.isml.format.wrapLineLength": {
+          "type": "number",
+          "default": 120,
+          "description": "Maximum line length before ISML formatting wraps. Set to 0 to disable wrapping."
+        },
+        "b2c-dx.isml.format.wrapAttributes": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "force",
+            "force-aligned",
+            "force-expand-multiline",
+            "aligned-multiple",
+            "preserve",
+            "preserve-aligned"
+          ],
+          "description": "How ISML formatting wraps element attributes (mirrors html.format.wrapAttributes)."
+        },
+        "b2c-dx.isml.format.preserveNewLines": {
+          "type": "boolean",
+          "default": true,
+          "description": "Preserve existing blank lines when formatting ISML."
+        },
+        "b2c-dx.isml.format.indentInnerHtml": {
+          "type": "boolean",
+          "default": false,
+          "description": "Indent the content of <head> and <body> sections when formatting ISML (mirrors html.format.indentInnerHtml)."
+        },
+        "b2c-dx.isml.diagnostics.disabledRules": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "unexpected-closing-tag",
+              "mismatched-closing-tag",
+              "unclosed-tag",
+              "void-tag-not-self-closing",
+              "void-closing-tag",
+              "missing-required-attribute",
+              "encoding-off",
+              "orphaned-branch",
+              "loop-control-outside-loop",
+              "isreplace-outside-decorator",
+              "style-formatter-conflict"
+            ]
+          },
+          "default": [],
+          "markdownDescription": "ISML diagnostic rule codes to disable globally. Empty by default (all rules on, including the `encoding-off` output-escaping security warning). Add a code to silence that rule; individual lines can also be suppressed inline with `<iscomment> b2c-dx-disable-next-line <code> </iscomment>`."
         }
       }
     },
@@ -140,6 +367,11 @@
           "id": "b2c-dx-sandboxes",
           "title": "B2C-DX Sandboxes",
           "icon": "$(server-environment)"
+        },
+        {
+          "id": "b2c-dx-analytics",
+          "title": "B2C-DX Analytics",
+          "icon": "$(graph)"
         }
       ]
     },
@@ -162,6 +394,30 @@
           "name": "Cartridges",
           "icon": "media/b2c-icon.svg",
           "contextualTitle": "B2C-DX"
+        },
+        {
+          "id": "b2cJobsExplorer",
+          "name": "Jobs",
+          "icon": "media/b2c-icon.svg",
+          "contextualTitle": "B2C-DX",
+          "visibility": "collapsed",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        }
+      ],
+      "b2c-dx-analytics": [
+        {
+          "id": "b2cCipAnalytics",
+          "name": "CIP Analytics",
+          "icon": "$(graph)",
+          "contextualTitle": "B2C-DX Analytics",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "id": "b2cExportExplorer",
+          "name": "Export",
+          "icon": "media/b2c-icon.svg",
+          "contextualTitle": "B2C-DX",
+          "when": "config.b2c-dx.features.exportExplorer"
         }
       ],
       "b2c-dx-scapi": [
@@ -176,6 +432,7 @@
         {
           "id": "b2cSandboxExplorer",
           "name": "Realm Explorer",
+          "icon": "$(server-environment)",
           "contextualTitle": "B2C-DX"
         }
       ]
@@ -183,23 +440,47 @@
     "viewsWelcome": [
       {
         "view": "b2cWebdavExplorer",
-        "contents": "No B2C Commerce instance configured.\n\nCreate a dw.json file in your workspace or set SFCC_* environment variables.\n\n[Refresh](command:b2c-dx.webdav.refresh)"
+        "contents": "No B2C Commerce instance configured.\n\n[Set up your instance](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22configure-instance%22%5D)\n\n[Refresh](command:b2c-dx.webdav.refresh)"
       },
       {
         "view": "b2cContentExplorer",
-        "contents": "No content libraries configured.\n\nSet \"contentLibrary\" in dw.json or add a library manually.\n\n[Add Library](command:b2c-dx.content.addLibrary)"
+        "contents": "No content libraries configured.\n\n[Set up your instance](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22configure-instance%22%5D) to enable content browsing, then add a library.\n\n[Add Library](command:b2c-dx.content.addLibrary)"
       },
       {
         "view": "b2cApiBrowser",
-        "contents": "Browse SCAPI OpenAPI schemas for your Commerce Cloud instance.\n\nRequires OAuth credentials (clientId, clientSecret) and shortCode in dw.json.\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
+        "contents": "Browse SCAPI OpenAPI schemas for your Commerce Cloud instance.\n\nRequires OAuth credentials (`client-id`, `client-secret`, `shortCode`) in dw.json.\n\n[Connect & authenticate](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22connect%22%5D)\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
       },
       {
         "view": "b2cSandboxExplorer",
+        "when": "!b2c-dx.sandbox.needsOAuth",
         "contents": "No sandbox realms configured.\n\nSet \"realm\" in dw.json or add a realm manually.\n\n[Add Realm](command:b2c-dx.sandbox.addRealm)"
       },
       {
+        "view": "b2cSandboxExplorer",
+        "when": "b2c-dx.sandbox.needsOAuth",
+        "contents": "Sandbox management requires Account Manager OAuth credentials.\n\nAdd \"client-id\" and \"client-secret\" to dw.json to browse and manage sandboxes for this realm.\n\n[Connect & authenticate](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22connect%22%5D)"
+      },
+      {
+        "view": "b2cJobsExplorer",
+        "when": "b2c-dx.jobs.needsOAuth",
+        "contents": "Job monitoring requires OAuth credentials with OCAPI job scopes.\n\nAdd \"client-id\" and \"client-secret\" to dw.json, then ensure your API client has access to `/job_execution_search` and `/jobs/*/executions*`.\n\n[Connect & authenticate](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22connect%22%5D)"
+      },
+      {
+        "view": "b2cJobsExplorer",
+        "when": "!b2c-dx.jobs.needsOAuth",
+        "contents": "Jobs view is not loaded by default to avoid unwanted OCAPI traffic.\n\n[Refresh Now](command:b2c-dx.jobs.refresh)\n[Enable Auto-Refresh](command:b2c-dx.jobs.toggleAutoRefresh)\n[Run Job](command:b2c-dx.jobs.run)\n[Open in Business Manager](command:b2c-dx.jobs.openBmDefinitions)"
+      },
+      {
         "view": "b2cCartridgeExplorer",
-        "contents": "No cartridges found.\n\nCartridges are identified by .project files in the workspace.\n\n[Refresh](command:b2c-dx.codeSync.refreshCartridges)"
+        "contents": "No cartridges found.\n\nCartridges are identified by .project files in the workspace.\n\n[Generate from a scaffold](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22scaffold%22%5D)\n\n[Refresh](command:b2c-dx.codeSync.refreshCartridges)"
+      },
+      {
+        "view": "b2cCipAnalytics",
+        "contents": "Explore Commerce Intelligence Platform (CIP) data — build SQL queries visually, browse tables, and run curated reports.\n\n[Open Query Builder](command:b2c-dx.cipAnalytics.queryBuilder)\n[Browse Tables](command:b2c-dx.cipAnalytics.browseTables)\n\nRequires OAuth credentials (clientId, clientSecret) in dw.json.\n\n[Refresh](command:b2c-dx.cipAnalytics.refresh)"
+      },
+      {
+        "view": "b2cExportExplorer",
+        "contents": "Interactively export site impex data units.\n\nRequires OAuth and WebDAV credentials in dw.json. Check the data units you want, then run Export.\n\n[Refresh](command:b2c-dx.export.refresh)"
       }
     ],
     "debuggers": [
@@ -246,6 +527,11 @@
         "category": "B2C DX"
       },
       {
+        "command": "b2c-dx.xml.setupValidation",
+        "title": "Set Up Metadata XML Validation",
+        "category": "B2C DX"
+      },
+      {
         "command": "b2c-dx.promptAgent",
         "title": "Prompt Agent",
         "category": "B2C DX"
@@ -254,6 +540,30 @@
         "command": "b2c-dx.listWebDav",
         "title": "List WebDAV",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.export.run",
+        "title": "Export Selected Data Units",
+        "icon": "$(cloud-download)",
+        "category": "B2C DX - Export"
+      },
+      {
+        "command": "b2c-dx.export.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C DX - Export"
+      },
+      {
+        "command": "b2c-dx.export.addById",
+        "title": "Add by ID",
+        "icon": "$(add)",
+        "category": "B2C DX - Export"
+      },
+      {
+        "command": "b2c-dx.export.clearSelection",
+        "title": "Clear Selection",
+        "icon": "$(clear-all)",
+        "category": "B2C DX - Export"
       },
       {
         "command": "b2c-dx.apiBrowser.refresh",
@@ -265,6 +575,88 @@
         "command": "b2c-dx.apiBrowser.openSwagger",
         "title": "Open API Documentation",
         "category": "B2C DX - API Browser"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.resetFromDwJson",
+        "title": "Reset from dw.json…",
+        "icon": "$(discard)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.openReport",
+        "title": "Open Report",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.browseTables",
+        "title": "Browse Tables",
+        "icon": "$(table)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.queryBuilder",
+        "title": "Open Query Builder",
+        "icon": "$(zap)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.configureConnection",
+        "title": "Configure Connection…",
+        "icon": "$(gear)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.testConnection",
+        "title": "Test Connection",
+        "icon": "$(debug-disconnect)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.switchRealm",
+        "title": "Switch Realm…",
+        "icon": "$(server)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.switchConnection",
+        "title": "Switch Connection…",
+        "icon": "$(plug)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.addRealm",
+        "title": "Add Realm…",
+        "icon": "$(add)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.removeRealm",
+        "title": "Remove Realm…",
+        "icon": "$(trash)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.openSavedQuery",
+        "title": "Open Saved Query",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.renameSavedQuery",
+        "title": "Edit Saved Query…",
+        "icon": "$(edit)",
+        "category": "B2C-DX Analytics"
+      },
+      {
+        "command": "b2c-dx.cipAnalytics.deleteSavedQuery",
+        "title": "Delete Saved Query…",
+        "icon": "$(trash)",
+        "category": "B2C-DX Analytics"
       },
       {
         "command": "b2c-dx.apiBrowser.scapiAdd",
@@ -349,6 +741,156 @@
         "title": "View Clone Details",
         "icon": "$(git-branch)",
         "category": "B2C DX - Sandboxes"
+      },
+      {
+        "command": "b2c-dx.jobs.openFilters",
+        "title": "Filter Job History",
+        "icon": "$(filter)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.openFiltersActive",
+        "title": "Filter Job History (filters active)",
+        "icon": "$(filter-filled)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.clearAllFilters",
+        "title": "Clear All Job History Filters",
+        "icon": "$(clear-all)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.setStatusFilter",
+        "title": "Set Status Filter",
+        "icon": "$(filter)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.setHistoryFilters",
+        "title": "Set History Filters",
+        "icon": "$(filter-filled)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.setNameFilter",
+        "title": "Filter by Job Name",
+        "icon": "$(search)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.toggleAutoRefresh",
+        "title": "Toggle Auto-Refresh",
+        "icon": "$(sync-ignored)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.enableAutoRefresh",
+        "title": "Enable Auto-Refresh",
+        "icon": "$(sync-ignored)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.disableAutoRefresh",
+        "title": "Disable Auto-Refresh",
+        "icon": "$(sync)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.toggleGrouping",
+        "title": "Group by Job ID",
+        "icon": "$(list-flat)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.toggleGroupingChronological",
+        "title": "Show as Chronological Timeline",
+        "icon": "$(list-tree)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.importSiteArchive",
+        "title": "Import Site Archive",
+        "icon": "$(cloud-upload)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.exportSiteArchive",
+        "title": "Export Site Archive",
+        "icon": "$(cloud-download)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.run",
+        "title": "Run Job",
+        "icon": "$(play)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.openDefinitionFile",
+        "title": "Open jobs.xml",
+        "icon": "$(go-to-file)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.createScaffold",
+        "title": "Create Job Scaffold",
+        "icon": "$(new-file)",
+        "category": "B2C DX - Job Definitions"
+      },
+      {
+        "command": "b2c-dx.cartridge.openStepTypeDefinition",
+        "title": "Show Step Type Definition",
+        "icon": "$(go-to-file)",
+        "category": "B2C DX - Cartridges"
+      },
+      {
+        "command": "b2c-dx.jobs.rerun",
+        "title": "Re-Run Job",
+        "icon": "$(debug-restart)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.stop",
+        "title": "Stop Execution",
+        "icon": "$(debug-stop)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.viewExecutionDetails",
+        "title": "View Execution Details",
+        "icon": "$(info)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.openExecutionInBM",
+        "title": "Open in Business Manager",
+        "icon": "$(link-external)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.openExecutionLog",
+        "title": "Open Execution Log",
+        "icon": "$(output)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.openFailureLog",
+        "title": "Open Failure Log",
+        "icon": "$(warning)",
+        "category": "B2C DX - Job History"
+      },
+      {
+        "command": "b2c-dx.jobs.openBmDefinitions",
+        "title": "Open Job Definitions in Business Manager",
+        "icon": "$(link-external)",
+        "category": "B2C DX - Job Definitions"
       },
       {
         "command": "b2c-dx.instance.inspect",
@@ -556,6 +1098,12 @@
         "category": "B2C DX - Code Sync"
       },
       {
+        "command": "b2c-dx.codeSync.deployOne",
+        "title": "Deploy a Single Cartridge",
+        "icon": "$(cloud-upload)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
         "command": "b2c-dx.codeSync.refreshCartridges",
         "title": "Refresh Cartridges",
         "icon": "$(refresh)",
@@ -620,6 +1168,224 @@
         "title": "Refresh Script API IntelliSense",
         "icon": "$(refresh)",
         "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.isml.createTemplate",
+        "title": "Create ISML Template",
+        "category": "B2C DX - ISML"
+      },
+      {
+        "command": "b2c-dx.isml.showReferences",
+        "title": "Show ISML References",
+        "category": "B2C DX - ISML"
+      },
+      {
+        "command": "b2c-dx.walkthrough.createDwJson",
+        "title": "Create dw.json Configuration",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.walkthrough.open",
+        "title": "Open Getting Started Guide",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.walkthrough.markAllDone",
+        "title": "Mark Getting Started as Done",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.walkthrough.resetProgress",
+        "title": "Reset Getting Started Progress",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.cli.verify",
+        "title": "Verify B2C CLI Installation",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.cli.update",
+        "title": "Update B2C CLI to Latest",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.cli.installNpm",
+        "title": "Install B2C CLI via npm",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.cli.installBrew",
+        "title": "Install B2C CLI via Homebrew",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.cli.recheck",
+        "title": "Re-check B2C CLI Installation",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.walkthrough.chooseCredentialStorage",
+        "title": "Configure Instance (Wizard)",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.walkthrough.inspectSetup",
+        "title": "Inspect Resolved Config (b2c setup inspect)",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.setup.connection",
+        "title": "Setup · Connection (instance + hostname)",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.setup.oauth",
+        "title": "Setup · OAuth Credentials",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.setup.webdav",
+        "title": "Setup · WebDAV Credentials",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.setup.scapi",
+        "title": "Setup · SCAPI Configuration",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.setup.resetSession",
+        "title": "Reset Setup Session (Start over from connection step)",
+        "category": "B2C DX - Getting Started"
+      },
+      {
+        "command": "b2c-dx.theme.toggle",
+        "title": "Toggle Light / Dark Theme",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.onboarding.open",
+        "title": "Open Onboarding Panel",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.onboarding.reset",
+        "title": "Reset Onboarding Progress",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.onboarding.changePersona",
+        "title": "Change Onboarding Role",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.walkthrough.validate",
+        "title": "Validate Walkthrough Configuration",
+        "category": "B2C DX - Development"
+      },
+      {
+        "command": "b2c-dx.walkthrough.checkAccessibility",
+        "title": "Check Walkthrough Accessibility",
+        "category": "B2C DX - Development"
+      },
+      {
+        "command": "b2c-dx.walkthrough.showTelemetry",
+        "title": "Show Walkthrough Telemetry",
+        "category": "B2C DX - Development"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "b2c-dx.gettingStarted",
+        "title": "B2C DX — Developer Onboarding",
+        "description": "A guided 5-phase setup — install, configure, connect, deploy, scaffold — for the Salesforce B2C Commerce Developer Experience extension. Most teams complete this in under 30 minutes.",
+        "icon": "media/b2c-icon.svg",
+        "when": "config.b2c-dx.features.onboarding",
+        "steps": [
+          {
+            "id": "pick-start",
+            "title": "Phase 0 · Choose your role",
+            "description": "Different roles need different things first. Open the **role-based deep-dive** for a path tailored to how you'll use B2C Commerce — Storefront, API/Integration, DevOps/Release, or AI-augmented developer. Or skip ahead and follow the universal five-phase flow below.\n\n[Open role-based guide](command:b2c-dx.onboarding.open)\n\nAlready set up? [Mark all phases as done](command:b2c-dx.walkthrough.markAllDone).",
+            "media": {
+              "image": {
+                "light": "media/walkthrough/welcome-hero-light.svg",
+                "dark": "media/walkthrough/welcome-hero-dark.svg",
+                "hc": "media/walkthrough/welcome-hero-dark.svg",
+                "hcLight": "media/walkthrough/welcome-hero-light.svg"
+              },
+              "altText": "B2C DX wordmark above a vertical five-step timeline: Install the B2C CLI (optional), Configure your instance (dw.json), Connect and authenticate, Deploy your first cartridge, and Generate from a scaffold."
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.onboarding.open",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          },
+          {
+            "id": "install-cli",
+            "title": "Phase 1 · Install the B2C CLI",
+            "description": "**Optional.** The B2C CLI powers deploys, log tailing, and sandbox commands from the terminal. Skip if you'll only use the VS Code views.\n\nInstall via `npm install -g @salesforce/b2c-cli` or `brew install salesforcecommercecloud/tools/b2c-cli`. \n\nRequires Node.js 22+.\n\n[Verify installation](command:b2c-dx.cli.verify) · [Update to latest](command:b2c-dx.cli.update)",
+            "media": {
+              "markdown": "media/walkthrough/install-cli.md"
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.cli.verify",
+              "onContext:b2c-dx.cliInstalled",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          },
+          {
+            "id": "configure-instance",
+            "title": "Phase 2 · Configure your instance",
+            "description": "Run the configuration wizard. Non-secret fields (hostname, code-version, short-code, tenant-id, mrtProject, mrtEnvironment) go into `dw.json`; secret pairs (OAuth `client-id`+`client-secret`, Basic `username`+`password`, MRT API key) are placed independently — Keychain, `pass`, env vars, or dw.json — per the documented Credential Grouping rule.\n\n[Run setup wizard](command:b2c-dx.walkthrough.chooseCredentialStorage) · [Inspect resolved config](command:b2c-dx.walkthrough.inspectSetup) · [Create dw.json (manual)](command:b2c-dx.walkthrough.createDwJson)",
+            "media": {
+              "markdown": "media/walkthrough/dw-json-setup.md"
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.walkthrough.chooseCredentialStorage",
+              "onCommand:b2c-dx.walkthrough.createDwJson",
+              "onContext:b2c-dx.dwJsonExists",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          },
+          {
+            "id": "connect",
+            "title": "Phase 3 · Connect & authenticate",
+            "description": "Verify your config resolves and the extension can reach your instance. The active instance shows in the status bar (bottom-left).\n\nOAuth fields (`client-id`, `client-secret`, `short-code`) unlock the Sandbox Explorer and API Browser; basic auth (`username`, `password`) is enough for WebDAV and cartridge deploys.\n\n[Inspect resolved config](command:b2c-dx.walkthrough.inspectSetup) — runs `b2c setup inspect` and shows where each value came from (file / env / keychain).\n\n[Inspect active instance](command:b2c-dx.instance.inspect) · [Open Realm Explorer](command:workbench.view.extension.b2c-dx-sandboxes)",
+            "media": {
+              "markdown": "media/walkthrough/oauth-setup.md"
+            },
+            "completionEvents": [
+              "onContext:b2c-dx.instanceConnected",
+              "onCommand:b2c-dx.instance.inspect",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          },
+          {
+            "id": "deploy-cartridge",
+            "title": "Phase 4 · Deploy your first cartridge",
+            "description": "Cartridges are folders containing a `.project` file. The extension auto-detects them in your workspace and lists them under the Cartridges view.\n\n[Deploy all cartridges](command:b2c-dx.codeSync.deploy)\n\n[Open Cartridges view](command:workbench.view.extension.b2c-dx)",
+            "media": {
+              "markdown": "media/walkthrough/deploy-cartridge.md"
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.codeSync.deploy",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          },
+          {
+            "id": "scaffold",
+            "title": "Phase 5 · Generate from a scaffold",
+            "description": "Generate boilerplate for cartridges, controllers, models, and Page Designer pages without leaving VS Code.\n\nRight-click a folder in the Explorer → **B2C DX → New from Scaffold…** or run the command directly.\n\n[New from Scaffold…](command:b2c-dx.scaffold.generate)\n\n---\n\nFinished early? [Mark all steps as done](command:b2c-dx.walkthrough.markAllDone).",
+            "media": {
+              "markdown": "media/walkthrough/next-steps.md"
+            },
+            "completionEvents": [
+              "onCommand:b2c-dx.scaffold.generate",
+              "onCommand:b2c-dx.walkthrough.markAllDone"
+            ]
+          }
+        ]
       }
     ],
     "menus": {
@@ -650,6 +1416,26 @@
           "group": "navigation"
         },
         {
+          "command": "b2c-dx.export.run",
+          "when": "view == b2cExportExplorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "b2c-dx.export.addById",
+          "when": "view == b2cExportExplorer",
+          "group": "navigation@2"
+        },
+        {
+          "command": "b2c-dx.export.clearSelection",
+          "when": "view == b2cExportExplorer",
+          "group": "navigation@3"
+        },
+        {
+          "command": "b2c-dx.export.refresh",
+          "when": "view == b2cExportExplorer",
+          "group": "navigation@4"
+        },
+        {
           "command": "b2c-dx.apiBrowser.refresh",
           "when": "view == b2cApiBrowser",
           "group": "navigation"
@@ -665,9 +1451,79 @@
           "group": "navigation"
         },
         {
+          "command": "b2c-dx.jobs.refresh",
+          "when": "view == b2cJobsExplorer",
+          "group": "navigation@0"
+        },
+        {
+          "command": "b2c-dx.jobs.enableAutoRefresh",
+          "when": "view == b2cJobsExplorer && !b2c-dx.jobs.autoRefreshEnabled",
+          "group": "navigation@1"
+        },
+        {
+          "command": "b2c-dx.jobs.disableAutoRefresh",
+          "when": "view == b2cJobsExplorer && b2c-dx.jobs.autoRefreshEnabled",
+          "group": "navigation@1"
+        },
+        {
+          "command": "b2c-dx.jobs.toggleGrouping",
+          "when": "view == b2cJobsExplorer && b2c-dx.jobs.groupingMode != groupByJobId",
+          "group": "navigation@2"
+        },
+        {
+          "command": "b2c-dx.jobs.toggleGroupingChronological",
+          "when": "view == b2cJobsExplorer && b2c-dx.jobs.groupingMode == groupByJobId",
+          "group": "navigation@2"
+        },
+        {
+          "command": "b2c-dx.jobs.setNameFilter",
+          "when": "view == b2cJobsExplorer",
+          "group": "navigation@3"
+        },
+        {
+          "command": "b2c-dx.jobs.openFilters",
+          "when": "view == b2cJobsExplorer && !b2c-dx.jobs.hasActiveFilters",
+          "group": "navigation@4"
+        },
+        {
+          "command": "b2c-dx.jobs.openFiltersActive",
+          "when": "view == b2cJobsExplorer && b2c-dx.jobs.hasActiveFilters",
+          "group": "navigation@4"
+        },
+        {
+          "command": "b2c-dx.jobs.run",
+          "when": "view == b2cJobsExplorer",
+          "group": "navigation@5"
+        },
+        {
+          "command": "b2c-dx.jobs.openBmDefinitions",
+          "when": "view == b2cJobsExplorer",
+          "group": "navigation@5"
+        },
+        {
           "command": "b2c-dx.codeSync.refreshCartridges",
           "when": "view == b2cCartridgeExplorer",
           "group": "navigation"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.removeRealm",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.addRealm",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.refresh",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@4"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.resetFromDwJson",
+          "when": "view == b2cCipAnalytics",
+          "group": "navigation@9"
         },
         {
           "command": "b2c-dx.codeSync.deploy",
@@ -691,6 +1547,51 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "b2c-dx.cipAnalytics.switchConnection",
+          "when": "view == b2cCipAnalytics && viewItem == cipRealm",
+          "group": "inline@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.removeRealm",
+          "when": "view == b2cCipAnalytics && viewItem == cipRealm",
+          "group": "2_realm@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.testConnection",
+          "when": "view == b2cCipAnalytics && viewItem == cipRealmInfo",
+          "group": "inline@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.configureConnection",
+          "when": "view == b2cCipAnalytics && viewItem == cipRealmInfo",
+          "group": "inline@1"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.renameSavedQuery",
+          "when": "view == b2cCipAnalytics && viewItem == cipSavedQuery",
+          "group": "inline@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.deleteSavedQuery",
+          "when": "view == b2cCipAnalytics && viewItem == cipSavedQuery",
+          "group": "inline@1"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.openSavedQuery",
+          "when": "view == b2cCipAnalytics && viewItem == cipSavedQuery",
+          "group": "1_open@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.renameSavedQuery",
+          "when": "view == b2cCipAnalytics && viewItem == cipSavedQuery",
+          "group": "2_modify@0"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.deleteSavedQuery",
+          "when": "view == b2cCipAnalytics && viewItem == cipSavedQuery",
+          "group": "2_modify@1"
+        },
         {
           "command": "b2c-dx.apiBrowser.scapiAdd",
           "when": "view == b2cApiBrowser && viewItem == apiSchema-shopper && b2c-dx.isStorefrontNext",
@@ -837,6 +1738,51 @@
           "group": "3_destructive@1"
         },
         {
+          "command": "b2c-dx.jobs.run",
+          "when": "view == b2cJobsExplorer && viewItem =~ /^jobExecution-/",
+          "group": "1_lifecycle@1"
+        },
+        {
+          "command": "b2c-dx.jobs.run",
+          "when": "view == b2cJobsExplorer && viewItem == workspaceJob",
+          "group": "1_lifecycle@1"
+        },
+        {
+          "command": "b2c-dx.jobs.openDefinitionFile",
+          "when": "view == b2cJobsExplorer && viewItem == workspaceJob",
+          "group": "2_navigation@1"
+        },
+        {
+          "command": "b2c-dx.jobs.viewExecutionDetails",
+          "when": "view == b2cJobsExplorer && viewItem =~ /^jobExecution-/",
+          "group": "1_info@1"
+        },
+        {
+          "command": "b2c-dx.jobs.openExecutionInBM",
+          "when": "view == b2cJobsExplorer && viewItem =~ /^jobExecution-/",
+          "group": "1_info@2"
+        },
+        {
+          "command": "b2c-dx.jobs.rerun",
+          "when": "view == b2cJobsExplorer && viewItem =~ /^jobExecution-/",
+          "group": "1_lifecycle@2"
+        },
+        {
+          "command": "b2c-dx.jobs.stop",
+          "when": "view == b2cJobsExplorer && viewItem == jobExecution-running",
+          "group": "1_lifecycle@3"
+        },
+        {
+          "command": "b2c-dx.jobs.openExecutionLog",
+          "when": "view == b2cJobsExplorer && viewItem =~ /^jobExecution-/",
+          "group": "2_logs@1"
+        },
+        {
+          "command": "b2c-dx.jobs.openFailureLog",
+          "when": "view == b2cJobsExplorer && viewItem == jobExecution-failed",
+          "group": "2_logs@2"
+        },
+        {
           "command": "b2c-dx.codeSync.revealCartridge",
           "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
           "group": "0_navigation@1"
@@ -860,6 +1806,16 @@
           "command": "b2c-dx.codeSync.removeFromSitePath",
           "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
           "group": "3_sitepath@2"
+        },
+        {
+          "command": "b2c-dx.jobs.createScaffold",
+          "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
+          "group": "4_scaffold@1"
+        },
+        {
+          "command": "b2c-dx.cartridge.openStepTypeDefinition",
+          "when": "view == b2cCartridgeExplorer && viewItem =~ /^cartridge-step-type/",
+          "group": "navigation@1"
         }
       ],
       "file/newFile": [
@@ -915,6 +1871,198 @@
       ],
       "commandPalette": [
         {
+          "command": "b2c-dx.isml.createTemplate",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.openFiltersActive",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.clearAllFilters",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.openDefinitionFile",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.isml.showReferences",
+          "when": "editorLangId == isml"
+        },
+        {
+          "command": "b2c-dx.onboarding.open",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.onboarding.reset",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.onboarding.changePersona",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.open",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.markAllDone",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.resetProgress",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.createDwJson",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.chooseCredentialStorage",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.inspectSetup",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.validate",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.checkAccessibility",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.walkthrough.showTelemetry",
+          "when": "config.b2c-dx.features.onboarding"
+        },
+        {
+          "command": "b2c-dx.jobs.openFilters",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.refresh",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.setStatusFilter",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.setHistoryFilters",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.setNameFilter",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.toggleAutoRefresh",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.toggleGrouping",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.importSiteArchive",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.exportSiteArchive",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.run",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.createScaffold",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.openExecutionInBM",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.jobs.openBmDefinitions",
+          "when": "config.b2c-dx.features.jobsExplorer"
+        },
+        {
+          "command": "b2c-dx.export.run",
+          "when": "config.b2c-dx.features.exportExplorer"
+        },
+        {
+          "command": "b2c-dx.export.refresh",
+          "when": "config.b2c-dx.features.exportExplorer"
+        },
+        {
+          "command": "b2c-dx.export.addById",
+          "when": "config.b2c-dx.features.exportExplorer"
+        },
+        {
+          "command": "b2c-dx.export.clearSelection",
+          "when": "config.b2c-dx.features.exportExplorer"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.refresh",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.resetFromDwJson",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.openReport",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.browseTables",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.queryBuilder",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.configureConnection",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.testConnection",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.switchRealm",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.switchConnection",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.addRealm",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.removeRealm",
+          "when": "config.b2c-dx.features.cipAnalytics"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.openSavedQuery",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.renameSavedQuery",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.cipAnalytics.deleteSavedQuery",
+          "when": "false"
+        },
+        {
           "command": "b2c-dx.debug.copySessionCookie",
           "when": "inDebugMode && debugType == 'b2c-script'"
         },
@@ -964,6 +2112,42 @@
         },
         {
           "command": "b2c-dx.sandbox.viewCloneDetails",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.rerun",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.stop",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.viewExecutionDetails",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.openExecutionLog",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.openFailureLog",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.enableAutoRefresh",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.disableAutoRefresh",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.cartridge.openStepTypeDefinition",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.jobs.toggleGroupingChronological",
           "when": "false"
         },
         {
@@ -1073,16 +2257,17 @@
     ]
   },
   "scripts": {
+    "sync:xsd": "node scripts/sync-xsd.mjs",
     "build": "node scripts/esbuild-bundle.mjs",
     "watch": "node scripts/esbuild-bundle.mjs --watch",
     "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-script-types run build && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
-    "package": "pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
+    "package": "pnpm run build && pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
     "typecheck:agent": "tsc -p . --noEmit --pretty false",
     "format": "prettier --write src",
     "format:check": "prettier --check src",
-    "pretest": "tsc -p tsconfig.test.json",
+    "pretest": "pnpm run sync:xsd && tsc -p tsconfig.test.json",
     "test": "vscode-test",
     "posttest": "pnpm run lint",
     "analyze": "ANALYZE_BUNDLE=1 node scripts/esbuild-bundle.mjs"
@@ -1091,6 +2276,8 @@
     "@eslint/compat": "catalog:",
     "@types/mocha": "catalog:",
     "@types/node": "catalog:",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
     "@types/vscode": "^1.105.1",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",

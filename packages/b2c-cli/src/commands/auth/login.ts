@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
+import {BaseCommand, ERROR_CODE, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
 import {ImplicitOAuthStrategy, createUserAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
@@ -82,7 +82,8 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
         t(
           'error.oauthClientIdRequired',
           'OAuth client ID required. Provide a client ID argument or set SFCC_CLIENT_ID.',
-        ),
+        ) + this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
 

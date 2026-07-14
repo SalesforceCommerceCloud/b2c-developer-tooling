@@ -218,6 +218,65 @@ describe('content metadefinition validation', () => {
     it('throws MetaDefinitionDetectionError for undetectable data', () => {
       expect(() => validateMetaDefinition({foo: 'bar'})).to.throw(MetaDefinitionDetectionError);
     });
+
+    it('accepts preview: "default" on a page type', () => {
+      const result = validateMetaDefinition(
+        {region_definitions: [{id: 'main', name: 'Main'}], preview: 'default'},
+        {type: 'pagetype'},
+      );
+      expect(result.valid).to.equal(true);
+      expect(result.errors).to.have.lengthOf(0);
+    });
+
+    it('accepts page type without preview', () => {
+      const result = validateMetaDefinition({region_definitions: [{id: 'main', name: 'Main'}]}, {type: 'pagetype'});
+      expect(result.valid).to.equal(true);
+    });
+
+    it('rejects preview value not in enum', () => {
+      const result = validateMetaDefinition(
+        {region_definitions: [{id: 'main', name: 'Main'}], preview: 'fancy'},
+        {type: 'pagetype'},
+      );
+      expect(result.valid).to.equal(false);
+      expect(result.errors.some((e) => e.message.toLowerCase().includes('enum'))).to.equal(true);
+    });
+
+    it('rejects non-string preview', () => {
+      const result = validateMetaDefinition(
+        {region_definitions: [{id: 'main', name: 'Main'}], preview: 123},
+        {type: 'pagetype'},
+      );
+      expect(result.valid).to.equal(false);
+      expect(
+        result.errors.some(
+          (e) => e.message.toLowerCase().includes('string') || e.message.toLowerCase().includes('type'),
+        ),
+      ).to.equal(true);
+    });
+
+    it('rejects preview on a component type', () => {
+      const result = validateMetaDefinition(
+        {
+          group: 'content',
+          region_definitions: [],
+          attribute_definition_groups: [],
+          preview: 'default',
+        },
+        {type: 'componenttype'},
+      );
+      expect(result.valid).to.equal(false);
+      expect(result.errors.some((e) => e.message.includes('additional property'))).to.equal(true);
+    });
+
+    it('auto-detects page type with preview', () => {
+      const result = validateMetaDefinition({
+        region_definitions: [{id: 'main', name: 'Main'}],
+        preview: 'default',
+      });
+      expect(result.valid).to.equal(true);
+      expect(result.schemaType).to.equal('pagetype');
+    });
   });
 
   describe('validateMetaDefinitionFile', () => {
@@ -253,6 +312,16 @@ describe('content metadefinition validation', () => {
     it('throws MetaDefinitionDetectionError for undetectable file', () => {
       const filePath = writeTempJson({foo: 'bar'});
       expect(() => validateMetaDefinitionFile(filePath)).to.throw(MetaDefinitionDetectionError);
+    });
+
+    it('validates a page type file with preview', () => {
+      const filePath = writeTempJson({
+        region_definitions: [{id: 'main', name: 'Main'}],
+        preview: 'default',
+      });
+      const result = validateMetaDefinitionFile(filePath, {type: 'pagetype'});
+      expect(result.valid).to.equal(true);
+      expect(result.filePath).to.equal(path.resolve(filePath));
     });
   });
 
@@ -334,10 +403,35 @@ describe('content metadefinition validation', () => {
       expect(result.valid).to.equal(true);
     });
 
-    it('passes when component_id is set without embedded', () => {
+    it('fails when component_id is set without embedded', () => {
+      // Per the platform schema, component_id is only valid on embedded
+      // components (embedded:true) — setting it otherwise is rejected.
       const result = validateMetaDefinition(
         {group: 'content', component_id: 'my-comp', region_definitions: [], attribute_definition_groups: []},
         {type: 'componenttype'},
+      );
+      expect(result.valid).to.equal(false);
+      expect(result.errors.some((e) => e.message.includes('embedded'))).to.equal(true);
+    });
+
+    it('passes when region definition includes a description', () => {
+      const result = validateMetaDefinition(
+        {
+          group: 'content',
+          region_definitions: [{id: 'main', name: 'Main', description: 'The main content region'}],
+          attribute_definition_groups: [],
+        },
+        {type: 'componenttype'},
+      );
+      expect(result.valid).to.equal(true);
+    });
+
+    it('passes when pagetype region definition includes a description', () => {
+      const result = validateMetaDefinition(
+        {
+          region_definitions: [{id: 'hero', name: 'Hero', description: 'Top hero region'}],
+        },
+        {type: 'pagetype'},
       );
       expect(result.valid).to.equal(true);
     });

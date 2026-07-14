@@ -211,8 +211,11 @@ function parseStep(typeId: string, text: string): JobStep {
 
 function main(): void {
   const inputDir = process.argv[2];
+  // Optional platform version (e.g. "26.7"), forwarded by refresh-docs-data.ts.
+  // Falls back to the previously bundled version when run standalone.
+  const platformVersion = process.argv[3] ?? '26.7';
   if (!inputDir) {
-    console.error('Usage: build-job-steps-dataset.ts <dir-with-jobstep-html>');
+    console.error('Usage: build-job-steps-dataset.ts <dir-with-jobstep-html> [platform-version]');
     console.error('  The directory must contain jobstep.<TypeID>.html files from the');
     console.error('  jobstepapi section of a downloaded B2C Commerce documentation archive.');
     process.exit(1);
@@ -241,9 +244,9 @@ function main(): void {
         'Catalog of standard (system) B2C Commerce job step type IDs available in Business Manager job flows and jobs.xml site-import flows.',
       derivation:
         'Generated from the public B2C Commerce Job Step API documentation (the jobstepapi section of the Script API documentation archive obtained via `b2c docs download`). Each step lists its purpose, execution scope, and input parameters (required, description, allowed values, default) as published in that documentation.',
-      platformDocVersion: 'DWAPP 26.7',
+      platformDocVersion: `DWAPP ${platformVersion}`,
       regenerate:
-        'pnpm --filter @salesforce/b2c-tooling-sdk run build:job-steps-dataset -- <jobstep-html-dir>; then run generate:job-steps-docs',
+        'pnpm --filter @salesforce/b2c-tooling-sdk run refresh:docs-data (or, standalone: build:job-steps-dataset -- <jobstep-html-dir> [version]; then generate:job-steps-docs)',
     },
     steps,
   };

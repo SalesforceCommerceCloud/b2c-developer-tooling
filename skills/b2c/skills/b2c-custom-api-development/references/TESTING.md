@@ -23,6 +23,8 @@ See `b2c-cli:b2c-slas` skill for more options.
 
 ## Get a Shopper Token (Private Client)
 
+> Illustrative SLAS token endpoint and grant flow; confirm current SLAS endpoint URLs, grant types, and parameter requirements with `b2c docs read commerce-api/custom-api-authentication`.
+
 Using a private SLAS client with client credentials grant:
 
 ```bash
@@ -50,6 +52,8 @@ curl -s "https://$SHORTCODE.api.commercecloud.salesforce.com/custom/my-api/v1/or
 ```
 
 ## Testing Admin APIs
+
+> Illustrative Account Manager OAuth scope requirements; confirm current Admin API authorization model, tenant scope format, and scope combination rules with `b2c docs read commerce-api/custom-api-authentication`.
 
 For Admin APIs (`AmOAuth2`), obtain a token from Account Manager with the **two required scope types**:
 

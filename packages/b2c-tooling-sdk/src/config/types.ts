@@ -148,6 +148,22 @@ export interface NormalizedConfig {
   /** Optional CIP analytics host override */
   cipHost?: string;
 
+  // Docs
+  /**
+   * Allowlist of documentation categories to expose from the `docs` search/read
+   * surface (CLI `b2c docs`, MCP docs tools). When set, bounds the entire
+   * available corpus to these categories; unset means no restriction (full
+   * corpus). Category names are validated by `resolveEnabledCategories` in the
+   * docs module (unknown names are dropped with a warning).
+   *
+   * Sourced from `docs-categories` (dw.json), `SFCC_DOCS_CATEGORIES` (env), or
+   * `docsCategories` (package.json). A CLI `--topics` / MCP `--docs-topics` flag,
+   * when provided, overrides this config value.
+   *
+   * @example ["script-api", "job-step", "help-admin", "tooling"]
+   */
+  docsCategories?: string[];
+
   // Metadata
   /** Instance name (from multi-config supporting sources) */
   instanceName?: string;

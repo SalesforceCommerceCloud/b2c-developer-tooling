@@ -8,8 +8,13 @@ import type {CartridgeService} from '../cartridges/cartridge-service.js';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {registerSafeCommand} from '../safety.js';
 import {CodeSyncManager} from './code-sync-manager.js';
-import {CartridgeTreeProvider, CartridgeItem} from './cartridge-tree-provider.js';
-import {createDeployCommand} from './deploy-command.js';
+import {
+  CartridgeTreeProvider,
+  CartridgeItem,
+  CartridgeStepTypeItem,
+  openStepTypeDefinition,
+} from './cartridge-tree-provider.js';
+import {createDeployCommand, createDeployOneCommand} from './deploy-command.js';
 import {registerCartridgeCommands, updateCodeVersionDisplay} from './cartridge-commands.js';
 
 export function registerCodeSync(
@@ -58,6 +63,11 @@ export function registerCodeSync(
     createDeployCommand(configProvider, manager.outputChannel),
   );
 
+  const deployOneCmd = registerSafeCommand(
+    'b2c-dx.codeSync.deployOne',
+    createDeployOneCommand(configProvider, manager.outputChannel, context),
+  );
+
   const refreshCmd = registerSafeCommand('b2c-dx.codeSync.refreshCartridges', () => {
     cartridgeService.refresh();
     manager.refreshCartridges(configProvider.getWorkingDirectory());
@@ -77,7 +87,37 @@ export function registerCodeSync(
       return;
     }
     await manager.uploadSingleCartridge(instance, item.cartridge);
+    try {
+      await vscode.commands.executeCommand('b2c-dx.webdav.refresh');
+    } catch {
+      // best-effort
+    }
   });
+
+  // Jumps to the @type-id line inside the cartridge's steptypes.json. The
+  // default click on a step type node opens the module (.js) implementation;
+  // this command is the alternative offered via the right-click menu.
+  //
+  // Two invocation shapes: (a) the default-click path from
+  // `TreeItem.command.arguments` passes `(typeId, stepTypesPath)`; (b) the
+  // right-click menu path from `view/item/context` passes the TreeItem itself
+  // as the first arg. Handle both so neither is silently dropped.
+  const openStepTypeDefinitionCmd = registerSafeCommand(
+    'b2c-dx.cartridge.openStepTypeDefinition',
+    async (typeIdOrItem?: string | CartridgeStepTypeItem, stepTypesPath?: string) => {
+      let typeId: string | undefined;
+      let resolvedPath: string | undefined;
+      if (typeIdOrItem instanceof CartridgeStepTypeItem) {
+        typeId = typeIdOrItem.entry.typeId;
+        resolvedPath = typeIdOrItem.entry.stepTypesPath;
+      } else {
+        typeId = typeIdOrItem;
+        resolvedPath = stepTypesPath;
+      }
+      if (!typeId || !resolvedPath) return;
+      await openStepTypeDefinition(typeId, resolvedPath);
+    },
+  );
 
   const uploadToInstanceCmd = registerSafeCommand('b2c-dx.codeSync.uploadToInstance', async (uri?: vscode.Uri) => {
     if (!uri) return;
@@ -87,6 +127,11 @@ export function registerCodeSync(
       return;
     }
     await manager.uploadFileOrFolder(instance, uri, configProvider.getWorkingDirectory());
+    try {
+      await vscode.commands.executeCommand('b2c-dx.webdav.refresh');
+    } catch {
+      // best-effort
+    }
   });
 
   // --- Cartridge commands (download, diff, site path, code versions) ---
@@ -157,8 +202,10 @@ export function registerCodeSync(
     startCmd,
     stopCmd,
     deployCmd,
+    deployOneCmd,
     refreshCmd,
     uploadCartridgeCmd,
+    openStepTypeDefinitionCmd,
     uploadToInstanceCmd,
     cartridgesSub,
     ...cartridgeCmdDisposables,

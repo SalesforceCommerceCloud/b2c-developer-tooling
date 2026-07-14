@@ -112,3 +112,8 @@ export type {
   ExportSitesConfiguration,
   ExportGlobalDataConfiguration,
 } from './site-archive.js';
+
+// Exportable data unit discovery
+export {discoverExportableUnits} from './discover.js';
+
+export type {ExportableUnits} from './discover.js';

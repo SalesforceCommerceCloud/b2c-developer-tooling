@@ -15,13 +15,16 @@ Skills follow the open [Agent Skills](https://agentskills.io/home) standard and 
 ```bash [Claude Code]
 claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 # Use --scope project to install for current project only
+
+# Core: CLI + platform skills + MCP server
 claude plugin install b2c-cli
 claude plugin install b2c
-claude plugin install storefront-next
-# Install storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
-claude plugin install storefront-next-figma
-# Install b2c-dx-mcp if you want the MCP server installed
 claude plugin install b2c-dx-mcp
+
+# Storefront Next (only for Storefront Next projects)
+claude plugin install storefront-next
+# storefront-next-figma adds Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma
 ```
 
 ```bash [Codex]
@@ -47,8 +50,13 @@ Then enter:
 
 ```bash [Copilot CLI]
 copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+
+# Core: CLI + platform skills
 copilot plugin install b2c-cli@b2c-developer-tooling
 copilot plugin install b2c@b2c-developer-tooling
+# For the MCP server on Copilot, install it directly — see /mcp/installation
+
+# Storefront Next (only for Storefront Next projects)
 copilot plugin install storefront-next@b2c-developer-tooling
 copilot plugin install storefront-next-figma@b2c-developer-tooling
 ```
@@ -111,23 +119,27 @@ Install plugins at your preferred scope:
 ::: code-group
 
 ```bash [User Scope (default)]
+# Core: CLI + platform skills + MCP server
 claude plugin install b2c-cli
 claude plugin install b2c
-claude plugin install storefront-next
-# Install storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
-claude plugin install storefront-next-figma
-# Install b2c-dx-mcp if you want the MCP server installed
 claude plugin install b2c-dx-mcp
+
+# Storefront Next (only for Storefront Next projects)
+claude plugin install storefront-next
+# storefront-next-figma adds Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma
 ```
 
 ```bash [Project Scope]
+# Core: CLI + platform skills + MCP server
 claude plugin install b2c-cli --scope project
 claude plugin install b2c --scope project
-claude plugin install storefront-next --scope project
-# Install storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
-claude plugin install storefront-next-figma --scope project
-# Install b2c-dx-mcp if you want the MCP server installed
 claude plugin install b2c-dx-mcp --scope project
+
+# Storefront Next (only for Storefront Next projects)
+claude plugin install storefront-next --scope project
+# storefront-next-figma adds Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma --scope project
 ```
 
 :::
@@ -174,16 +186,16 @@ Cursor follows the open [Agent Skills](https://cursor.com/docs/skills) standard.
 
 Cursor automatically loads skills from these locations:
 
-| Path | Scope | Source |
-|------|-------|--------|
-| `.cursor/skills/` | Project | Native Cursor |
-| `.agents/skills/` | Project | Native Cursor |
-| `~/.cursor/skills/` | User | Native Cursor |
-| `~/.agents/skills/` | User | Native Cursor |
-| `.claude/skills/` | Project | Claude Code compatibility |
-| `~/.claude/skills/` | User | Claude Code compatibility |
-| `.codex/skills/` | Project | Codex compatibility |
-| `~/.codex/skills/` | User | Codex compatibility |
+| Path                | Scope   | Source                    |
+| ------------------- | ------- | ------------------------- |
+| `.cursor/skills/`   | Project | Native Cursor             |
+| `.agents/skills/`   | Project | Native Cursor             |
+| `~/.cursor/skills/` | User    | Native Cursor             |
+| `~/.agents/skills/` | User    | Native Cursor             |
+| `.claude/skills/`   | Project | Claude Code compatibility |
+| `~/.claude/skills/` | User    | Claude Code compatibility |
+| `.codex/skills/`    | Project | Codex compatibility       |
+| `~/.codex/skills/`  | User    | Codex compatibility       |
 
 Because Cursor reads from Claude Code and Codex paths too, **any plugin you've already installed via `claude plugin install` or `codex plugin install` is automatically picked up by Cursor** — no separate install needed.
 
@@ -213,10 +225,15 @@ If you also use Claude Code, install once and Cursor will see the same skills:
 
 ```bash
 claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+
+# Core: CLI + platform skills + MCP server
 claude plugin install b2c-cli
 claude plugin install b2c
+claude plugin install b2c-dx-mcp
+
+# Storefront Next (only for Storefront Next projects)
 claude plugin install storefront-next
-# Add storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
+# storefront-next-figma adds Figma design-kit workflows (requires the Figma MCP server)
 claude plugin install storefront-next-figma
 ```
 
@@ -240,8 +257,13 @@ To pull the latest skills, open the **Extensions** view, click the **`···`** 
 
 ```bash
 copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+
+# Core: CLI + platform skills
 copilot plugin install b2c-cli@b2c-developer-tooling
 copilot plugin install b2c@b2c-developer-tooling
+# For the MCP server on Copilot, install it directly — see /mcp/installation
+
+# Storefront Next (only for Storefront Next projects)
 copilot plugin install storefront-next@b2c-developer-tooling
 copilot plugin install storefront-next-figma@b2c-developer-tooling
 ```
@@ -316,13 +338,13 @@ b2c setup skills b2c --ide agentforce-vibes --global
 Use [`b2c setup skills`](/cli/setup) for any supported IDE.
 :::
 
-| IDE | Flag |
-|-----|------|
-| [Cursor](https://cursor.com/docs/skills) | `--ide cursor` |
-| [Windsurf](https://docs.windsurf.com/) | `--ide windsurf` |
-| [VS Code / Copilot](https://code.visualstudio.com/docs/copilot/customization/agent-skills) | `--ide vscode` |
-| [Codex CLI](https://github.com/openai/codex) | `--ide codex` |
-| [OpenCode](https://opencode.ai/) | `--ide opencode` |
+| IDE                                                                                        | Flag             |
+| ------------------------------------------------------------------------------------------ | ---------------- |
+| [Cursor](https://cursor.com/docs/skills)                                                   | `--ide cursor`   |
+| [Windsurf](https://docs.windsurf.com/)                                                     | `--ide windsurf` |
+| [VS Code / Copilot](https://code.visualstudio.com/docs/copilot/customization/agent-skills) | `--ide vscode`   |
+| [Codex CLI](https://github.com/openai/codex)                                               | `--ide codex`    |
+| [OpenCode](https://opencode.ai/)                                                           | `--ide opencode` |
 
 ### Manual Installation
 
@@ -335,14 +357,14 @@ b2c setup skills b2c --ide manual --directory ./my-skills
 
 For reference, the install locations each `--ide` flag writes to:
 
-| IDE | Project | User |
-|-----|---------|------|
-| Cursor | `.cursor/skills/` | `~/.cursor/skills/` |
-| Windsurf | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
-| VS Code / Copilot | `.github/skills/` | `~/.copilot/skills/` |
-| Codex CLI | `.codex/skills/` | `~/.codex/skills/` |
-| OpenCode | `.opencode/skills/` | `~/.config/opencode/skills/` |
-| Agentforce Vibes | `.a4drules/skills/` | IDE's global storage |
+| IDE               | Project             | User                          |
+| ----------------- | ------------------- | ----------------------------- |
+| Cursor            | `.cursor/skills/`   | `~/.cursor/skills/`           |
+| Windsurf          | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
+| VS Code / Copilot | `.github/skills/`   | `~/.copilot/skills/`          |
+| Codex CLI         | `.codex/skills/`    | `~/.codex/skills/`            |
+| OpenCode          | `.opencode/skills/` | `~/.config/opencode/skills/`  |
+| Agentforce Vibes  | `.a4drules/skills/` | IDE's global storage          |
 
 ## Usage Examples
 

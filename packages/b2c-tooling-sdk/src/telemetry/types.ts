@@ -37,6 +37,12 @@ export interface TelemetryEventProperties extends TelemetryAttributes {
   timestamp: string;
   /** Process uptime in milliseconds */
   processUptime: number;
+  /**
+   * Whether the event originated from a CI / automation environment.
+   * Allows analytics to separate human-developer traffic from CI runs, which
+   * can otherwise dominate volume and skew blended KPIs.
+   */
+  isCI: boolean;
 }
 
 /**

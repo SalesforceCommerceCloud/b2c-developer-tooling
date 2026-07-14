@@ -26,16 +26,7 @@ describe('discovery/patterns/storefront-next', () => {
       expect(storefrontNextPattern.projectType).to.equal('storefront-next');
     });
 
-    it('detects @salesforce/storefront-next dependency', async () => {
-      const pkg = {dependencies: {'@salesforce/storefront-next': '^1.0.0'}};
-      await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(pkg));
-
-      const result = await storefrontNextPattern.detect(tempDir);
-
-      expect(result).to.be.true;
-    });
-
-    it('detects @salesforce/storefront-next-dev dependency (prefix match)', async () => {
+    it('detects @salesforce/storefront-next-dev dependency (the definitive signal)', async () => {
       const pkg = {devDependencies: {'@salesforce/storefront-next-dev': 'workspace:*'}};
       await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(pkg));
 
@@ -44,13 +35,44 @@ describe('discovery/patterns/storefront-next', () => {
       expect(result).to.be.true;
     });
 
-    it('detects @salesforce/storefront-next-runtime dependency (prefix match)', async () => {
-      const pkg = {dependencies: {'@salesforce/storefront-next-runtime': 'workspace:*'}};
+    it('does NOT detect on @salesforce/storefront-next-runtime alone (shared with PWA Kit)', async () => {
+      // -runtime is now pulled in by PWA Kit projects too, so it is no longer a
+      // Storefront Next signal on its own — only -dev is.
+      const pkg = {name: 'x', dependencies: {'@salesforce/storefront-next-runtime': 'workspace:*'}};
       await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(pkg));
 
       const result = await storefrontNextPattern.detect(tempDir);
 
-      expect(result).to.be.true;
+      expect(result).to.be.false;
+    });
+
+    it('does NOT detect a PWA Kit project even if it depends on storefront-next-runtime', async () => {
+      // The exact field false positive: template-retail-react-app ships
+      // @salesforce/storefront-next-runtime but is a PWA Kit app.
+      const pkg = {
+        name: '@salesforce/retail-react-app',
+        dependencies: {
+          '@salesforce/pwa-kit-runtime': '^3.0.0',
+          '@salesforce/storefront-next-runtime': '^1.0.0',
+        },
+      };
+      await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(pkg));
+
+      const result = await storefrontNextPattern.detect(tempDir);
+
+      expect(result).to.be.false;
+    });
+
+    it('a PWA Kit signal disqualifies Storefront Next even with storefront-next-dev present', async () => {
+      const pkg = {
+        name: 'x',
+        dependencies: {'@salesforce/pwa-kit-runtime': '^3.0.0', '@salesforce/storefront-next-dev': '^1.0.0'},
+      };
+      await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(pkg));
+
+      const result = await storefrontNextPattern.detect(tempDir);
+
+      expect(result).to.be.false;
     });
 
     it('does not detect @salesforce/odyssey (not a real package)', async () => {
@@ -93,7 +115,7 @@ describe('discovery/patterns/storefront-next', () => {
       await fs.mkdir(packagesDir, {recursive: true});
       const pkgDir = path.join(packagesDir, 'storefront-app');
       await fs.mkdir(pkgDir, {recursive: true});
-      const pkgPkg = {name: 'storefront-app', dependencies: {'@salesforce/storefront-next-runtime': '^1.0.0'}};
+      const pkgPkg = {name: 'storefront-app', devDependencies: {'@salesforce/storefront-next-dev': '^1.0.0'}};
       await fs.writeFile(path.join(pkgDir, 'package.json'), JSON.stringify(pkgPkg));
 
       const result = await storefrontNextPattern.detect(tempDir);

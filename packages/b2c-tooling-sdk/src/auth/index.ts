@@ -76,6 +76,9 @@ export type {
 } from './types.js';
 export {ALL_AUTH_METHODS} from './types.js';
 
+// Client credential encoding (RFC 6749 §2.3.1)
+export {encodeBasicClientCredentials} from './client-credentials.js';
+
 // Strategies
 export {BasicAuthStrategy} from './basic.js';
 export {OAuthStrategy, decodeJWT} from './oauth.js';

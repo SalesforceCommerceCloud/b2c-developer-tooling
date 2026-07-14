@@ -9,7 +9,26 @@
  * @module discovery/patterns/pwa-kit-v3
  */
 import type {DetectionPattern} from '../types.js';
+import type {PackageJson} from '../utils.js';
 import {readPackageJson} from '../utils.js';
+
+/**
+ * Returns true if this package.json indicates a PWA Kit v3 project.
+ *
+ * Two flavors:
+ * - Template copy: has an `@salesforce/pwa-kit-*` package
+ * - Extensible: has `@salesforce/retail-react-app` or the `ccExtensibility` field
+ *
+ * Exported so other patterns (e.g. storefront-next) can treat a PWA Kit signal
+ * as a disambiguator without duplicating this logic.
+ */
+export function packageIndicatesPwaKit(pkg: PackageJson): boolean {
+  // ccExtensibility field is the extensible-flavor marker.
+  if (pkg.ccExtensibility) return true;
+
+  const deps = Object.keys({...pkg.dependencies, ...pkg.devDependencies});
+  return deps.some((dep) => dep.startsWith('@salesforce/pwa-kit') || dep === '@salesforce/retail-react-app');
+}
 
 /**
  * Detection pattern for PWA Kit v3 storefronts.
@@ -25,14 +44,6 @@ export const pwaKitV3Pattern: DetectionPattern = {
   detect: async (workspacePath) => {
     const pkg = await readPackageJson(workspacePath);
     if (!pkg) return false;
-
-    // Check for ccExtensibility field (extensible flavor marker)
-    if (pkg.ccExtensibility) return true;
-
-    const deps = Object.keys({...pkg.dependencies, ...pkg.devDependencies});
-
-    // Template copy flavor: @salesforce/pwa-kit-* packages
-    // Extensible flavor: @salesforce/retail-react-app package
-    return deps.some((dep) => dep.startsWith('@salesforce/pwa-kit') || dep === '@salesforce/retail-react-app');
+    return packageIndicatesPwaKit(pkg);
   },
 };
