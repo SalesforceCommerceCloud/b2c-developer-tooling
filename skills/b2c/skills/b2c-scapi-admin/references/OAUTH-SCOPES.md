@@ -1,5 +1,7 @@
 # Admin API OAuth Scopes Reference
 
+> **Note:** This reference is a snapshot for quick lookup during development. For the current scope catalog, newly-added scopes, and official scope definitions, consult `docs_read commerce-api/auth-z-scope-catalog`.
+
 Complete reference for OAuth scopes used with Account Manager for Admin APIs.
 
 ## Scope Format
@@ -29,12 +31,17 @@ sfcc.products.rw # Read and write
 
 ### Via CLI
 
-```bash
-# Get token with specific scopes
-b2c auth token --auth-scope sfcc.orders --scope sfcc.products
+`b2c auth token` accepts multiple scopes: repeat `--auth-scope`, or pass a comma-separated list. Unlike the SCAPI subcommands (e.g. `b2c scapi custom status`), `b2c auth token` does **not** auto-inject the tenant scope — you must include `SALESFORCE_COMMERCE_API:<tenant_id>` yourself alongside the API scopes:
 
-# Get token with full scope string
-b2c auth token --auth-scope "sfcc.orders sfcc.products.rw"
+```bash
+# Repeatable flag form — include the tenant scope plus API scopes
+b2c auth token \
+  --auth-scope "SALESFORCE_COMMERCE_API:zzte_053" \
+  --auth-scope sfcc.orders \
+  --auth-scope sfcc.products
+
+# Comma-separated form (equivalent)
+b2c auth token --auth-scope "SALESFORCE_COMMERCE_API:zzte_053,sfcc.orders,sfcc.products.rw"
 ```
 
 ### Via cURL
@@ -232,10 +239,10 @@ Request only the scopes your integration needs:
 
 ```bash
 # Bad - too broad
-b2c auth token --auth-scope "sfcc.catalogs.rw sfcc.products.rw sfcc.orders.rw sfcc.inventory.availability.rw"
+b2c auth token --auth-scope "SALESFORCE_COMMERCE_API:zzte_053,sfcc.catalogs.rw,sfcc.products.rw,sfcc.orders.rw,sfcc.inventory.availability.rw"
 
-# Good - only what's needed for order export
-b2c auth token --auth-scope sfcc.orders
+# Good - only what's needed for order export (tenant scope is still required)
+b2c auth token --auth-scope "SALESFORCE_COMMERCE_API:zzte_053" --auth-scope sfcc.orders
 ```
 
 ### Separate Clients for Different Integrations

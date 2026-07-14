@@ -1,6 +1,6 @@
 ---
 name: b2c-config
-description: Inspect and debug CLI configuration, instance connections, and authentication. Use this skill whenever the user needs to check which dw.json or credentials are active, manage multiple instance profiles, retrieve OAuth tokens for scripting, troubleshoot authentication failures or connection errors, or integrate with VS Code or other editors. Also use when environment variables override config or the wrong sandbox is being targeted -- even if they just say 'why is it connecting to the wrong instance' or 'get me an access token'.
+description: Inspect, configure, and troubleshoot the B2C CLI's setup, authentication, and instance connections. Use this skill as the **fallback whenever CLI setup, configuration, or authentication is unclear or failing** — including "command can't find my instance/credentials", auth errors (401/403, "client credentials required"), wrong sandbox being targeted, env var vs dw.json precedence, hostname mismatch warnings, missing tenantId/shortCode, OAuth scope errors, multi-instance switching, retrieving access tokens for scripts, and IDE integration. Also use when the user needs to check what `dw.json` looks like, what fields it accepts (camelCase or kebab-case keys), or where the CLI is reading config from. Triggers include "why is the CLI connecting to the wrong instance", "auth keeps failing", "what config does the CLI see", "I need an OAuth token", "my dw.json isn't being picked up", or any general "how do I configure the CLI" question.
 ---
 
 # B2C Config Skill
@@ -8,6 +8,39 @@ description: Inspect and debug CLI configuration, instance connections, and auth
 The B2C CLI (`@salesforce/b2c-cli`) is a command-line tool for Salesforce B2C Commerce development. It provides commands organized by topic: `auth`, `code`, `webdav`, `sandbox`, `mrt`, `scapi`, `slas`, `ecdn`, `job`, `logs`, `sites`, `content`, `cip`, `setup`, and more. Use `b2c --help` or `b2c <topic> --help` for a full list.
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli setup inspect`).
+
+## How the CLI Discovers Configuration (read this first)
+
+The CLI **automatically detects** instance hostname, credentials, tenant ID, MRT API key, and other settings from multiple sources. **You usually do not need to pass `--server`, `--client-id`, `--client-secret`, `--username`, `--password`, `--tenant-id`, `--short-code`, or `--api-key` as flags** — the CLI picks them up from the environment or config files.
+
+Sources, in resolution order (highest priority first):
+
+1. **CLI flags and environment variables** — explicit values always win. Includes `.env` files in the current project directory (auto-loaded).
+2. **Plugin sources (high priority)** — custom configuration plugins (e.g., secret managers).
+3. **`dw.json`** — searched starting at the current directory and walking up the directory tree. Supports a single instance or a `configs[]` array with `active: true` / `-i <name>` selection.
+4. **`~/.mobify`** — home-directory file (MRT API key only).
+5. **Plugin sources (low priority)**.
+6. **`package.json`** under the `b2c` key — non-sensitive project defaults (e.g., `shortCode`, `clientId`, `mrtProject`). Sensitive fields like `clientSecret`/`password` are intentionally **not** allowed here.
+
+When in doubt, **always run `b2c setup inspect` first** — it shows the resolved value and the source for every field. This is the single most useful command for setup confusion.
+
+### `dw.json` Key Casing
+
+Field names in `dw.json` accept **both camelCase and kebab-case** — they're equivalent. For example:
+
+| Either form works |
+|---|
+| `clientId` ≡ `client-id` |
+| `clientSecret` ≡ `client-secret` |
+| `codeVersion` ≡ `code-version` |
+| `tenantId` ≡ `tenant-id` |
+| `shortCode` ≡ `short-code` ≡ `scapi-shortcode` |
+| `webdavHostname` ≡ `webdav-hostname` ≡ `webdav-server` ≡ `secureHostname` |
+| `certificatePassphrase` ≡ `certificate-passphrase` ≡ `passphrase` |
+
+Legacy aliases like `server` (for `hostname`) are also still supported. If a value isn't being picked up, casing is rarely the cause — check spelling, then run `b2c setup inspect` to see what the CLI actually parsed.
+
+For the full field reference, see the [Configuration guide](https://b2c-developer-tooling.dx.commercecloud.salesforce.com/guide/configuration.html) (or `docs/guide/configuration.md` in the repo).
 
 ## Authentication
 
@@ -98,22 +131,19 @@ b2c setup inspect --json | jq '.config'
 b2c setup inspect --json | jq '.sources'
 ```
 
-## IDE Integration (Prophet)
+## IDE Integration
 
-Use `b2c setup ide prophet` to generate a `dw.js` bridge script for the Prophet VS Code extension.
+Use `b2c setup ide` to configure IDE tooling that consumes the resolved CLI configuration and to enable Script API IntelliSense.
 
 ```bash
-# Generate ./dw.js in the current project
-b2c setup ide prophet
+# Vendor Script API TypeScript definitions + jsconfig.json (plain VS Code, WebStorm, etc.)
+b2c setup ide vscode-types
 
-# Overwrite existing file
-b2c setup ide prophet --force
-
-# Custom path
-b2c setup ide prophet --output .vscode/dw.js
+# Print the TS Server plugin path for LSP-based editors (Neovim, Helix, Zed, ...)
+b2c setup ide tsserver-plugin --json
 ```
 
-The generated script runs `b2c setup inspect --json --unmask` at runtime, so Prophet sees the same resolved config as CLI commands, including configuration plugins. It maps values to `dw.json`-style keys and passes through Prophet fields like `cartridgesPath`, `siteID`, and `storefrontPassword` when present.
+The B2C DX VS Code extension needs no setup — it injects the same TypeScript Server plugin at runtime.
 
 ## Managing Instances
 
@@ -201,27 +231,71 @@ Values are resolved with this priority (highest to lowest):
 
 When troubleshooting, check the source column to understand which configuration is taking precedence.
 
-## Common Issues
+## Troubleshooting
 
-### Missing Values
+**Always start with `b2c setup inspect`** — it shows resolved values and their sources. Add `--unmask` to see full secrets, `--json` for scripting. If a value isn't where you expect, the source column will tell you which file/env var/plugin won.
 
-If a value shows `-`, it means no source provided that configuration. Check:
+### Command says "credentials required" or "client-id is required"
 
-- Is the field spelled correctly in dw.json?
-- Is the environment variable set?
-- Does the plugin provide that value?
+- The CLI is not finding `clientId`/`clientSecret`. Run `b2c setup inspect` and check the OAuth section.
+- Confirm `dw.json` exists in the current directory or a parent (the CLI walks up from `cwd`).
+- Confirm `SFCC_CLIENT_ID`/`SFCC_CLIENT_SECRET` env vars are exported in *this* shell, not just defined elsewhere.
+- Credential groups are **atomic**: if `clientId` comes from one source and `clientSecret` from a lower-priority one, the lower-priority secret is discarded. Provide both from the same source, or use a higher-priority override.
 
-### Wrong Source Taking Precedence
+### Command targets the wrong instance
 
-If a value comes from an unexpected source:
+- `b2c setup inspect` will show the resolved hostname and its source.
+- For multi-instance `dw.json`, the `active: true` config is used by default. Override with `-i <name>` per-command, or change the default with `b2c setup instance set-active <name>`.
+- `SFCC_SERVER` (or any env var) overrides `dw.json`. Unset it if you want `dw.json` to win.
+- **Hostname mismatch protection:** if you pass `--server` (or `SFCC_SERVER`) that differs from the `dw.json` hostname, the CLI ignores **all** other values from `dw.json` to prevent mixing credentials across instances. Either match the hostname or pass full credentials explicitly.
 
-- Higher priority sources override lower ones
-- Credential groups (username+password, clientId+clientSecret) are atomic
-- Hostname mismatch protection may discard values
+### `dw.json` is not being picked up
 
-### Sensitive Values Masked
+- Check the `Sources` block from `b2c setup inspect` — if `DwJsonSource` isn't listed, the file wasn't found.
+- The CLI searches from the current working directory upward. Run from your project root, set `SFCC_PROJECT_DIRECTORY`, or pass `--config /path/to/dw.json`.
+- Ensure the file is valid JSON (a parse error silently skips it).
+- Field name casing doesn't matter — both `clientId` and `client-id` work. See "dw.json Key Casing" above.
 
-By default, passwords and secrets show partial values like `admi...REDACTED`. Use `--unmask` to see full values when debugging authentication issues.
+### 401/403 errors on SCAPI/OCAPI calls
+
+- Confirm the resolved `clientId`/`clientSecret` belong to the *target* instance (Account Manager scopes the API client per tenant).
+- Check OAuth scopes: required scopes vary by command (e.g., `sfcc.cdn-zones`, `sfcc.orders`). Pass `--auth-scope` or set `SFCC_OAUTH_SCOPES`.
+- For SCAPI commands, verify `tenantId` is correct — tenant IDs use underscores (`zzxy_001`), hostnames use hyphens (`zzxy-001`). The CLI normalizes between them, but a wrong tenant ID will produce 403s.
+
+### Missing `tenantId` / `shortCode`
+
+- These resolve from `dw.json`, `SFCC_TENANT_ID`/`SFCC_SHORTCODE`, or `package.json`. Run `b2c setup inspect` to see which source provided them.
+- For sandboxes, `tenantId` is derived from the hostname (replace `-` with `_`): `zzxy-001.dx...` → `zzxy_001`.
+
+### MRT commands say "API key required"
+
+- `MRT_API_KEY` (or `SFCC_MRT_API_KEY`) env var, or `~/.mobify` file (`{ "api_key": "..." }`).
+- When using `--cloud-origin <host>`, the CLI looks for `~/.mobify--<host>` instead of plain `~/.mobify`.
+
+### Sensitive values masked in `setup inspect`
+
+- By default secrets show as `admi...REDACTED`. Add `--unmask` to see full values when debugging.
+
+### Missing values
+
+- If a field shows `-`, no source provided it. Check spelling in `dw.json`, env var presence, and plugin output. Remember: `clientSecret`, `password`, and `mrtApiKey` cannot be set via `package.json` — use `dw.json` or env vars.
+
+### Wrong source taking precedence
+
+- Review the priority list in "How the CLI Discovers Configuration" above. Common surprise: env vars (or a `.env` file) override `dw.json`.
+
+### Still stuck
+
+Compare two outputs:
+
+```bash
+b2c setup inspect --unmask --json > expected.json   # in a known-good shell
+# ... run the failing command in the broken shell, then:
+b2c setup inspect --unmask --json > actual.json
+diff expected.json actual.json
+```
+
+The diff usually points directly at the missing or overridden field.
 
 ## Getting Admin OAuth Tokens
 
@@ -234,8 +308,9 @@ b2c auth token
 # Get token with browser-based auth
 b2c auth token --user-auth
 
-# Get token with specific scopes
+# Get token with specific scopes (accepts multiple: repeat --auth-scope or comma-separate)
 b2c auth token --auth-scope sfcc.orders --auth-scope sfcc.products
+b2c auth token --auth-scope "sfcc.orders,sfcc.products"
 
 # Get token as JSON (includes expiration and scopes)
 b2c auth token --json
@@ -248,6 +323,16 @@ curl -H "Authorization: Bearer $(b2c auth token)" \
 The token is obtained using the `clientId` and `clientSecret` from your configuration (dw.json or environment variables). If only `clientId` is configured, or `--user-auth` is used, an implicit OAuth flow is used (browser-based).
 
 **Note:** This command returns **admin** tokens for OCAPI/Admin APIs. For **shopper** tokens (SLAS), see the [b2c-slas skill](../b2c-slas/SKILL.md).
+
+> **Calling SCAPI Admin APIs (system or custom)?** The token must carry the tenant scope `SALESFORCE_COMMERCE_API:<tenant_id>` **plus** the API-specific scopes. `b2c auth token` does not add the tenant scope for you (unlike the SCAPI subcommands such as `b2c scapi custom status`), so pass it explicitly:
+>
+> ```bash
+> b2c auth token \
+>   --auth-scope "SALESFORCE_COMMERCE_API:zzpq_013" \
+>   --auth-scope sfcc.orders --auth-scope sfcc.products.rw
+> ```
+>
+> See the `b2c:b2c-scapi-admin` and `b2c:b2c-custom-api-development` skills for details.
 
 ## More Commands
 

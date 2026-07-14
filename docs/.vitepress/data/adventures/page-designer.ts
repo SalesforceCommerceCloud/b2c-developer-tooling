@@ -163,7 +163,7 @@ export const pageDesignerAdventure = defineAdventure({
         ),
         check(
           'Generate a WebDAV access key (BM username + key)',
-          link('/guide/authentication', 'option-a-basic-authentication-recommended', 'Basic Authentication'),
+          link('/guide/authentication', 'option-a-basic-authentication-user-access', 'Basic Authentication'),
         ),
         check(
           usingPackage ? 'Add a `libraries` array under the `b2c` key in package.json' : 'List your libraries in dw.json',

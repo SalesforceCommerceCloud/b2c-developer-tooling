@@ -135,7 +135,7 @@ export const deployCodeAdventure = defineAdventure({
         ? [
             check(
               'Generate a WebDAV access key for your BM user',
-              link('/guide/authentication', 'option-a-basic-authentication-recommended', 'Basic Authentication'),
+              link('/guide/authentication', 'option-a-basic-authentication-user-access', 'Basic Authentication'),
             ),
           ]
         : [
@@ -145,7 +145,7 @@ export const deployCodeAdventure = defineAdventure({
             ),
             check(
               'Configure WebDAV Client Permissions in Business Manager',
-              link('/guide/authentication', 'option-b-oauth-based-webdav', 'OAuth-based WebDAV'),
+              link('/guide/authentication', 'option-b-oauth-based-webdav-api-client-access', 'OAuth-based WebDAV'),
             ),
           ]),
       ...(needsOcapi

@@ -32,15 +32,15 @@ See the [CLI Configuration guide](../guide/configuration#configuration-file) for
 
 **Required fields per toolset:**
 
-| Toolset | Required Fields |
-|---------|----------------|
-| **SCAPI** | `short-code`, `tenant-id`, `client-id`, `client-secret` |
-| **CARTRIDGES** | `hostname`, `username`, `password` (or OAuth: `hostname`, `client-id`, `client-secret`) |
-| **MRT** | `mrtProject`, `mrtApiKey` (or `api_key` in `~/.mobify`, or `MRT_API_KEY` env var). `mrtEnvironment` required when deploying. |
-| **PWAV3** | None (project directory auto-detected) |
-| **STOREFRONTNEXT** | None (project directory auto-detected) |
+| Toolset            | Required Fields                                                                                                                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SCAPI**          | `short-code`, `tenant-id`, `client-id`, `client-secret`                                                                                                                                           |
+| **CARTRIDGES**     | `hostname`, `username`, `password` (or OAuth: `hostname`, `client-id`, `client-secret`)                                                                                                           |
+| **MRT**            | `mrtProject`, `mrtApiKey` (or `api_key` in `~/.mobify`, or `MRT_API_KEY` env var). `mrtEnvironment` required when deploying.                                                                      |
+| **PWAV3**          | None for guidelines tools (project directory auto-detected). MRT credentials (`mrtProject`, `mrtEnvironment`, `mrtApiKey`) required for `mrt_bundle_push` and the `mrt_logs_watch_*` tools.       |
+| **STOREFRONTNEXT** | None for guidelines/Figma tools (project directory auto-detected). MRT credentials (`mrtProject`, `mrtEnvironment`, `mrtApiKey`) required for `mrt_bundle_push` and the `mrt_logs_watch_*` tools. |
 
-**Note:** Some tools require specific scopes. See [Configuring Scopes](../guide/authentication#configuring-scopes) in the Authentication Setup guide and individual tool pages for scope requirements.
+**Note:** The `mrt_logs_watch_*` tools also appear in the always-on **DIAGNOSTICS** toolset and require the same MRT credentials (`mrtProject`, `mrtEnvironment`, `mrtApiKey`). Some tools require specific scopes. See [Configuring Scopes](../guide/authentication#configuring-scopes) in the Authentication Setup guide and individual tool pages for scope requirements.
 
 ### `.env` File {#env-file}
 
@@ -69,6 +69,7 @@ MRT tools require an API key. You can include `mrtApiKey`, `mrtProject`, and `mr
 ```
 
 **`~/.mobify` file locations:**
+
 - Default: `~/.mobify`
 - With `--cloud-origin`: `~/.mobify--{hostname}` (e.g., `~/.mobify--custom.example.com`)
 - With `--credentials-file` (or `MRT_CREDENTIALS_FILE`): uses the specified path
@@ -100,19 +101,15 @@ Override auto-discovery with `--toolsets` or `SFCC_TOOLSETS`:
   "mcpServers": {
     "b2c-dx-mcp": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@salesforce/b2c-dx-mcp@latest",
-        "--toolsets",
-        "CARTRIDGES,MRT",
-        "--allow-non-ga-tools"
-      ]
+      "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--toolsets", "CARTRIDGES,MRT", "--allow-non-ga-tools"]
     }
   }
 }
 ```
 
 **Available toolsets:** `CARTRIDGES`, `MRT`, `PWAV3`, `SCAPI`, `STOREFRONTNEXT`, `all`
+
+**Deprecated toolset:** `STOREFRONTNEXT_DEPRECATED` holds the legacy `sfnext_*` tools, which are not compatible with the Storefront Next 1.0 GA release and are superseded by the [`storefront-next`/`storefront-next-figma` agent-skills plugins](../guide/agent-skills). It is **never auto-enabled** and **not included in `all`** — request it explicitly with `--toolsets STOREFRONTNEXT_DEPRECATED --allow-non-ga-tools`. See [Toolsets](./toolsets#storefrontnext-deprecated).
 
 With auto-discovery, the `SCAPI` toolset is always included. When using `--toolsets` or `--tools`, only the specified toolsets/tools are enabled.
 
@@ -122,11 +119,7 @@ Enable specific tools instead of entire toolsets:
 
 ```json
 {
-  "args": [
-    "--tools",
-    "cartridge_deploy,scapi_schemas_list",
-    "--allow-non-ga-tools"
-  ]
+  "args": ["--tools", "cartridge_deploy,scapi_schemas_list", "--allow-non-ga-tools"]
 }
 ```
 
@@ -154,22 +147,36 @@ Telemetry is enabled by default and collects anonymous usage data to help improv
 
 To disable, set either variable in your `.env` file or MCP client `env` object:
 
-| Variable | Description |
-|----------|-------------|
-| `SFCC_DISABLE_TELEMETRY` | Set to `true` to disable telemetry |
-| `SF_DISABLE_TELEMETRY` | Set to `true` to disable telemetry (sf CLI standard) |
+| Variable                 | Description                                          |
+| ------------------------ | ---------------------------------------------------- |
+| `SFCC_DISABLE_TELEMETRY` | Set to `true` to disable telemetry                   |
+| `SF_DISABLE_TELEMETRY`   | Set to `true` to disable telemetry (sf CLI standard) |
 
 ## MCP Server Flags Reference {#mcp-server-flags}
 
 Flags specific to the MCP server (in addition to the shared CLI flags in the [CLI Configuration guide](../guide/configuration)):
 
-| Flag | Type | Default | Description |
-| ---- | ---- | ------- | ----------- |
-| `--toolsets` | string | Auto-detect | Toolsets to enable (comma-separated) |
-| `--tools` | string | - | Individual tools to enable (comma-separated) |
-| `--allow-non-ga-tools` | boolean | `false` | Enable non-GA (experimental) tools |
+| Flag                   | Type    | Default     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------- | ------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--toolsets`           | string  | Auto-detect | Toolsets to enable (comma-separated)                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `--tools`              | string  | -           | Individual tools to enable (comma-separated)                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `--docs-topics`        | string  | All         | Hard configuration allowlist bounding the docs tools' corpus to these categories (comma-separated): `script-api`, `job-step`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`. Per-call `category` hard-filters within the allowlist; `workspace` (comma-separated multi-value allowed, e.g. `sfra,pwa-kit-v3`) boosts relevant categories and de-boosts competing storefront frameworks within the allowlist |
+| `--allow-non-ga-tools` | boolean | `false`     | Enable non-GA (experimental) tools                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 Environment variable equivalents for these flags are listed in [MCP Server Environment Variables](#mcp-server-environment-variables).
+
+### Documentation Tools Restriction
+
+The `--docs-topics` flag (or `SFCC_DOCS_TOPICS` env var) sets a hard configuration boundary for the entire corpus available to the `docs_*` tools. When set, it affects tool behavior in several ways:
+
+- **Tool schemas** - The `category` parameter enums narrow to only the allowlisted categories
+- **Tool descriptions** - Tools note the restriction in their descriptions shown to the AI agent
+- **ID resolution** - `docs_read` will reject document IDs outside the allowlist
+- **Per-call filtering** - The `category` parameter hard-filters to one allowlisted category; the `workspace` parameter (comma-separated multi-value allowed, e.g. `sfra,pwa-kit-v3`) provides boosting (relevance weighting) and de-boosting within the allowlist, but never hides results
+
+Unknown category names in the allowlist are ignored with a warning at server startup.
+
+Unlike `--docs-topics`, which is a startup-time configuration boundary, the per-call `workspace` parameter only affects ranking and never filters content from view.
 
 ## Environment Variables Reference {#environment-variables-reference}
 
@@ -179,44 +186,45 @@ These can be set in a `.env` file, the MCP client `env` object, or as system env
 
 MCP-specific environment variables (flag equivalents):
 
-| Env Variable | Equivalent Flag | Type | Default | Description |
-| ------------ | --------------- | ---- | ------- | ----------- |
-| `SFCC_TOOLSETS` | `--toolsets` | string | Auto-detect | Toolsets to enable (comma-separated) |
-| `SFCC_TOOLS` | `--tools` | string | - | Individual tools to enable (comma-separated) |
-| `SFCC_ALLOW_NON_GA_TOOLS` | `--allow-non-ga-tools` | boolean | `false` | Enable non-GA (experimental) tools |
+| Env Variable              | Equivalent Flag        | Type    | Default     | Description                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------- | ---------------------- | ------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SFCC_TOOLSETS`           | `--toolsets`           | string  | Auto-detect | Toolsets to enable (comma-separated)                                                                                                                                                                                                                                                                                                                                                   |
+| `SFCC_TOOLS`              | `--tools`              | string  | -           | Individual tools to enable (comma-separated)                                                                                                                                                                                                                                                                                                                                           |
+| `SFCC_DOCS_TOPICS`        | `--docs-topics`        | string  | All         | Hard configuration allowlist bounding the docs tools' corpus to these categories (comma-separated): `script-api`, `job-step`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`. Per-call `category` hard-filters within the allowlist; `workspace` boosts relevant categories and de-boosts competing storefront frameworks within the allowlist |
+| `SFCC_ALLOW_NON_GA_TOOLS` | `--allow-non-ga-tools` | boolean | `false`     | Enable non-GA (experimental) tools                                                                                                                                                                                                                                                                                                                                                     |
 
 **B2C instance:**
 
-| Variable | Description |
-|----------|-------------|
-| `SFCC_SERVER` | B2C instance hostname |
-| `SFCC_CODE_VERSION` | Code version for deployments |
-| `SFCC_USERNAME` | Username for Basic auth (WebDAV) |
-| `SFCC_PASSWORD` | Password/access key for Basic auth |
-| `SFCC_CLIENT_ID` | OAuth client ID (`SFCC_OAUTH_CLIENT_ID` also supported) |
+| Variable             | Description                                                     |
+| -------------------- | --------------------------------------------------------------- |
+| `SFCC_SERVER`        | B2C instance hostname                                           |
+| `SFCC_CODE_VERSION`  | Code version for deployments                                    |
+| `SFCC_USERNAME`      | Username for Basic auth (WebDAV)                                |
+| `SFCC_PASSWORD`      | Password/access key for Basic auth                              |
+| `SFCC_CLIENT_ID`     | OAuth client ID (`SFCC_OAUTH_CLIENT_ID` also supported)         |
 | `SFCC_CLIENT_SECRET` | OAuth client secret (`SFCC_OAUTH_CLIENT_SECRET` also supported) |
-| `SFCC_SHORTCODE` | SCAPI short code |
-| `SFCC_TENANT_ID` | Organization/tenant ID |
+| `SFCC_SHORTCODE`     | SCAPI short code                                                |
+| `SFCC_TENANT_ID`     | Organization/tenant ID                                          |
 
 **MRT:**
 
-| Variable | Description |
-|----------|-------------|
-| `MRT_API_KEY` | MRT API key (`SFCC_MRT_API_KEY` also supported) |
-| `MRT_PROJECT` | MRT project slug (`SFCC_MRT_PROJECT` also supported) |
-| `MRT_ENVIRONMENT` | Target environment (`SFCC_MRT_ENVIRONMENT` also supported) |
-| `MRT_CLOUD_ORIGIN` | MRT API origin URL (`SFCC_MRT_CLOUD_ORIGIN` also supported) |
-| `MRT_CREDENTIALS_FILE` | Path to MRT credentials file (overrides `~/.mobify`) |
+| Variable               | Description                                                 |
+| ---------------------- | ----------------------------------------------------------- |
+| `MRT_API_KEY`          | MRT API key (`SFCC_MRT_API_KEY` also supported)             |
+| `MRT_PROJECT`          | MRT project slug (`SFCC_MRT_PROJECT` also supported)        |
+| `MRT_ENVIRONMENT`      | Target environment (`SFCC_MRT_ENVIRONMENT` also supported)  |
+| `MRT_CLOUD_ORIGIN`     | MRT API origin URL (`SFCC_MRT_CLOUD_ORIGIN` also supported) |
+| `MRT_CREDENTIALS_FILE` | Path to MRT credentials file (overrides `~/.mobify`)        |
 
 **General:**
 
-| Variable | Description |
-|----------|-------------|
+| Variable                 | Description                                                 |
+| ------------------------ | ----------------------------------------------------------- |
 | `SFCC_PROJECT_DIRECTORY` | Project directory (`SFCC_WORKING_DIRECTORY` also supported) |
-| `SFCC_CONFIG` | Path to config file |
-| `SFCC_INSTANCE` | Instance name from configuration file |
-| `SFCC_LOG_LEVEL` | Logging level |
-| `SFCC_DEBUG` | Enable debug logging |
+| `SFCC_CONFIG`            | Path to config file                                         |
+| `SFCC_INSTANCE`          | Instance name from configuration file                       |
+| `SFCC_LOG_LEVEL`         | Logging level                                               |
+| `SFCC_DEBUG`             | Enable debug logging                                        |
 
 See the [CLI Configuration guide](../guide/configuration#environment-variables) for the complete list including OAuth and advanced options.
 

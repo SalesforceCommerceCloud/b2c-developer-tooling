@@ -1,0 +1,64 @@
+diff --git a/package.json b/package.json
+index 389cc6b064b5f888e7f9d718f5440feabdce57ad..9e8f76b39967fa523c3a9d02e7692e4fe961a0a1 100644
+--- a/package.json
++++ b/package.json
+@@ -23,9 +23,9 @@
+     "./yargs": [
+       {
+         "import": "./yargs.mjs",
+-        "require": "./yargs"
++        "require": "./yargs.cjs"
+       },
+-      "./yargs"
++      "./yargs.cjs"
+     ]
+   },
+   "type": "module",
+@@ -44,6 +44,7 @@
+     "helpers/*",
+     "index.mjs",
+     "yargs",
++    "yargs.cjs",
+     "yargs.mjs",
+     "build",
+     "locales",
+diff --git a/yargs b/yargs
+index 8460d10a675a4e6c68c7fe7f29ccf70b22e676aa..aa3b0bf79274c25b0aa62606f1161ff806a7a9c9 100644
+--- a/yargs
++++ b/yargs
+@@ -1,9 +1,5 @@
+-// TODO: consolidate on using a helpers file at some point in the future, which
+-// is the approach currently used to export Parser and applyExtends for ESM:
+-const {applyExtends, cjsPlatformShim, Parser, Yargs, processArgv} = require('./build/index.cjs')
+-Yargs.applyExtends = (config, cwd, mergeExtends) => {
+-  return applyExtends(config, cwd, mergeExtends, cjsPlatformShim)
+-}
+-Yargs.hideBin = processArgv.hideBin
+-Yargs.Parser = Parser
+-module.exports = Yargs
++// This file gets hit in node versions below node 12.17.0
++// when require('yargs/yargs') from CommonJS
++// because conditional exports not fully supported and treats as filename.
++
++module.exports = require('./yargs.cjs');
+diff --git a/yargs.cjs b/yargs.cjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..e7c22f2b8dec0cd256a740247948c6bb47e68a3e
+--- /dev/null
++++ b/yargs.cjs
+@@ -0,0 +1,15 @@
++// TODO: consolidate on using a helpers file at some point in the future, which
++// is the approach currently used to export Parser and applyExtends for ESM:
++const {
++  applyExtends,
++  cjsPlatformShim,
++  Parser,
++  Yargs,
++  processArgv,
++} = require('./build/index.cjs');
++Yargs.applyExtends = (config, cwd, mergeExtends) => {
++  return applyExtends(config, cwd, mergeExtends, cjsPlatformShim);
++};
++Yargs.hideBin = processArgv.hideBin;
++Yargs.Parser = Parser;
++module.exports = Yargs;

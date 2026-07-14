@@ -5,6 +5,10 @@
  */
 
 import {expect} from 'chai';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {stub, restore} from 'sinon';
 import {createToolRegistry, registerToolsets} from '../src/registry.js';
 import {Services} from '../src/services.js';
 import {B2CDxMcpServer} from '../src/server.js';
@@ -42,6 +46,7 @@ describe('registry', () => {
       expect(registry).to.have.property('PWAV3');
       expect(registry).to.have.property('SCAPI');
       expect(registry).to.have.property('STOREFRONTNEXT');
+      expect(registry).to.have.property('STOREFRONTNEXT_DEPRECATED');
     });
 
     it('should create CARTRIDGES tools', () => {
@@ -89,7 +94,7 @@ describe('registry', () => {
       expect(toolNames).to.include('scapi_custom_api_generate_scaffold');
     });
 
-    it('should create STOREFRONTNEXT tools', () => {
+    it('should create STOREFRONTNEXT tools (shared GA tools only; sfnext_* are deprecated)', () => {
       const loadServices = createMockLoadServicesWrapper();
       const registry = createToolRegistry(loadServices);
 
@@ -97,10 +102,28 @@ describe('registry', () => {
       expect(registry.STOREFRONTNEXT.length).to.be.greaterThan(0);
 
       const toolNames = registry.STOREFRONTNEXT.map((t) => t.name);
+      // mrt_bundle_push and scapi tools appear in STOREFRONTNEXT (multi-toolset, GA)
+      expect(toolNames).to.include('mrt_bundle_push');
+      expect(toolNames).to.include('scapi_schemas_list');
+      // The legacy sfnext_* tools have moved to STOREFRONTNEXT_DEPRECATED
+      expect(toolNames).to.not.include('sfnext_get_guidelines');
+      expect(toolNames).to.not.include('sfnext_add_page_designer_decorator');
+    });
+
+    it('should create STOREFRONTNEXT_DEPRECATED tools (legacy sfnext_* tools)', () => {
+      const loadServices = createMockLoadServicesWrapper();
+      const registry = createToolRegistry(loadServices);
+
+      expect(registry.STOREFRONTNEXT_DEPRECATED).to.be.an('array');
+      expect(registry.STOREFRONTNEXT_DEPRECATED.length).to.be.greaterThan(0);
+
+      const toolNames = registry.STOREFRONTNEXT_DEPRECATED.map((t) => t.name);
       expect(toolNames).to.include('sfnext_get_guidelines');
       expect(toolNames).to.include('sfnext_add_page_designer_decorator');
-      // mrt_bundle_push should also appear in STOREFRONTNEXT (multi-toolset)
-      expect(toolNames).to.include('mrt_bundle_push');
+      expect(toolNames).to.include('sfnext_configure_theme');
+      expect(toolNames).to.include('sfnext_start_figma_workflow');
+      expect(toolNames).to.include('sfnext_analyze_component');
+      expect(toolNames).to.include('sfnext_match_tokens_to_theme');
     });
 
     it('should assign correct toolsets to each tool', () => {
@@ -123,6 +146,9 @@ describe('registry', () => {
       for (const tool of registry.STOREFRONTNEXT) {
         expect(tool.toolsets).to.include('STOREFRONTNEXT');
       }
+      for (const tool of registry.STOREFRONTNEXT_DEPRECATED) {
+        expect(tool.toolsets).to.include('STOREFRONTNEXT_DEPRECATED');
+      }
     });
 
     it('registered tool handlers are invokable end-to-end', async () => {
@@ -131,8 +157,8 @@ describe('registry', () => {
       // Uses sfnext_get_guidelines (pure, no network/services needed).
       const loadServices = createMockLoadServicesWrapper();
       const registry = createToolRegistry(loadServices);
-      const tool = registry.STOREFRONTNEXT.find((t) => t.name === 'sfnext_get_guidelines');
-      expect(tool, 'sfnext_get_guidelines must be registered in STOREFRONTNEXT').to.not.be.undefined;
+      const tool = registry.STOREFRONTNEXT_DEPRECATED.find((t) => t.name === 'sfnext_get_guidelines');
+      expect(tool, 'sfnext_get_guidelines must be registered in STOREFRONTNEXT_DEPRECATED').to.not.be.undefined;
 
       const result = await tool!.handler({sections: ['quick-reference']});
       expect(result).to.have.property('content');
@@ -159,6 +185,10 @@ describe('registry', () => {
       expect(server.registeredTools.length).to.be.greaterThan(0);
       // SCAPI tools should be registered as fallback
       expect(server.registeredTools).to.include('scapi_schemas_list');
+      // DIAGNOSTICS is a base toolset too — log/debugger/docs tools are
+      // auto-enabled for every project type, including unknown workspaces.
+      expect(server.registeredTools).to.include('logs_list_files');
+      expect(server.registeredTools).to.include('docs_search');
     });
 
     it('should skip auto-discovery when empty toolsets array is explicitly provided', async () => {
@@ -218,11 +248,55 @@ describe('registry', () => {
       const loadServices = createMockLoadServicesWrapper();
       await registerToolsets(flags, server, loadServices);
 
-      // Should include tools from all toolsets (placeholder tools removed)
+      // Should include tools from all non-deprecated toolsets (placeholder tools removed)
       expect(server.registeredTools).to.include('cartridge_deploy');
       expect(server.registeredTools).to.include('mrt_bundle_push');
       expect(server.registeredTools).to.include('scapi_schemas_list');
+      // ALL excludes the deprecated toolset — sfnext_* tools must NOT be registered
+      expect(server.registeredTools).to.not.include('sfnext_get_guidelines');
+      expect(server.registeredTools).to.not.include('sfnext_add_page_designer_decorator');
+    });
+
+    it('should NOT register deprecated toolset tools when ALL is specified', async () => {
+      const server = createMockServer();
+      const flags: StartupFlags = {
+        toolsets: ['ALL'],
+        allowNonGaTools: true,
+      };
+
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
+
+      // The deprecated toolset is opt-in only and excluded from ALL.
+      for (const toolName of [
+        'sfnext_get_guidelines',
+        'sfnext_add_page_designer_decorator',
+        'sfnext_configure_theme',
+        'sfnext_start_figma_workflow',
+        'sfnext_analyze_component',
+        'sfnext_match_tokens_to_theme',
+      ]) {
+        expect(server.registeredTools).to.not.include(toolName);
+      }
+    });
+
+    it('should register deprecated tools only when STOREFRONTNEXT_DEPRECATED is explicitly requested', async () => {
+      const server = createMockServer();
+      const flags: StartupFlags = {
+        toolsets: ['STOREFRONTNEXT_DEPRECATED'],
+        allowNonGaTools: true,
+      };
+
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
+
+      // All legacy sfnext_* tools should be registered when explicitly requested
       expect(server.registeredTools).to.include('sfnext_get_guidelines');
+      expect(server.registeredTools).to.include('sfnext_add_page_designer_decorator');
+      expect(server.registeredTools).to.include('sfnext_configure_theme');
+      expect(server.registeredTools).to.include('sfnext_start_figma_workflow');
+      expect(server.registeredTools).to.include('sfnext_analyze_component');
+      expect(server.registeredTools).to.include('sfnext_match_tokens_to_theme');
     });
 
     it('should register individual tools via --tools flag', async () => {
@@ -344,15 +418,15 @@ describe('registry', () => {
     it('should skip non-GA tools when allowNonGaTools is false', async () => {
       const server = createMockServer();
       const flags: StartupFlags = {
-        toolsets: ['STOREFRONTNEXT'],
+        toolsets: ['STOREFRONTNEXT_DEPRECATED'],
         allowNonGaTools: false,
       };
 
       const loadServices = createMockLoadServicesWrapper();
       await registerToolsets(flags, server, loadServices);
 
-      // STOREFRONTNEXT-only tools are non-GA (isGA: false), so they should be skipped.
-      // Multi-toolset GA tools (mrt_bundle_push, scapi_*) that appear in STOREFRONTNEXT are still registered.
+      // The deprecated sfnext_* tools are non-GA (isGA: false), so even when the
+      // deprecated toolset is explicitly requested they are skipped without --allow-non-ga-tools.
       const sfnextOnlyTools = ['sfnext_get_guidelines', 'sfnext_add_page_designer_decorator'];
       for (const toolName of sfnextOnlyTools) {
         expect(server.registeredTools).to.not.include(toolName);
@@ -377,9 +451,29 @@ describe('registry', () => {
       expect(server.registeredTools).to.include('scapi_custom_api_generate_scaffold');
       expect(server.registeredTools).to.include('pwakit_get_guidelines');
 
-      // STOREFRONTNEXT-only tools should NOT be registered (still non-GA)
+      // Non-GA tools should NOT be registered
+      expect(server.registeredTools).to.not.include('metrics_get');
       expect(server.registeredTools).to.not.include('sfnext_get_guidelines');
       expect(server.registeredTools).to.not.include('sfnext_add_page_designer_decorator');
+    });
+
+    it('should register non-GA tools when allowNonGaTools is true', async () => {
+      const server = createMockServer();
+      const flags: StartupFlags = {
+        toolsets: ['SCAPI'],
+        allowNonGaTools: true,
+      };
+
+      const loadServices = createMockLoadServicesWrapper();
+      await registerToolsets(flags, server, loadServices);
+
+      // GA SCAPI tools should be registered
+      expect(server.registeredTools).to.include('scapi_schemas_list');
+      expect(server.registeredTools).to.include('scapi_custom_apis_get_status');
+      expect(server.registeredTools).to.include('scapi_custom_api_generate_scaffold');
+
+      // Non-GA SCAPI tools should also be registered
+      expect(server.registeredTools).to.include('metrics_get');
     });
 
     describe('auto-discovery', () => {
@@ -444,6 +538,76 @@ describe('registry', () => {
         expect(server.registeredTools).to.include('cartridge_deploy');
         // Should not have tools from other toolsets unless explicitly requested
         expect(server.registeredTools).to.not.include('pwakit_create_storefront');
+      });
+
+      it('should NOT scan the filesystem when explicit toolsets are provided', async () => {
+        // If detection ran, it would auto-enable CARTRIDGES from the .project
+        // fixture below. With explicit toolsets it must be skipped entirely, so
+        // only SCAPI tools (the requested toolset) are registered.
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-mcp-registry-'));
+        try {
+          const cartridge = path.join(dir, 'cartridges', 'app_storefront_base');
+          fs.mkdirSync(cartridge, {recursive: true});
+          fs.writeFileSync(path.join(cartridge, '.project'), '<xml/>');
+
+          const server = createMockServer();
+          const flags: StartupFlags = {
+            toolsets: ['SCAPI'],
+            projectDirectory: dir,
+            allowNonGaTools: true,
+          };
+          await registerToolsets(flags, server, createMockLoadServicesWrapper());
+
+          expect(server.registeredTools).to.include('scapi_schemas_list');
+          // cartridge_deploy would only appear if detection had auto-enabled CARTRIDGES.
+          expect(server.registeredTools).to.not.include('cartridge_deploy');
+        } finally {
+          fs.rmSync(dir, {recursive: true, force: true});
+        }
+      });
+
+      it('should auto-discover CARTRIDGES from a shallow .project within the depth bound', async () => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-mcp-registry-'));
+        try {
+          const cartridge = path.join(dir, 'cartridges', 'app_storefront_base');
+          fs.mkdirSync(cartridge, {recursive: true});
+          fs.writeFileSync(path.join(cartridge, '.project'), '<xml/>');
+
+          const server = createMockServer();
+          const flags: StartupFlags = {projectDirectory: dir, allowNonGaTools: true};
+          await registerToolsets(flags, server, createMockLoadServicesWrapper());
+
+          expect(server.registeredTools).to.include('cartridge_deploy');
+        } finally {
+          fs.rmSync(dir, {recursive: true, force: true});
+        }
+      });
+
+      it('should skip auto-discovery when the project directory is the home directory', async () => {
+        // Place a cartridge in the "home" directory; detection must be skipped so
+        // it is not found and only the base fallback (SCAPI) is registered. Stub
+        // os.homedir() directly rather than overriding an env var — the backing
+        // env differs by platform ($HOME on POSIX, USERPROFILE on Windows) and
+        // Windows may return a short (8.3) path that would not string-match.
+        const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-mcp-home-'));
+        try {
+          const cartridge = path.join(fakeHome, 'cartridges', 'app_storefront_base');
+          fs.mkdirSync(cartridge, {recursive: true});
+          fs.writeFileSync(path.join(cartridge, '.project'), '<xml/>');
+
+          stub(os, 'homedir').returns(fakeHome);
+
+          const server = createMockServer();
+          const flags: StartupFlags = {projectDirectory: fakeHome, allowNonGaTools: true};
+          await registerToolsets(flags, server, createMockLoadServicesWrapper());
+
+          // Base fallback still registers, but the cartridge was never scanned.
+          expect(server.registeredTools).to.include('scapi_schemas_list');
+          expect(server.registeredTools).to.not.include('cartridge_deploy');
+        } finally {
+          restore();
+          fs.rmSync(fakeHome, {recursive: true, force: true});
+        }
       });
     });
   });

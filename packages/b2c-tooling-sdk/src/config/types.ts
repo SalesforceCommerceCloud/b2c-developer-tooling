@@ -148,6 +148,22 @@ export interface NormalizedConfig {
   /** Optional CIP analytics host override */
   cipHost?: string;
 
+  // Docs
+  /**
+   * Allowlist of documentation categories to expose from the `docs` search/read
+   * surface (CLI `b2c docs`, MCP docs tools). When set, bounds the entire
+   * available corpus to these categories; unset means no restriction (full
+   * corpus). Category names are validated by `resolveEnabledCategories` in the
+   * docs module (unknown names are dropped with a warning).
+   *
+   * Sourced from `docs-categories` (dw.json), `SFCC_DOCS_CATEGORIES` (env), or
+   * `docsCategories` (package.json). A CLI `--topics` / MCP `--docs-topics` flag,
+   * when provided, overrides this config value.
+   *
+   * @example ["script-api", "job-step", "help-admin", "tooling"]
+   */
+  docsCategories?: string[];
+
   // Metadata
   /** Instance name (from multi-config supporting sources) */
   instanceName?: string;
@@ -393,32 +409,6 @@ export interface CreateOAuthOptions {
 }
 
 /**
- * Result of configuration resolution with factory methods.
- *
- * Provides both raw configuration values and factory methods for creating
- * B2C SDK objects (B2CInstance, AuthStrategy, MrtClient) based on the
- * resolved configuration.
- *
- * @example
- * ```typescript
- * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
- *
- * const config = resolveConfig({
- *   hostname: process.env.SFCC_SERVER,
- *   clientId: process.env.SFCC_CLIENT_ID,
- * });
- *
- * if (config.hasB2CInstanceConfig()) {
- *   const instance = config.createB2CInstance();
- *   await instance.webdav.propfind('Cartridges');
- * }
- *
- * if (config.hasMrtConfig()) {
- *   const mrtAuth = config.createMrtAuth();
- * }
- * ```
- */
-/**
  * Information about a configured instance.
  */
 export interface InstanceInfo {
@@ -446,6 +436,33 @@ export interface CreateInstanceOptions {
   setActive?: boolean;
 }
 
+/**
+ * Result of configuration resolution with factory methods.
+ *
+ * Provides both raw configuration values and factory methods for creating
+ * B2C SDK objects (B2CInstance, AuthStrategy, MrtClient) based on the
+ * resolved configuration. Use the `has*` methods to check availability before
+ * calling factory methods, which throw errors if required configuration is missing.
+ *
+ * @example
+ * ```typescript
+ * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
+ *
+ * const config = resolveConfig({
+ *   hostname: process.env.SFCC_SERVER,
+ *   clientId: process.env.SFCC_CLIENT_ID,
+ * });
+ *
+ * if (config.hasB2CInstanceConfig()) {
+ *   const instance = config.createB2CInstance();
+ *   await instance.webdav.propfind('Cartridges');
+ * }
+ *
+ * if (config.hasMrtConfig()) {
+ *   const mrtAuth = config.createMrtAuth();
+ * }
+ * ```
+ */
 export interface ResolvedB2CConfig {
   /** Raw configuration values */
   readonly values: NormalizedConfig;

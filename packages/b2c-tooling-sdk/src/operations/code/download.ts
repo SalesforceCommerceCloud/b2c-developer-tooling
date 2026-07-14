@@ -9,11 +9,9 @@ import JSZip from 'jszip';
 import type {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
 import {getActiveCodeVersion} from './versions.js';
+import {LONG_OPERATION_TIMEOUT_MS} from './constants.js';
 
 const ZIP_BODY = new URLSearchParams({method: 'ZIP'}).toString();
-
-// 10 minutes — server-side zipping and large downloads can take a long time
-const LONG_OPERATION_TIMEOUT_MS = 600_000;
 
 /** Progress info passed to the onProgress callback. */
 export interface DownloadProgressInfo {
@@ -182,6 +180,7 @@ async function extractZip(
  * @param cartridgeName - Name of the cartridge to download
  * @param outputPath - Local path to extract the cartridge into
  * @param onProgress - Optional progress callback
+ * @returns Promise that resolves when the cartridge has been successfully downloaded and extracted
  */
 export async function downloadSingleCartridge(
   instance: B2CInstance,

@@ -1,3 +1,4 @@
+import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import {defineConfig} from 'vitepress';
@@ -169,17 +170,52 @@ async function checkAdventureAnchors(srcDir: string) {
   console.log(`✓ All Quickstart anchors resolve (${adventures.length} guides checked).`);
 }
 
+// Extract the committed Salesforce Help corpus tarball (docs/help-content.tar.gz)
+// into <outDir>/help so the converted .md pages are served verbatim at
+// <base>/help/<category>/<id>.md. The tarball is the committed artifact (one
+// file instead of ~1000 loose .md); the loose tree is git-ignored. No-op if the
+// tarball is absent so a partial checkout still builds.
+function extractHelpCorpus(srcDir: string, outDir: string) {
+  const tarball = path.join(srcDir, 'help-content.tar.gz');
+  if (!fs.existsSync(tarball)) {
+    console.warn(`[help-corpus] ${tarball} not found; skipping Help corpus extraction`);
+    return;
+  }
+  fs.mkdirSync(outDir, {recursive: true});
+  execFileSync('tar', ['-xzf', tarball, '-C', outDir], {stdio: 'inherit'});
+}
+
 // Build configuration from environment
 const isDevBuild = process.env.IS_DEV_BUILD === 'true';
 
+// Per-PR preview builds (CI) set DOCS_BASE_PATH to an absolute path such as "/pr-123/".
+// When present it overrides the normal base so every asset and link URL is prefixed for
+// the preview's subdirectory. Normalized to always have a single leading/trailing slash.
+const previewBasePath = process.env.DOCS_BASE_PATH
+  ? `/${process.env.DOCS_BASE_PATH.replace(/^\/+|\/+$/g, '')}/`
+  : undefined;
+
+// Public production docs URL — preview builds point their version switcher here because
+// relative links would otherwise resolve under the ephemeral /pr-N/ base.
+const prodDocsUrl = 'https://salesforcecommercecloud.github.io/b2c-developer-tooling/';
+
 // Base paths - dev build lives in /dev/ subdirectory, stable/release is at root
 const siteBase = '/b2c-developer-tooling';
-const basePath = isDevBuild ? `${siteBase}/dev/` : `${siteBase}/`;
+const basePath = previewBasePath ?? (isDevBuild ? `${siteBase}/dev/` : `${siteBase}/`);
 
 // Build version dropdown items
 // VitePress prepends base path to links starting with /, so we use relative paths
 // that work correctly for each build context
 function getVersionItems() {
+  if (previewBasePath) {
+    // Preview build: docs live under an ephemeral /pr-N/ base with no sibling versions.
+    // Link out to the published docs with absolute URLs so the switcher works.
+    return [
+      {text: 'Latest Release', link: prodDocsUrl},
+      {text: 'Development (main)', link: `${prodDocsUrl}dev/`},
+    ];
+  }
+
   if (isDevBuild) {
     // Dev build: base is /b2c-developer-tooling/dev/
     // Use ../ to navigate up to stable docs at root
@@ -215,7 +251,9 @@ const guidesSidebar = [
       {text: 'sfcc-ci SDK Migration', link: '/guide/sdk-migration'},
       {text: 'Account Manager', link: '/guide/account-manager'},
       {text: 'Analytics Reports (CIP/CCAC)', link: '/guide/analytics-reports-cip-ccac'},
+      {text: 'Metrics', link: '/guide/metrics'},
       {text: 'IDE Integration', link: '/guide/ide-integration'},
+      {text: 'Script Debugger', link: '/guide/script-debugger'},
       {text: 'Scaffolding', link: '/guide/scaffolding'},
       {text: 'Safety Mode', link: '/guide/safety'},
       {text: 'Security', link: '/guide/security'},
@@ -269,7 +307,9 @@ const referenceSidebar = [
       {text: 'eCDN', link: '/cli/ecdn'},
       {text: 'Jobs', link: '/cli/jobs'},
       {text: 'Logs', link: '/cli/logs'},
+      {text: 'Metrics', link: '/cli/metrics'},
       {text: 'MRT', link: '/cli/mrt'},
+      {text: 'Preferences', link: '/cli/preferences'},
       {text: 'Sandbox', link: '/cli/sandbox'},
       {text: 'Scaffold', link: '/cli/scaffold'},
       {text: 'SCAPI Schemas', link: '/cli/scapi-schemas'},
@@ -277,6 +317,7 @@ const referenceSidebar = [
       {text: 'Setup', link: '/cli/setup'},
       {text: 'Sites', link: '/cli/sites'},
       {text: 'SLAS', link: '/cli/slas'},
+      {text: 'Storefront Next', link: '/cli/sfnext'},
       {text: 'WebDAV', link: '/cli/webdav'},
       {text: 'Logging', link: '/cli/logging'},
     ],
@@ -287,27 +328,39 @@ const referenceSidebar = [
       {
         text: 'Cartridges',
         collapsed: true,
-        items: [{text: 'cartridge_deploy', link: '/mcp/tools/cartridge-deploy'}],
+        items: [{text: 'Deployment', link: '/mcp/tools/cartridge-deploy'}],
       },
       {
         text: 'SCAPI',
         collapsed: true,
         items: [
-          {text: 'scapi_schemas_list', link: '/mcp/tools/scapi-schemas-list'},
-          {text: 'scapi_custom_api_generate_scaffold', link: '/mcp/tools/scapi-custom-api-generate-scaffold'},
-          {text: 'scapi_custom_apis_get_status', link: '/mcp/tools/scapi-custom-apis-get-status'},
+          {text: 'Schemas', link: '/mcp/tools/scapi-schemas-list'},
+          {text: 'Custom APIs', link: '/mcp/tools/scapi-custom-apis'},
         ],
       },
       {
         text: 'PWA Kit',
         collapsed: true,
         items: [
-          {text: 'mrt_bundle_push', link: '/mcp/tools/mrt-bundle-push'},
-          {text: 'pwakit_get_guidelines', link: '/mcp/tools/pwakit-get-guidelines'},
+          {text: 'Bundle Deployment', link: '/mcp/tools/mrt-bundle-push'},
+          {text: 'Development Guidelines', link: '/mcp/tools/pwakit-get-guidelines'},
         ],
       },
       {
-        text: 'Storefront Next',
+        text: 'Diagnostics',
+        collapsed: true,
+        items: [
+          {text: 'Script Debugger', link: '/mcp/tools/diagnostics'},
+          {text: 'Logs (Instance & MRT)', link: '/mcp/tools/logs'},
+        ],
+      },
+      {
+        text: 'Documentation',
+        collapsed: true,
+        items: [{text: 'Documentation Tools', link: '/mcp/tools/docs'}],
+      },
+      {
+        text: 'Storefront Next (deprecated)',
         collapsed: true,
         items: [
           {text: 'sfnext_get_guidelines', link: '/mcp/tools/sfnext-get-guidelines'},
@@ -317,11 +370,6 @@ const referenceSidebar = [
           {text: 'sfnext_add_page_designer_decorator', link: '/mcp/tools/sfnext-add-page-designer-decorator'},
           {text: 'sfnext_configure_theme', link: '/mcp/tools/sfnext-configure-theme'},
         ],
-      },
-      {
-        text: 'Diagnostics',
-        collapsed: true,
-        items: [{text: 'Script Debugger', link: '/mcp/tools/diagnostics'}],
       },
     ],
   },
@@ -353,7 +401,8 @@ document.addEventListener('click', (e) => {
 
 export default defineConfig({
   title: 'B2C Developer Toolkit',
-  description: 'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and the B2C DX VS Code Extension for Salesforce B2C Commerce',
+  description:
+    'Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SDK, and the B2C DX VS Code Extension for Salesforce B2C Commerce',
   base: basePath,
 
   head: [['script', {}, versionSwitchScript]],
@@ -367,6 +416,13 @@ export default defineConfig({
   async buildEnd(siteConfig) {
     copyMarkdownSources(siteConfig.srcDir, siteConfig.outDir);
     await checkAdventureAnchors(siteConfig.srcDir);
+    // Extract the Salesforce Help corpus straight into the build output (raw
+    // .md served verbatim; fetched by `b2c docs read` via each entry's
+    // sourceUrl). Done here — in buildEnd — because it only matters for the
+    // deployed production site (dev never serves it), and this hook runs on
+    // `vitepress build` only, after rendering, so nothing lands in the source
+    // tree or the VitePress page graph.
+    extractHelpCorpus(siteConfig.srcDir, siteConfig.outDir);
   },
 
   // Show deeper heading levels in the outline; register group-icons md plugin
@@ -394,6 +450,11 @@ export default defineConfig({
             dark: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 56" fill="#e8e8e8"><path d="M34 18h-7.9l6.8-15.2c0-.2.1-.5.1-.8 0-1.1-.9-2-2-2H9c-.9 0-1.7.6-1.9 1.5l-7 26c0 .2-.1.3-.1.5 0 1.1.9 2 2 2h7.5L4 53.5c0 .1-.1.3-.1.5 0 1.1.9 2 2 2 .6 0 1.2-.3 1.5-.7l28-34c.3-.4.5-.8.5-1.3.1-1.1-.8-2-1.9-2Z"/></svg>',
           },
           'claude code': 'logos:claude-icon',
+          cursor: {
+            light:
+              '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 466.73 532.09" fill="#26251e"><path d="M457.43,125.94L244.42,2.96c-6.84-3.95-15.28-3.95-22.12,0L9.3,125.94c-5.75,3.32-9.3,9.46-9.3,16.11v247.99c0,6.65,3.55,12.79,9.3,16.11l213.01,122.98c6.84,3.95,15.28,3.95,22.12,0l213.01-122.98c5.75-3.32,9.3-9.46,9.3-16.11v-247.99c0-6.65-3.55-12.79-9.3-16.11h-.01ZM444.05,151.99l-205.63,356.16c-1.39,2.4-5.06,1.42-5.06-1.36v-233.21c0-4.66-2.49-8.97-6.53-11.31L24.87,145.67c-2.4-1.39-1.42-5.06,1.36-5.06h411.26c5.84,0,9.49,6.33,6.57,11.39h-.01Z"/></svg>',
+            dark: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 466.73 532.09" fill="#edecec"><path d="M457.43,125.94L244.42,2.96c-6.84-3.95-15.28-3.95-22.12,0L9.3,125.94c-5.75,3.32-9.3,9.46-9.3,16.11v247.99c0,6.65,3.55,12.79,9.3,16.11l213.01,122.98c6.84,3.95,15.28,3.95,22.12,0l213.01-122.98c5.75-3.32,9.3-9.46,9.3-16.11v-247.99c0-6.65-3.55-12.79-9.3-16.11h-.01ZM444.05,151.99l-205.63,356.16c-1.39,2.4-5.06,1.42-5.06-1.36v-233.21c0-4.66-2.49-8.97-6.53-11.31L24.87,145.67c-2.4-1.39-1.42-5.06,1.36-5.06h411.26c5.84,0,9.49,6.33,6.57,11.39h-.01Z"/></svg>',
+          },
           'copilot (vs code)': 'logos:visual-studio-code',
           'copilot cli': {
             light: 'logos:github-copilot',
@@ -425,13 +486,13 @@ export default defineConfig({
     nav: [
       {text: 'Guides', link: '/guide/'},
       {text: 'Quickstart', link: '/quickstart/'},
-      {text: 'Skills', link: '/guide/agent-skills'},
+      {text: 'Agent Plugins', link: '/guide/agent-skills'},
       {text: 'VS Code', link: '/vscode-extension/'},
       {text: 'MCP', link: '/mcp/'},
       {text: 'Reference', link: '/cli/'},
       {text: 'SDK', link: '/api/'},
       {
-        text: isDevBuild ? 'Dev' : 'Latest',
+        text: previewBasePath ? 'Preview' : isDevBuild ? 'Dev' : 'Latest',
         items: getVersionItems(),
       },
     ],

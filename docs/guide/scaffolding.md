@@ -135,15 +135,15 @@ Creates a hook implementation with automatic hooks.json registration.
 
 **Parameters:**
 - `hookName` (required) - Hook function name in camelCase
-- `hookType` (required) - Hook type: ocapi, scapi, or system
+- `hookType` (required) - Hook type: scapi-ocapi or system
 - `hookPoint` (required) - Extension point (auto-discovered list)
 - `cartridgeName` (required) - Target cartridge
 
 ```bash
 b2c scaffold hook \
   --option hookName=validateBasket \
-  --option hookType=ocapi \
-  --option hookPoint=dw.ocapi.shop.basket.beforePOST \
+  --option hookType=scapi-ocapi \
+  --option scapiOcapiHookPoint=dw.ocapi.shop.basket.beforePOST \
   --option cartridgeName=app_custom
 ```
 

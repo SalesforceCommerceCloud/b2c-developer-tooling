@@ -4,9 +4,11 @@ description: Get theming guidelines, guided questions, and WCAG color contrast v
 
 # sfnext_configure_theme
 
-Guides theming changes (colors, fonts, visual styling) for Storefront Next and validates color combinations for WCAG accessibility.
+::: warning DEPRECATED — use the agent-skills plugins instead
+This tool is **deprecated** and **not compatible with the Storefront Next 1.0 GA release**. It has been superseded by the [`storefront-next` and `storefront-next-figma`](../../guide/agent-skills) agent-skills plugins, which stay current with the GA release. It now lives in the opt-in [`STOREFRONTNEXT_DEPRECATED`](../toolsets#storefrontnext-deprecated) toolset (never auto-enabled, excluded from `--toolsets ALL`) and **will be removed in a future release**. Install the skills plugins instead — see the [Agent Skills guide](../../guide/agent-skills).
+:::
 
-> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
+Guides theming changes (colors, fonts, visual styling) for Storefront Next and validates color combinations for WCAG accessibility.
 
 ## Overview
 
@@ -46,28 +48,28 @@ THEMING_FILES='[{"key":"brand-guidelines","path":"docs/brand-guidelines.md"}]'
 
 ## Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `fileKeys` | string[] | No | File keys to add to the default set. Custom keys are merged with defaults: `theming-questions`, `theming-validation`, `theming-accessibility`. |
-| `conversationContext` | object | No | Context from previous rounds. Omit to list available files. See [Conversation Context](#conversation-context) for details. |
+| Parameter             | Type     | Required | Description                                                                                                                                    |
+| --------------------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fileKeys`            | string[] | No       | File keys to add to the default set. Custom keys are merged with defaults: `theming-questions`, `theming-validation`, `theming-accessibility`. |
+| `conversationContext` | object   | No       | Context from previous rounds. Omit to list available files. See [Conversation Context](#conversation-context) for details.                     |
 
 ### Conversation Context
 
 When using the tool across multiple turns, provide `conversationContext` with the following structure:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `currentStep` | `"updating-information"` \| `"validation"` | Current step in the workflow |
-| `collectedAnswers` | object | Previously collected answers. Include `colorMapping` to trigger automatic WCAG validation. |
-| `questionsAsked` | string[] | List of question IDs already asked |
+| Field              | Type                                       | Description                                                                                |
+| ------------------ | ------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `currentStep`      | `"updating-information"` \| `"validation"` | Current step in the workflow                                                               |
+| `collectedAnswers` | object                                     | Previously collected answers. Include `colorMapping` to trigger automatic WCAG validation. |
+| `questionsAsked`   | string[]                                   | List of question IDs already asked                                                         |
 
 **collectedAnswers** can include:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `colors` | object[] | Extracted colors with `hex` and optional `type` |
-| `fonts` | object[] | Extracted fonts with `name` and optional `type` |
-| `colorMapping` | object | Maps color keys to hex values (for example, `lightText`, `lightBackground`, `buttonText`, `buttonBackground`). **Providing this triggers automatic WCAG contrast validation.** |
+| Field          | Type     | Description                                                                                                                                                                    |
+| -------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `colors`       | object[] | Extracted colors with `hex` and optional `type`                                                                                                                                |
+| `fonts`        | object[] | Extracted fonts with `name` and optional `type`                                                                                                                                |
+| `colorMapping` | object   | Maps color keys to hex values (for example, `lightText`, `lightBackground`, `buttonText`, `buttonBackground`). **Providing this triggers automatic WCAG contrast validation.** |
 
 ## Workflow
 
@@ -82,30 +84,34 @@ The tool guides you through a structured workflow:
 Use natural language prompts to interact with the tool:
 
 **Start theming:**
+
 ```
 I want to apply my brand colors to my Storefront Next site. Use the MCP tool to help me.
 ```
 
 **Provide colors upfront:**
+
 ```
 Use these colors: #635BFF (accent), #0A2540 (dark), #F6F9FC (brand), #FFFFFF (light). Use the MCP tool to guide me through theming.
 ```
 
 **Specify fonts:**
+
 ```
 I want to use Inter for body text and Playfair Display for headings. Use the MCP tool to help me theme my site.
 ```
 
 **Validate colors for accessibility:**
+
 ```
 I have a color scheme ready. Use the MCP tool to validate my colors for accessibility before I implement.
 ```
 
 **Change existing theme:**
+
 ```
 I want to change my site theme. Use the MCP tool to walk me through the process.
 ```
-
 
 ## Output
 

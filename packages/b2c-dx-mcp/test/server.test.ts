@@ -314,6 +314,7 @@ describe('B2CDxMcpServer', () => {
       expect(mockTelemetry.events[0].attributes.toolName).to.equal('test_tool');
       expect(mockTelemetry.events[0].attributes.isError).to.equal(false);
       expect(mockTelemetry.events[0].attributes.runTimeMs).to.be.a('number');
+      expect(mockTelemetry.events[0].attributes.errorMessage).to.be.undefined;
     });
 
     it('should send TOOL_CALLED event with isError=true when tool returns error', async () => {
@@ -327,6 +328,7 @@ describe('B2CDxMcpServer', () => {
       expect(mockTelemetry.events[0].name).to.equal('TOOL_CALLED');
       expect(mockTelemetry.events[0].attributes.toolName).to.equal('error_tool');
       expect(mockTelemetry.events[0].attributes.isError).to.equal(true);
+      expect(mockTelemetry.events[0].attributes.errorMessage).to.equal('error occurred');
     });
 
     it('should send TOOL_CALLED event with isError=true when tool throws', async () => {
@@ -345,6 +347,32 @@ describe('B2CDxMcpServer', () => {
       expect(mockTelemetry.events[0].name).to.equal('TOOL_CALLED');
       expect(mockTelemetry.events[0].attributes.toolName).to.equal('throwing_tool');
       expect(mockTelemetry.events[0].attributes.isError).to.equal(true);
+      expect(mockTelemetry.events[0].attributes.errorMessage).to.equal('Tool execution failed');
+    });
+
+    it('should send TOOL_CALLED event with errorCause when tool throws error with cause', async () => {
+      const server = createServerWithHandlerCapture();
+
+      const handlerWithCause = async (): Promise<{content: Array<{type: 'text'; text: string}>}> => {
+        const innerError = new Error('Inner error');
+        throw new Error('Tool execution failed', {cause: innerError});
+      };
+
+      server.addTool('throwing_tool_with_cause', 'Throwing tool with cause', {}, handlerWithCause);
+
+      try {
+        await capturedHandler!({}, {});
+        expect.fail('Should have thrown');
+      } catch {
+        // Expected
+      }
+
+      expect(mockTelemetry.events).to.have.lengthOf(1);
+      expect(mockTelemetry.events[0].name).to.equal('TOOL_CALLED');
+      expect(mockTelemetry.events[0].attributes.toolName).to.equal('throwing_tool_with_cause');
+      expect(mockTelemetry.events[0].attributes.isError).to.equal(true);
+      expect(mockTelemetry.events[0].attributes.errorMessage).to.equal('Tool execution failed');
+      expect(mockTelemetry.events[0].attributes.errorCause).to.include('Error: Inner error');
     });
 
     it('should measure runTimeMs accurately', async () => {

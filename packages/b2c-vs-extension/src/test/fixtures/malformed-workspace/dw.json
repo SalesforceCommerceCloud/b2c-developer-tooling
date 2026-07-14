@@ -1,0 +1,6 @@
+{
+  "hostname": "test-fixture.invalid",
+  "username": "fixture-user",
+  "password": "not-a-real-password",
+  "code-version": "version1",
+}

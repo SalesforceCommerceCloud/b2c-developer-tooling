@@ -12,6 +12,7 @@
  *
  * @module operations/debug/sdapi-client
  */
+import {wrapNetworkError} from '../../errors/network-error.js';
 import {getLogger} from '../../logging/logger.js';
 import type {
   SdapiBreakpoint,
@@ -23,6 +24,17 @@ import type {
   SdapiScriptThreads,
   BreakpointInput,
 } from './types.js';
+
+/**
+ * Converts a Headers object to a plain object for trace logging.
+ */
+function headersToObject(headers: Headers): Record<string, string> {
+  const result: Record<string, string> = {};
+  headers.forEach((value, key) => {
+    result[key] = value;
+  });
+  return result;
+}
 
 /**
  * Error thrown when the SDAPI returns a fault response.
@@ -57,6 +69,17 @@ export class SdapiClient {
   private readonly baseUrl: string;
   private readonly headers: Record<string, string>;
   private readonly logger = getLogger();
+  /**
+   * Cookies (name -> value) returned by the SDAPI via Set-Cookie, replayed on
+   * subsequent requests. The debugger establishes a session (e.g. `dwsid`) on
+   * the first request that must be honored for the lifetime of this client.
+   *
+   * Replaying these cookies is required for server affinity: in multi-app
+   * server instances/environments the `dwsid` pins the session to the app
+   * server that holds the debugger state, so without it subsequent requests may
+   * be routed to a different app server with no knowledge of the session.
+   */
+  private readonly cookies = new Map<string, string>();
 
   constructor(config: SdapiClientConfig) {
     this.baseUrl = `https://${config.hostname}/s/-/dw/debugger/v2_0`;
@@ -84,11 +107,20 @@ export class SdapiClient {
   // Breakpoints
   // -----------------------------------------------------------------------
 
+  /**
+   * Retrieves all currently set breakpoints for the debugger session.
+   * @returns Promise resolving to array of breakpoints, or empty array if none are set.
+   */
   async getBreakpoints(): Promise<SdapiBreakpoint[]> {
     const data = await this.request<SdapiBreakpoints>('GET', '/breakpoints');
     return data.breakpoints ?? [];
   }
 
+  /**
+   * Sets or replaces breakpoints for the debugger.
+   * @param breakpoints Array of breakpoint definitions to set.
+   * @returns Promise resolving to array of confirmed breakpoints from the server.
+   */
   async setBreakpoints(breakpoints: BreakpointInput[]): Promise<SdapiBreakpoint[]> {
     const data = await this.request<SdapiBreakpoints>('POST', '/breakpoints', {
       body: {breakpoints},
@@ -108,11 +140,20 @@ export class SdapiClient {
   // Threads
   // -----------------------------------------------------------------------
 
+  /**
+   * Gets all active script threads.
+   * @returns Promise resolving to array of script threads, or empty array if none are active.
+   */
   async getThreads(): Promise<SdapiScriptThread[]> {
     const data = await this.request<SdapiScriptThreads>('GET', '/threads');
     return data.script_threads ?? [];
   }
 
+  /**
+   * Retrieves a specific thread by ID.
+   * @param threadId The thread identifier.
+   * @returns Promise resolving to the thread object with its current state.
+   */
   async getThread(threadId: number): Promise<SdapiScriptThread> {
     return this.request<SdapiScriptThread>('GET', `/threads/${threadId}`);
   }
@@ -169,6 +210,13 @@ export class SdapiClient {
     return this.request<SdapiObjectMembers>('GET', `/threads/${threadId}/frames/${frameIndex}/members${suffix}`);
   }
 
+  /**
+   * Evaluates a JavaScript expression in a frame context.
+   * @param threadId The thread ID of the halted thread.
+   * @param frameIndex The stack frame index (0 = topmost frame).
+   * @param expr The JavaScript expression to evaluate.
+   * @returns Promise resolving to the evaluation result.
+   */
   async evaluate(threadId: number, frameIndex: number, expr: string): Promise<SdapiEvalResult> {
     const params = new URLSearchParams({expr});
     return this.request<SdapiEvalResult>('GET', `/threads/${threadId}/frames/${frameIndex}/eval?${params.toString()}`);
@@ -180,13 +228,26 @@ export class SdapiClient {
 
   private async request<T>(method: string, path: string, options?: {body?: unknown; expect204?: boolean}): Promise<T> {
     const url = `${this.baseUrl}${path}`;
-    this.logger.trace({method, path}, 'SDAPI request');
+    const headers = {...this.headers, ...this.cookieHeader()};
+    this.logger.trace({method, url, headers, body: options?.body}, `[SDAPI REQ] ${method} ${url}`);
 
-    const response = await fetch(url, {
-      method,
-      headers: this.headers,
-      body: options?.body ? JSON.stringify(options.body) : undefined,
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method,
+        headers,
+        body: options?.body ? JSON.stringify(options.body) : undefined,
+      });
+    } catch (err) {
+      const host = new URL(url).host;
+      throw wrapNetworkError(err, {operation: 'Script Debugger API request', host});
+    }
+
+    this.storeCookies(response.headers);
+    this.logger.trace(
+      {method, url, status: response.status, headers: headersToObject(response.headers)},
+      `[SDAPI RESP] ${method} ${url} ${response.status}`,
+    );
 
     if (options?.expect204) {
       if (!response.ok) {
@@ -217,5 +278,50 @@ export class SdapiClient {
       fault = {_v: '2.0', type: 'UnknownError', message: `HTTP ${response.status} ${response.statusText}`};
     }
     throw new SdapiError(fault, response.status);
+  }
+
+  /**
+   * Returns the value of a stored session cookie, or `undefined` if it has not
+   * been set yet. The session cookie (`dwsid`) pins requests to the app server
+   * holding the debugger session — callers may need it to route external
+   * requests (e.g. a storefront browser) to the same app server.
+   */
+  getCookie(name: string): string | undefined {
+    return this.cookies.get(name);
+  }
+
+  /**
+   * Builds the `Cookie` request header from stored session cookies, or an empty
+   * object if none have been set yet.
+   */
+  private cookieHeader(): Record<string, string> {
+    if (this.cookies.size === 0) {
+      return {};
+    }
+    const cookie = Array.from(this.cookies, ([name, value]) => `${name}=${value}`).join('; ');
+    return {Cookie: cookie};
+  }
+
+  /**
+   * Parses `Set-Cookie` headers from a response and stores them for replay on
+   * subsequent requests (only the name=value pair is retained, attributes are
+   * ignored). Uses `Headers.getSetCookie()` so multiple cookies are not
+   * collapsed into a single comma-joined value.
+   */
+  private storeCookies(headers: Headers): void {
+    const setCookies = typeof headers.getSetCookie === 'function' ? headers.getSetCookie() : ([] as string[]);
+    for (const setCookie of setCookies) {
+      const pair = setCookie.split(';', 1)[0]?.trim();
+      if (!pair) {
+        continue;
+      }
+      const eq = pair.indexOf('=');
+      if (eq <= 0) {
+        continue;
+      }
+      const name = pair.slice(0, eq).trim();
+      const value = pair.slice(eq + 1).trim();
+      this.cookies.set(name, value);
+    }
   }
 }

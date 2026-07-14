@@ -170,7 +170,7 @@ export const ciCdAdventure = defineAdventure({
         : []),
       check(
         'Generate a WebDAV access key for cartridge uploads',
-        link('/guide/authentication', 'option-a-basic-authentication-recommended', 'Basic Authentication'),
+        link('/guide/authentication', 'option-a-basic-authentication-user-access', 'Basic Authentication'),
       ),
       check(
         'Enable code_versions in OCAPI Data API (Business Manager)',

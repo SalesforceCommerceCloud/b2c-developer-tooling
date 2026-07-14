@@ -17,7 +17,7 @@
       "source": "./skills/b2c-cli",
       "category": "productivity",
       "strict": false,
-      "version": "1.3.1"
+      "version": "1.5.1"
     },
     {
       "name": "b2c",
@@ -29,7 +29,7 @@
       "source": "./skills/b2c",
       "category": "productivity",
       "strict": false,
-      "version": "1.3.1"
+      "version": "1.5.1"
     },
     {
       "name": "b2c-dx-mcp",
@@ -40,7 +40,8 @@
       "license": "Apache-2.0",
       "source": "./plugins/b2c-dx-mcp",
       "category": "productivity",
-      "strict": false
+      "strict": false,
+      "version": "1.8.0"
     },
     {
       "name": "storefront-next",
@@ -52,31 +53,19 @@
       "source": "./skills/storefront-next",
       "category": "productivity",
       "strict": false,
-      "version": "1.3.1"
+      "version": "1.5.1"
     },
     {
-      "name": "cap-dev",
-      "description": "Skills for scaffolding, packaging, validating, and submitting Commerce App Packages (CAPs) for Salesforce Commerce Cloud.",
+      "name": "storefront-next-figma",
+      "description": "Figma design-kit skills for Storefront Next verticals — duplicate the kit, sync brand variables, and publish Code Connect. Requires the Figma MCP server.",
       "author": {
         "name": "Salesforce"
       },
-      "homepage": "https://github.com/SalesforceCommerceCloud/commerce-apps",
-      "repository": "https://github.com/SalesforceCommerceCloud/commerce-apps",
       "license": "Apache-2.0",
-      "source": {
-        "source": "git-subdir",
-        "url": "SalesforceCommerceCloud/commerce-apps",
-        "path": ".claude"
-      },
+      "source": "./skills/storefront-next-figma",
       "category": "productivity",
-      "keywords": [
-        "salesforce",
-        "commerce-apps",
-        "commerce-cloud",
-        "cap",
-        "impex"
-      ],
-      "strict": false
+      "strict": false,
+      "version": "1.3.3"
     }
   ]
 }

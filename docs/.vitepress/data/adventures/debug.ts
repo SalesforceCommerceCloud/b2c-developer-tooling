@@ -105,7 +105,7 @@ export const debugAdventure = defineAdventure({
       ),
       check(
         'Generate a WebDAV access key for your BM user',
-        link('/guide/authentication', 'option-a-basic-authentication-recommended', 'Basic Authentication'),
+        link('/guide/authentication', 'option-a-basic-authentication-user-access', 'Basic Authentication'),
       ),
       check(
         useEnv

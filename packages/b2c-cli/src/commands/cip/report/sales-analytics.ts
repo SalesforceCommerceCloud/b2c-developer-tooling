@@ -6,8 +6,14 @@
 
 import {withDocs} from '../../../i18n/index.js';
 import {CipReportCommand} from '../../../utils/cip/report-command.js';
-import {createSiteIdFlag} from '../../../utils/cip/report-flags.js';
+import {buildReportFlags, requireReport} from '../../../utils/cip/report-flags.js';
 
+const REPORT_NAME = 'sales-analytics';
+
+/**
+ * `b2c cip report sales-analytics` — flags are auto-derived from the catalog
+ * definition; param parsing/validation lives in {@link CipReportCommand} and the SDK.
+ */
 export default class CipReportSalesAnalytics extends CipReportCommand<typeof CipReportSalesAnalytics> {
   static description = withDocs(
     'Track daily sales performance with AOV and AOS metrics',
@@ -19,12 +25,8 @@ export default class CipReportSalesAnalytics extends CipReportCommand<typeof Cip
   static flags = {
     ...CipReportCommand.baseFlags,
     ...CipReportCommand.reportFlags,
-    'site-id': createSiteIdFlag(),
+    ...buildReportFlags(requireReport(REPORT_NAME)),
   };
 
-  protected readonly reportName = 'sales-analytics';
-
-  protected getReportParams(): Record<string, string> {
-    return this.getBaseReportParams();
-  }
+  protected readonly reportName = REPORT_NAME;
 }

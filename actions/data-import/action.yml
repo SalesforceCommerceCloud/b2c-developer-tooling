@@ -35,6 +35,27 @@ inputs:
   password:
     description: 'WebDAV password/access key (falls back to SFCC_PASSWORD env var)'
     required: false
+  short-code:
+    description: 'SCAPI short code (falls back to SFCC_SHORTCODE env var)'
+    required: false
+  tenant-id:
+    description: 'Tenant ID (falls back to SFCC_TENANT_ID env var)'
+    required: false
+  account-manager-host:
+    description: 'Account Manager hostname (falls back to SFCC_ACCOUNT_MANAGER_HOST env var)'
+    required: false
+  webdav-server:
+    description: 'Separate WebDAV hostname for staging (falls back to SFCC_WEBDAV_SERVER env var)'
+    required: false
+  certificate:
+    description: 'Path to PKCS12 client certificate for two-factor (mTLS) auth (falls back to SFCC_CERTIFICATE env var)'
+    required: false
+  certificate-passphrase:
+    description: 'Passphrase for the PKCS12 client certificate (falls back to SFCC_CERTIFICATE_PASSPHRASE env var)'
+    required: false
+  selfsigned:
+    description: 'Allow self-signed server certificates (falls back to SFCC_SELFSIGNED env var)'
+    required: false
   # Setup inputs
   version:
     description: 'CLI version to install if not already set up'
@@ -61,11 +82,20 @@ runs:
       with:
         version: ${{ inputs.version }}
         node-version: ${{ inputs.node-version }}
+        # Reuse an already-installed CLI; only install when none is present.
+        skip-if-present: 'true'
         client-id: ${{ inputs.client-id }}
         client-secret: ${{ inputs.client-secret }}
         server: ${{ inputs.server }}
         username: ${{ inputs.username }}
         password: ${{ inputs.password }}
+        short-code: ${{ inputs.short-code }}
+        tenant-id: ${{ inputs.tenant-id }}
+        account-manager-host: ${{ inputs.account-manager-host }}
+        webdav-server: ${{ inputs.webdav-server }}
+        certificate: ${{ inputs.certificate }}
+        certificate-passphrase: ${{ inputs.certificate-passphrase }}
+        selfsigned: ${{ inputs.selfsigned }}
 
     - name: Build command
       id: build-cmd

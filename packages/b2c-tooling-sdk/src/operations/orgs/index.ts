@@ -56,7 +56,13 @@ import type {
   ListOrgsOptions,
 } from '../../clients/am-api.js';
 
-// Re-export types
+/**
+ * Core organization types re-exported for convenience:
+ *
+ * - {@link AccountManagerOrganization} - Single organization from Account Manager
+ * - {@link OrganizationCollection} - Paginated collection of organizations with pagination metadata (totalElements, totalPages, number, size)
+ * - {@link ListOrgsOptions} - Options for listing organizations with pagination and bulk retrieval (size, page, all)
+ */
 export type {AccountManagerOrganization, OrganizationCollection, ListOrgsOptions} from '../../clients/am-api.js';
 
 /**
@@ -65,19 +71,19 @@ export type {AccountManagerOrganization, OrganizationCollection, ListOrgsOptions
  * @param client - Account Manager Organizations client
  * @param orgId - Organization ID
  * @returns Organization details
- * @throws Error if organization is not found
+ * @throws {Error} If the organization is not found (404), authentication fails (401), permission is denied (403), or other request failures occur
  */
 export async function getOrg(client: AccountManagerOrgsClient, orgId: string): Promise<AccountManagerOrganization> {
   return client.getOrg(orgId);
 }
 
 /**
- * Gets an organization by name (searches for exact or partial match).
+ * Gets an organization by name (performs case-sensitive prefix search using startsWith, filters to exact match if multiple results are found, throws if ambiguous).
  *
  * @param client - Account Manager Organizations client
  * @param name - Organization name
  * @returns Organization details
- * @throws Error if organization is not found or ambiguous
+ * @throws {Error} If the organization is not found or if multiple organizations match the name
  */
 export async function getOrgByName(
   client: AccountManagerOrgsClient,
@@ -90,8 +96,8 @@ export async function getOrgByName(
  * Lists organizations with pagination.
  *
  * @param client - Account Manager Organizations client
- * @param options - List options (size, page, all)
- * @returns Organization collection
+ * @param options - Pagination options. Set `all: true` to retrieve all organizations using the max page size of 5000
+ * @returns {OrganizationCollection} Paginated organization collection with pagination metadata (totalElements, totalPages, number, size)
  */
 export async function listOrgs(
   client: AccountManagerOrgsClient,

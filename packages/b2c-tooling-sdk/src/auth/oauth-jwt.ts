@@ -14,6 +14,8 @@
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import type {AuthStrategy, FetchInit, AccessTokenResponse} from './types.js';
+import {dispatchFetch} from './dispatch-fetch.js';
+import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {
   getOAuthCacheKey,
@@ -84,6 +86,17 @@ export class JwtOAuthStrategy implements AuthStrategy {
   private _hasHadSuccess = false;
   private readonly privateKey: crypto.KeyObject;
 
+  /**
+   * Creates a new JwtOAuthStrategy instance.
+   *
+   * Validates the provided configuration and caches the private key during construction
+   * to avoid repeated file I/O during token requests.
+   *
+   * @param config - JWT OAuth configuration containing clientId, certificate/key file paths, and Account Manager host
+   * @throws Error if clientId, certPath, keyPath, or accountManagerHost are missing
+   * @throws Error if certificate or key files do not exist, are unreadable, or have invalid PEM format
+   * @throws Error if the private key is encrypted but no passphrase is provided, or the passphrase is incorrect
+   */
   constructor(config: JwtOAuthConfig) {
     this.validateConfig(config);
     this.config = config;
@@ -201,8 +214,8 @@ export class JwtOAuthStrategy implements AuthStrategy {
     headers.set('Authorization', `Bearer ${token}`);
     headers.set('x-dw-client-id', this.config.clientId);
 
-    // Pass through dispatcher for TLS/mTLS support
-    let res = await fetch(url, {...init, headers} as RequestInit);
+    // Pass through dispatcher for TLS/mTLS support (see dispatchFetch)
+    let res = await dispatchFetch(url, {...init, headers});
 
     if (res.status !== 401) {
       this._hasHadSuccess = true;
@@ -215,7 +228,7 @@ export class JwtOAuthStrategy implements AuthStrategy {
       this.invalidateToken();
       const newToken = await this.getAccessToken();
       headers.set('Authorization', `Bearer ${newToken}`);
-      res = await fetch(url, {...init, headers} as RequestInit);
+      res = await dispatchFetch(url, {...init, headers});
     }
 
     return res;
@@ -339,7 +352,13 @@ export class JwtOAuthStrategy implements AuthStrategy {
     const middleware = globalAuthMiddlewareRegistry.getMiddleware();
     request = await applyAuthRequestMiddleware(request, middleware);
 
-    let response = await fetch(request);
+    let response: Response;
+    try {
+      response = await fetch(request);
+    } catch (err) {
+      const host = new URL(tokenUrl).host;
+      throw wrapNetworkError(err, {operation: 'OAuth JWT token request', host});
+    }
 
     // Apply auth response middleware
     response = await applyAuthResponseMiddleware(request, response, middleware);

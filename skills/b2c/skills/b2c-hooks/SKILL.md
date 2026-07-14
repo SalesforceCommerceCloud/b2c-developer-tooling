@@ -234,6 +234,110 @@ exports.afterPOST = function(basket) {
 };
 ```
 
+## Order `afterPOST`: Headless Order Placement
+
+The `dw.ocapi.shop.order.afterPOST(order): Status` hook is the extension point for completing a **headless (SCAPI) checkout**. When the SCAPI Shopper Orders API (`POST /checkout/shopper-orders/.../orders`) creates an order, the order is left in **`CREATED`** status — it is *not* yet placed. This hook is where you authorize payment and decide the order's fate. Getting the operational rules wrong here produces opaque failures, so read this section carefully.
+
+### Operational Rules (read before writing the hook)
+
+1. **`afterPOST` already runs inside a platform transaction.** Do **NOT** wrap `OrderMgr.placeOrder()`, `OrderMgr.failOrder()`, or payment-instrument mutations in your own `Transaction.wrap()` / `Transaction.begin()`. A nested transaction causes the inner change to be **rolled back**, and the platform surfaces it to the API caller as an opaque:
+
+   ```
+   HTTP 400
+   An error occurred in ExtensionPoint dw.ocapi.shop.order.afterPOST
+   ```
+
+   Call `placeOrder` / `failOrder` **directly**, with no transaction wrapper. (This is the opposite of a job- or controller-driven flow — see [b2c-ordering](../b2c-ordering/SKILL.md), where the same calls *are* wrapped because they run outside a hook transaction.)
+
+2. **The hook owns the `CREATED → NEW` / `CREATED → FAILED` transition.** SCAPI leaves the order in `CREATED`. The hook must:
+   - Authorize the payment instruments, then
+   - `OrderMgr.placeOrder(order)` to advance **`CREATED → NEW`** on success, or
+   - `OrderMgr.failOrder(order, true|false)` to advance to **`FAILED`** on decline (`true` reopens the basket so the shopper can retry; `false` discards it).
+
+   If the hook does neither, the order is **stranded in `CREATED` indefinitely** — never placed and invisible to most order reporting. Never leave the hook without resolving the order.
+
+3. **Returning `Status.ERROR` is how the hook declines the request**, but the platform reports it to the caller as the same generic *"An error occurred in ExtensionPoint…"* message — the decline reason is **not** propagated. Therefore **log the meaningful detail yourself** (`Logger.error(...)`) before returning, or you will have no record of *why* an order failed.
+
+### Canonical `afterPOST` Example
+
+Authorizes every payment instrument via the SFRA `app.payment.processor.<id>` Authorize hook convention, fails the order on any decline, and places it (setting confirmation + export status) only when fully paid. Note the complete absence of `Transaction.wrap` — every mutation runs directly in the hook's ambient transaction.
+
+```javascript
+// hooks/order.js
+var HookMgr = require('dw/system/HookMgr');
+var OrderMgr = require('dw/order/OrderMgr');
+var Order = require('dw/order/Order');
+var PaymentMgr = require('dw/order/PaymentMgr');
+var Status = require('dw/system/Status');
+var Logger = require('dw/system/Logger');
+
+exports.afterPOST = function (order) {
+    var log = Logger.getLogger('checkout', 'orderAfterPOST');
+
+    // SCAPI delivers the order in CREATED status. Authorize each payment
+    // instrument by delegating to its processor's Authorize hook.
+    // getPaymentInstruments() returns a dw.util.Collection — call toArray()
+    // for index access (Collections are not directly indexable).
+    var instruments = order.getPaymentInstruments().toArray();
+    for (var i = 0; i < instruments.length; i++) {
+        var pi = instruments[i];
+        var method = PaymentMgr.getPaymentMethod(pi.getPaymentMethod());
+        var processor = method ? method.getPaymentProcessor() : null;
+
+        if (!processor) {
+            log.error('Order {0}: no payment processor for method {1}',
+                order.orderNo, pi.getPaymentMethod());
+            // No Transaction.wrap — we are already inside the hook transaction.
+            OrderMgr.failOrder(order, false);
+            return new Status(Status.ERROR, 'PAYMENT_ERROR', 'Missing payment processor');
+        }
+
+        // SFRA convention: app.payment.processor.<processorID lowercased>, fn "Authorize"
+        var hookID = 'app.payment.processor.' + processor.getID().toLowerCase();
+        var result;
+        if (HookMgr.hasHook(hookID)) {
+            result = HookMgr.callHook(hookID, 'Authorize', order.orderNo, pi, processor);
+        } else {
+            result = HookMgr.callHook('app.payment.processor.default', 'Authorize',
+                order.orderNo, pi, processor);
+        }
+
+        if (!result || result.error) {
+            // Log the real reason here — the API caller only sees a generic 400.
+            log.error('Order {0}: authorization declined by {1}', order.orderNo, hookID);
+            OrderMgr.failOrder(order, true); // reopen basket so the shopper can retry
+            return new Status(Status.ERROR, 'PAYMENT_DECLINED', 'Payment authorization failed');
+        }
+    }
+
+    // Fully authorized — place the order (CREATED -> NEW) and mark it ready.
+    // placeOrder returns a dw.system.Status object; check .error (not === Status.ERROR).
+    var placeStatus = OrderMgr.placeOrder(order);
+    if (placeStatus.error) {
+        log.error('Order {0}: placeOrder failed', order.orderNo);
+        OrderMgr.failOrder(order, false);
+        return new Status(Status.ERROR, 'PLACE_FAILED', 'Order placement failed');
+    }
+
+    order.setConfirmationStatus(Order.CONFIRMATION_STATUS_CONFIRMED);
+    order.setExportStatus(Order.EXPORT_STATUS_READY);
+
+    // Return nothing — let the system implementation and any later hooks run.
+};
+```
+
+Register it like any order hook:
+
+```json
+{
+  "hooks": [
+    { "name": "dw.ocapi.shop.order.afterPOST", "script": "./hooks/order.js" }
+  ]
+}
+```
+
+> The `app.payment.processor.<id>` Authorize hooks are themselves custom hooks (one per payment processor, function `Authorize`). By SFRA convention they return a plain object whose `error` flag signals the outcome — `{ authorized: true }` on success, `{ error: true }` on decline — which is why the example treats a missing result or `result.error` as a failure. This mirrors the SFRA `handlePayments` checkout helper. For order-status semantics (`placeOrder`/`failOrder`, reopen-basket behavior, status transitions) see [b2c-ordering](../b2c-ordering/SKILL.md).
+
 ## System Hooks
 
 ### Calculate Hooks

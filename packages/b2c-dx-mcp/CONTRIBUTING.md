@@ -65,6 +65,12 @@ npx mcp-inspector --cli node bin/dev.js --toolsets all --allow-non-ga-tools --me
 # Call a specific tool
 npx mcp-inspector --cli node bin/dev.js --toolsets all --allow-non-ga-tools \
   --method tools/call \
+  --tool-name cartridge_deploy
+
+# Deprecated sfnext_* tools are excluded from `--toolsets all`; request the
+# deprecated toolset explicitly to exercise them
+npx mcp-inspector --cli node bin/dev.js --toolsets STOREFRONTNEXT_DEPRECATED --allow-non-ga-tools \
+  --method tools/call \
   --tool-name sfnext_add_page_designer_decorator
 ```
 

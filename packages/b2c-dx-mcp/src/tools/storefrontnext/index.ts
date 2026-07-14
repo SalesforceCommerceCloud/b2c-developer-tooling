@@ -5,9 +5,15 @@
  */
 
 /**
- * Storefront Next toolset for B2C Commerce.
+ * Storefront Next (deprecated) toolset for B2C Commerce.
  *
- * This toolset provides MCP tools for Storefront Next development.
+ * **DEPRECATED:** These `sfnext_*` tools are superseded by the `storefront-next`
+ * and `storefront-next-figma` agent-skills plugins and are NOT compatible with
+ * the Storefront Next 1.0 GA release. They now live in the
+ * `STOREFRONTNEXT_DEPRECATED` toolset, which is never auto-activated by project
+ * detection and is excluded from `--toolsets ALL`. To use them you must request
+ * the toolset explicitly (`--toolsets STOREFRONTNEXT_DEPRECATED`). They will be
+ * removed in a future release.
  *
  * **Implemented Tools:**
  * - `sfnext_get_guidelines` - Get development guidelines and best practices
@@ -16,8 +22,6 @@
  * - `sfnext_start_figma_workflow` - Convert Figma to components
  * - `sfnext_analyze_component` - Analyze design and recommend REUSE/EXTEND/CREATE
  * - `sfnext_match_tokens_to_theme` - Match design tokens to theme
- *
- * Note: mrt_bundle_push is defined in the MRT toolset and appears in STOREFRONTNEXT.
  *
  * @module tools/storefrontnext
  */
@@ -32,11 +36,7 @@ import {createGenerateComponentTool} from './figma/generate-component/index.js';
 import {createMapTokensToThemeTool} from './figma/map-tokens/index.js';
 
 /**
- * Creates all tools for the STOREFRONTNEXT toolset.
- *
- * Note: mrt_bundle_push is defined in the MRT toolset with
- * toolsets: ["MRT", "PWAV3", "STOREFRONTNEXT"] and will
- * automatically appear in STOREFRONTNEXT.
+ * Creates all tools for the deprecated STOREFRONTNEXT_DEPRECATED toolset.
  *
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns Array of MCP tools

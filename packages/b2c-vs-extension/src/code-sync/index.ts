@@ -4,20 +4,27 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import * as vscode from 'vscode';
+import type {CartridgeService} from '../cartridges/cartridge-service.js';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {registerSafeCommand} from '../safety.js';
 import {CodeSyncManager} from './code-sync-manager.js';
-import {CartridgeTreeProvider, CartridgeItem} from './cartridge-tree-provider.js';
-import {createDeployCommand} from './deploy-command.js';
+import {
+  CartridgeTreeProvider,
+  CartridgeItem,
+  CartridgeStepTypeItem,
+  openStepTypeDefinition,
+} from './cartridge-tree-provider.js';
+import {createDeployCommand, createDeployOneCommand} from './deploy-command.js';
 import {registerCartridgeCommands, updateCodeVersionDisplay} from './cartridge-commands.js';
 
 export function registerCodeSync(
   context: vscode.ExtensionContext,
   configProvider: B2CExtensionConfig,
+  cartridgeService: CartridgeService,
   log: vscode.OutputChannel,
 ): void {
   const manager = new CodeSyncManager(context.workspaceState);
-  const treeProvider = new CartridgeTreeProvider(configProvider);
+  const treeProvider = new CartridgeTreeProvider(cartridgeService);
   const treeView = vscode.window.createTreeView('b2cCartridgeExplorer', {treeDataProvider: treeProvider});
 
   // --- Core sync commands ---
@@ -56,19 +63,21 @@ export function registerCodeSync(
     createDeployCommand(configProvider, manager.outputChannel),
   );
 
+  const deployOneCmd = registerSafeCommand(
+    'b2c-dx.codeSync.deployOne',
+    createDeployOneCommand(configProvider, manager.outputChannel, context),
+  );
+
   const refreshCmd = registerSafeCommand('b2c-dx.codeSync.refreshCartridges', () => {
-    treeProvider.refresh();
+    cartridgeService.refresh();
     manager.refreshCartridges(configProvider.getWorkingDirectory());
   });
 
-  // Watch for new .project files (new cartridges added via scaffolding, etc.)
-  const projectFileWatcher = vscode.workspace.createFileSystemWatcher('**/.project');
-  projectFileWatcher.onDidCreate(() => {
-    treeProvider.refresh();
+  // CartridgeService already watches **/.project for create/delete and refreshes
+  // itself; the tree updates via its onDidChange subscription. We forward those
+  // events to the code-sync manager so it picks up newly-scaffolded cartridges.
+  const cartridgesSub = cartridgeService.onDidChange(() => {
     manager.refreshCartridges(configProvider.getWorkingDirectory());
-  });
-  projectFileWatcher.onDidDelete(() => {
-    treeProvider.refresh();
   });
 
   const uploadCartridgeCmd = registerSafeCommand('b2c-dx.codeSync.uploadCartridge', async (item: CartridgeItem) => {
@@ -78,7 +87,37 @@ export function registerCodeSync(
       return;
     }
     await manager.uploadSingleCartridge(instance, item.cartridge);
+    try {
+      await vscode.commands.executeCommand('b2c-dx.webdav.refresh');
+    } catch {
+      // best-effort
+    }
   });
+
+  // Jumps to the @type-id line inside the cartridge's steptypes.json. The
+  // default click on a step type node opens the module (.js) implementation;
+  // this command is the alternative offered via the right-click menu.
+  //
+  // Two invocation shapes: (a) the default-click path from
+  // `TreeItem.command.arguments` passes `(typeId, stepTypesPath)`; (b) the
+  // right-click menu path from `view/item/context` passes the TreeItem itself
+  // as the first arg. Handle both so neither is silently dropped.
+  const openStepTypeDefinitionCmd = registerSafeCommand(
+    'b2c-dx.cartridge.openStepTypeDefinition',
+    async (typeIdOrItem?: string | CartridgeStepTypeItem, stepTypesPath?: string) => {
+      let typeId: string | undefined;
+      let resolvedPath: string | undefined;
+      if (typeIdOrItem instanceof CartridgeStepTypeItem) {
+        typeId = typeIdOrItem.entry.typeId;
+        resolvedPath = typeIdOrItem.entry.stepTypesPath;
+      } else {
+        typeId = typeIdOrItem;
+        resolvedPath = stepTypesPath;
+      }
+      if (!typeId || !resolvedPath) return;
+      await openStepTypeDefinition(typeId, resolvedPath);
+    },
+  );
 
   const uploadToInstanceCmd = registerSafeCommand('b2c-dx.codeSync.uploadToInstance', async (uri?: vscode.Uri) => {
     if (!uri) return;
@@ -88,6 +127,11 @@ export function registerCodeSync(
       return;
     }
     await manager.uploadFileOrFolder(instance, uri, configProvider.getWorkingDirectory());
+    try {
+      await vscode.commands.executeCommand('b2c-dx.webdav.refresh');
+    } catch {
+      // best-effort
+    }
   });
 
   // --- Cartridge commands (download, diff, site path, code versions) ---
@@ -141,7 +185,8 @@ export function registerCodeSync(
     if (manager.isWatching) {
       await manager.stopWatch();
     }
-    treeProvider.refresh();
+    // CartridgeService listens to onDidReset itself and refreshes its cache;
+    // the tree updates via the cartridge-service onDidChange event.
     updateContextKey();
     await evaluateAutoStart();
   });
@@ -157,10 +202,12 @@ export function registerCodeSync(
     startCmd,
     stopCmd,
     deployCmd,
+    deployOneCmd,
     refreshCmd,
     uploadCartridgeCmd,
+    openStepTypeDefinitionCmd,
     uploadToInstanceCmd,
-    projectFileWatcher,
+    cartridgesSub,
     ...cartridgeCmdDisposables,
   );
 }

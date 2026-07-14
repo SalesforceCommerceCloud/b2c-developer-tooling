@@ -11,7 +11,9 @@ Use the `b2c` CLI plugin to manage SCAPI Custom API endpoints and check their re
 
 ## Configuration
 
-Values like `tenantId` and `shortCode` resolve from `dw.json` / `SFCC_*` env vars / the active instance. Examples below show minimal usage; add flags only to override configured values. If a required value is missing, the CLI emits an actionable error pointing at the flag, env var, and config key. See the `b2c-config` skill for precedence details.
+Values like `tenantId`, `shortCode`, `clientId`, and `clientSecret` resolve from `dw.json` / `SFCC_*` env vars / the active instance / configuration plugins. Examples below show minimal usage; **add flags only to override configured values** — passing `--client-id`/`--client-secret`/`--tenant-id`/`--short-code` is usually unnecessary. If a required value is missing, the CLI emits an actionable error pointing at the flag, env var, and config key.
+
+Run `b2c setup inspect` to see the resolved configuration and which source provided each value (`--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 ## Tenant ID vs. Organization ID
 
@@ -96,6 +98,21 @@ The tenant ID and short code can be overridden via flags or environment variable
 ### More Commands
 
 See `b2c scapi custom --help` for a full list of available commands and options.
+
+## OAuth Scopes (manual token minting)
+
+`b2c scapi custom status` injects the scopes it needs automatically — the domain scope `sfcc.custom-apis` plus the tenant scope `SALESFORCE_COMMERCE_API:<tenant_id>`. You don't pass these for the command itself.
+
+When you mint a token **by hand** (with `b2c auth token` or curl) to call a custom Admin API directly, that injection does **not** happen — you must list both the tenant scope and your scope(s) yourself. `b2c auth token` accepts multiple scopes (repeat `--auth-scope` or comma-separate):
+
+```bash
+# Token for calling a custom Admin API endpoint
+b2c auth token \
+  --auth-scope "SALESFORCE_COMMERCE_API:zzpq_013" \
+  --auth-scope c_my_admin_scope
+```
+
+A token missing the tenant scope returns 403. See `b2c:b2c-custom-api-development` (Testing Reference) for full request examples.
 
 ## Related Skills
 

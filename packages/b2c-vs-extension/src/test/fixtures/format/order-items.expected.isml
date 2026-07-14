@@ -1,0 +1,19 @@
+<isloop items="${orderItems}" var="orderItem" status="s">
+    <isif condition="${s.count > 5}">
+        <isbreak/>
+    </isif>
+    <isif condition="${item.status === P.returned}">
+        <isset name="qty" value="${item.qtyReturned}" scope="page"/>
+    <iselseif condition="${item.status === P.cancelled}"/>
+        <isset name="qty" value="${item.qtyCancelled}" scope="page"/>
+    </isif>
+    <isscript>
+    var url = null;
+    if (product) {
+        url = URLUtils.url("Product-Show", "pid", product.ID);
+    }
+    </isscript>
+    <isif condition="${empty(product)}">
+        <iscontinue/>
+    </isif>
+</isloop>

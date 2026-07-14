@@ -12,14 +12,31 @@ import path from 'node:path';
 import type {DetectionPattern} from '../types.js';
 import type {PackageJson} from '../utils.js';
 import {readPackageJson, globDirs} from '../utils.js';
+import {packageIndicatesPwaKit} from './pwa-kit.js';
+
+/**
+ * The Storefront Next dev toolchain dependency — the definitive dependency
+ * signal that a project is Storefront Next.
+ *
+ * We deliberately do NOT match the broader `@salesforce/storefront-next*` prefix:
+ * `@salesforce/storefront-next-runtime` is now also pulled in by PWA Kit projects
+ * for unrelated reasons, and matching the prefix produced false positives there.
+ */
+const STOREFRONT_NEXT_DEV_DEP = '@salesforce/storefront-next-dev';
 
 /**
  * Returns true if this package.json (deps or name) indicates a Storefront Next project.
- * Relies on @salesforce/storefront-next* dependency or package name starting with "storefront-next" only.
+ *
+ * A PWA Kit signal disqualifies the package outright: PWA Kit apps may depend on
+ * `@salesforce/storefront-next-runtime`, and a package that is clearly PWA Kit is
+ * not Storefront Next.
  */
 function packageIndicatesStorefrontNext(pkg: PackageJson): boolean {
+  // PWA Kit and Storefront Next are distinct; a PWA Kit package is never SFNext.
+  if (packageIndicatesPwaKit(pkg)) return false;
+
   const deps = Object.keys({...pkg.dependencies, ...pkg.devDependencies});
-  if (deps.some((dep) => dep.startsWith('@salesforce/storefront-next'))) {
+  if (deps.includes(STOREFRONT_NEXT_DEV_DEP)) {
     return true;
   }
   const name = pkg.name;

@@ -8,8 +8,10 @@ import {marked} from 'marked';
 
 import {markedTerminal} from 'marked-terminal';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {readDocByQuery, type DocEntry} from '@salesforce/b2c-tooling-sdk/docs';
+import {readDocByQuery, resolveEnabledCategories, type DocEntry} from '@salesforce/b2c-tooling-sdk/docs';
+import {detectWorkspaceType, PROJECT_TYPES} from '@salesforce/b2c-tooling-sdk/discovery';
 import {t} from '../../i18n/index.js';
+import {resolveDocsWorkspace} from '../../utils/docs/workspace.js';
 
 interface ReadDocsResult {
   entry: DocEntry;
@@ -55,17 +57,51 @@ export default class DocsRead extends BaseCommand<typeof DocsRead> {
       description: 'Output raw markdown without terminal formatting',
       default: false,
     }),
+    topics: Flags.string({
+      description:
+        'Limit readable documentation to these categories (comma-separated allowlist that bounds the whole ' +
+        'corpus). Unknown names are ignored with a warning.',
+      env: 'SFCC_DOCS_TOPICS',
+    }),
+    workspace: Flags.string({
+      // No oclif `options`: it validates the whole value, so it would reject a
+      // comma-separated list. Validation happens in resolveDocsWorkspace.
+      description:
+        `Favor docs for a workspace type (auto|all|${PROJECT_TYPES.join('|')}) when resolving a fuzzy query, ` +
+        'matching `docs search` ranking. Defaults to auto-detecting; "all" applies no preference. ' +
+        'Ignored for an exact id match.',
+    }),
   };
 
   protected operations = {
     readDocByQuery,
+    detectWorkspaceType,
   };
 
   async run(): Promise<ReadDocsResult> {
     const {query} = this.args;
     const {raw} = this.flags;
+    // Flag first (--topics / SFCC_DOCS_TOPICS), else config `docsCategories`.
+    const topicsInput = this.flags.topics ?? this.resolvedConfig?.values.docsCategories;
+    const enabledCategories = resolveEnabledCategories(topicsInput, (invalid) =>
+      this.warn(
+        t('commands.docs.read.invalidTopics', 'Ignoring unknown documentation topic(s): {{topics}}', {
+          topics: invalid.join(', '),
+        }),
+      ),
+    );
 
-    const result = this.operations.readDocByQuery(query);
+    // Resolve workspace the same way `docs search` does, so a fuzzy `docs read`
+    // picks the same top hit search ranks first (exact id matches ignore it —
+    // readDocByQuery short-circuits on an exact id before searching).
+    const workspace = await resolveDocsWorkspace(
+      this.flags.workspace,
+      this.operations.detectWorkspaceType,
+      this.logger,
+      this.warn.bind(this),
+    );
+
+    const result = await this.operations.readDocByQuery(query, {enabledCategories, workspace});
 
     if (!result) {
       this.error(t('commands.docs.read.notFound', 'No documentation found matching: {{query}}', {query}), {

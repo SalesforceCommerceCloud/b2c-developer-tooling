@@ -3,6 +3,15 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/**
+ * CIP (Commerce Intelligence Platform) client for B2C Commerce analytics.
+ *
+ * Provides a typed client for the CIP Avatica JDBC interface, enabling
+ * programmatic execution of analytics queries and retrieval of result sets
+ * with column metadata.
+ *
+ * @module clients/cip
+ */
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {createRequire} from 'node:module';

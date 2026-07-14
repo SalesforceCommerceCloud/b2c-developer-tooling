@@ -27,6 +27,11 @@ export interface CommerceAppInstallOptions {
   siteId: string;
   /** Keep the uploaded zip on the instance after install (default: false). */
   keepArchive?: boolean;
+  /**
+   * Create a pull request against the connected Storefront Next repository
+   * when the app includes storefront content (default: false).
+   */
+  shouldCreatePr?: boolean;
   /** Wait options for job completion. */
   waitOptions?: WaitForJobOptions;
 }
@@ -73,7 +78,7 @@ export async function commerceAppInstall(
   options: CommerceAppInstallOptions,
 ): Promise<CommerceAppInstallResult> {
   const logger = getLogger();
-  const {siteId: rawSiteId, keepArchive = false, waitOptions} = options;
+  const {siteId: rawSiteId, keepArchive = false, shouldCreatePr = false, waitOptions} = options;
   const siteId = normalizeSiteId(rawSiteId);
 
   if (!fs.existsSync(target)) {
@@ -121,6 +126,7 @@ export async function commerceAppInstall(
       app_domain: manifest.domain,
       site_id: siteId,
       app_path: appPath,
+      should_create_pr: shouldCreatePr,
     } as unknown as string,
   });
 
@@ -140,6 +146,7 @@ export async function commerceAppInstall(
           {name: 'AppDomain', value: manifest.domain},
           {name: 'SiteId', value: siteId},
           {name: 'AppPath', value: appPath},
+          {name: 'ShouldCreatePR', value: String(shouldCreatePr)},
         ],
       } as unknown as string,
     });
@@ -187,6 +194,20 @@ export async function commerceAppInstall(
   };
 }
 
+/**
+ * Reads and parses the commerce-app.json manifest file from a CAP directory.
+ *
+ * @param capDir - Path to the CAP directory containing commerce-app.json
+ * @returns Parsed manifest object
+ * @throws Error if commerce-app.json does not exist in the directory
+ * @throws Error if commerce-app.json is not valid JSON
+ *
+ * @example
+ * ```typescript
+ * const manifest = readManifest('./my-commerce-app');
+ * console.log(`App: ${manifest.id}@${manifest.version}`);
+ * ```
+ */
 export function readManifest(capDir: string): CommerceAppManifest {
   const manifestPath = path.join(capDir, 'commerce-app.json');
   if (!fs.existsSync(manifestPath)) {

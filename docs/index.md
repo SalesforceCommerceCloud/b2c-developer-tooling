@@ -5,11 +5,11 @@ isHome: true
 
 renameNotice:
   title: Formerly B2C DX
-  text: "The project previously known as B2C DX (B2C Developer Tooling) is now the Agentic B2C Developer Toolkit. The CLI package name (@salesforce/b2c-cli), commands, and configuration remain the same."
+  text: 'The project previously known as B2C DX (B2C Developer Tooling) is now the Agentic B2C Developer Toolkit. The CLI package name (@salesforce/b2c-cli), commands, and configuration remain the same.'
 
 hero:
   name: Agentic B2C Developer Toolkit
-  text: ""
+  text: ''
   tagline: CLI, Agent Skills, MCP Server, and the B2C DX VS Code Extension for Salesforce Agentforce Commerce — everything you and your coding agent need to build, deploy, and operate B2C Commerce together.
   image:
     src: /hero-collage.png
@@ -22,7 +22,7 @@ hero:
       text: Get Started
       link: /guide/
     - theme: alt
-      text: Agent Skills
+      text: Agent Plugins
       link: /guide/agent-skills
     - theme: alt
       text: VS Code
@@ -88,17 +88,38 @@ brew install SalesforceCommerceCloud/tools/b2c-cli
 
 :::
 
-## Install Agent Skills
+## Install Agent Plugins
 
-Detailed setup: [Claude Code](/guide/agent-skills#claude-code) · [Codex](/guide/agent-skills#codex) · [Copilot](/guide/agent-skills#copilot) · [Agentforce Vibes](/guide/agent-skills#agentforce-vibes) · [All IDEs](/guide/agent-skills)
+Detailed setup: [Claude Code](/guide/agent-skills#claude-code) · [Codex](/guide/agent-skills#codex) · [Cursor](/guide/agent-skills#cursor) · [Copilot](/guide/agent-skills#copilot) · [Agentforce Vibes](/guide/agent-skills#agentforce-vibes) · [All IDEs](/guide/agent-skills)
 
 ::: code-group
 
 ```bash [Claude Code]
 claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 # Use --scope project to install for current project only
+
+# Core: CLI + platform skills + MCP server
 claude plugin install b2c-cli
 claude plugin install b2c
+claude plugin install b2c-dx-mcp
+
+# Storefront Next (only for Storefront Next projects)
+claude plugin install storefront-next
+# storefront-next-figma adds Figma design-kit workflows (requires the Figma MCP server)
+claude plugin install storefront-next-figma
+```
+
+```bash [Codex]
+codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+# Then in Codex, run /plugins, select the "B2C Developer Tooling"
+# marketplace, and select and install the desired plugins.
+```
+
+```bash [Cursor]
+# Cursor auto-loads skills from Claude Code paths — if you've already
+# installed via `claude plugin install`, Cursor picks them up too.
+# Otherwise, install directly to .cursor/skills/:
+npx @salesforce/b2c-cli setup skills --ide cursor
 ```
 
 ```text [Copilot (VS Code)]
@@ -110,21 +131,21 @@ Then enter:
 
 ```bash [Copilot CLI]
 copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+
+# Core: CLI + platform skills
 copilot plugin install b2c-cli@b2c-developer-tooling
 copilot plugin install b2c@b2c-developer-tooling
-```
+# For the MCP server on Copilot, install it directly — see /mcp/installation
 
-```bash [Codex]
-codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-# Then in Codex, run /plugins, select the "B2C Developer Tooling"
-# marketplace, and select and install the desired plugins.
+# Storefront Next (only for Storefront Next projects)
+copilot plugin install storefront-next@b2c-developer-tooling
+copilot plugin install storefront-next-figma@b2c-developer-tooling
 ```
 
 ```bash [Agentforce Vibes]
 # Marketplace install coming soon. For now, use the B2C CLI:
 npx @salesforce/b2c-cli setup skills --ide agentforce-vibes
 ```
-
 
 ```bash [B2C CLI]
 npx @salesforce/b2c-cli setup skills
@@ -156,4 +177,3 @@ Browse the [GitHub releases page]({{ vsxRelease.fallbackUrl }}) for `b2c-vs-exte
 </div>
 
 Detailed setup: [Installation](/vscode-extension/installation) · [Configuration](/vscode-extension/configuration)
-

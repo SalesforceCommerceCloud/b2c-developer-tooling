@@ -105,7 +105,42 @@ function extractRequiredScopes(spec: Record<string, unknown>): string[] {
   return Array.from(scopes);
 }
 
-function detectApiType(spec: Record<string, unknown>, schema: SchemaEntry): ApiType {
+const SHOPPER_SECURITY_SCHEMES = new Set(['ShopperToken', 'ShopperTokenTaob']);
+const ADMIN_SECURITY_SCHEMES = new Set(['AmOAuth2', 'BearerToken']);
+
+const HTTP_METHODS = ['get', 'put', 'post', 'delete', 'patch', 'options', 'head'] as const;
+
+/**
+ * Collect security scheme names used by any operation in the spec, falling
+ * back to the spec's global `security` array if no operation declares one.
+ */
+function collectSecuritySchemeNames(spec: Record<string, unknown>): Set<string> {
+  const names = new Set<string>();
+  const collect = (security: unknown): void => {
+    if (!Array.isArray(security)) return;
+    for (const req of security) {
+      if (req && typeof req === 'object') {
+        for (const key of Object.keys(req as Record<string, unknown>)) {
+          names.add(key);
+        }
+      }
+    }
+  };
+
+  const paths = spec.paths as Record<string, Record<string, unknown>> | undefined;
+  if (paths) {
+    for (const pathItem of Object.values(paths)) {
+      for (const method of HTTP_METHODS) {
+        const op = pathItem[method] as Record<string, unknown> | undefined;
+        if (op?.security) collect(op.security);
+      }
+    }
+  }
+  if (names.size === 0) collect(spec.security);
+  return names;
+}
+
+export function detectApiType(spec: Record<string, unknown>, schema: SchemaEntry): ApiType {
   const info = spec.info as Record<string, unknown> | undefined;
   if (info) {
     const xApiType = info['x-api-type'] ?? info['x-apiType'];
@@ -114,7 +149,62 @@ function detectApiType(spec: Record<string, unknown>, schema: SchemaEntry): ApiT
       if (xApiType.toLowerCase().includes('admin')) return 'Admin';
     }
   }
-  return schema.apiFamily.startsWith('shopper') ? 'Shopper' : 'Admin';
+
+  // Detect from declared security schemes — works for standard SCAPI (where
+  // shopper-named APIs may live under non-shopper families) and for Custom
+  // APIs (which can be Shopper or Admin depending on the scheme they declare).
+  const schemeNames = collectSecuritySchemeNames(spec);
+  let shopperHits = 0;
+  let adminHits = 0;
+  for (const name of schemeNames) {
+    if (SHOPPER_SECURITY_SCHEMES.has(name)) shopperHits++;
+    else if (ADMIN_SECURITY_SCHEMES.has(name)) adminHits++;
+  }
+  if (shopperHits > 0 && adminHits === 0) return 'Shopper';
+  if (adminHits > 0 && shopperHits === 0) return 'Admin';
+  if (shopperHits > 0 && adminHits > 0) {
+    return schema.apiName.startsWith('shopper-') ? 'Shopper' : 'Admin';
+  }
+
+  if (schema.apiName.startsWith('shopper-')) return 'Shopper';
+  if (schema.apiFamily === 'shopper') return 'Shopper';
+  return 'Admin';
+}
+
+/**
+ * Custom API specs only describe the developer-authored portion of each path;
+ * the platform injects `/organizations/{organizationId}` between the base URL
+ * and the path at runtime. Rewrite the spec so Swagger UI shows the runtime
+ * path and "Try it out" calls the correct URL.
+ */
+export function injectCustomApiOrgPathPrefix(spec: Record<string, unknown>): void {
+  const paths = spec.paths as Record<string, Record<string, unknown>> | undefined;
+  if (!paths) return;
+
+  const orgParam = (): Record<string, unknown> => ({
+    name: 'organizationId',
+    in: 'path',
+    required: true,
+    schema: {type: 'string'},
+  });
+
+  const rewritten: Record<string, unknown> = {};
+  for (const [originalPath, pathItem] of Object.entries(paths)) {
+    const normalized = originalPath.startsWith('/') ? originalPath : `/${originalPath}`;
+    const newKey = `/organizations/{organizationId}${normalized}`;
+
+    if (pathItem && typeof pathItem === 'object') {
+      const item = pathItem as Record<string, unknown>;
+      const existing = Array.isArray(item.parameters) ? [...(item.parameters as unknown[])] : [];
+      const hasOrg = existing.some(
+        (p) => p && typeof p === 'object' && (p as {name?: unknown}).name === 'organizationId',
+      );
+      if (!hasOrg) existing.push(orgParam());
+      item.parameters = existing;
+    }
+    rewritten[newKey] = pathItem;
+  }
+  spec.paths = rewritten;
 }
 
 /**
@@ -184,6 +274,11 @@ export class SwaggerWebviewManager implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
   /** Tracks panels that have been disposed so we don't `postMessage` to them. */
   private readonly disposedPanels = new WeakSet<vscode.WebviewPanel>();
+  /**
+   * In-flight proxy fetch controllers keyed by requestId, scoped per panel.
+   * Allows us to abort outstanding fetches when the panel is disposed.
+   */
+  private readonly proxyControllers = new WeakMap<vscode.WebviewPanel, Map<string, AbortController>>();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -234,12 +329,22 @@ export class SwaggerWebviewManager implements vscode.Disposable {
 
     const apiType = detectApiType(spec, schema);
 
-    // Resolve external $refs server-side so the webview doesn't have to fetch them
+    // Resolve external $refs server-side so the webview doesn't have to fetch them.
+    // This completes before the panel exists, so panel-disposal can't cancel it; if a
+    // future refactor moves panel creation earlier, an AbortController plumbed through
+    // resolveExternalRefs and aborted from onDidDispose would make this cancellable.
     if (config.hasOAuthConfig()) {
       const oauthOptions = await this.configProvider.getImplicitAuthOptions();
       const oauthStrategy = config.createOAuth(oauthOptions);
       const authHeader = await oauthStrategy.getAuthorizationHeader?.();
       await resolveExternalRefs(spec, authHeader, this.log);
+    }
+
+    // Custom APIs author paths relative to their resource; the platform routes
+    // them under `/organizations/{organizationId}/...`. Add that prefix back so
+    // the browser displays — and "Try it out" calls — the correct URL.
+    if (schema.apiFamily === 'custom') {
+      injectCustomApiOrgPathPrefix(spec);
     }
 
     // Derive organizationId and pre-fill it in the spec
@@ -287,10 +392,19 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     );
 
     this.panels.set(key, panel);
+    this.proxyControllers.set(panel, new Map());
 
     panel.onDidDispose(() => {
       this.disposedPanels.add(panel);
       this.panels.delete(key);
+      // Abort any in-flight proxy fetches scoped to this panel
+      const controllers = this.proxyControllers.get(panel);
+      if (controllers) {
+        for (const controller of controllers.values()) {
+          controller.abort();
+        }
+        controllers.clear();
+      }
     });
 
     panel.webview.html = this.getWebviewHtml(panel.webview, spec, apiType, initialToken);
@@ -414,11 +528,19 @@ export class SwaggerWebviewManager implements vscode.Disposable {
 
     this.log.appendLine(`[API Browser Proxy] ${method} ${url} (${requestId})`);
 
+    // Track the AbortController so panel disposal can abort in-flight fetches.
+    const controllers = this.proxyControllers.get(panel);
+    const controller = new AbortController();
+    if (controllers) {
+      controllers.set(requestId, controller);
+    }
+
     try {
       const res = await fetch(url, {
         method,
         headers,
         body: body || undefined,
+        signal: controller.signal,
       });
 
       const responseHeaders: Record<string, string> = {};
@@ -442,12 +564,18 @@ export class SwaggerWebviewManager implements vscode.Disposable {
       });
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      this.log.appendLine(`[API Browser Proxy] ${requestId} → ERROR: ${errMsg}`);
+      if (err instanceof Error && err.name === 'AbortError') {
+        this.log.appendLine(`[API Browser Proxy] ${requestId} → aborted`);
+      } else {
+        this.log.appendLine(`[API Browser Proxy] ${requestId} → ERROR: ${errMsg}`);
+      }
       this.safePostMessage(panel, {
         type: 'proxyResponse',
         requestId,
         error: errMsg,
       });
+    } finally {
+      controllers?.delete(requestId);
     }
   }
 

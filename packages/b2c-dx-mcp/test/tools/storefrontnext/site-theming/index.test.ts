@@ -60,9 +60,9 @@ describe('tools/storefrontnext/site-theming', () => {
       expect(tool.handler).to.be.a('function');
     });
 
-    it('should be in STOREFRONTNEXT toolset', () => {
+    it('should be in STOREFRONTNEXT_DEPRECATED toolset', () => {
       const tool = createSiteThemingTool(createMockLoadServices(services));
-      expect(tool.toolsets).to.include('STOREFRONTNEXT');
+      expect(tool.toolsets).to.include('STOREFRONTNEXT_DEPRECATED');
     });
   });
 

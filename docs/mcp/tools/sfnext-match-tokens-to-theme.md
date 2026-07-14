@@ -4,9 +4,11 @@ description: Match Figma design tokens to existing theme tokens in app.css with 
 
 # sfnext_match_tokens_to_theme
 
-Matches Figma design tokens (colors, spacing, radius, etc.) to your Storefront Next theme tokens in `app.css`. Helps you identify which design tokens match existing theme variables and suggests new token names for values that don't have matches.
+::: warning DEPRECATED — use the agent-skills plugins instead
+This tool is **deprecated** and **not compatible with the Storefront Next 1.0 GA release**. It has been superseded by the [`storefront-next` and `storefront-next-figma`](../../guide/agent-skills) agent-skills plugins, which stay current with the GA release. It now lives in the opt-in [`STOREFRONTNEXT_DEPRECATED`](../toolsets#storefrontnext-deprecated) toolset (never auto-enabled, excluded from `--toolsets ALL`) and **will be removed in a future release**. Install the skills plugins instead — see the [Agent Skills guide](../../guide/agent-skills).
+:::
 
-> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
+Matches Figma design tokens (colors, spacing, radius, etc.) to your Storefront Next theme tokens in `app.css`. Helps you identify which design tokens match existing theme variables and suggests new token names for values that don't have matches.
 
 ## Overview
 
@@ -25,30 +27,32 @@ See [Figma-to-Component Tools Setup](../figma-tools-setup) for complete prerequi
 
 ## Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `figmaTokens` | array | Yes | Array of design tokens (e.g., from Figma, design system, or style guide). |
-| `themeFilePath` | string | No | Optional absolute path to theme CSS file. If not provided, searches for `app.css` in common locations. |
+| Parameter       | Type   | Required | Description                                                                                            |
+| --------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------ |
+| `figmaTokens`   | array  | Yes      | Array of design tokens (e.g., from Figma, design system, or style guide).                              |
+| `themeFilePath` | string | No       | Optional absolute path to theme CSS file. If not provided, searches for `app.css` in common locations. |
 
 ### Figma Token Schema
 
 Each token in `figmaTokens` must have:
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | Yes | Token name from Figma (e.g., `"Primary/Blue"`, `"Spacing/Large"`). |
-| `value` | string | Yes | Token value (e.g., `"#2563eb"`, `"16px"`, `"0.5rem"`). |
-| `type` | string | Yes | One of: `color`, `spacing`, `radius`, `opacity`, `fontSize`, `fontFamily`, `other`. |
-| `description` | string | No | Optional description from Figma. |
+| Field         | Type   | Required | Description                                                                         |
+| ------------- | ------ | -------- | ----------------------------------------------------------------------------------- |
+| `name`        | string | Yes      | Token name from Figma (e.g., `"Primary/Blue"`, `"Spacing/Large"`).                  |
+| `value`       | string | Yes      | Token value (e.g., `"#2563eb"`, `"16px"`, `"0.5rem"`).                              |
+| `type`        | string | Yes      | One of: `color`, `spacing`, `radius`, `opacity`, `fontSize`, `fontFamily`, `other`. |
+| `description` | string | No       | Optional description from Figma.                                                    |
 
 ## Usage Examples
 
 **Match design tokens to your theme (default app.css):**
+
 ```
 Use the MCP tool to match these design tokens to my theme: Primary/Blue #2563eb (color), Spacing/Large 16px (spacing).
 ```
 
 **Match design tokens with custom theme file path:**
+
 ```
 Use the MCP tool to match these design tokens to my theme at /path/to/app.css:
 - Primary/Blue #2563eb (color)
@@ -58,6 +62,7 @@ Use the MCP tool to match these design tokens to my theme at /path/to/app.css:
 ## Output
 
 Returns a report (does not modify files) showing:
+
 - Which Figma design tokens match existing theme variables (exact matches)
 - Which tokens are similar to existing variables (suggested matches)
 - Which tokens need new theme variables created (with suggested names)

@@ -5,8 +5,6 @@
  */
 
 import {createTelemetry, Telemetry, type TelemetryAttributes} from '@salesforce/b2c-tooling-sdk/telemetry';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 import * as vscode from 'vscode';
 
 const TELEMETRY_PROJECT = 'b2c-vs-extension';
@@ -14,11 +12,6 @@ const SETTING_ENABLED = 'b2c-dx.telemetry.enabled';
 
 let instance: Telemetry | undefined;
 const usedCategories = new Set<FeatureCategory>();
-
-interface TelemetryPjson {
-  version: string;
-  telemetry?: {connectionString?: string};
-}
 
 /**
  * Broad feature categories used to bucket usage events. Keep this list short
@@ -34,18 +27,11 @@ export type FeatureCategory =
   | 'debugger'
   | 'scaffold'
   | 'cap'
-  | 'pageDesigner'
   | 'logs'
-  | 'instance';
-
-function readPjson(extensionPath: string): TelemetryPjson | undefined {
-  try {
-    const raw = fs.readFileSync(path.join(extensionPath, 'package.json'), 'utf8');
-    return JSON.parse(raw) as TelemetryPjson;
-  } catch {
-    return undefined;
-  }
-}
+  | 'instance'
+  | 'cipAnalytics'
+  | 'scriptTypes'
+  | 'xmlValidation';
 
 /** VS Code 1.86+ telemetry-level signal. Falls back to true on older hosts. */
 function isVsCodeTelemetryEnabled(): boolean {
@@ -54,6 +40,15 @@ function isVsCodeTelemetryEnabled(): boolean {
 
 function isExtensionTelemetryEnabled(): boolean {
   return vscode.workspace.getConfiguration().get<boolean>(SETTING_ENABLED, true);
+}
+
+function resolveBuildConstant(reader: () => string): string | undefined {
+  try {
+    const value = reader();
+    return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -66,9 +61,11 @@ function isExtensionTelemetryEnabled(): boolean {
  *   - A connection string is available (from `telemetry.connectionString` in
  *     this package's package.json, or from the `SFCC_APP_INSIGHTS_KEY` env var).
  *
- * Initialization runs in the background and never blocks activation. The HTTP
- * client used by Application Insights buffers events in memory and flushes via
- * a background timer, so subsequent `sendEvent` calls are non-blocking too.
+ * Initialization runs in the background and never blocks activation. The
+ * telemetry client buffers events in memory, so `sendEvent` calls are
+ * non-blocking. Because the extension host is long-lived and may not get a
+ * clean `deactivate()` flush, we enable a periodic auto-flush (see
+ * `flushIntervalMs`) so a dirty shutdown loses at most one interval of events.
  * Failure to initialize is silent — the extension continues without telemetry.
  */
 export function initTelemetry(context: vscode.ExtensionContext): void {
@@ -76,8 +73,9 @@ export function initTelemetry(context: vscode.ExtensionContext): void {
   if (!isVsCodeTelemetryEnabled()) return;
   if (!isExtensionTelemetryEnabled()) return;
 
-  const pjson = readPjson(context.extensionPath);
-  const connectionString = Telemetry.getConnectionString(pjson?.telemetry?.connectionString);
+  const configuredConnectionString = resolveBuildConstant(() => __TELEMETRY_CONNECTION_STRING__);
+  const extensionVersion = resolveBuildConstant(() => __EXT_VERSION__) ?? 'dev';
+  const connectionString = Telemetry.getConnectionString(configuredConnectionString);
   if (!connectionString) return;
 
   // Run start() in the background. Events sent before start() resolves are
@@ -85,8 +83,11 @@ export function initTelemetry(context: vscode.ExtensionContext): void {
   const client = createTelemetry({
     project: TELEMETRY_PROJECT,
     appInsightsKey: connectionString,
-    version: pjson?.version,
+    version: extensionVersion,
     dataDir: context.globalStorageUri.fsPath,
+    // Long-lived host: deliver buffered events every 30s so a non-clean
+    // shutdown (window force-close, host crash) loses at most one interval.
+    flushIntervalMs: 30_000,
     initialAttributes: {
       host: vscode.env.appName,
       uiKind: vscode.env.uiKind === vscode.UIKind.Web ? 'web' : 'desktop',
@@ -105,8 +106,9 @@ export function initTelemetry(context: vscode.ExtensionContext): void {
 }
 
 /**
- * Send an event. Fire-and-forget — writes into the App Insights in-memory
- * buffer, no HTTP I/O on the calling stack. No-ops when telemetry is disabled.
+ * Send an event. Fire-and-forget — writes into the in-memory buffer, no HTTP
+ * I/O on the calling stack; delivery happens on the periodic flush or at
+ * dispose. No-ops when telemetry is disabled.
  */
 export function sendEvent(eventName: string, attributes: TelemetryAttributes = {}): void {
   instance?.sendEvent(eventName, attributes);

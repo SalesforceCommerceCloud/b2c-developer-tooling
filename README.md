@@ -204,6 +204,29 @@ See the [documentation site](https://salesforcecommercecloud.github.io/b2c-devel
 
 When adding new public APIs, ensure they have comprehensive JSDoc comments as these will appear in the generated documentation.
 
+### Bundled Platform Data (Script API docs, schemas, job steps)
+
+The SDK ships several corpora derived from the B2C Commerce platform under `packages/b2c-tooling-sdk/data/`:
+
+| Directory | Contents | Consumed by |
+|-----------|----------|-------------|
+| `script-api/` | Script API reference markdown + search index | `b2c docs search` / `docs read`, MCP `docs_*` |
+| `content-schemas/` | Page Designer / content metadefinition JSON schemas | `b2c content validate` |
+| `xsd/` | Import/export XSD schemas + search index | `b2c docs schema *`, XML validation |
+| `job-steps/` | Standard job-step markdown + dataset + search index | `b2c docs search` / `docs read` |
+
+All of these originate from the same documentation archive that `b2c docs download` fetches from an instance (the inner `DWAPP-<version>-API-doc.zip`). To refresh **all** of them to a new platform release at once, run the maintainer script against a current instance (it uses your default instance/auth via the CLI):
+
+```bash
+# Refresh every data set and regenerate the derived indexes
+pnpm --filter @salesforce/b2c-tooling-sdk run refresh:docs-data
+
+# Target a non-default instance, or keep the temp workdir for inspection
+B2C_INSTANCE=my-sandbox KEEP_WORKDIR=1 pnpm --filter @salesforce/b2c-tooling-sdk run refresh:docs-data
+```
+
+The script prints the detected platform version (e.g. `DWAPP 26.7`). Afterward, review the diff under `packages/b2c-tooling-sdk/data/` (index files always change their `generatedAt` timestamp; look for substantive schema/doc changes), run `pnpm --filter @salesforce/b2c-tooling-sdk run test:agent`, and add a changeset if the refresh changes user-facing behavior. See the `sdk-module-development` skill for details.
+
 ## Releases and Publishing
 
 This project uses [Changesets](https://github.com/changesets/changesets) for version management and publishes to npm using [OIDC trusted publishers](https://docs.npmjs.com/trusted-publishers).
@@ -267,4 +290,4 @@ This project is licensed under the Apache License 2.0. See [LICENSE.txt](./LICEN
 
 ## Disclaimer
 
-This project is currently in **Developer Preview** and is provided "as-is" without warranty of any kind. It is not yet generally available (GA) and should not be used in production environments. Features, APIs, and functionality may change without notice in future releases.
+This project is provided "as-is" without warranty of any kind. While the CLI, SDK, and MCP server are **Generally Available**, the VS Code extension is currently in **Developer Preview** — see its [documentation](./docs/vscode-extension/index.md) for details. Breaking changes to any component will follow a documented deprecation cycle.

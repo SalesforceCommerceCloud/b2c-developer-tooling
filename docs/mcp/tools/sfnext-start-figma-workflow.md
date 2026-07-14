@@ -4,9 +4,11 @@ description: Workflow orchestrator for Figma-to-component conversion. Parses you
 
 # sfnext_start_figma_workflow
 
-Workflow orchestrator for converting Figma designs to Storefront Next components. Provide a Figma design URL to start the workflow, which extracts design data, analyzes your codebase, and produces component recommendations.
+::: warning DEPRECATED — use the agent-skills plugins instead
+This tool is **deprecated** and **not compatible with the Storefront Next 1.0 GA release**. It has been superseded by the [`storefront-next` and `storefront-next-figma`](../../guide/agent-skills) agent-skills plugins, which stay current with the GA release. It now lives in the opt-in [`STOREFRONTNEXT_DEPRECATED`](../toolsets#storefrontnext-deprecated) toolset (never auto-enabled, excluded from `--toolsets ALL`) and **will be removed in a future release**. Install the skills plugins instead — see the [Agent Skills guide](../../guide/agent-skills).
+:::
 
-> **Note:** 🚧 This MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
+Workflow orchestrator for converting Figma designs to Storefront Next components. Provide a Figma design URL to start the workflow, which extracts design data, analyzes your codebase, and produces component recommendations.
 
 ## Overview
 
@@ -32,10 +34,10 @@ See [Figma-to-Component Tools Setup](../figma-tools-setup) for complete prerequi
 
 ## Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `figmaUrl` | string | Yes | The Figma design URL to convert. Must be a valid URL and include the `node-id` query parameter. |
-| `workflowFilePath` | string | No | Optional absolute path to a custom workflow `.md` file. If not provided, uses the default built-in workflow. |
+| Parameter          | Type   | Required | Description                                                                                                  |
+| ------------------ | ------ | -------- | ------------------------------------------------------------------------------------------------------------ |
+| `figmaUrl`         | string | Yes      | The Figma design URL to convert. Must be a valid URL and include the `node-id` query parameter.              |
+| `workflowFilePath` | string | No       | Optional absolute path to a custom workflow `.md` file. If not provided, uses the default built-in workflow. |
 
 ## Supported Figma URL Formats
 

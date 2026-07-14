@@ -1,13 +1,13 @@
 .vscode/**
 .vscode-test/**
+.claude/**
+test-workspace/**
 src/**
 !src/webview.html
 !src/api-browser/swagger-webview.html
-!src/storefront-next-cartridge.html
-!src/scapi-explorer.html
-!src/ods-management.html
 out/**
 **/node_modules/**
+dist/meta.json
 
 !src/template/**
 .gitignore

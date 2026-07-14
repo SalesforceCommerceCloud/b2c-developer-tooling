@@ -56,7 +56,7 @@ To enable non-production support, turn on **Enable Reports & Dashboards Data Tra
 
 Reports & Dashboards non-production URL:
 
-- `https://ccac.stg.analytics.commercecloud.salesforce.com`
+- `https://jdbc.stg.analytics.commercecloud.salesforce.com`
 
 For CLI commands, you can target the staging analytics host with `--staging`.
 
@@ -259,6 +259,42 @@ See the SDK API reference:
 - [CipClient class](/api/clients/classes/CipClient)
 - [createCipClient helper](/api/clients/functions/createCipClient)
 - [CIP Operations API](/api/operations/cip/)
+
+## VS Code IDE Integration
+
+The B2C Commerce Developer Tools VS Code extension exposes the same CIP analytics workflows as a graphical experience. Open the **B2C-DX Analytics** view in the activity bar to access them.
+
+::: tip
+You don't need to install or configure the CLI separately — the extension uses the same SDK under the hood and reads from your workspace `dw.json` (or environment variables).
+:::
+
+### Available panels
+
+- **Query Builder** — visual SELECT / FROM / WHERE / ORDER BY / LIMIT composer with a "Saved Queries" library so you can bookmark frequently-used queries per tenant. Switch to **SQL** mode for raw query editing.
+- **Tables Browser** — schema explorer that lists every CIP warehouse table for the active tenant. Click a table to inspect its columns and types.
+- **Curated Reports** — opens any `cip report` command (sales analytics, top-selling products, etc.) in a parameter form with date pickers, validation, CSV/JSON export, and a sortable result grid.
+
+### Realm management
+
+The sidebar tree groups tenants under named realms. Each realm can hold multiple connections (e.g., production + sandbox). Use the toolbar actions to:
+
+- **Add Realm** — create a new realm group (e.g. `abcd`).
+- **Configure / Edit** — set tenant ID, environment (production / staging / custom host), and run a connection test.
+- **Switch Connection** — change which realm/tenant the open panels query against. All open Query Builder, Tables Browser, and Report panels follow the active connection.
+
+### Saving queries
+
+Inside the Query Builder, the **Save** button persists the current SQL into a workspace-scoped library, tagged with the active tenant. Saved queries appear in the **Saved Queries** dropdown — those authored against the current tenant are listed first; queries from other tenants appear dimmed below a divider so you can still recall them after switching connections.
+
+The library is stored in VS Code workspace state (`b2c-dx.cipAnalytics.savedQueries`). It is not committed to source control.
+
+### Telemetry
+
+Opening any CIP Analytics panel records a single per-session usage event under the `cipAnalytics` feature category. No SQL text or query results are collected. To opt out, set `b2c-dx.telemetry.enabled` to `false` in VS Code settings (or disable VS Code's global telemetry). See the [VS Code extension configuration](/vscode-extension/configuration#verbosity-polling-telemetry) for details.
+
+### Safety mode
+
+CIP commands flow through the same SafetyGuard as the rest of the extension. If your workspace defines a [safety policy](/guide/safety) that blocks or confirms a CIP command, the policy is enforced before the panel opens.
 
 ## Next Steps
 

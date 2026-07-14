@@ -76,14 +76,19 @@ b2c slas token --tenant-id <TENANT_ID> --site-id <SITE_ID>
 
 ### Flows
 
-The command automatically selects the appropriate authentication flow:
+The command automatically selects the appropriate authentication flow based on whether `--shopper-login` and `--slas-client-secret` are provided:
 
 | Scenario | Flow |
 |----------|------|
-| No `--slas-client-secret` | Public client PKCE (authorization_code_pkce) |
-| With `--slas-client-secret` | Private client (client_credentials) |
-| With `--shopper-login` | Registered customer login |
+| Guest, no `--slas-client-secret` | Public client guest PKCE (`authorization_code_pkce`) |
+| Guest, with `--slas-client-secret` | Private client `client_credentials` |
+| Registered (`--shopper-login`), no secret | Registered login + PKCE (`authorization_code_pkce`) |
+| Registered (`--shopper-login`), with secret | Registered login + PKCE, plus client-secret Basic auth |
 | No `--slas-client-id` | Auto-discovers first public client via SLAS Admin API |
+
+::: tip Registered login uses PKCE on both public and private clients
+The registered-customer flow is always PKCE-protected: the `/oauth2/login` step presents a `code_challenge`, so the token exchange always sends the matching `code_verifier`. A private SLAS client additionally authenticates with its secret (HTTP Basic). This is why the registered flow works against both public and private clients.
+:::
 
 ### Examples
 
@@ -189,7 +194,7 @@ Displays a list of SLAS clients with:
 
 ## b2c slas client create
 
-Create a new SLAS client.
+Create or update a SLAS client.
 
 ### Usage
 

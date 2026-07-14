@@ -37,6 +37,8 @@ Safety Mode provides protection against accidental or unwanted destructive opera
 | | `NO_DELETE` | Block DELETE operations |
 | | `NO_UPDATE` | Block DELETE and destructive operations (reset, stop, restart) |
 | | `READ_ONLY` | Block all write operations (GET only) |
+| `SFCC_SAFETY_CONFIRM` | `true`, `1` | Enable confirmation mode (prompt user instead of blocking destructive operations) |
+| `SFCC_SAFETY_CONFIG` | File path | Path to global safety config file (JSON format with optional `level`, `confirm`, and `rules`) |
 
 **Example:**
 ```bash
@@ -103,7 +105,7 @@ All Account Manager commands are under the `am` topic:
 
 - [Setup Commands](./setup) - Configure instances, install IDE integrations, and install agent skills
 - [Auth Commands](./auth) - Authentication and token management
-- [Docs Commands](./docs) - Search/read Script API docs and XSD schemas, and download docs from an instance
+- [Docs Commands](./docs) - Search/read Script API, Developer Center guides, tooling docs, job steps, and XSD schemas; download docs from an instance
 - [Logging](./logging) - Log levels, output formats, and environment variables
 
 ## Getting Help

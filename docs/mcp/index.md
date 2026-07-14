@@ -6,8 +6,6 @@ description: MCP Server for Salesforce B2C Commerce - AI-assisted development to
 
 The B2C DX MCP Server enables AI assistants (like Claude Code, Cursor, GitHub Copilot, and others) to help with B2C Commerce development tasks. It provides toolsets for **SCAPI**, **CARTRIDGES**, **MRT**, **PWAV3**, and **STOREFRONTNEXT** development.
 
-> **Note:** 🚧 The STOREFRONTNEXT MCP tool is for Storefront Next. Storefront Next is part of a closed pilot and isn't available for general use.
-
 ## Quick Start
 
 1. **Install** — set up the MCP server for your client. See the [Installation Guide](./installation) for Claude Code, Cursor, GitHub Copilot, and other clients.
@@ -20,29 +18,21 @@ For authentication setup instructions, see the [Authentication Setup guide](../g
 
 ## Project Type Detection
 
-The server analyzes your project directory and enables toolsets based on what it finds:
+The **SCAPI** and **DIAGNOSTICS** toolsets are always enabled. On top of those, the server analyzes your project directory and enables additional toolsets based on what it finds:
 
-| Project Type | Detection | Toolsets Enabled |
-|--------------|-----------|------------------|
-| **PWA Kit v3** | `@salesforce/pwa-kit-*`, `@salesforce/retail-react-app`, or `ccExtensibility` in package.json | PWAV3, MRT, SCAPI |
-| **Storefront Next** | Root or a workspace package has `@salesforce/storefront-next*` dependency, or package name starting with `storefront-next`. | STOREFRONTNEXT, MRT, CARTRIDGES, SCAPI |
-| **Cartridges** | `.project` file in cartridge directory | CARTRIDGES, SCAPI |
-| **No project detected** | No B2C markers found | SCAPI (base toolset only) |
+| Project Type            | Detection                                                                                                                          | Toolsets Added                  |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| **Cartridges**          | `.project` file in a cartridge directory                                                                                           | CARTRIDGES                      |
+| **SFRA**                | An `app_storefront_base` cartridge (or `paths.base` in `package.json`)                                                             | CARTRIDGES                      |
+| **PWA Kit v3**          | `@salesforce/pwa-kit-*` or `@salesforce/retail-react-app` dependency, or `ccExtensibility` in `package.json`                       | PWAV3, MRT                      |
+| **Storefront Next**     | `@salesforce/storefront-next-dev` dependency or a package name starting with `storefront-next`, in the root or a workspace package | STOREFRONTNEXT, MRT, CARTRIDGES |
+| **No project detected** | No B2C markers found                                                                                                               | _(base only)_                   |
 
-With auto-discovery, the **SCAPI** toolset is always included. Hybrid projects (e.g., cartridges + PWA Kit) get combined toolsets. You can also [manually select toolsets](./configuration#toolset-selection).
+Every configuration also includes the always-on base toolsets (**SCAPI** + **DIAGNOSTICS**). Hybrid projects (e.g. cartridges + PWA Kit) get the union of the matching rows. You can also [manually select toolsets](./configuration#toolset-selection).
 
-## Prompting Tips
-
-> ⚠️ **Explicitly mention "Use the MCP tool"** in your prompts for reliable tool usage. This ensures the assistant prioritizes MCP tools over general knowledge.
-
-**Examples:**
-- "I'm new to Storefront Next. **Use the MCP tool** to show me the critical rules I need to know."
-- "**Use the MCP tool** to list all available SCAPI schemas."
-- "**Use the MCP tool** to deploy my cartridges to the sandbox instance."
-- "**Use the MCP tool** to build and push my Storefront Next bundle to staging."
-- "**Use the MCP tool** to convert this Figma design to a Storefront Next component: [Figma URL with node-id]"
-
-Other tips: be specific about your goal, mention the framework or domain, use natural language, and ask for guidelines first when learning a new framework.
+::: warning Storefront Next `sfnext_*` tools are deprecated
+The legacy Storefront Next MCP tools (`sfnext_*`) are **not compatible with the Storefront Next 1.0 GA release** and have been superseded by the [`storefront-next` and `storefront-next-figma` agent-skills plugins](../guide/agent-skills). They no longer auto-enable for Storefront Next projects and have moved to the opt-in [`STOREFRONTNEXT_DEPRECATED`](./toolsets#storefrontnext-deprecated) toolset. Install the skills plugins instead — see the [Agent Skills guide](../guide/agent-skills).
+:::
 
 ## Plugins
 
