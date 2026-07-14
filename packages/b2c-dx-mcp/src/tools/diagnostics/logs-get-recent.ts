@@ -60,7 +60,9 @@ export function createLogsGetRecentTool(
         prefixes: z
           .array(z.string())
           .optional()
-          .describe('Log prefixes to read. Defaults to ["error", "customerror"].'),
+          .describe(
+            'Log prefixes to read. Defaults to ["error", "customerror"]. Use a path like "internal/server" to read logs from a subdirectory.',
+          ),
         count: z.number().int().positive().optional().describe('Maximum number of entries to return. Defaults to 50.'),
         since: z
           .string()

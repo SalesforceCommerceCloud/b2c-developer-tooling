@@ -45,7 +45,9 @@ export function createLogsListFilesTool(
         prefixes: z
           .array(z.string())
           .optional()
-          .describe('Filter by log prefixes (e.g., ["error", "customerror"]). Returns all when omitted.'),
+          .describe(
+            'Filter by log prefixes (e.g., ["error", "customerror"]). Returns all when omitted. Use a path like "internal/server" to list logs in a subdirectory.',
+          ),
         sort_by: z.enum(['date', 'name', 'size']).optional().describe('Sort field. Defaults to "date".'),
         sort_order: z.enum(['asc', 'desc']).optional().describe('Sort order. Defaults to "desc".'),
       },
