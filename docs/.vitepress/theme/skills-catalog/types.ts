@@ -13,6 +13,8 @@ export interface SkillRecord {
   persona: string | null;
   personaLabel: string | null;
   category: string | null;
+  /** Additional personas this skill also serves (besides its primary persona). */
+  alsoFor: string[];
   tags: string[];
   description: string;
   skillUrl: string;

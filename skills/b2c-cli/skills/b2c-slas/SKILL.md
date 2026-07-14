@@ -4,6 +4,7 @@ description: Create, update, and manage SLAS (Shopper Login and API Access Servi
 persona: developer
 category: Authentication & Identity
 tags: [slas, authentication, headless, storefront, storefront-next, cli]
+alsoFor: [operator]
 ---
 
 # B2C SLAS Skill

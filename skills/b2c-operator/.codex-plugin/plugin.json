@@ -1,7 +1,7 @@
 {
   "name": "b2c-operator",
   "version": "1.4.0",
-  "description": "Operator/Admin bundle — curated operational B2C Commerce skills (deploys, sandboxes, jobs, logs, debugging, edge/MRT, access administration) for those who run instances rather than author feature code. A curated subset of b2c-cli/b2c — install instead of those plugins, not alongside.",
+  "description": "Operator/Admin runbooks for Salesforce B2C Commerce — safe production releases and incident triage.",
   "author": {
     "name": "Salesforce"
   },
@@ -13,13 +13,14 @@
     "b2c-commerce",
     "commerce-cloud",
     "operations",
-    "devops"
+    "devops",
+    "incident-response"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "B2C Operator / Admin",
     "shortDescription": "Run and operate Salesforce B2C Commerce instances from your AI assistant.",
-    "longDescription": "Curated operational skills for Salesforce B2C Commerce — deploy code and activate versions, manage On-Demand Sandboxes, run and monitor jobs, retrieve and debug logs, manage eCDN/MRT edge delivery, and administer Account Manager / Business Manager access. A persona bundle drawn from the b2c-cli and b2c plugins; install instead of those, not alongside, to avoid duplicating skills.",
+    "longDescription": "Operator/Admin runbooks for Salesforce B2C Commerce — orchestrate safe production code releases with guaranteed rollback, and triage live incidents (500s, error spikes, slowdowns) by reading the right logs and isolating the cause. Composes the b2c CLI's code, logs, debugger, and analytics commands into higher-level operational procedures. Install alongside the b2c-cli plugin (or use the individual CLI skills) for the underlying commands.",
     "developerName": "Salesforce",
     "category": "Productivity",
     "capabilities": [
@@ -30,10 +31,10 @@
     "brandColor": "#0D9DDA",
     "websiteURL": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
     "defaultPrompt": [
-      "Deploy the cartridges in ./cartridges to my sandbox and activate the version",
-      "Tail the latest error logs from my instance",
-      "Run the reindex job on my sandbox and wait for it to finish",
-      "Why is my custom API returning 404 — check the logs and registration status"
+      "Cut a production release and give me a rollback plan",
+      "The site is throwing 500s after the last deploy — help me triage",
+      "Roll back the last code activation",
+      "Errors spiked in production, find the cause"
     ]
   }
 }

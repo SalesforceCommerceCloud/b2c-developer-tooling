@@ -16,6 +16,7 @@
         "forms",
         "metadata"
       ],
+      "alsoFor": [],
       "references": [
         "references/EXTENSIONS-XML.md"
       ]
@@ -36,6 +37,7 @@
         "routing",
         "debugging"
       ],
+      "alsoFor": [],
       "references": [
         "references/CLASSIC-PATTERNS.md",
         "references/SFRA-PATTERNS.md"
@@ -55,6 +57,7 @@
         "headless",
         "authentication"
       ],
+      "alsoFor": [],
       "references": [
         "references/CONTRACT.md",
         "references/IMPLEMENTATION.md",
@@ -73,6 +76,7 @@
         "performance",
         "debugging"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -86,6 +90,7 @@
         "jobs",
         "business-manager"
       ],
+      "alsoFor": [],
       "references": [
         "references/CHUNK-ORIENTED.md",
         "references/STEPTYPES-JSON.md",
@@ -106,6 +111,7 @@
         "ocapi",
         "scapi"
       ],
+      "alsoFor": [],
       "references": [
         "references/OCAPI-SEARCH.md"
       ]
@@ -124,6 +130,7 @@
         "sfra",
         "storefront"
       ],
+      "alsoFor": [],
       "references": [
         "references/FORM-XML.md"
       ]
@@ -143,6 +150,7 @@
         "integrations",
         "debugging"
       ],
+      "alsoFor": [],
       "references": [
         "references/OCAPI-SCAPI-HOOKS.md",
         "references/SYSTEM-HOOKS.md"
@@ -161,6 +169,7 @@
         "sfra",
         "debugging"
       ],
+      "alsoFor": [],
       "references": [
         "references/EXPRESSIONS.md",
         "references/TAGS.md"
@@ -179,6 +188,7 @@
         "isml",
         "storefront"
       ],
+      "alsoFor": [],
       "references": [
         "references/PATTERNS.md"
       ]
@@ -195,6 +205,7 @@
         "debugging",
         "diagnostics"
       ],
+      "alsoFor": [],
       "references": [
         "references/LOG-FILES.md"
       ]
@@ -212,6 +223,7 @@
         "site-config",
         "business-manager"
       ],
+      "alsoFor": [],
       "references": [
         "references/SYSTEM-OBJECTS.md",
         "references/XML-EXAMPLES.md"
@@ -232,6 +244,7 @@
         "deployment",
         "configuration"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -247,6 +260,7 @@
         "controllers",
         "debugging"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -262,6 +276,7 @@
         "isml",
         "metadata"
       ],
+      "alsoFor": [],
       "references": [
         "references/ATTRIBUTE-TYPES.md",
         "references/META-DEFINITIONS.md"
@@ -281,6 +296,7 @@
         "ordering",
         "debugging"
       ],
+      "alsoFor": [],
       "references": [
         "references/PERFORMANCE-APIS.md"
       ]
@@ -300,6 +316,7 @@
         "ordering",
         "catalog"
       ],
+      "alsoFor": [],
       "references": [
         "references/INTEGRATION-PATTERNS.md",
         "references/OAUTH-SCOPES.md"
@@ -323,6 +340,7 @@
         "catalog",
         "performance"
       ],
+      "alsoFor": [],
       "references": [
         "references/CHECKOUT-FLOW.md",
         "references/COMMON-PATTERNS.md",
@@ -345,6 +363,7 @@
         "storefront-next",
         "sfra"
       ],
+      "alsoFor": [],
       "references": [
         "references/PASSKEYS.md",
         "references/SESSION-BRIDGE.md",
@@ -364,6 +383,7 @@
         "debugging",
         "caching"
       ],
+      "alsoFor": [],
       "references": [
         "references/FTP-SERVICES.md",
         "references/HTTP-SERVICES.md",
@@ -385,6 +405,7 @@
         "cli",
         "ci-cd"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -402,6 +423,7 @@
         "ocapi",
         "cli"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -417,6 +439,7 @@
         "cli",
         "storefront-next"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -435,6 +458,7 @@
         "performance",
         "cli"
       ],
+      "alsoFor": [],
       "references": [
         "references/KNOWN_TABLES.md",
         "references/STARTER_QUERIES.md"
@@ -453,6 +477,9 @@
         "webdav",
         "cli"
       ],
+      "alsoFor": [
+        "developer"
+      ],
       "references": []
     },
     {
@@ -469,6 +496,9 @@
         "onboarding",
         "docs"
       ],
+      "alsoFor": [
+        "operator"
+      ],
       "references": []
     },
     {
@@ -484,6 +514,7 @@
         "cli",
         "deployment"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -498,6 +529,9 @@
         "diagnostics",
         "controllers",
         "cli"
+      ],
+      "alsoFor": [
+        "developer"
       ],
       "references": []
     },
@@ -515,6 +549,7 @@
         "scapi",
         "ocapi"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -531,6 +566,7 @@
         "diagnostics",
         "cli"
       ],
+      "alsoFor": [],
       "references": [
         "references/ADVANCED.md",
         "references/SECURITY.md"
@@ -549,6 +585,7 @@
         "cli",
         "site-config"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -563,6 +600,9 @@
         "diagnostics",
         "debugging",
         "cli"
+      ],
+      "alsoFor": [
+        "developer"
       ],
       "references": []
     },
@@ -581,6 +621,7 @@
         "configuration",
         "cli"
       ],
+      "alsoFor": [],
       "references": [
         "references/BUNDLE-COMMANDS.md",
         "references/ENVIRONMENT-COMMANDS.md",
@@ -599,6 +640,9 @@
         "cli",
         "configuration"
       ],
+      "alsoFor": [
+        "developer"
+      ],
       "references": []
     },
     {
@@ -615,6 +659,7 @@
         "debugging",
         "cli"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -631,6 +676,7 @@
         "ordering",
         "cli"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -647,6 +693,7 @@
         "custom-objects",
         "cli"
       ],
+      "alsoFor": [],
       "references": [
         "references/METADATA-XML.md"
       ]
@@ -664,6 +711,7 @@
         "diagnostics",
         "cli"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -681,6 +729,9 @@
         "storefront-next",
         "cli"
       ],
+      "alsoFor": [
+        "operator"
+      ],
       "references": []
     },
     {
@@ -694,6 +745,44 @@
         "webdav",
         "cli",
         "deployment"
+      ],
+      "alsoFor": [],
+      "references": []
+    },
+    {
+      "name": "b2c-incident-triage",
+      "plugin": "b2c-operator",
+      "path": "skills/b2c-operator/skills/b2c-incident-triage/SKILL.md",
+      "description": "Triage a live B2C Commerce production incident — a 500 error, error spike, or sudden slowdown — by quantifying the spike, reading the right log files, and isolating the cause before opening a Support case. Use this skill whenever the user reports a production problem and needs a structured investigation: \"the site is throwing 500s\", \"errors spiked after the last release\", \"checkout is failing in production\", \"the storefront got slow\", \"something broke on prod, help me find it\", or \"what do I put in the Support ticket\". This is the operator runbook that orchestrates b2c-cli:b2c-cip, b2c-cli:b2c-logs, and b2c-cli:b2c-debug into one diagnostic flow.",
+      "persona": "operator",
+      "category": "Observability & Diagnostics",
+      "tags": [
+        "diagnostics",
+        "logging",
+        "debugging",
+        "performance",
+        "cli"
+      ],
+      "alsoFor": [
+        "developer"
+      ],
+      "references": []
+    },
+    {
+      "name": "b2c-production-release",
+      "plugin": "b2c-operator",
+      "path": "skills/b2c-operator/skills/b2c-production-release/SKILL.md",
+      "description": "Run a safe production code release on B2C Commerce — deploy to a new code version, activate it, verify health, and roll back fast if needed. Use this skill whenever the user is shipping code to a Production (or Staging) instance and wants a controlled, reversible release: \"deploy to production\", \"activate the new code version\", \"cut a release\", \"roll back the last deploy\", \"the release broke the site, revert it\", or \"what's our rollback plan\". This is the operator runbook that orchestrates the lower-level b2c-cli:b2c-code, b2c-cli:b2c-logs, and b2c-cli:b2c-cip skills into one release procedure with guardrails.",
+      "persona": "operator",
+      "category": "Deployment & Release",
+      "tags": [
+        "deployment",
+        "ci-cd",
+        "diagnostics",
+        "cli"
+      ],
+      "alsoFor": [
+        "developer"
       ],
       "references": []
     },
@@ -712,6 +801,7 @@
         "storefront",
         "state-management"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -727,6 +817,7 @@
         "storefront",
         "design-system"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -743,6 +834,7 @@
         "configuration",
         "site-config"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -760,6 +852,7 @@
         "scaffolding",
         "testing"
       ],
+      "alsoFor": [],
       "references": [
         "references/COMPONENT-AUTHORING.md",
         "references/PROJECT-STRUCTURE.md",
@@ -782,6 +875,7 @@
         "figma",
         "scaffolding"
       ],
+      "alsoFor": [],
       "references": [
         "references/COMPONENT-AUTHORING.md",
         "references/PROJECT-STRUCTURE.md",
@@ -803,6 +897,7 @@
         "data-fetching",
         "scapi"
       ],
+      "alsoFor": [],
       "references": [
         "references/LOADER-PATTERNS.md",
         "references/SCAPI-FETCHER.md"
@@ -824,6 +919,7 @@
         "storefront",
         "cli"
       ],
+      "alsoFor": [],
       "references": [
         "references/MRT-DEPLOYMENT.md"
       ]
@@ -843,6 +939,7 @@
         "i18n",
         "integrations"
       ],
+      "alsoFor": [],
       "references": [
         "references/BASE-AUDIT.md",
         "references/EXTENSION-EXAMPLES.md"
@@ -863,6 +960,7 @@
         "routing",
         "authentication"
       ],
+      "alsoFor": [],
       "references": [
         "references/HYBRID-PROXY-CONFIG.md"
       ]
@@ -881,6 +979,7 @@
         "i18n",
         "localization"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -898,6 +997,7 @@
         "content",
         "data-fetching"
       ],
+      "alsoFor": [],
       "references": [
         "references/COMPONENT-REGISTRY.md",
         "references/DECORATOR-PATTERNS.md"
@@ -918,6 +1018,7 @@
         "caching",
         "diagnostics"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -936,6 +1037,7 @@
         "configuration",
         "cli"
       ],
+      "alsoFor": [],
       "references": [
         "references/ENV-VARIABLES.md",
         "references/PROJECT-STRUCTURE.md"
@@ -954,6 +1056,7 @@
         "storefront",
         "routing"
       ],
+      "alsoFor": [],
       "references": [
         "references/ROUTE-CONVENTIONS.md"
       ]
@@ -971,6 +1074,7 @@
         "storefront",
         "state-management"
       ],
+      "alsoFor": [],
       "references": []
     },
     {
@@ -987,6 +1091,7 @@
         "testing",
         "design-system"
       ],
+      "alsoFor": [],
       "references": [
         "references/STORYBOOK-PATTERNS.md"
       ]
@@ -1005,6 +1110,7 @@
         "storefront-next",
         "storefront"
       ],
+      "alsoFor": [],
       "references": [
         "references/FIGMA-COMPONENT-EDITING.md",
         "references/PROJECT-STRUCTURE.md",

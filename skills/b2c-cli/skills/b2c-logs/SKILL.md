@@ -4,6 +4,7 @@ description: Retrieve and search logs from B2C Commerce instances using the b2c 
 persona: operator
 category: Observability & Diagnostics
 tags: [logging, diagnostics, debugging, cli]
+alsoFor: [developer]
 ---
 
 # B2C Logs Skill

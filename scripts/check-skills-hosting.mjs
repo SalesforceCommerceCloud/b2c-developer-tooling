@@ -78,13 +78,9 @@ for (const s of index.skills) {
   checked++;
 }
 
-// Cross-check count against governed plugins (best-effort). Generated persona
-// bundles are intentionally excluded from the index (their skills are hosted
-// under their home plugin), so skip them here too.
+// Cross-check that every published plugin contributed at least one skill.
 try {
-  const plugins = JSON.parse(readFileSync(skillsPluginsPath, 'utf8'))
-    .plugins.filter((p) => !p.generated)
-    .map((p) => p.name);
+  const plugins = JSON.parse(readFileSync(skillsPluginsPath, 'utf8')).plugins.map((p) => p.name);
   const seenPlugins = new Set(index.skills.map((s) => s.plugin));
   for (const p of plugins) {
     if (!seenPlugins.has(p)) fail(`plugin "${p}" from skills/plugins.json has no skills in the index`);

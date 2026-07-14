@@ -120,6 +120,7 @@ function assign(out, key, value) {
   else if (key === 'persona') out.persona = value;
   else if (key === 'category') out.category = value;
   else if (key === 'tags') out.tags = Array.isArray(value) ? value : [value];
+  else if (key === 'alsoFor') out.alsoFor = Array.isArray(value) ? value : [value];
 }
 
 function stripScalar(s) {
@@ -155,12 +156,7 @@ function listSkillDirs(pluginName) {
 const schema = JSON.parse(readFileSync(schemaPath, 'utf8'));
 const validTags = new Set(schema.tags);
 const personaDefs = schema.personas;
-// Skip generated persona bundles: their skills are copies of source-of-truth
-// skills already validated in their home plugin (double-validating would also
-// double-count). The publish workflow still zips them (it ignores this flag).
-const plugins = JSON.parse(readFileSync(pluginsPath, 'utf8'))
-  .plugins.filter((p) => !p.generated)
-  .map((p) => p.name);
+const plugins = JSON.parse(readFileSync(pluginsPath, 'utf8')).plugins.map((p) => p.name);
 
 // --- Walk + validate --------------------------------------------------------
 
@@ -215,6 +211,16 @@ for (const plugin of plugins) {
       }
     }
 
+    // alsoFor: optional secondary personas a skill ALSO serves (e.g. a
+    // developer-home skill operators rely on day to day). Each must be a known,
+    // active persona and must not repeat the primary persona.
+    const alsoFor = fm.alsoFor ?? [];
+    for (const p of alsoFor) {
+      if (!personaDefs[p]) taxIssue(`${rel(skillPath)}: unknown alsoFor persona "${p}"`);
+      else if (personaDefs[p].active === false) taxIssue(`${rel(skillPath)}: alsoFor persona "${p}" is not active`);
+      else if (p === persona) taxIssue(`${rel(skillPath)}: alsoFor "${p}" duplicates the primary persona`);
+    }
+
     // Reference-link resolution (errors; cross-plugin ../../../ links allowed
     // as long as they resolve on disk).
     for (const link of relativeMdLinks(content)) {
@@ -239,6 +245,7 @@ for (const plugin of plugins) {
       persona: persona ?? null,
       category: category ?? null,
       tags: tags ?? [],
+      alsoFor,
       references,
     });
   }

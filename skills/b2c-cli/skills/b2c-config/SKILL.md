@@ -4,6 +4,7 @@ description: Inspect, configure, and troubleshoot the B2C CLI's setup, authentic
 persona: developer
 category: Getting Started & Scaffolding
 tags: [configuration, authentication, cli, onboarding, docs]
+alsoFor: [operator]
 ---
 
 # B2C Config Skill

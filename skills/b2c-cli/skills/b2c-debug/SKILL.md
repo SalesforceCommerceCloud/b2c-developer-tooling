@@ -4,6 +4,7 @@ description: Debug B2C Commerce server-side scripts using the b2c CLI. Use this 
 persona: operator
 category: Observability & Diagnostics
 tags: [debugging, diagnostics, controllers, cli]
+alsoFor: [developer]
 ---
 
 # B2C Debug Skill

@@ -144,10 +144,10 @@ jobs:
           retention-days: 30
 
   skills:
-    # Fast, dependency-light gate for the agent-skill taxonomy + persona
-    # bundles + docs hosting. Runs the strict frontmatter validator, checks
-    # the generated manifest and assembled persona dirs are not stale, and
-    # smoke-builds the docs (which publishes the curl-able skills tree/index).
+    # Fast, dependency-light gate for the agent-skill taxonomy + docs hosting.
+    # Runs the strict frontmatter validator, checks the generated manifest is
+    # not stale and docs anchors resolve, and smoke-builds the docs (which
+    # publishes the curl-able skills tree/index).
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -181,9 +181,6 @@ jobs:
 
       - name: Check docs anchors resolve (page-split guard)
         run: node scripts/check-doc-anchors.mjs
-
-      - name: Check persona bundles are not stale
-        run: pnpm run skills:assemble:check
 
       - name: Build packages (docs build depends on the SDK)
         run: pnpm -r run build

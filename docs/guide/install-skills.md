@@ -1,15 +1,15 @@
 ---
-description: Install B2C Commerce agent skills into Claude Code, Codex, Cursor, GitHub Copilot, Agentforce Vibes, and other IDEs — marketplace and B2C CLI install paths, scopes, updates, and install locations.
+description: Install B2C Commerce agent plugins (skills + MCP server) into Claude Code, Codex, Cursor, GitHub Copilot, Agentforce Vibes, and other IDEs — marketplace and B2C CLI install paths, scopes, updates, and install locations.
 ---
 
-# Installing Skills
+# Installing Agent Plugins
 
-Detailed, per-IDE installation for the B2C Commerce agent skill plugins. For a quick overview of what skills exist and how to browse them, see **[Agent Skills & Plugins](/guide/agent-skills)**.
+Detailed, per-IDE installation for the B2C Commerce agent plugins. For a quick overview of what skills exist and how to browse them, see **[Agent Skills + MCP](/guide/agent-skills)**.
 
 All skill plugins are published to a single Claude Code / Codex / Copilot marketplace (`SalesforceCommerceCloud/b2c-developer-tooling`) and are also installable directly with the B2C CLI (`b2c setup skills`) for any supported IDE.
 
-::: tip Persona bundles
-`b2c-operator` is a curated **bundle** of the operational skills already published in `b2c-cli` and `b2c`. Install it **instead of** the broad plugins if you primarily run instances (deploys, sandboxes, jobs, logs, debugging) rather than author feature code — installing both a persona bundle and its source plugins duplicates the same skills and their always-on context cost.
+::: tip Persona plugins
+`b2c-operator` adds operator/admin **runbook** skills (safe production release & rollback, incident triage) that orchestrate the `b2c` CLI. Install it **alongside `b2c-cli`** so your agent has the underlying commands. See [Persona Plugins](/guide/agent-skills#persona-plugins).
 :::
 
 ## Claude Code
@@ -30,7 +30,7 @@ claude plugin install b2c
 claude plugin install storefront-next
 # Install storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
 claude plugin install storefront-next-figma
-# Operator/Admin bundle (curated operational skills) — install INSTEAD OF b2c-cli/b2c
+# Operator/Admin runbooks (pair with b2c-cli for the underlying commands)
 claude plugin install b2c-operator
 # Install b2c-dx-mcp if you want the MCP server installed
 claude plugin install b2c-dx-mcp
@@ -42,7 +42,7 @@ claude plugin install b2c --scope project
 claude plugin install storefront-next --scope project
 # Install storefront-next-figma for Figma design-kit workflows (requires the Figma MCP server)
 claude plugin install storefront-next-figma --scope project
-# Operator/Admin bundle (curated operational skills) — install INSTEAD OF b2c-cli/b2c
+# Operator/Admin runbooks (pair with b2c-cli for the underlying commands)
 claude plugin install b2c-operator --scope project
 # Install b2c-dx-mcp if you want the MCP server installed
 claude plugin install b2c-dx-mcp --scope project
@@ -92,16 +92,16 @@ Cursor follows the open [Agent Skills](https://cursor.com/docs/skills) standard.
 
 Cursor automatically loads skills from these locations:
 
-| Path | Scope | Source |
-|------|-------|--------|
-| `.cursor/skills/` | Project | Native Cursor |
-| `.agents/skills/` | Project | Native Cursor |
-| `~/.cursor/skills/` | User | Native Cursor |
-| `~/.agents/skills/` | User | Native Cursor |
-| `.claude/skills/` | Project | Claude Code compatibility |
-| `~/.claude/skills/` | User | Claude Code compatibility |
-| `.codex/skills/` | Project | Codex compatibility |
-| `~/.codex/skills/` | User | Codex compatibility |
+| Path                | Scope   | Source                    |
+| ------------------- | ------- | ------------------------- |
+| `.cursor/skills/`   | Project | Native Cursor             |
+| `.agents/skills/`   | Project | Native Cursor             |
+| `~/.cursor/skills/` | User    | Native Cursor             |
+| `~/.agents/skills/` | User    | Native Cursor             |
+| `.claude/skills/`   | Project | Claude Code compatibility |
+| `~/.claude/skills/` | User    | Claude Code compatibility |
+| `.codex/skills/`    | Project | Codex compatibility       |
+| `~/.codex/skills/`  | User    | Codex compatibility       |
 
 Because Cursor reads from Claude Code and Codex paths too, **any plugin you've already installed via `claude plugin install` or `codex plugin install` is automatically picked up by Cursor** — no separate install needed.
 
@@ -234,13 +234,13 @@ b2c setup skills b2c --ide agentforce-vibes --global
 Use [`b2c setup skills`](/cli/setup) for any supported IDE.
 :::
 
-| IDE | Flag |
-|-----|------|
-| [Cursor](https://cursor.com/docs/skills) | `--ide cursor` |
-| [Windsurf](https://docs.windsurf.com/) | `--ide windsurf` |
-| [VS Code / Copilot](https://code.visualstudio.com/docs/copilot/customization/agent-skills) | `--ide vscode` |
-| [Codex CLI](https://github.com/openai/codex) | `--ide codex` |
-| [OpenCode](https://opencode.ai/) | `--ide opencode` |
+| IDE                                                                                        | Flag             |
+| ------------------------------------------------------------------------------------------ | ---------------- |
+| [Cursor](https://cursor.com/docs/skills)                                                   | `--ide cursor`   |
+| [Windsurf](https://docs.windsurf.com/)                                                     | `--ide windsurf` |
+| [VS Code / Copilot](https://code.visualstudio.com/docs/copilot/customization/agent-skills) | `--ide vscode`   |
+| [Codex CLI](https://github.com/openai/codex)                                               | `--ide codex`    |
+| [OpenCode](https://opencode.ai/)                                                           | `--ide opencode` |
 
 ### Manual Installation
 
@@ -253,15 +253,15 @@ b2c setup skills b2c --ide manual --directory ./my-skills
 
 For reference, the install locations each `--ide` flag writes to:
 
-| IDE | Project | User |
-|-----|---------|------|
-| Cursor | `.cursor/skills/` | `~/.cursor/skills/` |
-| Windsurf | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
-| VS Code / Copilot | `.github/skills/` | `~/.copilot/skills/` |
-| Codex CLI | `.codex/skills/` | `~/.codex/skills/` |
-| OpenCode | `.opencode/skills/` | `~/.config/opencode/skills/` |
-| Agentforce Vibes | `.a4drules/skills/` | IDE's global storage |
+| IDE               | Project             | User                          |
+| ----------------- | ------------------- | ----------------------------- |
+| Cursor            | `.cursor/skills/`   | `~/.cursor/skills/`           |
+| Windsurf          | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
+| VS Code / Copilot | `.github/skills/`   | `~/.copilot/skills/`          |
+| Codex CLI         | `.codex/skills/`    | `~/.codex/skills/`            |
+| OpenCode          | `.opencode/skills/` | `~/.config/opencode/skills/`  |
+| Agentforce Vibes  | `.a4drules/skills/` | IDE's global storage          |
 
 ## Fetch Without Installing
 
-Every skill is also hosted as raw, curl-able markdown for agents, CI, and ephemeral environments that don't install plugins. See [Fetch Skills Directly](/guide/agent-skills#fetch-skills-directly) on the catalog page.
+Every skill is also hosted as raw markdown your agent can fetch on demand — for agents, CI, and ephemeral environments that don't install plugins. See [Use Skills Without Installing](/guide/agent-skills#use-skills-without-installing) on the catalog page.

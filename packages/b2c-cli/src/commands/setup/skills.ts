@@ -161,27 +161,6 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       }
     }
 
-    // Persona bundles (e.g. b2c-operator) are curated subsets of the broad
-    // plugins. Warn if a persona is installed alongside its source plugins,
-    // since the same skills (and their always-on context) would be duplicated.
-    const PERSONA_SOURCES: Partial<Record<SkillSet, SkillSet[]>> = {
-      'b2c-operator': ['b2c-cli', 'b2c', 'storefront-next'],
-    };
-    for (const set of skillsets) {
-      const sources = PERSONA_SOURCES[set];
-      if (!sources) continue;
-      const overlap = sources.filter((s) => skillsets.includes(s));
-      if (overlap.length > 0) {
-        this.warn(
-          t(
-            'commands.setup.skills.personaOverlap',
-            "'{{persona}}' is a curated subset of {{sources}} — installing both duplicates the same skills. Install the persona bundle instead of, not alongside, those plugins.",
-            {persona: set, sources: overlap.join(', ')},
-          ),
-        );
-      }
-    }
-
     // Download and scan skills
     const hasReleaseArtifacts = skillsets.some((s) => SKILL_SOURCES[s].type === 'release-artifact');
     const hasRepoContents = skillsets.some((s) => SKILL_SOURCES[s].type === 'repo-contents');

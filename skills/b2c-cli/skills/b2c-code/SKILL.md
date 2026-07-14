@@ -4,6 +4,7 @@ description: Deploy, download, and manage cartridge code versions on B2C Commerc
 persona: operator
 category: Deployment & Release
 tags: [deployment, ci-cd, webdav, cli]
+alsoFor: [developer]
 ---
 
 # B2C Code Skill

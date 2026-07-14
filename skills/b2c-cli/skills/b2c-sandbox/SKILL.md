@@ -4,6 +4,7 @@ description: Create and manage on-demand sandboxes (ODS) for B2C Commerce using 
 persona: operator
 category: Environments & Sandboxes
 tags: [sandbox, cli, configuration]
+alsoFor: [developer]
 ---
 
 # B2C Sandbox Skill
