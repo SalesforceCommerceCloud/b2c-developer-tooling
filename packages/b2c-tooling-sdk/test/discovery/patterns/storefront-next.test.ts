@@ -35,15 +35,14 @@ describe('discovery/patterns/storefront-next', () => {
       expect(result).to.be.true;
     });
 
-    it('does NOT detect on @salesforce/storefront-next-runtime alone (shared with PWA Kit)', async () => {
-      // -runtime is now pulled in by PWA Kit projects too, so it is no longer a
-      // Storefront Next signal on its own — only -dev is.
+    it('detects @salesforce/storefront-next-runtime dependency (when not a PWA Kit project)', async () => {
+      // -runtime alone is a valid signal when the PWA Kit guard doesn't disqualify.
       const pkg = {name: 'x', dependencies: {'@salesforce/storefront-next-runtime': 'workspace:*'}};
       await fs.writeFile(path.join(tempDir, 'package.json'), JSON.stringify(pkg));
 
       const result = await storefrontNextPattern.detect(tempDir);
 
-      expect(result).to.be.false;
+      expect(result).to.be.true;
     });
 
     it('does NOT detect a PWA Kit project even if it depends on storefront-next-runtime', async () => {
