@@ -14,20 +14,21 @@
  * that slipped through, or a page removed upstream after generation) fails CI
  * rather than silently degrading `b2c docs`.
  *
- * It is intentionally standalone (no SDK imports) and network-bound, so CI runs
- * it only when the index changes (see `.github/workflows/guides-link-check.yml`).
+ * LOCAL-ONLY: this is a manual/local verification tool, not a CI gate. The docs
+ * CDN (Cloudflare) blanket-403s datacenter IPs, so every URL comes back blocked
+ * from GitHub-hosted runners regardless of headers — a CI run would verify
+ * nothing while appearing green. Run it from a normal network after regenerating
+ * the index (see the documentation skill).
  *
  * Usage:
  *   pnpm --filter @salesforce/b2c-tooling-sdk run check:guides-links
  *
  * Signal vs. noise: only 404/410 are treated as "broken" — those mean the page
- * is definitively gone. The docs site sits behind a bot filter that returns 403
- * (or 429) to datacenter/non-browser clients — e.g. GitHub-hosted runners — which
- * is an environmental block, not a dead link. Such statuses (plus 5xx and network
- * errors) are counted as "inconclusive": individual ones are reported but do not
- * fail the run, and if the whole run is dominated by them we warn and pass rather
- * than flag every URL as broken. We send a browser-like User-Agent to minimize
- * this. The docs site 404s HEAD requests, so we issue GET and drain the body.
+ * is definitively gone. A 403/429/5xx or network error is an environmental block
+ * (bot filter, rate limit, transient), not a dead link, so it is counted as
+ * "inconclusive": reported but non-fatal, and a run dominated by inconclusive
+ * results warns and passes rather than flagging every URL. We send a browser-like
+ * User-Agent to minimize blocks. The docs site 404s HEAD, so we GET and drain.
  */
 
 import * as fs from 'node:fs';
