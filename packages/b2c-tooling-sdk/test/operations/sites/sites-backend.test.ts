@@ -158,4 +158,127 @@ describe('operations/sites backend', () => {
       });
     });
   });
+
+  describe('ScapiSitesBackend pagination + enrichment', () => {
+    /**
+     * Stubs the SCAPI client with an in-memory paginated `getSites` over
+     * `total` id-only sites (`site-0`..), plus a per-site detail endpoint.
+     * Tracks the (limit, offset) of each list page and every detail id fetched.
+     */
+    function stubPaginatedClient(backend: ScapiSitesBackend, total: number) {
+      const listPages: Array<{limit?: number; offset?: number}> = [];
+      const detailFetches: string[] = [];
+      (backend as unknown as {client: unknown}).client = {
+        async GET(path: string, opts: {params?: {path?: Record<string, string>; query?: Record<string, number>}}) {
+          if (path.endsWith('/sites/{siteId}')) {
+            const id = opts.params!.path!.siteId;
+            detailFetches.push(id);
+            return {
+              data: {id, displayName: {default: `Name ${id}`}, storefrontStatus: 'online', cartridges: 'a:b'},
+              error: undefined,
+              response: {status: 200},
+            };
+          }
+          // list page
+          const {limit = 50, offset = 0} = opts.params?.query ?? {};
+          listPages.push({limit, offset});
+          const slice = Array.from({length: Math.max(0, Math.min(limit, total - offset))}, (_, i) => ({
+            id: `site-${offset + i}`,
+          }));
+          return {data: {data: slice, limit, offset, total}, error: undefined, response: {status: 200}};
+        },
+      };
+      return {listPages, detailFetches};
+    }
+
+    it('pages through all sites when total exceeds the 50-item page cap', async () => {
+      const backend = new ScapiSitesBackend({shortCode: 'abcd1234', tenantId: 'zzxy_dev', auth: fakeAuth});
+      const {listPages} = stubPaginatedClient(backend, 75);
+
+      const sites = await backend.listSites();
+
+      expect(sites).to.have.length(75);
+      expect(sites[0].id).to.equal('site-0');
+      expect(sites[74].id).to.equal('site-74');
+      // Two list pages: offset 0 (limit 50) then offset 50 (limit 50).
+      expect(listPages).to.deep.equal([
+        {limit: 50, offset: 0},
+        {limit: 50, offset: 50},
+      ]);
+    });
+
+    it('honors start/count as SCAPI offset/limit', async () => {
+      const backend = new ScapiSitesBackend({shortCode: 'abcd1234', tenantId: 'zzxy_dev', auth: fakeAuth});
+      const {listPages} = stubPaginatedClient(backend, 100);
+
+      const sites = await backend.listSites({start: 30, count: 10});
+
+      expect(sites).to.have.length(10);
+      expect(sites[0].id).to.equal('site-30');
+      expect(sites[9].id).to.equal('site-39');
+      expect(listPages).to.deep.equal([{limit: 10, offset: 30}]);
+    });
+
+    it('fetches multiple pages when count exceeds the page cap', async () => {
+      const backend = new ScapiSitesBackend({shortCode: 'abcd1234', tenantId: 'zzxy_dev', auth: fakeAuth});
+      const {listPages} = stubPaginatedClient(backend, 200);
+
+      const sites = await backend.listSites({count: 75});
+
+      expect(sites).to.have.length(75);
+      expect(listPages).to.deep.equal([
+        {limit: 50, offset: 0},
+        {limit: 25, offset: 50},
+      ]);
+    });
+
+    it('enriches each id-only site via a per-site detail call', async () => {
+      const backend = new ScapiSitesBackend({shortCode: 'abcd1234', tenantId: 'zzxy_dev', auth: fakeAuth});
+      const {detailFetches} = stubPaginatedClient(backend, 3);
+
+      const sites = await backend.listSites();
+
+      expect(detailFetches).to.deep.equal(['site-0', 'site-1', 'site-2']);
+      expect(sites[0]).to.include({id: 'site-0', displayName: 'Name site-0', storefrontStatus: 'online'});
+    });
+
+    it('returns an empty list for an empty instance without a detail call', async () => {
+      const backend = new ScapiSitesBackend({shortCode: 'abcd1234', tenantId: 'zzxy_dev', auth: fakeAuth});
+      const {detailFetches, listPages} = stubPaginatedClient(backend, 0);
+
+      const sites = await backend.listSites();
+
+      expect(sites).to.have.length(0);
+      expect(detailFetches).to.have.length(0);
+      expect(listPages).to.deep.equal([{limit: 50, offset: 0}]);
+    });
+
+    it('does not fetch per-site detail when the list item is already rich', async () => {
+      const backend = new ScapiSitesBackend({shortCode: 'abcd1234', tenantId: 'zzxy_dev', auth: fakeAuth});
+      const detailFetches: string[] = [];
+      (backend as unknown as {client: unknown}).client = {
+        async GET(path: string, opts: {params?: {path?: Record<string, string>}}) {
+          if (path.endsWith('/sites/{siteId}')) {
+            detailFetches.push(opts.params!.path!.siteId);
+            return {data: {id: 'x'}, error: undefined, response: {status: 200}};
+          }
+          return {
+            data: {
+              data: [{id: 'RefArch', displayName: {default: 'Ref Arch'}, storefrontStatus: 'online', cartridges: 'a'}],
+              limit: 50,
+              offset: 0,
+              total: 1,
+            },
+            error: undefined,
+            response: {status: 200},
+          };
+        },
+      };
+
+      const sites = await backend.listSites();
+
+      expect(detailFetches).to.have.length(0);
+      expect(sites[0]).to.include({id: 'RefArch', displayName: 'Ref Arch', storefrontStatus: 'online'});
+    });
+  });
 });

@@ -32,7 +32,7 @@ export default class CodeActivate extends CodeCommand<typeof CodeActivate> {
     ...CodeCommand.baseFlags,
     reload: Flags.boolean({
       char: 'r',
-      description: 'Reload the code version (OCAPI only — forces a code cache reload via toggle)',
+      description: 'Reload the code version (forces a code cache reload by toggling activation)',
       default: false,
     }),
   };

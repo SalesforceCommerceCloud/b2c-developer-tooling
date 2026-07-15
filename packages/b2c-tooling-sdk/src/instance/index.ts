@@ -168,10 +168,12 @@ export class B2CInstance {
    *      (clientId + cert/key).
    *
    * Stateful and implicit flows are excluded on purpose: they hold a fixed
-   * token whose scopes were chosen at acquisition, so under `auto` they would
-   * route to SCAPI with a token AM never granted the required scopes for, and
-   * that 403 is not a fallback trigger. Callers wanting SCAPI on those flows
-   * opt in explicitly via `--api-backend scapi` and build the client directly.
+   * token whose scopes were chosen at acquisition, so they cannot request the
+   * `sfcc.*` scopes SCAPI needs. This is not an `auto`-only restriction —
+   * because both consumers (the dual-backend factory and the system-job runner)
+   * gate on this getter, even explicit `--api-backend scapi` cannot use SCAPI
+   * with implicit/stateful auth; it fails with a clear error naming the flow
+   * requirement. SCAPI requires client-credentials or JWT Bearer.
    */
   get scapiClientConfig(): ScapiClientConfig | undefined {
     const {shortCode, tenantId} = this.config;

@@ -20,7 +20,7 @@ import {
   getOAuthCacheKey,
   getCachedOAuthToken,
   setCachedOAuthToken,
-  invalidateCachedOAuthToken,
+  invalidateCachedTokensForIdentity,
   findCachedTokenSatisfying,
   decodeJWT,
 } from './oauth.js';
@@ -83,6 +83,7 @@ export class JwtOAuthStrategy implements AuthStrategy {
   private readonly config: JwtOAuthConfig;
   private readonly logger = getLogger();
   private readonly cacheKey: string;
+  private readonly identityPrefix: string;
   private _hasHadSuccess = false;
   private readonly privateKey: crypto.KeyObject;
 
@@ -101,6 +102,7 @@ export class JwtOAuthStrategy implements AuthStrategy {
     this.validateConfig(config);
     this.config = config;
     this.cacheKey = getOAuthCacheKey(this.config.clientId, 'jwt', this.config.accountManagerHost, this.config.scopes);
+    this.identityPrefix = `${this.config.accountManagerHost}:${this.config.clientId}:jwt:`;
 
     // Cache private key to avoid file I/O on every token request
     const keyContent = fs.readFileSync(config.keyPath, 'utf8');
@@ -271,7 +273,7 @@ export class JwtOAuthStrategy implements AuthStrategy {
    */
   async getAccessTokenForCascade(candidates: string[][]): Promise<string> {
     const baseScopes = this.config.scopes ?? [];
-    const identityPrefix = `${this.config.accountManagerHost}:${this.config.clientId}:jwt:`;
+    const identityPrefix = this.identityPrefix;
 
     for (const candidate of candidates) {
       const required = [...new Set([...baseScopes, ...candidate])];
@@ -325,10 +327,14 @@ export class JwtOAuthStrategy implements AuthStrategy {
   }
 
   /**
-   * Invalidates the cached access token, forcing re-authentication on next request.
+   * Invalidates cached tokens, forcing re-authentication on next request.
+   *
+   * Clears every token for this client/AM-host JWT identity — not just the
+   * base-scope key — so a 401 retry can't re-use a rejected token cached under
+   * a merged cascade-scope key.
    */
   invalidateToken(): void {
-    invalidateCachedOAuthToken(this.cacheKey);
+    invalidateCachedTokensForIdentity(this.identityPrefix);
     this.logger.trace('[JwtOAuthStrategy] Token invalidated');
   }
 

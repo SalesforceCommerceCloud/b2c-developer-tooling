@@ -25,7 +25,7 @@ b2c code list --api-backend ocapi   # force the legacy OCAPI backend
 
 Or set `"api-backend": "scapi"` in `dw.json`, or `SFCC_API_BACKEND=scapi`.
 
-The `code activate --reload` flag uses an OCAPI call regardless of `--api-backend`, since SCAPI does not expose the cache-rebuild operation. On OCAPI-disabled instances, `--reload` is unavailable.
+The `--reload` flag forces a code cache reload by toggling activation (activate an alternate version, then re-activate the target). It uses the same backend as the rest of the command — SCAPI or OCAPI per `--api-backend` — so it works on OCAPI-disabled instances when SCAPI is configured.
 :::
 
 ::: tip

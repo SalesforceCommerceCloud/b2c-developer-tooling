@@ -27,7 +27,7 @@ Or set `"api-backend": "scapi"` in `dw.json`, or `SFCC_API_BACKEND=scapi`.
 :::
 
 ::: tip
-The `job import` and `job export` commands trigger the `sfcc-site-archive-import`/`-export` system jobs and transfer files over WebDAV. The job-execution trigger currently uses OCAPI; on OCAPI-disabled instances these subcommands are not yet available over SCAPI.
+The `job import` and `job export` commands trigger the `sfcc-site-archive-import`/`-export` system jobs and transfer archive files over WebDAV. The job-execution trigger honors `--api-backend`: in `auto` mode it starts the system job over SCAPI (requires the `sfcc.jobs.rw` scope) and falls back to OCAPI only if the SCAPI start is rejected. WebDAV is always used for the archive transfer itself regardless of backend.
 :::
 
 ## Authentication

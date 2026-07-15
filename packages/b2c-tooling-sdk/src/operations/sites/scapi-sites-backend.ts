@@ -16,6 +16,12 @@ import {SCOPE_MODE_HEADER} from '../../clients/middleware.js';
 
 const READ_HEADERS = {[SCOPE_MODE_HEADER]: 'read'};
 
+/** SCAPI `getSites` caps `limit` at 50 (spec `site-sites-v1.yaml`). */
+const SCAPI_SITES_MAX_PAGE = 50;
+
+/** Concurrency for per-site detail enrichment; bounds rate-limit pressure. */
+const ENRICH_CONCURRENCY = 5;
+
 function defaultLocaleValue(map?: {[key: string]: string}): string | undefined {
   if (!map) return undefined;
   return map.default ?? Object.values(map)[0];
@@ -57,24 +63,75 @@ export class ScapiSitesBackend implements SitesBackend {
   }
 
   async listSites(options: ListSitesOptions = {}): Promise<SiteInfo[]> {
-    // `getSites` and `site-search` return only site IDs — display name,
-    // storefront status, and cartridges live on the per-site detail endpoint.
-    // Fetch IDs first, then enrich each concurrently via `getSite` so the
-    // list matches the rich shape the OCAPI `/sites?select=(**)` path returned.
-    const {count, start} = options;
-    const {data, error} = await this.client.GET('/organizations/{organizationId}/sites', {
-      params: {path: {organizationId: this.organizationId}},
-      headers: READ_HEADERS,
-    });
-    if (error || !data) {
-      throw new Error(toErrorMessage(error, 'Failed to list sites'));
+    // Page through `getSites` on the server (limit capped at 50) rather than
+    // relying on the default single 25-item page — otherwise instances with
+    // more than 25 sites silently lose the rest. The caller's start/count map
+    // to SCAPI offset/limit.
+    const rawSites = await this.fetchSitePage(options);
+
+    // `getSites` returns items that carry only the id (display name, storefront
+    // status, and cartridges live on the per-site detail endpoint). Enrich any
+    // sparse item via `getSite`, with bounded concurrency to limit rate-limit
+    // pressure. Items that already arrive rich (future-proofing if the platform
+    // starts populating list fields) are mapped directly with no extra call.
+    return this.enrichSites(rawSites);
+  }
+
+  /**
+   * Fetches the requested window of sites, paginating across 50-item SCAPI
+   * pages. `start` is the offset into the full result set; `count` bounds how
+   * many are returned (unbounded when omitted).
+   */
+  private async fetchSitePage(options: ListSitesOptions): Promise<ScapiSite[]> {
+    const startOffset = options.start ?? 0;
+    const target = options.count; // undefined → all remaining
+    const collected: ScapiSite[] = [];
+    let offset = startOffset;
+
+    while (true) {
+      const remaining = target === undefined ? SCAPI_SITES_MAX_PAGE : target - collected.length;
+      if (remaining <= 0) break;
+      const limit = Math.min(SCAPI_SITES_MAX_PAGE, remaining);
+
+      const {data, error} = await this.client.GET('/organizations/{organizationId}/sites', {
+        params: {path: {organizationId: this.organizationId}, query: {limit, offset}},
+        headers: READ_HEADERS,
+      });
+      if (error || !data) {
+        throw new Error(toErrorMessage(error, 'Failed to list sites'));
+      }
+
+      const page = data as unknown as {data?: ScapiSite[]; total?: number};
+      const items = page.data ?? [];
+      collected.push(...items);
+      offset += items.length;
+
+      // Stop when the server has no more items, or we've reached the reported
+      // total, or the page came back short (defensive against a missing total).
+      const total = page.total ?? startOffset + collected.length;
+      if (items.length === 0 || offset >= total) break;
     }
-    let ids = ((data as unknown as {data?: ScapiSite[]}).data ?? [])
-      .map((s) => s.id)
-      .filter((id): id is string => !!id);
-    if (start !== undefined) ids = ids.slice(start);
-    if (count !== undefined) ids = ids.slice(0, count);
-    return Promise.all(ids.map((id) => this.getSite(id)));
+
+    return collected;
+  }
+
+  /** Maps sites, fetching per-site detail (bounded concurrency) for sparse items. */
+  private async enrichSites(sites: ScapiSite[]): Promise<SiteInfo[]> {
+    const results: SiteInfo[] = [];
+    for (let i = 0; i < sites.length; i += ENRICH_CONCURRENCY) {
+      const batch = sites.slice(i, i + ENRICH_CONCURRENCY);
+      const mapped = await Promise.all(
+        batch.map((site) => {
+          // If the list item is already rich, avoid the extra detail call.
+          if (site.displayName !== undefined || site.storefrontStatus !== undefined) {
+            return Promise.resolve(mapScapiSite(site));
+          }
+          return site.id ? this.getSite(site.id) : Promise.resolve(mapScapiSite(site));
+        }),
+      );
+      results.push(...mapped);
+    }
+    return results;
   }
 
   async getSite(siteId: string): Promise<SiteInfo> {

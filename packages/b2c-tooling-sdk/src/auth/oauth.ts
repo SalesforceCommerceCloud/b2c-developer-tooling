@@ -123,12 +123,24 @@ export function findCachedTokenSatisfying(
 }
 
 /**
- * Invalidates a cached OAuth token.
+ * Invalidates **every** cached token for an identity prefix
+ * (`${accountManagerHost}:${clientId}:${method}:`).
  *
- * @param cacheKey - Cache key from getOAuthCacheKey()
+ * A cascade-resolving strategy caches tokens under *merged-scope* keys (e.g.
+ * base ∪ `sfcc.jobs.rw`), which differ from the strategy's configured base-
+ * scope {@link getOAuthCacheKey}. Deleting only the base key on a 401 would
+ * leave the rejected merged token cached, so the retry's cascade cache-scan
+ * ({@link findCachedTokenSatisfying}) would re-hand out the same rejected
+ * token. Clearing by identity prefix evicts all of them so the retry re-
+ * requests from Account Manager. The prefix scopes deletion to this
+ * client/method/AM host, so unrelated identities are untouched.
  */
-export function invalidateCachedOAuthToken(cacheKey: string): void {
-  ACCESS_TOKEN_CACHE.delete(cacheKey);
+export function invalidateCachedTokensForIdentity(identityPrefix: string): void {
+  for (const key of ACCESS_TOKEN_CACHE.keys()) {
+    if (key.startsWith(identityPrefix)) {
+      ACCESS_TOKEN_CACHE.delete(key);
+    }
+  }
 }
 
 /**
@@ -156,6 +168,7 @@ export class OAuthStrategy implements AuthStrategy {
   private accountManagerHost: string;
   private _hasHadSuccess = false;
   private cacheKey: string;
+  private identityPrefix: string;
 
   /**
    * Creates a new OAuthStrategy instance with the provided OAuth configuration.
@@ -170,6 +183,7 @@ export class OAuthStrategy implements AuthStrategy {
       this.accountManagerHost,
       this.config.scopes,
     );
+    this.identityPrefix = `${this.accountManagerHost}:${this.config.clientId}:client-credentials:`;
   }
 
   /**
@@ -241,10 +255,14 @@ export class OAuthStrategy implements AuthStrategy {
   }
 
   /**
-   * Invalidates the cached token, forcing re-authentication on next request
+   * Invalidates cached tokens, forcing re-authentication on next request.
+   *
+   * Clears every token for this client/method/AM-host identity — not just the
+   * base-scope key — so a 401 retry can't re-use a rejected token that was
+   * cached under a merged cascade-scope key.
    */
   invalidateToken(): void {
-    invalidateCachedOAuthToken(this.cacheKey);
+    invalidateCachedTokensForIdentity(this.identityPrefix);
   }
 
   /**
@@ -278,7 +296,7 @@ export class OAuthStrategy implements AuthStrategy {
   async getAccessTokenForCascade(candidates: string[][]): Promise<string> {
     const logger = getLogger();
     const baseScopes = this.config.scopes ?? [];
-    const identityPrefix = `${this.accountManagerHost}:${this.config.clientId}:client-credentials:`;
+    const identityPrefix = this.identityPrefix;
 
     // Pass 1: cache scan. Return the first cached token that satisfies any
     // candidate.

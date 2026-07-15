@@ -32,6 +32,27 @@ import type {JobExecutionInfo, JobExecutionSearchResults, JobStepExecutionResult
 const READ_HEADERS = {[SCOPE_MODE_HEADER]: 'read'};
 const WRITE_HEADERS = {[SCOPE_MODE_HEADER]: 'write'};
 
+/**
+ * Thrown by {@link executeJob} when the SCAPI job-start POST is rejected with
+ * a response (non-2xx). Carries the received HTTP status so callers can tell a
+ * *request rejection* (server refused before starting the job — safe to treat
+ * as "no job created") from an ambiguous failure.
+ *
+ * A network/timeout error during the POST does NOT produce this — it surfaces
+ * as a raw thrown error with no status, because the request may have reached
+ * the server and the job may already be running.
+ */
+export class ScapiJobStartError extends Error {
+  constructor(
+    message: string,
+    /** HTTP status of the rejection response. */
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ScapiJobStartError';
+  }
+}
+
 function mapStepExecution(step: ScapiJobStepExecution): JobStepExecutionResult {
   return {
     id: step.id,
@@ -121,7 +142,9 @@ export async function executeJob(
   if (error || !data) {
     const errorBody = error as unknown as {detail?: string; title?: string};
     const message = errorBody?.detail ?? errorBody?.title ?? `Failed to execute job ${jobId}`;
-    throw new Error(message);
+    // A received (non-2xx) response means the server refused the start — carry
+    // the status so callers can classify request-rejection vs ambiguous.
+    throw new ScapiJobStartError(message, response.status);
   }
 
   return mapScapiExecution(data);

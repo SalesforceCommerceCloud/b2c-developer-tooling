@@ -46,6 +46,7 @@ export {
   searchJobExecutions as scapiSearchJobExecutions,
   deleteJobExecution as scapiDeleteJobExecution,
   getJobLog as scapiGetJobLog,
+  ScapiJobStartError,
 } from './scapi-ops.js';
 export type {ExecuteJobScapiOptions, SearchJobExecutionsScapiOptions} from './scapi-ops.js';
 export type {JobExecutionInfo, JobStepExecutionResult, JobExecutionSearchResults} from './types.js';

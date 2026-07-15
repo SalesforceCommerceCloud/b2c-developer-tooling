@@ -91,6 +91,30 @@ describe('config/EnvSource', () => {
     });
   });
 
+  describe('apiBackend (SFCC_API_BACKEND)', () => {
+    for (const value of ['auto', 'scapi', 'ocapi']) {
+      it(`maps SFCC_API_BACKEND=${value} to apiBackend`, () => {
+        const source = new EnvSource({SFCC_API_BACKEND: value});
+        const result = source.load({});
+        expect(result!.config.apiBackend).to.equal(value);
+      });
+    }
+
+    it('ignores an invalid SFCC_API_BACKEND value', () => {
+      const source = new EnvSource({SFCC_API_BACKEND: 'bogus'});
+      const result = source.load({});
+      // No valid fields → source contributes nothing.
+      expect(result).to.be.undefined;
+    });
+
+    it('ignores an invalid value but keeps other valid env fields', () => {
+      const source = new EnvSource({SFCC_API_BACKEND: 'bogus', SFCC_SERVER: 'test.demandware.net'});
+      const result = source.load({});
+      expect(result!.config.apiBackend).to.be.undefined;
+      expect(result!.config.hostname).to.equal('test.demandware.net');
+    });
+  });
+
   describe('boolean parsing', () => {
     it('parses SFCC_SELFSIGNED=true as boolean true', () => {
       const source = new EnvSource({SFCC_SELFSIGNED: 'true'});

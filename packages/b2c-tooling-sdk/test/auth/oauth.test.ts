@@ -602,6 +602,48 @@ describe('auth/oauth', () => {
         // Should not have tried the second candidate.
         expect(amCallCount).to.equal(1);
       });
+
+      // Regression: invalidateToken() must evict cascade tokens (cached under a
+      // MERGED-scope key), not just the strategy's base-scope key. Otherwise a
+      // 401 retry re-uses the rejected token from the cascade cache scan.
+      it('invalidateToken() evicts a merged cascade token so the next request re-fetches', async () => {
+        const tokenA = createMockJWT({sub: 'cascade-invalidate', v: 'A'});
+        const tokenB = createMockJWT({sub: 'cascade-invalidate', v: 'B'});
+        let amCallCount = 0;
+
+        server.use(
+          http.post(AM_URL, async () => {
+            amCallCount++;
+            return HttpResponse.json({
+              access_token: amCallCount === 1 ? tokenA : tokenB,
+              expires_in: 1800,
+              scope: 'sfcc.jobs.rw',
+            });
+          }),
+        );
+
+        // Base scopes are the tenant scope only; the cascade merges in the rw
+        // scope, so the resulting token is cached under a DIFFERENT key than
+        // the strategy's base cacheKey.
+        const strategy = new OAuthStrategy({
+          clientId: 'cascade-invalidate',
+          clientSecret: 'test-secret',
+          scopes: ['SALESFORCE_COMMERCE_API:zzxy_prd'],
+        });
+
+        const first = await strategy.getAccessTokenForCascade([['sfcc.jobs.rw']]);
+        expect(first).to.equal(tokenA);
+        expect(amCallCount).to.equal(1);
+
+        // Simulate the middleware's 401 handling.
+        strategy.invalidateToken();
+
+        // The retry must NOT reuse tokenA from the cache scan — it must re-hit AM.
+        const second = await strategy.getAccessTokenForCascade([['sfcc.jobs.rw']]);
+        expect(amCallCount).to.equal(2);
+        expect(second).to.equal(tokenB);
+        expect(second).to.not.equal(first);
+      });
     });
   });
 });

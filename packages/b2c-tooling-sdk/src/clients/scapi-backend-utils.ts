@@ -98,6 +98,25 @@ export interface ResolveBackendOptions {
 }
 
 /**
+ * Message for when explicit SCAPI is requested but the instance can't reach it.
+ *
+ * Names both reasons the SCAPI client config can be unavailable — missing
+ * coordinates OR an auth flow that can't request scopes — because a user who
+ * hits this in explicit `--api-backend scapi` mode often *does* have shortCode
+ * and tenantId configured; the real blocker is that implicit/stateful OAuth
+ * holds a fixed-scope token and can't request the `sfcc.*` scopes SCAPI needs.
+ * The old message only mentioned missing credentials, which was misleading.
+ */
+export function scapiUnavailableMessage(domainName: string): string {
+  return (
+    `${domainName} SCAPI backend requires shortCode, tenantId, and a stateless OAuth flow ` +
+    `(client-credentials or JWT Bearer) that can request the required scopes. ` +
+    `Implicit and stateful (stored-session) auth cannot request SCAPI scopes — ` +
+    `use client-credentials/JWT, or set --api-backend ocapi.`
+  );
+}
+
+/**
  * Resolves a user preference + config availability into a concrete backend choice.
  *
  * - Explicit `'ocapi'` always returns `'ocapi'`.
@@ -114,10 +133,7 @@ export function resolveScapiOrOcapi(opts: ResolveBackendOptions): 'ocapi' | 'sca
 
   if (preference === 'scapi') {
     if (!hasScapiConfig) {
-      throw new Error(
-        `${domainName} SCAPI backend requires shortCode, tenantId, and OAuth credentials. ` +
-          `Configure them in dw.json or use --api-backend ocapi.`,
-      );
+      throw new Error(scapiUnavailableMessage(domainName));
     }
     return 'scapi';
   }

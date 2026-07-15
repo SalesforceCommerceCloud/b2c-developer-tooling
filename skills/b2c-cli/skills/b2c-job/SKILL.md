@@ -210,7 +210,7 @@ Job commands run over SCAPI. Configure `shortCode`, `tenantId`, and the SCAPI sc
 
 OCAPI is deprecated and disabled on newer instances. `--api-backend auto` (the default) falls back to the OCAPI Data API only when SCAPI scopes are not configured; force a backend with `--api-backend scapi|ocapi`, dw.json `"api-backend": "scapi"`, or `SFCC_API_BACKEND=scapi`.
 
-> **Note:** `job import` and `job export` trigger system jobs via OCAPI and transfer files over WebDAV; they are not yet available over SCAPI and won't work on OCAPI-disabled instances.
+> **Note:** `job import` and `job export` trigger the site-archive system jobs and transfer archive files over WebDAV. The job trigger honors `--api-backend`: in `auto` mode it runs over SCAPI (needs `sfcc.jobs.rw`) with OCAPI fallback if the SCAPI start is rejected. The archive transfer always uses WebDAV.
 
 ### Wait for Job Completion
 

@@ -311,7 +311,7 @@ b2c code list --auth-methods jwt
 ## OCAPI Configuration
 
 ::: warning OCAPI is deprecated
-OCAPI (the Open Commerce API / Data API) is **deprecated** and is being disabled across instances. Newer instances reject OCAPI calls entirely (`OcapiDeprecatedException`). Prefer [SCAPI](#scapi-authentication) for code, jobs, and BM users/roles — the CLI uses SCAPI first and only falls back to OCAPI when SCAPI scopes are not configured. Configure OCAPI only for instances that still support it or for the few OCAPI-only operations (e.g. [Sites](/cli/sites)).
+OCAPI (the Open Commerce API / Data API) is **deprecated** and is being disabled across instances. Newer instances reject OCAPI calls entirely (`OcapiDeprecatedException`). Prefer [SCAPI](#scapi-authentication) for code, jobs, BM users/roles, and site reads — the CLI uses SCAPI first and only falls back to OCAPI when SCAPI scopes are not configured. Configure OCAPI only for instances that still support it or for the few operations with no SCAPI equivalent (e.g. cartridge-path writes on [Sites](/cli/sites), and `bm users search` / `whoami` / `access-key`).
 
 If a command fails with "OCAPI is deprecated and disabled for this instance," configure [SCAPI scopes](#scapi-authentication) on your API client instead.
 :::
@@ -619,7 +619,7 @@ Here's a complete example for setting up CLI access:
 
 ### 2. (Optional) Configure OCAPI fallback
 
-With the SCAPI scopes above configured, `code`, `jobs`, and `bm users/roles` run entirely over SCAPI — no OCAPI setup is needed. Configure OCAPI only for the OCAPI-only [`sites`](/cli/sites) command, or to provide a fallback on instances where SCAPI scopes are not yet provisioned. Note that OCAPI is [deprecated](#ocapi-configuration) and disabled on newer instances. To set it up, add the JSON configuration shown in [OCAPI Configuration](#ocapi-configuration).
+With the SCAPI scopes above configured, `code`, `jobs`, `bm users/roles`, and `sites` reads run over SCAPI — no OCAPI setup is needed (add the `sfcc.sites` / `sfcc.sites.rw` scope for `sites`). Configure OCAPI only for operations with no SCAPI equivalent — cartridge-path writes on [`sites`](/cli/sites) and `bm users search` / `whoami` / `access-key` — or to provide a fallback on instances where SCAPI scopes are not yet provisioned. Note that OCAPI is [deprecated](#ocapi-configuration) and disabled on newer instances. To set it up, add the JSON configuration shown in [OCAPI Configuration](#ocapi-configuration).
 
 ### 3. Configure WebDAV Access (for code deploy/watch, webdav commands)
 

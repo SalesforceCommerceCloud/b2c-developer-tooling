@@ -28,10 +28,13 @@
  *   - `'ocapi'`: always OCAPI.
  *   - `'scapi'`: always SCAPI (throws if the instance can't reach SCAPI).
  *   - `'auto'` (default): SCAPI when {@link B2CInstance.scapiClientConfig} is
- *     available, else OCAPI. **Fallback to OCAPI happens only if the SCAPI
- *     *start* fails** (missing scope, body rejected, system job not
- *     triggerable over SCAPI). Once a job has started, the wait/log path never
- *     falls back — re-running a started write would be unsafe.
+ *     available, else OCAPI. **Fallback to OCAPI happens only when the SCAPI
+ *     start provably created no job** — an Account Manager scope rejection
+ *     (before the POST) or a client-side rejection status (the server refused
+ *     the start). Ambiguous failures (network drop after dispatch, timeout,
+ *     5xx) and any post-start failure propagate without a re-run, because
+ *     re-running a mutating system job over OCAPI could execute it twice. See
+ *     {@link isSafeStartFallback}.
  *
  * ## Lifecycle
  *
@@ -42,12 +45,49 @@
  */
 import type {B2CInstance, ScapiClientConfig} from '../../instance/index.js';
 import {isOcapiDeprecatedFault, OcapiDeprecatedError} from '../../clients/error-utils.js';
+import {
+  isInvalidScopeError,
+  ScapiCapabilityUnsupportedError,
+  scapiUnavailableMessage,
+} from '../../clients/scapi-backend-utils.js';
 import {createScapiJobsClient} from '../../clients/scapi-jobs.js';
 import {getLogger} from '../../logging/logger.js';
 import {mapCanonicalToOcapiExecution} from './ocapi-mapping.js';
-import {executeJob as scapiExecuteJob, getJobExecution as scapiGetJobExecution} from './scapi-ops.js';
+import {
+  executeJob as scapiExecuteJob,
+  getJobExecution as scapiGetJobExecution,
+  ScapiJobStartError,
+} from './scapi-ops.js';
 import {waitForJob, JobExecutionError, type JobExecution, type WaitForJobOptions} from './run.js';
 import {waitForJobExecution, CanonicalJobExecutionError} from './wait-canonical.js';
+
+/**
+ * HTTP statuses on a SCAPI job-start response that prove the server *refused*
+ * the request before creating a job execution — so re-running over OCAPI
+ * cannot duplicate a mutating job. Ambiguous statuses (5xx, 429) and
+ * network/timeout errors (no response at all) are deliberately excluded.
+ */
+const SAFE_START_REJECTION_STATUSES = new Set([400, 401, 403, 404, 405, 406, 415]);
+
+/**
+ * Decides whether a SCAPI start failure is provably safe to fall back to OCAPI
+ * for. Safe cases guarantee no job was created:
+ *   - {@link isInvalidScopeError}: Account Manager rejected the scope during
+ *     token acquisition — thrown before the job POST is ever sent.
+ *   - {@link ScapiCapabilityUnsupportedError}: a purely local rejection.
+ *   - a {@link ScapiJobStartError} whose HTTP status is a client-side rejection
+ *     (the server refused before starting the job).
+ *
+ * Everything else — a network/timeout error (which may have reached the server
+ * with the job now running), a 5xx, or a 429 — is ambiguous and must NOT
+ * trigger an OCAPI re-run of a mutating job.
+ */
+function isSafeStartFallback(error: unknown): boolean {
+  if (isInvalidScopeError(error) || error instanceof ScapiCapabilityUnsupportedError) {
+    return true;
+  }
+  return error instanceof ScapiJobStartError && SAFE_START_REJECTION_STATUSES.has(error.status);
+}
 
 /**
  * Declarative description of a system job to run. The operation supplies its
@@ -95,10 +135,9 @@ export async function runSystemJob(instance: B2CInstance, spec: SystemJobSpec): 
 
   if (preference === 'scapi') {
     if (!scapiConfig) {
-      throw new Error(
-        `${spec.jobId} SCAPI backend requires shortCode, tenantId, and OAuth credentials. ` +
-          `Configure them in dw.json or set apiBackend to ocapi.`,
-      );
+      // Domain label (not the job ID) so the message reads "Jobs SCAPI
+      // backend requires…", consistent with resolveScapiOrOcapi.
+      throw new Error(scapiUnavailableMessage('Jobs'));
     }
     return runScapiSystemJob(instance, scapiConfig, spec);
   }
@@ -108,9 +147,9 @@ export async function runSystemJob(instance: B2CInstance, spec: SystemJobSpec): 
     return runOcapiSystemJob(instance, spec);
   }
 
-  // Try SCAPI start; fall back to OCAPI only if the start fails (nothing has
-  // run yet). Once started, finishScapiJob handles wait/failure without
-  // falling back.
+  // Try SCAPI start; fall back to OCAPI only for a provably-safe start failure
+  // (see isSafeStartFallback). Once started, finishScapiJob handles wait/failure
+  // without falling back.
   const client = createScapiJobsClient(
     {shortCode: scapiConfig.shortCode, tenantId: scapiConfig.tenantId},
     scapiConfig.auth,
@@ -119,9 +158,16 @@ export async function runSystemJob(instance: B2CInstance, spec: SystemJobSpec): 
   try {
     started = await startScapiJob(client, scapiConfig.tenantId, spec);
   } catch (error) {
+    // Fall back to OCAPI ONLY when the SCAPI start provably created no job.
+    // An ambiguous failure (network drop after dispatch, timeout, 5xx) must
+    // propagate — re-running a mutating system job over OCAPI could execute it
+    // twice.
+    if (!isSafeStartFallback(error)) {
+      throw error;
+    }
     getLogger().info(
       {jobId: spec.jobId, reason: error instanceof Error ? error.message : String(error)},
-      `SCAPI ${spec.jobId} unavailable, falling back to OCAPI`,
+      `SCAPI ${spec.jobId} start rejected, falling back to OCAPI`,
     );
     return runOcapiSystemJob(instance, spec);
   }

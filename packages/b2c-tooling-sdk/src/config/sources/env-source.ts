@@ -44,6 +44,7 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_AUTH_METHODS: 'authMethods',
   SFCC_ACCOUNT_MANAGER_HOST: 'accountManagerHost',
   SFCC_SANDBOX_API_HOST: 'sandboxApiHost',
+  SFCC_API_BACKEND: 'apiBackend',
   // JWT Bearer auth env vars
   SFCC_JWT_CERT: 'jwtCertPath',
   SFCC_JWT_KEY: 'jwtKeyPath',
@@ -71,6 +72,15 @@ const ARRAY_FIELDS = new Set<keyof NormalizedConfig>([
 
 /** Fields that should be parsed as booleans. */
 const BOOLEAN_FIELDS = new Set<keyof NormalizedConfig>(['selfSigned']);
+
+/**
+ * Enum-valued fields and their allowed values. Values outside the set are
+ * skipped with a warning, mirroring the CLI flag's `options` validation so the
+ * env var behaves the same for SDK consumers (e.g. the VS Code extension).
+ */
+const ENUM_FIELDS: Partial<Record<keyof NormalizedConfig, readonly string[]>> = {
+  apiBackend: ['ocapi', 'scapi', 'auto'],
+};
 
 /**
  * Configuration source that reads SFCC_* environment variables.
@@ -113,6 +123,12 @@ export class EnvSource implements ConfigSource {
     for (const [envVar, configField] of Object.entries(ENV_VAR_MAP)) {
       const value = this.env[envVar];
       if (value === undefined || value === '') continue;
+
+      const allowed = ENUM_FIELDS[configField];
+      if (allowed && !allowed.includes(value)) {
+        logger.warn(`[EnvSource] Ignoring ${envVar}: "${value}" is not one of ${allowed.join(', ')}`);
+        continue;
+      }
 
       if (BOOLEAN_FIELDS.has(configField)) {
         (config as Record<string, unknown>)[configField] = value === 'true' || value === '1';

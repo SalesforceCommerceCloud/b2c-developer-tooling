@@ -118,7 +118,7 @@ b2c code delete <version-name>
 
 `code deploy` (file upload itself), `code download`, and `code watch` always use WebDAV — only the surrounding code-version operations use SCAPI.
 
-OCAPI is deprecated and disabled on newer instances. `--api-backend auto` (the default) falls back to the OCAPI Data API only when SCAPI scopes are not configured; force a backend with `--api-backend scapi|ocapi` if needed. `code reload` is implemented as activate(alternate) + activate(target) so it works under either backend, except the `--reload` cache-rebuild uses OCAPI and is unavailable on OCAPI-disabled instances.
+OCAPI is deprecated and disabled on newer instances. `--api-backend auto` (the default) falls back to the OCAPI Data API only when SCAPI scopes are not configured; force a backend with `--api-backend scapi|ocapi` if needed. The `--reload` flag forces a code cache reload as activate(alternate) + activate(target), using whichever backend the command selected — so it works on OCAPI-disabled instances when SCAPI is configured.
 
 ### More Commands
 

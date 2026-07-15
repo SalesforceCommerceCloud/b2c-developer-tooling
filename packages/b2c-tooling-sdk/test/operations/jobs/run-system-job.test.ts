@@ -160,6 +160,47 @@ describe('operations/jobs/run-system-job', () => {
       expect(execution.id).to.equal('ocapi-1');
       expect(execution.execution_status).to.equal('finished');
     });
+
+    it('does NOT fall back on a 5xx SCAPI start (job outcome ambiguous)', async () => {
+      let ocapiPosted = false;
+      server.use(
+        http.post(`${SCAPI_BASE}/organizations/${ORG_ID}/jobs/${JOB_ID}/executions`, () =>
+          HttpResponse.json({title: 'Internal Server Error'}, {status: 500}),
+        ),
+        http.post(`${OCAPI_BASE}/jobs/${JOB_ID}/executions`, () => {
+          ocapiPosted = true;
+          return HttpResponse.json({id: 'must-not-run'});
+        }),
+      );
+
+      try {
+        await runSystemJob(makeInstance({scapi: true}), SPEC);
+        expect.fail('expected the 5xx to propagate');
+      } catch (error) {
+        expect((error as Error).message).to.be.a('string');
+      }
+      // A 5xx is ambiguous — the job may have started; must NOT re-run on OCAPI.
+      expect(ocapiPosted).to.be.false;
+    });
+
+    it('does NOT fall back on a SCAPI network failure (request may have reached the server)', async () => {
+      let ocapiPosted = false;
+      server.use(
+        http.post(`${SCAPI_BASE}/organizations/${ORG_ID}/jobs/${JOB_ID}/executions`, () => HttpResponse.error()),
+        http.post(`${OCAPI_BASE}/jobs/${JOB_ID}/executions`, () => {
+          ocapiPosted = true;
+          return HttpResponse.json({id: 'must-not-run'});
+        }),
+      );
+
+      try {
+        await runSystemJob(makeInstance({scapi: true}), SPEC);
+        expect.fail('expected the network error to propagate');
+      } catch {
+        // expected
+      }
+      expect(ocapiPosted).to.be.false;
+    });
   });
 
   describe('OCAPI path', () => {
