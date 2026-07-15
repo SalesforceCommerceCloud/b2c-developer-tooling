@@ -93,6 +93,9 @@ b2c logs list
 # List specific log types
 b2c logs list --filter error --filter customerror
 
+# List logs in a subdirectory (path-like filter)
+b2c logs list --filter internal/server
+
 # JSON output
 b2c logs list --json
 ```
@@ -170,6 +173,23 @@ Common log file prefixes:
 | `api` | API problems and violations |
 | `deprecation` | Deprecated API usage |
 | `quota` | Quota warnings |
+
+## Logs in Subdirectories
+
+The `Logs/` directory contains subdirectories such as `internal/` (e.g. `server`, `ccp`, `health`, `csrf-violations`, `internalquota`). These are **not** listed by default. To reach them, pass a path-like `--filter` (one containing a `/`): the tooling then recurses into that subdirectory and matches files by their path relative to `Logs/`.
+
+```bash
+# All "server" logs under internal/
+b2c logs list --filter internal/server
+
+# Everything under internal/ (trailing slash)
+b2c logs tail --filter internal/
+
+# Mix a subdirectory filter with normal prefix filters
+b2c logs get --filter error --filter internal/server
+```
+
+This works the same across `logs list`, `logs get`, and `logs tail` (and the equivalent MCP tools).
 
 ## More Commands
 

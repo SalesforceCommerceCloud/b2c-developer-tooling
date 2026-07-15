@@ -42,7 +42,8 @@ export default class LogsTail extends InstanceCommand<typeof LogsTail> {
     ...InstanceCommand.baseFlags,
     filter: Flags.string({
       char: 'f',
-      description: 'Log prefixes to filter (can specify multiple)',
+      description:
+        'Log prefixes to filter (can specify multiple). Use a path like "internal/server" to tail logs in a subdirectory.',
       multiple: true,
       default: DEFAULT_PREFIXES,
     }),
