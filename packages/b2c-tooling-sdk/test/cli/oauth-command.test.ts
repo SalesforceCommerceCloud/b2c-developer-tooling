@@ -434,6 +434,26 @@ describe('cli/oauth-command', () => {
       expect(tokenResponse.accessToken).to.equal(token);
     });
 
+    it('does not use a stored session when a DIFFERENT client ID is configured', async () => {
+      // The store is keyed by clientId: a session saved under 'stored-client' must
+      // not be picked up when the command resolves a different configured client.
+      saveAuthSession({
+        clientId: 'stored-client',
+        flow: 'client-credentials',
+        accessToken: makeValidJWT(),
+        refreshToken: null,
+      });
+      const commandWithDefault = new TestOAuthCommandWithDefault([], config);
+      stubParse(commandWithDefault, {'client-id': 'configured-client'});
+      await commandWithDefault.init();
+
+      const strategy = commandWithDefault.testGetOAuthStrategy();
+      // findAuthSession('configured-client') is null, so the stored 'stored-client'
+      // session is ignored and we fall through to the default user/PKCE strategy.
+      expect(strategy).to.not.be.instanceOf(StatefulOAuthStrategy);
+      expect(strategy).to.be.instanceOf(PkceWithImplicitFallbackStrategy);
+    });
+
     it('warns and falls back to stateless when stored client-credentials token is expired', async () => {
       saveAuthSession({
         clientId: 'stored-client',

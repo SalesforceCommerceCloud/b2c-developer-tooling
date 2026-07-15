@@ -40,6 +40,8 @@ Skills covering the full Storefront Next development lifecycle:
 - **`sfnext-state-management`** — React context, Zustand stores, basket provider
 - **`sfnext-testing`** — Vitest unit tests, Storybook stories, interaction and accessibility testing
 - **`sfnext-performance`** — bundle size limits, DynamicImage, parallel fetching, Lighthouse optimization
+- **`sfnext-scapi-management`** — manage typed SCAPI clients, discover API schemas before coding
+- **`sfnext-custom-apis`** — end-to-end custom API implementation and consumption
 - **`sfnext-deployment`** — build and deploy to Managed Runtime (MRT), cartridge deployment
 - **`sfnext-hybrid-storefronts`** — hybrid setup with SFRA/SiteGenesis, gradual migration, session bridging
 

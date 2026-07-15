@@ -1,0 +1,12 @@
+[
+  {"query": "My custom API endpoint returns 404 when I try to call it from my storefront next app using createApiClients. The cartridge is deployed but something isn't connecting. How do I debug this end-to-end?", "should_trigger": true},
+  {"query": "I deployed a custom loyalty-points API and now I need to add it to my storefront next project with b2c sfnext scapi add custom and then call it from my account page loader. Walk me through the full workflow.", "should_trigger": true},
+  {"query": "I have a custom shopper API that I can call from Postman but when I call it through createApiClients in my storefront next loader I get a 401 unauthorized. How do I fix the auth scheme mismatch between my api.json and the sfnext context?", "should_trigger": true},
+  {"query": "What's the complete end-to-end workflow for making a custom SCAPI endpoint callable as a typed client from my storefront next loaders? I have the cartridge registered and want to know the sfnext-specific steps.", "should_trigger": true},
+  {"query": "After running b2c sfnext scapi add custom my-inventory-api v1, how do I use the generated typed client in my storefront next route loader to call the checkStock endpoint?", "should_trigger": true},
+  {"query": "I need to write the schema.yaml OpenAPI spec and script.js controller for a new custom API that returns product recommendations based on browsing history.", "should_trigger": false},
+  {"query": "How do I check whether my custom API endpoints are registered and active on my sandbox instance? I just want to see the registration status.", "should_trigger": false},
+  {"query": "I need to call the standard shopperProducts.getProduct API from my product detail page loader. What's the pattern for using createApiClients with the built-in clients?", "should_trigger": false},
+  {"query": "I want to add the shopper-search standard SCAPI to my storefront next project so I can build a search page.", "should_trigger": false},
+  {"query": "How do I deploy my custom API cartridge code version to the sandbox and activate it using the b2c CLI?", "should_trigger": false}
+]

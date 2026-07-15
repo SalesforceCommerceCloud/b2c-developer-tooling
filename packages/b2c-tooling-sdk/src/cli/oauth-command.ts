@@ -185,6 +185,9 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     const requiredScopes = config.scopes ?? [];
 
     const explicitAuthFlags = this.detectExplicitAuthFlags();
+    // Only a client ID resolved from user configuration constrains stateful auth.
+    // getDefaultClientId() is a stateless fallback and must not prevent an
+    // otherwise valid stored session from being reused.
     const configuredClientId = config.clientId;
 
     // Stored `client-credentials` sessions (from `auth client`) are reusable

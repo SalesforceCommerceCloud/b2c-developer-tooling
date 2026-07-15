@@ -14,7 +14,9 @@ The CLI supports **stateful auth** (session stored on disk) in addition to **sta
 - **Stateful (client credentials)**: Use `b2c auth client` to authenticate with client ID and secret (or user/password) for non-interactive/automation use. Only the access token is persisted — the client secret is never stored. When the access token expires, re-run `b2c auth client` with the same credentials. There is no automatic refresh.
 - **Stateless**: You provide `--client-id` (and optionally `--client-secret`) per run or via environment/config; no session is persisted.
 
-The stored session is used only when the token is valid and no explicit stateless auth flags are provided. The CLI falls back to stateless auth when the stored token is expired/invalid, or when `--client-secret`, `--user-auth`, or `--auth-methods` are passed on the command line. In both cases a warning is shown explaining why stateful auth was skipped. Note that `--client-id` alone does not force stateless; the stored session is used if the client ID matches. To opt out of stateful auth entirely, run `b2c auth logout` to clear the stored session.
+After `auth login` or `auth client`, you do not need to provide the client ID again. When a later command has no client configured, it automatically reuses the valid saved session.
+
+The CLI falls back to stateless auth when the stored token is expired/invalid, or when `--client-secret`, `--user-auth`, or `--auth-methods` are passed on the command line. In both cases a warning is shown explaining why stateful auth was skipped. Note that `--client-id` alone does not force stateless; the stored session is used if the configured client ID matches. To opt out of stateful auth entirely, run `b2c auth logout` to clear the stored session.
 
 Use **auth:logout** to clear the stored session and return to stateless-only behavior.
 
