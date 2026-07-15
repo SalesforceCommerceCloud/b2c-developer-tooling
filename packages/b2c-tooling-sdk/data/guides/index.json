@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-07-02T15:36:34.248Z",
+  "generatedAt": "2026-07-15T16:07:44.486Z",
   "entries": [
     {
       "id": "b2c-commerce/agentic-mcp-shopper-tools-quick-start",
@@ -8,7 +8,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/agentic-mcp-shopper-tools-quick-start.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/agentic-mcp-shopper-tools-quick-start.md",
-      "headings": "B2C Commerce MCP Shopper Service Overview • B2C Commerce MCP Service (Pilot) • Configure the B2C Commerce MCP Server • B2C Commerce MCP Shopper Service Tools • Shopper Products Tools • Shopper Checkout Tools • Security • Restrictions",
+      "headings": "B2C Commerce MCP Shopper Service Overview • Which approach should I use? • B2C Commerce MCP Service (Pilot) • Configure the B2C Commerce MCP Server • B2C Commerce MCP Shopper Service Tools • Shopper Products Tools • Shopper Checkout Tools • Security • Restrictions",
       "summary": "Integrate AI agents with B2C Commerce via MCP protocol to provide shoppers with accurate, real-time product recommendations and storefront-specific suggestions.",
       "keywords": [
         "MCP",
@@ -385,27 +385,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c_cc_ods_scheduler",
-      "title": "On-Demand Sandbox Operations Scheduler",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c_cc_ods_scheduler.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c_cc_ods_scheduler.md",
-      "summary": "Schedule on-demand sandbox instance starts and stops to manage ODS credit usage via Control Center Operations Scheduler.",
-      "keywords": [
-        "sandbox scheduler",
-        "ODS scheduler",
-        "on-demand sandbox",
-        "operations scheduler",
-        "sandbox management",
-        "control center",
-        "sandbox automation",
-        "schedule start stop",
-        "ODS credits",
-        "sandbox lifecycle",
-        "Sandbox API"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c_cc_ods_scheduler_intro",
       "title": "On-Demand Sandbox Operation Scheduler",
       "category": "b2c-commerce",
@@ -513,27 +492,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c_cc_use_dbinit_to_initialize_instance",
-      "title": "Use Reset to Initial an Instance in Control Center",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c_cc_use_dbinit_to_initialize_instance.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c_cc_use_dbinit_to_initialize_instance.md",
-      "summary": "Reset a sandbox instance to a clean state by deleting all database data using Control Center's reset functionality.",
-      "keywords": [
-        "reset instance",
-        "initialize instance",
-        "Control Center",
-        "sandbox instance",
-        "SIG instance",
-        "reset to initial",
-        "database reset",
-        "instance initialization",
-        "clean state",
-        "instance management",
-        "reset permissions"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c_cc_view_clone_history",
       "title": "View Clone History for On-Demand Sandboxes",
       "category": "b2c-commerce",
@@ -578,49 +536,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c_cc_view_the_audit_log",
-      "title": "View Control Center Audit Events in Log Center",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c_cc_view_the_audit_log.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c_cc_view_the_audit_log.md",
-      "summary": "View and monitor Control Center audit events in Log Center to track all instance activity and user actions for troubleshooting and compliance.",
-      "keywords": [
-        "Control Center audit events",
-        "Log Center",
-        "audit logging",
-        "instance monitoring",
-        "account manager roles",
-        "Log Center External Administrator",
-        "Log Center User",
-        "Control Center activity tracking",
-        "centralized log management",
-        "event filtering",
-        "B2C Commerce logging"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-access-log-files",
-      "title": "Access Log Files",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-access-log-files.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-access-log-files.md",
-      "summary": "Access and retrieve log files from Business Manager or WebDAV client to monitor site activity and troubleshoot errors.",
-      "keywords": [
-        "access log files",
-        "log files download",
-        "WebDAV client logs",
-        "Business Manager logs",
-        "site development logs",
-        "Total Commander WebDAV",
-        "demandware logs",
-        "error troubleshooting",
-        "log file retrieval",
-        "SSL connection logs",
-        "Sites Logs directory",
-        "monitoring logs"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c-active-data-for-developers",
       "title": "Customize Active Data",
       "category": "b2c-commerce",
@@ -641,266 +556,6 @@
         "sorting rules",
         "API scripts",
         "data processing"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-analytics-and-reporting-for-recommendations",
-      "title": "Analytics and Reporting for Explicit Recommendations",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-analytics-and-reporting-for-recommendations.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-analytics-and-reporting-for-recommendations.md",
-      "summary": "Monitor and troubleshoot B2C Commerce recommendations using pipeline processing reports, dashboards, and system logs.",
-      "keywords": [
-        "recommendations analytics",
-        "pipeline processing reports",
-        "reports dashboards",
-        "pipeline debugger",
-        "system logs",
-        "recommendation troubleshooting",
-        "technical dashboard",
-        "pipeline errors",
-        "pipeline usage",
-        "webdav logs",
-        "recommendation monitoring",
-        "API processing logs"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-api-availability-calculation",
-      "title": "API Availability Calculation",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-api-availability-calculation.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-api-availability-calculation.md",
-      "headings": "isOrderable() • isOrderable(Quantity) • isInStock() • isInStock(Quantity) • GetAvailabilityStatus() • GetAvailabilityLevels(Quantity) • ReserveInventoryForOrder(Basket) • GetAvailability()",
-      "summary": "Defines how isOrderable() and isInStock() APIs determine product availability for simple products, bundles, base products, and product sets.",
-      "keywords": [
-        "isOrderable API",
-        "isInStock API",
-        "product availability",
-        "ATS inventory",
-        "minOrderQuantity",
-        "product bundle orderable",
-        "simple product availability",
-        "base product variations",
-        "product set orderable",
-        "stock calculation",
-        "availability logic",
-        "perpetual inventory"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-apis-for-customer-search",
-      "title": "APIs for Customer Search",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-apis-for-customer-search.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-apis-for-customer-search.md",
-      "headings": "API Usage • Customer Profile Batch Processing API",
-      "summary": "Search and process customer profiles efficiently using B2C Commerce APIs with improved search relevance and batch processing capabilities.",
-      "keywords": [
-        "customer search",
-        "searchProfiles",
-        "processProfiles",
-        "CustomerMgr",
-        "full-text search",
-        "batch processing",
-        "queryProfiles",
-        "search relevance",
-        "customer profile API",
-        "LIKE ILIKE queries",
-        "profile search performance"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-apple-pay-button-injection",
-      "title": "Apple Pay Button Injection",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-apple-pay-button-injection.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-apple-pay-button-injection.md",
-      "summary": "Inject Apple Pay payment buttons into B2C Commerce storefronts automatically or manually using configuration and the <isapplepay> ISML tag.",
-      "keywords": [
-        "Apple Pay button",
-        "payment button injection",
-        "ISML isapplepay tag",
-        "Apple Pay integration",
-        "storefront payment methods",
-        "automatic button injection",
-        "manual button injection",
-        "Apple Pay checkout",
-        "payment control customization",
-        "browser support detection",
-        "Apple Pay configuration"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-apple-pay-for-the-web",
-      "title": "Apple Pay on the Web",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-apple-pay-for-the-web.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-apple-pay-for-the-web.md",
-      "headings": "Apple Pay Roles • Apple Pay on the Web Experience",
-      "summary": "Enable Apple Pay payment option on B2C Commerce storefronts via PSP integration to reduce checkout friction on Apple devices.",
-      "keywords": [
-        "Apple Pay",
-        "Apple Pay on the Web",
-        "mobile payment",
-        "payment integration",
-        "PSP integration",
-        "digital wallet",
-        "checkout",
-        "payment method",
-        "Business Manager configuration",
-        "ecommerce payment"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-apw-integration-into-demandware-processes",
-      "title": "Apple Pay on the Web Integration into Salesforce B2C Commerce Processes",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-apw-integration-into-demandware-processes.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-apw-integration-into-demandware-processes.md",
-      "summary": "Integrate Apple Pay into B2C Commerce storefronts while maintaining existing payment processing, fulfillment, and order management workflows.",
-      "keywords": [
-        "Apple Pay",
-        "Apple Pay Web",
-        "payment integration",
-        "B2C Commerce payments",
-        "PSP integration",
-        "digital wallet",
-        "payment processing",
-        "order management",
-        "fulfillment",
-        "storefront payments",
-        "merchant payments",
-        "web payments"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-apw-payment-authorization",
-      "title": "Apple Pay on the Web Payment Authorization",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-apw-payment-authorization.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-apw-payment-authorization.md",
-      "headings": "Merchant Validation • Authorize Payment",
-      "summary": "Process Apple Pay payments on the web through merchant validation, payment request creation, and PSP authorization with encrypted token handling.",
-      "keywords": [
-        "Apple Pay web payment",
-        "payment authorization",
-        "merchant validation",
-        "encrypted payment token",
-        "payment request",
-        "PSP integration",
-        "order creation",
-        "Apple Pay sheet",
-        "payment processing",
-        "transaction authorization",
-        "storefront checkout"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-apw-process",
-      "title": "Apple Pay on the Web Process",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-apw-process.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-apw-process.md",
-      "headings": "Process Flow",
-      "summary": "Implement secure Apple Pay on the Web transactions with domain verification, encrypted payment data, and PSP authorization integration.",
-      "keywords": [
-        "Apple Pay Web",
-        "Apple Pay on the Web",
-        "Apple Pay integration",
-        "payment processing",
-        "domain verification",
-        "encrypted payment",
-        "TLS validation",
-        "PSP authorization",
-        "mobile payment",
-        "payment gateway",
-        "checkout flow",
-        "secure transactions"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-asian-language-support",
-      "title": "Asian Language Support",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-asian-language-support.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-asian-language-support.md",
-      "headings": "Search Query Processing",
-      "summary": "Enable Asian character support in B2C Commerce by using UTF-8 encoding for message resources and property files.",
-      "keywords": [
-        "Asian language support",
-        "UTF-8 encoding",
-        "property files",
-        "character encoding",
-        "Chinese Japanese Korean",
-        "multilingual",
-        "extended ASCII",
-        "message resources",
-        "internationalization",
-        "i18n",
-        "locale support",
-        "search query processing"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-attribute-form-widget",
-      "title": "Attribute_form Widget",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-attribute-form-widget.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-attribute-form-widget.md",
-      "summary": "Configure dynamic attribute form elements with metadata overrides to customize field validation, formatting, constraints, and UI presentation in B2C Commerce layouts.",
-      "keywords": [
-        "attribute_form widget",
-        "form metadata",
-        "attribute validation",
-        "field customization",
-        "required fields",
-        "form constraints",
-        "attribute format",
-        "field type override",
-        "form layout configuration",
-        "disabled fields",
-        "attribute metadata override"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-attribute-layout-widget",
-      "title": "Attribute_layout Widget",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-attribute-layout-widget.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-attribute-layout-widget.md",
-      "summary": "Display customer attributes in customizable layouts by configuring the attribute_layout widget through layout sub-elements.",
-      "keywords": [
-        "attribute_layout widget",
-        "display attributes",
-        "layout configuration",
-        "customer attributes",
-        "billing address",
-        "grid distribution",
-        "widget registration",
-        "layout elements",
-        "attribute rendering",
-        "form layout"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-attribute-listing-widget",
-      "title": "Attribute_listing Widget",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-attribute-listing-widget.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-attribute-listing-widget.md",
-      "summary": "Display system and custom attributes in configurable columns (1-3) with control over empty value visibility.",
-      "keywords": [
-        "attribute_listing",
-        "widget",
-        "attributes display",
-        "columns layout",
-        "custom attributes",
-        "system attributes",
-        "show_empty",
-        "attribute configuration",
-        "grid layout",
-        "attribute widget"
       ]
     },
     {
@@ -947,50 +602,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c-best-practices-for-recommendations",
-      "title": "Developer Best Practices for Explicit Recommendations",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-best-practices-for-recommendations.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-best-practices-for-recommendations.md",
-      "summary": "Learn developer best practices for implementing explicit recommendations, including merchandiser collaboration, variation product assignment, and stock availability handling.",
-      "keywords": [
-        "explicit recommendations",
-        "recommendations implementation",
-        "merchandiser collaboration",
-        "variation products",
-        "product recommendations",
-        "storefront recommendations",
-        "recommendation imports",
-        "stock availability",
-        "SiteGenesis",
-        "recommendation best practices",
-        "product assignment",
-        "merchandising team"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-business-manager-extension-points",
-      "title": "Business Manager Extension Points",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-business-manager-extension-points.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-business-manager-extension-points.md",
-      "headings": "Menu Items • Menu Actions • Dialog Actions • Form Extensions",
-      "summary": "Extend Business Manager UI by customizing menu items and actions to add navigation elements for storefront information management.",
-      "keywords": [
-        "Business Manager extension",
-        "menu items customization",
-        "navigation elements",
-        "Business Manager UI",
-        "menu actions",
-        "first-level navigation",
-        "second-level navigation",
-        "Administration menu",
-        "Site menu",
-        "Business Manager extensions",
-        "extend Business Manager"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c-business-objects",
       "title": "Use Custom Object Definitions",
       "category": "b2c-commerce",
@@ -1011,29 +622,6 @@
         "attribute grouping",
         "custom preferences",
         "B2C Commerce objects"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-business-objects-for-recommendations",
-      "title": "Business Objects for Explicit Recommendations",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-business-objects-for-recommendations.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-business-objects-for-recommendations.md",
-      "headings": "RecommendationType • Related Links",
-      "summary": "Define and configure the Recommendation system object with native attributes for implementing explicit product recommendations in B2C Commerce.",
-      "keywords": [
-        "explicit recommendations",
-        "recommendation system object",
-        "business objects",
-        "recommendation attributes",
-        "recommendation type",
-        "cross-sell up-sell",
-        "recommendation configuration",
-        "storefront recommendations",
-        "recommendation messaging",
-        "commerce recommendation engine",
-        "B2C recommendations",
-        "recommendation object schema"
       ]
     },
     {
@@ -1103,28 +691,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c-commerce-development",
-      "title": "Developing Your Site",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-commerce-development.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-commerce-development.md",
-      "summary": "Access B2C Commerce developer components, tools, and resources for building and managing your e-commerce site.",
-      "keywords": [
-        "site development",
-        "developer components",
-        "B2C Commerce development",
-        "site management",
-        "development tools",
-        "code deployment",
-        "page designer",
-        "checkout customization",
-        "web services",
-        "site performance",
-        "business objects",
-        "developer resources"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c-compatibility-mode-considerations",
       "title": "Compatibility Mode Changes",
       "category": "b2c-commerce",
@@ -1167,28 +733,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c-configuring-ap-win-bm",
-      "title": "Configure Apple Pay on the Web in Business Manager",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-configuring-ap-win-bm.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-configuring-ap-win-bm.md",
-      "summary": "Enable and configure Apple Pay on the Web payment option in B2C Commerce Business Manager for production, staging, or development environments.",
-      "keywords": [
-        "Apple Pay",
-        "configure Apple Pay",
-        "Apple Pay Web",
-        "payment configuration",
-        "Business Manager",
-        "Apple Pay setup",
-        "merchant ID",
-        "payment methods",
-        "Apple Pay enabled",
-        "payment sheet",
-        "merchant capabilities",
-        "Apple Pay sandbox testing"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c-configuring-browse-on-behalf-of",
       "title": "Configure a Storefront Hostname",
       "category": "b2c-commerce",
@@ -1208,94 +752,6 @@
         "storefront domain setup",
         "CSC storefront configuration",
         "host name alias"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-configuring-facebook-product-feed",
-      "title": "Configure Facebook Dynamic Ads",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-configuring-facebook-product-feed.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-configuring-facebook-product-feed.md",
-      "summary": "Configure Facebook Dynamic Ads integration in B2C Commerce by enabling the feature, setting up Business/Page/Pixel IDs, and creating product feed files.",
-      "keywords": [
-        "Facebook Dynamic Ads",
-        "Facebook integration",
-        "product feed",
-        "catalog feed",
-        "Facebook Pixel",
-        "Business Manager",
-        "feed export",
-        "Facebook Page ID",
-        "Facebook Business ID",
-        "dynamic product ads",
-        "social commerce",
-        "merchant tools"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-considerations-for-recommendations",
-      "title": "General Considerations for Explicit Recommendations",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-considerations-for-recommendations.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-considerations-for-recommendations.md",
-      "summary": "Plan explicit recommendations implementation across requirements, design, build, and testing phases with considerations for presentation logic, visualization, and data population methods.",
-      "keywords": [
-        "explicit recommendations",
-        "recommendation planning",
-        "recommendations implementation",
-        "presentation logic",
-        "visualization requirements",
-        "recommendation import",
-        "Business Manager recommendations",
-        "recommendation data population",
-        "recommendation types",
-        "requirements phase",
-        "design phase",
-        "build phase"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-content-asset-apis",
-      "title": "Content Asset APIs",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-content-asset-apis.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-content-asset-apis.md",
-      "headings": "B2C Commerce Script APIs • Pipelets",
-      "summary": "Access and customize storefront content assets from private and shared libraries using B2C Commerce Script APIs and pipelets.",
-      "keywords": [
-        "content asset APIs",
-        "ContentMgr",
-        "private library",
-        "shared library",
-        "getContent",
-        "getSiteLibrary",
-        "dw.content",
-        "storefront customization",
-        "content management",
-        "URLUtils staticURL",
-        "GetContent pipelet",
-        "library access"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-content-asset-link-examples",
-      "title": "Content Asset Link Examples",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-content-asset-link-examples.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-content-asset-link-examples.md",
-      "headings": "Updating an Existing Link",
-      "summary": "Learn how to create and update links in content assets by modifying category, product, content asset, image, and email references.",
-      "keywords": [
-        "content asset links",
-        "update links",
-        "cgid category ID",
-        "pid product ID",
-        "cid content asset ID",
-        "image src path",
-        "mailto email link",
-        "link examples",
-        "modify links",
-        "content asset management"
       ]
     },
     {
@@ -1341,27 +797,6 @@
         "cache middleware",
         "SFRA caching",
         "storefront caching"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-content-data-administration",
-      "title": "Content Data Administration",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-content-data-administration.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-content-data-administration.md",
-      "summary": "Manage content asset library replication, site assignments, and WebDAV access for static files in B2C Commerce.",
-      "keywords": [
-        "content library replication",
-        "shared library",
-        "private library",
-        "site preferences",
-        "WebDAV access",
-        "content assets",
-        "library assignment",
-        "replication tasks",
-        "static files",
-        "content administration",
-        "staging production"
       ]
     },
     {
@@ -1428,27 +863,6 @@
         "address form",
         "UI customization",
         "CSC settings"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-creating-content-asset-links",
-      "title": "Create Content Asset Links",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-creating-content-asset-links.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-creating-content-asset-links.md",
-      "summary": "Create links within content assets to external sites, static content, or dynamic pipeline-driven content.",
-      "keywords": [
-        "content asset links",
-        "hyperlink creation",
-        "link types",
-        "product detail page URL",
-        "category page URL",
-        "content page URL",
-        "static content linking",
-        "dynamic content linking",
-        "pipeline links",
-        "asset linking",
-        "URL hyperlinks"
       ]
     },
     {
@@ -1900,50 +1314,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c-customizing-the-fb-feed",
-      "title": "Customize the Facebook Feed",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-customizing-the-fb-feed.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-customizing-the-fb-feed.md",
-      "headings": "Example",
-      "summary": "Customize Facebook feed exports by implementing hooks to transform B2C Commerce products to Facebook catalog schema using FacebookProduct data structure.",
-      "keywords": [
-        "Facebook feed customization",
-        "FacebookProduct",
-        "catalog feed export",
-        "transformProduct hook",
-        "product transformation",
-        "Facebook catalog",
-        "feed export hooks",
-        "custom cartridge hooks",
-        "com.demandware.plugin.facebook.FacebookFeedHooks",
-        "product attribute mapping",
-        "dw.extensions.facebook"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-define-custom-cache",
-      "title": "Define a Custom Cache",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-define-custom-cache.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-define-custom-cache.md",
-      "summary": "Create custom caches in a B2C Commerce cartridge using JSON configuration files with unique IDs and optional expiration times.",
-      "keywords": [
-        "custom cache",
-        "cache definition",
-        "JSON cache",
-        "caches.json",
-        "cache ID",
-        "cache expiration",
-        "package.json",
-        "cache configuration",
-        "define cache",
-        "cartridge cache",
-        "TTL",
-        "cache setup"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c-del-file-ds",
       "title": "DelFile.ds",
       "category": "b2c-commerce",
@@ -2012,7 +1382,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dev-for-page-designer.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dev-for-page-designer.md",
-      "headings": "Developing for Page Designer • What Is Page Designer? • Get the Page Designer Reference Examples • Page Designer Development Recommendations • Page Designer General Troubleshooting • Optimal Page Performance • Create Page and Component Types • Page Designer Meta Definition Files • Headless Page Designer for PWA Kit • Example: Traditional ISML Page • Page-Level Custom Attributes • Initialize a Region with a Component Already Populated • Page Designer Script Files • Component Attribute Types and UI Controls • Component Attribute Types and Resolved Value Objects • Page Designer HTML • Page Type, Component Type, and Custom Attribute Editor IDs • Length Restrictions for Page Type and Component Type IDs • Using Decorators with Page Designer Pages • Develop a Dynamic Page • Aspect Types • Components with Dynamic Attributes • Render a Dynamic Page • Best Practices for Developing a Dynamic Page • Create a Custom Cartridge for Page Designer UI Artifacts • Create Page Designer Localization Resource Bundles • Example Resource Bundle for a Page Type • Example Resource Bundle for a Component Type • Example Resource Bundle for a Component Type Group • Page Designer Thumbnail Images • Thumbnail Images for Pages • Thumbnail Images for Components • Use Salesforce CMS Content with Page Designer • Get Access to Salesforce CMS • Connect Salesforce CMS to Page Designer • Develop a Component Type to Use CMS Content • Use Salesforce CMS Content to Configure a Component Attribute • Develop a Custom Attribute Editor • Why Implement a Custom Attribute Editor? • How Does a Custom Attribute Editor Work? • Custom Attribute in the Component Meta Definition File • Custom Attribute Editor Meta Definition File • Custom Attribute Editor Script File • Client-Side JavaScript and CSS for a Custom Attribute Editor • Custom Attribute Editor Events • subscribe() • emit() • Create a Breakout Custom Attribute Editor That Displays in a Modal Window • What Is a Breakout Editor? • Trigger Editor Meta Definition and Script Files • Breakout Editor Meta Definition and Script Files • Open and Close a Breakout Editor • Enable and Disable the Breakout Editor Apply Button • Trigger and Breakout Editor Client-Side UI Code • Use a Prebuilt Editor in a Custom Attribute Editor • Search Configuration for Page Designer Pages • Enable Search and Search Suggestions for Page Designer Pages • Enable Indexing for Attribute Content • Use SEO Page Meta Tag Rules for Dynamic Pages • Pages and Components as Content Assets • Pages and Components and OCAPI SHOP and DATA API • Page and Component Content Asset Attributes • Import and Export for Page Designer Pages and Components • Page Designer Caching • Page Caching • Page Rendering and Serialization • Controller Pagecache Lifecycle • Page Rendering and Serialization Using Nested Remote Includes to Handle Visibility Rules • SCAPI Based Page Serialization • #### Page Rendering and Serialization Using Nested Remote Includes to Handle Visibility Rules • Page and Component Pagecache Lifecycle • Best Practices • Page Type, Component Type, and Custom Attribute Editor Cache Times • Publish a Page Designer Page • Render Page Designer Pages from a Controller • Incorporate a Page Designer Page into the Storefront • Mock Component Placeholders • Render a JSON View of a Page Designer Page",
+      "headings": "Developing for Page Designer • What Is Page Designer? • Get the Page Designer Reference Examples • Page Designer Development Recommendations • Page Designer General Troubleshooting • Optimal Page Performance • Create Page and Component Types • Page Designer Meta Definition Files • Page Designer and Storefront Next • Page Designer and PWA Kit • Example: Traditional ISML Page • Page-Level Custom Attributes • Initialize a Region with a Component Already Populated • Page Designer Script Files • Component Attribute Types and UI Controls • Component Attribute Types and Resolved Value Objects • Page Designer HTML • Page Type, Component Type, and Custom Attribute Editor IDs • Length Restrictions for Page Type and Component Type IDs • Using Decorators with Page Designer Pages • Develop a Dynamic Page • Aspect Types • Components with Dynamic Attributes • Render a Dynamic Page • Best Practices for Developing a Dynamic Page • Create a Custom Cartridge for Page Designer UI Artifacts • Create Page Designer Localization Resource Bundles • Example Resource Bundle for a Page Type • Example Resource Bundle for a Component Type • Example Resource Bundle for a Component Type Group • Page Designer Thumbnail Images • Thumbnail Images for Pages • Thumbnail Images for Components • Use Salesforce CMS Content with Page Designer • Get Access to Salesforce CMS • Connect Salesforce CMS to Page Designer • Develop a Component Type to Use CMS Content • Use Salesforce CMS Content to Configure a Component Attribute • Develop a Custom Attribute Editor • Why Implement a Custom Attribute Editor? • How Does a Custom Attribute Editor Work? • Custom Attribute in the Component Meta Definition File • Custom Attribute Editor Meta Definition File • Custom Attribute Editor Script File • Client-Side JavaScript and CSS for a Custom Attribute Editor • Custom Attribute Editor Events • subscribe() • emit() • Create a Breakout Custom Attribute Editor That Displays in a Modal Window • What Is a Breakout Editor? • Trigger Editor Meta Definition and Script Files • Breakout Editor Meta Definition and Script Files • Open and Close a Breakout Editor • Enable and Disable the Breakout Editor Apply Button • Trigger and Breakout Editor Client-Side UI Code • Use a Prebuilt Editor in a Custom Attribute Editor • Search Configuration for Page Designer Pages • Enable Search and Search Suggestions for Page Designer Pages • Enable Indexing for Attribute Content • Use SEO Page Meta Tag Rules for Dynamic Pages • Pages and Components as Content Assets • Pages and Components and OCAPI SHOP and DATA API • Page and Component Content Asset Attributes • Import and Export for Page Designer Pages and Components • Page Designer Caching • Page Caching • Page Rendering and Serialization • Controller Pagecache Lifecycle • Page Rendering and Serialization Using Nested Remote Includes to Handle Visibility Rules • SCAPI Based Page Serialization • #### Page Rendering and Serialization Using Nested Remote Includes to Handle Visibility Rules • Page and Component Pagecache Lifecycle • Best Practices • Page Type, Component Type, and Custom Attribute Editor Cache Times • Publish a Page Designer Page • Render Page Designer Pages from a Controller • Incorporate a Page Designer Page into the Storefront • Mock Component Placeholders • Render a JSON View of a Page Designer Page",
       "summary": "Create reusable page types and component types for merchants to build custom storefront pages using Page Designer's visual editor.",
       "keywords": [
         "Page Designer",
@@ -2049,28 +1419,6 @@
         "OCAPI",
         "sandbox creation",
         "developer environment"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-developer-considerations-for-predictive-recommendations",
-      "title": "Developer Considerations for Product Recommendations",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-developer-considerations-for-predictive-recommendations.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-developer-considerations-for-predictive-recommendations.md",
-      "summary": "Modify ISML templates, define content slots with unique IDs, and create page templates to display product recommendations on storefronts.",
-      "keywords": [
-        "product recommendations",
-        "ISML templates",
-        "content slots",
-        "slot rendering",
-        "recommendation engine",
-        "context object",
-        "product detail page",
-        "category landing page",
-        "slot caching",
-        "template customization",
-        "islot tag",
-        "recommendation templates"
       ]
     },
     {
@@ -2143,119 +1491,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c-displaying-prices-in-multiple-currencies",
-      "title": "Displaying Prices in Multiple Currencies",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-displaying-prices-in-multiple-currencies.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-displaying-prices-in-multiple-currencies.md",
-      "summary": "Display product prices in multiple currencies on storefronts using ProductPriceModel API methods for price book lookups.",
-      "keywords": [
-        "multi-currency prices",
-        "multiple currencies",
-        "ProductPriceModel",
-        "getPriceBookPrice",
-        "price conversion",
-        "currency display",
-        "storefront prices",
-        "price book currency",
-        "site currency",
-        "product pricing API",
-        "currency exchange"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-enable-apple-pay-in-your-storefront",
-      "title": "Enable Apple Pay in Your Storefront",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-enable-apple-pay-in-your-storefront.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-enable-apple-pay-in-your-storefront.md",
-      "headings": "Register for an Apple Merchant ID • Generate an Apple Payment Processing Certificate • Configure Apple Pay on the Web in Business Manager",
-      "summary": "Enable Apple Pay payment method in B2C Commerce storefronts using PSP integration or LINK cartridge with merchant ID and certificate setup.",
-      "keywords": [
-        "Apple Pay",
-        "payment method",
-        "PSP integration",
-        "Standard Payment API",
-        "LINK cartridge",
-        "merchant ID",
-        "certificate",
-        "payment gateway",
-        "storefront payments",
-        "Apple Pay Web",
-        "payment processing",
-        "Business Manager"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-enable-apw-for-psps",
-      "title": "Enable Apple Pay on the Web for PSPs",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-enable-apw-for-psps.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-enable-apw-for-psps.md",
-      "headings": "Apple Pay Request • Response • HTTPS Statuses • Reason Codes",
-      "summary": "Enable Apple Pay on the Web for Payment Service Providers using B2C Commerce APIs with endpoint integration or LINK cartridge updates.",
-      "keywords": [
-        "Apple Pay",
-        "web payment",
-        "PSP integration",
-        "payment authorization",
-        "Apple Pay API",
-        "payment service provider",
-        "LINK cartridge",
-        "payment gateway",
-        "merchant account",
-        "Apple Pay on Web",
-        "payment processing",
-        "PSP setup"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-enable-apw-using-a-link-cartridge",
-      "title": "Enable Apple Pay on the Web Using a LINK Cartridge",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-enable-apw-using-a-link-cartridge.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-enable-apw-using-a-link-cartridge.md",
-      "headings": "Salesforce B2C Commerce Extensions • Testing Your Apple Pay on the Web Implementation",
-      "summary": "Configure Apple Pay payment processing on B2C Commerce storefronts using LINK cartridge with required developer setup and payment authorization hooks.",
-      "keywords": [
-        "Apple Pay",
-        "LINK cartridge",
-        "payment method",
-        "web payment",
-        "payment authorization hooks",
-        "Xcode configuration",
-        "Apple Developer account",
-        "METHOD_DW_APPLE_PAY",
-        "Safari payment API",
-        "iOS Developer program",
-        "dw.extensions.applepay",
-        "payment processing"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-enabling-language-translation",
-      "title": "Enable Language Translation",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-enabling-language-translation.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-enabling-language-translation.md",
-      "headings": "Source Translation • Content Translation:",
-      "summary": "Configure multi-language support for your B2C Commerce storefront by translating source files, content, and products into target languages.",
-      "keywords": [
-        "language translation",
-        "internationalization",
-        "i18n",
-        "localization",
-        "multi-language storefront",
-        "locale-specific folders",
-        "content translation",
-        "product translation",
-        "language selector",
-        "storefront translation",
-        "translate templates",
-        "translate images"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c-end-file-log-ds",
       "title": "EndFileLog.ds",
       "category": "b2c-commerce",
@@ -2277,49 +1512,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c-error-page-best-practices",
-      "title": "Error Page Best Practices",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-error-page-best-practices.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-error-page-best-practices.md",
-      "summary": "Create user-friendly error pages that guide customers back to shopping with helpful navigation, search options, and positive messaging.",
-      "keywords": [
-        "error page design",
-        "404 page",
-        "error handling",
-        "customer experience",
-        "navigation recovery",
-        "content assets",
-        "user experience best practices",
-        "error messaging",
-        "broken links",
-        "site navigation",
-        "error page template",
-        "B2C Commerce error pages"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-existing-applications-with-recommendations",
-      "title": "Existing Applications and Explicit Recommendations",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-existing-applications-with-recommendations.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-existing-applications-with-recommendations.md",
-      "summary": "Understand product linking vs. explicit recommendations features in B2C Commerce storefronts, their differences, and when to migrate between them.",
-      "keywords": [
-        "product linking",
-        "explicit recommendations",
-        "product relationships",
-        "cross-sell",
-        "upsell",
-        "recommendations feature",
-        "product links migration",
-        "storefront catalog",
-        "custom attributes",
-        "recommendation types",
-        "product-to-product relationships"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c-exporting-active-data",
       "title": "Export Active Data",
       "category": "b2c-commerce",
@@ -2338,89 +1530,6 @@
         "active data file format",
         "merchant tools",
         "online marketing"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-extending-the-product-inventory-record-object",
-      "title": "Extend the ProductInventoryRecord Object",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-extending-the-product-inventory-record-object.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-extending-the-product-inventory-record-object.md",
-      "summary": "Extend ProductInventoryRecord object to store additional fields like threshold values and trigger custom messages.",
-      "keywords": [
-        "ProductInventoryRecord",
-        "extend object",
-        "system object types",
-        "attribute definitions",
-        "inventory threshold",
-        "object customization",
-        "inventory management",
-        "custom attributes",
-        "ISML template",
-        "resource file"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-facebook-integration",
-      "title": "Facebook Dynamic Ads Integration",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-facebook-integration.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-facebook-integration.md",
-      "summary": "Integrate Facebook Dynamic Ads with B2C Commerce to embed tracking pixels, auto-track events, and export product catalogs to Facebook for dynamic advertising.",
-      "keywords": [
-        "Facebook Dynamic Ads",
-        "Facebook Pixel integration",
-        "product catalog feed",
-        "Facebook tracking",
-        "pixel injection",
-        "event tracking",
-        "Facebook Business Manager",
-        "dynamic ads setup",
-        "Facebook conversion tracking",
-        "B2C Commerce Facebook",
-        "product feed export",
-        "PageView AddToCart Purchase"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-facebook-product-feed",
-      "title": "Facebook Product Feed",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-facebook-product-feed.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-facebook-product-feed.md",
-      "summary": "Configure which products to include or exclude in your Facebook product feed and manage feed eligibility settings.",
-      "keywords": [
-        "Facebook product feed",
-        "product feed configuration",
-        "Facebook catalog feed",
-        "include exclude products",
-        "product eligibility",
-        "Facebook integration",
-        "product feed setup",
-        "merchant tools products",
-        "site-level product settings",
-        "Facebook Business Manager"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-facebook-server-side-activity-tracking",
-      "title": "Server-Side Activity Tracking for Facebook",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-facebook-server-side-activity-tracking.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-facebook-server-side-activity-tracking.md",
-      "summary": "Enable server-side activity tracking for Facebook to replace third-party cookie-based pixel tracking using the Facebook Conversions API.",
-      "keywords": [
-        "Facebook server-side tracking",
-        "Facebook Conversions API",
-        "activity tracking Facebook",
-        "third-party cookies",
-        "Facebook Dynamic Ads",
-        "Commerce Einstein tracking",
-        "viewPage viewProduct addToCart",
-        "Facebook Business Manager integration",
-        "pixel-based tracking replacement",
-        "Finish checkout events",
-        "server-side events Facebook"
       ]
     },
     {
@@ -2467,27 +1576,6 @@
         "SCAPI",
         "template processor",
         "top-level variables"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-geotracking",
-      "title": "Geotracking",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-geotracking.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-geotracking.md",
-      "summary": "Use IP address geolocation to track customer location and redirect them to appropriate site versions based on country.",
-      "keywords": [
-        "geotracking",
-        "geolocation",
-        "IP address lookup",
-        "dw.util.Geolocation",
-        "getGeolocation",
-        "country redirect",
-        "site selector",
-        "location-based routing",
-        "httpRemoteAddress",
-        "geo-targeting",
-        "regional site selection"
       ]
     },
     {
@@ -2704,134 +1792,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c-implementing-quota-overrides",
-      "title": "Implement Quota Overrides",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-implementing-quota-overrides.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-implementing-quota-overrides.md",
-      "summary": "Export quota settings from production instances and import them to Sandbox instances to apply softened quota overrides.",
-      "keywords": [
-        "quota overrides",
-        "quota settings",
-        "export quotas",
-        "import quotas",
-        "custom quota settings",
-        "quota configuration",
-        "production to sandbox",
-        "Site Import Export",
-        "quota status",
-        "quota management",
-        "soften quotas",
-        "quota actions"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-including-text-within-a-template-or-form",
-      "title": "Including Text Within a Template or Form",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-including-text-within-a-template-or-form.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-including-text-within-a-template-or-form.md",
-      "headings": "Cart Template Example • Form Example",
-      "summary": "Reference language text from properties files within B2C Commerce templates and forms using resource keys.",
-      "keywords": [
-        "template text",
-        "form text",
-        "properties file",
-        "resource reference",
-        "internationalization",
-        "i18n",
-        "localization",
-        "language strings",
-        "template language",
-        "form localization"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-integrating-with-facebook",
-      "title": "Integrate with Facebook",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-integrating-with-facebook.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-integrating-with-facebook.md",
-      "summary": "Set up Facebook Business Manager, create a Facebook page, and configure product catalog feeds to integrate your B2C Commerce storefront with Facebook.",
-      "keywords": [
-        "Facebook integration",
-        "Facebook Business Manager",
-        "Facebook page setup",
-        "product catalog Facebook",
-        "product feeds",
-        "Facebook commerce",
-        "social commerce",
-        "B2C Commerce Facebook",
-        "catalog integration",
-        "merchant product catalog",
-        "Facebook storefront"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-integration-with-inventory-management-systems",
-      "title": "Integration with Inventory Management Systems",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-integration-with-inventory-management-systems.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-integration-with-inventory-management-systems.md",
-      "summary": "Track and update inventory levels in B2C Commerce using inventory management system integration with flexible scheduling and schema options.",
-      "keywords": [
-        "inventory management system integration",
-        "inventory tracking",
-        "stock levels",
-        "inventory updates",
-        "inventory schema",
-        "inventory.xsd",
-        "product inventory",
-        "inventory synchronization",
-        "inventory data",
-        "stock management",
-        "inventory integration"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-inventory-ap-is-and-pipelets",
-      "title": "Inventory APIs and Pipelets",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-inventory-ap-is-and-pipelets.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-inventory-ap-is-and-pipelets.md",
-      "summary": "Access and manage product inventory programmatically using B2C Commerce inventory APIs, pipelets, and resources for availability information.",
-      "keywords": [
-        "inventory APIs",
-        "inventory pipelets",
-        "product inventory management",
-        "availability information",
-        "inventory access",
-        "inventory records",
-        "inventory lists",
-        "product availability",
-        "inventory resources",
-        "inventory customization"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-inventory-best-practices",
-      "title": "Inventory Best Practices",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-inventory-best-practices.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-inventory-best-practices.md",
-      "headings": "Training and Documentation • Testing Inventory • Implement and Document Stock Level Tracking • Daily Operations • Clean up Inventory Transactions",
-      "summary": "Implement inventory management workflows, track stock levels, test in staging, and manage daily inventory operations using XML imports and Business Manager.",
-      "keywords": [
-        "inventory management",
-        "stock level tracking",
-        "inventory best practices",
-        "inventory lists",
-        "job schedules",
-        "XML inventory import",
-        "inventory testing",
-        "staging production",
-        "inventory.xsd",
-        "site assignments",
-        "inventory workflows",
-        "batch inventory updates"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c-inventory-for-developers",
       "title": "Customize Inventory Management",
       "category": "b2c-commerce",
@@ -2851,138 +1811,6 @@
         "inventory APIs",
         "SiteGenesis inventory",
         "cart checkout inventory"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-inventory-implementation-considerations",
-      "title": "Inventory Implementation Considerations",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-inventory-implementation-considerations.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-inventory-implementation-considerations.md",
-      "summary": "Plan inventory system integration by defining data exchange with order management, stock validation points, and backorder/pre-order handling requirements.",
-      "keywords": [
-        "inventory management system",
-        "stock availability",
-        "backorder pre-order",
-        "order management system",
-        "inventory integration",
-        "stock validation",
-        "inventory tracking",
-        "product availability",
-        "batch transmission",
-        "inventory implementation",
-        "stock levels"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-inventory-list-export",
-      "title": "Inventory List Export",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-inventory-list-export.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-inventory-list-export.md",
-      "headings": "Data for Inventory Lists",
-      "summary": "Export Inventory List records and Product Inventory Records to XML files following the inventory.xsd schema.",
-      "keywords": [
-        "inventory list export",
-        "XML export",
-        "inventory.xsd",
-        "product inventory records",
-        "available to sell",
-        "ATS",
-        "inventory import export",
-        "allocation",
-        "on-order",
-        "preorder backorder",
-        "inventory attributes",
-        "export data"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-inventory-list-import",
-      "title": "Inventory List Import",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-inventory-list-import.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-inventory-list-import.md",
-      "headings": "ProductInventoryRecord Objects",
-      "summary": "Import inventory lists and product stock levels into B2C Commerce using XML files following the inventory.xsd schema.",
-      "keywords": [
-        "inventory import",
-        "XML import",
-        "inventory list",
-        "product inventory",
-        "stock level",
-        "inventory.xsd",
-        "backorder allocation",
-        "perpetual inventory",
-        "inventory management",
-        "bulk import",
-        "inventory records",
-        "import export"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-inventory-scenarios",
-      "title": "Inventory Scenarios",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-inventory-scenarios.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-inventory-scenarios.md",
-      "summary": "Explore six inventory management models for B2C Commerce to track product stock levels and communicate availability to customers.",
-      "keywords": [
-        "inventory scenarios",
-        "stock level management",
-        "product availability",
-        "inventory models",
-        "stock tracking",
-        "inventory implementation",
-        "SiteGenesis inventory",
-        "inventory records",
-        "real-time stock check",
-        "omnichannel inventory"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-inventory-transactions-cleanup",
-      "title": "Inventory Transactions Clean Up",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-inventory-transactions-cleanup.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-inventory-transactions-cleanup.md",
-      "summary": "Clean up inventory transactions to improve checkout performance by removing zero-amount and redundant transactions using the CleanupInventoryTransaction job.",
-      "keywords": [
-        "inventory transactions cleanup",
-        "CleanupInventoryTransaction job",
-        "inventory performance",
-        "checkout speed",
-        "inventory allocation reset",
-        "zero amount transactions",
-        "flash sales inventory",
-        "reallocation date",
-        "inventory quota",
-        "order throughput",
-        "inventory retention",
-        "transaction deletion"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-inventory-xsd-schema",
-      "title": "Inventory.xsd Schema",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-inventory-xsd-schema.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-inventory-xsd-schema.md",
-      "headings": "Inventory List Record • Product Inventory Records",
-      "summary": "Define XML structure for transmitting inventory data to B2C Commerce using the inventory.xsd schema with inventory lists and product inventory records.",
-      "keywords": [
-        "inventory.xsd",
-        "inventory XML",
-        "inventory schema",
-        "product inventory",
-        "inventory list",
-        "inventory import",
-        "inventory data structure",
-        "XML schema",
-        "inventory records",
-        "allocation",
-        "ATS",
-        "preorder backorder"
       ]
     },
     {
@@ -3755,49 +2583,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c-link-widget",
-      "title": "Link Widget",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-link-widget.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-link-widget.md",
-      "summary": "Create clickable links in B2C Commerce storefront pages using the Link Widget component with href and text properties.",
-      "keywords": [
-        "Link Widget",
-        "hyperlink component",
-        "href attribute",
-        "text link",
-        "navigation link",
-        "storefront widget",
-        "link element",
-        "clickable link",
-        "URL link",
-        "page link"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-linking-to-another-site-url",
-      "title": "Linking to Another Site URL",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-linking-to-another-site-url.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-linking-to-another-site-url.md",
-      "headings": "Linking to a Pipeline • Linking to Static Content",
-      "summary": "Create hyperlinks to external sites, pipelines, and static content like products and assets using B2C Commerce link functions.",
-      "keywords": [
-        "linking URLs",
-        "pipeline links",
-        "$link function",
-        "$url function",
-        "static content links",
-        "product links",
-        "content asset links",
-        "external site links",
-        "hyperlink syntax",
-        "content link functions",
-        "$staticlink$",
-        "email links"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c-load-task-configuration-ds",
       "title": "LoadTaskConfiguration.ds",
       "category": "b2c-commerce",
@@ -3815,50 +2600,6 @@
         "config management",
         "SFCC configuration",
         "load task settings"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-locale-fallback",
-      "title": "Locale Fallback",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-locale-fallback.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-locale-fallback.md",
-      "headings": "Disabling Locale Fallback",
-      "summary": "Configure locale fallback chains to inherit multi-locale data across country, language, and default locales in B2C Commerce.",
-      "keywords": [
-        "locale fallback",
-        "multi-locale",
-        "language inheritance",
-        "country locale",
-        "en_US fallback",
-        "locale chain",
-        "localizable attributes",
-        "persistent object",
-        "disable fallback",
-        "locale configuration",
-        "i18n fallback"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-locales",
-      "title": "Locales",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-locales.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-locales.md",
-      "headings": "Configuring Locales • Business Manager Locales • Dictionary Fallback",
-      "summary": "Configure multiple locales for B2C Commerce Business Manager UI and storefront sites with language and country-specific settings.",
-      "keywords": [
-        "locales",
-        "language-specific locales",
-        "country-specific locales",
-        "global preferences",
-        "locale configuration",
-        "localized data",
-        "storefront localization",
-        "Business Manager locales",
-        "multi-locale support",
-        "resource lookup sequence",
-        "locale fallback"
       ]
     },
     {
@@ -3882,117 +2623,6 @@
         "product localization",
         "catalog localization",
         "site globalization"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-localization-considerations",
-      "title": "Localization Considerations",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-localization-considerations.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-localization-considerations.md",
-      "summary": "Understand which Business Manager UI elements cannot be localized, including custom attributes, site IDs, order status, and database-defined content.",
-      "keywords": [
-        "localization",
-        "i18n",
-        "translation",
-        "Business Manager UI",
-        "untranslatable elements",
-        "custom attributes",
-        "database content",
-        "multi-language",
-        "site localization limits",
-        "non-localizable fields",
-        "column titles",
-        "permissions translation"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-localizing-static-files",
-      "title": "Localizing Static Files",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-localizing-static-files.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-localizing-static-files.md",
-      "summary": "Localize static files like images and CSS by creating locale-specific folders that override default files when users access your storefront in different languages.",
-      "keywords": [
-        "localize static files",
-        "locale-specific images",
-        "CSS localization",
-        "i18n static assets",
-        "multi-language images",
-        "locale folder structure",
-        "static file fallback",
-        "es_US locale",
-        "localized content library",
-        "image translation",
-        "language-specific CSS",
-        "cartridge static files"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-localizing-template-resource-bundles",
-      "title": "Localizing Template Resource Bundles",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-localizing-template-resource-bundles.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-localizing-template-resource-bundles.md",
-      "headings": "Account Example • Form Example",
-      "summary": "Store and manage static localized content in template resource bundles using properties files within cartridge directories for multi-language storefront support.",
-      "keywords": [
-        "template resource bundles",
-        "localization",
-        "properties files",
-        "msg() method",
-        "dw.web.Resource",
-        "cartridge templates",
-        "locale",
-        "multi-language",
-        "i18n",
-        "localized messages",
-        "static content",
-        "SendMail API"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-localizing-templates",
-      "title": "Localizing Templates",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-localizing-templates.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-localizing-templates.md",
-      "summary": "Externalize and translate storefront template strings using resource files for multi-locale support without duplicating template logic.",
-      "keywords": [
-        "localization",
-        "internationalization",
-        "i18n",
-        "template localization",
-        "resource files",
-        "translate strings",
-        "multi-locale",
-        "externalize strings",
-        "template translation",
-        "locale-specific content",
-        "storefront localization"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-localizing-using-multiple-template-sets",
-      "title": "Localizing Using Multiple Template Sets",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-localizing-using-multiple-template-sets.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-localizing-using-multiple-template-sets.md",
-      "headings": "Defaults",
-      "summary": "Set up locale-specific template folders using ISO 639/3166 codes to localize B2C Commerce storefronts across different languages and regions.",
-      "keywords": [
-        "localization templates",
-        "multiple template sets",
-        "locale-specific templates",
-        "ISO 639 language codes",
-        "ISO 3166 country codes",
-        "template folder structure",
-        "language country locales",
-        "en_US de_AT es_AR",
-        "storefront localization",
-        "template sets by language",
-        "regional templates",
-        "i18n templates"
       ]
     },
     {
@@ -4148,133 +2778,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c-model-1-no-product-records",
-      "title": "Model 1 - No Product Records",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-model-1-no-product-records.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-model-1-no-product-records.md",
-      "summary": "Configure inventory Model 1 for merchants with always-in-stock products and no product availability data transmission to B2C Commerce.",
-      "keywords": [
-        "Model 1 inventory",
-        "no product records",
-        "ProductInventoryList",
-        "ProductInventoryRecord",
-        "in stock products",
-        "inventory management",
-        "storefront inventory",
-        "DefaultInStock",
-        "product availability",
-        "inventory configuration"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-model-2-inventory-information-for-some-products",
-      "title": "Model 2 - Inventory Information for Some Products",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-model-2-inventory-information-for-some-products.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-model-2-inventory-information-for-some-products.md",
-      "summary": "Configure Model 2 inventory to manage stock for some products while treating others without inventory records as permanently in stock.",
-      "keywords": [
-        "Model 2 inventory",
-        "ProductInventoryList",
-        "ProductInventoryRecord",
-        "partial inventory tracking",
-        "perpetual inventory false",
-        "ATS available to sell",
-        "inventory availability",
-        "subset products monitoring",
-        "DefaultInStock",
-        "allocation units",
-        "backorderable preorderable",
-        "inventory configuration"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-model-3-demandware-does-not-calculate-ats-values",
-      "title": "Model 3 - Salesforce B2C Commerce Doesn't Calculate ATS Values",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-model-3-demandware-does-not-calculate-ats-values.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-model-3-demandware-does-not-calculate-ats-values.md",
-      "summary": "Configure Model 3 inventory setup where B2C Commerce doesn't calculate ATS values and relies on frequent external stock level updates.",
-      "keywords": [
-        "Model 3 inventory",
-        "ATS calculation",
-        "allocation",
-        "inventory records",
-        "stock levels",
-        "ProductInventoryList",
-        "perpetual inventory",
-        "backorder",
-        "preorder",
-        "UpdateStockLevel",
-        "inventory refresh",
-        "Omnichannel Inventory"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-model-4-demandware-calculates-ats-values",
-      "title": "Model 4 - Salesforce B2C Commerce Calculates ATS Values",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-model-4-demandware-calculates-ats-values.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-model-4-demandware-calculates-ats-values.md",
-      "summary": "Configure B2C Commerce to calculate Available-To-Sell (ATS) inventory values with daily batch updates for stock, backorder, and pre-order status.",
-      "keywords": [
-        "ATS calculation",
-        "inventory status",
-        "available to sell",
-        "backorder",
-        "pre-order",
-        "inventory list",
-        "product inventory record",
-        "stock levels",
-        "allocation",
-        "inventory batch feed",
-        "out of stock",
-        "perpetual inventory"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-model-5-real-time-inventory-availability-at-add-to-cart",
-      "title": "Model 5 - Real-Time Inventory Availability at Add-to-Cart",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-model-5-real-time-inventory-availability-at-add-to-cart.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-model-5-real-time-inventory-availability-at-add-to-cart.md",
-      "summary": "Implement real-time inventory availability checks at the add-to-cart stage to prevent customers from ordering unavailable products.",
-      "keywords": [
-        "real-time inventory",
-        "add-to-cart",
-        "stock availability",
-        "inventory management",
-        "Model 5",
-        "product availability check",
-        "inventory list",
-        "stock level verification",
-        "out of stock",
-        "inventory integration",
-        "real-time stock check"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-model-6-real-time-inventory-availability-at-checkout",
-      "title": "Model 6 - Real-Time Inventory Availability at Checkout",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-model-6-real-time-inventory-availability-at-checkout.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-model-6-real-time-inventory-availability-at-checkout.md",
-      "summary": "Implement real-time inventory availability checking at checkout to prevent customers from ordering out-of-stock products.",
-      "keywords": [
-        "real-time inventory",
-        "checkout inventory",
-        "inventory availability",
-        "stock level check",
-        "Model 6",
-        "inventory management",
-        "product availability",
-        "inventory system integration",
-        "out-of-stock detection",
-        "inventory customization"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c-new-and-changed-in-upcoming-release",
       "title": "B2C Commerce Release Notes",
       "category": "b2c-commerce",
@@ -4385,49 +2888,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c-publishing-content-layouts",
-      "title": "Publish Content Layouts as Velocity Templates",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-publishing-content-layouts.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-publishing-content-layouts.md",
-      "headings": "Implementing Content Publishing • Selecting a CMS • Uploading Your Velocity Template",
-      "summary": "Publish content-rich page layouts as Velocity templates from a CMS to B2C Commerce for email, social media, and storefront pages.",
-      "keywords": [
-        "Velocity templates",
-        "content layouts",
-        "publish layouts",
-        "CMS integration",
-        "B2C Commerce",
-        "WebDAV",
-        "OCAPI",
-        "content management",
-        "email templates",
-        "staging production",
-        "template publishing",
-        "content deployment"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-quota-log-file-format",
-      "title": "Quota Log Files",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-quota-log-file-format.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-quota-log-file-format.md",
-      "summary": "Understand quota log files that track when quota warn thresholds or limits are exceeded with timestamp, thread, and message details.",
-      "keywords": [
-        "quota log files",
-        "quota messages",
-        "quota threshold",
-        "quota limit",
-        "warn threshold",
-        "quota enforcement",
-        "log file format",
-        "quota logging",
-        "performance quotas",
-        "quota monitoring"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c-recommendations-for-developers",
       "title": "Developer Considerations for Explicit Recommendations",
       "category": "b2c-commerce",
@@ -4447,29 +2907,6 @@
         "product linking migration",
         "storefront recommendations",
         "business manager"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-registering-your-site-with-oauth2-providers",
-      "title": "Register Your Site with OAuth2 Providers",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-registering-your-site-with-oauth2-providers.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-registering-your-site-with-oauth2-providers.md",
-      "headings": "Google • LinkedIn • Microsoft • Facebook • GitHub",
-      "summary": "Register your storefront as a client application with OAuth2 providers like Google, Facebook, LinkedIn, and Microsoft to enable social login.",
-      "keywords": [
-        "OAuth2 registration",
-        "OAuth2 providers",
-        "Google OAuth",
-        "Facebook login",
-        "LinkedIn authentication",
-        "Microsoft OAuth",
-        "client credentials",
-        "social login setup",
-        "OAuth2 configuration",
-        "identity providers",
-        "storefront authentication",
-        "third-party login"
       ]
     },
     {
@@ -4493,28 +2930,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c-rendering-velocity-templates",
-      "title": "Render Velocity Templates",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-rendering-velocity-templates.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-rendering-velocity-templates.md",
-      "headings": "Script Rendering Examples • Using Controllers or Pipelines • ISML Equivalents in Velocity • ISML Tags and Their Velocity Equivalents",
-      "summary": "Render Velocity templates in B2C Commerce using controllers or pipelines with dw.Template.Velocity.render method and pass objects as parameters.",
-      "keywords": [
-        "Velocity templates",
-        "render",
-        "dw.Template.Velocity.render",
-        "controllers",
-        "pipelines",
-        "template rendering",
-        "script rendering",
-        "WebDav",
-        "inline templates",
-        "Velocity callbacks",
-        "template objects"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c-reporting-to-support",
       "title": "Reporting to B2C Commerce Support",
       "category": "b2c-commerce",
@@ -4533,26 +2948,6 @@
         "Salesforce Help portal",
         "support ticket",
         "issue reporting"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-resetting-a-customer-password-in-csc",
-      "title": "Reset a Customer Password",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-resetting-a-customer-password-in-csc.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-resetting-a-customer-password-in-csc.md",
-      "summary": "Enable customer service agents to reset customer passwords in B2C Commerce Customer Service Center with email notification.",
-      "keywords": [
-        "reset customer password",
-        "password reset",
-        "Customer Service Center",
-        "customer support",
-        "password recovery",
-        "CSC",
-        "AfterPost hook",
-        "customer authentication",
-        "password management",
-        "email notification"
       ]
     },
     {
@@ -4646,26 +3041,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c-set-up-server-side-activity-tracking-for-facebook",
-      "title": "Set Up Server-Side Activity Tracking for Facebook",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-set-up-server-side-activity-tracking-for-facebook.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-set-up-server-side-activity-tracking-for-facebook.md",
-      "summary": "Configure server-side Facebook pixel tracking in B2C Commerce using Commerce Einstein data and Facebook Conversions API.",
-      "keywords": [
-        "Facebook pixel server-side tracking",
-        "Conversions API",
-        "Commerce Einstein",
-        "Facebook Business Manager",
-        "activity tracking setup",
-        "Facebook integration",
-        "server-side events",
-        "pixel configuration",
-        "B2C Commerce Facebook",
-        "shopper activity tracking"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c-setting-permissions-for-csc",
       "title": "Set Permissions",
       "category": "b2c-commerce",
@@ -4685,28 +3060,6 @@
         "adjust order price",
         "locale permissions",
         "login on behalf"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-site-genesis-application-inventory-implementation",
-      "title": "SiteGenesis Application Inventory Implementation",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-site-genesis-application-inventory-implementation.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-site-genesis-application-inventory-implementation.md",
-      "summary": "Implement inventory management with product variants, stock levels, and availability checks across product pages and checkout in SiteGenesis.",
-      "keywords": [
-        "inventory implementation",
-        "stock levels",
-        "product availability",
-        "pre-order back-order",
-        "isInStock",
-        "out-of-stock products",
-        "variant products",
-        "availability model",
-        "product listing inventory",
-        "add-to-cart inventory check",
-        "checkout inventory validation",
-        "low stock notification"
       ]
     },
     {
@@ -4943,27 +3296,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c-tab-widget",
-      "title": "Tabs Widget",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-tab-widget.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-tab-widget.md",
-      "summary": "Create tabbed layouts in B2C Commerce by configuring widget_tab or form_tab types with captions and content containers.",
-      "keywords": [
-        "tabs widget",
-        "widget_tab",
-        "form_tab",
-        "tabbed layout",
-        "tab configuration",
-        "caption template",
-        "area_id",
-        "data provider",
-        "query params",
-        "tab content",
-        "localized tabs"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c-tagging-pages-for-data-collection",
       "title": "Tagging Pages for Data Collection",
       "category": "b2c-commerce",
@@ -4982,27 +3314,6 @@
         "storefront templates",
         "active data",
         "page instrumentation"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-text-widget",
-      "title": "Text Widget",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-text-widget.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-text-widget.md",
-      "summary": "Display localized and parametrized text content in B2C Commerce storefronts using the Text Widget component.",
-      "keywords": [
-        "text widget",
-        "localized text",
-        "parametrized text",
-        "content display",
-        "widget",
-        "internationalization",
-        "i18n",
-        "storefront widget",
-        "text rendering",
-        "B2C Commerce widget",
-        "dynamic text"
       ]
     },
     {
@@ -5120,28 +3431,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c-understanding-log-files",
-      "title": "Log File Types",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-understanding-log-files.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-understanding-log-files.md",
-      "headings": "Redundancy Tracking • Custom Named Log Files • Quota Log • Security Logs • Import and Export Log • Batch Processing Logs",
-      "summary": "Understand B2C Commerce log file types including system, custom, security, and batch logs, how to access them, and their retention policies.",
-      "keywords": [
-        "log files",
-        "system logs",
-        "custom logs",
-        "security logs",
-        "batch processing logs",
-        "WebDAV",
-        "log retention",
-        "Development Setup",
-        "custom logging configuration",
-        "log archive",
-        "import export logs"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c-understanding-remote-includes",
       "title": "Understanding Remote Includes",
       "category": "b2c-commerce",
@@ -5183,138 +3472,6 @@
         "keyword search",
         "search indexes",
         "pagination"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-updating-stock-levels",
-      "title": "Updating Stock Levels",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-updating-stock-levels.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-updating-stock-levels.md",
-      "headings": "Stock Level Update Cancellation or Replacement Mechanism • Stock Level Update Mechanism for Order Placement",
-      "summary": "Manage product inventory updates when orders are created, canceled, or replaced using the ReserveInventoryForOrder pipelet.",
-      "keywords": [
-        "stock level update",
-        "inventory management",
-        "ReserveInventoryForOrder",
-        "order cancellation",
-        "order replacement",
-        "inventory adjustment",
-        "product inventory",
-        "OMS integration",
-        "inventory import feed",
-        "checkout inventory"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-urls-for-localization",
-      "title": "URLs for Localization",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-urls-for-localization.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-urls-for-localization.md",
-      "headings": "Standard B2C Commerce URLs • Generating a Locale-Specific URL Programmatically",
-      "summary": "Configure and generate localized URLs in B2C Commerce with locale IDs, URL rules, and programmatic locale-specific URL creation.",
-      "keywords": [
-        "localization URLs",
-        "locale ID",
-        "URL rules",
-        "multi-locale",
-        "site URLs",
-        "locale-specific URLs",
-        "URL format",
-        "demandware URLs",
-        "SEO URLs",
-        "locale lookup",
-        "international URLs",
-        "URL configuration"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-using-content-link-functions",
-      "title": "Using Content Link Functions",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-using-content-link-functions.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-using-content-link-functions.md",
-      "headings": "$staticlink$ • $Url()$ • $HttpUrl()$ • $HttpsUrl()$ • $Include()$ • $Link$",
-      "summary": "Learn how to use B2C Commerce content link functions like $staticlink$, $url(), $httpUrl(), and $httpsUrl() to generate dynamic links and URLs in content assets.",
-      "keywords": [
-        "content link functions",
-        "$staticlink$",
-        "$url()",
-        "$httpUrl()",
-        "$httpsUrl()",
-        "content asset links",
-        "dynamic URLs",
-        "absolute URLs",
-        "URL syntax",
-        "content markup",
-        "$include()",
-        "link generation"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-using-custom-caches",
-      "title": "Use Custom Caches",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-using-custom-caches.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-using-custom-caches.md",
-      "summary": "Store and retrieve cached data using B2C Commerce CacheMgr and Cache APIs with scope management and loader functions.",
-      "keywords": [
-        "custom cache",
-        "CacheMgr",
-        "dw.system.Cache",
-        "cache management",
-        "cache entry",
-        "cache loader",
-        "cache invalidate",
-        "caching strategy",
-        "transient memory",
-        "cache scope",
-        "data caching",
-        "cache API"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-using-locales-beyond-a-different-language",
-      "title": "Using Locales Beyond a Different Language",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-using-locales-beyond-a-different-language.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-using-locales-beyond-a-different-language.md",
-      "summary": "Configure locale-specific templates to customize storefront content by country while sharing base templates across same-language locales.",
-      "keywords": [
-        "locales",
-        "locale-specific templates",
-        "multi-site localization",
-        "country-specific customization",
-        "template organization",
-        "en_US en_GB en_IE",
-        "language country codes",
-        "ISML templates locales",
-        "regional content",
-        "locale folder structure",
-        "multi-region sites"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-using-one-template-set-to-localize",
-      "title": "Using One Template Set to Localize",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-using-one-template-set-to-localize.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-using-one-template-set-to-localize.md",
-      "headings": "Directory Structure",
-      "summary": "Localize storefront text using a single SFRA template set with properties files organized by locale directories and fallback mechanisms.",
-      "keywords": [
-        "localization",
-        "SFRA",
-        "template resource bundles",
-        "properties files",
-        "locale-specific directories",
-        "language-specific directories",
-        "storefront internationalization",
-        "i18n",
-        "localization fallback",
-        "multi-language support",
-        "template resources"
       ]
     },
     {
@@ -5362,28 +3519,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/b2c-viewing-quota-status",
-      "title": "View Quota Status",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-viewing-quota-status.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-viewing-quota-status.md",
-      "summary": "Monitor API quota usage and limits in Administration to identify violations and prevent performance issues.",
-      "keywords": [
-        "quota status",
-        "quota limits",
-        "API quota",
-        "quota violations",
-        "quota monitoring",
-        "Administration quota",
-        "custom quota actions",
-        "quota alerts",
-        "database usage",
-        "quota log",
-        "quota email notifications",
-        "quota exceeded"
-      ]
-    },
-    {
       "id": "b2c-commerce/b2c-webservices",
       "title": "Web Services",
       "category": "b2c-commerce",
@@ -5404,28 +3539,6 @@
         "web service performance",
         "API calls",
         "call limits"
-      ]
-    },
-    {
-      "id": "b2c-commerce/b2c-what-are-caches",
-      "title": "What Is a Custom Cache?",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-what-are-caches.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-what-are-caches.md",
-      "summary": "Learn how custom caches store expensive-to-calculate data and external system responses to improve B2C Commerce storefront performance.",
-      "keywords": [
-        "custom cache",
-        "caching",
-        "cache memory",
-        "performance optimization",
-        "expensive calculations",
-        "external system cache",
-        "configuration caching",
-        "storefront performance",
-        "cache implementation",
-        "B2C Commerce cache",
-        "in-memory cache",
-        "cache strategy"
       ]
     },
     {
@@ -5635,57 +3748,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/creatingcustombusinessobjectsinstance",
-      "title": "Create a Custom Object Instance with Business Manager",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/creatingcustombusinessobjectsinstance.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/creatingcustombusinessobjectsinstance.md"
-    },
-    {
-      "id": "b2c-commerce/creatingcustombusinessobjectswithdemandwarebusinessmanager",
-      "title": "Create a Custom Business Object Definition",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/creatingcustombusinessobjectswithdemandwarebusinessmanager.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/creatingcustombusinessobjectswithdemandwarebusinessmanager.md",
-      "summary": "Create custom business object definitions in Business Manager to store organization-wide data with custom attributes and attribute groupings.",
-      "keywords": [
-        "custom business object",
-        "custom object definition",
-        "custom object types",
-        "business object creation",
-        "attribute definitions",
-        "key attribute",
-        "attribute grouping",
-        "Business Manager",
-        "Site Development",
-        "custom data model",
-        "object schema"
-      ]
-    },
-    {
-      "id": "b2c-commerce/creatingcustombusinessobjectswithscript",
-      "title": "Creating Custom Business Objects with Scripts",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/creatingcustombusinessobjectswithscript.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/creatingcustombusinessobjectswithscript.md",
-      "headings": "Script Function with Reference to Product Object • Creating Custom Objects",
-      "summary": "Create and manage custom business objects in B2C Commerce scripts using the dw.object package with CustomObject and CustomObjectMgr classes.",
-      "keywords": [
-        "custom business objects",
-        "dw.object package",
-        "CustomObject",
-        "CustomObjectMgr",
-        "script objects",
-        "custom attributes",
-        "pipeline dictionary",
-        "extend B2C Commerce objects",
-        "JavaScript custom objects",
-        "persistence scripting",
-        "getCustomObject",
-        "wrapper objects"
-      ]
-    },
-    {
       "id": "b2c-commerce/demandwarejavascript",
       "title": "Script Programming",
       "category": "b2c-commerce",
@@ -5820,6 +3882,45 @@
         "Salesforce Commerce Cloud",
         "instance configuration"
       ]
+    },
+    {
+      "id": "b2c-commerce/hybrid-auth-environment-matrix",
+      "title": "Hybrid Auth Environments and Routing (All Architectures)",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-environment-matrix.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-environment-matrix.md",
+      "headings": "Setup Guide by Architecture and Environment • Configuration by Environment • Route Ownership • Canonical Routing Rules • Notes"
+    },
+    {
+      "id": "b2c-commerce/hybrid-auth-manual-setup",
+      "title": "Manual Hybrid Auth Setup (PWA Kit, SFRA/SiteGenesis)",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-manual-setup.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-manual-setup.md",
+      "headings": "Are You Starting Fresh or Coming from an Existing Setup? • Fresh Setup • Existing Setup • Set Up by Instance Type • PIG (Primary Instance Group) • ODS (On-Demand Sandbox) • Localhost (Local Development) • SFRA/SiteGenesis Proper + Hybrid Auth (Session Extension and SLAS Setup) • Scope • High-Level Steps • Validate the Setup • Migration Recommendation • Headless Storefronts + SFRA/SiteGenesis • When to Use This Path • Supported Scenario • Before You Begin • Step-by-Step Setup • Step 1: Authenticate Shoppers with SLAS • Step 2: Respect SLAS Set-Cookie Responses • Step 3: Send the `sfdc_dwsid` Header on SCAPI Calls • Step 4: Configure Route Ownership Between Headless and SFRA • Step 5: (Optional) Basket Merge and Shopper Context • Step 6: Validate Cross-Runtime Navigation • Next Steps"
+    },
+    {
+      "id": "b2c-commerce/hybrid-auth-quick-start",
+      "title": "Storefront Next Automated Setup",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-quick-start.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-quick-start.md",
+      "headings": "Before You Begin • Set Up by Instance Type • PIG (Primary Instance Group) • ODS (On-Demand Sandbox) • Localhost (Local Development) • Next Steps"
+    },
+    {
+      "id": "b2c-commerce/hybrid-auth-select-storefront",
+      "title": "Select Your Storefront",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-select-storefront.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-select-storefront.md"
+    },
+    {
+      "id": "b2c-commerce/hybrid-auth-troubleshooting",
+      "title": "Hybrid Auth Troubleshooting",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-troubleshooting.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-troubleshooting.md",
+      "headings": "Hybrid Auth Not Applying • Token or Session Drift Across Runtimes • eCDN Routing Mismatch • Localhost and Sandbox Differences • Missing SCAPI Short Code on On-Demand Sandboxes (ODS)"
     },
     {
       "id": "b2c-commerce/integratingwithapplications",
@@ -7273,7 +5374,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/packaging.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/packaging.md",
-      "headings": "CAP Structure Requirements • Required Files • The tasksList.json • IMPEX Structure • Placeholder Replacement • Install IMPEX • Uninstall IMPEX • Naming Conventions • Packaging and Validation Workflow • Using Claude Code Skills (Recommended) • Manual Workflow",
+      "headings": "CAP Structure Requirements • Required Files • Optional Files • The tasksList.json • Localizing app-shipped strings • IMPEX Structure • Placeholder Replacement • Install IMPEX • Uninstall IMPEX • Naming Conventions • Packaging and Validation Workflow • Using Claude Code Skills (Recommended) • Manual Workflow",
       "summary": "Package a Commerce App into a CAP structure with required files, directories, and IMPEX configuration for distribution.",
       "keywords": [
         "CAP",
@@ -7342,7 +5443,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/reference.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/reference.md",
-      "headings": "commerce-app.json Schema • APIs • Install/Uninstall Jobs (OCAPI Data API) • Required OCAPI Permissions • Install Job Parameters • Uninstall Job Parameters • Job Execution Response • CommerceFeatureState Data Model • FeatureType Values • Multi-Site Behavior • Feature Toggles • Tax Domain Toggles • Install and Uninstall Flow Details • Install Flow • Uninstall Flow • App Registry Manifest • Manifest Entry Fields • Entry Types • Hub Display • Known Limitations • Storefront compatibility • Extension points • Installation and upgrades • Multi-site • Storefront Next extensions • External Documentation Links • Glossary",
+      "headings": "commerce-app.json Schema • adminComponents.json Schema • Component Object Fields • `storefrontComponentVisibility` Attributes • Example • CI Validation • App-shipped string localization • Stable keys: `taskKey` and `componentKey` • `app-configuration/translations/<locale>.json` • Fallback chain • Locale rollout • Supported locales • CI validation • APIs • Install/Uninstall Jobs (OCAPI Data API) • Required OCAPI Permissions • Install Job Parameters • Uninstall Job Parameters • Job Execution Response • CommerceFeatureState Data Model • FeatureType Values • Multi-Site Behavior • Feature Toggles • Tax Domain Toggles • Install and Uninstall Flow Details • Install Flow • Uninstall Flow • App Registry Manifest • Manifest Entry Fields • Entry Types • Hub Display • Manifest and Catalog Cache TTL • Known Limitations • Storefront compatibility • Extension points • Installation and upgrades • Multi-site • Storefront Next extensions • External Documentation Links • Glossary",
       "summary": "Define Commerce App package identity, metadata, and publisher details using the required commerce-app.json schema file.",
       "keywords": [
         "commerce-app.json",
@@ -7584,27 +5685,6 @@
         "storefront comparison",
         "PWA storefront",
         "headless commerce"
-      ]
-    },
-    {
-      "id": "b2c-commerce/workingwithjson",
-      "title": "Working with JSON",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/workingwithjson.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/workingwithjson.md",
-      "summary": "Parse and stringify JSON data in B2C Commerce using the JSON class to exchange complex objects between server and client.",
-      "keywords": [
-        "JSON parsing",
-        "JSON stringify",
-        "JSON class",
-        "data interchange",
-        "JavaScript Object Notation",
-        "server client communication",
-        "parse function",
-        "stringify method",
-        "JSON objects",
-        "attribute field",
-        "data serialization"
       ]
     },
     {
@@ -8369,11 +6449,11 @@
     },
     {
       "id": "commerce-api/ecdn-rules-for-phased-headless-rollout",
-      "title": "CDN APIs for Hybrid Implementations",
+      "title": "CDN Routing Rules for Hybrid Implementations",
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/ecdn-rules-for-phased-headless-rollout.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/ecdn-rules-for-phased-headless-rollout.md",
-      "headings": "Traffic Routing for Hybrid Apps with and without eCDN • Traffic Routing for SIG Instances without eCDN • Traffic Routing for PIG Instances with eCDN • Prerequisites • Route Traffic to Managed Runtime • Routing Scenarios • Expression Constraints • Modify Routing Configuration • Add More Routing Configurations • Modify Managed Runtime Environment • Disable Routing • Route All Traffic to Managed Runtime • See Also",
+      "headings": "Traffic Routing for Hybrid Apps with and without eCDN • Traffic Routing for Local Development without eCDN • Traffic Routing for PIG Instances with eCDN • Configure Routing Rules in the Business Manager UI • Configure Routing Rules with the CDN Zones API • Prerequisites • Route Traffic to Managed Runtime • Routing Scenarios • Expression Constraints • Modify Routing Configuration • Add More Routing Configurations • Modify Managed Runtime Environment • Disable Routing • Route All Traffic to Managed Runtime • See Also",
       "summary": "Route traffic between SFRA and Composable Storefront using eCDN for production or hybrid proxy for development in phased headless rollouts.",
       "keywords": [
         "CDN",
@@ -8545,12 +6625,20 @@
       ]
     },
     {
+      "id": "commerce-api/hybrid-auth-shared-setup",
+      "title": "Shared Hybrid Auth Setup (All Architectures)",
+      "category": "commerce-api",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/hybrid-auth-shared-setup.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/hybrid-auth-shared-setup.md",
+      "headings": "Step 1: Set Up a SLAS Client • Step 2: Enable Session Bridging • Step 3: (Optional) Configure Third-Party IDP and Social Login • Step 4: Configure Business Manager • Step 5: Remove Plugin SLAS (If Migrating) • Step 6: Remove OCAPI Permissions (If Migrating from Plugin SLAS) • Step 7: (Optional) Set Shopper Context • Step 8: (Optional) Enable or Disable Do-Not-Track Synchronization • DNT Cookie Expiration • Next Steps"
+    },
+    {
       "id": "commerce-api/hybrid-authentication",
-      "title": "Hybrid Authentication",
+      "title": "Hybrid Authentication Overview",
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/hybrid-authentication.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/hybrid-authentication.md",
-      "headings": "Hybrid Auth Overview • Hybrid Auth Benefits • Platform-Native Data Synchronization • Seamless Shopper Experience • Full Support for All Templates • Hybrid Auth Prerequisites • Step 1: Set Up Your Storefront with Hybrid Auth • Step 2: Set Up Hybrid Locally (SIG Instances) • Configure On-Demand Sandbox to Use Alias • (Optional) Configure PWA Kit Routes to Prefix Outgoing URLs • Step 3: (Optional) Configure Basket Management for Hybrid Auth • Invoke Hooks with REST API • Hook Invocation With Custom Controller Implementation • Step 4: Set Shopper Context for Hybrid Auth • Step 5: (Optional) Enable/Disable Do Not Track Synchronization • DNT Customization • DNT Cookie Expiration • Hybrid Auth Feature Support Matrix • See Also",
+      "headings": "What Hybrid Auth Solves • Benefits • Architecture • Next Steps",
       "summary": "Implement Hybrid Auth for B2C Commerce v25.3+ to manage both SFRA/SiteGenesis and SLAS tokens in hybrid storefronts.",
       "keywords": [
         "Hybrid Auth",
@@ -8573,7 +6661,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/hybrid-storefront-baskets.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/hybrid-storefront-baskets.md",
-      "headings": "Hybrid Authentication • Hybrid Storefront Considerations • Cost to Maintain • Performance Optimization • Hybrid Storefront Best Practices for Working with Baskets • Avoid Empty Baskets • Create or Retrieve a Basket • Asynchronous Functions • Hooks • Next Steps",
+      "headings": "Hybrid Authentication • Hybrid Storefront Considerations • Cost to Maintain • Performance Optimization • Hybrid Storefront Best Practices for Working with Baskets • Avoid Empty Baskets • Create or Retrieve a Basket • Asynchronous Functions • Hooks • Merge Baskets on Shopper Login • Invoke the Hook with the REST API • Invoke the Hook with a Custom Controller Implementation • Next Steps",
       "summary": "Combine traditional B2C Commerce storefronts with headless Composable Storefront sites using hybrid implementations for faster deployment and lower costs.",
       "keywords": [
         "hybrid storefront",
@@ -8854,29 +6942,6 @@
         "complex properties",
         "query filtering",
         "response optimization"
-      ]
-    },
-    {
-      "id": "commerce-api/scapi-schema-api",
-      "title": "SCAPI Schema API",
-      "category": "commerce-api",
-      "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/scapi-schema-api.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/scapi-schema-api.md",
-      "headings": "Use the SCAPI Schema API • Authentication & Authorization • List Endpoint • Parameters • Response Format • Detail Endpoint • Parameters • Response Format • Expansion Parameters • Examples • List All Available Schemas • Filter by API Family • Get Complete Schema Definition • Get Schema with Custom Properties • Get Schema with Multiple Expansions • Get Complete Schema with All Metadata • Get Schema with Custom Properties and Descriptions • Handle Invalid Expansion Parameters • Responses • Use Cases • API Documentation Generation • Client SDK Generation • API Testing and Validation • API Discovery and Registry • Related Documentation",
-      "summary": "Access OpenAPI specifications for System and Custom APIs to discover endpoints, validate schemas, generate clients, and introspect data models.",
-      "keywords": [
-        "SCAPI Schema API",
-        "OpenAPI specification",
-        "OAS definitions",
-        "API discovery",
-        "schema validation",
-        "client generation",
-        "API documentation",
-        "data model introspection",
-        "OAuth 2.0",
-        "scapi-schemas scope",
-        "System APIs",
-        "Custom APIs"
       ]
     },
     {
@@ -10370,10 +8435,11 @@
     },
     {
       "id": "pwa-kit-managed-runtime/hybrid-auth",
-      "title": "Configure a Hybrid Storefront with Hybrid Auth",
+      "title": "Configure a Hybrid Storefront with Hybrid Auth (PWA Kit)",
       "category": "pwa-kit-managed-runtime",
       "url": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/hybrid-auth.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/hybrid-auth.md",
+      "headings": "Prerequisites • Complete the Shared Hybrid Auth Setup First • Configure PWA Kit for Hybrid Auth • Step 1: Create or Update Your PWA Kit Retail React App • Step 2: Enable `hybridAuthEnabled` in the `_app-config` Component • Step 3: Update PWA Kit Routes • Step 4: Handle Cookie Responses in the Client Browser • Step 5: Enable Cookies on Managed Runtime • Step 6: Configure eCDN Origin Routing • Set Up Hybrid on On-Demand Sandbox (ODS) Instances Using eCDN • Set Up Hybrid Locally for Local Development • Verify Your Hybrid Auth Setup • Hybrid Auth Feature Support Matrix • Related Guidance",
       "summary": "Configure hybrid authentication for B2C Commerce storefronts requiring both SFRA/SiteGenesis and SLAS authorization tokens.",
       "keywords": [
         "hybrid auth",
@@ -10411,6 +8477,14 @@
         "decoupled storefront",
         "multi-channel storefront"
       ]
+    },
+    {
+      "id": "pwa-kit-managed-runtime/hybrid-routing-matrix",
+      "title": "Hybrid Storefront Routing Matrix (PWA Kit)",
+      "category": "pwa-kit-managed-runtime",
+      "url": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/hybrid-routing-matrix.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/hybrid-routing-matrix.md",
+      "headings": "Use the Right Rule Syntax by Setup Type • Architectural Foundations • Matrix Configurations • Matrix-01: Modern Core (Home, PDP, PLP on PWA Kit) • Matrix-02: Modern Checkout (Cart and Checkout on PWA Kit) • Matrix-03: Modern Entry Only (Home on PWA Kit) • Matrix-04: Legacy Entry Only (Home on SFRA) • Matrix-05: Catalog-Only Migration (PLP/PDP on PWA Kit) • Matrix-06: Account and Auth Only (Identity Flows on PWA Kit) • Global Framework Requirements"
     },
     {
       "id": "pwa-kit-managed-runtime/hybrid-upgrade-v2.x",
@@ -10913,7 +8987,7 @@
       "category": "pwa-kit-managed-runtime",
       "url": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/order-mgmt.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/order-mgmt.md",
-      "headings": "Connect Your B2C Commerce Instance and the Order Management Organization • Step 1: Connect a B2C Commerce Instance to the SOM organization • Step 2: Test the Connection by Placing an Order • Composable Storefront-SOM Integration Considerations • Getting Orders from SOM • Placing Orders in SOM",
+      "headings": "Prerequisite: Connect Your B2C Commerce Instance and the Order Management Organization • Step 1: Connect a B2C Commerce Instance to the SOM organization • Step 2: Test the Connection by Placing an Order • Composable Storefront-SOM Integration Considerations • Getting Orders from SOM • Placing Orders in SOM • Managing Orders in SOM • Prerequisites • Accessing the Order Detail Page • Tracking Order Shipments • Canceling an Order • Returning Eligible Items • Order Refunds • Status Badge",
       "summary": "Integrate Salesforce Order Management with PWA Kit Composable Storefront to display customer order history and status from SOM starting in B2C Commerce 26.3.",
       "keywords": [
         "Salesforce Order Management",
@@ -12464,52 +10538,6 @@
       ]
     },
     {
-      "id": "sfnext/sfnext-debug-log-center",
-      "title": "Debug Your Storefront in Production Using Log Center",
-      "category": "sfnext",
-      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-debug-log-center.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-debug-log-center.md",
-      "headings": "Log Center Prerequisites • View Logs • Limitations",
-      "summary": "Use Log Center to debug production Storefront Next and B2C Commerce environments with centralized logging, search, and error tracking.",
-      "keywords": [
-        "Log Center",
-        "production debugging",
-        "Storefront Next",
-        "MRT logs",
-        "B2C Commerce logging",
-        "SLAS errors",
-        "CDN error logs",
-        "log search",
-        "production troubleshooting",
-        "PWA Kit logs",
-        "Managed Runtime logs",
-        "error investigation"
-      ]
-    },
-    {
-      "id": "sfnext/sfnext-debug-mrt",
-      "title": "Debug Your Storefront on Managed Runtime",
-      "category": "sfnext",
-      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-debug-mrt.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-debug-mrt.md",
-      "headings": "Debug Using Source Maps • Source Maps Prerequisites • Enable Source Maps • Use Runtime Admin • Use the Managed Runtime API • Upload Source Maps • View Source Maps • Source Map Considerations • Default Settings for Source Maps • Manage Log Levels • Recommended Log Levels • Set Log Level by Using Runtime Admin • Set Log Level by Using the Managed Runtime API • Tail Logs on Managed Runtime • Within a PWA Kit Project • Outside a PWA Kit Project • Constraints and Considerations",
-      "summary": "Debug storefront code deployed to Managed Runtime using source maps and log tailing to identify server-side errors and real-time issues.",
-      "keywords": [
-        "debug managed runtime",
-        "source maps",
-        "tail logs",
-        "storefront debugging",
-        "MRT debugging",
-        "server-side errors",
-        "stack trace",
-        "runtime admin",
-        "managed runtime API",
-        "PWA Kit debugging",
-        "error troubleshooting",
-        "sfnext debug"
-      ]
-    },
-    {
       "id": "sfnext/sfnext-debug-troubleshoot",
       "title": "Troubleshooting Tips for Storefront Next",
       "category": "sfnext",
@@ -12696,7 +10724,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-hybrid-ods.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-hybrid-ods.md",
-      "headings": "Hybrid ODS Features • Production-Like Hybrid Routing on ODS • Parity with Production eCDN Rules • Scalable Development Environment Strategy • Configuration Flexibility • Before You Begin • Configure Hybrid Storefront Settings • Step 1: Enable Hybrid Auth in Business Manager • Locate Your SLAS Credentials • Configure Hybrid Auth Settings • Step 2: Configure the Application (MRT Environments) • Step 3: Configure eCDN Routing Rules • Locate the eCDN Zone Hostname • Update Aliases with the eCDN Hostname • Update eCDN Routing Rules for Your Demo Site • Step 4 (Optional): Configure Locale Rules • Step 5: Verify Your Setup • Troubleshooting • Next Steps",
+      "headings": "Hybrid ODS Features • Production-Like Hybrid Routing on ODS • Parity with Production eCDN Rules • Scalable Development Environment Strategy • Configuration Flexibility • Before You Begin • Configure Hybrid Storefront Settings • Step 1: Enable Hybrid Auth in Business Manager • Step 2: Configure the Application (MRT Environments) • Step 3: Configure eCDN Routing Rules • Locate the eCDN Zone Hostname • Update Aliases with the eCDN Hostname • Update eCDN Routing Rules for Your Demo Site • Step 4 (Optional): Configure Locale Rules • Step 5: Verify Your Setup • Troubleshooting • Next Steps",
       "summary": "Configure hybrid storefronts running Storefront Next and SFRA/SiteGenesis simultaneously on ODS using Cloudflare eCDN origin routing.",
       "keywords": [
         "hybrid storefront ODS",
@@ -13636,29 +11664,6 @@
       ]
     },
     {
-      "id": "sfnext/sfnext-pwa-caching",
-      "title": "Caching Differences with PWA Kit",
-      "category": "sfnext",
-      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-pwa-caching.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-pwa-caching.md",
-      "headings": "Key Differences • Cache Layer Comparison • Setting Cache Headers • Controlling Data Freshness • Storefront Conversion Considerations",
-      "summary": "Understand caching strategy differences between PWA Kit (client-side personalization, CDN-optimized) and Storefront Next (server-side personalization, faster UX).",
-      "keywords": [
-        "PWA Kit caching",
-        "Storefront Next caching",
-        "SSR personalization",
-        "CDN cache",
-        "request-processor.js",
-        "HTTP cache headers",
-        "client-side caching",
-        "server-side rendering",
-        "cache segmentation",
-        "React Query",
-        "cookie-based state",
-        "multi-layer caching"
-      ]
-    },
-    {
       "id": "sfnext/sfnext-pwa-components",
       "title": "Component Differences with PWA Kit",
       "category": "sfnext",
@@ -13748,29 +11753,6 @@
         "TypeScript configuration",
         "sfnext dev CLI",
         "port configuration"
-      ]
-    },
-    {
-      "id": "sfnext/sfnext-pwa-extensions",
-      "title": "sfnext-pwa-extensions",
-      "category": "sfnext",
-      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-pwa-extensions.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-pwa-extensions.md",
-      "headings": "PWA Kit Template Extensibility vs Storefront Next Extensions • Configuration and Capabilities Comparison • Internationalization (i18n) • PWA Kit Template Extensibility • Storefront Next Extensions • Routing • PWA Kit Template Extensibility • Storefront Next Extensions • See Also",
-      "summary": "Migrate from PWA Kit template overrides to Storefront Next's modular extension framework for customizing storefronts.",
-      "keywords": [
-        "PWA Kit extensibility",
-        "Storefront Next extensions",
-        "template overrides",
-        "extension framework",
-        "UITarget",
-        "filesystem overrides",
-        "modular customization",
-        "extension markers",
-        "target-config.json",
-        "storefront customization",
-        "composable storefront",
-        "extension modules"
       ]
     },
     {
@@ -14115,6 +12097,14 @@
       ]
     },
     {
+      "id": "sfnext/sfnext-release-notes",
+      "title": "Storefront Next Release Notes",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-release-notes.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-release-notes.md",
+      "headings": "<Date> - vx.y.z • <Date> - B2C Commerce 26.x • <Release note title> • July 9, 2026 - v1.1.0 • Maintain Shopper Sessions Across Subdomains in Storefront Next • Secure Your Storefront and Stabilize APIs by Upgrading to React Router 7.18"
+    },
+    {
       "id": "sfnext/sfnext-security-headers",
       "title": "Security Response Headers",
       "category": "sfnext",
@@ -14202,26 +12192,6 @@
         "loader action",
         "React Router 7",
         "secure API calls"
-      ]
-    },
-    {
-      "id": "sfnext/sfnext-sfnext-storybook",
-      "title": "sfnext-sfnext-storybook",
-      "category": "sfnext",
-      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-sfnext-storybook.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-sfnext-storybook.md",
-      "summary": "Use the sfnext Storybook component library to build and document UI components for storefront development.",
-      "keywords": [
-        "sfnext storybook",
-        "component library",
-        "ui components",
-        "storefront components",
-        "storybook catalog",
-        "component documentation",
-        "sfnext",
-        "visual development",
-        "component showcase",
-        "storefront UI"
       ]
     },
     {
@@ -14564,26 +12534,6 @@
       ]
     },
     {
-      "id": "sfra/b2c-clear-refresh-form",
-      "title": "Clearing or Refreshing a Form",
-      "category": "sfra",
-      "url": "https://developer.salesforce.com/docs/commerce/sfra/guide/b2c-clear-refresh-form.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfra/guide/b2c-clear-refresh-form.md",
-      "summary": "Use server.getForms to retrieve form data structures and manually call the clear method to reset forms in SFRA templates.",
-      "keywords": [
-        "clear form",
-        "refresh form",
-        "server.getForms",
-        "form data structure",
-        "SFRA forms",
-        "clear method",
-        "form definition",
-        "pdict variable",
-        "reset form",
-        "profile form"
-      ]
-    },
-    {
       "id": "sfra/b2c-configuring-sfra",
       "title": "Configure SFRA",
       "category": "sfra",
@@ -14602,28 +12552,6 @@
         "site settings",
         "SFRA setup",
         "instance configuration"
-      ]
-    },
-    {
-      "id": "sfra/b2c-convert-form-data-json",
-      "title": "Converting Form Data to JSON Objects",
-      "category": "sfra",
-      "url": "https://developer.salesforce.com/docs/commerce/sfra/guide/b2c-convert-form-data-json.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfra/guide/b2c-convert-form-data-json.md",
-      "summary": "Convert form data to JSON objects and prepopulate forms using SFRA's forms.js module with methods like parseForm and copyObjectToForm.",
-      "keywords": [
-        "form data JSON conversion",
-        "parseForm",
-        "copyObjectToForm",
-        "prepopulate forms",
-        "forms.js module",
-        "SFRA forms",
-        "form handling",
-        "ViewData",
-        "findValue",
-        "clearOptions",
-        "form to JSON",
-        "server-side forms"
       ]
     },
     {
@@ -14650,29 +12578,6 @@
       ]
     },
     {
-      "id": "sfra/b2c-customizing-templates",
-      "title": "Customize Templates",
-      "category": "sfra",
-      "url": "https://developer.salesforce.com/docs/commerce/sfra/guide/b2c-customizing-templates.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfra/guide/b2c-customizing-templates.md",
-      "headings": "Overriding CSS and Client-Side JavaScript for a Page • Best Practices with ISML",
-      "summary": "Override SFRA templates and assets by creating custom cartridges with matching template names and locations in the cartridge path.",
-      "keywords": [
-        "customize templates",
-        "template override",
-        "SFRA templates",
-        "cartridge path",
-        "decorator templates",
-        "page.isml",
-        "checkout.isml",
-        "override CSS",
-        "override JavaScript",
-        "assets.addJs",
-        "assets.addCss",
-        "custom cartridge"
-      ]
-    },
-    {
       "id": "sfra/b2c-forms",
       "title": "Forms",
       "category": "sfra",
@@ -14693,90 +12598,6 @@
         "custom objects",
         "localization",
         "SFRA"
-      ]
-    },
-    {
-      "id": "sfra/b2c-localizing-forms",
-      "title": "Localizing a Form",
-      "category": "sfra",
-      "url": "https://developer.salesforce.com/docs/commerce/sfra/guide/b2c-localizing-forms.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfra/guide/b2c-localizing-forms.md",
-      "headings": "Localizing Strings Within Simple Forms • Localizing Strings Within Complex Forms • Example: Localizing Labels and Error Messages",
-      "summary": "Create locale-specific form structures and localize form strings using resource files for different countries and languages.",
-      "keywords": [
-        "localize form",
-        "form localization",
-        "locale-specific form",
-        "resource strings",
-        "forms.properties",
-        "country-specific fields",
-        "multi-language forms",
-        "ISML form",
-        "locale folders",
-        "form definition",
-        "translate forms",
-        "i18n forms"
-      ]
-    },
-    {
-      "id": "sfra/b2c-prepopulate-form-data",
-      "title": "Prepopulating Form Data",
-      "category": "sfra",
-      "url": "https://developer.salesforce.com/docs/commerce/sfra/guide/b2c-prepopulate-form-data.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfra/guide/b2c-prepopulate-form-data.md",
-      "headings": "To Get Data from System Objects • To Get Data from Other Forms • To Copy Values from One Object to Another",
-      "summary": "Prepopulate forms with data from system objects, custom objects, and other forms using copyObjectToForm and FormModel methods.",
-      "keywords": [
-        "prepopulate forms",
-        "form data prefill",
-        "copyObjectToForm",
-        "FormModel.copyFrom",
-        "system objects",
-        "custom objects",
-        "form population",
-        "copy form data",
-        "form metadata",
-        "shipping address billing"
-      ]
-    },
-    {
-      "id": "sfra/b2c-save-form-data",
-      "title": "Saving Form Data",
-      "category": "sfra",
-      "url": "https://developer.salesforce.com/docs/commerce/sfra/guide/b2c-save-form-data.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfra/guide/b2c-save-form-data.md",
-      "summary": "Save form data using route:BeforeComplete event and ViewData object for different form types.",
-      "keywords": [
-        "route:BeforeComplete",
-        "save form data",
-        "ViewData",
-        "form data persistence",
-        "Account.js",
-        "SavePassword",
-        "form submission",
-        "store form data",
-        "form handling",
-        "SFRA forms"
-      ]
-    },
-    {
-      "id": "sfra/b2c-secure-forms",
-      "title": "Securing Forms",
-      "category": "sfra",
-      "url": "https://developer.salesforce.com/docs/commerce/sfra/guide/b2c-secure-forms.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfra/guide/b2c-secure-forms.md",
-      "summary": "Implement CSRF protection in SFRA forms using B2C Commerce middleware to prevent cross-site request forgery attacks.",
-      "keywords": [
-        "CSRF protection",
-        "cross-site request forgery",
-        "SFRA forms",
-        "csrfProtection middleware",
-        "validateAjaxRequest",
-        "validateRequest",
-        "form security",
-        "request forgery",
-        "CSRF framework",
-        "form validation"
       ]
     },
     {
@@ -15025,29 +12846,6 @@
         "Nobile_First",
         "SFRA issues",
         "code deployment"
-      ]
-    },
-    {
-      "id": "sfra/b2c-validate-form-data",
-      "title": "Validating Form Data",
-      "category": "sfra",
-      "url": "https://developer.salesforce.com/docs/commerce/sfra/guide/b2c-validate-form-data.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfra/guide/b2c-validate-form-data.md",
-      "headings": "Validation by Attribute • Validation by Function • Client-Side Validation Scripts",
-      "summary": "Configure server-side and client-side form validation in SFRA using attributes, functions, and error handling.",
-      "keywords": [
-        "form validation",
-        "server-side validation",
-        "client-side validation",
-        "form definition",
-        "SFRA",
-        "mandatory attribute",
-        "validation function",
-        "form error handling",
-        "InvalidateFormElement",
-        "HTML5 validation",
-        "jQuery AJAX",
-        "field validation"
       ]
     },
     {

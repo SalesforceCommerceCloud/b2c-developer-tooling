@@ -176,9 +176,13 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
 
     const statefulSession = getStoredSession();
     const explicitAuthFlags = this.detectExplicitAuthFlags();
-    const configuredClientId = config.clientId;
+    // Only a client ID resolved from user configuration constrains stateful auth.
+    // getDefaultClientId() is a stateless implicit-flow fallback and must not
+    // prevent an otherwise valid stored session from being reused.
+    const requiredStatefulClientId = config.clientId;
     const validSession =
-      statefulSession !== null && isStatefulTokenValid(statefulSession, requiredScopes, undefined, configuredClientId);
+      statefulSession !== null &&
+      isStatefulTokenValid(statefulSession, requiredScopes, undefined, requiredStatefulClientId);
 
     // Use stateful auth only when the session is valid and no explicit auth flags override it
     if (validSession && explicitAuthFlags.length === 0) {

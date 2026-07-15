@@ -22,6 +22,17 @@
  * human-facing .html page; `sourceUrl` is the raw .md fetched for content. Basenames are
  * unique within each category, so flattening does not collide.
  *
+ * IMPORTANT — only TOC-referenced files are indexed. The docs site publishes a
+ * page only if it is linked from a guide table-of-contents YAML (e.g.
+ * `b2c-commerce/guides/index.yml`, `sfra/guides/sfra-toc.yml`). Many `.md` files
+ * live in the repo as orphans (old pages whose content was consolidated
+ * elsewhere, drafts, etc.) and are NOT published — deriving a URL for them yields
+ * a dead 404. We therefore gather the set of `.md` basenames referenced (via
+ * uncommented `link:`/`source:` entries) by every guide TOC and skip any file
+ * whose basename is not in that set. Basename matching (not full path) is used
+ * deliberately: it mirrors the flattened URL scheme and tolerates a file being
+ * referenced from a sibling category's TOC via a relative `../../` link.
+ *
  * Optional enrichment: if `data/guides/enrichment.json` exists (produced by
  * `enrich-docs.ts`), each entry is augmented with an LLM-generated `summary` and
  * `keywords` for better recall. Missing enrichment is simply omitted.
@@ -80,16 +91,52 @@ function resolveDocsRepo(): string {
   return contentDir;
 }
 
-/** Recursively lists every `.md` file under a directory. */
-function walkMarkdown(dir: string): string[] {
+/** Recursively lists every file matching `predicate` under a directory. */
+function walkFiles(dir: string, predicate: (name: string) => boolean): string[] {
   const out: string[] = [];
   if (!fs.existsSync(dir)) return out;
   for (const entry of fs.readdirSync(dir, {withFileTypes: true})) {
     const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...walkMarkdown(full));
-    else if (entry.isFile() && entry.name.endsWith('.md')) out.push(full);
+    if (entry.isDirectory()) out.push(...walkFiles(full, predicate));
+    else if (entry.isFile() && predicate(entry.name)) out.push(full);
   }
   return out;
+}
+
+/** Recursively lists every `.md` file under a directory. */
+function walkMarkdown(dir: string): string[] {
+  return walkFiles(dir, (name) => name.endsWith('.md'));
+}
+
+/**
+ * Matches a `link:` or `source:` YAML entry pointing at a `.md` file, capturing
+ * the referenced path. Commented-out lines are excluded by the caller.
+ */
+const TOC_MD_LINK = /^\s*(?:link|source):\s*"?([^"\s]+\.md)"?\s*$/;
+
+/**
+ * Scans every guide table-of-contents YAML under `contentDir` and returns the
+ * set of `.md` basenames (without extension) that are actually referenced — i.e.
+ * the pages the docs site publishes. A page not in this set has no live URL.
+ *
+ * We match on basename rather than full path because URLs flatten nested dirs and
+ * a page may be referenced from a sibling category's TOC via a relative link.
+ * Lines that are commented out (`# link: ...`) are ignored so removed pages don't
+ * leak back in.
+ */
+function collectTocBasenames(contentDir: string): Set<string> {
+  const basenames = new Set<string>();
+  const tocFiles = walkFiles(contentDir, (name) => name.endsWith('.yml')).filter((f) =>
+    f.includes(`${path.sep}guides${path.sep}`),
+  );
+  for (const toc of tocFiles) {
+    for (const rawLine of fs.readFileSync(toc, 'utf-8').split('\n')) {
+      if (rawLine.trimStart().startsWith('#')) continue;
+      const m = rawLine.match(TOC_MD_LINK);
+      if (m) basenames.add(path.basename(m[1], '.md'));
+    }
+  }
+  return basenames;
 }
 
 function extractTitle(md: string, fallback: string): string {
@@ -122,11 +169,13 @@ function loadEnrichment(): Map<string, EnrichmentEntry> {
 function main(): void {
   const contentDir = resolveDocsRepo();
   const enrichment = loadEnrichment();
+  const published = collectTocBasenames(contentDir);
 
   const entries: DocEntry[] = [];
   // Maps an id to the file that first claimed it, so a duplicate warning can
   // name both the kept and the skipped file (walk order is filesystem-dependent).
   const seen = new Map<string, string>();
+  let skippedOrphans = 0;
 
   for (const category of CATEGORIES) {
     const guidesDir = path.join(contentDir, category, 'guides');
@@ -134,6 +183,12 @@ function main(): void {
 
     for (const file of files) {
       const basename = path.basename(file, '.md');
+      // Skip files not referenced by any guide TOC — the docs site never
+      // publishes them, so their derived URL would be a dead 404.
+      if (!published.has(basename)) {
+        skippedOrphans++;
+        continue;
+      }
       const id = `${category}/${basename}`;
       const keptFile = seen.get(id);
       if (keptFile) {
@@ -180,7 +235,8 @@ function main(): void {
   const enriched = entries.filter((e) => e.summary).length;
   console.log(
     `Generated guides index: ${entries.length} entries across ${CATEGORIES.length} categories ` +
-      `(${enriched} enriched) at ${path.join(GUIDES_DIR, 'index.json')}`,
+      `(${enriched} enriched, ${skippedOrphans} orphan files skipped as not TOC-referenced) ` +
+      `at ${path.join(GUIDES_DIR, 'index.json')}`,
   );
 }
 

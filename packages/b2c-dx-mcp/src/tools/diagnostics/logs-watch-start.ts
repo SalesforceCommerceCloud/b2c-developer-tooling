@@ -61,7 +61,9 @@ export function createLogsWatchStartTool(
         prefixes: z
           .array(z.string())
           .optional()
-          .describe('Log prefixes to watch. Defaults to ["error", "customerror"].'),
+          .describe(
+            'Log prefixes to watch. Defaults to ["error", "customerror"]. Use a path like "internal/server" to watch logs in a subdirectory.',
+          ),
         last_entries: z
           .number()
           .int()

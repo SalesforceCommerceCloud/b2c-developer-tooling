@@ -49,7 +49,7 @@ Most commands that interact with a B2C Commerce instance require authentication.
 - **Client credentials (API client):** Configure `clientId` and `clientSecret` in dw.json or environment variables. This is the default for automated/CI use.
 - **Browser-based (implicit OAuth):** Use `--user-auth` on any OAuth-enabled command to authenticate interactively via the browser. This opens Account Manager in your default browser for login.
 - **Basic auth:** Configure `username` and `password` for WebDAV operations.
-- **Stateful sessions:** Use `b2c auth login` for persistent browser-based login sessions.
+- **Stateful sessions:** Use `b2c auth login` for persistent browser-based login sessions or `b2c auth client` for persistent client authentication. Later commands reuse the valid saved session when no other client is configured.
 
 ### `--user-auth` Flag
 
