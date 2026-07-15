@@ -14,6 +14,8 @@ export type IdeType =
   | 'vscode'
   | 'codex'
   | 'opencode'
+  | 'gemini-cli'
+  | 'antigravity'
   | 'agentforce-vibes'
   | 'manual';
 

@@ -30,7 +30,7 @@ catalog:
   prettier: ^3.8.3
   shx: ^0.3.3
   sinon: ^21.0.1
-  tsx: ^4
+  tsx: ^4.22.0 # 4.22.0 switched from the deprecated module.register() to module.registerHooks(), silencing Node's DEP0205 warning in dev
   typescript: ^5
   typescript-eslint: ^8
   vscode-html-languageservice: 5.6.0

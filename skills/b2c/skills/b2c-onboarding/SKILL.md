@@ -28,6 +28,7 @@ Silently identify the IDE from system context:
 | "VS Code" / "Visual Studio Code"    | `vscode`      |
 | "Codex"                             | `codex`       |
 | "Gemini CLI"                        | `gemini-cli`  |
+| "Antigravity"                       | `antigravity` |
 | Unrecognized                        | `other`       |
 
 ### Step 2 — Install the other B2C skills plugins
@@ -41,7 +42,8 @@ This onboarding skill is part of the `b2c` plugin. For a full B2C Commerce setup
 | GitHub Copilot CLI | `copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling` then `copilot plugin install b2c-cli@b2c-developer-tooling` |
 | `cursor`      | Cursor Settings → Plugins → add marketplace URL `https://github.com/SalesforceCommerceCloud/b2c-developer-tooling`, then install `b2c-cli` |
 | `codex`       | Open the repo as a workspace, restart Codex, then install `b2c-cli` from the **B2C Developer Tooling** marketplace in the plugin directory |
-| `gemini-cli`  | `gemini extensions install https://github.com/SalesforceCommerceCloud/b2c-developer-tooling` (run in terminal, not inside the CLI) |
+| `gemini-cli`  | `gemini extensions install https://github.com/SalesforceCommerceCloud/b2c-developer-tooling` (run in terminal — installs the MCP server + context), then install skills with the file-copy installer below (`--ide gemini-cli`) |
+| `antigravity` | Use the file-copy installer below (`--ide antigravity`). For the MCP server, add `b2c-dx-mcp` to `.agents/mcp_config.json` — see the [MCP installation docs](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation) |
 | `other`       | Use the file-copy installer below |
 
 For clients other than Claude Code, the `b2c-dx-mcp` MCP server can be installed directly — see the [MCP installation docs](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation).

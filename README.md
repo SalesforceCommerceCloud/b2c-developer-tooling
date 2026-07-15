@@ -37,7 +37,18 @@ Install B2C Commerce agent skills and plugins in your AI-powered editor. Three p
 
 - **Codex CLI**: run `/plugins` and add from this repo (GitHub URL).
 
-- **Gemini CLI**: `gemini extensions install https://github.com/SalesforceCommerceCloud/b2c-developer-tooling`
+- **Gemini CLI**: install the extension (bundles the MCP server + project context), then add the skills:
+
+    ```
+    gemini extensions install https://github.com/SalesforceCommerceCloud/b2c-developer-tooling
+    npx @salesforce/b2c-cli setup skills b2c --ide gemini-cli
+    ```
+
+- **Google Antigravity** (IDE / CLI / SDK):
+
+    ```
+    npx @salesforce/b2c-cli setup skills b2c --ide antigravity
+    ```
 
 - **Any supported IDE (file-copy install via CLI)**:
 

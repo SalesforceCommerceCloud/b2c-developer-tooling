@@ -1,0 +1,16 @@
+{
+  "name": "b2c-developer-tooling",
+  "version": "1.8.0",
+  "description": "Salesforce B2C Commerce developer tooling for Gemini CLI: the b2c-dx-mcp MCP server (deploy cartridges, run jobs, manage On-Demand Sandboxes, stream logs, query docs) plus B2C project context. Install agent skills with: b2c setup skills --ide gemini-cli",
+  "contextFileName": "GEMINI.md",
+  "mcpServers": {
+    "b2c-dx-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@salesforce/b2c-dx-mcp@1.8.0",
+        "--allow-non-ga-tools"
+      ]
+    }
+  }
+}
