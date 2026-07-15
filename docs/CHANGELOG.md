@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.13
+
+### Patch Changes
+
+- [`4b3ecd1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4b3ecd15d66112725adca54007a743ac540a8cb1) - Clarify that commands without a configured client ID reuse the saved stateful session. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.12
 
 ### Patch Changes
