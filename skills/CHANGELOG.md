@@ -1,5 +1,28 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.5.1
+
+### Patch Changes
+
+- [#563](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/563) [`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999) - Update the `b2c-docs` skill for the new Salesforce Help corpus (`help-admin`, `help-merchant`), the `docsCategories` config field, and the `b2c docs cache` command (online content caching + purge). (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#565](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/565) [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767) - Update the b2c-config skill's IDE integration section to reference `setup ide vscode-types` and `setup ide tsserver-plugin` for Script API IntelliSense. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.5.0
+
+### Minor Changes
+
+- [#552](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/552) [`fdf3c5f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/fdf3c5fe570ff71fddfc4aa0d83c9e3a05be5406) - Add Metrics API support (**CLOSED BETA**). The new SCAPI Observability Metrics API (`observability/metrics/v1`) is now available across the tooling: (Thanks [@clavery](https://github.com/clavery)!)
+  - **SDK:** a typed `createMetricsClient` plus `getOverallMetrics`, `getSalesMetrics`, `getEcdnMetrics`, `getThirdPartyMetrics`, `getScapiMetrics`, `getScapiHooksMetrics`, `getMrtMetrics`, `getControllerMetrics`, `getOcapiMetrics`, and `getMetricsByCategory` operations that fetch operational time-series metrics for an organization. Admin OAuth scope `sfcc.metrics` is handled automatically. Time bounds accept a `Date` or epoch milliseconds and are sent to the API as epoch seconds; response timestamps are normalized to epoch milliseconds. Optional `enrichMetricsTags`/`parseSeriesTags` helpers add a structured `tags` object (`realm`, `environment`, applied filters, and per-series dimensions like `apiFamily`/`host`/`cacheStatus`) to each series, so consumers can group and filter by dimension instead of parsing the packed series id.
+  - **CLI:** a new `metrics` topic with per-category commands (`b2c metrics overall`, `b2c metrics scapi`, `b2c metrics ocapi`, etc.) and `b2c metrics list` — with table and `--json` output. The time window is set with `--from`/`--to` (relative like `1h`/`7d` or ISO 8601) and an optional `--window` duration (e.g. `--from 7d --window 1h` for a one-hour window seven days ago). Any open bound defaults to a 24-hour window (the API caps a window at 24 hours), so requests always send an explicit range. Category-specific filter flags (`--api-family`, `--api-name`, `--ocapi-category`, `--ocapi-api`, `--third-party-service-id`) live only on the command they apply to. Each series is enriched with a structured `tags` object by default; use `--no-tags` for the raw API shape.
+  - **MCP:** a `metrics_get` tool in the SCAPI toolset (gated as non-GA; requires `--allow-non-ga-tools`). Series are returned with the structured `tags` object.
+
+  This is a closed beta feature: it must be enabled for your organization, and its behavior, output, and OAuth scopes may change without notice.
+
+### Patch Changes
+
+- [#556](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/556) [`7fb1122`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7fb1122549bc4ace13049191ebb9a06e1f1ab925) - Pin the `b2c-dx-mcp` Claude Code plugin to the exact published MCP server version instead of `@latest`, and version its marketplace entry. `npx` reuses a cached package for a floating tag, so users could keep running a stale server (e.g. missing the latest docs tools) after an upgrade — an exact version forces a fetch, and versioning the marketplace entry makes clients re-pull the new pin. The pin and marketplace version track the MCP release automatically. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.4.5
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 ---
 name: b2c-config
-description: Inspect, configure, and troubleshoot the B2C CLI's setup, authentication, and instance connections. Use this skill as the **fallback whenever CLI setup, configuration, or authentication is unclear or failing** — including "command can't find my instance/credentials", auth errors (401/403, "client credentials required"), wrong sandbox being targeted, env var vs dw.json precedence, hostname mismatch warnings, missing tenantId/shortCode, OAuth scope errors, multi-instance switching, retrieving access tokens for scripts, and IDE/Prophet integration. Also use when the user needs to check what `dw.json` looks like, what fields it accepts (camelCase or kebab-case keys), or where the CLI is reading config from. Triggers include "why is the CLI connecting to the wrong instance", "auth keeps failing", "what config does the CLI see", "I need an OAuth token", "my dw.json isn't being picked up", or any general "how do I configure the CLI" question.
+description: Inspect, configure, and troubleshoot the B2C CLI's setup, authentication, and instance connections. Use this skill as the **fallback whenever CLI setup, configuration, or authentication is unclear or failing** — including "command can't find my instance/credentials", auth errors (401/403, "client credentials required"), wrong sandbox being targeted, env var vs dw.json precedence, hostname mismatch warnings, missing tenantId/shortCode, OAuth scope errors, multi-instance switching, retrieving access tokens for scripts, and IDE integration. Also use when the user needs to check what `dw.json` looks like, what fields it accepts (camelCase or kebab-case keys), or where the CLI is reading config from. Triggers include "why is the CLI connecting to the wrong instance", "auth keeps failing", "what config does the CLI see", "I need an OAuth token", "my dw.json isn't being picked up", or any general "how do I configure the CLI" question.
 ---
 
 # B2C Config Skill
@@ -131,22 +131,19 @@ b2c setup inspect --json | jq '.config'
 b2c setup inspect --json | jq '.sources'
 ```
 
-## IDE Integration (Prophet)
+## IDE Integration
 
-Use `b2c setup ide prophet` to generate a `dw.js` bridge script for the Prophet VS Code extension.
+Use `b2c setup ide` to configure IDE tooling that consumes the resolved CLI configuration and to enable Script API IntelliSense.
 
 ```bash
-# Generate ./dw.js in the current project
-b2c setup ide prophet
+# Vendor Script API TypeScript definitions + jsconfig.json (plain VS Code, WebStorm, etc.)
+b2c setup ide vscode-types
 
-# Overwrite existing file
-b2c setup ide prophet --force
-
-# Custom path
-b2c setup ide prophet --output .vscode/dw.js
+# Print the TS Server plugin path for LSP-based editors (Neovim, Helix, Zed, ...)
+b2c setup ide tsserver-plugin --json
 ```
 
-The generated script runs `b2c setup inspect --json --unmask` at runtime, so Prophet sees the same resolved config as CLI commands, including configuration plugins. It maps values to `dw.json`-style keys and passes through Prophet fields like `cartridgesPath`, `siteID`, and `storefrontPassword` when present.
+The B2C DX VS Code extension needs no setup — it injects the same TypeScript Server plugin at runtime.
 
 ## Managing Instances
 

@@ -107,7 +107,7 @@ See the [VS Code Extension](/vscode-extension/) section for the full overview, [
 - [Authentication Setup](./authentication) - Set up Account Manager, OCAPI, and WebDAV
 - [Analytics Reports (CIP/CCAC)](./analytics-reports-cip-ccac) - Run curated analytics reports and SQL queries
 - [Configuration](./configuration) - Configure instances and credentials
-- [IDE Integration](./ide-integration) - Connect Prophet VS Code to B2C CLI configuration
+- [IDE Integration](./ide-integration) - Connect third-party IDE tooling to B2C CLI configuration and enable Script API IntelliSense
 - [MCP Server](/mcp/) - AI-assisted development with Model Context Protocol
 - [VS Code Extension](/vscode-extension/) - Sandbox management, code sync, and the script debugger inside VS Code
 - [CLI Reference](/cli/) - Browse available commands

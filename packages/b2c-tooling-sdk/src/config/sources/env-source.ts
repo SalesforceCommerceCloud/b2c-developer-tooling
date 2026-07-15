@@ -42,6 +42,7 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_CATALOGS: 'catalogs',
   SFCC_LIBRARIES: 'libraries',
   SFCC_ASSET_QUERY: 'assetQuery',
+  SFCC_DOCS_CATEGORIES: 'docsCategories',
   SFCC_AUTH_METHODS: 'authMethods',
   SFCC_ACCOUNT_MANAGER_HOST: 'accountManagerHost',
   SFCC_SANDBOX_API_HOST: 'sandboxApiHost',
@@ -66,6 +67,7 @@ const ARRAY_FIELDS = new Set<keyof NormalizedConfig>([
   'authMethods',
   'cartridges',
   'catalogs',
+  'docsCategories',
   'libraries',
   'assetQuery',
 ]);

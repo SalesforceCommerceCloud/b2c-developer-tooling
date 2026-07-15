@@ -94,6 +94,27 @@ The B2C Script Debugger registers regardless of these toggles — it activates o
 | `b2c-dx.sandbox.pollingInterval` | `10` | Seconds between polls while a sandbox is in a transitional state (`creating`, `starting`, `stopping`, `deleting`, `cloning`). Range: 2–300. Polling stops automatically once the realm settles. |
 | `b2c-dx.telemetry.enabled` | `true` | Send anonymous usage telemetry. Honors VS Code's `telemetry.telemetryLevel` — disabling that disables this regardless of this setting. |
 
+### XML schema validation
+
+The extension contributes XSD-based validation for B2C metadata XML files via the [Red Hat XML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-xml), which is declared as an extension dependency and installed automatically. When a file path matches one of the contributed globs, diagnostics, autocomplete, and hover docs are driven by the corresponding B2C schema.
+
+Both common workspace conventions are recognized:
+
+- **Canonical site-archive layout** — `sites/<site-id>/`, `catalogs/<id>/`, `libraries/<id>/`, `customer_lists/<id>/`, `pricebooks/`, `inventory_lists/`, `meta/`.
+- **Exploded `metadata/` workspace layout** — `metadata/sites/<id>/*.xml`, `metadata/catalogs/*.xml`, `metadata/promotions/*.xml`, etc.
+
+Schemas covered include catalog, promotion, slot, customer-group, customer-list, custom-object, inventory, library, payment-method, payment-processor, preference, pricebook, redirect-url, search/search2, shipping, site, sourcecode, store, url-rule, jobs, services, schedules, ab-test (and participants), assignment, cache-settings, commerce-feature-state, coupon (and redemption), csrf-allowlist, customer, customer-cdn-settings, dcext, form, geolocation, gift-certificate, locales, meta (system/custom-objecttype-extensions), oauth-providers, page-meta-tags, price-adjustment-limits, product-list, sitemap-configuration, sorting-rules, storefronts, and tax. The full mapping is at `packages/b2c-vs-extension/resources/xsd-mappings.json`.
+
+To disable XML validation globally in your workspace, set:
+
+```jsonc
+{
+  "xml.validation.enabled": false
+}
+```
+
+To opt out of the Red Hat XML dependency entirely, uninstall this extension or pin to a release prior to the one that introduced XML validation.
+
 ### Complete defaults (copy-paste)
 
 ```jsonc

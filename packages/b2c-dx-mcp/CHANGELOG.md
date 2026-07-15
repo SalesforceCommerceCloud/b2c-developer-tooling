@@ -1,5 +1,49 @@
 # @salesforce/b2c-dx-mcp
 
+## 1.8.0
+
+### Minor Changes
+
+- [#563](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/563) [`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999) - Add a Salesforce Help documentation corpus to `docs search`/`docs read` (and the MCP docs tools), covering Business Manager administration and merchandising content from help.salesforce.com. It is split into two categories — `help-admin` (import/export, jobs, replication, security, Account Manager, permissions, logs, inventory) and `help-merchant` (catalogs, products, promotions, search, content, analytics, SEO) — so you can search platform-administration and merchandising topics alongside the existing Script API, Developer Center, and tooling docs. (Thanks [@clavery](https://github.com/clavery)!)
+
+  You can scope the whole docs corpus to chosen categories with the new `docsCategories` config field, sourced from `dw.json` (`docs-categories`), the `SFCC_DOCS_CATEGORIES` env var, or `package.json` — in addition to the existing `--topics` / `--docs-topics` flags (which still override config). For example, set `"docs-categories": ["script-api", "job-step", "help-admin", "tooling"]` in dw.json to expose only developer + admin docs.
+
+### Patch Changes
+
+- [#563](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/563) [`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999) - `docs read` / `docs_read` now apply the same workspace-aware ranking as `docs search` when resolving a **fuzzy** query, so a fuzzy read (e.g. `productmgr`) returns the same top result that search ranks first for the current project. Exact id lookups (e.g. `dw.catalog.ProductMgr`) are unaffected — they resolve deterministically. The CLI gains a `--workspace` flag on `docs read` (defaults to auto-detect; `all` opts out); the MCP `docs_read` uses the server's detected workspace. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999), [`9fb332d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9fb332d92cc3289d2796c97a4c70f839dfe5f999), [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767), [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767), [`54d69bc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/54d69bc3e439d0252f6a1456e9aa8a307e7a2767)]:
+  - @salesforce/b2c-tooling-sdk@1.20.0
+
+## 1.7.0
+
+### Minor Changes
+
+- [#557](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/557) [`71dfe3a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/71dfe3a86b7e752ffad9f3d44f1e7c6357e431fa) - Fix costly recursive filesystem scan on MCP server startup. Workspace auto-discovery previously did an unbounded `**/.project` walk from the launch directory, which could hang startup when the server was spawned from a home directory (as Cursor and Claude Code often do). Discovery is now skipped entirely when explicit `--toolsets`/`--tools` are provided, skipped for home and root directories, and otherwise depth-bounded and short-circuited at the first match. `findCartridges` gains optional `maxDepth` and `firstMatchOnly` options for callers that need a bounded search (existing callers are unaffected). (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`71dfe3a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/71dfe3a86b7e752ffad9f3d44f1e7c6357e431fa)]:
+  - @salesforce/b2c-tooling-sdk@1.19.1
+
+## 1.6.0
+
+### Minor Changes
+
+- [#552](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/552) [`fdf3c5f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/fdf3c5fe570ff71fddfc4aa0d83c9e3a05be5406) - Add Metrics API support (**CLOSED BETA**). The new SCAPI Observability Metrics API (`observability/metrics/v1`) is now available across the tooling: (Thanks [@clavery](https://github.com/clavery)!)
+  - **SDK:** a typed `createMetricsClient` plus `getOverallMetrics`, `getSalesMetrics`, `getEcdnMetrics`, `getThirdPartyMetrics`, `getScapiMetrics`, `getScapiHooksMetrics`, `getMrtMetrics`, `getControllerMetrics`, `getOcapiMetrics`, and `getMetricsByCategory` operations that fetch operational time-series metrics for an organization. Admin OAuth scope `sfcc.metrics` is handled automatically. Time bounds accept a `Date` or epoch milliseconds and are sent to the API as epoch seconds; response timestamps are normalized to epoch milliseconds. Optional `enrichMetricsTags`/`parseSeriesTags` helpers add a structured `tags` object (`realm`, `environment`, applied filters, and per-series dimensions like `apiFamily`/`host`/`cacheStatus`) to each series, so consumers can group and filter by dimension instead of parsing the packed series id.
+  - **CLI:** a new `metrics` topic with per-category commands (`b2c metrics overall`, `b2c metrics scapi`, `b2c metrics ocapi`, etc.) and `b2c metrics list` — with table and `--json` output. The time window is set with `--from`/`--to` (relative like `1h`/`7d` or ISO 8601) and an optional `--window` duration (e.g. `--from 7d --window 1h` for a one-hour window seven days ago). Any open bound defaults to a 24-hour window (the API caps a window at 24 hours), so requests always send an explicit range. Category-specific filter flags (`--api-family`, `--api-name`, `--ocapi-category`, `--ocapi-api`, `--third-party-service-id`) live only on the command they apply to. Each series is enriched with a structured `tags` object by default; use `--no-tags` for the raw API shape.
+  - **MCP:** a `metrics_get` tool in the SCAPI toolset (gated as non-GA; requires `--allow-non-ga-tools`). Series are returned with the structured `tags` object.
+
+  This is a closed beta feature: it must be enabled for your organization, and its behavior, output, and OAuth scopes may change without notice.
+
+### Patch Changes
+
+- [#556](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/556) [`7fb1122`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7fb1122549bc4ace13049191ebb9a06e1f1ab925) - Pin the `b2c-dx-mcp` Claude Code plugin to the exact published MCP server version instead of `@latest`, and version its marketplace entry. `npx` reuses a cached package for a floating tag, so users could keep running a stale server (e.g. missing the latest docs tools) after an upgrade — an exact version forces a fetch, and versioning the marketplace entry makes clients re-pull the new pin. The pin and marketplace version track the MCP release automatically. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`fdf3c5f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/fdf3c5fe570ff71fddfc4aa0d83c9e3a05be5406)]:
+  - @salesforce/b2c-tooling-sdk@1.19.0
+
 ## 1.5.0
 
 ### Minor Changes

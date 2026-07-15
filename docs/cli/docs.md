@@ -1,29 +1,30 @@
 ---
-description: Search, read, and download B2C Commerce documentation including Script API reference, Developer Center guides, XSD schemas, and job steps.
+description: Search, read, and download B2C Commerce documentation including Script API reference, Developer Center guides, Salesforce Help, XSD schemas, and job steps.
 ---
 
 # Docs Commands
 
-Commands for searching and reading B2C Commerce documentation spanning multiple corpora: Script API reference (`dw.*` classes/modules), **Developer Center guides** (conceptual/how-to content across Commerce API, PWA Kit, SFRA, and more), **tooling documentation** (this project's own guides), the **standard (system) job step** catalog, and bundled XSD schemas. Download fresh Script API documentation from an instance.
+Commands for searching and reading B2C Commerce documentation spanning multiple corpora: Script API reference (`dw.*` classes/modules), **Developer Center guides** (conceptual/how-to content across Commerce API, PWA Kit, SFRA, and more), **Salesforce Help** (administration and merchandising content from help.salesforce.com), **tooling documentation** (this project's own guides), the **standard (system) job step** catalog, and bundled XSD schemas. Download fresh Script API documentation from an instance.
 
-**Use these commands for any B2C Commerce developer or administrator question that is not already grounded in your project context** — from Script API method lookups to SCAPI integration patterns, job step parameters, storefront framework guides, and authentication flows.
+**Use these commands for any B2C Commerce developer or administrator question that is not already grounded in your project context** — from Script API method lookups to SCAPI integration patterns, job step parameters, storefront framework guides, Business Manager administration, and authentication flows.
 
-The bundled corpus searched by `docs search` / `docs read` includes:
+The corpus searched by `docs search` / `docs read` includes:
 
-- **Script API reference** — `dw.*` classes/modules for server-side scripting. Script API entries include durable permalinks to developer.salesforce.com pages (both .html for browsing and .md for content, though the content itself is bundled in the CLI).
+- **Script API reference** — `dw.*` classes/modules for server-side scripting (category: `script-api`). Content is read online from developer.salesforce.com (cached locally after first read); the search index is bundled.
 - **Developer Center guides** — conceptual and how-to content from B2C Commerce Developer Center, organized into categories: `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`
+- **Salesforce Help** — administration and merchandising documentation from help.salesforce.com, split into two categories: `help-admin` (import/export, jobs, replication, security, Account Manager, permissions, logs, inventory ops) and `help-merchant` (catalogs, products, promotions, search, content, analytics, SEO). Each entry's `url` links the live Help article; content is read from the raw markdown source.
 - **Tooling guides** — documentation for this CLI, MCP server, SDK, and VS Code extension (category: `tooling`)
-- **Standard job steps** — built-in job step type IDs (for example `ImportCatalog`, `ExportCatalog`, `ImportInventoryLists`) that you add to Business Manager job flows. Read the catalog overview with `b2c docs read job-steps`, or a specific step with `b2c docs read <TypeID>`. See the `b2c-cli:b2c-job` and `b2c:b2c-custom-job-steps` skills for how standard steps fit into job flows.
+- **Standard job steps** — built-in job step type IDs (for example `ImportCatalog`, `ExportCatalog`, `ImportInventoryLists`) that you add to Business Manager job flows (category: `job-step`). Read the catalog overview with `b2c docs read job-steps`, or a specific step with `b2c docs read <TypeID>`. See the `b2c-cli:b2c-job` and `b2c:b2c-custom-job-steps` skills for how standard steps fit into job flows.
 - **XSD schemas** — import/export data format definitions
 
-Search results include `category`, `summary`, `keywords`, `url`, and `sourceUrl` fields to help triage matches before reading full content. Each documentation entry with a public page carries both `url` (the `.html` page for browser viewing) and `sourceUrl` (the raw `.md` source). When you `docs read` a Developer Center guide, its content is fetched online from the `sourceUrl` (with a graceful offline fallback to the indexed summary + headings).
+Search results include `category`, `summary`, `keywords`, `url`, and `sourceUrl` fields to help triage matches before reading full content. Each documentation entry with a public page carries both `url` (the `.html` page for browser viewing) and `sourceUrl` (the raw `.md` source). Content for online corpora (Script API, Developer Center guides, Salesforce Help) is fetched from the `sourceUrl` on `docs read` and cached locally; if a fetch fails, the command falls back to the indexed summary + headings and prints both URLs so you can retrieve the page yourself. Standard job steps are the one corpus whose content ships bundled (they have no public page).
 
 ## Authentication
 
 | Operation       | Auth Required                     |
 | --------------- | --------------------------------- |
-| `docs search`   | None (uses local bundled docs)    |
-| `docs read`     | None (bundled docs + online fetch for guides)    |
+| `docs search`   | None (uses the local bundled index)    |
+| `docs read`     | None (bundled job steps + online fetch for Script API, guides, and Help)    |
 | `docs schema`   | None (uses local bundled schemas) |
 | `docs download` | Instance + WebDAV credentials     |
 
@@ -60,7 +61,7 @@ b2c docs search [query]
 | Flag               | Description                                                                                                                                                                                 | Default |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | `--limit`, `-l`    | Maximum number of results to display                                                                                                                                                        | `20`    |
-| `--category`, `-c` | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step`                                                        | (none)  |
+| `--category`, `-c` | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step`, `help-admin`, `help-merchant`                                                        | (none)  |
 | `--workspace`      | Workspace awareness: `auto` (default, auto-detects project type), `all` (disable), or specify one or more types comma-separated: `cartridges`, `sfra`, `pwa-kit-v3`, `storefront-next`. Boosts relevant categories and de-boosts competing storefront frameworks      | `auto`  |
 | `--topics`         | Allowlist that bounds the whole corpus to these categories (comma-separated; env `SFCC_DOCS_TOPICS`). `--category`/`--workspace` narrow within it; unknown names are ignored with a warning | (all)   |
 | `--list`           | List all available documentation entries                                                                                                                                                    | `false` |
@@ -84,6 +85,12 @@ b2c docs search ProductMgr --category script-api
 
 # Search PWA Kit / MRT documentation
 b2c docs search "deploy bundle" --category pwa-kit-managed-runtime
+
+# Search Salesforce Help administration content (import/export, jobs, security, ...)
+b2c docs search "site import export" --category help-admin
+
+# Search Salesforce Help merchandising content (catalogs, promotions, search, ...)
+b2c docs search "price book assignment" --category help-merchant
 
 # Find a standard job step by name
 b2c docs search ImportCatalog
@@ -159,7 +166,7 @@ Default output is a table with `id`, `category`, `title`, and `score` columns. U
 
 ## b2c docs read
 
-Read documentation for a specific entry. For Developer Center guides, content is fetched online from developer.salesforce.com (with graceful offline fallback showing summary + headings + URL if the network fetch fails).
+Read documentation for a specific entry. For online corpora (Script API, Developer Center guides, and Salesforce Help), content is fetched from the raw markdown source and cached locally after the first read (with a graceful offline fallback showing summary + headings + both URLs if the network fetch fails). Standard job steps are read from the bundled copy.
 
 ### Usage
 
@@ -179,6 +186,7 @@ b2c docs read <query>
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------- |
 | `--raw`, `-r` | Output raw markdown (no terminal rendering)                                                                                          | `false` |
 | `--topics`    | Allowlist that bounds readable docs to these categories (comma-separated; env `SFCC_DOCS_TOPICS`). An id outside it will not resolve | (all)   |
+| `--workspace` | Favor a workspace type (`auto`\|`all`\|`cartridges`\|`sfra`\|`pwa-kit-v3`\|`storefront-next`) when resolving a fuzzy query, matching `docs search`. Ignored for an exact id match | `auto`  |
 
 ### Examples
 
@@ -192,6 +200,10 @@ b2c docs read dw.catalog.ProductMgr
 # Read a Developer Center guide by namespaced ID
 b2c docs read sfnext/sfnext-get-started
 b2c docs read commerce-api/slas-passwordless-login-registration
+
+# Read a Salesforce Help article by namespaced ID
+b2c docs read help-admin/b2c_site_import_export
+b2c docs read help-merchant/b2c_creating_price_books
 
 # Read a standard job step's purpose + configuration parameters
 b2c docs read ImportCatalog
@@ -211,7 +223,44 @@ b2c docs read ProductMgr --json
 
 ### Output
 
-By default, markdown is rendered for terminal display. Raw markdown is emitted when using `--raw` (or when output is not a TTY). For Developer Center guides, the command fetches full content online from the sourceUrl (.md); if the fetch fails, it displays the locally-indexed summary, section headings, and the url (.html) for manual browsing.
+By default, markdown is rendered for terminal display. Raw markdown is emitted when using `--raw` (or when output is not a TTY). For online corpora (Script API, Developer Center guides, Salesforce Help), the command fetches full content from the sourceUrl (.md) and caches it locally; if the fetch fails, it displays the locally-indexed summary, section headings, and both the url (.html) and sourceUrl (.md) so you can retrieve the page yourself.
+
+> **Fuzzy read matches the search ranking:** `docs read` resolves an exact id deterministically (e.g. `dw.catalog.ProductMgr` always reads that class). For a *fuzzy* query (e.g. `productmgr`), it applies the same workspace-aware ranking as `docs search` — auto-detecting the workspace by default, or honoring `--workspace` — so a fuzzy `docs read` resolves the same top hit that `docs search` ranks first. Use `--workspace all` to opt out of the preference.
+
+---
+
+## b2c docs cache
+
+Show or clear the local documentation content cache. Content for online corpora (Script API, Developer Center guides, Salesforce Help) is fetched on `docs read` and cached on disk under the CLI's cache directory (e.g. `~/.cache/b2c/docs-content` on Linux, `~/Library/Caches/b2c/docs-content` on macOS), so repeated reads — within a session and across CLI invocations — avoid the network for up to 7 days per entry.
+
+### Usage
+
+```bash
+b2c docs cache [--clear]
+```
+
+### Flags
+
+| Flag      | Description                                                    | Default |
+| --------- | -------------------------------------------------------------- | ------- |
+| `--clear` | Delete all cached documentation content (memory + on-disk)     | `false` |
+
+### Examples
+
+```bash
+# Show cache location, file count, and total size
+b2c docs cache
+
+# Clear the cache (forces the next read to re-fetch from the source)
+b2c docs cache --clear
+
+# JSON output
+b2c docs cache --json
+```
+
+### Output
+
+Without `--clear`, prints the cache directory, number of cached files, and total size. With `--clear`, removes both cache tiers and reports how many files (and how much space) were freed.
 
 ---
 

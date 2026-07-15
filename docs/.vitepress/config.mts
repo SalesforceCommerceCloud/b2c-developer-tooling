@@ -1,3 +1,4 @@
+import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import {defineConfig} from 'vitepress';
@@ -21,17 +22,52 @@ function copyMarkdownSources(srcDir: string, outDir: string) {
   }
 }
 
+// Extract the committed Salesforce Help corpus tarball (docs/help-content.tar.gz)
+// into <outDir>/help so the converted .md pages are served verbatim at
+// <base>/help/<category>/<id>.md. The tarball is the committed artifact (one
+// file instead of ~1000 loose .md); the loose tree is git-ignored. No-op if the
+// tarball is absent so a partial checkout still builds.
+function extractHelpCorpus(srcDir: string, outDir: string) {
+  const tarball = path.join(srcDir, 'help-content.tar.gz');
+  if (!fs.existsSync(tarball)) {
+    console.warn(`[help-corpus] ${tarball} not found; skipping Help corpus extraction`);
+    return;
+  }
+  fs.mkdirSync(outDir, {recursive: true});
+  execFileSync('tar', ['-xzf', tarball, '-C', outDir], {stdio: 'inherit'});
+}
+
 // Build configuration from environment
 const isDevBuild = process.env.IS_DEV_BUILD === 'true';
 
+// Per-PR preview builds (CI) set DOCS_BASE_PATH to an absolute path such as "/pr-123/".
+// When present it overrides the normal base so every asset and link URL is prefixed for
+// the preview's subdirectory. Normalized to always have a single leading/trailing slash.
+const previewBasePath = process.env.DOCS_BASE_PATH
+  ? `/${process.env.DOCS_BASE_PATH.replace(/^\/+|\/+$/g, '')}/`
+  : undefined;
+
+// Public production docs URL — preview builds point their version switcher here because
+// relative links would otherwise resolve under the ephemeral /pr-N/ base.
+const prodDocsUrl = 'https://salesforcecommercecloud.github.io/b2c-developer-tooling/';
+
 // Base paths - dev build lives in /dev/ subdirectory, stable/release is at root
 const siteBase = '/b2c-developer-tooling';
-const basePath = isDevBuild ? `${siteBase}/dev/` : `${siteBase}/`;
+const basePath = previewBasePath ?? (isDevBuild ? `${siteBase}/dev/` : `${siteBase}/`);
 
 // Build version dropdown items
 // VitePress prepends base path to links starting with /, so we use relative paths
 // that work correctly for each build context
 function getVersionItems() {
+  if (previewBasePath) {
+    // Preview build: docs live under an ephemeral /pr-N/ base with no sibling versions.
+    // Link out to the published docs with absolute URLs so the switcher works.
+    return [
+      {text: 'Latest Release', link: prodDocsUrl},
+      {text: 'Development (main)', link: `${prodDocsUrl}dev/`},
+    ];
+  }
+
   if (isDevBuild) {
     // Dev build: base is /b2c-developer-tooling/dev/
     // Use ../ to navigate up to stable docs at root
@@ -67,6 +103,7 @@ const guidesSidebar = [
       {text: 'sfcc-ci SDK Migration', link: '/guide/sdk-migration'},
       {text: 'Account Manager', link: '/guide/account-manager'},
       {text: 'Analytics Reports (CIP/CCAC)', link: '/guide/analytics-reports-cip-ccac'},
+      {text: 'Metrics', link: '/guide/metrics'},
       {text: 'IDE Integration', link: '/guide/ide-integration'},
       {text: 'Script Debugger', link: '/guide/script-debugger'},
       {text: 'Scaffolding', link: '/guide/scaffolding'},
@@ -122,7 +159,9 @@ const referenceSidebar = [
       {text: 'eCDN', link: '/cli/ecdn'},
       {text: 'Jobs', link: '/cli/jobs'},
       {text: 'Logs', link: '/cli/logs'},
+      {text: 'Metrics', link: '/cli/metrics'},
       {text: 'MRT', link: '/cli/mrt'},
+      {text: 'Preferences', link: '/cli/preferences'},
       {text: 'Sandbox', link: '/cli/sandbox'},
       {text: 'Scaffold', link: '/cli/scaffold'},
       {text: 'SCAPI Schemas', link: '/cli/scapi-schemas'},
@@ -170,7 +209,7 @@ const referenceSidebar = [
       {
         text: 'Documentation',
         collapsed: true,
-        items: [{text: 'Script API & Schemas', link: '/mcp/tools/docs'}],
+        items: [{text: 'Documentation Tools', link: '/mcp/tools/docs'}],
       },
       {
         text: 'Storefront Next (deprecated)',
@@ -228,6 +267,13 @@ export default defineConfig({
 
   buildEnd(siteConfig) {
     copyMarkdownSources(siteConfig.srcDir, siteConfig.outDir);
+    // Extract the Salesforce Help corpus straight into the build output (raw
+    // .md served verbatim; fetched by `b2c docs read` via each entry's
+    // sourceUrl). Done here — in buildEnd — because it only matters for the
+    // deployed production site (dev never serves it), and this hook runs on
+    // `vitepress build` only, after rendering, so nothing lands in the source
+    // tree or the VitePress page graph.
+    extractHelpCorpus(siteConfig.srcDir, siteConfig.outDir);
   },
 
   // Show deeper heading levels in the outline; register group-icons md plugin
@@ -291,7 +337,7 @@ export default defineConfig({
       {text: 'Reference', link: '/cli/'},
       {text: 'SDK', link: '/api/'},
       {
-        text: isDevBuild ? 'Dev' : 'Latest',
+        text: previewBasePath ? 'Preview' : isDevBuild ? 'Dev' : 'Latest',
         items: getVersionItems(),
       },
     ],

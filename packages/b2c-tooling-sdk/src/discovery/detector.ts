@@ -9,7 +9,7 @@
  * @module discovery/detector
  */
 import {getLogger} from '../logging/logger.js';
-import type {DetectionResult, DetectionPattern, DetectOptions, ProjectType} from './types.js';
+import type {DetectionResult, DetectionPattern, DetectOptions, DetectionContext, ProjectType} from './types.js';
 import {DEFAULT_PATTERNS} from './patterns/index.js';
 
 /**
@@ -41,6 +41,7 @@ import {DEFAULT_PATTERNS} from './patterns/index.js';
 export class WorkspaceTypeDetector {
   private workspacePath: string;
   private patterns: DetectionPattern[];
+  private context: DetectionContext;
 
   /**
    * Creates a new WorkspaceTypeDetector.
@@ -51,6 +52,7 @@ export class WorkspaceTypeDetector {
   constructor(workspacePath: string, options: DetectOptions = {}) {
     this.workspacePath = workspacePath;
     this.patterns = this.resolvePatterns(options);
+    this.context = {maxDepth: options.maxDepth};
   }
 
   /**
@@ -76,7 +78,7 @@ export class WorkspaceTypeDetector {
 
     for (const pattern of this.patterns) {
       try {
-        const matched = await pattern.detect(this.workspacePath);
+        const matched = await pattern.detect(this.workspacePath, this.context);
         logger.trace({pattern: pattern.name, projectType: pattern.projectType, matched}, 'Detection pattern evaluated');
         if (matched) {
           matchedPatterns.push(pattern.name);

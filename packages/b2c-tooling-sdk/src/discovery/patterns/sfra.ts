@@ -43,12 +43,17 @@ import {readPackageJson} from '../utils.js';
 export const sfraPattern: DetectionPattern = {
   name: 'sfra',
   projectType: 'sfra',
-  detect: async (workspacePath) => {
+  detect: async (workspacePath, context) => {
     // Primary check: Look for app_storefront_base cartridge (the core SFRA cartridge)
-    // This is the definitive indicator per Salesforce documentation
-    const cartridges = findCartridges(workspacePath);
-    const hasSfraCartridge = cartridges.some((cartridge) => cartridge.name === 'app_storefront_base');
-    if (hasSfraCartridge) {
+    // This is the definitive indicator per Salesforce documentation. Filter to
+    // that name and stop at the first hit so we don't enumerate every cartridge,
+    // and honor the depth bound so a broad root isn't fully scanned.
+    const cartridges = findCartridges(workspacePath, {
+      include: ['app_storefront_base'],
+      firstMatchOnly: true,
+      maxDepth: context?.maxDepth,
+    });
+    if (cartridges.length > 0) {
       return true;
     }
 

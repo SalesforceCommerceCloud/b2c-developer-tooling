@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-tooling-sdk",
   "description": "Core tooling library for Salesforce B2C Commerce CLI",
-  "version": "1.18.0",
+  "version": "1.20.0",
   "author": "Charles Lavery",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -114,6 +114,11 @@
       "types": "./dist/esm/operations/cip/index.d.ts",
       "default": "./dist/esm/operations/cip/index.js"
     },
+    "./operations/metrics": {
+      "development": "./src/operations/metrics/index.ts",
+      "types": "./dist/esm/operations/metrics/index.d.ts",
+      "default": "./dist/esm/operations/metrics/index.js"
+    },
     "./slas": {
       "development": "./src/slas/index.ts",
       "types": "./dist/esm/slas/index.d.ts",
@@ -205,10 +210,11 @@
   "files": [
     "dist",
     "specs",
-    "data"
+    "data",
+    "!data/script-api/*.md"
   ],
   "scripts": {
-    "generate:types": "openapi-typescript specs/data-api.json -o src/clients/ocapi.generated.ts && openapi-typescript specs/slas-admin-v1.yaml -o src/clients/slas-admin.generated.ts && openapi-typescript specs/ods-api-v1.json -o src/clients/ods.generated.ts && openapi-typescript specs/mrt-api-v1.json -o src/clients/mrt.generated.ts && openapi-typescript specs/mrt-b2c.json -o src/clients/mrt-b2c.generated.ts && openapi-typescript specs/custom-apis-v1.yaml -o src/clients/custom-apis.generated.ts && openapi-typescript specs/scapi-schemas-v1.yaml -o src/clients/scapi-schemas.generated.ts && openapi-typescript specs/cdn-zones-v1.yaml -o src/clients/cdn-zones.generated.ts && openapi-typescript specs/am-users-api-v1.yaml -o src/clients/am-users-api.generated.ts && openapi-typescript specs/am-roles-api-v1.yaml -o src/clients/am-roles-api.generated.ts && openapi-typescript specs/am-apiclients-api-v1.yaml -o src/clients/am-apiclients-api.generated.ts && openapi-typescript specs/granular-replications-v1.yaml -o src/clients/granular-replications.generated.ts",
+    "generate:types": "openapi-typescript specs/data-api.json -o src/clients/ocapi.generated.ts && openapi-typescript specs/slas-admin-v1.yaml -o src/clients/slas-admin.generated.ts && openapi-typescript specs/ods-api-v1.json -o src/clients/ods.generated.ts && openapi-typescript specs/mrt-api-v1.json -o src/clients/mrt.generated.ts && openapi-typescript specs/mrt-b2c.json -o src/clients/mrt-b2c.generated.ts && openapi-typescript specs/custom-apis-v1.yaml -o src/clients/custom-apis.generated.ts && openapi-typescript specs/scapi-schemas-v1.yaml -o src/clients/scapi-schemas.generated.ts && openapi-typescript specs/cdn-zones-v1.yaml -o src/clients/cdn-zones.generated.ts && openapi-typescript specs/am-users-api-v1.yaml -o src/clients/am-users-api.generated.ts && openapi-typescript specs/am-roles-api-v1.yaml -o src/clients/am-roles-api.generated.ts && openapi-typescript specs/am-apiclients-api-v1.yaml -o src/clients/am-apiclients-api.generated.ts && openapi-typescript specs/granular-replications-v1.yaml -o src/clients/granular-replications.generated.ts && openapi-typescript specs/preferences-v1.yaml -o src/clients/preferences.generated.ts && openapi-typescript specs/metrics-v1.json -o src/clients/metrics.generated.ts",
     "build": "pnpm run generate:types && pnpm run build:esm",
     "build:esm": "tsc -p tsconfig.esm.json",
     "clean": "shx rm -rf dist",
@@ -234,6 +240,7 @@
     "postpack": "git checkout package.json",
     "generate:guides-index": "tsx scripts/generate-guides-index.ts",
     "generate:tooling-index": "tsx scripts/generate-tooling-index.ts",
+    "generate:help-corpus": "tsx scripts/generate-help-corpus.ts",
     "enrich:docs": "tsx scripts/enrich-docs.ts"
   },
   "devDependencies": {

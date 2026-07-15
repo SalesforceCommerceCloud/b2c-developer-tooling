@@ -177,6 +177,8 @@ export async function loader({ context }: LoaderFunctionArgs) {
 
 ## Related Skills
 
+- `storefront-next:sfnext-scapi-management` - Adding/removing SCAPI clients and discovering API shapes
+- `storefront-next:sfnext-custom-apis` - Calling custom API endpoints from loaders/actions
 - `storefront-next:sfnext-routing` - Route file conventions and module exports
 - `storefront-next:sfnext-components` - Rendering loader data with createPage and Suspense
 - `storefront-next:sfnext-state-management` - Client-side Zustand stores (NOT data fetching)
