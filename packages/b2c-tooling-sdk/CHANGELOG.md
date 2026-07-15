@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.20.1
+
+### Patch Changes
+
+- [#572](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/572) [`3b1152f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3b1152f4a21bf167b1c647677f36c1507d0a476c) - Fix dead 404 links in the Developer Center guides documentation corpus. The guides index now includes only pages that are published on developer.salesforce.com (referenced from a guide table-of-contents), removing 105 orphaned entries whose URLs returned 404 in `b2c docs search`/`docs read`. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.20.0
 
 ### Minor Changes

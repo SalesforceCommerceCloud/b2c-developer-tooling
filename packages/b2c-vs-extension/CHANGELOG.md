@@ -1,5 +1,16 @@
 # Change Log
 
+## 1.0.0
+
+### Major Changes
+
+- [#570](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/570) [`a524534`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a5245345c319d88cc515fd414b2e228a41712770) - Release the B2C Commerce VS Code extension 1.0. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`3b1152f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3b1152f4a21bf167b1c647677f36c1507d0a476c)]:
+  - @salesforce/b2c-tooling-sdk@1.20.1
+
 ## 0.11.0
 
 ### Minor Changes
