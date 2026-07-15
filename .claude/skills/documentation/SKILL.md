@@ -259,6 +259,43 @@ pnpm run docs:build
 pnpm run docs:preview
 ```
 
+## Guides Search Corpus (`b2c docs`)
+
+Separate from the Vitepress site above, the SDK bundles a search index that
+powers `b2c docs search` / `docs read` and the MCP `docs_*` tools. For the
+Developer Center guides corpus, only lightweight metadata is bundled
+(`packages/b2c-tooling-sdk/data/guides/index.json`); the page content itself is
+fetched live from developer.salesforce.com at read time.
+
+Regenerate the index from a local clone of the `commerce-cloud-docs` content
+repo (defaults to `~/code/commerce-cloud-docs`):
+
+```bash
+COMMERCE_DOCS_REPO=/path/to/commerce-cloud-docs \
+  pnpm --filter @salesforce/b2c-tooling-sdk run generate:guides-index
+```
+
+**Only TOC-referenced pages are indexed.** The generator (`scripts/generate-guides-index.ts`)
+skips any `.md` file not linked from a guide table-of-contents YAML (e.g.
+`b2c-commerce/guides/index.yml`). Orphan files (old pages consolidated elsewhere,
+drafts) are not published by the docs site, so indexing them would yield dead
+404 URLs.
+
+### Verifying links (local only)
+
+After regenerating, verify every URL in the index resolves:
+
+```bash
+pnpm --filter @salesforce/b2c-tooling-sdk run check:guides-links
+```
+
+Run this from a normal network / browser-capable connection. It is **not** a CI
+job: the docs CDN (Cloudflare) blanket-403s datacenter IPs, so it verifies
+nothing from GitHub-hosted runners (every URL comes back blocked). The script
+fails only on 404/410 (definitively gone); it treats 403/429/5xx/network errors
+as inconclusive and, if a run is dominated by them, warns and passes rather than
+reporting false failures. Always run it locally after touching the guides index.
+
 ## TypeDoc Configuration
 
 Located in `typedoc.json`:
