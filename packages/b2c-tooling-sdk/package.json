@@ -241,7 +241,9 @@
     "generate:guides-index": "tsx scripts/generate-guides-index.ts",
     "generate:tooling-index": "tsx scripts/generate-tooling-index.ts",
     "generate:help-corpus": "tsx scripts/generate-help-corpus.ts",
-    "enrich:docs": "tsx scripts/enrich-docs.ts"
+    "enrich:docs": "tsx scripts/enrich-docs.ts",
+    "generate:metrics-tags-catalog": "tsx scripts/generate-metrics-tags-catalog.ts",
+    "generate:metrics-tags-golden": "tsx scripts/generate-metrics-tags-golden.ts"
   },
   "devDependencies": {
     "@eslint/compat": "catalog:",

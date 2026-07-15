@@ -1,0 +1,7 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="40" height="40" rx="4" fill="#00A1E0"/>
+  <path d="M10 15 L20 10 L30 15 L20 20 Z" fill="white"/>
+  <path d="M10 20 L10 25 L20 30 L20 25 Z" fill="white" opacity="0.8"/>
+  <path d="M30 20 L30 25 L20 30 L20 25 Z" fill="white" opacity="0.6"/>
+  <text x="20" y="37" font-family="Arial, sans-serif" font-size="8" fill="white" text-anchor="middle" font-weight="bold">B2C</text>
+</svg>

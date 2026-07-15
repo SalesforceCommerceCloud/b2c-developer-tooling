@@ -137,83 +137,143 @@ function stripRealmPrefix(seriesId: string, realm: string): string {
 type SeriesTagExtractor = (remainder: string, rawId: string, realm: string) => MetricSeriesTags;
 
 /**
- * Extractor for series whose remainder is a bare API family (`product`,
- * `custom`, …) — but which may instead be an HTTP status class (`2xx`) or the
- * metric's own fallback id. SCAPI mixes these within a single metric.
+ * Strategy names for the declarative extractor catalog. Each strategy maps to a
+ * specific parsing rule. Some strategies require a `key` parameter.
  */
-const scapiFamilyOrStatus: SeriesTagExtractor = (remainder): MetricSeriesTags => {
-  if (/^[1-5]xx$/.test(remainder)) return {statusClass: remainder};
-  return {apiFamily: remainder};
+export type ExtractorStrategy =
+  | 'familyOrStatus' // SCAPI: remainder is apiFamily or HTTP status class (2xx)
+  | 'familyOrOverallAgg' // SCAPI requestLatency: overall→aggregation, else apiFamily
+  | 'lastSpaceSplit' // SCAPI cacheHitRate: split on last space → apiFamily + cacheStatus
+  | 'lastDotSplit' // third-party remoteExceptions: last dot → host + exceptionType
+  | 'wholeAs' // assign remainder to a single key (requires `key` field)
+  | 'ecdnSuccessError'; // eCDN successAndError: status class before realm, host after
+
+/**
+ * A declarative rule that maps a category/metricId pair to an extraction strategy.
+ * Exported for build-time catalog generation (consumed by the Go SDK).
+ */
+export interface ExtractorRule {
+  /** The metric category this rule applies to. */
+  category: MetricCategory;
+  /** The metric id, or '*' to apply to all metrics in the category. */
+  metricId: string;
+  /** The strategy to apply for extracting tags. */
+  strategy: ExtractorStrategy;
+  /** The tag key to assign when using the 'wholeAs' strategy. */
+  key?: string;
+}
+
+/**
+ * The declarative catalog of all extraction rules. This is the single source of
+ * truth for both TypeScript and Go (exported to JSON at build time).
+ */
+export const EXTRACTOR_CATALOG: ExtractorRule[] = [
+  // SCAPI
+  {category: 'scapi', metricId: 'totalCalls', strategy: 'familyOrStatus'},
+  {category: 'scapi', metricId: 'requestLatency', strategy: 'familyOrOverallAgg'},
+  {category: 'scapi', metricId: 'responseCount', strategy: 'familyOrStatus'},
+  {category: 'scapi', metricId: 'errors4xx', strategy: 'wholeAs', key: 'apiFamily'},
+  {category: 'scapi', metricId: 'cacheHitRate', strategy: 'lastSpaceSplit'},
+  // OCAPI
+  {category: 'ocapi', metricId: 'totalCalls', strategy: 'wholeAs', key: 'ocapiCategory'},
+  {category: 'ocapi', metricId: 'callsMean', strategy: 'wholeAs', key: 'ocapiCategory'},
+  // Controller
+  {category: 'controller', metricId: '*', strategy: 'wholeAs', key: 'controller'},
+  // Third-party
+  {category: 'third-party', metricId: 'callsCount', strategy: 'wholeAs', key: 'host'},
+  {category: 'third-party', metricId: 'callsP95', strategy: 'wholeAs', key: 'host'},
+  {category: 'third-party', metricId: 'remoteExceptions', strategy: 'lastDotSplit'},
+  // eCDN
+  {category: 'ecdn', metricId: 'successAndError', strategy: 'ecdnSuccessError'},
+  {category: 'ecdn', metricId: '*', strategy: 'wholeAs', key: 'host'},
+];
+
+/**
+ * Strategy implementations. Maps strategy name to the extraction function.
+ */
+/**
+ * Parses a SCAPI drill-down remainder into its dimensions. When a request filters
+ * by `apiFamily`, the server returns finer-grained series ids of the form
+ * `{apiFamily}.{apiName}[.{apiName…}].{version}` — e.g. `shopper.auth.v1` or
+ * `search.shopper-search.v1`. This splits off the leading family, a trailing `vN`
+ * version (if present), and treats everything in between as the api name, so that
+ * otherwise-identical drilled-down series get distinct, groupable tags. The
+ * `apiFamily` is authoritative-overridden later by any applied filter.
+ */
+function scapiDrilldown(remainder: string): MetricSeriesTags {
+  const segments = remainder.split('.');
+  const tags: MetricSeriesTags = {apiFamily: segments[0]};
+  let rest = segments.slice(1);
+  const last = rest[rest.length - 1];
+  if (last && /^v\d+$/.test(last)) {
+    tags.apiVersion = last;
+    rest = rest.slice(0, -1);
+  }
+  if (rest.length > 0) tags.apiName = rest.join('.');
+  return tags;
+}
+
+const STRATEGY_IMPL: Record<
+  ExtractorStrategy,
+  (remainder: string, rawId: string, realm: string, key?: string) => MetricSeriesTags
+> = {
+  familyOrStatus: (remainder): MetricSeriesTags => {
+    if (/^[1-5]xx$/.test(remainder)) return {statusClass: remainder};
+    // A drill-down id (`shopper.auth.v1`) carries an api name/version; a bare
+    // family (`product`) does not.
+    if (remainder.includes('.')) return scapiDrilldown(remainder);
+    return {apiFamily: remainder};
+  },
+  familyOrOverallAgg: (remainder): MetricSeriesTags => {
+    // `Average overall latency` is a rollup, not a per-family series.
+    if (/overall/i.test(remainder)) return {aggregation: 'overall'};
+    if (remainder.includes('.')) return scapiDrilldown(remainder);
+    return {apiFamily: remainder};
+  },
+  lastSpaceSplit: (remainder): MetricSeriesTags => {
+    // `bdpx.product HIT` / `bdpx.custom MISS` → apiFamily + cacheStatus
+    const spaceIdx = remainder.lastIndexOf(' ');
+    if (spaceIdx > 0) {
+      return {apiFamily: remainder.slice(0, spaceIdx), cacheStatus: remainder.slice(spaceIdx + 1)};
+    }
+    return {apiFamily: remainder};
+  },
+  lastDotSplit: (remainder): MetricSeriesTags => {
+    // `bdpx.host.socketReadTimeout` → host + exceptionType
+    const lastDot = remainder.lastIndexOf('.');
+    if (lastDot > 0) {
+      return {host: remainder.slice(0, lastDot), exceptionType: remainder.slice(lastDot + 1)};
+    }
+    return {host: remainder};
+  },
+  wholeAs: (remainder, _rawId, _realm, key): MetricSeriesTags => {
+    if (!key) throw new Error('wholeAs strategy requires a key parameter');
+    return {[key]: remainder};
+  },
+  ecdnSuccessError: (_remainder, rawId, realm): MetricSeriesTags => {
+    // `2xx bdpx.host` (status class BEFORE the realm) → statusClass + host
+    const spaceIdx = rawId.indexOf(' ');
+    if (spaceIdx > 0) {
+      const statusClass = rawId.slice(0, spaceIdx);
+      const host = stripRealmPrefix(rawId.slice(spaceIdx + 1), realm);
+      return {statusClass, host};
+    }
+    return {host: stripRealmPrefix(rawId, realm)};
+  },
 };
 
 /**
- * Per-category, per-metric extraction rules. Keyed by `category` then
- * `metricId`; a category-level `*` entry applies to any metric not explicitly
- * listed. Rules operate on the realm-stripped remainder (see
- * {@link stripRealmPrefix}); returning `{}` means "no extra dimensions, just the
- * context tags."
+ * Pre-built extractor index for fast lookup. Built from the declarative catalog.
  */
-const EXTRACTORS: Partial<Record<MetricCategory, Record<string, SeriesTagExtractor>>> = {
-  scapi: {
-    // `bdpx.product` → apiFamily=product; `bdpx 2xx`/`bdpx 3xx` → statusClass
-    totalCalls: scapiFamilyOrStatus,
-    requestLatency: (remainder): MetricSeriesTags => {
-      // `Average overall latency` is a rollup, not a per-family series.
-      if (/overall/i.test(remainder)) return {aggregation: 'overall'};
-      return {apiFamily: remainder};
-    },
-    responseCount: scapiFamilyOrStatus,
-    errors4xx: (remainder): MetricSeriesTags => ({apiFamily: remainder}),
-    // `bdpx.product HIT` / `bdpx.custom MISS` → apiFamily + cacheStatus
-    cacheHitRate: (remainder): MetricSeriesTags => {
-      const spaceIdx = remainder.lastIndexOf(' ');
-      if (spaceIdx > 0) {
-        return {apiFamily: remainder.slice(0, spaceIdx), cacheStatus: remainder.slice(spaceIdx + 1)};
-      }
-      return {apiFamily: remainder};
-    },
-  },
-  ocapi: {
-    // `bdpx.shop` → ocapiCategory=shop
-    totalCalls: (remainder): MetricSeriesTags => ({ocapiCategory: remainder}),
-    callsMean: (remainder): MetricSeriesTags => ({ocapiCategory: remainder}),
-  },
-  controller: {
-    // `bdpx.Home-Show` → controller=Home-Show (applies to every controller metric)
-    '*': (remainder): MetricSeriesTags => ({controller: remainder}),
-  },
-  'third-party': {
-    // `bdpx.login.salesforce.com` → host; the host itself contains dots, so we
-    // treat the whole remainder as the host for call/latency metrics.
-    callsCount: (remainder): MetricSeriesTags => ({host: remainder}),
-    callsP95: (remainder): MetricSeriesTags => ({host: remainder}),
-    // `bdpx.host.socketReadTimeout` → host + exceptionType. The exception type is
-    // the final dot-segment; everything before it is the (dotted) host. This is
-    // only unambiguous because we key on the remoteExceptions metric.
-    remoteExceptions: (remainder): MetricSeriesTags => {
-      const lastDot = remainder.lastIndexOf('.');
-      if (lastDot > 0) {
-        return {host: remainder.slice(0, lastDot), exceptionType: remainder.slice(lastDot + 1)};
-      }
-      return {host: remainder};
-    },
-  },
-  ecdn: {
-    // `2xx bdpx.host` (status class BEFORE the realm) → statusClass + host; other
-    // eCDN metrics are just `bdpx.host` → host. Operates on the raw id because
-    // the realm is not a leading prefix here.
-    successAndError: (_remainder, rawId, realm): MetricSeriesTags => {
-      const spaceIdx = rawId.indexOf(' ');
-      if (spaceIdx > 0) {
-        const statusClass = rawId.slice(0, spaceIdx);
-        const host = stripRealmPrefix(rawId.slice(spaceIdx + 1), realm);
-        return {statusClass, host};
-      }
-      return {host: stripRealmPrefix(rawId, realm)};
-    },
-    '*': (remainder) => ({host: remainder}),
-  },
-};
+const EXTRACTORS: Partial<Record<MetricCategory, Record<string, SeriesTagExtractor>>> = (() => {
+  const index: Partial<Record<MetricCategory, Record<string, SeriesTagExtractor>>> = {};
+  for (const rule of EXTRACTOR_CATALOG) {
+    if (!index[rule.category]) index[rule.category] = {};
+    const impl = STRATEGY_IMPL[rule.strategy];
+    index[rule.category]![rule.metricId] = (remainder, rawId, realm) => impl(remainder, rawId, realm, rule.key);
+  }
+  return index;
+})();
 
 /**
  * Extracts the dimension tags for a single series id.
@@ -260,12 +320,17 @@ export function parseSeriesTags(params: {
   const extractor = categoryRules?.[metricId] ?? categoryRules?.['*'];
   const remainder = stripRealmPrefix(seriesId, realm);
 
-  if (extractor) {
+  if (remainder === metricId) {
+    // The series id is just the metric id echoed back (e.g. `cacheHitRate`,
+    // `errors4xx`) — a rollup/aggregate series carrying no per-series dimension.
+    // Don't run the extractor (which would mis-tag it as apiFamily/host/etc.) and
+    // don't record a `series` tag; identity tags alone are correct here.
+    tags.aggregation = 'total';
+  } else if (extractor) {
     Object.assign(tags, extractor(remainder, seriesId, realm));
-  } else if (remainder && remainder !== metricId) {
+  } else if (remainder) {
     // No rule for this category/metric. Preserve the (realm-stripped) remainder
-    // so nothing is lost, unless it is just the metric id echoed back (a
-    // value-less fallback series).
+    // so nothing is lost.
     tags.series = remainder;
   }
 

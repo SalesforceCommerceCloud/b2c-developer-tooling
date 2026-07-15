@@ -280,3 +280,46 @@ jobs:
             packages/b2c-tooling-sdk/coverage/
             packages/b2c-cli/coverage/
           retention-days: 30
+
+  test-go:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        go-version: ['1.26.x']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache-dependency-path: |
+            packages/b2c-tooling-sdk-go/go.sum
+            packages/b2c-grafana-datasource/go.sum
+
+      - name: Go SDK - Build
+        working-directory: packages/b2c-tooling-sdk-go
+        run: go build ./...
+
+      - name: Go SDK - Vet
+        working-directory: packages/b2c-tooling-sdk-go
+        run: go vet ./...
+
+      - name: Go SDK - Test
+        working-directory: packages/b2c-tooling-sdk-go
+        run: go test ./... -v
+
+      - name: Grafana Plugin - Build
+        working-directory: packages/b2c-grafana-datasource
+        run: go build ./...
+
+      - name: Grafana Plugin - Vet
+        working-directory: packages/b2c-grafana-datasource
+        run: go vet ./...
+
+      - name: Grafana Plugin - Test
+        working-directory: packages/b2c-grafana-datasource
+        run: go test ./... -v

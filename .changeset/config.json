@@ -10,5 +10,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@salesforce/b2c-plugin-example-config"]
+  "ignore": ["@salesforce/b2c-plugin-example-config", "b2c-grafana-datasource"]
 }

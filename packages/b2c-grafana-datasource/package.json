@@ -1,0 +1,63 @@
+{
+  "name": "b2c-grafana-datasource",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Grafana datasource plugin for Salesforce B2C Commerce Metrics API",
+  "author": "Salesforce",
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "webpack --config .config/webpack.config.ts --env production",
+    "build:backend": "go build -o dist/gpx_b2c_metrics ./pkg && go build -o dist/gpx_b2c_cip ./pkg/cip",
+    "build:backend:all": "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/gpx_b2c_metrics_linux_amd64 ./pkg && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o dist/gpx_b2c_metrics_linux_arm64 ./pkg && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/gpx_b2c_cip_linux_amd64 ./pkg/cip && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o dist/gpx_b2c_cip_linux_arm64 ./pkg/cip",
+    "dev": "webpack --config .config/webpack.config.ts --watch",
+    "typecheck": "tsc --noEmit",
+    "test:backend": "go test -v ./...",
+    "fmt": "go fmt ./...",
+    "vet": "go vet ./...",
+    "clean": "rm -rf dist",
+    "demo": "docker compose up --build",
+    "demo:down": "docker compose down",
+    "demo:logs": "docker compose logs -f"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling.git",
+    "directory": "packages/b2c-grafana-datasource"
+  },
+  "keywords": [
+    "grafana",
+    "grafana-plugin",
+    "datasource",
+    "salesforce",
+    "b2c-commerce",
+    "metrics",
+    "observability"
+  ],
+  "dependencies": {
+    "@grafana/data": "^10.4.0",
+    "@grafana/runtime": "^10.4.0",
+    "@grafana/ui": "^10.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@grafana/eslint-config": "^7.0.0",
+    "@grafana/tsconfig": "^2.0.0",
+    "@swc/core": "^1.4.0",
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/webpack": "^5.28.5",
+    "copy-webpack-plugin": "^12.0.2",
+    "css-loader": "^6.10.0",
+    "style-loader": "^3.3.4",
+    "swc-loader": "^0.2.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.0",
+    "webpack": "^5.90.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
