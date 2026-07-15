@@ -13,12 +13,26 @@ import * as vscode from 'vscode';
  * Renders the AI Skills & MCP step body as styled HTML with one-click install
  * actions for each IDE the B2C CLI's `setup skills` command supports.
  *
- * IDE list and detection paths come directly from
- * `@salesforce/b2c-tooling-sdk/skills` IDE_CONFIGS (DRY by mirroring the
- * paths since the SDK runs in the extension host too).
+ * IDE list and detection paths mirror `@salesforce/b2c-tooling-sdk/skills`
+ * IDE_CONFIGS (DRY by mirroring the paths since the SDK runs in the extension
+ * host too). Two intentional divergences from the SDK:
+ *   - `vscode` detects via the VS Code user-data dir, NOT `~/.copilot`, so it
+ *     doesn't collide with the separate GitHub Copilot CLI card (whose home IS
+ *     `~/.copilot`). The SDK still uses `~/.copilot` for `vscode`.
+ *   - `copilot-cli` is walkthrough-only — the SDK's IdeType union has no such
+ *     value, so it installs skills via a marketplace command, not `--ide`.
  */
 
 export type IdeStatus = 'not-installed' | 'ide-present' | 'skills-installed';
+
+/**
+ * MCP-server configuration state for a target.
+ * - `configured` — a `b2c-dx-mcp` entry was found in the IDE's MCP config.
+ * - `not-configured` — the IDE has a known MCP config location, but no entry yet.
+ * - `unknown` — this IDE's MCP config path isn't documented, so we don't probe it
+ *   (shown as a manual-setup hint rather than a false "not configured").
+ */
+export type McpStatus = 'configured' | 'not-configured' | 'unknown';
 
 export interface AiSkillsTarget {
   /** CLI flag value for `b2c setup skills --ide <id>`. */
@@ -31,13 +45,42 @@ export interface AiSkillsTarget {
   globalSkillsDir: string;
   /** Per-IDE skills install dir for project-scoped installs (relative to workspace root). */
   projectSkillsDir: string;
+  /**
+   * Absolute dir that holds installed skills for marketplace-mode targets whose
+   * skills DON'T land in `globalSkillsDir` (e.g. GitHub Copilot CLI installs
+   * plugins under `~/.copilot/installed-plugins/<marketplace>/`). A `b2c*` entry
+   * here counts as skills-installed.
+   */
+  skillsMarkerDir?: string;
+  /**
+   * How skills install for this target. `'cli'` (default) uses the file-copy
+   * installer `b2c setup skills --ide <id>`. `'marketplace'` runs
+   * `marketplaceCommand` as the primary action — used by GitHub Copilot CLI,
+   * which is a marketplace-plugin target, NOT a valid `--ide` value.
+   */
+  skillsMode?: 'cli' | 'marketplace';
   /** Marketplace plugin command, if applicable. */
   marketplaceCommand?: string;
+  /**
+   * Command that uninstalls the marketplace plugins. Prepended to
+   * `marketplaceCommand` for a clean "Reinstall" (uninstall → install) once the
+   * plugins are already present. Only meaningful for marketplace-mode targets.
+   */
+  marketplaceUninstallCommand?: string;
   /** MCP install one-liner / snippet. */
   mcpCommand?: string;
+  /** Project-relative MCP config file that would hold a `b2c-dx-mcp` entry. */
+  mcpProjectConfig?: string;
+  /** Absolute global MCP config file that would hold a `b2c-dx-mcp` entry. */
+  mcpGlobalConfig?: string;
+  /** Absolute marker dir whose existence implies MCP is registered (e.g. an installed extension). */
+  mcpMarkerDir?: string;
 }
 
 const home = os.homedir();
+
+/** Fallback MCP setup docs, linked when a target has no one-click MCP path. */
+const MCP_DOCS_URL = 'https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation.html';
 
 /** Only IDEs the b2c CLI's `setup skills` command actually supports. */
 export const AI_SKILL_TARGETS: AiSkillsTarget[] = [
@@ -52,6 +95,9 @@ export const AI_SKILL_TARGETS: AiSkillsTarget[] = [
       'claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling && claude plugin install b2c-cli',
     mcpCommand:
       'claude mcp add --transport stdio --scope project b2c-dx-mcp -- npx -y @salesforce/b2c-dx-mcp@latest --allow-non-ga-tools',
+    // `claude mcp add --scope project` writes .mcp.json; user scope writes ~/.claude.json.
+    mcpProjectConfig: '.mcp.json',
+    mcpGlobalConfig: path.join(home, '.claude.json'),
   },
   {
     id: 'cursor',
@@ -62,6 +108,8 @@ export const AI_SKILL_TARGETS: AiSkillsTarget[] = [
     projectSkillsDir: path.join('.cursor', 'skills'),
     mcpCommand:
       'mkdir -p .cursor && printf \'%s\' \'{"mcpServers":{"b2c-dx-mcp":{"command":"npx","args":["-y","@salesforce/b2c-dx-mcp@latest","--allow-non-ga-tools"]}}}\' > .cursor/mcp.json',
+    mcpProjectConfig: path.join('.cursor', 'mcp.json'),
+    mcpGlobalConfig: path.join(home, '.cursor', 'mcp.json'),
   },
   {
     id: 'windsurf',
@@ -70,16 +118,21 @@ export const AI_SKILL_TARGETS: AiSkillsTarget[] = [
     detectPath: path.join(home, '.codeium', 'windsurf'),
     globalSkillsDir: path.join(home, '.codeium', 'windsurf', 'skills'),
     projectSkillsDir: path.join('.windsurf', 'skills'),
+    // MCP config path for Windsurf is not documented in our install guide — leave
+    // it unprobed (McpStatus 'unknown') rather than assert a false negative.
   },
   {
     id: 'vscode',
     label: 'VS Code / GitHub Copilot',
     description: 'Copilot Chat in VS Code. MCP via .vscode/mcp.json.',
-    detectPath: path.join(home, '.copilot'),
+    // Detect via the VS Code user dir, NOT ~/.copilot (that's the Copilot *CLI*,
+    // which now has its own card below).
+    detectPath: getVsCodeUserDir(),
     globalSkillsDir: path.join(home, '.copilot', 'skills'),
     projectSkillsDir: path.join('.github', 'skills'),
     mcpCommand:
       'mkdir -p .vscode && printf \'%s\' \'{"servers":{"b2c-dx-mcp":{"type":"stdio","command":"npx","args":["-y","@salesforce/b2c-dx-mcp@latest","--allow-non-ga-tools"]}}}\' > .vscode/mcp.json',
+    mcpProjectConfig: path.join('.vscode', 'mcp.json'),
   },
   {
     id: 'codex',
@@ -99,6 +152,62 @@ export const AI_SKILL_TARGETS: AiSkillsTarget[] = [
     projectSkillsDir: path.join('.opencode', 'skills'),
   },
   {
+    id: 'gemini-cli',
+    label: 'Gemini CLI',
+    description: 'Google Gemini CLI. Extension install bundles skills, MCP, and context.',
+    detectPath: path.join(home, '.gemini'),
+    globalSkillsDir: path.join(home, '.gemini', 'skills'),
+    projectSkillsDir: path.join('.gemini', 'skills'),
+    // The extension bundles skills + MCP + GEMINI.md context in one install.
+    // No raw mcpCommand: Gemini's ~/.gemini/settings.json holds broad settings
+    // (not a dedicated mcp.json), so overwriting it would clobber user config.
+    marketplaceCommand: 'gemini extensions install https://github.com/SalesforceCommerceCloud/b2c-developer-tooling',
+    // The extension install drops the server under ~/.gemini/extensions/<name>.
+    mcpMarkerDir: path.join(home, '.gemini', 'extensions', 'b2c-developer-tooling'),
+    mcpGlobalConfig: path.join(home, '.gemini', 'settings.json'),
+  },
+  {
+    id: 'antigravity',
+    label: 'Google Antigravity',
+    description: 'Google Antigravity (IDE/CLI/SDK). Skills via .agents/skills; MCP via .agents/mcp_config.json.',
+    detectPath: path.join(home, '.gemini'),
+    globalSkillsDir: path.join(home, '.gemini', 'config', 'skills'),
+    projectSkillsDir: path.join('.agents', 'skills'),
+    // .agents/mcp_config.json is a dedicated MCP file using the standard
+    // mcpServers/stdio shape, so writing it directly is safe (like Cursor/VS Code).
+    mcpCommand:
+      'mkdir -p .agents && printf \'%s\' \'{"mcpServers":{"b2c-dx-mcp":{"command":"npx","args":["-y","@salesforce/b2c-dx-mcp@latest","--allow-non-ga-tools"]}}}\' > .agents/mcp_config.json',
+    mcpProjectConfig: path.join('.agents', 'mcp_config.json'),
+    mcpGlobalConfig: path.join(home, '.gemini', 'config', 'mcp_config.json'),
+  },
+  {
+    // GitHub Copilot CLI is a MARKETPLACE-plugin target, not a `b2c setup skills
+    // --ide` value — the CLI's IdeType union has no `copilot-cli`. Skills install
+    // via `copilot plugin install`; MCP has no documented one-click path, so it
+    // links to the setup docs.
+    id: 'copilot-cli',
+    label: 'GitHub Copilot CLI',
+    description: 'GitHub Copilot in the terminal. Skills install as marketplace plugins.',
+    detectPath: path.join(home, '.copilot'),
+    globalSkillsDir: path.join(home, '.copilot', 'skills'),
+    projectSkillsDir: path.join('.copilot', 'skills'),
+    // `copilot plugin install` drops plugins under
+    // ~/.copilot/installed-plugins/<marketplace>/<plugin>, NOT in a skills dir.
+    // Our marketplace is `b2c-developer-tooling`, so its presence (containing
+    // the b2c/b2c-cli plugins) means the skills are installed.
+    skillsMarkerDir: path.join(home, '.copilot', 'installed-plugins', 'b2c-developer-tooling'),
+    skillsMode: 'marketplace',
+    // `marketplace add` errors ("already registered") if the marketplace is
+    // already present, so separate it with `;` — otherwise `&&` would abort the
+    // installs. The installs themselves chain with `&&` (b2c-cli after b2c).
+    marketplaceCommand:
+      'copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling ; copilot plugin install b2c@b2c-developer-tooling && copilot plugin install b2c-cli@b2c-developer-tooling',
+    // Reinstall = uninstall both plugins first, then re-run the install command.
+    marketplaceUninstallCommand:
+      'copilot plugin uninstall b2c@b2c-developer-tooling ; copilot plugin uninstall b2c-cli@b2c-developer-tooling',
+    // MCP config location for Copilot CLI is not documented — surfaced as a docs link.
+  },
+  {
     id: 'agentforce-vibes',
     label: 'Agentforce Vibes',
     description: 'Salesforce Agentforce Vibes (VS Code extension).',
@@ -107,6 +216,16 @@ export const AI_SKILL_TARGETS: AiSkillsTarget[] = [
     projectSkillsDir: path.join('.a4drules', 'skills'),
   },
 ];
+
+/** VS Code user-data dir, used to distinguish VS Code from the Copilot CLI (~/.copilot). */
+function getVsCodeUserDir(): string {
+  if (process.platform === 'darwin') {
+    return path.join(home, 'Library', 'Application Support', 'Code');
+  } else if (process.platform === 'win32') {
+    return path.join(process.env.APPDATA || path.join(home, 'AppData', 'Roaming'), 'Code');
+  }
+  return path.join(home, '.config', 'Code');
+}
 
 function getAgentforceVibesGlobalDir(): string {
   if (process.platform === 'darwin') {
@@ -139,6 +258,60 @@ async function dirHasB2cSkills(dir: string): Promise<boolean> {
   }
 }
 
+/** Server-container keys used across the MCP config formats we support. */
+const MCP_CONTAINER_KEYS = ['mcpServers', 'servers'] as const;
+
+/**
+ * Returns true if the given MCP config file registers a `b2c-dx-mcp` server.
+ * Prefers a structural check — parse the JSON and look for a `b2c-dx-mcp` key
+ * inside a `mcpServers` (Cursor/Gemini/Antigravity) or `servers` (VS Code
+ * Copilot) container — so a disabled/commented mention or an unrelated string
+ * in a broad settings file (`~/.gemini/settings.json`, `~/.claude.json`)
+ * doesn't count as "configured". Falls back to a substring match only when the
+ * file isn't parseable JSON. Missing/unreadable files → false.
+ */
+async function fileRegistersB2cMcp(file: string): Promise<boolean> {
+  let text: string;
+  try {
+    text = await fs.readFile(file, 'utf8');
+  } catch {
+    return false;
+  }
+  if (!text.includes('b2c-dx-mcp')) return false;
+  try {
+    const parsed = JSON.parse(text) as Record<string, unknown>;
+    return MCP_CONTAINER_KEYS.some((key) => {
+      const container = parsed[key];
+      return !!container && typeof container === 'object' && 'b2c-dx-mcp' in container;
+    });
+  } catch {
+    // Not valid JSON (e.g. JSONC with comments) — the substring is our best signal.
+    return true;
+  }
+}
+
+/**
+ * Resolve the MCP-server state for a target across its documented config
+ * locations. Targets with no known MCP path resolve to `'unknown'` so the UI
+ * can offer a manual-setup hint instead of a misleading "not configured".
+ */
+export async function detectMcpStatus(target: AiSkillsTarget, workspaceRoots: string[] = []): Promise<McpStatus> {
+  const hasKnownLocation = !!(target.mcpProjectConfig || target.mcpGlobalConfig || target.mcpMarkerDir);
+  if (!hasKnownLocation) return 'unknown';
+
+  if (target.mcpMarkerDir && (await pathExists(target.mcpMarkerDir))) return 'configured';
+
+  if (target.mcpProjectConfig) {
+    for (const root of workspaceRoots) {
+      if (await fileRegistersB2cMcp(path.join(root, target.mcpProjectConfig))) return 'configured';
+    }
+  }
+
+  if (target.mcpGlobalConfig && (await fileRegistersB2cMcp(target.mcpGlobalConfig))) return 'configured';
+
+  return 'not-configured';
+}
+
 /**
  * Returns the install state for a single target.
  * - `not-installed` — no IDE installed
@@ -152,6 +325,10 @@ async function dirHasB2cSkills(dir: string): Promise<boolean> {
 export async function detectIdeStatus(target: AiSkillsTarget, workspaceRoots: string[] = []): Promise<IdeStatus> {
   const idePresent = await pathExists(target.detectPath);
   if (!idePresent) return 'not-installed';
+
+  // Marketplace-plugin targets (e.g. Copilot CLI) install skills outside the
+  // per-IDE skills dir — check their dedicated marker dir for a b2c* entry.
+  if (target.skillsMarkerDir && (await dirHasB2cSkills(target.skillsMarkerDir))) return 'skills-installed';
 
   // Project-scoped checks (one per workspace folder).
   for (const root of workspaceRoots) {
@@ -167,15 +344,21 @@ export async function detectIdeStatus(target: AiSkillsTarget, workspaceRoots: st
 
 export interface DetectedTarget extends AiSkillsTarget {
   status: IdeStatus;
+  mcpStatus: McpStatus;
 }
 
 /**
  * Detect status for every target in parallel. Pulls workspace roots from
- * VS Code so project-scoped skill installs are picked up.
+ * VS Code so project-scoped skill and MCP installs are picked up.
  */
 export async function detectAllTargets(): Promise<DetectedTarget[]> {
   const roots = (vscode.workspace.workspaceFolders ?? []).map((f) => f.uri.fsPath);
-  return Promise.all(AI_SKILL_TARGETS.map(async (t) => ({...t, status: await detectIdeStatus(t, roots)})));
+  return Promise.all(
+    AI_SKILL_TARGETS.map(async (t) => {
+      const [status, mcpStatus] = await Promise.all([detectIdeStatus(t, roots), detectMcpStatus(t, roots)]);
+      return {...t, status, mcpStatus};
+    }),
+  );
 }
 
 const escape = (s: string): string =>
@@ -183,14 +366,32 @@ const escape = (s: string): string =>
     c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '"' ? '&quot;' : '&#39;',
   );
 
+const CHECK_SVG = `<svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path fill="currentColor" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 1 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z"/></svg>`;
+
 function statusPill(status: IdeStatus): string {
   switch (status) {
     case 'skills-installed':
-      return `<span class="ai-pill ai-pill--ok"><svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path fill="currentColor" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 1 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z"/></svg>Ready · Skills installed</span>`;
+      return `<span class="ai-pill ai-pill--ok">${CHECK_SVG}Ready · Skills installed</span>`;
     case 'ide-present':
       return `<span class="ai-pill ai-pill--ready"><span class="ai-pill__dot"></span>IDE detected</span>`;
     case 'not-installed':
       return `<span class="ai-pill ai-pill--off"><span class="ai-pill__dot"></span>Not installed</span>`;
+  }
+}
+
+/**
+ * Small secondary badge showing MCP-server state. Only rendered when the IDE
+ * is present (an "MCP configured" claim is meaningless for an absent IDE).
+ * `unknown` targets (no documented MCP path) get a neutral "manual" hint.
+ */
+function mcpPill(status: McpStatus): string {
+  switch (status) {
+    case 'configured':
+      return `<span class="ai-pill ai-pill--mcp-ok">${CHECK_SVG}MCP configured</span>`;
+    case 'not-configured':
+      return `<span class="ai-pill ai-pill--mcp-off"><span class="ai-pill__dot"></span>MCP not set up</span>`;
+    case 'unknown':
+      return `<span class="ai-pill ai-pill--mcp-na"><span class="ai-pill__dot"></span>MCP · manual</span>`;
   }
 }
 
@@ -215,6 +416,15 @@ function ideIcon(id: string): string {
     case 'opencode':
       // Open hexagon
       return `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><polygon points="12 3 21 8 21 16 12 21 3 16 3 8"/><circle cx="12" cy="12" r="3"/></svg>`;
+    case 'gemini-cli':
+      // Four-point sparkle (Gemini-ish accent)
+      return `<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2 C12 7, 12 7, 22 12 C12 17, 12 17, 12 22 C12 17, 12 17, 2 12 C12 7, 12 7, 12 2 Z"/></svg>`;
+    case 'antigravity':
+      // Upward orbit (anti-gravity)
+      return `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="15" r="3"/><path d="M12 12 L12 3 M12 3 L9 6 M12 3 L15 6"/></svg>`;
+    case 'copilot-cli':
+      // Terminal prompt (CLI surface of Copilot)
+      return `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><polyline points="7 9 10 12 7 15"/><line x1="12" y1="15" x2="17" y2="15"/></svg>`;
     case 'agentforce-vibes':
       // Spark with cloud
       return `<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M14 2 L15.5 7 L20.5 8.5 L15.5 10 L14 15 L12.5 10 L7.5 8.5 L12.5 7 Z"/><circle cx="6" cy="17" r="2"/><circle cx="10" cy="20" r="1.5"/></svg>`;
@@ -230,43 +440,71 @@ export function generateAiSkillsHtml(targets: DetectedTarget[]): string {
     return order[a.status] - order[b.status];
   });
 
+  const downloadSvg = `<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M8 1v9.59l3.3-3.3 1.4 1.42L8 13.41 3.3 8.71l1.4-1.42L8 10.59V1zM2 14h12v2H2z"/></svg>`;
+
   const cards = sorted
     .map((t) => {
       const isInstalled = t.status === 'skills-installed';
       const isReady = t.status === 'ide-present';
       const isMissing = t.status === 'not-installed';
+      // Marketplace-mode targets (GitHub Copilot CLI) install skills via a
+      // `copilot plugin install` command, not `b2c setup skills --ide` — that
+      // IDE value doesn't exist, so wiring the file-copy button would just fail.
+      const marketplaceMode = t.skillsMode === 'marketplace';
 
-      const skillsLabel = isInstalled ? 'Reinstall' : isReady ? 'Install Skills' : 'Install Skills';
+      const skillsLabel = isInstalled ? 'Reinstall' : 'Install Skills';
       const skillsDisabled = isMissing ? 'disabled' : '';
       const skillsClass = isReady ? 'ai-btn ai-btn--primary' : isInstalled ? 'ai-btn ai-btn--ghost' : 'ai-btn';
+      const skillsIcon = isReady || isInstalled ? downloadSvg : '';
+
+      // Primary skills action: file-copy installer, or the marketplace command.
+      // For a marketplace Reinstall, uninstall the plugins first so the install
+      // is clean (uninstall → install); a fresh install just runs install.
+      const marketplaceCmd =
+        isInstalled && t.marketplaceUninstallCommand
+          ? `${t.marketplaceUninstallCommand} ; ${t.marketplaceCommand ?? ''}`
+          : (t.marketplaceCommand ?? '');
+      const primaryAction = marketplaceMode
+        ? `<button data-action="run-cmd" data-cmd="${escape(marketplaceCmd)}" data-label="${escape(t.label)} skills" class="${skillsClass}" ${skillsDisabled}>${skillsIcon}<span>${skillsLabel}</span></button>`
+        : `<button data-action="install-skills" data-ide="${escape(t.id)}" class="${skillsClass}" ${skillsDisabled}>${skillsIcon}<span>${skillsLabel}</span></button>`;
 
       const secondaryActions: string[] = [];
-      if (t.marketplaceCommand) {
+      // In marketplace mode the plugin command IS the primary action — don't repeat it.
+      if (t.marketplaceCommand && !marketplaceMode) {
         secondaryActions.push(
           `<button data-action="run-cmd" data-cmd="${escape(t.marketplaceCommand)}" data-label="${escape(t.label)} marketplace" class="ai-btn ai-btn--ghost" ${isMissing ? 'disabled' : ''}>Marketplace plugin</button>`,
         );
       }
       if (t.mcpCommand) {
+        // Re-running the command overwrites the config, so label it as such
+        // once the server is already registered.
+        const mcpLabel = t.mcpStatus === 'configured' ? 'Re-configure MCP' : 'Install MCP';
         secondaryActions.push(
-          `<button data-action="run-cmd" data-cmd="${escape(t.mcpCommand)}" data-label="${escape(t.label)} MCP" class="ai-btn ai-btn--ghost" ${isMissing ? 'disabled' : ''}>Install MCP</button>`,
+          `<button data-action="run-cmd" data-cmd="${escape(t.mcpCommand)}" data-label="${escape(t.label)} MCP" class="ai-btn ai-btn--ghost" ${isMissing ? 'disabled' : ''}>${mcpLabel}</button>`,
+        );
+      } else if (!isMissing) {
+        // No one-click MCP path documented for this IDE — link to setup docs
+        // instead of leaving the user with no MCP action at all.
+        secondaryActions.push(
+          `<a href="${MCP_DOCS_URL}" class="ai-btn ai-btn--ghost ai-btn--link">MCP setup guide</a>`,
         );
       }
 
+      // Show the MCP badge next to the skills pill once the IDE is present.
+      const mcpBadge = isMissing ? '' : mcpPill(t.mcpStatus);
+
       return `
-        <article class="ai-card" data-status="${t.status}">
+        <article class="ai-card" data-status="${t.status}" data-mcp="${t.mcpStatus}">
           <header class="ai-card__top">
             <div class="ai-card__icon" data-id="${escape(t.id)}">${ideIcon(t.id)}</div>
             <div class="ai-card__title">
               <h3>${escape(t.label)}</h3>
-              ${statusPill(t.status)}
+              <div class="ai-card__pills">${statusPill(t.status)}${mcpBadge}</div>
             </div>
           </header>
           <p class="ai-card__desc">${escape(t.description)}</p>
           <div class="ai-card__cta">
-            <button data-action="install-skills" data-ide="${escape(t.id)}" class="${skillsClass}" ${skillsDisabled}>
-              ${isReady || isInstalled ? '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M8 1v9.59l3.3-3.3 1.4 1.42L8 13.41 3.3 8.71l1.4-1.42L8 10.59V1zM2 14h12v2H2z"/></svg>' : ''}
-              <span>${skillsLabel}</span>
-            </button>
+            ${primaryAction}
             ${secondaryActions.length ? `<div class="ai-card__secondary">${secondaryActions.join('')}</div>` : ''}
           </div>
         </article>`;
@@ -275,6 +513,7 @@ export function generateAiSkillsHtml(targets: DetectedTarget[]): string {
 
   const installedCount = targets.filter((t) => t.status !== 'not-installed').length;
   const skillsInstalledCount = targets.filter((t) => t.status === 'skills-installed').length;
+  const mcpConfiguredCount = targets.filter((t) => t.mcpStatus === 'configured').length;
 
   return `<style>
 :host, .ai-section { color: var(--vscode-foreground); }
@@ -315,6 +554,7 @@ export function generateAiSkillsHtml(targets: DetectedTarget[]): string {
 .ai-stat__num { font-size: 0.96rem; font-weight: 800; line-height: 1; color: var(--vscode-foreground); }
 .ai-stat__num--ok { color: #1A8754; }
 .ai-stat__num--ready { color: #0176D3; }
+.ai-stat__num--mcp { color: #6D28D9; }
 .ai-stat__label { font-size: 0.78rem; font-weight: 500; }
 .ai-stat__sep {
   color: var(--vscode-descriptionForeground);
@@ -380,13 +620,15 @@ export function generateAiSkillsHtml(targets: DetectedTarget[]): string {
 }
 .ai-btn--primary:hover:not([disabled]) { background: var(--brand-blue-deep, #014486); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(1,118,211,0.35); }
 .ai-btn--ghost {
-  border-color: var(--hairline, rgba(128,128,128,0.30));
+  border-color: color-mix(in srgb, var(--vscode-foreground) 42%, transparent);
   color: var(--vscode-foreground);
   font-size: 0.78rem; padding: 6px 10px; border-radius: 999px;
 }
 .ai-btn--ghost:hover:not([disabled]) { border-color: var(--brand-blue, #0176D3); color: var(--brand-blue, #0176D3); background: transparent; }
+.ai-btn--link { text-decoration: none; }
 .ai-btn[disabled] { cursor: not-allowed; opacity: 0.5; }
 
+.ai-card__pills { display: flex; flex-wrap: wrap; gap: 5px; }
 .ai-pill {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 2px 10px; border-radius: 999px;
@@ -399,6 +641,10 @@ export function generateAiSkillsHtml(targets: DetectedTarget[]): string {
 .ai-pill--ok { color: #1A8754; background: rgba(26,135,84,0.14); }
 .ai-pill--ready { color: #0176D3; background: rgba(1,118,211,0.12); }
 .ai-pill--off { color: var(--vscode-descriptionForeground); background: rgba(127,127,127,0.14); }
+/* MCP badges use a distinct violet accent so they read as a separate axis from skills. */
+.ai-pill--mcp-ok { color: #6D28D9; background: rgba(109,40,217,0.14); }
+.ai-pill--mcp-off { color: var(--vscode-descriptionForeground); background: rgba(127,127,127,0.10); }
+.ai-pill--mcp-na { color: var(--vscode-descriptionForeground); background: rgba(127,127,127,0.10); opacity: 0.85; }
 
 .ai-tip {
   margin: 0 0 22px;
@@ -421,14 +667,16 @@ export function generateAiSkillsHtml(targets: DetectedTarget[]): string {
 <p>Configure once and your AI tools share the same instance, dw.json, and cartridge layout this extension already understands.</p>
 
 <div class="ai-stats-row">
-  <div class="ai-stats" role="group" aria-label="AI skills coverage">
-    <span class="ai-stat"><span class="ai-stat__num">${targets.length}</span><span class="ai-stat__label">compatible</span></span>
+  <div class="ai-stats" role="group" aria-label="AI tool coverage">
+    <span class="ai-stat"><span class="ai-stat__num">${targets.length}</span><span class="ai-stat__label">tools supported</span></span>
     <span class="ai-stat__sep">·</span>
-    <span class="ai-stat"><span class="ai-stat__num ai-stat__num--ready">${installedCount}</span><span class="ai-stat__label">detected</span></span>
+    <span class="ai-stat"><span class="ai-stat__num ai-stat__num--ready">${installedCount}</span><span class="ai-stat__label">detected here</span></span>
     <span class="ai-stat__sep">·</span>
-    <span class="ai-stat"><span class="ai-stat__num ai-stat__num--ok">${skillsInstalledCount}</span><span class="ai-stat__label">skills installed</span></span>
+    <span class="ai-stat"><span class="ai-stat__num ai-stat__num--ok">${skillsInstalledCount}</span><span class="ai-stat__label">with skills</span></span>
+    <span class="ai-stat__sep">·</span>
+    <span class="ai-stat"><span class="ai-stat__num ai-stat__num--mcp">${mcpConfiguredCount}</span><span class="ai-stat__label">with MCP</span></span>
   </div>
-  <button class="ai-recheck" data-action="ai-recheck" title="Re-detect installed IDEs and skills">
+  <button class="ai-recheck" data-action="ai-recheck" title="Re-detect installed IDEs, skills, and MCP config">
     <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M13.65 2.35a8 8 0 1 0 1.96 8.4l-1.83-.69A6 6 0 1 1 12.24 3.76L10 6h6V0l-2.35 2.35z"/></svg>
     Re-check
   </button>
@@ -436,7 +684,7 @@ export function generateAiSkillsHtml(targets: DetectedTarget[]): string {
 
 <div class="ai-grid">${cards}</div>
 
-<p class="ai-tip"><strong>One-click install.</strong> Click <em>Install Skills</em> on a detected IDE and a terminal opens with <code>b2c setup skills b2c --ide &lt;ide&gt;</code> queued. Press <kbd>Enter</kbd> to run; the CLI handles paths, downloads, and overwrites.</p>
+<p class="ai-tip"><strong>One-click install.</strong> Click <em>Install Skills</em> on a detected tool and a terminal opens with the right command queued (<code>b2c setup skills b2c --ide &lt;ide&gt;</code>, or the marketplace-plugin command for GitHub Copilot CLI). Press <kbd>Enter</kbd> to run; the CLI handles paths, downloads, and overwrites.</p>
 
 <h2>What gets installed</h2>
 <ul>

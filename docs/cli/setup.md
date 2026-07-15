@@ -422,7 +422,7 @@ b2c setup skills [SKILLSET]
 | --------------------- | ---------------------------------------------------------------------------------------------- | ----------- |
 | `--list`, `-l`        | List available skills without installing                                                       | `false`     |
 | `--skill`             | Install specific skill(s) (can be repeated)                                                    |             |
-| `--ide`               | Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, agentforce-vibes, manual | Auto-detect |
+| `--ide`               | Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, gemini-cli, antigravity, agentforce-vibes, manual | Auto-detect |
 | `--directory`, `-d`   | Custom installation directory (overrides IDE default path)                                     |             |
 | `--global`, `-g`      | Install to user home directory (global scope)                                                  | `false`     |
 | `--update`, `-u`      | Update existing skills (overwrite)                                                             | `false`     |
@@ -442,10 +442,14 @@ b2c setup skills [SKILLSET]
 | `vscode`           | VS Code / GitHub Copilot | `.github/skills/`     | `~/.copilot/skills/`                                |
 | `codex`            | OpenAI Codex CLI         | `.codex/skills/`      | `~/.codex/skills/`                                  |
 | `opencode`         | OpenCode                 | `.opencode/skills/`   | `~/.config/opencode/skills/`                        |
+| `gemini-cli`       | Gemini CLI               | `.gemini/skills/`     | `~/.gemini/skills/`                                 |
+| `antigravity`      | Google Antigravity       | `.agents/skills/`     | `~/.gemini/config/skills/`                          |
 | `agentforce-vibes` | Agentforce Vibes         | `.a4drules/skills/`   | `~/Library/Application Support/Code/User/globalStorage` (macOS) |
 | `manual`           | Manual                   | `.agents/skills/`     | `~/.agents/skills/`                                 |
 
 Use `agentforce-vibes` for Salesforce Agentforce for VS Code. Use `manual` for generic installation with a custom `--directory` path.
+
+For `gemini-cli`, the [Gemini CLI extension](/guide/agent-skills#gemini-cli) (`gemini extensions install …`) also installs the `b2c-dx-mcp` MCP server and B2C project context. For `antigravity`, the same skills serve the Antigravity IDE, CLI, and SDK; configure the MCP server separately via `.agents/mcp_config.json` (see [MCP Installation](/mcp/installation#google-antigravity)).
 
 ### Examples
 
@@ -469,6 +473,12 @@ b2c setup skills b2c --ide cursor --ide windsurf
 
 # Install specific skills only
 b2c setup skills b2c-cli --skill b2c-code --skill b2c-webdav --ide cursor
+
+# Install to Gemini CLI (.gemini/skills/)
+b2c setup skills b2c-cli --ide gemini-cli
+
+# Install to Google Antigravity (.agents/skills/)
+b2c setup skills b2c --ide antigravity
 
 # Install to Agentforce Vibes (.a4drules/skills/)
 b2c setup skills b2c --ide agentforce-vibes

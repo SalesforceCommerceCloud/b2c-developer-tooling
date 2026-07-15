@@ -100,3 +100,30 @@ mcpEntry.version = mcpVersion;
 writeJson(marketplacePath, marketplace);
 
 console.log(`Pinned b2c-dx-mcp plugin to @salesforce/b2c-dx-mcp@${mcpVersion}`);
+
+// (3) Gemini CLI extension: the root gemini-extension.json bundles the same
+// b2c-dx-mcp server, so it tracks the MCP version too (not b2c-agent-plugins).
+// Two things must move together, mirroring the .mcp.json handling above:
+//   - Pin the npx-launched server to the exact published version (forces a
+//     fresh fetch instead of reusing a stale @latest npx cache).
+//   - Bump the manifest's own `version` so `gemini extensions update` sees the
+//     extension as changed and re-pulls the new server pin.
+const geminiExtPath = join(repoRoot, 'gemini-extension.json');
+const geminiExt = readJson(geminiExtPath);
+const geminiArgs = geminiExt.mcpServers?.['b2c-dx-mcp']?.args;
+if (!Array.isArray(geminiArgs)) {
+  console.error('gemini-extension.json has no mcpServers["b2c-dx-mcp"].args array');
+  process.exit(1);
+}
+const geminiPkgArgIndex = geminiArgs.findIndex(
+  (arg) => typeof arg === 'string' && arg.startsWith('@salesforce/b2c-dx-mcp@'),
+);
+if (geminiPkgArgIndex === -1) {
+  console.error('gemini-extension.json args do not reference @salesforce/b2c-dx-mcp');
+  process.exit(1);
+}
+geminiArgs[geminiPkgArgIndex] = `@salesforce/b2c-dx-mcp@${mcpVersion}`;
+geminiExt.version = mcpVersion;
+writeJson(geminiExtPath, geminiExt);
+
+console.log(`Pinned gemini-extension.json to @salesforce/b2c-dx-mcp@${mcpVersion}`);

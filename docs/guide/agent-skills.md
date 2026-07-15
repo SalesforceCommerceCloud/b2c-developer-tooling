@@ -1,12 +1,12 @@
 ---
-description: Agentic B2C Developer Toolkit — AI agent skills and plugins that teach Agentforce Vibes, Claude Code, Codex, Cursor, and GitHub Copilot the full B2C Commerce stack.
+description: Agentic B2C Developer Toolkit — AI agent skills and plugins that teach Agentforce Vibes, Claude Code, Codex, Cursor, Gemini, Google Antigravity, and GitHub Copilot the full B2C Commerce stack.
 ---
 
 # Agent Skills & Plugins
 
 Turn your coding agent into a B2C Commerce specialist. Skills cover the full platform — storefront and headless development, operational workflows, and everything in between — so your agent knows both how B2C Commerce works and which CLI commands to run.
 
-Skills follow the open [Agent Skills](https://agentskills.io/home) standard and work with Agentforce Vibes, Claude Code, Cursor, GitHub Copilot (VS Code and CLI), Codex, OpenCode, and others. Install from your IDE's plugin marketplace or the B2C CLI (`b2c setup skills`).
+Skills follow the open [Agent Skills](https://agentskills.io/home) standard and work with Agentforce Vibes, Claude Code, Cursor, GitHub Copilot (VS Code and CLI), Gemini CLI, Google Antigravity (IDE/CLI/SDK), Codex, OpenCode, and others. Install from your IDE's plugin marketplace or the B2C CLI (`b2c setup skills`).
 
 ## Quick Start
 
@@ -59,6 +59,22 @@ copilot plugin install b2c@b2c-developer-tooling
 # Storefront Next (only for Storefront Next projects)
 copilot plugin install storefront-next@b2c-developer-tooling
 copilot plugin install storefront-next-figma@b2c-developer-tooling
+```
+
+```bash [Gemini CLI]
+# One command installs the MCP server + project context:
+gemini extensions install https://github.com/SalesforceCommerceCloud/b2c-developer-tooling
+
+# Then add the agent skills (discovered from .gemini/skills):
+npx @salesforce/b2c-cli setup skills b2c --ide gemini-cli
+npx @salesforce/b2c-cli setup skills b2c-cli --ide gemini-cli
+```
+
+```bash [Antigravity]
+# Google Antigravity (IDE/CLI/SDK) reads skills from .agents/skills:
+npx @salesforce/b2c-cli setup skills b2c --ide antigravity
+npx @salesforce/b2c-cli setup skills b2c-cli --ide antigravity
+# For the MCP server on Antigravity, see /mcp/installation
 ```
 
 ```bash [Agentforce Vibes]
@@ -268,6 +284,77 @@ copilot plugin install storefront-next@b2c-developer-tooling
 copilot plugin install storefront-next-figma@b2c-developer-tooling
 ```
 
+::: warning Microsoft Copilot desktop app is not the same product
+The **Microsoft 365 / Microsoft Copilot desktop app** for Mac and Windows is a productivity assistant — it does **not** run local MCP servers or read repo Agent Skills (its extensibility is limited to tenant-published agents and connected apps). For B2C Commerce development, use **GitHub Copilot in VS Code** or the **Copilot CLI** above; those are GitHub Copilot's desktop surfaces and both are supported here.
+:::
+
+## Gemini
+
+Skills and the `b2c-dx-mcp` MCP server work with **Gemini CLI** and **Gemini Code Assist** (VS Code / JetBrains).
+
+### Gemini CLI
+
+The fastest path is the Gemini CLI extension, which bundles the MCP server and B2C project context (`GEMINI.md`) in a single install:
+
+```bash
+gemini extensions install https://github.com/SalesforceCommerceCloud/b2c-developer-tooling
+```
+
+Update or remove it later with:
+
+```bash
+gemini extensions update b2c-developer-tooling
+gemini extensions uninstall b2c-developer-tooling
+```
+
+The extension does **not** bundle the agent skills (the repo's skills are plugin-grouped, not laid out at the extension root). Install them with the B2C CLI — they land in the directories Gemini CLI discovers automatically:
+
+::: code-group
+
+```bash [Project Scope]
+b2c setup skills b2c --ide gemini-cli
+b2c setup skills b2c-cli --ide gemini-cli
+```
+
+```bash [User Scope]
+b2c setup skills b2c --ide gemini-cli --global
+b2c setup skills b2c-cli --ide gemini-cli --global
+```
+
+:::
+
+This writes to `.gemini/skills/` (project) or `~/.gemini/skills/` (user). Gemini CLI also reads `.agents/skills/`.
+
+### Gemini Code Assist (VS Code / JetBrains)
+
+Gemini Code Assist shares configuration with the Gemini CLI. In **VS Code**, once you've installed the extension (or added the MCP server to `~/.gemini/settings.json`), the `b2c-dx-mcp` tools are available in agent mode. In **JetBrains**, configure the MCP server via the IDE's MCP settings and use `GEMINI.md` / `AGENT.md` for context. See [MCP Installation](/mcp/installation) for the exact server configuration.
+
+::: warning Gemini desktop app (Mac/Windows) is not supported
+The standalone **Gemini app** for Mac and Windows is a consumer assistant. It supports only Gems and Google-curated connected apps — it does **not** run local MCP servers or read repo Agent Skills. For B2C Commerce development, use **Gemini CLI**, **Gemini Code Assist**, or **Google Antigravity** instead.
+:::
+
+## Google Antigravity
+
+[Google Antigravity](https://antigravity.google/) is an agent-first development platform available as an **IDE**, a **CLI**, and a **Python SDK**. It implements the same open [Agent Skills](https://antigravity.google/docs/skills) standard (`SKILL.md` folders) and supports MCP servers over stdio, so the B2C skills and `b2c-dx-mcp` work across all three surfaces.
+
+Install the skills with the B2C CLI:
+
+::: code-group
+
+```bash [Project Scope]
+b2c setup skills b2c --ide antigravity
+b2c setup skills b2c-cli --ide antigravity
+```
+
+```bash [User Scope]
+b2c setup skills b2c --ide antigravity --global
+b2c setup skills b2c-cli --ide antigravity --global
+```
+
+:::
+
+This writes to `.agents/skills/` (workspace) or `~/.gemini/config/skills/` (global) — the locations Antigravity discovers. For the `b2c-dx-mcp` MCP server, add it to `.agents/mcp_config.json` (workspace) or `~/.gemini/config/mcp_config.json` (global); see [MCP Installation](/mcp/installation).
+
 ## B2C CLI
 
 Interactive — select skillsets and IDEs:
@@ -338,13 +425,15 @@ b2c setup skills b2c --ide agentforce-vibes --global
 Use [`b2c setup skills`](/cli/setup) for any supported IDE.
 :::
 
-| IDE                                                                                        | Flag             |
-| ------------------------------------------------------------------------------------------ | ---------------- |
-| [Cursor](https://cursor.com/docs/skills)                                                   | `--ide cursor`   |
-| [Windsurf](https://docs.windsurf.com/)                                                     | `--ide windsurf` |
-| [VS Code / Copilot](https://code.visualstudio.com/docs/copilot/customization/agent-skills) | `--ide vscode`   |
-| [Codex CLI](https://github.com/openai/codex)                                               | `--ide codex`    |
-| [OpenCode](https://opencode.ai/)                                                           | `--ide opencode` |
+| IDE                                                                                        | Flag                |
+| ------------------------------------------------------------------------------------------ | ------------------- |
+| [Cursor](https://cursor.com/docs/skills)                                                   | `--ide cursor`      |
+| [Windsurf](https://docs.windsurf.com/)                                                     | `--ide windsurf`    |
+| [VS Code / Copilot](https://code.visualstudio.com/docs/copilot/customization/agent-skills) | `--ide vscode`      |
+| [Codex CLI](https://github.com/openai/codex)                                               | `--ide codex`       |
+| [OpenCode](https://opencode.ai/)                                                           | `--ide opencode`    |
+| [Gemini CLI](https://google-gemini.github.io/gemini-cli/)                                  | `--ide gemini-cli`  |
+| [Google Antigravity](https://antigravity.google/docs/skills)                               | `--ide antigravity` |
 
 ### Manual Installation
 
@@ -357,14 +446,16 @@ b2c setup skills b2c --ide manual --directory ./my-skills
 
 For reference, the install locations each `--ide` flag writes to:
 
-| IDE               | Project             | User                          |
-| ----------------- | ------------------- | ----------------------------- |
-| Cursor            | `.cursor/skills/`   | `~/.cursor/skills/`           |
-| Windsurf          | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
-| VS Code / Copilot | `.github/skills/`   | `~/.copilot/skills/`          |
-| Codex CLI         | `.codex/skills/`    | `~/.codex/skills/`            |
-| OpenCode          | `.opencode/skills/` | `~/.config/opencode/skills/`  |
-| Agentforce Vibes  | `.a4drules/skills/` | IDE's global storage          |
+| IDE                | Project             | User                          |
+| ------------------ | ------------------- | ----------------------------- |
+| Cursor             | `.cursor/skills/`   | `~/.cursor/skills/`           |
+| Windsurf           | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
+| VS Code / Copilot  | `.github/skills/`   | `~/.copilot/skills/`          |
+| Codex CLI          | `.codex/skills/`    | `~/.codex/skills/`            |
+| OpenCode           | `.opencode/skills/` | `~/.config/opencode/skills/`  |
+| Gemini CLI         | `.gemini/skills/`   | `~/.gemini/skills/`           |
+| Google Antigravity | `.agents/skills/`   | `~/.gemini/config/skills/`    |
+| Agentforce Vibes   | `.a4drules/skills/` | IDE's global storage          |
 
 ## Usage Examples
 

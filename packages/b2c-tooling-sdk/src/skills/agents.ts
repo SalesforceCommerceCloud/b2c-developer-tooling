@@ -101,6 +101,39 @@ export const IDE_CONFIGS: Record<IdeType, IdeConfig> = {
     },
     docsUrl: 'https://opencode.ai/',
   },
+  // NOTE: gemini-cli, antigravity, and manual all live under ~/.gemini or
+  // .agents/skills. They are intentionally distinct entries with different
+  // subpaths — do not collapse them:
+  //   - gemini-cli   skills: ~/.gemini/skills, .gemini/skills
+  //   - antigravity  skills: ~/.gemini/config/skills, .agents/skills
+  //   - manual       skills: ~/.agents/skills, .agents/skills
+  // gemini-cli and antigravity both probe ~/.gemini for detection (a slightly
+  // loose signal, since both products share that root), but they install to
+  // different locations. See docs/guide/agent-skills.md for the surface matrix.
+  'gemini-cli': {
+    id: 'gemini-cli',
+    displayName: 'Gemini CLI',
+    paths: {
+      projectDir: '.gemini/skills',
+      globalDir: path.join(home, '.gemini/skills'),
+    },
+    detectInstalled: async () => {
+      return fs.existsSync(path.join(home, '.gemini'));
+    },
+    docsUrl: 'https://google-gemini.github.io/gemini-cli/',
+  },
+  antigravity: {
+    id: 'antigravity',
+    displayName: 'Google Antigravity',
+    paths: {
+      projectDir: '.agents/skills',
+      globalDir: path.join(home, '.gemini/config/skills'),
+    },
+    detectInstalled: async () => {
+      return fs.existsSync(path.join(home, '.gemini'));
+    },
+    docsUrl: 'https://antigravity.google/docs/skills',
+  },
   'agentforce-vibes': {
     id: 'agentforce-vibes',
     displayName: 'Agentforce Vibes',
@@ -139,6 +172,8 @@ export const ALL_IDE_TYPES: IdeType[] = [
   'vscode',
   'codex',
   'opencode',
+  'gemini-cli',
+  'antigravity',
   'agentforce-vibes',
   'manual',
 ];

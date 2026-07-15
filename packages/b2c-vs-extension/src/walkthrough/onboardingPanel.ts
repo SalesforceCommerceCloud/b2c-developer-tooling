@@ -11,7 +11,7 @@ import * as fs from 'fs/promises';
 import {OnboardingStateStore, StepStatus} from './state.js';
 import {PERSONAS, PersonaId, StepAction, StepDefinition, getPersona, listPersonas, resolveSteps} from './personas.js';
 import {renderMarkdown} from './markdown.js';
-import {detectTools, generateInstallCliHtml, ToolDetectionResult} from './toolDetection.js';
+import {buildInstallCliActions, detectTools, generateInstallCliHtml, ToolDetectionResult} from './toolDetection.js';
 import {detectAllTargets, generateAiSkillsHtml} from './aiSkillsContent.js';
 import {
   detectStepConfigurations,
@@ -57,7 +57,7 @@ interface StepView {
   actions: StepAction[];
   html: string;
   /** Optional per-step detection chip ("1 configuration detected"). */
-  detection?: {label: string; matchedNames: string[]} | null;
+  detection?: {label: string; matchedNames: string[]; tooltip?: string} | null;
 }
 
 interface ViewState {
@@ -446,11 +446,21 @@ export class OnboardingPanel {
     const record = this.store.getStep(personaId, def.id);
     let html: string;
     let actions = def.actions ?? [];
+    // Optional override for the "Quick actions" chip. The install-cli step uses
+    // it to surface the detected b2c-cli version on the green tick.
+    let detectionOverride: StepView['detection'] = null;
 
     if (def.id === 'install-cli') {
       const result = await this.getToolDetection();
       html = generateInstallCliHtml(result);
-      actions = this.buildInstallCliActions(result);
+      actions = buildInstallCliActions(result);
+      if (result.b2cCli.installed && result.b2cCli.version) {
+        detectionOverride = {
+          label: `b2c-cli v${result.b2cCli.version}`,
+          matchedNames: [],
+          tooltip: `Detected B2C CLI version ${result.b2cCli.version} on your PATH.`,
+        };
+      }
     } else if (def.id === 'ai-skills') {
       if (!this.aiSkillsCache) {
         this.aiSkillsCache = await detectAllTargets();
@@ -483,8 +493,8 @@ export class OnboardingPanel {
       }
     }
 
-    let detection: StepView['detection'] = null;
-    if (detectionSummary) {
+    let detection: StepView['detection'] = detectionOverride;
+    if (!detection && detectionSummary) {
       const found: StepDetection | null = getDetectionForStep(def.id, detectionSummary);
       if (found && found.matchCount > 0 && found.label) {
         detection = {label: found.label, matchedNames: found.matchedNames ?? []};
@@ -869,30 +879,6 @@ export class OnboardingPanel {
   /** Invalidates cached detection so the next refresh re-detects. */
   invalidateToolDetection(): void {
     this.toolDetectionCache = null;
-  }
-
-  private buildInstallCliActions(result: ToolDetectionResult): StepAction[] {
-    const actions: StepAction[] = [];
-
-    if (!result.b2cCli.installed) {
-      if (result.npm.installed) {
-        actions.push({label: 'Install via npm', command: 'b2c-dx.cli.installNpm', primary: true});
-      } else if (result.homebrew.installed) {
-        actions.push({label: 'Install via Homebrew', command: 'b2c-dx.cli.installBrew', primary: true});
-      }
-      actions.push({label: 'Verify CLI', command: 'b2c-dx.cli.verify'});
-      actions.push({label: 'Re-check', command: 'b2c-dx.cli.recheck'});
-    } else if (result.b2cCliOutdated) {
-      actions.push({label: 'Update CLI', command: 'b2c-dx.cli.update', primary: true});
-      actions.push({label: 'Verify CLI', command: 'b2c-dx.cli.verify'});
-      actions.push({label: 'Re-check', command: 'b2c-dx.cli.recheck'});
-    } else {
-      actions.push({label: 'Verify CLI', command: 'b2c-dx.cli.verify', primary: true});
-      actions.push({label: 'Update CLI', command: 'b2c-dx.cli.update'});
-      actions.push({label: 'Re-check', command: 'b2c-dx.cli.recheck'});
-    }
-
-    return actions;
   }
 
   private async readMarkdown(relativePath: string): Promise<string> {
@@ -2406,9 +2392,11 @@ const PANEL_JS = `
       if (step.detection && step.detection.label) {
         detectionLabel.textContent = step.detection.label;
         const names = step.detection.matchedNames || [];
-        detectionChip.title = names.length
-          ? 'Detected in dw.json: ' + names.join(', ')
-          : 'Detected in dw.json';
+        detectionChip.title = step.detection.tooltip
+          ? step.detection.tooltip
+          : names.length
+            ? 'Detected in dw.json: ' + names.join(', ')
+            : 'Detected in dw.json';
         detectionChip.hidden = false;
         // Ensure the actions wrapper is visible even if there are no actions,
         // so the chip alone can communicate "this step is already configured".

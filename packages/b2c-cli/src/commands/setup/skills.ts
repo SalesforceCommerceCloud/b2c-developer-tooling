@@ -91,6 +91,8 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
     '<%= config.bin %> <%= command.id %> b2c --list',
     '<%= config.bin %> <%= command.id %> b2c-cli --skill b2c-code --skill b2c-webdav --ide cursor',
     '<%= config.bin %> <%= command.id %> b2c --global --update --force',
+    '<%= config.bin %> <%= command.id %> b2c-cli --ide gemini-cli',
+    '<%= config.bin %> <%= command.id %> b2c --ide antigravity',
     '<%= config.bin %> <%= command.id %> b2c --ide agentforce-vibes',
     '<%= config.bin %> <%= command.id %> b2c --ide manual --directory ./my-skills',
   ];
@@ -107,7 +109,8 @@ export default class SetupSkills extends BaseCommand<typeof SetupSkills> {
       multiple: true,
     }),
     ide: Flags.string({
-      description: 'Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, agentforce-vibes, manual',
+      description:
+        'Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, gemini-cli, antigravity, agentforce-vibes, manual',
       options: ALL_IDE_TYPES,
       multiple: true,
     }),

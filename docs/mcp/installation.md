@@ -1,5 +1,5 @@
 ---
-description: Install and configure the B2C DX MCP Server for Claude Code, Cursor, GitHub Copilot, and other MCP clients.
+description: Install and configure the B2C DX MCP Server for Claude Code, Cursor, GitHub Copilot, Gemini, Google Antigravity, and other MCP clients.
 ---
 
 # Installation
@@ -127,6 +127,65 @@ Copilot supports project-level configuration. Create the MCP config file in your
 > **Note:** GitHub Copilot/VS Code uses `"servers"` (not `"mcpServers"`) and requires `"type": "stdio"` for stdio-based servers. The `"inputs"` array is optional but included for consistency with VS Code's format.
 
 With project-level configuration, the server automatically detects your project location.
+
+> **Note:** This applies to **GitHub Copilot in VS Code** and the **Copilot CLI** — GitHub Copilot's developer surfaces. The **Microsoft 365 / Microsoft Copilot desktop app** for Mac/Windows is a separate productivity assistant that does not run local MCP servers.
+
+## Gemini
+
+The B2C DX MCP server works with **Gemini CLI** and **Gemini Code Assist** (VS Code / JetBrains).
+
+### Gemini CLI (extension — recommended)
+
+The Gemini CLI extension bundles the MCP server (and B2C project context) in a single install:
+
+```bash
+gemini extensions install https://github.com/SalesforceCommerceCloud/b2c-developer-tooling
+```
+
+This registers `b2c-dx-mcp` automatically — no manual config editing. Update it later with `gemini extensions update b2c-developer-tooling`.
+
+### Gemini CLI (manual config)
+
+Alternatively, add the server to `~/.gemini/settings.json` under `mcpServers` (the same shape as Cursor). Gemini CLI uses `"mcpServers"` (not `"servers"`):
+
+```json
+{
+  "mcpServers": {
+    "b2c-dx-mcp": {
+      "command": "npx",
+      "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
+    }
+  }
+}
+```
+
+> **Note:** `~/.gemini/settings.json` holds broad Gemini CLI settings, not just MCP servers — edit it by hand (merge into any existing `mcpServers` object) rather than overwriting the file. The extension install above avoids this entirely.
+
+### Gemini Code Assist
+
+Gemini Code Assist shares configuration with the Gemini CLI. In **VS Code**, the server configured in `~/.gemini/settings.json` (or via the extension) is available in agent mode. In **JetBrains**, add the server through the IDE's MCP settings. See the [Gemini CLI configuration docs](https://google-gemini.github.io/gemini-cli/) for details.
+
+> **Note:** The standalone **Gemini desktop app** for Mac/Windows is a consumer assistant and does **not** run local MCP servers. Use Gemini CLI, Gemini Code Assist, or Google Antigravity for B2C development.
+
+## Google Antigravity
+
+[Google Antigravity](https://antigravity.google/docs/mcp) (IDE, CLI, and Python SDK) supports MCP servers over stdio using the standard `"mcpServers"` shape — identical to the config below. Add the server at either scope:
+
+- **Workspace:** `.agents/mcp_config.json` in your project root
+- **Global:** `~/.gemini/config/mcp_config.json`
+
+```json
+{
+  "mcpServers": {
+    "b2c-dx-mcp": {
+      "command": "npx",
+      "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--allow-non-ga-tools"]
+    }
+  }
+}
+```
+
+The Antigravity **SDK** auto-discovers servers from the workspace `.agents/mcp_config.json`, so the same file serves the IDE, CLI, and SDK. In the Antigravity IDE you can also add the server through the built-in MCP Store (**···** → **MCP Servers** → **Manage MCP Servers** → **View raw config**).
 
 ## After Installation
 

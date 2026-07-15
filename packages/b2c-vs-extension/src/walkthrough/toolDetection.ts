@@ -5,6 +5,7 @@
  */
 
 import * as cp from 'child_process';
+import type {StepAction} from './personas.js';
 
 export interface ToolStatus {
   name: string;
@@ -279,4 +280,51 @@ li { margin-bottom: 4px; }
   );
 
   return parts.join('\n');
+}
+
+/**
+ * Builds the Quick-actions for the "Install the B2C CLI" step based on detected
+ * tool state. Extracted as a pure function so the enable/disable logic is unit
+ * testable without the VS Code panel.
+ *
+ * Notable behavior: "Update CLI" is only actionable when an update is actually
+ * available. When the CLI is installed and confirmed up to date
+ * (`b2cCliOutdated === false`) the button renders disabled with an explanatory
+ * tooltip. When the latest version is unknown (offline / version cache empty,
+ * so `b2cCliOutdated` is `undefined`) it stays enabled — we don't block an
+ * update we simply couldn't verify.
+ */
+export function buildInstallCliActions(result: ToolDetectionResult): StepAction[] {
+  const actions: StepAction[] = [];
+
+  if (!result.b2cCli.installed) {
+    if (result.npm.installed) {
+      actions.push({label: 'Install via npm', command: 'b2c-dx.cli.installNpm', primary: true});
+    } else if (result.homebrew.installed) {
+      actions.push({label: 'Install via Homebrew', command: 'b2c-dx.cli.installBrew', primary: true});
+    }
+    actions.push({label: 'Verify CLI', command: 'b2c-dx.cli.verify'});
+    actions.push({label: 'Re-check', command: 'b2c-dx.cli.recheck'});
+  } else if (result.b2cCliOutdated) {
+    actions.push({label: 'Update CLI', command: 'b2c-dx.cli.update', primary: true});
+    actions.push({label: 'Verify CLI', command: 'b2c-dx.cli.verify'});
+    actions.push({label: 'Re-check', command: 'b2c-dx.cli.recheck'});
+  } else {
+    // Installed. Only offer an actionable Update when we know a newer version
+    // exists; otherwise disable it (up to date) or leave it enabled when the
+    // latest version couldn't be resolved.
+    const upToDate = result.b2cCliOutdated === false;
+    actions.push({label: 'Verify CLI', command: 'b2c-dx.cli.verify', primary: true});
+    actions.push({
+      label: upToDate ? 'Up to date' : 'Update CLI',
+      command: 'b2c-dx.cli.update',
+      disabled: upToDate,
+      tooltip: upToDate
+        ? `B2C CLI ${result.b2cCli.version ?? ''} is the latest version — no update available.`.trim()
+        : undefined,
+    });
+    actions.push({label: 'Re-check', command: 'b2c-dx.cli.recheck'});
+  }
+
+  return actions;
 }
