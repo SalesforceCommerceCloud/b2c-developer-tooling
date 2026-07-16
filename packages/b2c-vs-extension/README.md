@@ -7,6 +7,9 @@ See the [extension documentation](https://salesforcecommercecloud.github.io/b2c-
 [![Salesforce B2C Commerce activity bar showing the extension's developer tools](https://raw.githubusercontent.com/SalesforceCommerceCloud/b2c-developer-tooling/main/docs/vscode-extension/images/overview.png)](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/)
 
 ## Highlights
+> **Marketplace publishing happens out of [`forcedotcom/b2c-dx`](https://github.com/forcedotcom/b2c-dx).** All extension development, issues, and pull requests stay in this monorepo; the `forcedotcom/b2c-dx` repo holds the marketplace landing page, governance files, and the workflows that publish each release to VS Code Marketplace and Open VSX. See [PUBLISHING.md](./PUBLISHING.md) for the publish flow and the manual fallback.
+
+## Features (overview)
 
 ### Write B2C code with editor support
 

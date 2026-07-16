@@ -226,8 +226,12 @@ function loadCorpus(dataDir: string): DocEntry[] {
   for (const entry of parsed.entries) {
     if (entryById.has(entry.id)) continue; // first corpus wins on id collision
     entryById.set(entry.id, entry);
-    // Only record a data dir for entries whose content is bundled on disk.
-    if (entry.filePath) {
+    // Record a data dir only for entries whose content is actually bundled on
+    // disk. Some corpora (e.g. Salesforce Help) carry a `filePath` for
+    // parity/debug but ship online-only — their `.md` files are NOT packaged, so
+    // reading from disk would ENOENT. Existence-gating routes those to the
+    // online `sourceUrl` path in readEntryContent instead.
+    if (entry.filePath && fs.existsSync(path.join(dataDir, entry.filePath))) {
       entryDataDir.set(entry.id, dataDir);
     }
   }
@@ -484,7 +488,13 @@ export async function readEntryContent(entry: DocEntry): Promise<string> {
   const dataDir = entryDataDir.get(entry.id);
   if (dataDir && entry.filePath) {
     logger.debug({id: entry.id, source: 'bundled', filePath: entry.filePath}, 'Reading bundled documentation entry');
-    return fs.readFileSync(path.join(dataDir, entry.filePath), 'utf-8');
+    try {
+      return fs.readFileSync(path.join(dataDir, entry.filePath), 'utf-8');
+    } catch (err) {
+      // A registered bundled file should exist (loadCorpus existence-gates), but
+      // if it is unreadable, fall through to the online source rather than throw.
+      logger.debug({id: entry.id, filePath: entry.filePath, err}, 'Bundled read failed; trying online source');
+    }
   }
   // Online-only entries (guides): fetch the raw markdown. Prefer `sourceUrl`
   // (the `.md`); fall back to `url` for any entry that only carries one.
