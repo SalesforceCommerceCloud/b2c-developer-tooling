@@ -4,6 +4,7 @@
   "description": "Tools for developing on Salesforce B2C Commerce, including cartridge deployment, script debugging and IntelliSense, and sandbox management.",
   "version": "1.0.0",
   "publisher": "Salesforce",
+  "icon": "media/icon.png",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
   "homepage": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/packages/b2c-vs-extension",
