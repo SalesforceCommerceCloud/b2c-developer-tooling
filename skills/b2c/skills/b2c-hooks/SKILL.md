@@ -1,6 +1,6 @@
 ---
 name: b2c-hooks
-description: Implement hooks with HookMgr, hooks.json registration, and system extension points for order, basket, and API lifecycle events. Use this skill whenever the user needs to register a hook implementation, extend OCAPI/SCAPI behavior with before/after hooks, customize order calculation or payment authorization, or create custom extension points. Also use when debugging hook registration or Status return values -- even if they just say 'run code when an order is placed' or 'intercept the basket API'.
+description: Register and implement B2C Commerce platform hooks -- scripts registered in a cartridge's hooks.json and invoked by HookMgr during OCAPI/SCAPI requests or system events. This skill applies ONLY when the user's question involves writing or debugging code that is registered in hooks.json and called by the platform's HookMgr dispatcher. Key identifiers that signal this skill: hooks.json, HookMgr.callHook(), dw.system.Status returns, dw.ocapi.shop.* extension points (beforePOST/afterPOST/modifyResponse), dw.order.calculate, app.payment.processor.*. Covers: hook script authoring, registration, Status OK/ERROR/rollback semantics, request.custom inter-hook data passing, custom extension points. Hard exclusions -- do NOT trigger for these even if the query mentions 'hook' or 'order': outbound webhook/notification endpoints on external Node.js/Express services (not hooks.json-registered); SFRA controller routes, middleware, or prepend/append chains; scheduled job step modules (execute/beforeStep/afterStep in steptypes.json, not hooks.json); Git or CI hooks (husky, pre-commit).
 ---
 
 # B2C Commerce Hooks
@@ -338,6 +338,57 @@ Register it like any order hook:
 
 > The `app.payment.processor.<id>` Authorize hooks are themselves custom hooks (one per payment processor, function `Authorize`). By SFRA convention they return a plain object whose `error` flag signals the outcome — `{ authorized: true }` on success, `{ error: true }` on decline — which is why the example treats a missing result or `result.error` as a failure. This mirrors the SFRA `handlePayments` checkout helper. For order-status semantics (`placeOrder`/`failOrder`, reopen-basket behavior, status transitions) see [b2c-ordering](../b2c-ordering/SKILL.md).
 
+## Order Hook Lifecycle and Rollback Semantics
+
+The order POST hooks execute in a defined sequence with different transaction semantics at each phase:
+
+```
+beforePOST(basket)          ← Validation; Status.ERROR rejects before order creation
+       ↓
+[Order created: CREATED]    ← Platform creates order from basket
+       ↓
+afterPOST(order)            ← Inside platform transaction; owns CREATED→NEW/FAILED
+       ↓
+[Transaction commits]
+       ↓
+modifyPOSTResponse(order, response)  ← After commit; response-shaping only
+```
+
+### Rollback Semantics
+
+| Phase | Transaction context | `Status.ERROR` effect |
+|-------|--------------------|-----------------------|
+| `afterPOST` | Inside transaction | **Rolls back** — no order record survives |
+| `modifyPOSTResponse` | After commit | **No rollback** — order already persisted; only sets HTTP response to 400 |
+
+This means `afterPOST` gives you EITHER a persisted failed order (return `Status.OK` after `OrderMgr.failOrder`) OR an HTTP error (return `Status.ERROR`), **not both**.
+
+### Two-Hook Pattern: Persist Failed Order AND Return HTTP Error
+
+When you need a queryable FAILED order (for metrics/triage) AND an HTTP error to the storefront (so the UI shows a decline):
+
+1. **`afterPOST`**: Call `OrderMgr.failOrder(order, false)`, stash decline details on `request.custom`, return `Status.OK` so the transaction commits.
+2. **`modifyPOSTResponse`**: Read `request.custom`, return `new Status(Status.ERROR, code, message)` — this sets the HTTP response to 400 without rolling back the persisted order.
+
+See [Order Hook Lifecycle reference](references/ORDER-HOOK-LIFECYCLE.md) for the full code example and verified test results.
+
+### `request.custom` for Inter-Hook Data Passing
+
+`request.custom` (`dw.system.Request`) is the idiomatic channel to pass data between hooks within the same request. It persists for the request's lifetime and works across all hook phases (before → after → modifyResponse).
+
+```javascript
+// In afterPOST
+request.custom.declineInfo = { code: 'PAYMENT_DECLINED', reason: 'Insufficient funds' };
+
+// In modifyPOSTResponse (same request, after commit)
+var info = request.custom.declineInfo;
+if (info) {
+    return new Status(Status.ERROR, info.code, info.reason);
+}
+```
+
+This technique applies generally — not just to orders. Any pair of hooks in the same request can communicate via `request.custom`.
+
 ## System Hooks
 
 ### Calculate Hooks
@@ -482,3 +533,4 @@ Hooks must complete within the SCAPI timeout (HTTP 504 on timeout).
 
 - [OCAPI/SCAPI Hooks](references/OCAPI-SCAPI-HOOKS.md) - API hook patterns and available hooks
 - [System Hooks](references/SYSTEM-HOOKS.md) - Calculate, payment, and order hooks
+- [Order Hook Lifecycle](references/ORDER-HOOK-LIFECYCLE.md) - Lifecycle phases, rollback semantics, and the two-hook pattern
