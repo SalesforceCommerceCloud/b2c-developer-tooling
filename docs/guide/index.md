@@ -2,10 +2,6 @@
 description: Introduction to the Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, VS Code extension, and SDK for Salesforce Agentforce Commerce.
 ---
 
-<script setup>
-import {data as vsxRelease} from '../vscode-extension/release.data.ts';
-</script>
-
 # Introduction
 
 The Agentic B2C Developer Toolkit exposes the B2C Commerce platform as commands, MCP tools, and coding skills — so you and your AI agents can build, deploy, and operate storefronts from the terminal or directly inside your IDE. No clicking through Business Manager to deploy, no context-switching to run a job, no manual copy-paste when your agent needs to touch a live sandbox.
@@ -13,7 +9,7 @@ The Agentic B2C Developer Toolkit exposes the B2C Commerce platform as commands,
 - **B2C CLI** — a single command for every workflow: cartridge deploys, jobs, ODS/MRT, WebDAV, site archives, SLAS, eCDN, Account Manager, CI/CD.
 - **Agent Skills** — 30+ preconfigured skills that teach your coding agent (Claude Code, Cursor, Agentforce Vibes, Copilot, Codex) how B2C Commerce works — SCAPI Custom APIs, SLAS, SFRA controllers and forms, ISML, Page Designer, hooks, custom objects — and which CLI commands to run when.
 - **MCP Server** — a focused set of MCP tools that complement the CLI for agent-driven workflows.
-- **VS Code Extension** *(Developer Preview)* — sandbox management, cartridge code sync, content libraries, SCAPI explorer, and a server-side script debugger right inside VS Code.
+- **VS Code Extension** — sandbox management, cartridge code sync, content libraries, SCAPI explorer, and a server-side script debugger right inside VS Code.
 - **Tooling SDK** — everything the CLI does, available as a typed TypeScript SDK for custom integrations.
 
 ## Quick CLI Install
@@ -79,26 +75,13 @@ claude plugin install b2c-dx-mcp --scope project
 
 See the [MCP Server Installation Guide](/mcp/installation) for full setup steps and troubleshooting.
 
-## Quick VS Code Extension Install <Badge type="warning" text="Developer Preview" />
+## Quick VS Code Extension Install
 
-The B2C DX VS Code Extension brings sandbox management, code sync, content libraries, the SCAPI explorer, and a server-side debugger into VS Code. It isn't on the Marketplace yet — install the latest pre-built `.vsix` from GitHub.
-
-<div v-if="!vsxRelease.unavailable">
-
-Latest version: <strong>{{ vsxRelease.version }}</strong> · <a :href="vsxRelease.vsixDownloadUrl">Download {{ vsxRelease.vsixAssetName }}</a> · <a :href="vsxRelease.releasePageUrl">Release notes</a>
+The Salesforce B2C Commerce VS Code Extension brings sandbox management, code sync, content libraries, the SCAPI explorer, and a server-side debugger into VS Code. Install [Salesforce B2C Commerce](https://marketplace.visualstudio.com/items?itemName=Salesforce.b2c-vs-extension) from the Visual Studio Marketplace or run:
 
 ```bash
-code --install-extension {{ vsxRelease.vsixAssetName }}
-# or, in Cursor:
-cursor --install-extension {{ vsxRelease.vsixAssetName }}
+code --install-extension Salesforce.b2c-vs-extension
 ```
-
-</div>
-<div v-else>
-
-The extension hasn't shipped a release yet. Browse the <a :href="vsxRelease.fallbackUrl">GitHub releases page</a> for `b2c-vs-extension@*` tags.
-
-</div>
 
 See the [VS Code Extension](/vscode-extension/) section for the full overview, [installation](/vscode-extension/installation), and [configuration](/vscode-extension/configuration).
 
