@@ -1,5 +1,14 @@
 # Change Log
 
+## 1.0.1
+
+### Patch Changes
+
+- [#578](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/578) [`b6aedd2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b6aedd2f2329f0e9511bdf4e3a799d286fd9b262) - Add a Marketplace/Open VSX listing icon. The extension previously published with the default placeholder tile; it now ships a 256x256 branded icon (Salesforce cloud + B2C Commerce cart) via the top-level `icon` manifest field. (Thanks [@amit-kumar8-sf](https://github.com/amit-kumar8-sf)!)
+
+- Updated dependencies [[`f169fa1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f169fa153f75f4f3b76622b4300c11631deb50b0), [`633f3cb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/633f3cb7d409132f107b012e26448ab7812ed506)]:
+  - @salesforce/b2c-tooling-sdk@1.21.0
+
 ## 1.0.0
 
 ### Major Changes
