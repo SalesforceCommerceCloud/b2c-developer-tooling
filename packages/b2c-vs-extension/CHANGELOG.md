@@ -1,5 +1,13 @@
 # Change Log
 
+## 1.0.2
+
+### Patch Changes
+
+- [#579](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/579) [`17d8eba`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/17d8eba792ab02bd708a13b7ef6996cee22b2bed) - Prepare the VS Code extension for its 1.0 Marketplace launch with a public-facing README, feature tour, setup guidance, Marketplace installation instructions, and support links. Contributor build, test, and packaging instructions now live in `DEVELOPMENT.md`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#549](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/549) [`4f3ac11`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f3ac110ec5dc7364643bb1ff4d4c529c4f8cd63) - Point the extension's marketplace repository URL at `forcedotcom/b2c-dx`. The extension is published from a separate Salesforce-owned repository under open-source governance (public OSS lives under a `forcedotcom`/`salesforce` org); development, issues, and pull requests continue in this monorepo. See `packages/b2c-vs-extension/PUBLISHING.md` for the publish flow. (Thanks [@amit-kumar8-sf](https://github.com/amit-kumar8-sf)!)
+
 ## 1.0.1
 
 ### Patch Changes
