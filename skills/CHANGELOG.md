@@ -1,5 +1,19 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.5.3
+
+### Patch Changes
+
+- [#568](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/568) [`633f3cb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/633f3cb7d409132f107b012e26448ab7812ed506) - Log commands and tools can now access logs in `Logs/` subdirectories (such as `internal/`). Pass a path-like `--filter`/`prefixes` value containing a `/` — e.g. `--filter internal/server` to target `server-*.log` files under `internal/`, or `--filter internal/` for everything in that subdirectory. Plain prefix filters (and the default listing) are unchanged and still only scan the top-level `Logs/` directory, so there is no performance impact unless you opt in with a path filter. Works across `logs list`, `logs get`, `logs tail`, and the corresponding MCP tools. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.5.2
+
+### Patch Changes
+
+- [`4b3ecd1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4b3ecd15d66112725adca54007a743ac540a8cb1) - Clarify that commands without a configured client ID reuse the saved stateful session. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#566](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/566) [`8964008`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8964008cbe47315dc1457ac74af37d9a38956197) - Add storefront-next skills for SCAPI client management and custom API implementation workflows (Thanks [@charithaT07](https://github.com/charithaT07)!)
+
 ## 1.5.1
 
 ### Patch Changes

@@ -25,8 +25,11 @@ const packageRoot = path.dirname(require.resolve('@salesforce/b2c-tooling-sdk/pa
 const GUIDES_INDEX = path.join(packageRoot, 'data/guides/index.json');
 const TOOLING_INDEX = path.join(packageRoot, 'data/tooling/index.json');
 
+const HELP_INDEX = path.join(packageRoot, 'data/help/index.json');
+
 const hasGuides = fs.existsSync(GUIDES_INDEX);
 const hasTooling = fs.existsSync(TOOLING_INDEX);
+const hasHelp = fs.existsSync(HELP_INDEX);
 
 describe('docs: Developer Center guides corpus', function () {
   before(function () {
@@ -348,6 +351,37 @@ describe('docs: tooling corpus', function () {
       const content = await readEntryContent(auth!);
       expect(content).to.equal('# Authentication\n\nfetched body');
       expect(fetchedUrl, 'content must be fetched from the .md sourceUrl').to.equal(auth!.sourceUrl);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+describe('docs: Salesforce Help corpus', function () {
+  before(function () {
+    if (!hasHelp) this.skip();
+  });
+
+  // Help entries carry a `filePath` for parity/debug, but the .md tree is NOT
+  // bundled in the package (it ships to the docs site only). Reads must therefore
+  // route to the online sourceUrl, never a (nonexistent) local file — regression
+  // for reads failing with "failed to load from the local doc cache".
+  it('reads help content online from sourceUrl despite carrying a filePath', async () => {
+    const entry = listDocs('help-admin').find((e) => Boolean(e.filePath && e.sourceUrl));
+    expect(entry, 'expected a help-admin entry with a filePath and sourceUrl').to.not.equal(undefined);
+    clearContentCache(true);
+    const originalFetch = globalThis.fetch;
+    let fetchedUrl = '';
+    globalThis.fetch = ((input: Parameters<typeof fetch>[0]) => {
+      fetchedUrl = String(input);
+      return Promise.resolve(new Response('# Help Article\n\nfetched body', {status: 200}));
+    }) as typeof fetch;
+    try {
+      const content = await readEntryContent(entry!);
+      // Real content, not the offline metadata fallback.
+      expect(content).to.equal('# Help Article\n\nfetched body');
+      expect(content).to.not.contain('could not be fetched');
+      expect(fetchedUrl, 'help content must be fetched from the online sourceUrl').to.equal(entry!.sourceUrl);
     } finally {
       globalThis.fetch = originalFetch;
     }

@@ -56,10 +56,12 @@ The CLI supports five authentication methods:
 
 **Stateful Client Auth** uses `b2c auth client` to authenticate once with client credentials (or user/password), store the session, and reuse it across subsequent commands without passing credentials each time. Mirrors the [sfcc-ci](https://github.com/SalesforceCommerceCloud/sfcc-ci) `client:auth` workflow. Use `--renew` to enable automatic token renewal via `b2c auth client renew`. See [Auth Commands](/cli/auth#b2c-auth-client) for details.
 
+After signing in with `auth login` or `auth client`, you can omit the client ID from later commands. The CLI automatically reuses the valid saved session when no other client is configured.
+
 ::: warning Stateful vs Stateless Precedence
 The stored session is used only when the token is valid **and** no explicit auth flags are provided. The CLI falls back to stateless auth when:
 - The stored token is **expired or invalid** — a warning suggests `b2c auth client renew` (if renewable) or `b2c auth client` / `b2c auth login` to re-authenticate.
-- **Explicit stateless auth flags** are passed (`--client-secret`, `--user-auth`, or `--auth-methods`) — a warning lists the flags that triggered the override. Remove them to use the stored session. Note that `--client-id` alone does not force stateless; the stored session is used if the client ID matches.
+- **Explicit stateless auth flags** are passed (`--client-secret`, `--user-auth`, or `--auth-methods`) — a warning lists the flags that triggered the override. Remove them to use the stored session. Note that `--client-id` alone does not force stateless; the stored session is used if the configured client ID matches.
 
 To opt out of stateful auth entirely, run `b2c auth logout` to clear the stored session. The CLI will then use stateless auth exclusively.
 :::
