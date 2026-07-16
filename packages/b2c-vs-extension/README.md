@@ -1,97 +1,85 @@
-# B2C DX - VS Code Extension
+# Salesforce B2C Commerce for VS Code
 
-VS Code extension for B2C Commerce developer experience: sandbox realm explorer, cartridge code sync, WebDAV browser, content libraries, SCAPI API browser, B2C script debugger, scaffold/CAP install, log tailing, CIP analytics (Query Builder + curated reports), and ISML language support.
+Manage Salesforce B2C Commerce sandboxes, sync cartridges, browse content and APIs, debug server-side scripts, and work with ISML—all without leaving VS Code.
 
-**User-facing documentation:** [B2C DX VS Code Extension](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/) — overview, installation, configuration, and feature tour.
+See the [extension documentation](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/) for setup and feature guides, or go directly to [connecting a B2C Commerce instance](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration#connecting-to-a-b2c-instance).
 
-This README is the source of truth for repo-level developer info (build/watch, launch configs, packaging, tests). End-user documentation lives in the docs site above.
+[![Salesforce B2C Commerce activity bar showing the extension's developer tools](https://raw.githubusercontent.com/SalesforceCommerceCloud/b2c-developer-tooling/main/docs/vscode-extension/images/overview.png)](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/)
 
-## Features (overview)
+## Highlights
 
-- Sandbox Realm Explorer — create / start / stop / restart / clone / extend / view / open BM / delete.
-- Cartridge Code Sync — watch, deploy, upload/download, diff, code-version management.
-- WebDAV Browser + `b2c-webdav://` filesystem provider.
-- Content Libraries — browse, export (with/without assets), filter, import site archive.
-- SCAPI API Browser — Swagger UI panel.
-- B2C Script Debugger (debug type `b2c-script`).
-- Scaffold (`New from Scaffold...`) and CAP install.
-- Log tailing into a dedicated output channel.
-- Jobs Explorer — monitor recent job executions, drill into steps, run/re-run/stop jobs, scaffold `jobs.xml`, deploy scaffolded jobs, and open execution logs.
-- B2C-DX Analytics — CIP/CCAC Query Builder, Tables Browser, curated reports, multi-realm support, saved-query library.
-- ISML language support — syntax highlighting, language configuration (comments, brackets, auto-close), snippets, automatic closing-tag insertion, and Emmet support for `.isml` files.
+### Write B2C code with editor support
 
-See the [docs site](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/features) for the full tour.
+- ISML syntax highlighting, snippets, formatting, tag completion, diagnostics, and Emmet support
+- Script API IntelliSense and hover documentation for `dw/*` modules without adding files to your workspace
+- XSD-based validation, completion, and hover documentation for B2C metadata XML files
+- Scaffolds for cartridges, controllers, hooks, jobs, Page Designer components, and other common project files
 
-## Development
+### Debug server-side scripts
 
-From the monorepo root:
+Set breakpoints and log points, inspect variables, and step through cartridge controllers, jobs, hooks, custom scripts, and Custom APIs with the built-in B2C Script Debugger.
 
-```bash
-pnpm install
-pnpm --filter b2c-vs-extension run build
-pnpm --filter b2c-vs-extension run lint
-pnpm --filter b2c-vs-extension run format
-pnpm --filter b2c-vs-extension run test
-```
+[![B2C Script Debugger](https://raw.githubusercontent.com/SalesforceCommerceCloud/b2c-developer-tooling/main/docs/vscode-extension/images/script-debugger.png)](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/script-debugger)
 
-### Tests
+### Manage sandbox realms
 
-The test suite uses **Mocha** + **`@vscode/test-cli`** (which wraps `@vscode/test-electron`). Two layers:
+Create, start, stop, restart, clone, extend, and delete on-demand sandboxes from the Sandbox Realm Explorer. Context menus adapt to each sandbox's current state.
 
-- **Unit tests** (`src/test/*.test.ts`) — pure helpers, no `vscode` import where avoidable. Run inside the Extension Host but don't need a workspace.
-- **Integration tests** (`src/test/integration/*.test.ts`) — launch a real Extension Development Host with a fixture workspace and exercise activation, command registration, and tree providers.
+[![Sandbox Realm Explorer](https://raw.githubusercontent.com/SalesforceCommerceCloud/b2c-developer-tooling/main/docs/vscode-extension/images/sandbox-explorer.png)](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/)
 
-```bash
-# Run all tests (downloads VS Code on first run)
-pnpm --filter b2c-vs-extension run test
+### Sync cartridges and manage code versions
 
-# Coverage (text + lcov, no thresholds yet)
-pnpm --filter b2c-vs-extension exec c8 vscode-test
-```
+Deploy cartridges on demand or watch local files and upload changes automatically. Compare local and remote files, download remote changes, and activate or remove code versions from the editor.
 
-`.vscode-test.mjs` configures the Mocha runner; `tsconfig.test.json` compiles `src/**/*` to `out/`. The test glob (`out/test/**/*.test.js`) keeps the runner scoped to test files only.
+### Browse WebDAV and content libraries
 
-> **Note on coverage:** `c8` instruments the parent Node process, but the actual VS Code Extension Host runs in a child Electron process that is not instrumented out-of-the-box. The reported numbers are therefore a low-bound. For now we use coverage as a smoke check; richer instrumentation (e.g. via `nyc` injected through `extensionTestsEnv`) is a follow-up.
+Work with remote WebDAV files as if they were local. Browse Page Designer pages and components, filter large libraries, export content with or without assets, edit component XML, and import site archives.
 
-The build bundles `@salesforce/b2c-tooling-sdk` into `dist/extension.js` with esbuild, so the extension works when installed from a `.vsix` without requiring a separate `node_modules` install (unlike the CLI, which declares the SDK as an npm dependency).
+[![Content Library Explorer](https://raw.githubusercontent.com/SalesforceCommerceCloud/b2c-developer-tooling/main/docs/vscode-extension/images/library-explorer.png)](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/)
 
-### Dev workflow (watch mode)
+### Explore SCAPI
 
-For iterating on both the extension and the SDK without rebuilding:
+Browse the SCAPI schemas available to your instance and try requests in an integrated Swagger UI. The extension handles authentication with your configured credentials.
 
-1. Start the watcher in a terminal:
-   ```bash
-   cd packages/b2c-vs-extension
-   pnpm run watch
-   ```
-   This uses esbuild with the `development` condition, resolving SDK imports to source `.ts` files directly — no SDK rebuild needed.
+[![SCAPI API Explorer](https://raw.githubusercontent.com/SalesforceCommerceCloud/b2c-developer-tooling/main/docs/vscode-extension/images/api-browser.png)](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/)
 
-2. Open `packages/b2c-vs-extension` in VS Code and select the **Run Extension (Dev)** launch configuration (F5). This launches an Extension Development Host without a preLaunchTask so it won't overwrite the watch output.
+### Stay in the development flow
 
-3. After making changes, press **Cmd+Shift+F5** (Restart Debugging) to restart the extension host and pick up the new bundle.
+Tail sandbox logs into a VS Code output channel, install Commerce App Packages, manage jobs, and keep the active B2C instance visible in the status bar. Preview features such as Job History, site export, analytics, and guided onboarding can be enabled from the `b2c-dx.features.*` settings.
 
-> **Note:** The **Run Extension** launch config runs a production build (`pnpm run build`) as a preLaunchTask, which overwrites `dist/extension.js` without the `development` condition. Use **Run Extension (Dev)** when iterating with watch mode.
+## Get started
 
-### Manual verification (Jobs Explorer)
+1. Open a B2C Commerce project in VS Code.
+2. Add a `dw.json` file at the workspace root or use an existing B2C CLI configuration.
+3. Select the active instance from the cloud icon in the status bar.
+4. Open an extension view from the activity bar or run an extension command from the Command Palette.
 
-1. Configure `dw.json` with OAuth credentials and scopes that allow `/job_execution_search` and `/jobs/*/executions*`.
-2. Launch the extension host and open **B2C-DX Operations → Jobs**.
-3. Confirm jobs appear with status, last execution time, and duration, and auto-refresh every `b2c-dx.jobs.refreshInterval` seconds.
-   - Tune `b2c-dx.jobs.discoveryExecutionScanLimit` to scan more recent executions and discover additional job IDs.
-   - Tune `b2c-dx.jobs.historyLimit` to show deeper per-job execution history when expanding a job.
-   - Optionally define `b2c-dx.jobs.knownJobIds` to get quick-pick suggestions when running jobs before history is populated.
-4. Expand a job to verify execution history and step-level status/details.
-5. Run **Run Job**, **Re-Run Job**, and **Stop Execution** from the view context menu.
-6. Run **Create Job Scaffold**, complete the wizard, and verify files are generated under `b2c-jobs/<job-id>/` (`jobs.xml`, `README.md`, and script stub).
-7. Run **Deploy Job Scaffold**, select a generated `jobs.xml`, confirm target instance, and verify deployment completes.
-8. After deploy, open **Business Manager Jobs** from the success prompt and confirm the new job definition is present (disabled by default).
-9. For a failed execution, run **Open Failure Log** and verify the editor jumps to a matching error message in the opened log.
+Different features require different credentials. WebDAV workflows can use a Business Manager username and access key, while sandbox and API workflows require OAuth configuration. See [Connecting to a B2C instance](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration#connecting-to-a-b2c-instance) for the per-feature requirements and an example `dw.json`.
+
+The [B2C CLI](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/installation) is optional. Install it when you want to run the same workflows from a terminal or CI environment.
 
 ## Requirements
 
-- VS Code ^1.105.1
-- [B2C CLI](https://www.npmjs.com/package/@salesforce/b2c-cli) installed (for WebDAV and other CLI commands)
+- VS Code 1.105.1 or later
+- Access to a Salesforce B2C Commerce instance for remote workflows
+- The [Red Hat XML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-xml) for B2C metadata XML validation; the extension offers to install it when needed
+
+## Documentation and support
+
+- [Extension documentation](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/)
+- [Authentication setup](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication)
+- [Configuration reference](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration)
+- [Report an issue](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/issues)
+- [Release notes](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/blob/main/packages/b2c-vs-extension/CHANGELOG.md)
+
+## Telemetry
+
+The extension sends anonymous lifecycle and broad feature-category events to help improve the product. It honors VS Code's global `telemetry.telemetryLevel` setting and can also be disabled with `b2c-dx.telemetry.enabled`.
+
+## Contributing
+
+Development, testing, and packaging instructions are available in [DEVELOPMENT.md](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/blob/main/packages/b2c-vs-extension/DEVELOPMENT.md).
 
 ## License
 
-Apache-2.0. See [license.txt](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/blob/main/license.txt) in the repo root.
+Copyright (c) 2026, Salesforce, Inc. Licensed under the [Apache License 2.0](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/blob/main/license.txt).
