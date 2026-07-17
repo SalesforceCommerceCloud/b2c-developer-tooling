@@ -406,6 +406,11 @@ describe('docs: Salesforce Help corpus', function () {
     expect(chunkedPage!.relatedEntries).to.equal(undefined);
   });
 
+  it('excludes topics marked for future publication', () => {
+    const futureTopic = listDocs('help-admin').find((entry) => entry.id === 'help-admin/b2c_metrics_third_party');
+    expect(futureTopic).to.equal(undefined);
+  });
+
   it('only emits related entry ids that resolve within the corpus', () => {
     const helpEntries = [...listDocs('help-admin'), ...listDocs('help-merchant')];
     const ids = new Set(helpEntries.map((entry) => entry.id));

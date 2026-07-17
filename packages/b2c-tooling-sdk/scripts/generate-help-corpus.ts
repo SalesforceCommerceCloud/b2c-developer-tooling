@@ -36,6 +36,8 @@
  * titles/shortdescs still enrich the parent page's searchable signal.
  * Non-chunked child pages remain separate entries and are also emitted as the
  * parent's related-content list, matching the linked cards on Salesforce Help.
+ * Nodes marked `otherprops="future"` are excluded from both map traversal and
+ * topic conversion so unpublished content does not leak into the corpus.
  *
  * ## Category assignment
  *
@@ -206,8 +208,10 @@ const parser = new XMLParser({
 });
 
 const tagOf = (node: XmlNode): string => Object.keys(node).find((k) => k !== ':@') as string;
-const childrenOf = (node: XmlNode): XmlNode[] => (node[tagOf(node)] as XmlNode[]) ?? [];
 const attrsOf = (node: XmlNode): Record<string, string> => (node[':@'] as Record<string, string>) ?? {};
+const isFuture = (node: XmlNode): boolean => /(^|\s)future($|\s)/i.test(attrsOf(node)['@_otherprops']?.trim() ?? '');
+const childrenOf = (node: XmlNode): XmlNode[] =>
+  ((node[tagOf(node)] as XmlNode[]) ?? []).filter((child) => !isFuture(child));
 const findChild = (arr: XmlNode[] | undefined, name: string): XmlNode | undefined =>
   (arr ?? []).find((n) => tagOf(n) === name);
 const findChildren = (arr: XmlNode[] | undefined, name: string): XmlNode[] =>
@@ -625,7 +629,7 @@ interface ParsedTopic {
 function parseTopic(file: string): ParsedTopic | null {
   const tree = parser.parse(fs.readFileSync(file, 'utf-8')) as XmlNode[];
   const rootNode = tree.find((n) => ['concept', 'task', 'reference', 'topic', 'dita'].includes(tagOf(n)));
-  if (!rootNode) return null;
+  if (!rootNode || isFuture(rootNode)) return null;
   const id = attrsOf(rootNode)['@_id'];
   if (!id) return null; // topics with no id are not standalone-published
   const kids = childrenOf(rootNode);

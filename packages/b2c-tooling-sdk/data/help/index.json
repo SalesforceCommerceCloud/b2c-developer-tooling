@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-07-17T14:08:02.368Z",
+  "generatedAt": "2026-07-17T14:57:17.167Z",
   "entries": [
     {
       "id": "help-admin/b2c__replication_best_practices",
@@ -2357,7 +2357,6 @@
         "help-admin/b2c_metrics_overall_app",
         "help-admin/b2c_metrics_sales",
         "help-admin/b2c_metrics_ecdn",
-        "help-admin/b2c_metrics_third_party",
         "help-admin/b2c_metrics_scapi",
         "help-admin/b2c_metrics_scapi_hooks",
         "help-admin/b2c_metrics_managed_runtime"
@@ -2422,16 +2421,6 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_metrics_scapi_hooks.md",
       "headings": "Hook Execution Time • Hook Execution Errors",
       "summary": "SCAPI Hook metrics help website administrators and DevOps teams monitor and analyze the performance of SCAPI hooks. These metrics help identify issues with slow performance and failures of SCAPI hooks. SCAPI Hook metrics appear in the Metrics Dashboard with a delay of up to 10 minutes."
-    },
-    {
-      "id": "help-admin/b2c_metrics_third_party",
-      "title": "Third Party Service Metrics",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_metrics_third_party.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_metrics_third_party.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_metrics_third_party.md",
-      "headings": "Number of Calls • Call Duration p95 • Total Remote Exceptions",
-      "summary": "Third Party Service metrics help website administrators and DevOps teams monitor and analyze the performance of outgoing calls made to third-party services. These metrics help identify issues with calls, such as slow-performing calls and network errors from third-party services."
     },
     {
       "id": "help-admin/b2c_minimize_the_attack_surface",
