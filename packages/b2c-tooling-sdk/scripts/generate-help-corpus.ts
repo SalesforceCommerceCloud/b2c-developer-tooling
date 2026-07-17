@@ -46,9 +46,10 @@
  * logs, inventory ops) or `help-merchant` (merchandising: catalogs, products,
  * promotions, search, content, analytics, SEO). Composite maps can contain both
  * direct topicrefs and maprefs; their direct topics are indexed here while the
- * referenced maps are processed independently. A few maps are excluded (Data
- * Cloud, Agentforce, Einstein, CDP connector) — that content is feature-marketing
- * or covered by other corpora.
+ * referenced maps are processed independently. Data 360, Agentforce, Einstein,
+ * and the legacy CDP Connector maps are deliberately excluded even though they
+ * contain published Help articles: they are product-specific guides outside this
+ * corpus's focused Business Manager administration and merchandising scope.
  *
  * ## URL derivation
  *
@@ -99,7 +100,11 @@ const pagesSourceUrl = (category: string, id: string): string => `${PAGES_BASE}/
 // ---------------------------------------------------------------------------
 type HelpCategory = 'help-admin' | 'help-merchant';
 
-/** Maps whose content is intentionally NOT indexed (feature marketing / covered elsewhere). */
+/**
+ * Published product-specific Help maps intentionally kept outside this corpus's
+ * Business Manager administration and merchandising scope. Do not remove an
+ * exclusion without an explicit corpus-scope decision.
+ */
 const EXCLUDED_MAPS = new Set(['b2c_data_cloud', 'b2c_agentforce', 'b2c_einstein', 'b2c_cdp_connector']);
 
 const ADMIN_MAPS = new Set([
