@@ -151,8 +151,35 @@ describe('tools/docs', () => {
 
     it('defaults to a small result set when limit is omitted', async () => {
       const tool = createDocsSearchTool(loadServices);
-      const json = getResultJson<{results: unknown[]}>(await tool.handler({query: 'login'}));
+      const json = getResultJson<{results: unknown[]; total: number; offset: number}>(
+        await tool.handler({query: 'login'}),
+      );
       expect(json.results.length).to.be.at.most(5);
+      expect(json.total).to.be.at.least(json.results.length);
+      expect(json.offset).to.equal(0);
+    });
+
+    it('pages ranked search results with total and nextOffset', async () => {
+      const tool = createDocsSearchTool(loadServices);
+      const first = getResultJson<{
+        total: number;
+        offset: number;
+        results: Array<{id: string}>;
+        truncated?: boolean;
+        nextOffset?: number;
+      }>(await tool.handler({query: 'login', limit: 1}));
+      expect(first.total).to.be.greaterThan(1);
+      expect(first.offset).to.equal(0);
+      expect(first.results).to.have.length(1);
+      expect(first.truncated).to.equal(true);
+      expect(first.nextOffset).to.equal(1);
+
+      const second = getResultJson<{offset: number; results: Array<{id: string}>}>(
+        await tool.handler({query: 'login', limit: 1, offset: first.nextOffset}),
+      );
+      expect(second.offset).to.equal(1);
+      expect(second.results).to.have.length(1);
+      expect(second.results[0].id).to.not.equal(first.results[0].id);
     });
 
     it('returns empty results on a miss', async () => {
