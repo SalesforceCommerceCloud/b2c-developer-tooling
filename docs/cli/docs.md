@@ -21,12 +21,12 @@ Search results include `category`, `summary`, `keywords`, `url`, and `sourceUrl`
 
 ## Authentication
 
-| Operation       | Auth Required                     |
-| --------------- | --------------------------------- |
-| `docs search`   | None (uses the local bundled index)    |
-| `docs read`     | None (bundled job steps + online fetch for Script API, guides, and Help)    |
-| `docs schema`   | None (uses local bundled schemas) |
-| `docs download` | Instance + WebDAV credentials     |
+| Operation       | Auth Required                                                            |
+| --------------- | ------------------------------------------------------------------------ |
+| `docs search`   | None (uses the local bundled index)                                      |
+| `docs read`     | None (bundled job steps + online fetch for Script API, guides, and Help) |
+| `docs schema`   | None (uses local bundled schemas)                                        |
+| `docs download` | Instance + WebDAV credentials                                            |
 
 For `b2c docs download`, configure instance and WebDAV access:
 
@@ -42,7 +42,7 @@ In addition to these topic-specific options, all commands also support [global f
 
 ## b2c docs search
 
-Search documentation across all corpora using content-aware BM25-style ranking. Results include metadata (category, summary, keywords, url) to help triage matches.
+Search documentation across all corpora using content-aware BM25-style ranking. Results include metadata (category, summary, keywords, url) to help triage matches. Search results are paginated by ranked position.
 
 ### Usage
 
@@ -58,15 +58,16 @@ b2c docs search [query]
 
 ### Flags
 
-| Flag               | Description                                                                                                                                                                                 | Default |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `--limit`, `-l`    | Maximum number of results to display                                                                                                                                                        | `20`    |
-| `--category`, `-c` | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step`, `help-admin`, `help-merchant`                                                        | (none)  |
-| `--workspace`      | Workspace awareness: `auto` (default, auto-detects project type), `all` (disable), or specify one or more types comma-separated: `cartridges`, `sfra`, `pwa-kit-v3`, `storefront-next`. Boosts relevant categories and de-boosts competing storefront frameworks      | `auto`  |
-| `--topics`         | Allowlist that bounds the whole corpus to these categories (comma-separated; env `SFCC_DOCS_TOPICS`). `--category`/`--workspace` narrow within it; unknown names are ignored with a warning | (all)   |
-| `--list`           | List all available documentation entries                                                                                                                                                    | `false` |
-| `--columns`        | Columns to display (comma-separated). Available: id, title, category, summary, keywords, url, sourceUrl, score                                                                                         | `id, category, title, score`  |
-| `--extended`, `-x` | Show all columns including extended fields                                                                                                                                                  | `false` |
+| Flag               | Description                                                                                                                                                                                                                                                      | Default                      |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `--limit`, `-l`    | Maximum number of results to display                                                                                                                                                                                                                             | `20`                         |
+| `--offset`, `-o`   | Number of ranked results to skip (for pagination)                                                                                                                                                                                                                | `0`                          |
+| `--category`, `-c` | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step`, `help-admin`, `help-merchant`                                                                                              | (none)                       |
+| `--workspace`      | Workspace awareness: `auto` (default, auto-detects project type), `all` (disable), or specify one or more types comma-separated: `cartridges`, `sfra`, `pwa-kit-v3`, `storefront-next`. Boosts relevant categories and de-boosts competing storefront frameworks | `auto`                       |
+| `--topics`         | Allowlist that bounds the whole corpus to these categories (comma-separated; env `SFCC_DOCS_TOPICS`). `--category`/`--workspace` narrow within it; unknown names are ignored with a warning                                                                      | (all)                        |
+| `--list`           | List all available documentation entries                                                                                                                                                                                                                         | `false`                      |
+| `--columns`        | Columns to display (comma-separated). Available: id, title, category, summary, keywords, url, sourceUrl, score                                                                                                                                                   | `id, category, title, score` |
+| `--extended`, `-x` | Show all columns including extended fields                                                                                                                                                                                                                       | `false`                      |
 
 ### Examples
 
@@ -97,6 +98,9 @@ b2c docs search ImportCatalog
 
 # Limit result count
 b2c docs search authentication --limit 5
+
+# Read the next page of ranked results
+b2c docs search authentication --limit 5 --offset 5
 
 # List all available entries
 b2c docs search --list
@@ -182,10 +186,10 @@ b2c docs read <query>
 
 ### Flags
 
-| Flag          | Description                                                                                                                          | Default |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------- |
-| `--raw`, `-r` | Output raw markdown (no terminal rendering)                                                                                          | `false` |
-| `--topics`    | Allowlist that bounds readable docs to these categories (comma-separated; env `SFCC_DOCS_TOPICS`). An id outside it will not resolve | (all)   |
+| Flag          | Description                                                                                                                                                                       | Default |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `--raw`, `-r` | Output raw markdown (no terminal rendering)                                                                                                                                       | `false` |
+| `--topics`    | Allowlist that bounds readable docs to these categories (comma-separated; env `SFCC_DOCS_TOPICS`). An id outside it will not resolve                                              | (all)   |
 | `--workspace` | Favor a workspace type (`auto`\|`all`\|`cartridges`\|`sfra`\|`pwa-kit-v3`\|`storefront-next`) when resolving a fuzzy query, matching `docs search`. Ignored for an exact id match | `auto`  |
 
 ### Examples
@@ -225,7 +229,7 @@ b2c docs read ProductMgr --json
 
 By default, markdown is rendered for terminal display. Raw markdown is emitted when using `--raw` (or when output is not a TTY). For online corpora (Script API, Developer Center guides, Salesforce Help), the command fetches full content from the sourceUrl (.md) and caches it locally; if the fetch fails, it displays the locally-indexed summary, section headings, and both the url (.html) and sourceUrl (.md) so you can retrieve the page yourself.
 
-> **Fuzzy read matches the search ranking:** `docs read` resolves an exact id deterministically (e.g. `dw.catalog.ProductMgr` always reads that class). For a *fuzzy* query (e.g. `productmgr`), it applies the same workspace-aware ranking as `docs search` — auto-detecting the workspace by default, or honoring `--workspace` — so a fuzzy `docs read` resolves the same top hit that `docs search` ranks first. Use `--workspace all` to opt out of the preference.
+> **Fuzzy read matches the search ranking:** `docs read` resolves an exact id deterministically (e.g. `dw.catalog.ProductMgr` always reads that class). For a _fuzzy_ query (e.g. `productmgr`), it applies the same workspace-aware ranking as `docs search` — auto-detecting the workspace by default, or honoring `--workspace` — so a fuzzy `docs read` resolves the same top hit that `docs search` ranks first. Use `--workspace all` to opt out of the preference.
 
 ---
 
@@ -241,9 +245,9 @@ b2c docs cache [--clear]
 
 ### Flags
 
-| Flag      | Description                                                    | Default |
-| --------- | -------------------------------------------------------------- | ------- |
-| `--clear` | Delete all cached documentation content (memory + on-disk)     | `false` |
+| Flag      | Description                                                | Default |
+| --------- | ---------------------------------------------------------- | ------- |
+| `--clear` | Delete all cached documentation content (memory + on-disk) | `false` |
 
 ### Examples
 

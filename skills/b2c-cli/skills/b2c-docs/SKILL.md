@@ -60,6 +60,9 @@ b2c docs search "authentication setup" --category tooling
 # Limit results (CLI default is 20, MCP default is 5)
 b2c docs search authentication --limit 5
 
+# Read the next page of ranked results
+b2c docs search authentication --limit 5 --offset 5
+
 # Show extended fields (url, sourceUrl, summary, keywords)
 b2c docs search authentication --columns id,title,category,url,summary
 # or use -x for extended output
@@ -223,16 +226,16 @@ xmllint --schema "$(b2c docs schema catalog --path)" my-catalog.xml --noout
 
 ## Documentation Categories
 
-| Category                  | Description                                               | Example IDs                                         |
-| ------------------------- | --------------------------------------------------------- | --------------------------------------------------- |
-| `script-api`              | Server-side Script API reference (`dw.*` classes/modules) | `dw.catalog.ProductMgr`, `dw.order.Basket`          |
-| `commerce-api`            | Commerce API (SCAPI/OCAPI) conceptual and how-to guides   | `commerce-api/slas-passwordless-login-registration` |
-| `pwa-kit-managed-runtime` | PWA Kit and Managed Runtime (MRT) guides                  | `pwa-kit-managed-runtime/getting-started`           |
-| `sfra`                    | Storefront Reference Architecture (SFRA) guides           | `sfra/controllers-and-routes`                       |
-| `sfnext`                  | Storefront Next (deprecated) guides                       | `sfnext/sfnext-get-started`                         |
-| `b2c-commerce`            | General B2C Commerce platform guides                      | `b2c-commerce/business-manager-overview`            |
-| `tooling`                 | B2C CLI, MCP, SDK, and VS Code extension guides           | `guide-authentication`, `guide-configuration`       |
-| `job-step`                | Standard (system) job step catalog                        | `ImportCatalog`, `ExportCatalog`, `job-steps`       |
+| Category                  | Description                                                                                                                      | Example IDs                                         |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `script-api`              | Server-side Script API reference (`dw.*` classes/modules)                                                                        | `dw.catalog.ProductMgr`, `dw.order.Basket`          |
+| `commerce-api`            | Commerce API (SCAPI/OCAPI) conceptual and how-to guides                                                                          | `commerce-api/slas-passwordless-login-registration` |
+| `pwa-kit-managed-runtime` | PWA Kit and Managed Runtime (MRT) guides                                                                                         | `pwa-kit-managed-runtime/getting-started`           |
+| `sfra`                    | Storefront Reference Architecture (SFRA) guides                                                                                  | `sfra/controllers-and-routes`                       |
+| `sfnext`                  | Storefront Next (deprecated) guides                                                                                              | `sfnext/sfnext-get-started`                         |
+| `b2c-commerce`            | General B2C Commerce platform guides                                                                                             | `b2c-commerce/business-manager-overview`            |
+| `tooling`                 | B2C CLI, MCP, SDK, and VS Code extension guides                                                                                  | `guide-authentication`, `guide-configuration`       |
+| `job-step`                | Standard (system) job step catalog                                                                                               | `ImportCatalog`, `ExportCatalog`, `job-steps`       |
 | `help-admin`              | Salesforce Help — administration/ops (import/export, jobs, replication, security, Account Manager, permissions, logs, inventory) | `help-admin/b2c_site_import_export`                 |
 | `help-merchant`           | Salesforce Help — merchandising (catalogs, products, promotions, search, content, analytics, SEO)                                | `help-merchant/b2c_creating_price_books`            |
 
