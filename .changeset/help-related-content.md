@@ -5,4 +5,4 @@
 '@salesforce/b2c-agent-plugins': patch
 ---
 
-Preserve published Salesforce Help child-topic links in generated Markdown and expose their exact documentation IDs through `relatedEntries` metadata so CLI and MCP readers can discover the full article content without surfacing future-profiled content.
+Expose directly related documentation IDs from Salesforce Help child-topic links and Developer Center guide TOCs so CLI and MCP readers can traverse the full published content without surfacing future-profiled Help content.

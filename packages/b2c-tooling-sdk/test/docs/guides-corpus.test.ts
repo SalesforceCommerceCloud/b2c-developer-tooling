@@ -56,6 +56,31 @@ describe('docs: Developer Center guides corpus', function () {
     expect(entry.filePath, 'guides are online-only, not bundled').to.equal(undefined);
   });
 
+  it('preserves immediate Developer Center TOC neighbors as bidirectional related entries', () => {
+    const guides = listDocs().filter((entry) =>
+      ['commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra', 'b2c-commerce'].includes(entry.category),
+    );
+    const byId = new Map(guides.map((entry) => [entry.id, entry]));
+    const workflow = byId.get('b2c-commerce/developer-workflow');
+    const quickStart = byId.get('b2c-commerce/quick-start-landing-page');
+
+    expect(workflow?.relatedEntries).to.include('b2c-commerce/quick-start-landing-page');
+    expect(quickStart?.relatedEntries).to.include('b2c-commerce/developer-workflow');
+    expect(quickStart?.relatedEntries).to.include('b2c-commerce/b2c-developer-tooling');
+    expect(workflow?.relatedEntries).not.to.include('b2c-commerce/b2c-developer-tooling');
+    expect(byId.get('b2c-commerce/build-your-site')?.relatedEntries).to.include(
+      'commerce-api/hybrid-storefront-baskets',
+    );
+
+    for (const entry of guides) {
+      for (const relatedId of entry.relatedEntries ?? []) {
+        const related = byId.get(relatedId);
+        expect(related, `${entry.id} references missing guide ${relatedId}`).to.not.equal(undefined);
+        expect(related!.relatedEntries, `${entry.id} -> ${relatedId} is not bidirectional`).to.include(entry.id);
+      }
+    }
+  });
+
   it('Script API entries carry durable .html url + .md sourceUrl and defer content online', () => {
     const scriptApi = listDocs('script-api');
     expect(scriptApi.length).to.be.greaterThan(0);

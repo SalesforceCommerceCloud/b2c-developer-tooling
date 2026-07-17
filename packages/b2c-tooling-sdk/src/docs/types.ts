@@ -95,8 +95,9 @@ export interface DocEntry {
   keywords?: string[];
   /**
    * IDs of directly related documentation entries. Salesforce Help landing
-   * articles use this for the child topics that appear as linked content cards;
-   * callers can pass any id directly to `docs read` / `docs_read`.
+   * articles use this for linked child topics, while Developer Center guides
+   * use it for immediate parent and child pages from the published TOC. Callers
+   * can pass any id directly to `docs read` / `docs_read`.
    */
   relatedEntries?: string[];
   /** Optional preview/excerpt from the document. */

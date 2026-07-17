@@ -216,6 +216,15 @@ describe('tools/docs', () => {
       ]);
     });
 
+    it('returns immediate Developer Center TOC neighbors', async () => {
+      const tool = createDocsReadTool(loadServices);
+      const result = await tool.handler({query: 'b2c-commerce/quick-start-landing-page'});
+      expect(result.isError).to.be.undefined;
+      const json = getResultJson<{entry: {relatedEntries?: string[]}}>(result);
+      expect(json.entry.relatedEntries).to.include('b2c-commerce/developer-workflow');
+      expect(json.entry.relatedEntries).to.include('b2c-commerce/b2c-developer-tooling');
+    });
+
     it('truncates long content to maxLength and pages via offset', async () => {
       const tool = createDocsReadTool(loadServices);
       const first = getResultJson<{
