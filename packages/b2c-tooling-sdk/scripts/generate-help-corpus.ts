@@ -41,11 +41,14 @@
  *
  * ## Category assignment
  *
- * Each leaf ditamap is classed `help-admin` (platform ops: import/export, jobs,
- * replication, security, Account Manager, permissions, logs, inventory ops) or
- * `help-merchant` (merchandising: catalogs, products, promotions, search, content,
- * analytics, SEO). A few maps are excluded (Data Cloud, Agentforce, Einstein, CDP
- * connector) — that content is feature-marketing or covered by other corpora.
+ * Each ditamap with directly published topics is classed `help-admin` (platform
+ * ops: import/export, jobs, replication, security, Account Manager, permissions,
+ * logs, inventory ops) or `help-merchant` (merchandising: catalogs, products,
+ * promotions, search, content, analytics, SEO). Composite maps can contain both
+ * direct topicrefs and maprefs; their direct topics are indexed here while the
+ * referenced maps are processed independently. A few maps are excluded (Data
+ * Cloud, Agentforce, Einstein, CDP connector) — that content is feature-marketing
+ * or covered by other corpora.
  *
  * ## URL derivation
  *
@@ -99,10 +102,9 @@ type HelpCategory = 'help-admin' | 'help-merchant';
 /** Maps whose content is intentionally NOT indexed (feature marketing / covered elsewhere). */
 const EXCLUDED_MAPS = new Set(['b2c_data_cloud', 'b2c_agentforce', 'b2c_einstein', 'b2c_cdp_connector']);
 
-/** Aggregator maps that only compose other maps via <mapref>; never walked directly. */
-const AGGREGATOR_MAPS = new Set(['b2c_merchandiser_administrator', 'b2c_merch', 'b2c_administer']);
-
 const ADMIN_MAPS = new Set([
+  'b2c_merchandiser_administrator',
+  'b2c_administer',
   'b2c_getting_started',
   'b2c_permissions',
   'b2c_jobs_refactored',
@@ -119,6 +121,7 @@ const ADMIN_MAPS = new Set([
 ]);
 
 const MERCHANT_MAPS = new Set([
+  'b2c_merch',
   'b2c_catalogs',
   'b2c_categories',
   'b2c_products',
@@ -148,7 +151,7 @@ const MERCHANT_MAPS = new Set([
 ]);
 
 function categoryFor(mapName: string): HelpCategory | null {
-  if (EXCLUDED_MAPS.has(mapName) || AGGREGATOR_MAPS.has(mapName)) return null;
+  if (EXCLUDED_MAPS.has(mapName)) return null;
   if (ADMIN_MAPS.has(mapName)) return 'help-admin';
   if (MERCHANT_MAPS.has(mapName)) return 'help-merchant';
   return null; // unclassified leaf map -> excluded until explicitly placed

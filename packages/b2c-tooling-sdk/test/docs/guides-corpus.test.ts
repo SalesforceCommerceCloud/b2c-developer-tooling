@@ -436,6 +436,20 @@ describe('docs: Salesforce Help corpus', function () {
     expect(futureTopic).to.equal(undefined);
   });
 
+  it('indexes direct topics from composite Help maps', () => {
+    const helpEntries = [...listDocs('help-admin'), ...listDocs('help-merchant')];
+    const ids = new Set(helpEntries.map((entry) => entry.id));
+    for (const id of [
+      'help-admin/b2c_getting_started',
+      'help-admin/b2c_default_domain',
+      'help-merchant/b2c_merchandising_your_site',
+      'help-merchant/b2c_multi_currency_sites',
+      'help-merchant/b2c_batch_processing',
+    ]) {
+      expect(ids.has(id), `missing direct topic from composite map: ${id}`).to.equal(true);
+    }
+  });
+
   it('only emits related entry ids that resolve within the corpus', () => {
     const helpEntries = [...listDocs('help-admin'), ...listDocs('help-merchant')];
     const ids = new Set(helpEntries.map((entry) => entry.id));
