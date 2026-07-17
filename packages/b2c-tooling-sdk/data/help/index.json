@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-07-17T15:23:33.663Z",
+  "generatedAt": "2026-07-17T15:31:19.255Z",
   "entries": [
     {
       "id": "help-admin/b2c__replication_best_practices",
@@ -2694,7 +2694,8 @@
         "help-admin/b2c_make_security_usable",
         "help-admin/b2c_use_secure_defaults",
         "help-admin/b2c_minimize_the_attack_surface",
-        "help-admin/b2c_prevent_ecommerce_fraud"
+        "help-admin/b2c_prevent_ecommerce_fraud",
+        "help-admin/b2c_incorporate_third-party_apps"
       ]
     },
     {
@@ -3075,6 +3076,15 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_importing_or_exporting_site_genesis_data.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_importing_or_exporting_site_genesis_data.md",
       "summary": "The SiteGenesis application doesn't include import and export feed examples. However, if you run Site Import/Export (export) on the SiteGenesis data, the files exported are valid import files. These import files contain the SiteGenesis data. This topic applies to B2C Commerce."
+    },
+    {
+      "id": "help-admin/b2c_incorporate_third-party_apps",
+      "title": "Securely Incorporate Third-Party Apps",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_incorporate_third-party_apps.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_incorporate_third-party_apps.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_incorporate_third-party_apps.md",
+      "summary": "Storefront capabilities and selling online are Salesforce B2C Commerce's specialties. For other operations, third-party applications bring their expertise to your storefront platform, such as when processing online taxes, credit card payments, and shipping carriers. Using a third-party app created by people who focus exclusively on specific processes is one of the factors that makes B2C Commerce so flexible."
     },
     {
       "id": "help-admin/b2c_install_salesforce_payment_plugin",

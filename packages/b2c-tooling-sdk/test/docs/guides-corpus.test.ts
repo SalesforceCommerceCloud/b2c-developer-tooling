@@ -58,7 +58,7 @@ describe('docs: Developer Center guides corpus', function () {
 
   it('preserves immediate Developer Center TOC neighbors as bidirectional related entries', () => {
     const guides = listDocs().filter((entry) =>
-      ['commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra', 'b2c-commerce'].includes(entry.category),
+      ['commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra', 'b2c-commerce'].includes(entry.category ?? ''),
     );
     const byId = new Map(guides.map((entry) => [entry.id, entry]));
     const workflow = byId.get('b2c-commerce/developer-workflow');
@@ -442,6 +442,7 @@ describe('docs: Salesforce Help corpus', function () {
     for (const id of [
       'help-admin/b2c_getting_started',
       'help-admin/b2c_default_domain',
+      'help-admin/b2c_incorporate_third-party_apps',
       'help-merchant/b2c_merchandising_your_site',
       'help-merchant/b2c_multi_currency_sites',
       'help-merchant/b2c_batch_processing',

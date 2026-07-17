@@ -219,7 +219,7 @@ const findChild = (arr: XmlNode[] | undefined, name: string): XmlNode | undefine
   (arr ?? []).find((n) => tagOf(n) === name);
 const findChildren = (arr: XmlNode[] | undefined, name: string): XmlNode[] =>
   (arr ?? []).filter((n) => tagOf(n) === name);
-const idFromHref = (href: string | undefined): string | null => href?.match(/([a-z0-9_]+)\.xml$/i)?.[1] ?? null;
+const idFromHref = (href: string | undefined): string | null => href?.match(/(?:^|\/)([^/]+)\.xml$/i)?.[1] ?? null;
 
 /** Collapse insignificant XML pretty-print whitespace into single spaces. */
 function textEsc(s: string): string {
@@ -329,8 +329,8 @@ function rawText(children: XmlNode[] | undefined): string {
 /** Cross-references to other help topics (`*.xml`) rewrite to the live Help URL. */
 function mdLink(label: string, href: string): string {
   if (!href) return label;
-  const m = href.match(/([a-z0-9_]+)\.xml$/i);
-  if (m) return `[${label}](${helpArticleUrl(m[1])})`;
+  const id = idFromHref(href);
+  if (id) return `[${label}](${helpArticleUrl(id)})`;
   return `[${label}](${href})`;
 }
 
