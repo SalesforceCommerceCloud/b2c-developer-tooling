@@ -93,6 +93,12 @@ export interface DocEntry {
   summary?: string;
   /** Search keywords/synonyms an agent or developer might use to find this doc. */
   keywords?: string[];
+  /**
+   * IDs of directly related documentation entries. Salesforce Help landing
+   * articles use this for the child topics that appear as linked content cards;
+   * callers can pass any id directly to `docs read` / `docs_read`.
+   */
+  relatedEntries?: string[];
   /** Optional preview/excerpt from the document. */
   preview?: string;
 }

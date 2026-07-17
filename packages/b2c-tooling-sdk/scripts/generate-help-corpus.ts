@@ -21,8 +21,9 @@
  *     (dev never serves it). The generator stages the tree under the SDK's `tmp/`
  *     purely to build the tarball; that staging dir is git-ignored.
  *  2. Emits the lightweight bundled search index at `data/help/index.json` (title,
- *     section headings, `<shortdesc>` summary, merged-section keywords, and the two
- *     URLs). The index ships in the SDK package; content does not.
+ *     section headings, `<shortdesc>` summary, merged-section keywords, related
+ *     entry ids, and the two URLs). The index ships in the SDK package; content
+ *     does not.
  *
  * ## DITA chunking
  *
@@ -33,6 +34,8 @@
  * the ditamaps with those semantics so the corpus cardinality matches the real
  * site navigation (no phantom per-fragment entries), while the merged sections'
  * titles/shortdescs still enrich the parent page's searchable signal.
+ * Non-chunked child pages remain separate entries and are also emitted as the
+ * parent's related-content list, matching the linked cards on Salesforce Help.
  *
  * ## Category assignment
  *
@@ -162,6 +165,7 @@ interface HelpEntry {
   headings?: string;
   summary?: string;
   keywords?: string[];
+  relatedEntries?: string[];
 }
 
 interface SearchIndex {
@@ -647,6 +651,8 @@ function parseTopic(file: string): ParsedTopic | null {
 interface Page {
   id: string;
   sections: Array<{id: string; depth: number}>;
+  /** Direct child pages that Help renders as linked cards below this article. */
+  relatedIds: string[];
 }
 
 /** Walk a ditamap into published pages (chunk-aware); merged sections carry depth. */
@@ -658,33 +664,41 @@ function pagesFromMap(mapsDir: string, mapName: string): Page[] {
   if (!mapNode) return [];
   const pages: Page[] = [];
 
-  const walk = (node: XmlNode, chunkRoot: Page | null, depth: number): void => {
+  const walk = (node: XmlNode, chunkRoot: Page | null, parentPage: Page | null, depth: number): void => {
     const attrs = attrsOf(node);
     const id = idFromHref(attrs['@_href']);
     const chunk = attrs['@_chunk'];
     let nextRoot = chunkRoot;
+    let nextParent = parentPage;
     let nextDepth = depth;
     if (id) {
       if (chunk === 'to-content') {
-        const page: Page = {id, sections: []};
+        const page: Page = {id, sections: [], relatedIds: []};
         pages.push(page);
+        parentPage?.relatedIds.push(id);
         nextRoot = page;
+        nextParent = page;
         nextDepth = 1;
       } else if (chunkRoot) {
         chunkRoot.sections.push({id, depth});
         nextRoot = chunkRoot;
+        // This topic is merged into the chunk root rather than published as a
+        // page, so any nested chunk starts a related page of the chunk root.
+        nextParent = chunkRoot;
         nextDepth = depth + 1;
       } else {
-        const page: Page = {id, sections: []};
+        const page: Page = {id, sections: [], relatedIds: []};
         pages.push(page);
+        parentPage?.relatedIds.push(id);
         nextRoot = null;
+        nextParent = page;
         nextDepth = 1;
       }
     }
-    for (const c of findChildren(childrenOf(node), 'topicref')) walk(c, nextRoot, nextDepth);
+    for (const c of findChildren(childrenOf(node), 'topicref')) walk(c, nextRoot, nextParent, nextDepth);
   };
 
-  for (const tr of findChildren(childrenOf(mapNode), 'topicref')) walk(tr, null, 0);
+  for (const tr of findChildren(childrenOf(mapNode), 'topicref')) walk(tr, null, null, 0);
   return pages;
 }
 
@@ -755,6 +769,19 @@ function main(): void {
         if (body) parts.push('', body);
       }
 
+      const relatedTopics = page.relatedIds
+        .map((id) => resolveTopic(id))
+        .filter((topic): topic is ParsedTopic => topic !== null);
+      if (relatedTopics.length > 0) {
+        parts.push('', '## Related Content');
+        for (const topic of relatedTopics) {
+          parts.push(
+            '',
+            `- [${topic.title}](${helpArticleUrl(topic.id)})${topic.summary ? `\n  ${topic.summary}` : ''}`,
+          );
+        }
+      }
+
       const md =
         parts
           .join('\n')
@@ -772,10 +799,23 @@ function main(): void {
         ...(headings.length && {headings: headings.join(' • ')}),
         ...(rootTopic.summary && {summary: rootTopic.summary}),
         ...(keywords.length && {keywords}),
+        ...(relatedTopics.length && {
+          relatedEntries: relatedTopics.map((topic) => `${category}/${topic.id}`),
+        }),
       });
       perCategory[category] = (perCategory[category] ?? 0) + 1;
       perMap[mapName] = (perMap[mapName] ?? 0) + 1;
     }
+  }
+
+  // A topic can be referenced from more than one map. The first published page
+  // wins (matching the existing `seen` behavior), so discard any relationship
+  // whose category-qualified id did not make it into the final corpus.
+  const publishedIds = new Set(entries.map((entry) => entry.id));
+  for (const entry of entries) {
+    if (!entry.relatedEntries) continue;
+    entry.relatedEntries = [...new Set(entry.relatedEntries)].filter((id) => publishedIds.has(id));
+    if (entry.relatedEntries.length === 0) delete entry.relatedEntries;
   }
 
   entries.sort((a, b) => a.id.localeCompare(b.id));

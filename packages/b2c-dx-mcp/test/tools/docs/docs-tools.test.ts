@@ -203,6 +203,19 @@ describe('tools/docs', () => {
       expect(json.totalLength).to.be.a('number');
     });
 
+    it('returns related Help entry ids for landing articles', async () => {
+      const tool = createDocsReadTool(loadServices);
+      const result = await tool.handler({query: 'help-merchant/b2c_cb_page_designer'});
+      expect(result.isError).to.be.undefined;
+      const json = getResultJson<{entry: {relatedEntries?: string[]}}>(result);
+      expect(json.entry.relatedEntries).to.deep.equal([
+        'help-merchant/b2c_cb_save_as',
+        'help-merchant/b2c_cb_add_to_page',
+        'help-merchant/b2c_cb_edit',
+        'help-merchant/b2c_cb_remove_from_page',
+      ]);
+    });
+
     it('truncates long content to maxLength and pages via offset', async () => {
       const tool = createDocsReadTool(loadServices);
       const first = getResultJson<{

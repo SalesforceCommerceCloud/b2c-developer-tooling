@@ -275,6 +275,7 @@ describe('docs: Developer Center guides corpus', function () {
       sourceUrl: 'https://developer.salesforce.com/docs/commerce/sfnext/guide/__test__.md',
       headings: 'Section A • Section B',
       summary: 'A test guide used to exercise the offline fallback path.',
+      relatedEntries: ['sfnext/related-guide'],
     };
     // Clear the cache so the (failing) fetch path is exercised, not a cache hit.
     clearContentCache(true);
@@ -286,6 +287,7 @@ describe('docs: Developer Center guides corpus', function () {
       expect(content).to.include('# Test Guide');
       expect(content).to.include('A test guide used to exercise the offline fallback path.');
       expect(content).to.include('Section A');
+      expect(content).to.include('sfnext/related-guide');
       expect(content).to.include('could not be fetched');
       // Both retrieval URLs are surfaced so a caller can retry on its own.
       expect(content, 'fallback includes the HTML page URL').to.include(entry.url!);
@@ -384,6 +386,33 @@ describe('docs: Salesforce Help corpus', function () {
       expect(fetchedUrl, 'help content must be fetched from the online sourceUrl').to.equal(entry!.sourceUrl);
     } finally {
       globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('preserves DITA child-topic navigation as related entry metadata', () => {
+    const pageDesigner = listDocs('help-merchant').find((entry) => entry.id === 'help-merchant/b2c_cb_page_designer');
+    expect(pageDesigner).to.not.equal(undefined);
+    expect(pageDesigner!.relatedEntries).to.deep.equal([
+      'help-merchant/b2c_cb_save_as',
+      'help-merchant/b2c_cb_add_to_page',
+      'help-merchant/b2c_cb_edit',
+      'help-merchant/b2c_cb_remove_from_page',
+    ]);
+  });
+
+  it('does not expose topics merged into a chunked page as separate related entries', () => {
+    const chunkedPage = listDocs('help-merchant').find((entry) => entry.id === 'help-merchant/b2c_localize_bulk_pages');
+    expect(chunkedPage).to.not.equal(undefined);
+    expect(chunkedPage!.relatedEntries).to.equal(undefined);
+  });
+
+  it('only emits related entry ids that resolve within the corpus', () => {
+    const helpEntries = [...listDocs('help-admin'), ...listDocs('help-merchant')];
+    const ids = new Set(helpEntries.map((entry) => entry.id));
+    for (const entry of helpEntries) {
+      for (const relatedId of entry.relatedEntries ?? []) {
+        expect(ids.has(relatedId), `${entry.id} references missing entry ${relatedId}`).to.equal(true);
+      }
     }
   });
 });
