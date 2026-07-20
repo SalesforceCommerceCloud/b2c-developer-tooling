@@ -99,9 +99,11 @@ suite('scriptTypesInferUsage — real hover/completion via the VS Code language 
     // (every identifier token already in the document) before the plugin's
     // inferred entries are merged in — that response is non-empty too, so a
     // bare `items.length > 0` wait condition would resolve on it immediately
-    // and never see the real completions. Wait for the actual member we
-    // expect instead, the same way the hover test above waits for its
-    // specific text rather than "any hover content".
+    // and never see the real completions. Wait for the actual members we
+    // expect instead — and since `getID`/`getName` appear as words in the
+    // fixture text (word-based suggestions could offer them on their own),
+    // the condition also requires a Product member that appears nowhere in
+    // any fixture document, which only inference can produce.
     const labels = await waitFor(async () => {
       const result = await vscode.commands.executeCommand<vscode.CompletionList>(
         'vscode.executeCompletionItemProvider',
@@ -109,12 +111,125 @@ suite('scriptTypesInferUsage — real hover/completion via the VS Code language 
         dotPosition,
       );
       const items = result?.items.map((i) => (typeof i.label === 'string' ? i.label : i.label.label)) ?? [];
-      return items.includes('getID') && items.includes('getName') ? items : undefined;
+      return items.includes('getID') && items.includes('getName') && items.includes('getLongDescription')
+        ? items
+        : undefined;
     }, 25000);
 
     // eslint-disable-next-line no-console
     console.log(`[diagnostic] ${labels.length} completion label(s): ${labels.join(', ')}`);
     assert.ok(labels.includes('getID'), `expected getID among completions, got: ${labels.join(', ')}`);
     assert.ok(labels.includes('getName'), `expected getName among completions, got: ${labels.join(', ')}`);
+    assert.ok(
+      labels.includes('getLongDescription'),
+      `expected getLongDescription (absent from fixture text, so only inference can offer it), got: ${labels.join(', ')}`,
+    );
+  });
+});
+
+suite('scriptTypesInferUsage — SFRA-style cross-file and chain patterns', () => {
+  let helpersDoc: vscode.TextDocument;
+
+  suiteSetup(async function () {
+    this.timeout(30000);
+
+    const expectedRoot = fixtureFile();
+    const openRoots = (vscode.workspace.workspaceFolders ?? []).map((f) => f.uri.fsPath);
+    if (!openRoots.includes(expectedRoot)) {
+      this.skip();
+    }
+
+    const ext = vscode.extensions.getExtension(EXTENSION_ID);
+    assert.ok(ext, `extension ${EXTENSION_ID} must be discoverable in the test host`);
+    await ext!.activate();
+
+    // Open the consumer first so its call sites are loaded into the project,
+    // then the helpers module the tests hover/complete in. The fixture's
+    // jsconfig.json puts both in one configured project either way — this
+    // mirrors a developer with the controller and its helper open.
+    const consumerUri = vscode.Uri.file(
+      fixtureFile('cartridges', 'test_cartridge', 'cartridge', 'scripts', 'cartService.js'),
+    );
+    await vscode.workspace.openTextDocument(consumerUri);
+    const helpersUri = vscode.Uri.file(
+      fixtureFile('cartridges', 'test_cartridge', 'cartridge', 'scripts', 'helpers', 'productHelpers.js'),
+    );
+    helpersDoc = await vscode.workspace.openTextDocument(helpersUri);
+    await vscode.window.showTextDocument(helpersDoc);
+  });
+
+  function positionOf(substring: string, offsetWithin = 0): vscode.Position {
+    const idx = helpersDoc.getText().indexOf(substring);
+    assert.ok(idx > -1, `fixture must contain: ${substring}`);
+    return helpersDoc.positionAt(idx + offsetWithin);
+  }
+
+  async function waitForHoverMatching(position: vscode.Position, expected: RegExp): Promise<string> {
+    return waitFor(async () => {
+      const result = await vscode.commands.executeCommand<vscode.Hover[]>(
+        'vscode.executeHoverProvider',
+        helpersDoc.uri,
+        position,
+      );
+      const text = result?.flatMap((h) => h.contents.map((c) => (typeof c === 'string' ? c : c.value))).join('\n');
+      return text && text.includes('Inferred from usage') && expected.test(text) ? text : undefined;
+    }, 25000);
+  }
+
+  async function waitForCompletionsIncluding(position: vscode.Position, required: string[]): Promise<string[]> {
+    return waitFor(async () => {
+      const result = await vscode.commands.executeCommand<vscode.CompletionList>(
+        'vscode.executeCompletionItemProvider',
+        helpersDoc.uri,
+        position,
+      );
+      const items = result?.items.map((i) => (typeof i.label === 'string' ? i.label : i.label.label)) ?? [];
+      return required.every((name) => items.includes(name)) ? items : undefined;
+    }, 25000);
+  }
+
+  test('infers a parameter type when the only call sites live in another file, reached via a ~/ cartridge require', async () => {
+    // getSalePrice() is never called inside productHelpers.js — its call
+    // sites are in cartService.js, linked through the plugin's own
+    // `~/cartridge/...` module resolution and the SFRA-canonical
+    // `module.exports = {name: name}` alias map. This exercises module
+    // resolution, project-wide reference search, and inference together.
+    const text = await waitForHoverMatching(positionOf('getSalePrice(product', 'getSalePrice('.length), /Product/);
+    assert.ok(/Product/.test(text), `expected the inferred type to mention Product, got: ${text}`);
+  });
+
+  test('infers the chained type of an intermediate local variable (var priceModel = product.getPriceModel())', async () => {
+    const text = await waitForHoverMatching(positionOf('priceModel.getPrice()'), /ProductPriceModel/);
+    assert.ok(/ProductPriceModel/.test(text), `expected ProductPriceModel, got: ${text}`);
+  });
+
+  test('offers inferred completions after a chained receiver (product.getPriceModel().)', async () => {
+    // Neither getMinPrice nor getMaxPrice appears as a word anywhere in the
+    // fixture, so word-based suggestions cannot satisfy this — only the
+    // plugin's synthesized ProductPriceModel members can.
+    const labels = await waitForCompletionsIncluding(positionOf('.getPrice().getValue()', 1), [
+      'getMinPrice',
+      'getMaxPrice',
+    ]);
+    assert.ok(labels.includes('getMinPrice'), `expected getMinPrice among completions, got: ${labels.join(', ')}`);
+    assert.ok(labels.includes('getMaxPrice'), `expected getMaxPrice among completions, got: ${labels.join(', ')}`);
+  });
+
+  test('infers through a deep property chain with a nullable middle step (availabilityModel.inventoryRecord)', async () => {
+    // Product.availabilityModel -> ProductAvailabilityModel.inventoryRecord
+    // is `ProductInventoryRecord | null` in the real dw types — the exact
+    // shape that silently broke member lookup before nullability stripping.
+    const text = await waitForHoverMatching(positionOf('inventoryRecord.ATS'), /ProductInventoryRecord/);
+    assert.ok(/ProductInventoryRecord/.test(text), `expected ProductInventoryRecord, got: ${text}`);
+  });
+
+  test('offers inferred completions on the nullable chain variable (inventoryRecord.)', async () => {
+    // getATS and perpetual appear nowhere in the fixture text.
+    const labels = await waitForCompletionsIncluding(positionOf('inventoryRecord.ATS', 'inventoryRecord.'.length), [
+      'getATS',
+      'perpetual',
+    ]);
+    assert.ok(labels.includes('getATS'), `expected getATS among completions, got: ${labels.join(', ')}`);
+    assert.ok(labels.includes('perpetual'), `expected perpetual among completions, got: ${labels.join(', ')}`);
   });
 });

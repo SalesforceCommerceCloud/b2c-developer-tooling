@@ -15,6 +15,7 @@ const {
   describeTypes,
   inferParameterType,
   inferReturnType,
+  inferTypeForNode,
   typesToCompletionEntries,
 } = require('../plugin/usage-inference');
 const {createFixtureLanguageService, findFunctionDeclaration} = require('./helpers/fixture-language-service');
@@ -289,6 +290,48 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
       const types = inferParameterType(ctx, fn.parameters[0]);
 
       assert.equal(types.length, 0);
+    });
+
+    it('chases a var-of-var deep property chain with a real nullable middle step (availabilityModel.inventoryRecord)', () => {
+      // Product.availabilityModel is non-null but
+      // ProductAvailabilityModel.inventoryRecord is `ProductInventoryRecord |
+      // null` in the real dw types — the property-access branch must strip
+      // the nullable part before looking up members on the next hop.
+      const files = {
+        '/types.d.ts': realTypesPrelude(['Product', 'ProductMgr'], '  function getSomeProduct(): Product<any>;'),
+        '/stockHelpers.js': `
+          function isOrderable(product, quantity) {
+            var availabilityModel = product.availabilityModel;
+            var inventoryRecord = availabilityModel.inventoryRecord;
+            return inventoryRecord.ATS.value >= quantity;
+          }
+          function useHelper() {
+            var product = getSomeProduct();
+            return isOrderable(product, 2);
+          }
+        `,
+      };
+      const languageService = createFixtureLanguageService(files, {strict: true});
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/stockHelpers.js');
+      let recordIdentifier;
+      const visit = (node) => {
+        if (
+          ts.isIdentifier(node) &&
+          node.text === 'inventoryRecord' &&
+          ts.isPropertyAccessExpression(node.parent) &&
+          node.parent.expression === node
+        ) {
+          recordIdentifier = node;
+          return;
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(sourceFile);
+
+      const types = inferTypeForNode(ctx, recordIdentifier);
+
+      assert.equal(describeTypes(ctx.checker, types), 'ProductInventoryRecord | null');
     });
 
     it('synthesizes real members for a generic collection candidate type (Collection<Variant>) without special-casing generics', () => {

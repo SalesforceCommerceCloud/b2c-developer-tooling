@@ -251,6 +251,18 @@ function resolveIndirectReferenceTarget(
     return {kind: 'name', name: parent.name};
   }
 
+  // `module.exports = {getSalePrice: getSalePrice}` — SFRA's canonical export
+  // shape, an alias map from property name to a separately-declared function.
+  // A reference search on the *function* name dead-ends at the alias-map
+  // initializer; the actual consumers (`productHelpers.getSalePrice(x)` in
+  // another file) are references of the property *name*, so redirect the
+  // search there. Not scoped to module.exports specifically: any
+  // `{run: helper}` alias whose property is later called is a genuine call
+  // site of the aliased function.
+  if (ts.isPropertyAssignment(parent) && parent.initializer === node && ts.isIdentifier(parent.name)) {
+    return {kind: 'name', name: parent.name};
+  }
+
   return undefined;
 }
 

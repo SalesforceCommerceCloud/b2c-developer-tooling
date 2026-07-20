@@ -212,6 +212,32 @@ describe('usage-inference', () => {
       assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
     });
 
+    it('resolves the SFRA-canonical alias-map export (`module.exports = {helper: helper}`) called from another file', () => {
+      // References on the *function* name dead-end at the alias-map
+      // initializer; reaching the cross-file `productHelpers.helper(x)` call
+      // requires hopping to the property *name* and searching from there.
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `
+          function helper(product) {
+            return product.ID;
+          }
+          module.exports = {
+            helper: helper
+          };
+        `,
+        '/consumer.js': `var productHelpers = require('./helper'); productHelpers.helper(getProduct());`,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      const fn = findFunctionDeclaration(sourceFile, 'helper');
+
+      const types = inferParameterType(ctx, fn.parameters[0]);
+
+      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    });
+
     it('resolves an ES6 method-shorthand export called via property access', () => {
       const files = {
         '/types.d.ts': AMBIENT_TYPES,
