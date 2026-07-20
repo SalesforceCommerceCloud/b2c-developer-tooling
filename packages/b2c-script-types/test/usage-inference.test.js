@@ -494,6 +494,177 @@ describe('usage-inference', () => {
     });
   });
 
+  describe('local-variable indirection', () => {
+    it('chases a return value through an intermediate local variable, same as the inline expression', () => {
+      // Idiomatic SFCC style: the chain is split across a `var` instead of
+      // written inline. Regression test — the identifier branch of
+      // resolveExpressionTypes used to dead-end on anything that wasn't a
+      // parameter declaration, so this inferred nothing while the inline
+      // one-liner version inferred fine.
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `
+          function pick(input) {
+            var intermediate = input;
+            return intermediate;
+          }
+          pick(getProduct());
+          module.exports = {pick};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      const fn = findFunctionDeclaration(sourceFile, 'pick');
+
+      const types = inferReturnType(ctx, fn);
+
+      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    });
+
+    it('infers the type of a variable initialized from a property access on an undocumented parameter', () => {
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `
+          function pick(product) {
+            var id = product.ID;
+            return id;
+          }
+          pick(getProduct());
+          module.exports = {pick};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      let idIdentifier;
+      const visit = (node) => {
+        if (ts.isIdentifier(node) && node.text === 'id' && ts.isReturnStatement(node.parent)) {
+          idIdentifier = node;
+          return;
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(sourceFile);
+
+      const types = inferTypeForNode(ctx, idIdentifier);
+
+      assert.equal(describeTypes(ctx.checker, types), 'string');
+    });
+
+    it('leaves a variable with an explicit `@type {any}` JSDoc annotation alone', () => {
+      // Same rule as parameters and return types: an annotated `any` is a
+      // deliberate choice, not an inference failure.
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `
+          function pick(product) {
+            /** @type {any} */
+            var id = product.ID;
+            return id;
+          }
+          pick(getProduct());
+          module.exports = {pick};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      let idIdentifier;
+      const visit = (node) => {
+        if (ts.isIdentifier(node) && node.text === 'id' && ts.isReturnStatement(node.parent)) {
+          idIdentifier = node;
+          return;
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(sourceFile);
+
+      const types = inferTypeForNode(ctx, idIdentifier);
+
+      assert.equal(types.length, 0);
+    });
+
+    it('does not hang on mutually-referencing variable initializers (`var a = b; var b = a;`)', () => {
+      const files = {
+        '/cycle.js': `
+          function g() {
+            var a = b;
+            var b = a;
+            return a;
+          }
+          g();
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/cycle.js');
+      let aIdentifier;
+      const visit = (node) => {
+        if (ts.isIdentifier(node) && node.text === 'a' && ts.isReturnStatement(node.parent)) {
+          aIdentifier = node;
+          return;
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(sourceFile);
+
+      // Must return promptly (not hang) with no candidates.
+      const types = inferTypeForNode(ctx, aIdentifier);
+      assert.equal(types.length, 0);
+    });
+  });
+
+  describe('cycle-truncated results and the memo', () => {
+    it('does not memoize a result whose computation hit a cycle guard', () => {
+      // b's result computed *inside* the a->b->a cycle is truncated by what
+      // happened to be on the call stack; caching it would let a later,
+      // out-of-cycle query in the same request get the truncated answer.
+      const files = {
+        '/recursive.js': `
+          function a(x) {
+            return b(x);
+          }
+          function b(y) {
+            return a(y);
+          }
+          a(1);
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/recursive.js');
+      const fnA = findFunctionDeclaration(sourceFile, 'a');
+
+      inferReturnType(ctx, fnA);
+
+      assert.ok(ctx.cycleHits > 0, 'expected the mutual recursion to actually trip a cycle guard');
+      assert.equal(ctx.memo.size, 0, 'cycle-truncated results must not be memoized');
+    });
+
+    it('still memoizes results whose computation never hit a cycle guard', () => {
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `
+          function helper(product) {
+            return product.ID;
+          }
+          helper(getProduct());
+          module.exports = {helper};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      const fn = findFunctionDeclaration(sourceFile, 'helper');
+
+      inferParameterType(ctx, fn.parameters[0]);
+
+      assert.equal(ctx.cycleHits, 0);
+      assert.ok(ctx.memo.has(fn.parameters[0]), 'a clean computation should be memoized');
+    });
+  });
+
   describe('inferParameterType — widening and cycle safety', () => {
     it('widens literal call-site arguments to their general type instead of a union of literals', () => {
       const files = {

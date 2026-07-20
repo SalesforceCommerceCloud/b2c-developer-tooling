@@ -158,6 +158,31 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
       assert.equal(describeTypes(ctx.checker, types), 'Money');
     });
 
+    it('resolves the same chain split across an intermediate local variable — the idiomatic SFCC style', () => {
+      // Same result as the inline `product.getPriceModel().getPrice()` test
+      // above, but written the way real SFRA helpers are: chain hops assigned
+      // to `var`s along the way. Regression test — variable indirection used
+      // to dead-end inference entirely while the inline version worked.
+      const files = {
+        '/pricingHelpers.js': `
+          function resolveProductPrice(product) {
+            var priceModel = product.getPriceModel();
+            return priceModel.getPrice();
+          }
+          function useHelper() {
+            var ProductMgr = require('${REAL_DW_TYPES.ProductMgr}');
+            var product = ProductMgr.getProduct('some-id');
+            return resolveProductPrice(product);
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/pricingHelpers.js', 'resolveProductPrice');
+
+      const types = inferReturnType(ctx, fn);
+
+      assert.equal(describeTypes(ctx.checker, types), 'Money');
+    });
+
     it('resolves a three-hop chain (order.getCustomer().getProfile().getEmail()) through an undocumented helper', () => {
       const files = {
         '/types.d.ts': realTypesPrelude(['Order', 'OrderMgr'], '  function getSomeOrder(): Order;'),

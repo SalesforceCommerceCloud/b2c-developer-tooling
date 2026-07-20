@@ -62,6 +62,10 @@ export default defineConfig([
     mocha: {
       ui: 'tdd',
       timeout: 30000,
+      // This label names a single compiled file, so running vscode-test
+      // without the pretest compile step would otherwise report
+      // "0 passing" and exit 0 — a green run that executed nothing.
+      failZero: true,
     },
   },
 ]);

@@ -293,6 +293,87 @@ describe('create() proxy — usage inference wiring', () => {
     assert.ok(names.includes('getName'));
   });
 
+  it('offers inferred completions when the receiver is a chained call, not just a bare identifier', () => {
+    // `product.getPriceModel().|` — the receiver is a CallExpression. The
+    // completion wiring used to require a plain identifier base, so chains
+    // got no synthesized entries even though hover-driven return inference
+    // could resolve them.
+    const files = {
+      '/priceHelper.js': `
+        function resolveProductPrice(product) {
+          return product.getPriceModel().getPrice();
+        }
+        function useHelper() {
+          var ProductMgr = require('${REAL_DW_TYPES.ProductMgr}');
+          var product = ProductMgr.getProduct('some-id');
+          return resolveProductPrice(product);
+        }
+        module.exports = {resolveProductPrice};
+      `,
+    };
+    const host = createFixtureHost(files);
+    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const {create} = init({typescript: ts});
+    const proxy = create({
+      languageService,
+      languageServiceHost: host,
+      project: {
+        projectService: {logger: {info: () => {}}},
+        getCurrentDirectory: () => '/',
+        getProjectVersion: () => '1',
+      },
+      config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
+    });
+    const dotPos = files['/priceHelper.js'].indexOf('.getPrice()') + 1;
+
+    const completions = proxy.getCompletionsAtPosition('/priceHelper.js', dotPos, undefined);
+    const names = (completions?.entries ?? []).map((e) => e.name);
+    // Real dw.catalog.ProductPriceModel members.
+    assert.ok(names.includes('getPrice'), `expected getPrice among completions, got: ${names.join(', ')}`);
+    assert.ok(names.includes('getMinPrice'), `expected getMinPrice among completions, got: ${names.join(', ')}`);
+
+    // Methods and properties get distinct completion icons.
+    const entryByName = new Map((completions?.entries ?? []).map((e) => [e.name, e]));
+    assert.equal(entryByName.get('getPrice').kind, ts.ScriptElementKind.memberFunctionElement);
+    assert.equal(entryByName.get('maxPrice').kind, ts.ScriptElementKind.memberVariableElement);
+  });
+
+  it('lets a non-cancellation exception from the underlying call propagate instead of degrading it to an empty result', () => {
+    // The `guarded` wrapper exists to protect tsserver from bugs in this
+    // plugin's own inference additions — never to change how errors from the
+    // real language service behave. Swallowing those would turn a genuine TS
+    // crash into a silent "hover stopped working" for every file.
+    const host = createFixtureHost(FIXTURE_FILES);
+    const realLanguageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const languageService = new Proxy(realLanguageService, {
+      get(target, prop) {
+        if (prop === 'getQuickInfoAtPosition' || prop === 'getCompletionsAtPosition') {
+          return () => {
+            throw new Error('underlying language service failure');
+          };
+        }
+        return target[prop];
+      },
+    });
+    const {create} = init({typescript: ts});
+    const proxy = create({
+      languageService,
+      languageServiceHost: host,
+      project: {
+        projectService: {logger: {info: () => {}}},
+        getCurrentDirectory: () => '/',
+        getProjectVersion: () => '1',
+      },
+      config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
+    });
+
+    assert.throws(() => proxy.getQuickInfoAtPosition('/helper.js', 0), /underlying language service failure/);
+    assert.throws(
+      () => proxy.getCompletionsAtPosition('/helper.js', 0, undefined),
+      /underlying language service failure/,
+    );
+  });
+
   it('rethrows ts.OperationCanceledException from the underlying call instead of swallowing it as a failure', () => {
     // TS throws this cooperatively whenever the host's CancellationToken
     // fires (e.g. the user kept typing while this request was in flight) —

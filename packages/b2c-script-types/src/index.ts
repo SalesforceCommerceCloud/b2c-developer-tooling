@@ -12,6 +12,7 @@ import {
   describeTypes,
   findEnclosingPropertyAccess,
   getNodeAtPosition,
+  inferTypeForExpression,
   inferTypeForNode,
   isAnyType,
   typesToCompletionEntries,
@@ -665,17 +666,22 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       return types;
     };
 
-    // Runs `fn` (either the underlying, un-proxied language service call, or
-    // our own inference logic on top of it) and degrades to `fallback` if it
-    // throws, so a plugin override throwing can't take the whole tsserver
-    // request down with it. `ts.OperationCanceledException` is exempted and
-    // always rethrown: TS throws it cooperatively whenever the host's
-    // CancellationToken fires (e.g. the user kept typing while this hover or
-    // completion request was still in flight), which is ordinary, frequent
-    // behavior, not a real failure — tsserver's request pipeline handles a
-    // propagated cancellation very differently from a completed-but-empty
-    // response, so swallowing it here would misreport "cancelled" as
-    // "resolved to nothing" every time.
+    // Runs our own inference logic and degrades to `fallback` (the untouched
+    // underlying result) if it throws, so a bug in this plugin's additions
+    // can't take the whole tsserver request down with it. Deliberately wraps
+    // ONLY the inference augmentation, never the underlying language-service
+    // call itself: an exception from vanilla TS must keep propagating to
+    // tsserver's own error reporting exactly as it would without this plugin
+    // installed — swallowing it here would turn a real TS crash into a
+    // silent "hover stopped working" for every file in the project.
+    // `ts.OperationCanceledException` is exempted and always rethrown: TS
+    // throws it cooperatively whenever the host's CancellationToken fires
+    // (e.g. the user kept typing while this hover or completion request was
+    // still in flight), which is ordinary, frequent behavior, not a real
+    // failure — tsserver's request pipeline handles a propagated
+    // cancellation very differently from a completed-but-empty response, so
+    // swallowing it here would misreport "cancelled" as "resolved to
+    // nothing" every time.
     const guarded = <T>(label: string, fn: () => T, fallback: T): T => {
       try {
         return fn();
@@ -687,11 +693,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     };
 
     proxy.getQuickInfoAtPosition = (fileName, position, maximumLength) => {
-      const original = guarded(
-        'hover',
-        () => info.languageService.getQuickInfoAtPosition(fileName, position, maximumLength),
-        undefined,
-      );
+      const original = info.languageService.getQuickInfoAtPosition(fileName, position, maximumLength);
       if (!enabled || !inferUsageEnabled || !isCartridgeFile(fileName) || !original) return original;
       return guarded(
         'hover',
@@ -719,11 +721,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     };
 
     proxy.getCompletionsAtPosition = (fileName, position, options, formattingSettings) => {
-      const original = guarded(
-        'completions',
-        () => info.languageService.getCompletionsAtPosition(fileName, position, options, formattingSettings),
-        undefined,
-      );
+      const original = info.languageService.getCompletionsAtPosition(fileName, position, options, formattingSettings);
       if (!enabled || !inferUsageEnabled || !isCartridgeFile(fileName)) return original;
       return guarded(
         'completions',
@@ -734,13 +732,16 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
           const node = getNodeAtPosition(sourceFile, ts, Math.max(position - 1, 0));
           if (!node) return original;
           const propAccess = findEnclosingPropertyAccess(node, ts);
-          if (!propAccess || !ts.isIdentifier(propAccess.expression)) return original;
+          if (!propAccess) return original;
           const checker = program.getTypeChecker();
           if (!isAnyType(ts, checker.getTypeAtLocation(propAccess.expression))) return original;
+          // The receiver can be any expression, not just a plain identifier:
+          // `product.getPriceModel().|` needs the chain resolved the same way
+          // hover-driven return inference already resolves it.
           const baseNode = propAccess.expression;
           const types = getCachedInference(`completions:${fileName}:${baseNode.getStart(sourceFile)}`, () => {
             const ctx = createInferenceContext(ts, info.languageService);
-            return ctx ? inferTypeForNode(ctx, baseNode) : [];
+            return ctx ? inferTypeForExpression(ctx, baseNode) : [];
           });
           if (types.length === 0) return original;
           const inferredEntries = typesToCompletionEntries(ts, checker, types);

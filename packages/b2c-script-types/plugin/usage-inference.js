@@ -1,4 +1,9 @@
 "use strict";
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.INFERRED_COMPLETION_SOURCE = void 0;
 exports.createInferenceContext = createInferenceContext;
@@ -8,6 +13,7 @@ exports.findEnclosingPropertyAccess = findEnclosingPropertyAccess;
 exports.inferParameterType = inferParameterType;
 exports.inferReturnType = inferReturnType;
 exports.inferTypeForNode = inferTypeForNode;
+exports.inferTypeForExpression = inferTypeForExpression;
 exports.describeTypes = describeTypes;
 exports.typesToCompletionEntries = typesToCompletionEntries;
 // Bounds how far we chase an undocumented call chain (helper calls helper calls
@@ -23,7 +29,12 @@ const MAX_REFERENCE_HOPS = 2;
 // bounds worst-case cost for a helper referenced from dozens of places,
 // complementing MAX_INFERENCE_DEPTH's cap on recursion depth. Generous enough
 // to cover realistic cartridge helper usage without being effectively
-// unlimited.
+// unlimited. Note what this does and doesn't bound: it caps how many results
+// get processed and how far the search fans out, but a single
+// getReferencesAtPosition call still scans the whole program regardless — on
+// a large project the dominant cost is that first search, and the real bound
+// on it is TS's own cooperative cancellation (rethrown, never swallowed, by
+// the plugin's `guarded` wrapper).
 const MAX_REFERENCES_PER_REQUEST = 200;
 // Caps how much of that shared request-wide budget a *single* collectCallSites
 // call can spend, so one widely-referenced sub-helper (e.g. reached from the
@@ -56,6 +67,7 @@ function createInferenceContext(ts, languageService) {
         visiting: new Set(),
         memo: new Map(),
         referenceBudget: MAX_REFERENCES_PER_REQUEST,
+        cycleHits: 0,
     };
 }
 /** True when `type` is (or includes) `any` — the signal that the checker gave up and usage inference should try to help. */
@@ -252,6 +264,40 @@ function hasExplicitParameterType(param, ts) {
 function hasExplicitReturnType(fn, ts) {
     return fn.type !== undefined || ts.getJSDocReturnType(fn) !== undefined;
 }
+/** Same idea as {@link hasExplicitParameterType}, but for a variable declaration (`var x = ...`). */
+function hasExplicitVariableType(decl, ts) {
+    return decl.type !== undefined || ts.getJSDocType(decl) !== undefined;
+}
+/**
+ * Chases a local variable's initializer expression — the missing link for the
+ * idiomatic SFCC style of splitting a chain across intermediate variables
+ * (`var priceModel = product.getPriceModel(); return priceModel.getPrice();`),
+ * which would otherwise dead-end at the variable reference even though the
+ * exact same logic written inline resolves fine.
+ *
+ * Guarded three ways: an explicit type/JSDoc annotation on the variable means
+ * its `any` is deliberate (same rule as parameters/returns); the `visiting`
+ * set breaks initializer cycles (`var a = b; var b = a;`) and records the hit
+ * in ctx.cycleHits; and the hop is charged to `chainHops` — following a
+ * variable never crosses a function boundary, so it's an in-expression hop,
+ * not a recursion-depth step.
+ */
+function resolveVariableInitializerTypes(ctx, decl, depth, chainHops) {
+    const { ts } = ctx;
+    if (!decl.initializer || hasExplicitVariableType(decl, ts))
+        return [];
+    if (ctx.visiting.has(decl)) {
+        ctx.cycleHits++;
+        return [];
+    }
+    ctx.visiting.add(decl);
+    try {
+        return resolveExpressionTypes(ctx, decl.initializer, depth, chainHops);
+    }
+    finally {
+        ctx.visiting.delete(decl);
+    }
+}
 /**
  * Resolves the function-like declaration a call expression's callee refers
  * to, via its symbol or — as a fallback for shapes the symbol lookup misses
@@ -277,7 +323,12 @@ function resolveCalleeDeclaration(ctx, call) {
 function widenType(checker, type) {
     return checker.getBaseTypeOfLiteralType(type);
 }
-/** Deduplicates candidate types by their display string. */
+/**
+ * Deduplicates candidate types by their display string. Two distinct types
+ * that happen to render identically (e.g. same-named classes from different
+ * modules) collapse into one — acceptable here because every consumer of the
+ * result is display-oriented (hover text, completion-member names).
+ */
 function dedupeTypes(checker, types) {
     const seen = new Set();
     const out = [];
@@ -390,6 +441,14 @@ function resolveExpressionTypes(ctx, expr, depth, chainHops = 0) {
             if (inferred.length > 0)
                 return inferred;
         }
+        else if (decl && ts.isVariableDeclaration(decl)) {
+            // ...or a local variable holding an intermediate result — chase its
+            // initializer the same way, so splitting a chain across `var`
+            // statements infers exactly like the inline expression would.
+            const inferred = resolveVariableInitializerTypes(ctx, decl, depth, chainHops + 1);
+            if (inferred.length > 0)
+                return inferred;
+        }
     }
     return [];
 }
@@ -417,9 +476,12 @@ function inferParameterType(ctx, param, depth = 0) {
     // Cycle guard: a self-forwarding helper (e.g. `function id(x){return x}`
     // called as `id(id(y))`) could otherwise re-enter inference for this same
     // parameter before the first call has finished and memoized its result.
-    if (ctx.visiting.has(param))
+    if (ctx.visiting.has(param)) {
+        ctx.cycleHits++;
         return [];
+    }
     ctx.visiting.add(param);
+    const cycleHitsBefore = ctx.cycleHits;
     try {
         const fn = param.parent;
         if (!ts.isFunctionLike(fn))
@@ -438,7 +500,15 @@ function inferParameterType(ctx, param, depth = 0) {
             types.push(...resolveExpressionTypes(ctx, arg, depth));
         }
         const result = dedupeTypes(checker, types);
-        ctx.memo.set(param, { atDepth: depth, types: result });
+        // Don't memoize a result whose computation hit a cycle guard: it was
+        // truncated by what happened to be on the *current* call stack, and the
+        // same node queried later in this request from outside the cycle could
+        // legitimately resolve more. (Depth-cap truncation, by contrast, IS
+        // safely memoized — the atDepth field encodes exactly how truncated it
+        // can be, and reuse is restricted accordingly.)
+        if (ctx.cycleHits === cycleHitsBefore) {
+            ctx.memo.set(param, { atDepth: depth, types: result });
+        }
         return result;
     }
     finally {
@@ -488,16 +558,22 @@ function inferReturnType(ctx, fn, depth = 0) {
         return [];
     if (hasExplicitReturnType(fn, ts))
         return [];
-    if (ctx.visiting.has(fn))
+    if (ctx.visiting.has(fn)) {
+        ctx.cycleHits++;
         return [];
+    }
     ctx.visiting.add(fn);
+    const cycleHitsBefore = ctx.cycleHits;
     try {
         const types = [];
         for (const expr of collectReturnExpressions(fn, ts)) {
             types.push(...resolveExpressionTypes(ctx, expr, depth));
         }
         const result = dedupeTypes(checker, types);
-        ctx.memo.set(fn, { atDepth: depth, types: result });
+        // See inferParameterType for why cycle-truncated results skip the memo.
+        if (ctx.cycleHits === cycleHitsBefore) {
+            ctx.memo.set(fn, { atDepth: depth, types: result });
+        }
         return result;
     }
     finally {
@@ -520,14 +596,29 @@ function inferTypeForNode(ctx, node) {
         return [];
     if (ts.isParameter(decl))
         return inferParameterType(ctx, decl);
-    if (ts.isVariableDeclaration(decl) && decl.initializer && ts.isCallExpression(decl.initializer)) {
-        const calleeFn = resolveCalleeDeclaration(ctx, decl.initializer);
-        if (calleeFn)
-            return inferReturnType(ctx, calleeFn);
+    if (ts.isVariableDeclaration(decl)) {
+        // Resolve the full initializer expression, not just a direct call's
+        // callee: `var pm = product.getPriceModel()` (a method call on an
+        // undocumented parameter) and `var pm = product.priceModel` (a property
+        // access) both need the same chain-chasing that return-type inference
+        // already does — resolveVariableInitializerTypes routes through it.
+        return dedupeTypes(checker, resolveVariableInitializerTypes(ctx, decl, 0, 0));
     }
     if (ts.isFunctionLike(decl))
         return inferReturnType(ctx, decl);
     return [];
+}
+/**
+ * Like {@link inferTypeForNode}, but for an arbitrary expression in receiver
+ * position — the completion case `product.getPriceModel().|`, where the thing
+ * before the dot is a call or chain rather than a plain identifier, so there's
+ * no declaration to look up; the expression itself is what gets resolved.
+ */
+function inferTypeForExpression(ctx, expr) {
+    const { ts, checker } = ctx;
+    if (ts.isIdentifier(expr))
+        return inferTypeForNode(ctx, expr);
+    return dedupeTypes(checker, resolveExpressionTypes(ctx, expr, 0));
 }
 /** Renders candidate types as human-readable hover text, e.g. `"Product | Category"`. */
 function describeTypes(checker, types) {
@@ -547,8 +638,14 @@ function typesToCompletionEntries(ts, checker, types) {
             seen.add(name);
             entries.push({
                 name,
-                kind: ts.ScriptElementKind.memberVariableElement,
+                // Method vs property determines the completion icon the editor shows.
+                kind: sym.flags & ts.SymbolFlags.Method
+                    ? ts.ScriptElementKind.memberFunctionElement
+                    : ts.ScriptElementKind.memberVariableElement,
                 kindModifiers: '',
+                // '11' mirrors TS's own internal SortText.LocationPriority — the rank
+                // ordinary resolved members get — so inferred members sort alongside
+                // real ones rather than above or below them.
                 sortText: '11',
                 source: exports.INFERRED_COMPLETION_SOURCE,
             });

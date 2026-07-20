@@ -117,7 +117,7 @@ If your editor's LSP client is launched outside the repo root (for example, open
 
 JSDoc-documented functions get full hover/completion support because TypeScript reads the `@param`/`@returns` annotations directly. Plain, undocumented helper functions don't — an unannotated parameter or return value gets widened to `any`, and that `any` propagates to every caller, silencing completion for anything built on top of it.
 
-Enable the `b2c-dx.features.scriptTypesInferUsage` setting (default: `false`) or pass `inferUsage: true` in the plugin config (`init_options.plugins` for other LSP hosts) to have the plugin infer a plausible type for these cases from how the value is actually used elsewhere in the project — call-site arguments for parameters, return statements for return values — chasing through undocumented call chains (a helper calling a helper calling a helper) rather than stopping at the first `any`.
+Enable the `b2c-dx.features.scriptTypesInferUsage` setting (default: `false`) or pass `inferUsage: true` in the plugin config (`init_options.plugins` for other LSP hosts) to have the plugin infer a plausible type for these cases from how the value is actually used elsewhere in the project — call-site arguments for parameters, return statements for return values — chasing through undocumented call chains (a helper calling a helper calling a helper), multi-hop method chains (`product.getPriceModel().getPrice()`), and intermediate local variables (`var priceModel = product.getPriceModel(); return priceModel.getPrice();`) rather than stopping at the first `any`.
 
 Inferred results are heuristic and clearly labeled:
 
