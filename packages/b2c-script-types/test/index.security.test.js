@@ -49,6 +49,16 @@ function buildWorkspace() {
   fs.writeFileSync(path.join(modRoot, 'goodpkg', 'package.json'), JSON.stringify({main: './lib.js'}));
   fs.writeFileSync(path.join(modRoot, 'goodpkg', 'lib.js'), 'module.exports = {};');
 
+  // A directory package whose package.json is valid JSON with a valid in-root
+  // `main`, but padded past the 1 MiB parse ceiling — must be refused rather
+  // than parsed synchronously on tsserver's thread.
+  fs.mkdirSync(path.join(modRoot, 'bigpkg'), {recursive: true});
+  fs.writeFileSync(
+    path.join(modRoot, 'bigpkg', 'package.json'),
+    JSON.stringify({main: './lib.js', _pad: 'A'.repeat(2 * 1024 * 1024)}),
+  );
+  fs.writeFileSync(path.join(modRoot, 'bigpkg', 'lib.js'), 'module.exports = {};');
+
   // Secrets outside any root.
   fs.writeFileSync(path.join(tmp, 'secret_outside.js'), 'module.exports = {SECRET: "leaked"};');
   fs.writeFileSync(path.join(tmp, 'leak.d.ts'), 'export const SECRET: string;');
@@ -181,6 +191,13 @@ describe('module resolver path-traversal containment', () => {
     const resolved = resolve('goodpkg');
     assert.ok(resolved, 'expected goodpkg to resolve via package.json main');
     assert.ok(isWithin(resolved, workspace.modRoot), `resolved outside modules root: ${resolved}`);
+  });
+
+  it('refuses to parse a cartridge package.json larger than the size ceiling', () => {
+    // Valid JSON with a valid in-root `main`, but > 1 MiB — the size cap must
+    // skip it (a real package.json is a few KB) rather than parse it.
+    const resolved = resolve('bigpkg');
+    assert.equal(resolved, undefined, `oversized package.json was parsed and resolved to ${resolved}`);
   });
 
   // --- symlink escape: an in-cartridge symlink pointing outside ---

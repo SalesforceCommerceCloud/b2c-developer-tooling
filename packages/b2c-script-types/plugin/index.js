@@ -107,6 +107,28 @@ function init({ typescript: ts }) {
         const resolved = canonicalPath(candidate);
         return (resolved + '/').startsWith(root.endsWith('/') ? root : root + '/');
     };
+    // Parses a workspace JSON file (dw.json, a cartridge's package.json) with a
+    // hard size ceiling. Both are attacker-controlled in a cloned repo and are
+    // parsed synchronously on tsserver's thread, so a multi-hundred-megabyte
+    // file would be a denial-of-service vector (memory + parse time) — a real
+    // dw.json/package.json is a few KB, so anything past 1 MiB is refused
+    // outright rather than best-effort parsed. Never throws: a missing,
+    // oversized, or malformed file yields `undefined`, and callers treat that
+    // as "absent" rather than failing the whole request.
+    const MAX_JSON_BYTES = 1024 * 1024;
+    const readJsonFile = (p) => {
+        try {
+            if (ts.sys.getFileSize && ts.sys.getFileSize(p) > MAX_JSON_BYTES)
+                return undefined;
+            const content = ts.sys.readFile(p);
+            if (content === undefined || content.length > MAX_JSON_BYTES)
+                return undefined;
+            return JSON.parse(content);
+        }
+        catch {
+            return undefined;
+        }
+    };
     const setCartridges = (list) => {
         cartridges = list.map(({ name, src }) => {
             const n = normalize(src);
@@ -178,22 +200,7 @@ function init({ typescript: ts }) {
         const dwJsonPath = node_path_1.default.join(projectRoot, 'dw.json');
         if (!fileExists(dwJsonPath))
             return undefined;
-        let content;
-        try {
-            content = ts.sys.readFile(dwJsonPath);
-        }
-        catch {
-            return undefined;
-        }
-        if (!content)
-            return undefined;
-        let parsed;
-        try {
-            parsed = JSON.parse(content);
-        }
-        catch {
-            return undefined;
-        }
+        const parsed = readJsonFile(dwJsonPath);
         const value = parsed?.cartridges;
         if (typeof value === 'string') {
             return value
@@ -228,9 +235,13 @@ function init({ typescript: ts }) {
             return ordered;
         }
         const indexed = discovered.map((c, i) => ({ c, i }));
+        // hasOwn guard so a cartridge directory literally named `__proto__` or
+        // `constructor` can't read an inherited Object.prototype value here (which
+        // would make the rank a non-number and corrupt the sort comparator).
+        const rankOf = (name) => Object.prototype.hasOwnProperty.call(BASE_CARTRIDGE_RANK, name) ? BASE_CARTRIDGE_RANK[name] : 0;
         indexed.sort((a, b) => {
-            const ar = BASE_CARTRIDGE_RANK[a.c.name] ?? 0;
-            const br = BASE_CARTRIDGE_RANK[b.c.name] ?? 0;
+            const ar = rankOf(a.c.name);
+            const br = rankOf(b.c.name);
             if (ar !== br)
                 return ar - br;
             return a.i - b.i;
@@ -361,22 +372,14 @@ function init({ typescript: ts }) {
         // package.json `main` fallback for directories without an index.js.
         const pkgPath = baseAbs + '/package.json';
         if (fileExists(pkgPath) && isWithinRoot(pkgPath, modulesCart.root)) {
-            try {
-                const content = ts.sys.readFile(pkgPath);
-                if (content) {
-                    const main = JSON.parse(content).main;
-                    if (typeof main === 'string' && main.length > 0) {
-                        const resolved = (modulesCart.root + moduleName + '/' + main.replace(/^\.\//, '')).replace(/\\/g, '/');
-                        // `main` is attacker-controlled JSON content flowing into a path
-                        // join — a `../../..` or absolute value must not escape the root.
-                        if (fileExists(resolved) && isWithinRoot(resolved, modulesCart.root)) {
-                            return { resolved, source: modulesCart.name };
-                        }
-                    }
+            const main = readJsonFile(pkgPath)?.main;
+            if (typeof main === 'string' && main.length > 0) {
+                const resolved = (modulesCart.root + moduleName + '/' + main.replace(/^\.\//, '')).replace(/\\/g, '/');
+                // `main` is attacker-controlled JSON content flowing into a path
+                // join — a `../../..` or absolute value must not escape the root.
+                if (fileExists(resolved) && isWithinRoot(resolved, modulesCart.root)) {
+                    return { resolved, source: modulesCart.name };
                 }
-            }
-            catch {
-                // best-effort
             }
         }
         return undefined;
