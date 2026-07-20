@@ -31,6 +31,14 @@ const MAX_REFERENCES_PER_REQUEST = 200;
 // exhaust the whole budget and starve the others processed later in the same
 // request.
 const MAX_REFERENCES_PER_CALL = 50;
+// Bounds how many `.method()` hops resolveExpressionTypes() will chase within
+// a single static method-chain expression (e.g. `a.b().c().d()`). This is
+// separate from MAX_INFERENCE_DEPTH, which only bounds crossing into another
+// undocumented helper's own return-type inference — an in-expression chain
+// never crosses a function boundary, so without its own cap it would be
+// bounded only by how long an expression a cartridge author (or a generated
+// file) happens to write, not by a predictable cost.
+const MAX_CHAIN_HOPS = 10;
 exports.INFERRED_COMPLETION_SOURCE = '@salesforce/b2c-script-types/inferred-usage';
 /**
  * Builds a fresh inference context for one top-level hover/completion
@@ -283,19 +291,48 @@ function dedupeTypes(checker, types) {
     return out;
 }
 /**
+ * Strips any nullable part from `type` and computes its apparent type — the
+ * shared first step for every place in this file (and `typesToCompletionEntries`)
+ * that walks a candidate type's members. `getPropertyOfType`/`getPropertiesOfType`
+ * on a union only return members common to *every* constituent, and
+ * `null`/`undefined` contribute none, so an un-stripped nullable candidate —
+ * the common shape of an SFCC getter that can return nothing, e.g.
+ * `ProductMgr.getProduct(): Product | null` — would otherwise never resolve
+ * any member. `getApparentType` also picks up a primitive candidate's
+ * wrapper-object members (.length, .toUpperCase(), etc.), which live there
+ * rather than on the primitive type's own declared members.
+ */
+function getNonNullableApparentType(checker, type) {
+    return checker.getApparentType(checker.getNonNullableType(type));
+}
+/** Looks up a member by name on `type`'s non-nullable apparent type — see {@link getNonNullableApparentType}. */
+function getMemberOfType(checker, type, name) {
+    return checker.getPropertyOfType(getNonNullableApparentType(checker, type), name);
+}
+/**
  * Resolves the candidate type(s) of `expr`. If the checker settles on `any`
  * and `expr` is itself a call to a function we can analyze, recurses into
  * that function's inferred return type(s) instead of accepting the `any`.
  *
+ * @param chainHops - how many `.method()`/`.prop` hops within the *same*
+ * static expression have already been chased (e.g. the `2` in
+ * `a.b().c().d()` when resolving `d`'s receiver `a.b().c()`). This is
+ * distinct from `depth`, which only advances when crossing into another
+ * undocumented helper's own return-type inference — chain-hopping never
+ * crosses a function boundary, so it needs its own bound
+ * (`MAX_CHAIN_HOPS`) to keep worst-case cost predictable for a very long
+ * inline method chain.
  * @returns An array (rather than a single unioned Type) because the public
  * TypeChecker API exposed via tsserverlibrary has no way to synthesize a
  * union Type — callers merge candidates for display/completions themselves.
  */
-function resolveExpressionTypes(ctx, expr, depth) {
+function resolveExpressionTypes(ctx, expr, depth, chainHops = 0) {
     const { ts, checker } = ctx;
     const direct = checker.getTypeAtLocation(expr);
     if (!isAnyType(ts, direct))
         return [widenType(checker, direct)];
+    if (chainHops >= MAX_CHAIN_HOPS)
+        return [];
     if (ts.isCallExpression(expr)) {
         const calleeFn = resolveCalleeDeclaration(ctx, expr);
         if (calleeFn) {
@@ -314,8 +351,8 @@ function resolveExpressionTypes(ctx, expr, depth) {
             const methodAccess = expr.expression;
             const methodName = methodAccess.name.text;
             const returnTypes = [];
-            for (const receiverType of resolveExpressionTypes(ctx, methodAccess.expression, depth)) {
-                const methodSymbol = checker.getPropertyOfType(checker.getApparentType(receiverType), methodName);
+            for (const receiverType of resolveExpressionTypes(ctx, methodAccess.expression, depth, chainHops + 1)) {
+                const methodSymbol = getMemberOfType(checker, receiverType, methodName);
                 if (!methodSymbol)
                     continue;
                 const methodType = checker.getTypeOfSymbolAtLocation(methodSymbol, methodAccess.name);
@@ -324,7 +361,7 @@ function resolveExpressionTypes(ctx, expr, depth) {
                 }
             }
             if (returnTypes.length > 0)
-                return returnTypes;
+                return dedupeTypes(checker, returnTypes);
         }
     }
     else if (ts.isPropertyAccessExpression(expr)) {
@@ -334,13 +371,13 @@ function resolveExpressionTypes(ctx, expr, depth) {
         // access just because the access itself resolved to `any`.
         const propName = expr.name.text;
         const propTypes = [];
-        for (const baseType of resolveExpressionTypes(ctx, expr.expression, depth)) {
-            const propSymbol = checker.getPropertyOfType(checker.getApparentType(baseType), propName);
+        for (const baseType of resolveExpressionTypes(ctx, expr.expression, depth, chainHops + 1)) {
+            const propSymbol = getMemberOfType(checker, baseType, propName);
             if (propSymbol)
                 propTypes.push(widenType(checker, checker.getTypeOfSymbolAtLocation(propSymbol, expr)));
         }
         if (propTypes.length > 0)
-            return propTypes;
+            return dedupeTypes(checker, propTypes);
     }
     else if (ts.isIdentifier(expr)) {
         // `expr` is itself an undocumented parameter reference (e.g. a helper
@@ -503,16 +540,7 @@ function typesToCompletionEntries(ts, checker, types) {
     const seen = new Set();
     const entries = [];
     for (const type of types) {
-        // getPropertiesOfType on a union only returns members common to *every*
-        // constituent — since `null`/`undefined` contribute none, a candidate
-        // like `Product | null` (the real, common shape of an SFCC getter that
-        // can return nothing) would otherwise always synthesize zero entries.
-        // Strip the nullable parts first; getApparentType then picks up a
-        // primitive candidate's wrapper-object members (.length, .toUpperCase(),
-        // etc.), which live there rather than on the primitive type's own
-        // declared members.
-        const nonNullable = checker.getNonNullableType(type);
-        for (const sym of checker.getPropertiesOfType(checker.getApparentType(nonNullable))) {
+        for (const sym of checker.getPropertiesOfType(getNonNullableApparentType(checker, type))) {
             const name = sym.getName();
             if (seen.has(name))
                 continue;

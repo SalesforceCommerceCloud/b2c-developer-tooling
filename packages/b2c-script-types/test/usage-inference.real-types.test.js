@@ -17,21 +17,18 @@ const {
   inferReturnType,
   typesToCompletionEntries,
 } = require('../plugin/usage-inference');
-const {createFixtureLanguageService} = require('./helpers/fixture-language-service');
+const {createFixtureLanguageService, findFunctionDeclaration} = require('./helpers/fixture-language-service');
 const {REAL_DW_TYPES, realTypesPrelude} = require('./helpers/real-dw-types');
 
-function findFunctionDeclaration(sourceFile, name) {
-  let found;
-  const visit = (node) => {
-    if (ts.isFunctionDeclaration(node) && node.name && node.name.text === name) {
-      found = node;
-      return;
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(sourceFile);
-  if (!found) throw new Error(`function ${name} not found`);
-  return found;
+// Builds the fixture LanguageService + inference context + target function
+// node in one call, so each test body only has to state its fixture and its
+// assertion.
+function setupInference(files, jsFileName, fnName) {
+  const languageService = createFixtureLanguageService(files, {strict: true});
+  const ctx = createInferenceContext(ts, languageService);
+  const sourceFile = ctx.program.getSourceFile(jsFileName);
+  const fn = findFunctionDeclaration(sourceFile, fnName);
+  return {ctx, fn};
 }
 
 function completionNames(ts_, checker, types) {
@@ -50,23 +47,21 @@ function completionNames(ts_, checker, types) {
 // exercises the same feature end-to-end in VS Code.
 describe('usage-inference — real dw.* Script API types (Product, Order)', () => {
   describe('happy paths', () => {
+    const PRODUCT_HELPER_FILES = {
+      '/types.d.ts': realTypesPrelude(['Product', 'ProductMgr'], '  function getSomeProduct(): Product<any>;'),
+      '/productHelpers.js': `
+        function getDisplayName(product) {
+          return product.getName();
+        }
+        function useHelper() {
+          var product = getSomeProduct();
+          return getDisplayName(product);
+        }
+      `,
+    };
+
     it('infers dw.catalog.Product for an undocumented parameter from a single ProductMgr.getProduct() call site', () => {
-      const files = {
-        '/types.d.ts': realTypesPrelude(['Product', 'ProductMgr'], '  function getSomeProduct(): Product<any>;'),
-        '/productHelpers.js': `
-          function getDisplayName(product) {
-            return product.getName();
-          }
-          function useHelper() {
-            var product = getSomeProduct();
-            return getDisplayName(product);
-          }
-        `,
-      };
-      const languageService = createFixtureLanguageService(files, {strict: true});
-      const ctx = createInferenceContext(ts, languageService);
-      const sourceFile = ctx.program.getSourceFile('/productHelpers.js');
-      const fn = findFunctionDeclaration(sourceFile, 'getDisplayName');
+      const {ctx, fn} = setupInference(PRODUCT_HELPER_FILES, '/productHelpers.js', 'getDisplayName');
 
       const types = inferParameterType(ctx, fn.parameters[0]);
 
@@ -74,22 +69,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
     });
 
     it('offers real dw.catalog.Product members (getID, getName, getPriceModel) as synthesized completions', () => {
-      const files = {
-        '/types.d.ts': realTypesPrelude(['Product', 'ProductMgr'], '  function getSomeProduct(): Product<any>;'),
-        '/productHelpers.js': `
-          function getDisplayName(product) {
-            return product.getName();
-          }
-          function useHelper() {
-            var product = getSomeProduct();
-            return getDisplayName(product);
-          }
-        `,
-      };
-      const languageService = createFixtureLanguageService(files, {strict: true});
-      const ctx = createInferenceContext(ts, languageService);
-      const sourceFile = ctx.program.getSourceFile('/productHelpers.js');
-      const fn = findFunctionDeclaration(sourceFile, 'getDisplayName');
+      const {ctx, fn} = setupInference(PRODUCT_HELPER_FILES, '/productHelpers.js', 'getDisplayName');
 
       const types = inferParameterType(ctx, fn.parameters[0]);
       const names = completionNames(ts, ctx.checker, types);
@@ -112,10 +92,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
           }
         `,
       };
-      const languageService = createFixtureLanguageService(files, {strict: true});
-      const ctx = createInferenceContext(ts, languageService);
-      const sourceFile = ctx.program.getSourceFile('/orderHelpers.js');
-      const fn = findFunctionDeclaration(sourceFile, 'getOrderNumber');
+      const {ctx, fn} = setupInference(files, '/orderHelpers.js', 'getOrderNumber');
 
       const types = inferParameterType(ctx, fn.parameters[0]);
 
@@ -124,23 +101,21 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
   });
 
   describe('deep nesting', () => {
+    const PRICING_HELPER_FILES = {
+      '/types.d.ts': realTypesPrelude(['Product', 'ProductMgr'], '  function getSomeProduct(): Product<any>;'),
+      '/pricingHelpers.js': `
+        function resolveProductPrice(product) {
+          return product.getPriceModel().getPrice();
+        }
+        function useHelper() {
+          var product = getSomeProduct();
+          return resolveProductPrice(product);
+        }
+      `,
+    };
+
     it("resolves an undocumented helper's own return type through a real two-hop method chain (product.getPriceModel().getPrice())", () => {
-      const files = {
-        '/types.d.ts': realTypesPrelude(['Product', 'ProductMgr'], '  function getSomeProduct(): Product<any>;'),
-        '/pricingHelpers.js': `
-          function resolveProductPrice(product) {
-            return product.getPriceModel().getPrice();
-          }
-          function useHelper() {
-            var product = getSomeProduct();
-            return resolveProductPrice(product);
-          }
-        `,
-      };
-      const languageService = createFixtureLanguageService(files, {strict: true});
-      const ctx = createInferenceContext(ts, languageService);
-      const sourceFile = ctx.program.getSourceFile('/pricingHelpers.js');
-      const fn = findFunctionDeclaration(sourceFile, 'resolveProductPrice');
+      const {ctx, fn} = setupInference(PRICING_HELPER_FILES, '/pricingHelpers.js', 'resolveProductPrice');
 
       const types = inferReturnType(ctx, fn);
 
@@ -148,28 +123,39 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
     });
 
     it('offers real dw.value.Money members for the deep-chain-inferred return type', () => {
-      const files = {
-        '/types.d.ts': realTypesPrelude(['Product', 'ProductMgr'], '  function getSomeProduct(): Product<any>;'),
-        '/pricingHelpers.js': `
-          function resolveProductPrice(product) {
-            return product.getPriceModel().getPrice();
-          }
-          function useHelper() {
-            var product = getSomeProduct();
-            return resolveProductPrice(product);
-          }
-        `,
-      };
-      const languageService = createFixtureLanguageService(files, {strict: true});
-      const ctx = createInferenceContext(ts, languageService);
-      const sourceFile = ctx.program.getSourceFile('/pricingHelpers.js');
-      const fn = findFunctionDeclaration(sourceFile, 'resolveProductPrice');
+      const {ctx, fn} = setupInference(PRICING_HELPER_FILES, '/pricingHelpers.js', 'resolveProductPrice');
 
       const types = inferReturnType(ctx, fn);
       const names = completionNames(ts, ctx.checker, types);
 
       assert.ok(names.includes('getValue'));
       assert.ok(names.includes('getCurrencyCode'));
+    });
+
+    it('resolves a method-chain return type when the receiver traces back to a real nullable getter (ProductMgr.getProduct(): Product | null)', () => {
+      // Regression test: resolveExpressionTypes's chain-hop branch looked up
+      // each method directly on the receiver's apparent type without
+      // stripping nullability first, so a receiver inferred from a real,
+      // nullable SFCC getter (the common shape — nearly every dw.*Mgr getter
+      // returns `T | null`) made `getPropertyOfType` return nothing for every
+      // hop, silently reducing the whole chain to `[]` instead of `Money`.
+      const files = {
+        '/pricingHelpers.js': `
+          function resolveProductPrice(product) {
+            return product.getPriceModel().getPrice();
+          }
+          function useHelper() {
+            var ProductMgr = require('${REAL_DW_TYPES.ProductMgr}');
+            var product = ProductMgr.getProduct('some-id');
+            return resolveProductPrice(product);
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/pricingHelpers.js', 'resolveProductPrice');
+
+      const types = inferReturnType(ctx, fn);
+
+      assert.equal(describeTypes(ctx.checker, types), 'Money');
     });
 
     it('resolves a three-hop chain (order.getCustomer().getProfile().getEmail()) through an undocumented helper', () => {
@@ -185,10 +171,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
           }
         `,
       };
-      const languageService = createFixtureLanguageService(files, {strict: true});
-      const ctx = createInferenceContext(ts, languageService);
-      const sourceFile = ctx.program.getSourceFile('/customerHelpers.js');
-      const fn = findFunctionDeclaration(sourceFile, 'resolveCustomerEmail');
+      const {ctx, fn} = setupInference(files, '/customerHelpers.js', 'resolveCustomerEmail');
 
       const types = inferReturnType(ctx, fn);
 
@@ -211,10 +194,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
           }
         `,
       };
-      const languageService = createFixtureLanguageService(files, {strict: true});
-      const ctx = createInferenceContext(ts, languageService);
-      const sourceFile = ctx.program.getSourceFile('/pricingHelpers.js');
-      const fn = findFunctionDeclaration(sourceFile, 'resolveProductPrice');
+      const {ctx, fn} = setupInference(files, '/pricingHelpers.js', 'resolveProductPrice');
 
       const types = inferReturnType(ctx, fn);
 
@@ -240,10 +220,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
           }
         `,
       };
-      const languageService = createFixtureLanguageService(files, {strict: true});
-      const ctx = createInferenceContext(ts, languageService);
-      const sourceFile = ctx.program.getSourceFile('/consumer.js');
-      const fn = findFunctionDeclaration(sourceFile, 'getDisplayName');
+      const {ctx, fn} = setupInference(files, '/consumer.js', 'getDisplayName');
 
       const types = inferParameterType(ctx, fn.parameters[0]);
       const names = completionNames(ts, ctx.checker, types);
@@ -266,10 +243,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
           describe(getSomeCategory());
         `,
       };
-      const languageService = createFixtureLanguageService(files, {strict: true});
-      const ctx = createInferenceContext(ts, languageService);
-      const sourceFile = ctx.program.getSourceFile('/consumer.js');
-      const fn = findFunctionDeclaration(sourceFile, 'describe');
+      const {ctx, fn} = setupInference(files, '/consumer.js', 'describe');
 
       const types = inferParameterType(ctx, fn.parameters[0]);
 
@@ -285,10 +259,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
           }
         `,
       };
-      const languageService = createFixtureLanguageService(files, {strict: true});
-      const ctx = createInferenceContext(ts, languageService);
-      const sourceFile = ctx.program.getSourceFile('/productHelpers.js');
-      const fn = findFunctionDeclaration(sourceFile, 'getDisplayName');
+      const {ctx, fn} = setupInference(files, '/productHelpers.js', 'getDisplayName');
 
       const types = inferParameterType(ctx, fn.parameters[0]);
 
@@ -311,10 +282,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
           }
         `,
       };
-      const languageService = createFixtureLanguageService(files, {strict: true});
-      const ctx = createInferenceContext(ts, languageService);
-      const sourceFile = ctx.program.getSourceFile('/variantHelpers.js');
-      const fn = findFunctionDeclaration(sourceFile, 'countVariants');
+      const {ctx, fn} = setupInference(files, '/variantHelpers.js', 'countVariants');
 
       const types = inferParameterType(ctx, fn.parameters[0]);
       const names = completionNames(ts, ctx.checker, types);

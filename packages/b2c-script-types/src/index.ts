@@ -665,89 +665,102 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       return types;
     };
 
-    proxy.getQuickInfoAtPosition = (fileName, position, maximumLength) => {
-      // The underlying call is not ours to trust unconditionally — TS's own
-      // quick-info resolution can throw on unusual ASTs (e.g. mid-edit syntax
-      // errors), and a plugin override throwing takes the whole tsserver
-      // request down with it instead of degrading to no hover.
-      let original: tsserver.QuickInfo | undefined;
+    // Runs `fn` (either the underlying, un-proxied language service call, or
+    // our own inference logic on top of it) and degrades to `fallback` if it
+    // throws, so a plugin override throwing can't take the whole tsserver
+    // request down with it. `ts.OperationCanceledException` is exempted and
+    // always rethrown: TS throws it cooperatively whenever the host's
+    // CancellationToken fires (e.g. the user kept typing while this hover or
+    // completion request was still in flight), which is ordinary, frequent
+    // behavior, not a real failure — tsserver's request pipeline handles a
+    // propagated cancellation very differently from a completed-but-empty
+    // response, so swallowing it here would misreport "cancelled" as
+    // "resolved to nothing" every time.
+    const guarded = <T>(label: string, fn: () => T, fallback: T): T => {
       try {
-        original = info.languageService.getQuickInfoAtPosition(fileName, position, maximumLength);
+        return fn();
       } catch (e) {
-        log(`usage-inference hover failed: underlying getQuickInfoAtPosition threw: ${(e as Error).message}`);
-        return undefined;
-      }
-      if (!enabled || !inferUsageEnabled || !isCartridgeFile(fileName) || !original) return original;
-      try {
-        const program = info.languageService.getProgram();
-        const sourceFile = program?.getSourceFile(fileName);
-        if (!program || !sourceFile) return original;
-        const node = getNodeAtPosition(sourceFile, ts, position);
-        if (!node || !ts.isIdentifier(node)) return original;
-        const checker = program.getTypeChecker();
-        if (!isAnyType(ts, checker.getTypeAtLocation(node))) return original;
-        const types = getCachedInference(`hover:${fileName}:${node.getStart(sourceFile)}`, () => {
-          const ctx = createInferenceContext(ts, info.languageService);
-          return ctx ? inferTypeForNode(ctx, node) : [];
-        });
-        if (types.length === 0) return original;
-        const note: tsserver.SymbolDisplayPart = {
-          text: `\n\nInferred from usage: ${describeTypes(checker, types)}`,
-          kind: 'text',
-        };
-        return {...original, documentation: [...(original.documentation ?? []), note]};
-      } catch (e) {
-        log(`usage-inference hover failed: ${(e as Error).message}`);
-        return original;
+        if (e instanceof ts.OperationCanceledException) throw e;
+        log(`usage-inference ${label} failed: ${(e as Error).message}`);
+        return fallback;
       }
     };
 
+    proxy.getQuickInfoAtPosition = (fileName, position, maximumLength) => {
+      const original = guarded(
+        'hover',
+        () => info.languageService.getQuickInfoAtPosition(fileName, position, maximumLength),
+        undefined,
+      );
+      if (!enabled || !inferUsageEnabled || !isCartridgeFile(fileName) || !original) return original;
+      return guarded(
+        'hover',
+        () => {
+          const program = info.languageService.getProgram();
+          const sourceFile = program?.getSourceFile(fileName);
+          if (!program || !sourceFile) return original;
+          const node = getNodeAtPosition(sourceFile, ts, position);
+          if (!node || !ts.isIdentifier(node)) return original;
+          const checker = program.getTypeChecker();
+          if (!isAnyType(ts, checker.getTypeAtLocation(node))) return original;
+          const types = getCachedInference(`hover:${fileName}:${node.getStart(sourceFile)}`, () => {
+            const ctx = createInferenceContext(ts, info.languageService);
+            return ctx ? inferTypeForNode(ctx, node) : [];
+          });
+          if (types.length === 0) return original;
+          const note: tsserver.SymbolDisplayPart = {
+            text: `\n\nInferred from usage: ${describeTypes(checker, types)}`,
+            kind: 'text',
+          };
+          return {...original, documentation: [...(original.documentation ?? []), note]};
+        },
+        original,
+      );
+    };
+
     proxy.getCompletionsAtPosition = (fileName, position, options, formattingSettings) => {
-      // Same reasoning as getQuickInfoAtPosition above: don't let an
-      // exception from the underlying call escape uncaught.
-      let original: tsserver.WithMetadata<tsserver.CompletionInfo> | undefined;
-      try {
-        original = info.languageService.getCompletionsAtPosition(fileName, position, options, formattingSettings);
-      } catch (e) {
-        log(`usage-inference completions failed: underlying getCompletionsAtPosition threw: ${(e as Error).message}`);
-        return undefined;
-      }
+      const original = guarded(
+        'completions',
+        () => info.languageService.getCompletionsAtPosition(fileName, position, options, formattingSettings),
+        undefined,
+      );
       if (!enabled || !inferUsageEnabled || !isCartridgeFile(fileName)) return original;
-      try {
-        const program = info.languageService.getProgram();
-        const sourceFile = program?.getSourceFile(fileName);
-        if (!program || !sourceFile) return original;
-        const node = getNodeAtPosition(sourceFile, ts, Math.max(position - 1, 0));
-        if (!node) return original;
-        const propAccess = findEnclosingPropertyAccess(node, ts);
-        if (!propAccess || !ts.isIdentifier(propAccess.expression)) return original;
-        const checker = program.getTypeChecker();
-        if (!isAnyType(ts, checker.getTypeAtLocation(propAccess.expression))) return original;
-        const baseNode = propAccess.expression;
-        const types = getCachedInference(`completions:${fileName}:${baseNode.getStart(sourceFile)}`, () => {
-          const ctx = createInferenceContext(ts, info.languageService);
-          return ctx ? inferTypeForNode(ctx, baseNode) : [];
-        });
-        if (types.length === 0) return original;
-        const inferredEntries = typesToCompletionEntries(ts, checker, types);
-        if (inferredEntries.length === 0) return original;
-        const existingNames = new Set((original?.entries ?? []).map((e) => e.name));
-        const merged = [...(original?.entries ?? []), ...inferredEntries.filter((e) => !existingNames.has(e.name))];
-        // Preserve every other field TS set on the original result (isIncomplete,
-        // optionalReplacementSpan, metadata, defaultCommitCharacters, flags) —
-        // only entries actually changed. Only synthesize a fresh CompletionInfo
-        // in the rare case TS returned nothing at all for this position.
-        if (original) return {...original, entries: merged};
-        return {
-          isGlobalCompletion: false,
-          isMemberCompletion: true,
-          isNewIdentifierLocation: false,
-          entries: merged,
-        };
-      } catch (e) {
-        log(`usage-inference completions failed: ${(e as Error).message}`);
-        return original;
-      }
+      return guarded(
+        'completions',
+        () => {
+          const program = info.languageService.getProgram();
+          const sourceFile = program?.getSourceFile(fileName);
+          if (!program || !sourceFile) return original;
+          const node = getNodeAtPosition(sourceFile, ts, Math.max(position - 1, 0));
+          if (!node) return original;
+          const propAccess = findEnclosingPropertyAccess(node, ts);
+          if (!propAccess || !ts.isIdentifier(propAccess.expression)) return original;
+          const checker = program.getTypeChecker();
+          if (!isAnyType(ts, checker.getTypeAtLocation(propAccess.expression))) return original;
+          const baseNode = propAccess.expression;
+          const types = getCachedInference(`completions:${fileName}:${baseNode.getStart(sourceFile)}`, () => {
+            const ctx = createInferenceContext(ts, info.languageService);
+            return ctx ? inferTypeForNode(ctx, baseNode) : [];
+          });
+          if (types.length === 0) return original;
+          const inferredEntries = typesToCompletionEntries(ts, checker, types);
+          if (inferredEntries.length === 0) return original;
+          const existingNames = new Set((original?.entries ?? []).map((e) => e.name));
+          const merged = [...(original?.entries ?? []), ...inferredEntries.filter((e) => !existingNames.has(e.name))];
+          // Preserve every other field TS set on the original result (isIncomplete,
+          // optionalReplacementSpan, metadata, defaultCommitCharacters, flags) —
+          // only entries actually changed. Only synthesize a fresh CompletionInfo
+          // in the rare case TS returned nothing at all for this position.
+          if (original) return {...original, entries: merged};
+          return {
+            isGlobalCompletion: false,
+            isMemberCompletion: true,
+            isNewIdentifierLocation: false,
+            entries: merged,
+          };
+        },
+        original,
+      );
     };
 
     log(`plugin initialized (cartridges=${cartridges.length}, enabled=${enabled})`);

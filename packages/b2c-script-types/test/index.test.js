@@ -292,4 +292,45 @@ describe('create() proxy — usage inference wiring', () => {
     assert.ok(names.includes('getID'));
     assert.ok(names.includes('getName'));
   });
+
+  it('rethrows ts.OperationCanceledException from the underlying call instead of swallowing it as a failure', () => {
+    // TS throws this cooperatively whenever the host's CancellationToken
+    // fires (e.g. the user kept typing while this request was in flight) —
+    // ordinary, frequent behavior that tsserver's request pipeline handles
+    // very differently from a completed-but-empty response. A plugin
+    // override that swallows it and returns undefined instead would
+    // misreport "cancelled" as "resolved to nothing" on every fast edit.
+    const host = createFixtureHost({
+      '/helper.js': `
+        function helper(product) { return product.ID; }
+        helper(getProduct());
+        module.exports = {helper};
+      `,
+    });
+    const realLanguageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const languageService = new Proxy(realLanguageService, {
+      get(target, prop) {
+        if (prop === 'getQuickInfoAtPosition' || prop === 'getCompletionsAtPosition') {
+          return () => {
+            throw new ts.OperationCanceledException();
+          };
+        }
+        return target[prop];
+      },
+    });
+    const {create} = init({typescript: ts});
+    const proxy = create({
+      languageService,
+      languageServiceHost: host,
+      project: {
+        projectService: {logger: {info: () => {}}},
+        getCurrentDirectory: () => '/',
+        getProjectVersion: () => '1',
+      },
+      config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
+    });
+
+    assert.throws(() => proxy.getQuickInfoAtPosition('/helper.js', 0), ts.OperationCanceledException);
+    assert.throws(() => proxy.getCompletionsAtPosition('/helper.js', 0, undefined), ts.OperationCanceledException);
+  });
 });

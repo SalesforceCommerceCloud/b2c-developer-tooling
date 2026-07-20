@@ -20,26 +20,12 @@ const {
   inferTypeForNode,
   typesToCompletionEntries,
 } = require('../plugin/usage-inference');
-const {createFixtureLanguageService} = require('./helpers/fixture-language-service');
+const {createFixtureLanguageService, findFunctionDeclaration} = require('./helpers/fixture-language-service');
 
 const AMBIENT_TYPES = `
 declare function getProduct(): {ID: string; name: string};
 declare function getInventory(): {quantity: number};
 `;
-
-function findFunctionDeclaration(sourceFile, name) {
-  let found;
-  const visit = (node) => {
-    if (ts.isFunctionDeclaration(node) && node.name && node.name.text === name) {
-      found = node;
-      return;
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(sourceFile);
-  if (!found) throw new Error(`function ${name} not found`);
-  return found;
-}
 
 describe('usage-inference', () => {
   describe('inferParameterType', () => {
@@ -411,6 +397,67 @@ describe('usage-inference', () => {
       const types = inferReturnType(ctx, caller);
 
       assert.equal(describeTypes(ctx.checker, types), 'string');
+    });
+
+    it('chases a method-chain (`x.next().next()...`) within MAX_CHAIN_HOPS', () => {
+      const files = {
+        '/types.d.ts': `
+          interface Chainable {
+            next(): Chainable;
+            value: string;
+          }
+          declare function getChainable(): Chainable;
+        `,
+        '/chain.js': `
+          function resolveChain(x) {
+            return x.next().next().next().next().next().value;
+          }
+          function useHelper() {
+            return resolveChain(getChainable());
+          }
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/chain.js');
+      const fn = findFunctionDeclaration(sourceFile, 'resolveChain');
+
+      const types = inferReturnType(ctx, fn);
+
+      assert.equal(describeTypes(ctx.checker, types), 'string');
+    });
+
+    it('gives up (without hanging) on a method-chain longer than MAX_CHAIN_HOPS, rather than chasing it unbounded', () => {
+      // MAX_CHAIN_HOPS bounds in-expression chain-hopping (a.b().c().d()...)
+      // separately from MAX_INFERENCE_DEPTH, which only bounds crossing into
+      // another undocumented helper's own return-type inference — a chain
+      // never crosses a function boundary, so without its own cap this would
+      // be bounded only by how long an expression happens to be written.
+      const files = {
+        '/types.d.ts': `
+          interface Chainable {
+            next(): Chainable;
+            value: string;
+          }
+          declare function getChainable(): Chainable;
+        `,
+        '/chain.js': `
+          function resolveChain(x) {
+            return x.next().next().next().next().next().next().next().next().next().next().next().next().value;
+          }
+          function useHelper() {
+            return resolveChain(getChainable());
+          }
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/chain.js');
+      const fn = findFunctionDeclaration(sourceFile, 'resolveChain');
+
+      const types = inferReturnType(ctx, fn);
+
+      assert.equal(types.length, 0);
     });
 
     it('reuses a memoized result computed at a shallower depth even when a later call is over MAX_INFERENCE_DEPTH', () => {

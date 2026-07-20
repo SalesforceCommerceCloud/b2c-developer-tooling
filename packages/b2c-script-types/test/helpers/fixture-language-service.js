@@ -51,4 +51,21 @@ function createFixtureLanguageService(files, options) {
   return ts.createLanguageService(host, ts.createDocumentRegistry());
 }
 
-module.exports = {createFixtureHost, createFixtureLanguageService};
+// Finds a top-level `function name(...) {...}` declaration in a fixture
+// source file, so tests can locate the node to run inference against without
+// computing offsets by hand.
+function findFunctionDeclaration(sourceFile, name) {
+  let found;
+  const visit = (node) => {
+    if (ts.isFunctionDeclaration(node) && node.name && node.name.text === name) {
+      found = node;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  if (!found) throw new Error(`function ${name} not found`);
+  return found;
+}
+
+module.exports = {createFixtureHost, createFixtureLanguageService, findFunctionDeclaration};
