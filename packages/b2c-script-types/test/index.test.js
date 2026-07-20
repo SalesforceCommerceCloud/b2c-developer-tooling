@@ -115,6 +115,25 @@ describe('create() proxy — usage inference wiring', () => {
     assert.ok(names.includes('name'));
   });
 
+  it('preserves every other CompletionInfo field from the original result when merging in inferred entries', () => {
+    const plainProxy = createPluginProxy({enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG});
+    const original = plainProxy.getCompletionsAtPosition('/helper.js', dotPos, undefined);
+
+    const inferProxy = createPluginProxy({
+      enabled: true,
+      autoDiscover: false,
+      cartridges: CARTRIDGE_CONFIG,
+      inferUsage: true,
+    });
+    const merged = inferProxy.getCompletionsAtPosition('/helper.js', dotPos, undefined);
+
+    const originalRest = {...original};
+    delete originalRest.entries;
+    const mergedRest = {...merged};
+    delete mergedRest.entries;
+    assert.deepEqual(mergedRest, originalRest);
+  });
+
   it('does not run inference outside a configured cartridge root, even when inferUsage is on', () => {
     // No cartridges configured -> /helper.js isn't recognized as a cartridge
     // file, matching every other feature in this plugin (require resolution,

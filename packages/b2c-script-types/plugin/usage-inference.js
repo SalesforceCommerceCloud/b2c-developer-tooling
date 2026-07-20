@@ -18,12 +18,27 @@ const MAX_INFERENCE_DEPTH = 3;
 // renamed re-export, etc.) collectCallSites() will follow from a reference
 // before giving up on finding an actual call site.
 const MAX_REFERENCE_HOPS = 2;
+// Hard cap on how many reference-search hits collectCallSites() will process
+// across a single top-level inference request (not just one call site) —
+// bounds worst-case cost for a helper referenced from dozens of places,
+// complementing MAX_INFERENCE_DEPTH's cap on recursion depth. Generous enough
+// to cover realistic cartridge helper usage without being effectively
+// unlimited.
+const MAX_REFERENCES_PER_REQUEST = 200;
 exports.INFERRED_COMPLETION_SOURCE = '@salesforce/b2c-script-types/inferred-usage';
 function createInferenceContext(ts, languageService) {
     const program = languageService.getProgram();
     if (!program)
         return undefined;
-    return { ts, program, checker: program.getTypeChecker(), languageService, visiting: new Set() };
+    return {
+        ts,
+        program,
+        checker: program.getTypeChecker(),
+        languageService,
+        visiting: new Set(),
+        memo: new Map(),
+        referenceBudget: MAX_REFERENCES_PER_REQUEST,
+    };
 }
 function isAnyType(ts, type) {
     return (type.flags & ts.TypeFlags.Any) !== 0;
@@ -140,15 +155,20 @@ function resolveIndirectReferenceTarget(node, ts) {
 }
 // Finds actual call sites for `nameNode`, following up to
 // MAX_REFERENCE_HOPS binding indirections (require() bindings, destructuring)
-// when a reference doesn't sit directly in callee position.
+// when a reference doesn't sit directly in callee position. Stops early once
+// ctx.referenceBudget runs out, returning whatever call sites were already
+// found rather than continuing to fan out — an under-inferred (but still
+// heuristic, clearly-labeled) result beats hanging on a widely-referenced helper.
 function collectCallSites(ctx, nameNode) {
     const { ts, languageService, program } = ctx;
     const calls = [];
     const seenNameKeys = new Set();
     let frontier = [nameNode];
-    for (let hop = 0; hop <= MAX_REFERENCE_HOPS && frontier.length > 0; hop++) {
+    for (let hop = 0; hop <= MAX_REFERENCE_HOPS && frontier.length > 0 && ctx.referenceBudget > 0; hop++) {
         const nextFrontier = [];
         for (const name of frontier) {
+            if (ctx.referenceBudget <= 0)
+                break;
             const sourceFile = name.getSourceFile();
             const key = `${sourceFile.fileName}:${name.getStart(sourceFile)}`;
             if (seenNameKeys.has(key))
@@ -156,6 +176,9 @@ function collectCallSites(ctx, nameNode) {
             seenNameKeys.add(key);
             const refs = languageService.getReferencesAtPosition(sourceFile.fileName, name.getStart(sourceFile)) ?? [];
             for (const ref of refs) {
+                if (ctx.referenceBudget <= 0)
+                    break;
+                ctx.referenceBudget--;
                 const refFile = program.getSourceFile(ref.fileName);
                 if (!refFile)
                     continue;
@@ -179,6 +202,17 @@ function collectCallSites(ctx, nameNode) {
         frontier = nextFrontier;
     }
     return calls;
+}
+// True when the developer already gave this parameter/function an explicit
+// type — TS syntax or JSDoc — even if that type is literally `any`. In that
+// case the checker's `any` reflects a deliberate choice, not an inference
+// failure, so usage inference must never second-guess it. Only genuinely
+// implicit `any` (no annotation at all) is fair game.
+function hasExplicitParameterType(param, ts) {
+    return param.type !== undefined || ts.getJSDocType(param) !== undefined;
+}
+function hasExplicitReturnType(fn, ts) {
+    return fn.type !== undefined || ts.getJSDocReturnType(fn) !== undefined;
 }
 function resolveCalleeDeclaration(ctx, call) {
     const { checker, ts } = ctx;
@@ -244,6 +278,11 @@ function inferParameterType(ctx, param, depth = 0) {
     const { ts, checker } = ctx;
     if (depth > MAX_INFERENCE_DEPTH)
         return [];
+    if (hasExplicitParameterType(param, ts))
+        return [];
+    const cached = ctx.memo.get(param);
+    if (cached && cached.atDepth <= depth)
+        return cached.types;
     const fn = param.parent;
     if (!ts.isFunctionLike(fn))
         return [];
@@ -260,7 +299,9 @@ function inferParameterType(ctx, param, depth = 0) {
             continue;
         types.push(...resolveExpressionTypes(ctx, arg, depth));
     }
-    return dedupeTypes(checker, types);
+    const result = dedupeTypes(checker, types);
+    ctx.memo.set(param, { atDepth: depth, types: result });
+    return result;
 }
 // Recursively walks a function body collecting `return` expressions, without
 // descending into nested function-like boundaries (their returns belong to
@@ -292,6 +333,11 @@ function inferReturnType(ctx, fn, depth = 0) {
     const { ts, checker } = ctx;
     if (depth > MAX_INFERENCE_DEPTH)
         return [];
+    if (hasExplicitReturnType(fn, ts))
+        return [];
+    const cached = ctx.memo.get(fn);
+    if (cached && cached.atDepth <= depth)
+        return cached.types;
     if (ctx.visiting.has(fn))
         return [];
     ctx.visiting.add(fn);
@@ -300,7 +346,9 @@ function inferReturnType(ctx, fn, depth = 0) {
         for (const expr of collectReturnExpressions(fn, ts)) {
             types.push(...resolveExpressionTypes(ctx, expr, depth));
         }
-        return dedupeTypes(checker, types);
+        const result = dedupeTypes(checker, types);
+        ctx.memo.set(fn, { atDepth: depth, types: result });
+        return result;
     }
     finally {
         ctx.visiting.delete(fn);

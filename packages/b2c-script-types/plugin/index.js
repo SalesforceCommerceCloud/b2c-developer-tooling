@@ -571,17 +571,23 @@ function init({ typescript: ts }) {
         // a type the checker has already given up on (`any` — typically an
         // undocumented helper function), infer a better answer from call sites
         // elsewhere in the project instead of leaving the editor with nothing.
-        // Cached per (file, node position), invalidated on project version change
-        // so cost is bounded to "recompute only what's under the cursor, only
-        // when the program actually changed" rather than a whole-program scan.
+        // Cached per (file, node position); the whole cache is thrown away on a
+        // project version change rather than tracking per-entry validity, so it
+        // can't grow without bound across a long editing session — every entry
+        // in it is guaranteed fresh for the current program.
+        let inferenceCacheProjectVersion;
         const inferenceCache = new Map();
         const getCachedInference = (cacheKey, compute) => {
             const projectVersion = info.project.getProjectVersion();
+            if (projectVersion !== inferenceCacheProjectVersion) {
+                inferenceCache.clear();
+                inferenceCacheProjectVersion = projectVersion;
+            }
             const cached = inferenceCache.get(cacheKey);
-            if (cached && cached.projectVersion === projectVersion)
-                return cached.types;
+            if (cached)
+                return cached;
             const types = compute();
-            inferenceCache.set(cacheKey, { projectVersion, types });
+            inferenceCache.set(cacheKey, types);
             return types;
         };
         proxy.getQuickInfoAtPosition = (fileName, position, maximumLength) => {
@@ -646,10 +652,16 @@ function init({ typescript: ts }) {
                     return original;
                 const existingNames = new Set((original?.entries ?? []).map((e) => e.name));
                 const merged = [...(original?.entries ?? []), ...inferredEntries.filter((e) => !existingNames.has(e.name))];
+                // Preserve every other field TS set on the original result (isIncomplete,
+                // optionalReplacementSpan, metadata, defaultCommitCharacters, flags) —
+                // only entries actually changed. Only synthesize a fresh CompletionInfo
+                // in the rare case TS returned nothing at all for this position.
+                if (original)
+                    return { ...original, entries: merged };
                 return {
-                    isGlobalCompletion: original?.isGlobalCompletion ?? false,
+                    isGlobalCompletion: false,
                     isMemberCompletion: true,
-                    isNewIdentifierLocation: original?.isNewIdentifierLocation ?? false,
+                    isNewIdentifierLocation: false,
                     entries: merged,
                 };
             }

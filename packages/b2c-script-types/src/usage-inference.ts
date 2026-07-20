@@ -15,7 +15,24 @@ const MAX_INFERENCE_DEPTH = 3;
 // before giving up on finding an actual call site.
 const MAX_REFERENCE_HOPS = 2;
 
+// Hard cap on how many reference-search hits collectCallSites() will process
+// across a single top-level inference request (not just one call site) —
+// bounds worst-case cost for a helper referenced from dozens of places,
+// complementing MAX_INFERENCE_DEPTH's cap on recursion depth. Generous enough
+// to cover realistic cartridge helper usage without being effectively
+// unlimited.
+const MAX_REFERENCES_PER_REQUEST = 200;
+
 export const INFERRED_COMPLETION_SOURCE = '@salesforce/b2c-script-types/inferred-usage';
+
+interface MemoEntry {
+  // Remaining recursion budget (MAX_INFERENCE_DEPTH - depth) at the time this
+  // was computed. A result computed with equal-or-more remaining budget is
+  // always safe to reuse for a request needing equal-or-less budget, since
+  // more budget can only surface the same types or more, never fewer.
+  readonly atDepth: number;
+  readonly types: tsserver.Type[];
+}
 
 export interface InferenceContext {
   readonly ts: typeof tsserver;
@@ -26,6 +43,14 @@ export interface InferenceContext {
   // call stack unwinds) — NOT a cross-request memoization cache. It exists
   // solely to break cycles like `function a(){return b()} function b(){return a()}`.
   readonly visiting: Set<tsserver.Node>;
+  // Request-scoped memoization so sibling branches (e.g. several return
+  // statements or call-site arguments that all resolve through the same
+  // undocumented sub-helper) don't redo the same reference search and
+  // recursive inference repeatedly within one hover/completion request.
+  readonly memo: Map<tsserver.Node, MemoEntry>;
+  // Mutable, shared across the whole request — decremented by
+  // collectCallSites() every time it processes a reference.
+  referenceBudget: number;
 }
 
 export function createInferenceContext(
@@ -34,7 +59,15 @@ export function createInferenceContext(
 ): InferenceContext | undefined {
   const program = languageService.getProgram();
   if (!program) return undefined;
-  return {ts, program, checker: program.getTypeChecker(), languageService, visiting: new Set()};
+  return {
+    ts,
+    program,
+    checker: program.getTypeChecker(),
+    languageService,
+    visiting: new Set(),
+    memo: new Map(),
+    referenceBudget: MAX_REFERENCES_PER_REQUEST,
+  };
 }
 
 export function isAnyType(ts: typeof tsserver, type: tsserver.Type): boolean {
@@ -162,16 +195,20 @@ function resolveIndirectReferenceTarget(
 
 // Finds actual call sites for `nameNode`, following up to
 // MAX_REFERENCE_HOPS binding indirections (require() bindings, destructuring)
-// when a reference doesn't sit directly in callee position.
+// when a reference doesn't sit directly in callee position. Stops early once
+// ctx.referenceBudget runs out, returning whatever call sites were already
+// found rather than continuing to fan out — an under-inferred (but still
+// heuristic, clearly-labeled) result beats hanging on a widely-referenced helper.
 function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier): tsserver.CallExpression[] {
   const {ts, languageService, program} = ctx;
   const calls: tsserver.CallExpression[] = [];
   const seenNameKeys = new Set<string>();
   let frontier: tsserver.Identifier[] = [nameNode];
 
-  for (let hop = 0; hop <= MAX_REFERENCE_HOPS && frontier.length > 0; hop++) {
+  for (let hop = 0; hop <= MAX_REFERENCE_HOPS && frontier.length > 0 && ctx.referenceBudget > 0; hop++) {
     const nextFrontier: tsserver.Identifier[] = [];
     for (const name of frontier) {
+      if (ctx.referenceBudget <= 0) break;
       const sourceFile = name.getSourceFile();
       const key = `${sourceFile.fileName}:${name.getStart(sourceFile)}`;
       if (seenNameKeys.has(key)) continue;
@@ -179,6 +216,8 @@ function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier):
 
       const refs = languageService.getReferencesAtPosition(sourceFile.fileName, name.getStart(sourceFile)) ?? [];
       for (const ref of refs) {
+        if (ctx.referenceBudget <= 0) break;
+        ctx.referenceBudget--;
         const refFile = program.getSourceFile(ref.fileName);
         if (!refFile) continue;
         const node = getNodeAtPosition(refFile, ts, ref.textSpan.start);
@@ -199,6 +238,19 @@ function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier):
   }
 
   return calls;
+}
+
+// True when the developer already gave this parameter/function an explicit
+// type — TS syntax or JSDoc — even if that type is literally `any`. In that
+// case the checker's `any` reflects a deliberate choice, not an inference
+// failure, so usage inference must never second-guess it. Only genuinely
+// implicit `any` (no annotation at all) is fair game.
+function hasExplicitParameterType(param: tsserver.ParameterDeclaration, ts: typeof tsserver): boolean {
+  return param.type !== undefined || ts.getJSDocType(param) !== undefined;
+}
+
+function hasExplicitReturnType(fn: tsserver.SignatureDeclaration, ts: typeof tsserver): boolean {
+  return fn.type !== undefined || ts.getJSDocReturnType(fn) !== undefined;
 }
 
 function resolveCalleeDeclaration(
@@ -267,6 +319,9 @@ export function inferParameterType(
 ): tsserver.Type[] {
   const {ts, checker} = ctx;
   if (depth > MAX_INFERENCE_DEPTH) return [];
+  if (hasExplicitParameterType(param, ts)) return [];
+  const cached = ctx.memo.get(param);
+  if (cached && cached.atDepth <= depth) return cached.types;
   const fn = param.parent;
   if (!ts.isFunctionLike(fn)) return [];
   const nameNode = getReferenceNameNode(fn, ts);
@@ -281,7 +336,9 @@ export function inferParameterType(
     types.push(...resolveExpressionTypes(ctx, arg, depth));
   }
 
-  return dedupeTypes(checker, types);
+  const result = dedupeTypes(checker, types);
+  ctx.memo.set(param, {atDepth: depth, types: result});
+  return result;
 }
 
 // Recursively walks a function body collecting `return` expressions, without
@@ -312,6 +369,9 @@ function collectReturnExpressions(fn: tsserver.SignatureDeclaration, ts: typeof 
 export function inferReturnType(ctx: InferenceContext, fn: tsserver.SignatureDeclaration, depth = 0): tsserver.Type[] {
   const {ts, checker} = ctx;
   if (depth > MAX_INFERENCE_DEPTH) return [];
+  if (hasExplicitReturnType(fn, ts)) return [];
+  const cached = ctx.memo.get(fn);
+  if (cached && cached.atDepth <= depth) return cached.types;
   if (ctx.visiting.has(fn)) return [];
   ctx.visiting.add(fn);
   try {
@@ -319,7 +379,9 @@ export function inferReturnType(ctx: InferenceContext, fn: tsserver.SignatureDec
     for (const expr of collectReturnExpressions(fn, ts)) {
       types.push(...resolveExpressionTypes(ctx, expr, depth));
     }
-    return dedupeTypes(checker, types);
+    const result = dedupeTypes(checker, types);
+    ctx.memo.set(fn, {atDepth: depth, types: result});
+    return result;
   } finally {
     ctx.visiting.delete(fn);
   }

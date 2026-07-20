@@ -98,9 +98,12 @@ const DISCOVERY_IGNORE = new Set(['node_modules', '.git', 'dist', 'build', 'cove
 const DISCOVERY_MAX_DEPTH = 8;
 
 function init({typescript: ts}: {typescript: typeof tsserver}) {
-  // Module-scoped state shared across all projects in the TS server. The host
-  // calls onConfigurationChanged() on this module when configurePlugin() runs;
-  // each project's wrapped resolver reads from these variables.
+  // tsserver calls this factory function fresh for every project that loads
+  // the plugin (once per tsconfig/jsconfig root), so these variables are a
+  // private closure per project, not shared state across a multi-root
+  // workspace. configurePlugin() broadcasts the same config to every open
+  // project, but each project's own onConfigurationChanged() call only
+  // updates its own copy of these variables.
   let cartridges: NormalizedCartridge[] = [];
   let enabled = true;
   let autoDiscoverEnabled = true;
@@ -643,16 +646,22 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     // a type the checker has already given up on (`any` — typically an
     // undocumented helper function), infer a better answer from call sites
     // elsewhere in the project instead of leaving the editor with nothing.
-    // Cached per (file, node position), invalidated on project version change
-    // so cost is bounded to "recompute only what's under the cursor, only
-    // when the program actually changed" rather than a whole-program scan.
-    const inferenceCache = new Map<string, {projectVersion: string; types: tsserver.Type[]}>();
+    // Cached per (file, node position); the whole cache is thrown away on a
+    // project version change rather than tracking per-entry validity, so it
+    // can't grow without bound across a long editing session — every entry
+    // in it is guaranteed fresh for the current program.
+    let inferenceCacheProjectVersion: string | undefined;
+    const inferenceCache = new Map<string, tsserver.Type[]>();
     const getCachedInference = (cacheKey: string, compute: () => tsserver.Type[]): tsserver.Type[] => {
       const projectVersion = info.project.getProjectVersion();
+      if (projectVersion !== inferenceCacheProjectVersion) {
+        inferenceCache.clear();
+        inferenceCacheProjectVersion = projectVersion;
+      }
       const cached = inferenceCache.get(cacheKey);
-      if (cached && cached.projectVersion === projectVersion) return cached.types;
+      if (cached) return cached;
       const types = compute();
-      inferenceCache.set(cacheKey, {projectVersion, types});
+      inferenceCache.set(cacheKey, types);
       return types;
     };
 
@@ -706,10 +715,15 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
         if (inferredEntries.length === 0) return original;
         const existingNames = new Set((original?.entries ?? []).map((e) => e.name));
         const merged = [...(original?.entries ?? []), ...inferredEntries.filter((e) => !existingNames.has(e.name))];
+        // Preserve every other field TS set on the original result (isIncomplete,
+        // optionalReplacementSpan, metadata, defaultCommitCharacters, flags) —
+        // only entries actually changed. Only synthesize a fresh CompletionInfo
+        // in the rare case TS returned nothing at all for this position.
+        if (original) return {...original, entries: merged};
         return {
-          isGlobalCompletion: original?.isGlobalCompletion ?? false,
+          isGlobalCompletion: false,
           isMemberCompletion: true,
-          isNewIdentifierLocation: original?.isNewIdentifierLocation ?? false,
+          isNewIdentifierLocation: false,
           entries: merged,
         };
       } catch (e) {

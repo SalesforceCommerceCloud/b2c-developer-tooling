@@ -242,6 +242,78 @@ describe('usage-inference', () => {
     });
   });
 
+  describe('inferParameterType — explicit `any` is left alone', () => {
+    it('does not infer a type for a parameter with an explicit `@param {any}` JSDoc tag', () => {
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `
+          /** @param {any} product */
+          function helper(product) {
+            return product.ID;
+          }
+          helper(getProduct());
+          module.exports = {helper};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      const fn = findFunctionDeclaration(sourceFile, 'helper');
+
+      const types = inferParameterType(ctx, fn.parameters[0]);
+
+      assert.equal(types.length, 0);
+    });
+
+    it('does not infer a type for a parameter with an explicit `: any` TS annotation', () => {
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.ts': `
+          function helper(product: any) {
+            return product.ID;
+          }
+          helper(getProduct());
+          export {helper};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.ts');
+      const fn = findFunctionDeclaration(sourceFile, 'helper');
+
+      const types = inferParameterType(ctx, fn.parameters[0]);
+
+      assert.equal(types.length, 0);
+    });
+  });
+
+  describe('inferParameterType — reference budget', () => {
+    it('stops collecting call sites once the request-scoped reference budget runs out', () => {
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `
+          function helper(product) {
+            return product.ID;
+          }
+          helper(getProduct());
+          helper(getInventory());
+          module.exports = {helper};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      const fn = findFunctionDeclaration(sourceFile, 'helper');
+
+      // Exhausted up front — even though the helper has usable call sites,
+      // none should be processed once the shared budget is gone.
+      ctx.referenceBudget = 0;
+      const types = inferParameterType(ctx, fn.parameters[0]);
+
+      assert.equal(types.length, 0);
+    });
+  });
+
   describe('inferReturnType', () => {
     it('chases a multi-hop undocumented call chain through a forwarding helper', () => {
       // `identity` forwards its own (undocumented, `any`) parameter, so TS's
