@@ -9,9 +9,12 @@ const ts = require('typescript');
 
 // Builds a LanguageServiceHost backed entirely by in-memory sources. Lib files
 // (lib.es2020.d.ts, etc.) still resolve through the real ts.sys since we only
-// care about controlling the fixture's own files.
+// care about controlling the fixture's own files — but the default lib file
+// must be listed explicitly, since (unlike ts.createProgram) a LanguageService
+// never adds it automatically; without it, primitive types (string, number)
+// have no members at all, which would make apparent-type-dependent inference
+// impossible to test.
 function createFixtureHost(files, options) {
-  const fileNames = Object.keys(files);
   const compilerOptions = {
     target: ts.ScriptTarget.ES2020,
     module: ts.ModuleKind.CommonJS,
@@ -20,12 +23,14 @@ function createFixtureHost(files, options) {
     strict: false,
     ...options,
   };
+  const libFileName = ts.getDefaultLibFilePath(compilerOptions);
+  const fileNames = () => [...Object.keys(files), libFileName];
 
   return {
-    getScriptFileNames: () => fileNames,
+    getScriptFileNames: fileNames,
     getScriptVersion: () => '0',
     getScriptSnapshot: (fileName) => {
-      const text = files[fileName];
+      const text = files[fileName] ?? ts.sys.readFile(fileName);
       return text === undefined ? undefined : ts.ScriptSnapshot.fromString(text);
     },
     getCurrentDirectory: () => '/',

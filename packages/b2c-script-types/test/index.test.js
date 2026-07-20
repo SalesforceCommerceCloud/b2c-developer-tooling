@@ -163,4 +163,83 @@ describe('create() proxy — usage inference wiring', () => {
     const names = (completions?.entries ?? []).map((e) => e.name);
     assert.ok(!names.includes('ID'));
   });
+
+  it('forwards the maximumLength parameter to the underlying getQuickInfoAtPosition call', () => {
+    // A documented (explicitly-typed) parameter with a long inline object
+    // type, so a small maximumLength actually truncates the display text —
+    // proves getQuickInfoAtPosition's 3rd argument reaches the real
+    // language service rather than being silently dropped by the wrapper.
+    const files = {
+      '/typed.ts': `function helper(x: {aVeryLongPropertyNameHere: string; anotherVeryLongPropertyName: number; yetAnotherLongOne: boolean}) { return x; }`,
+    };
+    const host = createFixtureHost(files);
+    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const {create} = init({typescript: ts});
+    const proxy = create({
+      languageService,
+      languageServiceHost: host,
+      project: {
+        projectService: {logger: {info: () => {}}},
+        getCurrentDirectory: () => '/',
+        getProjectVersion: () => '1',
+      },
+      config: {enabled: true, autoDiscover: false, cartridges: []},
+    });
+    const pos = files['/typed.ts'].indexOf('x:');
+
+    const full = proxy.getQuickInfoAtPosition('/typed.ts', pos);
+    const truncated = proxy.getQuickInfoAtPosition('/typed.ts', pos, 10);
+
+    const fullText = full.displayParts.map((p) => p.text).join('');
+    const truncatedText = truncated.displayParts.map((p) => p.text).join('');
+    assert.ok(truncatedText.length < fullText.length);
+  });
+
+  it('does not serve a stale inferred type after the underlying file changes and the project version bumps', () => {
+    const files = {
+      '/types.d.ts': AMBIENT_TYPES + 'declare function getInventory(): {quantity: number};\n',
+      '/helper.js': `
+        function helper(product) {
+          return product.ID;
+        }
+        helper(getProduct());
+        module.exports = {helper};
+      `,
+    };
+    const versions = {'/types.d.ts': 0, '/helper.js': 0};
+    let projectVersion = 1;
+    const host = createFixtureHost(files);
+    // createFixtureHost's getScriptVersion is a constant '0' — override it
+    // here so this test can simulate a real edit bumping a file's version.
+    host.getScriptVersion = (fileName) => String(versions[fileName] ?? 0);
+    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const {create} = init({typescript: ts});
+    const proxy = create({
+      languageService,
+      languageServiceHost: host,
+      project: {
+        projectService: {logger: {info: () => {}}},
+        getCurrentDirectory: () => '/',
+        getProjectVersion: () => String(projectVersion),
+      },
+      config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
+    });
+    const paramPos = files['/helper.js'].indexOf('product)'); // start of the `product` identifier
+
+    const before = proxy.getQuickInfoAtPosition('/helper.js', paramPos);
+    const beforeText = (before?.documentation ?? []).map((p) => p.text).join('');
+    assert.ok(beforeText.includes('{ ID: string; name: string; }'));
+    assert.ok(!beforeText.includes('quantity'));
+
+    // Simulate an edit: add a second call site with a different argument
+    // type, and bump both the file's script version and the project version
+    // (as a real host would) so the cache can't keep serving the old answer.
+    files['/helper.js'] += '\nhelper(getInventory());\n';
+    versions['/helper.js'] += 1;
+    projectVersion += 1;
+
+    const after = proxy.getQuickInfoAtPosition('/helper.js', paramPos);
+    const afterText = (after?.documentation ?? []).map((p) => p.text).join('');
+    assert.ok(afterText.includes('quantity'));
+  });
 });

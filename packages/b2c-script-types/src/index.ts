@@ -687,7 +687,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
         };
         return {...original, documentation: [...(original.documentation ?? []), note]};
       } catch (e) {
-        log(`inferUsage hover failed: ${(e as Error).message}`);
+        log(`usage-inference hover failed: ${(e as Error).message}`);
         return original;
       }
     };
@@ -727,7 +727,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
           entries: merged,
         };
       } catch (e) {
-        log(`inferUsage completions failed: ${(e as Error).message}`);
+        log(`usage-inference completions failed: ${(e as Error).message}`);
         return original;
       }
     };

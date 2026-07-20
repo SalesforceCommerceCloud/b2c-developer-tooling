@@ -25,6 +25,12 @@ const MAX_REFERENCE_HOPS = 2;
 // to cover realistic cartridge helper usage without being effectively
 // unlimited.
 const MAX_REFERENCES_PER_REQUEST = 200;
+// Caps how much of that shared request-wide budget a *single* collectCallSites
+// call can spend, so one widely-referenced sub-helper (e.g. reached from the
+// first of several sibling return statements or call-site arguments) can't
+// exhaust the whole budget and starve the others processed later in the same
+// request.
+const MAX_REFERENCES_PER_CALL = 50;
 exports.INFERRED_COMPLETION_SOURCE = '@salesforce/b2c-script-types/inferred-usage';
 /**
  * Builds a fresh inference context for one top-level hover/completion
@@ -183,10 +189,11 @@ function collectCallSites(ctx, nameNode) {
     const calls = [];
     const seenNameKeys = new Set();
     let frontier = [nameNode];
-    for (let hop = 0; hop <= MAX_REFERENCE_HOPS && frontier.length > 0 && ctx.referenceBudget > 0; hop++) {
+    let localBudget = Math.min(MAX_REFERENCES_PER_CALL, ctx.referenceBudget);
+    for (let hop = 0; hop <= MAX_REFERENCE_HOPS && frontier.length > 0 && localBudget > 0; hop++) {
         const nextFrontier = [];
         for (const name of frontier) {
-            if (ctx.referenceBudget <= 0)
+            if (localBudget <= 0)
                 break;
             const sourceFile = name.getSourceFile();
             const key = `${sourceFile.fileName}:${name.getStart(sourceFile)}`;
@@ -195,8 +202,9 @@ function collectCallSites(ctx, nameNode) {
             seenNameKeys.add(key);
             const refs = languageService.getReferencesAtPosition(sourceFile.fileName, name.getStart(sourceFile)) ?? [];
             for (const ref of refs) {
-                if (ctx.referenceBudget <= 0)
+                if (localBudget <= 0)
                     break;
+                localBudget--;
                 ctx.referenceBudget--;
                 const refFile = program.getSourceFile(ref.fileName);
                 if (!refFile)
@@ -253,6 +261,14 @@ function resolveCalleeDeclaration(ctx, call) {
         return sigDecl;
     return undefined;
 }
+/**
+ * Widens a literal type (e.g. the string literal type of `"hello"`) to its
+ * general primitive type, so hover text shows `string` rather than a union
+ * of every literal argument ever passed to a helper.
+ */
+function widenType(checker, type) {
+    return checker.getBaseTypeOfLiteralType(type);
+}
 /** Deduplicates candidate types by their display string. */
 function dedupeTypes(checker, types) {
     const seen = new Set();
@@ -279,7 +295,7 @@ function resolveExpressionTypes(ctx, expr, depth) {
     const { ts, checker } = ctx;
     const direct = checker.getTypeAtLocation(expr);
     if (!isAnyType(ts, direct))
-        return [direct];
+        return [widenType(checker, direct)];
     if (ts.isCallExpression(expr)) {
         const calleeFn = resolveCalleeDeclaration(ctx, expr);
         if (calleeFn) {
@@ -287,6 +303,21 @@ function resolveExpressionTypes(ctx, expr, depth) {
             if (inferred.length > 0)
                 return inferred;
         }
+    }
+    else if (ts.isPropertyAccessExpression(expr)) {
+        // `expr` (e.g. `x.ID`) is `any` because its base is itself undocumented
+        // (an untyped parameter, say) — infer the base's type first, then look
+        // up this specific property on it, rather than giving up on the whole
+        // access just because the access itself resolved to `any`.
+        const propName = expr.name.text;
+        const propTypes = [];
+        for (const baseType of resolveExpressionTypes(ctx, expr.expression, depth)) {
+            const propSymbol = checker.getPropertyOfType(checker.getApparentType(baseType), propName);
+            if (propSymbol)
+                propTypes.push(widenType(checker, checker.getTypeOfSymbolAtLocation(propSymbol, expr)));
+        }
+        if (propTypes.length > 0)
+            return propTypes;
     }
     else if (ts.isIdentifier(expr)) {
         // `expr` is itself an undocumented parameter reference (e.g. a helper
@@ -312,32 +343,47 @@ function resolveExpressionTypes(ctx, expr, depth) {
  */
 function inferParameterType(ctx, param, depth = 0) {
     const { ts, checker } = ctx;
+    // Check the memo before the depth cap: a result already computed at an
+    // equal-or-shallower depth is valid regardless of how deep the *current*
+    // call is — it would be wrong to discard a known-good cached answer just
+    // because this particular path to it happens to run over budget.
+    const cached = ctx.memo.get(param);
+    if (cached && cached.atDepth <= depth)
+        return cached.types;
     if (depth > MAX_INFERENCE_DEPTH)
         return [];
     if (hasExplicitParameterType(param, ts))
         return [];
-    const cached = ctx.memo.get(param);
-    if (cached && cached.atDepth <= depth)
-        return cached.types;
-    const fn = param.parent;
-    if (!ts.isFunctionLike(fn))
+    // Cycle guard: a self-forwarding helper (e.g. `function id(x){return x}`
+    // called as `id(id(y))`) could otherwise re-enter inference for this same
+    // parameter before the first call has finished and memoized its result.
+    if (ctx.visiting.has(param))
         return [];
-    const nameNode = getReferenceNameNode(fn, ts);
-    if (!nameNode)
-        return [];
-    const paramIndex = fn.parameters.indexOf(param);
-    if (paramIndex < 0)
-        return [];
-    const types = [];
-    for (const call of collectCallSites(ctx, nameNode)) {
-        const arg = call.arguments[paramIndex];
-        if (!arg)
-            continue;
-        types.push(...resolveExpressionTypes(ctx, arg, depth));
+    ctx.visiting.add(param);
+    try {
+        const fn = param.parent;
+        if (!ts.isFunctionLike(fn))
+            return [];
+        const nameNode = getReferenceNameNode(fn, ts);
+        if (!nameNode)
+            return [];
+        const paramIndex = fn.parameters.indexOf(param);
+        if (paramIndex < 0)
+            return [];
+        const types = [];
+        for (const call of collectCallSites(ctx, nameNode)) {
+            const arg = call.arguments[paramIndex];
+            if (!arg)
+                continue;
+            types.push(...resolveExpressionTypes(ctx, arg, depth));
+        }
+        const result = dedupeTypes(checker, types);
+        ctx.memo.set(param, { atDepth: depth, types: result });
+        return result;
     }
-    const result = dedupeTypes(checker, types);
-    ctx.memo.set(param, { atDepth: depth, types: result });
-    return result;
+    finally {
+        ctx.visiting.delete(param);
+    }
 }
 /**
  * Recursively walks a function body collecting `return` expressions, without
@@ -374,13 +420,14 @@ function collectReturnExpressions(fn, ts) {
  */
 function inferReturnType(ctx, fn, depth = 0) {
     const { ts, checker } = ctx;
+    // See inferParameterType for why the memo is checked before the depth cap.
+    const cached = ctx.memo.get(fn);
+    if (cached && cached.atDepth <= depth)
+        return cached.types;
     if (depth > MAX_INFERENCE_DEPTH)
         return [];
     if (hasExplicitReturnType(fn, ts))
         return [];
-    const cached = ctx.memo.get(fn);
-    if (cached && cached.atDepth <= depth)
-        return cached.types;
     if (ctx.visiting.has(fn))
         return [];
     ctx.visiting.add(fn);
@@ -433,7 +480,10 @@ function typesToCompletionEntries(ts, checker, types) {
     const seen = new Set();
     const entries = [];
     for (const type of types) {
-        for (const sym of checker.getPropertiesOfType(type)) {
+        // getApparentType so a primitive candidate (string/number/boolean) picks
+        // up its wrapper-object members (.length, .toUpperCase(), etc.), which
+        // live there rather than on the primitive type's own declared members.
+        for (const sym of checker.getPropertiesOfType(checker.getApparentType(type))) {
             const name = sym.getName();
             if (seen.has(name))
                 continue;

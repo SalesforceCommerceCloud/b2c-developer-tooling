@@ -29,11 +29,10 @@
     "typecheck:agent": "tsc -p . --noEmit --pretty false",
     "format": "prettier --write src",
     "format:check": "prettier --check src",
-    "pretest": "pnpm run build",
-    "test": "node --test",
-    "test:agent": "node --test --test-reporter=dot",
-    "test:unit": "node --test",
-    "test:watch": "node --test --watch"
+    "test": "pnpm run build && node --test",
+    "test:agent": "pnpm run build && node --test --test-reporter=dot",
+    "test:unit": "pnpm run build && node --test",
+    "test:watch": "pnpm run build && node --test --watch"
   },
   "devDependencies": {
     "@eslint/compat": "catalog:",

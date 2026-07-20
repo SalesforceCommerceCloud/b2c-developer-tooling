@@ -312,6 +312,30 @@ describe('usage-inference', () => {
 
       assert.equal(types.length, 0);
     });
+
+    it('caps how much of the shared budget a single call can spend, so one widely-referenced helper cannot starve sibling branches', () => {
+      const callSites = Array.from({length: 60}, () => 'helper(1);').join('\n');
+      const files = {
+        '/helper.js': `
+          function helper(product) {
+            return product;
+          }
+          ${callSites}
+          module.exports = {helper};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      const fn = findFunctionDeclaration(sourceFile, 'helper');
+      const budgetBefore = ctx.referenceBudget;
+
+      inferParameterType(ctx, fn.parameters[0]);
+
+      const spent = budgetBefore - ctx.referenceBudget;
+      assert.ok(spent <= 50, `expected at most 50 references spent by one call, got ${spent}`);
+      assert.ok(spent < 60, 'expected the per-call cap to actually engage given 60+ available references');
+    });
   });
 
   describe('inferReturnType', () => {
@@ -362,6 +386,107 @@ describe('usage-inference', () => {
 
       // Must return (not hang) even though a() and b() call each other.
       const types = inferReturnType(ctx, fnA);
+      assert.ok(Array.isArray(types));
+    });
+
+    it('chases a property access on an undocumented parameter (`return x.prop`)', () => {
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/chain.js': `
+          function shared(x) {
+            return x.ID;
+          }
+          function caller() {
+            return shared(getProduct());
+          }
+          shared(getProduct());
+          module.exports = {caller, shared};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/chain.js');
+      const caller = findFunctionDeclaration(sourceFile, 'caller');
+
+      const types = inferReturnType(ctx, caller);
+
+      assert.equal(describeTypes(ctx.checker, types), 'string');
+    });
+
+    it('reuses a memoized result computed at a shallower depth even when a later call is over MAX_INFERENCE_DEPTH', () => {
+      // `shared` is reached at depth 1 via `short` (well within budget, gets
+      // memoized), then again at depth 4 via a longer forwarding chain, which
+      // is over MAX_INFERENCE_DEPTH (3). The memoized, fully-resolved result
+      // must still be returned rather than discarded just because this
+      // particular path to it happens to run over the depth cap.
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/chain.js': `
+          function shared(x) { return x; }
+          function short() { return shared(getProduct()); }
+          function longChain0() { return longChain1(); }
+          function longChain1() { return longChain2(); }
+          function longChain2() { return shared(getProduct()); }
+          function top() { return longChain0(); }
+          short();
+          top();
+          module.exports = {short, top};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/chain.js');
+      const shortFn = findFunctionDeclaration(sourceFile, 'short');
+      const topFn = findFunctionDeclaration(sourceFile, 'top');
+
+      const shortTypes = inferReturnType(ctx, shortFn);
+      assert.equal(describeTypes(ctx.checker, shortTypes), '{ ID: string; name: string; }');
+
+      const topTypes = inferReturnType(ctx, topFn);
+      assert.equal(describeTypes(ctx.checker, topTypes), '{ ID: string; name: string; }');
+    });
+  });
+
+  describe('inferParameterType — widening and cycle safety', () => {
+    it('widens literal call-site arguments to their general type instead of a union of literals', () => {
+      const files = {
+        '/helper.js': `
+          function helper(input) {
+            return input;
+          }
+          helper('hello');
+          helper('world');
+          module.exports = {helper};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      const fn = findFunctionDeclaration(sourceFile, 'helper');
+
+      const types = inferParameterType(ctx, fn.parameters[0]);
+
+      assert.equal(describeTypes(ctx.checker, types), 'string');
+    });
+
+    it('does not hang on a self-forwarding helper called with itself as an argument', () => {
+      const files = {
+        '/helper.js': `
+          function identity(x) {
+            return x;
+          }
+          identity(identity(1));
+          module.exports = {identity};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      const fn = findFunctionDeclaration(sourceFile, 'identity');
+
+      // Must return promptly (not hang) even though identity's own parameter
+      // inference re-enters itself via the nested identity(...) argument.
+      const types = inferParameterType(ctx, fn.parameters[0]);
       assert.ok(Array.isArray(types));
     });
   });
@@ -419,6 +544,29 @@ describe('usage-inference', () => {
       const entries = typesToCompletionEntries(ts, ctx.checker, types);
 
       assert.deepEqual(entries.map((e) => e.name).sort(), ['ID', 'name']);
+    });
+
+    it('offers member completions for a primitive candidate type via its apparent (wrapper-object) members', () => {
+      const files = {
+        '/helper.js': `
+          function helper(input) {
+            return input;
+          }
+          helper('hello');
+          module.exports = {helper};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      const fn = findFunctionDeclaration(sourceFile, 'helper');
+      const types = inferParameterType(ctx, fn.parameters[0]);
+
+      const entries = typesToCompletionEntries(ts, ctx.checker, types);
+
+      const names = entries.map((e) => e.name);
+      assert.ok(names.includes('length'));
+      assert.ok(names.includes('toUpperCase'));
     });
   });
 

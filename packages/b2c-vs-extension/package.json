@@ -271,7 +271,7 @@
         "b2c-dx.features.scriptTypesInferUsage": {
           "type": "boolean",
           "default": false,
-          "description": "(Preview) Infer a better type for hover/completion when TypeScript has widened something to `any` (typically an undocumented helper function). Heuristic and may be wrong — in development, off by default."
+          "description": "(Preview) Infer a better type for hover/completion when TypeScript has widened something to `any` (typically an undocumented helper function). Heuristic and may be wrong. In development — off by default."
         },
         "b2c-dx.telemetry.enabled": {
           "type": "boolean",

@@ -621,7 +621,7 @@ function init({ typescript: ts }) {
                 return { ...original, documentation: [...(original.documentation ?? []), note] };
             }
             catch (e) {
-                log(`inferUsage hover failed: ${e.message}`);
+                log(`usage-inference hover failed: ${e.message}`);
                 return original;
             }
         };
@@ -669,7 +669,7 @@ function init({ typescript: ts }) {
                 };
             }
             catch (e) {
-                log(`inferUsage completions failed: ${e.message}`);
+                log(`usage-inference completions failed: ${e.message}`);
                 return original;
             }
         };

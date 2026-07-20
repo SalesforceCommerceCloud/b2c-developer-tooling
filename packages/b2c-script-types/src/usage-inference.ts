@@ -23,14 +23,22 @@ const MAX_REFERENCE_HOPS = 2;
 // unlimited.
 const MAX_REFERENCES_PER_REQUEST = 200;
 
+// Caps how much of that shared request-wide budget a *single* collectCallSites
+// call can spend, so one widely-referenced sub-helper (e.g. reached from the
+// first of several sibling return statements or call-site arguments) can't
+// exhaust the whole budget and starve the others processed later in the same
+// request.
+const MAX_REFERENCES_PER_CALL = 50;
+
 export const INFERRED_COMPLETION_SOURCE = '@salesforce/b2c-script-types/inferred-usage';
 
 interface MemoEntry {
   /**
-   * Remaining recursion budget (MAX_INFERENCE_DEPTH - depth) at the time this
-   * was computed. A result computed with equal-or-more remaining budget is
-   * always safe to reuse for a request needing equal-or-less budget, since
-   * more budget can only surface the same types or more, never fewer.
+   * The `depth` this was computed at — i.e. how much of the recursion budget
+   * had already been spent getting here. A result computed at an equal-or-
+   * shallower depth (equal-or-more remaining budget) is always safe to reuse
+   * for a request now at an equal-or-deeper depth, since more budget can only
+   * surface the same types or more, never fewer.
    */
   readonly atDepth: number;
   readonly types: tsserver.Type[];
@@ -231,11 +239,12 @@ function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier):
   const calls: tsserver.CallExpression[] = [];
   const seenNameKeys = new Set<string>();
   let frontier: tsserver.Identifier[] = [nameNode];
+  let localBudget = Math.min(MAX_REFERENCES_PER_CALL, ctx.referenceBudget);
 
-  for (let hop = 0; hop <= MAX_REFERENCE_HOPS && frontier.length > 0 && ctx.referenceBudget > 0; hop++) {
+  for (let hop = 0; hop <= MAX_REFERENCE_HOPS && frontier.length > 0 && localBudget > 0; hop++) {
     const nextFrontier: tsserver.Identifier[] = [];
     for (const name of frontier) {
-      if (ctx.referenceBudget <= 0) break;
+      if (localBudget <= 0) break;
       const sourceFile = name.getSourceFile();
       const key = `${sourceFile.fileName}:${name.getStart(sourceFile)}`;
       if (seenNameKeys.has(key)) continue;
@@ -243,7 +252,8 @@ function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier):
 
       const refs = languageService.getReferencesAtPosition(sourceFile.fileName, name.getStart(sourceFile)) ?? [];
       for (const ref of refs) {
-        if (ctx.referenceBudget <= 0) break;
+        if (localBudget <= 0) break;
+        localBudget--;
         ctx.referenceBudget--;
         const refFile = program.getSourceFile(ref.fileName);
         if (!refFile) continue;
@@ -302,6 +312,15 @@ function resolveCalleeDeclaration(
   return undefined;
 }
 
+/**
+ * Widens a literal type (e.g. the string literal type of `"hello"`) to its
+ * general primitive type, so hover text shows `string` rather than a union
+ * of every literal argument ever passed to a helper.
+ */
+function widenType(checker: tsserver.TypeChecker, type: tsserver.Type): tsserver.Type {
+  return checker.getBaseTypeOfLiteralType(type);
+}
+
 /** Deduplicates candidate types by their display string. */
 function dedupeTypes(checker: tsserver.TypeChecker, types: tsserver.Type[]): tsserver.Type[] {
   const seen = new Set<string>();
@@ -327,13 +346,25 @@ function dedupeTypes(checker: tsserver.TypeChecker, types: tsserver.Type[]): tss
 function resolveExpressionTypes(ctx: InferenceContext, expr: tsserver.Expression, depth: number): tsserver.Type[] {
   const {ts, checker} = ctx;
   const direct = checker.getTypeAtLocation(expr);
-  if (!isAnyType(ts, direct)) return [direct];
+  if (!isAnyType(ts, direct)) return [widenType(checker, direct)];
   if (ts.isCallExpression(expr)) {
     const calleeFn = resolveCalleeDeclaration(ctx, expr);
     if (calleeFn) {
       const inferred = inferReturnType(ctx, calleeFn, depth + 1);
       if (inferred.length > 0) return inferred;
     }
+  } else if (ts.isPropertyAccessExpression(expr)) {
+    // `expr` (e.g. `x.ID`) is `any` because its base is itself undocumented
+    // (an untyped parameter, say) — infer the base's type first, then look
+    // up this specific property on it, rather than giving up on the whole
+    // access just because the access itself resolved to `any`.
+    const propName = expr.name.text;
+    const propTypes: tsserver.Type[] = [];
+    for (const baseType of resolveExpressionTypes(ctx, expr.expression, depth)) {
+      const propSymbol = checker.getPropertyOfType(checker.getApparentType(baseType), propName);
+      if (propSymbol) propTypes.push(widenType(checker, checker.getTypeOfSymbolAtLocation(propSymbol, expr)));
+    }
+    if (propTypes.length > 0) return propTypes;
   } else if (ts.isIdentifier(expr)) {
     // `expr` is itself an undocumented parameter reference (e.g. a helper
     // that just returns/forwards one of its own params) — chase that
@@ -362,27 +393,40 @@ export function inferParameterType(
   depth = 0,
 ): tsserver.Type[] {
   const {ts, checker} = ctx;
-  if (depth > MAX_INFERENCE_DEPTH) return [];
-  if (hasExplicitParameterType(param, ts)) return [];
+  // Check the memo before the depth cap: a result already computed at an
+  // equal-or-shallower depth is valid regardless of how deep the *current*
+  // call is — it would be wrong to discard a known-good cached answer just
+  // because this particular path to it happens to run over budget.
   const cached = ctx.memo.get(param);
   if (cached && cached.atDepth <= depth) return cached.types;
-  const fn = param.parent;
-  if (!ts.isFunctionLike(fn)) return [];
-  const nameNode = getReferenceNameNode(fn, ts);
-  if (!nameNode) return [];
-  const paramIndex = fn.parameters.indexOf(param);
-  if (paramIndex < 0) return [];
+  if (depth > MAX_INFERENCE_DEPTH) return [];
+  if (hasExplicitParameterType(param, ts)) return [];
+  // Cycle guard: a self-forwarding helper (e.g. `function id(x){return x}`
+  // called as `id(id(y))`) could otherwise re-enter inference for this same
+  // parameter before the first call has finished and memoized its result.
+  if (ctx.visiting.has(param)) return [];
+  ctx.visiting.add(param);
+  try {
+    const fn = param.parent;
+    if (!ts.isFunctionLike(fn)) return [];
+    const nameNode = getReferenceNameNode(fn, ts);
+    if (!nameNode) return [];
+    const paramIndex = fn.parameters.indexOf(param);
+    if (paramIndex < 0) return [];
 
-  const types: tsserver.Type[] = [];
-  for (const call of collectCallSites(ctx, nameNode)) {
-    const arg = call.arguments[paramIndex];
-    if (!arg) continue;
-    types.push(...resolveExpressionTypes(ctx, arg, depth));
+    const types: tsserver.Type[] = [];
+    for (const call of collectCallSites(ctx, nameNode)) {
+      const arg = call.arguments[paramIndex];
+      if (!arg) continue;
+      types.push(...resolveExpressionTypes(ctx, arg, depth));
+    }
+
+    const result = dedupeTypes(checker, types);
+    ctx.memo.set(param, {atDepth: depth, types: result});
+    return result;
+  } finally {
+    ctx.visiting.delete(param);
   }
-
-  const result = dedupeTypes(checker, types);
-  ctx.memo.set(param, {atDepth: depth, types: result});
-  return result;
 }
 
 /**
@@ -419,10 +463,11 @@ function collectReturnExpressions(fn: tsserver.SignatureDeclaration, ts: typeof 
  */
 export function inferReturnType(ctx: InferenceContext, fn: tsserver.SignatureDeclaration, depth = 0): tsserver.Type[] {
   const {ts, checker} = ctx;
-  if (depth > MAX_INFERENCE_DEPTH) return [];
-  if (hasExplicitReturnType(fn, ts)) return [];
+  // See inferParameterType for why the memo is checked before the depth cap.
   const cached = ctx.memo.get(fn);
   if (cached && cached.atDepth <= depth) return cached.types;
+  if (depth > MAX_INFERENCE_DEPTH) return [];
+  if (hasExplicitReturnType(fn, ts)) return [];
   if (ctx.visiting.has(fn)) return [];
   ctx.visiting.add(fn);
   try {
@@ -475,7 +520,10 @@ export function typesToCompletionEntries(
   const seen = new Set<string>();
   const entries: tsserver.CompletionEntry[] = [];
   for (const type of types) {
-    for (const sym of checker.getPropertiesOfType(type)) {
+    // getApparentType so a primitive candidate (string/number/boolean) picks
+    // up its wrapper-object members (.length, .toUpperCase(), etc.), which
+    // live there rather than on the primitive type's own declared members.
+    for (const sym of checker.getPropertiesOfType(checker.getApparentType(type))) {
       const name = sym.getName();
       if (seen.has(name)) continue;
       seen.add(name);
