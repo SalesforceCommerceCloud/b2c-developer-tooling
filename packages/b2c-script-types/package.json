@@ -28,11 +28,16 @@
     "lint:agent": "eslint --quiet",
     "typecheck:agent": "tsc -p . --noEmit --pretty false",
     "format": "prettier --write src",
-    "format:check": "prettier --check src"
+    "format:check": "prettier --check src",
+    "test": "pnpm run build && c8 node --test",
+    "test:agent": "pnpm run build && node --test --test-reporter=dot",
+    "test:unit": "pnpm run test",
+    "test:watch": "pnpm run build && node --test --watch"
   },
   "devDependencies": {
     "@eslint/compat": "catalog:",
     "@types/node": "catalog:",
+    "c8": "catalog:",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-header": "catalog:",

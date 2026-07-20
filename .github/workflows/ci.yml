@@ -12,6 +12,7 @@ on:
       - main
       - develop
       - 'release/**'
+      - 'feature/**'
   workflow_dispatch:
 
 permissions:
