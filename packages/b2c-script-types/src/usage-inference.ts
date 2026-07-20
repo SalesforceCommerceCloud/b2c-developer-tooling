@@ -94,6 +94,13 @@ export interface InferenceContext {
    * request), so such results must not be memoized — see inferReturnType.
    */
   cycleHits: number;
+  /**
+   * Maps a cartridge file to the same-subpath file in the next cartridge
+   * down the cartridge path — the module `module.superModule` refers to at
+   * runtime. Supplied by the plugin host (which owns the cartridge order);
+   * without it, `module.superModule` expressions stay uninferred.
+   */
+  readonly resolveSuperModulePath?: (containingFile: string) => string | undefined;
 }
 
 /**
@@ -103,6 +110,7 @@ export interface InferenceContext {
 export function createInferenceContext(
   ts: typeof tsserver,
   languageService: tsserver.LanguageService,
+  resolveSuperModulePath?: (containingFile: string) => string | undefined,
 ): InferenceContext | undefined {
   const program = languageService.getProgram();
   if (!program) return undefined;
@@ -115,6 +123,7 @@ export function createInferenceContext(
     memo: new Map(),
     referenceBudget: MAX_REFERENCES_PER_REQUEST,
     cycleHits: 0,
+    resolveSuperModulePath,
   };
 }
 
@@ -339,6 +348,79 @@ function hasExplicitVariableType(decl: tsserver.VariableDeclaration, ts: typeof 
 }
 
 /**
+ * The SFCC `module.superModule` expression — the runtime handle to the
+ * same-path module in the next cartridge down the cartridge path, which SFRA
+ * plugin cartridges use to extend base modules. Identified structurally, like
+ * the require() detection above.
+ */
+function isSuperModuleAccess(expr: tsserver.PropertyAccessExpression, ts: typeof tsserver): boolean {
+  return ts.isIdentifier(expr.expression) && expr.expression.text === 'module' && expr.name.text === 'superModule';
+}
+
+/**
+ * Resolves what `module.superModule` evaluates to: the export type(s) of the
+ * same-subpath module in the next cartridge down the path (located by the
+ * host-supplied ctx.resolveSuperModulePath). The export type is read off the
+ * right-hand side of the super module's top-level `module.exports = X`
+ * assignment(s) via resolveExpressionTypes — so a plain alias-map export
+ * yields its concrete object type directly, and a pass-through overlay
+ * (`module.exports = base` where base is itself `module.superModule`) recurses
+ * naturally another cartridge down. Members an intermediate overlay adds via
+ * `module.exports.name = fn` afterwards aren't representable as extra
+ * candidate types through this hop and are not surfaced.
+ *
+ * Only works when the super module's file is part of the current program —
+ * true under the recommended jsconfig setup that includes all cartridge
+ * files, but not in a bare inferred project where nothing require()s the
+ * base file.
+ */
+function resolveSuperModuleTypes(
+  ctx: InferenceContext,
+  expr: tsserver.PropertyAccessExpression,
+  depth: number,
+  chainHops: number,
+): tsserver.Type[] {
+  const {ts, checker, program} = ctx;
+  if (!ctx.resolveSuperModulePath) return [];
+  const superPath = ctx.resolveSuperModulePath(expr.getSourceFile().fileName);
+  if (!superPath) return [];
+  // The resolver returns host-normalized (possibly case-folded) paths;
+  // program keys may differ in case on case-insensitive filesystems.
+  let superFile = program.getSourceFile(superPath);
+  if (!superFile) {
+    const target = superPath.toLowerCase();
+    superFile = program.getSourceFiles().find((sf) => sf.fileName.toLowerCase() === target);
+  }
+  if (!superFile) return [];
+  // Guard against overlay cycles (two cartridges whose modules somehow point
+  // at each other through a misconfigured cartridge path).
+  if (ctx.visiting.has(superFile)) {
+    ctx.cycleHits++;
+    return [];
+  }
+  ctx.visiting.add(superFile);
+  try {
+    const types: tsserver.Type[] = [];
+    for (const stmt of superFile.statements) {
+      if (!ts.isExpressionStatement(stmt) || !ts.isBinaryExpression(stmt.expression)) continue;
+      const bin = stmt.expression;
+      if (bin.operatorToken.kind !== ts.SyntaxKind.EqualsToken) continue;
+      const left = bin.left;
+      const isModuleExports =
+        ts.isPropertyAccessExpression(left) &&
+        ts.isIdentifier(left.expression) &&
+        left.expression.text === 'module' &&
+        left.name.text === 'exports';
+      if (!isModuleExports) continue;
+      types.push(...resolveExpressionTypes(ctx, bin.right, depth, chainHops + 1));
+    }
+    return dedupeTypes(checker, types);
+  } finally {
+    ctx.visiting.delete(superFile);
+  }
+}
+
+/**
  * Chases a local variable's initializer expression — the missing link for the
  * idiomatic SFCC style of splitting a chain across intermediate variables
  * (`var priceModel = product.getPriceModel(); return priceModel.getPrice();`),
@@ -492,12 +574,35 @@ function resolveExpressionTypes(
         if (!methodSymbol) continue;
         const methodType = checker.getTypeOfSymbolAtLocation(methodSymbol, methodAccess.name);
         for (const sig of methodType.getCallSignatures()) {
-          returnTypes.push(widenType(checker, checker.getReturnTypeOfSignature(sig)));
+          const returnType = checker.getReturnTypeOfSignature(sig);
+          if (!isAnyType(ts, returnType)) {
+            returnTypes.push(widenType(checker, returnType));
+            continue;
+          }
+          // The member resolved but its own return type is `any` — the
+          // superModule case, where the base module's export type carries an
+          // undocumented function. `any` is never a useful candidate to
+          // surface; recurse into the function's actual declaration instead,
+          // the same fallback resolveCalleeDeclaration provides for direct
+          // calls.
+          const sigDecl = sig.declaration;
+          if (sigDecl && ts.isFunctionLike(sigDecl)) {
+            returnTypes.push(...inferReturnType(ctx, sigDecl, depth + 1));
+          }
         }
       }
       if (returnTypes.length > 0) return dedupeTypes(checker, returnTypes);
     }
   } else if (ts.isPropertyAccessExpression(expr)) {
+    if (isSuperModuleAccess(expr, ts)) {
+      // `module.superModule` — resolve to the overridden module's export
+      // type(s) along the cartridge path, rather than treating it as an
+      // ordinary property access (TS knows nothing about it, so the generic
+      // handling below could never resolve it).
+      const inferred = resolveSuperModuleTypes(ctx, expr, depth, chainHops);
+      if (inferred.length > 0) return inferred;
+      return [];
+    }
     // `expr` (e.g. `x.ID`) is `any` because its base is itself undocumented
     // (an untyped parameter, say) — infer the base's type first, then look
     // up this specific property on it, rather than giving up on the whole
@@ -506,7 +611,12 @@ function resolveExpressionTypes(
     const propTypes: tsserver.Type[] = [];
     for (const baseType of resolveExpressionTypes(ctx, expr.expression, depth, chainHops + 1)) {
       const propSymbol = getMemberOfType(checker, baseType, propName);
-      if (propSymbol) propTypes.push(widenType(checker, checker.getTypeOfSymbolAtLocation(propSymbol, expr)));
+      if (!propSymbol) continue;
+      const propType = checker.getTypeOfSymbolAtLocation(propSymbol, expr);
+      // An `any`-typed member (e.g. an untyped value in an exports map) is
+      // never a useful candidate — surfacing "Inferred from usage: any"
+      // would be worse than staying quiet.
+      if (!isAnyType(ts, propType)) propTypes.push(widenType(checker, propType));
     }
     if (propTypes.length > 0) return dedupeTypes(checker, propTypes);
   } else if (ts.isIdentifier(expr)) {

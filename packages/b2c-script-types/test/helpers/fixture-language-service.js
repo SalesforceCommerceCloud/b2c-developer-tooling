@@ -26,6 +26,20 @@ function createFixtureHost(files, options) {
   const libFileName = ts.getDefaultLibFilePath(compilerOptions);
   const fileNames = () => [...Object.keys(files), libFileName];
 
+  // Directories implied by the in-memory file map. TS's module resolver
+  // probes directoryExists before trying file candidates
+  // (directoryProbablyExists), and the ts.sys fallback answers against the
+  // real filesystem — where these virtual directories don't exist — so
+  // without this, a nested relative require ('./helpers/productHelpers')
+  // inside the fixture silently fails to resolve.
+  const impliedDirs = new Set(['/']);
+  for (const fileName of Object.keys(files)) {
+    let dir = fileName;
+    while (dir.includes('/') && (dir = dir.slice(0, dir.lastIndexOf('/'))) !== '') {
+      impliedDirs.add(dir);
+    }
+  }
+
   return {
     getScriptFileNames: fileNames,
     getScriptVersion: () => '0',
@@ -38,7 +52,7 @@ function createFixtureHost(files, options) {
     getDefaultLibFileName: (opts) => ts.getDefaultLibFilePath(opts),
     fileExists: (fileName) => fileName in files || ts.sys.fileExists(fileName),
     readFile: (fileName) => files[fileName] ?? ts.sys.readFile(fileName),
-    directoryExists: (dir) => ts.sys.directoryExists(dir),
+    directoryExists: (dir) => impliedDirs.has(dir) || ts.sys.directoryExists(dir),
     getDirectories: (dir) => ts.sys.getDirectories(dir),
   };
 }

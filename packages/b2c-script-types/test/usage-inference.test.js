@@ -641,6 +641,142 @@ describe('usage-inference', () => {
     });
   });
 
+  describe('module.superModule overlays', () => {
+    // The SFRA plugin-cartridge pattern: an overlay module at the same path
+    // as a base-cartridge module reaches the base via `module.superModule`.
+    // The engine resolves it through ctx.resolveSuperModulePath (supplied by
+    // the plugin host, which owns the cartridge order).
+    const SUPER_RESOLVER = (containingFile) =>
+      containingFile === '/custom/cartridge/scripts/helpers/x.js' ? '/base/cartridge/scripts/helpers/x.js' : undefined;
+
+    const OVERLAY_FILES = {
+      '/types.d.ts': AMBIENT_TYPES,
+      '/base/cartridge/scripts/helpers/x.js': `
+        function getThing(input) {
+          return input;
+        }
+        getThing(getProduct());
+        module.exports = {
+          getThing: getThing
+        };
+      `,
+      '/custom/cartridge/scripts/helpers/x.js': `
+        var base = module.superModule;
+        function wrapped() {
+          return base.getThing(getProduct());
+        }
+        module.exports = base;
+        module.exports.wrapped = wrapped;
+      `,
+    };
+
+    function findIdentifier(sourceFile, text, parentPredicate) {
+      let found;
+      const visit = (node) => {
+        if (ts.isIdentifier(node) && node.text === text && parentPredicate(node)) {
+          found = node;
+          return;
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(sourceFile);
+      return found;
+    }
+
+    it("resolves `module.superModule` to the overridden module's export type", () => {
+      const languageService = createFixtureLanguageService(OVERLAY_FILES);
+      const ctx = createInferenceContext(ts, languageService, SUPER_RESOLVER);
+      const overlay = ctx.program.getSourceFile('/custom/cartridge/scripts/helpers/x.js');
+      // `base` in `base.getThing(...)` — an identifier whose declaration is
+      // the `var base = module.superModule` initializer.
+      const baseUse = findIdentifier(overlay, 'base', (n) => ts.isPropertyAccessExpression(n.parent));
+
+      const types = inferTypeForNode(ctx, baseUse);
+      const entries = typesToCompletionEntries(ts, ctx.checker, types);
+
+      assert.deepEqual(
+        entries.map((e) => e.name),
+        ['getThing'],
+      );
+    });
+
+    it("chases a call through superModule into the base module's own undocumented helper", () => {
+      // base.getThing's declared return type is `any` (undocumented), so the
+      // member lookup alone isn't enough — the engine must recurse into the
+      // base function's declaration and infer its return from usage.
+      const languageService = createFixtureLanguageService(OVERLAY_FILES);
+      const ctx = createInferenceContext(ts, languageService, SUPER_RESOLVER);
+      const overlay = ctx.program.getSourceFile('/custom/cartridge/scripts/helpers/x.js');
+      const wrapped = findFunctionDeclaration(overlay, 'wrapped');
+
+      const types = inferReturnType(ctx, wrapped);
+
+      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    });
+
+    it('returns no candidates when no lower cartridge provides the module', () => {
+      const languageService = createFixtureLanguageService(OVERLAY_FILES);
+      const ctx = createInferenceContext(ts, languageService, () => undefined);
+      const overlay = ctx.program.getSourceFile('/custom/cartridge/scripts/helpers/x.js');
+      const baseUse = findIdentifier(overlay, 'base', (n) => ts.isPropertyAccessExpression(n.parent));
+
+      assert.equal(inferTypeForNode(ctx, baseUse).length, 0);
+    });
+
+    it('returns no candidates without a resolver (plain LSP host that never supplied one)', () => {
+      const languageService = createFixtureLanguageService(OVERLAY_FILES);
+      const ctx = createInferenceContext(ts, languageService);
+      const overlay = ctx.program.getSourceFile('/custom/cartridge/scripts/helpers/x.js');
+      const baseUse = findIdentifier(overlay, 'base', (n) => ts.isPropertyAccessExpression(n.parent));
+
+      assert.equal(inferTypeForNode(ctx, baseUse).length, 0);
+    });
+
+    it('recurses through a pass-through overlay (`module.exports = base`) to the cartridge below it', () => {
+      // Three-cartridge path: top -> mid -> base. mid re-exports its own
+      // superModule untouched, so resolving top's `module.superModule` must
+      // chase through mid's `module.exports = base` to base's concrete type.
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/base/cartridge/scripts/helpers/x.js': `
+          function getThing(input) {
+            return input;
+          }
+          module.exports = {
+            getThing: getThing
+          };
+        `,
+        '/mid/cartridge/scripts/helpers/x.js': `
+          var base = module.superModule;
+          module.exports = base;
+        `,
+        '/top/cartridge/scripts/helpers/x.js': `
+          var base = module.superModule;
+          function useIt() {
+            return base;
+          }
+          module.exports = base;
+        `,
+      };
+      const order = {
+        '/top/cartridge/scripts/helpers/x.js': '/mid/cartridge/scripts/helpers/x.js',
+        '/mid/cartridge/scripts/helpers/x.js': '/base/cartridge/scripts/helpers/x.js',
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService, (f) => order[f]);
+      const top = ctx.program.getSourceFile('/top/cartridge/scripts/helpers/x.js');
+      const baseUse = findIdentifier(top, 'base', (n) => ts.isReturnStatement(n.parent));
+
+      const types = inferTypeForNode(ctx, baseUse);
+      const entries = typesToCompletionEntries(ts, ctx.checker, types);
+
+      assert.deepEqual(
+        entries.map((e) => e.name),
+        ['getThing'],
+      );
+    });
+  });
+
   describe('cycle-truncated results and the memo', () => {
     it('does not memoize a result whose computation hit a cycle guard', () => {
       // b's result computed *inside* the a->b->a cycle is truncated by what

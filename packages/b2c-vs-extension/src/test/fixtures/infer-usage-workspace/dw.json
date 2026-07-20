@@ -2,5 +2,6 @@
   "hostname": "test-fixture.invalid",
   "username": "fixture-user",
   "password": "not-a-real-password",
-  "code-version": "version1"
+  "code-version": "version1",
+  "cartridges": "app_custom_cartridge:test_cartridge"
 }

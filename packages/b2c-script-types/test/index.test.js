@@ -338,6 +338,74 @@ describe('create() proxy — usage inference wiring', () => {
     assert.equal(entryByName.get('maxPrice').kind, ts.ScriptElementKind.memberVariableElement);
   });
 
+  it('resolves module.superModule along the configured cartridge path for hover and completions', () => {
+    // Two cartridge roots in path order (custom overrides base). The overlay
+    // reaches its base module via module.superModule; the plugin must map
+    // that to the same-subpath file in the next cartridge down and infer the
+    // base module's export members.
+    const files = {
+      '/types.d.ts': AMBIENT_TYPES,
+      '/base/cartridge/scripts/helpers/priceHelpers.js': `
+        function getSalePrice(product) {
+          return product.ID;
+        }
+        getSalePrice(getProduct());
+        module.exports = {
+          getSalePrice: getSalePrice
+        };
+      `,
+      '/custom/cartridge/scripts/helpers/priceHelpers.js': `
+        var base = module.superModule;
+        function getMemberPrice(product) {
+          var basePrice = base.getSalePrice(product);
+          return basePrice;
+        }
+        module.exports = base;
+        module.exports.getMemberPrice = getMemberPrice;
+      `,
+    };
+    const host = createFixtureHost(files);
+    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const {create} = init({typescript: ts});
+    const proxy = create({
+      languageService,
+      languageServiceHost: host,
+      project: {
+        projectService: {logger: {info: () => {}}},
+        getCurrentDirectory: () => '/',
+        getProjectVersion: () => '1',
+      },
+      config: {
+        enabled: true,
+        autoDiscover: false,
+        cartridges: [
+          {name: 'custom', src: '/custom/'},
+          {name: 'base', src: '/base/'},
+        ],
+        inferUsage: true,
+      },
+    });
+    const overlaySource = files['/custom/cartridge/scripts/helpers/priceHelpers.js'];
+    const overlayFile = '/custom/cartridge/scripts/helpers/priceHelpers.js';
+
+    // Hover on `basePrice` — its value flows through superModule into the
+    // base module's undocumented helper, which is only typed by its own
+    // call site in the base cartridge.
+    const hoverPos = overlaySource.indexOf('basePrice;');
+    const hover = proxy.getQuickInfoAtPosition(overlayFile, hoverPos);
+    const hoverText = (hover?.documentation ?? []).map((p) => p.text).join('');
+    assert.ok(
+      hoverText.includes('Inferred from usage: string'),
+      `expected the base helper's inferred return type (string), got: ${hoverText}`,
+    );
+
+    // Completion after `base.` offers the base module's exported members.
+    const dotPos = overlaySource.indexOf('base.getSalePrice') + 'base.'.length;
+    const completions = proxy.getCompletionsAtPosition(overlayFile, dotPos, undefined);
+    const names = (completions?.entries ?? []).map((e) => e.name);
+    assert.ok(names.includes('getSalePrice'), `expected getSalePrice among completions, got: ${names.join(', ')}`);
+  });
+
   it('lets a non-cancellation exception from the underlying call propagate instead of degrading it to an empty result', () => {
     // The `guarded` wrapper exists to protect tsserver from bugs in this
     // plugin's own inference additions — never to change how errors from the

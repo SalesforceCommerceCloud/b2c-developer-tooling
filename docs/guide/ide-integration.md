@@ -119,6 +119,10 @@ JSDoc-documented functions get full hover/completion support because TypeScript 
 
 Enable the `b2c-dx.features.scriptTypesInferUsage` setting (default: `false`) or pass `inferUsage: true` in the plugin config (`init_options.plugins` for other LSP hosts) to have the plugin infer a plausible type for these cases from how the value is actually used elsewhere in the project — call-site arguments for parameters, return statements for return values — chasing through undocumented call chains (a helper calling a helper calling a helper), multi-hop method chains (`product.getPriceModel().getPrice()`), and intermediate local variables (`var priceModel = product.getPriceModel(); return priceModel.getPrice();`) rather than stopping at the first `any`.
 
+`module.superModule` is understood too: in an overlay cartridge that extends a base module (`var base = module.superModule;`), hover and completions on `base` and on values derived from it resolve against the same-path module in the next cartridge down the cartridge path — including recursing into the base module's own undocumented helpers.
+
+Cross-file inference (call sites in other files, `module.superModule`) needs those files in the same TypeScript project. A `jsconfig.json` that includes all cartridge sources — like the one `b2c setup ide vscode-types` generates — provides that; without one, each open file gets its own inferred project and only same-file usage is visible.
+
 Inferred results are heuristic and clearly labeled:
 
 - Hover text gets an appended `Inferred from usage: <type>` line.

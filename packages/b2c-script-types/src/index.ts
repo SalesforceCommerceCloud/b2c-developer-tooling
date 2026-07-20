@@ -459,6 +459,29 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
 
     const host = info.languageServiceHost;
 
+    // What `module.superModule` refers to at runtime: the same-subpath file
+    // in the next cartridge down the cartridge path that has one. Powers the
+    // usage-inference engine's handling of SFRA overlay modules. Probes
+    // existence through the language-service host (not ts.sys) so it sees
+    // the same filesystem view as the rest of this project.
+    const hostFileExists = (p: string): boolean => {
+      try {
+        return host.fileExists ? host.fileExists(p) : ts.sys.fileExists(p);
+      } catch {
+        return false;
+      }
+    };
+    const resolveSuperModulePath = (containingFile: string): string | undefined => {
+      const owner = ownerCartridge(containingFile);
+      if (!owner) return undefined;
+      const subpath = normalize(containingFile).slice(owner.root.length);
+      for (let i = cartridges.indexOf(owner) + 1; i < cartridges.length; i++) {
+        const candidate = cartridges[i].root + subpath;
+        if (hostFileExists(candidate)) return candidate;
+      }
+      return undefined;
+    };
+
     // Inject ambient declarations into the TS program when the project
     // contains at least one cartridge file:
     //   - global.d.ts: SFCC platform globals (session, request, response,
@@ -706,7 +729,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
           const checker = program.getTypeChecker();
           if (!isAnyType(ts, checker.getTypeAtLocation(node))) return original;
           const types = getCachedInference(`hover:${fileName}:${node.getStart(sourceFile)}`, () => {
-            const ctx = createInferenceContext(ts, info.languageService);
+            const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath);
             return ctx ? inferTypeForNode(ctx, node) : [];
           });
           if (types.length === 0) return original;
@@ -740,7 +763,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
           // hover-driven return inference already resolves it.
           const baseNode = propAccess.expression;
           const types = getCachedInference(`completions:${fileName}:${baseNode.getStart(sourceFile)}`, () => {
-            const ctx = createInferenceContext(ts, info.languageService);
+            const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath);
             return ctx ? inferTypeForExpression(ctx, baseNode) : [];
           });
           if (types.length === 0) return original;

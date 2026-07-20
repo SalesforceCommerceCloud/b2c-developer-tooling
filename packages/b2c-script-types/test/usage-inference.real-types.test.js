@@ -228,6 +228,57 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
     });
   });
 
+  describe('module.superModule overlays', () => {
+    it('infers Money through an overlay calling an undocumented base helper (superModule + alias map + var chain)', () => {
+      // Full SFRA plugin composition: the overlay reaches its base module via
+      // module.superModule, calls an undocumented base helper whose own
+      // parameter is only typed by a call site in a third file (reached
+      // through the alias-map export), with every hop parked in a local var.
+      const files = {
+        '/base/cartridge/scripts/helpers/productHelpers.js': `
+          function getSalePrice(product) {
+            var priceModel = product.getPriceModel();
+            var price = priceModel.getPrice();
+            return price;
+          }
+          module.exports = {
+            getSalePrice: getSalePrice
+          };
+        `,
+        '/base/cartridge/scripts/cartService.js': `
+          var ProductMgr = require('${REAL_DW_TYPES.ProductMgr}');
+          var productHelpers = require('./helpers/productHelpers');
+          function buildInfo(productId) {
+            var product = ProductMgr.getProduct(productId);
+            return productHelpers.getSalePrice(product);
+          }
+          module.exports = {buildInfo: buildInfo};
+        `,
+        '/custom/cartridge/scripts/helpers/productHelpers.js': `
+          var base = module.superModule;
+          function getMemberPrice(product) {
+            var basePrice = base.getSalePrice(product);
+            return basePrice;
+          }
+          module.exports = base;
+          module.exports.getMemberPrice = getMemberPrice;
+        `,
+      };
+      const resolver = (f) =>
+        f === '/custom/cartridge/scripts/helpers/productHelpers.js'
+          ? '/base/cartridge/scripts/helpers/productHelpers.js'
+          : undefined;
+      const languageService = createFixtureLanguageService(files, {strict: true});
+      const ctx = createInferenceContext(ts, languageService, resolver);
+      const overlay = ctx.program.getSourceFile('/custom/cartridge/scripts/helpers/productHelpers.js');
+      const fn = findFunctionDeclaration(overlay, 'getMemberPrice');
+
+      const types = inferReturnType(ctx, fn);
+
+      assert.equal(describeTypes(ctx.checker, types), 'Money');
+    });
+  });
+
   describe('edge cases', () => {
     it('still offers real member completions when the inferred type is nullable (ProductMgr.getProduct(): Product | null)', () => {
       // ProductMgr.getProduct's real signature returns `Product<any> | null` —

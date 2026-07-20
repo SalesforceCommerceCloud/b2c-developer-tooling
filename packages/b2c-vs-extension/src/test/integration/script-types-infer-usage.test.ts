@@ -116,7 +116,6 @@ suite('scriptTypesInferUsage — real hover/completion via the VS Code language 
         : undefined;
     }, 25000);
 
-    // eslint-disable-next-line no-console
     console.log(`[diagnostic] ${labels.length} completion label(s): ${labels.join(', ')}`);
     assert.ok(labels.includes('getID'), `expected getID among completions, got: ${labels.join(', ')}`);
     assert.ok(labels.includes('getName'), `expected getName among completions, got: ${labels.join(', ')}`);
@@ -231,5 +230,99 @@ suite('scriptTypesInferUsage — SFRA-style cross-file and chain patterns', () =
     ]);
     assert.ok(labels.includes('getATS'), `expected getATS among completions, got: ${labels.join(', ')}`);
     assert.ok(labels.includes('perpetual'), `expected perpetual among completions, got: ${labels.join(', ')}`);
+  });
+});
+
+suite('scriptTypesInferUsage — module.superModule cartridge overlays', () => {
+  let overlayDoc: vscode.TextDocument;
+
+  suiteSetup(async function () {
+    this.timeout(30000);
+
+    const expectedRoot = fixtureFile();
+    const openRoots = (vscode.workspace.workspaceFolders ?? []).map((f) => f.uri.fsPath);
+    if (!openRoots.includes(expectedRoot)) {
+      this.skip();
+    }
+
+    const ext = vscode.extensions.getExtension(EXTENSION_ID);
+    assert.ok(ext, `extension ${EXTENSION_ID} must be discoverable in the test host`);
+    await ext!.activate();
+
+    // app_custom_cartridge sits above test_cartridge in dw.json's cartridges
+    // order, so module.superModule in its productHelpers.js resolves to
+    // test_cartridge's module at the same path.
+    const overlayUri = vscode.Uri.file(
+      fixtureFile('cartridges', 'app_custom_cartridge', 'cartridge', 'scripts', 'helpers', 'productHelpers.js'),
+    );
+    overlayDoc = await vscode.workspace.openTextDocument(overlayUri);
+    await vscode.window.showTextDocument(overlayDoc);
+  });
+
+  function positionOf(substring: string, offsetWithin = 0): vscode.Position {
+    const idx = overlayDoc.getText().indexOf(substring);
+    assert.ok(idx > -1, `overlay fixture must contain: ${substring}`);
+    return overlayDoc.positionAt(idx + offsetWithin);
+  }
+
+  // Word-based suggestions draw from every open document, and earlier suites
+  // leave the base productHelpers.js open — so its member names could appear
+  // as plain word suggestions here. Filter those out (kind Text) so these
+  // assertions can only be satisfied by real, typed completion entries.
+  async function waitForTypedCompletionsIncluding(position: vscode.Position, required: string[]): Promise<string[]> {
+    return waitFor(async () => {
+      const result = await vscode.commands.executeCommand<vscode.CompletionList>(
+        'vscode.executeCompletionItemProvider',
+        overlayDoc.uri,
+        position,
+      );
+      const items = (result?.items ?? [])
+        .filter((i) => i.kind !== vscode.CompletionItemKind.Text)
+        .map((i) => (typeof i.label === 'string' ? i.label : i.label.label));
+      return required.every((name) => items.includes(name)) ? items : undefined;
+    }, 25000);
+  }
+
+  test('infers Money for a value that flows through superModule into an undocumented base helper', async () => {
+    // basePrice <- base.getSalePrice(product): the base helper is itself
+    // undocumented, its parameter only typed by a call site in cartService.js
+    // — the full SFRA plugin composition (superModule + alias-map export +
+    // intermediate variables + cross-file call site) resolved end-to-end.
+    const text = await waitFor(async () => {
+      const result = await vscode.commands.executeCommand<vscode.Hover[]>(
+        'vscode.executeHoverProvider',
+        overlayDoc.uri,
+        positionOf('basePrice.multiply'),
+      );
+      const hoverText = result?.flatMap((h) => h.contents.map((c) => (typeof c === 'string' ? c : c.value))).join('\n');
+      return hoverText && hoverText.includes('Inferred from usage') && /Money/.test(hoverText) ? hoverText : undefined;
+    }, 25000);
+    assert.ok(/Money/.test(text), `expected Money, got: ${text}`);
+  });
+
+  test("offers the base module's exported members as completions after `base.`", async () => {
+    const labels = await waitForTypedCompletionsIncluding(positionOf('base.getSalePrice', 'base.'.length), [
+      'getSalePrice',
+      'getListPriceValue',
+      'isOrderable',
+    ]);
+    assert.ok(labels.includes('isOrderable'), `expected isOrderable among completions, got: ${labels.join(', ')}`);
+    assert.ok(
+      labels.includes('getListPriceValue'),
+      `expected getListPriceValue among completions, got: ${labels.join(', ')}`,
+    );
+  });
+
+  test('offers Money members as completions on the superModule-derived value (basePrice.)', async () => {
+    // subtract and getCurrencyCode appear nowhere in any fixture document.
+    const labels = await waitForTypedCompletionsIncluding(positionOf('basePrice.multiply', 'basePrice.'.length), [
+      'subtract',
+      'getCurrencyCode',
+    ]);
+    assert.ok(labels.includes('subtract'), `expected subtract among completions, got: ${labels.join(', ')}`);
+    assert.ok(
+      labels.includes('getCurrencyCode'),
+      `expected getCurrencyCode among completions, got: ${labels.join(', ')}`,
+    );
   });
 });
