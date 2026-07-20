@@ -1,5 +1,5 @@
 ---
-description: Connect the B2C DX VS Code Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference.
+description: Connect the Salesforce B2C Commerce VS Code Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference.
 ---
 
 # Configuration
@@ -20,17 +20,17 @@ The extension needs different credentials depending on which feature you use. **
 
 A summary by feature:
 
-| Feature | Required `dw.json` fields |
-| ------- | ------------------------- |
+| Feature                    | Required `dw.json` fields                                                                                                   |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | **Sandbox Realm Explorer** | OAuth (browser login by default; `client-id` + `client-secret` for headless). `Sandbox API User` role with a tenant filter. |
-| **WebDAV Browser** | `hostname`, `username`, `password` (WebDAV access key). OAuth (`client-id` + `client-secret`) also accepted. |
-| **Content Libraries** | Same as WebDAV. Optionally `contentLibrary` (or `libraries`) to seed the tree. |
-| **Cartridge Code Sync** | WebDAV for transfer **and** OCAPI (`client-id` + `client-secret`) for code-version operations. |
-| **SCAPI API Browser** | `client-id`, `client-secret`, `short-code`, `tenant-id`. |
-| **B2C Script Debugger** | WebDAV (for source-mapping). |
-| **Log Tailing** | WebDAV (logs are read from `Logs/`). |
-| **CAP install** | WebDAV; some apps additionally require OAuth client credentials. |
-| **Scaffold** | None — local-only. |
+| **WebDAV Browser**         | `hostname`, `username`, `password` (WebDAV access key). OAuth (`client-id` + `client-secret`) also accepted.                |
+| **Content Libraries**      | Same as WebDAV. Optionally `contentLibrary` (or `libraries`) to seed the tree.                                              |
+| **Cartridge Code Sync**    | WebDAV for transfer **and** OCAPI (`client-id` + `client-secret`) for code-version operations.                              |
+| **SCAPI API Browser**      | `client-id`, `client-secret`, `short-code`, `tenant-id`.                                                                    |
+| **B2C Script Debugger**    | WebDAV (for source-mapping).                                                                                                |
+| **Log Tailing**            | WebDAV (logs are read from `Logs/`).                                                                                        |
+| **CAP install**            | WebDAV; some apps additionally require OAuth client credentials.                                                            |
+| **Scaffold**               | None — local-only.                                                                                                          |
 
 ### Example `dw.json`
 
@@ -51,7 +51,7 @@ A summary by feature:
   "tenant-id": "...",
 
   // Optional — content tree seed
-  "contentLibrary": "your-library-id"
+  "contentLibrary": "your-library-id",
 }
 ```
 
@@ -61,7 +61,7 @@ You can also set any of these via `SFCC_*` environment variables (`SFCC_SERVER`,
 
 ## Switching the Active Instance
 
-When `dw.json` defines multiple named instances (the recommended pattern for working across dev / staging / sandbox), click the cloud icon in the status bar to run **B2C DX: Switch Active Instance** — a quick-pick over the configured instances. Selecting a new one updates the underlying `dw.json` active-instance pointer and refreshes every view.
+When `dw.json` defines multiple named instances (the recommended pattern for working across dev / staging / sandbox), click the cloud icon in the status bar to open a quick pick of the configured instances. Selecting a new one updates the underlying `dw.json` active-instance pointer and refreshes every view.
 
 The same pointer is shared with the CLI: switching here is equivalent to running `b2c setup instance set-active <name>`.
 
@@ -73,26 +73,26 @@ These VS Code settings live under the `b2c-dx.*` namespace. **You usually don't 
 
 Each feature is enabled by default. Set to `false` to skip its activation entirely (no tree views, no commands, no context-menu entries). Useful for trimming the UI, isolating activation issues, or running in a project where a feature isn't applicable.
 
-| Setting | Default |
-| ------- | ------- |
-| `b2c-dx.features.sandboxExplorer` | `true` |
-| `b2c-dx.features.webdavBrowser` | `true` |
-| `b2c-dx.features.contentLibraries` | `true` |
-| `b2c-dx.features.codeSync` | `true` |
-| `b2c-dx.features.logTailing` | `true` |
-| `b2c-dx.features.scaffold` | `true` |
-| `b2c-dx.features.apiBrowser` | `true` |
-| `b2c-dx.features.cap` | `true` |
+| Setting                            | Default |
+| ---------------------------------- | ------- |
+| `b2c-dx.features.sandboxExplorer`  | `true`  |
+| `b2c-dx.features.webdavBrowser`    | `true`  |
+| `b2c-dx.features.contentLibraries` | `true`  |
+| `b2c-dx.features.codeSync`         | `true`  |
+| `b2c-dx.features.logTailing`       | `true`  |
+| `b2c-dx.features.scaffold`         | `true`  |
+| `b2c-dx.features.apiBrowser`       | `true`  |
+| `b2c-dx.features.cap`              | `true`  |
 
 The B2C Script Debugger registers regardless of these toggles — it activates only when a `b2c-script` launch configuration is used.
 
 ### Verbosity, polling, telemetry
 
-| Setting | Default | Description |
-| ------- | ------- | ----------- |
-| `b2c-dx.logLevel` | `info` | Verbosity for the **B2C DX** output channel. Allowed: `trace`, `debug`, `info`, `warn`, `error`, `silent`. Applied immediately on change. Drop to `debug` or `trace` when filing a bug. |
-| `b2c-dx.sandbox.pollingInterval` | `10` | Seconds between polls while a sandbox is in a transitional state (`creating`, `starting`, `stopping`, `deleting`, `cloning`). Range: 2–300. Polling stops automatically once the realm settles. |
-| `b2c-dx.telemetry.enabled` | `true` | Send anonymous usage telemetry. Honors VS Code's `telemetry.telemetryLevel` — disabling that disables this regardless of this setting. |
+| Setting                          | Default | Description                                                                                                                                                                                     |
+| -------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `b2c-dx.logLevel`                | `info`  | Verbosity for the extension output channel. Allowed: `trace`, `debug`, `info`, `warn`, `error`, `silent`. Applied immediately on change. Drop to `debug` or `trace` when filing a bug.          |
+| `b2c-dx.sandbox.pollingInterval` | `10`    | Seconds between polls while a sandbox is in a transitional state (`creating`, `starting`, `stopping`, `deleting`, `cloning`). Range: 2–300. Polling stops automatically once the realm settles. |
+| `b2c-dx.telemetry.enabled`       | `true`  | Send anonymous usage telemetry. Honors VS Code's `telemetry.telemetryLevel` — disabling that disables this regardless of this setting.                                                          |
 
 ### XML schema validation
 
@@ -109,7 +109,7 @@ To disable XML validation globally in your workspace, set:
 
 ```jsonc
 {
-  "xml.validation.enabled": false
+  "xml.validation.enabled": false,
 }
 ```
 
@@ -130,7 +130,7 @@ To opt out of the Red Hat XML dependency entirely, uninstall this extension or p
   "b2c-dx.features.cap": true,
   "b2c-dx.logLevel": "info",
   "b2c-dx.sandbox.pollingInterval": 10,
-  "b2c-dx.telemetry.enabled": true
+  "b2c-dx.telemetry.enabled": true,
 }
 ```
 

@@ -2,11 +2,15 @@
   "name": "b2c-vs-extension",
   "displayName": "Salesforce B2C Commerce",
   "description": "Tools for developing on Salesforce B2C Commerce, including cartridge deployment, script debugging and IntelliSense, and sandbox management.",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "publisher": "Salesforce",
+  "icon": "media/icon.png",
   "license": "Apache-2.0",
-  "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
-  "homepage": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/packages/b2c-vs-extension",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/forcedotcom/b2c-dx.git"
+  },
+  "homepage": "https://github.com/forcedotcom/b2c-dx#readme",
   "bugs": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/issues",
   "categories": [
     "Other"
@@ -15,6 +19,7 @@
   "dependencies": {
     "@salesforce/b2c-script-types": "workspace:*",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
+    "swagger-ui-dist": "^5.18.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "vscode-html-languageservice": "catalog:"
@@ -2285,7 +2290,6 @@
     "c8": "catalog:",
     "esbuild": "^0.24.0",
     "jszip": "3.10.1",
-    "swagger-ui-dist": "^5.18.0",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-header": "catalog:",
