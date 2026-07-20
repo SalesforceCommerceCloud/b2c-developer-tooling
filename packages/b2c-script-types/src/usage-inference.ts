@@ -121,6 +121,18 @@ export interface InferenceContext {
    */
   readonly callSiteMemo: Map<tsserver.Identifier, tsserver.CallExpression[]>;
   /**
+   * Request-scoped memo of checker.typeToString() results, used by
+   * dedupeTypes(). Candidate types propagate up through every recursion
+   * level (parameter -> return -> forwarding helper -> ...), and each level
+   * dedupes its combined result — without the memo the same Type objects get
+   * re-stringified once per level (measured: 192 stringifications for 48
+   * unique candidate types, 13ms of a 34ms request, when 50 call sites pass
+   * large distinct object literals through a two-hop forwarding chain).
+   * Stringifying a type is pure for a given checker, and the context never
+   * outlives its checker, so memoizing per request is sound.
+   */
+  readonly typeDisplayStrings: Map<tsserver.Type, string>;
+  /**
    * Mutable, shared across the whole request — incremented every time a
    * cycle guard fires (a `visiting` hit). A result computed while this moved
    * is potentially incomplete *for this call stack only* (the cycle member it
@@ -158,6 +170,7 @@ export function createInferenceContext(
     referenceBudget: MAX_REFERENCES_PER_REQUEST,
     searchBudget: MAX_SEARCHES_PER_REQUEST,
     callSiteMemo: new Map(),
+    typeDisplayStrings: new Map(),
     cycleHits: 0,
     resolveSuperModulePath,
   };
@@ -525,7 +538,7 @@ function resolveSuperModuleTypes(
         types.push(...resolveExpressionTypes(ctx, bin.right, depth, chainHops + 1));
       }
     }
-    return dedupeTypes(checker, types);
+    return dedupeTypes(ctx, types);
   } finally {
     ctx.visiting.delete(superFile);
   }
@@ -592,7 +605,7 @@ function resolveSuperModuleMemberTypes(
       for (const m of matches) {
         types.push(...resolveExpressionTypes(ctx, m.expr, depth, chainHops + 1).filter((t) => !isAnyType(ts, t)));
       }
-      return dedupeTypes(checker, types);
+      return dedupeTypes(ctx, types);
     }
     // No augmentation at this level: continue downward only through a
     // pass-through (`module.exports = <any>`); a concrete export either
@@ -708,17 +721,26 @@ function widenType(checker: tsserver.TypeChecker, type: tsserver.Type): tsserver
   return checker.getBaseTypeOfLiteralType(type);
 }
 
+/** checker.typeToString memoized per request — see InferenceContext.typeDisplayStrings. */
+function typeDisplayString(ctx: InferenceContext, type: tsserver.Type): string {
+  const cached = ctx.typeDisplayStrings.get(type);
+  if (cached !== undefined) return cached;
+  const str = ctx.checker.typeToString(type);
+  ctx.typeDisplayStrings.set(type, str);
+  return str;
+}
+
 /**
  * Deduplicates candidate types by their display string. Two distinct types
  * that happen to render identically (e.g. same-named classes from different
  * modules) collapse into one — acceptable here because every consumer of the
  * result is display-oriented (hover text, completion-member names).
  */
-function dedupeTypes(checker: tsserver.TypeChecker, types: tsserver.Type[]): tsserver.Type[] {
+function dedupeTypes(ctx: InferenceContext, types: tsserver.Type[]): tsserver.Type[] {
   const seen = new Set<string>();
   const out: tsserver.Type[] = [];
   for (const t of types) {
-    const key = checker.typeToString(t);
+    const key = typeDisplayString(ctx, t);
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(t);
@@ -840,7 +862,7 @@ function resolveExpressionTypes(
           }
         }
       }
-      if (returnTypes.length > 0) return dedupeTypes(checker, returnTypes);
+      if (returnTypes.length > 0) return dedupeTypes(ctx, returnTypes);
     }
   } else if (ts.isPropertyAccessExpression(expr)) {
     // `expr` (e.g. `x.ID`) is `any` because its base is itself undocumented
@@ -870,7 +892,7 @@ function resolveExpressionTypes(
         );
       }
     }
-    if (propTypes.length > 0) return dedupeTypes(checker, propTypes);
+    if (propTypes.length > 0) return dedupeTypes(ctx, propTypes);
   } else if (ts.isIdentifier(expr)) {
     // `expr` is itself an undocumented parameter reference (e.g. a helper
     // that just returns/forwards one of its own params) — chase that
@@ -972,7 +994,7 @@ export function inferParameterType(
   param: tsserver.ParameterDeclaration,
   depth = 0,
 ): tsserver.Type[] {
-  const {ts, checker} = ctx;
+  const {ts} = ctx;
   // Check the memo before the depth cap: a result already computed at an
   // equal-or-shallower depth is valid regardless of how deep the *current*
   // call is — it would be wrong to discard a known-good cached answer just
@@ -1011,7 +1033,7 @@ export function inferParameterType(
       types.push(...inferCallbackParameterTypes(ctx, fn, paramIndex, depth));
     }
 
-    const result = dedupeTypes(checker, types);
+    const result = dedupeTypes(ctx, types);
     // Don't memoize a result whose computation hit a cycle guard: it was
     // truncated by what happened to be on the *current* call stack, and the
     // same node queried later in this request from outside the cycle could
@@ -1060,7 +1082,7 @@ function collectReturnExpressions(fn: tsserver.SignatureDeclaration, ts: typeof 
  * led here; defaults to 0 for a top-level request.
  */
 export function inferReturnType(ctx: InferenceContext, fn: tsserver.SignatureDeclaration, depth = 0): tsserver.Type[] {
-  const {ts, checker} = ctx;
+  const {ts} = ctx;
   // See inferParameterType for why the memo is checked before the depth cap.
   const cached = ctx.memo.get(fn);
   if (cached && cached.atDepth <= depth) return cached.types;
@@ -1077,7 +1099,7 @@ export function inferReturnType(ctx: InferenceContext, fn: tsserver.SignatureDec
     for (const expr of collectReturnExpressions(fn, ts)) {
       types.push(...resolveExpressionTypes(ctx, expr, depth));
     }
-    const result = dedupeTypes(checker, types);
+    const result = dedupeTypes(ctx, types);
     // See inferParameterType for why cycle-truncated results skip the memo.
     if (ctx.cycleHits === cycleHitsBefore) {
       ctx.memo.set(fn, {atDepth: depth, types: result});
@@ -1107,7 +1129,7 @@ export function inferTypeForNode(ctx: InferenceContext, node: tsserver.Node): ts
     // undocumented parameter) and `var pm = product.priceModel` (a property
     // access) both need the same chain-chasing that return-type inference
     // already does — resolveVariableInitializerTypes routes through it.
-    return dedupeTypes(checker, resolveVariableInitializerTypes(ctx, decl, 0, 0));
+    return dedupeTypes(ctx, resolveVariableInitializerTypes(ctx, decl, 0, 0));
   }
   if (ts.isFunctionLike(decl)) return inferReturnType(ctx, decl);
   return [];
@@ -1120,16 +1142,23 @@ export function inferTypeForNode(ctx: InferenceContext, node: tsserver.Node): ts
  * no declaration to look up; the expression itself is what gets resolved.
  */
 export function inferTypeForExpression(ctx: InferenceContext, expr: tsserver.Expression): tsserver.Type[] {
-  const {ts, checker} = ctx;
+  const {ts} = ctx;
   if (ts.isIdentifier(expr)) return inferTypeForNode(ctx, expr);
-  return dedupeTypes(checker, resolveExpressionTypes(ctx, expr, 0));
+  return dedupeTypes(ctx, resolveExpressionTypes(ctx, expr, 0));
 }
 
-/** Renders candidate types as human-readable hover text, e.g. `"Product | Category"`. */
+/**
+ * Renders candidate types as human-readable hover text, e.g.
+ * `"Product | Category"`. Dedupes by display string in the same pass that
+ * renders it — the callers hand in already-deduped candidates, so routing
+ * through dedupeTypes() here would just stringify everything a second time.
+ */
 export function describeTypes(checker: tsserver.TypeChecker, types: tsserver.Type[]): string {
-  return dedupeTypes(checker, types)
-    .map((t) => checker.typeToString(t))
-    .join(' | ');
+  const seen = new Set<string>();
+  for (const t of types) {
+    seen.add(checker.typeToString(t));
+  }
+  return [...seen].join(' | ');
 }
 
 /** Synthesizes completion entries for candidate types' members, deduplicated by property name. */

@@ -84,6 +84,12 @@ const BASELINE = {
   // on events that don't produce a new Program) must not evict the inference
   // cache — invalidation keys on Program identity.
   versionBumpSameProgram: 0,
+  // Candidate types propagating up a forwarding chain get deduplicated (by
+  // display string) at every recursion level; the request-scoped
+  // typeToString memo must keep that to ONE stringification per unique type
+  // per request. 30 unique candidates + slack — without the memo this
+  // scenario stringifies each candidate once per level (4x, 120 calls).
+  nestedForwardingStringifications: 32,
 };
 
 /**
@@ -474,6 +480,49 @@ describe('usage-inference — performance baselines', () => {
       counter.referenceSearches(),
       BASELINE.versionBumpSameProgram,
       'a version bump with an unchanged program must be served from the inference cache',
+    );
+    assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
+  });
+
+  it(`stringifies each unique candidate type at most once per request (<= ${BASELINE.nestedForwardingStringifications} typeToString calls)`, () => {
+    // fmtOpts forwards its parameter; wrap1/wrap2 forward through it. Hover
+    // on wrap2 pulls all 30 distinct large object-literal candidates up
+    // through three dedupe levels — each level re-rendered every type before
+    // the typeToString memo existed (120 calls, measured at 13ms of a 34ms
+    // request with 50x150-property literals).
+    const N = 30;
+    const literal = (i) => '{' + Array.from({length: 40}, (_, p) => `k${i}_${p}: ${p}`).join(', ') + '}';
+    const calls = Array.from({length: N}, (_, i) => `fmtOpts(${literal(i)});`).join('\n');
+    const files = {
+      '/opts.js': `
+        function fmtOpts(opts) {
+          return opts;
+        }
+        function wrap1(o) { return fmtOpts(o); }
+        function wrap2(o) { return wrap1(o); }
+        ${calls}
+        module.exports = {fmtOpts: fmtOpts, wrap1: wrap1, wrap2: wrap2};
+      `,
+    };
+    const base = createFixtureLanguageService(files);
+    const ctx = createInferenceContext(ts, base);
+    // Count typeToString calls made THROUGH the public checker method — the
+    // deterministic cost proxy for dedupe/render work (checker-internal
+    // rendering doesn't route through this, so the counter is exactly ours).
+    let stringifications = 0;
+    const origTypeToString = ctx.checker.typeToString.bind(ctx.checker);
+    ctx.checker.typeToString = (...args) => {
+      stringifications++;
+      return origTypeToString(...args);
+    };
+    const fn = findFunctionDeclaration(ctx.program.getSourceFile('/opts.js'), 'wrap2');
+
+    const {result: types, elapsedMs} = timed(() => inferReturnType(ctx, fn));
+
+    assert.equal(types.length, N, 'all candidate object-literal types must survive dedupe');
+    assert.ok(
+      stringifications <= BASELINE.nestedForwardingStringifications,
+      `expected the typeToString memo to bound stringifications at <= ${BASELINE.nestedForwardingStringifications}, got ${stringifications}`,
     );
     assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
   });
