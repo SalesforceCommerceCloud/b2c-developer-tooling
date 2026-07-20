@@ -40,6 +40,10 @@ function isFeatureEnabled(): boolean {
   return vscode.workspace.getConfiguration('b2c-dx').get<boolean>('features.scriptTypes', true);
 }
 
+function isInferUsageEnabled(): boolean {
+  return vscode.workspace.getConfiguration('b2c-dx').get<boolean>('features.scriptTypesInferUsage', false);
+}
+
 export function registerScriptTypes(
   context: vscode.ExtensionContext,
   cartridgeService: CartridgeService,
@@ -59,10 +63,11 @@ export function registerScriptTypes(
     const a = await ensureApi();
     if (!a) return;
     const enabled = isFeatureEnabled();
+    const inferUsage = isInferUsageEnabled();
     const cartridges = enabled ? cartridgeService.getCartridges().map((c) => ({name: c.name, src: c.src})) : [];
-    a.configurePlugin(PLUGIN_ID, {cartridges, enabled});
+    a.configurePlugin(PLUGIN_ID, {cartridges, enabled, inferUsage});
     log.appendLine(
-      `[ScriptTypes] Pushed ${cartridges.length} cartridge(s); enabled=${enabled}; order=[${cartridges.map((c) => c.name).join(', ')}].`,
+      `[ScriptTypes] Pushed ${cartridges.length} cartridge(s); enabled=${enabled}; inferUsage=${inferUsage}; order=[${cartridges.map((c) => c.name).join(', ')}].`,
     );
   };
 
@@ -71,7 +76,10 @@ export function registerScriptTypes(
   const cartridgesSub = cartridgeService.onDidChange(() => void push());
 
   const configChange = vscode.workspace.onDidChangeConfiguration((e) => {
-    if (e.affectsConfiguration('b2c-dx.features.scriptTypes')) {
+    if (
+      e.affectsConfiguration('b2c-dx.features.scriptTypes') ||
+      e.affectsConfiguration('b2c-dx.features.scriptTypesInferUsage')
+    ) {
       void push();
     }
   });

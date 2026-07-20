@@ -7,6 +7,16 @@ import path from 'node:path';
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
+import {
+  createInferenceContext,
+  describeTypes,
+  findEnclosingPropertyAccess,
+  getNodeAtPosition,
+  inferTypeForNode,
+  isAnyType,
+  typesToCompletionEntries,
+} from './usage-inference';
+
 interface ConfiguredCartridge {
   name: string;
   src: string;
@@ -22,6 +32,13 @@ interface PluginConfig {
    * to false — i.e. auto-discovery runs unless the host explicitly opts out.
    */
   autoDiscover?: boolean;
+  /**
+   * Opt-in, heuristic: when a parameter or return value has been widened to
+   * `any` (typically an undocumented helper function with no JSDoc), infer a
+   * better type from how it's actually called/used elsewhere in the project
+   * and surface it in hover text and member completions. Off by default.
+   */
+  inferUsage?: boolean;
 }
 
 interface NormalizedCartridge {
@@ -87,6 +104,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
   let cartridges: NormalizedCartridge[] = [];
   let enabled = true;
   let autoDiscoverEnabled = true;
+  let inferUsageEnabled = false;
   // Whether the most recent applyConfig() received an explicit cartridges list.
   // When true, we skip auto-discovery; when false, create() may auto-populate.
   let cartridgesFromHost = false;
@@ -114,6 +132,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     const c = (config ?? {}) as PluginConfig;
     enabled = c.enabled !== false;
     autoDiscoverEnabled = c.autoDiscover !== false;
+    inferUsageEnabled = c.inferUsage === true;
 
     // Only touch the cartridge list if the host explicitly provided one.
     // This lets onConfigurationChanged() update flags (enabled, autoDiscover)
@@ -618,6 +637,85 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     proxy.getImplementationAtPosition = (fileName, position) => {
       const result = info.languageService.getImplementationAtPosition(fileName, position);
       return result?.map(remapDefinition);
+    };
+
+    // Usage-based inference (opt-in, `inferUsage`): when hover/completion hits
+    // a type the checker has already given up on (`any` — typically an
+    // undocumented helper function), infer a better answer from call sites
+    // elsewhere in the project instead of leaving the editor with nothing.
+    // Cached per (file, node position), invalidated on project version change
+    // so cost is bounded to "recompute only what's under the cursor, only
+    // when the program actually changed" rather than a whole-program scan.
+    const inferenceCache = new Map<string, {projectVersion: string; types: tsserver.Type[]}>();
+    const getCachedInference = (cacheKey: string, compute: () => tsserver.Type[]): tsserver.Type[] => {
+      const projectVersion = info.project.getProjectVersion();
+      const cached = inferenceCache.get(cacheKey);
+      if (cached && cached.projectVersion === projectVersion) return cached.types;
+      const types = compute();
+      inferenceCache.set(cacheKey, {projectVersion, types});
+      return types;
+    };
+
+    proxy.getQuickInfoAtPosition = (fileName, position) => {
+      const original = info.languageService.getQuickInfoAtPosition(fileName, position);
+      if (!inferUsageEnabled || !original) return original;
+      try {
+        const program = info.languageService.getProgram();
+        const sourceFile = program?.getSourceFile(fileName);
+        if (!program || !sourceFile) return original;
+        const node = getNodeAtPosition(sourceFile, ts, position);
+        if (!node || !ts.isIdentifier(node)) return original;
+        const checker = program.getTypeChecker();
+        if (!isAnyType(ts, checker.getTypeAtLocation(node))) return original;
+        const types = getCachedInference(`hover:${fileName}:${node.getStart(sourceFile)}`, () => {
+          const ctx = createInferenceContext(ts, info.languageService);
+          return ctx ? inferTypeForNode(ctx, node) : [];
+        });
+        if (types.length === 0) return original;
+        const note: tsserver.SymbolDisplayPart = {
+          text: `\n\nInferred from usage: ${describeTypes(checker, types)}`,
+          kind: 'text',
+        };
+        return {...original, documentation: [...(original.documentation ?? []), note]};
+      } catch (e) {
+        log(`inferUsage hover failed: ${(e as Error).message}`);
+        return original;
+      }
+    };
+
+    proxy.getCompletionsAtPosition = (fileName, position, options, formattingSettings) => {
+      const original = info.languageService.getCompletionsAtPosition(fileName, position, options, formattingSettings);
+      if (!inferUsageEnabled) return original;
+      try {
+        const program = info.languageService.getProgram();
+        const sourceFile = program?.getSourceFile(fileName);
+        if (!program || !sourceFile) return original;
+        const node = getNodeAtPosition(sourceFile, ts, Math.max(position - 1, 0));
+        if (!node) return original;
+        const propAccess = findEnclosingPropertyAccess(node, ts);
+        if (!propAccess || !ts.isIdentifier(propAccess.expression)) return original;
+        const checker = program.getTypeChecker();
+        if (!isAnyType(ts, checker.getTypeAtLocation(propAccess.expression))) return original;
+        const baseNode = propAccess.expression;
+        const types = getCachedInference(`completions:${fileName}:${baseNode.getStart(sourceFile)}`, () => {
+          const ctx = createInferenceContext(ts, info.languageService);
+          return ctx ? inferTypeForNode(ctx, baseNode) : [];
+        });
+        if (types.length === 0) return original;
+        const inferredEntries = typesToCompletionEntries(ts, checker, types);
+        if (inferredEntries.length === 0) return original;
+        const existingNames = new Set((original?.entries ?? []).map((e) => e.name));
+        const merged = [...(original?.entries ?? []), ...inferredEntries.filter((e) => !existingNames.has(e.name))];
+        return {
+          isGlobalCompletion: original?.isGlobalCompletion ?? false,
+          isMemberCompletion: true,
+          isNewIdentifierLocation: original?.isNewIdentifierLocation ?? false,
+          entries: merged,
+        };
+      } catch (e) {
+        log(`inferUsage completions failed: ${(e as Error).message}`);
+        return original;
+      }
     };
 
     log(`plugin initialized (cartridges=${cartridges.length}, enabled=${enabled})`);

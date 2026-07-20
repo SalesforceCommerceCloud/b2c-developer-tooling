@@ -268,6 +268,11 @@
           "default": true,
           "description": "Provide Script API IntelliSense (dw/*) in cartridge JavaScript via the bundled TypeScript Server plugin. No files are written to your workspace."
         },
+        "b2c-dx.features.scriptTypesInferUsage": {
+          "type": "boolean",
+          "default": false,
+          "description": "Experimental: when hover/completion hits a type TypeScript has widened to `any` (typically an undocumented helper function with no JSDoc), infer a better type from how it's called elsewhere in the project. Heuristic — inferred results are labeled and may be wrong."
+        },
         "b2c-dx.telemetry.enabled": {
           "type": "boolean",
           "default": true,

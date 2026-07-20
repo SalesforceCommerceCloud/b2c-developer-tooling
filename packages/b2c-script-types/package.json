@@ -28,7 +28,12 @@
     "lint:agent": "eslint --quiet",
     "typecheck:agent": "tsc -p . --noEmit --pretty false",
     "format": "prettier --write src",
-    "format:check": "prettier --check src"
+    "format:check": "prettier --check src",
+    "pretest": "pnpm run build",
+    "test": "node --test",
+    "test:agent": "node --test --test-reporter=dot",
+    "test:unit": "node --test",
+    "test:watch": "node --test --watch"
   },
   "devDependencies": {
     "@eslint/compat": "catalog:",

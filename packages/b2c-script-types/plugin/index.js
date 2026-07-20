@@ -8,6 +8,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 const node_path_1 = __importDefault(require("node:path"));
+const usage_inference_1 = require("./usage-inference");
 const PLUGIN_NAME = '@salesforce/b2c-script-types';
 const TYPES_DIR = node_path_1.default.resolve(__dirname, '..', 'types').replace(/\\/g, '/');
 // Ambient declarations for SFCC globals (`session`, `request`, `response`,
@@ -60,6 +61,7 @@ function init({ typescript: ts }) {
     let cartridges = [];
     let enabled = true;
     let autoDiscoverEnabled = true;
+    let inferUsageEnabled = false;
     // Whether the most recent applyConfig() received an explicit cartridges list.
     // When true, we skip auto-discovery; when false, create() may auto-populate.
     let cartridgesFromHost = false;
@@ -84,6 +86,7 @@ function init({ typescript: ts }) {
         const c = (config ?? {});
         enabled = c.enabled !== false;
         autoDiscoverEnabled = c.autoDiscover !== false;
+        inferUsageEnabled = c.inferUsage === true;
         // Only touch the cartridge list if the host explicitly provided one.
         // This lets onConfigurationChanged() update flags (enabled, autoDiscover)
         // without wiping a previously auto-discovered list.
@@ -563,6 +566,97 @@ function init({ typescript: ts }) {
         proxy.getImplementationAtPosition = (fileName, position) => {
             const result = info.languageService.getImplementationAtPosition(fileName, position);
             return result?.map(remapDefinition);
+        };
+        // Usage-based inference (opt-in, `inferUsage`): when hover/completion hits
+        // a type the checker has already given up on (`any` — typically an
+        // undocumented helper function), infer a better answer from call sites
+        // elsewhere in the project instead of leaving the editor with nothing.
+        // Cached per (file, node position), invalidated on project version change
+        // so cost is bounded to "recompute only what's under the cursor, only
+        // when the program actually changed" rather than a whole-program scan.
+        const inferenceCache = new Map();
+        const getCachedInference = (cacheKey, compute) => {
+            const projectVersion = info.project.getProjectVersion();
+            const cached = inferenceCache.get(cacheKey);
+            if (cached && cached.projectVersion === projectVersion)
+                return cached.types;
+            const types = compute();
+            inferenceCache.set(cacheKey, { projectVersion, types });
+            return types;
+        };
+        proxy.getQuickInfoAtPosition = (fileName, position) => {
+            const original = info.languageService.getQuickInfoAtPosition(fileName, position);
+            if (!inferUsageEnabled || !original)
+                return original;
+            try {
+                const program = info.languageService.getProgram();
+                const sourceFile = program?.getSourceFile(fileName);
+                if (!program || !sourceFile)
+                    return original;
+                const node = (0, usage_inference_1.getNodeAtPosition)(sourceFile, ts, position);
+                if (!node || !ts.isIdentifier(node))
+                    return original;
+                const checker = program.getTypeChecker();
+                if (!(0, usage_inference_1.isAnyType)(ts, checker.getTypeAtLocation(node)))
+                    return original;
+                const types = getCachedInference(`hover:${fileName}:${node.getStart(sourceFile)}`, () => {
+                    const ctx = (0, usage_inference_1.createInferenceContext)(ts, info.languageService);
+                    return ctx ? (0, usage_inference_1.inferTypeForNode)(ctx, node) : [];
+                });
+                if (types.length === 0)
+                    return original;
+                const note = {
+                    text: `\n\nInferred from usage: ${(0, usage_inference_1.describeTypes)(checker, types)}`,
+                    kind: 'text',
+                };
+                return { ...original, documentation: [...(original.documentation ?? []), note] };
+            }
+            catch (e) {
+                log(`inferUsage hover failed: ${e.message}`);
+                return original;
+            }
+        };
+        proxy.getCompletionsAtPosition = (fileName, position, options, formattingSettings) => {
+            const original = info.languageService.getCompletionsAtPosition(fileName, position, options, formattingSettings);
+            if (!inferUsageEnabled)
+                return original;
+            try {
+                const program = info.languageService.getProgram();
+                const sourceFile = program?.getSourceFile(fileName);
+                if (!program || !sourceFile)
+                    return original;
+                const node = (0, usage_inference_1.getNodeAtPosition)(sourceFile, ts, Math.max(position - 1, 0));
+                if (!node)
+                    return original;
+                const propAccess = (0, usage_inference_1.findEnclosingPropertyAccess)(node, ts);
+                if (!propAccess || !ts.isIdentifier(propAccess.expression))
+                    return original;
+                const checker = program.getTypeChecker();
+                if (!(0, usage_inference_1.isAnyType)(ts, checker.getTypeAtLocation(propAccess.expression)))
+                    return original;
+                const baseNode = propAccess.expression;
+                const types = getCachedInference(`completions:${fileName}:${baseNode.getStart(sourceFile)}`, () => {
+                    const ctx = (0, usage_inference_1.createInferenceContext)(ts, info.languageService);
+                    return ctx ? (0, usage_inference_1.inferTypeForNode)(ctx, baseNode) : [];
+                });
+                if (types.length === 0)
+                    return original;
+                const inferredEntries = (0, usage_inference_1.typesToCompletionEntries)(ts, checker, types);
+                if (inferredEntries.length === 0)
+                    return original;
+                const existingNames = new Set((original?.entries ?? []).map((e) => e.name));
+                const merged = [...(original?.entries ?? []), ...inferredEntries.filter((e) => !existingNames.has(e.name))];
+                return {
+                    isGlobalCompletion: original?.isGlobalCompletion ?? false,
+                    isMemberCompletion: true,
+                    isNewIdentifierLocation: original?.isNewIdentifierLocation ?? false,
+                    entries: merged,
+                };
+            }
+            catch (e) {
+                log(`inferUsage completions failed: ${e.message}`);
+                return original;
+            }
         };
         log(`plugin initialized (cartridges=${cartridges.length}, enabled=${enabled})`);
         return proxy;

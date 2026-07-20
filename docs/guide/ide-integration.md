@@ -113,6 +113,19 @@ require('lspconfig').ts_ls.setup({
 
 If your editor's LSP client is launched outside the repo root (for example, opening a single cartridge subdirectory), point it at the project root so the plugin's auto-discovery walks the right tree.
 
+### Inferring types for undocumented helpers (experimental)
+
+JSDoc-documented functions get full hover/completion support because TypeScript reads the `@param`/`@returns` annotations directly. Plain, undocumented helper functions don't — an unannotated parameter or return value gets widened to `any`, and that `any` propagates to every caller, silencing completion for anything built on top of it.
+
+Enable **`b2c-dx.features.scriptTypesInferUsage`** (VS Code extension setting, default off) or pass `inferUsage: true` in the plugin config (`init_options.plugins` for other LSP hosts) to have the plugin infer a plausible type for these cases from how the value is actually used elsewhere in the project — call-site arguments for parameters, return statements for return values — chasing through undocumented call chains (a helper calling a helper calling a helper) rather than stopping at the first `any`.
+
+Inferred results are heuristic and clearly labeled:
+
+- Hover text gets an appended `Inferred from usage: <type>` line.
+- Member completions synthesized this way are still offered alongside (not instead of) whatever TypeScript already resolved.
+
+This won't recover types TypeScript genuinely can't infer — for example, values that are never called with a consistent, well-typed argument anywhere in the project — and it's off by default because it's new and heuristic.
+
 ### Notes
 
 - The bundle is version-locked to a Script API release (currently 26.7). Re-run `b2c setup ide vscode-types` after upgrading the CLI to refresh the vendored copy; use `--force` to overwrite existing files if they were previously created. The plugin path returned by `b2c setup ide tsserver-plugin` always points at the bundle shipped with your installed CLI.
