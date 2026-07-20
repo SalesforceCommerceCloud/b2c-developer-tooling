@@ -54,6 +54,18 @@ const MAX_CHAIN_HOPS = 10;
 // stack more than three or four overlays of the same module.
 const MAX_SUPERMODULE_HOPS = 8;
 
+// Hard cap on how many getReferencesAtPosition SEARCHES one top-level request
+// may issue. This is a different axis from MAX_REFERENCES_PER_REQUEST, which
+// only bounds how many search *results* get processed: every search is a full
+// project scan even when it returns almost nothing, so a helper whose call
+// sites feed it results of many DISTINCT sub-helpers (each searched once,
+// each contributing only 2-3 results) drains the result budget at ~2-3 per
+// search — measured at 76 scans ≈ 115ms for a single hover on an SFRA-sized
+// program (~1,900 cartridge files) before this cap existed. Legitimate
+// scenarios in the perf baseline suite need at most 6 searches; 12 doubles
+// that headroom while keeping the worst case at ~12 scans per request.
+const MAX_SEARCHES_PER_REQUEST = 12;
+
 export const INFERRED_COMPLETION_SOURCE = '@salesforce/b2c-script-types/inferred-usage';
 
 interface MemoEntry {
@@ -92,6 +104,23 @@ export interface InferenceContext {
    */
   referenceBudget: number;
   /**
+   * Mutable, shared across the whole request — decremented by
+   * collectCallSites() every time it issues a getReferencesAtPosition call
+   * (a full project scan each). See MAX_SEARCHES_PER_REQUEST for why this
+   * needs its own budget alongside the result-count one.
+   */
+  searchBudget: number;
+  /**
+   * Request-scoped memo of collectCallSites() results, keyed by the searched
+   * name node. Two different parameters of the same function (or two return
+   * paths reaching the same parameter set) otherwise each re-run the exact
+   * same reference searches within one request. Reuse is sound because the
+   * budgets only ever decrease during a request: a memoized result was
+   * computed with at least as much budget as any later call would have had,
+   * so it can only be equally or more complete.
+   */
+  readonly callSiteMemo: Map<tsserver.Identifier, tsserver.CallExpression[]>;
+  /**
    * Mutable, shared across the whole request — incremented every time a
    * cycle guard fires (a `visiting` hit). A result computed while this moved
    * is potentially incomplete *for this call stack only* (the cycle member it
@@ -127,6 +156,8 @@ export function createInferenceContext(
     visiting: new Set(),
     memo: new Map(),
     referenceBudget: MAX_REFERENCES_PER_REQUEST,
+    searchBudget: MAX_SEARCHES_PER_REQUEST,
+    callSiteMemo: new Map(),
     cycleHits: 0,
     resolveSuperModulePath,
   };
@@ -141,6 +172,14 @@ export function isAnyType(ts: typeof tsserver, type: tsserver.Type): boolean {
  * Finds the most specific node whose span contains `pos`. Standard technique
  * built only on public Node/forEachChild APIs — deliberately avoids TS's
  * internal (unversioned) getTokenAtPosition helper.
+ *
+ * The walk stops scanning a sibling list as soon as it passes `pos`
+ * (forEachChild aborts when the callback returns truthy, and siblings are
+ * ordered and non-overlapping). Without that, every call in a file whose
+ * top-level (or any enclosing) node has thousands of children — a generated
+ * data file with an 8,000-element array literal, say — pays for the full
+ * child list on every one of the up-to-50 reference hits collectCallSites()
+ * resolves in that file.
  */
 export function getNodeAtPosition(
   sourceFile: tsserver.SourceFile,
@@ -148,11 +187,12 @@ export function getNodeAtPosition(
   pos: number,
 ): tsserver.Node | undefined {
   let result: tsserver.Node | undefined;
-  const visit = (node: tsserver.Node) => {
-    if (pos >= node.getStart(sourceFile) && pos < node.getEnd()) {
-      result = node;
-      ts.forEachChild(node, visit);
-    }
+  const visit = (node: tsserver.Node): boolean | undefined => {
+    if (pos < node.getStart(sourceFile)) return true; // walked past pos — later siblings can't contain it
+    if (pos >= node.getEnd()) return undefined; // before pos — keep scanning this sibling list
+    result = node;
+    ts.forEachChild(node, visit);
+    return true; // containing child handled — siblings don't overlap
   };
   visit(sourceFile);
   return result;
@@ -284,12 +324,16 @@ function resolveIndirectReferenceTarget(
  * Finds actual call sites for `nameNode`, following up to
  * MAX_REFERENCE_HOPS binding indirections (require() bindings, destructuring)
  * when a reference doesn't sit directly in callee position. Stops early once
- * ctx.referenceBudget runs out, returning whatever call sites were already
- * found rather than continuing to fan out — an under-inferred (but still
- * heuristic, clearly-labeled) result beats hanging on a widely-referenced helper.
+ * ctx.referenceBudget (result count) or ctx.searchBudget (project scans) runs
+ * out, returning whatever call sites were already found rather than
+ * continuing to fan out — an under-inferred (but still heuristic,
+ * clearly-labeled) result beats hanging on a widely-referenced helper.
+ * Results are memoized per name node for the duration of the request.
  */
 function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier): tsserver.CallExpression[] {
   const {ts, languageService, program} = ctx;
+  const memoized = ctx.callSiteMemo.get(nameNode);
+  if (memoized) return memoized;
   const calls: tsserver.CallExpression[] = [];
   const seenNameKeys = new Set<string>();
   let frontier: tsserver.Identifier[] = [nameNode];
@@ -298,12 +342,13 @@ function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier):
   for (let hop = 0; hop <= MAX_REFERENCE_HOPS && frontier.length > 0 && localBudget > 0; hop++) {
     const nextFrontier: tsserver.Identifier[] = [];
     for (const name of frontier) {
-      if (localBudget <= 0) break;
+      if (localBudget <= 0 || ctx.searchBudget <= 0) break;
       const sourceFile = name.getSourceFile();
       const key = `${sourceFile.fileName}:${name.getStart(sourceFile)}`;
       if (seenNameKeys.has(key)) continue;
       seenNameKeys.add(key);
 
+      ctx.searchBudget--;
       const refs = languageService.getReferencesAtPosition(sourceFile.fileName, name.getStart(sourceFile)) ?? [];
       for (const ref of refs) {
         if (localBudget <= 0) break;
@@ -328,6 +373,7 @@ function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier):
     frontier = nextFrontier;
   }
 
+  ctx.callSiteMemo.set(nameNode, calls);
   return calls;
 }
 

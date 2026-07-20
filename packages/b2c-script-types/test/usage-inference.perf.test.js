@@ -66,6 +66,20 @@ const BASELINE = {
   // A repeated identical request at the same project version must be served
   // entirely from the plugin's position cache.
   repeatedHoverCached: 0,
+  // A helper whose call sites feed it results of many DISTINCT sub-helpers:
+  // the memo can't collapse anything (every name is different) and each
+  // sub-helper costs its own full-project scan while draining the result
+  // budget by only 2-3 — so the SEARCH budget (MAX_SEARCHES_PER_REQUEST) is
+  // the bound that has to engage. Before that cap existed this scenario ran
+  // 76 scans (~115ms measured on an SFRA-sized program).
+  distinctSubHelperTree: 12,
+  // Two implicit-any parameters of the same function must share one
+  // reference-search set (the request-scoped call-site memo), not re-run the
+  // identical searches once per parameter.
+  multiParamHelper: 2,
+  // Thousands of call sites packed into one generated file: one scan, and
+  // the per-call result budget must bound how many of its hits get processed.
+  hugeGeneratedFile: 2,
 };
 
 /**
@@ -297,6 +311,119 @@ describe('usage-inference — performance baselines', () => {
       BASELINE.repeatedHoverCached,
       'an unchanged project version must be served from the inference cache without re-searching',
     );
+    assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
+  });
+
+  it(`caps full-project scans when call sites route through many DISTINCT sub-helpers (<= ${BASELINE.distinctSubHelperTree} searches)`, () => {
+    // hot(x) is called 40 times, each time with the result of a DIFFERENT
+    // exported sub-helper that just returns its own parameter. Nothing here
+    // repeats, so neither the request memo nor the call-site memo can help,
+    // and every sub-helper's reference search returns only 2-3 results —
+    // draining the result budget far too slowly to bound the number of
+    // project scans. Only the dedicated search budget stops this one.
+    const N = 40;
+    const subs = Array.from({length: N}, (_, i) => `function sub${i}(a${i}) { return a${i}; }`).join('\n');
+    const calls = Array.from({length: N}, (_, i) => `hot(sub${i}(getProduct()));`).join('\n');
+    const exportsMap = Array.from({length: N}, (_, i) => `  sub${i}: sub${i},`).join('\n');
+    const files = {
+      '/types.d.ts': 'declare function getProduct(): {ID: string; name: string};',
+      '/tree.js': `
+        function hot(x) {
+          return x.ID;
+        }
+        ${subs}
+        ${calls}
+        module.exports = {
+          hot: hot,
+        ${exportsMap}
+        };
+      `,
+    };
+    const base = createFixtureLanguageService(files);
+    const counter = withReferenceCounter(base);
+    const ctx = createInferenceContext(ts, counter.languageService);
+    const fn = findFunctionDeclaration(ctx.program.getSourceFile('/tree.js'), 'hot');
+
+    const {result: types, elapsedMs} = timed(() => inferParameterType(ctx, fn.parameters[0]));
+
+    // Correctness must survive the cap: the first in-budget sub-helpers are
+    // enough to resolve the parameter's type.
+    assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    assert.ok(
+      counter.referenceSearches() <= BASELINE.distinctSubHelperTree,
+      `expected the search budget to bound project scans at <= ${BASELINE.distinctSubHelperTree}, got ${counter.referenceSearches()}`,
+    );
+    // The scenario must genuinely pressure the cap — if it stops needing to,
+    // it no longer guards anything and needs rebuilding.
+    assert.equal(ctx.searchBudget, 0, 'expected the search budget to be fully consumed by this scenario');
+    assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
+  });
+
+  it(`shares one reference-search set across sibling parameters of the same function (<= ${BASELINE.multiParamHelper} searches)`, () => {
+    // Return-type inference of pick() chases BOTH parameters; without the
+    // request-scoped call-site memo each parameter re-ran the identical
+    // searches (4 total instead of 2: the function name plus its alias-map
+    // property, twice).
+    const files = {
+      '/types.d.ts':
+        'declare function getProduct(): {ID: string}; declare function getCategory(): {displayName: string};',
+      '/pick.js': `
+        function pick(a, b) {
+          if (a) { return a; }
+          return b;
+        }
+        pick(getProduct(), getCategory());
+        module.exports = {pick: pick};
+      `,
+    };
+    const base = createFixtureLanguageService(files);
+    const counter = withReferenceCounter(base);
+    const ctx = createInferenceContext(ts, counter.languageService);
+    const fn = findFunctionDeclaration(ctx.program.getSourceFile('/pick.js'), 'pick');
+
+    const {result: types, elapsedMs} = timed(() => inferReturnType(ctx, fn));
+
+    assert.equal(describeTypes(ctx.checker, types), '{ ID: string; } | { displayName: string; }');
+    assert.ok(
+      counter.referenceSearches() <= BASELINE.multiParamHelper,
+      `expected the call-site memo to dedupe sibling-parameter searches to <= ${BASELINE.multiParamHelper}, got ${counter.referenceSearches()}`,
+    );
+    assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
+  });
+
+  it(`bounds a helper with thousands of call sites in one generated file (<= ${BASELINE.hugeGeneratedFile} searches, <= 50 hits processed)`, () => {
+    // A generated data file whose big array literal contains a call site per
+    // row. One scan finds all of them; the per-call result budget must stop
+    // processing at 50, and each processed hit's root-to-position AST walk
+    // must not degrade on the huge sibling list (getNodeAtPosition stops
+    // scanning a sibling list once past the target position).
+    const rows = Array.from({length: 2000}, (_, i) => `  {sku: 'sku-${i}', price: hotPrice(getProduct())},`).join('\n');
+    const files = {
+      '/types.d.ts': 'declare function getProduct(): {ID: string; name: string};',
+      '/huge.js': `
+        function hotPrice(product) {
+          return product.ID;
+        }
+        var ROWS = [
+        ${rows}
+        ];
+        module.exports = {ROWS: ROWS, hotPrice: hotPrice};
+      `,
+    };
+    const base = createFixtureLanguageService(files);
+    const counter = withReferenceCounter(base);
+    const ctx = createInferenceContext(ts, counter.languageService);
+    const fn = findFunctionDeclaration(ctx.program.getSourceFile('/huge.js'), 'hotPrice');
+
+    const {result: types, elapsedMs} = timed(() => inferParameterType(ctx, fn.parameters[0]));
+
+    assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    assert.ok(
+      counter.referenceSearches() <= BASELINE.hugeGeneratedFile,
+      `expected <= ${BASELINE.hugeGeneratedFile} searches, got ${counter.referenceSearches()}`,
+    );
+    const spent = 200 - ctx.referenceBudget;
+    assert.ok(spent <= 50, `expected the per-call cap (50) to bound processed hits, spent ${spent}`);
     assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
   });
 
