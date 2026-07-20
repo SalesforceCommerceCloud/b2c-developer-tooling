@@ -26,10 +26,12 @@ const MAX_REFERENCES_PER_REQUEST = 200;
 export const INFERRED_COMPLETION_SOURCE = '@salesforce/b2c-script-types/inferred-usage';
 
 interface MemoEntry {
-  // Remaining recursion budget (MAX_INFERENCE_DEPTH - depth) at the time this
-  // was computed. A result computed with equal-or-more remaining budget is
-  // always safe to reuse for a request needing equal-or-less budget, since
-  // more budget can only surface the same types or more, never fewer.
+  /**
+   * Remaining recursion budget (MAX_INFERENCE_DEPTH - depth) at the time this
+   * was computed. A result computed with equal-or-more remaining budget is
+   * always safe to reuse for a request needing equal-or-less budget, since
+   * more budget can only surface the same types or more, never fewer.
+   */
   readonly atDepth: number;
   readonly types: tsserver.Type[];
 }
@@ -39,20 +41,30 @@ export interface InferenceContext {
   readonly program: tsserver.Program;
   readonly checker: tsserver.TypeChecker;
   readonly languageService: tsserver.LanguageService;
-  // Recursion guard for the current inference request only (cleared as the
-  // call stack unwinds) — NOT a cross-request memoization cache. It exists
-  // solely to break cycles like `function a(){return b()} function b(){return a()}`.
+  /**
+   * Recursion guard for the current inference request only (cleared as the
+   * call stack unwinds) — NOT a cross-request memoization cache. It exists
+   * solely to break cycles like `function a(){return b()} function b(){return a()}`.
+   */
   readonly visiting: Set<tsserver.Node>;
-  // Request-scoped memoization so sibling branches (e.g. several return
-  // statements or call-site arguments that all resolve through the same
-  // undocumented sub-helper) don't redo the same reference search and
-  // recursive inference repeatedly within one hover/completion request.
+  /**
+   * Request-scoped memoization so sibling branches (e.g. several return
+   * statements or call-site arguments that all resolve through the same
+   * undocumented sub-helper) don't redo the same reference search and
+   * recursive inference repeatedly within one hover/completion request.
+   */
   readonly memo: Map<tsserver.Node, MemoEntry>;
-  // Mutable, shared across the whole request — decremented by
-  // collectCallSites() every time it processes a reference.
+  /**
+   * Mutable, shared across the whole request — decremented by
+   * collectCallSites() every time it processes a reference.
+   */
   referenceBudget: number;
 }
 
+/**
+ * Builds a fresh inference context for one top-level hover/completion
+ * request, or `undefined` if the language service has no program yet.
+ */
 export function createInferenceContext(
   ts: typeof tsserver,
   languageService: tsserver.LanguageService,
@@ -70,13 +82,16 @@ export function createInferenceContext(
   };
 }
 
+/** True when `type` is (or includes) `any` — the signal that the checker gave up and usage inference should try to help. */
 export function isAnyType(ts: typeof tsserver, type: tsserver.Type): boolean {
   return (type.flags & ts.TypeFlags.Any) !== 0;
 }
 
-// Finds the most specific node whose span contains `pos`. Standard technique
-// built only on public Node/forEachChild APIs — deliberately avoids TS's
-// internal (unversioned) getTokenAtPosition helper.
+/**
+ * Finds the most specific node whose span contains `pos`. Standard technique
+ * built only on public Node/forEachChild APIs — deliberately avoids TS's
+ * internal (unversioned) getTokenAtPosition helper.
+ */
 export function getNodeAtPosition(
   sourceFile: tsserver.SourceFile,
   ts: typeof tsserver,
@@ -93,6 +108,7 @@ export function getNodeAtPosition(
   return result;
 }
 
+/** Walks up from `node` to the nearest enclosing PropertyAccessExpression, or `undefined` if there isn't one. */
 export function findEnclosingPropertyAccess(
   node: tsserver.Node,
   ts: typeof tsserver,
@@ -105,10 +121,12 @@ export function findEnclosingPropertyAccess(
   return undefined;
 }
 
-// Identifies the name to run findReferences on for a function-like
-// declaration that itself has no `name` (the common CommonJS shapes:
-// `const foo = function(){}`, `{foo: function(){}}`, `{foo(){}}`,
-// `exports.foo = function(){}`, `module.exports = function(){}`).
+/**
+ * Identifies the name to run findReferences on for a function-like
+ * declaration that itself has no `name` (the common CommonJS shapes:
+ * `const foo = function(){}`, `{foo: function(){}}`, `{foo(){}}`,
+ * `exports.foo = function(){}`, `module.exports = function(){}`).
+ */
 function getReferenceNameNode(fn: tsserver.SignatureDeclaration, ts: typeof tsserver): tsserver.Identifier | undefined {
   if (ts.isFunctionDeclaration(fn) && fn.name) return fn.name;
   if (ts.isMethodDeclaration(fn) && ts.isIdentifier(fn.name)) return fn.name;
@@ -129,10 +147,12 @@ function getReferenceNameNode(fn: tsserver.SignatureDeclaration, ts: typeof tsse
   return undefined;
 }
 
-// Given a reference identifier (`helper` in either `helper(x)` or
-// `exports.helper(x)`/`obj.helper(x)`), finds the enclosing CallExpression if
-// the identifier sits in callee position — one parent up for a direct call,
-// two parents up when the identifier is the `.name` of a property access.
+/**
+ * Given a reference identifier (`helper` in either `helper(x)` or
+ * `exports.helper(x)`/`obj.helper(x)`), finds the enclosing CallExpression if
+ * the identifier sits in callee position — one parent up for a direct call,
+ * two parents up when the identifier is the `.name` of a property access.
+ */
 function findCallInCalleePosition(node: tsserver.Node, ts: typeof tsserver): tsserver.CallExpression | undefined {
   const parent = node.parent;
   if (!parent) return undefined;
@@ -144,9 +164,11 @@ function findCallInCalleePosition(node: tsserver.Node, ts: typeof tsserver): tss
   return undefined;
 }
 
-// A `require('specifier')` call, identified structurally (only public
-// AST-node-kind checks — `ts.isRequireCall` exists at runtime but isn't part
-// of TypeScript's public API surface, so isn't safe to depend on here).
+/**
+ * A `require('specifier')` call, identified structurally (only public
+ * AST-node-kind checks — `ts.isRequireCall` exists at runtime but isn't part
+ * of TypeScript's public API surface, so isn't safe to depend on here).
+ */
 function isRequireCallExpression(node: tsserver.Node, ts: typeof tsserver): node is tsserver.CallExpression {
   return (
     ts.isCallExpression(node) &&
@@ -157,14 +179,17 @@ function isRequireCallExpression(node: tsserver.Node, ts: typeof tsserver): node
   );
 }
 
-// When a reference to our function's name doesn't sit directly in callee
-// position, it may still be one hop away from a real call site through a
-// binding indirection: the module specifier of a `require(...)` call whose
-// result is assigned to a variable (`var helper = require('./helper')`), or
-// a destructuring binding element (`const {helper} = require(...)` or
-// `const {helper: local} = someObject`). Resolves to either the further name
-// to search references for, or — for an immediately-invoked require
-// (`require('./helper')(x)`) — the call site itself.
+/**
+ * When a reference to our function's name doesn't sit directly in callee
+ * position, it may still be one hop away from a real call site through a
+ * binding indirection: the module specifier of a `require(...)` call whose
+ * result is assigned to a variable (`var helper = require('./helper')`), or
+ * a destructuring binding element (`const {helper} = require(...)` or
+ * `const {helper: local} = someObject`).
+ *
+ * @returns Either the further name to search references for, or — for an
+ * immediately-invoked require (`require('./helper')(x)`) — the call site itself.
+ */
 function resolveIndirectReferenceTarget(
   node: tsserver.Node,
   ts: typeof tsserver,
@@ -193,12 +218,14 @@ function resolveIndirectReferenceTarget(
   return undefined;
 }
 
-// Finds actual call sites for `nameNode`, following up to
-// MAX_REFERENCE_HOPS binding indirections (require() bindings, destructuring)
-// when a reference doesn't sit directly in callee position. Stops early once
-// ctx.referenceBudget runs out, returning whatever call sites were already
-// found rather than continuing to fan out — an under-inferred (but still
-// heuristic, clearly-labeled) result beats hanging on a widely-referenced helper.
+/**
+ * Finds actual call sites for `nameNode`, following up to
+ * MAX_REFERENCE_HOPS binding indirections (require() bindings, destructuring)
+ * when a reference doesn't sit directly in callee position. Stops early once
+ * ctx.referenceBudget runs out, returning whatever call sites were already
+ * found rather than continuing to fan out — an under-inferred (but still
+ * heuristic, clearly-labeled) result beats hanging on a widely-referenced helper.
+ */
 function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier): tsserver.CallExpression[] {
   const {ts, languageService, program} = ctx;
   const calls: tsserver.CallExpression[] = [];
@@ -240,19 +267,27 @@ function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier):
   return calls;
 }
 
-// True when the developer already gave this parameter/function an explicit
-// type — TS syntax or JSDoc — even if that type is literally `any`. In that
-// case the checker's `any` reflects a deliberate choice, not an inference
-// failure, so usage inference must never second-guess it. Only genuinely
-// implicit `any` (no annotation at all) is fair game.
+/**
+ * True when the developer already gave this parameter an explicit type — TS
+ * syntax or JSDoc — even if that type is literally `any`. In that case the
+ * checker's `any` reflects a deliberate choice, not an inference failure, so
+ * usage inference must never second-guess it. Only genuinely implicit `any`
+ * (no annotation at all) is fair game.
+ */
 function hasExplicitParameterType(param: tsserver.ParameterDeclaration, ts: typeof tsserver): boolean {
   return param.type !== undefined || ts.getJSDocType(param) !== undefined;
 }
 
+/** Same idea as {@link hasExplicitParameterType}, but for a function's return type. */
 function hasExplicitReturnType(fn: tsserver.SignatureDeclaration, ts: typeof tsserver): boolean {
   return fn.type !== undefined || ts.getJSDocReturnType(fn) !== undefined;
 }
 
+/**
+ * Resolves the function-like declaration a call expression's callee refers
+ * to, via its symbol or — as a fallback for shapes the symbol lookup misses
+ * — the checker's resolved signature.
+ */
 function resolveCalleeDeclaration(
   ctx: InferenceContext,
   call: tsserver.CallExpression,
@@ -267,6 +302,7 @@ function resolveCalleeDeclaration(
   return undefined;
 }
 
+/** Deduplicates candidate types by their display string. */
 function dedupeTypes(checker: tsserver.TypeChecker, types: tsserver.Type[]): tsserver.Type[] {
   const seen = new Set<string>();
   const out: tsserver.Type[] = [];
@@ -279,12 +315,15 @@ function dedupeTypes(checker: tsserver.TypeChecker, types: tsserver.Type[]): tss
   return out;
 }
 
-// Resolves the candidate type(s) of `expr`. If the checker settles on `any`
-// and `expr` is itself a call to a function we can analyze, recurses into
-// that function's inferred return type(s) instead of accepting the `any`.
-// Returns an array (rather than a single unioned Type) because the public
-// TypeChecker API exposed via tsserverlibrary has no way to synthesize a
-// union Type — callers merge candidates for display/completions themselves.
+/**
+ * Resolves the candidate type(s) of `expr`. If the checker settles on `any`
+ * and `expr` is itself a call to a function we can analyze, recurses into
+ * that function's inferred return type(s) instead of accepting the `any`.
+ *
+ * @returns An array (rather than a single unioned Type) because the public
+ * TypeChecker API exposed via tsserverlibrary has no way to synthesize a
+ * union Type — callers merge candidates for display/completions themselves.
+ */
 function resolveExpressionTypes(ctx: InferenceContext, expr: tsserver.Expression, depth: number): tsserver.Type[] {
   const {ts, checker} = ctx;
   const direct = checker.getTypeAtLocation(expr);
@@ -309,9 +348,14 @@ function resolveExpressionTypes(ctx: InferenceContext, expr: tsserver.Expression
   return [];
 }
 
-// Infers a parameter's candidate type(s) from the arguments it's actually
-// called with across the project, since plain un-annotated JS parameters
-// default to `any` with no back-inference from call sites.
+/**
+ * Infers a parameter's candidate type(s) from the arguments it's actually
+ * called with across the project, since plain un-annotated JS parameters
+ * default to `any` with no back-inference from call sites.
+ *
+ * @param depth - Recursion budget already consumed by the call chain that
+ * led here; defaults to 0 for a top-level request.
+ */
 export function inferParameterType(
   ctx: InferenceContext,
   param: tsserver.ParameterDeclaration,
@@ -341,9 +385,11 @@ export function inferParameterType(
   return result;
 }
 
-// Recursively walks a function body collecting `return` expressions, without
-// descending into nested function-like boundaries (their returns belong to
-// them, not to `fn`).
+/**
+ * Recursively walks a function body collecting `return` expressions, without
+ * descending into nested function-like boundaries (their returns belong to
+ * them, not to `fn`).
+ */
 function collectReturnExpressions(fn: tsserver.SignatureDeclaration, ts: typeof tsserver): tsserver.Expression[] {
   if (ts.isArrowFunction(fn) && fn.body && !ts.isBlock(fn.body)) {
     return [fn.body];
@@ -363,9 +409,14 @@ function collectReturnExpressions(fn: tsserver.SignatureDeclaration, ts: typeof 
   return out;
 }
 
-// Infers a function's candidate return type(s) from its own return
-// statements, chasing into undocumented callees when a return expression
-// itself resolves to `any`.
+/**
+ * Infers a function's candidate return type(s) from its own return
+ * statements, chasing into undocumented callees when a return expression
+ * itself resolves to `any`.
+ *
+ * @param depth - Recursion budget already consumed by the call chain that
+ * led here; defaults to 0 for a top-level request.
+ */
 export function inferReturnType(ctx: InferenceContext, fn: tsserver.SignatureDeclaration, depth = 0): tsserver.Type[] {
   const {ts, checker} = ctx;
   if (depth > MAX_INFERENCE_DEPTH) return [];
@@ -387,10 +438,12 @@ export function inferReturnType(ctx: InferenceContext, fn: tsserver.SignatureDec
   }
 }
 
-// Entry point for both hover and completion wiring: given an identifier node,
-// figures out what it's worth inferring a better type for (a parameter it's
-// declared as, a variable holding an undocumented call's result, or the
-// function it names) and returns candidate type(s), if any.
+/**
+ * Entry point for both hover and completion wiring: given an identifier
+ * node, figures out what it's worth inferring a better type for (a parameter
+ * it's declared as, a variable holding an undocumented call's result, or the
+ * function it names) and returns candidate type(s), if any.
+ */
 export function inferTypeForNode(ctx: InferenceContext, node: tsserver.Node): tsserver.Type[] {
   const {ts, checker} = ctx;
   if (!ts.isIdentifier(node)) return [];
@@ -406,12 +459,14 @@ export function inferTypeForNode(ctx: InferenceContext, node: tsserver.Node): ts
   return [];
 }
 
+/** Renders candidate types as human-readable hover text, e.g. `"Product | Category"`. */
 export function describeTypes(checker: tsserver.TypeChecker, types: tsserver.Type[]): string {
   return dedupeTypes(checker, types)
     .map((t) => checker.typeToString(t))
     .join(' | ');
 }
 
+/** Synthesizes completion entries for candidate types' members, deduplicated by property name. */
 export function typesToCompletionEntries(
   ts: typeof tsserver,
   checker: tsserver.TypeChecker,

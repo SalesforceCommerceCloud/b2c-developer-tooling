@@ -55,9 +55,12 @@ const BASE_CARTRIDGE_RANK = {
 const DISCOVERY_IGNORE = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.cache', 'tmp', 'temp']);
 const DISCOVERY_MAX_DEPTH = 8;
 function init({ typescript: ts }) {
-    // Module-scoped state shared across all projects in the TS server. The host
-    // calls onConfigurationChanged() on this module when configurePlugin() runs;
-    // each project's wrapped resolver reads from these variables.
+    // tsserver calls this factory function fresh for every project that loads
+    // the plugin (once per tsconfig/jsconfig root), so these variables are a
+    // private closure per project, not shared state across a multi-root
+    // workspace. configurePlugin() broadcasts the same config to every open
+    // project, but each project's own onConfigurationChanged() call only
+    // updates its own copy of these variables.
     let cartridges = [];
     let enabled = true;
     let autoDiscoverEnabled = true;

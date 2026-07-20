@@ -26,6 +26,10 @@ const MAX_REFERENCE_HOPS = 2;
 // unlimited.
 const MAX_REFERENCES_PER_REQUEST = 200;
 exports.INFERRED_COMPLETION_SOURCE = '@salesforce/b2c-script-types/inferred-usage';
+/**
+ * Builds a fresh inference context for one top-level hover/completion
+ * request, or `undefined` if the language service has no program yet.
+ */
 function createInferenceContext(ts, languageService) {
     const program = languageService.getProgram();
     if (!program)
@@ -40,12 +44,15 @@ function createInferenceContext(ts, languageService) {
         referenceBudget: MAX_REFERENCES_PER_REQUEST,
     };
 }
+/** True when `type` is (or includes) `any` — the signal that the checker gave up and usage inference should try to help. */
 function isAnyType(ts, type) {
     return (type.flags & ts.TypeFlags.Any) !== 0;
 }
-// Finds the most specific node whose span contains `pos`. Standard technique
-// built only on public Node/forEachChild APIs — deliberately avoids TS's
-// internal (unversioned) getTokenAtPosition helper.
+/**
+ * Finds the most specific node whose span contains `pos`. Standard technique
+ * built only on public Node/forEachChild APIs — deliberately avoids TS's
+ * internal (unversioned) getTokenAtPosition helper.
+ */
 function getNodeAtPosition(sourceFile, ts, pos) {
     let result;
     const visit = (node) => {
@@ -57,6 +64,7 @@ function getNodeAtPosition(sourceFile, ts, pos) {
     visit(sourceFile);
     return result;
 }
+/** Walks up from `node` to the nearest enclosing PropertyAccessExpression, or `undefined` if there isn't one. */
 function findEnclosingPropertyAccess(node, ts) {
     let current = node;
     while (current) {
@@ -66,10 +74,12 @@ function findEnclosingPropertyAccess(node, ts) {
     }
     return undefined;
 }
-// Identifies the name to run findReferences on for a function-like
-// declaration that itself has no `name` (the common CommonJS shapes:
-// `const foo = function(){}`, `{foo: function(){}}`, `{foo(){}}`,
-// `exports.foo = function(){}`, `module.exports = function(){}`).
+/**
+ * Identifies the name to run findReferences on for a function-like
+ * declaration that itself has no `name` (the common CommonJS shapes:
+ * `const foo = function(){}`, `{foo: function(){}}`, `{foo(){}}`,
+ * `exports.foo = function(){}`, `module.exports = function(){}`).
+ */
 function getReferenceNameNode(fn, ts) {
     if (ts.isFunctionDeclaration(fn) && fn.name)
         return fn.name;
@@ -96,10 +106,12 @@ function getReferenceNameNode(fn, ts) {
     }
     return undefined;
 }
-// Given a reference identifier (`helper` in either `helper(x)` or
-// `exports.helper(x)`/`obj.helper(x)`), finds the enclosing CallExpression if
-// the identifier sits in callee position — one parent up for a direct call,
-// two parents up when the identifier is the `.name` of a property access.
+/**
+ * Given a reference identifier (`helper` in either `helper(x)` or
+ * `exports.helper(x)`/`obj.helper(x)`), finds the enclosing CallExpression if
+ * the identifier sits in callee position — one parent up for a direct call,
+ * two parents up when the identifier is the `.name` of a property access.
+ */
 function findCallInCalleePosition(node, ts) {
     const parent = node.parent;
     if (!parent)
@@ -113,9 +125,11 @@ function findCallInCalleePosition(node, ts) {
     }
     return undefined;
 }
-// A `require('specifier')` call, identified structurally (only public
-// AST-node-kind checks — `ts.isRequireCall` exists at runtime but isn't part
-// of TypeScript's public API surface, so isn't safe to depend on here).
+/**
+ * A `require('specifier')` call, identified structurally (only public
+ * AST-node-kind checks — `ts.isRequireCall` exists at runtime but isn't part
+ * of TypeScript's public API surface, so isn't safe to depend on here).
+ */
 function isRequireCallExpression(node, ts) {
     return (ts.isCallExpression(node) &&
         ts.isIdentifier(node.expression) &&
@@ -123,14 +137,17 @@ function isRequireCallExpression(node, ts) {
         node.arguments.length > 0 &&
         ts.isStringLiteralLike(node.arguments[0]));
 }
-// When a reference to our function's name doesn't sit directly in callee
-// position, it may still be one hop away from a real call site through a
-// binding indirection: the module specifier of a `require(...)` call whose
-// result is assigned to a variable (`var helper = require('./helper')`), or
-// a destructuring binding element (`const {helper} = require(...)` or
-// `const {helper: local} = someObject`). Resolves to either the further name
-// to search references for, or — for an immediately-invoked require
-// (`require('./helper')(x)`) — the call site itself.
+/**
+ * When a reference to our function's name doesn't sit directly in callee
+ * position, it may still be one hop away from a real call site through a
+ * binding indirection: the module specifier of a `require(...)` call whose
+ * result is assigned to a variable (`var helper = require('./helper')`), or
+ * a destructuring binding element (`const {helper} = require(...)` or
+ * `const {helper: local} = someObject`).
+ *
+ * @returns Either the further name to search references for, or — for an
+ * immediately-invoked require (`require('./helper')(x)`) — the call site itself.
+ */
 function resolveIndirectReferenceTarget(node, ts) {
     const parent = node.parent;
     if (!parent)
@@ -153,12 +170,14 @@ function resolveIndirectReferenceTarget(node, ts) {
     }
     return undefined;
 }
-// Finds actual call sites for `nameNode`, following up to
-// MAX_REFERENCE_HOPS binding indirections (require() bindings, destructuring)
-// when a reference doesn't sit directly in callee position. Stops early once
-// ctx.referenceBudget runs out, returning whatever call sites were already
-// found rather than continuing to fan out — an under-inferred (but still
-// heuristic, clearly-labeled) result beats hanging on a widely-referenced helper.
+/**
+ * Finds actual call sites for `nameNode`, following up to
+ * MAX_REFERENCE_HOPS binding indirections (require() bindings, destructuring)
+ * when a reference doesn't sit directly in callee position. Stops early once
+ * ctx.referenceBudget runs out, returning whatever call sites were already
+ * found rather than continuing to fan out — an under-inferred (but still
+ * heuristic, clearly-labeled) result beats hanging on a widely-referenced helper.
+ */
 function collectCallSites(ctx, nameNode) {
     const { ts, languageService, program } = ctx;
     const calls = [];
@@ -203,17 +222,25 @@ function collectCallSites(ctx, nameNode) {
     }
     return calls;
 }
-// True when the developer already gave this parameter/function an explicit
-// type — TS syntax or JSDoc — even if that type is literally `any`. In that
-// case the checker's `any` reflects a deliberate choice, not an inference
-// failure, so usage inference must never second-guess it. Only genuinely
-// implicit `any` (no annotation at all) is fair game.
+/**
+ * True when the developer already gave this parameter an explicit type — TS
+ * syntax or JSDoc — even if that type is literally `any`. In that case the
+ * checker's `any` reflects a deliberate choice, not an inference failure, so
+ * usage inference must never second-guess it. Only genuinely implicit `any`
+ * (no annotation at all) is fair game.
+ */
 function hasExplicitParameterType(param, ts) {
     return param.type !== undefined || ts.getJSDocType(param) !== undefined;
 }
+/** Same idea as {@link hasExplicitParameterType}, but for a function's return type. */
 function hasExplicitReturnType(fn, ts) {
     return fn.type !== undefined || ts.getJSDocReturnType(fn) !== undefined;
 }
+/**
+ * Resolves the function-like declaration a call expression's callee refers
+ * to, via its symbol or — as a fallback for shapes the symbol lookup misses
+ * — the checker's resolved signature.
+ */
 function resolveCalleeDeclaration(ctx, call) {
     const { checker, ts } = ctx;
     const sym = checker.getSymbolAtLocation(call.expression);
@@ -226,6 +253,7 @@ function resolveCalleeDeclaration(ctx, call) {
         return sigDecl;
     return undefined;
 }
+/** Deduplicates candidate types by their display string. */
 function dedupeTypes(checker, types) {
     const seen = new Set();
     const out = [];
@@ -238,12 +266,15 @@ function dedupeTypes(checker, types) {
     }
     return out;
 }
-// Resolves the candidate type(s) of `expr`. If the checker settles on `any`
-// and `expr` is itself a call to a function we can analyze, recurses into
-// that function's inferred return type(s) instead of accepting the `any`.
-// Returns an array (rather than a single unioned Type) because the public
-// TypeChecker API exposed via tsserverlibrary has no way to synthesize a
-// union Type — callers merge candidates for display/completions themselves.
+/**
+ * Resolves the candidate type(s) of `expr`. If the checker settles on `any`
+ * and `expr` is itself a call to a function we can analyze, recurses into
+ * that function's inferred return type(s) instead of accepting the `any`.
+ *
+ * @returns An array (rather than a single unioned Type) because the public
+ * TypeChecker API exposed via tsserverlibrary has no way to synthesize a
+ * union Type — callers merge candidates for display/completions themselves.
+ */
 function resolveExpressionTypes(ctx, expr, depth) {
     const { ts, checker } = ctx;
     const direct = checker.getTypeAtLocation(expr);
@@ -271,9 +302,14 @@ function resolveExpressionTypes(ctx, expr, depth) {
     }
     return [];
 }
-// Infers a parameter's candidate type(s) from the arguments it's actually
-// called with across the project, since plain un-annotated JS parameters
-// default to `any` with no back-inference from call sites.
+/**
+ * Infers a parameter's candidate type(s) from the arguments it's actually
+ * called with across the project, since plain un-annotated JS parameters
+ * default to `any` with no back-inference from call sites.
+ *
+ * @param depth - Recursion budget already consumed by the call chain that
+ * led here; defaults to 0 for a top-level request.
+ */
 function inferParameterType(ctx, param, depth = 0) {
     const { ts, checker } = ctx;
     if (depth > MAX_INFERENCE_DEPTH)
@@ -303,9 +339,11 @@ function inferParameterType(ctx, param, depth = 0) {
     ctx.memo.set(param, { atDepth: depth, types: result });
     return result;
 }
-// Recursively walks a function body collecting `return` expressions, without
-// descending into nested function-like boundaries (their returns belong to
-// them, not to `fn`).
+/**
+ * Recursively walks a function body collecting `return` expressions, without
+ * descending into nested function-like boundaries (their returns belong to
+ * them, not to `fn`).
+ */
 function collectReturnExpressions(fn, ts) {
     if (ts.isArrowFunction(fn) && fn.body && !ts.isBlock(fn.body)) {
         return [fn.body];
@@ -326,9 +364,14 @@ function collectReturnExpressions(fn, ts) {
     visit(body);
     return out;
 }
-// Infers a function's candidate return type(s) from its own return
-// statements, chasing into undocumented callees when a return expression
-// itself resolves to `any`.
+/**
+ * Infers a function's candidate return type(s) from its own return
+ * statements, chasing into undocumented callees when a return expression
+ * itself resolves to `any`.
+ *
+ * @param depth - Recursion budget already consumed by the call chain that
+ * led here; defaults to 0 for a top-level request.
+ */
 function inferReturnType(ctx, fn, depth = 0) {
     const { ts, checker } = ctx;
     if (depth > MAX_INFERENCE_DEPTH)
@@ -354,10 +397,12 @@ function inferReturnType(ctx, fn, depth = 0) {
         ctx.visiting.delete(fn);
     }
 }
-// Entry point for both hover and completion wiring: given an identifier node,
-// figures out what it's worth inferring a better type for (a parameter it's
-// declared as, a variable holding an undocumented call's result, or the
-// function it names) and returns candidate type(s), if any.
+/**
+ * Entry point for both hover and completion wiring: given an identifier
+ * node, figures out what it's worth inferring a better type for (a parameter
+ * it's declared as, a variable holding an undocumented call's result, or the
+ * function it names) and returns candidate type(s), if any.
+ */
 function inferTypeForNode(ctx, node) {
     const { ts, checker } = ctx;
     if (!ts.isIdentifier(node))
@@ -377,11 +422,13 @@ function inferTypeForNode(ctx, node) {
         return inferReturnType(ctx, decl);
     return [];
 }
+/** Renders candidate types as human-readable hover text, e.g. `"Product | Category"`. */
 function describeTypes(checker, types) {
     return dedupeTypes(checker, types)
         .map((t) => checker.typeToString(t))
         .join(' | ');
 }
+/** Synthesizes completion entries for candidate types' members, deduplicated by property name. */
 function typesToCompletionEntries(ts, checker, types) {
     const seen = new Set();
     const entries = [];
