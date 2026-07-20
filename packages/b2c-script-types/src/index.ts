@@ -673,23 +673,44 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     // a type the checker has already given up on (`any` — typically an
     // undocumented helper function), infer a better answer from call sites
     // elsewhere in the project instead of leaving the editor with nothing.
-    // Cached per (file, node position); the whole cache is thrown away on a
-    // project version change rather than tracking per-entry validity, so it
-    // can't grow without bound across a long editing session — every entry
-    // in it is guaranteed fresh for the current program.
-    let inferenceCacheProjectVersion: string | undefined;
-    const inferenceCache = new Map<string, tsserver.Type[]>();
-    const getCachedInference = (cacheKey: string, compute: () => tsserver.Type[]): tsserver.Type[] => {
-      const projectVersion = info.project.getProjectVersion();
-      if (projectVersion !== inferenceCacheProjectVersion) {
+    //
+    // Cached per (file, node position). Entries are finished DISPLAY products
+    // (the hover note string, the synthesized completion entries) rather than
+    // checker Type objects: a Type pins its checker and, through it, the whole
+    // program it came from, so caching types would keep an entire stale
+    // program graph alive from the last edit until the next inference-eligible
+    // request — potentially forever if the user stops hovering. Strings and
+    // plain completion entries retain nothing.
+    //
+    // The whole cache is invalidated when the language service hands back a
+    // different Program instance (TS builds a new Program object for any
+    // semantic change, and reuses the same instance otherwise), rather than
+    // tracking per-entry validity. Program identity is more precise than the
+    // previously-used project version string, which also bumps on events that
+    // don't produce a new program — each such bump needlessly re-ran a full
+    // inference (measured ~13ms per hover on an SFRA-sized project) that the
+    // cache should have answered.
+    let inferenceCacheProgram: tsserver.Program | undefined;
+    const inferenceCache = new Map<string, string | tsserver.CompletionEntry[] | undefined>();
+    // Bounds the cache during a long no-edit session (e.g. hours of hovering
+    // around at the same program): entries are small (strings / plain entry
+    // arrays), so this is belt-and-braces, and a wholesale clear is honest —
+    // no LRU bookkeeping for a cache this cheap to refill.
+    const MAX_INFERENCE_CACHE_ENTRIES = 512;
+    const getCachedInference = <T extends string | tsserver.CompletionEntry[] | undefined>(
+      cacheKey: string,
+      program: tsserver.Program,
+      compute: () => T,
+    ): T => {
+      if (program !== inferenceCacheProgram) {
         inferenceCache.clear();
-        inferenceCacheProjectVersion = projectVersion;
+        inferenceCacheProgram = program;
       }
-      const cached = inferenceCache.get(cacheKey);
-      if (cached) return cached;
-      const types = compute();
-      inferenceCache.set(cacheKey, types);
-      return types;
+      if (inferenceCache.has(cacheKey)) return inferenceCache.get(cacheKey) as T;
+      const result = compute();
+      if (inferenceCache.size >= MAX_INFERENCE_CACHE_ENTRIES) inferenceCache.clear();
+      inferenceCache.set(cacheKey, result);
+      return result;
     };
 
     // Runs our own inference logic and degrades to `fallback` (the untouched
@@ -736,13 +757,17 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
           if (!isAnyType(ts, checker.getTypeAtLocation(node)) && !traceSuperModuleAccess(ts, checker, node)) {
             return original;
           }
-          const types = getCachedInference(`hover:${fileName}:${node.getStart(sourceFile)}`, () => {
+          // `undefined` (inference found nothing) is a cached answer too —
+          // re-deriving "nothing" costs the same reference searches as
+          // re-deriving something.
+          const description = getCachedInference(`hover:${fileName}:${node.getStart(sourceFile)}`, program, () => {
             const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath);
-            return ctx ? inferTypeForNode(ctx, node) : [];
+            const types = ctx ? inferTypeForNode(ctx, node) : [];
+            return types.length > 0 ? describeTypes(checker, types) : undefined;
           });
-          if (types.length === 0) return original;
+          if (!description) return original;
           const note: tsserver.SymbolDisplayPart = {
-            text: `\n\nInferred from usage: ${describeTypes(checker, types)}`,
+            text: `\n\nInferred from usage: ${description}`,
             kind: 'text',
           };
           return {...original, documentation: [...(original.documentation ?? []), note]};
@@ -776,10 +801,15 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
           // `product.getPriceModel().|` needs the chain resolved the same way
           // hover-driven return inference already resolves it.
           const baseNode = propAccess.expression;
-          const types = getCachedInference(`completions:${fileName}:${baseNode.getStart(sourceFile)}`, () => {
-            const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath);
-            return ctx ? inferTypeForExpression(ctx, baseNode) : [];
-          });
+          const typeEntries = getCachedInference(
+            `completions:${fileName}:${baseNode.getStart(sourceFile)}`,
+            program,
+            () => {
+              const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath);
+              const types = ctx ? inferTypeForExpression(ctx, baseNode) : [];
+              return typesToCompletionEntries(ts, checker, types);
+            },
+          );
           // Members added by pass-through superModule overlay levels
           // (`module.exports = base; module.exports.extra = fn;`) can't be
           // carried by any candidate type — collect them separately. Cheap
@@ -794,7 +824,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
             sortText: '11',
             source: INFERRED_COMPLETION_SOURCE,
           }));
-          const inferredEntries = [...typesToCompletionEntries(ts, checker, types), ...augmentedEntries];
+          const inferredEntries = [...typeEntries, ...augmentedEntries];
           if (inferredEntries.length === 0) return original;
           // Dedupe against the original entries AND within the inferred set
           // (a name can come from both a candidate type and an overlay

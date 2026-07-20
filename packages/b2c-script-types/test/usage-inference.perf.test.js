@@ -80,6 +80,10 @@ const BASELINE = {
   // Thousands of call sites packed into one generated file: one scan, and
   // the per-call result budget must bound how many of its hits get processed.
   hugeGeneratedFile: 2,
+  // A project-version bump WITHOUT a program change (the version string moves
+  // on events that don't produce a new Program) must not evict the inference
+  // cache — invalidation keys on Program identity.
+  versionBumpSameProgram: 0,
 };
 
 /**
@@ -424,6 +428,53 @@ describe('usage-inference — performance baselines', () => {
     );
     const spent = 200 - ctx.referenceBudget;
     assert.ok(spent <= 50, `expected the per-call cap (50) to bound processed hits, spent ${spent}`);
+    assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
+  });
+
+  it('keeps the inference cache across a project-version bump that produces no new program (0 new searches)', () => {
+    // tsserver bumps the project version string on events that don't change
+    // the program. Invalidation keys on Program identity, so such a bump must
+    // NOT force a full re-inference.
+    const files = {
+      '/types.d.ts': 'declare function getProduct(): {ID: string; name: string};',
+      '/helper.js': `
+        function helper(product) {
+          return product.ID;
+        }
+        helper(getProduct());
+        module.exports = {helper};
+      `,
+    };
+    const host = createFixtureHost(files);
+    const baseLs = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const counter = withReferenceCounter(baseLs);
+    const {create} = init({typescript: ts});
+    let projectVersion = 1;
+    const proxy = create({
+      languageService: counter.languageService,
+      languageServiceHost: host,
+      project: {
+        projectService: {logger: {info: () => {}}},
+        getCurrentDirectory: () => '/',
+        getProjectVersion: () => String(projectVersion),
+      },
+      config: {enabled: true, autoDiscover: false, cartridges: [{name: 'c', src: '/'}], inferUsage: true},
+    });
+    const paramPos = files['/helper.js'].indexOf('product)');
+
+    const first = proxy.getQuickInfoAtPosition('/helper.js', paramPos);
+    assert.ok((first?.documentation ?? []).some((p) => p.text.includes('Inferred from usage')));
+    counter.reset();
+    projectVersion++; // bump WITHOUT any host/script change — same program
+
+    const {result: second, elapsedMs} = timed(() => proxy.getQuickInfoAtPosition('/helper.js', paramPos));
+
+    assert.ok((second?.documentation ?? []).some((p) => p.text.includes('Inferred from usage')));
+    assert.equal(
+      counter.referenceSearches(),
+      BASELINE.versionBumpSameProgram,
+      'a version bump with an unchanged program must be served from the inference cache',
+    );
     assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
   });
 
