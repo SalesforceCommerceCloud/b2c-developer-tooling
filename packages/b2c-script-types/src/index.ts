@@ -666,7 +666,17 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     };
 
     proxy.getQuickInfoAtPosition = (fileName, position, maximumLength) => {
-      const original = info.languageService.getQuickInfoAtPosition(fileName, position, maximumLength);
+      // The underlying call is not ours to trust unconditionally — TS's own
+      // quick-info resolution can throw on unusual ASTs (e.g. mid-edit syntax
+      // errors), and a plugin override throwing takes the whole tsserver
+      // request down with it instead of degrading to no hover.
+      let original: tsserver.QuickInfo | undefined;
+      try {
+        original = info.languageService.getQuickInfoAtPosition(fileName, position, maximumLength);
+      } catch (e) {
+        log(`usage-inference hover failed: underlying getQuickInfoAtPosition threw: ${(e as Error).message}`);
+        return undefined;
+      }
       if (!enabled || !inferUsageEnabled || !isCartridgeFile(fileName) || !original) return original;
       try {
         const program = info.languageService.getProgram();
@@ -693,7 +703,15 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     };
 
     proxy.getCompletionsAtPosition = (fileName, position, options, formattingSettings) => {
-      const original = info.languageService.getCompletionsAtPosition(fileName, position, options, formattingSettings);
+      // Same reasoning as getQuickInfoAtPosition above: don't let an
+      // exception from the underlying call escape uncaught.
+      let original: tsserver.WithMetadata<tsserver.CompletionInfo> | undefined;
+      try {
+        original = info.languageService.getCompletionsAtPosition(fileName, position, options, formattingSettings);
+      } catch (e) {
+        log(`usage-inference completions failed: underlying getCompletionsAtPosition threw: ${(e as Error).message}`);
+        return undefined;
+      }
       if (!enabled || !inferUsageEnabled || !isCartridgeFile(fileName)) return original;
       try {
         const program = info.languageService.getProgram();

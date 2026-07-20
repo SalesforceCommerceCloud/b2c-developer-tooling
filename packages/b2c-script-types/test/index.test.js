@@ -12,6 +12,7 @@ const ts = require('typescript');
 
 const init = require('../plugin/index');
 const {createFixtureHost} = require('./helpers/fixture-language-service');
+const {REAL_DW_TYPES} = require('./helpers/real-dw-types');
 
 const AMBIENT_TYPES = `
 declare function getProduct(): {ID: string; name: string};
@@ -241,5 +242,54 @@ describe('create() proxy — usage inference wiring', () => {
     const after = proxy.getQuickInfoAtPosition('/helper.js', paramPos);
     const afterText = (after?.documentation ?? []).map((p) => p.text).join('');
     assert.ok(afterText.includes('quantity'));
+  });
+
+  it('hovers and completes against the real, nullable dw.catalog.ProductMgr.getProduct() shape end-to-end', () => {
+    // Regression test for the exact production bug this feature shipped
+    // with: ProductMgr.getProduct() really does return `Product<any> | null`,
+    // and getPropertiesOfType on that union (before stripping the nullable
+    // part) returns zero members — completions silently fell back to plain
+    // global suggestions while hover kept working, since describeTypes just
+    // stringifies the union instead of walking its members.
+    const files = {
+      '/priceHelper.js': `
+        function getDisplayName(product) {
+          return product.getName();
+        }
+        function useHelper() {
+          var ProductMgr = require('${REAL_DW_TYPES.ProductMgr}');
+          var product = ProductMgr.getProduct('some-id');
+          return getDisplayName(product);
+        }
+        module.exports = {getDisplayName};
+      `,
+    };
+    const proxy = (() => {
+      const {create} = init({typescript: ts});
+      const host = createFixtureHost(files);
+      const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+      return create({
+        languageService,
+        languageServiceHost: host,
+        project: {
+          projectService: {logger: {info: () => {}}},
+          getCurrentDirectory: () => '/',
+          getProjectVersion: () => '1',
+        },
+        config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
+      });
+    })();
+    const paramPos = files['/priceHelper.js'].indexOf('product)');
+    const dotPos = files['/priceHelper.js'].indexOf('product.getName()') + 'product.'.length;
+
+    const hover = proxy.getQuickInfoAtPosition('/priceHelper.js', paramPos);
+    const hoverText = (hover?.documentation ?? []).map((p) => p.text).join('');
+    assert.ok(hoverText.includes('Inferred from usage'));
+    assert.ok(/Product/.test(hoverText));
+
+    const completions = proxy.getCompletionsAtPosition('/priceHelper.js', dotPos, undefined);
+    const names = (completions?.entries ?? []).map((e) => e.name);
+    assert.ok(names.includes('getID'));
+    assert.ok(names.includes('getName'));
   });
 });

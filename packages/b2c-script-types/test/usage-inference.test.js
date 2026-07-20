@@ -546,6 +546,39 @@ describe('usage-inference', () => {
       assert.deepEqual(entries.map((e) => e.name).sort(), ['ID', 'name']);
     });
 
+    it('offers member completions for a candidate type that is nullable (`T | null`)', () => {
+      // getPropertiesOfType on a union only returns members common to every
+      // constituent; `null` contributes none, so a candidate like this one —
+      // the common shape of an SFCC getter that can return nothing, e.g.
+      // ProductMgr.getProduct(): Product | null — must have its nullable part
+      // stripped first, or every entry disappears. Under the default
+      // `strict: false` fixture settings TS collapses `T | null` down to just
+      // `T` (strictNullChecks off), which would mask this bug entirely, so
+      // this test opts into `strictNullChecks: true` — matching VS Code's own
+      // implicit JS project default (`js/ts.implicitProjectConfig.strictNullChecks`),
+      // which is what a real cartridge file actually type-checks under.
+      const files = {
+        '/types.d.ts': `
+          declare function getProductOrNull(): {ID: string; name: string} | null;
+        `,
+        '/consumer.js': `
+          function pick(input) {
+            return input;
+          }
+          pick(getProductOrNull());
+        `,
+      };
+      const languageService = createFixtureLanguageService(files, {strict: true});
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/consumer.js');
+      const fn = findFunctionDeclaration(sourceFile, 'pick');
+      const types = inferParameterType(ctx, fn.parameters[0]);
+
+      const entries = typesToCompletionEntries(ts, ctx.checker, types);
+
+      assert.deepEqual(entries.map((e) => e.name).sort(), ['ID', 'name']);
+    });
+
     it('offers member completions for a primitive candidate type via its apparent (wrapper-object) members', () => {
       const files = {
         '/helper.js': `

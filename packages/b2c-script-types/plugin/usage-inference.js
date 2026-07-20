@@ -303,6 +303,29 @@ function resolveExpressionTypes(ctx, expr, depth) {
             if (inferred.length > 0)
                 return inferred;
         }
+        if (ts.isPropertyAccessExpression(expr.expression)) {
+            // `expr` (e.g. `x.getPriceModel().getPrice()`) is `any` because the
+            // receiver's own base is undocumented — resolveCalleeDeclaration can't
+            // find a real declaration since the checker never got far enough to
+            // resolve the method itself. Infer the receiver's type first (recursing
+            // through as many chained calls/property accesses as it takes to reach
+            // an untyped parameter or undocumented helper), then look up this
+            // method by name on that resolved type's real, documented signature(s).
+            const methodAccess = expr.expression;
+            const methodName = methodAccess.name.text;
+            const returnTypes = [];
+            for (const receiverType of resolveExpressionTypes(ctx, methodAccess.expression, depth)) {
+                const methodSymbol = checker.getPropertyOfType(checker.getApparentType(receiverType), methodName);
+                if (!methodSymbol)
+                    continue;
+                const methodType = checker.getTypeOfSymbolAtLocation(methodSymbol, methodAccess.name);
+                for (const sig of methodType.getCallSignatures()) {
+                    returnTypes.push(widenType(checker, checker.getReturnTypeOfSignature(sig)));
+                }
+            }
+            if (returnTypes.length > 0)
+                return returnTypes;
+        }
     }
     else if (ts.isPropertyAccessExpression(expr)) {
         // `expr` (e.g. `x.ID`) is `any` because its base is itself undocumented
@@ -480,10 +503,16 @@ function typesToCompletionEntries(ts, checker, types) {
     const seen = new Set();
     const entries = [];
     for (const type of types) {
-        // getApparentType so a primitive candidate (string/number/boolean) picks
-        // up its wrapper-object members (.length, .toUpperCase(), etc.), which
-        // live there rather than on the primitive type's own declared members.
-        for (const sym of checker.getPropertiesOfType(checker.getApparentType(type))) {
+        // getPropertiesOfType on a union only returns members common to *every*
+        // constituent — since `null`/`undefined` contribute none, a candidate
+        // like `Product | null` (the real, common shape of an SFCC getter that
+        // can return nothing) would otherwise always synthesize zero entries.
+        // Strip the nullable parts first; getApparentType then picks up a
+        // primitive candidate's wrapper-object members (.length, .toUpperCase(),
+        // etc.), which live there rather than on the primitive type's own
+        // declared members.
+        const nonNullable = checker.getNonNullableType(type);
+        for (const sym of checker.getPropertiesOfType(checker.getApparentType(nonNullable))) {
             const name = sym.getName();
             if (seen.has(name))
                 continue;

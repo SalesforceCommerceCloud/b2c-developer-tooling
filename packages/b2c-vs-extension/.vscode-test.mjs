@@ -49,4 +49,19 @@ export default defineConfig([
       timeout: 20000,
     },
   },
+  {
+    // Own workspace folder (not empty-workspace) because cartridge discovery
+    // walks the open workspace root for .project markers — the scriptTypes
+    // plugin needs a real cartridge in scope for isCartridgeFile() to let
+    // scriptTypesInferUsage run at all.
+    label: 'infer-usage-workspace',
+    files: 'out/test/integration/script-types-infer-usage.test.js',
+    version: 'stable',
+    workspaceFolder: 'src/test/fixtures/infer-usage-workspace',
+    launchArgs: ['--user-data-dir', shortUserDataDir('infer-usage-workspace')],
+    mocha: {
+      ui: 'tdd',
+      timeout: 30000,
+    },
+  },
 ]);
