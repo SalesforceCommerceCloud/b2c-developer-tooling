@@ -656,9 +656,9 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       return types;
     };
 
-    proxy.getQuickInfoAtPosition = (fileName, position) => {
-      const original = info.languageService.getQuickInfoAtPosition(fileName, position);
-      if (!inferUsageEnabled || !original) return original;
+    proxy.getQuickInfoAtPosition = (fileName, position, maximumLength) => {
+      const original = info.languageService.getQuickInfoAtPosition(fileName, position, maximumLength);
+      if (!enabled || !inferUsageEnabled || !isCartridgeFile(fileName) || !original) return original;
       try {
         const program = info.languageService.getProgram();
         const sourceFile = program?.getSourceFile(fileName);
@@ -685,7 +685,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
 
     proxy.getCompletionsAtPosition = (fileName, position, options, formattingSettings) => {
       const original = info.languageService.getCompletionsAtPosition(fileName, position, options, formattingSettings);
-      if (!inferUsageEnabled) return original;
+      if (!enabled || !inferUsageEnabled || !isCartridgeFile(fileName)) return original;
       try {
         const program = info.languageService.getProgram();
         const sourceFile = program?.getSourceFile(fileName);

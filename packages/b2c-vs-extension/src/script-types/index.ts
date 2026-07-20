@@ -63,7 +63,7 @@ export function registerScriptTypes(
     const a = await ensureApi();
     if (!a) return;
     const enabled = isFeatureEnabled();
-    const inferUsage = isInferUsageEnabled();
+    const inferUsage = enabled && isInferUsageEnabled();
     const cartridges = enabled ? cartridgeService.getCartridges().map((c) => ({name: c.name, src: c.src})) : [];
     a.configurePlugin(PLUGIN_ID, {cartridges, enabled, inferUsage});
     log.appendLine(

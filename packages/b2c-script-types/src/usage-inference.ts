@@ -10,6 +10,11 @@ import type tsserver from 'typescript/lib/tsserverlibrary';
 // how deep a cartridge's helper stack goes.
 const MAX_INFERENCE_DEPTH = 3;
 
+// Bounds how many indirection hops (require() binding -> destructuring ->
+// renamed re-export, etc.) collectCallSites() will follow from a reference
+// before giving up on finding an actual call site.
+const MAX_REFERENCE_HOPS = 2;
+
 export const INFERRED_COMPLETION_SOURCE = '@salesforce/b2c-script-types/inferred-usage';
 
 export interface InferenceContext {
@@ -69,15 +74,22 @@ export function findEnclosingPropertyAccess(
 
 // Identifies the name to run findReferences on for a function-like
 // declaration that itself has no `name` (the common CommonJS shapes:
-// `const foo = function(){}`, `{foo: function(){}}`, `exports.foo = function(){}`).
+// `const foo = function(){}`, `{foo: function(){}}`, `{foo(){}}`,
+// `exports.foo = function(){}`, `module.exports = function(){}`).
 function getReferenceNameNode(fn: tsserver.SignatureDeclaration, ts: typeof tsserver): tsserver.Identifier | undefined {
   if (ts.isFunctionDeclaration(fn) && fn.name) return fn.name;
+  if (ts.isMethodDeclaration(fn) && ts.isIdentifier(fn.name)) return fn.name;
   const parent = fn.parent;
   if (!parent) return undefined;
   if (ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name)) return parent.name;
   if (ts.isPropertyAssignment(parent) && ts.isIdentifier(parent.name)) return parent.name;
   if (ts.isBinaryExpression(parent) && parent.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
     const left = parent.left;
+    // `module.exports = function(){}` / `exports.foo = function(){}` — the
+    // `.name` identifier (`exports` or `foo`) is what findReferences can
+    // actually track; for the bare `module.exports` case this resolves to
+    // the whole module's value, so callers reach it via collectCallSites()'s
+    // require() indirection rather than a direct property-access call.
     if (ts.isPropertyAccessExpression(left) && ts.isIdentifier(left.name)) return left.name;
     if (ts.isIdentifier(left)) return left;
   }
@@ -97,6 +109,96 @@ function findCallInCalleePosition(node: tsserver.Node, ts: typeof tsserver): tss
     if (grandparent && ts.isCallExpression(grandparent) && grandparent.expression === parent) return grandparent;
   }
   return undefined;
+}
+
+// A `require('specifier')` call, identified structurally (only public
+// AST-node-kind checks — `ts.isRequireCall` exists at runtime but isn't part
+// of TypeScript's public API surface, so isn't safe to depend on here).
+function isRequireCallExpression(node: tsserver.Node, ts: typeof tsserver): node is tsserver.CallExpression {
+  return (
+    ts.isCallExpression(node) &&
+    ts.isIdentifier(node.expression) &&
+    node.expression.text === 'require' &&
+    node.arguments.length > 0 &&
+    ts.isStringLiteralLike(node.arguments[0])
+  );
+}
+
+// When a reference to our function's name doesn't sit directly in callee
+// position, it may still be one hop away from a real call site through a
+// binding indirection: the module specifier of a `require(...)` call whose
+// result is assigned to a variable (`var helper = require('./helper')`), or
+// a destructuring binding element (`const {helper} = require(...)` or
+// `const {helper: local} = someObject`). Resolves to either the further name
+// to search references for, or — for an immediately-invoked require
+// (`require('./helper')(x)`) — the call site itself.
+function resolveIndirectReferenceTarget(
+  node: tsserver.Node,
+  ts: typeof tsserver,
+): {kind: 'call'; call: tsserver.CallExpression} | {kind: 'name'; name: tsserver.Identifier} | undefined {
+  const parent = node.parent;
+  if (!parent) return undefined;
+
+  if (ts.isCallExpression(parent) && parent.arguments[0] === node && isRequireCallExpression(parent, ts)) {
+    const requireCall = parent;
+    const outer = requireCall.parent;
+    if (outer && ts.isCallExpression(outer) && outer.expression === requireCall) {
+      return {kind: 'call', call: outer}; // require('./helper')(x)
+    }
+    if (outer && ts.isVariableDeclaration(outer) && outer.initializer === requireCall && ts.isIdentifier(outer.name)) {
+      return {kind: 'name', name: outer.name}; // var helper = require('./helper')
+    }
+    return undefined;
+  }
+
+  if (ts.isBindingElement(parent) && ts.isIdentifier(parent.name)) {
+    // Covers both `{helper}` (shorthand — name and propertyName are the same
+    // node) and `{helper: local}` (renamed — redirect to the local binding).
+    return {kind: 'name', name: parent.name};
+  }
+
+  return undefined;
+}
+
+// Finds actual call sites for `nameNode`, following up to
+// MAX_REFERENCE_HOPS binding indirections (require() bindings, destructuring)
+// when a reference doesn't sit directly in callee position.
+function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier): tsserver.CallExpression[] {
+  const {ts, languageService, program} = ctx;
+  const calls: tsserver.CallExpression[] = [];
+  const seenNameKeys = new Set<string>();
+  let frontier: tsserver.Identifier[] = [nameNode];
+
+  for (let hop = 0; hop <= MAX_REFERENCE_HOPS && frontier.length > 0; hop++) {
+    const nextFrontier: tsserver.Identifier[] = [];
+    for (const name of frontier) {
+      const sourceFile = name.getSourceFile();
+      const key = `${sourceFile.fileName}:${name.getStart(sourceFile)}`;
+      if (seenNameKeys.has(key)) continue;
+      seenNameKeys.add(key);
+
+      const refs = languageService.getReferencesAtPosition(sourceFile.fileName, name.getStart(sourceFile)) ?? [];
+      for (const ref of refs) {
+        const refFile = program.getSourceFile(ref.fileName);
+        if (!refFile) continue;
+        const node = getNodeAtPosition(refFile, ts, ref.textSpan.start);
+        if (!node) continue;
+        // Definition sites (the declaration itself) never sit in callee
+        // position, so this also naturally excludes them.
+        const call = findCallInCalleePosition(node, ts);
+        if (call) {
+          calls.push(call);
+          continue;
+        }
+        const indirect = resolveIndirectReferenceTarget(node, ts);
+        if (indirect?.kind === 'call') calls.push(indirect.call);
+        else if (indirect?.kind === 'name') nextFrontier.push(indirect.name);
+      }
+    }
+    frontier = nextFrontier;
+  }
+
+  return calls;
 }
 
 function resolveCalleeDeclaration(
@@ -163,7 +265,7 @@ export function inferParameterType(
   param: tsserver.ParameterDeclaration,
   depth = 0,
 ): tsserver.Type[] {
-  const {ts, languageService, program, checker} = ctx;
+  const {ts, checker} = ctx;
   if (depth > MAX_INFERENCE_DEPTH) return [];
   const fn = param.parent;
   if (!ts.isFunctionLike(fn)) return [];
@@ -172,19 +274,8 @@ export function inferParameterType(
   const paramIndex = fn.parameters.indexOf(param);
   if (paramIndex < 0) return [];
 
-  const sourceFile = nameNode.getSourceFile();
-  const refs = languageService.getReferencesAtPosition(sourceFile.fileName, nameNode.getStart(sourceFile)) ?? [];
-
   const types: tsserver.Type[] = [];
-  for (const ref of refs) {
-    const refFile = program.getSourceFile(ref.fileName);
-    if (!refFile) continue;
-    const node = getNodeAtPosition(refFile, ts, ref.textSpan.start);
-    if (!node) continue;
-    // Definition sites (the declaration itself) never sit in callee position,
-    // so this also naturally excludes them.
-    const call = findCallInCalleePosition(node, ts);
-    if (!call) continue;
+  for (const call of collectCallSites(ctx, nameNode)) {
     const arg = call.arguments[paramIndex];
     if (!arg) continue;
     types.push(...resolveExpressionTypes(ctx, arg, depth));

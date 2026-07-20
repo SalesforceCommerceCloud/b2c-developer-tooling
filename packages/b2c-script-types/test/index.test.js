@@ -68,35 +68,80 @@ function fixtureOffsets() {
   return {paramPos, dotPos};
 }
 
+// `/helper.js` only counts as a cartridge file once a cartridge root
+// containing it is configured — matches how the real plugin scopes every
+// other feature (require resolution, ambient globals) to cartridge files.
+const CARTRIDGE_CONFIG = [{name: 'test_cartridge', src: '/'}];
+
 describe('create() proxy — usage inference wiring', () => {
   const {paramPos, dotPos} = fixtureOffsets();
 
   it('leaves hover untouched when inferUsage is off (default)', () => {
-    const proxy = createPluginProxy({enabled: true, autoDiscover: false, cartridges: []});
+    const proxy = createPluginProxy({enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG});
     const info = proxy.getQuickInfoAtPosition('/helper.js', paramPos);
     const docText = (info?.documentation ?? []).map((p) => p.text).join('');
     assert.ok(!docText.includes('Inferred from usage'));
   });
 
   it('appends an inferred-usage hover note when inferUsage is on', () => {
-    const proxy = createPluginProxy({enabled: true, autoDiscover: false, cartridges: [], inferUsage: true});
+    const proxy = createPluginProxy({
+      enabled: true,
+      autoDiscover: false,
+      cartridges: CARTRIDGE_CONFIG,
+      inferUsage: true,
+    });
     const info = proxy.getQuickInfoAtPosition('/helper.js', paramPos);
     const docText = (info?.documentation ?? []).map((p) => p.text).join('');
     assert.ok(docText.includes('Inferred from usage: { ID: string; name: string; }'));
   });
 
   it('leaves completions untouched when inferUsage is off (default)', () => {
-    const proxy = createPluginProxy({enabled: true, autoDiscover: false, cartridges: []});
+    const proxy = createPluginProxy({enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG});
     const completions = proxy.getCompletionsAtPosition('/helper.js', dotPos, undefined);
     const names = (completions?.entries ?? []).map((e) => e.name);
     assert.ok(!names.includes('ID'));
   });
 
   it('synthesizes member completions from inferred usage when inferUsage is on', () => {
-    const proxy = createPluginProxy({enabled: true, autoDiscover: false, cartridges: [], inferUsage: true});
+    const proxy = createPluginProxy({
+      enabled: true,
+      autoDiscover: false,
+      cartridges: CARTRIDGE_CONFIG,
+      inferUsage: true,
+    });
     const completions = proxy.getCompletionsAtPosition('/helper.js', dotPos, undefined);
     const names = (completions?.entries ?? []).map((e) => e.name);
     assert.ok(names.includes('ID'));
     assert.ok(names.includes('name'));
+  });
+
+  it('does not run inference outside a configured cartridge root, even when inferUsage is on', () => {
+    // No cartridges configured -> /helper.js isn't recognized as a cartridge
+    // file, matching every other feature in this plugin (require resolution,
+    // ambient globals) that only applies inside known cartridge roots.
+    const proxy = createPluginProxy({enabled: true, autoDiscover: false, cartridges: [], inferUsage: true});
+    const info = proxy.getQuickInfoAtPosition('/helper.js', paramPos);
+    const docText = (info?.documentation ?? []).map((p) => p.text).join('');
+    assert.ok(!docText.includes('Inferred from usage'));
+
+    const completions = proxy.getCompletionsAtPosition('/helper.js', dotPos, undefined);
+    const names = (completions?.entries ?? []).map((e) => e.name);
+    assert.ok(!names.includes('ID'));
+  });
+
+  it('does not run inference when the parent scriptTypes feature is disabled, even when inferUsage is on', () => {
+    const proxy = createPluginProxy({
+      enabled: false,
+      autoDiscover: false,
+      cartridges: CARTRIDGE_CONFIG,
+      inferUsage: true,
+    });
+    const info = proxy.getQuickInfoAtPosition('/helper.js', paramPos);
+    const docText = (info?.documentation ?? []).map((p) => p.text).join('');
+    assert.ok(!docText.includes('Inferred from usage'));
+
+    const completions = proxy.getCompletionsAtPosition('/helper.js', dotPos, undefined);
+    const names = (completions?.entries ?? []).map((e) => e.name);
+    assert.ok(!names.includes('ID'));
   });
 });

@@ -584,9 +584,9 @@ function init({ typescript: ts }) {
             inferenceCache.set(cacheKey, { projectVersion, types });
             return types;
         };
-        proxy.getQuickInfoAtPosition = (fileName, position) => {
-            const original = info.languageService.getQuickInfoAtPosition(fileName, position);
-            if (!inferUsageEnabled || !original)
+        proxy.getQuickInfoAtPosition = (fileName, position, maximumLength) => {
+            const original = info.languageService.getQuickInfoAtPosition(fileName, position, maximumLength);
+            if (!enabled || !inferUsageEnabled || !isCartridgeFile(fileName) || !original)
                 return original;
             try {
                 const program = info.languageService.getProgram();
@@ -618,7 +618,7 @@ function init({ typescript: ts }) {
         };
         proxy.getCompletionsAtPosition = (fileName, position, options, formattingSettings) => {
             const original = info.languageService.getCompletionsAtPosition(fileName, position, options, formattingSettings);
-            if (!inferUsageEnabled)
+            if (!enabled || !inferUsageEnabled || !isCartridgeFile(fileName))
                 return original;
             try {
                 const program = info.languageService.getProgram();

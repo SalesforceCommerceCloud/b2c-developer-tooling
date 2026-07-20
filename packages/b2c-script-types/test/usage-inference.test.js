@@ -139,6 +139,109 @@ describe('usage-inference', () => {
     });
   });
 
+  describe('inferParameterType — cross-file export patterns', () => {
+    function findFunctionExpressionParam(sourceFile) {
+      let param;
+      const visit = (node) => {
+        if (ts.isFunctionExpression(node)) {
+          param = node.parameters[0];
+          return;
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(sourceFile);
+      return param;
+    }
+
+    function findMethodDeclarationParam(sourceFile) {
+      let param;
+      const visit = (node) => {
+        if (ts.isMethodDeclaration(node)) {
+          param = node.parameters[0];
+          return;
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(sourceFile);
+      return param;
+    }
+
+    it('resolves a bare `module.exports = function(){}` called via `require(...)` in another file', () => {
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `module.exports = function (product) { return product.ID; };`,
+        '/consumer.js': `var helper = require('./helper'); helper(getProduct());`,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const param = findFunctionExpressionParam(ctx.program.getSourceFile('/helper.js'));
+
+      const types = inferParameterType(ctx, param);
+
+      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    });
+
+    it('resolves an immediately-invoked `require(...)(x)` call', () => {
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `module.exports = function (product) { return product.ID; };`,
+        '/consumer.js': `require('./helper')(getProduct());`,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const param = findFunctionExpressionParam(ctx.program.getSourceFile('/helper.js'));
+
+      const types = inferParameterType(ctx, param);
+
+      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    });
+
+    it('resolves a destructured `const {helper} = require(...)` call site', () => {
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `module.exports = { helper: function (product) { return product.ID; } };`,
+        '/consumer.js': `var { helper } = require('./helper'); helper(getProduct());`,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const param = findFunctionExpressionParam(ctx.program.getSourceFile('/helper.js'));
+
+      const types = inferParameterType(ctx, param);
+
+      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    });
+
+    it('resolves a renamed destructure `const {helper: h} = require(...)`', () => {
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `module.exports = { helper: function (product) { return product.ID; } };`,
+        '/consumer.js': `var { helper: h } = require('./helper'); h(getProduct());`,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const param = findFunctionExpressionParam(ctx.program.getSourceFile('/helper.js'));
+
+      const types = inferParameterType(ctx, param);
+
+      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    });
+
+    it('resolves an ES6 method-shorthand export called via property access', () => {
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `module.exports = { helper(product) { return product.ID; } };`,
+        '/consumer.js': `var helper = require('./helper'); helper.helper(getProduct());`,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const param = findMethodDeclarationParam(ctx.program.getSourceFile('/helper.js'));
+
+      const types = inferParameterType(ctx, param);
+
+      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    });
+  });
+
   describe('inferReturnType', () => {
     it('chases a multi-hop undocumented call chain through a forwarding helper', () => {
       // `identity` forwards its own (undocumented, `any`) parameter, so TS's
