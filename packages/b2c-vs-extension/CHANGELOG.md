@@ -1,5 +1,22 @@
 # Change Log
 
+## 1.0.2
+
+### Patch Changes
+
+- [#579](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/579) [`17d8eba`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/17d8eba792ab02bd708a13b7ef6996cee22b2bed) - Prepare the VS Code extension for its 1.0 Marketplace launch with a public-facing README, feature tour, setup guidance, Marketplace installation instructions, and support links. Contributor build, test, and packaging instructions now live in `DEVELOPMENT.md`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#549](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/549) [`4f3ac11`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f3ac110ec5dc7364643bb1ff4d4c529c4f8cd63) - Point the extension's marketplace repository URL at `forcedotcom/b2c-dx`. The extension is published from a separate Salesforce-owned repository under open-source governance (public OSS lives under a `forcedotcom`/`salesforce` org); development, issues, and pull requests continue in this monorepo. See `packages/b2c-vs-extension/PUBLISHING.md` for the publish flow. (Thanks [@amit-kumar8-sf](https://github.com/amit-kumar8-sf)!)
+
+## 1.0.1
+
+### Patch Changes
+
+- [#578](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/578) [`b6aedd2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b6aedd2f2329f0e9511bdf4e3a799d286fd9b262) - Add a Marketplace/Open VSX listing icon. The extension previously published with the default placeholder tile; it now ships a 256x256 branded icon (Salesforce cloud + B2C Commerce cart) via the top-level `icon` manifest field. (Thanks [@amit-kumar8-sf](https://github.com/amit-kumar8-sf)!)
+
+- Updated dependencies [[`f169fa1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f169fa153f75f4f3b76622b4300c11631deb50b0), [`633f3cb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/633f3cb7d409132f107b012e26448ab7812ed506)]:
+  - @salesforce/b2c-tooling-sdk@1.21.0
+
 ## 1.0.0
 
 ### Major Changes

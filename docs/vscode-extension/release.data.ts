@@ -5,7 +5,7 @@
  */
 
 /*
- * VitePress build-time data loader for the latest published B2C DX VS Code
+ * VitePress build-time data loader for the latest published Salesforce B2C Commerce VS Code
  * extension `.vsix` asset. Consumed by `installation.md` via `<script setup>`.
  *
  * The release pipeline (.github/workflows/publish.yml) creates a versioned
