@@ -47,6 +47,11 @@
     "workspaceContains:dw.json"
   ],
   "main": "./dist/extension.cjs",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    }
+  },
   "contributes": {
     "typescriptServerPlugins": [
       {
