@@ -215,114 +215,123 @@ function resolveExpressionTypes(ctx, expr, depth, chainHops = 0) {
         return [(0, type_helpers_1.widenType)(checker, direct)];
     if (chainHops >= constants_1.MAX_CHAIN_HOPS)
         return [];
-    if (ts.isCallExpression(expr)) {
-        const calleeFn = resolveCalleeDeclaration(ctx, expr);
-        if (calleeFn) {
-            const inferred = inferReturnType(ctx, calleeFn, depth + 1);
-            if (inferred.length > 0)
-                return inferred;
-        }
-        if (ts.isPropertyAccessExpression(expr.expression)) {
-            // `expr` (e.g. `x.getPriceModel().getPrice()`) is `any` because the
-            // receiver's own base is undocumented — resolveCalleeDeclaration can't
-            // find a real declaration since the checker never got far enough to
-            // resolve the method itself. Infer the receiver's type first (recursing
-            // through as many chained calls/property accesses as it takes to reach
-            // an untyped parameter or undocumented helper), then look up this
-            // method by name on that resolved type's real, documented signature(s).
-            const methodAccess = expr.expression;
-            const methodName = methodAccess.name.text;
-            const returnTypes = [];
-            const pushSignatureReturns = (methodType) => {
-                for (const sig of methodType.getCallSignatures()) {
-                    const returnType = checker.getReturnTypeOfSignature(sig);
-                    if (!(0, type_helpers_1.isAnyType)(ts, returnType)) {
-                        returnTypes.push((0, type_helpers_1.widenType)(checker, returnType));
-                        continue;
-                    }
-                    // The member resolved but its own return type is `any` — the
-                    // superModule case, where the base module's export type carries an
-                    // undocumented function. `any` is never a useful candidate to
-                    // surface; recurse into the function's actual declaration instead,
-                    // the same fallback resolveCalleeDeclaration provides for direct
-                    // calls.
-                    const sigDecl = sig.declaration;
-                    if (sigDecl && ts.isFunctionLike(sigDecl)) {
-                        returnTypes.push(...inferReturnType(ctx, sigDecl, depth + 1));
-                    }
-                }
-            };
-            for (const receiverType of resolveExpressionTypes(ctx, methodAccess.expression, depth, chainHops + 1)) {
-                const methodSymbol = (0, type_helpers_1.getMemberOfType)(checker, receiverType, methodName);
-                if (!methodSymbol)
-                    continue;
-                pushSignatureReturns(checker.getTypeOfSymbolAtLocation(methodSymbol, methodAccess.name));
-            }
-            if (returnTypes.length === 0) {
-                // No candidate type carried this method — but if the receiver is (an
-                // alias of) module.superModule, the method may be an export
-                // *augmentation* added by a pass-through overlay level, which no
-                // candidate type can carry.
-                const superAccess = (0, super_module_1.traceSuperModuleAccess)(ts, checker, methodAccess.expression);
-                if (superAccess) {
-                    for (const memberType of resolveSuperModuleMemberTypes(ctx, superAccess, methodName, depth, chainHops)) {
-                        pushSignatureReturns(memberType);
-                    }
-                }
-            }
-            if (returnTypes.length > 0)
-                return (0, type_helpers_1.dedupeTypes)(ctx, returnTypes);
-        }
+    // The checker gave up (`any`). Dispatch on the kind of expression to a
+    // focused resolver. Each returns [] when it can't do better than `any`, so
+    // an unhandled kind (or an exhausted branch) falls through to [].
+    if (ts.isCallExpression(expr))
+        return resolveCallResultTypes(ctx, expr, depth, chainHops);
+    if (ts.isPropertyAccessExpression(expr))
+        return resolvePropertyTypes(ctx, expr, depth, chainHops);
+    if (ts.isIdentifier(expr))
+        return resolveIdentifierTypes(ctx, expr, depth, chainHops);
+    return [];
+}
+/**
+ * Resolves an `any` call expression: first by inferring the callee's own
+ * return type, then — for a chained call whose receiver is itself
+ * undocumented (`x.getPriceModel().getPrice()`) — by resolving the receiver's
+ * type and looking this method up on its real, documented signature(s).
+ * Returns [] when neither path improves on `any`.
+ */
+function resolveCallResultTypes(ctx, expr, depth, chainHops) {
+    const { ts, checker } = ctx;
+    const calleeFn = resolveCalleeDeclaration(ctx, expr);
+    if (calleeFn) {
+        const inferred = inferReturnType(ctx, calleeFn, depth + 1);
+        if (inferred.length > 0)
+            return inferred;
     }
-    else if (ts.isPropertyAccessExpression(expr)) {
-        // `expr` (e.g. `x.ID`) is `any` because its base is itself undocumented
-        // (an untyped parameter, say) — infer the base's type first, then look
-        // up this specific property on it, rather than giving up on the whole
-        // access just because the access itself resolved to `any`.
-        const propName = expr.name.text;
-        const propTypes = [];
-        for (const baseType of resolveExpressionTypes(ctx, expr.expression, depth, chainHops + 1)) {
-            const propSymbol = (0, type_helpers_1.getMemberOfType)(checker, baseType, propName);
-            if (!propSymbol)
+    // resolveCalleeDeclaration can't find a real declaration for a method whose
+    // receiver base is undocumented (the checker never resolved the method), so
+    // infer the receiver's type first, then look this method up by name on it.
+    if (!ts.isPropertyAccessExpression(expr.expression))
+        return [];
+    const methodAccess = expr.expression;
+    const methodName = methodAccess.name.text;
+    const returnTypes = [];
+    const pushSignatureReturns = (methodType) => {
+        for (const sig of methodType.getCallSignatures()) {
+            const returnType = checker.getReturnTypeOfSignature(sig);
+            if (!(0, type_helpers_1.isAnyType)(ts, returnType)) {
+                returnTypes.push((0, type_helpers_1.widenType)(checker, returnType));
                 continue;
-            const propType = checker.getTypeOfSymbolAtLocation(propSymbol, expr);
-            // An `any`-typed member (e.g. an untyped value in an exports map) is
-            // never a useful candidate — surfacing "Inferred from usage: any"
-            // would be worse than staying quiet.
-            if (!(0, type_helpers_1.isAnyType)(ts, propType))
-                propTypes.push((0, type_helpers_1.widenType)(checker, propType));
-        }
-        if (propTypes.length === 0) {
-            // Mirror of the method-chain fallback above: the property may be an
-            // export augmentation added by a pass-through superModule overlay.
-            const superAccess = (0, super_module_1.traceSuperModuleAccess)(ts, checker, expr.expression);
-            if (superAccess) {
-                propTypes.push(...resolveSuperModuleMemberTypes(ctx, superAccess, propName, depth, chainHops).map((t) => (0, type_helpers_1.widenType)(checker, t)));
+            }
+            // The member resolved but its own return type is `any` — the
+            // superModule case, where the base module's export type carries an
+            // undocumented function. `any` is never a useful candidate to surface;
+            // recurse into the function's actual declaration instead, the same
+            // fallback resolveCalleeDeclaration provides for direct calls.
+            const sigDecl = sig.declaration;
+            if (sigDecl && ts.isFunctionLike(sigDecl)) {
+                returnTypes.push(...inferReturnType(ctx, sigDecl, depth + 1));
             }
         }
-        if (propTypes.length > 0)
-            return (0, type_helpers_1.dedupeTypes)(ctx, propTypes);
+    };
+    for (const receiverType of resolveExpressionTypes(ctx, methodAccess.expression, depth, chainHops + 1)) {
+        const methodSymbol = (0, type_helpers_1.getMemberOfType)(checker, receiverType, methodName);
+        if (!methodSymbol)
+            continue;
+        pushSignatureReturns(checker.getTypeOfSymbolAtLocation(methodSymbol, methodAccess.name));
     }
-    else if (ts.isIdentifier(expr)) {
-        // `expr` is itself an undocumented parameter reference (e.g. a helper
-        // that just returns/forwards one of its own params) — chase that
-        // parameter's inferred type too, rather than stopping at `any`.
-        const sym = checker.getSymbolAtLocation(expr);
-        const decl = sym?.valueDeclaration;
-        if (decl && ts.isParameter(decl)) {
-            const inferred = inferParameterType(ctx, decl, depth + 1);
-            if (inferred.length > 0)
-                return inferred;
-        }
-        else if (decl && ts.isVariableDeclaration(decl)) {
-            // ...or a local variable holding an intermediate result — chase its
-            // initializer the same way, so splitting a chain across `var`
-            // statements infers exactly like the inline expression would.
-            const inferred = resolveVariableInitializerTypes(ctx, decl, depth, chainHops + 1);
-            if (inferred.length > 0)
-                return inferred;
+    if (returnTypes.length === 0) {
+        // No candidate type carried this method — but if the receiver is (an
+        // alias of) module.superModule, the method may be an export
+        // *augmentation* added by a pass-through overlay level, which no
+        // candidate type can carry.
+        const superAccess = (0, super_module_1.traceSuperModuleAccess)(ts, checker, methodAccess.expression);
+        if (superAccess) {
+            for (const memberType of resolveSuperModuleMemberTypes(ctx, superAccess, methodName, depth, chainHops)) {
+                pushSignatureReturns(memberType);
+            }
         }
     }
+    return returnTypes.length > 0 ? (0, type_helpers_1.dedupeTypes)(ctx, returnTypes) : [];
+}
+/**
+ * Resolves an `any` property access (`x.ID`) whose base is itself
+ * undocumented: infer the base's type first, then look this specific property
+ * up on it — or, if the base is a superModule alias, as a pass-through overlay
+ * augmentation. Returns [] when the property can't be resolved.
+ */
+function resolvePropertyTypes(ctx, expr, depth, chainHops) {
+    const { ts, checker } = ctx;
+    const propName = expr.name.text;
+    const propTypes = [];
+    for (const baseType of resolveExpressionTypes(ctx, expr.expression, depth, chainHops + 1)) {
+        const propSymbol = (0, type_helpers_1.getMemberOfType)(checker, baseType, propName);
+        if (!propSymbol)
+            continue;
+        const propType = checker.getTypeOfSymbolAtLocation(propSymbol, expr);
+        // An `any`-typed member (e.g. an untyped value in an exports map) is
+        // never a useful candidate — surfacing "Inferred from usage: any" would
+        // be worse than staying quiet.
+        if (!(0, type_helpers_1.isAnyType)(ts, propType))
+            propTypes.push((0, type_helpers_1.widenType)(checker, propType));
+    }
+    if (propTypes.length === 0) {
+        // Mirror of the method-chain fallback: the property may be an export
+        // augmentation added by a pass-through superModule overlay.
+        const superAccess = (0, super_module_1.traceSuperModuleAccess)(ts, checker, expr.expression);
+        if (superAccess) {
+            propTypes.push(...resolveSuperModuleMemberTypes(ctx, superAccess, propName, depth, chainHops).map((t) => (0, type_helpers_1.widenType)(checker, t)));
+        }
+    }
+    return propTypes.length > 0 ? (0, type_helpers_1.dedupeTypes)(ctx, propTypes) : [];
+}
+/**
+ * Resolves an `any` identifier by chasing what it refers to: an undocumented
+ * parameter (infer from its call sites) or a local variable holding an
+ * intermediate result (chase its initializer, so a chain split across `var`
+ * statements infers exactly like the inline expression would). Returns [] for
+ * anything else.
+ */
+function resolveIdentifierTypes(ctx, expr, depth, chainHops) {
+    const { ts, checker } = ctx;
+    const decl = checker.getSymbolAtLocation(expr)?.valueDeclaration;
+    if (decl && ts.isParameter(decl))
+        return inferParameterType(ctx, decl, depth + 1);
+    if (decl && ts.isVariableDeclaration(decl))
+        return resolveVariableInitializerTypes(ctx, decl, depth, chainHops + 1);
     return [];
 }
 /**

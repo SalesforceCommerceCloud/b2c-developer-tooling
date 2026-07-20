@@ -140,7 +140,6 @@ function resolveIndirectReferenceTarget(
  * Results are memoized per name node for the duration of the request.
  */
 export function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier): tsserver.CallExpression[] {
-  const {ts, languageService, program} = ctx;
   const memoized = ctx.callSiteMemo.get(nameNode);
   if (memoized) return memoized;
   const calls: tsserver.CallExpression[] = [];
@@ -156,32 +155,52 @@ export function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Ident
       const key = `${sourceFile.fileName}:${name.getStart(sourceFile)}`;
       if (seenNameKeys.has(key)) continue;
       seenNameKeys.add(key);
-
-      ctx.searchBudget--;
-      const refs = languageService.getReferencesAtPosition(sourceFile.fileName, name.getStart(sourceFile)) ?? [];
-      for (const ref of refs) {
-        if (localBudget <= 0) break;
-        localBudget--;
-        ctx.referenceBudget--;
-        const refFile = program.getSourceFile(ref.fileName);
-        if (!refFile) continue;
-        const node = getNodeAtPosition(refFile, ts, ref.textSpan.start);
-        if (!node) continue;
-        // Definition sites (the declaration itself) never sit in callee
-        // position, so this also naturally excludes them.
-        const call = findCallInCalleePosition(node, ts);
-        if (call) {
-          calls.push(call);
-          continue;
-        }
-        const indirect = resolveIndirectReferenceTarget(node, ts);
-        if (indirect?.kind === 'call') calls.push(indirect.call);
-        else if (indirect?.kind === 'name') nextFrontier.push(indirect.name);
-      }
+      localBudget = collectCallsFromName(ctx, name, calls, nextFrontier, localBudget);
     }
     frontier = nextFrontier;
   }
 
   ctx.callSiteMemo.set(nameNode, calls);
   return calls;
+}
+
+/**
+ * Runs one reference search for `name` and sorts each hit into either a
+ * resolved call site (pushed to `calls`) or a further name to chase on the
+ * next hop (pushed to `nextFrontier`) via a single binding indirection.
+ * Consumes one unit of the shared search budget and up to `localBudget`
+ * result slots, returning the remaining local budget so the caller can stop
+ * fanning out once it's exhausted.
+ */
+function collectCallsFromName(
+  ctx: InferenceContext,
+  name: tsserver.Identifier,
+  calls: tsserver.CallExpression[],
+  nextFrontier: tsserver.Identifier[],
+  localBudget: number,
+): number {
+  const {ts, languageService, program} = ctx;
+  const sourceFile = name.getSourceFile();
+  ctx.searchBudget--;
+  const refs = languageService.getReferencesAtPosition(sourceFile.fileName, name.getStart(sourceFile)) ?? [];
+  for (const ref of refs) {
+    if (localBudget <= 0) break;
+    localBudget--;
+    ctx.referenceBudget--;
+    const refFile = program.getSourceFile(ref.fileName);
+    if (!refFile) continue;
+    const node = getNodeAtPosition(refFile, ts, ref.textSpan.start);
+    if (!node) continue;
+    // Definition sites (the declaration itself) never sit in callee
+    // position, so this also naturally excludes them.
+    const call = findCallInCalleePosition(node, ts);
+    if (call) {
+      calls.push(call);
+      continue;
+    }
+    const indirect = resolveIndirectReferenceTarget(node, ts);
+    if (indirect?.kind === 'call') calls.push(indirect.call);
+    else if (indirect?.kind === 'name') nextFrontier.push(indirect.name);
+  }
+  return localBudget;
 }
