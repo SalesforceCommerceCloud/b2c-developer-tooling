@@ -79,6 +79,34 @@ function init({ typescript: ts }) {
         const slashed = p.replace(/\\/g, '/');
         return caseSensitive ? slashed : slashed.toLowerCase();
     };
+    // Canonical, real form of a path for containment checks: resolve symlinks
+    // (ts.sys.realpath) so an in-repo symlink can't point a require() at a file
+    // outside its root, then collapse `.`/`..` and fold to the same slash/case
+    // convention cartridge roots use. Falls back to a purely lexical resolve
+    // when the path doesn't exist or realpath is unavailable, so a crafted
+    // non-existent candidate is still `..`-collapsed before the check.
+    const canonicalPath = (p) => {
+        let real = p;
+        try {
+            if (ts.sys.realpath)
+                real = ts.sys.realpath(p);
+        }
+        catch {
+            // Non-existent path (or realpath failure) — fall back to lexical.
+        }
+        return normalize(node_path_1.default.resolve(real));
+    };
+    // True when `candidate` resolves to a location at or beneath `rootDir`.
+    // This is the trust boundary for every resolver below: import specifiers,
+    // cartridge names, and a cartridge's package.json `main` are all
+    // attacker-controlled in a cloned repository, so a resolved path that
+    // escapes its intended root (via `..`, an absolute/UNC/drive form, or a
+    // symlink) must be rejected rather than read into the TS program.
+    const isWithinRoot = (candidate, rootDir) => {
+        const root = canonicalPath(rootDir);
+        const resolved = canonicalPath(candidate);
+        return (resolved + '/').startsWith(root.endsWith('/') ? root : root + '/');
+    };
     const setCartridges = (list) => {
         cartridges = list.map(({ name, src }) => {
             const n = normalize(src);
@@ -224,7 +252,12 @@ function init({ typescript: ts }) {
         // tsserver keys its internal file map on forward-slash paths, so normalize
         // the return value here — path.join produces backslashes on Windows.
         if (moduleName.startsWith('dw/')) {
-            return node_path_1.default.join(TYPES_DIR, moduleName + '.d.ts').replace(/\\/g, '/');
+            const resolved = node_path_1.default.join(TYPES_DIR, moduleName + '.d.ts').replace(/\\/g, '/');
+            // A crafted name like `dw/../../../etc/passwd` would otherwise join to a
+            // path outside the bundled types dir. Reject anything that escapes it.
+            if (!isWithinRoot(resolved, TYPES_DIR))
+                return undefined;
+            return resolved;
         }
         return undefined;
     };
@@ -284,7 +317,10 @@ function init({ typescript: ts }) {
             const baseAbs = c.root + subpath;
             for (const ext of CANDIDATE_EXTENSIONS) {
                 const candidate = baseAbs + ext;
-                if (fileExists(candidate)) {
+                // `subpath` comes straight from the import specifier, so a `..`
+                // segment (or an absolute/symlinked target) can point outside the
+                // cartridge — resolve and contain before accepting it.
+                if (fileExists(candidate) && isWithinRoot(candidate, c.root)) {
                     return { resolved: candidate, source: c.name };
                 }
             }
@@ -316,20 +352,24 @@ function init({ typescript: ts }) {
         const baseAbs = modulesCart.root + moduleName;
         for (const ext of CANDIDATE_EXTENSIONS) {
             const candidate = baseAbs + ext;
-            if (fileExists(candidate)) {
+            // `moduleName` may carry `..` after its first segment (it only can't
+            // *start* with `.`/`/`); contain it against the modules root.
+            if (fileExists(candidate) && isWithinRoot(candidate, modulesCart.root)) {
                 return { resolved: candidate, source: modulesCart.name };
             }
         }
         // package.json `main` fallback for directories without an index.js.
         const pkgPath = baseAbs + '/package.json';
-        if (fileExists(pkgPath)) {
+        if (fileExists(pkgPath) && isWithinRoot(pkgPath, modulesCart.root)) {
             try {
                 const content = ts.sys.readFile(pkgPath);
                 if (content) {
                     const main = JSON.parse(content).main;
                     if (typeof main === 'string' && main.length > 0) {
                         const resolved = (modulesCart.root + moduleName + '/' + main.replace(/^\.\//, '')).replace(/\\/g, '/');
-                        if (fileExists(resolved)) {
+                        // `main` is attacker-controlled JSON content flowing into a path
+                        // join — a `../../..` or absolute value must not escape the root.
+                        if (fileExists(resolved) && isWithinRoot(resolved, modulesCart.root)) {
                             return { resolved, source: modulesCart.name };
                         }
                     }
@@ -430,7 +470,10 @@ function init({ typescript: ts }) {
             const subpath = normalize(containingFile).slice(owner.root.length);
             for (let i = cartridges.indexOf(owner) + 1; i < cartridges.length; i++) {
                 const candidate = cartridges[i].root + subpath;
-                if (hostFileExists(candidate))
+                // `subpath` is derived from an editor-supplied file path; contain the
+                // next-cartridge-down candidate so a crafted path or an overlapping
+                // cartridge root can't point it at a file outside that cartridge.
+                if (hostFileExists(candidate) && isWithinRoot(candidate, cartridges[i].root))
                     return candidate;
             }
             return undefined;
