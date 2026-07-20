@@ -8,10 +8,13 @@ import path from 'node:path';
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
 import {
+  collectSuperModuleAugmentedMembers,
+  traceSuperModuleAccess,
   createInferenceContext,
   describeTypes,
   findEnclosingPropertyAccess,
   getNodeAtPosition,
+  INFERRED_COMPLETION_SOURCE,
   inferTypeForExpression,
   inferTypeForNode,
   isAnyType,
@@ -727,7 +730,12 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
           const node = getNodeAtPosition(sourceFile, ts, position);
           if (!node || !ts.isIdentifier(node)) return original;
           const checker = program.getTypeChecker();
-          if (!isAnyType(ts, checker.getTypeAtLocation(node))) return original;
+          // superModule-derived expressions get past the not-any gate: the
+          // checker's type for them is garbage either way (any or an opaque
+          // circular typeof), never something worth leaving untouched.
+          if (!isAnyType(ts, checker.getTypeAtLocation(node)) && !traceSuperModuleAccess(ts, checker, node)) {
+            return original;
+          }
           const types = getCachedInference(`hover:${fileName}:${node.getStart(sourceFile)}`, () => {
             const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath);
             return ctx ? inferTypeForNode(ctx, node) : [];
@@ -757,7 +765,13 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
           const propAccess = findEnclosingPropertyAccess(node, ts);
           if (!propAccess) return original;
           const checker = program.getTypeChecker();
-          if (!isAnyType(ts, checker.getTypeAtLocation(propAccess.expression))) return original;
+          // See the hover gate above for the superModule exception.
+          if (
+            !isAnyType(ts, checker.getTypeAtLocation(propAccess.expression)) &&
+            !traceSuperModuleAccess(ts, checker, propAccess.expression)
+          ) {
+            return original;
+          }
           // The receiver can be any expression, not just a plain identifier:
           // `product.getPriceModel().|` needs the chain resolved the same way
           // hover-driven return inference already resolves it.
@@ -766,11 +780,30 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
             const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath);
             return ctx ? inferTypeForExpression(ctx, baseNode) : [];
           });
-          if (types.length === 0) return original;
-          const inferredEntries = typesToCompletionEntries(ts, checker, types);
+          // Members added by pass-through superModule overlay levels
+          // (`module.exports = base; module.exports.extra = fn;`) can't be
+          // carried by any candidate type — collect them separately. Cheap
+          // (statement scans only, no reference search), so uncached.
+          const augmentedCtx = createInferenceContext(ts, info.languageService, resolveSuperModulePath);
+          const augmentedEntries: tsserver.CompletionEntry[] = (
+            augmentedCtx ? collectSuperModuleAugmentedMembers(augmentedCtx, baseNode) : []
+          ).map((m) => ({
+            name: m.name,
+            kind: m.isMethod ? ts.ScriptElementKind.memberFunctionElement : ts.ScriptElementKind.memberVariableElement,
+            kindModifiers: '',
+            sortText: '11',
+            source: INFERRED_COMPLETION_SOURCE,
+          }));
+          const inferredEntries = [...typesToCompletionEntries(ts, checker, types), ...augmentedEntries];
           if (inferredEntries.length === 0) return original;
-          const existingNames = new Set((original?.entries ?? []).map((e) => e.name));
-          const merged = [...(original?.entries ?? []), ...inferredEntries.filter((e) => !existingNames.has(e.name))];
+          // Dedupe against the original entries AND within the inferred set
+          // (a name can come from both a candidate type and an overlay
+          // augmentation).
+          const seenNames = new Set((original?.entries ?? []).map((e) => e.name));
+          const merged = [
+            ...(original?.entries ?? []),
+            ...inferredEntries.filter((e) => !seenNames.has(e.name) && (seenNames.add(e.name), true)),
+          ];
           // Preserve every other field TS set on the original result (isIncomplete,
           // optionalReplacementSpan, metadata, defaultCommitCharacters, flags) —
           // only entries actually changed. Only synthesize a fresh CompletionInfo

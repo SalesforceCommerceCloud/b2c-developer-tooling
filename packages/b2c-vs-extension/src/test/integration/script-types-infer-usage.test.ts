@@ -326,3 +326,193 @@ suite('scriptTypesInferUsage — module.superModule cartridge overlays', () => {
     );
   });
 });
+
+// Shared helpers for the suites below, which each work on their own document.
+async function hoverTextMatching(
+  doc: vscode.TextDocument,
+  position: vscode.Position,
+  expected: RegExp,
+  requireInferredNote: boolean,
+): Promise<string> {
+  return waitFor(async () => {
+    const result = await vscode.commands.executeCommand<vscode.Hover[]>(
+      'vscode.executeHoverProvider',
+      doc.uri,
+      position,
+    );
+    const text = result?.flatMap((h) => h.contents.map((c) => (typeof c === 'string' ? c : c.value))).join('\n');
+    if (!text || !expected.test(text)) return undefined;
+    if (requireInferredNote && !text.includes('Inferred from usage')) return undefined;
+    return text;
+  }, 25000);
+}
+
+async function typedCompletionsIncluding(
+  doc: vscode.TextDocument,
+  position: vscode.Position,
+  required: string[],
+): Promise<string[]> {
+  return waitFor(async () => {
+    const result = await vscode.commands.executeCommand<vscode.CompletionList>(
+      'vscode.executeCompletionItemProvider',
+      doc.uri,
+      position,
+    );
+    // Word-based suggestions (kind Text) draw from every open document and
+    // could offer these names on their own — only typed entries count.
+    const items = (result?.items ?? [])
+      .filter((i) => i.kind !== vscode.CompletionItemKind.Text)
+      .map((i) => (typeof i.label === 'string' ? i.label : i.label.label));
+    return required.every((name) => items.includes(name)) ? items : undefined;
+  }, 25000);
+}
+
+function offsetPosition(doc: vscode.TextDocument, substring: string, offsetWithin = 0): vscode.Position {
+  const idx = doc.getText().indexOf(substring);
+  assert.ok(idx > -1, `fixture ${doc.uri.fsPath} must contain: ${substring}`);
+  return doc.positionAt(idx + offsetWithin);
+}
+
+suite('scriptTypesInferUsage — callback parameters and iterator loops', () => {
+  let variantDoc: vscode.TextDocument;
+
+  suiteSetup(async function () {
+    this.timeout(30000);
+
+    const expectedRoot = fixtureFile();
+    const openRoots = (vscode.workspace.workspaceFolders ?? []).map((f) => f.uri.fsPath);
+    if (!openRoots.includes(expectedRoot)) {
+      this.skip();
+    }
+
+    const ext = vscode.extensions.getExtension(EXTENSION_ID);
+    assert.ok(ext, `extension ${EXTENSION_ID} must be discoverable in the test host`);
+    await ext!.activate();
+
+    variantDoc = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(
+        fixtureFile('cartridges', 'test_cartridge', 'cartridge', 'scripts', 'helpers', 'variantHelpers.js'),
+      ),
+    );
+    await vscode.window.showTextDocument(variantDoc);
+  });
+
+  test('infers Variant for a collections.forEach callback parameter', async () => {
+    // The callback has no name to run a reference search on, the collections
+    // util is untyped JS, and the collection argument's own type only exists
+    // through inference of the enclosing helper's parameter — the full SFRA
+    // iteration idiom, resolved end-to-end.
+    const text = await hoverTextMatching(variantDoc, offsetPosition(variantDoc, 'variant.getID'), /Variant/, true);
+    assert.ok(/Variant/.test(text), `expected Variant, got: ${text}`);
+  });
+
+  test('offers Variant members as completions on the callback parameter (variant.)', async () => {
+    // getUPC and getLongDescription appear nowhere in any fixture document.
+    const labels = await typedCompletionsIncluding(
+      variantDoc,
+      offsetPosition(variantDoc, 'variant.getID', 'variant.'.length),
+      ['getUPC', 'getLongDescription'],
+    );
+    assert.ok(labels.includes('getUPC'), `expected getUPC among completions, got: ${labels.join(', ')}`);
+  });
+
+  test('infers Variant through a manual iterator loop (iterator()/hasNext()/next())', async () => {
+    const text = await hoverTextMatching(variantDoc, offsetPosition(variantDoc, 'candidate.getName'), /Variant/, true);
+    assert.ok(/Variant/.test(text), `expected Variant for iter.next() result, got: ${text}`);
+  });
+});
+
+suite('scriptTypes — server.append controller middleware (contextual, no inference)', () => {
+  let controllerDoc: vscode.TextDocument;
+
+  suiteSetup(async function () {
+    this.timeout(30000);
+
+    const expectedRoot = fixtureFile();
+    const openRoots = (vscode.workspace.workspaceFolders ?? []).map((f) => f.uri.fsPath);
+    if (!openRoots.includes(expectedRoot)) {
+      this.skip();
+    }
+
+    const ext = vscode.extensions.getExtension(EXTENSION_ID);
+    assert.ok(ext, `extension ${EXTENSION_ID} must be discoverable in the test host`);
+    await ext!.activate();
+
+    controllerDoc = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(fixtureFile('cartridges', 'test_cartridge', 'cartridge', 'controllers', 'Product.js')),
+    );
+    await vscode.window.showTextDocument(controllerDoc);
+  });
+
+  test('types req contextually via the injected SFRA ambient declarations — no inference label', async () => {
+    // The modules cartridge makes the plugin inject types/sfra/server.d.ts;
+    // its typed append(name, ...middleware) signature lets TypeScript type
+    // the middleware params itself. The hover must show Request WITHOUT the
+    // "Inferred from usage" note — this is a real type, not a heuristic.
+    const text = await hoverTextMatching(
+      controllerDoc,
+      offsetPosition(controllerDoc, 'req, res, next'),
+      /Request/,
+      false,
+    );
+    assert.ok(/Request/.test(text), `expected req: Request, got: ${text}`);
+    assert.ok(
+      !text.includes('Inferred from usage'),
+      `contextually-typed middleware params must not carry the inference label: ${text}`,
+    );
+  });
+
+  test('offers Request members as completions after req.', async () => {
+    // httpParameterMap and geolocation appear nowhere in the fixture text.
+    const labels = await typedCompletionsIncluding(
+      controllerDoc,
+      offsetPosition(controllerDoc, 'req.querystring', 'req.'.length),
+      ['httpParameterMap', 'geolocation'],
+    );
+    assert.ok(labels.includes('httpParameterMap'), `expected httpParameterMap, got: ${labels.join(', ')}`);
+  });
+});
+
+suite('scriptTypesInferUsage — multi-cartridge superModule stack (plugin_promo -> app_custom -> test)', () => {
+  let promoDoc: vscode.TextDocument;
+
+  suiteSetup(async function () {
+    this.timeout(30000);
+
+    const expectedRoot = fixtureFile();
+    const openRoots = (vscode.workspace.workspaceFolders ?? []).map((f) => f.uri.fsPath);
+    if (!openRoots.includes(expectedRoot)) {
+      this.skip();
+    }
+
+    const ext = vscode.extensions.getExtension(EXTENSION_ID);
+    assert.ok(ext, `extension ${EXTENSION_ID} must be discoverable in the test host`);
+    await ext!.activate();
+
+    promoDoc = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(
+        fixtureFile('cartridges', 'plugin_promo', 'cartridge', 'scripts', 'helpers', 'productHelpers.js'),
+      ),
+    );
+    await vscode.window.showTextDocument(promoDoc);
+  });
+
+  test('resolves a member augmented at the intermediate overlay level (base.getMemberPrice -> Money)', async () => {
+    // getMemberPrice exists only as an export augmentation on app_custom's
+    // pass-through re-export — no candidate type carries it — and its own
+    // return type needs recursion through the base cartridge's undocumented
+    // getSalePrice, whose parameter is typed by a call site in cartService.
+    const text = await hoverTextMatching(promoDoc, offsetPosition(promoDoc, 'memberPrice.subtract'), /Money/, true);
+    assert.ok(/Money/.test(text), `expected Money through the mid-level augmentation, got: ${text}`);
+  });
+
+  test('completions after base. merge deep base members with intermediate augmentations', async () => {
+    const labels = await typedCompletionsIncluding(
+      promoDoc,
+      offsetPosition(promoDoc, 'base.getMemberPrice', 'base.'.length),
+      ['getMemberPrice', 'isOrderable', 'getListPriceValue'],
+    );
+    assert.ok(labels.includes('getMemberPrice'), `expected mid augmentation getMemberPrice, got: ${labels.join(', ')}`);
+    assert.ok(labels.includes('isOrderable'), `expected deep base member isOrderable, got: ${labels.join(', ')}`);
+  });
+});

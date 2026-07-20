@@ -777,6 +777,234 @@ describe('usage-inference', () => {
     });
   });
 
+  describe('callback parameters (function expression in argument position)', () => {
+    // A callback has no name to run a reference search on; its first
+    // parameter is instead inferred from the element type of a
+    // collection-like sibling argument (something with iterator()/next()).
+    const COLLECTION_TYPES = `
+      interface FixtureIterator {
+        hasNext(): boolean;
+        next(): {ID: string; name: string};
+      }
+      interface FixtureCollection {
+        iterator(): FixtureIterator;
+      }
+      declare function getCollection(): FixtureCollection;
+    `;
+
+    function findCallbackParam(sourceFile, paramIndex = 0) {
+      let param;
+      const visit = (node) => {
+        if (ts.isFunctionExpression(node) && !param) {
+          param = node.parameters[paramIndex];
+          return;
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(sourceFile);
+      return param;
+    }
+
+    it('infers the element type from a collection sibling argument (collections.forEach style)', () => {
+      const files = {
+        '/types.d.ts': COLLECTION_TYPES,
+        '/consumer.js': `
+          function forEach(collection, callback) {
+            var it = collection.iterator();
+            while (it.hasNext()) { callback(it.next()); }
+          }
+          forEach(getCollection(), function (item) {
+            return item.ID;
+          });
+          module.exports = {forEach: forEach};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/consumer.js');
+      const param = findCallbackParam(sourceFile);
+
+      const types = inferParameterType(ctx, param);
+
+      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    });
+
+    it('resolves the collection argument through inference when it is itself undocumented', () => {
+      // The collection travels through an undocumented parameter — the
+      // sibling argument must be resolved by the engine, not just read off
+      // the checker.
+      const files = {
+        '/types.d.ts': COLLECTION_TYPES,
+        '/consumer.js': `
+          function eachItem(coll) {
+            forEach(coll, function (item) {
+              return item.name;
+            });
+          }
+          function forEach(collection, callback) {}
+          eachItem(getCollection());
+          module.exports = {eachItem: eachItem};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/consumer.js');
+      const param = findCallbackParam(sourceFile);
+
+      const types = inferParameterType(ctx, param);
+
+      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    });
+
+    it('does not apply the element heuristic to reduce-style callbacks (accumulator comes first)', () => {
+      const files = {
+        '/types.d.ts': COLLECTION_TYPES,
+        '/consumer.js': `
+          function reduce(collection, callback, initial) {}
+          reduce(getCollection(), function (acc) {
+            return acc;
+          }, 0);
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/consumer.js');
+      const param = findCallbackParam(sourceFile);
+
+      assert.equal(inferParameterType(ctx, param).length, 0);
+    });
+
+    it('only maps the first callback parameter to the element type', () => {
+      const files = {
+        '/types.d.ts': COLLECTION_TYPES,
+        '/consumer.js': `
+          function forEach(collection, callback) {}
+          forEach(getCollection(), function (item, index) {
+            return index;
+          });
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/consumer.js');
+      const indexParam = findCallbackParam(sourceFile, 1);
+
+      assert.equal(inferParameterType(ctx, indexParam).length, 0);
+    });
+
+    it('infers nothing when no sibling argument is collection-like', () => {
+      const files = {
+        '/consumer.js': `
+          function run(name, callback) {}
+          run('label', function (item) {
+            return item;
+          });
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/consumer.js');
+      const param = findCallbackParam(sourceFile);
+
+      assert.equal(inferParameterType(ctx, param).length, 0);
+    });
+  });
+
+  describe('module.superModule across multiple cartridges (pass-through + augmentation)', () => {
+    // The dominant real-world plugin stack: every level does
+    // `module.exports = base; module.exports.extra = fn;`. Members added at
+    // an intermediate level live only in those augmentation assignments —
+    // no candidate type can carry them — so both the member walk and the
+    // completion listing have dedicated handling.
+    const STACK_FILES = {
+      '/types.d.ts': AMBIENT_TYPES,
+      '/base/x.js': `
+        function getSalePrice(p) { return p; }
+        getSalePrice(getProduct());
+        module.exports = { getSalePrice: getSalePrice };
+      `,
+      '/mid/x.js': `
+        var base = module.superModule;
+        function getMemberPrice(p) { return 'member'; }
+        module.exports = base;
+        module.exports.getMemberPrice = getMemberPrice;
+      `,
+      '/top/x.js': `
+        var base = module.superModule;
+        function promo(p) {
+          var memberPrice = base.getMemberPrice(p);
+          var salePrice = base.getSalePrice(p);
+          return memberPrice;
+        }
+        module.exports = base;
+        module.exports.promo = promo;
+      `,
+    };
+    const STACK_ORDER = {
+      '/top/x.js': '/mid/x.js',
+      '/mid/x.js': '/base/x.js',
+    };
+
+    function findVarUse(sourceFile, text) {
+      let found;
+      const visit = (node) => {
+        if (ts.isIdentifier(node) && node.text === text && ts.isVariableDeclaration(node.parent)) {
+          found = node;
+          return;
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(sourceFile);
+      return found;
+    }
+
+    it("resolves a member augmented at an intermediate overlay level (mid's getMemberPrice from top)", () => {
+      const languageService = createFixtureLanguageService(STACK_FILES);
+      const ctx = createInferenceContext(ts, languageService, (f) => STACK_ORDER[f]);
+      const top = ctx.program.getSourceFile('/top/x.js');
+
+      const types = inferTypeForNode(ctx, findVarUse(top, 'memberPrice'));
+
+      assert.equal(describeTypes(ctx.checker, types), 'string');
+    });
+
+    it('still resolves a deep base member through the pass-through levels (base getSalePrice from top)', () => {
+      const languageService = createFixtureLanguageService(STACK_FILES);
+      const ctx = createInferenceContext(ts, languageService, (f) => STACK_ORDER[f]);
+      const top = ctx.program.getSourceFile('/top/x.js');
+
+      const types = inferTypeForNode(ctx, findVarUse(top, 'salePrice'));
+
+      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    });
+
+    it('lists augmented members from every pass-through level for completions', () => {
+      const {collectSuperModuleAugmentedMembers} = require('../plugin/usage-inference');
+      const languageService = createFixtureLanguageService(STACK_FILES);
+      const ctx = createInferenceContext(ts, languageService, (f) => STACK_ORDER[f]);
+      const top = ctx.program.getSourceFile('/top/x.js');
+      let baseUse;
+      const visit = (node) => {
+        if (
+          ts.isIdentifier(node) &&
+          node.text === 'base' &&
+          ts.isPropertyAccessExpression(node.parent) &&
+          node.parent.expression === node &&
+          !baseUse
+        ) {
+          baseUse = node;
+          return;
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(top);
+
+      const members = collectSuperModuleAugmentedMembers(ctx, baseUse);
+
+      assert.deepEqual(members, [{name: 'getMemberPrice', isMethod: true}]);
+    });
+  });
+
   describe('cycle-truncated results and the memo', () => {
     it('does not memoize a result whose computation hit a cycle guard', () => {
       // b's result computed *inside* the a->b->a cycle is truncated by what

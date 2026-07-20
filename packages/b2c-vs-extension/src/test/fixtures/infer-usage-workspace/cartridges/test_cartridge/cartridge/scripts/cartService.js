@@ -8,13 +8,16 @@
 
 var ProductMgr = require('dw/catalog/ProductMgr');
 var productHelpers = require('~/cartridge/scripts/helpers/productHelpers');
+var variantHelpers = require('~/cartridge/scripts/helpers/variantHelpers');
 
 function buildLineItemInfo(productId, quantity) {
   var product = ProductMgr.getProduct(productId);
   return {
     price: productHelpers.getSalePrice(product),
     priceValue: productHelpers.getListPriceValue(product),
-    orderable: productHelpers.isOrderable(product, quantity)
+    orderable: productHelpers.isOrderable(product, quantity),
+    variantIds: variantHelpers.collectVariantIds(product),
+    firstVariant: variantHelpers.firstVariantName(product)
   };
 }
 

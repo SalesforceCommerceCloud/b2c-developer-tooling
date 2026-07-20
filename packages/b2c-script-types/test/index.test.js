@@ -406,6 +406,137 @@ describe('create() proxy — usage inference wiring', () => {
     assert.ok(names.includes('getSalePrice'), `expected getSalePrice among completions, got: ${names.join(', ')}`);
   });
 
+  it('types server.append middleware parameters contextually via the injected SFRA ambient declarations', () => {
+    // No inference involved: with a `modules` cartridge configured the
+    // plugin injects types/sfra/server.d.ts, whose typed
+    // `append(name, ...middleware: Middleware[])` signature lets TypeScript
+    // itself type `req`/`res`/`next` contextually. The plugin must inject
+    // the ambient file and then stay out of the way.
+    const files = {
+      '/c/cartridge/controllers/Product.js': `
+        var server = require('server');
+        server.append('Show', function (req, res, next) {
+          var qs = req.querystring;
+          next();
+        });
+        module.exports = server.exports();
+      `,
+    };
+    const host = createFixtureHost(files);
+    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const {create} = init({typescript: ts});
+    const proxy = create({
+      languageService,
+      languageServiceHost: host,
+      project: {
+        projectService: {logger: {info: () => {}}},
+        getCurrentDirectory: () => '/',
+        getProjectVersion: () => '1',
+      },
+      config: {
+        enabled: true,
+        autoDiscover: false,
+        cartridges: [
+          {name: 'c', src: '/c/'},
+          {name: 'modules', src: '/modules/'},
+        ],
+        inferUsage: true,
+      },
+    });
+    const source = files['/c/cartridge/controllers/Product.js'];
+    const controllerFile = '/c/cartridge/controllers/Product.js';
+    const reqParamPos = source.indexOf('req, res');
+
+    const hover = proxy.getQuickInfoAtPosition(controllerFile, reqParamPos);
+    const hoverText = [...(hover?.displayParts ?? []), ...(hover?.documentation ?? [])].map((p) => p.text).join('');
+    assert.ok(/Request/.test(hoverText), `expected req to be typed as Request, got: ${hoverText}`);
+    assert.ok(
+      !hoverText.includes('Inferred from usage'),
+      `req is contextually typed — inference must not decorate it: ${hoverText}`,
+    );
+
+    const dotPos = source.indexOf('req.querystring') + 'req.'.length;
+    const completions = proxy.getCompletionsAtPosition(controllerFile, dotPos, undefined);
+    const names = (completions?.entries ?? []).map((e) => e.name);
+    assert.ok(
+      names.includes('httpParameterMap'),
+      `expected httpParameterMap among completions, got: ${names.join(', ')}`,
+    );
+    assert.ok(names.includes('geolocation'), `expected geolocation among completions, got: ${names.join(', ')}`);
+  });
+
+  it('resolves members across a multi-cartridge superModule stack, including intermediate augmentations', () => {
+    const files = {
+      '/types.d.ts': AMBIENT_TYPES,
+      '/base/cartridge/scripts/helpers/priceHelpers.js': `
+        function getSalePrice(product) {
+          return product.ID;
+        }
+        getSalePrice(getProduct());
+        module.exports = { getSalePrice: getSalePrice };
+      `,
+      '/mid/cartridge/scripts/helpers/priceHelpers.js': `
+        var base = module.superModule;
+        function getMemberPrice(product) {
+          return 'member-price';
+        }
+        module.exports = base;
+        module.exports.getMemberPrice = getMemberPrice;
+      `,
+      '/top/cartridge/scripts/helpers/priceHelpers.js': `
+        var base = module.superModule;
+        function getPromoPrice(product) {
+          var memberPrice = base.getMemberPrice(product);
+          return memberPrice;
+        }
+        module.exports = base;
+        module.exports.getPromoPrice = getPromoPrice;
+      `,
+    };
+    const host = createFixtureHost(files);
+    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const {create} = init({typescript: ts});
+    const proxy = create({
+      languageService,
+      languageServiceHost: host,
+      project: {
+        projectService: {logger: {info: () => {}}},
+        getCurrentDirectory: () => '/',
+        getProjectVersion: () => '1',
+      },
+      config: {
+        enabled: true,
+        autoDiscover: false,
+        cartridges: [
+          {name: 'top', src: '/top/'},
+          {name: 'mid', src: '/mid/'},
+          {name: 'base', src: '/base/'},
+        ],
+        inferUsage: true,
+      },
+    });
+    const source = files['/top/cartridge/scripts/helpers/priceHelpers.js'];
+    const topFile = '/top/cartridge/scripts/helpers/priceHelpers.js';
+
+    // Hover on `memberPrice` — flows through a member augmented at the MID
+    // level, invisible to any candidate type.
+    const hoverPos = source.indexOf('memberPrice;');
+    const hover = proxy.getQuickInfoAtPosition(topFile, hoverPos);
+    const hoverText = (hover?.documentation ?? []).map((p) => p.text).join('');
+    assert.ok(
+      hoverText.includes('Inferred from usage: string'),
+      `expected string via mid augmentation, got: ${hoverText}`,
+    );
+
+    // Completion after `base.` offers both the deep base member and the
+    // mid-level augmentation.
+    const dotPos = source.indexOf('base.getMemberPrice') + 'base.'.length;
+    const completions = proxy.getCompletionsAtPosition(topFile, dotPos, undefined);
+    const names = (completions?.entries ?? []).map((e) => e.name);
+    assert.ok(names.includes('getSalePrice'), `expected deep base member getSalePrice, got: ${names.join(', ')}`);
+    assert.ok(names.includes('getMemberPrice'), `expected mid augmentation getMemberPrice, got: ${names.join(', ')}`);
+  });
+
   it('lets a non-cancellation exception from the underlying call propagate instead of degrading it to an empty result', () => {
     // The `guarded` wrapper exists to protect tsserver from bugs in this
     // plugin's own inference additions — never to change how errors from the

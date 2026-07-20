@@ -3,5 +3,5 @@
   "username": "fixture-user",
   "password": "not-a-real-password",
   "code-version": "version1",
-  "cartridges": "app_custom_cartridge:test_cartridge"
+  "cartridges": "plugin_promo:app_custom_cartridge:test_cartridge:modules"
 }

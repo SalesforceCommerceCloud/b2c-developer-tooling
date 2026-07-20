@@ -228,6 +228,95 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
     });
   });
 
+  describe('callback parameters and iterator loops', () => {
+    const VARIANT_FILES = {
+      '/types.d.ts': realTypesPrelude(
+        ['Product', 'ProductMgr', 'Collection', 'Variant'],
+        '  function getSomeProduct(): Product<any>;',
+      ),
+      '/util/collections.js': `
+        function forEach(collection, callback) {
+          var it = collection.iterator();
+          while (it.hasNext()) { callback(it.next()); }
+        }
+        module.exports = { forEach: forEach };
+      `,
+      '/variantHelpers.js': `
+        var collections = require('./util/collections');
+        function eachVariant(product) {
+          collections.forEach(product.getVariants(), function (variant) {
+            return variant.getID();
+          });
+        }
+        function firstVariantName(product) {
+          var iter = product.getVariants().iterator();
+          while (iter.hasNext()) {
+            var candidate = iter.next();
+            return candidate.getName();
+          }
+          return null;
+        }
+        function useHelper() {
+          eachVariant(getSomeProduct());
+          firstVariantName(getSomeProduct());
+        }
+      `,
+    };
+
+    function findIdentifierUse(sourceFile, text) {
+      let found;
+      const visit = (node) => {
+        if (
+          ts.isIdentifier(node) &&
+          node.text === text &&
+          ts.isPropertyAccessExpression(node.parent) &&
+          node.parent.expression === node
+        ) {
+          found = node;
+          return;
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(sourceFile);
+      return found;
+    }
+
+    it('infers Variant for a collections.forEach callback parameter fed by an inferred Collection<Variant>', () => {
+      // The full SFRA shape: an untyped collections util, a callback with no
+      // name to search references for, and a collection argument that is
+      // itself only typed by inferring the enclosing helper's parameter.
+      const languageService = createFixtureLanguageService(VARIANT_FILES, {strict: true});
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/variantHelpers.js');
+      let cbParam;
+      const visit = (node) => {
+        if (ts.isFunctionExpression(node) && !cbParam) cbParam = node.parameters[0];
+        ts.forEachChild(node, visit);
+      };
+      visit(sourceFile);
+
+      const types = inferParameterType(ctx, cbParam);
+      const names = completionNames(ts, ctx.checker, types);
+
+      assert.equal(describeTypes(ctx.checker, types), 'Variant');
+      assert.ok(names.includes('getID'));
+      assert.ok(names.includes('getUPC'));
+    });
+
+    it('infers Variant through a manual iterator loop (iterator()/hasNext()/next())', () => {
+      const languageService = createFixtureLanguageService(VARIANT_FILES, {strict: true});
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/variantHelpers.js');
+
+      const iterTypes = inferTypeForNode(ctx, findIdentifierUse(sourceFile, 'iter'));
+      assert.equal(describeTypes(ctx.checker, iterTypes), 'Iterator<Variant>');
+
+      const ctx2 = createInferenceContext(ts, languageService);
+      const candidateTypes = inferTypeForNode(ctx2, findIdentifierUse(sourceFile, 'candidate'));
+      assert.equal(describeTypes(ctx2.checker, candidateTypes), 'Variant');
+    });
+  });
+
   describe('module.superModule overlays', () => {
     it('infers Money through an overlay calling an undocumented base helper (superModule + alias map + var chain)', () => {
       // Full SFRA plugin composition: the overlay reaches its base module via

@@ -10,6 +10,8 @@ exports.createInferenceContext = createInferenceContext;
 exports.isAnyType = isAnyType;
 exports.getNodeAtPosition = getNodeAtPosition;
 exports.findEnclosingPropertyAccess = findEnclosingPropertyAccess;
+exports.traceSuperModuleAccess = traceSuperModuleAccess;
+exports.collectSuperModuleAugmentedMembers = collectSuperModuleAugmentedMembers;
 exports.inferParameterType = inferParameterType;
 exports.inferReturnType = inferReturnType;
 exports.inferTypeForNode = inferTypeForNode;
@@ -50,6 +52,10 @@ const MAX_REFERENCES_PER_CALL = 50;
 // bounded only by how long an expression a cartridge author (or a generated
 // file) happens to write, not by a predictable cost.
 const MAX_CHAIN_HOPS = 10;
+// Bounds how many cartridge levels the superModule member walk descends
+// (top overlay -> mid overlay -> ... -> base). Real cartridge paths rarely
+// stack more than three or four overlays of the same module.
+const MAX_SUPERMODULE_HOPS = 8;
 exports.INFERRED_COMPLETION_SOURCE = '@salesforce/b2c-script-types/inferred-usage';
 /**
  * Builds a fresh inference context for one top-level hover/completion
@@ -290,36 +296,94 @@ function isSuperModuleAccess(expr, ts) {
     return ts.isIdentifier(expr.expression) && expr.expression.text === 'module' && expr.name.text === 'superModule';
 }
 /**
- * Resolves what `module.superModule` evaluates to: the export type(s) of the
- * same-subpath module in the next cartridge down the path (located by the
- * host-supplied ctx.resolveSuperModulePath). The export type is read off the
- * right-hand side of the super module's top-level `module.exports = X`
- * assignment(s) via resolveExpressionTypes — so a plain alias-map export
- * yields its concrete object type directly, and a pass-through overlay
- * (`module.exports = base` where base is itself `module.superModule`) recurses
- * naturally another cartridge down. Members an intermediate overlay adds via
- * `module.exports.name = fn` afterwards aren't representable as extra
- * candidate types through this hop and are not surfaced.
- *
- * Only works when the super module's file is part of the current program —
- * true under the recommended jsconfig setup that includes all cartridge
- * files, but not in a bare inferred project where nothing require()s the
- * base file.
+ * Locates the source file `module.superModule` refers to for `fromFileName`
+ * — the same-subpath module in the next cartridge down the path, per the
+ * host-supplied ctx.resolveSuperModulePath. Only works when that file is
+ * part of the current program (true under the recommended jsconfig setup
+ * that includes all cartridge files, but not in a bare inferred project
+ * where nothing require()s the base file).
  */
-function resolveSuperModuleTypes(ctx, expr, depth, chainHops) {
-    const { ts, checker, program } = ctx;
+function findSuperModuleFile(ctx, fromFileName) {
+    const { program } = ctx;
     if (!ctx.resolveSuperModulePath)
-        return [];
-    const superPath = ctx.resolveSuperModulePath(expr.getSourceFile().fileName);
+        return undefined;
+    const superPath = ctx.resolveSuperModulePath(fromFileName);
     if (!superPath)
-        return [];
+        return undefined;
     // The resolver returns host-normalized (possibly case-folded) paths;
     // program keys may differ in case on case-insensitive filesystems.
-    let superFile = program.getSourceFile(superPath);
-    if (!superFile) {
-        const target = superPath.toLowerCase();
-        superFile = program.getSourceFiles().find((sf) => sf.fileName.toLowerCase() === target);
+    const direct = program.getSourceFile(superPath);
+    if (direct)
+        return direct;
+    const target = superPath.toLowerCase();
+    return program.getSourceFiles().find((sf) => sf.fileName.toLowerCase() === target);
+}
+/**
+ * A module's top-level export assignments, gathered structurally:
+ * `full` — every `module.exports = X` right-hand side;
+ * `members` — every `module.exports.<name> = X` / `exports.<name> = X`
+ * augmentation, the shape SFRA plugin overlays use to add helpers on top of
+ * a re-exported base (`module.exports = base; module.exports.extra = extra;`).
+ */
+function collectExportAssignments(sf, ts) {
+    const full = [];
+    const members = [];
+    for (const stmt of sf.statements) {
+        if (!ts.isExpressionStatement(stmt) || !ts.isBinaryExpression(stmt.expression))
+            continue;
+        const bin = stmt.expression;
+        if (bin.operatorToken.kind !== ts.SyntaxKind.EqualsToken)
+            continue;
+        const left = bin.left;
+        if (!ts.isPropertyAccessExpression(left))
+            continue;
+        const base = left.expression;
+        if (ts.isIdentifier(base) && base.text === 'module' && left.name.text === 'exports') {
+            full.push(bin);
+        }
+        else if (ts.isIdentifier(base) && base.text === 'exports') {
+            members.push({ name: left.name.text, expr: bin.right });
+        }
+        else if (ts.isPropertyAccessExpression(base) &&
+            ts.isIdentifier(base.expression) &&
+            base.expression.text === 'module' &&
+            base.name.text === 'exports') {
+            members.push({ name: left.name.text, expr: bin.right });
+        }
     }
+    return { full, members };
+}
+/**
+ * True when a `module.exports = X` assignment gives the checker a genuinely
+ * usable exports type: not `any`, and actually exposing members. A
+ * pass-through overlay (`module.exports = base` where base came from
+ * `module.superModule`) fails this — depending on program shape the checker
+ * reports its exports as `any` or as an opaque, member-less `typeof base` —
+ * and must be resolved by recursing down the cartridge chain instead.
+ */
+function isConcreteExportAssignment(ctx, bin) {
+    const { ts, checker } = ctx;
+    const exportsType = checker.getTypeAtLocation(bin.left);
+    if (isAnyType(ts, exportsType))
+        return false;
+    return checker.getPropertiesOfType(checker.getApparentType(exportsType)).length > 0;
+}
+/**
+ * Resolves what `module.superModule` evaluates to: the export type(s) of the
+ * same-subpath module in the next cartridge down the path. The checker's
+ * type for the `module.exports` symbol is used when it's concrete — it
+ * merges the assigned object with any later `module.exports.name = fn`
+ * augmentations. For a pass-through overlay (`module.exports = base` where
+ * base is itself `module.superModule`), the right-hand side is resolved via
+ * resolveExpressionTypes instead, which recurses naturally another cartridge
+ * down; members such a pass-through level *adds* can't be merged into these
+ * candidate types — they're handled separately by
+ * {@link resolveSuperModuleMemberTypes} and
+ * {@link collectSuperModuleAugmentedMembers}.
+ */
+function resolveSuperModuleTypes(ctx, expr, depth, chainHops) {
+    const { ts, checker } = ctx;
+    const superFile = findSuperModuleFile(ctx, expr.getSourceFile().fileName);
     if (!superFile)
         return [];
     // Guard against overlay cycles (two cartridges whose modules somehow point
@@ -331,26 +395,125 @@ function resolveSuperModuleTypes(ctx, expr, depth, chainHops) {
     ctx.visiting.add(superFile);
     try {
         const types = [];
-        for (const stmt of superFile.statements) {
-            if (!ts.isExpressionStatement(stmt) || !ts.isBinaryExpression(stmt.expression))
-                continue;
-            const bin = stmt.expression;
-            if (bin.operatorToken.kind !== ts.SyntaxKind.EqualsToken)
-                continue;
-            const left = bin.left;
-            const isModuleExports = ts.isPropertyAccessExpression(left) &&
-                ts.isIdentifier(left.expression) &&
-                left.expression.text === 'module' &&
-                left.name.text === 'exports';
-            if (!isModuleExports)
-                continue;
-            types.push(...resolveExpressionTypes(ctx, bin.right, depth, chainHops + 1));
+        for (const bin of collectExportAssignments(superFile, ts).full) {
+            const concrete = isConcreteExportAssignment(ctx, bin);
+            if (concrete) {
+                types.push(widenType(checker, checker.getTypeAtLocation(bin.left)));
+            }
+            // A pass-through assignment (`module.exports = base` where base is
+            // this level's own module.superModule) needs the RHS recursed even
+            // when the left-hand type looked concrete: the checker sometimes
+            // merges this level's augmentations into an opaque `typeof base` type
+            // that still carries none of the deeper cartridges' members.
+            if (!concrete || traceSuperModuleAccess(ts, checker, bin.right)) {
+                types.push(...resolveExpressionTypes(ctx, bin.right, depth, chainHops + 1));
+            }
         }
         return dedupeTypes(checker, types);
     }
     finally {
         ctx.visiting.delete(superFile);
     }
+}
+/**
+ * Follows `expr` back to a `module.superModule` access if there is one: the
+ * expression itself, or — the universal SFRA idiom — a reference to a local
+ * `var base = module.superModule;` binding. Exported so the plugin's
+ * hover/completion gates can recognize superModule-derived expressions: the
+ * checker's own type for them is never meaningful (sometimes `any`,
+ * sometimes an opaque circular `typeof base`), so "is the type any?" alone
+ * would skip inference exactly where it's needed.
+ */
+function traceSuperModuleAccess(ts, checker, expr) {
+    if (ts.isPropertyAccessExpression(expr) && isSuperModuleAccess(expr, ts))
+        return expr;
+    if (ts.isIdentifier(expr)) {
+        const decl = checker.getSymbolAtLocation(expr)?.valueDeclaration;
+        if (decl &&
+            ts.isVariableDeclaration(decl) &&
+            decl.initializer &&
+            ts.isPropertyAccessExpression(decl.initializer) &&
+            isSuperModuleAccess(decl.initializer, ts)) {
+            return decl.initializer;
+        }
+    }
+    return undefined;
+}
+/**
+ * Walks the superModule chain of the file containing `superAccess`, one
+ * cartridge level at a time, and resolves `memberName` from the first level
+ * that provides it as an export augmentation (`module.exports.name = fn`).
+ * This is the complement to {@link resolveSuperModuleTypes}: members a
+ * pass-through overlay level *adds* live only in these assignments, not in
+ * any candidate type. A level whose `module.exports` type is concrete ends
+ * the walk (matching runtime semantics — a concrete re-assignment replaces
+ * everything below unless it deliberately carries the base along).
+ */
+function resolveSuperModuleMemberTypes(ctx, superAccess, memberName, depth, chainHops) {
+    const { ts, checker } = ctx;
+    const seen = new Set();
+    let fromFileName = superAccess.getSourceFile().fileName;
+    for (let hop = 0; hop < MAX_SUPERMODULE_HOPS; hop++) {
+        const superFile = findSuperModuleFile(ctx, fromFileName);
+        if (!superFile || seen.has(superFile))
+            return [];
+        seen.add(superFile);
+        const { full, members } = collectExportAssignments(superFile, ts);
+        const matches = members.filter((m) => m.name === memberName);
+        if (matches.length > 0) {
+            const types = [];
+            for (const m of matches) {
+                types.push(...resolveExpressionTypes(ctx, m.expr, depth, chainHops + 1).filter((t) => !isAnyType(ts, t)));
+            }
+            return dedupeTypes(checker, types);
+        }
+        // No augmentation at this level: continue downward only through a
+        // pass-through (`module.exports = <any>`); a concrete export either
+        // already carries the member (the type-based lookup found it) or
+        // genuinely replaces the levels below.
+        const passesThrough = full.some((bin) => !isConcreteExportAssignment(ctx, bin) || traceSuperModuleAccess(ts, checker, bin.right) !== undefined);
+        if (!passesThrough)
+            return [];
+        fromFileName = superFile.fileName;
+    }
+    return [];
+}
+/**
+ * Collects every member the superModule chain reachable from `expr`
+ * contributes through export augmentations (`module.exports.name = fn`) at
+ * pass-through levels — the members {@link resolveSuperModuleTypes}'s
+ * candidate types cannot carry. Used to complete after `base.` in an
+ * overlay; the first (highest) level defining a name wins, matching runtime
+ * override order.
+ */
+function collectSuperModuleAugmentedMembers(ctx, expr) {
+    const { ts, checker } = ctx;
+    const superAccess = traceSuperModuleAccess(ts, checker, expr);
+    if (!superAccess)
+        return [];
+    const out = [];
+    const seenNames = new Set();
+    const seenFiles = new Set();
+    let fromFileName = superAccess.getSourceFile().fileName;
+    for (let hop = 0; hop < MAX_SUPERMODULE_HOPS; hop++) {
+        const superFile = findSuperModuleFile(ctx, fromFileName);
+        if (!superFile || seenFiles.has(superFile))
+            break;
+        seenFiles.add(superFile);
+        const { full, members } = collectExportAssignments(superFile, ts);
+        for (const m of members) {
+            if (seenNames.has(m.name))
+                continue;
+            seenNames.add(m.name);
+            const type = checker.getTypeAtLocation(m.expr);
+            out.push({ name: m.name, isMethod: type.getCallSignatures().length > 0 });
+        }
+        const passesThrough = full.some((bin) => !isConcreteExportAssignment(ctx, bin) || traceSuperModuleAccess(ts, checker, bin.right) !== undefined);
+        if (!passesThrough)
+            break;
+        fromFileName = superFile.fileName;
+    }
+    return out;
 }
 /**
  * Chases a local variable's initializer expression — the missing link for the
@@ -463,6 +626,15 @@ function getMemberOfType(checker, type, name) {
  */
 function resolveExpressionTypes(ctx, expr, depth, chainHops = 0) {
     const { ts, checker } = ctx;
+    // module.superModule (or a `var base = module.superModule` alias) first,
+    // BEFORE trusting the checker's direct type: TS knows nothing about SFCC
+    // overlay semantics, and its type for these expressions is never
+    // meaningful — sometimes `any`, sometimes an opaque circular `typeof
+    // base` that would wrongly satisfy the not-any short-circuit below.
+    const superAccessAtRoot = traceSuperModuleAccess(ts, checker, expr);
+    if (superAccessAtRoot) {
+        return resolveSuperModuleTypes(ctx, superAccessAtRoot, depth, chainHops);
+    }
     const direct = checker.getTypeAtLocation(expr);
     if (!isAnyType(ts, direct))
         return [widenType(checker, direct)];
@@ -486,11 +658,7 @@ function resolveExpressionTypes(ctx, expr, depth, chainHops = 0) {
             const methodAccess = expr.expression;
             const methodName = methodAccess.name.text;
             const returnTypes = [];
-            for (const receiverType of resolveExpressionTypes(ctx, methodAccess.expression, depth, chainHops + 1)) {
-                const methodSymbol = getMemberOfType(checker, receiverType, methodName);
-                if (!methodSymbol)
-                    continue;
-                const methodType = checker.getTypeOfSymbolAtLocation(methodSymbol, methodAccess.name);
+            const pushSignatureReturns = (methodType) => {
                 for (const sig of methodType.getCallSignatures()) {
                     const returnType = checker.getReturnTypeOfSignature(sig);
                     if (!isAnyType(ts, returnType)) {
@@ -508,22 +676,30 @@ function resolveExpressionTypes(ctx, expr, depth, chainHops = 0) {
                         returnTypes.push(...inferReturnType(ctx, sigDecl, depth + 1));
                     }
                 }
+            };
+            for (const receiverType of resolveExpressionTypes(ctx, methodAccess.expression, depth, chainHops + 1)) {
+                const methodSymbol = getMemberOfType(checker, receiverType, methodName);
+                if (!methodSymbol)
+                    continue;
+                pushSignatureReturns(checker.getTypeOfSymbolAtLocation(methodSymbol, methodAccess.name));
+            }
+            if (returnTypes.length === 0) {
+                // No candidate type carried this method — but if the receiver is (an
+                // alias of) module.superModule, the method may be an export
+                // *augmentation* added by a pass-through overlay level, which no
+                // candidate type can carry.
+                const superAccess = traceSuperModuleAccess(ts, checker, methodAccess.expression);
+                if (superAccess) {
+                    for (const memberType of resolveSuperModuleMemberTypes(ctx, superAccess, methodName, depth, chainHops)) {
+                        pushSignatureReturns(memberType);
+                    }
+                }
             }
             if (returnTypes.length > 0)
                 return dedupeTypes(checker, returnTypes);
         }
     }
     else if (ts.isPropertyAccessExpression(expr)) {
-        if (isSuperModuleAccess(expr, ts)) {
-            // `module.superModule` — resolve to the overridden module's export
-            // type(s) along the cartridge path, rather than treating it as an
-            // ordinary property access (TS knows nothing about it, so the generic
-            // handling below could never resolve it).
-            const inferred = resolveSuperModuleTypes(ctx, expr, depth, chainHops);
-            if (inferred.length > 0)
-                return inferred;
-            return [];
-        }
         // `expr` (e.g. `x.ID`) is `any` because its base is itself undocumented
         // (an untyped parameter, say) — infer the base's type first, then look
         // up this specific property on it, rather than giving up on the whole
@@ -540,6 +716,14 @@ function resolveExpressionTypes(ctx, expr, depth, chainHops = 0) {
             // would be worse than staying quiet.
             if (!isAnyType(ts, propType))
                 propTypes.push(widenType(checker, propType));
+        }
+        if (propTypes.length === 0) {
+            // Mirror of the method-chain fallback above: the property may be an
+            // export augmentation added by a pass-through superModule overlay.
+            const superAccess = traceSuperModuleAccess(ts, checker, expr.expression);
+            if (superAccess) {
+                propTypes.push(...resolveSuperModuleMemberTypes(ctx, superAccess, propName, depth, chainHops).map((t) => widenType(checker, t)));
+            }
         }
         if (propTypes.length > 0)
             return dedupeTypes(checker, propTypes);
@@ -565,6 +749,71 @@ function resolveExpressionTypes(ctx, expr, depth, chainHops = 0) {
         }
     }
     return [];
+}
+/**
+ * Extracts the element type from a collection-like `type`: something with an
+ * `iterator()` method whose result has a typed `next()` (dw.util.Collection
+ * and friends), or something that is itself such an iterator. Returns
+ * `undefined` when `type` doesn't look like a collection or its element type
+ * is unknown — never `any`.
+ *
+ * @param location - any node in the file where the type is being used;
+ * required by getTypeOfSymbolAtLocation to resolve member types.
+ */
+function collectionElementType(ctx, type, location) {
+    const { ts, checker } = ctx;
+    const firstCallReturn = (t, memberName) => {
+        const sym = checker.getPropertyOfType(getNonNullableApparentType(checker, t), memberName);
+        if (!sym)
+            return undefined;
+        const memberType = checker.getTypeOfSymbolAtLocation(sym, location);
+        for (const sig of memberType.getCallSignatures()) {
+            return checker.getReturnTypeOfSignature(sig);
+        }
+        return undefined;
+    };
+    const iteratorType = firstCallReturn(type, 'iterator') ?? type;
+    const element = firstCallReturn(iteratorType, 'next');
+    if (!element || isAnyType(ts, element))
+        return undefined;
+    if (element.flags & (ts.TypeFlags.Void | ts.TypeFlags.Unknown | ts.TypeFlags.Never))
+        return undefined;
+    return element;
+}
+/**
+ * Infers the type of a callback's first parameter from sibling arguments of
+ * the call the callback is passed to: `collections.forEach(coll, function
+ * (item) {...})` — a function expression in argument position has no name to
+ * run a reference search on, but the collection travelling alongside it
+ * names the element type. Only the first parameter is mapped (SFRA's
+ * collections util passes the element first), and `reduce`-style callees are
+ * skipped since their callbacks lead with an accumulator instead.
+ */
+function inferCallbackParameterTypes(ctx, fn, paramIndex, depth) {
+    const { ts, checker } = ctx;
+    if (paramIndex !== 0)
+        return [];
+    const call = fn.parent;
+    if (!call || !ts.isCallExpression(call) || !call.arguments.some((arg) => arg === fn))
+        return [];
+    const calleeName = ts.isPropertyAccessExpression(call.expression)
+        ? call.expression.name.text
+        : ts.isIdentifier(call.expression)
+            ? call.expression.text
+            : undefined;
+    if (calleeName === 'reduce')
+        return [];
+    const types = [];
+    for (const arg of call.arguments) {
+        if (arg === fn)
+            continue;
+        for (const argType of resolveExpressionTypes(ctx, arg, depth)) {
+            const element = collectionElementType(ctx, argType, arg);
+            if (element)
+                types.push(widenType(checker, element));
+        }
+    }
+    return types;
 }
 /**
  * Infers a parameter's candidate type(s) from the arguments it's actually
@@ -600,18 +849,24 @@ function inferParameterType(ctx, param, depth = 0) {
         const fn = param.parent;
         if (!ts.isFunctionLike(fn))
             return [];
-        const nameNode = getReferenceNameNode(fn, ts);
-        if (!nameNode)
-            return [];
         const paramIndex = fn.parameters.indexOf(param);
         if (paramIndex < 0)
             return [];
         const types = [];
-        for (const call of collectCallSites(ctx, nameNode)) {
-            const arg = call.arguments[paramIndex];
-            if (!arg)
-                continue;
-            types.push(...resolveExpressionTypes(ctx, arg, depth));
+        const nameNode = getReferenceNameNode(fn, ts);
+        if (nameNode) {
+            for (const call of collectCallSites(ctx, nameNode)) {
+                const arg = call.arguments[paramIndex];
+                if (!arg)
+                    continue;
+                types.push(...resolveExpressionTypes(ctx, arg, depth));
+            }
+        }
+        else {
+            // No name to search references for — an anonymous callback passed
+            // directly in argument position. Its element type may still be
+            // recoverable from the collection argument travelling alongside it.
+            types.push(...inferCallbackParameterTypes(ctx, fn, paramIndex, depth));
         }
         const result = dedupeTypes(checker, types);
         // Don't memoize a result whose computation hit a cycle guard: it was
