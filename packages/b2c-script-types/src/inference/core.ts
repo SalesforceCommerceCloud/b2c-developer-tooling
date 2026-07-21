@@ -36,7 +36,14 @@ import {
   isConcreteExportAssignment,
   traceSuperModuleAccess,
 } from './super-module';
-import {collectionElementType, dedupeTypes, getMemberOfType, isAnyType, widenType} from './type-helpers';
+import {
+  collectionElementType,
+  dedupeTypes,
+  getMemberOfType,
+  isAnyType,
+  isOpenForUsageInference,
+  widenType,
+} from './type-helpers';
 import {collectParameterMemberUsage, collectVariableMemberUsage, matchAmbientTypesByUsage} from './usage-match';
 
 /**
@@ -273,11 +280,15 @@ function resolveExpressionTypes(
     return resolveSuperModuleTypes(ctx, superAccessAtRoot, depth, chainHops);
   }
   const direct = checker.getTypeAtLocation(expr);
-  if (!isAnyType(ts, direct)) return [widenType(checker, direct)];
+  // Prefer a concrete checker type, but keep chasing through placeholder
+  // shapes (`any` / `object` / `{}`) the same way — SFRA JSDoc often types
+  // helpers as `{Object}` which checkJs widens to `any`, and an empty `{}`
+  // annotation is equally useless as a call-site candidate.
+  if (!isOpenForUsageInference(ts, direct)) return [widenType(checker, direct)];
   if (chainHops >= MAX_CHAIN_HOPS) return [];
-  // The checker gave up (`any`). Dispatch on the kind of expression to a
-  // focused resolver. Each returns [] when it can't do better than `any`, so
-  // an unhandled kind (or an exhausted branch) falls through to [].
+  // The checker gave up. Dispatch on the kind of expression to a focused
+  // resolver. Each returns [] when it can't do better, so an unhandled kind
+  // (or an exhausted branch) falls through to [].
   if (ts.isCallExpression(expr)) return resolveCallResultTypes(ctx, expr, depth, chainHops);
   if (ts.isPropertyAccessExpression(expr)) return resolvePropertyTypes(ctx, expr, depth, chainHops);
   if (ts.isIdentifier(expr)) return resolveIdentifierTypes(ctx, expr, depth, chainHops);

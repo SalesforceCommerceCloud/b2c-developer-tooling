@@ -22,6 +22,17 @@
     "expect": "Customer"
   },
   {
+    "id": "customer-object-jsdoc-placeholder",
+    "source": "storefront accountHelpers — @param {Object} placeholder",
+    "description": "Weak SFRA @param {Object} does not block Customer inference from usage",
+    "dwTypes": ["Customer", "ServiceConfig"],
+    "files": {
+      "/helpers.js": "/**\n * @param {Object} customer\n */\nfunction getPasswordResetToken(customer) {\n  return customer.profile.credentials.createResetPasswordToken();\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "getPasswordResetToken", "param": 0},
+    "expect": "Customer"
+  },
+  {
     "id": "shipment-custom-plus-line-items",
     "source": "storefront shippingHelpers.markShipmentForShipping",
     "description": ".custom + .productLineItems resolves Shipment via distinctiveness (Transaction.wrap nested)",

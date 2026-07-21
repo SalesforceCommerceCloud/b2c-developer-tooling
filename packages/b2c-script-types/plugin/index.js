@@ -442,10 +442,13 @@ function init({ typescript: ts }) {
                 if (!node || !ts.isIdentifier(node))
                     return original;
                 const checker = program.getTypeChecker();
-                // superModule-derived expressions get past the not-any gate: the
+                // superModule-derived expressions get past the open-type gate: the
                 // checker's type for them is garbage either way (any or an opaque
-                // circular typeof), never something worth leaving untouched.
-                if (!(0, usage_inference_1.isAnyType)(ts, checker.getTypeAtLocation(node)) && !(0, usage_inference_1.traceSuperModuleAccess)(ts, checker, node)) {
+                // circular typeof), never something worth leaving untouched. Weak
+                // placeholder types (`object` / `{}`) are open too — see
+                // isOpenForUsageInference.
+                if (!(0, usage_inference_1.isOpenForUsageInference)(ts, checker.getTypeAtLocation(node)) &&
+                    !(0, usage_inference_1.traceSuperModuleAccess)(ts, checker, node)) {
                     return original;
                 }
                 // `undefined` (inference found nothing) is a cached answer too —
@@ -521,8 +524,8 @@ function init({ typescript: ts }) {
                 if (!propAccess)
                     return original;
                 const checker = program.getTypeChecker();
-                // See the hover gate above for the superModule exception.
-                if (!(0, usage_inference_1.isAnyType)(ts, checker.getTypeAtLocation(propAccess.expression)) &&
+                // See the hover gate above for the superModule / weak-type exception.
+                if (!(0, usage_inference_1.isOpenForUsageInference)(ts, checker.getTypeAtLocation(propAccess.expression)) &&
                     !(0, usage_inference_1.traceSuperModuleAccess)(ts, checker, propAccess.expression)) {
                     return original;
                 }

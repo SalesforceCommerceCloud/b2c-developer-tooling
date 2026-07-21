@@ -21,6 +21,7 @@ const {
   typesToCompletionEntries,
 } = require('../plugin/usage-inference');
 const {createFixtureLanguageService, findFunctionDeclaration} = require('./helpers/fixture-language-service');
+const {realTypesPrelude} = require('./helpers/real-dw-types');
 
 const AMBIENT_TYPES = `
 declare function getProduct(): {ID: string; name: string};
@@ -414,6 +415,54 @@ describe('usage-inference', () => {
       const types = inferParameterType(ctx, fn.parameters[0]);
 
       assert.equal(types.length, 0);
+    });
+  });
+
+  describe('inferParameterType — weak SFRA placeholder JSDoc does not block inference', () => {
+    // Real storefronts (and IntelliJ's happy path) often write `@param {Object}`
+    // / `{obj}` / `{*}` instead of a real dw.* type. Those placeholders must
+    // not permanently silence usage inference the way a deliberate `{any}` does.
+    for (const annotation of ['Object', 'obj', '*', '{}']) {
+      it(`infers through @param {${annotation}} on a named customer parameter`, () => {
+        const files = {
+          '/types.d.ts': realTypesPrelude(['Customer', 'ServiceConfig'], ''),
+          '/helper.js': `
+            /**
+             * @param {${annotation}} customer
+             */
+            function getPasswordResetToken(customer) {
+              return customer.profile.credentials.createResetPasswordToken();
+            }
+          `,
+        };
+        const languageService = createFixtureLanguageService(files);
+        const ctx = createInferenceContext(ts, languageService);
+        const sourceFile = ctx.program.getSourceFile('/helper.js');
+        const fn = findFunctionDeclaration(sourceFile, 'getPasswordResetToken');
+
+        assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])), 'Customer');
+      });
+    }
+
+    it('still respects a real @param {Customer} annotation (does not second-guess dw.* JSDoc)', () => {
+      // If we ignored the Customer annotation we'd chase the Product call site.
+      // Respecting dw.* JSDoc matches IntelliJ and leaves the author's type alone.
+      const languageService = createFixtureLanguageService({
+        '/types.d.ts': realTypesPrelude(['Customer', 'Product'], '  function getSomeProduct(): Product<any>;'),
+        '/helper.js': `
+          /**
+           * @param {Customer} product
+           */
+          function misnamed(product) {
+            return product.getID();
+          }
+          misnamed(getSomeProduct());
+        `,
+      });
+      const ctx = createInferenceContext(ts, languageService);
+      const fn = findFunctionDeclaration(ctx.program.getSourceFile('/helper.js'), 'misnamed');
+
+      assert.deepEqual(inferParameterType(ctx, fn.parameters[0]), []);
     });
   });
 

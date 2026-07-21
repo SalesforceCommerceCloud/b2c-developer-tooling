@@ -5,7 +5,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.matchAmbientTypesByUsage = exports.collectVariableMemberUsage = exports.collectParameterMemberUsage = exports.inferTypeForNode = exports.inferTypeForExpression = exports.inferReturnType = exports.inferParameterType = exports.traceSuperModuleAccess = exports.collectSuperModuleAugmentedMembers = exports.typesToCompletionEntries = exports.isAnyType = exports.getMemberOfType = exports.describeTypes = exports.findEnclosingPropertyAccess = exports.getNodeAtPosition = exports.createInferenceContext = exports.INFERRED_COMPLETION_SOURCE = void 0;
+exports.matchAmbientTypesByUsage = exports.collectVariableMemberUsage = exports.collectParameterMemberUsage = exports.inferTypeForNode = exports.inferTypeForExpression = exports.inferReturnType = exports.inferParameterType = exports.traceSuperModuleAccess = exports.collectSuperModuleAugmentedMembers = exports.typesToCompletionEntries = exports.isOpenForUsageInference = exports.isAnyType = exports.getMemberOfType = exports.describeTypes = exports.findEnclosingPropertyAccess = exports.getNodeAtPosition = exports.createInferenceContext = exports.INFERRED_COMPLETION_SOURCE = void 0;
 // Public entry point for the usage-inference engine. The implementation is
 // split across the ./inference/ modules by responsibility; this barrel just
 // re-exports the pieces the tsserver plugin (and the test suite) consume, so
@@ -30,6 +30,7 @@ var type_helpers_1 = require("./inference/type-helpers");
 Object.defineProperty(exports, "describeTypes", { enumerable: true, get: function () { return type_helpers_1.describeTypes; } });
 Object.defineProperty(exports, "getMemberOfType", { enumerable: true, get: function () { return type_helpers_1.getMemberOfType; } });
 Object.defineProperty(exports, "isAnyType", { enumerable: true, get: function () { return type_helpers_1.isAnyType; } });
+Object.defineProperty(exports, "isOpenForUsageInference", { enumerable: true, get: function () { return type_helpers_1.isOpenForUsageInference; } });
 Object.defineProperty(exports, "typesToCompletionEntries", { enumerable: true, get: function () { return type_helpers_1.typesToCompletionEntries; } });
 var super_module_1 = require("./inference/super-module");
 Object.defineProperty(exports, "collectSuperModuleAugmentedMembers", { enumerable: true, get: function () { return super_module_1.collectSuperModuleAugmentedMembers; } });

@@ -223,13 +223,17 @@ function resolveExpressionTypes(ctx, expr, depth, chainHops = 0) {
         return resolveSuperModuleTypes(ctx, superAccessAtRoot, depth, chainHops);
     }
     const direct = checker.getTypeAtLocation(expr);
-    if (!(0, type_helpers_1.isAnyType)(ts, direct))
+    // Prefer a concrete checker type, but keep chasing through placeholder
+    // shapes (`any` / `object` / `{}`) the same way — SFRA JSDoc often types
+    // helpers as `{Object}` which checkJs widens to `any`, and an empty `{}`
+    // annotation is equally useless as a call-site candidate.
+    if (!(0, type_helpers_1.isOpenForUsageInference)(ts, direct))
         return [(0, type_helpers_1.widenType)(checker, direct)];
     if (chainHops >= constants_1.MAX_CHAIN_HOPS)
         return [];
-    // The checker gave up (`any`). Dispatch on the kind of expression to a
-    // focused resolver. Each returns [] when it can't do better than `any`, so
-    // an unhandled kind (or an exhausted branch) falls through to [].
+    // The checker gave up. Dispatch on the kind of expression to a focused
+    // resolver. Each returns [] when it can't do better, so an unhandled kind
+    // (or an exhausted branch) falls through to [].
     if (ts.isCallExpression(expr))
         return resolveCallResultTypes(ctx, expr, depth, chainHops);
     if (ts.isPropertyAccessExpression(expr))

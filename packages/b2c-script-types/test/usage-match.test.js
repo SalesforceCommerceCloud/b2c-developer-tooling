@@ -446,13 +446,14 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
     // members) and the much smaller dw.customer.ProductListRegistrant (70
     // lines). "Fewest total members" alone picked ProductListRegistrant
     // every time, purely because it has less surface area — never the
-    // large, contextually correct Profile. `resettingCustomer` itself is
-    // deliberately left uninferred (an explicit, if made-up, JSDoc
-    // `@param {obj}` type) — the fallback only ever reaches `profile`'s own
-    // usage signature, matching the exact real-world path.
+    // large, contextually correct Profile. `resettingCustomer` itself stays
+    // uninferred (placeholder `@param {obj}` is ignored, but `.profile` alone
+    // is ambiguous across Customer/ServiceConfig and the name doesn't match)
+    // so the fallback only ever reaches `profile`'s own usage signature —
+    // matching the exact real-world path.
     it('infers Profile (not the smaller, equally-matching ProductListRegistrant) for a variable literally named `profile`', () => {
       const files = {
-        '/types.d.ts': realTypesPrelude(['Profile', 'ProductListRegistrant'], ''),
+        '/types.d.ts': realTypesPrelude(['Profile', 'ProductListRegistrant', 'Customer', 'ServiceConfig'], ''),
         '/accountHelpers.js': `
           /**
            * @param {obj} resettingCustomer - object that contains user's email address and name information.
@@ -470,8 +471,8 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
       };
       const {ctx, fn} = setupInference(files, '/accountHelpers.js', 'sentAccountActivationEmail');
 
-      // resettingCustomer's own explicit (if nonsensical) JSDoc type must be
-      // left alone, exactly as it is in the real file.
+      // Placeholder `{obj}` no longer blocks inference, but the body only
+      // contributes `.profile` under a non-matching name — still silent.
       const resettingCustomerTypes = inferParameterType(ctx, fn.parameters[0]);
       assert.deepEqual(resettingCustomerTypes, []);
 

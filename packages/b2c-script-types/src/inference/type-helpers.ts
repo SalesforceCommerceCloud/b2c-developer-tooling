@@ -22,6 +22,24 @@ export function isAnyType(ts: typeof tsserver, type: tsserver.Type): boolean {
 }
 
 /**
+ * True when the checker's type is too uninformative to prefer over usage
+ * inference: `any`, the `object` non-primitive, or an empty `{}` type literal.
+ * Used as the hover/completion gate and when deciding whether a resolved
+ * expression type is worth keeping versus chasing further.
+ *
+ * Deliberately excludes named classes (even wrong ones like a mis-documented
+ * `Request`) — those are strong enough that overriding them would fight both
+ * TypeScript and IntelliJ's JSDoc-first model.
+ */
+export function isOpenForUsageInference(ts: typeof tsserver, type: tsserver.Type): boolean {
+  if (isAnyType(ts, type)) return true;
+  if (type.flags & ts.TypeFlags.NonPrimitive) return true;
+  const symbol = type.getSymbol();
+  if (symbol?.getName() === '__type' && type.getProperties().length === 0) return true;
+  return false;
+}
+
+/**
  * Widens a literal type (e.g. the string literal type of `"hello"`) to its
  * general primitive type, so hover text shows `string` rather than a union
  * of every literal argument ever passed to a helper.

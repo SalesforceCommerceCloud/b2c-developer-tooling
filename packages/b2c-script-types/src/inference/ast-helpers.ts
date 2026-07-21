@@ -57,24 +57,64 @@ export function findEnclosingPropertyAccess(
 }
 
 /**
- * True when the developer already gave this parameter an explicit type — TS
- * syntax or JSDoc — even if that type is literally `any`. In that case the
- * checker's `any` reflects a deliberate choice, not an inference failure, so
- * usage inference must never second-guess it. Only genuinely implicit `any`
- * (no annotation at all) is fair game.
+ * SFRA helpers are often "documented" with a placeholder type that carries no
+ * Script API information — `@param {Object}`, `{obj}`, `{*}`, or `{}`. Those
+ * are ubiquitous in real cartridges (and IntelliJ mainly helps when authors
+ * write a real `dw.*` JSDoc), so treating them as deliberate annotations would
+ * permanently silence usage inference on the exact helpers that need it most.
+ *
+ * Deliberate `{any}` / `: any` is *not* weak: that is an author saying "do not
+ * pretend you know this type", and we still respect it.
+ */
+function isWeakTypeNode(typeNode: tsserver.TypeNode, ts: typeof tsserver): boolean {
+  let node: tsserver.TypeNode = typeNode;
+  while (ts.isParenthesizedTypeNode(node)) node = node.type;
+
+  // JSDoc `{*}` — "any value", not a real shape.
+  if (node.kind === ts.SyntaxKind.JSDocAllType) return true;
+  // Empty object literal type `{}`.
+  if (ts.isTypeLiteralNode(node) && node.members.length === 0) return true;
+  // Lowercase `object` keyword (TS/JSDoc) — non-primitive bag, not a dw.* class.
+  if (node.kind === ts.SyntaxKind.ObjectKeyword) return true;
+
+  const refName = (() => {
+    if (ts.isTypeReferenceNode(node)) return node.typeName.getText();
+    if (ts.isExpressionWithTypeArguments(node) && ts.isIdentifier(node.expression)) {
+      return node.expression.text;
+    }
+    return undefined;
+  })();
+  if (!refName) return false;
+  const lower = refName.toLowerCase();
+  // `Object` / `object` / the SFRA-conventional misspelling `obj`.
+  return lower === 'object' || lower === 'obj';
+}
+
+/** True when `typeNode` is a real annotation we must not second-guess (including deliberate `any`). */
+function isStrongTypeNode(typeNode: tsserver.TypeNode | undefined, ts: typeof tsserver): boolean {
+  return typeNode !== undefined && !isWeakTypeNode(typeNode, ts);
+}
+
+/**
+ * True when the developer already gave this parameter an explicit, meaningful
+ * type — TS syntax or JSDoc — even if that type is literally `any`. In that
+ * case the checker's type reflects a deliberate choice, not an inference
+ * failure, so usage inference must never second-guess it. Placeholder SFRA
+ * annotations (`Object` / `obj` / `*` / `{}`) do **not** count; see
+ * {@link isWeakTypeNode}.
  */
 export function hasExplicitParameterType(param: tsserver.ParameterDeclaration, ts: typeof tsserver): boolean {
-  return param.type !== undefined || ts.getJSDocType(param) !== undefined;
+  return isStrongTypeNode(param.type, ts) || isStrongTypeNode(ts.getJSDocType(param), ts);
 }
 
 /** Same idea as {@link hasExplicitParameterType}, but for a function's return type. */
 export function hasExplicitReturnType(fn: tsserver.SignatureDeclaration, ts: typeof tsserver): boolean {
-  return fn.type !== undefined || ts.getJSDocReturnType(fn) !== undefined;
+  return isStrongTypeNode(fn.type, ts) || isStrongTypeNode(ts.getJSDocReturnType(fn), ts);
 }
 
 /** Same idea as {@link hasExplicitParameterType}, but for a variable declaration (`var x = ...`). */
 export function hasExplicitVariableType(decl: tsserver.VariableDeclaration, ts: typeof tsserver): boolean {
-  return decl.type !== undefined || ts.getJSDocType(decl) !== undefined;
+  return isStrongTypeNode(decl.type, ts) || isStrongTypeNode(ts.getJSDocType(decl), ts);
 }
 
 /**

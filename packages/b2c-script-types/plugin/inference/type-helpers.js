@@ -6,6 +6,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isAnyType = isAnyType;
+exports.isOpenForUsageInference = isOpenForUsageInference;
 exports.widenType = widenType;
 exports.typeDisplayString = typeDisplayString;
 exports.dedupeTypes = dedupeTypes;
@@ -18,6 +19,26 @@ const constants_1 = require("./constants");
 /** True when `type` is (or includes) `any` — the signal that the checker gave up and usage inference should try to help. */
 function isAnyType(ts, type) {
     return (type.flags & ts.TypeFlags.Any) !== 0;
+}
+/**
+ * True when the checker's type is too uninformative to prefer over usage
+ * inference: `any`, the `object` non-primitive, or an empty `{}` type literal.
+ * Used as the hover/completion gate and when deciding whether a resolved
+ * expression type is worth keeping versus chasing further.
+ *
+ * Deliberately excludes named classes (even wrong ones like a mis-documented
+ * `Request`) — those are strong enough that overriding them would fight both
+ * TypeScript and IntelliJ's JSDoc-first model.
+ */
+function isOpenForUsageInference(ts, type) {
+    if (isAnyType(ts, type))
+        return true;
+    if (type.flags & ts.TypeFlags.NonPrimitive)
+        return true;
+    const symbol = type.getSymbol();
+    if (symbol?.getName() === '__type' && type.getProperties().length === 0)
+        return true;
+    return false;
 }
 /**
  * Widens a literal type (e.g. the string literal type of `"hello"`) to its

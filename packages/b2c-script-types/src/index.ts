@@ -18,7 +18,7 @@ import {
   INFERRED_COMPLETION_SOURCE,
   inferTypeForExpression,
   inferTypeForNode,
-  isAnyType,
+  isOpenForUsageInference,
   typesToCompletionEntries,
 } from './usage-inference';
 import {PLUGIN_NAME} from './resolver/constants';
@@ -522,10 +522,15 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
           const node = getNodeAtPosition(sourceFile, ts, position);
           if (!node || !ts.isIdentifier(node)) return original;
           const checker = program.getTypeChecker();
-          // superModule-derived expressions get past the not-any gate: the
+          // superModule-derived expressions get past the open-type gate: the
           // checker's type for them is garbage either way (any or an opaque
-          // circular typeof), never something worth leaving untouched.
-          if (!isAnyType(ts, checker.getTypeAtLocation(node)) && !traceSuperModuleAccess(ts, checker, node)) {
+          // circular typeof), never something worth leaving untouched. Weak
+          // placeholder types (`object` / `{}`) are open too — see
+          // isOpenForUsageInference.
+          if (
+            !isOpenForUsageInference(ts, checker.getTypeAtLocation(node)) &&
+            !traceSuperModuleAccess(ts, checker, node)
+          ) {
             return original;
           }
           // `undefined` (inference found nothing) is a cached answer too —
@@ -597,9 +602,9 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
           const propAccess = findEnclosingPropertyAccess(node, ts);
           if (!propAccess) return original;
           const checker = program.getTypeChecker();
-          // See the hover gate above for the superModule exception.
+          // See the hover gate above for the superModule / weak-type exception.
           if (
-            !isAnyType(ts, checker.getTypeAtLocation(propAccess.expression)) &&
+            !isOpenForUsageInference(ts, checker.getTypeAtLocation(propAccess.expression)) &&
             !traceSuperModuleAccess(ts, checker, propAccess.expression)
           ) {
             return original;
