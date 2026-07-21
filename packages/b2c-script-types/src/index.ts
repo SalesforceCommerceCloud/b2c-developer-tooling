@@ -106,7 +106,12 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
   const setCartridges = (list: ConfiguredCartridge[]) => {
     cartridges = list.map(({name, src}) => {
       const n = normalize(src);
-      return {name, root: n.endsWith('/') ? n : n + '/'};
+      const raw = src.replace(/\\/g, '/');
+      return {
+        name,
+        root: n.endsWith('/') ? n : n + '/',
+        rawRoot: raw.endsWith('/') ? raw : raw + '/',
+      };
     });
   };
 
@@ -242,9 +247,14 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     const resolveSuperModulePath = (containingFile: string): string | undefined => {
       const owner = ownerCartridge(containingFile);
       if (!owner) return undefined;
-      const subpath = normalize(containingFile).slice(owner.root.length);
+      // Slice from the slash-normalized-but-original-case form (not
+      // normalize()'s case-folded one) so the candidate built below from
+      // rawRoot doesn't get a folded-case tail spliced onto a real-case
+      // root — case folding never changes string length, so `owner.root`'s
+      // length is safe to reuse here.
+      const rawSubpath = containingFile.replace(/\\/g, '/').slice(owner.root.length);
       for (let i = cartridges.indexOf(owner) + 1; i < cartridges.length; i++) {
-        const candidate = cartridges[i].root + subpath;
+        const candidate = cartridges[i].rawRoot + rawSubpath;
         // `subpath` is derived from an editor-supplied file path; contain the
         // next-cartridge-down candidate so a crafted path or an overlapping
         // cartridge root can't point it at a file outside that cartridge.
@@ -388,7 +398,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       if (!modulesCart) return def;
       const moduleName = sfraModuleAtOffset(def.textSpan.start);
       if (!moduleName) return def;
-      const candidates = [modulesCart.root + moduleName + '.js', modulesCart.root + moduleName + '/index.js'];
+      const candidates = [modulesCart.rawRoot + moduleName + '.js', modulesCart.rawRoot + moduleName + '/index.js'];
       for (const candidate of candidates) {
         if (fileExists(candidate)) {
           return {...def, fileName: candidate, textSpan: {start: 0, length: 0}};

@@ -38,8 +38,19 @@ export interface PluginConfig {
 
 export interface NormalizedCartridge {
   name: string;
-  /** Forward-slash path with trailing '/'. Lowercased on case-insensitive filesystems. */
+  /**
+   * Forward-slash path with trailing '/', lowercased on case-insensitive
+   * filesystems — use ONLY for prefix comparisons (ownerCartridge,
+   * isCartridgeFile) against another `normalize()`d path. Never build a path
+   * to hand back to TypeScript from this: on a case-insensitive filesystem
+   * the lowercased form usually still opens the right file by luck, but it's
+   * not the file's real name, and on a case-sensitive filesystem a
+   * mixed-case cartridge root would make every resolution through it fail.
+   * Use `rawRoot` for that instead.
+   */
   root: string;
+  /** Forward-slash path with trailing '/', original case preserved — use to build any path returned to callers. */
+  rawRoot: string;
 }
 
 // Bare-name requires that the SFRA server.d.ts ambient declaration covers.

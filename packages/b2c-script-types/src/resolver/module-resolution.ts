@@ -148,7 +148,7 @@ export function resolveCartridgeModule(
   if (!subpath) return undefined;
 
   for (const c of order) {
-    const baseAbs = c.root + subpath;
+    const baseAbs = c.rawRoot + subpath;
     for (const ext of CANDIDATE_EXTENSIONS) {
       const candidate = baseAbs + ext;
       // `subpath` comes straight from the import specifier, so a `..`
@@ -187,7 +187,7 @@ export function resolveModulesCartridge(
   const modulesCart = cartridges.find((c) => c.name === 'modules');
   if (!modulesCart) return undefined;
 
-  const baseAbs = modulesCart.root + moduleName;
+  const baseAbs = modulesCart.rawRoot + moduleName;
   for (const ext of CANDIDATE_EXTENSIONS) {
     const candidate = baseAbs + ext;
     // `moduleName` may carry `..` after its first segment (it only can't
@@ -202,7 +202,7 @@ export function resolveModulesCartridge(
   if (deps.fileExists(pkgPath) && deps.isWithinRoot(pkgPath, modulesCart.root)) {
     const main = (readJsonFile(ts, pkgPath) as {main?: string} | undefined)?.main;
     if (typeof main === 'string' && main.length > 0) {
-      const resolved = (modulesCart.root + moduleName + '/' + main.replace(/^\.\//, '')).replace(/\\/g, '/');
+      const resolved = (modulesCart.rawRoot + moduleName + '/' + main.replace(/^\.\//, '')).replace(/\\/g, '/');
       // `main` is attacker-controlled JSON content flowing into a path
       // join — a `../../..` or absolute value must not escape the root.
       if (deps.fileExists(resolved) && deps.isWithinRoot(resolved, modulesCart.root)) {
