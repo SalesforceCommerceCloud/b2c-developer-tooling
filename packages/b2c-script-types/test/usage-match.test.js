@@ -224,4 +224,165 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
 
     assert.equal(describeTypes(ctx.checker, types), 'Shipment');
   });
+
+  describe("the `'member' in x` existence-check idiom as usage evidence", () => {
+    // Real-world shape from omoda-core: 261 occurrences across 107 files
+    // guard an optional/custom attribute with `'Foo' in obj` before reading
+    // it — sometimes with no direct property-access read anywhere nearby to
+    // otherwise carry the signal (e.g. omoda-core's productBase.js checking
+    // `'appliedPromotions' in this` with the read happening only on a later,
+    // unrelated code path). collectMemberUsageInScope must count this
+    // idiom, not just direct `x.member` reads.
+    it("collectParameterMemberUsage counts a bare `'member' in param` check", () => {
+      const files = {
+        '/types.d.ts': realTypesPrelude(['Shipment'], ''),
+        '/shippingHelpers.js': `
+          function describeShipment(shipment) {
+            if ('custom' in shipment) {
+              return 'has custom';
+            }
+            return 'no custom';
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/shippingHelpers.js', 'describeShipment');
+
+      const members = collectParameterMemberUsage(ctx, fn.parameters[0]);
+
+      assert.deepEqual([...members], ['custom']);
+    });
+
+    it("infers a real-world class purely from `in` checks (getProductSetOrder shape: ('x' in productCustom) ? ... : null)", () => {
+      // Mirrors omoda-core's productHelpers.js: no direct property-access
+      // read on the parameter at all near the guard — the ternary's
+      // consequent reads a *different* expression built from the checked
+      // name as a string, not `productCustom.custom` itself in this
+      // simplified repro, so the `in` checks are the only usage evidence.
+      const files = {
+        '/types.d.ts': realTypesPrelude(['Shipment'], ''),
+        '/shippingHelpers.js': `
+          function describeShipment(shipment) {
+            var hasCustom = 'custom' in shipment;
+            var hasLineItems = 'productLineItems' in shipment;
+            return hasCustom &amp;&amp; hasLineItems;
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/shippingHelpers.js', 'describeShipment');
+
+      const types = inferParameterType(ctx, fn.parameters[0]);
+
+      assert.equal(describeTypes(ctx.checker, types), 'Shipment');
+    });
+
+    it('combines an `in` check with a direct property-access read on the same member without double-counting (category.parent tree-walk shape)', () => {
+      // Mirrors omoda-core's dynamicAddressHelpers.js/productSearch.js:
+      // `if (category &amp;&amp; 'parent' in category &amp;&amp; category.parent.ID !== 'root')`.
+      const files = {
+        '/types.d.ts': realTypesPrelude(['Shipment'], ''),
+        '/shippingHelpers.js': `
+          function walkUp(shipment) {
+            if (shipment &amp;&amp; 'custom' in shipment &amp;&amp; shipment.productLineItems.length > 0) {
+              return true;
+            }
+            return false;
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/shippingHelpers.js', 'walkUp');
+
+      const members = collectParameterMemberUsage(ctx, fn.parameters[0]);
+      assert.deepEqual([...members].sort(), ['custom', 'productLineItems']);
+
+      const types = inferParameterType(ctx, fn.parameters[0]);
+      assert.equal(describeTypes(ctx.checker, types), 'Shipment');
+    });
+
+    it("attributes a chained `'member' in x.y` check to x.y's own one-hop access (`y`), not the checked name itself", () => {
+      // `'Subsoort' in apiProduct.custom`: `apiProduct.custom` is itself a
+      // direct, one-hop property access on `apiProduct` (contributing
+      // `custom`, same as any other `apiProduct.custom` occurrence) — the
+      // `in` check's right-hand side isn't a bare identifier matching the
+      // symbol, so `fromStoreId` correctly never gets attributed to
+      // `apiProduct`'s own signature; it describes `custom`'s shape instead.
+      const files = {
+        '/types.d.ts': realTypesPrelude(['Shipment'], ''),
+        '/shippingHelpers.js': `
+          function describeShipment(shipment) {
+            return 'fromStoreId' in shipment.custom;
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/shippingHelpers.js', 'describeShipment');
+
+      const members = collectParameterMemberUsage(ctx, fn.parameters[0]);
+
+      assert.deepEqual([...members], ['custom']);
+    });
+  });
+
+  it('infers dw.catalog.Category from mutually-exclusive boolean-flag branches (getProductType shape)', () => {
+    // Real-world shape from omoda-core's productHelpers.js's getProductType
+    // (there, checking product.master/variant/variationGroup/productSet/
+    // bundle/optionProduct — dw.catalog.Product itself is generic and
+    // deliberately excluded from ambient-class matching, see
+    // buildAmbientClassIndex, so this repro substitutes dw.catalog.Category's
+    // own four real boolean flags): a chain of if/else-if branches, each
+    // reading a different boolean flag on the same undocumented parameter —
+    // the return value is a plain string, so return-expression inference
+    // alone would learn nothing; only the union of every branch's flag read
+    // (already handled by the unconditional, control-flow-agnostic AST walk)
+    // recovers the parameter's real shape.
+    const files = {
+      '/types.d.ts': realTypesPrelude(['Category'], ''),
+      '/categoryHelpers.js': `
+        function getCategoryType(category) {
+          var result;
+          if (category.root) {
+            result = 'root';
+          } else if (category.topLevel) {
+            result = 'topLevel';
+          } else if (category.online) {
+            result = 'online';
+          } else if (category.onlineFlag) {
+            result = 'onlineFlag';
+          } else {
+            result = 'standard';
+          }
+          return result;
+        }
+      `,
+    };
+    const {ctx, fn} = setupInference(files, '/categoryHelpers.js', 'getCategoryType');
+
+    const types = inferParameterType(ctx, fn.parameters[0]);
+
+    assert.equal(describeTypes(ctx.checker, types), 'Category');
+  });
+
+  it('infers a parameter from a member-built object literal passed to a call argument, not returned (pushReview shape)', () => {
+    // Real-world shape from omoda-core's Reviews.js job step: the
+    // shape-defining object literal is built from the parameter's own
+    // properties and passed straight into another call's argument
+    // (`newReviews.unshift({...})`), never returned — the member-access walk
+    // must recover this the same way it would a returned object literal,
+    // since it doesn't care about the statement context a read sits in.
+    const files = {
+      '/types.d.ts': realTypesPrelude(['ProductLineItem'], ''),
+      '/reviewHelpers.js': `
+        function pushReview(list, review) {
+          list.unshift({
+            productID: review.productID,
+            quantity: review.quantity,
+            catalogProduct: review.catalogProduct,
+          });
+        }
+      `,
+    };
+    const {ctx, fn} = setupInference(files, '/reviewHelpers.js', 'pushReview');
+
+    const types = inferParameterType(ctx, fn.parameters[1]);
+
+    assert.equal(describeTypes(ctx.checker, types), 'ProductLineItem');
+  });
 });

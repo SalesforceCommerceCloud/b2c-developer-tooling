@@ -72,6 +72,13 @@ function buildAmbientClassIndex(ctx) {
  * count; a chained `x.custom.fromStoreId` only contributes `custom` — the
  * deeper hop describes `custom`'s shape, not `x`'s.
  *
+ * Also counts a `'member' in x` existence check as evidence of `member` —
+ * a very common real-world SFCC idiom for guarding an optional custom
+ * attribute or a conditionally-present property (`'appliedPromotions' in
+ * this`, `'Subsoort' in apiProduct.custom`) before reading it, sometimes
+ * with no direct property-access read anywhere nearby to otherwise carry the
+ * signal.
+ *
  * Skips the one property access the current request's own cursor sits
  * inside of (see {@link InferenceContext.triggerPosition}) — a dangling
  * `shipment.` mid-edit, immediately followed by more code, parses as a
@@ -90,6 +97,13 @@ function collectMemberUsageInScope(ctx, symbol, scope) {
                 node.expression.getEnd() <= triggerPosition &&
                 triggerPosition <= node.name.getStart())) {
             members.add(node.name.text);
+        }
+        else if (ts.isBinaryExpression(node) &&
+            node.operatorToken.kind === ts.SyntaxKind.InKeyword &&
+            ts.isStringLiteralLike(node.left) &&
+            ts.isIdentifier(node.right) &&
+            checker.getSymbolAtLocation(node.right) === symbol) {
+            members.add(node.left.text);
         }
         ts.forEachChild(node, visit);
     };
