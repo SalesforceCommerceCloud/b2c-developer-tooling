@@ -1,7 +1,7 @@
 [
   {
-    "id": "neuhaus-addressBook-addresses",
-    "source": "neuhaus-core addressHelpers.getAddressBookAddressByForm",
+    "id": "addressbook-unique-addresses",
+    "source": "storefront addressHelpers.getAddressBookAddressByForm",
     "description": "Single unique member .addresses recovers AddressBook with no call sites",
     "dwTypes": ["AddressBook", "CustomerAddress"],
     "files": {
@@ -11,8 +11,153 @@
     "expect": "AddressBook"
   },
   {
-    "id": "neuhaus-collections-map-option-item",
-    "source": "neuhaus-core productHelpers.getLineItemOptionNames (collections.map)",
+    "id": "customer-profile-credentials-chain",
+    "source": "storefront accountHelpers.getPasswordResetToken",
+    "description": "Named customer + single strong .profile recovers Customer despite ServiceConfig also exposing .profile",
+    "dwTypes": ["Customer", "ServiceConfig"],
+    "files": {
+      "/helpers.js": "function getPasswordResetToken(customer) {\n  return customer.profile.credentials.createResetPasswordToken();\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "getPasswordResetToken", "param": 0},
+    "expect": "Customer"
+  },
+  {
+    "id": "shipment-custom-plus-line-items",
+    "source": "storefront shippingHelpers.markShipmentForShipping",
+    "description": ".custom + .productLineItems resolves Shipment via distinctiveness (Transaction.wrap nested)",
+    "dwTypes": ["Shipment", "ProductLineItem", "Profile"],
+    "files": {
+      "/helpers.js": "function markShipmentForShipping(shipment) {\n  doInTransaction(function () {\n    var items = shipment.productLineItems;\n    var c = shipment.custom;\n    return items || c;\n  });\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "markShipmentForShipping", "param": 0},
+    "expect": "Shipment"
+  },
+  {
+    "id": "profile-name-beats-smaller-registrant",
+    "source": "storefront accountHelpers profile local variable",
+    "description": "Variable named profile with email/firstName/lastName/custom prefers Profile over ProductListRegistrant",
+    "dwTypes": ["Profile", "ProductListRegistrant"],
+    "files": {
+      "/helpers.js": "function buildContactPayload(resettingCustomer) {\n  var profile = resettingCustomer.profile;\n  return {\n    email: profile.email,\n    firstName: profile.firstName,\n    lastName: profile.lastName,\n    flag: profile.custom\n  };\n}\n"
+    },
+    "target": {"file": "/helpers.js", "kind": "variable", "name": "profile"},
+    "expect": "Profile"
+  },
+  {
+    "id": "basket-billing-address-members",
+    "source": "storefront checkoutHelpers.copyBillingAddressToBasket (basket param)",
+    "description": "Basket inferred from billingAddress + createBillingAddress usage",
+    "dwTypes": ["Basket", "Order", "Shipment"],
+    "files": {
+      "/helpers.js": "function copyBillingAddressToBasket(address, basket) {\n  var billingAddress = basket.billingAddress;\n  if (!billingAddress) {\n    billingAddress = basket.createBillingAddress();\n  }\n  return billingAddress;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "copyBillingAddressToBasket", "param": 1},
+    "expect": "Basket"
+  },
+  {
+    "id": "order-product-line-items",
+    "source": "storefront checkoutHelpers.getProductsWithPreorderableLineItems",
+    "description": "Order inferred from .productLineItems when JSDoc would say Object",
+    "dwTypes": ["Order", "Basket", "Shipment"],
+    "files": {
+      "/helpers.js": "function collectLineItems(order) {\n  return order.productLineItems;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "collectLineItems", "param": 0},
+    "expect": "Order"
+  },
+  {
+    "id": "product-price-model-from-callsite",
+    "source": "storefront job checkPrice / productHelpers",
+    "description": "Product inferred from typed ProductMgr/getProduct call site",
+    "dwTypes": ["Product", "Category", "Order"],
+    "files": {
+      "/helpers.js": "function checkPrice(product) {\n  var price = product.getPriceModel().getPrice();\n  if (price && price.getValue() <= 0) {\n    product.setSearchableFlag(false);\n    return product.getID();\n  }\n  return null;\n}\ncheckPrice(getSomeProduct());\n"
+    },
+    "globals": "  function getSomeProduct(): Product<any>;",
+    "target": {"file": "/helpers.js", "function": "checkPrice", "param": 0},
+    "expect": "Product"
+  },
+  {
+    "id": "product-get-categories-from-callsite",
+    "source": "storefront productHelpers isSpecialCategoryProduct",
+    "description": "Product inferred from call site when body only uses getCategories()",
+    "dwTypes": ["Product", "Category", "Shipment"],
+    "files": {
+      "/helpers.js": "function isSpecialCategoryProduct(product) {\n  return product.getCategories();\n}\nisSpecialCategoryProduct(getSomeProduct());\n"
+    },
+    "globals": "  function getSomeProduct(): Product<any>;",
+    "target": {"file": "/helpers.js", "function": "isSpecialCategoryProduct", "param": 0},
+    "expect": "Product"
+  },
+  {
+    "id": "product-get-categories-ambient",
+    "source": "storefront productHelpers — ambient path (no call sites)",
+    "description": "Named product + getCategories() recovers Product<any> from ambient index (generic classes included)",
+    "dwTypes": ["Product", "Variant", "Category"],
+    "files": {
+      "/helpers.js": "function isSpecialCategoryProduct(product) {\n  return product.getCategories();\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "isSpecialCategoryProduct", "param": 0},
+    "expect": "Product"
+  },
+  {
+    "id": "silence-unnamed-product-api-methods",
+    "source": "synthetic — Product API without product name",
+    "description": "getCategories alone on an unnamed param stays silent when multiple Product-family classes match",
+    "dwTypes": ["Product", "Variant", "VariationGroup", "Category"],
+    "files": {
+      "/helpers.js": "function isSpecialCategoryProduct(obj) {\n  return obj.getCategories();\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "isSpecialCategoryProduct", "param": 0},
+    "expect": null
+  },
+  {
+    "id": "category-parent-tree-walk",
+    "source": "storefront categoryHelper.findSegmentCategory",
+    "description": "Category inferred from parent + ID + displayName tree walk",
+    "dwTypes": ["Category", "Product", "Shipment"],
+    "files": {
+      "/helpers.js": "function findSegmentCategory(category) {\n  while (category) {\n    if (category.ID === 'root') return null;\n    if (category.displayName) return category;\n    category = category.parent;\n  }\n  return null;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "findSegmentCategory", "param": 0},
+    "expect": "Category"
+  },
+  {
+    "id": "order-address-setter-surface",
+    "source": "storefront checkoutHelpers.escapeAddress / copyAddress",
+    "description": "OrderAddress inferred from dense setter + getter surface",
+    "dwTypes": ["OrderAddress", "CustomerAddress", "Shipment"],
+    "files": {
+      "/helpers.js": "function escapeAddress(address) {\n  address.setFirstName(address.firstName);\n  address.setLastName(address.lastName);\n  address.setAddress1(address.address1);\n  address.setAddress2(address.address2);\n  address.setCity(address.city);\n  address.setPostalCode(address.postalCode);\n  address.setCompanyName(address.companyName);\n  return address.suite;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "escapeAddress", "param": 0},
+    "expect": "OrderAddress"
+  },
+  {
+    "id": "profile-getter-methods",
+    "source": "storefront abandonedCartHelpers.getInfo",
+    "description": "Profile inferred from getEmail/getFirstName/getLastName method style",
+    "dwTypes": ["Profile", "Customer", "ProductListRegistrant"],
+    "files": {
+      "/helpers.js": "function getInfo(profile) {\n  return {\n    email: profile.getEmail(),\n    firstName: profile.getFirstName(),\n    lastName: profile.getLastName()\n  };\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "getInfo", "param": 0},
+    "expect": "Profile"
+  },
+  {
+    "id": "customer-addressbook-member",
+    "source": "storefront service-cloud addressHelpers.syncAddressesIfRequired",
+    "description": "Customer inferred from .addressBook (not Profile.addressBook alone when named customer)",
+    "dwTypes": ["Customer", "Profile", "AddressBook"],
+    "files": {
+      "/helpers.js": "function syncAddressesIfRequired(customer) {\n  var book = customer.addressBook;\n  return book;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "syncAddressesIfRequired", "param": 0},
+    "expect": "Customer"
+  },
+  {
+    "id": "collections-map-element-callback",
+    "source": "storefront productHelpers.getLineItemOptionNames",
     "description": "collections.map callback first param gets collection element type",
     "files": {
       "/types.d.ts": "interface FixtureIterator { hasNext(): boolean; next(): { optionID: string; optionValueID: string }; }\ninterface FixtureCollection { iterator(): FixtureIterator; }\ndeclare function getOptionItems(): FixtureCollection;\ndeclare function map(collection: FixtureCollection, callback: (item: any) => any): any[];\n",
@@ -22,12 +167,24 @@
     "expect": "optionID"
   },
   {
-    "id": "omoda-custom-in-check-contributes-custom",
-    "source": "omoda-core seoHelpers ('bannerImage' in seoSource.custom)",
+    "id": "new-helper-constructor-callsite",
+    "source": "storefront constructor-function model pattern",
+    "description": "new Helper(x) is a call site for parameter inference",
+    "dwTypes": ["Product"],
+    "files": {
+      "/helpers.js": "function LineItemModel(product) {\n  this.product = product;\n}\nnew LineItemModel(getSomeProduct());\n"
+    },
+    "globals": "  function getSomeProduct(): Product<any>;",
+    "target": {"file": "/helpers.js", "function": "LineItemModel", "param": 0},
+    "expect": "Product"
+  },
+  {
+    "id": "member-in-custom-contributes-custom",
+    "source": "storefront seo/productHelpers 'attr' in x.custom",
     "description": "Chained 'attr' in x.custom contributes .custom (not the attribute name) to x",
     "dwTypes": ["Shipment"],
     "files": {
-      "/helpers.js": "function describeShipment(shipment) {\n  return 'fromStoreId' in shipment.custom;\n}\n"
+      "/helpers.js": "function describeShipment(shipment) {\n  return 'ATTR' in shipment.custom;\n}\n"
     },
     "target": {"file": "/helpers.js", "function": "describeShipment", "param": 0, "collectMembers": true},
     "expectMembers": ["custom"]
@@ -35,7 +192,7 @@
   {
     "id": "silence-conflicting-call-sites",
     "source": "synthetic — conflicting Product vs Order call sites",
-    "description": "Must stay silent when call-site types do not converge",
+    "description": "Must stay silent when call-site argument types do not converge",
     "dwTypes": ["Product", "Order"],
     "files": {
       "/helpers.js": "function describeThing(thing) {\n  return thing;\n}\ndescribeThing(getSomeProduct());\ndescribeThing(getSomeOrder());\n"
@@ -56,26 +213,63 @@
     "expect": null
   },
   {
-    "id": "mul-new-helper-constructor",
-    "source": "mul-core constructor-function model pattern",
-    "description": "new Helper(x) is a call site for parameter inference",
-    "dwTypes": ["Product"],
+    "id": "silence-ducktyped-store-as-address",
+    "source": "storefront checkoutHelpers.copyCustomerAddressToShipment",
+    "description": "Store model call site must not win when body also uses address-only fields",
+    "dwTypes": ["CustomerAddress", "Store"],
     "files": {
-      "/helpers.js": "function ProductLineItem(product) {\n  this.product = product;\n}\nnew ProductLineItem(getSomeProduct());\n"
+      "/models/store.js": "function StoreModel(storeObject) {\n  this.ID = storeObject.ID;\n  this.name = storeObject.name;\n  this.firstName = 'Shop';\n  this.lastName = this.name;\n  this.address1 = storeObject.address1;\n  this.address2 = storeObject.address2;\n  this.city = storeObject.city;\n  this.postalCode = storeObject.postalCode;\n  this.stateCode = storeObject.stateCode;\n  this.countryCode = storeObject.countryCode;\n}\nmodule.exports = StoreModel;\n",
+      "/helpers/storeHelpers.js": "var StoreModel = require('../models/store');\nfunction getDeliveryStore() {\n  return new StoreModel(getApiStore());\n}\nmodule.exports = { getDeliveryStore: getDeliveryStore };\n",
+      "/checkout/checkoutHelpers.js": "function copyCustomerAddressToShipment(address) {\n  use(address.countryCode);\n  use(address.firstName || 'X');\n  use(address.lastName || address.name);\n  use(address.companyName ? address.companyName : '');\n  use(address.address1);\n  use(address.address2);\n  use(address.postBox ? address.postBox : '');\n  use(address.city);\n  use(address.postalCode);\n  use(address.stateCode ? address.stateCode : '');\n  use(address.ID ? address.ID : '');\n}\nmodule.exports = { copyCustomerAddressToShipment: copyCustomerAddressToShipment };\n",
+      "/controllers/Checkout.js": "var COHelpers = require('../checkout/checkoutHelpers');\nvar storeHelpers = require('../helpers/storeHelpers');\nvar preferredAddress;\npreferredAddress = req.currentCustomer.addressBook.preferredAddress;\nCOHelpers.copyCustomerAddressToShipment(preferredAddress);\nCOHelpers.copyCustomerAddressToShipment(storeHelpers.getDeliveryStore());\n"
     },
-    "globals": "  function getSomeProduct(): Product<any>;",
-    "target": {"file": "/helpers.js", "function": "ProductLineItem", "param": 0},
-    "expect": "Product"
+    "globals": "  declare function getApiStore(): Store;\n  declare const req: any;",
+    "target": {"file": "/checkout/checkoutHelpers.js", "function": "copyCustomerAddressToShipment", "param": 0},
+    "expect": null
   },
   {
-    "id": "shipment-custom-plus-line-items",
-    "source": "synthetic — distinctive co-member with .custom",
-    "description": ".custom + .productLineItems still resolves Shipment via distinctiveness",
-    "dwTypes": ["Shipment", "ProductLineItem", "Profile"],
+    "id": "silence-sfra-customer-raw-only",
+    "source": "storefront addressHelpers.saveAddress",
+    "description": "SFRA view-model .raw is not dw.customer.Customer — stay silent",
+    "dwTypes": ["Customer", "Profile"],
     "files": {
-      "/helpers.js": "function describeShipment(shipment) {\n  var c = shipment.custom;\n  return shipment.productLineItems;\n}\n"
+      "/helpers.js": "function saveAddress(form, customer) {\n  return customer.raw.getProfile();\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "describeShipment", "param": 0},
-    "expect": "Shipment"
+    "target": {"file": "/helpers.js", "function": "saveAddress", "param": 1},
+    "expect": null
+  },
+  {
+    "id": "silence-string-or-product-call-sites",
+    "source": "storefront productHelpers getProductType-style helper",
+    "description": "Call sites passing string IDs and Product objects must stay silent",
+    "dwTypes": ["Product"],
+    "files": {
+      "/helpers.js": "function resolveProductKey(product) {\n  if (typeof product === 'string') return product;\n  return product.ID;\n}\nresolveProductKey('sku-1');\nresolveProductKey(getSomeProduct());\n"
+    },
+    "globals": "  function getSomeProduct(): Product<any>;",
+    "target": {"file": "/helpers.js", "function": "resolveProductKey", "param": 0},
+    "expect": null
+  },
+  {
+    "id": "silence-unnamed-shared-strong-member",
+    "source": "synthetic — .profile without Customer name",
+    "description": "Single strong member shared by multiple classes stays silent without a matching identifier name",
+    "dwTypes": ["Customer", "ServiceConfig"],
+    "files": {
+      "/helpers.js": "function readProfile(obj) {\n  return obj.profile;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "readProfile", "param": 0},
+    "expect": null
+  },
+  {
+    "id": "silence-viewmodel-array-length-only",
+    "source": "storefront hasPreorderableLineItem / hasMissingPrescriptions view-model arrays",
+    "description": "Array of SFRA view models (only .length) must not become Collection/ProductLineItem",
+    "dwTypes": ["ProductLineItem", "Basket", "Collection"],
+    "files": {
+      "/helpers.js": "function hasPreorderableLineItem(items) {\n  return items && items.length > 0;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "hasPreorderableLineItem", "param": 0},
+    "expect": null
   }
 ]

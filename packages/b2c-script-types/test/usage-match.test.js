@@ -377,10 +377,9 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
   it('infers dw.catalog.Category from mutually-exclusive boolean-flag branches (getProductType shape)', () => {
     // Real-world shape from omoda-core's productHelpers.js's getProductType
     // (there, checking product.master/variant/variationGroup/productSet/
-    // bundle/optionProduct — dw.catalog.Product itself is generic and
-    // deliberately excluded from ambient-class matching, see
-    // buildAmbientClassIndex, so this repro substitutes dw.catalog.Category's
-    // own four real boolean flags): a chain of if/else-if branches, each
+    // bundle/optionProduct — Category is used here instead of Product so the
+    // case stays focused on multi-boolean-flag disambiguation rather than the
+    // Product/Variant family): a chain of if/else-if branches, each
     // reading a different boolean flag on the same undocumented parameter —
     // the return value is a plain string, so return-expression inference
     // alone would learn nothing; only the union of every branch's flag read

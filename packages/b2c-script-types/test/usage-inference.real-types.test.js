@@ -444,9 +444,12 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
       assert.deepEqual(types, []);
     });
 
-    it('does not infer a false-positive type for a Product-shaped helper that is never called', () => {
+    it('infers Product from ambient usage when a never-called helper is named product and uses Product API methods', () => {
+      // Generic Product is indexed for ambient matching (hover shows Product<any>).
+      // A parameter conventionally named `product` plus a Product-only method is
+      // exactly the IntelliJ/JSDoc-less case storefront helpers hit constantly.
       const files = {
-        '/types.d.ts': realTypesPrelude(['Product'], ''),
+        '/types.d.ts': realTypesPrelude(['Product', 'Variant', 'Category'], ''),
         '/productHelpers.js': `
           function getDisplayName(product) {
             return product.getName();
@@ -457,7 +460,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
 
       const types = inferParameterType(ctx, fn.parameters[0]);
 
-      assert.equal(types.length, 0);
+      assert.equal(describeTypes(ctx.checker, types), 'Product<any>');
     });
 
     it('chases a var-of-var deep property chain with a real nullable middle step (availabilityModel.inventoryRecord)', () => {

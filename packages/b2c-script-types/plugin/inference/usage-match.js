@@ -26,16 +26,19 @@ const constants_1 = require("./constants");
 const classIndexCache = new WeakMap();
 /**
  * Indexes one top-level class/interface declaration into an ambient-class
- * candidate, or `undefined` when it's generic / nameless / has no members.
+ * candidate, or `undefined` when it's nameless / has no members.
  * Extracted from {@link buildAmbientClassIndex} so the walk stays flat.
+ *
+ * Generic classes (chiefly `dw.catalog.Product<T>`) are included: skipping
+ * them left the most common storefront parameter (`product`) matching only
+ * non-generic subclasses like `Variant` / `VariationGroup`, which is worse
+ * than showing the unsubstituted generic. Hover display rewrites `Product<T>`
+ * → `Product<any>` in {@link computeTypeDisplayString} so the editor never
+ * surfaces a bare type-parameter name with no instantiation context.
  */
 function candidateFromDeclaration(checker, ts, stmt) {
     const isClassOrInterface = ts.isClassDeclaration(stmt) || ts.isInterfaceDeclaration(stmt);
-    // Generic classes (e.g. `Product<T>`) are skipped: their declared type here
-    // is the unsubstituted generic (`Product<T>`, not `Product<any>`), which
-    // would render misleadingly in hover text with no real instantiation context
-    // to substitute from.
-    if (!isClassOrInterface || !stmt.name || (stmt.typeParameters?.length ?? 0) > 0)
+    if (!isClassOrInterface || !stmt.name)
         return undefined;
     const symbol = checker.getSymbolAtLocation(stmt.name);
     if (!symbol)

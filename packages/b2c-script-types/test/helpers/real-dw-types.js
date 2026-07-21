@@ -23,6 +23,7 @@ const REAL_DW_TYPES = {
   Category: dtsPath('dw', 'catalog', 'Category'),
   Collection: dtsPath('dw', 'util', 'Collection'),
   Variant: dtsPath('dw', 'catalog', 'Variant'),
+  VariationGroup: dtsPath('dw', 'catalog', 'VariationGroup'),
   Money: dtsPath('dw', 'value', 'Money'),
   Order: dtsPath('dw', 'order', 'Order'),
   OrderMgr: dtsPath('dw', 'order', 'OrderMgr'),
@@ -35,6 +36,10 @@ const REAL_DW_TYPES = {
   ProductListRegistrant: dtsPath('dw', 'customer', 'ProductListRegistrant'),
   Store: dtsPath('dw', 'catalog', 'Store'),
   ServiceConfig: dtsPath('dw', 'svc', 'ServiceConfig'),
+  Basket: dtsPath('dw', 'order', 'Basket'),
+  OrderAddress: dtsPath('dw', 'order', 'OrderAddress'),
+  ProductSearchModel: dtsPath('dw', 'catalog', 'ProductSearchModel'),
+  ProductAvailabilityModel: dtsPath('dw', 'catalog', 'ProductAvailabilityModel'),
 };
 
 /**

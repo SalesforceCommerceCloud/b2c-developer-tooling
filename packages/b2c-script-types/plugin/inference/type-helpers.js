@@ -50,7 +50,17 @@ function widenType(checker, type) {
  * generic-instantiation display is left untouched.
  */
 function computeTypeDisplayString(checker, type) {
-    const simple = checker.typeToString(type);
+    let simple = checker.typeToString(type);
+    // Ambient usage-matching indexes generic Script API classes via their
+    // unsubstituted declared type (`Product<T>`). With no call-site
+    // instantiation to substitute from, surface the conventional SFCC form
+    // `Product<any>` instead of a dangling type-parameter name. Only rewrite
+    // single-letter param slots (`T`, `T, U`) — never real arguments like
+    // `Product<Variant>`.
+    simple = simple.replace(/<([A-Z](?:\s*,\s*[A-Z])*)>/g, (_match, inner) => {
+        const params = inner.split(/\s*,\s*/);
+        return `<${params.map(() => 'any').join(', ')}>`;
+    });
     const symbol = type.getSymbol();
     if (!symbol)
         return simple;
