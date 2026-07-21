@@ -29,7 +29,11 @@ interface SearchDocsResponse {
   query?: string;
   category?: string;
   workspace?: ProjectType[];
+  total: number;
+  offset: number;
   results: SearchResult[];
+  truncated?: boolean;
+  nextOffset?: number;
 }
 
 interface ListDocsResponse {
@@ -108,6 +112,7 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
     '<%= config.bin %> <%= command.id %> "passwordless login" --category commerce-api',
     '<%= config.bin %> <%= command.id %> "storefront next getting started" --category sfnext',
     '<%= config.bin %> <%= command.id %> status --limit 5',
+    '<%= config.bin %> <%= command.id %> "passwordless login" --limit 5 --offset 5',
     '<%= config.bin %> <%= command.id %> --list --category tooling',
   ];
 
@@ -117,6 +122,12 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
       char: 'l',
       description: 'Maximum number of results to display',
       default: 20,
+    }),
+    offset: Flags.integer({
+      char: 'o',
+      description: 'Number of ranked results to skip (for pagination)',
+      default: 0,
+      min: 0,
     }),
     list: Flags.boolean({
       description: 'List all available documentation entries',
@@ -153,7 +164,9 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
 
   async run(): Promise<ListDocsResponse | SearchDocsResponse> {
     const {query} = this.args;
-    const {limit, list, category} = this.flags;
+    const {limit, list, category, offset} = this.flags;
+    const resultLimit = limit ?? 20;
+    const resultOffset = offset ?? 0;
     // Allowlist that bounds the whole corpus. Precedence: --topics /
     // SFCC_DOCS_TOPICS flag first, else the resolved config's `docsCategories`
     // (dw.json `docs-categories`, SFCC_DOCS_CATEGORIES, package.json).
@@ -214,18 +227,26 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
     // Workspace awareness is on by default for search (unset -> auto-detect).
     const workspace = await this.resolveWorkspace(this.flags.workspace);
 
-    const results = this.operations.searchDocs(query, {
-      limit,
+    // searchDocs returns top-N hits. Retrieve the complete ranked set so the
+    // CLI can expose total count and offset-based pagination.
+    const ranked = this.operations.searchDocs(query, {
+      limit: Number.MAX_SAFE_INTEGER,
       category: category as DocCategory | undefined,
       workspace,
       enabledCategories,
     });
+    const results = ranked.slice(resultOffset, resultOffset + resultLimit);
+    const end = resultOffset + results.length;
+    const truncated = end < ranked.length;
 
     const response: SearchDocsResponse = {
       query,
       ...(category && {category}),
       ...(workspace && {workspace}),
+      total: ranked.length,
+      offset: resultOffset,
       results,
+      ...(truncated && {truncated: true, nextOffset: end}),
     };
 
     if (this.jsonEnabled()) {
@@ -240,8 +261,9 @@ export default class DocsSearch extends BaseCommand<typeof DocsSearch> {
     tableRenderer.render(results, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     this.log(
-      t('commands.docs.search.resultCount', 'Found {{count}} matches for "{{query}}"', {
+      t('commands.docs.search.resultCount', 'Showing {{count}} of {{total}} matches for "{{query}}"', {
         count: results.length,
+        total: ranked.length,
         query,
       }),
     );

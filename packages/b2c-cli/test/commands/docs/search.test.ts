@@ -74,6 +74,32 @@ describe('docs search', () => {
     expect(result.results).to.have.length(1);
   });
 
+  it('pages ranked results with --offset and returns continuation metadata', async () => {
+    const command: any = await createCommand({json: true, limit: 1, offset: 1}, {query: 'x'});
+
+    const searchStub = sinon.stub().returns([
+      {entry: {id: 'a', title: 'A', filePath: 'a.md'}, score: 0.3},
+      {entry: {id: 'b', title: 'B', filePath: 'b.md'}, score: 0.2},
+      {entry: {id: 'c', title: 'C', filePath: 'c.md'}, score: 0.1},
+    ]);
+    command.operations = {...command.operations, searchDocs: searchStub};
+
+    const result = (await runSilent(() => command.run())) as {
+      total: number;
+      offset: number;
+      results: Array<{entry: {id: string}}>;
+      truncated?: boolean;
+      nextOffset?: number;
+    };
+
+    expect(searchStub.firstCall.args[1].limit).to.equal(Number.MAX_SAFE_INTEGER);
+    expect(result.total).to.equal(3);
+    expect(result.offset).to.equal(1);
+    expect(result.results.map((r) => r.entry.id)).to.deep.equal(['b']);
+    expect(result.truncated).to.equal(true);
+    expect(result.nextOffset).to.equal(2);
+  });
+
   it('passes an explicit --workspace through to searchDocs without detection', async () => {
     const command: any = await createCommand({json: true, limit: 5, workspace: 'storefront-next'}, {query: 'x'});
 

@@ -46,7 +46,8 @@ export function createDocsReadTool(
         'fetched from its published URL on demand and cached locally (with a summary/headings fallback if ' +
         'the network is unavailable). If you do not know the id, call docs_search first. Long docs are ' +
         'truncated to maxLength chars; page with offset when truncated=true. The returned entry ' +
-        'includes the canonical url for citation.' +
+        'includes the canonical url for citation and relatedEntries ids for directly connected Help or ' +
+        'Developer Center articles.' +
         enabledCategoriesNote(enabledCategories),
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {
