@@ -516,3 +516,135 @@ suite('scriptTypesInferUsage — multi-cartridge superModule stack (plugin_promo
     assert.ok(labels.includes('isOrderable'), `expected deep base member isOrderable, got: ${labels.join(', ')}`);
   });
 });
+
+suite('scriptTypesInferUsage — matching ambient classes from usage with no call site at all', () => {
+  let shippingDoc: vscode.TextDocument;
+
+  suiteSetup(async function () {
+    this.timeout(30000);
+
+    const expectedRoot = fixtureFile();
+    const openRoots = (vscode.workspace.workspaceFolders ?? []).map((f) => f.uri.fsPath);
+    if (!openRoots.includes(expectedRoot)) {
+      this.skip();
+    }
+
+    const ext = vscode.extensions.getExtension(EXTENSION_ID);
+    assert.ok(ext, `extension ${EXTENSION_ID} must be discoverable in the test host`);
+    await ext!.activate();
+
+    shippingDoc = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(
+        fixtureFile('cartridges', 'test_cartridge', 'cartridge', 'scripts', 'helpers', 'shippingHelpers.js'),
+      ),
+    );
+    await vscode.window.showTextDocument(shippingDoc);
+  });
+
+  test('infers dw.order.Shipment for an undocumented, never-called parameter purely from its own member usage', async () => {
+    // markShipmentForShipping is never called anywhere in this workspace —
+    // call-site inference (the rest of the engine) has nothing to work with
+    // at all. Only scanning `shipment`'s own body usage (.productLineItems,
+    // .custom, .setShippingMethod, including inside the nested
+    // Transaction.wrap/collections.forEach closures) can recover its type.
+    const text = await hoverTextMatching(
+      shippingDoc,
+      offsetPosition(shippingDoc, 'markShipmentForShipping(shipment)', 'markShipmentForShipping('.length),
+      /Shipment/,
+      true,
+    );
+    assert.ok(/Shipment/.test(text), `expected Shipment inferred purely from usage, got: ${text}`);
+  });
+
+  test("hover shows the real declaration's own display header and doc comment, not just a bare type name", async () => {
+    const text = await hoverTextMatching(
+      shippingDoc,
+      offsetPosition(shippingDoc, 'markShipmentForShipping(shipment)', 'markShipmentForShipping('.length),
+      /Represents an order shipment/,
+      true,
+    );
+    assert.ok(
+      /\(parameter\)\s+shipment:\s+Shipment/.test(text),
+      `expected a native-looking "(parameter) shipment: Shipment" header, got: ${text}`,
+    );
+  });
+
+  test('hover on a member name (shipment.custom) resolves the correctly-qualified nested type and its own doc comment', async () => {
+    // Regression test: dw.*'s vendored custom-attributes interface is nested
+    // under the exact same simple name as its owning class
+    // (`module ICustomAttributes { interface Shipment extends
+    // CustomAttributes {} }`, alongside the top-level `class Shipment`).
+    // Naive type-to-string would print "Shipment" for both, making this
+    // hover indistinguishable from hovering `shipment` itself.
+    const text = await hoverTextMatching(
+      shippingDoc,
+      offsetPosition(shippingDoc, 'shipment.custom.fromStoreId', 'shipment.'.length + 1),
+      /Returns the custom attributes/,
+      true,
+    );
+    assert.ok(/ICustomAttributes\.Shipment/.test(text), `expected the correctly-qualified nested type, got: ${text}`);
+  });
+
+  test('offers real dw.order.Shipment completions after `shipment.` with no call site anywhere', async () => {
+    // getUUID appears nowhere in the fixture text, so only inference can
+    // offer it. setShippingMethod/custom/productLineItems etc. are already
+    // literal text elsewhere in this same file, so the merge logic dedupes
+    // our real (typed) entry out in favor of the plain-text generic one —
+    // getUUID is the reliable signal precisely because it has no such
+    // word-completion competitor anywhere in the fixture.
+    const labels = await typedCompletionsIncluding(
+      shippingDoc,
+      offsetPosition(shippingDoc, 'shipment.setShippingMethod(null)', 'shipment.'.length),
+      ['getUUID'],
+    );
+    assert.ok(labels.includes('getUUID'), `expected getUUID among completions, got: ${labels.join(', ')}`);
+  });
+
+  test('still offers real completions when the cursor sits on a dangling mid-edit `shipment.` merged with later code', async () => {
+    // Regression test for a real dogfooding find: `.` never gets automatic
+    // semicolon insertion, so a dangling `shipment.` immediately followed
+    // (after a blank line) by more code parses as ONE expression together
+    // with whatever identifier comes next (`shipment.localTransaction.wrap`
+    // here) — the exact state while actively typing this line. Left
+    // unhandled, that phantom "localTransaction" member would poison
+    // usage-based matching and silently produce zero completions for the
+    // very position asking for them.
+    const labels = await typedCompletionsIncluding(
+      shippingDoc,
+      offsetPosition(shippingDoc, 'shipment.\n\n  localTransaction', 'shipment.'.length),
+      ['getUUID'],
+    );
+    assert.ok(labels.includes('getUUID'), `expected getUUID among completions, got: ${labels.join(', ')}`);
+    assert.ok(!labels.includes('localTransaction'), 'the phantom merged "localTransaction" member must not leak in');
+  });
+
+  test('infers dw.order.ProductLineItem for a manual-indexing loop variable (var lineItem = items[i])', async () => {
+    // hasBulkProductLineItem's `items` parameter is undocumented and never
+    // called either, so `items[i]` stays `any` regardless — only
+    // `lineItem`'s own downstream usage (.productID, .quantity,
+    // .catalogProduct) can recover its element type.
+    const text = await hoverTextMatching(
+      shippingDoc,
+      offsetPosition(shippingDoc, 'lineItem.productID'),
+      /ProductLineItem/,
+      true,
+    );
+    assert.ok(/ProductLineItem/.test(text), `expected ProductLineItem, got: ${text}`);
+  });
+
+  test('offers real dw.order.ProductLineItem completions on the manual-indexing loop variable (lineItem.)', async () => {
+    // productID/catalogProduct are already literal text in this file (the
+    // usage that got `lineItem` inferred in the first place), so — same
+    // dedup reasoning as above — getManufacturerName is the reliable signal:
+    // it appears nowhere in the fixture text, so only inference can offer it.
+    const labels = await typedCompletionsIncluding(
+      shippingDoc,
+      offsetPosition(shippingDoc, 'lineItem.productID', 'lineItem.'.length),
+      ['getManufacturerName'],
+    );
+    assert.ok(
+      labels.includes('getManufacturerName'),
+      `expected getManufacturerName among completions, got: ${labels.join(', ')}`,
+    );
+  });
+});

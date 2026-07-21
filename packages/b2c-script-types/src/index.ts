@@ -13,6 +13,7 @@ import {
   createInferenceContext,
   describeTypes,
   findEnclosingPropertyAccess,
+  getMemberOfType,
   getNodeAtPosition,
   INFERRED_COMPLETION_SOURCE,
   inferTypeForExpression,
@@ -29,6 +30,35 @@ import {
   readDwJsonCartridges,
   readJsonFile,
 } from './resolver/cartridge-discovery';
+
+// Rich hover data borrowed from a real ambient declaration (e.g. the `custom`
+// property on `dw.object.ExtensibleObject`) once usage inference has resolved
+// which one an undocumented value's usage matches. Plain data only — see the
+// caching note where this is produced for why.
+interface HoverInferenceResult {
+  readonly description: string;
+  readonly documentation?: readonly tsserver.SymbolDisplayPart[];
+  readonly tags?: readonly tsserver.JSDocTagInfo[];
+}
+
+/**
+ * Swaps the trailing `any` keyword part of a QuickInfo's display parts (the
+ * shape TS renders for an undocumented parameter/property, e.g. `(parameter)
+ * shipment: any`) for the inferred type's description, so the bolded hover
+ * header reads `(parameter) shipment: Shipment` instead of `... : any` —
+ * while leaving everything else (the `(parameter) shipment: ` prefix TS
+ * already rendered) untouched. Only ever touches a display exactly ending in
+ * that keyword; any other shape is returned as-is rather than guessed at.
+ */
+function replaceTrailingAnyDisplayPart(
+  displayParts: tsserver.SymbolDisplayPart[] | undefined,
+  description: string,
+): tsserver.SymbolDisplayPart[] | undefined {
+  if (!displayParts || displayParts.length === 0) return displayParts;
+  const last = displayParts[displayParts.length - 1];
+  if (last.kind !== 'keyword' || last.text !== 'any') return displayParts;
+  return [...displayParts.slice(0, -1), {kind: 'text', text: description}];
+}
 
 const TYPES_DIR = path.resolve(__dirname, '..', 'types').replace(/\\/g, '/');
 // Ambient declarations for SFCC globals (`session`, `request`, `response`,
@@ -542,6 +572,12 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     // request — potentially forever if the user stops hovering. Strings and
     // plain completion entries retain nothing.
     //
+    // HoverInferenceResult is likewise plain data only: `documentation` and
+    // `tags` are copied out of a real Symbol's own getDocumentationComment()/
+    // getJsDocTags() (SymbolDisplayPart[] / JSDocTagInfo[] are just text —
+    // they don't reference the Symbol, Type, or Node they came from), never
+    // the Symbol/Type/Node itself.
+    //
     // The whole cache is invalidated when the language service hands back a
     // different Program instance (TS builds a new Program object for any
     // semantic change, and reuses the same instance otherwise), rather than
@@ -551,13 +587,13 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     // inference (measured ~13ms per hover on an SFRA-sized project) that the
     // cache should have answered.
     let inferenceCacheProgram: tsserver.Program | undefined;
-    const inferenceCache = new Map<string, string | tsserver.CompletionEntry[] | undefined>();
+    const inferenceCache = new Map<string, string | tsserver.CompletionEntry[] | HoverInferenceResult | undefined>();
     // Bounds the cache during a long no-edit session (e.g. hours of hovering
     // around at the same program): entries are small (strings / plain entry
     // arrays), so this is belt-and-braces, and a wholesale clear is honest —
     // no LRU bookkeeping for a cache this cheap to refill.
     const MAX_INFERENCE_CACHE_ENTRIES = 512;
-    const getCachedInference = <T extends string | tsserver.CompletionEntry[] | undefined>(
+    const getCachedInference = <T extends string | tsserver.CompletionEntry[] | HoverInferenceResult | undefined>(
       cacheKey: string,
       program: tsserver.Program,
       compute: () => T,
@@ -620,17 +656,53 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
           // `undefined` (inference found nothing) is a cached answer too —
           // re-deriving "nothing" costs the same reference searches as
           // re-deriving something.
-          const description = getCachedInference(`hover:${fileName}:${node.getStart(sourceFile)}`, program, () => {
-            const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath);
-            const types = ctx ? inferTypeForNode(ctx, node) : [];
-            return types.length > 0 ? describeTypes(checker, types) : undefined;
+          const inferred = getCachedInference(`hover:${fileName}:${node.getStart(sourceFile)}`, program, () => {
+            const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath, position);
+            if (!ctx) return undefined;
+            // Hovering the member name of a property access
+            // (`shipment.productLineItems`, cursor on `productLineItems`) has
+            // no declaration of its own to look up — `productLineItems` isn't
+            // a symbol anywhere until the receiver's type is known. Resolve
+            // the whole access expression the same way completions do,
+            // rather than restricting to inferTypeForNode's bare-identifier
+            // (parameter/variable/function) cases.
+            const propAccess = findEnclosingPropertyAccess(node, ts);
+            const isMemberName = !!propAccess && propAccess.name === node;
+            const types = isMemberName ? inferTypeForExpression(ctx, propAccess) : inferTypeForNode(ctx, node);
+            if (types.length === 0) return undefined;
+            const description = describeTypes(checker, types);
+            // The receiver's type was undocumented, but the *member itself*
+            // (or the inferred type's own declaration) is real and usually
+            // documented — borrow its doc comment/tags so hover reads like a
+            // native, fully-resolved hover instead of just a bare type name.
+            let symbol: tsserver.Symbol | undefined;
+            if (isMemberName && propAccess) {
+              for (const baseType of inferTypeForExpression(ctx, propAccess.expression)) {
+                symbol = getMemberOfType(checker, baseType, node.text);
+                if (symbol) break;
+              }
+            } else {
+              symbol = types[0].getSymbol();
+            }
+            const documentation = symbol?.getDocumentationComment(checker);
+            const tags = symbol?.getJsDocTags(checker);
+            return {
+              description,
+              documentation: documentation && documentation.length > 0 ? documentation : undefined,
+              tags: tags && tags.length > 0 ? tags : undefined,
+            };
           });
-          if (!description) return original;
+          if (!inferred) return original;
           const note: tsserver.SymbolDisplayPart = {
-            text: `\n\nInferred from usage: ${description}`,
+            text: `\n\nInferred from usage: ${inferred.description}`,
             kind: 'text',
           };
-          return {...original, documentation: [...(original.documentation ?? []), note]};
+          return {
+            ...original,
+            displayParts: replaceTrailingAnyDisplayPart(original.displayParts, inferred.description),
+            documentation: [...(inferred.documentation ?? []), ...(original.documentation ?? []), note],
+            tags: inferred.tags && inferred.tags.length > 0 ? [...inferred.tags] : original.tags,
+          };
         },
         original,
       );
@@ -665,7 +737,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
             `completions:${fileName}:${baseNode.getStart(sourceFile)}`,
             program,
             () => {
-              const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath);
+              const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath, position);
               const types = ctx ? inferTypeForExpression(ctx, baseNode) : [];
               return typesToCompletionEntries(ts, checker, types);
             },

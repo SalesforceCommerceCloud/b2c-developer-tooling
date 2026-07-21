@@ -93,6 +93,20 @@ export interface InferenceContext {
    * without it, `module.superModule` expressions stay uninferred.
    */
   readonly resolveSuperModulePath?: (containingFile: string) => string | undefined;
+  /**
+   * The hover/completion request's own cursor position, when there is one.
+   * Exists so usage-based matching (see ./usage-match) can exclude the
+   * property access the request is itself sitting inside of from its own
+   * evidence: a dangling `shipment.` immediately followed (after a line
+   * break) by more code doesn't get automatic semicolon insertion — `.`
+   * always demands a following identifier — so the parser merges it with
+   * whatever statement comes next (`shipment.\n\nTransaction.wrap(...)`
+   * parses as one expression, `shipment.Transaction.wrap(...)`). Left
+   * uncorrected, that phantom `Transaction` member would count as real usage
+   * evidence and poison the match with a member no real class has, silently
+   * producing no completions for the very position asking for them.
+   */
+  readonly triggerPosition?: number;
 }
 
 /**
@@ -103,6 +117,7 @@ export function createInferenceContext(
   ts: typeof tsserver,
   languageService: tsserver.LanguageService,
   resolveSuperModulePath?: (containingFile: string) => string | undefined,
+  triggerPosition?: number,
 ): InferenceContext | undefined {
   const program = languageService.getProgram();
   if (!program) return undefined;
@@ -119,5 +134,6 @@ export function createInferenceContext(
     typeDisplayStrings: new Map(),
     cycleHits: 0,
     resolveSuperModulePath,
+    triggerPosition,
   };
 }

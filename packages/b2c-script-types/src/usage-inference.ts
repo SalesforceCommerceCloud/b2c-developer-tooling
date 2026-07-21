@@ -16,12 +16,18 @@
 //   inference/type-helpers  - Type utilities + hover text / completion entries
 //   inference/super-module  - module.superModule detection and export scanning
 //   inference/core          - the recursive engine that ties it all together
+//   inference/usage-match   - last-resort ambient-class matching from member usage
 
 export {INFERRED_COMPLETION_SOURCE} from './inference/constants';
 export {createInferenceContext} from './inference/context';
 export {getNodeAtPosition, findEnclosingPropertyAccess} from './inference/ast-helpers';
-export {describeTypes, isAnyType, typesToCompletionEntries} from './inference/type-helpers';
+export {describeTypes, getMemberOfType, isAnyType, typesToCompletionEntries} from './inference/type-helpers';
 export {collectSuperModuleAugmentedMembers, traceSuperModuleAccess} from './inference/super-module';
 export {inferParameterType, inferReturnType, inferTypeForExpression, inferTypeForNode} from './inference/core';
+export {
+  collectParameterMemberUsage,
+  collectVariableMemberUsage,
+  matchAmbientTypesByUsage,
+} from './inference/usage-match';
 
 export type {InferenceContext} from './inference/context';

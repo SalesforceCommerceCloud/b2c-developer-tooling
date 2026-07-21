@@ -11,6 +11,23 @@ const node_path_1 = __importDefault(require("node:path"));
 const usage_inference_1 = require("./usage-inference");
 const constants_1 = require("./resolver/constants");
 const cartridge_discovery_1 = require("./resolver/cartridge-discovery");
+/**
+ * Swaps the trailing `any` keyword part of a QuickInfo's display parts (the
+ * shape TS renders for an undocumented parameter/property, e.g. `(parameter)
+ * shipment: any`) for the inferred type's description, so the bolded hover
+ * header reads `(parameter) shipment: Shipment` instead of `... : any` —
+ * while leaving everything else (the `(parameter) shipment: ` prefix TS
+ * already rendered) untouched. Only ever touches a display exactly ending in
+ * that keyword; any other shape is returned as-is rather than guessed at.
+ */
+function replaceTrailingAnyDisplayPart(displayParts, description) {
+    if (!displayParts || displayParts.length === 0)
+        return displayParts;
+    const last = displayParts[displayParts.length - 1];
+    if (last.kind !== 'keyword' || last.text !== 'any')
+        return displayParts;
+    return [...displayParts.slice(0, -1), { kind: 'text', text: description }];
+}
 const TYPES_DIR = node_path_1.default.resolve(__dirname, '..', 'types').replace(/\\/g, '/');
 // Ambient declarations for SFCC globals (`session`, `request`, `response`,
 // `customer`, `empty(...)`, the `dw.*` namespace alias, etc.). The plugin
@@ -490,6 +507,12 @@ function init({ typescript: ts }) {
         // request — potentially forever if the user stops hovering. Strings and
         // plain completion entries retain nothing.
         //
+        // HoverInferenceResult is likewise plain data only: `documentation` and
+        // `tags` are copied out of a real Symbol's own getDocumentationComment()/
+        // getJsDocTags() (SymbolDisplayPart[] / JSDocTagInfo[] are just text —
+        // they don't reference the Symbol, Type, or Node they came from), never
+        // the Symbol/Type/Node itself.
+        //
         // The whole cache is invalidated when the language service hands back a
         // different Program instance (TS builds a new Program object for any
         // semantic change, and reuses the same instance otherwise), rather than
@@ -567,18 +590,58 @@ function init({ typescript: ts }) {
                 // `undefined` (inference found nothing) is a cached answer too —
                 // re-deriving "nothing" costs the same reference searches as
                 // re-deriving something.
-                const description = getCachedInference(`hover:${fileName}:${node.getStart(sourceFile)}`, program, () => {
-                    const ctx = (0, usage_inference_1.createInferenceContext)(ts, info.languageService, resolveSuperModulePath);
-                    const types = ctx ? (0, usage_inference_1.inferTypeForNode)(ctx, node) : [];
-                    return types.length > 0 ? (0, usage_inference_1.describeTypes)(checker, types) : undefined;
+                const inferred = getCachedInference(`hover:${fileName}:${node.getStart(sourceFile)}`, program, () => {
+                    const ctx = (0, usage_inference_1.createInferenceContext)(ts, info.languageService, resolveSuperModulePath, position);
+                    if (!ctx)
+                        return undefined;
+                    // Hovering the member name of a property access
+                    // (`shipment.productLineItems`, cursor on `productLineItems`) has
+                    // no declaration of its own to look up — `productLineItems` isn't
+                    // a symbol anywhere until the receiver's type is known. Resolve
+                    // the whole access expression the same way completions do,
+                    // rather than restricting to inferTypeForNode's bare-identifier
+                    // (parameter/variable/function) cases.
+                    const propAccess = (0, usage_inference_1.findEnclosingPropertyAccess)(node, ts);
+                    const isMemberName = !!propAccess && propAccess.name === node;
+                    const types = isMemberName ? (0, usage_inference_1.inferTypeForExpression)(ctx, propAccess) : (0, usage_inference_1.inferTypeForNode)(ctx, node);
+                    if (types.length === 0)
+                        return undefined;
+                    const description = (0, usage_inference_1.describeTypes)(checker, types);
+                    // The receiver's type was undocumented, but the *member itself*
+                    // (or the inferred type's own declaration) is real and usually
+                    // documented — borrow its doc comment/tags so hover reads like a
+                    // native, fully-resolved hover instead of just a bare type name.
+                    let symbol;
+                    if (isMemberName && propAccess) {
+                        for (const baseType of (0, usage_inference_1.inferTypeForExpression)(ctx, propAccess.expression)) {
+                            symbol = (0, usage_inference_1.getMemberOfType)(checker, baseType, node.text);
+                            if (symbol)
+                                break;
+                        }
+                    }
+                    else {
+                        symbol = types[0].getSymbol();
+                    }
+                    const documentation = symbol?.getDocumentationComment(checker);
+                    const tags = symbol?.getJsDocTags(checker);
+                    return {
+                        description,
+                        documentation: documentation && documentation.length > 0 ? documentation : undefined,
+                        tags: tags && tags.length > 0 ? tags : undefined,
+                    };
                 });
-                if (!description)
+                if (!inferred)
                     return original;
                 const note = {
-                    text: `\n\nInferred from usage: ${description}`,
+                    text: `\n\nInferred from usage: ${inferred.description}`,
                     kind: 'text',
                 };
-                return { ...original, documentation: [...(original.documentation ?? []), note] };
+                return {
+                    ...original,
+                    displayParts: replaceTrailingAnyDisplayPart(original.displayParts, inferred.description),
+                    documentation: [...(inferred.documentation ?? []), ...(original.documentation ?? []), note],
+                    tags: inferred.tags && inferred.tags.length > 0 ? [...inferred.tags] : original.tags,
+                };
             }, original);
         };
         proxy.getCompletionsAtPosition = (fileName, position, options, formattingSettings) => {
@@ -607,7 +670,7 @@ function init({ typescript: ts }) {
                 // hover-driven return inference already resolves it.
                 const baseNode = propAccess.expression;
                 const typeEntries = getCachedInference(`completions:${fileName}:${baseNode.getStart(sourceFile)}`, program, () => {
-                    const ctx = (0, usage_inference_1.createInferenceContext)(ts, info.languageService, resolveSuperModulePath);
+                    const ctx = (0, usage_inference_1.createInferenceContext)(ts, info.languageService, resolveSuperModulePath, position);
                     const types = ctx ? (0, usage_inference_1.inferTypeForExpression)(ctx, baseNode) : [];
                     return (0, usage_inference_1.typesToCompletionEntries)(ts, checker, types);
                 });

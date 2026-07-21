@@ -27,12 +27,42 @@ function isAnyType(ts, type) {
 function widenType(checker, type) {
     return checker.getBaseTypeOfLiteralType(type);
 }
-/** checker.typeToString memoized per request — see InferenceContext.typeDisplayStrings. */
+/**
+ * `checker.typeToString(type)`, except for a type whose declaration is
+ * nested inside a namespace/module (e.g. the vendored dw.* Script API's
+ * `declare global { module ICustomAttributes { interface Shipment extends
+ * CustomAttributes {} } }`, the type of `someShipment.custom`): plain
+ * typeToString() prints only the innermost declaration name, which for that
+ * pattern is the exact same string as the *unrelated* top-level `class
+ * Shipment` — someone hovering `shipment.custom` right after hovering
+ * `shipment` itself would see the identical "Shipment" both times, one of
+ * them silently wrong. `checker.getFullyQualifiedName()` distinguishes them
+ * ("Shipment" vs "global.ICustomAttributes.Shipment"); the "global." prefix
+ * (from the `declare global` wrapper, an implementation detail of how these
+ * types are vendored) is stripped as noise.
+ *
+ * Left alone for everything else, notably a generic instantiation
+ * (`Product<any>`): getFullyQualifiedName() only ever names the class itself
+ * ("Product"), never its type arguments, so comparing against typeToString()
+ * directly would wrongly "correct" `Product<any>` down to plain `Product`.
+ * Comparing against the symbol's own bare name sidesteps that — a
+ * non-nested symbol's qualified name always equals its own name, so the
+ * generic-instantiation display is left untouched.
+ */
+function computeTypeDisplayString(checker, type) {
+    const simple = checker.typeToString(type);
+    const symbol = type.getSymbol();
+    if (!symbol)
+        return simple;
+    const qualified = checker.getFullyQualifiedName(symbol).replace(/^global\./, '');
+    return qualified === symbol.getName() ? simple : qualified;
+}
+/** computeTypeDisplayString() memoized per request — see InferenceContext.typeDisplayStrings. */
 function typeDisplayString(ctx, type) {
     const cached = ctx.typeDisplayStrings.get(type);
     if (cached !== undefined)
         return cached;
-    const str = ctx.checker.typeToString(type);
+    const str = computeTypeDisplayString(ctx.checker, type);
     ctx.typeDisplayStrings.set(type, str);
     return str;
 }
@@ -112,7 +142,7 @@ function collectionElementType(ctx, type, location) {
 function describeTypes(checker, types) {
     const seen = new Set();
     for (const t of types) {
-        seen.add(checker.typeToString(t));
+        seen.add(computeTypeDisplayString(checker, t));
     }
     return [...seen].join(' | ');
 }

@@ -11,8 +11,9 @@ const {describe, it} = require('node:test');
 const ts = require('typescript');
 
 const init = require('../plugin/index');
+const {INFERRED_COMPLETION_SOURCE} = require('../plugin/usage-inference');
 const {createFixtureHost} = require('./helpers/fixture-language-service');
-const {REAL_DW_TYPES} = require('./helpers/real-dw-types');
+const {REAL_DW_TYPES, realTypesPrelude} = require('./helpers/real-dw-types');
 
 const AMBIENT_TYPES = `
 declare function getProduct(): {ID: string; name: string};
@@ -336,6 +337,185 @@ describe('create() proxy — usage inference wiring', () => {
     const entryByName = new Map((completions?.entries ?? []).map((e) => [e.name, e]));
     assert.equal(entryByName.get('getPrice').kind, ts.ScriptElementKind.memberFunctionElement);
     assert.equal(entryByName.get('maxPrice').kind, ts.ScriptElementKind.memberVariableElement);
+  });
+
+  it('shows an inferred-usage hover note when hovering the member name of a property access, not just the bare receiver', () => {
+    // Regression test: hovering `shipment` itself in `shipment.productLineItems`
+    // worked (inferTypeForNode resolves a bare identifier's own declaration),
+    // but hovering `productLineItems` — the member name — didn't, because
+    // `productLineItems` has no declaration of its own to look up until the
+    // receiver's type is known, and the hover handler only ever tried
+    // inferTypeForNode on the exact hovered identifier. It now falls back to
+    // resolving the whole access expression, the same way completions do.
+    const files = {
+      '/types.d.ts': realTypesPrelude(['Shipment'], ''),
+      '/shippingHelpers.js': `
+        function markShipmentForShipping(shipment) {
+          shipment.custom.fromStoreId = null;
+          var items = shipment.productLineItems;
+        }
+      `,
+    };
+    const host = createFixtureHost(files);
+    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const {create} = init({typescript: ts});
+    const proxy = create({
+      languageService,
+      languageServiceHost: host,
+      project: {
+        projectService: {logger: {info: () => {}}},
+        getCurrentDirectory: () => '/',
+        getProjectVersion: () => '1',
+      },
+      config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
+    });
+
+    const source = files['/shippingHelpers.js'];
+    const receiverPos = source.indexOf('shipment.productLineItems') + 1;
+    const memberPos = source.indexOf('productLineItems', receiverPos) + 1;
+
+    const receiverHover = proxy.getQuickInfoAtPosition('/shippingHelpers.js', receiverPos);
+    const receiverDoc = (receiverHover?.documentation ?? []).map((p) => p.text).join('');
+    assert.ok(
+      receiverDoc.includes('Inferred from usage: Shipment'),
+      `expected the receiver hover to infer Shipment, got: ${receiverDoc}`,
+    );
+
+    const memberHover = proxy.getQuickInfoAtPosition('/shippingHelpers.js', memberPos);
+    const memberDoc = (memberHover?.documentation ?? []).map((p) => p.text).join('');
+    assert.ok(
+      memberDoc.includes('Inferred from usage: Collection<ProductLineItem>'),
+      `expected the member-name hover to infer Collection<ProductLineItem>, got: ${memberDoc}`,
+    );
+  });
+
+  it("hover borrows the real declaration's display parts and doc comment instead of just noting the inferred type", () => {
+    // Regression test covering two things together:
+    //  1. Hover should read like a native, fully-resolved hover — the bolded
+    //     header should read "(parameter) shipment: Shipment" (not "... :
+    //     any"), and the documentation should include Shipment's own real
+    //     doc comment ("Represents an order shipment."), not just our bare
+    //     "Inferred from usage: X" note.
+    //  2. The vendored dw.* Script API nests each class's custom-attributes
+    //     interface under the exact same simple name as the class itself
+    //     (`declare global { module ICustomAttributes { interface Shipment
+    //     extends CustomAttributes {} } }`, alongside the top-level `class
+    //     Shipment`). Plain checker.typeToString() prints only the innermost
+    //     name for both, so hovering `shipment.custom` used to show the
+    //     misleading "Inferred from usage: Shipment" — identical to hovering
+    //     `shipment` itself — instead of the real, distinct
+    //     "ICustomAttributes.Shipment".
+    const files = {
+      '/types.d.ts': realTypesPrelude(['Shipment'], ''),
+      '/shippingHelpers.js': `
+        function markShipmentForShipping(shipment) {
+          shipment.custom.fromStoreId = null;
+          var items = shipment.productLineItems;
+        }
+      `,
+    };
+    const host = createFixtureHost(files);
+    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const {create} = init({typescript: ts});
+    const proxy = create({
+      languageService,
+      languageServiceHost: host,
+      project: {
+        projectService: {logger: {info: () => {}}},
+        getCurrentDirectory: () => '/',
+        getProjectVersion: () => '1',
+      },
+      config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
+    });
+
+    const source = files['/shippingHelpers.js'];
+    const paramPos = source.indexOf('markShipmentForShipping(shipment)') + 'markShipmentForShipping('.length;
+    const memberPos = source.indexOf('shipment.custom') + 'shipment.'.length + 1;
+
+    const paramHover = proxy.getQuickInfoAtPosition('/shippingHelpers.js', paramPos);
+    const paramHeader = (paramHover?.displayParts ?? []).map((p) => p.text).join('');
+    assert.equal(paramHeader, '(parameter) shipment: Shipment');
+    const paramDoc = (paramHover?.documentation ?? []).map((p) => p.text).join('');
+    assert.ok(
+      paramDoc.includes('Represents an order shipment.'),
+      `expected the class's own doc comment, got: ${paramDoc}`,
+    );
+
+    const memberHover = proxy.getQuickInfoAtPosition('/shippingHelpers.js', memberPos);
+    const memberHeader = (memberHover?.displayParts ?? []).map((p) => p.text).join('');
+    assert.equal(memberHeader, 'ICustomAttributes.Shipment');
+    const memberDoc = (memberHover?.documentation ?? []).map((p) => p.text).join('');
+    assert.ok(
+      memberDoc.includes('Returns the custom attributes for this object'),
+      `expected the property's own doc comment, got: ${memberDoc}`,
+    );
+    assert.ok(
+      memberDoc.includes('Inferred from usage: ICustomAttributes.Shipment'),
+      `expected the correctly-qualified type in the note, got: ${memberDoc}`,
+    );
+  });
+
+  it('offers completions for a dangling mid-edit `shipment.` immediately followed by more code on later lines', () => {
+    // Regression test for a real dogfooding find: `.` never gets automatic
+    // semicolon insertion (it always demands a following identifier), so a
+    // dangling `shipment.` — the exact state while a developer is mid-typing,
+    // before finishing the line — parses as ONE expression together with
+    // whatever identifier comes next, however many lines later:
+    // `shipment.\n\nTransaction.wrap(...)` becomes `shipment.Transaction.wrap(...)`.
+    // Left unhandled, that phantom `Transaction` "member" would count as real
+    // usage evidence for `shipment` (no dw.* class has it), poisoning the
+    // match and silently producing zero completions for the very position
+    // asking for them — even though `shipment` is used correctly (`.custom`,
+    // `.productLineItems`) later in the same function.
+    const files = {
+      '/types.d.ts': realTypesPrelude(['Shipment'], ''),
+      '/shippingHelpers.js': `
+        function markShipmentForShipping(shipment) {
+            var Transaction = require('dw/system/Transaction');
+
+            shipment.
+
+            Transaction.wrap(function () {
+                shipment.custom.fromStoreId = null;
+                var items = shipment.productLineItems;
+            });
+        }
+      `,
+    };
+    const host = createFixtureHost(files);
+    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const {create} = init({typescript: ts});
+    const proxy = create({
+      languageService,
+      languageServiceHost: host,
+      project: {
+        projectService: {logger: {info: () => {}}},
+        getCurrentDirectory: () => '/',
+        getProjectVersion: () => '1',
+      },
+      config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
+    });
+
+    const source = files['/shippingHelpers.js'];
+    const dotPos = source.indexOf('shipment.\n') + 'shipment.'.length;
+
+    const completions = proxy.getCompletionsAtPosition('/shippingHelpers.js', dotPos, undefined);
+    const inferredNames = (completions?.entries ?? [])
+      .filter((e) => e.source === INFERRED_COMPLETION_SOURCE)
+      .map((e) => e.name);
+    // "custom" itself is deduped out of the inferred set here because it's
+    // also a plain word-completion (it appears as literal text elsewhere in
+    // the fixture) — setShippingMethod isn't, so it's the reliable signal
+    // that real Shipment members were actually synthesized.
+    assert.ok(
+      inferredNames.includes('setShippingMethod'),
+      `expected real Shipment members despite the dangling dot, got: ${inferredNames.join(', ')}`,
+    );
+    assert.ok(inferredNames.includes('getUUID'), `expected getUUID, got: ${inferredNames.join(', ')}`);
+    assert.ok(
+      !inferredNames.includes('Transaction'),
+      'the phantom merged "Transaction" member must not leak in as a synthesized (inferred-usage) entry',
+    );
   });
 
   it('resolves module.superModule along the configured cartridge path for hover and completions', () => {

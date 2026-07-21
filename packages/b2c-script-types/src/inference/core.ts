@@ -31,6 +31,7 @@ import {
   traceSuperModuleAccess,
 } from './super-module';
 import {collectionElementType, dedupeTypes, getMemberOfType, isAnyType, widenType} from './type-helpers';
+import {collectParameterMemberUsage, collectVariableMemberUsage, matchAmbientTypesByUsage} from './usage-match';
 
 /**
  * Resolves the function-like declaration a call expression's callee refers
@@ -64,6 +65,12 @@ function resolveCalleeDeclaration(
  * in ctx.cycleHits; and the hop is charged to `chainHops` — following a
  * variable never crosses a function boundary, so it's an in-expression hop,
  * not a recursion-depth step.
+ *
+ * Falls back to matching the variable's own usage against ambient classes
+ * (see {@link collectVariableMemberUsage}) when the initializer itself
+ * resolves to nothing — the common shape for a manual-indexing loop variable
+ * (`var item = items[i]`), where `items[i]` stays `any` no matter what since
+ * `items` itself is undocumented.
  */
 function resolveVariableInitializerTypes(
   ctx: InferenceContext,
@@ -79,7 +86,9 @@ function resolveVariableInitializerTypes(
   }
   ctx.visiting.add(decl);
   try {
-    return resolveExpressionTypes(ctx, decl.initializer, depth, chainHops);
+    const resolved = resolveExpressionTypes(ctx, decl.initializer, depth, chainHops);
+    if (resolved.length > 0) return resolved;
+    return matchAmbientTypesByUsage(ctx, collectVariableMemberUsage(ctx, decl));
   } finally {
     ctx.visiting.delete(decl);
   }
@@ -389,7 +398,10 @@ function resolveIdentifierTypes(
 /**
  * Infers a parameter's candidate type(s) from the arguments it's actually
  * called with across the project, since plain un-annotated JS parameters
- * default to `any` with no back-inference from call sites.
+ * default to `any` with no back-inference from call sites. Falls back to
+ * matching the parameter's own usage (which members it's accessed by) against
+ * the program's ambient classes when no call site could be found or resolved
+ * at all — see {@link matchAmbientTypesByUsage}.
  *
  * @param depth - Recursion budget already consumed by the call chain that
  * led here; defaults to 0 for a top-level request.
@@ -438,7 +450,15 @@ export function inferParameterType(
       types.push(...inferCallbackParameterTypes(ctx, fn, paramIndex, depth));
     }
 
-    const result = dedupeTypes(ctx, types);
+    let result = dedupeTypes(ctx, types);
+    // No call site could be found or resolved at all (a helper only ever
+    // reached indirectly — a Controller route dispatching through a name the
+    // reference search can't follow, or genuinely dead/unused code). Rather
+    // than give up, try to match how the parameter's own body uses it against
+    // the program's ambient classes.
+    if (result.length === 0) {
+      result = matchAmbientTypesByUsage(ctx, collectParameterMemberUsage(ctx, param));
+    }
     // Don't memoize a result whose computation hit a cycle guard: it was
     // truncated by what happened to be on the *current* call stack, and the
     // same node queried later in this request from outside the cycle could

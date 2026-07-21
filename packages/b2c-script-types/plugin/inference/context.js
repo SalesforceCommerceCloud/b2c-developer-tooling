@@ -11,7 +11,7 @@ const constants_1 = require("./constants");
  * Builds a fresh inference context for one top-level hover/completion
  * request, or `undefined` if the language service has no program yet.
  */
-function createInferenceContext(ts, languageService, resolveSuperModulePath) {
+function createInferenceContext(ts, languageService, resolveSuperModulePath, triggerPosition) {
     const program = languageService.getProgram();
     if (!program)
         return undefined;
@@ -28,5 +28,6 @@ function createInferenceContext(ts, languageService, resolveSuperModulePath) {
         typeDisplayStrings: new Map(),
         cycleHits: 0,
         resolveSuperModulePath,
+        triggerPosition,
     };
 }

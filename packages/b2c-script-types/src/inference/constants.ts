@@ -69,3 +69,18 @@ export const MAX_SEARCHES_PER_REQUEST = 12;
 // TypeScript language service produced itself), so the editor can tell them
 // apart. Purely a label — it carries no path or other data.
 export const INFERRED_COMPLETION_SOURCE = '@salesforce/b2c-script-types/inferred-usage';
+
+// Last-resort fallback when call-site/return-expression inference (the whole
+// rest of the engine) comes up empty: match the member names a parameter is
+// actually accessed by (`shipment.custom`, `shipment.productLineItems`, ...)
+// against every ambient class/interface visible in the program, and accept
+// the most specific one(s) that expose all of them. A single accessed member
+// name (e.g. just `.custom`) is carried by dozens of unrelated business
+// objects, so it's too weak a signal on its own to guess from.
+export const MIN_USAGE_SIGNATURE_MEMBERS = 2;
+
+// If the member-name signature still ties across more candidates than this
+// after ranking by specificity (fewest total members), the match is too
+// ambiguous to be a useful hint — silence beats a wall of unrelated
+// candidates in the hover text.
+export const MAX_USAGE_MATCH_CANDIDATES = 5;

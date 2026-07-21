@@ -28,6 +28,8 @@ const REAL_DW_TYPES = {
   OrderMgr: dtsPath('dw', 'order', 'OrderMgr'),
   Customer: dtsPath('dw', 'customer', 'Customer'),
   Profile: dtsPath('dw', 'customer', 'Profile'),
+  Shipment: dtsPath('dw', 'order', 'Shipment'),
+  ProductLineItem: dtsPath('dw', 'order', 'ProductLineItem'),
 };
 
 /**
