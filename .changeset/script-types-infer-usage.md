@@ -4,3 +4,18 @@
 ---
 
 Script API IntelliSense can now infer types for undocumented helper functions from how they're actually called elsewhere in your project, instead of silently falling back to `any` and losing hover/completion for everything downstream. This is off by default — enable it with the `b2c-dx.features.scriptTypesInferUsage` VS Code setting (or `inferUsage: true` in the plugin config for other LSP hosts). Inferred results are clearly labeled ("Inferred from usage") since they're heuristic. `@salesforce/b2c-cli` picks this up too since `b2c setup ide vscode-types`/`tsserver-plugin` bundle the same plugin.
+
+Beyond call-site and return-expression inference, the engine also recognizes:
+- A parameter or local variable's own member/method accesses (e.g. `shipment.custom`, `shipment.productLineItems`) matched against the Script API's ambient classes, when no call site or usable initializer can resolve its type at all — recovering hover/completions for helpers only reached indirectly (e.g. dispatched from a Controller route), and for collection items pulled out with a manual indexing loop (`var item = items[i]`) instead of `collections.forEach`.
+- A single accessed member when it uniquely identifies one Script API class (e.g. `addressBook.addresses` only matches `dw.customer.AddressBook`), instead of only ever guessing from two or more accessed members. A lone member name shared by several classes (e.g. the common `.custom` attribute pattern) is still correctly left unresolved.
+- A `'member' in obj` existence check (e.g. `'Subsoort' in apiProduct.custom`) as evidence of that member, not just a direct `obj.member` read — a very common SFCC idiom for guarding an optional custom attribute before reading it.
+- `new Helper(x)` constructor calls as a call site, not just plain `helper(x)` calls — SFRA's other very common way to invoke an undocumented "class" model (e.g. `new ProductLineItem(...)`, `new StoreModel(...)`).
+
+Also fixes several bugs uncovered while dogfooding this against real projects:
+- Hover showed nothing when hovering the member name itself in a chained access (e.g. `productLineItems` in `shipment.productLineItems`) even though hovering the receiver worked.
+- Completions were slow/unreliable on large real projects because an internal cache was invalidated on every keystroke instead of once per project session.
+- Hover now shows the real declaration's own type name, documentation, and JSDoc tags (not just a bare "Inferred from usage: X" note).
+- A class's nested custom-attributes interface (`ICustomAttributes.Shipment`) rendered with the same display name as the unrelated top-level class it's attached to.
+- A dangling, mid-edit member access (`shipment.` immediately followed by more code on later lines — `.` never gets automatic semicolon insertion) could get parsed together with the next statement, poisoning usage-based matching with a phantom member name and silently producing no completions for the position being typed.
+
+Includes security hardening against malicious repositories: the tsserver plugin now canonicalizes and contains every resolved `require()` path (including a cartridge `package.json` `main`) so a crafted import specifier or symlink in a cloned repo can no longer resolve to a file outside the bundled types directory or the cartridge roots, bounds the size of `dw.json`/`package.json` it parses, and the VS Code extension now declares that Script API IntelliSense requires a trusted workspace (`capabilities.untrustedWorkspaces`) and refuses to forward cartridge paths or run usage inference until the workspace is trusted.
