@@ -21,6 +21,7 @@ const {
   createFixtureHost,
   createFixtureLanguageService,
   findFunctionDeclaration,
+  sharedDocumentRegistry,
 } = require('./helpers/fixture-language-service');
 const {realTypesPrelude} = require('./helpers/real-dw-types');
 
@@ -317,7 +318,7 @@ describe('usage-inference — performance baselines', () => {
       `,
     };
     const host = createFixtureHost(files);
-    const baseLs = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const baseLs = ts.createLanguageService(host, sharedDocumentRegistry);
     const counter = withReferenceCounter(baseLs);
     const {create} = init({typescript: ts});
     const proxy = create({
@@ -475,7 +476,7 @@ describe('usage-inference — performance baselines', () => {
       `,
     };
     const host = createFixtureHost(files);
-    const baseLs = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const baseLs = ts.createLanguageService(host, sharedDocumentRegistry);
     const counter = withReferenceCounter(baseLs);
     const {create} = init({typescript: ts});
     let projectVersion = 1;
