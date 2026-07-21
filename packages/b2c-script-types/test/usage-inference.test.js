@@ -53,7 +53,7 @@ describe('usage-inference', () => {
     });
 
     it('infers a parameter type from a `new Helper(x)` constructor call site (SFRA constructor-function model pattern)', () => {
-      // Real-world shape from omoda-core/mul-core: `function StoreModel(storeObject, location) {...}`
+      // Real-world shape from real storefront cartridges: `function StoreModel(storeObject, location) {...}`
       // invoked as `new StoreModel(store, location)`, never a plain call — a
       // widely-used SFRA idiom for "class" models that plain call-site
       // collection (which only recognized ordinary CallExpressions) missed

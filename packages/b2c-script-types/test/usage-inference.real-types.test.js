@@ -81,7 +81,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
     });
 
     it('infers dw.catalog.Product for a constructor-function model parameter, invoked via `new` (StoreModel/ProductLineItem shape)', () => {
-      // Real-world shape from omoda-core and mul-core: SFRA "class" models
+      // Real-world shape from real storefront cartridges: SFRA "class" models
       // are plain constructor functions (`function StoreModel(storeObject) {
       // this.id = storeObject.getID(); ... }`) invoked with `new`, never a
       // plain call — a widely-used idiom across both surveyed codebases

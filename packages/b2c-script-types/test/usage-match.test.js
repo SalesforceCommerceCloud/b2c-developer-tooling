@@ -109,7 +109,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
   });
 
   it('lets an identifier-name match rescue a single strong member shared by multiple classes (customer + .profile)', () => {
-    // Real-world shape from neuhaus-core's accountHelpers.js:
+    // Real-world shape from a storefront cartridge's accountHelpers.js:
     // getPasswordResetToken(customer) { customer.profile.credentials… }.
     // One-hop usage collection only sees `.profile`, which Customer shares
     // with ServiceConfig — below MIN_USAGE_SIGNATURE_MEMBERS and ambiguous —
@@ -144,7 +144,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
   });
 
   it('infers a single accessed member when it uniquely identifies one ambient class (addressBook.addresses)', () => {
-    // Real-world shape from neuhaus-core's addressHelpers.js:
+    // Real-world shape from a storefront cartridge's addressHelpers.js:
     // getAddressBookAddressByForm(addressBook, form) only ever touches
     // addressBook.addresses directly — a single member, normally below
     // MIN_USAGE_SIGNATURE_MEMBERS. Unlike `.custom` above, `.addresses` is
@@ -190,7 +190,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
   });
 
   it("infers a manual-indexing loop variable's type from its own usage (var item = items[i])", () => {
-    // Real-world shape from neuhaus-core's checkoutHelpers.js: an
+    // Real-world shape from a storefront cartridge's checkoutHelpers.js: an
     // undocumented collection parameter iterated with a manual for-loop
     // instead of collections.forEach, so items[i]'s type can never come from
     // items' own (unknown) type — only lineItem's own usage further down can
@@ -226,7 +226,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
   });
 
   it('stays quiet for a real-world single-member loop variable (hasPreorderableLineItem shape)', () => {
-    // Same neuhaus-core shape, but only one member (`preorderable`) is ever
+    // Same a storefront cartridge shape, but only one member (`preorderable`) is ever
     // accessed on the loop variable — below MIN_USAGE_SIGNATURE_MEMBERS.
     // `preorderable` uniquely identifies ProductInventoryRecord in the ambient
     // index, but the variable is named `lineItem` (SFRA alias → ProductLineItem),
@@ -283,10 +283,10 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
   });
 
   describe("the `'member' in x` existence-check idiom as usage evidence", () => {
-    // Real-world shape from omoda-core: 261 occurrences across 107 files
+    // Real-world shape from a storefront cartridge: 261 occurrences across 107 files
     // guard an optional/custom attribute with `'Foo' in obj` before reading
     // it — sometimes with no direct property-access read anywhere nearby to
-    // otherwise carry the signal (e.g. omoda-core's productBase.js checking
+    // otherwise carry the signal (e.g. a storefront cartridge's productBase.js checking
     // `'appliedPromotions' in this` with the read happening only on a later,
     // unrelated code path). collectMemberUsageInScope must count this
     // idiom, not just direct `x.member` reads.
@@ -310,7 +310,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
     });
 
     it("infers a real-world class purely from `in` checks (getProductSetOrder shape: ('x' in productCustom) ? ... : null)", () => {
-      // Mirrors omoda-core's productHelpers.js: no direct property-access
+      // Mirrors a storefront cartridge's productHelpers.js: no direct property-access
       // read on the parameter at all near the guard — the ternary's
       // consequent reads a *different* expression built from the checked
       // name as a string, not `productCustom.custom` itself in this
@@ -333,7 +333,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
     });
 
     it('combines an `in` check with a direct property-access read on the same member without double-counting (category.parent tree-walk shape)', () => {
-      // Mirrors omoda-core's dynamicAddressHelpers.js/productSearch.js:
+      // Mirrors a storefront cartridge's dynamicAddressHelpers.js/productSearch.js:
       // `if (category &amp;&amp; 'parent' in category &amp;&amp; category.parent.ID !== 'root')`.
       const files = {
         '/types.d.ts': realTypesPrelude(['Shipment'], ''),
@@ -379,7 +379,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
   });
 
   it('infers dw.catalog.Category from mutually-exclusive boolean-flag branches (getProductType shape)', () => {
-    // Real-world shape from omoda-core's productHelpers.js's getProductType
+    // Real-world shape from a storefront cartridge's productHelpers.js's getProductType
     // (there, checking product.master/variant/variationGroup/productSet/
     // bundle/optionProduct — Category is used here instead of Product so the
     // case stays focused on multi-boolean-flag disambiguation rather than the
@@ -417,7 +417,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
   });
 
   it('infers a parameter from a member-built object literal passed to a call argument, not returned (pushReview shape)', () => {
-    // Real-world shape from omoda-core's Reviews.js job step: the
+    // Real-world shape from a storefront cartridge's Reviews.js job step: the
     // shape-defining object literal is built from the parameter's own
     // properties and passed straight into another call's argument
     // (`newReviews.unshift({...})`), never returned — the member-access walk
@@ -443,18 +443,15 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
   });
 
   describe('identifier-name tiebreak (prefers the class matching the variable/parameter name)', () => {
-    // Real-world bug from mul-core's plugin_marketing_cloud/accountHelpers.js
-    // (sentAccountActivationEmail): `var profile = resettingCustomer.profile;`
-    // is only ever read via email/firstName/lastName/custom — a field subset
-    // shared by both the real dw.customer.Profile (420 lines, dozens of
-    // members) and the much smaller dw.customer.ProductListRegistrant (70
-    // lines). "Fewest total members" alone picked ProductListRegistrant
-    // every time, purely because it has less surface area — never the
-    // large, contextually correct Profile. `resettingCustomer` itself stays
-    // uninferred (placeholder `@param {obj}` is ignored, but `.profile` alone
-    // is ambiguous across Customer/ServiceConfig and the name doesn't match)
-    // so the fallback only ever reaches `profile`'s own usage signature —
-    // matching the exact real-world path.
+    // Real-world shape: `var profile = resettingCustomer.profile;` is only
+    // ever read via email/firstName/lastName/custom — a field subset shared
+    // by both dw.customer.Profile and the much smaller
+    // dw.customer.ProductListRegistrant. "Fewest total members" alone used to
+    // pick ProductListRegistrant; the identifier `profile` short-circuits to
+    // Profile. The parameter itself is also recoverable now via the
+    // PascalCase suffix `resettingCustomer` → Customer (even with weak
+    // `@param {obj}`), so `.profile` can resolve through Customer's declared
+    // property as well.
     it('infers Profile (not the smaller, equally-matching ProductListRegistrant) for a variable literally named `profile`', () => {
       const files = {
         '/types.d.ts': realTypesPrelude(['Profile', 'ProductListRegistrant', 'Customer', 'ServiceConfig'], ''),
@@ -475,10 +472,7 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
       };
       const {ctx, fn} = setupInference(files, '/accountHelpers.js', 'sentAccountActivationEmail');
 
-      // Placeholder `{obj}` no longer blocks inference, but the body only
-      // contributes `.profile` under a non-matching name — still silent.
-      const resettingCustomerTypes = inferParameterType(ctx, fn.parameters[0]);
-      assert.deepEqual(resettingCustomerTypes, []);
+      assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])), 'Customer');
 
       let profileDecl;
       const visit = (n) => {
@@ -575,6 +569,89 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
       const {ctx, fn} = setupInference(files, '/order.js', 'handlePliAttributes');
 
       assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])), 'ProductLineItem');
+    });
+
+    it('maps PascalCase suffix resettingCustomer → Customer (SFRA accountHelpers)', () => {
+      const files = {
+        '/types.d.ts': realTypesPrelude(['Customer', 'ServiceConfig'], ''),
+        '/accountHelpers.js': `
+          /**
+           * @param {Object} resettingCustomer
+           */
+          function sendPasswordResetEmail(email, resettingCustomer) {
+            return resettingCustomer.profile.credentials.createResetPasswordToken();
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/accountHelpers.js', 'sendPasswordResetEmail');
+
+      assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[1])), 'Customer');
+    });
+
+    it('maps paymentInstrument alias → OrderPaymentInstrument', () => {
+      const files = {
+        '/types.d.ts': realTypesPrelude(['OrderPaymentInstrument'], ''),
+        '/helpers.js': `
+          function amountOf(paymentInstrument) {
+            return paymentInstrument.capturedAmount;
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/helpers.js', 'amountOf');
+      assert.ok(
+        describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])).includes('OrderPaymentInstrument'),
+      );
+    });
+
+    it('maps PascalCase Profile suffix registeredCustomerProfile → Profile', () => {
+      const files = {
+        '/types.d.ts': realTypesPrelude(['Profile', 'ProductListRegistrant'], ''),
+        '/helpers.js': `
+          function greet(registeredCustomerProfile) {
+            return registeredCustomerProfile.firstName + registeredCustomerProfile.email;
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/helpers.js', 'greet');
+      assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])), 'Profile');
+    });
+
+    it('maps PascalCase suffixes apiProduct / currentBasket / defaultShipment', () => {
+      for (const [fnName, param, member, dwType, expect] of [
+        ['wrapApiProduct', 'apiProduct', 'getPriceModel', 'Product', 'Product'],
+        ['useBasket', 'currentBasket', 'billingAddress', 'Basket', 'Basket'],
+        ['useShipment', 'defaultShipment', 'productLineItems', 'Shipment', 'Shipment'],
+      ]) {
+        const files = {
+          '/types.d.ts': realTypesPrelude([dwType], ''),
+          '/helpers.js': `
+            function ${fnName}(${param}) {
+              return ${param}.${member};
+            }
+          `,
+        };
+        const {ctx, fn} = setupInference(files, '/helpers.js', fnName);
+        assert.ok(
+          describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])).includes(expect),
+          `${param} should infer ${expect}`,
+        );
+      }
+    });
+
+    it('does not treat all-lowercase names as CamelCase class suffixes (border ≠ Order)', () => {
+      // `.profile` is shared by Customer and ServiceConfig. A false
+      // `*order` → Order (or similar) suffix on `border` must not invent a
+      // unique name match — stay silent like any other uninformative name.
+      const files = {
+        '/types.d.ts': realTypesPrelude(['Customer', 'ServiceConfig', 'Order'], ''),
+        '/helpers.js': `
+          function paint(border) {
+            return border.profile;
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/helpers.js', 'paint');
+      assert.equal(inferParameterType(ctx, fn.parameters[0]).length, 0);
     });
 
     it('still silences lineItem when the only evidence is weak .custom', () => {

@@ -22,6 +22,61 @@
     "expect": "Customer"
   },
   {
+    "id": "resetting-customer-pascal-suffix",
+    "source": "storefront accountHelpers.sendPasswordResetEmail",
+    "description": "PascalCase suffix resettingCustomer + .profile recovers Customer (not exact class name)",
+    "dwTypes": ["Customer", "ServiceConfig"],
+    "files": {
+      "/helpers.js": "/**\n * @param {Object} resettingCustomer\n */\nfunction sendPasswordResetEmail(email, resettingCustomer) {\n  return resettingCustomer.profile.firstName;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "sendPasswordResetEmail", "param": 1},
+    "expect": "Customer"
+  },
+  {
+    "id": "api-product-pascal-suffix",
+    "source": "storefront product models / feeds apiProduct",
+    "description": "apiProduct PascalCase suffix recovers Product from getPriceModel",
+    "dwTypes": ["Product"],
+    "files": {
+      "/helpers.js": "function priceOf(apiProduct) {\n  return apiProduct.getPriceModel();\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "priceOf", "param": 0},
+    "expect": "Product"
+  },
+  {
+    "id": "current-basket-pascal-suffix",
+    "source": "storefront helpers currentBasket",
+    "description": "currentBasket PascalCase suffix recovers Basket",
+    "dwTypes": ["Basket", "Order"],
+    "files": {
+      "/helpers.js": "function billingOf(currentBasket) {\n  return currentBasket.billingAddress;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "billingOf", "param": 0},
+    "expect": "Basket"
+  },
+  {
+    "id": "payment-instrument-alias",
+    "source": "storefront payment helpers paymentInstrument",
+    "description": "paymentInstrument alias recovers OrderPaymentInstrument",
+    "dwTypes": ["OrderPaymentInstrument"],
+    "files": {
+      "/helpers.js": "function amountOf(paymentInstrument) {\n  return paymentInstrument.capturedAmount;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "amountOf", "param": 0},
+    "expect": "OrderPaymentInstrument"
+  },
+  {
+    "id": "registered-customer-profile-suffix",
+    "source": "storefront accountHelpers registeredCustomerProfile",
+    "description": "PascalCase Profile suffix recovers Profile from email/firstName",
+    "dwTypes": ["Profile", "ProductListRegistrant"],
+    "files": {
+      "/helpers.js": "function greet(registeredCustomerProfile) {\n  return registeredCustomerProfile.firstName + registeredCustomerProfile.email;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "greet", "param": 0},
+    "expect": "Profile"
+  },
+  {
     "id": "customer-object-jsdoc-placeholder",
     "source": "storefront accountHelpers — @param {Object} placeholder",
     "description": "Weak SFRA @param {Object} does not block Customer inference from usage",
@@ -318,7 +373,7 @@
   },
   {
     "id": "instanceof-product-line-item",
-    "source": "storefront Adyen/Avalara lineItemHelper",
+    "source": "storefront payment/tax lineItemHelper",
     "description": "Single instanceof ProductLineItem recovers that class with no call sites",
     "dwTypes": ["ProductLineItem", "ShippingLineItem", "PriceAdjustment"],
     "files": {

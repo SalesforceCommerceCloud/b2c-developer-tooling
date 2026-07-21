@@ -11,6 +11,14 @@ function forEach(collection, callback) {
   }
 }
 
+// Stock SFRA shape: ternary return through iterator.next(). Inference must
+// chase both branches so a typed call-site collection yields an element type.
+function first(collection) {
+  var iterator = collection.iterator();
+  return iterator.hasNext() ? iterator.next() : null;
+}
+
 module.exports = {
-  forEach: forEach
+  forEach: forEach,
+  first: first
 };

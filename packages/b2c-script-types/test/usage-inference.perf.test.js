@@ -579,7 +579,7 @@ describe('usage-inference — performance baselines', () => {
   });
 
   it('caches the ambient-class index across repeated hovers on a real dw.* no-call-site parameter (addressBook.addresses)', () => {
-    // Real-world shape from neuhaus-core's addressHelpers.js: an uncalled
+    // Real-world shape from a storefront cartridge's addressHelpers.js: an uncalled
     // (from this file's perspective) helper whose only parameter usage is a
     // single, globally-unique member access — the ambient-class matching
     // fallback this scenario exercises, against the real bundled dw.* types

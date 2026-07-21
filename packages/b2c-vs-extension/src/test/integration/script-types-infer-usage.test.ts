@@ -647,3 +647,75 @@ suite('scriptTypesInferUsage — matching ambient classes from usage with no cal
     );
   });
 });
+
+suite('scriptTypesInferUsage — naming aliases, instanceof, and collections.first', () => {
+  let namingDoc: vscode.TextDocument;
+
+  suiteSetup(async function () {
+    this.timeout(30000);
+
+    const expectedRoot = fixtureFile();
+    const openRoots = (vscode.workspace.workspaceFolders ?? []).map((f) => f.uri.fsPath);
+    if (!openRoots.includes(expectedRoot)) {
+      this.skip();
+    }
+
+    const ext = vscode.extensions.getExtension(EXTENSION_ID);
+    assert.ok(ext, `extension ${EXTENSION_ID} must be discoverable in the test host`);
+    await ext!.activate();
+
+    namingDoc = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(
+        fixtureFile('cartridges', 'test_cartridge', 'cartridge', 'scripts', 'helpers', 'namingHelpers.js'),
+      ),
+    );
+    await vscode.window.showTextDocument(namingDoc);
+  });
+
+  test('infers Customer for PascalCase suffix resettingCustomer despite weak @param {Object}', async () => {
+    const text = await hoverTextMatching(
+      namingDoc,
+      offsetPosition(namingDoc, 'sendPasswordResetEmail(email, resettingCustomer', 'sendPasswordResetEmail(email, '.length),
+      /Customer/,
+      true,
+    );
+    assert.ok(/Customer/.test(text), `expected Customer from resettingCustomer suffix, got: ${text}`);
+  });
+
+  test('offers Customer members after resettingCustomer. (e.g. getProfile)', async () => {
+    // getProfile is a Customer method absent from this fixture's literal text.
+    const labels = await typedCompletionsIncluding(
+      namingDoc,
+      offsetPosition(namingDoc, 'resettingCustomer.profile.credentials', 'resettingCustomer.'.length),
+      ['getProfile'],
+    );
+    assert.ok(labels.includes('getProfile'), `expected getProfile among completions, got: ${labels.join(', ')}`);
+  });
+
+  test('infers ProductLineItem for lineItem alias + .priceAdjustments (weak Object JSDoc)', async () => {
+    const text = await hoverTextMatching(
+      namingDoc,
+      offsetPosition(namingDoc, 'getLineItemAdjustmentCount(lineItem)', 'getLineItemAdjustmentCount('.length),
+      /ProductLineItem/,
+      true,
+    );
+    assert.ok(/ProductLineItem/.test(text), `expected ProductLineItem from lineItem alias, got: ${text}`);
+  });
+
+  test('infers ProductLineItem from a single instanceof dw.order.ProductLineItem check', async () => {
+    const text = await hoverTextMatching(
+      namingDoc,
+      offsetPosition(namingDoc, 'isProductLineItem(lineItem)', 'isProductLineItem('.length),
+      /ProductLineItem/,
+      true,
+    );
+    assert.ok(/ProductLineItem/.test(text), `expected ProductLineItem from instanceof, got: ${text}`);
+  });
+
+  test('infers Variant through collections.first ternary return (it.next() : null)', async () => {
+    // Hover the local `variant` holding collections.first(...); inference
+    // must chase the ternary return of `first` against product.getVariants().
+    const text = await hoverTextMatching(namingDoc, offsetPosition(namingDoc, 'variant ? variant.getID'), /Variant/, true);
+    assert.ok(/Variant/.test(text), `expected Variant from collections.first, got: ${text}`);
+  });
+});

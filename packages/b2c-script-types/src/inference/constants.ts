@@ -112,10 +112,10 @@ export const ELEMENT_FIRST_CALLBACK_CALLEES: ReadonlySet<string> = new Set([
   'every',
   'some',
   // SFRA `collections.find(coll, function (item) {...})` — same element-first
-  // shape; used heavily for address-book / line-item lookups (neuhaus-core).
+  // shape; used heavily for address-book / line-item lookups (a storefront cartridge).
   'find',
   // Stock SFRA `collections.first` takes only the collection, but several
-  // storefronts (and stickyio / calculate.js ports) call it with a predicate
+  // storefronts (and common calculate.js ports) call it with a predicate
   // the same shape as `find`. Treat that second-arg callback as element-first
   // when present so the predicate parameter still gets a type.
   'first',
@@ -130,7 +130,9 @@ export const ELEMENT_FIRST_CALLBACK_CALLEES: ReadonlySet<string> = new Set([
  *
  * Keep this list conservative: only aliases that are unambiguous in real
  * cartridges. Bare `address` is deliberately omitted (CustomerAddress vs
- * OrderAddress vs Store address models).
+ * OrderAddress vs Store address models). Prefer adding PascalCase suffixes to
+ * {@link CONVENTIONAL_IDENTIFIER_PASCAL_SUFFIXES} for `resettingCustomer`-style
+ * names; this map is for short / all-lowercase tokens (`pli`, `pricemodel`).
  */
 export const CONVENTIONAL_IDENTIFIER_ALIASES: ReadonlyMap<string, string> = new Map([
   ['lineitem', 'ProductLineItem'],
@@ -148,4 +150,52 @@ export const CONVENTIONAL_IDENTIFIER_ALIASES: ReadonlyMap<string, string> = new 
   ['couponlineitem', 'CouponLineItem'],
   ['customeraddress', 'CustomerAddress'],
   ['orderaddress', 'OrderAddress'],
+  // High-frequency all-lowercase / compound forms seen across storefronts
+  // (when authors don't camelCase the class token).
+  ['currentbasket', 'Basket'],
+  ['currentcustomer', 'Customer'],
+  ['currentorder', 'Order'],
+  ['apiproduct', 'Product'],
+  ['apiorder', 'Order'],
+  ['apilineitem', 'ProductLineItem'],
 ]);
+
+/**
+ * Trailing PascalCase class tokens → ambient class simple name. Matched with
+ * `identifierName.endsWith(pascalSuffix)` (case-sensitive on the original
+ * identifier) so `resettingCustomer` / `apiProduct` / `currentBasket` resolve
+ * while all-lowercase noise like `border` / `emailaddress` does not.
+ *
+ * Ordered longest-first so `productLineItem` hits ProductLineItem rather than
+ * Product. Generic `Address` is omitted — too many false friends
+ * (`emailAddress`, `ipAddress`, store address models).
+ */
+export const CONVENTIONAL_IDENTIFIER_PASCAL_SUFFIXES: ReadonlyArray<readonly [string, string]> = [
+  ['GiftCertificateLineItem', 'GiftCertificateLineItem'],
+  ['CouponLineItem', 'CouponLineItem'],
+  ['ProductLineItem', 'ProductLineItem'],
+  ['ShippingLineItem', 'ShippingLineItem'],
+  ['OrderPaymentInstrument', 'OrderPaymentInstrument'],
+  ['PaymentInstrument', 'OrderPaymentInstrument'],
+  ['ProductAvailabilityModel', 'ProductAvailabilityModel'],
+  ['AvailabilityModel', 'ProductAvailabilityModel'],
+  ['ProductPriceModel', 'ProductPriceModel'],
+  ['PriceModel', 'ProductPriceModel'],
+  ['ShippingAddress', 'OrderAddress'],
+  ['BillingAddress', 'OrderAddress'],
+  ['CustomerAddress', 'CustomerAddress'],
+  ['OrderAddress', 'OrderAddress'],
+  ['ShippingMethod', 'ShippingMethod'],
+  ['PriceAdjustment', 'PriceAdjustment'],
+  ['LineItem', 'ProductLineItem'],
+  ['Customer', 'Customer'],
+  ['Profile', 'Profile'],
+  ['Product', 'Product'],
+  ['Basket', 'Basket'],
+  ['Shipment', 'Shipment'],
+  ['Category', 'Category'],
+  ['Order', 'Order'],
+  ['Store', 'Store'],
+  ['Variant', 'Variant'],
+  ['Money', 'Money'],
+];

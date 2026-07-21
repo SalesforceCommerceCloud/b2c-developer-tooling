@@ -14,16 +14,25 @@ const type_helpers_1 = require("./type-helpers");
 /**
  * Resolves a parameter/variable identifier to the ambient class simple name(s)
  * it conventionally denotes: exact case-insensitive match (`customer` →
- * `Customer`) plus the curated SFRA aliases (`lineItem` / `pli` →
- * `ProductLineItem`). Returns lowercased names for comparison against
- * candidate.class names.
+ * `Customer`), curated short aliases (`pli` → `ProductLineItem`), and
+ * PascalCase suffixes (`resettingCustomer` → `Customer`, `apiProduct` →
+ * `Product`). Returns lowercased names for comparison against candidate
+ * class names.
  */
 function conventionalAmbientNames(identifierName) {
     const lower = identifierName.toLowerCase();
     const names = new Set([lower]);
     const alias = constants_1.CONVENTIONAL_IDENTIFIER_ALIASES.get(lower);
-    if (alias)
+    if (alias) {
         names.add(alias.toLowerCase());
+        return names;
+    }
+    for (const [pascalSuffix, className] of constants_1.CONVENTIONAL_IDENTIFIER_PASCAL_SUFFIXES) {
+        if (identifierName.length > pascalSuffix.length && identifierName.endsWith(pascalSuffix)) {
+            names.add(className.toLowerCase());
+            break;
+        }
+    }
     return names;
 }
 // Keyed by LanguageService, NOT by Program: tsserver hands the plugin a
@@ -224,11 +233,11 @@ function instanceTypeFromInstanceOfRhs(ctx, rhs) {
 }
 /**
  * Collects concrete types asserted via `param instanceof SomeType` in the
- * parameter's enclosing function body. Real payment/cart helpers (Adyen,
- * Avalara, stickyio calculate.js) branch on `lineItem instanceof
- * dw.order.ProductLineItem` — JetBrains' JS evaluator narrows from that;
- * without collecting it here, a polymorphic `lineItem` parameter stays
- * ambient-ambiguous even when the body names the class explicitly.
+ * parameter's enclosing function body. Real payment/cart helpers (and common
+ * calculate.js ports) branch on `lineItem instanceof dw.order.ProductLineItem`
+ * — JetBrains' JS evaluator narrows from that; without collecting it here, a
+ * polymorphic `lineItem` parameter stays ambient-ambiguous even when the body
+ * names the class explicitly.
  */
 function collectParameterInstanceOfTypes(ctx, param) {
     const { ts, checker } = ctx;
@@ -359,9 +368,10 @@ function matchAmbientTypesByUsage(ctx, memberNames, identifierName) {
         // uniquely matching `ProductInventoryRecord` while the author clearly
         // meant a line item. Silence rather than override the naming hint.
         if (byName.length === 0 && memberNames.size < constants_1.MIN_USAGE_SIGNATURE_MEMBERS) {
-            const lower = identifierName.toLowerCase();
-            const namedIntentionally = constants_1.CONVENTIONAL_IDENTIFIER_ALIASES.has(lower) ||
-                candidates.some((c) => c.name.toLowerCase() === lower);
+            // `conventional.size > 1` means an alias or PascalCase suffix fired
+            // (`resettingCustomer` → Customer, `lineItem` → ProductLineItem).
+            const namedIntentionally = conventional.size > 1 ||
+                candidates.some((c) => c.name.toLowerCase() === identifierName.toLowerCase());
             if (namedIntentionally)
                 return [];
         }

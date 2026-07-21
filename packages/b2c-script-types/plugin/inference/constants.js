@@ -5,7 +5,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CONVENTIONAL_IDENTIFIER_ALIASES = exports.ELEMENT_FIRST_CALLBACK_CALLEES = exports.WEAK_USAGE_MEMBERS = exports.MAX_CALL_SITE_CANDIDATES = exports.MAX_USAGE_MATCH_CANDIDATES = exports.MIN_USAGE_SIGNATURE_MEMBERS = exports.INFERRED_COMPLETION_SOURCE = exports.MAX_SEARCHES_PER_REQUEST = exports.MAX_SUPERMODULE_HOPS = exports.MAX_CHAIN_HOPS = exports.MAX_REFERENCES_PER_CALL = exports.MAX_REFERENCES_PER_REQUEST = exports.MAX_REFERENCE_HOPS = exports.MAX_INFERENCE_DEPTH = void 0;
+exports.CONVENTIONAL_IDENTIFIER_PASCAL_SUFFIXES = exports.CONVENTIONAL_IDENTIFIER_ALIASES = exports.ELEMENT_FIRST_CALLBACK_CALLEES = exports.WEAK_USAGE_MEMBERS = exports.MAX_CALL_SITE_CANDIDATES = exports.MAX_USAGE_MATCH_CANDIDATES = exports.MIN_USAGE_SIGNATURE_MEMBERS = exports.INFERRED_COMPLETION_SOURCE = exports.MAX_SEARCHES_PER_REQUEST = exports.MAX_SUPERMODULE_HOPS = exports.MAX_CHAIN_HOPS = exports.MAX_REFERENCES_PER_CALL = exports.MAX_REFERENCES_PER_REQUEST = exports.MAX_REFERENCE_HOPS = exports.MAX_INFERENCE_DEPTH = void 0;
 // Tunable limits for the usage-inference engine. They exist so a crafted (or
 // merely huge) cartridge can't make a single hover/completion do unbounded
 // work — every recursive walk and reference search is capped by one of these.
@@ -101,10 +101,10 @@ exports.ELEMENT_FIRST_CALLBACK_CALLEES = new Set([
     'every',
     'some',
     // SFRA `collections.find(coll, function (item) {...})` — same element-first
-    // shape; used heavily for address-book / line-item lookups (neuhaus-core).
+    // shape; used heavily for address-book / line-item lookups (a storefront cartridge).
     'find',
     // Stock SFRA `collections.first` takes only the collection, but several
-    // storefronts (and stickyio / calculate.js ports) call it with a predicate
+    // storefronts (and common calculate.js ports) call it with a predicate
     // the same shape as `find`. Treat that second-arg callback as element-first
     // when present so the predicate parameter still gets a type.
     'first',
@@ -118,7 +118,9 @@ exports.ELEMENT_FIRST_CALLBACK_CALLEES = new Set([
  *
  * Keep this list conservative: only aliases that are unambiguous in real
  * cartridges. Bare `address` is deliberately omitted (CustomerAddress vs
- * OrderAddress vs Store address models).
+ * OrderAddress vs Store address models). Prefer adding PascalCase suffixes to
+ * {@link CONVENTIONAL_IDENTIFIER_PASCAL_SUFFIXES} for `resettingCustomer`-style
+ * names; this map is for short / all-lowercase tokens (`pli`, `pricemodel`).
  */
 exports.CONVENTIONAL_IDENTIFIER_ALIASES = new Map([
     ['lineitem', 'ProductLineItem'],
@@ -136,4 +138,51 @@ exports.CONVENTIONAL_IDENTIFIER_ALIASES = new Map([
     ['couponlineitem', 'CouponLineItem'],
     ['customeraddress', 'CustomerAddress'],
     ['orderaddress', 'OrderAddress'],
+    // High-frequency all-lowercase / compound forms seen across storefronts
+    // (when authors don't camelCase the class token).
+    ['currentbasket', 'Basket'],
+    ['currentcustomer', 'Customer'],
+    ['currentorder', 'Order'],
+    ['apiproduct', 'Product'],
+    ['apiorder', 'Order'],
+    ['apilineitem', 'ProductLineItem'],
 ]);
+/**
+ * Trailing PascalCase class tokens → ambient class simple name. Matched with
+ * `identifierName.endsWith(pascalSuffix)` (case-sensitive on the original
+ * identifier) so `resettingCustomer` / `apiProduct` / `currentBasket` resolve
+ * while all-lowercase noise like `border` / `emailaddress` does not.
+ *
+ * Ordered longest-first so `productLineItem` hits ProductLineItem rather than
+ * Product. Generic `Address` is omitted — too many false friends
+ * (`emailAddress`, `ipAddress`, store address models).
+ */
+exports.CONVENTIONAL_IDENTIFIER_PASCAL_SUFFIXES = [
+    ['GiftCertificateLineItem', 'GiftCertificateLineItem'],
+    ['CouponLineItem', 'CouponLineItem'],
+    ['ProductLineItem', 'ProductLineItem'],
+    ['ShippingLineItem', 'ShippingLineItem'],
+    ['OrderPaymentInstrument', 'OrderPaymentInstrument'],
+    ['PaymentInstrument', 'OrderPaymentInstrument'],
+    ['ProductAvailabilityModel', 'ProductAvailabilityModel'],
+    ['AvailabilityModel', 'ProductAvailabilityModel'],
+    ['ProductPriceModel', 'ProductPriceModel'],
+    ['PriceModel', 'ProductPriceModel'],
+    ['ShippingAddress', 'OrderAddress'],
+    ['BillingAddress', 'OrderAddress'],
+    ['CustomerAddress', 'CustomerAddress'],
+    ['OrderAddress', 'OrderAddress'],
+    ['ShippingMethod', 'ShippingMethod'],
+    ['PriceAdjustment', 'PriceAdjustment'],
+    ['LineItem', 'ProductLineItem'],
+    ['Customer', 'Customer'],
+    ['Profile', 'Profile'],
+    ['Product', 'Product'],
+    ['Basket', 'Basket'],
+    ['Shipment', 'Shipment'],
+    ['Category', 'Category'],
+    ['Order', 'Order'],
+    ['Store', 'Store'],
+    ['Variant', 'Variant'],
+    ['Money', 'Money'],
+];

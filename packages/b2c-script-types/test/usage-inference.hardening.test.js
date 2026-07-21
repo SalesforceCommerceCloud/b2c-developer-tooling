@@ -128,7 +128,7 @@ describe('usage-inference hardening', () => {
       assert.deepEqual(types, []);
     });
 
-    it('stays silent when a duck-typed Store model call site resolves but the body also uses address-only fields (mul-core copyCustomerAddressToShipment)', () => {
+    it('stays silent when a duck-typed Store model call site resolves but the body also uses address-only fields (a storefront cartridge copyCustomerAddressToShipment)', () => {
       // Controllers pass both an untyped preferredAddress (req is any) and a
       // Store *model* from getDeliveryStore(). Only the model resolves to a
       // concrete type named Store — without a body-usage consistency check
@@ -204,7 +204,7 @@ describe('usage-inference hardening', () => {
 
   describe('multi-cartridge require call sites (cartridge-fixture factory)', () => {
     it('infers a helper parameter from a call site reached through require("~/...")', () => {
-      // Mirrors mul-core/neuhaus-core: helpers consumed via cartridge-relative
+      // Mirrors a storefront cartridge/a storefront cartridge: helpers consumed via cartridge-relative
       // require from another file in the same cartridge. Uses the shared
       // createCartridgeFixture factory so path layout stays consistent with
       // the VS Code E2E workspace.
