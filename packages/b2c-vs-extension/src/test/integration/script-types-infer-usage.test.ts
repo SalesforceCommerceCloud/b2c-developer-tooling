@@ -675,7 +675,11 @@ suite('scriptTypesInferUsage — naming aliases, instanceof, and collections.fir
   test('infers Customer for PascalCase suffix resettingCustomer despite weak @param {Object}', async () => {
     const text = await hoverTextMatching(
       namingDoc,
-      offsetPosition(namingDoc, 'sendPasswordResetEmail(email, resettingCustomer', 'sendPasswordResetEmail(email, '.length),
+      offsetPosition(
+        namingDoc,
+        'sendPasswordResetEmail(email, resettingCustomer',
+        'sendPasswordResetEmail(email, '.length,
+      ),
       /Customer/,
       true,
     );
@@ -715,7 +719,12 @@ suite('scriptTypesInferUsage — naming aliases, instanceof, and collections.fir
   test('infers Variant through collections.first ternary return (it.next() : null)', async () => {
     // Hover the local `variant` holding collections.first(...); inference
     // must chase the ternary return of `first` against product.getVariants().
-    const text = await hoverTextMatching(namingDoc, offsetPosition(namingDoc, 'variant ? variant.getID'), /Variant/, true);
+    const text = await hoverTextMatching(
+      namingDoc,
+      offsetPosition(namingDoc, 'variant ? variant.getID'),
+      /Variant/,
+      true,
+    );
     assert.ok(/Variant/.test(text), `expected Variant from collections.first, got: ${text}`);
   });
 });
