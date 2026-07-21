@@ -458,6 +458,61 @@ describe('create() proxy — usage inference wiring', () => {
     );
   });
 
+  it('runs inference through the hover/completion gate for a weak `@param {Object}` placeholder', () => {
+    // Regression test for the entry gate (isOpenForUsageInference): checkJs
+    // resolves the ubiquitous SFRA `@param {Object}` placeholder to the global
+    // `Object` interface — NOT `any` and NOT the lowercase `object`
+    // non-primitive — so the gate used to reject the hover/completion before
+    // inference ran, even though the rest of the engine already treats
+    // `{Object}` JSDoc as a weak placeholder. The unit/corpus suites call
+    // inferParameterType() directly and never exercised the gate, so this
+    // only surfaced in the real VS Code host (and its integration suite).
+    const files = {
+      '/types.d.ts': realTypesPrelude(['Customer', 'Profile'], ''),
+      '/accountHelpers.js': `
+        /**
+         * @param {Object} resettingCustomer
+         */
+        function sendPasswordResetEmail(resettingCustomer) {
+          var last = resettingCustomer.profile.lastName;
+          return resettingCustomer.profile.firstName + last;
+        }
+        module.exports = {sendPasswordResetEmail};
+      `,
+    };
+    const host = createFixtureHost(files);
+    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
+    const {create} = init({typescript: ts});
+    const proxy = create({
+      languageService,
+      languageServiceHost: host,
+      project: {
+        projectService: {logger: {info: () => {}}},
+        getCurrentDirectory: () => '/',
+        getProjectVersion: () => '1',
+      },
+      config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
+    });
+
+    const source = files['/accountHelpers.js'];
+    const paramPos = source.indexOf('sendPasswordResetEmail(resettingCustomer)') + 'sendPasswordResetEmail('.length;
+    const dotPos = source.indexOf('resettingCustomer.profile') + 'resettingCustomer.'.length;
+
+    const hover = proxy.getQuickInfoAtPosition('/accountHelpers.js', paramPos);
+    const hoverText = (hover?.documentation ?? []).map((p) => p.text).join('');
+    assert.ok(
+      hoverText.includes('Inferred from usage: Customer'),
+      `weak {Object} JSDoc must not close the gate; got: ${hoverText || '(no inferred note)'}`,
+    );
+
+    const completions = proxy.getCompletionsAtPosition('/accountHelpers.js', dotPos, undefined);
+    const names = (completions?.entries ?? []).map((e) => e.name);
+    assert.ok(
+      names.includes('getProfile'),
+      `expected Customer members after the {Object} receiver, got: ${names.join(', ')}`,
+    );
+  });
+
   it('offers completions for a dangling mid-edit `shipment.` immediately followed by more code on later lines', () => {
     // Regression test for a real dogfooding find: `.` never gets automatic
     // semicolon insertion (it always demands a following identifier), so a

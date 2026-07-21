@@ -728,3 +728,70 @@ suite('scriptTypesInferUsage — naming aliases, instanceof, and collections.fir
     assert.ok(/Variant/.test(text), `expected Variant from collections.first, got: ${text}`);
   });
 });
+
+suite('scriptTypesInferUsage — *LineItem subclass disambiguation and real-JSDoc deference', () => {
+  let lineItemDoc: vscode.TextDocument;
+
+  suiteSetup(async function () {
+    this.timeout(30000);
+
+    const expectedRoot = fixtureFile();
+    const openRoots = (vscode.workspace.workspaceFolders ?? []).map((f) => f.uri.fsPath);
+    if (!openRoots.includes(expectedRoot)) {
+      this.skip();
+    }
+
+    const ext = vscode.extensions.getExtension(EXTENSION_ID);
+    assert.ok(ext, `extension ${EXTENSION_ID} must be discoverable in the test host`);
+    await ext!.activate();
+
+    lineItemDoc = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(
+        fixtureFile('cartridges', 'test_cartridge', 'cartridge', 'scripts', 'helpers', 'lineItemHelpers.js'),
+      ),
+    );
+    await vscode.window.showTextDocument(lineItemDoc);
+  });
+
+  test('infers BonusDiscountLineItem (not ProductLineItem) for a bonusDiscountLineItem parameter', async () => {
+    // The bare `LineItem` naming suffix would force ProductLineItem; the
+    // specific-subclass alias must win so the correct sibling class resolves.
+    const text = await hoverTextMatching(
+      lineItemDoc,
+      offsetPosition(lineItemDoc, 'countBonusChoices(bonusDiscountLineItem)', 'countBonusChoices('.length),
+      /BonusDiscountLineItem/,
+      true,
+    );
+    assert.ok(/BonusDiscountLineItem/.test(text), `expected BonusDiscountLineItem, got: ${text}`);
+  });
+
+  test('offers BonusDiscountLineItem members as completions (getMaxBonusItems absent from fixture text)', async () => {
+    const labels = await typedCompletionsIncluding(
+      lineItemDoc,
+      offsetPosition(lineItemDoc, 'bonusDiscountLineItem.maxBonusItems', 'bonusDiscountLineItem.'.length),
+      ['getMaxBonusItems'],
+    );
+    assert.ok(
+      labels.includes('getMaxBonusItems'),
+      `expected getMaxBonusItems among completions, got: ${labels.join(', ')}`,
+    );
+  });
+
+  test('leaves a real @param {dw.catalog.Product} annotation alone — Product type, no inference note', async () => {
+    // Waiting for /Product/ proves the injected dw.* ambient types are live
+    // (native TS resolves the JSDoc against them). The type must appear
+    // WITHOUT the "Inferred from usage" note: a deliberate dw.* annotation is
+    // authoritative and inference must defer to it.
+    const text = await hoverTextMatching(
+      lineItemDoc,
+      offsetPosition(lineItemDoc, 'describeCatalogProduct(catalogProduct)', 'describeCatalogProduct('.length),
+      /Product/,
+      false,
+    );
+    assert.ok(/Product/.test(text), `expected the real Product type, got: ${text}`);
+    assert.ok(
+      !text.includes('Inferred from usage'),
+      `a deliberate dw.* JSDoc annotation must not carry the inference label: ${text}`,
+    );
+  });
+});

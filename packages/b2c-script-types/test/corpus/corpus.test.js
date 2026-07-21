@@ -93,7 +93,14 @@ describe('usage-inference golden corpus (real-storefront shapes)', () => {
       const types =
         target.kind === 'variable' ? inferTypeForNode(ctx, target.node.name) : inferParameterType(ctx, target.node);
       if (corpusCase.expect === null) {
-        assert.deepEqual(types, [], `expected silence for ${corpusCase.id}`);
+        // Assert length, never `deepEqual(types, [])`: on an unexpected
+        // non-empty result `types` holds TS Type objects whose circular
+        // internal structure makes deepEqual hang instead of failing.
+        assert.equal(
+          types.length,
+          0,
+          `expected silence for ${corpusCase.id}, got: ${describeTypes(ctx.checker, types)}`,
+        );
         return;
       }
 

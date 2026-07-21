@@ -370,8 +370,7 @@ function matchAmbientTypesByUsage(ctx, memberNames, identifierName) {
         if (byName.length === 0 && memberNames.size < constants_1.MIN_USAGE_SIGNATURE_MEMBERS) {
             // `conventional.size > 1` means an alias or PascalCase suffix fired
             // (`resettingCustomer` → Customer, `lineItem` → ProductLineItem).
-            const namedIntentionally = conventional.size > 1 ||
-                candidates.some((c) => c.name.toLowerCase() === identifierName.toLowerCase());
+            const namedIntentionally = conventional.size > 1 || candidates.some((c) => c.name.toLowerCase() === identifierName.toLowerCase());
             if (namedIntentionally)
                 return [];
         }

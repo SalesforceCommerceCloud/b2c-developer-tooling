@@ -406,5 +406,38 @@
     },
     "target": {"file": "/helpers.js", "kind": "callbackParam", "param": 0},
     "expect": "FixtureAdj"
+  },
+  {
+    "id": "bonus-discount-line-item-subclass",
+    "source": "storefront promotion helper bonusDiscountLineItem",
+    "description": "bonusDiscountLineItem name + distinctive members recovers BonusDiscountLineItem, not the ProductLineItem the bare LineItem suffix would force",
+    "dwTypes": ["BonusDiscountLineItem", "ProductLineItem", "CouponLineItem"],
+    "files": {
+      "/helpers.js": "function countBonusChoices(bonusDiscountLineItem) {\n  var max = bonusDiscountLineItem.maxBonusItems;\n  return bonusDiscountLineItem.getBonusProducts().length + max;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "countBonusChoices", "param": 0},
+    "expect": "BonusDiscountLineItem"
+  },
+  {
+    "id": "bonus-discount-line-item-shared-member-silence",
+    "source": "storefront promotion helper bonusDiscountLineItem (generic usage)",
+    "description": "bonusDiscountLineItem touching only a base member ProductLineItem also exposes stays silent (named class does not match) rather than mis-resolving to ProductLineItem",
+    "dwTypes": ["BonusDiscountLineItem", "ProductLineItem"],
+    "files": {
+      "/helpers.js": "function bonusQty(bonusDiscountLineItem) {\n  return bonusDiscountLineItem.getQuantity();\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "bonusQty", "param": 0},
+    "expect": null
+  },
+  {
+    "id": "product-shipping-line-item-subclass",
+    "source": "storefront shipping helper productShippingLineItem",
+    "description": "productShippingLineItem name + shared LineItem member resolves to ProductShippingLineItem, not the ShippingLineItem the shorter suffix would force",
+    "dwTypes": ["ProductShippingLineItem", "ShippingLineItem", "ProductLineItem"],
+    "files": {
+      "/helpers.js": "function surcharge(productShippingLineItem) {\n  var q = productShippingLineItem.getQuantity();\n  return productShippingLineItem.getProductLineItem();\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "surcharge", "param": 0},
+    "expect": "ProductShippingLineItem"
   }
 ]

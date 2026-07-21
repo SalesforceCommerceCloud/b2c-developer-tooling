@@ -29,6 +29,18 @@ function isAnyType(ts, type) {
  * Deliberately excludes named classes (even wrong ones like a mis-documented
  * `Request`) — those are strong enough that overriding them would fight both
  * TypeScript and IntelliJ's JSDoc-first model.
+ *
+ * The one named type it *does* treat as open is the global `Object` interface,
+ * which is what checkJs resolves the ubiquitous SFRA `@param {Object}`
+ * placeholder to (capital-O `Object`, distinct from the lowercase `object`
+ * non-primitive handled above, and from `{*}`/`{}`/`{obj}` which all widen to
+ * `any` or an empty type). `Object` carries no Script API information, so a
+ * value typed as bare `Object` is effectively undocumented — exactly the case
+ * usage inference exists for. Without this, the hover/completion entry gate
+ * (see index.ts) would reject every `@param {Object}` helper before inference
+ * even ran, even though {@link hasExplicitParameterType} already correctly
+ * classifies that JSDoc as a weak placeholder. No dw.* class is named plain
+ * `Object`, so keying on the name can't shadow a real Script API type.
  */
 function isOpenForUsageInference(ts, type) {
     if (isAnyType(ts, type))
@@ -37,6 +49,8 @@ function isOpenForUsageInference(ts, type) {
         return true;
     const symbol = type.getSymbol();
     if (symbol?.getName() === '__type' && type.getProperties().length === 0)
+        return true;
+    if (symbol?.getName() === 'Object' && (type.flags & ts.TypeFlags.Object) !== 0)
         return true;
     return false;
 }

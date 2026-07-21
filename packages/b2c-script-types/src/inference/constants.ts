@@ -148,6 +148,13 @@ export const CONVENTIONAL_IDENTIFIER_ALIASES: ReadonlyMap<string, string> = new 
   ['priceadjustment', 'PriceAdjustment'],
   ['giftcertificatelineitem', 'GiftCertificateLineItem'],
   ['couponlineitem', 'CouponLineItem'],
+  // Other concrete dw.order line-item subclasses. Without these, the bare
+  // `LineItem` PascalCase suffix (below) would force an all-lowercase
+  // `bonusdiscountlineitem` / `productshippinglineitem` to ProductLineItem —
+  // a wrong guess for a differently-named sibling class (see the matching
+  // PascalCase suffixes and the *LineItem note there).
+  ['bonusdiscountlineitem', 'BonusDiscountLineItem'],
+  ['productshippinglineitem', 'ProductShippingLineItem'],
   ['customeraddress', 'CustomerAddress'],
   ['orderaddress', 'OrderAddress'],
   // High-frequency all-lowercase / compound forms seen across storefronts
@@ -169,10 +176,23 @@ export const CONVENTIONAL_IDENTIFIER_ALIASES: ReadonlyMap<string, string> = new 
  * Ordered longest-first so `productLineItem` hits ProductLineItem rather than
  * Product. Generic `Address` is omitted — too many false friends
  * (`emailAddress`, `ipAddress`, store address models).
+ *
+ * The *LineItem subclasses (`ProductLineItem`, `BonusDiscountLineItem`,
+ * `CouponLineItem`, `GiftCertificateLineItem`, `ShippingLineItem`,
+ * `ProductShippingLineItem`) must ALL precede the bare `LineItem` →
+ * ProductLineItem fallback, and each longer name must precede any shorter one
+ * it ends with (`ProductShippingLineItem` before `ShippingLineItem`), because
+ * the matcher stops at the first `endsWith` hit in array order. Without the
+ * specific entries, a `bonusDiscountLineItem` / `productShippingLineItem`
+ * parameter would resolve to the wrong sibling class (ProductLineItem /
+ * ShippingLineItem) whenever its body only touches members shared through the
+ * common `LineItem` base — the classic silence-vs-wrong-guess trap.
  */
 export const CONVENTIONAL_IDENTIFIER_PASCAL_SUFFIXES: ReadonlyArray<readonly [string, string]> = [
   ['GiftCertificateLineItem', 'GiftCertificateLineItem'],
+  ['BonusDiscountLineItem', 'BonusDiscountLineItem'],
   ['CouponLineItem', 'CouponLineItem'],
+  ['ProductShippingLineItem', 'ProductShippingLineItem'],
   ['ProductLineItem', 'ProductLineItem'],
   ['ShippingLineItem', 'ShippingLineItem'],
   ['OrderPaymentInstrument', 'OrderPaymentInstrument'],
