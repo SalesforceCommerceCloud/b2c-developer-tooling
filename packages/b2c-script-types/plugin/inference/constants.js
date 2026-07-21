@@ -5,7 +5,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MAX_USAGE_MATCH_CANDIDATES = exports.MIN_USAGE_SIGNATURE_MEMBERS = exports.INFERRED_COMPLETION_SOURCE = exports.MAX_SEARCHES_PER_REQUEST = exports.MAX_SUPERMODULE_HOPS = exports.MAX_CHAIN_HOPS = exports.MAX_REFERENCES_PER_CALL = exports.MAX_REFERENCES_PER_REQUEST = exports.MAX_REFERENCE_HOPS = exports.MAX_INFERENCE_DEPTH = void 0;
+exports.ELEMENT_FIRST_CALLBACK_CALLEES = exports.WEAK_USAGE_MEMBERS = exports.MAX_CALL_SITE_CANDIDATES = exports.MAX_USAGE_MATCH_CANDIDATES = exports.MIN_USAGE_SIGNATURE_MEMBERS = exports.INFERRED_COMPLETION_SOURCE = exports.MAX_SEARCHES_PER_REQUEST = exports.MAX_SUPERMODULE_HOPS = exports.MAX_CHAIN_HOPS = exports.MAX_REFERENCES_PER_CALL = exports.MAX_REFERENCES_PER_REQUEST = exports.MAX_REFERENCE_HOPS = exports.MAX_INFERENCE_DEPTH = void 0;
 // Tunable limits for the usage-inference engine. They exist so a crafted (or
 // merely huge) cartridge can't make a single hover/completion do unbounded
 // work — every recursive walk and reference search is capped by one of these.
@@ -76,7 +76,31 @@ exports.INFERRED_COMPLETION_SOURCE = '@salesforce/b2c-script-types/inferred-usag
 // matchAmbientTypesByUsage's unambiguous-single-member exception.
 exports.MIN_USAGE_SIGNATURE_MEMBERS = 2;
 // If the member-name signature still ties across more candidates than this
-// after ranking by specificity (fewest total members), the match is too
-// ambiguous to be a useful hint — silence beats a wall of unrelated
-// candidates in the hover text.
+// after ranking by specificity (distinctiveness, then fewest total members),
+// the match is too ambiguous to be a useful hint — silence beats a wall of
+// unrelated candidates in the hover text.
 exports.MAX_USAGE_MATCH_CANDIDATES = 5;
+// When call-site arguments don't converge on a single distinct type, silence
+// rather than union a noisy hover like `Product | Order`. A two-type union is
+// already usually wrong for any given call site; ambient usage-matching is
+// also skipped in that case — conflicting evidence is not "no call sites".
+exports.MAX_CALL_SITE_CANDIDATES = 1;
+// Member names so common across dw.* that they barely discriminate a class
+// on their own (nearly every ExtensibleObject exposes `.custom` / `.UUID`).
+// They still count as usage evidence for matching, but contribute far less
+// to the distinctiveness score used to rank ambient candidates.
+exports.WEAK_USAGE_MEMBERS = new Set(['custom', 'UUID', 'toString', 'valueOf']);
+// Callee names whose callbacks lead with the collection element
+// (`collections.forEach(coll, function (item) {...})`). Only these get the
+// sibling-collection element-type heuristic; `reduce` (accumulator first)
+// and unknown helpers stay out.
+exports.ELEMENT_FIRST_CALLBACK_CALLEES = new Set([
+    'forEach',
+    'map',
+    'filter',
+    'every',
+    'some',
+    // SFRA `collections.find(coll, function (item) {...})` — same element-first
+    // shape; used heavily for address-book / line-item lookups (neuhaus-core).
+    'find',
+]);

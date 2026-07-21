@@ -75,8 +75,12 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
   });
 
   it('returns no candidates when the usage signature is a single, too-generic member name', () => {
+    // Include several ExtensibleObject-like classes so `.custom` is ambiguous
+    // across the ambient index — and name the parameter `shipment` so the
+    // identifier-name short-circuit would otherwise rescue Shipment despite
+    // the weak evidence.
     const files = {
-      '/types.d.ts': realTypesPrelude(['Shipment'], ''),
+      '/types.d.ts': realTypesPrelude(['Shipment', 'ProductLineItem', 'Profile', 'Customer'], ''),
       '/shippingHelpers.js': `
         function touchCustom(shipment) {
           shipment.custom.fromStoreId = null;
@@ -88,6 +92,20 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
     const types = inferParameterType(ctx, fn.parameters[0]);
 
     assert.deepEqual(types, []);
+  });
+
+  it('does not let an identifier-name match rescue a weak-only custom+UUID signature', () => {
+    const files = {
+      '/types.d.ts': realTypesPrelude(['Shipment', 'ProductLineItem', 'Profile', 'Customer'], ''),
+      '/helpers.js': `
+        function touch(shipment) {
+          return shipment.custom || shipment.UUID;
+        }
+      `,
+    };
+    const {ctx, fn} = setupInference(files, '/helpers.js', 'touch');
+
+    assert.deepEqual(inferParameterType(ctx, fn.parameters[0]), []);
   });
 
   it('infers a single accessed member when it uniquely identifies one ambient class (addressBook.addresses)', () => {

@@ -15,7 +15,13 @@
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
-import {MAX_CHAIN_HOPS, MAX_INFERENCE_DEPTH, MAX_SUPERMODULE_HOPS} from './constants';
+import {
+  ELEMENT_FIRST_CALLBACK_CALLEES,
+  MAX_CALL_SITE_CANDIDATES,
+  MAX_CHAIN_HOPS,
+  MAX_INFERENCE_DEPTH,
+  MAX_SUPERMODULE_HOPS,
+} from './constants';
 import type {InferenceContext} from './context';
 import {
   collectReturnExpressions,
@@ -197,12 +203,14 @@ function resolveSuperModuleMemberTypes(
 
 /**
  * Infers the type of a callback's first parameter from sibling arguments of
- * the call the callback is passed to: `collections.forEach(coll, function
- * (item) {...})` — a function expression in argument position has no name to
- * run a reference search on, but the collection travelling alongside it
- * names the element type. Only the first parameter is mapped (SFRA's
- * collections util passes the element first), and `reduce`-style callees are
- * skipped since their callbacks lead with an accumulator instead.
+ * the call the callback is passed to: `collections.forEach` / `map` /
+ * `filter` / `every` / `some` / `find` (see {@link ELEMENT_FIRST_CALLBACK_CALLEES}).
+ * A function expression in argument position has no name to run a reference
+ * search on, but the collection travelling alongside it names the element
+ * type. Only the first parameter is mapped (SFRA's collections util passes
+ * the element first). Unknown callees and `reduce` (accumulator first) are
+ * left alone — applying the heuristic to an arbitrary helper would guess wrong
+ * more often than it helps.
  */
 function inferCallbackParameterTypes(
   ctx: InferenceContext,
@@ -219,7 +227,7 @@ function inferCallbackParameterTypes(
     : ts.isIdentifier(call.expression)
       ? call.expression.text
       : undefined;
-  if (calleeName === 'reduce') return [];
+  if (!calleeName || !ELEMENT_FIRST_CALLBACK_CALLEES.has(calleeName)) return [];
   const types: tsserver.Type[] = [];
   for (const arg of call.arguments) {
     if (arg === fn) continue;
@@ -400,6 +408,63 @@ function resolveIdentifierTypes(
 }
 
 /**
+ * Collects argument types at `paramIndex` across every call/`new` site of
+ * `nameNode`. A bare `new Helper` (no parens) has `arguments === undefined`
+ * and contributes nothing.
+ */
+function collectArgumentTypesFromCallSites(
+  ctx: InferenceContext,
+  nameNode: tsserver.Identifier,
+  paramIndex: number,
+  depth: number,
+): tsserver.Type[] {
+  const types: tsserver.Type[] = [];
+  for (const call of collectCallSites(ctx, nameNode)) {
+    const arg = call.arguments?.[paramIndex];
+    if (!arg) continue;
+    types.push(...resolveExpressionTypes(ctx, arg, depth));
+  }
+  return types;
+}
+
+/**
+ * Turns raw call-site/callback candidates into the final answer for a
+ * parameter: dedupe, silence conflicting top-level unions, otherwise fall
+ * back to ambient usage matching when nothing resolved.
+ */
+function finalizeParameterCandidates(
+  ctx: InferenceContext,
+  param: tsserver.ParameterDeclaration,
+  types: tsserver.Type[],
+  depth: number,
+): tsserver.Type[] {
+  const {ts} = ctx;
+  const result = dedupeTypes(ctx, types);
+  // Conflicting call-site arguments (e.g. Product at one site, Order at
+  // another) are not a useful hover — silence rather than a noisy union,
+  // and do NOT fall through to ambient matching: we already have evidence,
+  // it just doesn't converge.
+  //
+  // Only enforce this at depth 0 (a top-level hover/completion on the
+  // parameter itself). Recursive callers that chase through a forwarding
+  // helper still need the full candidate set so return-type inference and
+  // the typeToString memo baselines keep working; the editor never shows
+  // those intermediate unions unlabeled.
+  if (depth === 0 && result.length > MAX_CALL_SITE_CANDIDATES) return [];
+  if (result.length > 0) return result;
+  // No call site could be found or resolved at all (a helper only ever
+  // reached indirectly — a Controller route dispatching through a name the
+  // reference search can't follow, or genuinely dead/unused code). Rather
+  // than give up, try to match how the parameter's own body uses it against
+  // the program's ambient classes.
+  return matchAmbientTypesByUsage(
+    ctx,
+    collectParameterMemberUsage(ctx, param),
+    ts.isIdentifier(param.name) ? param.name.text : undefined,
+  );
+}
+
+/**
  * Infers a parameter's candidate type(s) from the arguments it's actually
  * called with across the project — a plain call (`helper(x)`) or a
  * constructor invocation (`new Helper(x)`, SFRA's other common "class" model
@@ -441,36 +506,15 @@ export function inferParameterType(
     const paramIndex = fn.parameters.indexOf(param);
     if (paramIndex < 0) return [];
 
-    const types: tsserver.Type[] = [];
     const nameNode = getReferenceNameNode(fn, ts);
-    if (nameNode) {
-      for (const call of collectCallSites(ctx, nameNode)) {
-        // A bare `new Helper` (no parens) has `arguments === undefined`,
-        // unlike a plain call, which always has an (possibly empty) array.
-        const arg = call.arguments?.[paramIndex];
-        if (!arg) continue;
-        types.push(...resolveExpressionTypes(ctx, arg, depth));
-      }
-    } else {
-      // No name to search references for — an anonymous callback passed
-      // directly in argument position. Its element type may still be
-      // recoverable from the collection argument travelling alongside it.
-      types.push(...inferCallbackParameterTypes(ctx, fn, paramIndex, depth));
-    }
+    const types = nameNode
+      ? collectArgumentTypesFromCallSites(ctx, nameNode, paramIndex, depth)
+      : // No name to search references for — an anonymous callback passed
+        // directly in argument position. Its element type may still be
+        // recoverable from the collection argument travelling alongside it.
+        inferCallbackParameterTypes(ctx, fn, paramIndex, depth);
 
-    let result = dedupeTypes(ctx, types);
-    // No call site could be found or resolved at all (a helper only ever
-    // reached indirectly — a Controller route dispatching through a name the
-    // reference search can't follow, or genuinely dead/unused code). Rather
-    // than give up, try to match how the parameter's own body uses it against
-    // the program's ambient classes.
-    if (result.length === 0) {
-      result = matchAmbientTypesByUsage(
-        ctx,
-        collectParameterMemberUsage(ctx, param),
-        ts.isIdentifier(param.name) ? param.name.text : undefined,
-      );
-    }
+    const result = finalizeParameterCandidates(ctx, param, types, depth);
     // Don't memoize a result whose computation hit a cycle guard: it was
     // truncated by what happened to be on the *current* call stack, and the
     // same node queried later in this request from outside the cycle could

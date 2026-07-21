@@ -236,13 +236,16 @@ describe('create() proxy — usage inference wiring', () => {
     // Simulate an edit: add a second call site with a different argument
     // type, and bump both the file's script version and the project version
     // (as a real host would) so the cache can't keep serving the old answer.
+    // Conflicting call sites must not keep serving the stale Product-shaped
+    // inference — and must stay silent rather than union a noisy hover.
     files['/helper.js'] += '\nhelper(getInventory());\n';
     versions['/helper.js'] += 1;
     projectVersion += 1;
 
     const after = proxy.getQuickInfoAtPosition('/helper.js', paramPos);
     const afterText = (after?.documentation ?? []).map((p) => p.text).join('');
-    assert.ok(afterText.includes('quantity'));
+    assert.ok(!afterText.includes('Inferred from usage'), `expected silence after conflicting edit, got: ${afterText}`);
+    assert.ok(!afterText.includes('{ ID: string; name: string; }'));
   });
 
   it('hovers and completes against the real, nullable dw.catalog.ProductMgr.getProduct() shape end-to-end', () => {

@@ -84,7 +84,34 @@ export const INFERRED_COMPLETION_SOURCE = '@salesforce/b2c-script-types/inferred
 export const MIN_USAGE_SIGNATURE_MEMBERS = 2;
 
 // If the member-name signature still ties across more candidates than this
-// after ranking by specificity (fewest total members), the match is too
-// ambiguous to be a useful hint — silence beats a wall of unrelated
-// candidates in the hover text.
+// after ranking by specificity (distinctiveness, then fewest total members),
+// the match is too ambiguous to be a useful hint — silence beats a wall of
+// unrelated candidates in the hover text.
 export const MAX_USAGE_MATCH_CANDIDATES = 5;
+
+// When call-site arguments don't converge on a single distinct type, silence
+// rather than union a noisy hover like `Product | Order`. A two-type union is
+// already usually wrong for any given call site; ambient usage-matching is
+// also skipped in that case — conflicting evidence is not "no call sites".
+export const MAX_CALL_SITE_CANDIDATES = 1;
+
+// Member names so common across dw.* that they barely discriminate a class
+// on their own (nearly every ExtensibleObject exposes `.custom` / `.UUID`).
+// They still count as usage evidence for matching, but contribute far less
+// to the distinctiveness score used to rank ambient candidates.
+export const WEAK_USAGE_MEMBERS: ReadonlySet<string> = new Set(['custom', 'UUID', 'toString', 'valueOf']);
+
+// Callee names whose callbacks lead with the collection element
+// (`collections.forEach(coll, function (item) {...})`). Only these get the
+// sibling-collection element-type heuristic; `reduce` (accumulator first)
+// and unknown helpers stay out.
+export const ELEMENT_FIRST_CALLBACK_CALLEES: ReadonlySet<string> = new Set([
+  'forEach',
+  'map',
+  'filter',
+  'every',
+  'some',
+  // SFRA `collections.find(coll, function (item) {...})` — same element-first
+  // shape; used heavily for address-book / line-item lookups (neuhaus-core).
+  'find',
+]);

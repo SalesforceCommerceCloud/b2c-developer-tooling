@@ -1,0 +1,81 @@
+[
+  {
+    "id": "neuhaus-addressBook-addresses",
+    "source": "neuhaus-core addressHelpers.getAddressBookAddressByForm",
+    "description": "Single unique member .addresses recovers AddressBook with no call sites",
+    "dwTypes": ["AddressBook", "CustomerAddress"],
+    "files": {
+      "/helpers.js": "function getAddressBookAddressByForm(addressBook, form) {\n  return addressBook.addresses;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "getAddressBookAddressByForm", "param": 0},
+    "expect": "AddressBook"
+  },
+  {
+    "id": "neuhaus-collections-map-option-item",
+    "source": "neuhaus-core productHelpers.getLineItemOptionNames (collections.map)",
+    "description": "collections.map callback first param gets collection element type",
+    "files": {
+      "/types.d.ts": "interface FixtureIterator { hasNext(): boolean; next(): { optionID: string; optionValueID: string }; }\ninterface FixtureCollection { iterator(): FixtureIterator; }\ndeclare function getOptionItems(): FixtureCollection;\ndeclare function map(collection: FixtureCollection, callback: (item: any) => any): any[];\n",
+      "/helpers.js": "function getLineItemOptionNames(optionProductLineItems) {\n  return map(optionProductLineItems, function (item) {\n    return item.optionID;\n  });\n}\ngetLineItemOptionNames(getOptionItems());\n"
+    },
+    "target": {"file": "/helpers.js", "kind": "callbackParam", "param": 0},
+    "expect": "optionID"
+  },
+  {
+    "id": "omoda-custom-in-check-contributes-custom",
+    "source": "omoda-core seoHelpers ('bannerImage' in seoSource.custom)",
+    "description": "Chained 'attr' in x.custom contributes .custom (not the attribute name) to x",
+    "dwTypes": ["Shipment"],
+    "files": {
+      "/helpers.js": "function describeShipment(shipment) {\n  return 'fromStoreId' in shipment.custom;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "describeShipment", "param": 0, "collectMembers": true},
+    "expectMembers": ["custom"]
+  },
+  {
+    "id": "silence-conflicting-call-sites",
+    "source": "synthetic — conflicting Product vs Order call sites",
+    "description": "Must stay silent when call-site types do not converge",
+    "dwTypes": ["Product", "Order"],
+    "files": {
+      "/helpers.js": "function describeThing(thing) {\n  return thing;\n}\ndescribeThing(getSomeProduct());\ndescribeThing(getSomeOrder());\n"
+    },
+    "globals": "  function getSomeProduct(): Product<any>;\n  function getSomeOrder(): Order;",
+    "target": {"file": "/helpers.js", "function": "describeThing", "param": 0},
+    "expect": null
+  },
+  {
+    "id": "silence-weak-custom-uuid-only",
+    "source": "synthetic — only .custom and .UUID",
+    "description": "Weak ubiquitous members alone must not pick a random ExtensibleObject",
+    "dwTypes": ["Shipment", "ProductLineItem", "Profile", "Customer"],
+    "files": {
+      "/helpers.js": "function touch(obj) {\n  var c = obj.custom;\n  var u = obj.UUID;\n  return c || u;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "touch", "param": 0},
+    "expect": null
+  },
+  {
+    "id": "mul-new-helper-constructor",
+    "source": "mul-core constructor-function model pattern",
+    "description": "new Helper(x) is a call site for parameter inference",
+    "dwTypes": ["Product"],
+    "files": {
+      "/helpers.js": "function ProductLineItem(product) {\n  this.product = product;\n}\nnew ProductLineItem(getSomeProduct());\n"
+    },
+    "globals": "  function getSomeProduct(): Product<any>;",
+    "target": {"file": "/helpers.js", "function": "ProductLineItem", "param": 0},
+    "expect": "Product"
+  },
+  {
+    "id": "shipment-custom-plus-line-items",
+    "source": "synthetic — distinctive co-member with .custom",
+    "description": ".custom + .productLineItems still resolves Shipment via distinctiveness",
+    "dwTypes": ["Shipment", "ProductLineItem", "Profile"],
+    "files": {
+      "/helpers.js": "function describeShipment(shipment) {\n  var c = shipment.custom;\n  return shipment.productLineItems;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "describeShipment", "param": 0},
+    "expect": "Shipment"
+  }
+]

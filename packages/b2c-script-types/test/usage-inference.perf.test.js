@@ -171,9 +171,14 @@ describe('usage-inference — performance baselines', () => {
       counter.referenceSearches() <= BASELINE.widelyReferencedHelper,
       `expected <= ${BASELINE.widelyReferencedHelper} reference searches, got ${counter.referenceSearches()}`,
     );
-    // The per-call reference budget must actually engage.
+    // The per-call reference budget must actually engage (not short-circuit to
+    // 0 searches / 0 hits while still somehow typing the parameter).
     const spent = 200 - ctx.referenceBudget;
-    assert.ok(spent <= 50, `expected the per-call cap (50) to bound processed references, spent ${spent}`);
+    assert.equal(spent, 50, `expected the per-call cap (50) to fully engage on 300 call sites, spent ${spent}`);
+    assert.ok(
+      counter.referenceSearches() >= 1,
+      'expected at least one project-wide reference search for a named helper',
+    );
     assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
   });
 

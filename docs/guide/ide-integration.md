@@ -123,7 +123,7 @@ Enable the `b2c-dx.features.scriptTypesInferUsage` setting (default: `false`) or
 
 Two more SFRA idioms are covered:
 
-- **Iteration callbacks** — `collections.forEach(product.getVariants(), function (variant) {...})`: a callback in argument position has no name to search references for, so `variant` is typed from the element type of the collection travelling alongside it (anything with `iterator()`/`next()`, i.e. `dw.util.Collection` and friends). Manual iterator loops (`var iter = coll.iterator(); while (iter.hasNext()) { var item = iter.next(); }`) resolve through the same chain machinery.
+- **Iteration callbacks** — `collections.forEach` / `map` / `filter` / `every` / `some` / `find` (element-first callback; `reduce` and unknown callees are skipped), e.g. `collections.forEach(product.getVariants(), function (variant) {...})`. A callback in argument position has no name to search references for, so `variant` is typed from the element type of the collection travelling alongside it (anything with `iterator()`/`next()`, i.e. `dw.util.Collection` and friends). Manual iterator loops (`var iter = coll.iterator(); while (iter.hasNext()) { var item = iter.next(); }`) resolve through the same chain machinery.
 - **Controller middleware** — `server.append('Show', function (req, res, next) {...})` needs no inference at all: when a `modules` cartridge is present, the plugin injects its bundled SFRA ambient declarations and TypeScript types `req`/`res`/`next` contextually from the typed `append` signature. Inference deliberately stays out of the way there.
 
 Cross-file inference (call sites in other files, `module.superModule`) needs those files in the same TypeScript project. A `jsconfig.json` that includes all cartridge sources — like the one `b2c setup ide vscode-types` generates — provides that; without one, each open file gets its own inferred project and only same-file usage is visible.
@@ -132,8 +132,17 @@ Inferred results are heuristic and clearly labeled:
 
 - Hover text gets an appended `Inferred from usage: <type>` line.
 - Member completions synthesized this way are still offered alongside (not instead of) whatever TypeScript already resolved.
+- Conflicting call-site argument types cause inference to stay silent rather than union a noisy hover.
 
 This won't recover types TypeScript genuinely can't infer — for example, values that are never called with a consistent, well-typed argument anywhere in the project — and it's off by default because it's new and heuristic.
+
+**Known limitations** — intentionally deferred patterns:
+
+- ES6 `class` syntax / arrow-function module exports
+- Destructured function parameters (`function f({a, b})`)
+- Destructured return values (`var {a, b} = undocumentedFn()`)
+- Constructor inheritance via `Foo.prototype = Base.prototype`
+- Guessing individual custom attribute names on `.custom` (only `.custom` itself is usage evidence)
 
 ### Notes
 

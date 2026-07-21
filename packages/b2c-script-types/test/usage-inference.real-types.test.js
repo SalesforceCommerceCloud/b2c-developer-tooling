@@ -423,7 +423,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
       assert.ok(names.includes('getName'));
     });
 
-    it('unions candidate types across call sites passing different real dw.* classes (Product and Category)', () => {
+    it('stays silent when call sites pass different real dw.* classes (Product vs Category)', () => {
       const files = {
         '/types.d.ts': realTypesPrelude(
           ['Product', 'ProductMgr', 'Category'],
@@ -441,7 +441,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
 
       const types = inferParameterType(ctx, fn.parameters[0]);
 
-      assert.equal(describeTypes(ctx.checker, types), 'Product<any> | Category');
+      assert.deepEqual(types, []);
     });
 
     it('does not infer a false-positive type for a Product-shaped helper that is never called', () => {

@@ -78,7 +78,7 @@ describe('usage-inference', () => {
       assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
     });
 
-    it('unions candidate types across a mix of plain-call and `new` constructor call sites', () => {
+    it('stays silent when plain-call and `new` constructor call sites disagree on the argument type', () => {
       const files = {
         '/types.d.ts': AMBIENT_TYPES,
         '/helper.js': `
@@ -98,9 +98,30 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.equal(types.length, 2);
-      const rendered = types.map((t) => ctx.checker.typeToString(t)).sort();
-      assert.deepEqual(rendered, ['{ ID: string; name: string; }', '{ quantity: number; }']);
+      assert.deepEqual(types, []);
+    });
+
+    it('infers through a mix of plain-call and `new` when every site passes the same type', () => {
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `
+          function Wrapper(input) {
+            this.value = input;
+          }
+          Wrapper(getProduct());
+          new Wrapper(getProduct());
+          module.exports = Wrapper;
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      const fn = findFunctionDeclaration(sourceFile, 'Wrapper');
+      const param = fn.parameters[0];
+
+      const types = inferParameterType(ctx, param);
+
+      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
     });
 
     it('does not throw on a bare `new Helper` constructor call with no parentheses/arguments', () => {
@@ -127,7 +148,7 @@ describe('usage-inference', () => {
       assert.deepEqual(types, []);
     });
 
-    it('unions candidate types across multiple call sites', () => {
+    it('stays silent when call-site argument types conflict (no noisy union)', () => {
       const files = {
         '/types.d.ts': AMBIENT_TYPES,
         '/helper.js': `
@@ -147,9 +168,30 @@ describe('usage-inference', () => {
 
       const types = inferParameterType(ctx, param);
 
-      assert.equal(types.length, 2);
-      const rendered = types.map((t) => ctx.checker.typeToString(t)).sort();
-      assert.deepEqual(rendered, ['{ ID: string; name: string; }', '{ quantity: number; }']);
+      assert.deepEqual(types, []);
+    });
+
+    it('keeps a single converged type when every call site agrees', () => {
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `
+          function helper(input) {
+            return input;
+          }
+          helper(getProduct());
+          helper(getProduct());
+          module.exports = {helper};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      const fn = findFunctionDeclaration(sourceFile, 'helper');
+      const param = fn.parameters[0];
+
+      const types = inferParameterType(ctx, param);
+
+      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
     });
 
     it('resolves references through CommonJS `exports.foo = function(){}` assignment', () => {
@@ -949,6 +991,44 @@ describe('usage-inference', () => {
 
       assert.equal(inferParameterType(ctx, param).length, 0);
     });
+
+    it('does not apply the element heuristic to unknown callees outside the element-first allowlist', () => {
+      const files = {
+        '/types.d.ts': COLLECTION_TYPES,
+        '/consumer.js': `
+          function each(collection, callback) {}
+          each(getCollection(), function (item) {
+            return item.ID;
+          });
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/consumer.js');
+      const param = findCallbackParam(sourceFile);
+
+      assert.equal(inferParameterType(ctx, param).length, 0);
+    });
+
+    for (const callee of ['map', 'filter', 'every', 'some', 'find']) {
+      it(`infers the element type for collections.${callee}-style callbacks`, () => {
+        const files = {
+          '/types.d.ts': COLLECTION_TYPES,
+          '/consumer.js': `
+            function ${callee}(collection, callback) {}
+            ${callee}(getCollection(), function (item) {
+              return item.ID;
+            });
+          `,
+        };
+        const languageService = createFixtureLanguageService(files);
+        const ctx = createInferenceContext(ts, languageService);
+        const sourceFile = ctx.program.getSourceFile('/consumer.js');
+        const param = findCallbackParam(sourceFile);
+
+        assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, param)), '{ ID: string; name: string; }');
+      });
+    }
 
     it('only maps the first callback parameter to the element type', () => {
       const files = {

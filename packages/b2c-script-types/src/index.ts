@@ -174,18 +174,6 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     }
   };
 
-  // See resolver/module-resolution.ts for the resolution rules and security
-  // rationale. These wrappers just bind the closure's live cartridge list and
-  // path-safety primitives.
-  const resolveCartridgeModule = (
-    moduleName: string,
-    containingFile: string,
-  ): {resolved: string; source: string} | undefined =>
-    resolveCartridgeModuleImpl(cartridges, moduleName, containingFile, {normalize, isWithinRoot, fileExists});
-
-  const resolveModulesCartridge = (moduleName: string): {resolved: string; source: string} | undefined =>
-    resolveModulesCartridgeImpl(ts, cartridges, moduleName, {isWithinRoot, fileExists});
-
   const ownerCartridge = (containingFile: string): NormalizedCartridge | undefined =>
     ownerCartridgeImpl(cartridges, normalize, containingFile);
 
@@ -244,6 +232,25 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
         return false;
       }
     };
+    // Prefer the language-service host's view of the filesystem for require()
+    // resolution (not ts.sys): in-memory / virtualized hosts (tests, some LSP
+    // setups) otherwise never see cartridge files, and `~/` / `*/` requires
+    // silently stay unresolved. Auto-discovery above still uses ts.sys because
+    // it walks the real project root on disk.
+    const resolveCartridgeModuleOnHost = (
+      moduleName: string,
+      containingFile: string,
+    ): {resolved: string; source: string} | undefined =>
+      resolveCartridgeModuleImpl(cartridges, moduleName, containingFile, {
+        normalize,
+        isWithinRoot,
+        fileExists: hostFileExists,
+      });
+    const resolveModulesCartridgeOnHost = (moduleName: string): {resolved: string; source: string} | undefined =>
+      resolveModulesCartridgeImpl(ts, cartridges, moduleName, {
+        isWithinRoot,
+        fileExists: hostFileExists,
+      });
     const resolveSuperModulePath = (containingFile: string): string | undefined => {
       const owner = ownerCartridge(containingFile);
       if (!owner) return undefined;
@@ -298,10 +305,12 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       containingFile: string,
     ): {resolvedFileName: string; extension: tsserver.Extension; isExternalLibraryImport: boolean} | undefined => {
       const dw = resolveDwModule(text);
+      // Bundled dw/* types live on the real disk next to the plugin — ts.sys
+      // (via fileExists) is the right probe there, not the project host.
       if (dw && fileExists(dw)) {
         return {resolvedFileName: dw, extension: ts.Extension.Dts, isExternalLibraryImport: true};
       }
-      const cart = resolveCartridgeModule(text, containingFile);
+      const cart = resolveCartridgeModuleOnHost(text, containingFile);
       if (cart) {
         return {
           resolvedFileName: cart.resolved,
@@ -309,7 +318,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
           isExternalLibraryImport: false,
         };
       }
-      const mod = resolveModulesCartridge(text);
+      const mod = resolveModulesCartridgeOnHost(text);
       if (mod) {
         return {
           resolvedFileName: mod.resolved,

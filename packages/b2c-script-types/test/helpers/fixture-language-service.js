@@ -40,7 +40,10 @@ function createFixtureHost(files, options) {
     }
   }
 
-  return {
+  const fileExists = (fileName) => fileName in files || ts.sys.fileExists(fileName);
+  const readFile = (fileName) => files[fileName] ?? ts.sys.readFile(fileName);
+
+  const host = {
     getScriptFileNames: fileNames,
     // The shared DocumentRegistry below (see createFixtureLanguageService)
     // only reuses a cached parse when both the file path AND this version
@@ -57,17 +60,30 @@ function createFixtureHost(files, options) {
     // this cache exists to short-circuit.
     getScriptVersion: (fileName) => files[fileName] ?? 'on-disk',
     getScriptSnapshot: (fileName) => {
-      const text = files[fileName] ?? ts.sys.readFile(fileName);
+      const text = readFile(fileName);
       return text === undefined ? undefined : ts.ScriptSnapshot.fromString(text);
     },
     getCurrentDirectory: () => '/',
     getCompilationSettings: () => compilerOptions,
     getDefaultLibFileName: (opts) => ts.getDefaultLibFilePath(opts),
-    fileExists: (fileName) => fileName in files || ts.sys.fileExists(fileName),
-    readFile: (fileName) => files[fileName] ?? ts.sys.readFile(fileName),
+    fileExists,
+    readFile,
     directoryExists: (dir) => impliedDirs.has(dir) || ts.sys.directoryExists(dir),
     getDirectories: (dir) => ts.sys.getDirectories(dir),
   };
+
+  // The tsserver plugin only *wraps* existing host resolution hooks — it
+  // won't install cartridge `~/` / `*/` / `dw/` resolution when these are
+  // absent. Real tsserver hosts always provide them. Delegate to
+  // ts.resolveModuleName for ordinary relative/node resolution so existing
+  // engine tests keep working; the plugin's wrapper then fills in cartridge
+  // specifiers the default resolver leaves unresolved.
+  host.resolveModuleNameLiterals = (moduleLiterals, containingFile, _redirected, options) =>
+    moduleLiterals.map((literal) => ts.resolveModuleName(literal.text, containingFile, options, host));
+  host.resolveModuleNames = (moduleNames, containingFile, _reused, _redirected, options) =>
+    moduleNames.map((name) => ts.resolveModuleName(name, containingFile, options, host).resolvedModule);
+
+  return host;
 }
 
 // Shared across every fixture LanguageService created in this process — both

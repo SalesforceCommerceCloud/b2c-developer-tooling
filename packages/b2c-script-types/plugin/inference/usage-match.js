@@ -25,15 +25,35 @@ const constants_1 = require("./constants");
 // per fixture, since each test builds its own LanguageService.
 const classIndexCache = new WeakMap();
 /**
+ * Indexes one top-level class/interface declaration into an ambient-class
+ * candidate, or `undefined` when it's generic / nameless / has no members.
+ * Extracted from {@link buildAmbientClassIndex} so the walk stays flat.
+ */
+function candidateFromDeclaration(checker, ts, stmt) {
+    const isClassOrInterface = ts.isClassDeclaration(stmt) || ts.isInterfaceDeclaration(stmt);
+    // Generic classes (e.g. `Product<T>`) are skipped: their declared type here
+    // is the unsubstituted generic (`Product<T>`, not `Product<any>`), which
+    // would render misleadingly in hover text with no real instantiation context
+    // to substitute from.
+    if (!isClassOrInterface || !stmt.name || (stmt.typeParameters?.length ?? 0) > 0)
+        return undefined;
+    const symbol = checker.getSymbolAtLocation(stmt.name);
+    if (!symbol)
+        return undefined;
+    const type = checker.getDeclaredTypeOfSymbol(symbol);
+    const memberNames = new Set();
+    for (const prop of checker.getPropertiesOfType(type)) {
+        memberNames.add(prop.getName());
+    }
+    if (memberNames.size === 0)
+        return undefined;
+    return { type, memberNames, name: stmt.name.text };
+}
+/**
  * Indexes every top-level class/interface declared in a `.d.ts` file visible
  * to the program (the vendored dw.* Script API, plus whatever else a
  * project's ambient types pull in) by its full member-name set, so
  * {@link matchAmbientTypesByUsage} can look candidates up by shape.
- *
- * Generic classes (e.g. `Product<T>`) are skipped: their declared type here
- * is the unsubstituted generic (`Product<T>`, not `Product<any>`), which
- * would render misleadingly in hover text with no real instantiation context
- * to substitute from.
  */
 function buildAmbientClassIndex(ctx) {
     const cached = classIndexCache.get(ctx.languageService);
@@ -45,24 +65,40 @@ function buildAmbientClassIndex(ctx) {
         if (!sourceFile.isDeclarationFile)
             continue;
         for (const stmt of sourceFile.statements) {
-            const isClassOrInterface = ts.isClassDeclaration(stmt) || ts.isInterfaceDeclaration(stmt);
-            if (!isClassOrInterface || !stmt.name || (stmt.typeParameters?.length ?? 0) > 0)
-                continue;
-            const symbol = checker.getSymbolAtLocation(stmt.name);
-            if (!symbol)
-                continue;
-            const type = checker.getDeclaredTypeOfSymbol(symbol);
-            const memberNames = new Set();
-            for (const prop of checker.getPropertiesOfType(type)) {
-                memberNames.add(prop.getName());
-            }
-            if (memberNames.size === 0)
-                continue;
-            candidates.push({ type, memberNames, name: stmt.name.text });
+            const candidate = candidateFromDeclaration(checker, ts, stmt);
+            if (candidate)
+                candidates.push(candidate);
         }
     }
     classIndexCache.set(ctx.languageService, candidates);
     return candidates;
+}
+/**
+ * How many ambient classes declare `memberName`. Built once per
+ * matchAmbientTypesByUsage call so distinctiveness scoring stays O(matches ×
+ * signature) rather than re-scanning the whole index per member per match.
+ */
+function buildMemberFrequency(candidates) {
+    const freq = new Map();
+    for (const candidate of candidates) {
+        for (const name of candidate.memberNames) {
+            freq.set(name, (freq.get(name) ?? 0) + 1);
+        }
+    }
+    return freq;
+}
+/**
+ * Higher = the usage signature's members are rarer across the ambient index
+ * (and not just ubiquitous `.custom` / `.UUID` noise). Weak members still
+ * contribute, but at a steep discount so a distinctive co-member dominates.
+ */
+function distinctivenessScore(memberNames, frequency) {
+    let score = 0;
+    for (const name of memberNames) {
+        const weight = constants_1.WEAK_USAGE_MEMBERS.has(name) ? 0.15 : 1;
+        score += weight / Math.max(frequency.get(name) ?? 1, 1);
+    }
+    return score;
 }
 /**
  * Collects the names of every member accessed directly on whatever `symbol`
@@ -70,7 +106,9 @@ function buildAmbientClassIndex(ctx) {
  * `Transaction.wrap(function () {...})` callback still reads/writes an outer
  * parameter or variable it closes over). Only direct `x.member` accesses
  * count; a chained `x.custom.fromStoreId` only contributes `custom` — the
- * deeper hop describes `custom`'s shape, not `x`'s.
+ * deeper hop describes `custom`'s shape, not `x`'s. That one-hop rule is also
+ * what makes the SFRA `product.custom.foo` / `'foo' in product.custom` idiom
+ * usable as ExtensibleObject-family evidence without guessing attribute names.
  *
  * Also counts a `'member' in x` existence check as evidence of `member` —
  * a very common real-world SFCC idiom for guarding an optional custom
@@ -156,9 +194,15 @@ function collectVariableMemberUsage(ctx, decl) {
 /**
  * Matches a member-name usage signature against every ambient class the
  * program knows about, returning the type(s) of whichever candidate(s) expose
- * all of them, most-specific first. "Most specific" means fewest total
- * members — the tightest-fitting shape, not just any superset. Returns `[]`
- * when the signature is too weak to be worth guessing from (see
+ * all of them, most-specific first.
+ *
+ * Ranking (after an optional identifier-name short-circuit):
+ * 1. Highest distinctiveness score — rarer used members win over ubiquitous
+ *    ones like `.custom` / `.UUID` (see {@link WEAK_USAGE_MEMBERS}).
+ * 2. Fewest total members among that top score tier — the tightest-fitting
+ *    shape, not just any rare-member superset.
+ *
+ * Returns `[]` when the signature is too weak to be worth guessing from (see
  * MIN_USAGE_SIGNATURE_MEMBERS) or when it still ties across too many
  * unrelated candidates to be a useful hint (MAX_USAGE_MATCH_CANDIDATES).
  *
@@ -179,7 +223,10 @@ function collectVariableMemberUsage(ctx, decl) {
  * the SFCC class it holds is a stronger, more specific signal than raw
  * member count, so a name match short-circuits straight to that candidate
  * (ambient class names are unique, so at most one can ever match this way)
- * before size-based tiebreaking even runs.
+ * before size/distinctiveness ranking even runs — but only after the
+ * weak-signature silence guards below. A parameter literally named
+ * `shipment` whose only evidence is `.custom` must still stay silent:
+ * the name alone must not override "too weak / ambiguous" evidence.
  */
 function matchAmbientTypesByUsage(ctx, memberNames, identifierName) {
     if (memberNames.size === 0)
@@ -194,15 +241,36 @@ function matchAmbientTypesByUsage(ctx, memberNames, identifierName) {
     });
     if (matches.length === 0)
         return [];
+    // Silence guards run BEFORE the identifier-name short-circuit: they judge
+    // the raw usage signature against the full match set. A name match among
+    // an otherwise-ambiguous weak signature (e.g. `shipment` + only `.custom`)
+    // must not rescue a guess we would otherwise refuse.
+    if (memberNames.size < constants_1.MIN_USAGE_SIGNATURE_MEMBERS && matches.length > 1)
+        return [];
+    // A signature made only of ubiquitous members (`.custom` / `.UUID` / …) is
+    // never discriminative enough when more than one ambient class matches —
+    // distinctiveness scoring alone can't break the tie usefully because every
+    // match saw the same weak evidence. Silence rather than guessing the
+    // smallest ExtensibleObject.
+    const strongCount = [...memberNames].filter((n) => !constants_1.WEAK_USAGE_MEMBERS.has(n)).length;
+    if (strongCount === 0 && matches.length > 1)
+        return [];
     if (identifierName) {
         const byName = matches.filter((m) => m.name.toLowerCase() === identifierName.toLowerCase());
         if (byName.length === 1)
             return [byName[0].type];
     }
-    if (memberNames.size < constants_1.MIN_USAGE_SIGNATURE_MEMBERS && matches.length > 1)
-        return [];
-    const minSize = Math.min(...matches.map((m) => m.memberNames.size));
-    const tightest = matches.filter((m) => m.memberNames.size === minSize);
+    const frequency = buildMemberFrequency(candidates);
+    const scored = matches.map((m) => ({
+        candidate: m,
+        score: distinctivenessScore(memberNames, frequency),
+    }));
+    const bestScore = Math.max(...scored.map((s) => s.score));
+    // Floating-point slack: weights are small rationals; equality is fine in
+    // practice but a tiny epsilon keeps ranking stable if a future weight isn't.
+    const topTier = scored.filter((s) => bestScore - s.score < 1e-9).map((s) => s.candidate);
+    const minSize = Math.min(...topTier.map((m) => m.memberNames.size));
+    const tightest = topTier.filter((m) => m.memberNames.size === minSize);
     if (tightest.length > constants_1.MAX_USAGE_MATCH_CANDIDATES)
         return [];
     return tightest.map((m) => m.type);
