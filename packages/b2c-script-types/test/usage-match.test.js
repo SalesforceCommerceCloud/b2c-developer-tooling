@@ -90,6 +90,44 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
     assert.deepEqual(types, []);
   });
 
+  it('infers a single accessed member when it uniquely identifies one ambient class (addressBook.addresses)', () => {
+    // Real-world shape from neuhaus-core's addressHelpers.js:
+    // getAddressBookAddressByForm(addressBook, form) only ever touches
+    // addressBook.addresses directly — a single member, normally below
+    // MIN_USAGE_SIGNATURE_MEMBERS. Unlike `.custom` above, `.addresses` is
+    // declared by exactly one ambient class in the whole program
+    // (dw.customer.AddressBook), so the signature is weak but unambiguous
+    // and should still be trusted.
+    const files = {
+      '/types.d.ts': realTypesPrelude(['AddressBook'], ''),
+      '/addressHelpers.js': `
+        function getAddressBookAddressByForm(addressBook, form) {
+          var collections = require('*/cartridge/scripts/util/collections');
+          return collections.find(addressBook.addresses, function (address) {
+            return address.postalCode === form.postalCode.value;
+          });
+        }
+      `,
+    };
+    const {ctx, fn} = setupInference(files, '/addressHelpers.js', 'getAddressBookAddressByForm');
+
+    const types = inferParameterType(ctx, fn.parameters[0]);
+
+    assert.equal(describeTypes(ctx.checker, types), 'AddressBook');
+  });
+
+  it('matchAmbientTypesByUsage returns [] for a single member name that ties across multiple ambient classes', () => {
+    const {ctx} = setupInference(SHIPMENT_HELPER_FILES, '/shippingHelpers.js', 'markShipmentForShipping');
+
+    // `.custom` (the SFCC custom-attributes pattern) is shared by many
+    // ambient classes pulled in transitively — a weak signature that's also
+    // ambiguous must still be declined, unlike the addressBook.addresses case
+    // above.
+    const types = matchAmbientTypesByUsage(ctx, new Set(['custom']));
+
+    assert.deepEqual(types, []);
+  });
+
   it('matchAmbientTypesByUsage returns [] for a usage signature no ambient class satisfies', () => {
     const {ctx} = setupInference(SHIPMENT_HELPER_FILES, '/shippingHelpers.js', 'markShipmentForShipping');
 

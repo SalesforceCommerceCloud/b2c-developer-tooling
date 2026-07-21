@@ -30,6 +30,8 @@ const REAL_DW_TYPES = {
   Profile: dtsPath('dw', 'customer', 'Profile'),
   Shipment: dtsPath('dw', 'order', 'Shipment'),
   ProductLineItem: dtsPath('dw', 'order', 'ProductLineItem'),
+  AddressBook: dtsPath('dw', 'customer', 'AddressBook'),
+  CustomerAddress: dtsPath('dw', 'customer', 'CustomerAddress'),
 };
 
 /**

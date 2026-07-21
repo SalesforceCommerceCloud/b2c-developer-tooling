@@ -69,7 +69,11 @@ exports.INFERRED_COMPLETION_SOURCE = '@salesforce/b2c-script-types/inferred-usag
 // against every ambient class/interface visible in the program, and accept
 // the most specific one(s) that expose all of them. A single accessed member
 // name (e.g. just `.custom`) is carried by dozens of unrelated business
-// objects, so it's too weak a signal on its own to guess from.
+// objects, so it's too weak a signal on its own to guess from — UNLESS that
+// single member happens to be globally unique across every ambient class
+// (e.g. `.addresses`, which only `dw.customer.AddressBook` declares), in
+// which case there's no ambiguity to be weak about. See
+// matchAmbientTypesByUsage's unambiguous-single-member exception.
 exports.MIN_USAGE_SIGNATURE_MEMBERS = 2;
 // If the member-name signature still ties across more candidates than this
 // after ranking by specificity (fewest total members), the match is too

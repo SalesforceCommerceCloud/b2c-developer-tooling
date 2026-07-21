@@ -147,9 +147,16 @@ function collectVariableMemberUsage(ctx, decl) {
  * when the signature is too weak to be worth guessing from (see
  * MIN_USAGE_SIGNATURE_MEMBERS) or when it still ties across too many
  * unrelated candidates to be a useful hint (MAX_USAGE_MATCH_CANDIDATES).
+ *
+ * Exception: a signature below MIN_USAGE_SIGNATURE_MEMBERS is still trusted
+ * when it's globally unambiguous — exactly one ambient class in the whole
+ * program declares all of these members at all (not just tied for
+ * "tightest"). A member name that's this rare is as strong a signal as a
+ * multi-member signature; a signature that's both weak AND ambiguous is what
+ * MIN_USAGE_SIGNATURE_MEMBERS exists to filter out.
  */
 function matchAmbientTypesByUsage(ctx, memberNames) {
-    if (memberNames.size < constants_1.MIN_USAGE_SIGNATURE_MEMBERS)
+    if (memberNames.size === 0)
         return [];
     const candidates = buildAmbientClassIndex(ctx);
     const matches = candidates.filter((candidate) => {
@@ -160,6 +167,8 @@ function matchAmbientTypesByUsage(ctx, memberNames) {
         return true;
     });
     if (matches.length === 0)
+        return [];
+    if (memberNames.size < constants_1.MIN_USAGE_SIGNATURE_MEMBERS && matches.length > 1)
         return [];
     const minSize = Math.min(...matches.map((m) => m.memberNames.size));
     const tightest = matches.filter((m) => m.memberNames.size === minSize);
