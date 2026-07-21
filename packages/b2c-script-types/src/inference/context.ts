@@ -12,6 +12,7 @@
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
+import type {CallSite} from './call-sites';
 import {MAX_REFERENCES_PER_REQUEST, MAX_SEARCHES_PER_REQUEST} from './constants';
 
 export interface MemoEntry {
@@ -65,7 +66,7 @@ export interface InferenceContext {
    * computed with at least as much budget as any later call would have had,
    * so it can only be equally or more complete.
    */
-  readonly callSiteMemo: Map<tsserver.Identifier, tsserver.CallExpression[]>;
+  readonly callSiteMemo: Map<tsserver.Identifier, CallSite[]>;
   /**
    * Request-scoped memo of checker.typeToString() results, used by
    * dedupeTypes(). Candidate types propagate up through every recursion

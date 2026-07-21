@@ -9,13 +9,25 @@
 // arguments it receives. A reference search can land on a name that isn't a
 // direct call (a require() binding, a destructured import, an alias map), so
 // this layer follows a bounded number of those indirection hops to reach the
-// real call expressions.
+// real call expressions. "Call" includes `new Helper(x)` — SFRA's other very
+// common invocation shape, for its constructor-function "class" models.
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
 import {MAX_REFERENCE_HOPS, MAX_REFERENCES_PER_CALL} from './constants';
 import type {InferenceContext} from './context';
 import {getNodeAtPosition} from './ast-helpers';
+
+/**
+ * A call site is either an ordinary call (`helper(x)`) or a constructor
+ * invocation (`new Helper(x)`) — SFRA's other very common way to invoke an
+ * undocumented function, for its "class" models (`new ProductLineItem(...)`,
+ * `new StoreModel(...)`). Both shapes carry an `arguments` list keyed by the
+ * same parameter index, so every consumer below treats them uniformly; a
+ * bare `new Helper` with no parens has `arguments === undefined`, which
+ * callers must check for since a plain call's `arguments` is never absent.
+ */
+export type CallSite = tsserver.CallExpression | tsserver.NewExpression;
 
 /**
  * Identifies the name to run findReferences on for a function-like
@@ -47,18 +59,25 @@ export function getReferenceNameNode(
 }
 
 /**
- * Given a reference identifier (`helper` in either `helper(x)` or
- * `exports.helper(x)`/`obj.helper(x)`), finds the enclosing CallExpression if
- * the identifier sits in callee position — one parent up for a direct call,
- * two parents up when the identifier is the `.name` of a property access.
+ * Given a reference identifier (`helper` in `helper(x)`, `new Helper(x)`, or
+ * `exports.helper(x)`/`obj.helper(x)`), finds the enclosing call site if the
+ * identifier sits in callee/constructor position — one parent up for a
+ * direct call or `new` expression, two parents up when the identifier is the
+ * `.name` of a property access.
  */
-function findCallInCalleePosition(node: tsserver.Node, ts: typeof tsserver): tsserver.CallExpression | undefined {
+function findCallInCalleePosition(node: tsserver.Node, ts: typeof tsserver): CallSite | undefined {
   const parent = node.parent;
   if (!parent) return undefined;
-  if (ts.isCallExpression(parent) && parent.expression === node) return parent;
+  if ((ts.isCallExpression(parent) || ts.isNewExpression(parent)) && parent.expression === node) return parent;
   if (ts.isPropertyAccessExpression(parent) && parent.name === node) {
     const grandparent = parent.parent;
-    if (grandparent && ts.isCallExpression(grandparent) && grandparent.expression === parent) return grandparent;
+    if (
+      grandparent &&
+      (ts.isCallExpression(grandparent) || ts.isNewExpression(grandparent)) &&
+      grandparent.expression === parent
+    ) {
+      return grandparent;
+    }
   }
   return undefined;
 }
@@ -92,7 +111,7 @@ function isRequireCallExpression(node: tsserver.Node, ts: typeof tsserver): node
 function resolveIndirectReferenceTarget(
   node: tsserver.Node,
   ts: typeof tsserver,
-): {kind: 'call'; call: tsserver.CallExpression} | {kind: 'name'; name: tsserver.Identifier} | undefined {
+): {kind: 'call'; call: CallSite} | {kind: 'name'; name: tsserver.Identifier} | undefined {
   const parent = node.parent;
   if (!parent) return undefined;
 
@@ -139,10 +158,10 @@ function resolveIndirectReferenceTarget(
  * clearly-labeled) result beats hanging on a widely-referenced helper.
  * Results are memoized per name node for the duration of the request.
  */
-export function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier): tsserver.CallExpression[] {
+export function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Identifier): CallSite[] {
   const memoized = ctx.callSiteMemo.get(nameNode);
   if (memoized) return memoized;
-  const calls: tsserver.CallExpression[] = [];
+  const calls: CallSite[] = [];
   const seenNameKeys = new Set<string>();
   let frontier: tsserver.Identifier[] = [nameNode];
   let localBudget = Math.min(MAX_REFERENCES_PER_CALL, ctx.referenceBudget);
@@ -175,7 +194,7 @@ export function collectCallSites(ctx: InferenceContext, nameNode: tsserver.Ident
 function collectCallsFromName(
   ctx: InferenceContext,
   name: tsserver.Identifier,
-  calls: tsserver.CallExpression[],
+  calls: CallSite[],
   nextFrontier: tsserver.Identifier[],
   localBudget: number,
 ): number {

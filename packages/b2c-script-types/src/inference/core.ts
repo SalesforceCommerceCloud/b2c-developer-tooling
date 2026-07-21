@@ -397,11 +397,13 @@ function resolveIdentifierTypes(
 
 /**
  * Infers a parameter's candidate type(s) from the arguments it's actually
- * called with across the project, since plain un-annotated JS parameters
- * default to `any` with no back-inference from call sites. Falls back to
- * matching the parameter's own usage (which members it's accessed by) against
- * the program's ambient classes when no call site could be found or resolved
- * at all — see {@link matchAmbientTypesByUsage}.
+ * called with across the project — a plain call (`helper(x)`) or a
+ * constructor invocation (`new Helper(x)`, SFRA's other common "class" model
+ * shape) — since plain un-annotated JS parameters default to `any` with no
+ * back-inference from call sites. Falls back to matching the parameter's own
+ * usage (which members it's accessed by) against the program's ambient
+ * classes when no call site could be found or resolved at all — see
+ * {@link matchAmbientTypesByUsage}.
  *
  * @param depth - Recursion budget already consumed by the call chain that
  * led here; defaults to 0 for a top-level request.
@@ -439,7 +441,9 @@ export function inferParameterType(
     const nameNode = getReferenceNameNode(fn, ts);
     if (nameNode) {
       for (const call of collectCallSites(ctx, nameNode)) {
-        const arg = call.arguments[paramIndex];
+        // A bare `new Helper` (no parens) has `arguments === undefined`,
+        // unlike a plain call, which always has an (possibly empty) array.
+        const arg = call.arguments?.[paramIndex];
         if (!arg) continue;
         types.push(...resolveExpressionTypes(ctx, arg, depth));
       }

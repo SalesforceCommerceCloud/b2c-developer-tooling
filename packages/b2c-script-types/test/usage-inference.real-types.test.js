@@ -80,6 +80,34 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
       assert.ok(names.includes('getPriceModel'));
     });
 
+    it('infers dw.catalog.Product for a constructor-function model parameter, invoked via `new` (StoreModel/ProductLineItem shape)', () => {
+      // Real-world shape from omoda-core and mul-core: SFRA "class" models
+      // are plain constructor functions (`function StoreModel(storeObject) {
+      // this.id = storeObject.getID(); ... }`) invoked with `new`, never a
+      // plain call — a widely-used idiom across both surveyed codebases
+      // (StoreModel, ProductLineItem, CartModel, AccountModel, AddressModel,
+      // Contact, ...) that plain call-site collection previously missed
+      // entirely, since `new Foo(x)` is a NewExpression, not a CallExpression.
+      const files = {
+        '/types.d.ts': realTypesPrelude(['Product'], '  function getSomeProduct(): Product<any>;'),
+        '/productModel.js': `
+          function ProductModel(apiProduct) {
+            this.id = apiProduct.getID();
+            this.name = apiProduct.getName();
+          }
+          function useModel() {
+            return new ProductModel(getSomeProduct());
+          }
+          module.exports = ProductModel;
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/productModel.js', 'ProductModel');
+
+      const types = inferParameterType(ctx, fn.parameters[0]);
+
+      assert.equal(describeTypes(ctx.checker, types), 'Product<any>');
+    });
+
     it('infers dw.order.Order for an undocumented parameter from an OrderMgr.getOrder() call site', () => {
       const files = {
         '/types.d.ts': realTypesPrelude(['Order', 'OrderMgr'], '  function getSomeOrder(): Order;'),

@@ -42,21 +42,25 @@ function getReferenceNameNode(fn, ts) {
     return undefined;
 }
 /**
- * Given a reference identifier (`helper` in either `helper(x)` or
- * `exports.helper(x)`/`obj.helper(x)`), finds the enclosing CallExpression if
- * the identifier sits in callee position — one parent up for a direct call,
- * two parents up when the identifier is the `.name` of a property access.
+ * Given a reference identifier (`helper` in `helper(x)`, `new Helper(x)`, or
+ * `exports.helper(x)`/`obj.helper(x)`), finds the enclosing call site if the
+ * identifier sits in callee/constructor position — one parent up for a
+ * direct call or `new` expression, two parents up when the identifier is the
+ * `.name` of a property access.
  */
 function findCallInCalleePosition(node, ts) {
     const parent = node.parent;
     if (!parent)
         return undefined;
-    if (ts.isCallExpression(parent) && parent.expression === node)
+    if ((ts.isCallExpression(parent) || ts.isNewExpression(parent)) && parent.expression === node)
         return parent;
     if (ts.isPropertyAccessExpression(parent) && parent.name === node) {
         const grandparent = parent.parent;
-        if (grandparent && ts.isCallExpression(grandparent) && grandparent.expression === parent)
+        if (grandparent &&
+            (ts.isCallExpression(grandparent) || ts.isNewExpression(grandparent)) &&
+            grandparent.expression === parent) {
             return grandparent;
+        }
     }
     return undefined;
 }

@@ -51,6 +51,82 @@ describe('usage-inference', () => {
       assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
     });
 
+    it('infers a parameter type from a `new Helper(x)` constructor call site (SFRA constructor-function model pattern)', () => {
+      // Real-world shape from omoda-core/mul-core: `function StoreModel(storeObject, location) {...}`
+      // invoked as `new StoreModel(store, location)`, never a plain call — a
+      // widely-used SFRA idiom for "class" models that plain call-site
+      // collection (which only recognized ordinary CallExpressions) missed
+      // entirely.
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `
+          function StoreModel(storeObject) {
+            this.id = storeObject.ID;
+          }
+          new StoreModel(getProduct());
+          module.exports = StoreModel;
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      const fn = findFunctionDeclaration(sourceFile, 'StoreModel');
+      const param = fn.parameters[0];
+
+      const types = inferParameterType(ctx, param);
+
+      assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    });
+
+    it('unions candidate types across a mix of plain-call and `new` constructor call sites', () => {
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `
+          function Wrapper(input) {
+            this.value = input;
+          }
+          Wrapper(getProduct());
+          new Wrapper(getInventory());
+          module.exports = Wrapper;
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      const fn = findFunctionDeclaration(sourceFile, 'Wrapper');
+      const param = fn.parameters[0];
+
+      const types = inferParameterType(ctx, param);
+
+      assert.equal(types.length, 2);
+      const rendered = types.map((t) => ctx.checker.typeToString(t)).sort();
+      assert.deepEqual(rendered, ['{ ID: string; name: string; }', '{ quantity: number; }']);
+    });
+
+    it('does not throw on a bare `new Helper` constructor call with no parentheses/arguments', () => {
+      // `new Helper` (no parens) is valid JS whose `arguments` is `undefined`,
+      // unlike a plain call's — always-present, possibly-empty — array.
+      const files = {
+        '/types.d.ts': AMBIENT_TYPES,
+        '/helper.js': `
+          function Helper(input) {
+            this.value = input;
+          }
+          new Helper;
+          module.exports = Helper;
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/helper.js');
+      const fn = findFunctionDeclaration(sourceFile, 'Helper');
+      const param = fn.parameters[0];
+
+      const types = inferParameterType(ctx, param);
+
+      assert.deepEqual(types, []);
+    });
+
     it('unions candidate types across multiple call sites', () => {
       const files = {
         '/types.d.ts': AMBIENT_TYPES,
