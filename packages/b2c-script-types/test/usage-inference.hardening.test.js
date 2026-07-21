@@ -127,6 +127,79 @@ describe('usage-inference hardening', () => {
       const types = matchAmbientTypesByUsage(ctx, new Set(['notARealMember']), 'profile');
       assert.deepEqual(types, []);
     });
+
+    it('stays silent when a duck-typed Store model call site resolves but the body also uses address-only fields (mul-core copyCustomerAddressToShipment)', () => {
+      // Controllers pass both an untyped preferredAddress (req is any) and a
+      // Store *model* from getDeliveryStore(). Only the model resolves to a
+      // concrete type named Store — without a body-usage consistency check
+      // the hover wrongly claims the address parameter is Store.
+      const files = {
+        '/types.d.ts': realTypesPrelude(
+          ['CustomerAddress', 'Store'],
+          `
+          declare function getApiStore(): Store;
+          declare const req: any;
+        `,
+        ),
+        '/models/store.js': `
+          function Store(storeObject) {
+            this.ID = storeObject.ID;
+            this.name = storeObject.name;
+            this.firstName = 'Shop';
+            this.lastName = this.name;
+            this.address1 = storeObject.address1;
+            this.address2 = storeObject.address2;
+            this.city = storeObject.city;
+            this.postalCode = storeObject.postalCode;
+            this.stateCode = storeObject.stateCode;
+            this.countryCode = storeObject.countryCode;
+          }
+          module.exports = Store;
+        `,
+        '/helpers/reserveAndGoHelpers.js': `
+          var StoreModel = require('../models/store');
+          function getDeliveryStore() {
+            return new StoreModel(getApiStore());
+          }
+          module.exports = { getDeliveryStore: getDeliveryStore };
+        `,
+        '/checkout/checkoutHelpers.js': `
+          function copyCustomerAddressToShipment(address) {
+            use(address.countryCode);
+            use(address.firstName || 'X');
+            use(address.lastName || address.name);
+            use(address.companyName ? address.companyName : '');
+            use(address.address1);
+            use(address.address2);
+            use(address.postBox ? address.postBox : '');
+            use(address.city);
+            use(address.postalCode);
+            use(address.stateCode ? address.stateCode : '');
+            use(address.ID ? address.ID : '');
+          }
+          module.exports = { copyCustomerAddressToShipment: copyCustomerAddressToShipment };
+        `,
+        '/controllers/Checkout.js': `
+          var COHelpers = require('../checkout/checkoutHelpers');
+          var reserveAndGoHelpers = require('../helpers/reserveAndGoHelpers');
+          var preferredAddress;
+          if (req.currentCustomer.addressBook && req.currentCustomer.addressBook.preferredAddress) {
+            preferredAddress = req.currentCustomer.addressBook.preferredAddress;
+            COHelpers.copyCustomerAddressToShipment(preferredAddress);
+          }
+          var storeModel = reserveAndGoHelpers.getDeliveryStore();
+          COHelpers.copyCustomerAddressToShipment(storeModel);
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const fn = findFunctionDeclaration(
+        ctx.program.getSourceFile('/checkout/checkoutHelpers.js'),
+        'copyCustomerAddressToShipment',
+      );
+
+      assert.deepEqual(inferParameterType(ctx, fn.parameters[0]), []);
+    });
   });
 
   describe('multi-cartridge require call sites (cartridge-fixture factory)', () => {

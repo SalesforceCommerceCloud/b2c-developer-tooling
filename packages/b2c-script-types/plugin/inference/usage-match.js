@@ -224,9 +224,11 @@ function collectVariableMemberUsage(ctx, decl) {
  * member count, so a name match short-circuits straight to that candidate
  * (ambient class names are unique, so at most one can ever match this way)
  * before size/distinctiveness ranking even runs — but only after the
- * weak-signature silence guards below. A parameter literally named
- * `shipment` whose only evidence is `.custom` must still stay silent:
- * the name alone must not override "too weak / ambiguous" evidence.
+ * weak-only silence guard below. A parameter literally named `shipment`
+ * whose only evidence is `.custom` must still stay silent: the name alone
+ * must not override weak-only evidence. A single *strong* member plus a
+ * matching name (`customer` + `.profile`) is trusted, since one-hop usage
+ * collection often yields just the first property of a longer chain.
  */
 function matchAmbientTypesByUsage(ctx, memberNames, identifierName) {
     if (memberNames.size === 0)
@@ -241,25 +243,34 @@ function matchAmbientTypesByUsage(ctx, memberNames, identifierName) {
     });
     if (matches.length === 0)
         return [];
-    // Silence guards run BEFORE the identifier-name short-circuit: they judge
-    // the raw usage signature against the full match set. A name match among
-    // an otherwise-ambiguous weak signature (e.g. `shipment` + only `.custom`)
-    // must not rescue a guess we would otherwise refuse.
-    if (memberNames.size < constants_1.MIN_USAGE_SIGNATURE_MEMBERS && matches.length > 1)
-        return [];
     // A signature made only of ubiquitous members (`.custom` / `.UUID` / …) is
     // never discriminative enough when more than one ambient class matches —
     // distinctiveness scoring alone can't break the tie usefully because every
     // match saw the same weak evidence. Silence rather than guessing the
-    // smallest ExtensibleObject.
+    // smallest ExtensibleObject. This guard MUST run before the identifier-name
+    // short-circuit: a parameter literally named `shipment` whose only evidence
+    // is `.custom` must stay silent — the name alone must not override
+    // "too weak" evidence (see usage-match tests).
     const strongCount = [...memberNames].filter((n) => !constants_1.WEAK_USAGE_MEMBERS.has(n)).length;
     if (strongCount === 0 && matches.length > 1)
         return [];
+    // A conventionally named parameter (`customer`, `profile`, `shipment`) that
+    // uniquely matches one of the ambient candidates short-circuits here —
+    // even when the usage signature is a single strong member. Real SFRA shape:
+    // `function getPasswordResetToken(customer) { customer.profile.credentials… }`
+    // only contributes `.profile` (one-hop member collection), which is shared
+    // by `dw.customer.Customer` and `dw.svc.ServiceConfig`, but the parameter
+    // name makes the intended class unambiguous. Weak-only signatures never
+    // reach this point (guard above).
     if (identifierName) {
         const byName = matches.filter((m) => m.name.toLowerCase() === identifierName.toLowerCase());
         if (byName.length === 1)
             return [byName[0].type];
     }
+    // Below-minimum signatures that are still ambiguous (no unique name match)
+    // stay silent — e.g. an unnamed/`obj` parameter that only touches `.profile`.
+    if (memberNames.size < constants_1.MIN_USAGE_SIGNATURE_MEMBERS && matches.length > 1)
+        return [];
     const frequency = buildMemberFrequency(candidates);
     const scored = matches.map((m) => ({
         candidate: m,

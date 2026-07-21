@@ -108,6 +108,41 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
     assert.deepEqual(inferParameterType(ctx, fn.parameters[0]), []);
   });
 
+  it('lets an identifier-name match rescue a single strong member shared by multiple classes (customer + .profile)', () => {
+    // Real-world shape from neuhaus-core's accountHelpers.js:
+    // getPasswordResetToken(customer) { customer.profile.credentials… }.
+    // One-hop usage collection only sees `.profile`, which Customer shares
+    // with ServiceConfig — below MIN_USAGE_SIGNATURE_MEMBERS and ambiguous —
+    // but the parameter name uniquely picks Customer. Contrast the weak-only
+    // custom+UUID case above: `.profile` is a strong member, so the name
+    // short-circuit is allowed.
+    const files = {
+      '/types.d.ts': realTypesPrelude(['Customer', 'ServiceConfig'], ''),
+      '/accountHelpers.js': `
+        function getPasswordResetToken(customer) {
+          return customer.profile.credentials.createResetPasswordToken();
+        }
+      `,
+    };
+    const {ctx, fn} = setupInference(files, '/accountHelpers.js', 'getPasswordResetToken');
+
+    assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])), 'Customer');
+  });
+
+  it('stays silent for a single strong member shared by multiple classes when the identifier name does not disambiguate', () => {
+    const files = {
+      '/types.d.ts': realTypesPrelude(['Customer', 'ServiceConfig'], ''),
+      '/helpers.js': `
+        function readProfile(obj) {
+          return obj.profile;
+        }
+      `,
+    };
+    const {ctx, fn} = setupInference(files, '/helpers.js', 'readProfile');
+
+    assert.deepEqual(inferParameterType(ctx, fn.parameters[0]), []);
+  });
+
   it('infers a single accessed member when it uniquely identifies one ambient class (addressBook.addresses)', () => {
     // Real-world shape from neuhaus-core's addressHelpers.js:
     // getAddressBookAddressByForm(addressBook, form) only ever touches

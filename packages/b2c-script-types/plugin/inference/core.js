@@ -362,13 +362,32 @@ function collectArgumentTypesFromCallSites(ctx, nameNode, paramIndex, depth) {
     return types;
 }
 /**
+ * True when `type` exposes every member name in `memberNames`. Used to drop
+ * call-site candidates that can't actually support the parameter's own body
+ * — the classic SFRA duck-typing trap where a Store *model* is passed into a
+ * helper that also reads CustomerAddress-only fields (`companyName`,
+ * `postBox`, …). Without this filter the resolvable model wins the hover
+ * even though the body is not a Store.
+ */
+function typeSatisfiesMemberUsage(ctx, type, memberNames) {
+    if (memberNames.size === 0)
+        return true;
+    for (const name of memberNames) {
+        if (!(0, type_helpers_1.getMemberOfType)(ctx.checker, type, name))
+            return false;
+    }
+    return true;
+}
+/**
  * Turns raw call-site/callback candidates into the final answer for a
- * parameter: dedupe, silence conflicting top-level unions, otherwise fall
- * back to ambient usage matching when nothing resolved.
+ * parameter: drop types the body can't use, dedupe, silence conflicting
+ * top-level unions, otherwise fall back to ambient usage matching when
+ * nothing resolved.
  */
 function finalizeParameterCandidates(ctx, param, types, depth) {
     const { ts } = ctx;
-    const result = (0, type_helpers_1.dedupeTypes)(ctx, types);
+    const usage = (0, usage_match_1.collectParameterMemberUsage)(ctx, param);
+    const raw = (0, type_helpers_1.dedupeTypes)(ctx, types);
     // Conflicting call-site arguments (e.g. Product at one site, Order at
     // another) are not a useful hover — silence rather than a noisy union,
     // and do NOT fall through to ambient matching: we already have evidence,
@@ -379,16 +398,20 @@ function finalizeParameterCandidates(ctx, param, types, depth) {
     // helper still need the full candidate set so return-type inference and
     // the typeToString memo baselines keep working; the editor never shows
     // those intermediate unions unlabeled.
-    if (depth === 0 && result.length > constants_1.MAX_CALL_SITE_CANDIDATES)
+    if (depth === 0 && raw.length > constants_1.MAX_CALL_SITE_CANDIDATES)
         return [];
+    // Keep only call-site types that expose every member the parameter body
+    // actually touches. A partial resolution (one duck-typed Store model call
+    // site resolves, an untyped preferredAddress site doesn't) must not surface
+    // "Store" on a helper whose body also reads address-only fields the model
+    // never declares.
+    const result = (0, type_helpers_1.dedupeTypes)(ctx, raw.filter((t) => typeSatisfiesMemberUsage(ctx, t, usage)));
     if (result.length > 0)
         return result;
-    // No call site could be found or resolved at all (a helper only ever
-    // reached indirectly — a Controller route dispatching through a name the
-    // reference search can't follow, or genuinely dead/unused code). Rather
-    // than give up, try to match how the parameter's own body uses it against
-    // the program's ambient classes.
-    return (0, usage_match_1.matchAmbientTypesByUsage)(ctx, (0, usage_match_1.collectParameterMemberUsage)(ctx, param), ts.isIdentifier(param.name) ? param.name.text : undefined);
+    // No usable call-site type (none found, none resolved, or none that fit
+    // the body). Match how the parameter's own body uses it against the
+    // program's ambient classes instead.
+    return (0, usage_match_1.matchAmbientTypesByUsage)(ctx, usage, ts.isIdentifier(param.name) ? param.name.text : undefined);
 }
 /**
  * Infers a parameter's candidate type(s) from the arguments it's actually
