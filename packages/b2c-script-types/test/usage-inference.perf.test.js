@@ -22,6 +22,7 @@ const {
   createFixtureLanguageService,
   findFunctionDeclaration,
 } = require('./helpers/fixture-language-service');
+const {realTypesPrelude} = require('./helpers/real-dw-types');
 
 // ---------------------------------------------------------------------------
 // Performance baselines.
@@ -90,6 +91,11 @@ const BASELINE = {
   // per request. 30 unique candidates + slack — without the memo this
   // scenario stringifies each candidate once per level (4x, 120 calls).
   nestedForwardingStringifications: 32,
+  // The no-call-site usage-match fallback's ambient-class index (every
+  // dw.* class's member-name set) is built once per LanguageService and
+  // cached — a second hover/completion request against the same project
+  // must add zero further getPropertiesOfType calls, not rebuild the index.
+  ambientClassIndexRebuildOnRepeatedRequest: 0,
 };
 
 /**
@@ -111,6 +117,23 @@ function withReferenceCounter(languageService) {
     },
   });
   return {languageService: proxy, referenceSearches: () => count, reset: () => (count = 0)};
+}
+
+/**
+ * Counts calls to `checker.getPropertiesOfType` — the per-candidate cost of
+ * building the ambient-class index the no-call-site usage-match fallback
+ * (matchAmbientTypesByUsage) matches against. That index is cached per
+ * LanguageService (see buildAmbientClassIndex's WeakMap), so a warm cache
+ * must add zero further calls on a repeated request.
+ */
+function withPropertiesOfTypeCounter(checker) {
+  let count = 0;
+  const original = checker.getPropertiesOfType.bind(checker);
+  checker.getPropertiesOfType = (type) => {
+    count++;
+    return original(type);
+  };
+  return {count: () => count};
 }
 
 function timed(fn) {
@@ -547,5 +570,46 @@ describe('usage-inference — performance baselines', () => {
 
     assert.ok(ctx.referenceBudget >= 0, 'the shared reference budget must never go negative');
     assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
+  });
+
+  it('caches the ambient-class index across repeated hovers on a real dw.* no-call-site parameter (addressBook.addresses)', () => {
+    // Real-world shape from neuhaus-core's addressHelpers.js: an uncalled
+    // (from this file's perspective) helper whose only parameter usage is a
+    // single, globally-unique member access — the ambient-class matching
+    // fallback this scenario exercises, against the real bundled dw.* types
+    // rather than a small stand-in shape.
+    const files = {
+      '/types.d.ts': realTypesPrelude(['AddressBook'], ''),
+      '/addressHelpers.js': `
+        function getAddressBookAddressByForm(addressBook, form) {
+          var collections = require('*/cartridge/scripts/util/collections');
+          return collections.find(addressBook.addresses, function (address) {
+            return address.postalCode === form.postalCode.value;
+          });
+        }
+      `,
+    };
+    const languageService = createFixtureLanguageService(files, {strict: true});
+    const ctx = createInferenceContext(ts, languageService);
+    const fn = findFunctionDeclaration(ctx.program.getSourceFile('/addressHelpers.js'), 'getAddressBookAddressByForm');
+    const counter = withPropertiesOfTypeCounter(ctx.checker);
+
+    const first = timed(() => inferParameterType(ctx, fn.parameters[0]));
+    assert.equal(describeTypes(ctx.checker, first.result), 'AddressBook');
+    const scansAfterFirstHover = counter.count();
+    assert.ok(scansAfterFirstHover > 0, 'expected the cold ambient-class index build to scan at least one candidate');
+    assert.ok(first.elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(first.elapsedMs)}ms`);
+
+    // A second hover at the same position (the cursor lingering, or a
+    // completion request right after the hover) must reuse the cached index
+    // instead of re-scanning every ambient class's property list.
+    const second = timed(() => inferParameterType(ctx, fn.parameters[0]));
+    assert.equal(describeTypes(ctx.checker, second.result), 'AddressBook');
+    assert.equal(
+      counter.count() - scansAfterFirstHover,
+      BASELINE.ambientClassIndexRebuildOnRepeatedRequest,
+      `expected the warm ambient-class index to add ${BASELINE.ambientClassIndexRebuildOnRepeatedRequest} getPropertiesOfType calls, got ${counter.count() - scansAfterFirstHover}`,
+    );
+    assert.ok(second.elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(second.elapsedMs)}ms`);
   });
 });
