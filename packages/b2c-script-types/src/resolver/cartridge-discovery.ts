@@ -10,6 +10,7 @@
 // read and test in isolation. index.ts wires them into the plugin's
 // auto-discovery step.
 
+import {statSync} from 'node:fs';
 import path from 'node:path';
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
@@ -22,10 +23,15 @@ import type {ConfiguredCartridge} from './constants';
  * hard size ceiling (see MAX_JSON_BYTES). Never throws: a missing, oversized,
  * or malformed file yields `undefined`, and callers treat that as "absent"
  * rather than failing the whole request.
+ *
+ * The size check always uses `fs.statSync` rather than `ts.sys.getFileSize`
+ * (which is optional per the TS API and, when absent, would otherwise force
+ * `ts.sys.readFile` to load the whole file before we can measure it) so the
+ * DoS guard holds on every host.
  */
 export function readJsonFile(ts: typeof tsserver, filePath: string): unknown {
   try {
-    if (ts.sys.getFileSize && ts.sys.getFileSize(filePath) > MAX_JSON_BYTES) return undefined;
+    if (statSync(filePath).size > MAX_JSON_BYTES) return undefined;
     const content = ts.sys.readFile(filePath);
     if (content === undefined || content.length > MAX_JSON_BYTES) return undefined;
     return JSON.parse(content);

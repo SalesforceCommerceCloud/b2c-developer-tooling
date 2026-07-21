@@ -1,6 +1,6 @@
 ---
-'@salesforce/b2c-cli': patch
-'b2c-vs-extension': patch
+'@salesforce/b2c-cli': minor
+'b2c-vs-extension': minor
 ---
 
 Script API usage inference now also matches an undocumented parameter or local variable's own member/method accesses (e.g. `shipment.custom`, `shipment.productLineItems`) against the Script API's ambient classes when no call site or usable initializer can resolve its type at all. This recovers hover/completions for helpers only reached indirectly (e.g. dispatched from a Controller route), and for collection items pulled out with a manual indexing loop (`var item = items[i]`) instead of `collections.forEach`.

@@ -18,6 +18,7 @@ exports.parseDeclareModuleRanges = parseDeclareModuleRanges;
 // `fileExists` probe) as plain arguments and return data, so they're easy to
 // read and test in isolation. index.ts wires them into the plugin's
 // auto-discovery step.
+const node_fs_1 = require("node:fs");
 const node_path_1 = __importDefault(require("node:path"));
 const constants_1 = require("./constants");
 /**
@@ -25,10 +26,15 @@ const constants_1 = require("./constants");
  * hard size ceiling (see MAX_JSON_BYTES). Never throws: a missing, oversized,
  * or malformed file yields `undefined`, and callers treat that as "absent"
  * rather than failing the whole request.
+ *
+ * The size check always uses `fs.statSync` rather than `ts.sys.getFileSize`
+ * (which is optional per the TS API and, when absent, would otherwise force
+ * `ts.sys.readFile` to load the whole file before we can measure it) so the
+ * DoS guard holds on every host.
  */
 function readJsonFile(ts, filePath) {
     try {
-        if (ts.sys.getFileSize && ts.sys.getFileSize(filePath) > constants_1.MAX_JSON_BYTES)
+        if ((0, node_fs_1.statSync)(filePath).size > constants_1.MAX_JSON_BYTES)
             return undefined;
         const content = ts.sys.readFile(filePath);
         if (content === undefined || content.length > constants_1.MAX_JSON_BYTES)

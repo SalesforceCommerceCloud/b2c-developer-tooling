@@ -11,6 +11,7 @@ const node_path_1 = __importDefault(require("node:path"));
 const usage_inference_1 = require("./usage-inference");
 const constants_1 = require("./resolver/constants");
 const cartridge_discovery_1 = require("./resolver/cartridge-discovery");
+const module_resolution_1 = require("./resolver/module-resolution");
 /**
  * Swaps the trailing `any` keyword part of a QuickInfo's display parts (the
  * shape TS renders for an undocumented parameter/property, e.g. `(parameter)
@@ -58,39 +59,11 @@ function init({ typescript: ts }) {
     // backslashes on Windows — we have to normalize to match. We also fold case on
     // case-insensitive filesystems (Windows + default macOS HFS+/APFS) so a path
     // like "C:/Proj" matches a cartridge root of "c:/proj".
-    const caseSensitive = ts.sys.useCaseSensitiveFileNames;
-    const normalize = (p) => {
-        const slashed = p.replace(/\\/g, '/');
-        return caseSensitive ? slashed : slashed.toLowerCase();
-    };
-    // Canonical, real form of a path for containment checks: resolve symlinks
-    // (ts.sys.realpath) so an in-repo symlink can't point a require() at a file
-    // outside its root, then collapse `.`/`..` and fold to the same slash/case
-    // convention cartridge roots use. Falls back to a purely lexical resolve
-    // when the path doesn't exist or realpath is unavailable, so a crafted
-    // non-existent candidate is still `..`-collapsed before the check.
-    const canonicalPath = (p) => {
-        let real = p;
-        try {
-            if (ts.sys.realpath)
-                real = ts.sys.realpath(p);
-        }
-        catch {
-            // Non-existent path (or realpath failure) — fall back to lexical.
-        }
-        return normalize(node_path_1.default.resolve(real));
-    };
-    // True when `candidate` resolves to a location at or beneath `rootDir`.
-    // This is the trust boundary for every resolver below: import specifiers,
-    // cartridge names, and a cartridge's package.json `main` are all
-    // attacker-controlled in a cloned repository, so a resolved path that
-    // escapes its intended root (via `..`, an absolute/UNC/drive form, or a
-    // symlink) must be rejected rather than read into the TS program.
-    const isWithinRoot = (candidate, rootDir) => {
-        const root = canonicalPath(rootDir);
-        const resolved = canonicalPath(candidate);
-        return (resolved + '/').startsWith(root.endsWith('/') ? root : root + '/');
-    };
+    //
+    // isWithinRoot is the trust boundary for every resolver below — see its
+    // doc comment in resolver/module-resolution.ts for the full rationale and
+    // known limitations.
+    const { normalize, isWithinRoot } = (0, module_resolution_1.createPathContainment)(ts, ts.sys.useCaseSensitiveFileNames);
     const setCartridges = (list) => {
         cartridges = list.map(({ name, src }) => {
             const n = normalize(src);
@@ -154,114 +127,12 @@ function init({ typescript: ts }) {
             return false;
         }
     };
-    // Resolve a SFCC cartridge-style require relative to the configured cartridge
-    // path. Returns the absolute path to the resolved JS file, or undefined if no
-    // cartridge contains the target.
-    //
-    //   ~/cartridge/scripts/foo   -> only the cartridge that owns containingFile
-    //   * /cartridge/scripts/foo  -> walks the cartridge path, owner-first
-    //   bar/cartridge/scripts/foo -> only the cartridge named "bar"
-    const resolveCartridgeModule = (moduleName, containingFile) => {
-        if (cartridges.length === 0)
-            return undefined;
-        let subpath;
-        let order;
-        if (moduleName.startsWith('~/')) {
-            // ~ is the current cartridge — restrict to the cartridge that owns the
-            // calling file. If the containing file isn't inside any known cartridge,
-            // there is no current cartridge, so the require can't be resolved.
-            subpath = moduleName.slice(2);
-            const owner = ownerCartridge(containingFile);
-            if (!owner)
-                return undefined;
-            order = [owner];
-        }
-        else if (moduleName.startsWith('*/')) {
-            // * walks the cartridge path. Owner-first matches SFRA-style overrides
-            // (the requesting cartridge wins before falling through to others).
-            subpath = moduleName.slice(2);
-            order = reorderForContainingFile(cartridges, containingFile);
-        }
-        else {
-            // <cartridgeName>/cartridge/... — only treat as a cartridge require if the
-            // first segment matches a known cartridge name. Otherwise pass through so
-            // node_modules and other resolutions still work.
-            const slash = moduleName.indexOf('/');
-            if (slash <= 0)
-                return undefined;
-            const head = moduleName.slice(0, slash);
-            const known = cartridges.find((c) => c.name === head);
-            if (!known)
-                return undefined;
-            subpath = moduleName.slice(slash + 1);
-            order = [known];
-        }
-        if (!subpath)
-            return undefined;
-        for (const c of order) {
-            const baseAbs = c.root + subpath;
-            for (const ext of constants_1.CANDIDATE_EXTENSIONS) {
-                const candidate = baseAbs + ext;
-                // `subpath` comes straight from the import specifier, so a `..`
-                // segment (or an absolute/symlinked target) can point outside the
-                // cartridge — resolve and contain before accepting it.
-                if (fileExists(candidate) && isWithinRoot(candidate, c.root)) {
-                    return { resolved: candidate, source: c.name };
-                }
-            }
-        }
-        return undefined;
-    };
-    // Resolve a bare `require('server')`-style import against the SFRA `modules`
-    // cartridge. Unlike normal cartridges (which expose files under
-    // `cartridge/scripts/...`), the `modules` cartridge exposes its entire tree
-    // at the root, so `require('server')` -> `<modules>/server[.js|/index.js]`
-    // and `require('server/middleware')` -> `<modules>/server/middleware[.js]`.
-    // Falls through unless a cartridge literally named `modules` is in the list.
-    const resolveModulesCartridge = (moduleName) => {
-        if (cartridges.length === 0)
-            return undefined;
-        if (moduleName.startsWith('.') || moduleName.startsWith('/'))
-            return undefined;
-        if (moduleName.startsWith('~/') || moduleName.startsWith('*/') || moduleName.startsWith('dw/'))
-            return undefined;
-        // Let the bundled SFRA ambient declarations win for these names. If we
-        // resolved them to the .js file here, TS would infer types from the JS
-        // (which misses dynamic property assignments in modules/server.js) and
-        // ignore the ambient `declare module 'server' { ... }` shape.
-        if (constants_1.SFRA_AMBIENT_MODULES.has(moduleName))
-            return undefined;
-        const modulesCart = cartridges.find((c) => c.name === 'modules');
-        if (!modulesCart)
-            return undefined;
-        const baseAbs = modulesCart.root + moduleName;
-        for (const ext of constants_1.CANDIDATE_EXTENSIONS) {
-            const candidate = baseAbs + ext;
-            // `moduleName` may carry `..` after its first segment (it only can't
-            // *start* with `.`/`/`); contain it against the modules root.
-            if (fileExists(candidate) && isWithinRoot(candidate, modulesCart.root)) {
-                return { resolved: candidate, source: modulesCart.name };
-            }
-        }
-        // package.json `main` fallback for directories without an index.js.
-        const pkgPath = baseAbs + '/package.json';
-        if (fileExists(pkgPath) && isWithinRoot(pkgPath, modulesCart.root)) {
-            const main = (0, cartridge_discovery_1.readJsonFile)(ts, pkgPath)?.main;
-            if (typeof main === 'string' && main.length > 0) {
-                const resolved = (modulesCart.root + moduleName + '/' + main.replace(/^\.\//, '')).replace(/\\/g, '/');
-                // `main` is attacker-controlled JSON content flowing into a path
-                // join — a `../../..` or absolute value must not escape the root.
-                if (fileExists(resolved) && isWithinRoot(resolved, modulesCart.root)) {
-                    return { resolved, source: modulesCart.name };
-                }
-            }
-        }
-        return undefined;
-    };
-    const ownerCartridge = (containingFile) => {
-        const f = normalize(containingFile);
-        return cartridges.find((c) => f.startsWith(c.root));
-    };
+    // See resolver/module-resolution.ts for the resolution rules and security
+    // rationale. These wrappers just bind the closure's live cartridge list and
+    // path-safety primitives.
+    const resolveCartridgeModule = (moduleName, containingFile) => (0, module_resolution_1.resolveCartridgeModule)(cartridges, moduleName, containingFile, { normalize, isWithinRoot, fileExists });
+    const resolveModulesCartridge = (moduleName) => (0, module_resolution_1.resolveModulesCartridge)(ts, cartridges, moduleName, { isWithinRoot, fileExists });
+    const ownerCartridge = (containingFile) => (0, module_resolution_1.ownerCartridge)(cartridges, normalize, containingFile);
     // Cached map of byte ranges in types/sfra/server.d.ts to the SFRA module
     // declared by their enclosing `declare module 'X' { ... }` block. Used to
     // map go-to-definition results back to the matching modules/<X>.js file.
@@ -276,12 +147,6 @@ function init({ typescript: ts }) {
                 return r.module;
         }
         return undefined;
-    };
-    const reorderForContainingFile = (list, containingFile) => {
-        const owner = ownerCartridge(containingFile);
-        if (!owner)
-            return list;
-        return [owner, ...list.filter((c) => c !== owner)];
     };
     function create(info) {
         const log = (msg) => info.project.projectService.logger.info(`[${constants_1.PLUGIN_NAME}] ${msg}`);
@@ -360,6 +225,34 @@ function init({ typescript: ts }) {
             }
             return additions.length > 0 ? [...list, ...additions] : list;
         };
+        // Shared by both host resolution hooks below (the modern
+        // resolveModuleNameLiterals and the legacy TS 4.x resolveModuleNames):
+        // tries dw/* types, then SFCC cartridge-relative requires, then the SFRA
+        // `modules` cartridge, in that priority order. Each hook only differs in
+        // the shape TS expects the result wrapped in.
+        const resolveOne = (text, containingFile) => {
+            const dw = resolveDwModule(text);
+            if (dw && fileExists(dw)) {
+                return { resolvedFileName: dw, extension: ts.Extension.Dts, isExternalLibraryImport: true };
+            }
+            const cart = resolveCartridgeModule(text, containingFile);
+            if (cart) {
+                return {
+                    resolvedFileName: cart.resolved,
+                    extension: cart.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
+                    isExternalLibraryImport: false,
+                };
+            }
+            const mod = resolveModulesCartridge(text);
+            if (mod) {
+                return {
+                    resolvedFileName: mod.resolved,
+                    extension: mod.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
+                    isExternalLibraryImport: false,
+                };
+            }
+            return undefined;
+        };
         const origResolveModuleNameLiterals = host.resolveModuleNameLiterals?.bind(host);
         if (origResolveModuleNameLiterals) {
             host.resolveModuleNameLiterals = (moduleLiterals, containingFile, redirectedReference, options, containingSourceFile, reusedNames) => {
@@ -369,41 +262,12 @@ function init({ typescript: ts }) {
                 return original.map((res, i) => {
                     if (res.resolvedModule)
                         return res;
-                    const text = moduleLiterals[i].text;
-                    const dw = resolveDwModule(text);
-                    if (dw && fileExists(dw)) {
-                        return {
-                            resolvedModule: {
-                                resolvedFileName: dw,
-                                extension: ts.Extension.Dts,
-                                isExternalLibraryImport: true,
-                                packageId: undefined,
-                            },
-                        };
-                    }
-                    const cart = resolveCartridgeModule(text, containingFile);
-                    if (cart) {
-                        return {
-                            resolvedModule: {
-                                resolvedFileName: cart.resolved,
-                                extension: cart.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
-                                isExternalLibraryImport: false,
-                                packageId: undefined,
-                            },
-                        };
-                    }
-                    const mod = resolveModulesCartridge(text);
-                    if (mod) {
-                        return {
-                            resolvedModule: {
-                                resolvedFileName: mod.resolved,
-                                extension: mod.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
-                                isExternalLibraryImport: false,
-                                packageId: undefined,
-                            },
-                        };
-                    }
-                    return res;
+                    const resolved = resolveOne(moduleLiterals[i].text, containingFile);
+                    if (!resolved)
+                        return res;
+                    return {
+                        resolvedModule: { ...resolved, packageId: undefined },
+                    };
                 });
             };
         }
@@ -417,32 +281,8 @@ function init({ typescript: ts }) {
                 return original.map((res, i) => {
                     if (res)
                         return res;
-                    const text = moduleNames[i];
-                    const dw = resolveDwModule(text);
-                    if (dw && fileExists(dw)) {
-                        return {
-                            resolvedFileName: dw,
-                            extension: ts.Extension.Dts,
-                            isExternalLibraryImport: true,
-                        };
-                    }
-                    const cart = resolveCartridgeModule(text, containingFile);
-                    if (cart) {
-                        return {
-                            resolvedFileName: cart.resolved,
-                            extension: cart.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
-                            isExternalLibraryImport: false,
-                        };
-                    }
-                    const mod = resolveModulesCartridge(text);
-                    if (mod) {
-                        return {
-                            resolvedFileName: mod.resolved,
-                            extension: mod.resolved.endsWith('.json') ? ts.Extension.Json : ts.Extension.Js,
-                            isExternalLibraryImport: false,
-                        };
-                    }
-                    return res;
+                    const resolved = resolveOne(moduleNames[i], containingFile);
+                    return resolved ? resolved : res;
                 });
             };
         }

@@ -65,7 +65,8 @@ value widened to `any` by plain TypeScript inference, and that `any`
 propagates to every caller. Passing `inferUsage: true` in the plugin config
 (off by default) makes the plugin infer a plausible type for these cases from
 how the value is actually used elsewhere in the project — see
-[src/usage-inference.ts](./src/usage-inference.ts) — and surface it as an
+[src/usage-inference.ts](./src/usage-inference.ts) (barrel) and the engine
+modules under [src/inference/](./src/inference/) — and surface it as an
 "Inferred from usage" hover note plus synthesized member completions. It's
 heuristic and intentionally conservative: it only kicks in where the checker
 has already given up with `any`, never overriding a type TypeScript or JSDoc

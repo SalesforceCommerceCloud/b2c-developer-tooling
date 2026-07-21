@@ -103,8 +103,9 @@ export function registerScriptTypes(
   const refreshCmd = registerSafeCommand('b2c-dx.scriptTypes.refresh', async () => {
     cartridgeService.refresh();
     const cartridges = cartridgeService.getCartridges();
+    const active = vscode.workspace.isTrusted && isFeatureEnabled();
     vscode.window.showInformationMessage(
-      `B2C DX: Script API IntelliSense — ${isFeatureEnabled() ? 'active' : 'disabled'} (${cartridges.length} cartridge${cartridges.length === 1 ? '' : 's'}).`,
+      `B2C DX: Script API IntelliSense — ${active ? 'active' : 'disabled'} (${cartridges.length} cartridge${cartridges.length === 1 ? '' : 's'}).`,
     );
   });
 
