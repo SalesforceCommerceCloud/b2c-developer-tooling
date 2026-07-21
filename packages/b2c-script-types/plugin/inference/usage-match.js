@@ -58,7 +58,7 @@ function buildAmbientClassIndex(ctx) {
             }
             if (memberNames.size === 0)
                 continue;
-            candidates.push({ type, memberNames });
+            candidates.push({ type, memberNames, name: stmt.name.text });
         }
     }
     classIndexCache.set(ctx.languageService, candidates);
@@ -168,8 +168,20 @@ function collectVariableMemberUsage(ctx, decl) {
  * "tightest"). A member name that's this rare is as strong a signal as a
  * multi-member signature; a signature that's both weak AND ambiguous is what
  * MIN_USAGE_SIGNATURE_MEMBERS exists to filter out.
+ *
+ * @param identifierName - the parameter/variable's own name, when it's a
+ * plain identifier (`profile`, `shipment`). Real-world bug: a common field
+ * subset (`email`/`firstName`/`lastName`/`custom`) is shared by both the
+ * large `dw.customer.Profile` and the much smaller `dw.customer.
+ * ProductListRegistrant` — "fewest total members" alone picks the small,
+ * unrelated class every time purely because it has less surface area, never
+ * the large, contextually correct one. A variable conventionally named after
+ * the SFCC class it holds is a stronger, more specific signal than raw
+ * member count, so a name match short-circuits straight to that candidate
+ * (ambient class names are unique, so at most one can ever match this way)
+ * before size-based tiebreaking even runs.
  */
-function matchAmbientTypesByUsage(ctx, memberNames) {
+function matchAmbientTypesByUsage(ctx, memberNames, identifierName) {
     if (memberNames.size === 0)
         return [];
     const candidates = buildAmbientClassIndex(ctx);
@@ -182,6 +194,11 @@ function matchAmbientTypesByUsage(ctx, memberNames) {
     });
     if (matches.length === 0)
         return [];
+    if (identifierName) {
+        const byName = matches.filter((m) => m.name.toLowerCase() === identifierName.toLowerCase());
+        if (byName.length === 1)
+            return [byName[0].type];
+    }
     if (memberNames.size < constants_1.MIN_USAGE_SIGNATURE_MEMBERS && matches.length > 1)
         return [];
     const minSize = Math.min(...matches.map((m) => m.memberNames.size));

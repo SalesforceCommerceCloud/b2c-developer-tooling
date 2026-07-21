@@ -385,4 +385,108 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
 
     assert.equal(describeTypes(ctx.checker, types), 'ProductLineItem');
   });
+
+  describe('identifier-name tiebreak (prefers the class matching the variable/parameter name)', () => {
+    // Real-world bug from mul-core's plugin_marketing_cloud/accountHelpers.js
+    // (sentAccountActivationEmail): `var profile = resettingCustomer.profile;`
+    // is only ever read via email/firstName/lastName/custom — a field subset
+    // shared by both the real dw.customer.Profile (420 lines, dozens of
+    // members) and the much smaller dw.customer.ProductListRegistrant (70
+    // lines). "Fewest total members" alone picked ProductListRegistrant
+    // every time, purely because it has less surface area — never the
+    // large, contextually correct Profile. `resettingCustomer` itself is
+    // deliberately left uninferred (an explicit, if made-up, JSDoc
+    // `@param {obj}` type) — the fallback only ever reaches `profile`'s own
+    // usage signature, matching the exact real-world path.
+    it('infers Profile (not the smaller, equally-matching ProductListRegistrant) for a variable literally named `profile`', () => {
+      const files = {
+        '/types.d.ts': realTypesPrelude(['Profile', 'ProductListRegistrant'], ''),
+        '/accountHelpers.js': `
+          /**
+           * @param {obj} resettingCustomer - object that contains user's email address and name information.
+           */
+          function sentAccountActivationEmail(resettingCustomer) {
+            var profile = resettingCustomer.profile;
+            return {
+              email: profile.email,
+              firstname: profile.firstName,
+              lastname: profile.lastName,
+              multico_id__c: profile.custom.multicoID,
+            };
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/accountHelpers.js', 'sentAccountActivationEmail');
+
+      // resettingCustomer's own explicit (if nonsensical) JSDoc type must be
+      // left alone, exactly as it is in the real file.
+      const resettingCustomerTypes = inferParameterType(ctx, fn.parameters[0]);
+      assert.deepEqual(resettingCustomerTypes, []);
+
+      let profileDecl;
+      const visit = (n) => {
+        if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === 'profile') profileDecl = n;
+        ts.forEachChild(n, visit);
+      };
+      visit(fn.body);
+
+      const types = inferTypeForNode(ctx, profileDecl.name);
+
+      assert.equal(describeTypes(ctx.checker, types), 'Profile');
+    });
+
+    it('still returns the smallest-total-members candidate when no candidate name matches the identifier', () => {
+      // Same ambiguous member signature, different (unrelated) variable
+      // name — the size-based tiebreak from before this fix must still
+      // apply exactly as it did, since there's no name match to prefer.
+      // Keeps the same `@param {obj}` JSDoc block as the test above: without
+      // it, `resettingCustomer`'s own single-member usage (`.profile`)
+      // uniquely matches `dw.customer.Customer` on its own, resolving
+      // `.profile` through Customer's real declared property and never
+      // reaching the ambient-fallback path this test means to exercise.
+      const files = {
+        '/types.d.ts': realTypesPrelude(['Profile', 'ProductListRegistrant'], ''),
+        '/accountHelpers.js': `
+          /**
+           * @param {obj} resettingCustomer - object that contains user's email address and name information.
+           */
+          function sentAccountActivationEmail(resettingCustomer) {
+            var contactInfo = resettingCustomer.profile;
+            return {
+              email: contactInfo.email,
+              firstname: contactInfo.firstName,
+              lastname: contactInfo.lastName,
+              multico_id__c: contactInfo.custom.multicoID,
+            };
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/accountHelpers.js', 'sentAccountActivationEmail');
+
+      let contactInfoDecl;
+      const visit = (n) => {
+        if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === 'contactInfo') {
+          contactInfoDecl = n;
+        }
+        ts.forEachChild(n, visit);
+      };
+      visit(fn.body);
+
+      const types = inferTypeForNode(ctx, contactInfoDecl.name);
+
+      assert.equal(describeTypes(ctx.checker, types), 'ProductListRegistrant');
+    });
+
+    it('does not let an identifier-name match rescue a signature that matches zero ambient classes', () => {
+      const {ctx} = setupInference(SHIPMENT_HELPER_FILES, '/shippingHelpers.js', 'markShipmentForShipping');
+
+      const types = matchAmbientTypesByUsage(
+        ctx,
+        new Set(['thisMemberDoesNotExistAnywhere', 'norDoesThisOne']),
+        'shipment',
+      );
+
+      assert.deepEqual(types, []);
+    });
+  });
 });

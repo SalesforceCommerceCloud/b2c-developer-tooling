@@ -88,7 +88,11 @@ function resolveVariableInitializerTypes(
   try {
     const resolved = resolveExpressionTypes(ctx, decl.initializer, depth, chainHops);
     if (resolved.length > 0) return resolved;
-    return matchAmbientTypesByUsage(ctx, collectVariableMemberUsage(ctx, decl));
+    return matchAmbientTypesByUsage(
+      ctx,
+      collectVariableMemberUsage(ctx, decl),
+      ts.isIdentifier(decl.name) ? decl.name.text : undefined,
+    );
   } finally {
     ctx.visiting.delete(decl);
   }
@@ -461,7 +465,11 @@ export function inferParameterType(
     // than give up, try to match how the parameter's own body uses it against
     // the program's ambient classes.
     if (result.length === 0) {
-      result = matchAmbientTypesByUsage(ctx, collectParameterMemberUsage(ctx, param));
+      result = matchAmbientTypesByUsage(
+        ctx,
+        collectParameterMemberUsage(ctx, param),
+        ts.isIdentifier(param.name) ? param.name.text : undefined,
+      );
     }
     // Don't memoize a result whose computation hit a cycle guard: it was
     // truncated by what happened to be on the *current* call stack, and the

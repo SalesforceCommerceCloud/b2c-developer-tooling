@@ -65,7 +65,7 @@ function resolveVariableInitializerTypes(ctx, decl, depth, chainHops) {
         const resolved = resolveExpressionTypes(ctx, decl.initializer, depth, chainHops);
         if (resolved.length > 0)
             return resolved;
-        return (0, usage_match_1.matchAmbientTypesByUsage)(ctx, (0, usage_match_1.collectVariableMemberUsage)(ctx, decl));
+        return (0, usage_match_1.matchAmbientTypesByUsage)(ctx, (0, usage_match_1.collectVariableMemberUsage)(ctx, decl), ts.isIdentifier(decl.name) ? decl.name.text : undefined);
     }
     finally {
         ctx.visiting.delete(decl);
@@ -411,7 +411,7 @@ function inferParameterType(ctx, param, depth = 0) {
         // than give up, try to match how the parameter's own body uses it against
         // the program's ambient classes.
         if (result.length === 0) {
-            result = (0, usage_match_1.matchAmbientTypesByUsage)(ctx, (0, usage_match_1.collectParameterMemberUsage)(ctx, param));
+            result = (0, usage_match_1.matchAmbientTypesByUsage)(ctx, (0, usage_match_1.collectParameterMemberUsage)(ctx, param), ts.isIdentifier(param.name) ? param.name.text : undefined);
         }
         // Don't memoize a result whose computation hit a cycle guard: it was
         // truncated by what happened to be on the *current* call stack, and the

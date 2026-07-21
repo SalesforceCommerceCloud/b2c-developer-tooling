@@ -11,6 +11,8 @@ Beyond call-site and return-expression inference, the engine also recognizes:
 - A `'member' in obj` existence check (e.g. `'Subsoort' in apiProduct.custom`) as evidence of that member, not just a direct `obj.member` read — a very common SFCC idiom for guarding an optional custom attribute before reading it.
 - `new Helper(x)` constructor calls as a call site, not just plain `helper(x)` calls — SFRA's other very common way to invoke an undocumented "class" model (e.g. `new ProductLineItem(...)`, `new StoreModel(...)`).
 
+When a member signature still matches more than one Script API class, a parameter or variable conventionally named after the class it holds (`profile` for `dw.customer.Profile`, `shipment` for `dw.order.Shipment`) is now preferred over the previous "fewest total members" tiebreak alone — which could otherwise pick a small, unrelated class purely because it exposed less surface area than the large, correct one (e.g. `dw.customer.ProductListRegistrant` over `dw.customer.Profile` for a variable literally named `profile`, since both happen to share a common `email`/`firstName`/`lastName`/`custom` field subset).
+
 Also fixes several bugs uncovered while dogfooding this against real projects:
 - Hover showed nothing when hovering the member name itself in a chained access (e.g. `productLineItems` in `shipment.productLineItems`) even though hovering the receiver worked.
 - Completions were slow/unreliable on large real projects because an internal cache was invalidated on every keystroke instead of once per project session.

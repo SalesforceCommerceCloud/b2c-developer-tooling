@@ -42,7 +42,20 @@ function createFixtureHost(files, options) {
 
   return {
     getScriptFileNames: fileNames,
-    getScriptVersion: () => '0',
+    // The shared DocumentRegistry below (see createFixtureLanguageService)
+    // only reuses a cached parse when both the file path AND this version
+    // string match a previous request — so the version must reflect actual
+    // content, not a constant, or two different tests that happen to reuse
+    // the same in-memory path (very common: '/types.d.ts', '/helper.js') but
+    // with different content would silently serve each other's stale parsed
+    // SourceFile. Using the in-memory file's own text as its version makes
+    // that impossible (identical content -> identical version -> safe reuse;
+    // different content -> different version -> correctly reparsed) while
+    // real on-disk files (the vendored dw/* tree, lib.*.d.ts — which never
+    // change across a test run) keep a constant version, so THEY get parsed
+    // once total and reused by every subsequent fixture — the expensive part
+    // this cache exists to short-circuit.
+    getScriptVersion: (fileName) => files[fileName] ?? 'on-disk',
     getScriptSnapshot: (fileName) => {
       const text = files[fileName] ?? ts.sys.readFile(fileName);
       return text === undefined ? undefined : ts.ScriptSnapshot.fromString(text);
@@ -57,12 +70,23 @@ function createFixtureHost(files, options) {
   };
 }
 
+// Shared across every fixture LanguageService created in this process (see
+// createFixtureLanguageService): a DocumentRegistry is TypeScript's built-in
+// mechanism for reusing an already-parsed-and-bound SourceFile across
+// multiple LanguageServices that request the same (path, version,
+// compilation settings) — exactly the case for the real vendored dw/*
+// declaration tree, which is identical across every test in a run. A fresh
+// per-call registry (the previous behavior) defeated this entirely, forcing
+// every single test to re-parse and re-bind hundreds of real .d.ts files
+// from scratch — the dominant cost behind this suite's real-world runtime.
+const sharedDocumentRegistry = ts.createDocumentRegistry();
+
 // Builds a real ts.LanguageService on top of createFixtureHost(), so
 // usage-inference tests can exercise findReferences/checker behavior without
 // touching disk.
 function createFixtureLanguageService(files, options) {
   const host = createFixtureHost(files, options);
-  return ts.createLanguageService(host, ts.createDocumentRegistry());
+  return ts.createLanguageService(host, sharedDocumentRegistry);
 }
 
 // Finds a top-level `function name(...) {...}` declaration in a fixture
