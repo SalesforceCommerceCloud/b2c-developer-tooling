@@ -546,6 +546,42 @@ describe('usage-inference', () => {
       assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
     });
 
+    it('chases both branches of a ternary return (collections.first shape)', () => {
+      // Stock SFRA `collections.first`: `return it.hasNext() ? it.next() : null`.
+      // Without ConditionalExpression chasing the whole helper stays `any`
+      // even when the call-site collection is fully typed.
+      const files = {
+        '/types.d.ts': `
+          interface FixtureIterator {
+            hasNext(): boolean;
+            next(): {ID: string};
+          }
+          interface FixtureCollection {
+            iterator(): FixtureIterator;
+          }
+          declare function getCollection(): FixtureCollection;
+        `,
+        '/collections.js': `
+          function first(collection) {
+            var iterator = collection.iterator();
+            return iterator.hasNext() ? iterator.next() : null;
+          }
+          function caller() {
+            return first(getCollection());
+          }
+          first(getCollection());
+          module.exports = {first: first, caller: caller};
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/collections.js');
+      const caller = findFunctionDeclaration(sourceFile, 'caller');
+
+      const described = describeTypes(ctx.checker, inferReturnType(ctx, caller));
+      assert.ok(described.includes('{ ID: string; }'), `expected element type, got: ${described}`);
+    });
+
     it('does not infinitely recurse on mutually recursive undocumented helpers', () => {
       const files = {
         '/recursive.js': `
@@ -994,6 +1030,26 @@ describe('usage-inference', () => {
       const types = inferParameterType(ctx, param);
 
       assert.equal(describeTypes(ctx.checker, types), '{ ID: string; name: string; }');
+    });
+
+    it('infers the element type for collections.first(coll, function (item) …) predicates', () => {
+      // Stock SFRA `first` takes only the collection, but calculate.js ports
+      // call it with a find-style predicate — still element-first.
+      const files = {
+        '/types.d.ts': COLLECTION_TYPES,
+        '/consumer.js': `
+          function first(collection, callback) {}
+          first(getCollection(), function (item) {
+            return item.ID === 'x';
+          });
+        `,
+      };
+      const languageService = createFixtureLanguageService(files);
+      const ctx = createInferenceContext(ts, languageService);
+      const sourceFile = ctx.program.getSourceFile('/consumer.js');
+      const param = findCallbackParam(sourceFile);
+
+      assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, param)), '{ ID: string; name: string; }');
     });
 
     it('resolves the collection argument through inference when it is itself undocumented', () => {

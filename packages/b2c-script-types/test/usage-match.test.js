@@ -227,9 +227,11 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
 
   it('stays quiet for a real-world single-member loop variable (hasPreorderableLineItem shape)', () => {
     // Same neuhaus-core shape, but only one member (`preorderable`) is ever
-    // accessed on the loop variable — below MIN_USAGE_SIGNATURE_MEMBERS, so
-    // the engine correctly declines to guess rather than latch onto whichever
-    // ambient class happens to expose that one name.
+    // accessed on the loop variable — below MIN_USAGE_SIGNATURE_MEMBERS.
+    // `preorderable` uniquely identifies ProductInventoryRecord in the ambient
+    // index, but the variable is named `lineItem` (SFRA alias → ProductLineItem),
+    // so the naming hint wins and we stay silent rather than surprise the
+    // author with an inventory-record hover.
     const files = {
       '/types.d.ts': realTypesPrelude(['ProductLineItem'], ''),
       '/checkoutHelpers.js': `
@@ -254,7 +256,9 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
 
     const types = inferTypeForNode(ctx, lineItemDecl.name);
 
-    assert.deepEqual(types, []);
+    // Prefer length over deepEqual: Type objects are circular and hang
+    // assert.deepEqual when a regression accidentally returns a candidate.
+    assert.equal(types.length, 0, `expected silence, got: ${describeTypes(ctx.checker, types)}`);
   });
 
   it('still prefers call-site inference over usage matching when a real call site exists', () => {
@@ -492,16 +496,16 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
       // Same ambiguous member signature, different (unrelated) variable
       // name — the size-based tiebreak from before this fix must still
       // apply exactly as it did, since there's no name match to prefer.
-      // Keeps the same `@param {obj}` JSDoc block as the test above: without
-      // it, `resettingCustomer`'s own single-member usage (`.profile`)
-      // uniquely matches `dw.customer.Customer` on its own, resolving
-      // `.profile` through Customer's real declared property and never
-      // reaching the ambient-fallback path this test means to exercise.
+      // Deliberate `@param {any}` (not the weak `{obj}` placeholder) blocks
+      // inference on `resettingCustomer`: without it, the parameter's own
+      // single-member usage (`.profile`) uniquely matches Customer in this
+      // fixture and resolves `.profile` through the real declared property,
+      // never reaching the ambient-fallback path this test means to exercise.
       const files = {
         '/types.d.ts': realTypesPrelude(['Profile', 'ProductListRegistrant'], ''),
         '/accountHelpers.js': `
           /**
-           * @param {obj} resettingCustomer - object that contains user's email address and name information.
+           * @param {any} resettingCustomer - deliberately any so contactInfo must use ambient fallback.
            */
           function sentAccountActivationEmail(resettingCustomer) {
             var contactInfo = resettingCustomer.profile;
@@ -540,6 +544,97 @@ describe('usage-inference — matching ambient dw.* classes from parameter usage
       );
 
       assert.deepEqual(types, []);
+    });
+
+    it('maps SFRA alias lineItem → ProductLineItem for a single strong member', () => {
+      // Real storefront shape: productLineItem decorators name the parameter
+      // `lineItem` / `pli`, never `productLineItem` — exact name matching alone
+      // cannot short-circuit to ProductLineItem.
+      const files = {
+        '/types.d.ts': realTypesPrelude(['ProductLineItem', 'ShippingLineItem'], ''),
+        '/priceTotal.js': `
+          function getTotalPrice(lineItem) {
+            return lineItem.priceAdjustments;
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/priceTotal.js', 'getTotalPrice');
+
+      assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])), 'ProductLineItem');
+    });
+
+    it('maps short alias pli → ProductLineItem', () => {
+      const files = {
+        '/types.d.ts': realTypesPrelude(['ProductLineItem', 'ShippingLineItem'], ''),
+        '/order.js': `
+          function handlePliAttributes(pli) {
+            pli.setPriceValue(0);
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/order.js', 'handlePliAttributes');
+
+      assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])), 'ProductLineItem');
+    });
+
+    it('still silences lineItem when the only evidence is weak .custom', () => {
+      const files = {
+        '/types.d.ts': realTypesPrelude(['ProductLineItem', 'ShippingLineItem', 'Profile'], ''),
+        '/helpers.js': `
+          function touchCustom(lineItem) {
+            return lineItem.custom;
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/helpers.js', 'touchCustom');
+
+      assert.equal(inferParameterType(ctx, fn.parameters[0]).length, 0);
+    });
+  });
+
+  describe('instanceof evidence', () => {
+    it('infers ProductLineItem from a single instanceof check with no call sites', () => {
+      const files = {
+        '/types.d.ts': realTypesPrelude(
+          ['ProductLineItem', 'ShippingLineItem'],
+          `
+          const ProductLineItem: { new (): ProductLineItem };
+          const ShippingLineItem: { new (): ShippingLineItem };
+        `,
+        ),
+        '/lineItemHelper.js': `
+          function isProductLine(lineItem) {
+            return lineItem instanceof ProductLineItem;
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/lineItemHelper.js', 'isProductLine');
+
+      assert.equal(describeTypes(ctx.checker, inferParameterType(ctx, fn.parameters[0])), 'ProductLineItem');
+    });
+
+    it('stays silent when the body instanceof-checks multiple unrelated classes', () => {
+      const files = {
+        '/types.d.ts': realTypesPrelude(
+          ['ProductLineItem', 'ShippingLineItem', 'PriceAdjustment'],
+          `
+          const ProductLineItem: { new (): ProductLineItem };
+          const ShippingLineItem: { new (): ShippingLineItem };
+          const PriceAdjustment: { new (): PriceAdjustment };
+        `,
+        ),
+        '/lineItemHelper.js': `
+          function describeLine(lineItem) {
+            if (lineItem instanceof ProductLineItem) return 'product';
+            if (lineItem instanceof ShippingLineItem) return 'shipping';
+            if (lineItem instanceof PriceAdjustment) return 'adjustment';
+            return 'other';
+          }
+        `,
+      };
+      const {ctx, fn} = setupInference(files, '/lineItemHelper.js', 'describeLine');
+
+      assert.equal(inferParameterType(ctx, fn.parameters[0]).length, 0);
     });
   });
 });

@@ -114,4 +114,38 @@ export const ELEMENT_FIRST_CALLBACK_CALLEES: ReadonlySet<string> = new Set([
   // SFRA `collections.find(coll, function (item) {...})` — same element-first
   // shape; used heavily for address-book / line-item lookups (neuhaus-core).
   'find',
+  // Stock SFRA `collections.first` takes only the collection, but several
+  // storefronts (and stickyio / calculate.js ports) call it with a predicate
+  // the same shape as `find`. Treat that second-arg callback as element-first
+  // when present so the predicate parameter still gets a type.
+  'first',
+]);
+
+/**
+ * SFRA/storefront parameter names that conventionally hold a Script API class
+ * whose declared name does not equal the identifier (case-insensitive). Used
+ * by ambient usage-matching's identifier short-circuit — `lineItem` must map
+ * to `ProductLineItem`, not look for a nonexistent ambient class named
+ * `LineItem`. Keys are lowercase; values are ambient class simple names.
+ *
+ * Keep this list conservative: only aliases that are unambiguous in real
+ * cartridges. Bare `address` is deliberately omitted (CustomerAddress vs
+ * OrderAddress vs Store address models).
+ */
+export const CONVENTIONAL_IDENTIFIER_ALIASES: ReadonlyMap<string, string> = new Map([
+  ['lineitem', 'ProductLineItem'],
+  ['pli', 'ProductLineItem'],
+  ['productlineitem', 'ProductLineItem'],
+  ['pricemodel', 'ProductPriceModel'],
+  ['availabilitymodel', 'ProductAvailabilityModel'],
+  ['shippingaddress', 'OrderAddress'],
+  ['billingaddress', 'OrderAddress'],
+  ['paymentinstrument', 'OrderPaymentInstrument'],
+  ['shippingmethod', 'ShippingMethod'],
+  ['shippinglineitem', 'ShippingLineItem'],
+  ['priceadjustment', 'PriceAdjustment'],
+  ['giftcertificatelineitem', 'GiftCertificateLineItem'],
+  ['couponlineitem', 'CouponLineItem'],
+  ['customeraddress', 'CustomerAddress'],
+  ['orderaddress', 'OrderAddress'],
 ]);

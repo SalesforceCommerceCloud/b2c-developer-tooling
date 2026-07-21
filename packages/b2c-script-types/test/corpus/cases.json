@@ -282,5 +282,74 @@
     },
     "target": {"file": "/helpers.js", "function": "hasPreorderableLineItem", "param": 0},
     "expect": null
+  },
+  {
+    "id": "lineitem-alias-price-adjustments",
+    "source": "storefront productLineItem decorators / priceTotal",
+    "description": "SFRA alias lineItem + .priceAdjustments recovers ProductLineItem (name ≠ class)",
+    "dwTypes": ["ProductLineItem", "ShippingLineItem", "PriceAdjustment"],
+    "files": {
+      "/helpers.js": "function getTotalPrice(lineItem) {\n  return lineItem.priceAdjustments.getLength();\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "getTotalPrice", "param": 0},
+    "expect": "ProductLineItem"
+  },
+  {
+    "id": "pli-alias-set-price-value",
+    "source": "storefront Order controller handlePliAttributes",
+    "description": "Short alias pli + strong method recovers ProductLineItem",
+    "dwTypes": ["ProductLineItem", "ShippingLineItem"],
+    "files": {
+      "/helpers.js": "function handlePliAttributes(pli) {\n  pli.setPriceValue(0);\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "handlePliAttributes", "param": 0},
+    "expect": "ProductLineItem"
+  },
+  {
+    "id": "pricemodel-alias-price",
+    "source": "storefront feed DefaultPrice model",
+    "description": "priceModel alias recovers ProductPriceModel from .price",
+    "dwTypes": ["ProductPriceModel", "Product"],
+    "files": {
+      "/helpers.js": "function DefaultPrice(priceModel) {\n  this.price = priceModel.price;\n}\n"
+    },
+    "target": {"file": "/helpers.js", "function": "DefaultPrice", "param": 0},
+    "expect": "ProductPriceModel"
+  },
+  {
+    "id": "instanceof-product-line-item",
+    "source": "storefront Adyen/Avalara lineItemHelper",
+    "description": "Single instanceof ProductLineItem recovers that class with no call sites",
+    "dwTypes": ["ProductLineItem", "ShippingLineItem", "PriceAdjustment"],
+    "files": {
+      "/helpers.js": "function isProductLine(lineItem) {\n  return lineItem instanceof ProductLineItem;\n}\n"
+    },
+    "globals": "  const ProductLineItem: { new (): ProductLineItem };\n  const ShippingLineItem: { new (): ShippingLineItem };\n  const PriceAdjustment: { new (): PriceAdjustment };",
+    "target": {"file": "/helpers.js", "function": "isProductLine", "param": 0},
+    "expect": "ProductLineItem"
+  },
+  {
+    "id": "collections-first-ternary-return",
+    "source": "storefront collections.first / productImages",
+    "description": "collections.first ternary return (it.next() : null) recovers element type from typed call-site collection",
+    "dwTypes": ["Product", "Collection", "Variant"],
+    "files": {
+      "/collections.js": "function first(collection) {\n  var iterator = collection.iterator();\n  return iterator.hasNext() ? iterator.next() : null;\n}\n",
+      "/helpers.js": "function firstVariant(product) {\n  var variant = first(product.getVariants());\n  return variant;\n}\nfirstVariant(getProduct());\n"
+    },
+    "globals": "  function getProduct(): Product<any>;",
+    "target": {"file": "/helpers.js", "kind": "variable", "name": "variant"},
+    "expect": "Variant"
+  },
+  {
+    "id": "collections-first-callback-element",
+    "source": "storefront calculate.js collections.first(coll, function (adj) …) shape",
+    "description": "first with predicate callback types the element-first callback parameter",
+    "files": {
+      "/types.d.ts": "interface FixtureAdj { promotionID: string; }\ninterface FixtureIterator { hasNext(): boolean; next(): FixtureAdj; }\ninterface FixtureCollection { iterator(): FixtureIterator; }\ndeclare function getAdjustments(): FixtureCollection;\ndeclare function first(collection: FixtureCollection, callback: (item: any) => boolean): FixtureAdj | null;\n",
+      "/helpers.js": "function hasOrderLevelAdjustment() {\n  return first(getAdjustments(), function (priceAdjustment) {\n    return priceAdjustment.promotionID === 'x';\n  });\n}\n"
+    },
+    "target": {"file": "/helpers.js", "kind": "callbackParam", "param": 0},
+    "expect": "FixtureAdj"
   }
 ]

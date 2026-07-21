@@ -44,7 +44,12 @@ import {
   isOpenForUsageInference,
   widenType,
 } from './type-helpers';
-import {collectParameterMemberUsage, collectVariableMemberUsage, matchAmbientTypesByUsage} from './usage-match';
+import {
+  collectParameterInstanceOfTypes,
+  collectParameterMemberUsage,
+  collectVariableMemberUsage,
+  matchAmbientTypesByUsage,
+} from './usage-match';
 
 /**
  * Resolves the function-like declaration a call expression's callee refers
@@ -292,6 +297,19 @@ function resolveExpressionTypes(
   if (ts.isCallExpression(expr)) return resolveCallResultTypes(ctx, expr, depth, chainHops);
   if (ts.isPropertyAccessExpression(expr)) return resolvePropertyTypes(ctx, expr, depth, chainHops);
   if (ts.isIdentifier(expr)) return resolveIdentifierTypes(ctx, expr, depth, chainHops);
+  // SFRA helpers often return through a ternary (`return it.hasNext() ? it.next()
+  // : null` — the body of `collections.first`) or a parenthesized subexpression.
+  // Without chasing both branches the whole return collapses to `any` even when
+  // the collection argument at the call site is fully typed.
+  if (ts.isConditionalExpression(expr)) {
+    return dedupeTypes(ctx, [
+      ...resolveExpressionTypes(ctx, expr.whenTrue, depth, chainHops + 1),
+      ...resolveExpressionTypes(ctx, expr.whenFalse, depth, chainHops + 1),
+    ]);
+  }
+  if (ts.isParenthesizedExpression(expr)) {
+    return resolveExpressionTypes(ctx, expr.expression, depth, chainHops);
+  }
   return [];
 }
 
@@ -543,12 +561,20 @@ export function inferParameterType(
     if (paramIndex < 0) return [];
 
     const nameNode = getReferenceNameNode(fn, ts);
-    const types = nameNode
-      ? collectArgumentTypesFromCallSites(ctx, nameNode, paramIndex, depth)
-      : // No name to search references for — an anonymous callback passed
-        // directly in argument position. Its element type may still be
-        // recoverable from the collection argument travelling alongside it.
-        inferCallbackParameterTypes(ctx, fn, paramIndex, depth);
+    // `instanceof dw.order.ProductLineItem` (and friends) is concrete class
+    // evidence from the body itself — merge it with call-site candidates so a
+    // helper that never sees a typed call site still recovers the class the
+    // author named. finalizeParameterCandidates still silences multi-type
+    // unions at depth 0, so a polymorphic Adyen-style branch stays quiet.
+    const types = [
+      ...(nameNode
+        ? collectArgumentTypesFromCallSites(ctx, nameNode, paramIndex, depth)
+        : // No name to search references for — an anonymous callback passed
+          // directly in argument position. Its element type may still be
+          // recoverable from the collection argument travelling alongside it.
+          inferCallbackParameterTypes(ctx, fn, paramIndex, depth)),
+      ...collectParameterInstanceOfTypes(ctx, param),
+    ];
 
     const result = finalizeParameterCandidates(ctx, param, types, depth);
     // Don't memoize a result whose computation hit a cycle guard: it was

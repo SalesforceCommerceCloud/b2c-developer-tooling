@@ -40,6 +40,10 @@ const REAL_DW_TYPES = {
   OrderAddress: dtsPath('dw', 'order', 'OrderAddress'),
   ProductSearchModel: dtsPath('dw', 'catalog', 'ProductSearchModel'),
   ProductAvailabilityModel: dtsPath('dw', 'catalog', 'ProductAvailabilityModel'),
+  OrderPaymentInstrument: dtsPath('dw', 'order', 'OrderPaymentInstrument'),
+  ShippingMethod: dtsPath('dw', 'order', 'ShippingMethod'),
+  ShippingLineItem: dtsPath('dw', 'order', 'ShippingLineItem'),
+  PriceAdjustment: dtsPath('dw', 'order', 'PriceAdjustment'),
 };
 
 /**

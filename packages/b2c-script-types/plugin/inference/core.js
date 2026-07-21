@@ -240,6 +240,19 @@ function resolveExpressionTypes(ctx, expr, depth, chainHops = 0) {
         return resolvePropertyTypes(ctx, expr, depth, chainHops);
     if (ts.isIdentifier(expr))
         return resolveIdentifierTypes(ctx, expr, depth, chainHops);
+    // SFRA helpers often return through a ternary (`return it.hasNext() ? it.next()
+    // : null` — the body of `collections.first`) or a parenthesized subexpression.
+    // Without chasing both branches the whole return collapses to `any` even when
+    // the collection argument at the call site is fully typed.
+    if (ts.isConditionalExpression(expr)) {
+        return (0, type_helpers_1.dedupeTypes)(ctx, [
+            ...resolveExpressionTypes(ctx, expr.whenTrue, depth, chainHops + 1),
+            ...resolveExpressionTypes(ctx, expr.whenFalse, depth, chainHops + 1),
+        ]);
+    }
+    if (ts.isParenthesizedExpression(expr)) {
+        return resolveExpressionTypes(ctx, expr.expression, depth, chainHops);
+    }
     return [];
 }
 /**
@@ -460,12 +473,20 @@ function inferParameterType(ctx, param, depth = 0) {
         if (paramIndex < 0)
             return [];
         const nameNode = (0, call_sites_1.getReferenceNameNode)(fn, ts);
-        const types = nameNode
-            ? collectArgumentTypesFromCallSites(ctx, nameNode, paramIndex, depth)
-            : // No name to search references for — an anonymous callback passed
-                // directly in argument position. Its element type may still be
-                // recoverable from the collection argument travelling alongside it.
-                inferCallbackParameterTypes(ctx, fn, paramIndex, depth);
+        // `instanceof dw.order.ProductLineItem` (and friends) is concrete class
+        // evidence from the body itself — merge it with call-site candidates so a
+        // helper that never sees a typed call site still recovers the class the
+        // author named. finalizeParameterCandidates still silences multi-type
+        // unions at depth 0, so a polymorphic Adyen-style branch stays quiet.
+        const types = [
+            ...(nameNode
+                ? collectArgumentTypesFromCallSites(ctx, nameNode, paramIndex, depth)
+                : // No name to search references for — an anonymous callback passed
+                    // directly in argument position. Its element type may still be
+                    // recoverable from the collection argument travelling alongside it.
+                    inferCallbackParameterTypes(ctx, fn, paramIndex, depth)),
+            ...(0, usage_match_1.collectParameterInstanceOfTypes)(ctx, param),
+        ];
         const result = finalizeParameterCandidates(ctx, param, types, depth);
         // Don't memoize a result whose computation hit a cycle guard: it was
         // truncated by what happened to be on the *current* call stack, and the

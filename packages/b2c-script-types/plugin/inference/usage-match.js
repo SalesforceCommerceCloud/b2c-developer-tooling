@@ -6,9 +6,26 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.collectParameterMemberUsage = collectParameterMemberUsage;
+exports.collectParameterInstanceOfTypes = collectParameterInstanceOfTypes;
 exports.collectVariableMemberUsage = collectVariableMemberUsage;
 exports.matchAmbientTypesByUsage = matchAmbientTypesByUsage;
 const constants_1 = require("./constants");
+const type_helpers_1 = require("./type-helpers");
+/**
+ * Resolves a parameter/variable identifier to the ambient class simple name(s)
+ * it conventionally denotes: exact case-insensitive match (`customer` →
+ * `Customer`) plus the curated SFRA aliases (`lineItem` / `pli` →
+ * `ProductLineItem`). Returns lowercased names for comparison against
+ * candidate.class names.
+ */
+function conventionalAmbientNames(identifierName) {
+    const lower = identifierName.toLowerCase();
+    const names = new Set([lower]);
+    const alias = constants_1.CONVENTIONAL_IDENTIFIER_ALIASES.get(lower);
+    if (alias)
+        names.add(alias.toLowerCase());
+    return names;
+}
 // Keyed by LanguageService, NOT by Program: tsserver hands the plugin a
 // brand-new Program object on every edit to a file the project contains —
 // including every keystroke in the very file someone is actively typing in.
@@ -139,6 +156,15 @@ function collectMemberUsageInScope(ctx, symbol, scope) {
                 triggerPosition <= node.name.getStart())) {
             members.add(node.name.text);
         }
+        else if (ts.isElementAccessExpression(node) &&
+            ts.isIdentifier(node.expression) &&
+            checker.getSymbolAtLocation(node.expression) === symbol &&
+            node.argumentExpression &&
+            ts.isStringLiteralLike(node.argumentExpression)) {
+            // `lineItem['productID']` / `profile['email']` — same evidence as a dot
+            // read; common when the member name is computed from a form key.
+            members.add(node.argumentExpression.text);
+        }
         else if (ts.isBinaryExpression(node) &&
             node.operatorToken.kind === ts.SyntaxKind.InKeyword &&
             ts.isStringLiteralLike(node.left) &&
@@ -174,6 +200,61 @@ function collectParameterMemberUsage(ctx, param) {
     if (!symbol)
         return new Set();
     return collectMemberUsageInScope(ctx, symbol, body);
+}
+/**
+ * Resolves the *instance* type tested by an `instanceof` right-hand side
+ * (`dw.order.ProductLineItem`, a local class binding, …). Prefer a construct
+ * signature's return type; otherwise the declared type of the RHS symbol.
+ */
+function instanceTypeFromInstanceOfRhs(ctx, rhs) {
+    const { checker, ts } = ctx;
+    const rhsType = checker.getTypeAtLocation(rhs);
+    for (const sig of rhsType.getConstructSignatures()) {
+        const instance = checker.getReturnTypeOfSignature(sig);
+        if (!(0, type_helpers_1.isOpenForUsageInference)(ts, instance))
+            return instance;
+    }
+    const symbol = rhsType.getSymbol() ?? checker.getSymbolAtLocation(rhs);
+    if (!symbol)
+        return undefined;
+    const declared = checker.getDeclaredTypeOfSymbol(symbol);
+    if ((0, type_helpers_1.isOpenForUsageInference)(ts, declared))
+        return undefined;
+    return declared;
+}
+/**
+ * Collects concrete types asserted via `param instanceof SomeType` in the
+ * parameter's enclosing function body. Real payment/cart helpers (Adyen,
+ * Avalara, stickyio calculate.js) branch on `lineItem instanceof
+ * dw.order.ProductLineItem` — JetBrains' JS evaluator narrows from that;
+ * without collecting it here, a polymorphic `lineItem` parameter stays
+ * ambient-ambiguous even when the body names the class explicitly.
+ */
+function collectParameterInstanceOfTypes(ctx, param) {
+    const { ts, checker } = ctx;
+    const fn = param.parent;
+    if (!ts.isFunctionLike(fn) || !ts.isIdentifier(param.name))
+        return [];
+    const body = fn.body;
+    if (!body)
+        return [];
+    const symbol = checker.getSymbolAtLocation(param.name);
+    if (!symbol)
+        return [];
+    const types = [];
+    const visit = (node) => {
+        if (ts.isBinaryExpression(node) &&
+            node.operatorToken.kind === ts.SyntaxKind.InstanceOfKeyword &&
+            ts.isIdentifier(node.left) &&
+            checker.getSymbolAtLocation(node.left) === symbol) {
+            const instance = instanceTypeFromInstanceOfRhs(ctx, node.right);
+            if (instance)
+                types.push(instance);
+        }
+        ts.forEachChild(node, visit);
+    };
+    visit(body);
+    return types;
 }
 /**
  * Collects a local variable's own member-usage signature within its
@@ -257,18 +338,33 @@ function matchAmbientTypesByUsage(ctx, memberNames, identifierName) {
     const strongCount = [...memberNames].filter((n) => !constants_1.WEAK_USAGE_MEMBERS.has(n)).length;
     if (strongCount === 0 && matches.length > 1)
         return [];
-    // A conventionally named parameter (`customer`, `profile`, `shipment`) that
-    // uniquely matches one of the ambient candidates short-circuits here —
-    // even when the usage signature is a single strong member. Real SFRA shape:
+    // A conventionally named parameter (`customer`, `profile`, `shipment`, or
+    // an SFRA alias like `lineItem` / `pli` → ProductLineItem) that uniquely
+    // matches one of the ambient candidates short-circuits here — even when
+    // the usage signature is a single strong member. Real SFRA shape:
     // `function getPasswordResetToken(customer) { customer.profile.credentials… }`
     // only contributes `.profile` (one-hop member collection), which is shared
     // by `dw.customer.Customer` and `dw.svc.ServiceConfig`, but the parameter
     // name makes the intended class unambiguous. Weak-only signatures never
     // reach this point (guard above).
     if (identifierName) {
-        const byName = matches.filter((m) => m.name.toLowerCase() === identifierName.toLowerCase());
+        const conventional = conventionalAmbientNames(identifierName);
+        const byName = matches.filter((m) => conventional.has(m.name.toLowerCase()));
         if (byName.length === 1)
             return [byName[0].type];
+        // The identifier named a real Script API class (or an SFRA alias of one),
+        // but that class isn't among the usage matches. A thin signature's
+        // "globally unique member" hit is then almost certainly a *different*
+        // class that happens to share one property — e.g. `lineItem.preorderable`
+        // uniquely matching `ProductInventoryRecord` while the author clearly
+        // meant a line item. Silence rather than override the naming hint.
+        if (byName.length === 0 && memberNames.size < constants_1.MIN_USAGE_SIGNATURE_MEMBERS) {
+            const lower = identifierName.toLowerCase();
+            const namedIntentionally = constants_1.CONVENTIONAL_IDENTIFIER_ALIASES.has(lower) ||
+                candidates.some((c) => c.name.toLowerCase() === lower);
+            if (namedIntentionally)
+                return [];
+        }
     }
     // Below-minimum signatures that are still ambiguous (no unique name match)
     // stay silent — e.g. an unnamed/`obj` parameter that only touches `.profile`.

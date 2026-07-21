@@ -5,7 +5,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ELEMENT_FIRST_CALLBACK_CALLEES = exports.WEAK_USAGE_MEMBERS = exports.MAX_CALL_SITE_CANDIDATES = exports.MAX_USAGE_MATCH_CANDIDATES = exports.MIN_USAGE_SIGNATURE_MEMBERS = exports.INFERRED_COMPLETION_SOURCE = exports.MAX_SEARCHES_PER_REQUEST = exports.MAX_SUPERMODULE_HOPS = exports.MAX_CHAIN_HOPS = exports.MAX_REFERENCES_PER_CALL = exports.MAX_REFERENCES_PER_REQUEST = exports.MAX_REFERENCE_HOPS = exports.MAX_INFERENCE_DEPTH = void 0;
+exports.CONVENTIONAL_IDENTIFIER_ALIASES = exports.ELEMENT_FIRST_CALLBACK_CALLEES = exports.WEAK_USAGE_MEMBERS = exports.MAX_CALL_SITE_CANDIDATES = exports.MAX_USAGE_MATCH_CANDIDATES = exports.MIN_USAGE_SIGNATURE_MEMBERS = exports.INFERRED_COMPLETION_SOURCE = exports.MAX_SEARCHES_PER_REQUEST = exports.MAX_SUPERMODULE_HOPS = exports.MAX_CHAIN_HOPS = exports.MAX_REFERENCES_PER_CALL = exports.MAX_REFERENCES_PER_REQUEST = exports.MAX_REFERENCE_HOPS = exports.MAX_INFERENCE_DEPTH = void 0;
 // Tunable limits for the usage-inference engine. They exist so a crafted (or
 // merely huge) cartridge can't make a single hover/completion do unbounded
 // work — every recursive walk and reference search is capped by one of these.
@@ -103,4 +103,37 @@ exports.ELEMENT_FIRST_CALLBACK_CALLEES = new Set([
     // SFRA `collections.find(coll, function (item) {...})` — same element-first
     // shape; used heavily for address-book / line-item lookups (neuhaus-core).
     'find',
+    // Stock SFRA `collections.first` takes only the collection, but several
+    // storefronts (and stickyio / calculate.js ports) call it with a predicate
+    // the same shape as `find`. Treat that second-arg callback as element-first
+    // when present so the predicate parameter still gets a type.
+    'first',
+]);
+/**
+ * SFRA/storefront parameter names that conventionally hold a Script API class
+ * whose declared name does not equal the identifier (case-insensitive). Used
+ * by ambient usage-matching's identifier short-circuit — `lineItem` must map
+ * to `ProductLineItem`, not look for a nonexistent ambient class named
+ * `LineItem`. Keys are lowercase; values are ambient class simple names.
+ *
+ * Keep this list conservative: only aliases that are unambiguous in real
+ * cartridges. Bare `address` is deliberately omitted (CustomerAddress vs
+ * OrderAddress vs Store address models).
+ */
+exports.CONVENTIONAL_IDENTIFIER_ALIASES = new Map([
+    ['lineitem', 'ProductLineItem'],
+    ['pli', 'ProductLineItem'],
+    ['productlineitem', 'ProductLineItem'],
+    ['pricemodel', 'ProductPriceModel'],
+    ['availabilitymodel', 'ProductAvailabilityModel'],
+    ['shippingaddress', 'OrderAddress'],
+    ['billingaddress', 'OrderAddress'],
+    ['paymentinstrument', 'OrderPaymentInstrument'],
+    ['shippingmethod', 'ShippingMethod'],
+    ['shippinglineitem', 'ShippingLineItem'],
+    ['priceadjustment', 'PriceAdjustment'],
+    ['giftcertificatelineitem', 'GiftCertificateLineItem'],
+    ['couponlineitem', 'CouponLineItem'],
+    ['customeraddress', 'CustomerAddress'],
+    ['orderaddress', 'OrderAddress'],
 ]);
