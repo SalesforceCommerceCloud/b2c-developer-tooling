@@ -116,7 +116,6 @@ suite('scriptTypesInferUsage — real hover/completion via the VS Code language 
         : undefined;
     }, 25000);
 
-    console.log(`[diagnostic] ${labels.length} completion label(s): ${labels.join(', ')}`);
     assert.ok(labels.includes('getID'), `expected getID among completions, got: ${labels.join(', ')}`);
     assert.ok(labels.includes('getName'), `expected getName among completions, got: ${labels.join(', ')}`);
     assert.ok(
