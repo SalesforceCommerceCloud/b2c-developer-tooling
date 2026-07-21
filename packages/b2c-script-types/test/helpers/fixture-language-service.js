@@ -70,15 +70,17 @@ function createFixtureHost(files, options) {
   };
 }
 
-// Shared across every fixture LanguageService created in this process (see
-// createFixtureLanguageService): a DocumentRegistry is TypeScript's built-in
-// mechanism for reusing an already-parsed-and-bound SourceFile across
-// multiple LanguageServices that request the same (path, version,
-// compilation settings) — exactly the case for the real vendored dw/*
-// declaration tree, which is identical across every test in a run. A fresh
-// per-call registry (the previous behavior) defeated this entirely, forcing
-// every single test to re-parse and re-bind hundreds of real .d.ts files
-// from scratch — the dominant cost behind this suite's real-world runtime.
+// Shared across every fixture LanguageService created in this process — both
+// via createFixtureLanguageService below and by test files (e.g.
+// index.test.js) that build a LanguageService directly with
+// createFixtureHost(). A DocumentRegistry is TypeScript's built-in mechanism
+// for reusing an already-parsed-and-bound SourceFile across multiple
+// LanguageServices that request the same (path, version, compilation
+// settings) — exactly the case for the real vendored dw/* declaration tree,
+// which is identical across every test in a run. A fresh per-call registry
+// (the previous behavior) defeated this entirely, forcing every single test
+// to re-parse and re-bind hundreds of real .d.ts files from scratch — the
+// dominant cost behind this suite's real-world runtime.
 const sharedDocumentRegistry = ts.createDocumentRegistry();
 
 // Builds a real ts.LanguageService on top of createFixtureHost(), so
@@ -106,4 +108,9 @@ function findFunctionDeclaration(sourceFile, name) {
   return found;
 }
 
-module.exports = {createFixtureHost, createFixtureLanguageService, findFunctionDeclaration};
+module.exports = {
+  createFixtureHost,
+  createFixtureLanguageService,
+  findFunctionDeclaration,
+  sharedDocumentRegistry,
+};

@@ -12,7 +12,7 @@ const ts = require('typescript');
 
 const init = require('../plugin/index');
 const {INFERRED_COMPLETION_SOURCE} = require('../plugin/usage-inference');
-const {createFixtureHost} = require('./helpers/fixture-language-service');
+const {createFixtureHost, sharedDocumentRegistry} = require('./helpers/fixture-language-service');
 const {REAL_DW_TYPES, realTypesPrelude} = require('./helpers/real-dw-types');
 
 const AMBIENT_TYPES = `
@@ -36,7 +36,7 @@ const FIXTURE_FILES = {
 function createPluginProxy(config) {
   const {create} = init({typescript: ts});
   const host = createFixtureHost(FIXTURE_FILES);
-  const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+  const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
   const info = {
     languageService,
     languageServiceHost: host,
@@ -175,7 +175,7 @@ describe('create() proxy — usage inference wiring', () => {
       '/typed.ts': `function helper(x: {aVeryLongPropertyNameHere: string; anotherVeryLongPropertyName: number; yetAnotherLongOne: boolean}) { return x; }`,
     };
     const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
     const {create} = init({typescript: ts});
     const proxy = create({
       languageService,
@@ -214,7 +214,7 @@ describe('create() proxy — usage inference wiring', () => {
     // createFixtureHost's getScriptVersion is a constant '0' — override it
     // here so this test can simulate a real edit bumping a file's version.
     host.getScriptVersion = (fileName) => String(versions[fileName] ?? 0);
-    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
     const {create} = init({typescript: ts});
     const proxy = create({
       languageService,
@@ -268,7 +268,7 @@ describe('create() proxy — usage inference wiring', () => {
     const proxy = (() => {
       const {create} = init({typescript: ts});
       const host = createFixtureHost(files);
-      const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+      const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
       return create({
         languageService,
         languageServiceHost: host,
@@ -313,7 +313,7 @@ describe('create() proxy — usage inference wiring', () => {
       `,
     };
     const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
     const {create} = init({typescript: ts});
     const proxy = create({
       languageService,
@@ -357,7 +357,7 @@ describe('create() proxy — usage inference wiring', () => {
       `,
     };
     const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
     const {create} = init({typescript: ts});
     const proxy = create({
       languageService,
@@ -415,7 +415,7 @@ describe('create() proxy — usage inference wiring', () => {
       `,
     };
     const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
     const {create} = init({typescript: ts});
     const proxy = create({
       languageService,
@@ -483,7 +483,7 @@ describe('create() proxy — usage inference wiring', () => {
       `,
     };
     const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
     const {create} = init({typescript: ts});
     const proxy = create({
       languageService,
@@ -545,7 +545,7 @@ describe('create() proxy — usage inference wiring', () => {
       `,
     };
     const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
     const {create} = init({typescript: ts});
     const proxy = create({
       languageService,
@@ -603,7 +603,7 @@ describe('create() proxy — usage inference wiring', () => {
       `,
     };
     const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
     const {create} = init({typescript: ts});
     const proxy = create({
       languageService,
@@ -674,7 +674,7 @@ describe('create() proxy — usage inference wiring', () => {
       `,
     };
     const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
     const {create} = init({typescript: ts});
     const proxy = create({
       languageService,
@@ -723,7 +723,7 @@ describe('create() proxy — usage inference wiring', () => {
     // real language service behave. Swallowing those would turn a genuine TS
     // crash into a silent "hover stopped working" for every file.
     const host = createFixtureHost(FIXTURE_FILES);
-    const realLanguageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const realLanguageService = ts.createLanguageService(host, sharedDocumentRegistry);
     const languageService = new Proxy(realLanguageService, {
       get(target, prop) {
         if (prop === 'getQuickInfoAtPosition' || prop === 'getCompletionsAtPosition') {
@@ -767,7 +767,7 @@ describe('create() proxy — usage inference wiring', () => {
         module.exports = {helper};
       `,
     });
-    const realLanguageService = ts.createLanguageService(host, ts.createDocumentRegistry());
+    const realLanguageService = ts.createLanguageService(host, sharedDocumentRegistry);
     const languageService = new Proxy(realLanguageService, {
       get(target, prop) {
         if (prop === 'getQuickInfoAtPosition' || prop === 'getCompletionsAtPosition') {
