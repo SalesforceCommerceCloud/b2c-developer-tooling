@@ -357,7 +357,7 @@ targetRegistry.registerImporter(
 
 ---
 
-## Phase 4 — Commit, push, and ship
+## Phase 4 — Commit and deploy
 
 ### 4a — Generate cartridge JSON locally (pre-commit validation)
 
@@ -365,45 +365,23 @@ targetRegistry.registerImporter(
 pnpm cartridge:generate
 ```
 
-Confirm the expected JSON files were written under `cartridges/`. If this fails, fix before committing — a broken decorator parse will also break CI.
+Confirm the expected JSON files were written under `cartridges/`. If this fails, fix before committing — a broken decorator parse blocks the deploy too.
 
-### 4b — Commit and push
+### 4b — Commit
 
-Stage the new component files, registry edit, generated cartridge JSON, **and any token updates from Phase 1d**:
+Commit the new component file(s), the registry edit, the generated cartridge JSON, **and any token updates from Phase 1d**. If the token changes were substantial, keep them in a separate commit (e.g. `chore: align brand tokens with Figma design`) so the rebrand is reviewable on its own.
 
-```bash
-git add src/components/<name>/index.tsx
-git add src/lib/page-designer/static-registry.ts
-git add src/theme/tokens/brand.css   # only if tokens were updated in 1d
-git add cartridges/
-git commit -m "feat: add <Name> Page Designer block from Figma"
-git push origin feat/pd-blocks-from-figma
-```
+### 4c — Deploy
 
-If token updates were substantial, prefer a separate commit (e.g. `chore: align brand tokens with Figma design`) so the rebrand is reviewable on its own.
+Two commands make the block live — run them directly against the target instance/environment:
 
-If working directly on the target branch (e.g. main):
-```bash
-git push origin main
-```
+1. **Cartridge deploy** (`pnpm cartridge:deploy` / `sfnext deploy-cartridge`) — uploads the cartridge JSON to B2C. The new component types appear in the Page Designer palette after this.
 
-### 4c — What happens after push (inform the user)
+2. **MRT deploy** (`pnpm push` / `sfnext push`) — deploys the storefront bundle to MRT so the new React components render. If the project sets `GENERATE_AND_DEPLOY_CARTRIDGE_ON_MRT_PUSH = true`, the cartridge deploy runs automatically as part of `pnpm push`.
 
-Two things run in sequence after the push lands, typically via CI:
+Then tell the user: open Business Manager → Page Designer → the target page, and the new blocks appear in the component palette ready to author — text fields pre-filled with the copy from the Figma design; they just swap in real images, URLs, and product IDs.
 
-1. **MRT deploy** (`pnpm push` / `sfnext push`) — deploys the updated storefront bundle to MRT. The new React components are live in the storefront after this.
-
-2. **Cartridge deploy** (`pnpm cartridge:deploy` / `sfnext deploy-cartridge`) — uploads the cartridge JSON to B2C. The new component types appear in the Page Designer palette after this step. If the project has `GENERATE_AND_DEPLOY_CARTRIDGE_ON_MRT_PUSH = true` in its config, this runs automatically as part of `pnpm push`.
-
-Tell the user: "Once CI completes both steps, open Business Manager → Page Designer → Home page, and the new blocks will appear in the component palette ready to author. The text fields will be pre-filled with the copy from your Figma design — you'll just need to swap in real images and URLs."
-
-If CI is not configured, provide the manual fallback:
-```bash
-pnpm cartridge:deploy   # upload metadata to B2C
-pnpm push               # deploy storefront to MRT
-```
-
-If `cartridge:deploy` fails with `401 invalid_client`, the most common cause is a stale, pod-specific Account Manager host in `dw.json` (or a wrong `SFCC_SERVER`). Test the OAuth token against `account.demandware.com` versus the configured host, and correct the AM host before retrying — the credentials are usually fine.
+If a deploy command fails, re-run it with `--log-level trace` for full diagnostics, and consult the `b2c` and `b2c-cli` skills (if installed) — they cover auth, WebDAV, and deploy troubleshooting in depth.
 
 ---
 
@@ -445,6 +423,7 @@ If `pnpm dev` is not running or browser MCP is unavailable, explicitly tell the 
 | `get_design_context` returns no Code Connect hints | Project has no `.figma.ts` files yet — use raw design tokens and screenshot as reference only. |
 | `cartridge:generate` exits with decorator parse error | The metadata class must be a `class` (not interface) and decorators must be on class fields, not function params. |
 | Component not appearing in PD palette after deploy | Check BM → Administration → Site Development → Development Setup for cartridge assignment; the storefront cartridge must be in the cartridge path. |
+| `cartridge:deploy` / `push` fails (auth, WebDAV, or connection error) | Re-run the command with `--log-level trace` for full diagnostics, and consult the `b2c` / `b2c-cli` skills (if installed) — they cover auth and deploy troubleshooting. |
 | `markup` type attribute renders as escaped HTML | Use `dangerouslySetInnerHTML={{ __html: props.bodyText }}` for markup-typed attributes — they send raw HTML. |
 | Registry entry causes a Vite HMR error | Ensure the import path resolves — run `pnpm build` to get a full error trace. |
 | Product block renders as a blank/empty space, no error | The export named `loader` is not callable (a `{ server: fn }` object, or `export { loader } from './loaders'` re-exporting that object). The loader never runs, `data` is `undefined`, and `return null` hides the block. Fix: export a callable — `export const loader = loaders.server` or a plain `export async function loader(...)`. Verify with `typeof loader === 'function'`. See Phase 2e. |
