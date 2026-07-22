@@ -141,11 +141,24 @@ Include another template:
 <!-- URL include (controller output) -->
 <isinclude url="${URLUtils.url('Header-Include')}"/>
 
-<!-- Include with specific file -->
+<!-- Disable Storefront Toolkit markers for this include -->
 <isinclude sf-toolkit="off" template="checkout/billing"/>
 ```
 
 **Max include depth:** 20 for local, 10 for URL includes.
+
+**Disabling Storefront Toolkit markers (`sf-toolkit="off"`):**
+
+When the Storefront Toolkit is active (in a Business Manager storefront preview),
+the platform injects extra HTML markers around each `<isinclude>` for its
+overlay/cache-info tooling. Add `sf-toolkit="off"` to suppress those markers for
+a single include when the injected markup would cause problems — e.g. non-HTML
+responses (JSON/XML/CSV), markup-sensitive contexts (`<head>`, `<script>`,
+`<table>`, attribute values), or snippets composed into a larger string.
+
+The attribute only has an effect when the toolkit is active (safe to leave in
+production) and applies to that one tag only — it does not disable the toolkit
+globally or in nested includes.
 
 ### isdecorate / isreplace
 
