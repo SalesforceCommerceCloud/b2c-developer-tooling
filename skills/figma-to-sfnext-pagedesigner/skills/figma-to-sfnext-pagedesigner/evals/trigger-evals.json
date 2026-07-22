@@ -1,0 +1,12 @@
+[
+  {"query": "Here's a Figma frame for our new homepage — turn it into Page Designer blocks for my Storefront Next project so merchants can edit the copy.", "should_trigger": true},
+  {"query": "I have a Figma design with a hero and a 3-up product row. Convert it into merchant-authorable Page Designer components in my sfnext storefront.", "should_trigger": true},
+  {"query": "Take this figma.com/design/...?node-id=1-2 frame and generate Storefront Next Page Designer components with decorator metadata and default values from the design copy.", "should_trigger": true},
+  {"query": "Build Page Designer blocks from my Figma mockup and wire up the product cards to pull live catalog data via SCAPI.", "should_trigger": true},
+  {"query": "I want the sections in this Figma file to show up in the Business Manager Page Designer palette for my React storefront. How do I do that?", "should_trigger": true},
+  {"query": "Just implement this Figma design as plain React and Tailwind components — I don't need any Page Designer or Business Manager integration.", "should_trigger": false},
+  {"query": "Convert this Figma frame into ISML templates and a Page Designer component for my SFRA cartridge.", "should_trigger": false},
+  {"query": "Sync my brand.css tokens into the Figma design kit and republish the Code Connect mappings.", "should_trigger": false},
+  {"query": "How do I deploy my Storefront Next bundle to Managed Runtime?", "should_trigger": false},
+  {"query": "Add a new custom SCAPI endpoint for a loyalty points service in my cartridge.", "should_trigger": false}
+]
