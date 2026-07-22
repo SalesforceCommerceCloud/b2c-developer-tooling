@@ -77,11 +77,7 @@ See the [MCP Server Installation Guide](/mcp/installation) for full setup steps 
 
 ## Quick VS Code Extension Install
 
-The Salesforce B2C Commerce VS Code Extension brings sandbox management, code sync, content libraries, the SCAPI explorer, and a server-side debugger into VS Code. Install [Salesforce B2C Commerce](https://marketplace.visualstudio.com/items?itemName=Salesforce.b2c-vs-extension) from the Visual Studio Marketplace or run:
-
-```bash
-code --install-extension Salesforce.b2c-vs-extension
-```
+The Salesforce B2C Commerce VS Code Extension brings sandbox management, code sync, content libraries, the SCAPI explorer, and a server-side debugger into VS Code. Open the Extensions view in your editor and search for **Salesforce B2C Commerce** — VS Code installs from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Salesforce.b2c-vs-extension), while Cursor, VSCodium, Windsurf, and other VS Code–compatible editors install from the [Open VSX Registry](https://open-vsx.org/extension/salesforce/b2c-vs-extension).
 
 See the [VS Code Extension](/vscode-extension/) section for the full overview, [installation](/vscode-extension/installation), and [configuration](/vscode-extension/configuration).
 
