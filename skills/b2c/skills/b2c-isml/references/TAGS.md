@@ -147,18 +147,23 @@ Include another template:
 
 **Max include depth:** 20 for local, 10 for URL includes.
 
-**Disabling Storefront Toolkit markers (`sf-toolkit="off"`):**
+**Disabling Storefront Toolkit markers (`sf-toolkit`):**
 
-When the Storefront Toolkit is active (in a Business Manager storefront preview),
-the platform injects extra HTML markers around each `<isinclude>` for its
-overlay/cache-info tooling. Add `sf-toolkit="off"` to suppress those markers for
-a single include when the injected markup would cause problems — e.g. non-HTML
-responses (JSON/XML/CSV), markup-sensitive contexts (`<head>`, `<script>`,
-`<table>`, attribute values), or snippets composed into a larger string.
+When the Storefront Toolkit is enabled, the content of every `<isinclude>` is
+wrapped in a `dwMarker` comment tag (`sf-toolkit="on"` is the default). This
+marker can push Internet Explorer into Quirks mode. Set `sf-toolkit="off"` to
+suppress the `dwMarker` tag for that include:
 
-The attribute only has an effect when the toolkit is active (safe to leave in
-production) and applies to that one tag only — it does not disable the toolkit
-globally or in nested includes.
+```html
+<isinclude template="test/customassets" sf-toolkit="off"/>
+```
+
+- Only supported on **local (template) includes** — remote (`url=`) includes do
+  not support the attribute.
+- Not applied recursively — the marker is suppressed for that tag only, not for
+  any child `<isinclude>` inside the included template.
+
+See the [isinclude Element docs](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-isinclude.html).
 
 ### isdecorate / isreplace
 
