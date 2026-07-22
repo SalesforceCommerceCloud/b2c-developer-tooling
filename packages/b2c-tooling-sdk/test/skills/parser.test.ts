@@ -86,4 +86,25 @@ description: also [broken
 ---`;
     expect(parseSkillFrontmatter(content)).to.be.null;
   });
+
+  it('ignores taxonomy frontmatter keys (persona/category/tags)', () => {
+    // Skills carry persona/category/tags for the docs catalog + persona-plugin
+    // repackaging. The SDK parser must remain oblivious to them and return only
+    // {name, description} so that adding the keys is non-breaking.
+    const content = `---
+name: b2c-logs
+description: Retrieve and search logs from B2C Commerce instances using the b2c CLI.
+persona: operator
+category: Observability & Diagnostics
+tags: [logging, diagnostics, debugging, cli]
+---
+
+# B2C Logs`;
+
+    const result = parseSkillFrontmatter(content);
+    expect(result).to.deep.equal({
+      name: 'b2c-logs',
+      description: 'Retrieve and search logs from B2C Commerce instances using the b2c CLI.',
+    });
+  });
 });

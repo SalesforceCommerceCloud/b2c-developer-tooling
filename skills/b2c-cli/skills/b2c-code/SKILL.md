@@ -1,6 +1,10 @@
 ---
 name: b2c-code
 description: Deploy, download, and manage cartridge code versions on B2C Commerce instances. Use this skill whenever the user needs to upload or download cartridges to/from a sandbox, activate or delete code versions, watch for local file changes during development, or deploy a subset of cartridges. Also use when pushing code to an instance, pulling code from an instance, or setting up a dev workflow with live reload -- even if they just say 'push my code to the sandbox', 'download the code', or 'how do I activate the new version'.
+persona: operator
+category: Deployment & Release
+tags: [deployment, ci-cd, webdav, cli]
+alsoFor: [developer]
 ---
 
 # B2C Code Skill

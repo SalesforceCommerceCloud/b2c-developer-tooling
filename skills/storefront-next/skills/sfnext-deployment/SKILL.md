@@ -1,6 +1,9 @@
 ---
 name: sfnext-deployment
 description: Build and deploy Storefront Next storefronts to Managed Runtime (MRT) using the sfnext CLI. Use when running production builds, pushing bundles to MRT with sfnext push, configuring deployment environments, or deploying Page Designer cartridges. This is for Storefront Next deployment — for general MRT management via b2c CLI, see b2c-cli:b2c-mrt.
+persona: operator
+category: Edge & Delivery (eCDN / MRT)
+tags: [mrt, deployment, ci-cd, headless, storefront-next, storefront, cli]
 ---
 
 # Deployment Skill

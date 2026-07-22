@@ -1,6 +1,9 @@
 ---
 name: sfnext-data-fetching
 description: Implement server-side data fetching in Storefront Next using loaders, actions, and useScapiFetcher. Use when writing loader functions, making SCAPI calls, handling form submissions, or implementing interactive data fetching. Covers synchronous loaders, streaming patterns, createApiClients, and parallel requests. NOT for client-side Zustand state — see sfnext-state-management.
+persona: developer
+category: Headless Storefront (Storefront Next)
+tags: [headless, storefront-next, storefront, data-fetching, scapi]
 ---
 
 # Data Fetching Skill

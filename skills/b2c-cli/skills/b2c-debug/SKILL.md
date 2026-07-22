@@ -1,6 +1,10 @@
 ---
 name: b2c-debug
 description: Debug B2C Commerce server-side scripts using the b2c CLI. Use this skill whenever the user needs to set breakpoints, step through code, inspect variables, evaluate expressions, or investigate runtime behavior on a B2C Commerce instance. Also use when the user wants to understand what a script is doing at runtime, capture state at a specific line, or drive the debugger from a headless script — even if they just say "debug this controller" or "what's the value of basket at line 42".
+persona: operator
+category: Observability & Diagnostics
+tags: [debugging, diagnostics, controllers, cli]
+alsoFor: [developer]
 ---
 
 # B2C Debug Skill

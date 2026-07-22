@@ -1,14 +1,16 @@
 ---
-description: Agentic B2C Developer Toolkit — AI agent skills and plugins that teach Agentforce Vibes, Claude Code, Codex, Cursor, and GitHub Copilot the full B2C Commerce stack.
+description: Agentic B2C Developer Toolkit — AI agent skills, plugins, and the MCP server that teach Agentforce Vibes, Claude Code, Codex, Cursor, and GitHub Copilot the full B2C Commerce stack.
 ---
 
-# Agent Skills & Plugins
+# Agent Skills + MCP
 
-Turn your coding agent into a B2C Commerce specialist. Skills cover the full platform — storefront and headless development, operational workflows, and everything in between — so your agent knows both how B2C Commerce works and which CLI commands to run.
+Turn your coding agent into a B2C Commerce specialist. **Skills** teach your agent how the platform works and which CLI commands to run; the **MCP server** adds project-aware tooling (live logs, debugging, scaffolding). Together they cover the full stack — storefront and headless development, operational workflows, and everything in between.
 
-Skills follow the open [Agent Skills](https://agentskills.io/home) standard and work with Agentforce Vibes, Claude Code, Cursor, GitHub Copilot (VS Code and CLI), Codex, OpenCode, and others. Install from your IDE's plugin marketplace or the B2C CLI (`b2c setup skills`).
+Skills follow the open [Agent Skills](https://agentskills.io/home) standard and work with Agentforce Vibes, Claude Code, Cursor, GitHub Copilot (VS Code and CLI), Codex, OpenCode, and others.
 
 ## Quick Start
+
+Pick your tool and install the skill plugins. For full per-IDE detail, scopes, the MCP server, update/uninstall, and install locations, see **[Installing Agent Plugins](/guide/install-skills)**.
 
 ::: code-group
 
@@ -29,23 +31,17 @@ claude plugin install storefront-next-figma
 
 ```bash [Codex]
 codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-# Then in Codex, run /plugins, select the "B2C Developer Tooling"
-# marketplace, and select and install the desired plugins.
+# Then run /plugins, select the "B2C Developer Tooling" marketplace, and install.
 ```
 
 ```bash [Cursor]
-# Cursor reads skills from .cursor/skills/, .agents/skills/, and from
-# Claude Code / Codex skill paths (.claude/skills/, .codex/skills/).
-# If you've already installed via the Claude Code marketplace, Cursor
-# will auto-discover those skills. Otherwise, install with the B2C CLI:
+# Cursor auto-discovers Claude Code / Codex skills, or install directly:
 npx @salesforce/b2c-cli setup skills --ide cursor
 ```
 
 ```text [Copilot (VS Code)]
-In VS Code, open the Command Palette (Cmd/Ctrl+Shift+P) and run:
-  Chat: Install Plugin from Source
-Then enter:
-  SalesforceCommerceCloud/b2c-developer-tooling
+Command Palette (Cmd/Ctrl+Shift+P) → "Chat: Install Plugin from Source"
+→ SalesforceCommerceCloud/b2c-developer-tooling
 ```
 
 ```bash [Copilot CLI]
@@ -62,7 +58,6 @@ copilot plugin install storefront-next-figma@b2c-developer-tooling
 ```
 
 ```bash [Agentforce Vibes]
-# Marketplace install coming soon. For now, use the B2C CLI:
 npx @salesforce/b2c-cli setup skills --ide agentforce-vibes
 ```
 
@@ -72,7 +67,43 @@ npx @salesforce/b2c-cli setup skills
 
 :::
 
-## Available Plugins
+<a id="available-plugins"></a>
+
+## Browse the Skills Catalog
+
+Explore what your agent can do. Search by **keyword** and filter by **persona** (Developer, Operator/Admin), then open any skill to read exactly what it teaches. The best way to use these day to day is to [install the plugins](/guide/install-skills) — but you can also copy a one-click instruction from any card to have your agent fetch a single skill on demand.
+
+<skills-catalog />
+
+## Use Skills Without Installing
+
+For everyday use, **[installing the plugins](/guide/install-skills) is the recommended path** — your agent gets every skill automatically and always has them in context.
+
+If you can't install (a cold agent, a CI job, an ephemeral environment), every skill is also hosted as raw markdown your agent can fetch on demand. You don't run these commands yourself — you **paste the instruction to your AI assistant**, and it fetches and follows the skill.
+
+Point your agent at the index to discover what's available:
+
+```text
+Use curl to download, read, and follow:
+https://salesforcecommercecloud.github.io/b2c-developer-tooling/skills.txt
+```
+
+Or hand it a specific skill directly:
+
+```text
+Use curl to download, read, and follow:
+https://salesforcecommercecloud.github.io/b2c-developer-tooling/skills/b2c-cli/skills/b2c-logs/SKILL.md
+```
+
+There is also a machine-readable [`skills-index.json`](https://salesforcecommercecloud.github.io/b2c-developer-tooling/skills-index.json) listing every skill with its URL, persona, and tags.
+
+::: tip Why `curl`, and why not WebFetch?
+Skills are detailed operational instructions meant to be read **verbatim**. Summarizing fetch tools (like WebFetch) often drop critical flags and steps — `curl -sL` guarantees the full content. b2c-cli skills describe commands of the local `b2c` CLI, so your agent still needs it installed (`npm i -g @salesforce/b2c-cli`) to run them.
+:::
+
+## What Is a Skill?
+
+A skill is a folder containing a `SKILL.md` file with YAML frontmatter (`name`, `description`, and our taxonomy keys `persona`/`category`/`tags`) plus optional `references/`, `scripts/`, and `assets/`. Your agent reads the `description` to decide when a skill applies, then loads the body for step-by-step guidance. Skills are bundled into **plugins** you install from a marketplace or with the B2C CLI:
 
 <table>
   <colgroup>
@@ -101,270 +132,34 @@ npx @salesforce/b2c-cli setup skills
     </tr>
     <tr>
       <td><a href="/mcp/"><code>b2c-dx-mcp</code></a></td>
-      <td>Automatic project type detection and B2C Commerce workflows for your AI assistant. See <a href="/mcp/installation">MCP Installation</a></td>
+      <td>MCP server — automatic project type detection and B2C Commerce workflows for your AI assistant. See <a href="/mcp/installation">MCP Installation</a></td>
     </tr>
   </tbody>
 </table>
 
-## Claude Code
+## Persona Plugins
 
-Add the marketplace:
+Beyond the per-area plugins above, some plugins target a specific **role** with higher-level **runbook** skills that orchestrate the underlying commands into a complete procedure.
 
-```bash
-claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-```
+<table>
+  <colgroup>
+    <col style="width: 12rem" />
+    <col />
+  </colgroup>
+  <thead>
+    <tr><th>Plugin</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/tree/main/skills/b2c-operator/skills"><code>b2c-operator</code></a></td>
+      <td>Operator/Admin runbooks for people who run instances — a safe <strong>production release &amp; rollback</strong> procedure and a <strong>production incident triage</strong> flow. These compose the <code>b2c-cli</code> commands (code, logs, debugger, analytics) into guided, guard-railed workflows.</td>
+    </tr>
+  </tbody>
+</table>
 
-Install plugins at your preferred scope:
-
-::: code-group
-
-```bash [User Scope (default)]
-# Core: CLI + platform skills + MCP server
-claude plugin install b2c-cli
-claude plugin install b2c
-claude plugin install b2c-dx-mcp
-
-# Storefront Next (only for Storefront Next projects)
-claude plugin install storefront-next
-# storefront-next-figma adds Figma design-kit workflows (requires the Figma MCP server)
-claude plugin install storefront-next-figma
-```
-
-```bash [Project Scope]
-# Core: CLI + platform skills + MCP server
-claude plugin install b2c-cli --scope project
-claude plugin install b2c --scope project
-claude plugin install b2c-dx-mcp --scope project
-
-# Storefront Next (only for Storefront Next projects)
-claude plugin install storefront-next --scope project
-# storefront-next-figma adds Figma design-kit workflows (requires the Figma MCP server)
-claude plugin install storefront-next-figma --scope project
-```
-
+::: tip Pair with the underlying commands
+The operator runbooks orchestrate the `b2c` CLI, so install **`b2c-operator` alongside `b2c-cli`** (or the individual CLI skills) so your agent has the underlying commands available.
 :::
-
-Verify, update, or uninstall:
-
-```bash
-claude plugin list
-claude plugin marketplace update
-claude plugin update b2c-cli@b2c-developer-tooling
-claude plugin update storefront-next@b2c-developer-tooling
-claude plugin uninstall b2c-cli@b2c-developer-tooling
-claude plugin marketplace remove b2c-developer-tooling
-```
-
-## Codex
-
-Add the marketplace:
-
-```bash
-codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-```
-
-Then in Codex run `/plugins`, select the **B2C Developer Tooling** marketplace, and select and install the desired plugins.
-
-Codex does not yet support installing plugins from the command line — installs happen from the interactive `/plugins` picker. You can also point Codex at a local marketplace directory by running `codex plugin marketplace add <path-to-dir>`.
-
-Upgrade or remove the marketplace later with:
-
-```bash
-codex plugin marketplace upgrade b2c-developer-tooling
-codex plugin marketplace remove b2c-developer-tooling
-```
-
-> **Note:** The `b2c-dx-mcp` plugin is available only for Claude Code. For other clients, install the MCP server directly — see [MCP Installation](/mcp/installation).
-
-> **Note:** The `storefront-next-figma` plugin requires the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server) to be configured in your AI tool — its skills drive the Figma design kit (duplicating the kit, syncing brand variables, and publishing Code Connect) through Figma's MCP tools. Install it alongside `storefront-next` when you also manage the design system in Figma.
-
-## Cursor
-
-Cursor follows the open [Agent Skills](https://cursor.com/docs/skills) standard. Each skill is a folder containing a `SKILL.md` file with YAML frontmatter (`name`, `description`, optional `paths` for glob scoping, and optional `disable-model-invocation`). Optional `scripts/`, `references/`, and `assets/` subdirectories live alongside `SKILL.md`.
-
-### Skill Discovery Locations
-
-Cursor automatically loads skills from these locations:
-
-| Path                | Scope   | Source                    |
-| ------------------- | ------- | ------------------------- |
-| `.cursor/skills/`   | Project | Native Cursor             |
-| `.agents/skills/`   | Project | Native Cursor             |
-| `~/.cursor/skills/` | User    | Native Cursor             |
-| `~/.agents/skills/` | User    | Native Cursor             |
-| `.claude/skills/`   | Project | Claude Code compatibility |
-| `~/.claude/skills/` | User    | Claude Code compatibility |
-| `.codex/skills/`    | Project | Codex compatibility       |
-| `~/.codex/skills/`  | User    | Codex compatibility       |
-
-Because Cursor reads from Claude Code and Codex paths too, **any plugin you've already installed via `claude plugin install` or `codex plugin install` is automatically picked up by Cursor** — no separate install needed.
-
-### Install with the B2C CLI
-
-::: code-group
-
-```bash [Project Scope]
-b2c setup skills b2c --ide cursor
-b2c setup skills b2c-cli --ide cursor
-b2c setup skills storefront-next --ide cursor
-```
-
-```bash [User Scope]
-b2c setup skills b2c --ide cursor --global
-b2c setup skills b2c-cli --ide cursor --global
-b2c setup skills storefront-next --ide cursor --global
-```
-
-:::
-
-This writes skills to `.cursor/skills/` (project) or `~/.cursor/skills/` (user). For monorepos, a `.cursor/skills/` folder placed in a nested project directory is auto-scoped to files within that directory — no `paths` field required in `SKILL.md`.
-
-### Reuse Claude Code Plugin Installs
-
-If you also use Claude Code, install once and Cursor will see the same skills:
-
-```bash
-claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-
-# Core: CLI + platform skills + MCP server
-claude plugin install b2c-cli
-claude plugin install b2c
-claude plugin install b2c-dx-mcp
-
-# Storefront Next (only for Storefront Next projects)
-claude plugin install storefront-next
-# storefront-next-figma adds Figma design-kit workflows (requires the Figma MCP server)
-claude plugin install storefront-next-figma
-```
-
-## Copilot
-
-GitHub Copilot supports skills in both VS Code and the Copilot CLI.
-
-### Copilot (VS Code)
-
-In VS Code, open the Command Palette (Cmd/Ctrl+Shift+P) and run **Chat: Install Plugin from Source**, then enter:
-
-```
-SalesforceCommerceCloud/b2c-developer-tooling
-```
-
-::: tip Updating Copilot skills in VS Code
-To pull the latest skills, open the **Extensions** view, click the **`···`** menu, and select **Check for Extension Updates**.
-:::
-
-### Copilot CLI
-
-```bash
-copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-
-# Core: CLI + platform skills
-copilot plugin install b2c-cli@b2c-developer-tooling
-copilot plugin install b2c@b2c-developer-tooling
-# For the MCP server on Copilot, install it directly — see /mcp/installation
-
-# Storefront Next (only for Storefront Next projects)
-copilot plugin install storefront-next@b2c-developer-tooling
-copilot plugin install storefront-next-figma@b2c-developer-tooling
-```
-
-## B2C CLI
-
-Interactive — select skillsets and IDEs:
-
-```bash
-b2c setup skills
-```
-
-List available skills:
-
-```bash
-b2c setup skills b2c --list
-b2c setup skills b2c-cli --list
-b2c setup skills storefront-next --list
-b2c setup skills storefront-next-figma --list
-```
-
-Install to specific IDEs:
-
-::: code-group
-
-```bash [Project Scope]
-b2c setup skills b2c --ide cursor
-b2c setup skills b2c-cli --ide windsurf
-b2c setup skills b2c --ide cursor --ide windsurf
-```
-
-```bash [User Scope]
-b2c setup skills b2c --ide cursor --global
-b2c setup skills b2c-cli --ide vscode --global
-```
-
-:::
-
-Install specific skills only:
-
-```bash
-b2c setup skills b2c-cli --skill b2c-code --skill b2c-webdav --ide cursor
-```
-
-Update existing skills:
-
-```bash
-b2c setup skills b2c --ide cursor --update
-```
-
-Non-interactive (CI/CD):
-
-```bash
-b2c setup skills b2c-cli --ide cursor --global --force
-```
-
-See [Setup Commands](/cli/setup) for full documentation.
-
-## Agentforce Vibes
-
-See [Skills in Agentforce Vibes](https://developer.salesforce.com/docs/platform/einstein-for-devs/guide/skills.html) for platform details.
-
-```bash
-b2c setup skills b2c --ide agentforce-vibes
-b2c setup skills b2c-cli --ide agentforce-vibes
-b2c setup skills b2c --ide agentforce-vibes --global
-```
-
-## Other IDEs
-
-::: tip
-Use [`b2c setup skills`](/cli/setup) for any supported IDE.
-:::
-
-| IDE                                                                                        | Flag             |
-| ------------------------------------------------------------------------------------------ | ---------------- |
-| [Cursor](https://cursor.com/docs/skills)                                                   | `--ide cursor`   |
-| [Windsurf](https://docs.windsurf.com/)                                                     | `--ide windsurf` |
-| [VS Code / Copilot](https://code.visualstudio.com/docs/copilot/customization/agent-skills) | `--ide vscode`   |
-| [Codex CLI](https://github.com/openai/codex)                                               | `--ide codex`    |
-| [OpenCode](https://opencode.ai/)                                                           | `--ide opencode` |
-
-### Manual Installation
-
-Install to `.agents/skills/` (default) or a custom directory:
-
-```bash
-b2c setup skills b2c --ide manual
-b2c setup skills b2c --ide manual --directory ./my-skills
-```
-
-For reference, the install locations each `--ide` flag writes to:
-
-| IDE               | Project             | User                          |
-| ----------------- | ------------------- | ----------------------------- |
-| Cursor            | `.cursor/skills/`   | `~/.cursor/skills/`           |
-| Windsurf          | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
-| VS Code / Copilot | `.github/skills/`   | `~/.copilot/skills/`          |
-| Codex CLI         | `.codex/skills/`    | `~/.codex/skills/`            |
-| OpenCode          | `.opencode/skills/` | `~/.config/opencode/skills/`  |
-| Agentforce Vibes  | `.a4drules/skills/` | IDE's global storage          |
 
 ## Usage Examples
 
@@ -382,3 +177,9 @@ Once installed, ask your AI assistant:
 - "Add a new route with a loader to my Storefront Next app"
 - "Deploy my Storefront Next storefront to Managed Runtime"
 - "Add Page Designer support to my storefront component"
+
+## Next Steps
+
+- **[Installing Agent Plugins](/guide/install-skills)** — full per-IDE setup (Claude Code, Codex, Cursor, Copilot, Agentforce Vibes), the MCP server, scopes, updates, and install locations.
+- **[MCP Server](/mcp/)** — project-aware tooling that complements the skills.
+- **[Setup Commands](/cli/setup)** — `b2c setup skills` reference.

@@ -1,6 +1,9 @@
 ---
 name: b2c-bm-users-roles
 description: Manage Business Manager users, access roles, role permissions, and per-user access keys on a B2C Commerce instance using the b2c CLI. Use this skill whenever the user needs to list or search BM users on a sandbox or production instance, identify which BM user an OAuth token resolves to ("whoami"), assign or revoke instance-level access roles, edit role permissions, look up a user's WebDAV / OCAPI / Storefront access key, or rotate access keys for SSO-managed users. Also use when the user asks "what's my BM login on sandbox X", "rotate my WebDAV password", "how do I make a custom BM role", "audit BM users on this instance", or "delete a stale BM user from a sandbox".
+persona: operator
+category: Access & Identity Administration
+tags: [business-manager, access-control, authentication, webdav, ocapi, cli]
 ---
 
 # B2C Business Manager Users, Roles, and Access Keys

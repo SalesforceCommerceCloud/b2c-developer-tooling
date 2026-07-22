@@ -1,6 +1,9 @@
 ---
 name: sfnext-project-setup
 description: Create and configure Storefront Next projects. Use when creating a new storefront, understanding project structure, setting up environment variables, or running the sfnext CLI for the first time. Covers project creation, directory layout, .env configuration, and sfnext CLI basics.
+persona: developer
+category: Headless Storefront (Storefront Next)
+tags: [headless, storefront-next, storefront, scaffolding, onboarding, configuration, cli]
 ---
 
 # Project Setup Skill

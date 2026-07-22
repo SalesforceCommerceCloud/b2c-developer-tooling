@@ -1,6 +1,9 @@
 ---
 name: b2c-custom-caches
 description: Implement custom caching with CacheMgr, caches.json definitions, and cache region configuration. Use this skill whenever the user needs to cache expensive computations or API responses server-side, define cache regions with TTL and size limits, invalidate cache entries, or debug disappearing cache data. Also use when optimizing script performance with application-level caching -- even if they just say 'cache this data' or 'my cached values keep disappearing'.
+persona: developer
+category: Backend & Cartridge Development
+tags: [caching, performance, debugging]
 ---
 
 # B2C Custom Caches

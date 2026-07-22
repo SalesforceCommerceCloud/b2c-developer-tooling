@@ -1,6 +1,9 @@
 ---
 name: sfnext-components
 description: Build UI components in Storefront Next using createPage HOC, Suspense/Await patterns, shadcn/ui, and Tailwind CSS v4. Use when creating page components, adding Suspense boundaries, integrating shadcn/ui, styling with Tailwind, or organizing component files. Covers server vs client rendering patterns and the cn() utility.
+persona: developer
+category: Headless Storefront (Storefront Next)
+tags: [headless, storefront-next, storefront, design-system]
 ---
 
 # Components Skill

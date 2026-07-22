@@ -1,6 +1,9 @@
 ---
 name: b2c-cip
 description: Run analytics reports and SQL queries against B2C Commerce Intelligence data using the b2c CLI. Use this skill whenever the user needs sales analytics, search query performance metrics, payment data, or KPI exports, OR technical/developer analytics such as SCAPI/OCAPI request volume, API error rates, response-time/latency distributions, cache hit ratios, or SFRA controller health. Also use when they need to discover available data tables, run custom SQL, or pull aggregate reports — even if they just say "show me sales data", "what are our top search terms", or "which SCAPI endpoints are slow or erroring".
+persona: operator
+category: Observability & Diagnostics
+tags: [analytics, diagnostics, querying, ocapi, scapi, performance, cli]
 ---
 
 # B2C CIP Skill

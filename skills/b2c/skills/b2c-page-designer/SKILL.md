@@ -1,6 +1,9 @@
 ---
 name: b2c-page-designer
 description: Define Page Designer page types and component types with regions, attributes, and rendering scripts. Use this skill whenever the user needs to create a new page or component type, configure regions with allowed component constraints, define attribute_definition_groups, debug why a component does not appear in the editor, or fix enum/color attribute pitfalls. Also use when building visual merchandising experiences -- even if they just say 'my component is missing from PD' or 'add a hero banner component'.
+persona: developer
+category: Backend & Cartridge Development
+tags: [page-designer, content, isml, metadata]
 ---
 
 # Page Designer Skill

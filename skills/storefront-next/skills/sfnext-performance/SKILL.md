@@ -1,6 +1,9 @@
 ---
 name: sfnext-performance
 description: Optimize Storefront Next performance with bundle size limits, DynamicImage component, Lighthouse audits, and progressive streaming. Use when checking bundle sizes, optimizing images, improving page load speed, or configuring performance metrics. Covers parallel data fetching, image optimization, and performance monitoring.
+persona: developer
+category: Headless Storefront (Storefront Next)
+tags: [headless, storefront-next, storefront, performance, caching, diagnostics]
 ---
 
 # Performance Skill

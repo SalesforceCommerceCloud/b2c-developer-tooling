@@ -145,6 +145,54 @@ jobs:
             packages/b2c-cli/coverage/
           retention-days: 30
 
+  skills:
+    # Fast, dependency-light gate for the agent-skill taxonomy + docs hosting.
+    # Runs the strict frontmatter validator, checks the generated manifest is
+    # not stale and docs anchors resolve, and smoke-builds the docs (which
+    # publishes the curl-able skills tree/index).
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.x
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate skill taxonomy (frontmatter + links + manifest freshness)
+        run: pnpm run skills:taxonomy:check
+
+      - name: Check docs anchors resolve (page-split guard)
+        run: node scripts/check-doc-anchors.mjs
+
+      - name: Build packages (docs build depends on the SDK)
+        run: pnpm -r run build
+
+      - name: Smoke-build docs (publishes curl-able skills tree + index)
+        run: pnpm run docs:build
+
+      - name: Assert hosted skill + index are curl-able (served from dist)
+        run: node scripts/check-skills-hosting.mjs
+
   test-windows:
     runs-on: windows-latest
     # Advisory rollout: Windows coverage is new; surface failures without

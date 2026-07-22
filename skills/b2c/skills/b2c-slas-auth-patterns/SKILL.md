@@ -1,6 +1,9 @@
 ---
 name: b2c-slas-auth-patterns
 description: Implement SLAS authentication patterns in B2C Commerce including passwordless login (email OTP, SMS OTP, passkeys), session bridging between PWA Kit/Storefront Next and SFRA, hybrid authentication (B2C 25.3+), token refresh flows, trusted system on behalf of (TSOB), and JWT validation. Use this skill whenever the user asks about shopper authentication beyond basic login, token exchange flows, passwordless or biometric auth, keeping sessions alive across storefronts, handling 409 Conflict errors on token endpoints, refreshing shopper tokens, or validating JWTs — even if they don't mention SLAS by name.
+persona: developer
+category: Authentication & Identity
+tags: [authentication, slas, scapi, headless, storefront, storefront-next, sfra]
 ---
 
 # B2C SLAS Authentication Patterns

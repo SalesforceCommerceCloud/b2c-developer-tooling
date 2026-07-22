@@ -5,6 +5,7 @@ import './custom.css';
 import 'virtual:group-icons.css';
 import HomeLayout from './HomeLayout.vue';
 import MarkdownActions from './MarkdownActions.vue';
+import SkillsCatalog from './skills-catalog/SkillsCatalog.vue';
 import {lookupRedirect} from './redirects';
 
 export default {
@@ -17,6 +18,7 @@ export default {
   },
   enhanceApp({app, router, siteData}) {
     app.component('b2c-home', HomeLayout);
+    app.component('skills-catalog', SkillsCatalog);
 
     // Client-side redirects for moved/merged pages (SSR-safe: browser only).
     if (typeof window !== 'undefined') {

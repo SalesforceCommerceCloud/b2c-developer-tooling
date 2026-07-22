@@ -1,6 +1,9 @@
 ---
 name: b2c-sites
 description: List storefront sites, check site status, and manage cartridge paths on B2C Commerce instances using the b2c CLI. Use this skill whenever the user needs to discover site IDs, check which storefronts are online or offline, get site configuration as JSON, or view/modify the ordered cartridge path for a site or Business Manager. Also use when the user needs site information for scripting, CI/CD pipelines, or as input to other commands — even if they just say "what sites do I have" or "add this cartridge to my site".
+persona: operator
+category: Site & Content Administration
+tags: [site-config, catalog, diagnostics, cli]
 ---
 
 # B2C Sites Skill

@@ -1,6 +1,9 @@
 ---
 name: b2c-job
 description: Run and monitor jobs on B2C Commerce instances using the b2c CLI, including site archive import/export and search indexing. Use this skill whenever the user needs to trigger a job, import a site archive, export site data, rebuild search indexes, check job status, or troubleshoot failed job executions — even if they just say "import this folder" or "rebuild the search index".
+persona: operator
+category: Jobs & Automation
+tags: [jobs, diagnostics, cli, site-config]
 ---
 
 # B2C Job Skill

@@ -1,6 +1,9 @@
 ---
 name: sfnext-i18n
 description: Implement internationalization in Storefront Next using i18next with useTranslation for components and getTranslation for server-side code. Use when adding translations, configuring locales, handling pluralization, using the Zod schema factory pattern, or managing extension translations. Covers namespaces, interpolation, and language switching.
+persona: developer
+category: Headless Storefront (Storefront Next)
+tags: [headless, storefront-next, storefront, i18n, localization]
 ---
 
 # Internationalization (i18n) Skill

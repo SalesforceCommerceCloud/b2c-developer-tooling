@@ -15,7 +15,7 @@ hero:
       text: Get Started
       link: /guide/
     - theme: alt
-      text: Agent Plugins
+      text: Agent Skills + MCP
       link: /guide/agent-skills
     - theme: alt
       text: VS Code
@@ -77,9 +77,9 @@ brew install SalesforceCommerceCloud/tools/b2c-cli
 
 :::
 
-## Install Agent Plugins
+## Install Agent Skills + MCP
 
-Detailed setup: [Claude Code](/guide/agent-skills#claude-code) · [Codex](/guide/agent-skills#codex) · [Cursor](/guide/agent-skills#cursor) · [Copilot](/guide/agent-skills#copilot) · [Agentforce Vibes](/guide/agent-skills#agentforce-vibes) · [All IDEs](/guide/agent-skills)
+Detailed setup: [Claude Code](/guide/install-skills#claude-code) · [Codex](/guide/install-skills#codex) · [Cursor](/guide/install-skills#cursor) · [Copilot](/guide/install-skills#copilot) · [Agentforce Vibes](/guide/install-skills#agentforce-vibes) · [All IDEs](/guide/install-skills)
 
 ::: code-group
 

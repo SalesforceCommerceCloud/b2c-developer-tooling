@@ -1,6 +1,9 @@
 ---
 name: b2c-forms
 description: Build forms with validation in B2C Commerce using SFRA patterns. Use this skill whenever the user needs to create a storefront form (checkout, registration, profile edit, address, contact), define form fields in XML, handle form submission in a controller, add field validation rules, or render forms in ISML templates. Also use when they mention form XML definitions, server.forms.getForm, form groups/actions/lists, or CSRF protection on form posts — even if they just say "I need a registration form" or "add validation to checkout".
+persona: developer
+category: Backend & Cartridge Development
+tags: [forms, controllers, isml, sfra, storefront]
 ---
 
 # Forms Skill

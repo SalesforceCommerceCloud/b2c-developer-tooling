@@ -1,6 +1,9 @@
 ---
 name: sfnext-testing
 description: Write tests for Storefront Next using Vitest unit tests, Storybook stories, interaction tests, snapshot tests, and accessibility tests. Use when writing component tests, creating Storybook stories, running test coverage, or setting up test utilities. Covers testing-library patterns, play functions, and coverage thresholds.
+persona: developer
+category: Headless Storefront (Storefront Next)
+tags: [headless, storefront-next, storefront, testing, design-system]
 ---
 
 # Testing Skill

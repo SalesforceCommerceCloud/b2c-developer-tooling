@@ -1,6 +1,9 @@
 ---
 name: b2c-am
 description: Manage Account Manager resources including API clients, users, roles, and organizations. Use this skill whenever the user needs to create or update API clients, onboard or offboard developers, assign Account Manager roles scoped to tenants, audit user permissions, look up organizations, or provision API clients for CI/CD pipelines. Also use when managing AM role assignments or querying Account Manager data — even if they just say "add a new developer" or "set up an API client". For instance-level Business Manager administration (BM roles, BM users, BM access keys, BM whoami), defer to the `b2c-cli:b2c-bm-users-roles` skill.
+persona: operator
+category: Access & Identity Administration
+tags: [account-manager, access-control, authentication, cli, ci-cd]
 ---
 
 # B2C Account Manager Skill

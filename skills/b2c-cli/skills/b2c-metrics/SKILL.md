@@ -1,6 +1,10 @@
 ---
 name: b2c-metrics
 description: Query observability metrics from SCAPI Metrics API (CLOSED BETA). Use this skill whenever the user needs request volume, latency distributions, error rates, cache performance, or technical health indicators for SCAPI, OCAPI, MRT, SFRA controllers, or overall system performance. Also use when they want to monitor third-party integrations, sales metrics, or eCDN performance -- even if they just say 'show me SCAPI metrics', 'what is my error rate', or 'check API performance'.
+persona: operator
+category: Observability & Diagnostics
+tags: [diagnostics, performance, analytics, scapi, ocapi, mrt, cli]
+alsoFor: [developer]
 ---
 
 # B2C Metrics Skill

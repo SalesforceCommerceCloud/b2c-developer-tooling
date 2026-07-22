@@ -1,6 +1,10 @@
 ---
 name: b2c-logs
 description: Retrieve and search logs from B2C Commerce instances using the b2c CLI. Use this skill whenever the user needs to view server logs, search for errors, filter log entries by level or time, or monitor logs in real-time. Also use when the user reports a 500 error, broken checkout, failing job, or any server-side issue that needs log investigation — even if they just say "something's broken on the sandbox" or "check the logs".
+persona: operator
+category: Observability & Diagnostics
+tags: [logging, diagnostics, debugging, cli]
+alsoFor: [developer]
 ---
 
 # B2C Logs Skill

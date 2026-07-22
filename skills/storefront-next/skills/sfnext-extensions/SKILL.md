@@ -1,6 +1,9 @@
 ---
 name: sfnext-extensions
 description: Build extensions for Storefront Next using target-config.json, target points, extension routes, and translation namespaces. Use when creating modular features, inserting components into UI targets, adding extension routes, adding a section to an existing page, or using SFDC_EXT_ integration markers. Covers the base-audit decision gate (deciding whether to extend at all vs token/variant override), extension structure, targetId configuration, and extension registration in src/extensions/config.json.
+persona: developer
+category: Headless Storefront (Storefront Next)
+tags: [headless, storefront-next, storefront, routing, i18n, integrations]
 ---
 
 # Extensions Skill

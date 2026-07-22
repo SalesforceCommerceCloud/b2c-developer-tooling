@@ -1,6 +1,9 @@
 ---
 name: b2c-ordering
 description: Manage the order lifecycle in B2C Commerce including order creation, status transitions, failure handling, and checkout completion. Use this skill whenever the user needs to create an order from a basket, transition order status, handle failed or cancelled orders, implement payment authorization in checkout, or understand async order processing — even if they just say "my order is stuck" or "finish the checkout flow".
+persona: developer
+category: Backend & Cartridge Development
+tags: [ordering, hooks, controllers, debugging]
 ---
 
 # B2C Ordering
