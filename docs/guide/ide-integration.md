@@ -113,6 +113,39 @@ require('lspconfig').ts_ls.setup({
 
 If your editor's LSP client is launched outside the repo root (for example, opening a single cartridge subdirectory), point it at the project root so the plugin's auto-discovery walks the right tree.
 
+### Inferring types for undocumented helpers (experimental)
+
+JSDoc-documented functions get full hover/completion support when the annotation names a real Script API type (`@param {dw.customer.Customer}` / `@param {Customer}`), because TypeScript reads those directly — the same happy path the IntelliJ SFCC plugin relies on. Plain, undocumented helpers don't, and neither do the placeholder SFRA annotations that show up constantly in real cartridges (`@param {Object}`, `{obj}`, `{*}`, `{}`): those widen to an uninformative type and silence completion for everything downstream.
+
+Enable the `b2c-dx.features.scriptTypesInferUsage` setting (default: `false`) or pass `inferUsage: true` in the plugin config (`init_options.plugins` for other LSP hosts) to have the plugin infer a plausible type for these cases from how the value is actually used elsewhere in the project — call-site arguments for parameters, return statements for return values — chasing through undocumented call chains (a helper calling a helper calling a helper), multi-hop method chains (`product.getPriceModel().getPrice()`), and intermediate local variables (`var priceModel = product.getPriceModel(); return priceModel.getPrice();`) rather than stopping at the first `any` or placeholder `Object`. Deliberate `@param {any}` / `: any` annotations are still respected and never second-guessed; real `dw.*` JSDoc is left alone too.
+
+`module.superModule` is understood too: in an overlay cartridge that extends a base module (`var base = module.superModule;`), hover and completions on `base` and on values derived from it resolve against the same-path module in the next cartridge down the cartridge path — including recursing into the base module's own undocumented helpers, and across multi-cartridge plugin stacks where intermediate levels re-export the base and add members (`module.exports = base; module.exports.extra = extra;`).
+
+Two more SFRA idioms are covered:
+
+- **Iteration callbacks** — `collections.forEach` / `map` / `filter` / `every` / `some` / `find` / `first` (element-first callback when a predicate is passed; `reduce` and unknown callees are skipped), e.g. `collections.forEach(product.getVariants(), function (variant) {...})`. A callback in argument position has no name to search references for, so `variant` is typed from the element type of the collection travelling alongside it (anything with `iterator()`/`next()`, i.e. `dw.util.Collection` and friends). Manual iterator loops (`var iter = coll.iterator(); while (iter.hasNext()) { var item = iter.next(); }`) and ternary returns like stock `collections.first` (`return it.hasNext() ? it.next() : null`) resolve through the same chain machinery.
+- **SFRA naming aliases** — parameters conventionally named `lineItem` / `pli`, `priceModel`, `shippingAddress` / `billingAddress`, `paymentInstrument`, etc. short-circuit ambient matching to the Script API class they hold even when the identifier is not the class's own simple name. CamelCase suffixes are recognized too (`resettingCustomer` → `Customer`, `apiProduct` → `Product`, `currentBasket` → `Basket`), matching the naming style SFRA controllers and helpers use constantly.
+- **`instanceof` checks** — a single `param instanceof ProductLineItem` (or `dw.order.ProductLineItem`) in the helper body is treated as concrete class evidence when call sites don't resolve.
+- **Controller middleware** — `server.append('Show', function (req, res, next) {...})` needs no inference at all: when a `modules` cartridge is present, the plugin injects its bundled SFRA ambient declarations and TypeScript types `req`/`res`/`next` contextually from the typed `append` signature. Inference deliberately stays out of the way there.
+
+Cross-file inference (call sites in other files, `module.superModule`) needs those files in the same TypeScript project. A `jsconfig.json` that includes all cartridge sources — like the one `b2c setup ide vscode-types` generates — provides that; without one, each open file gets its own inferred project and only same-file usage is visible.
+
+Inferred results are heuristic and clearly labeled:
+
+- Hover text gets an appended `Inferred from usage: <type>` line.
+- Member completions synthesized this way are still offered alongside (not instead of) whatever TypeScript already resolved.
+- Conflicting call-site argument types cause inference to stay silent rather than union a noisy hover.
+
+This won't recover types TypeScript genuinely can't infer — for example, values that are never called with a consistent, well-typed argument anywhere in the project — and it's off by default because it's new and heuristic.
+
+**Known limitations** — intentionally deferred patterns:
+
+- ES6 `class` syntax / arrow-function module exports
+- Destructured function parameters (`function f({a, b})`)
+- Destructured return values (`var {a, b} = undocumentedFn()`)
+- Constructor inheritance via `Foo.prototype = Base.prototype`
+- Guessing individual custom attribute names on `.custom` (only `.custom` itself is usage evidence)
+
 ### Notes
 
 - The bundle is version-locked to a Script API release (currently 26.7). Re-run `b2c setup ide vscode-types` after upgrading the CLI to refresh the vendored copy; use `--force` to overwrite existing files if they were previously created. The plugin path returned by `b2c setup ide tsserver-plugin` always points at the bundle shipped with your installed CLI.
