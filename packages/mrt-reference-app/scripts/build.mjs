@@ -135,6 +135,22 @@ async function build() {
   });
   await logOutputFile(path.join(buildDir, 'request-processor.js'));
 
+  // Build config.server.ts -> build/config.server.js so `b2c mrt bundle deploy`
+  // reads the ssrOnly/ssrShared globs from it. Without this file the SDK falls
+  // back to defaults that only match ssr.{js,mjs}, so the streamingHandler entry
+  // ends up in neither ssr_only nor ssr_shared and the push is rejected.
+  // MRT_BUNDLE_TYPE is baked in via `define`, so config.server.ts selects the
+  // correct entry point (ssr vs. streamingHandler) at build time. Always CJS so
+  // it loads regardless of MRT_EXPORT_TYPE (build/package.json has no "type").
+  await esbuild.build({
+    ...commonOptions,
+    format: 'cjs',
+    minify: false,
+    sourcemap: false,
+    entryPoints: {'config.server': path.join(pkgRoot, 'config.server.ts')},
+  });
+  await logOutputFile(path.join(buildDir, 'config.server.js'));
+
   // Copy static assets
   const staticSrc = path.join(pkgRoot, 'src', 'static');
   const staticDest = path.join(buildDir, 'static');

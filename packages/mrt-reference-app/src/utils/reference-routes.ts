@@ -115,6 +115,30 @@ export const tlsVersionTest = async (_: Request, res: Response) => {
   res.send(JSON.stringify({'tls1.1': response11, 'tls1.2': response12}, null, 4));
 };
 
+export const outboundLoopTest = async (req: Request, res: Response) => {
+  const externalDomain = process.env.EXTERNAL_DOMAIN_NAME;
+  if (!externalDomain) {
+    return res.status(400).json({error: 'EXTERNAL_DOMAIN_NAME environment variable is not set'});
+  }
+
+  const baseUrl = /^https?:\/\//.test(externalDomain) ? externalDomain : `https://${externalDomain}`;
+  const requestPath = typeof req.query.path === 'string' ? req.query.path : '/';
+  const target = new URL(requestPath, baseUrl).toString();
+
+  const response = await fetch(target, {
+    headers: {
+      'x-mrt-loop': 'true',
+    },
+  });
+  const body = await response.text();
+  res.status(response.status);
+  const contentType = response.headers.get('content-type');
+  if (contentType) {
+    res.set('Content-Type', contentType);
+  }
+  return res.send(body);
+};
+
 export const cacheTest = async (req: Request, res: Response) => {
   let duration = String(req.params.duration || '60');
   if (isNaN(parseInt(duration))) {
