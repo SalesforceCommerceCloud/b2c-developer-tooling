@@ -66,6 +66,18 @@
       "category": "productivity",
       "strict": false,
       "version": "1.3.3"
+    },
+    {
+      "name": "figma-to-sfnext-pagedesigner",
+      "description": "Convert a Figma frame into live Storefront Next Page Designer blocks — React components with decorator metadata, brand-token reconciliation, and product data loaders. Requires the Figma MCP server.",
+      "author": {
+        "name": "Salesforce"
+      },
+      "license": "Apache-2.0",
+      "source": "./skills/figma-to-sfnext-pagedesigner",
+      "category": "productivity",
+      "strict": false,
+      "version": "0.1.0"
     }
   ]
 }

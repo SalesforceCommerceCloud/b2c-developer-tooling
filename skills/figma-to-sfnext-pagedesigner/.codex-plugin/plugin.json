@@ -1,0 +1,40 @@
+{
+  "name": "figma-to-sfnext-pagedesigner",
+  "version": "0.1.0",
+  "description": "Convert a Figma frame into live Storefront Next Page Designer blocks — React components with decorator metadata, brand-token reconciliation, and product data loaders. Requires the Figma MCP server.",
+  "author": {
+    "name": "Salesforce"
+  },
+  "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
+  "repository": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling",
+  "license": "Apache-2.0",
+  "keywords": [
+    "salesforce",
+    "storefront-next",
+    "figma",
+    "page-designer",
+    "b2c-commerce",
+    "commerce-cloud"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Figma to Storefront Next Page Designer",
+    "shortDescription": "Turn a Figma frame into merchant-authorable Page Designer blocks.",
+    "longDescription": "Point this skill at a Figma frame and a Storefront Next repo. It splits the frame into one Page Designer block per visual section, shows you the authorable fields for approval, reconciles brand tokens where the design diverges, generates React + Tailwind components with Page Designer decorator metadata, wires up SCAPI product loaders, and commits. Requires the Figma MCP server (and a browser MCP for visual validation) to be configured in your AI tool.",
+    "developerName": "Salesforce",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "logo": "./assets/logo.svg",
+    "composerIcon": "./assets/logo.svg",
+    "brandColor": "#0D9DDA",
+    "websiteURL": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
+    "defaultPrompt": [
+      "Turn this Figma frame into Page Designer blocks for my Storefront Next project",
+      "Convert this Figma design into merchant-authorable Page Designer components",
+      "Build a hero and product row from Figma as Storefront Next PD blocks",
+      "Generate Page Designer components from my Figma homepage design"
+    ]
+  }
+}
