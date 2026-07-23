@@ -23,6 +23,7 @@ import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {registerSafeCommand} from '../safety.js';
 import {CartridgeItem, type CartridgeTreeItem, type CartridgeTreeProvider} from './cartridge-tree-provider.js';
+import {getActivationCandidates} from './code-version-actions.js';
 
 function getInstance(configProvider: B2CExtensionConfig): B2CInstance | undefined {
   const instance = configProvider.getInstance();
@@ -263,14 +264,20 @@ function createListCodeVersionsCommand(
       const versionId = picked.version.id;
 
       if (actionPick.action === 'activate') {
+        let activationAlreadyActive = false;
         await vscode.window.withProgress(
           {location: vscode.ProgressLocation.Notification, title: `Activating "${versionId}"...`},
           async () => {
-            await activateCodeVersion(instance, versionId);
+            const activation = await activateCodeVersion(instance, versionId);
+            activationAlreadyActive = activation.alreadyActive;
             treeView.description = `v: ${versionId}`;
           },
         );
-        vscode.window.showInformationMessage(`B2C DX: Code version "${versionId}" activated.`);
+        vscode.window.showInformationMessage(
+          activationAlreadyActive
+            ? `B2C DX: Code version "${versionId}" is already active. No changes were needed.`
+            : `B2C DX: Code version "${versionId}" activated.`,
+        );
       } else if (actionPick.action === 'reload') {
         await vscode.window.withProgress(
           {location: vscode.ProgressLocation.Notification, title: `Reloading "${versionId}"...`},
@@ -335,9 +342,18 @@ function createActivateCodeVersionCommand(
 
     try {
       const versions = await listCodeVersions(instance);
-      const items = versions.map((v) => ({
+      const candidates = getActivationCandidates(versions);
+      if (candidates.length === 0) {
+        const activeVersion = versions.find((version) => version.active)?.id;
+        vscode.window.showInformationMessage(
+          activeVersion
+            ? `B2C DX: Code version "${activeVersion}" is already active. No other versions are available to activate.`
+            : 'B2C DX: No inactive code versions are available to activate.',
+        );
+        return;
+      }
+      const items = candidates.map((v) => ({
         label: v.id ?? 'unknown',
-        description: v.active ? '$(star-full) Active' : '',
         version: v,
       }));
 
@@ -347,15 +363,25 @@ function createActivateCodeVersionCommand(
       });
       if (!picked || !picked.version.id) return;
 
+      let activationAlreadyActive = false;
       await vscode.window.withProgress(
         {location: vscode.ProgressLocation.Notification, title: `Activating "${picked.version.id}"...`},
         async () => {
-          await activateCodeVersion(instance, picked.version.id!);
+          const activation = await activateCodeVersion(instance, picked.version.id!);
+          activationAlreadyActive = activation.alreadyActive;
           treeView.description = `v: ${picked.version.id}`;
         },
       );
-      outputChannel.appendLine(`[Code Version] Activated "${picked.version.id}"`);
-      vscode.window.showInformationMessage(`B2C DX: Code version "${picked.version.id}" activated.`);
+      outputChannel.appendLine(
+        activationAlreadyActive
+          ? `[Code Version] "${picked.version.id}" was already active`
+          : `[Code Version] Activated "${picked.version.id}"`,
+      );
+      vscode.window.showInformationMessage(
+        activationAlreadyActive
+          ? `B2C DX: Code version "${picked.version.id}" is already active. No changes were needed.`
+          : `B2C DX: Code version "${picked.version.id}" activated.`,
+      );
     } catch (err) {
       showError(err, outputChannel);
     }

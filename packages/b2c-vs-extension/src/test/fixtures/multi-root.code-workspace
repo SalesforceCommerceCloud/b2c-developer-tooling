@@ -1,0 +1,12 @@
+{
+  "folders": [
+    {
+      "name": "first-workspace-folder",
+      "path": "multi-root/first",
+    },
+    {
+      "name": "second-workspace-folder",
+      "path": "multi-root/second",
+    },
+  ],
+}

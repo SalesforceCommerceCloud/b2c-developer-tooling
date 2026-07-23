@@ -91,6 +91,7 @@ export const en = {
         description: 'Activate or reload a code version',
         activating: 'Activating code version {{codeVersion}} on {{hostname}}...',
         activated: 'Code version {{codeVersion}} activated successfully',
+        alreadyActive: 'Code version {{codeVersion}} is already active; no changes made',
         reloading: 'Reloading code version{{version}} on {{hostname}}...',
         reloaded: 'Code version{{version}} reloaded successfully',
         failed: 'Failed to activate code version: {{message}}',

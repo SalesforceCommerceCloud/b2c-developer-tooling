@@ -103,7 +103,7 @@ b2c code activate <version-name>
 b2c code activate --reload
 ```
 
-**Note:** Activating a code version triggers Custom API endpoint registration. If you've added or modified Custom APIs, use `--reload` with deploy or activate to register them. Check registration status with the `b2c-cli:b2c-scapi-custom` skill.
+**Note:** Activation is idempotent. If the version is already active, the command succeeds without making a change. If you've uploaded code or changed Custom APIs in the active version, use `--reload` with deploy or activate to force a refresh and register the endpoints. Check registration status with the `b2c-cli:b2c-scapi-custom` skill.
 
 ### Delete Code Version
 
