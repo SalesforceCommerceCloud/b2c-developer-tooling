@@ -1,5 +1,17 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.6.0
+
+### Minor Changes
+
+- [#589](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/589) [`886a33e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/886a33ee8490dc5707b18cac9f3d6f6dc62f95ff) - Add the `figma-to-sfnext-pagedesigner` plugin: an agent skill that converts a Figma frame into live Storefront Next Page Designer blocks — splitting the frame into one block per section, reconciling brand tokens, generating React + Tailwind components with Page Designer decorator metadata and SCAPI product loaders, and validating design fidelity. Requires the Figma MCP server. Install with `claude plugin install figma-to-sfnext-pagedesigner@b2c-developer-tooling`. (Thanks [@lukejohnson-sf](https://github.com/lukejohnson-sf)!)
+
+### Patch Changes
+
+- [#583](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/583) [`e9c5659`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e9c565945c35b3e0ef0fe11159a335635952a148) - The b2c-logs skill now documents custom-category log file discovery. It explains that a custom logger category writes to its own `custom-<prefix>-*.log` file (distinct from `customerror`), that the prefix is the first argument to `Logger.getLogger(prefix, category)`, and how to find and read these files with `logs list --filter custom` and `logs get --filter custom-<prefix>`, plus the `webdav ls --root logs` fallback. This makes the retrieval skill self-contained for triaging integration and job logs, which almost always use a custom category. (Thanks [@charithaT07](https://github.com/charithaT07)!)
+
+- [#581](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/581) [`1fe5ff2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1fe5ff2e49b4aef66c81ad9b9c9dd4b92d1da405) - Expose directly related documentation IDs from Salesforce Help child-topic links and Developer Center guide TOCs, including articles previously omitted from composite Help maps or hyphenated topic filenames. CLI and MCP documentation search results can now be paged by ranked position, so agents can traverse the full published content without surfacing future-profiled Help content. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.5.3
 
 ### Patch Changes
