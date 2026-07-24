@@ -1,5 +1,15 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.16
+
+### Patch Changes
+
+- [#592](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/592) [`f6b4ced`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f6b4ced5d40b8fcd8a9fbaf524f6dcdd83852b02) - Detect nested `dw.json` project roots in VS Code workspaces and allow nested folders to be pinned from Explorer, so parent-folder and multi-root layouts connect to the intended project. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#590](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/590) [`3fb0871`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3fb08711a90f3dc216fce5b8418b6fef0a6dfca9) - Document the figma-to-sfnext-pagedesigner plugin in the Agent Skills guide (Thanks [@lukejohnson-sf](https://github.com/lukejohnson-sf)!)
+
+- [#592](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/592) [`f6b4ced`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f6b4ced5d40b8fcd8a9fbaf524f6dcdd83852b02) - Treat activation of an already-active code version as success, preserve useful OCAPI fault details, and avoid redundant activation choices in VS Code. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.15
 
 ### Patch Changes
