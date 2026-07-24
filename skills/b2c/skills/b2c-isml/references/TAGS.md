@@ -141,11 +141,29 @@ Include another template:
 <!-- URL include (controller output) -->
 <isinclude url="${URLUtils.url('Header-Include')}"/>
 
-<!-- Include with specific file -->
+<!-- Disable Storefront Toolkit markers for this include -->
 <isinclude sf-toolkit="off" template="checkout/billing"/>
 ```
 
 **Max include depth:** 20 for local, 10 for URL includes.
+
+**Disabling Storefront Toolkit markers (`sf-toolkit`):**
+
+When the Storefront Toolkit is enabled, the content of every `<isinclude>` is
+wrapped in a `dwMarker` comment tag (`sf-toolkit="on"` is the default). This
+marker can push Internet Explorer into Quirks mode. Set `sf-toolkit="off"` to
+suppress the `dwMarker` tag for that include:
+
+```html
+<isinclude template="test/customassets" sf-toolkit="off"/>
+```
+
+- Only supported on **local (template) includes** — remote (`url=`) includes do
+  not support the attribute.
+- Not applied recursively — the marker is suppressed for that tag only, not for
+  any child `<isinclude>` inside the included template.
+
+See the [isinclude Element docs](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-isinclude.html).
 
 ### isdecorate / isreplace
 
