@@ -46,6 +46,33 @@ describe('code activate', () => {
     expect(options?.body).to.deep.equal({active: true});
   });
 
+  it('reports an already-active version without failing', async () => {
+    const command: any = await createCommand({}, {codeVersion: 'v1'});
+
+    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    const logStub = sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
+    sinon.stub(command, 'instance').get(() => ({
+      ocapi: {
+        PATCH: sinon.stub().resolves({
+          data: undefined,
+          error: {
+            fault: {
+              arguments: {codeVersionId: 'v1'},
+              type: 'CodeVersionModificationException',
+              message: "The code version 'v1' is active and can't be changed.",
+            },
+          },
+          response: {status: 400, statusText: 'Bad Request'},
+        }),
+      },
+    }));
+
+    await command.run();
+
+    expect(logStub.calledWithMatch(/already active/i)).to.be.true;
+  });
+
   it('errors when no code version is provided for activate mode', async () => {
     const command: any = await createCommand({}, {});
 

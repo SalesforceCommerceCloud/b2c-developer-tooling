@@ -4,23 +4,26 @@ description: Connect the Salesforce B2C Commerce VS Code Extension to a B2C Comm
 
 # Configuration
 
-The extension reuses the [B2C CLI](../guide/configuration)'s configuration system, so anything that works with `b2c` works here — `dw.json`, `SFCC_*` environment variables, and active-instance selection.
+The extension shares the [B2C CLI](../guide/configuration)'s configuration system. This page focuses on the extension's connection requirements, project selection, and settings.
 
 This page covers:
 
 - [Connecting to a B2C Instance](#connecting-to-a-b2c-instance) — credentials per feature.
+- [How the Extension Chooses a Project](#how-the-extension-chooses-a-project) — parent folders and multi-root workspaces.
 - [Switching the Active Instance](#switching-the-active-instance) — single-workspace, multi-instance.
 - [Settings Reference](#settings-reference) — the `b2c-dx.*` toggles and verbosity controls.
 
 ## Connecting to a B2C Instance
 
-The extension needs different credentials depending on which feature you use. **A `dw.json` at your workspace root is the recommended setup** — populate the fields each feature needs, and the extension picks them up automatically.
+The extension uses the same configuration resolver as the B2C CLI. Environment variables, a project `.env`, `dw.json`, supported settings under `package.json#b2c`, shared CLI credential storage, and configuration sources added by installed B2C CLI plugins are all honored. The [CLI Configuration guide](../guide/configuration) is the reference for available fields and precedence.
+
+**A `dw.json` at your project root is the conventional setup** and is the easiest way for the extension to locate a B2C project nested inside a larger workspace. It is not required when another configuration source provides what you need.
 
 ### Per-feature requirements
 
-A summary by feature:
+A summary by feature, regardless of which configuration source provides the values:
 
-| Feature                    | Required `dw.json` fields                                                                                                   |
+| Feature                    | Required configuration                                                                                                      |
 | -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | **Sandbox Realm Explorer** | OAuth (browser login by default; `client-id` + `client-secret` for headless). `Sandbox API User` role with a tenant filter. |
 | **WebDAV Browser**         | `hostname`, `username`, `password` (WebDAV access key). OAuth (`client-id` + `client-secret`) also accepted.                |
@@ -55,9 +58,23 @@ A summary by feature:
 }
 ```
 
-You can also set any of these via `SFCC_*` environment variables (`SFCC_SERVER`, `SFCC_USERNAME`, `SFCC_CLIENT_ID`, `SFCC_TENANT_ID`, etc.). See the [CLI Configuration guide](../guide/configuration) for the complete list and precedence rules, and the [Authentication Setup guide](../guide/authentication) for OAuth scope requirements and Account Manager API client setup.
+See the [Authentication Setup guide](../guide/authentication) for OAuth scope requirements and Account Manager API client setup.
 
 <!-- TODO(screenshot): replace ./images/settings.svg with ./images/settings.png — Settings UI filtered to b2c-dx -->
+
+## How the Extension Chooses a Project
+
+You do not need to open the exact project directory for the extension to find it. These common layouts work automatically:
+
+- **Project folder open:** configuration is resolved from that folder using all supported sources.
+- **Parent folder open:** the extension searches its subfolders. For example, a workspace containing `react/` and `sfra/dw.json` uses `sfra/` as the B2C project.
+- **Multi-root workspace:** folders containing `dw.json` are checked in the order shown in Explorer. If none contains one, root-level `.env` and `package.json#b2c` configuration are also considered.
+
+If one workspace folder contains more than one B2C project, the project closest to that workspace folder is selected. Open the intended project directly when sibling projects are equally close.
+
+`dw.json` is the conventional nested-project discovery signal. When a project uses only environment variables, `.env`, `package.json`, or a plugin-provided source, open that project as a workspace folder so the extension has the correct project root.
+
+To keep a particular project directory selected, right-click that folder in Explorer and choose **B2C DX > Use as B2C Commerce Root**. This works for nested folders such as `sfra/` as well as top-level folders in a multi-root workspace. Run **B2C DX: Reset B2C Commerce Root to Auto-Detect** from the Command Palette to return to automatic selection.
 
 ## Switching the Active Instance
 

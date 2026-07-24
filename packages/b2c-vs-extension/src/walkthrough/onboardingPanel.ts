@@ -404,7 +404,8 @@ export class OnboardingPanel {
       return {persona: null, personas, steps: [], activeStepId: null, setupInstance};
     }
     const defs = resolveSteps(personaDef.id);
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const workspaceRoot =
+      this.getConfigProvider?.()?.getWorkingDirectory() || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     const detectionSummary = await detectStepConfigurations(workspaceRoot);
     const rawSteps = await Promise.all(defs.map((def) => this.buildStepView(personaDef.id, def, detectionSummary)));
     // Sequential gating: a step is locked until every step before it is done
@@ -572,7 +573,8 @@ export class OnboardingPanel {
    * caller can disable the primary action).
    */
   private async buildDeployBanner(): Promise<{html: string; alreadyDeployed: boolean; cartridgeName?: string} | null> {
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const workspaceRoot =
+      this.getConfigProvider?.()?.getWorkingDirectory() || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     const ctx = await readDeployContext(workspaceRoot);
     const lastScaffolded = this.context.workspaceState.get<string>('b2c-dx.scaffold.lastCartridgeName');
 

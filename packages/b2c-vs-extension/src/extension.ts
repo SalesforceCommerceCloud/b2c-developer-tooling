@@ -12,6 +12,7 @@ import * as https from 'https';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {B2CExtensionConfig} from './config-provider.js';
+import {workspaceHasDwJson} from './workspace-discovery.js';
 import {CartridgeService} from './cartridges/cartridge-service.js';
 import {registerCap} from './cap/index.js';
 import {registerJobLogViewer} from './job-log-viewer.js';
@@ -527,18 +528,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   configProvider.onDidReset(() => updateInstanceConnectedContext());
 
   const updateDwJsonContext = async () => {
-    const folders = vscode.workspace.workspaceFolders ?? [];
-    let exists = false;
-    for (const folder of folders) {
-      try {
-        await vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, 'dw.json'));
-        exists = true;
-        break;
-      } catch {
-        // not in this folder
-      }
-    }
-    await vscode.commands.executeCommand('setContext', 'b2c-dx.dwJsonExists', exists);
+    await vscode.commands.executeCommand('setContext', 'b2c-dx.dwJsonExists', await workspaceHasDwJson());
   };
   void updateDwJsonContext();
   const dwJsonWatcher = vscode.workspace.createFileSystemWatcher('**/dw.json');
@@ -857,19 +847,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   // Drop the per-workspace onboarding panel state (persona + step records)
   // when the workspace has no dw.json, so the deep-dive panel reopens with no
   // selection. Cheap to call: workspaceState writes are local.
-  const workspaceHasDwJson = await (async () => {
-    const folders = vscode.workspace.workspaceFolders ?? [];
-    for (const folder of folders) {
-      try {
-        await vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, 'dw.json'));
-        return true;
-      } catch {
-        // keep checking
-      }
-    }
-    return false;
-  })();
-  if (!workspaceHasDwJson) {
+  if (!(await workspaceHasDwJson())) {
     await onboardingStore.reset();
   }
 

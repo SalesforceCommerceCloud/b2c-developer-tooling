@@ -163,11 +163,33 @@ describe('operations/code/versions', () => {
         }),
       );
 
-      await activateCodeVersion(mockInstance, 'v2');
-      // Success - no error thrown
+      const result = await activateCodeVersion(mockInstance, 'v2');
+
+      expect(result).to.deep.equal({alreadyActive: false});
     });
 
-    it('should throw error when activation fails', async () => {
+    it('should treat activating the active version as an idempotent success', async () => {
+      server.use(
+        http.patch(`${BASE_URL}/code_versions/v2`, () => {
+          return HttpResponse.json(
+            {
+              fault: {
+                arguments: {codeVersionId: 'v2'},
+                type: 'CodeVersionModificationException',
+                message: "The code version 'v2' is active and can't be changed.",
+              },
+            },
+            {status: 400},
+          );
+        }),
+      );
+
+      const result = await activateCodeVersion(mockInstance, 'v2');
+
+      expect(result).to.deep.equal({alreadyActive: true});
+    });
+
+    it('should throw an informative error when activation fails', async () => {
       server.use(
         http.patch(`${BASE_URL}/code_versions/nonexistent`, () => {
           return HttpResponse.json({fault: {message: 'Version not found'}}, {status: 404});
@@ -178,7 +200,31 @@ describe('operations/code/versions', () => {
         await activateCodeVersion(mockInstance, 'nonexistent');
         expect.fail('Should have thrown error');
       } catch (error: any) {
-        expect(error.message).to.include('Failed to activate code version');
+        expect(error.message).to.equal('Could not activate code version "nonexistent": Version not found');
+      }
+    });
+
+    it('should not swallow a modification fault for a different code version', async () => {
+      server.use(
+        http.patch(`${BASE_URL}/code_versions/v2`, () => {
+          return HttpResponse.json(
+            {
+              fault: {
+                arguments: {codeVersionId: 'other'},
+                type: 'CodeVersionModificationException',
+                message: 'Modification failed',
+              },
+            },
+            {status: 400},
+          );
+        }),
+      );
+
+      try {
+        await activateCodeVersion(mockInstance, 'v2');
+        expect.fail('Should have thrown error');
+      } catch (error: any) {
+        expect(error.message).to.equal('Could not activate code version "v2": Modification failed');
       }
     });
   });
