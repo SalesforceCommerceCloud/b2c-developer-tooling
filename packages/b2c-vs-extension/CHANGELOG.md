@@ -1,5 +1,16 @@
 # Change Log
 
+## 1.0.4
+
+### Patch Changes
+
+- [#592](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/592) [`f6b4ced`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f6b4ced5d40b8fcd8a9fbaf524f6dcdd83852b02) - Detect nested `dw.json` project roots in VS Code workspaces and allow nested folders to be pinned from Explorer, so parent-folder and multi-root layouts connect to the intended project. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#592](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/592) [`f6b4ced`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f6b4ced5d40b8fcd8a9fbaf524f6dcdd83852b02) - Treat activation of an already-active code version as success, preserve useful OCAPI fault details, and avoid redundant activation choices in VS Code. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`f6b4ced`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f6b4ced5d40b8fcd8a9fbaf524f6dcdd83852b02)]:
+  - @salesforce/b2c-tooling-sdk@1.21.2
+
 ## 1.0.3
 
 ### Patch Changes
