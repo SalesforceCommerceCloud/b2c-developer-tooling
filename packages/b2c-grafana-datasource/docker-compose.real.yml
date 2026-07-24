@@ -1,0 +1,29 @@
+# Real-data override for the B2C Metrics demo stack.
+#
+# Usage (via Makefile, which injects credentials from the b2c CLI keychain):
+#   make real
+#
+# Or manually, with the five B2C_* vars exported in your shell:
+#   docker compose -f docker-compose.yml -f docker-compose.real.yml up -d --build grafana
+#
+# This override:
+#   - swaps the provisioning mount to provisioning-real/ (real datasource, no mock URLs)
+#   - passes the B2C_* credential env vars into the Grafana container for ${VAR}
+#     interpolation during provisioning
+#   - leaves the mock-metrics service defined but unused (bring up only `grafana`)
+services:
+  grafana:
+    volumes:
+      - ./provisioning-real:/etc/grafana/provisioning:ro
+      - ./dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      # Credentials for real-mode datasource provisioning (interpolated into
+      # provisioning-real/datasources/b2c-metrics.yaml). Sourced from the host
+      # environment — the Makefile `real` target fills these from the b2c CLI.
+      B2C_SHORT_CODE: "${B2C_SHORT_CODE:?set B2C_SHORT_CODE (or use: make real)}"
+      B2C_TENANT_ID: "${B2C_TENANT_ID:?set B2C_TENANT_ID (or use: make real)}"
+      B2C_CLIENT_ID: "${B2C_CLIENT_ID:?set B2C_CLIENT_ID (or use: make real)}"
+      B2C_CLIENT_SECRET: "${B2C_CLIENT_SECRET:?set B2C_CLIENT_SECRET (or use: make real)}"
+      B2C_ACCOUNT_MANAGER_HOST: "${B2C_ACCOUNT_MANAGER_HOST:-account.demandware.com}"
+    # No dependency on the mock in real mode.
+    depends_on: !reset []

@@ -1,0 +1,442 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Controller Requests / day",
+      "type": "timeseries",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "controller request volume",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT $__timeGroupAlias(cr.request_date, '1d'), SUM(cr.num_requests) AS requests FROM warehouse.ccdw_aggr_controller_request cr JOIN warehouse.ccdw_dim_site s ON s.site_id=cr.site_id WHERE $__timeFilter(cr.request_date) AND s.nsite_id='$site' GROUP BY 1 ORDER BY 1",
+          "format": 0
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisPlacement": "auto"
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Controller Avg Latency (ms)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "controller avg response time",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT $__timeGroupAlias(cr.request_date, '1d'), CAST(SUM(cr.response_time)/NULLIF(SUM(cr.num_requests),0) AS DECIMAL(15,2)) AS avg_ms FROM warehouse.ccdw_aggr_controller_request cr JOIN warehouse.ccdw_dim_site s ON s.site_id=cr.site_id WHERE $__timeFilter(cr.request_date) AND s.nsite_id='$site' GROUP BY 1 ORDER BY 1",
+          "format": 0
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisPlacement": "auto"
+          },
+          "mappings": [],
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Controller Error Rate %",
+      "type": "timeseries",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "controller-error-rate-trend",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT $__timeGroupAlias(cr.request_date, '1d'), CAST(100.0*SUM(CASE WHEN cr.status_code BETWEEN 400 AND 599 THEN cr.num_requests ELSE 0 END)/NULLIF(SUM(cr.num_requests),0) AS DECIMAL(15,2)) AS error_pct FROM warehouse.ccdw_aggr_controller_request cr JOIN warehouse.ccdw_dim_site s ON s.site_id=cr.site_id WHERE $__timeFilter(cr.request_date) AND s.nsite_id='$site' GROUP BY 1 ORDER BY 1",
+          "format": 0
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisPlacement": "auto"
+          },
+          "mappings": [],
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Controller Health Scorecard",
+      "type": "table",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "controller-health-scorecard",
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT cr.controller_name, SUM(cr.num_requests) AS requests, CAST(SUM(cr.response_time)/NULLIF(SUM(cr.num_requests),0) AS DECIMAL(15,2)) AS avg_ms, CAST(100.0*SUM(CASE WHEN cr.status_code>=400 THEN cr.num_requests ELSE 0 END)/NULLIF(SUM(cr.num_requests),0) AS DECIMAL(15,2)) AS error_pct, CAST(100.0*SUM(cr.num_requests_bucket9+cr.num_requests_bucket10+cr.num_requests_bucket11)/NULLIF(SUM(cr.num_requests),0) AS DECIMAL(15,2)) AS slow_tail_pct, CAST(100.0*SUM(CASE WHEN cr.cache_behavior='HIT' THEN cr.num_requests ELSE 0 END)/NULLIF(SUM(CASE WHEN cr.cache_behavior IN ('HIT','MISS') THEN cr.num_requests ELSE 0 END),0) AS DECIMAL(15,2)) AS cache_hit_pct FROM warehouse.ccdw_aggr_controller_request cr JOIN warehouse.ccdw_dim_site s ON s.site_id=cr.site_id WHERE $__timeFilter(cr.request_date) AND s.nsite_id='$site' GROUP BY cr.controller_name ORDER BY requests DESC LIMIT 25",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "OCAPI Requests / day",
+      "type": "timeseries",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "OCAPI request volume (all sites)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 25
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT $__timeGroupAlias(o.request_date, '1d'), SUM(o.num_requests) AS requests FROM warehouse.ccdw_aggr_ocapi_request o WHERE $__timeFilter(o.request_date) GROUP BY 1 ORDER BY 1",
+          "format": 0
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisPlacement": "auto"
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "OCAPI Client Usage",
+      "type": "table",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "ocapi-client-usage",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 25
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT o.client_id, SUM(o.num_requests) AS requests, CAST(100.0*SUM(CASE WHEN o.status_code>=400 THEN o.num_requests ELSE 0 END)/NULLIF(SUM(o.num_requests),0) AS DECIMAL(15,2)) AS error_pct, CAST(SUM(o.response_time)/NULLIF(SUM(o.num_requests),0) AS DECIMAL(15,2)) AS avg_ms FROM warehouse.ccdw_aggr_ocapi_request o WHERE $__timeFilter(o.request_date) GROUP BY o.client_id ORDER BY requests DESC LIMIT 25",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "SCAPI Traffic & Latency (by endpoint)",
+      "type": "table",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "scapi-traffic-latency (SCAPI data historical; widen range if empty)",
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 33
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT r.api_family, r.api_name, r.api_resource, SUM(r.num_requests) AS requests, CAST(SUM(r.response_time)/NULLIF(SUM(r.num_requests),0) AS DECIMAL(15,2)) AS avg_ms FROM warehouse.ccdw_aggr_scapi_request r WHERE $__timeFilter(r.request_date) GROUP BY r.api_family, r.api_name, r.api_resource ORDER BY requests DESC LIMIT 30",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "SCAPI Cache Hit Ratio",
+      "type": "table",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "scapi-cache-hit-ratio",
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 33
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT r.api_family, r.api_name, SUM(r.num_requests) AS requests, CAST(100.0*SUM(CASE WHEN r.cache_behavior='HIT' THEN r.num_requests ELSE 0 END)/NULLIF(SUM(CASE WHEN r.cache_behavior IN ('HIT','MISS') THEN r.num_requests ELSE 0 END),0) AS DECIMAL(15,2)) AS hit_ratio_pct FROM warehouse.ccdw_aggr_scapi_request r WHERE $__timeFilter(r.request_date) GROUP BY r.api_family, r.api_name ORDER BY requests DESC LIMIT 30",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      }
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 39,
+  "tags": [
+    "b2c",
+    "cip",
+    "technical"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "site",
+        "label": "Site",
+        "type": "query",
+        "datasource": {
+          "type": "salesforce-b2c-cip-datasource",
+          "uid": "b2c-cip"
+        },
+        "query": {
+          "query": "sites"
+        },
+        "definition": "sites",
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "current": {
+          "text": "Sites-NTOSFRA-Site",
+          "value": "Sites-NTOSFRA-Site",
+          "selected": true
+        },
+        "options": [],
+        "description": "Storefront nsite_id, populated from CIP (distinct ccdw_dim_site.nsite_id).",
+        "hide": 0
+      }
+    ]
+  },
+  "time": {
+    "from": "now-90d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "B2C Commerce \u2014 Technical / API Health (CIP)",
+  "uid": "b2c-cip-technical",
+  "version": 1,
+  "weekStart": ""
+}

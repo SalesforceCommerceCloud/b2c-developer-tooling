@@ -1,0 +1,46 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "datasource",
+  "name": "Salesforce B2C Commerce Metrics",
+  "id": "salesforce-b2c-metrics-datasource",
+  "backend": true,
+  "executable": "gpx_b2c_metrics",
+  "alerting": true,
+  "metrics": true,
+  "annotations": false,
+  "logs": false,
+  "tracing": false,
+  "info": {
+    "version": "0.1.0",
+    "description": "Datasource for Salesforce B2C Commerce Metrics API - monitor SCAPI, OCAPI, eCDN, MRT, and custom code performance",
+    "author": {
+      "name": "Salesforce",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-api"
+    },
+    "keywords": [
+      "salesforce",
+      "b2c commerce",
+      "metrics",
+      "observability",
+      "scapi",
+      "ocapi"
+    ],
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "links": [
+      {
+        "name": "Documentation",
+        "url": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling"
+      }
+    ],
+    "screenshots": [],
+    "updated": "2026-07-14"
+  },
+  "routes": [],
+  "dependencies": {
+    "grafanaDependency": ">=9.0.0",
+    "plugins": []
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-07-14T18:47:24.331Z",
+  "description": "Declarative catalog of metrics series tag extraction rules. Defines how packed series ids are parsed into structured dimension tags.",
+  "strategies": [
+    "familyOrStatus",
+    "familyOrOverallAgg",
+    "lastSpaceSplit",
+    "lastDotSplit",
+    "wholeAs",
+    "ecdnSuccessError"
+  ],
+  "rules": [
+    {
+      "category": "scapi",
+      "metricId": "totalCalls",
+      "strategy": "familyOrStatus"
+    },
+    {
+      "category": "scapi",
+      "metricId": "requestLatency",
+      "strategy": "familyOrOverallAgg"
+    },
+    {
+      "category": "scapi",
+      "metricId": "responseCount",
+      "strategy": "familyOrStatus"
+    },
+    {
+      "category": "scapi",
+      "metricId": "errors4xx",
+      "strategy": "wholeAs",
+      "key": "apiFamily"
+    },
+    {
+      "category": "scapi",
+      "metricId": "cacheHitRate",
+      "strategy": "lastSpaceSplit"
+    },
+    {
+      "category": "ocapi",
+      "metricId": "totalCalls",
+      "strategy": "wholeAs",
+      "key": "ocapiCategory"
+    },
+    {
+      "category": "ocapi",
+      "metricId": "callsMean",
+      "strategy": "wholeAs",
+      "key": "ocapiCategory"
+    },
+    {
+      "category": "controller",
+      "metricId": "*",
+      "strategy": "wholeAs",
+      "key": "controller"
+    },
+    {
+      "category": "third-party",
+      "metricId": "callsCount",
+      "strategy": "wholeAs",
+      "key": "host"
+    },
+    {
+      "category": "third-party",
+      "metricId": "callsP95",
+      "strategy": "wholeAs",
+      "key": "host"
+    },
+    {
+      "category": "third-party",
+      "metricId": "remoteExceptions",
+      "strategy": "lastDotSplit"
+    },
+    {
+      "category": "ecdn",
+      "metricId": "successAndError",
+      "strategy": "ecdnSuccessError"
+    },
+    {
+      "category": "ecdn",
+      "metricId": "*",
+      "strategy": "wholeAs",
+      "key": "host"
+    }
+  ]
+}
