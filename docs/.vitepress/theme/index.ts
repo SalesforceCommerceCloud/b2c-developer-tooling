@@ -1,13 +1,16 @@
 import {h} from 'vue';
+import type {Theme} from 'vitepress';
 import DefaultTheme from 'vitepress/theme';
 import type {Router} from 'vitepress';
 import './custom.css';
 import 'virtual:group-icons.css';
 import HomeLayout from './HomeLayout.vue';
 import MarkdownActions from './MarkdownActions.vue';
+import QuickstartGuide from './adventure/QuickstartGuide.vue';
+import QuickstartIndex from './adventure/QuickstartIndex.vue';
 import {lookupRedirect} from './redirects';
 
-export default {
+const theme: Theme = {
   extends: DefaultTheme,
   Layout() {
     return h(DefaultTheme.Layout, null, {
@@ -17,6 +20,8 @@ export default {
   },
   enhanceApp({app, router, siteData}) {
     app.component('b2c-home', HomeLayout);
+    app.component('QuickstartGuide', QuickstartGuide);
+    app.component('QuickstartIndex', QuickstartIndex);
 
     // Client-side redirects for moved/merged pages (SSR-safe: browser only).
     if (typeof window !== 'undefined') {
@@ -40,3 +45,5 @@ export default {
     }
   },
 };
+
+export default theme;
