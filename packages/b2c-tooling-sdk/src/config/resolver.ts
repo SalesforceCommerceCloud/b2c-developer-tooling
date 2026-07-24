@@ -309,6 +309,7 @@ export class ConfigResolver {
     // the case where no source provided a hostname (no mismatch to detect).
     const {config, warnings: mergeWarnings} = mergeConfigsWithProtection(overrides, baseConfig, {
       hostnameProtection: options.hostnameProtection,
+      clientIdProtection: options.clientIdProtection,
     });
 
     // Normalize mrtOrigin to ensure it always has an https:// prefix.

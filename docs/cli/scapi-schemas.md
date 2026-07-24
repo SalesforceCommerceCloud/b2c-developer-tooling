@@ -24,8 +24,8 @@ These flags are available on all SCAPI Schemas commands.
 | `--client-id` | `SFCC_CLIENT_ID` | Client ID for OAuth |
 | `--client-secret` | `SFCC_CLIENT_SECRET` | Client Secret for OAuth |
 | `--auth-scope` | `SFCC_OAUTH_SCOPES` | OAuth scopes to request (comma-separated, repeatable) |
-| `--auth-methods` | `SFCC_AUTH_METHODS` | Allowed auth methods in priority order (`client-credentials`, `jwt`, `implicit`, `basic`, `api-key`) |
-| `--user-auth` | | Use browser-based user authentication (implicit OAuth flow) |
+| `--auth-methods` | `SFCC_AUTH_METHODS` | Allowed auth methods in priority order (`client-credentials`, `jwt`, `user`, `implicit`, `basic`, `api-key`) |
+| `--user-auth` | | Use browser-based user authentication (Authorization Code + PKCE flow) |
 | `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname for OAuth (default: `account.demandware.com`) |
 | `--jwt-cert` | `SFCC_JWT_CERT` | Path to JWT certificate file (`cert.pem`) for JWT Bearer authentication |
 | `--jwt-key` | `SFCC_JWT_KEY` | Path to JWT private key file (`key.pem`) for JWT Bearer authentication |

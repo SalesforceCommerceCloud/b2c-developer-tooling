@@ -37,7 +37,7 @@ These flags are available on all sandbox commands:
 
 ## Authentication
 
-Sandbox commands work out of the box using the CLI's built-in public client, which authenticates via browser login (implicit flow). No API client configuration is required for interactive use.
+Sandbox commands work out of the box using the CLI's built-in public client, which authenticates via browser login (Authorization Code + PKCE flow). No API client configuration is required for interactive use.
 
 For automation or CI/CD, you can provide your own API client credentials.
 

@@ -41,16 +41,18 @@ b2c code deploy \
 
 See [JWT Authentication](./authentication#jwt-authentication-certificate-based) for setup instructions.
 
-#### Implicit Flow
+#### User Authentication (Browser)
 
-For development without a client secret, use implicit flow which opens a browser for authentication:
+For development without a client secret, use the browser-based user flow (Authorization Code + PKCE):
 
 ```bash
 b2c code deploy \
   --server abcd-123.dx.commercecloud.salesforce.com \
   --client-id your-client-id \
-  --auth-methods implicit
+  --user-auth
 ```
+
+`--user-auth` is shorthand for `--auth-methods user`. The legacy implicit flow is still selectable via `--auth-methods implicit` but emits a deprecation warning.
 
 ### Basic Authentication (WebDAV)
 
@@ -87,8 +89,9 @@ You can configure the CLI using environment variables:
 | `SFCC_SHORTCODE`              | SCAPI short code                                               |
 | `SFCC_TENANT_ID`              | Organization/tenant ID for SCAPI                               |
 | `SFCC_ACCOUNT_MANAGER_HOST`   | Account Manager hostname for OAuth                             |
-| `SFCC_REDIRECT_URI`           | Override redirect URI for implicit OAuth flow (e.g., when behind a proxy) |
-| `SFCC_OAUTH_LOCAL_PORT`       | Local port for the implicit OAuth redirect server (default: `8080`) |
+| `SFCC_REDIRECT_URI`           | Override redirect URI for browser-based OAuth flows (e.g., when behind a proxy) |
+| `SFCC_OAUTH_LOCAL_PORT`       | Local port for the browser-based OAuth redirect server (default: `8080`) |
+| `SFCC_DISABLE_PKCE_FALLBACK`  | Disable the automatic PKCE→implicit fallback for clients not yet registered for PKCE (set to `1`) |
 | `SFCC_USERNAME`               | Basic auth username                                            |
 | `SFCC_PASSWORD`               | Basic auth password                                            |
 | `SFCC_CERTIFICATE`            | Path to PKCS12 certificate for two-factor auth (mTLS)          |
@@ -255,6 +258,7 @@ For the full command reference with all flags, see [Setup Commands](/cli/setup).
 | `password`               | Basic auth access key (WebDAV)                                                                                                      |
 | `oauth-scopes`           | OAuth scopes (array of strings)                                                                                                     |
 | `auth-methods`           | Authentication methods in priority order (array of strings)                                                                         |
+| `user-auth`              | Boolean shorthand for `"auth-methods": ["user"]`. Mutually exclusive with `auth-methods` — set one or the other.                    |
 | `account-manager-host`   | Account Manager hostname for OAuth                                                                                                  |
 | `shortCode`              | SCAPI short code. Also accepts `short-code` or `scapi-shortcode`.                                                                   |
 | `content-library`        | Default content library ID for `content export` and `content list` commands                                                         |
@@ -331,7 +335,7 @@ Only non-sensitive, project-level fields can be configured in `package.json`. Bo
 | Field                | Description                                                                                                                              |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `shortCode`          | SCAPI short code                                                                                                                         |
-| `clientId`           | OAuth client ID (for implicit login discovery)                                                                                           |
+| `clientId`           | OAuth client ID (for browser login discovery)                                                                                            |
 | `contentLibrary`     | Default content library ID for `content export` and `content list` commands                                                              |
 | `libraries`          | Library IDs for the WebDAV browser and Content Libraries tree. Accepts `string[]` or `[{id, siteLibrary?}]`; elements may be mixed       |
 | `assetQuery`         | JSON dot-paths used to extract static asset URLs during content library parsing (default `["image.path"]`)                               |
@@ -428,17 +432,18 @@ When using the `--cloud-origin` flag to specify a different MRT endpoint, the CL
 
 ## Overriding Authentication Behavior
 
-By default, the CLI automatically detects available credentials and tries authentication methods in this order: `client-credentials`, then `implicit`. You can override this behavior to control which methods are used.
+By default, the CLI automatically detects available credentials and tries authentication methods in this order: `client-credentials`, `jwt`, then `user` (Authorization Code + PKCE). You can override this behavior to control which methods are used.
 
 ::: tip Default Public Client
-For platform-level commands (Sandbox, SLAS, and Account Manager), the CLI includes a built-in public client ID. If no `--client-id` is configured, these commands automatically use the built-in client with the implicit flow, opening a browser for authentication. This means you can use these commands with zero configuration.
+For platform-level commands (Sandbox, SLAS, and Account Manager), the CLI includes a built-in public client ID. If no `--client-id` is configured, these commands automatically use the built-in client with Authorization Code + PKCE, opening a browser for authentication. This means you can use these commands with zero configuration.
 :::
 
 ### Available Auth Methods
 
 - `client-credentials` - OAuth 2.0 client credentials flow (requires client ID and secret). Used for SCAPI/OCAPI and WebDAV.
 - `jwt` - OAuth 2.0 JWT Bearer flow (requires client ID, certificate, and private key). Used for SCAPI/OCAPI and WebDAV. More secure than client credentials.
-- `implicit` - OAuth 2.0 implicit flow (requires client ID only, opens browser for login). Used for SCAPI/OCAPI and WebDAV.
+- `user` - OAuth 2.0 Authorization Code + PKCE flow (requires client ID only, opens browser for login). Used for SCAPI/OCAPI and WebDAV.
+- `implicit` - OAuth 2.0 implicit flow (deprecated — opt-in only). Selectable via `--auth-methods implicit` for backwards compatibility, but emits a deprecation warning. OAuth 2.1 deprecates implicit for public clients.
 - `basic` - Basic authentication with username and access key. Used for WebDAV operations only.
 - `api-key` - API key authentication. Used for MRT commands only.
 
@@ -448,13 +453,13 @@ You can specify allowed auth methods in priority order using comma-separated val
 
 ```bash
 # Comma-separated (preferred)
-b2c code deploy --auth-methods client-credentials,implicit
+b2c code deploy --auth-methods client-credentials,user
 
 # Multiple flags (also supported)
-b2c code deploy --auth-methods client-credentials --auth-methods implicit
+b2c code deploy --auth-methods client-credentials --auth-methods user
 
 # Via environment variable
-SFCC_AUTH_METHODS=client-credentials,implicit b2c code deploy
+SFCC_AUTH_METHODS=client-credentials,user b2c code deploy
 ```
 
 The CLI will try each method in order until one succeeds.

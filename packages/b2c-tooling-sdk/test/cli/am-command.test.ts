@@ -7,7 +7,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
 import {AmCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {ImplicitOAuthStrategy, OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {ImplicitOAuthStrategy, OAuthStrategy, PkceWithImplicitFallbackStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../helpers/stub-parse.js';
 
@@ -167,6 +167,27 @@ describe('cli/am-command', () => {
       command.testAccountManagerClient();
 
       expect(command.getAuthMethodUsed()).to.equal('implicit');
+    });
+
+    it('should track auth method used as user for the PKCE fallback wrapper', async () => {
+      stubParse(command, {
+        'client-id': 'test-client',
+      });
+
+      await command.init();
+
+      // The default 'user' strategy is the transitional PKCE→implicit fallback
+      // wrapper; it must still be reported as the 'user' auth method.
+      const strategy = new PkceWithImplicitFallbackStrategy({
+        clientId: 'test-client',
+        accountManagerHost: 'account.test.demandware.com',
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.stub(command as any, 'getOAuthStrategy').returns(strategy);
+
+      command.testAccountManagerClient();
+
+      expect(command.getAuthMethodUsed()).to.equal('user');
     });
 
     it('should track auth method used as client-credentials', async () => {

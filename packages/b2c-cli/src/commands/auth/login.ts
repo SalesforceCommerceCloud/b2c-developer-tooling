@@ -5,14 +5,17 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {BaseCommand, ERROR_CODE, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
-import {ImplicitOAuthStrategy, setStoredSession, decodeJWT} from '@salesforce/b2c-tooling-sdk/auth';
+import {ImplicitOAuthStrategy, createUserAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
 
+const LOGIN_AUTH_METHODS = ['user', 'implicit'] as const;
+type LoginAuthMethod = (typeof LOGIN_AUTH_METHODS)[number];
+
 /**
- * Log in via browser (implicit OAuth) and persist the session for stateful auth.
- * Uses the same storage as sfcc-ci; when valid, subsequent commands use this token
- * until it expires or you run auth:logout.
+ * Log in via browser (Authorization Code + PKCE) and persist the session for
+ * stateful auth. Uses the same storage as sfcc-ci; when valid, subsequent
+ * commands use this token until it expires or you run auth:logout.
  */
 export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
   static args = {
@@ -27,7 +30,11 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
     '/cli/auth.html#b2c-auth-login',
   );
 
-  static examples = ['<%= config.bin %> <%= command.id %>', '<%= config.bin %> <%= command.id %> your-client-id'];
+  static examples = [
+    '<%= config.bin %> <%= command.id %>',
+    '<%= config.bin %> <%= command.id %> your-client-id',
+    '<%= config.bin %> <%= command.id %> --auth-methods implicit',
+  ];
 
   static flags = {
     'account-manager-host': Flags.string({
@@ -39,6 +46,14 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
     'auth-scope': Flags.string({
       description: 'OAuth scopes to request (comma-separated)',
       env: 'SFCC_OAUTH_SCOPES',
+      multiple: true,
+      multipleNonGreedy: true,
+      delimiter: ',',
+      helpGroup: 'AUTH',
+    }),
+    'auth-methods': Flags.string({
+      description: 'Browser-based auth flow to use. Defaults to "user" (Authorization Code + PKCE).',
+      options: [...LOGIN_AUTH_METHODS],
       multiple: true,
       multipleNonGreedy: true,
       delimiter: ',',
@@ -74,33 +89,34 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
 
     const accountManagerHost = this.resolvedConfig.values.accountManagerHost ?? DEFAULT_ACCOUNT_MANAGER_HOST;
     const scopes = this.resolvedConfig.values.scopes;
+    const method = this.selectMethod();
 
-    const strategy = new ImplicitOAuthStrategy({
-      clientId,
-      scopes,
-      accountManagerHost,
-    });
-
-    const tokenResponse = await strategy.getTokenResponse();
-
-    let user: null | string = null;
-    try {
-      const decoded = decodeJWT(tokenResponse.accessToken);
-      if (typeof decoded.payload.sub === 'string') {
-        user = decoded.payload.sub;
-      }
-    } catch {
-      // ignore
+    if (method === 'implicit') {
+      this.warn(
+        t(
+          'warning.implicitFlowDeprecated',
+          'The OAuth implicit flow is deprecated. Create a new public OAuth client in Account Manager ' +
+            'and use Authorization Code + PKCE (the default) instead. ' +
+            'See https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html#implicit-flow-deprecation',
+        ),
+      );
+      const strategy = new ImplicitOAuthStrategy({clientId, scopes, accountManagerHost});
+      await strategy.getTokenResponse();
+    } else {
+      // PKCE with an automatic, WARN-logged fallback to the implicit flow for
+      // clients not yet registered for PKCE (see oauth-pkce-fallback in the SDK).
+      const strategy = createUserAuthStrategy({clientId, scopes, accountManagerHost});
+      await strategy.getTokenResponse();
     }
 
-    setStoredSession({
-      clientId,
-      accessToken: tokenResponse.accessToken,
-      refreshToken: null,
-      renewBase: null,
-      user,
-    });
-
     this.log(t('commands.auth.login.success', 'Login succeeded. Session saved for stateful auth.'));
+  }
+
+  private selectMethod(): LoginAuthMethod {
+    const methods = this.flags['auth-methods'] as string[] | undefined;
+    if (!methods || methods.length === 0) return 'user';
+    // oclif's `options` constraint already restricts values to LOGIN_AUTH_METHODS.
+    // Pick the first one as the chosen flow — login is single-flow by nature.
+    return methods[0] as LoginAuthMethod;
   }
 }

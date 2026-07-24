@@ -23,7 +23,7 @@ The CLI uses different authentication mechanisms depending on the operation:
 | [MRT](/cli/mrt) commands                                                                           | MRT API Key                  | [MRT API Key](#managed-runtime-api-key)                                                  |
 
 ::: tip Zero-Config for Platform Commands
-Sandbox, SLAS, and Account Manager commands work out of the box without any client configuration. The CLI includes a built-in public client that authenticates via browser login (implicit flow). You only need to configure an API client if you want to use client credentials for automation/CI or need specific scopes.
+Sandbox, SLAS, and Account Manager commands work out of the box without any client configuration. The CLI includes a built-in public client that authenticates via browser login (Authorization Code + PKCE). You only need to configure an API client if you want to use client credentials for automation/CI or need specific scopes.
 :::
 
 ::: tip
@@ -46,21 +46,23 @@ The CLI supports five authentication methods:
 | **Stateful User Authentication**   | After running `b2c auth login` — browser-based login, token stored and reused                  | Roles configured on your **user account** |
 | **Stateful Client Authentication** | After running `b2c auth client` — client credentials login, token stored and reused            | Roles configured on the **API client**    |
 
-**User Authentication** opens a browser for interactive login and uses roles assigned to your user account. This is ideal for development and manual operations. Use `--user-auth` as a shorthand for `--auth-methods implicit` on any OAuth command.
+**User Authentication** opens a browser for interactive login and uses roles assigned to your user account. This is ideal for development and manual operations. Use `--user-auth` as a shorthand for `--auth-methods user` on any OAuth command — both select the Authorization Code + PKCE flow.
+
+In dw.json, the same shorthand is available as `"user-auth": true`. It is mutually exclusive with `"auth-methods"` — set one or the other, not both.
 
 **Client Credentials** uses the API client's secret for non-interactive authentication. This is ideal for CI/CD pipelines and automation.
 
 **JWT Bearer** uses a public/private certificate pair for authentication without storing client secrets. See [JWT Authentication](#jwt-authentication-certificate-based) for details.
 
-**Stateful User Auth** uses `b2c auth login` to open a browser for interactive login once, then stores the session on disk. Subsequent commands automatically use the stored token when it is present and valid, without re-opening the browser. Clear the session with `b2c auth logout`. See [Auth Commands](/cli/auth#b2c-auth-login) for details.
+**Stateful User Auth** uses `b2c auth login` to open a browser for interactive login once (Authorization Code + PKCE). The CLI persists both the access token *and* a long-lived refresh token, so subsequent commands silently refresh expired access tokens without re-opening the browser. Clear the session with `b2c auth logout`. See [Auth Commands](/cli/auth#b2c-auth-login) for details.
 
-**Stateful Client Auth** uses `b2c auth client` to authenticate once with client credentials (or user/password), store the session, and reuse it across subsequent commands without passing credentials each time. Mirrors the [sfcc-ci](https://github.com/SalesforceCommerceCloud/sfcc-ci) `client:auth` workflow. Use `--renew` to enable automatic token renewal via `b2c auth client renew`. See [Auth Commands](/cli/auth#b2c-auth-client) for details.
+**Stateful Client Auth** uses `b2c auth client` to authenticate once with client credentials (or user/password) and store the **access token** for reuse across subsequent commands. The client secret is never persisted, and there is no automatic refresh — when the access token expires, re-run `b2c auth client` with the same credentials. For refresh-capable user authentication, use `b2c auth login` instead. See [Auth Commands](/cli/auth#b2c-auth-client) for details.
 
 After signing in with `auth login` or `auth client`, you can omit the client ID from later commands. The CLI automatically reuses the valid saved session when no other client is configured.
 
 ::: warning Stateful vs Stateless Precedence
 The stored session is used only when the token is valid **and** no explicit auth flags are provided. The CLI falls back to stateless auth when:
-- The stored token is **expired or invalid** — a warning suggests `b2c auth client renew` (if renewable) or `b2c auth client` / `b2c auth login` to re-authenticate.
+- The stored token is **expired or invalid** — a warning suggests re-running `b2c auth client <id> <secret>` (for client-credentials sessions) or `b2c auth login` (for user sessions).
 - **Explicit stateless auth flags** are passed (`--client-secret`, `--user-auth`, or `--auth-methods`) — a warning lists the flags that triggered the override. Remove them to use the stored session. Note that `--client-id` alone does not force stateless; the stored session is used if the configured client ID matches.
 
 To opt out of stateful auth entirely, run `b2c auth logout` to clear the stored session. The CLI will then use stateless auth exclusively.
@@ -149,7 +151,7 @@ The tenant filter restricts which tenants/realms the role applies to.
 
 ### Redirect URLs
 
-For **User Authentication** (implicit flow), configure redirect URLs in your API client:
+For **User Authentication** (Authorization Code + PKCE), configure redirect URLs in your API client:
 
 | Redirect URL                                                         | Purpose                                                   |
 | -------------------------------------------------------------------- | --------------------------------------------------------- |
@@ -157,6 +159,8 @@ For **User Authentication** (implicit flow), configure redirect URLs in your API
 | `https://admin.dx.commercecloud.salesforce.com/oauth2-redirect.html` | Optional - enables ODS Swagger interface with same client |
 
 **Note:** Redirect URLs are not required for API clients using only Client Credentials or JWT Bearer authentication.
+
+**Use a public client.** The Authorization Code + PKCE flow requires the API client to be registered in Account Manager as a **public client** (not a confidential client). Public clients have no secret and selecting that type configures the Authorization Code + PKCE grant automatically. A client's type can't be changed after creation, so a legacy implicit-only client must be replaced by a newly-created public client, not converted. See [Implicit Flow Deprecation (PKCE Migration)](#implicit-flow-deprecation) for the transitional fallback behavior and how to resolve the deprecation warning.
 
 ::: tip Running Behind a Proxy
 If you're running the CLI behind a proxy where `localhost:8080` isn't reachable by the browser, set `SFCC_REDIRECT_URI` to the proxy URL (e.g., `https://proxy.example.com:8080`). The proxy should forward traffic to the CLI's local server. You can also change the local server port with `SFCC_OAUTH_LOCAL_PORT`. Make sure to add your proxy URL to the API client's redirect URLs in Account Manager.
@@ -268,11 +272,13 @@ export SFCC_JWT_PASSPHRASE=your-passphrase
 
 ### Authentication Priority
 
-JWT authentication is tried **after** client credentials (if client secret is available) but **before** implicit flow:
+JWT authentication is tried **after** client credentials (if client secret is available) but **before** the user (browser) flow:
 
 1. `client-credentials` - Uses client secret if available
 2. `jwt` - Uses JWT certificate if configured (no client secret)
-3. `implicit` - Opens browser for user authentication
+3. `user` - Opens browser for Authorization Code + PKCE login
+
+The legacy `implicit` flow has been removed from the default chain. It is still selectable via `--auth-methods implicit` for backwards compatibility, but emits a deprecation warning; OAuth 2.1 deprecates implicit for public clients.
 
 To force JWT authentication even when a client secret is configured:
 
@@ -663,6 +669,35 @@ b2c scapi schemas list
 - Add the required scopes to your API client's Default Scopes
 - For SCAPI commands, ensure the relevant `sfcc.*` scopes are in Default Scopes
 - Verify that Default Scopes includes `mail roles tenantFilter openid`
+
+## Implicit Flow Deprecation (PKCE Migration) {#implicit-flow-deprecation}
+
+The browser-based `user` authentication method now uses the **Authorization Code flow with PKCE** (Proof Key for Code Exchange). The legacy **implicit** flow is deprecated for public clients per OAuth 2.1 and is no longer the default. Most users are unaffected — this section is for those with a legacy implicit-only client seeing a deprecation warning.
+
+### What changed
+
+- `b2c auth login` and the `user` auth method use Authorization Code + PKCE by default and persist a **refresh token**, so subsequent commands refresh silently without re-opening the browser.
+- The implicit flow is still selectable for backward compatibility via `--auth-methods implicit` (or `"auth-methods": ["implicit"]` in `dw.json`), but it emits a deprecation warning and cannot obtain refresh tokens.
+
+### You must use a public client
+
+PKCE requires the Account Manager client to be a **public client**. Selecting that type in Account Manager configures the Authorization Code + PKCE grant automatically and the client has no secret.
+
+**An Account Manager client's type cannot be changed after it is created.** A legacy implicit-only client therefore has to be **replaced by a newly-created public client** — it cannot be converted in place. Create a new public client, add the CLI's redirect URI (`http://localhost:8080` by default), and use its client ID.
+
+### Transitional automatic fallback
+
+To keep existing users working during the migration, if the configured client is **not** a PKCE-capable public client, the `user` flow automatically falls back to the deprecated implicit flow for that client and logs a warning:
+
+```
+[Auth] Authorization Code + PKCE failed for client <id> (<oauth error>). Falling back to
+the deprecated implicit flow. Recommend creating a new public (PKCE) client in Account
+Manager and using it to remove this warning.
+```
+
+The fallback triggers **only** for OAuth errors that indicate the client is not a public/PKCE client — `invalid_client` (Account Manager requires client authentication at the token exchange; the most common case for legacy implicit clients), `unauthorized_client`, `unsupported_response_type`, and `unsupported_grant_type`. Other failures (for example `invalid_scope` from requesting scopes the client can't have, or a cancelled login) surface directly without falling back, because they would fail identically under the implicit flow.
+
+To resolve the warning, create a new public client as described above and use its client ID. To disable the fallback entirely and surface PKCE failures directly, set `SFCC_DISABLE_PKCE_FALLBACK=1`. The fallback is temporary and will be removed once public clients have migrated.
 
 ## Next Steps
 

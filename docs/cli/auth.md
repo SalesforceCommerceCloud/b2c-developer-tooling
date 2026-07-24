@@ -8,10 +8,10 @@ Commands for authentication and token management.
 
 ## Stateful vs stateless auth
 
-The CLI supports **stateful auth** (session stored on disk) in addition to **stateless auth** (client credentials or one-off implicit flow):
+The CLI supports **stateful auth** (session stored on disk) in addition to **stateless auth** (client credentials or one-off browser login):
 
-- **Stateful (browser)**: After you run `b2c auth login`, your token is stored on disk in the CLI data directory. Subsequent commands (e.g. `b2c auth token`, `b2c am orgs list`) use this token when it is present and valid. If the token is missing or expired, the CLI falls back to stateless auth.
-- **Stateful (client credentials)**: Use `b2c auth client` to authenticate with client ID and secret (or user/password) for non-interactive/automation use. Supports auto-renewal with `--renew`.
+- **Stateful (browser)**: After you run `b2c auth login`, your access token *and* a long-lived refresh token are stored on disk in the CLI data directory. Subsequent commands silently refresh the access token without re-prompting. If both tokens are missing/expired, the CLI falls back to stateless auth.
+- **Stateful (client credentials)**: Use `b2c auth client` to authenticate with client ID and secret (or user/password) for non-interactive/automation use. Only the access token is persisted — the client secret is never stored. When the access token expires, re-run `b2c auth client` with the same credentials. There is no automatic refresh.
 - **Stateless**: You provide `--client-id` (and optionally `--client-secret`) per run or via environment/config; no session is persisted.
 
 After `auth login` or `auth client`, you do not need to provide the client ID again. When a later command has no client configured, it automatically reuses the valid saved session.
@@ -22,7 +22,7 @@ Use **auth:logout** to clear the stored session and return to stateless-only beh
 
 ## b2c auth login
 
-Log in via browser (implicit OAuth) and save the session for stateful auth.
+Log in via browser (Authorization Code + PKCE) and save the session for stateful auth. The access token is silently refreshed via the persisted refresh token; you only see a browser prompt when the refresh token also expires (typically after 24 hours of disuse).
 
 ### Usage
 
@@ -50,6 +50,34 @@ b2c auth login
 
 After a successful login, subsequent commands use the stored token until it expires or you run `b2c auth logout`.
 
+### Flags
+
+| Flag | Environment Variable | Description |
+|------|---------------------|-------------|
+| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname |
+| `--auth-scope` | `SFCC_OAUTH_SCOPES` | OAuth scopes to request (can be repeated) |
+| `--auth-methods` | | Browser-based flow to use: `user` (default — Authorization Code + PKCE) or `implicit` (deprecated) |
+
+### Choosing a flow
+
+`auth login` defaults to **Authorization Code + PKCE**, which is the recommended browser flow for public clients. The legacy implicit flow is still selectable for clients that haven't been migrated:
+
+```bash
+# Default: Authorization Code + PKCE
+b2c auth login your-client-id
+
+# Legacy implicit flow (emits a deprecation warning)
+b2c auth login your-client-id --auth-methods implicit
+```
+
+OAuth 2.1 deprecates the implicit flow for public clients. Configure your Account Manager API client as a public client and use the default PKCE flow when possible.
+
+#### Account Manager prerequisites
+
+To use the browser-based `user` flow with your own client, create a **public client** in Account Manager (not a confidential client — public clients have no secret, and selecting that type configures the Authorization Code + PKCE grant automatically). A client's type can't be changed after creation, so an existing implicit-only client must be replaced by a newly-created public client, not converted. Add the CLI's redirect URI to the client's allowed redirect URIs — by default `http://localhost:8080` (override the port with `SFCC_OAUTH_LOCAL_PORT` or the whole URI with `SFCC_REDIRECT_URI`).
+
+If a client is still registered as implicit-only, the `user` flow automatically falls back to the implicit flow and logs a deprecation warning. Create a new public client and use it to silence the warning, or set `SFCC_DISABLE_PKCE_FALLBACK=1` to disable the fallback.
+
 ## b2c auth logout
 
 Clear the stored OAuth session (stateful auth). After logout, commands use stateless auth when configured.
@@ -60,7 +88,7 @@ b2c auth logout
 
 ## b2c auth client
 
-Authenticate an API client using client credentials or resource owner password credentials and save the session for stateful auth. Compatible with the [sfcc-ci `client:auth`](https://github.com/SalesforceCommerceCloud/sfcc-ci) workflow.
+Authenticate an API client using client credentials or resource owner password credentials and save the **access token** for stateful auth. The client secret is **never** persisted: when the access token expires, re-run this command with the same credentials. There is no automatic refresh for client_credentials sessions — for refresh-capable user authentication, use `b2c auth login` (PKCE) instead.
 
 This is the non-interactive alternative to `auth login` — ideal for CI/CD pipelines and automation.
 
@@ -69,9 +97,6 @@ This is the non-interactive alternative to `auth login` — ideal for CI/CD pipe
 ```bash
 # Client credentials grant (client ID + secret)
 b2c auth client --client-id <id> --client-secret <secret>
-
-# With auto-renewal enabled
-b2c auth client --client-id <id> --client-secret <secret> --renew
 
 # Resource owner password credentials grant (+ user credentials)
 b2c auth client --client-id <id> --client-secret <secret> --user <email> --user-password <pwd>
@@ -86,7 +111,6 @@ b2c auth client --client-id <id> --client-secret <secret> --grant-type client_cr
 |------|---------------------|-------------|
 | `--client-id` | `SFCC_CLIENT_ID` | Client ID (required) |
 | `--client-secret` | `SFCC_CLIENT_SECRET` | Client secret (required) |
-| `--renew` / `-r` | | Enable auto-renewal (stores credentials for `auth client renew`) |
 | `--grant-type` / `-t` | | Force grant type: `client_credentials` or `password` |
 | `--user` | `SFCC_OAUTH_USER_NAME` | Username for password grant |
 | `--user-password` | `SFCC_OAUTH_USER_PASSWORD` | Password for password grant |
@@ -107,40 +131,9 @@ export SFCC_CLIENT_ID=my-client
 export SFCC_CLIENT_SECRET=my-secret
 b2c auth client
 
-# Authenticate with auto-renewal for long-running scripts
-b2c auth client --client-id <id> --client-secret <secret> --renew
-
 # Authenticate with user credentials
 b2c auth client --client-id <id> --client-secret <secret> \
   --user admin@example.com --user-password secret123
-```
-
-## b2c auth client renew
-
-Renew the authentication token using stored credentials. Requires initial authentication with `--renew` flag.
-
-Uses `refresh_token` grant when a refresh token is stored, otherwise falls back to `client_credentials` grant.
-
-### Usage
-
-```bash
-b2c auth client renew
-```
-
-### Flags
-
-| Flag | Environment Variable | Description |
-|------|---------------------|-------------|
-| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname for OAuth (default: account.demandware.com) |
-
-### Example
-
-```bash
-# Initial auth with --renew
-b2c auth client --client-id <id> --client-secret <secret> --renew
-
-# Later, renew the token without re-entering credentials
-b2c auth client renew
 ```
 
 ## b2c auth client token
@@ -198,8 +191,8 @@ b2c auth token
 | `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (default: account.demandware.com) |
 | `--short-code` | `SFCC_SHORTCODE` | SCAPI short code |
 | `--tenant-id` | `SFCC_TENANT_ID` | Organization/tenant ID |
-| `--auth-methods` | `SFCC_AUTH_METHODS` | Allowed auth methods in priority order (comma-separated): client-credentials, jwt, implicit, basic, api-key |
-| `--user-auth` | | Use browser-based user authentication (implicit OAuth flow) |
+| `--auth-methods` | `SFCC_AUTH_METHODS` | Allowed auth methods in priority order (comma-separated): client-credentials, jwt, user, implicit, basic, api-key |
+| `--user-auth` | | Use browser-based user authentication (Authorization Code + PKCE flow) |
 | `--jwt-cert` | `SFCC_JWT_CERT` | Path to JWT certificate file (cert.pem) for JWT Bearer authentication |
 | `--jwt-key` | `SFCC_JWT_KEY` | Path to JWT private key file (key.pem) for JWT Bearer authentication |
 | `--jwt-passphrase` | `SFCC_JWT_PASSPHRASE` | Passphrase for encrypted JWT private key |

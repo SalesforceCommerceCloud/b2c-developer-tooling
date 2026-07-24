@@ -63,6 +63,7 @@
 // Types
 export type {
   AuthStrategy,
+  UserAuthStrategy,
   FetchInit,
   AccessTokenResponse,
   DecodedJWT,
@@ -84,22 +85,35 @@ export {OAuthStrategy, decodeJWT} from './oauth.js';
 export type {OAuthConfig} from './oauth.js';
 export {ImplicitOAuthStrategy} from './oauth-implicit.js';
 export type {ImplicitOAuthConfig} from './oauth-implicit.js';
+export {PkceOAuthStrategy, PkceGrantUnsupportedError} from './oauth-pkce.js';
+export type {PkceOAuthConfig} from './oauth-pkce.js';
+export {
+  PkceWithImplicitFallbackStrategy,
+  createUserAuthStrategy,
+  isPkceFallbackDisabled,
+} from './oauth-pkce-fallback.js';
 export {JwtOAuthStrategy} from './oauth-jwt.js';
 export type {JwtOAuthConfig} from './oauth-jwt.js';
 export {ApiKeyStrategy} from './api-key.js';
 export {StatefulOAuthStrategy} from './stateful-oauth-strategy.js';
 export type {StatefulOAuthStrategyOptions} from './stateful-oauth-strategy.js';
 
-// Stateful auth store
+// Unified auth-session store (PKCE, implicit, and client-credentials sessions)
 export {
-  initializeStatefulStore,
-  getStoredSession,
-  setStoredSession,
-  clearStoredSession,
-  isStatefulTokenValid,
-  resetStatefulStoreForTesting,
-} from './stateful-store.js';
-export type {StatefulSession} from './stateful-store.js';
+  initializeFileAuthSessionStore,
+  setAuthSessionBackend,
+  getAuthSessionBackend,
+  FileAuthSessionBackend,
+  InMemoryAuthSessionBackend,
+  findAuthSession,
+  saveAuthSession,
+  deleteAuthSession,
+  listAuthSessions,
+  clearAllAuthSessions,
+  isAuthSessionTokenValid,
+  resetAuthSessionStoreForTesting,
+} from './session-store.js';
+export type {AuthSession, AuthSessionBackend, AuthSessionFlow} from './session-store.js';
 
 // Resolution helpers
 export {resolveAuthStrategy, checkAvailableAuthMethods} from './resolve.js';

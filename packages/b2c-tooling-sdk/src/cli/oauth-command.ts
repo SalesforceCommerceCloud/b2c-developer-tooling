@@ -8,11 +8,13 @@ import {BaseCommand, ERROR_CODE} from './base-command.js';
 import {loadConfig, extractOAuthFlags, ALL_AUTH_METHODS} from './config.js';
 import type {AuthMethod} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
+import type {UserAuthStrategy} from '../auth/types.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import {ImplicitOAuthStrategy} from '../auth/oauth-implicit.js';
+import {createUserAuthStrategy} from '../auth/oauth-pkce-fallback.js';
 import {StatefulOAuthStrategy} from '../auth/stateful-oauth-strategy.js';
 import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
-import {getStoredSession, isStatefulTokenValid} from '../auth/stateful-store.js';
+import {findAuthSession, isAuthSessionTokenValid, listAuthSessions} from '../auth/session-store.js';
 import {t} from '../i18n/index.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {normalizeTenantId, toOrganizationId} from '../clients/custom-apis.js';
@@ -24,9 +26,12 @@ import {normalizeTenantId, toOrganizationId} from '../clients/custom-apis.js';
  * Priority order:
  * 1. client-credentials (requires clientId + clientSecret)
  * 2. jwt (requires clientId + jwtCertPath + jwtKeyPath)
- * 3. implicit (requires clientId, browser-based)
+ * 3. user (requires clientId, browser-based — Authorization Code + PKCE)
+ *
+ * The legacy 'implicit' flow is no longer in the default chain. Users can
+ * still opt into it via `--auth-methods implicit`.
  */
-const DEFAULT_OAUTH_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'jwt', 'implicit'];
+const DEFAULT_OAUTH_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'jwt', 'user'];
 
 /**
  * Base command for operations requiring OAuth authentication.
@@ -91,7 +96,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       exclusive: ['user-auth'],
     }),
     'user-auth': Flags.boolean({
-      description: 'Use browser-based user authentication (implicit OAuth flow)',
+      description: 'Use browser-based user authentication (Authorization Code + PKCE flow)',
       default: false,
       exclusive: ['auth-methods'],
       helpGroup: 'AUTH',
@@ -135,7 +140,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    * This method is used by getOAuthStrategy() when no auth methods are specified in config.
    * Subclasses can override this to change the default priority — for example,
    * commands that talk to endpoints requiring a real user identity should
-   * return `['implicit']` so that user-auth is preferred when the user has
+   * return `['user']` so that user-auth is preferred when the user has
    * not explicitly chosen an auth method.
    *
    * Explicit user input via `--auth-methods`, `--client-secret`, `--jwt-cert`,
@@ -169,33 +174,37 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    * @returns An OAuth strategy instance ({@link OAuthStrategy}, {@link JwtOAuthStrategy}, {@link ImplicitOAuthStrategy}, or {@link StatefulOAuthStrategy}) based on configured credentials and allowed authentication methods.
    * @throws Error if no allowed method has the required credentials configured
    */
-  protected getOAuthStrategy(): OAuthStrategy | JwtOAuthStrategy | ImplicitOAuthStrategy | StatefulOAuthStrategy {
+  protected getOAuthStrategy():
+    | OAuthStrategy
+    | JwtOAuthStrategy
+    | ImplicitOAuthStrategy
+    | StatefulOAuthStrategy
+    | UserAuthStrategy {
     const config = this.resolvedConfig.values;
     const accountManagerHost = this.accountManagerHost;
     const requiredScopes = config.scopes ?? [];
 
-    const statefulSession = getStoredSession();
     const explicitAuthFlags = this.detectExplicitAuthFlags();
     // Only a client ID resolved from user configuration constrains stateful auth.
-    // getDefaultClientId() is a stateless implicit-flow fallback and must not
-    // prevent an otherwise valid stored session from being reused.
-    const requiredStatefulClientId = config.clientId;
-    const validSession =
-      statefulSession !== null &&
-      isStatefulTokenValid(statefulSession, requiredScopes, undefined, requiredStatefulClientId);
+    // getDefaultClientId() is a stateless fallback and must not prevent an
+    // otherwise valid stored session from being reused.
+    const configuredClientId = config.clientId;
 
-    // Use stateful auth only when the session is valid and no explicit auth flags override it
-    if (validSession && explicitAuthFlags.length === 0) {
-      this.logger.debug('[Auth] Using stateful session');
-      return new StatefulOAuthStrategy(statefulSession, {
-        accountManagerHost,
-        scopes: requiredScopes,
-      });
-    }
-
-    // Warn when an invalid stored session exists or explicit auth flags override a valid one
-    if (statefulSession) {
-      if (validSession && explicitAuthFlags.length > 0) {
+    // Stored `client-credentials` sessions (from `auth client`) are reusable
+    // until expiry. PKCE / implicit sessions are handled inside their flow
+    // strategies (which hydrate from the store and refresh themselves), so we
+    // only need a special gate for client-credentials here.
+    const storedSession = configuredClientId ? findAuthSession(configuredClientId) : null;
+    if (storedSession?.flow === 'client-credentials') {
+      const isValid = isAuthSessionTokenValid(storedSession, requiredScopes, undefined, configuredClientId);
+      if (isValid && explicitAuthFlags.length === 0) {
+        this.logger.debug('[Auth] Using stored client-credentials session');
+        return new StatefulOAuthStrategy(storedSession, {
+          accountManagerHost,
+          scopes: requiredScopes,
+        });
+      }
+      if (isValid && explicitAuthFlags.length > 0) {
         this.warn(
           t(
             'warning.statefulTokenOverridden',
@@ -204,15 +213,12 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
               'Remove these flags to use the stored session.',
           ),
         );
-      } else if (!validSession) {
-        const renewable = statefulSession.renewBase !== null && statefulSession.renewBase !== undefined;
+      } else if (!isValid) {
         this.warn(
           t(
-            renewable ? 'warning.statefulTokenExpired' : 'warning.statefulTokenExpiredNoRenew',
-            '[StatefulAuth] [sfcc-ci compatibility] Stored token is expired or invalid for the given request. ' +
-              (renewable
-                ? 'Run `b2c auth client renew` to refresh it. '
-                : 'Run `b2c auth client` or `b2c auth login` to re-authenticate. ') +
+            'warning.statefulTokenExpiredNoRenew',
+            '[StatefulAuth] Stored client-credentials access token is expired. ' +
+              'Run `b2c auth client <id> <secret>` to re-authenticate. ' +
               'Falling back to stateless auth.',
           ),
         );
@@ -260,12 +266,37 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
           }
           break;
 
+        case 'user': {
+          const effectiveClientId = config.clientId ?? defaultClientId;
+          if (effectiveClientId) {
+            if (!config.clientId && defaultClientId) {
+              this.logger.debug('Using default B2C CLI public client for user authentication');
+            }
+            // PKCE with an automatic, WARN-logged fallback to the implicit flow
+            // for clients not yet registered for PKCE (see oauth-pkce-fallback).
+            return createUserAuthStrategy({
+              clientId: effectiveClientId,
+              scopes: config.scopes,
+              accountManagerHost,
+            });
+          }
+          break;
+        }
+
         case 'implicit': {
           const effectiveClientId = config.clientId ?? defaultClientId;
           if (effectiveClientId) {
             if (!config.clientId && defaultClientId) {
               this.logger.debug('Using default B2C CLI public client for authentication');
             }
+            this.warn(
+              t(
+                'warning.implicitFlowDeprecated',
+                'The OAuth implicit flow is deprecated. Create a new public OAuth client in Account Manager ' +
+                  'and use Authorization Code + PKCE (`--user-auth`) instead. ' +
+                  'See https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html#implicit-flow-deprecation',
+              ),
+            );
             return new ImplicitOAuthStrategy({
               clientId: effectiveClientId,
               scopes: config.scopes,
@@ -296,12 +327,12 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    * Only flags that mandate a specific auth flow are considered:
    * - --client-secret: indicates client-credentials flow
    * - --jwt-cert / --jwt-key: indicates JWT Bearer flow
-   * - --user-auth: indicates browser-based implicit flow
+   * - --user-auth: indicates browser-based PKCE flow
    * - --auth-methods: explicit auth method selection
    *
    * Contextual flags (--client-id, --auth-scope, --short-code, --tenant-id,
    * --account-manager-host) are NOT included because they are handled by
-   * isStatefulTokenValid (clientId/scope matching) or don't affect auth flow.
+   * isAuthSessionTokenValid (clientId/scope matching) or don't affect auth flow.
    */
   private detectExplicitAuthFlags(): string[] {
     const rawArgs = this._rawArgv;
@@ -315,9 +346,9 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    * or if a default client ID is available for implicit flows.
    */
   protected hasOAuthCredentials(): boolean {
-    return (
-      this.resolvedConfig.hasOAuthConfig() || this.getDefaultClientId() !== undefined || getStoredSession() !== null
-    );
+    if (this.resolvedConfig.hasOAuthConfig() || this.getDefaultClientId() !== undefined) return true;
+    const clientId = this.resolvedConfig.values.clientId;
+    return clientId ? findAuthSession(clientId) !== null : listAuthSessions().length > 0;
   }
 
   /**

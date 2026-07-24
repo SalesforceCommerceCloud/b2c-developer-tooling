@@ -31,7 +31,7 @@ import {confirm as safetyConfirm} from '../ux/confirm.js';
 import {globalConfigSourceRegistry} from '../config/config-source-registry.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
-import {initializeStatefulStore} from '../auth/stateful-store.js';
+import {initializeFileAuthSessionStore} from '../auth/session-store.js';
 import {initializeContentCache} from '../docs/content-cache.js';
 import {setUserAgent} from '../clients/user-agent.js';
 import {createTelemetry, Telemetry, type TelemetryAttributes} from '../telemetry/index.js';
@@ -216,7 +216,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // files are stored alongside other CLI data (e.g. ~/Library/Application Support/@salesforce/b2c-cli).
     // Tests may override the path via B2C_TEST_DATA_DIR to isolate the auth-session.json
     // file (e.g. per mocha worker) so they don't race on the developer's real session file.
-    initializeStatefulStore(process.env.B2C_TEST_DATA_DIR ?? this.config.dataDir);
+    initializeFileAuthSessionStore(process.env.B2C_TEST_DATA_DIR ?? this.config.dataDir);
 
     // Point the docs online-content cache at oclif's cacheDir (e.g. ~/.cache/b2c)
     // so cached docs live alongside other CLI cache data and honor oclif dir

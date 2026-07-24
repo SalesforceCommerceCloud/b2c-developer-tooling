@@ -11,7 +11,7 @@
  *
  * @module config/mapping
  */
-import type {AuthConfig} from '../auth/types.js';
+import type {AuthConfig, AuthMethod} from '../auth/types.js';
 import {B2CInstance, type InstanceConfig} from '../instance/index.js';
 import {parseSafetyLevelString} from '../safety/safety-middleware.js';
 import {isValidSafetyAction} from '../safety/types.js';
@@ -152,6 +152,17 @@ function parseCartridges(value: string | string[] | undefined): string[] | undef
  * ```
  */
 export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfig {
+  // `user-auth: true` is shorthand for `"auth-methods": ["user"]`. Setting
+  // both in the same dw.json is ambiguous; reject it the same way the CLI
+  // rejects passing `--user-auth` together with `--auth-methods`.
+  if (json.userAuth !== undefined && json.authMethods !== undefined) {
+    throw new Error(
+      'dw.json: `user-auth` and `auth-methods` are mutually exclusive. ' +
+        '`user-auth: true` is shorthand for `"auth-methods": ["user"]` — set one or the other.',
+    );
+  }
+  const authMethods: AuthMethod[] | undefined = json.userAuth === true ? ['user'] : json.authMethods;
+
   return {
     hostname: json.hostname,
     webdavHostname: json.webdavHostname,
@@ -177,7 +188,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     cipHost: json.cipHost,
     docsCategories: json.docsCategories,
     instanceName: json.name,
-    authMethods: json.authMethods,
+    authMethods,
     accountManagerHost: json.accountManagerHost,
     mrtProject: json.mrtProject,
     mrtEnvironment: json.mrtEnvironment,
@@ -369,6 +380,15 @@ export interface MergeConfigOptions {
    * @default true
    */
   hostnameProtection?: boolean;
+  /**
+   * Whether to apply OAuth client mismatch protection.
+   * When true, if overrides.clientId differs from base.clientId, the base
+   * `clientSecret` is dropped (a secret bound to a different client would
+   * never be valid). Same for slasClientId/slasClientSecret. The rest of
+   * the base config still merges through.
+   * @default true
+   */
+  clientIdProtection?: boolean;
 }
 
 /**
@@ -381,6 +401,10 @@ export interface MergeConfigResult {
   warnings: ConfigWarning[];
   /** Whether a hostname mismatch was detected and base was ignored */
   hostnameMismatch: boolean;
+  /** Whether an OAuth clientId mismatch was detected and base.clientSecret was dropped */
+  clientIdMismatch: boolean;
+  /** Whether a slasClientId mismatch was detected and base.slasClientSecret was dropped */
+  slasClientIdMismatch: boolean;
 }
 
 /**
@@ -416,6 +440,7 @@ export function mergeConfigsWithProtection(
 ): MergeConfigResult {
   const warnings: ConfigWarning[] = [];
   const hostnameProtection = options.hostnameProtection !== false;
+  const clientIdProtection = options.clientIdProtection !== false;
 
   // Check for hostname mismatch
   const hostnameExplicitlyProvided = Boolean(overrides.hostname);
@@ -436,7 +461,62 @@ export function mergeConfigsWithProtection(
       config: {...overrides} as NormalizedConfig,
       warnings,
       hostnameMismatch: true,
+      clientIdMismatch: false,
+      slasClientIdMismatch: false,
     };
+  }
+
+  // Check for OAuth clientId mismatch — if the user supplied a different
+  // clientId than the one stored in dw.json, the stored clientSecret is for
+  // the WRONG client and would silently steer auth into client-credentials
+  // with credentials that can never validate. Drop the base secret.
+  let baseClientSecret = base.clientSecret;
+  let clientIdMismatch = false;
+  if (
+    clientIdProtection &&
+    overrides.clientId !== undefined &&
+    base.clientId !== undefined &&
+    overrides.clientId !== base.clientId
+  ) {
+    clientIdMismatch = true;
+    if (base.clientSecret !== undefined) {
+      warnings.push({
+        code: 'CLIENT_ID_MISMATCH',
+        message:
+          `Client ID override "${overrides.clientId}" differs from config file "${base.clientId}". ` +
+          `Ignoring stored clientSecret for the configured client.`,
+        details: {
+          providedClientId: overrides.clientId,
+          configClientId: base.clientId,
+        },
+      });
+    }
+    baseClientSecret = undefined;
+  }
+
+  // Same protection for the SLAS client/secret pair.
+  let baseSlasClientSecret = base.slasClientSecret;
+  let slasClientIdMismatch = false;
+  if (
+    clientIdProtection &&
+    overrides.slasClientId !== undefined &&
+    base.slasClientId !== undefined &&
+    overrides.slasClientId !== base.slasClientId
+  ) {
+    slasClientIdMismatch = true;
+    if (base.slasClientSecret !== undefined) {
+      warnings.push({
+        code: 'SLAS_CLIENT_ID_MISMATCH',
+        message:
+          `SLAS client ID override "${overrides.slasClientId}" differs from config file "${base.slasClientId}". ` +
+          `Ignoring stored slasClientSecret for the configured client.`,
+        details: {
+          providedSlasClientId: overrides.slasClientId,
+          configSlasClientId: base.slasClientId,
+        },
+      });
+    }
+    baseSlasClientSecret = undefined;
   }
 
   // Normal merge - overrides win, use ?? for proper undefined handling
@@ -448,10 +528,10 @@ export function mergeConfigsWithProtection(
       username: overrides.username ?? base.username,
       password: overrides.password ?? base.password,
       clientId: overrides.clientId ?? base.clientId,
-      clientSecret: overrides.clientSecret ?? base.clientSecret,
+      clientSecret: overrides.clientSecret ?? baseClientSecret,
       scopes: overrides.scopes ?? base.scopes,
       slasClientId: overrides.slasClientId ?? base.slasClientId,
-      slasClientSecret: overrides.slasClientSecret ?? base.slasClientSecret,
+      slasClientSecret: overrides.slasClientSecret ?? baseSlasClientSecret,
       siteId: overrides.siteId ?? base.siteId,
       authMethods: overrides.authMethods ?? base.authMethods,
       accountManagerHost: overrides.accountManagerHost ?? base.accountManagerHost,
@@ -486,6 +566,8 @@ export function mergeConfigsWithProtection(
     },
     warnings,
     hostnameMismatch: false,
+    clientIdMismatch,
+    slasClientIdMismatch,
   };
 }
 

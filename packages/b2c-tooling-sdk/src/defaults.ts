@@ -29,18 +29,33 @@ export const DEFAULT_ACCOUNT_MANAGER_HOST = 'account.demandware.com';
 export const DEFAULT_ODS_HOST = 'admin.dx.commercecloud.salesforce.com';
 
 /**
- * Default public client ID for implicit OAuth flows.
- * Used as a fallback when no client ID is configured for platform-level
- * commands (Account Manager, Sandbox, SLAS) that support public client tokens.
+ * Default public client ID used for browser-based user authentication
+ * (Authorization Code + PKCE). Used as a fallback when no client ID is
+ * configured for platform-level commands (Account Manager, Sandbox, SLAS).
+ *
+ * This client supports the PKCE flow. The previous public client used by
+ * the implicit flow (`7eee11e3-...`) is retained as
+ * {@link LEGACY_IMPLICIT_PUBLIC_CLIENT_ID} for users who explicitly opt into
+ * `--auth-methods implicit`.
  */
-export const DEFAULT_PUBLIC_CLIENT_ID = '7eee11e3-375b-498f-a087-e450a330d202';
+export const DEFAULT_PUBLIC_CLIENT_ID = 'a40a7a9b-e854-4aa6-8078-d5f79872aa65';
+
+/**
+ * Legacy public client ID used for the deprecated OAuth implicit flow.
+ * Only used when a caller explicitly selects `--auth-methods implicit`.
+ */
+export const LEGACY_IMPLICIT_PUBLIC_CLIENT_ID = '7eee11e3-375b-498f-a087-e450a330d202';
 
 /**
  * Host-specific overrides for the default public client ID.
  * Some Account Manager instances require a different public client registration.
+ *
+ * The pod5 entry is a PKCE-capable public client, so the default `user` flow
+ * completes via Authorization Code + PKCE without engaging the transitional
+ * implicit fallback (see `auth/oauth-pkce-fallback`).
  */
 const HOST_CLIENT_ID_OVERRIDES: Record<string, string> = {
-  'account-pod5.demandware.net': 'c44527fe-66ff-4455-9eec-7287b2c66485',
+  'account-pod5.demandware.net': '3f41a930-b2bb-42c9-907d-f06a33c85849',
 };
 
 /**

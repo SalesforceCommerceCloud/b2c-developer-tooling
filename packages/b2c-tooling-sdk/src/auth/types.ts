@@ -34,6 +34,22 @@ export interface AuthStrategy {
 }
 
 /**
+ * An interactive, token-bearing OAuth strategy — the "user" auth flow
+ * (Authorization Code + PKCE, with the legacy implicit flow as fallback).
+ *
+ * Unlike the base {@link AuthStrategy}, these always expose the access token /
+ * decoded JWT so callers like `auth token` can surface them. Implemented by
+ * `PkceOAuthStrategy`, `ImplicitOAuthStrategy`, and the transitional
+ * `PkceWithImplicitFallbackStrategy`.
+ */
+export interface UserAuthStrategy extends AuthStrategy {
+  getAuthorizationHeader(): Promise<string>;
+  getJWT(): Promise<DecodedJWT>;
+  getTokenResponse(): Promise<AccessTokenResponse>;
+  invalidateToken(): void;
+}
+
+/**
  * Configuration for Basic authentication (username/access-key).
  * Used primarily for WebDAV operations.
  */
@@ -108,14 +124,15 @@ export interface DecodedJWT {
  * Available authentication methods.
  * - 'client-credentials': OAuth client credentials flow (requires clientId + clientSecret)
  * - 'jwt': OAuth JWT Bearer flow (requires clientId + JWT certificate/key pair)
- * - 'implicit': Interactive browser-based OAuth (requires clientId only)
+ * - 'user': Interactive browser-based user authentication (Authorization Code + PKCE; requires clientId only)
+ * - 'implicit': Legacy interactive browser-based OAuth implicit flow (deprecated; kept for compatibility)
  * - 'basic': Username/password (access key) authentication
  * - 'api-key': API key authentication (for MRT, etc.)
  */
-export type AuthMethod = 'client-credentials' | 'jwt' | 'implicit' | 'basic' | 'api-key';
+export type AuthMethod = 'client-credentials' | 'jwt' | 'user' | 'implicit' | 'basic' | 'api-key';
 
 /** All available auth methods in default priority order */
-export const ALL_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'jwt', 'implicit', 'basic', 'api-key'];
+export const ALL_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'jwt', 'user', 'implicit', 'basic', 'api-key'];
 
 /**
  * Configuration for resolving an auth strategy.

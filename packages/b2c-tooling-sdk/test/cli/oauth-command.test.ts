@@ -12,11 +12,13 @@ import {Config} from '@oclif/core';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   ImplicitOAuthStrategy,
+  PkceOAuthStrategy,
+  PkceWithImplicitFallbackStrategy,
   StatefulOAuthStrategy,
-  initializeStatefulStore,
-  setStoredSession,
-  clearStoredSession,
-  resetStatefulStoreForTesting,
+  initializeFileAuthSessionStore,
+  saveAuthSession,
+  clearAllAuthSessions,
+  resetAuthSessionStoreForTesting,
 } from '@salesforce/b2c-tooling-sdk/auth';
 import {DEFAULT_PUBLIC_CLIENT_ID, getDefaultPublicClientId} from '@salesforce/b2c-tooling-sdk';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
@@ -104,16 +106,16 @@ describe('cli/oauth-command', () => {
 
   before(() => {
     testDir = mkdtempSync(join(tmpdir(), 'b2c-oauth-cmd-test-'));
-    initializeStatefulStore(testDir);
+    initializeFileAuthSessionStore(testDir);
   });
 
   after(() => {
-    resetStatefulStoreForTesting();
+    resetAuthSessionStoreForTesting();
     rmSync(testDir, {recursive: true, force: true});
   });
 
   beforeEach(async () => {
-    clearStoredSession();
+    clearAllAuthSessions();
     isolateConfig();
     config = await Config.load();
     command = new TestOAuthCommand([], config);
@@ -122,7 +124,7 @@ describe('cli/oauth-command', () => {
   afterEach(() => {
     sinon.restore();
     restoreConfig();
-    clearStoredSession();
+    clearAllAuthSessions();
   });
 
   describe('requireOAuthCredentials', () => {
@@ -155,7 +157,7 @@ describe('cli/oauth-command', () => {
   });
 
   describe('--user-auth flag', () => {
-    it('should force implicit auth method when --user-auth is set', async () => {
+    it('should force PKCE user auth method when --user-auth is set', async () => {
       stubParse(command, {
         'client-id': 'test-client',
         'client-secret': 'test-secret',
@@ -165,9 +167,10 @@ describe('cli/oauth-command', () => {
       await command.init();
 
       // With --user-auth, even though client-secret is provided,
-      // implicit auth should be used
+      // user auth (PKCE) should be used. The default 'user' strategy is the
+      // transitional PKCE→implicit fallback wrapper.
       const strategy = command.testGetOAuthStrategy();
-      expect(strategy).to.be.instanceOf(ImplicitOAuthStrategy);
+      expect(strategy).to.be.instanceOf(PkceWithImplicitFallbackStrategy);
     });
 
     it('should use client-credentials when --user-auth is not set and secret is provided', async () => {
@@ -181,7 +184,61 @@ describe('cli/oauth-command', () => {
 
       // Without --user-auth, client-credentials should be used when secret is available
       const strategy = command.testGetOAuthStrategy();
+      expect(strategy).to.not.be.instanceOf(PkceOAuthStrategy);
       expect(strategy).to.not.be.instanceOf(ImplicitOAuthStrategy);
+    });
+  });
+
+  describe('implicit flow deprecation', () => {
+    it('returns ImplicitOAuthStrategy when --auth-methods implicit is selected', async () => {
+      stubParse(command, {
+        'client-id': 'test-client',
+        'auth-methods': ['implicit'],
+      });
+
+      await command.init();
+      sinon.stub(command, 'warn');
+
+      const strategy = command.testGetOAuthStrategy();
+      expect(strategy).to.be.instanceOf(ImplicitOAuthStrategy);
+    });
+
+    it('emits a deprecation WARN suggesting PKCE / public client when implicit is used', async () => {
+      stubParse(command, {
+        'client-id': 'test-client',
+        'auth-methods': ['implicit'],
+      });
+
+      await command.init();
+      const warnStub = sinon.stub(command, 'warn');
+
+      command.testGetOAuthStrategy();
+
+      expect(warnStub.calledOnce).to.be.true;
+      const message = warnStub.firstCall.args[0] as string;
+      expect(message).to.include('implicit flow is deprecated');
+      expect(message).to.include('public OAuth client');
+      expect(message).to.include('--user-auth');
+      expect(message).to.include(
+        'https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html#implicit-flow-deprecation',
+      );
+    });
+
+    it('does not emit the implicit deprecation WARN for PKCE / user auth', async () => {
+      stubParse(command, {
+        'client-id': 'test-client',
+        'user-auth': true,
+      });
+
+      await command.init();
+      const warnStub = sinon.stub(command, 'warn');
+
+      command.testGetOAuthStrategy();
+
+      const implicitWarnings = warnStub
+        .getCalls()
+        .filter((call) => typeof call.args[0] === 'string' && (call.args[0] as string).includes('implicit flow'));
+      expect(implicitWarnings).to.have.length(0);
     });
   });
 
@@ -291,12 +348,12 @@ describe('cli/oauth-command', () => {
         commandWithDefault.testRequireOAuthCredentials();
       });
 
-      it('getOAuthStrategy returns ImplicitOAuthStrategy using default client', async () => {
+      it('getOAuthStrategy returns the PKCE user strategy using default client', async () => {
         stubParse(commandWithDefault);
         await commandWithDefault.init();
 
         const strategy = commandWithDefault.testGetOAuthStrategy();
-        expect(strategy).to.be.instanceOf(ImplicitOAuthStrategy);
+        expect(strategy).to.be.instanceOf(PkceWithImplicitFallbackStrategy);
       });
 
       it('uses explicit clientId over default when provided', async () => {
@@ -304,7 +361,7 @@ describe('cli/oauth-command', () => {
         await commandWithDefault.init();
 
         const strategy = commandWithDefault.testGetOAuthStrategy();
-        expect(strategy).to.be.instanceOf(ImplicitOAuthStrategy);
+        expect(strategy).to.be.instanceOf(PkceWithImplicitFallbackStrategy);
       });
 
       it('uses client-credentials when both clientId and clientSecret are provided', async () => {
@@ -312,7 +369,8 @@ describe('cli/oauth-command', () => {
         await commandWithDefault.init();
 
         const strategy = commandWithDefault.testGetOAuthStrategy();
-        // client-credentials has higher priority than implicit in the default auth methods
+        // client-credentials has higher priority than user (PKCE) in the default auth methods
+        expect(strategy).to.not.be.instanceOf(PkceOAuthStrategy);
         expect(strategy).to.not.be.instanceOf(ImplicitOAuthStrategy);
       });
 
@@ -320,7 +378,7 @@ describe('cli/oauth-command', () => {
         stubParse(commandWithDefault, {'account-manager-host': 'account-pod5.demandware.net'});
         await commandWithDefault.init();
 
-        expect(commandWithDefault.testGetDefaultClientId()).to.equal('c44527fe-66ff-4455-9eec-7287b2c66485');
+        expect(commandWithDefault.testGetDefaultClientId()).to.equal('3f41a930-b2bb-42c9-907d-f06a33c85849');
       });
     });
   });
@@ -331,7 +389,7 @@ describe('cli/oauth-command', () => {
     });
 
     it('returns pod5 client ID for account-pod5.demandware.net', () => {
-      expect(getDefaultPublicClientId('account-pod5.demandware.net')).to.equal('c44527fe-66ff-4455-9eec-7287b2c66485');
+      expect(getDefaultPublicClientId('account-pod5.demandware.net')).to.equal('3f41a930-b2bb-42c9-907d-f06a33c85849');
     });
 
     it('returns standard default when host is undefined', () => {
@@ -343,172 +401,115 @@ describe('cli/oauth-command', () => {
     });
   });
 
-  describe('stateful auth', () => {
-    it('hasOAuthCredentials returns true when stateful session exists', async () => {
-      setStoredSession({
+  describe('stored client-credentials sessions', () => {
+    it('hasOAuthCredentials returns true when a session exists for the configured clientId', async () => {
+      saveAuthSession({
         clientId: 'stored-client',
+        flow: 'client-credentials',
         accessToken: makeValidJWT(),
         refreshToken: null,
-        renewBase: null,
-        user: null,
       });
-      stubParse(command);
-      await command.init();
+      const cmd = new TestOAuthCommand(['--client-id', 'stored-client'], config);
+      stubParse(cmd, {'client-id': 'stored-client'});
+      await cmd.init();
 
-      expect(command.testHasOAuthCredentials()).to.be.true;
+      expect(cmd.testHasOAuthCredentials()).to.be.true;
     });
 
-    it('getOAuthStrategy returns StatefulOAuthStrategy when stateful session is valid', async () => {
+    it('returns StatefulOAuthStrategy for a valid stored client-credentials session', async () => {
       const token = makeValidJWT();
-      setStoredSession({
+      saveAuthSession({
         clientId: 'stored-client',
+        flow: 'client-credentials',
         accessToken: token,
         refreshToken: null,
-        renewBase: null,
-        user: null,
       });
-      stubParse(command);
-      await command.init();
+      const cmd = new TestOAuthCommand(['--client-id', 'stored-client'], config);
+      stubParse(cmd, {'client-id': 'stored-client'});
+      await cmd.init();
 
-      const strategy = command.testGetOAuthStrategy();
+      const strategy = cmd.testGetOAuthStrategy();
       expect(strategy).to.be.instanceOf(StatefulOAuthStrategy);
       const tokenResponse = await (strategy as StatefulOAuthStrategy).getTokenResponse();
       expect(tokenResponse.accessToken).to.equal(token);
     });
 
-    it('uses the stored session instead of the built-in default client when no client ID is configured', async () => {
-      const token = makeValidJWT();
-      setStoredSession({
+    it('does not use a stored session when a DIFFERENT client ID is configured', async () => {
+      // The store is keyed by clientId: a session saved under 'stored-client' must
+      // not be picked up when the command resolves a different configured client.
+      saveAuthSession({
         clientId: 'stored-client',
-        accessToken: token,
-        refreshToken: null,
-        renewBase: null,
-        user: null,
-      });
-      const commandWithDefault = new TestOAuthCommandWithDefault([], config);
-      stubParse(commandWithDefault);
-      await commandWithDefault.init();
-
-      const strategy = commandWithDefault.testGetOAuthStrategy();
-
-      expect(strategy).to.be.instanceOf(StatefulOAuthStrategy);
-      const tokenResponse = await (strategy as StatefulOAuthStrategy).getTokenResponse();
-      expect(tokenResponse.accessToken).to.equal(token);
-    });
-
-    it('does not use the stored session when a different client ID is configured', async () => {
-      setStoredSession({
-        clientId: 'stored-client',
+        flow: 'client-credentials',
         accessToken: makeValidJWT(),
         refreshToken: null,
-        renewBase: null,
-        user: null,
       });
       const commandWithDefault = new TestOAuthCommandWithDefault([], config);
       stubParse(commandWithDefault, {'client-id': 'configured-client'});
       await commandWithDefault.init();
 
-      const warnStub = sinon.stub(commandWithDefault, 'warn');
       const strategy = commandWithDefault.testGetOAuthStrategy();
-
-      expect(strategy).to.be.instanceOf(ImplicitOAuthStrategy);
-      expect(warnStub.calledOnce).to.be.true;
-    });
-
-    it('falls back to stateless when no stateful session', async () => {
-      stubParse(command, {'client-id': 'c', 'client-secret': 's'});
-      await command.init();
-
-      const strategy = command.testGetOAuthStrategy();
+      // findAuthSession('configured-client') is null, so the stored 'stored-client'
+      // session is ignored and we fall through to the default user/PKCE strategy.
       expect(strategy).to.not.be.instanceOf(StatefulOAuthStrategy);
+      expect(strategy).to.be.instanceOf(PkceWithImplicitFallbackStrategy);
     });
 
-    it('warns about expired renewable token and falls back to stateless', async () => {
-      setStoredSession({
+    it('warns and falls back to stateless when stored client-credentials token is expired', async () => {
+      saveAuthSession({
         clientId: 'stored-client',
+        flow: 'client-credentials',
         accessToken: makeExpiredJWT(),
         refreshToken: null,
-        renewBase: 'c2VjcmV0',
-        user: null,
       });
-      stubParse(command, {'client-id': 'c', 'client-secret': 's'});
-      await command.init();
+      const cmd = new TestOAuthCommand(['--client-id', 'stored-client', '--client-secret', 's'], config);
+      stubParse(cmd, {'client-id': 'stored-client', 'client-secret': 's'});
+      await cmd.init();
 
-      const warnStub = sinon.stub(command, 'warn');
-      const strategy = command.testGetOAuthStrategy();
-
-      expect(strategy).to.not.be.instanceOf(StatefulOAuthStrategy);
-      expect(warnStub.calledOnce).to.be.true;
-      expect(warnStub.firstCall.args[0]).to.include('auth client renew');
-    });
-
-    it('warns about expired non-renewable token and falls back to stateless', async () => {
-      setStoredSession({
-        clientId: 'stored-client',
-        accessToken: makeExpiredJWT(),
-        refreshToken: null,
-        renewBase: null,
-        user: null,
-      });
-      stubParse(command, {'client-id': 'c', 'client-secret': 's'});
-      await command.init();
-
-      const warnStub = sinon.stub(command, 'warn');
-      const strategy = command.testGetOAuthStrategy();
+      const warnStub = sinon.stub(cmd, 'warn');
+      const strategy = cmd.testGetOAuthStrategy();
 
       expect(strategy).to.not.be.instanceOf(StatefulOAuthStrategy);
       expect(warnStub.calledOnce).to.be.true;
       expect(warnStub.firstCall.args[0]).to.include('auth client');
-      expect(warnStub.firstCall.args[0]).to.include('auth login');
     });
 
-    it('warns and skips valid session when --client-secret is passed', async () => {
-      setStoredSession({
+    it('warns and skips valid client-credentials session when --client-secret is passed', async () => {
+      saveAuthSession({
         clientId: 'stored-client',
+        flow: 'client-credentials',
         accessToken: makeValidJWT(),
         refreshToken: null,
-        renewBase: null,
-        user: null,
       });
-      const cmdWithFlags = new TestOAuthCommand(['--client-secret', 's'], config);
-      stubParse(cmdWithFlags, {'client-id': 'stored-client', 'client-secret': 's'});
-      await cmdWithFlags.init();
+      const cmd = new TestOAuthCommand(['--client-id', 'stored-client', '--client-secret', 's'], config);
+      stubParse(cmd, {'client-id': 'stored-client', 'client-secret': 's'});
+      await cmd.init();
 
-      const warnStub = sinon.stub(cmdWithFlags, 'warn');
-      const strategy = cmdWithFlags.testGetOAuthStrategy();
+      const warnStub = sinon.stub(cmd, 'warn');
+      const strategy = cmd.testGetOAuthStrategy();
 
       expect(strategy).to.not.be.instanceOf(StatefulOAuthStrategy);
       expect(warnStub.calledOnce).to.be.true;
-      expect(warnStub.firstCall.args[0]).to.include('Valid token found');
       expect(warnStub.firstCall.args[0]).to.include('--client-secret');
     });
 
-    it('uses stateful session when only --client-id matches stored session', async () => {
-      setStoredSession({
-        clientId: 'stored-client',
+    it('does not gate on stored sessions of other flows (PKCE/implicit hydrate themselves)', async () => {
+      // A stored PKCE session should not pre-empt normal flow resolution; the
+      // PKCE strategy will hydrate from it directly.
+      saveAuthSession({
+        clientId: 'pkce-client',
+        flow: 'pkce',
         accessToken: makeValidJWT(),
-        refreshToken: null,
-        renewBase: null,
-        user: null,
+        refreshToken: 'rt',
       });
-      const cmdWithClientId = new TestOAuthCommand(['--client-id', 'stored-client'], config);
-      stubParse(cmdWithClientId, {'client-id': 'stored-client'});
-      await cmdWithClientId.init();
+      const cmd = new TestOAuthCommand(['--client-id', 'pkce-client', '--client-secret', 's'], config);
+      stubParse(cmd, {'client-id': 'pkce-client', 'client-secret': 's'});
+      await cmd.init();
 
-      const warnStub = sinon.stub(cmdWithClientId, 'warn');
-      const strategy = cmdWithClientId.testGetOAuthStrategy();
+      const warnStub = sinon.stub(cmd, 'warn');
+      const strategy = cmd.testGetOAuthStrategy();
 
-      expect(strategy).to.be.instanceOf(StatefulOAuthStrategy);
-      expect(warnStub.called).to.be.false;
-    });
-
-    it('does not warn when no stateful session exists', async () => {
-      stubParse(command, {'client-id': 'c', 'client-secret': 's'});
-      await command.init();
-
-      const warnStub = sinon.stub(command, 'warn');
-      command.testGetOAuthStrategy();
-
+      expect(strategy).to.not.be.instanceOf(StatefulOAuthStrategy);
+      // No warning — PKCE sessions don't trigger the client-credentials gate.
       expect(warnStub.called).to.be.false;
     });
   });
