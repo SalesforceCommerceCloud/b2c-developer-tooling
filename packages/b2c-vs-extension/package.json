@@ -2267,6 +2267,7 @@
     "watch": "node scripts/esbuild-bundle.mjs --watch",
     "vscode:prepublish": "pnpm run typecheck:agent && pnpm --filter @salesforce/b2c-script-types run build && pnpm --filter @salesforce/b2c-tooling-sdk run build && node scripts/esbuild-bundle.mjs",
     "package": "pnpm run build && pnpm exec vsce package --no-dependencies && node scripts/inject-script-types.mjs",
+    "package:pre-release": "pnpm run build && pnpm exec vsce package --no-dependencies --pre-release && node scripts/inject-script-types.mjs",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
     "typecheck:agent": "tsc -p . --noEmit --pretty false",

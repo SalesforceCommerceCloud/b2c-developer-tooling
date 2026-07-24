@@ -66,8 +66,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Build-once: merging the version PR to main cuts a RELEASE CANDIDATE, not
+      # a direct GA. publish.yml builds + attests both VSIX and cuts ONE
+      # prerelease release; an environment-gated approval then publishes npm@rc;
+      # promote.yml (soak or manual) later flips that release to latest and moves
+      # the npm dist-tag rc -> latest. GA therefore always passes a human gate.
       - name: Trigger publish workflow
         if: steps.changesets.outputs.hasChangesets == 'false'
-        run: gh workflow run publish.yml -f release_type=stable
+        run: gh workflow run publish.yml -f release_type=rc
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
