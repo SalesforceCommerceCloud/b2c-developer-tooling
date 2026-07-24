@@ -19,13 +19,13 @@
   "dependencies": {
     "@salesforce/b2c-script-types": "workspace:*",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
-    "swagger-ui-dist": "^5.18.0",
+    "swagger-ui-dist": "^5.32.11",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "vscode-html-languageservice": "catalog:"
   },
   "engines": {
-    "vscode": "^1.105.1"
+    "vscode": "^1.130.0"
   },
   "telemetry": {
     "connectionString": "InstrumentationKey=6fcc215f-0b11-4864-ad5c-3945ae19e2f3;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=a60f17ec-265a-4dfc-b8df-03a64695697d"
@@ -2289,11 +2289,11 @@
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "@types/vscode": "^1.105.1",
-    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^2.5.2",
-    "@vscode/vsce": "^3.9.1",
+    "@vscode/vsce": "^3.9.2",
     "c8": "catalog:",
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.28.1",
     "jszip": "3.10.1",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
