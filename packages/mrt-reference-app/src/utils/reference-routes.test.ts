@@ -20,6 +20,7 @@ import {
   echo,
   exception,
   tlsVersionTest,
+  outboundLoopTest,
   cacheTest,
   cookieTest,
   responseHeadersTest,
@@ -98,6 +99,77 @@ describe('reference-routes', () => {
         .expect('Content-Type', /application\/json/);
       expect(response.text).to.include('tls1.1');
       expect(response.text).to.include('tls1.2');
+    });
+  });
+
+  describe('outboundLoopTest', () => {
+    let fetchStub: sinon.SinonStub;
+    let originalDomain: string | undefined;
+
+    beforeEach(() => {
+      originalDomain = process.env.EXTERNAL_DOMAIN_NAME;
+      fetchStub = sinon.stub(global, 'fetch');
+    });
+
+    afterEach(() => {
+      if (originalDomain === undefined) {
+        delete process.env.EXTERNAL_DOMAIN_NAME;
+      } else {
+        process.env.EXTERNAL_DOMAIN_NAME = originalDomain;
+      }
+    });
+
+    it('should return 400 when EXTERNAL_DOMAIN_NAME is not set', async () => {
+      delete process.env.EXTERNAL_DOMAIN_NAME;
+      app.get('/test', outboundLoopTest);
+      const response = await request(app).get('/test').expect(400);
+      expect(response.body).to.have.property('error');
+      expect(fetchStub.called).to.equal(false);
+    });
+
+    it('should fetch the external domain and return its response verbatim', async () => {
+      process.env.EXTERNAL_DOMAIN_NAME = 'storefront.example.com';
+      fetchStub.resolves(
+        new Response('<html>storefront</html>', {status: 200, headers: {'content-type': 'text/html'}}),
+      );
+      app.get('/test', outboundLoopTest);
+      const response = await request(app).get('/test').expect(200);
+      expect(fetchStub.calledOnce).to.equal(true);
+      expect(fetchStub.firstCall.args[0]).to.equal('https://storefront.example.com/');
+      expect(response.headers['content-type']).to.match(/text\/html/);
+      expect(response.text).to.equal('<html>storefront</html>');
+    });
+
+    it('should send the x-mrt-loop header on the outbound request', async () => {
+      process.env.EXTERNAL_DOMAIN_NAME = 'storefront.example.com';
+      fetchStub.resolves(new Response('ok', {status: 200}));
+      app.get('/test', outboundLoopTest);
+      await request(app).get('/test').expect(200);
+      expect(fetchStub.firstCall.args[1]).to.deep.include({headers: {'x-mrt-loop': 'true'}});
+    });
+
+    it('should honor a custom path from the query string', async () => {
+      process.env.EXTERNAL_DOMAIN_NAME = 'storefront.example.com';
+      fetchStub.resolves(new Response('ok', {status: 200}));
+      app.get('/test', outboundLoopTest);
+      await request(app).get('/test?path=/on/demandware.store').expect(200);
+      expect(fetchStub.firstCall.args[0]).to.equal('https://storefront.example.com/on/demandware.store');
+    });
+
+    it('should not double the scheme when EXTERNAL_DOMAIN_NAME already includes one', async () => {
+      process.env.EXTERNAL_DOMAIN_NAME = 'https://storefront.example.com';
+      fetchStub.resolves(new Response('ok', {status: 200}));
+      app.get('/test', outboundLoopTest);
+      await request(app).get('/test').expect(200);
+      expect(fetchStub.firstCall.args[0]).to.equal('https://storefront.example.com/');
+    });
+
+    it('should propagate the upstream status code', async () => {
+      process.env.EXTERNAL_DOMAIN_NAME = 'storefront.example.com';
+      fetchStub.resolves(new Response('not found', {status: 404}));
+      app.get('/test', outboundLoopTest);
+      const response = await request(app).get('/test').expect(404);
+      expect(response.text).to.equal('not found');
     });
   });
 

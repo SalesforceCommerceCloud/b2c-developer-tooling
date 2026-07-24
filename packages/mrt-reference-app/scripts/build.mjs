@@ -88,6 +88,22 @@ async function logOutputFile(filePath) {
   console.log(`  build/${path.basename(rel)}  ${formatSize(stat.size)}`);
 }
 
+/** Recursively sum the size of every file under a directory. */
+async function dirSize(dir) {
+  let total = 0;
+  const entries = await fs.readdir(dir, {withFileTypes: true});
+  for (const entry of entries) {
+    const entryPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      total += await dirSize(entryPath);
+    } else {
+      const stat = await fs.stat(entryPath);
+      total += stat.size;
+    }
+  }
+  return total;
+}
+
 async function build() {
   await fs.rm(buildDir, {recursive: true, force: true});
   await fs.mkdir(buildDir, {recursive: true});
@@ -135,6 +151,22 @@ async function build() {
   });
   await logOutputFile(path.join(buildDir, 'request-processor.js'));
 
+  // Build config.server.ts -> build/config.server.js so `b2c mrt bundle deploy`
+  // reads the ssrOnly/ssrShared globs from it. Without this file the SDK falls
+  // back to defaults that only match ssr.{js,mjs}, so the streamingHandler entry
+  // ends up in neither ssr_only nor ssr_shared and the push is rejected.
+  // MRT_BUNDLE_TYPE is baked in via `define`, so config.server.ts selects the
+  // correct entry point (ssr vs. streamingHandler) at build time. Always CJS so
+  // it loads regardless of MRT_EXPORT_TYPE (build/package.json has no "type").
+  await esbuild.build({
+    ...commonOptions,
+    format: 'cjs',
+    minify: false,
+    sourcemap: false,
+    entryPoints: {'config.server': path.join(pkgRoot, 'config.server.ts')},
+  });
+  await logOutputFile(path.join(buildDir, 'config.server.js'));
+
   // Copy static assets
   const staticSrc = path.join(pkgRoot, 'src', 'static');
   const staticDest = path.join(buildDir, 'static');
@@ -148,6 +180,7 @@ async function build() {
   delete pkg.type;
   await fs.writeFile(path.join(buildDir, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
 
+  console.log(`Total build size: ${formatSize(await dirSize(buildDir))}`);
   console.log('Build complete');
 }
 
