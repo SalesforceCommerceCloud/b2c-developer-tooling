@@ -88,6 +88,22 @@ async function logOutputFile(filePath) {
   console.log(`  build/${path.basename(rel)}  ${formatSize(stat.size)}`);
 }
 
+/** Recursively sum the size of every file under a directory. */
+async function dirSize(dir) {
+  let total = 0;
+  const entries = await fs.readdir(dir, {withFileTypes: true});
+  for (const entry of entries) {
+    const entryPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      total += await dirSize(entryPath);
+    } else {
+      const stat = await fs.stat(entryPath);
+      total += stat.size;
+    }
+  }
+  return total;
+}
+
 async function build() {
   await fs.rm(buildDir, {recursive: true, force: true});
   await fs.mkdir(buildDir, {recursive: true});
@@ -164,6 +180,7 @@ async function build() {
   delete pkg.type;
   await fs.writeFile(path.join(buildDir, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
 
+  console.log(`Total build size: ${formatSize(await dirSize(buildDir))}`);
   console.log('Build complete');
 }
 
