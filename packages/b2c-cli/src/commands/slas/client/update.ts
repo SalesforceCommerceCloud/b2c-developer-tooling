@@ -10,6 +10,7 @@ import {
   type ClientRequest,
   type ClientOutput,
   normalizeClientResponse,
+  parseUriList,
   printClientDetails,
   formatApiError,
 } from '../../../utils/slas/client.js';
@@ -180,8 +181,8 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
     },
   ): Partial<ClientRequest> {
     const existingScopes = this.normalizeScopes(existing.scopes);
-    const existingRedirectUri = this.normalizeUriArray(existing.redirectUri);
-    const existingCallbackUri = this.normalizeCallbackUri(existing.callbackUri);
+    const existingRedirectUri = parseUriList(existing.redirectUri);
+    const existingCallbackUri = parseUriList(existing.callbackUri);
 
     // Determine merged values
     const mergedChannels = this.mergeArrayValues(existing.channels ?? [], updates.channels, updates.replace);
@@ -224,13 +225,6 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
   }
 
   /**
-   * Normalize callback URI from API response (comma-separated string).
-   */
-  private normalizeCallbackUri(value: string | undefined): string[] {
-    return value ? value.split(',').map((s) => s.trim()) : [];
-  }
-
-  /**
    * Normalize scopes from API response (may be space-separated string or array).
    */
   private normalizeScopes(scopes: string | string[] | undefined): string[] {
@@ -238,15 +232,5 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
       return scopes.split(' ');
     }
     return Array.isArray(scopes) ? scopes : [];
-  }
-
-  /**
-   * Normalize URI values from API response (may be pipe-delimited string or array).
-   */
-  private normalizeUriArray(value: string | string[] | undefined): string[] {
-    if (Array.isArray(value)) {
-      return value.flatMap((uri) => (typeof uri === 'string' ? uri.split('|').map((s) => s.trim()) : []));
-    }
-    return typeof value === 'string' ? value.split('|').map((s) => s.trim()) : [];
   }
 }
