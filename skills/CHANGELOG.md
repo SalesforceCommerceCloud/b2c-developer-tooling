@@ -1,5 +1,13 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.6.2
+
+### Patch Changes
+
+- [#588](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/588) [`3a7843d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3a7843d147d86135292b70d8fecdf1c54b2ac488) - Document the `sf-toolkit="off"` attribute on `<isinclude>` in the b2c-isml skill, explaining how to disable Storefront Toolkit markers and when to use it. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#577](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/577) [`fe264a7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/fe264a7a38383e4157fcc799cc474713390f67ff) - Document the order hook lifecycle in the b2c-hooks skill: the beforePOST → afterPOST → modifyPOSTResponse sequence, Status.ERROR rollback semantics per phase, the two-hook pattern for persisting a failed order while returning an HTTP error, and request.custom for inter-hook data passing. (Thanks [@charithaT07](https://github.com/charithaT07)!)
+
 ## 1.6.1
 
 ### Patch Changes
