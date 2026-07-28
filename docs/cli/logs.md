@@ -26,7 +26,7 @@ b2c logs get
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--filter`, `-f` | Log prefixes to filter (can specify multiple) | `error`, `customerror` |
+| `--filter`, `-f` | Log prefixes to filter (can specify multiple). Use a path like `internal/server` to fetch logs from a subdirectory. | `error`, `customerror` |
 | `--count`, `-n` | Maximum number of entries to retrieve | `20` |
 | `--since` | Only show entries after this time (e.g., "5m", "1h", "2d", or ISO 8601) | - |
 | `--level` | Filter by log level (can specify multiple): ERROR, WARN, INFO, DEBUG, FATAL, TRACE | - |
@@ -47,6 +47,9 @@ b2c logs get --count 50
 
 # Get logs from specific types
 b2c logs get --filter error --filter debug --filter warn
+
+# Get logs from a subdirectory (e.g. internal/) using a path-like filter
+b2c logs get --filter internal/server
 
 # Filter by time - last 5 minutes
 b2c logs get --since 5m
@@ -118,7 +121,7 @@ b2c logs list
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--filter`, `-f` | Filter by log prefix (can specify multiple) | All logs |
+| `--filter`, `-f` | Filter by log prefix (can specify multiple). Use a path like `internal/server` to list logs in a subdirectory. | All logs |
 | `--sort` | Sort field: `name`, `date`, `size` | `date` |
 | `--order`, `-o` | Sort order: `asc`, `desc` | `desc` |
 | `--columns`, `-c` | Columns to display (comma-separated). Available: name, prefix, size, modified | - |
@@ -133,6 +136,9 @@ b2c logs list
 
 # List only error logs
 b2c logs list --filter error --filter customerror
+
+# List logs in the internal/ subdirectory (path-like filter)
+b2c logs list --filter internal/server
 
 # Sort by size
 b2c logs list --sort size --order desc
@@ -167,7 +173,7 @@ b2c logs tail
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--filter`, `-f` | Log prefixes to filter (can specify multiple) | `error`, `customerror` |
+| `--filter`, `-f` | Log prefixes to filter (can specify multiple). Use a path like `internal/server` to tail logs in a subdirectory. | `error`, `customerror` |
 | `--interval` | Polling interval in milliseconds | `3000` |
 | `--last`, `-l` | Show last N entries per file on startup (0 to skip) | `1` |
 | `--level` | Filter by log level (can specify multiple): ERROR, WARN, INFO, DEBUG, FATAL, TRACE | - |
@@ -185,6 +191,9 @@ b2c logs tail
 
 # Tail specific log types
 b2c logs tail --filter debug --filter error --filter warn
+
+# Tail a log in the internal/ subdirectory (path-like filter)
+b2c logs tail --filter internal/server
 
 # Faster polling (1 second)
 b2c logs tail --interval 1000

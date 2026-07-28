@@ -26,7 +26,8 @@ describe('code activate', () => {
       name: 'ocapi' as const,
       listCodeVersions: sinon.stub(),
       getActiveCodeVersion: sinon.stub(),
-      activateCodeVersion: sinon.stub(),
+      // Backend contract returns a CodeVersionActivationResult.
+      activateCodeVersion: sinon.stub().resolves({alreadyActive: false}),
       deleteCodeVersion: sinon.stub(),
       createCodeVersion: sinon.stub(),
     };
@@ -45,12 +46,39 @@ describe('code activate', () => {
   it('activates when --reload is not set', async () => {
     const command: any = await createCommand({}, {codeVersion: 'v1'});
     const backend = stubCommon(command);
-    backend.activateCodeVersion.resolves();
+    backend.activateCodeVersion.resolves({alreadyActive: false});
 
     await command.run();
 
     expect(backend.activateCodeVersion.calledOnce).to.be.true;
     expect(backend.activateCodeVersion.firstCall.args[0]).to.equal('v1');
+  });
+
+  it('reports an already-active version without failing', async () => {
+    const command: any = await createCommand({}, {codeVersion: 'v1'});
+
+    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    const logStub = sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
+    sinon.stub(command, 'instance').get(() => ({
+      ocapi: {
+        PATCH: sinon.stub().resolves({
+          data: undefined,
+          error: {
+            fault: {
+              arguments: {codeVersionId: 'v1'},
+              type: 'CodeVersionModificationException',
+              message: "The code version 'v1' is active and can't be changed.",
+            },
+          },
+          response: {status: 400, statusText: 'Bad Request'},
+        }),
+      },
+    }));
+
+    await command.run();
+
+    expect(logStub.calledWithMatch(/already active/i)).to.be.true;
   });
 
   it('errors when no code version is provided for activate mode', async () => {
@@ -74,7 +102,7 @@ describe('code activate', () => {
       {id: 'v1', active: true},
       {id: 'v2', active: false},
     ]);
-    backend.activateCodeVersion.resolves();
+    backend.activateCodeVersion.resolves({alreadyActive: false});
 
     await command.run();
 

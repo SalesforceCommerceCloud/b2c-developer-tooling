@@ -45,6 +45,65 @@ jobs:
           [ "$NO_COLOR" = "1" ] || (echo "NO_COLOR not set" && exit 1)
           echo "All environment variables verified"
 
+  # Regression test for W-23178876: credentials containing shell-significant
+  # sequences ($WORD, $$, $(...), backticks, quotes) must reach $GITHUB_ENV
+  # byte-for-byte. The old `echo "VAR=${{ inputs.* }}"` pattern let bash re-expand
+  # those sequences, silently corrupting credentials (e.g. a WebDAV access key
+  # with `$`) and surfacing later as an unexplained 401.
+  setup-special-char-credentials:
+    name: 'Setup (credentials with $ / special chars)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run setup action with shell-significant credentials
+        uses: ./actions/setup
+        with:
+          # All single-quoted YAML scalars → passed to the action verbatim.
+          # short-code and tenant-id are included so the renamed-input mapping
+          # (short-code → SFCC_SHORTCODE) is exercised, not just same-name inputs.
+          client-id: 'client$ID123'
+          client-secret: 'sec$(echo INJECTED)ret'
+          username: 'user$HOME_name'
+          password: 'pa$$key$FOO123$end'
+          certificate-passphrase: 'pass`id`phrase'
+          short-code: 'short$CODE_xyz'
+          tenant-id: 'bbsv_$PRD123'
+
+      - name: Verify credentials round-tripped intact
+        # Expected values are injected through this step's env block (literal, not
+        # shell-evaluated), so the assertions themselves are immune to the very
+        # expansion bug they guard against. Each EXPECTED_* must match the `with:`
+        # value above exactly.
+        env:
+          EXPECTED_CLIENT_ID: 'client$ID123'
+          EXPECTED_CLIENT_SECRET: 'sec$(echo INJECTED)ret'
+          EXPECTED_USERNAME: 'user$HOME_name'
+          EXPECTED_PASSWORD: 'pa$$key$FOO123$end'
+          EXPECTED_CERTIFICATE_PASSPHRASE: 'pass`id`phrase'
+          EXPECTED_SHORTCODE: 'short$CODE_xyz'
+          EXPECTED_TENANT_ID: 'bbsv_$PRD123'
+        run: |
+          fail=0
+          check() {
+            # $1 = env var name, $2 = actual value, $3 = expected value
+            if [ "$2" != "$3" ]; then
+              printf 'MISMATCH %s: got [%s] expected [%s]\n' "$1" "$2" "$3"
+              fail=1
+            else
+              printf 'OK %s\n' "$1"
+            fi
+          }
+          check SFCC_CLIENT_ID "$SFCC_CLIENT_ID" "$EXPECTED_CLIENT_ID"
+          check SFCC_CLIENT_SECRET "$SFCC_CLIENT_SECRET" "$EXPECTED_CLIENT_SECRET"
+          check SFCC_USERNAME "$SFCC_USERNAME" "$EXPECTED_USERNAME"
+          check SFCC_PASSWORD "$SFCC_PASSWORD" "$EXPECTED_PASSWORD"
+          check SFCC_CERTIFICATE_PASSPHRASE "$SFCC_CERTIFICATE_PASSPHRASE" "$EXPECTED_CERTIFICATE_PASSPHRASE"
+          check SFCC_SHORTCODE "$SFCC_SHORTCODE" "$EXPECTED_SHORTCODE"
+          check SFCC_TENANT_ID "$SFCC_TENANT_ID" "$EXPECTED_TENANT_ID"
+          [ "$fail" -eq 0 ] || { echo "Credential corruption detected"; exit 1; }
+          echo "All credentials preserved verbatim"
+
   setup-nightly:
     name: 'Setup (nightly)'
     runs-on: ubuntu-latest

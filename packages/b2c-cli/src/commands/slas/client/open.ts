@@ -44,6 +44,7 @@ export default class SlasClientOpen extends BaseCommand<typeof SlasClientOpen> {
     'short-code': Flags.string({
       description: 'SCAPI short code',
       env: 'SFCC_SHORTCODE',
+      default: async () => process.env.SFCC_SHORT_CODE || undefined,
     }),
   };
 

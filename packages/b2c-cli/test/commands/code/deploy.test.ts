@@ -27,7 +27,7 @@ describe('code deploy', () => {
       name: 'ocapi' as const,
       listCodeVersions: sinon.stub().resolves([]),
       getActiveCodeVersion: sinon.stub().resolves(undefined),
-      activateCodeVersion: sinon.stub().resolves(undefined),
+      activateCodeVersion: sinon.stub().resolves({alreadyActive: false}),
       deleteCodeVersion: sinon.stub().resolves(undefined),
       createCodeVersion: sinon.stub().resolves(undefined),
     };
@@ -127,6 +127,24 @@ describe('code deploy', () => {
     expect(result).to.deep.include({codeVersion: 'v1', activated: true, reloaded: false});
   });
 
+  it('reports an already-active version as a successful no-op', async () => {
+    const command: any = await createCommand({activate: true}, {cartridgePath: '.'});
+    const {scriptsBackend} = stubCommon(command);
+    scriptsBackend.activateCodeVersion = sinon.stub().resolves({alreadyActive: true});
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+    sinon.stub(command, 'findCartridgesWithProviders').resolves([{name: 'c1', src: '/tmp/c1', dest: 'c1'}]);
+
+    const uploadStub = sinon.stub().resolves(void 0);
+    command.operations = {...command.operations, uploadCartridges: uploadStub};
+
+    const result = await command.run();
+
+    expect(result).to.deep.include({codeVersion: 'v1', activated: true, reloaded: false});
+    expect(command.log.calledWithMatch(/already active/i)).to.be.true;
+  });
+
   it('errors when activate fails', async () => {
     const command: any = await createCommand({activate: true}, {cartridgePath: '.'});
     const {scriptsBackend} = stubCommon(command);
@@ -148,7 +166,8 @@ describe('code deploy', () => {
     expect(errorStub.called).to.be.true;
     const errorMessage = errorStub.firstCall.args[0];
     expect(errorMessage).to.include('activate failed');
-    expect(errorMessage).to.include('OCAPI');
+    expect(errorMessage).to.include('Cartridges were deployed');
+    expect(errorMessage).not.to.include('permissions');
   });
 
   it('errors when reload fails', async () => {
@@ -172,7 +191,7 @@ describe('code deploy', () => {
     expect(errorStub.called).to.be.true;
     const errorMessage = errorStub.firstCall.args[0];
     expect(errorMessage).to.include('reload failed');
-    expect(errorMessage).to.include('OCAPI');
+    expect(errorMessage).to.include('Cartridges were deployed');
   });
 
   it('errors when no code version and no OAuth credentials', async () => {

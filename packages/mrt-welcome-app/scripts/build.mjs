@@ -72,6 +72,8 @@ async function build() {
   const esmRequireBanner =
     "import {createRequire as __mrtCreateRequire} from 'node:module';" +
     'const require = __mrtCreateRequire(import.meta.url);';
+  // CJS has no real import.meta; derive import.meta.url from __filename.
+  const cjsMetaBanner = 'const __mrtImportMetaUrl=require("url").pathToFileURL(__filename).href;';
   await esbuild.build({
     bundle: true,
     platform: 'node',
@@ -82,12 +84,13 @@ async function build() {
     outdir: buildDir,
     define: {
       'process.env.NODE_ENV': '"production"',
+      ...(format === 'cjs' ? {'import.meta.url': '__mrtImportMetaUrl'} : {}),
     },
     plugins: [bundlePlugin],
     splitting: false,
     entryPoints: {ssr: path.join(pkgRoot, 'src', 'ssr.ts')},
     outExtension: {'.js': ssrExt},
-    ...(format === 'esm' ? {banner: {js: esmRequireBanner}} : {}),
+    ...(format === 'esm' ? {banner: {js: esmRequireBanner}} : {banner: {js: cjsMetaBanner}}),
   });
 
   const ssrStat = await fs.stat(path.join(buildDir, `ssr${ssrExt}`));

@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Command, Flags} from '@oclif/core';
-import {BaseCommand} from './base-command.js';
+import {BaseCommand, ERROR_CODE} from './base-command.js';
 import {loadConfig, extractOAuthFlags, ALL_AUTH_METHODS} from './config.js';
 import type {AuthMethod} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
@@ -71,6 +71,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     'short-code': Flags.string({
       description: 'SCAPI short code',
       env: 'SFCC_SHORTCODE',
+      default: async () => process.env.SFCC_SHORT_CODE || undefined,
       helpGroup: 'AUTH',
     }),
     'tenant-id': Flags.string({
@@ -175,9 +176,13 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
 
     const statefulSession = getStoredSession();
     const explicitAuthFlags = this.detectExplicitAuthFlags();
-    const configuredClientId = config.clientId;
+    // Only a client ID resolved from user configuration constrains stateful auth.
+    // getDefaultClientId() is a stateless implicit-flow fallback and must not
+    // prevent an otherwise valid stored session from being reused.
+    const requiredStatefulClientId = config.clientId;
     const validSession =
-      statefulSession !== null && isStatefulTokenValid(statefulSession, requiredScopes, undefined, configuredClientId);
+      statefulSession !== null &&
+      isStatefulTokenValid(statefulSession, requiredScopes, undefined, requiredStatefulClientId);
 
     // Use stateful auth only when the session is valid and no explicit auth flags override it
     if (validSession && explicitAuthFlags.length === 0) {
@@ -331,7 +336,9 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   protected requireOAuthCredentials(): void {
     if (!this.hasOAuthCredentials()) {
       this.error(
-        t('error.oauthClientIdRequired', 'OAuth client ID required. Provide --client-id or set SFCC_CLIENT_ID.'),
+        t('error.oauthClientIdRequired', 'OAuth client ID required. Provide --client-id or set SFCC_CLIENT_ID.') +
+          this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
   }
@@ -348,7 +355,8 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
         t(
           'error.tenantIdRequired',
           'tenant-id is required. Provide via --tenant-id flag, SFCC_TENANT_ID env var, or tenant-id in dw.json.',
-        ),
+        ) + this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
     return normalizeTenantId(tenantId);

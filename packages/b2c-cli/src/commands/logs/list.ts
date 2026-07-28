@@ -72,7 +72,8 @@ export default class LogsList extends InstanceCommand<typeof LogsList> {
     ...InstanceCommand.baseFlags,
     filter: Flags.string({
       char: 'f',
-      description: 'Filter by log prefix (can specify multiple)',
+      description:
+        'Filter by log prefix (can specify multiple). Use a path like "internal/server" to list logs in a subdirectory.',
       multiple: true,
     }),
     sort: Flags.string({

@@ -13,6 +13,9 @@
  * @module operations/code/scripts-types
  */
 import type {BackendBase} from '../../clients/scapi-backend-utils.js';
+import type {CodeVersionActivationResult} from './versions.js';
+
+export type {CodeVersionActivationResult};
 
 /**
  * Canonical code version. CamelCase fields match SCAPI; OCAPI mapping
@@ -42,7 +45,7 @@ export interface CodeVersionInfo {
 export interface ScriptsBackend extends BackendBase {
   listCodeVersions(): Promise<CodeVersionInfo[]>;
   getActiveCodeVersion(): Promise<CodeVersionInfo | undefined>;
-  activateCodeVersion(codeVersionId: string): Promise<void>;
+  activateCodeVersion(codeVersionId: string): Promise<CodeVersionActivationResult>;
   deleteCodeVersion(codeVersionId: string): Promise<void>;
   createCodeVersion(codeVersionId: string): Promise<void>;
 }

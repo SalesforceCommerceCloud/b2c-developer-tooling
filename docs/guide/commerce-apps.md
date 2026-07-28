@@ -85,10 +85,10 @@ After install, complete the setup wizard tasks in Business Manager or follow the
 
 ## VS Code Extension Integration
 
-The B2C DX VS Code extension provides Commerce App support directly in the file explorer.
+The Salesforce B2C Commerce VS Code extension provides Commerce App support directly in the file explorer.
 
 - **CAP detection** — any directory containing a `commerce-app.json` file is decorated with a **CA** badge in the explorer, making CAP directories easy to identify.
-- **Install from the explorer** — right-click a CAP directory and choose **B2C-DX → Install Commerce App (CAP)**. You will be prompted for the target site ID.
+- **Install from the explorer** — right-click a CAP directory and choose **Install Commerce App (CAP)**. You will be prompted for the target site ID.
 
 ## Authentication Requirements
 

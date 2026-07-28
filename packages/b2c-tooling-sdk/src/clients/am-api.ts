@@ -27,6 +27,7 @@ import type {
 } from './am-apiclients-api.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
+import {wrapNetworkError} from '../errors/network-error.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {getLogger} from '../logging/logger.js';
 
@@ -1139,7 +1140,13 @@ export function createAccountManagerOrgsClient(
     // Apply middleware chain to request
     request = await applyMiddleware(request);
 
-    const response = await fetch(request);
+    let response: Response;
+    try {
+      response = await fetch(request);
+    } catch (err) {
+      const host = new URL(baseUrl).host;
+      throw wrapNetworkError(err, {operation: 'Account Manager API request', host});
+    }
 
     // Apply middleware chain to response
     const processedResponse = await processResponse(request, response);

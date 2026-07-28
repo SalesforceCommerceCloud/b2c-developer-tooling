@@ -1,0 +1,12 @@
+<isdecorate template="common/layout/page">
+    <isscript>
+    var marker = "</iselse>"; // must not be touched
+    </isscript>
+    <isif condition="${pdict.items.length > 0}">
+        <isloop items="${pdict.items}" var="item">
+            <isprint value="${item.name}" encoding="off"/>
+        </isloop>
+    <iselse/>
+        <p>none</p>
+    </isif>
+</isdecorate>

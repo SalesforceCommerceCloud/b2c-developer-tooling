@@ -1,4 +1,16 @@
-<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M4 4h16v2H4V4zm0 5h10v2H4V9zm0 5h16v2H4v-2zm0 5h10v2H4v-2z" fill="#C5C5C5"/>
-  <path d="M20 9l-4 2.5L20 14V9z" fill="#C5C5C5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" role="img" aria-label="B2C DX">
+  <defs>
+    <linearGradient id="b2c-icon-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1B96FF"/>
+      <stop offset="55%" stop-color="#0176D3"/>
+      <stop offset="100%" stop-color="#014486"/>
+    </linearGradient>
+  </defs>
+  <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill="url(#b2c-icon-bg)"/>
+  <text x="12" y="14.4" text-anchor="middle"
+        font-family="'Inter','SF Pro Display','Segoe UI Variable Display','Segoe UI',system-ui,-apple-system,sans-serif"
+        font-size="8.5" font-weight="800" letter-spacing="-0.3" fill="#fff">B2C</text>
+  <text x="12" y="20.6" text-anchor="middle"
+        font-family="'Inter','Segoe UI',system-ui,-apple-system,sans-serif"
+        font-size="4" font-weight="700" letter-spacing="0.3" fill="#7CC5FF">·DX</text>
 </svg>

@@ -78,7 +78,7 @@ export {
   deleteCodeVersion,
   createCodeVersion,
 } from './versions.js';
-export type {CodeVersion, CodeVersionResult} from './versions.js';
+export type {CodeVersion, CodeVersionActivationResult, CodeVersionResult} from './versions.js';
 
 // Scripts (code versions) backend abstraction — supports OCAPI + SCAPI
 export {createScriptsBackend, reloadCodeVersion} from './scripts-backend.js';

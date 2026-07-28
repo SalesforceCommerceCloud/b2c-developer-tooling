@@ -1,5 +1,5 @@
 {
-	"exclude": ["src/template", "src/test"],
+	"exclude": ["src/template", "src/test", "src/webview-ui"],
 	"compilerOptions": {
 		"module": "Node16",
 		"target": "ES2022",

@@ -93,10 +93,22 @@ export default class CodeActivate extends CodeCommand<typeof CodeActivate> {
       );
 
       try {
-        await backend.activateCodeVersion(codeVersion!);
-        this.log(
-          t('commands.code.activate.activated', 'Code version {{codeVersion}} activated successfully', {codeVersion}),
-        );
+        const activation = await backend.activateCodeVersion(codeVersion!);
+        if (activation.alreadyActive) {
+          this.log(
+            t(
+              'commands.code.activate.alreadyActive',
+              'Code version {{codeVersion}} is already active; no changes made',
+              {
+                codeVersion,
+              },
+            ),
+          );
+        } else {
+          this.log(
+            t('commands.code.activate.activated', 'Code version {{codeVersion}} activated successfully', {codeVersion}),
+          );
+        }
       } catch (error) {
         if (error instanceof Error) {
           this.error(

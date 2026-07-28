@@ -176,6 +176,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     libraries: json.libraries,
     assetQuery: json.assetQuery,
     cipHost: json.cipHost,
+    docsCategories: json.docsCategories,
     instanceName: json.name,
     authMethods: json.authMethods,
     accountManagerHost: json.accountManagerHost,
@@ -312,6 +313,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.cipHost !== undefined) {
     result.cipHost = config.cipHost;
+  }
+  if (config.docsCategories !== undefined) {
+    result.docsCategories = config.docsCategories;
   }
   if (config.mrtProject !== undefined) {
     result.mrtProject = config.mrtProject;

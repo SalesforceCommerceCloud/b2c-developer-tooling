@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import type {B2CInstance} from '../../instance/index.js';
-import type {ScriptsBackend, CodeVersionInfo} from './scripts-types.js';
+import type {ScriptsBackend, CodeVersionInfo, CodeVersionActivationResult} from './scripts-types.js';
 import type {CodeVersion as OcapiCodeVersion} from './versions.js';
 import {
   listCodeVersions as ocapiListCodeVersions,
@@ -44,8 +44,8 @@ export class OcapiScriptsBackend implements ScriptsBackend {
     return active ? mapOcapiCodeVersion(active) : undefined;
   }
 
-  async activateCodeVersion(codeVersionId: string): Promise<void> {
-    await ocapiActivateCodeVersion(this.instance, codeVersionId);
+  async activateCodeVersion(codeVersionId: string): Promise<CodeVersionActivationResult> {
+    return ocapiActivateCodeVersion(this.instance, codeVersionId);
   }
 
   async deleteCodeVersion(codeVersionId: string): Promise<void> {

@@ -10,7 +10,7 @@
  */
 import {B2CInstance} from '../../instance/index.js';
 import type {components} from '../../clients/ocapi.generated.js';
-import {isOcapiDeprecatedFault, OcapiDeprecatedError} from '../../clients/error-utils.js';
+import {isOcapiDeprecatedFault, OcapiDeprecatedError, getApiErrorMessage} from '../../clients/error-utils.js';
 import {SCAPI_JOBS_CASCADE} from '../../clients/scapi-jobs.js';
 import {getLogger} from '../../logging/logger.js';
 
@@ -416,7 +416,7 @@ export async function searchJobExecutions(
     query = {bool_query: {must: queries}};
   }
 
-  const {data, error} = await instance.ocapi.POST('/job_execution_search', {
+  const {data, error, response} = await instance.ocapi.POST('/job_execution_search', {
     body: {
       query,
       count,
@@ -427,8 +427,9 @@ export async function searchJobExecutions(
 
   if (error || !data) {
     if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError({cause: error, requiredScopes: JOBS_READ_SCOPES});
-    const message = error?.fault?.message ?? 'Failed to search job executions';
-    throw new Error(message, {cause: error});
+    const message =
+      error && response ? getApiErrorMessage(error, response) : (error?.fault?.message ?? 'Unknown error');
+    throw new Error(`Failed to search job executions: ${message}`, {cause: error});
   }
 
   return {

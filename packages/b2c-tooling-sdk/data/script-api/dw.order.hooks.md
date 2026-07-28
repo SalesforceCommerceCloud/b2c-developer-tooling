@@ -10,3 +10,4 @@
 | [PaymentHooks](dw.order.hooks.PaymentHooks.md) | This interface represents all script hooks that can be registered to  customize the order center payment functionality. |
 | [ReturnHooks](dw.order.hooks.ReturnHooks.md) | This interface represents all script hooks that can be registered to  customizing the order center return resource. |
 | [ShippingOrderHooks](dw.order.hooks.ShippingOrderHooks.md) | This interface represents all script hooks that can be registered around  shipping order lifecycle. |
+| [TaxHooks](dw.order.hooks.TaxHooks.md) | This interface represents tax extension points for Commerce App tax providers. |

@@ -259,6 +259,9 @@ Component with nested regions:
 ```
 
 **Script for container:**
+
+> Illustrative SFRA pattern using custom PageRenderHelper utility; confirm current region rendering API with `docs_read dw.experience.PageMgr` (use PageMgr.renderRegion() for canonical approach).
+
 ```javascript
 'use strict';
 
@@ -283,12 +286,14 @@ module.exports.render = function (context) {
 
 ## Page Script Context
 
+> Illustrative context API; confirm current PageScriptContext properties with `docs_read dw.experience.PageScriptContext` (note: renderParameters is deprecated, use getRuntimeParameters() instead).
+
 Properties available in `context` parameter:
 
 ```javascript
 module.exports.render = function (context) {
     var page = context.page;                    // dw.experience.Page
-    var renderParameters = context.renderParameters;  // HashMap from PageMgr.renderPage()
+    var renderParameters = context.renderParameters;  // DEPRECATED - use context.getRuntimeParameters()
 
     // Page methods
     var pageId = page.ID;
@@ -299,6 +304,8 @@ module.exports.render = function (context) {
 ```
 
 ## Component Script Context
+
+> Illustrative context API; confirm current ComponentScriptContext properties with `docs_read dw.experience.ComponentScriptContext`.
 
 Properties available in `context` parameter:
 

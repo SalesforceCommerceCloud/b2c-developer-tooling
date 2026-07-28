@@ -6,7 +6,7 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
-import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {BaseCommand, ERROR_CODE, classifyError} from '@salesforce/b2c-tooling-sdk/cli';
 import {globalMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
 import {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
@@ -48,6 +48,10 @@ class TestBaseCommand extends BaseCommand<typeof TestBaseCommand> {
 
   public testAddTelemetryContext() {
     return this.addTelemetryContext();
+  }
+
+  public testConfigDocsHint() {
+    return this.configDocsHint();
   }
 }
 
@@ -462,7 +466,81 @@ describe('cli/base-command', () => {
           command: 'test:base',
           exitCode: 42,
           errorMessage: 'Test error',
+          // A plain Error has no classification code, so it is a genuine runtime error.
+          errorCategory: 'runtime',
         });
+      });
+
+      it('classifies a VALIDATION-coded error as a validation category in COMMAND_ERROR', async () => {
+        const telemetry = new Telemetry({project: 'test', appInsightsKey: 'test-key'});
+        (command as unknown as {telemetry: Telemetry}).telemetry = telemetry;
+
+        stubParse(command, {json: false});
+        await command.init();
+
+        sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+        const error = new Error('tenant-id is required.') as Error & {code?: string; exitCode?: number};
+        error.code = ERROR_CODE.VALIDATION;
+        error.exitCode = 1;
+
+        try {
+          await command.testCatch(error);
+        } catch {
+          // Expected
+        }
+
+        const commandErrorCall = telemetrySendEventStub.getCalls().find((c) => c.args[0] === 'COMMAND_ERROR');
+        expect(commandErrorCall).to.not.be.undefined;
+        expect(commandErrorCall!.args[1]).to.include({errorCategory: 'validation'});
+      });
+    });
+
+    describe('classifyError()', () => {
+      it('returns "validation" for a VALIDATION-coded error', () => {
+        const err = Object.assign(new Error('x'), {code: ERROR_CODE.VALIDATION});
+        expect(classifyError(err)).to.equal('validation');
+      });
+
+      it('returns "guardrail" for a GUARDRAIL-coded error', () => {
+        const err = Object.assign(new Error('x'), {code: ERROR_CODE.GUARDRAIL});
+        expect(classifyError(err)).to.equal('guardrail');
+      });
+
+      it('returns "guardrail" for a SafetyBlockedError by name', () => {
+        const err = new Error('blocked');
+        err.name = 'SafetyBlockedError';
+        expect(classifyError(err)).to.equal('guardrail');
+      });
+
+      it('returns "runtime" for a plain error', () => {
+        expect(classifyError(new Error('boom'))).to.equal('runtime');
+      });
+
+      it('returns "runtime" for non-error values', () => {
+        expect(classifyError(undefined)).to.equal('runtime');
+        expect(classifyError('a string')).to.equal('runtime');
+      });
+    });
+
+    describe('configDocsHint()', () => {
+      it('returns a docs link when no config source loaded', () => {
+        command.setResolvedConfig({sources: []} as unknown as ReturnType<typeof command.getResolvedConfig>);
+        const hint = command.testConfigDocsHint();
+        expect(hint).to.include('configuration.html');
+        expect(hint).to.include('No configuration was found');
+      });
+
+      it('returns empty string when a config source contributed', () => {
+        command.setResolvedConfig({
+          sources: [{name: 'DwJsonSource'}],
+        } as unknown as ReturnType<typeof command.getResolvedConfig>);
+        expect(command.testConfigDocsHint()).to.equal('');
+      });
+
+      it('returns empty string when resolvedConfig is unset', () => {
+        command.setResolvedConfig(undefined as unknown as ReturnType<typeof command.getResolvedConfig>);
+        expect(command.testConfigDocsHint()).to.equal('');
       });
     });
 

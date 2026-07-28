@@ -15,6 +15,29 @@ export type CodeVersion = OcapiComponents['schemas']['code_version'];
 /** Result of listing code versions */
 export type CodeVersionResult = OcapiComponents['schemas']['code_version_result'];
 
+/** Result of requesting code-version activation. */
+export interface CodeVersionActivationResult {
+  /** Whether the target was already active and no server-side change was needed. */
+  alreadyActive: boolean;
+}
+
+function isAlreadyActiveFault(error: unknown, status: number, codeVersionId: string): boolean {
+  if (status !== 400 || !error || typeof error !== 'object') return false;
+
+  const fault = (error as {fault?: unknown}).fault;
+  if (!fault || typeof fault !== 'object') return false;
+
+  const typedFault = fault as {
+    arguments?: {codeVersionId?: unknown};
+    type?: unknown;
+  };
+  const faultCodeVersionId = typedFault.arguments?.codeVersionId;
+  return (
+    typedFault.type === 'CodeVersionModificationException' &&
+    (faultCodeVersionId === undefined || faultCodeVersionId === codeVersionId)
+  );
+}
+
 /**
  * Lists all code versions on an instance.
  *
@@ -67,7 +90,9 @@ export async function getActiveCodeVersion(instance: B2CInstance): Promise<CodeV
  *
  * @param instance - B2C instance
  * @param codeVersionId - Code version ID to activate
- * @returns Promise that resolves when the code version is activated
+ * Activating the current active version is treated as an idempotent success.
+ *
+ * @returns Whether the code version was already active
  * @throws Error if activation fails
  *
  * @example
@@ -76,7 +101,10 @@ export async function getActiveCodeVersion(instance: B2CInstance): Promise<CodeV
  * console.log('Code version v2 is now active');
  * ```
  */
-export async function activateCodeVersion(instance: B2CInstance, codeVersionId: string): Promise<void> {
+export async function activateCodeVersion(
+  instance: B2CInstance,
+  codeVersionId: string,
+): Promise<CodeVersionActivationResult> {
   const logger = getLogger();
   logger.debug({codeVersionId}, `Activating code version ${codeVersionId}`);
 
@@ -86,10 +114,18 @@ export async function activateCodeVersion(instance: B2CInstance, codeVersionId: 
   });
 
   if (error) {
-    throwOcapiError(error, response, 'Failed to activate code version', SCAPI_SCRIPTS_RW_SCOPES);
+    // Activating the current active version is an idempotent success.
+    if (isAlreadyActiveFault(error, response.status, codeVersionId)) {
+      logger.debug({codeVersionId}, `Code version ${codeVersionId} is already active`);
+      return {alreadyActive: true};
+    }
+    // Deprecation-aware: names the SCAPI scope on OCAPI-disabled instances,
+    // otherwise throws a rich message via getApiErrorMessage.
+    throwOcapiError(error, response, `Could not activate code version "${codeVersionId}"`, SCAPI_SCRIPTS_RW_SCOPES);
   }
 
   logger.debug({codeVersionId}, `Code version ${codeVersionId} activated`);
+  return {alreadyActive: false};
 }
 
 /**

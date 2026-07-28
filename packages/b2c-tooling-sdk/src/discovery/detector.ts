@@ -8,7 +8,8 @@
  *
  * @module discovery/detector
  */
-import type {DetectionResult, DetectionPattern, DetectOptions, ProjectType} from './types.js';
+import {getLogger} from '../logging/logger.js';
+import type {DetectionResult, DetectionPattern, DetectOptions, DetectionContext, ProjectType} from './types.js';
 import {DEFAULT_PATTERNS} from './patterns/index.js';
 
 /**
@@ -40,6 +41,7 @@ import {DEFAULT_PATTERNS} from './patterns/index.js';
 export class WorkspaceTypeDetector {
   private workspacePath: string;
   private patterns: DetectionPattern[];
+  private context: DetectionContext;
 
   /**
    * Creates a new WorkspaceTypeDetector.
@@ -50,6 +52,7 @@ export class WorkspaceTypeDetector {
   constructor(workspacePath: string, options: DetectOptions = {}) {
     this.workspacePath = workspacePath;
     this.patterns = this.resolvePatterns(options);
+    this.context = {maxDepth: options.maxDepth};
   }
 
   /**
@@ -61,22 +64,40 @@ export class WorkspaceTypeDetector {
    * @returns Detection result with all project types and matched patterns
    */
   async detect(): Promise<DetectionResult> {
+    // SDK-internal detail is logged at trace: the application layers (CLI/MCP)
+    // surface the resolved storefront at debug/info, so this stays out of the
+    // way on a normal debug run and is available when tracing library internals.
+    const logger = getLogger().child({component: 'discovery'});
     const matchedPatterns: string[] = [];
     const projectTypes: ProjectType[] = [];
 
+    logger.trace(
+      {workspacePath: this.workspacePath, patternCount: this.patterns.length},
+      'Detecting workspace/storefront type',
+    );
+
     for (const pattern of this.patterns) {
       try {
-        if (await pattern.detect(this.workspacePath)) {
+        const matched = await pattern.detect(this.workspacePath, this.context);
+        logger.trace({pattern: pattern.name, projectType: pattern.projectType, matched}, 'Detection pattern evaluated');
+        if (matched) {
           matchedPatterns.push(pattern.name);
           // Add project type if not already present
           if (!projectTypes.includes(pattern.projectType)) {
             projectTypes.push(pattern.projectType);
           }
         }
-      } catch {
-        // Skip patterns that fail to detect - could log in debug mode
+      } catch (err) {
+        // A pattern that throws is treated as "not matched" so one bad pattern
+        // cannot break detection; surface it (previously silently swallowed).
+        logger.trace({pattern: pattern.name, err}, 'Detection pattern threw; treating as no match');
       }
     }
+
+    logger.trace(
+      {workspacePath: this.workspacePath, projectTypes, matchedPatterns},
+      `Workspace detection complete: ${projectTypes.length > 0 ? projectTypes.join(', ') : 'no project type detected'}`,
+    );
 
     return {
       projectTypes,

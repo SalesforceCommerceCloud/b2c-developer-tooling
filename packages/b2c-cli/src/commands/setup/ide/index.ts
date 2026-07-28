@@ -15,7 +15,7 @@ export default class SetupIdeIndex extends BaseCommand<typeof SetupIdeIndex> {
     '/cli/setup.html#b2c-setup-ide',
   );
 
-  static examples = ['<%= config.bin %> setup ide prophet'];
+  static examples = ['<%= config.bin %> setup ide tsserver-plugin'];
 
   async run(): Promise<void> {
     await this.config.runCommand('help', ['setup', 'ide']);

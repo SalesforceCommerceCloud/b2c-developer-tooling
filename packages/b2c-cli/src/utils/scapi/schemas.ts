@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Command} from '@oclif/core';
-import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {ERROR_CODE, OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {createScapiSchemasClient, type ScapiSchemasClient} from '@salesforce/b2c-tooling-sdk/clients';
 import {t} from '../../i18n/index.js';
 
@@ -28,7 +28,8 @@ export abstract class ScapiSchemasCommand<T extends typeof Command> extends OAut
         t(
           'error.shortCodeRequired',
           'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
-        ),
+        ) + this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
     if (!tenantId) {
@@ -36,7 +37,8 @@ export abstract class ScapiSchemasCommand<T extends typeof Command> extends OAut
         t(
           'error.tenantIdRequired',
           'tenant-id is required. Provide via --tenant-id flag, SFCC_TENANT_ID env var, or tenant-id in dw.json.',
-        ),
+        ) + this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
 

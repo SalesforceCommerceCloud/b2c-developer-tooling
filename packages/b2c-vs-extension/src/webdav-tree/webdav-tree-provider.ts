@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {type WebDavFileSystemProvider, WEBDAV_ROOTS, VIRTUAL_ROOTS, webdavPathToUri} from './webdav-fs-provider.js';
 import type {WebDavMappingsProvider} from './webdav-mappings.js';
+import {showThrottledError} from '../notify.js';
 
 function formatFileSize(bytes: number | undefined): string {
   if (bytes === undefined || bytes === null) return '';
@@ -246,7 +247,18 @@ export class WebDavTreeDataProvider implements vscode.TreeDataProvider<WebDavTre
         return [];
       }
       const message = err instanceof Error ? err.message : String(err);
-      vscode.window.showErrorMessage(`WebDAV: Failed to list ${element.webdavPath}: ${message}`);
+      // A manual Refresh re-lists every expanded node, so an unreachable
+      // instance would otherwise stack one identical toast per node. Throttle
+      // connection-down failures (Unavailable) under a single key; keep
+      // actionable permission errors (401/403) immediate and distinct.
+      if (err instanceof vscode.FileSystemError && err.code === 'Unavailable') {
+        showThrottledError(`WebDAV: instance unreachable — ${message}`, 'webdav:unavailable');
+      } else {
+        showThrottledError(
+          `WebDAV: Failed to list ${element.webdavPath}: ${message}`,
+          `webdav:list:${element.webdavPath}`,
+        );
+      }
       return [];
     }
   }

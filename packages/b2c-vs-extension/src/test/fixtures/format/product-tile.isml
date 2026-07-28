@@ -1,0 +1,27 @@
+<div class="product-tile m-2 mt-4">
+    <!-- dwMarker="product" dwContentID="${product.uuid}" -->
+    <isinclude template="product/components/productTileImage" />
+
+    <div class="tile-body d-flex flex-column align-items-center justify-content-between">
+        <isinclude template="product/components/productTileSwatch" />
+
+        <isinclude template="product/components/productTileName" />
+
+        <isset name="price" value="${product.price}" scope="page" />
+        <isif condition="${product.productType === 'set'}">
+            <isinclude template="product/components/pricing/setPrice" />
+        <iselse/>
+            <isinclude template="product/components/pricing/main" />
+        </isif>
+        <isif condition="${pdict.display.ratings !== false}">
+            <isinclude template="product/productTileFooter" />
+        </isif>
+        <isif condition="${pdict.display.showBottomButton}">
+            <a class="btn btn-primary btn-block mx-3" href="${pdict.urls.product}"
+                title="${Resource.msg('label.viewdetails', 'search', null)}">
+                ${Resource.msg('label.viewdetails', 'search', null)}
+            </a>
+        </isif>
+    </div>
+    <!-- END_dwmarker -->
+</div>

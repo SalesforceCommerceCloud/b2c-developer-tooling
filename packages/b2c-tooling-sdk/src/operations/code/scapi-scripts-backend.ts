@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import type {AuthStrategy} from '../../auth/types.js';
-import type {ScriptsBackend, CodeVersionInfo} from './scripts-types.js';
+import type {ScriptsBackend, CodeVersionInfo, CodeVersionActivationResult} from './scripts-types.js';
 import {
   createScapiScriptsClient,
   SCAPI_SCRIPTS_RW_SCOPES,
@@ -74,7 +74,7 @@ export class ScapiScriptsBackend implements ScriptsBackend {
     return versions.find((v) => v.active);
   }
 
-  async activateCodeVersion(codeVersionId: string): Promise<void> {
+  async activateCodeVersion(codeVersionId: string): Promise<CodeVersionActivationResult> {
     const client = this.scopeTier.getClientForWrite();
     const logger = getLogger();
     logger.debug({codeVersionId}, `Activating code version ${codeVersionId}`);
@@ -87,6 +87,9 @@ export class ScapiScriptsBackend implements ScriptsBackend {
       throw new Error(toErrorMessage(error, `Failed to activate code version ${codeVersionId}`));
     }
     logger.debug({codeVersionId}, `Code version ${codeVersionId} activated`);
+    // SCAPI PATCH active=true is idempotent and does not surface a distinct
+    // "already active" fault the way OCAPI does, so report a normal activation.
+    return {alreadyActive: false};
   }
 
   async deleteCodeVersion(codeVersionId: string): Promise<void> {

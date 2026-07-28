@@ -56,3 +56,47 @@ for (const rel of codexTargets) {
 }
 
 console.log(`Synced plugin manifests to version ${version}`);
+
+// b2c-dx-mcp plugin: unlike the skills plugins, this one tracks the
+// @salesforce/b2c-dx-mcp npm package (changeset version has already bumped its
+// package.json by now), not the b2c-agent-plugins version. Two things must move
+// together on every MCP release:
+//
+//  1. Pin the npx-launched server to the exact published version. npx reuses a
+//     cached package for a floating tag like @latest, so users can get a stale
+//     server after an upgrade; an exact version forces a fetch.
+//  2. Bump the marketplace entry's `version` so Claude Code sees the plugin as
+//     changed and re-pulls the new pin. Without a version change the updated
+//     .mcp.json can sit on the marketplace and never reach installed plugins.
+const mcpVersion = readJson(join(repoRoot, 'packages/b2c-dx-mcp/package.json')).version;
+if (!mcpVersion) {
+  console.error('packages/b2c-dx-mcp/package.json has no version field');
+  process.exit(1);
+}
+
+// (1) Rewrite the pinned version in the plugin's .mcp.json.
+const mcpConfigPath = join(repoRoot, 'plugins/b2c-dx-mcp/.mcp.json');
+const mcpConfig = readJson(mcpConfigPath);
+const mcpArgs = mcpConfig.mcpServers?.['b2c-dx-mcp']?.args;
+if (!Array.isArray(mcpArgs)) {
+  console.error('plugins/b2c-dx-mcp/.mcp.json has no mcpServers["b2c-dx-mcp"].args array');
+  process.exit(1);
+}
+const pkgArgIndex = mcpArgs.findIndex((arg) => typeof arg === 'string' && arg.startsWith('@salesforce/b2c-dx-mcp@'));
+if (pkgArgIndex === -1) {
+  console.error('plugins/b2c-dx-mcp/.mcp.json args do not reference @salesforce/b2c-dx-mcp');
+  process.exit(1);
+}
+mcpArgs[pkgArgIndex] = `@salesforce/b2c-dx-mcp@${mcpVersion}`;
+writeJson(mcpConfigPath, mcpConfig);
+
+// (2) Stamp the MCP version onto its marketplace entry so clients re-pull.
+const mcpEntry = marketplace.plugins.find((plugin) => plugin.name === 'b2c-dx-mcp');
+if (!mcpEntry) {
+  console.error('.claude-plugin/marketplace.json has no b2c-dx-mcp plugin entry');
+  process.exit(1);
+}
+mcpEntry.version = mcpVersion;
+writeJson(marketplacePath, marketplace);
+
+console.log(`Pinned b2c-dx-mcp plugin to @salesforce/b2c-dx-mcp@${mcpVersion}`);

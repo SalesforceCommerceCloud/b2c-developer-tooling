@@ -140,6 +140,9 @@ describe('cli/oauth-command', () => {
       }
 
       expect(errorStub.called).to.be.true;
+      // Classified as a validation error so analytics can exclude it from reliability metrics.
+      const opts = errorStub.firstCall.args[1] as {code?: string} | undefined;
+      expect(opts?.code).to.equal('VALIDATION');
     });
 
     it('does not throw when clientId is set', async () => {
@@ -210,6 +213,27 @@ describe('cli/oauth-command', () => {
       }
 
       expect(errorStub.called).to.be.true;
+      const opts = errorStub.firstCall.args[1] as {code?: string} | undefined;
+      expect(opts?.code).to.equal('VALIDATION');
+    });
+
+    it('appends a docs-link hint when no config source contributed', async () => {
+      // With no flags/env/dw.json, no config source loads — point the user at the guide.
+      stubParse(command);
+      await command.init();
+
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      try {
+        command.testRequireTenantId();
+      } catch {
+        // Expected
+      }
+
+      const message = errorStub.firstCall.args[0] as string;
+      expect(message).to.include('tenant-id is required');
+      expect(message).to.include('No configuration was found');
+      expect(message).to.include('guide/configuration.html');
     });
   });
 
@@ -350,6 +374,45 @@ describe('cli/oauth-command', () => {
       expect(strategy).to.be.instanceOf(StatefulOAuthStrategy);
       const tokenResponse = await (strategy as StatefulOAuthStrategy).getTokenResponse();
       expect(tokenResponse.accessToken).to.equal(token);
+    });
+
+    it('uses the stored session instead of the built-in default client when no client ID is configured', async () => {
+      const token = makeValidJWT();
+      setStoredSession({
+        clientId: 'stored-client',
+        accessToken: token,
+        refreshToken: null,
+        renewBase: null,
+        user: null,
+      });
+      const commandWithDefault = new TestOAuthCommandWithDefault([], config);
+      stubParse(commandWithDefault);
+      await commandWithDefault.init();
+
+      const strategy = commandWithDefault.testGetOAuthStrategy();
+
+      expect(strategy).to.be.instanceOf(StatefulOAuthStrategy);
+      const tokenResponse = await (strategy as StatefulOAuthStrategy).getTokenResponse();
+      expect(tokenResponse.accessToken).to.equal(token);
+    });
+
+    it('does not use the stored session when a different client ID is configured', async () => {
+      setStoredSession({
+        clientId: 'stored-client',
+        accessToken: makeValidJWT(),
+        refreshToken: null,
+        renewBase: null,
+        user: null,
+      });
+      const commandWithDefault = new TestOAuthCommandWithDefault([], config);
+      stubParse(commandWithDefault, {'client-id': 'configured-client'});
+      await commandWithDefault.init();
+
+      const warnStub = sinon.stub(commandWithDefault, 'warn');
+      const strategy = commandWithDefault.testGetOAuthStrategy();
+
+      expect(strategy).to.be.instanceOf(ImplicitOAuthStrategy);
+      expect(warnStub.calledOnce).to.be.true;
     });
 
     it('falls back to stateless when no stateful session', async () => {

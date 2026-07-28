@@ -308,6 +308,39 @@ export type {
   CipQueryResult,
 } from './cip.js';
 
+export {createPreferencesClient, PREFERENCES_READ_SCOPES, PREFERENCES_RW_SCOPES} from './preferences.js';
+export type {
+  PreferencesClient,
+  PreferencesClientConfig,
+  PreferencesClientOptions,
+  PreferencesError,
+  PreferencesResponse,
+  PreferenceInstanceType,
+  CustomPreference,
+  CustomPreferenceList,
+  OrganizationPreferences,
+  SitePreferences,
+  PreferenceValue,
+  PreferenceValueSearchResult,
+  SearchRequest as PreferencesSearchRequest,
+  paths as PreferencesPaths,
+  components as PreferencesComponents,
+} from './preferences.js';
+
+export {createMetricsClient, METRICS_DEFAULT_SCOPES} from './metrics.js';
+export type {
+  MetricsClient,
+  MetricsClientConfig,
+  MetricsResponse,
+  MetricsDataResponse,
+  Metric,
+  MetricDataSeries,
+  MetricDataPoint,
+  MetricsError,
+  paths as MetricsPaths,
+  components as MetricsComponents,
+} from './metrics.js';
+
 export {createGranularReplicationsClient} from './granular-replications.js';
 export type {
   GranularReplicationsClient,

@@ -29,6 +29,7 @@
             <xsd:element name="unconfigured-at" type="xsd:dateTime" minOccurs="0" />
             <xsd:element name="config-tasks" type="simpleType.Generic.String" minOccurs="0" />
             <xsd:element name="installation-metadata" type="simpleType.Generic.String" minOccurs="0" />
+            <xsd:element name="admin-components" type="simpleType.Generic.String" minOccurs="0" />
         </xsd:sequence>
         <xsd:attribute name="site-id" type="simpleType.Generic.NonEmptyString.256" use="required" />
         <xsd:attribute name="feature-name" type="simpleType.Generic.NonEmptyString.256" use="required" />

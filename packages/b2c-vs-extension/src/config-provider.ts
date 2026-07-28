@@ -14,6 +14,7 @@ import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import {readFile} from 'fs/promises';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {findWorkspaceDwJson} from './workspace-discovery.js';
 
 const DW_JSON = 'dw.json';
 const DOT_ENV = '.env';
@@ -30,15 +31,13 @@ async function pathExists(p: string): Promise<boolean> {
 }
 
 /**
- * Detect the best workspace folder for B2C config resolution.
+ * Detect the best project directory for B2C config resolution.
  *
  * Scans all workspace folders for B2C indicators in priority order:
- * 1. Folder containing dw.json (strongest signal)
+ * 1. Directory containing dw.json (strongest signal; nested directories included)
  * 2. Folder containing .env with SFCC_* variables
  * 3. Folder containing package.json with `b2c` key
  * 4. Falls back to first folder (current behavior)
- *
- * Single-folder workspaces skip scanning (fast path).
  */
 async function detectWorkingDirectory(log: vscode.OutputChannel): Promise<string> {
   const folders = vscode.workspace.workspaceFolders;
@@ -47,23 +46,14 @@ async function detectWorkingDirectory(log: vscode.OutputChannel): Promise<string
     return process.cwd();
   }
 
-  // Single-folder workspace — fast path
-  if (folders.length === 1) {
-    return folders[0].uri.fsPath;
-  }
-
-  // Multi-root: scan for B2C indicators
   const folderNames = folders.map((f) => f.uri.fsPath).join(', ');
-  log.appendLine(
-    `[Config] Multi-root workspace detected (${folders.length} folders: ${folderNames}), scanning for B2C project...`,
-  );
+  log.appendLine(`[Config] Scanning workspace folders for a B2C project (${folderNames})...`);
 
-  for (const folder of folders) {
-    const dwJsonPath = path.join(folder.uri.fsPath, DW_JSON);
-    if (await pathExists(dwJsonPath)) {
-      log.appendLine(`[Config] Selected workspace folder via dw.json: ${folder.uri.fsPath}`);
-      return folder.uri.fsPath;
-    }
+  const dwJson = await findWorkspaceDwJson();
+  if (dwJson) {
+    const projectDirectory = path.dirname(dwJson.fsPath);
+    log.appendLine(`[Config] Selected project directory via dw.json: ${projectDirectory}`);
+    return projectDirectory;
   }
 
   for (const folder of folders) {
@@ -173,7 +163,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
 
   /**
    * Returns the working directory used for config resolution.
-   * Either the pinned project root or the auto-detected workspace folder.
+   * Either the pinned project root or the auto-detected project directory.
    */
   getWorkingDirectory(): string {
     return this.detectedDirectory;

@@ -32,6 +32,7 @@ This class does not have a constructor, so you cannot create it directly.
 | Method | Description |
 | --- | --- |
 | static [applyExternalTax](dw.order.TaxMgr.md#applyexternaltaxbasket)([Basket](dw.order.Basket.md)) | Applies externally set tax rates to the given [Basket](dw.order.Basket.md). |
+| static [applyTax](dw.order.TaxMgr.md#applytaxbasket)([Basket](dw.order.Basket.md)) | Applies tax to the given [Basket](dw.order.Basket.md) using the platform's tax hook dispatch logic. |
 | static [getCustomRateTaxClassID](dw.order.TaxMgr.md#getcustomratetaxclassid)() | Returns the ID of the tax class that represents items with a custom tax rate. |
 | static [getDefaultTaxClassID](dw.order.TaxMgr.md#getdefaulttaxclassid)() | Returns the ID of the default tax class defined for the site. |
 | static [getDefaultTaxJurisdictionID](dw.order.TaxMgr.md#getdefaulttaxjurisdictionid)() | Returns the ID of the default tax jurisdiction defined for the site. |
@@ -152,6 +153,59 @@ This class does not have a constructor, so you cannot create it directly.
 
     **Parameters:**
     - basket - apply external taxation to this basket
+
+
+---
+
+### applyTax(Basket)
+- static applyTax(basket: [Basket](dw.order.Basket.md)): void
+  - : Applies tax to the given [Basket](dw.order.Basket.md) using the platform's tax hook dispatch logic.
+      
+      
+      This method is intended for use in custom {@code dw.order.calculate} hook implementations (e.g., in SFRA or
+      SiteGenesis) that override the default basket calculation. Calling this method instead of directly invoking
+      {@code dw.order.calculateTax} ensures that Commerce App tax providers registered via
+      {@code sfcc.app.tax.calculate} are invoked when available, with automatic fallback to the legacy
+      {@code dw.order.calculateTax} hook or the platform default tax calculation.
+      
+      
+      
+      
+      **WARNING:** Do NOT call this method from within a {@code dw.order.calculateTax} hook
+      implementation, as this will cause infinite recursion. This method is designed to be called from
+      {@code dw.order.calculate} hooks only.
+      
+      
+      
+      
+      The dispatch precedence is:
+      
+      1. {@code sfcc.app.tax.calculate}— if a Commerce App tax provider is installed and the feature is   enabled.
+      2. {@code dw.order.calculateTax}— if registered by the storefront.
+      3. Platform default tax calculation — using the site's tax tables.
+      
+      
+      
+      
+      
+      **Typical usage in a custom {@code dw.order.calculate} hook:**
+      
+      
+      
+      
+      ```
+      var TaxMgr = require('dw/order/TaxMgr');
+      
+      exports.calculate = function (basket) {
+          // ... product prices, promotions, shipping ...
+          TaxMgr.applyTax(basket);
+          basket.updateTotals();
+      };
+      ```
+
+
+    **Parameters:**
+    - basket - the basket for which tax should be calculated.
 
 
 ---

@@ -15,6 +15,7 @@ import {parseStringPromise} from 'xml2js';
 import type {Dispatcher} from 'undici';
 import type {AuthStrategy} from '../auth/types.js';
 import {HTTPError} from '../errors/http-error.js';
+import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry, type UnifiedMiddleware} from './middleware-registry.js';
 
@@ -167,12 +168,18 @@ export class WebDavClient {
 
     // Use auth.fetch with the (potentially modified) request
     // Pass dispatcher for TLS/mTLS support
-    let response = await this.auth.fetch(request.url, {
-      method: request.method,
-      headers: request.headers,
-      body: init?.body, // Use original body since Request body may have been consumed
-      dispatcher: this.dispatcher,
-    });
+    let response: Response;
+    try {
+      response = await this.auth.fetch(request.url, {
+        method: request.method,
+        headers: request.headers,
+        body: init?.body, // Use original body since Request body may have been consumed
+        dispatcher: this.dispatcher,
+      });
+    } catch (err) {
+      const host = new URL(this.baseUrl).host;
+      throw wrapNetworkError(err, {operation: `WebDAV ${request.method}`, host});
+    }
 
     const duration = Date.now() - startTime;
 

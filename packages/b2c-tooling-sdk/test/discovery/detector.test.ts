@@ -101,6 +101,43 @@ describe('discovery/detector', () => {
         expect(result.matchedPatterns).to.deep.equal(['good-pattern']);
       });
 
+      it('passes maxDepth from options to patterns via context', async () => {
+        let seenMaxDepth: number | undefined = -1;
+        const capturingPattern: DetectionPattern = {
+          name: 'capture',
+          projectType: 'cartridges',
+          detect: async (_workspacePath, context) => {
+            seenMaxDepth = context?.maxDepth;
+            return true;
+          },
+        };
+        const detector = new WorkspaceTypeDetector('/test/path', {
+          patterns: [capturingPattern],
+          maxDepth: 5,
+        });
+
+        await detector.detect();
+
+        expect(seenMaxDepth).to.equal(5);
+      });
+
+      it('passes undefined maxDepth when not configured', async () => {
+        let seenMaxDepth: number | undefined = -1;
+        const capturingPattern: DetectionPattern = {
+          name: 'capture',
+          projectType: 'cartridges',
+          detect: async (_workspacePath, context) => {
+            seenMaxDepth = context?.maxDepth;
+            return true;
+          },
+        };
+        const detector = new WorkspaceTypeDetector('/test/path', {patterns: [capturingPattern]});
+
+        await detector.detect();
+
+        expect(seenMaxDepth).to.equal(undefined);
+      });
+
       it('preserves pattern order in results', async () => {
         const detector = new WorkspaceTypeDetector('/test/path', {
           patterns: [

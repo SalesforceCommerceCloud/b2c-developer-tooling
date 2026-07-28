@@ -1,0 +1,169 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "ISML",
+  "scopeName": "text.html.isml",
+  "fileTypes": ["isml"],
+  "patterns": [
+    {"include": "#isml-comment"},
+    {"include": "#isml-script"},
+    {"include": "#isml-tag"},
+    {"include": "#isml-expression"},
+    {"include": "text.html.basic"}
+  ],
+  "repository": {
+    "isml-comment": {
+      "name": "comment.block.isml",
+      "begin": "<iscomment>",
+      "end": "</iscomment>",
+      "beginCaptures": {
+        "0": {"name": "punctuation.definition.comment.begin.isml"}
+      },
+      "endCaptures": {
+        "0": {"name": "punctuation.definition.comment.end.isml"}
+      }
+    },
+    "isml-script": {
+      "name": "meta.embedded.block.isml.isscript",
+      "begin": "(<)(isscript)\\b([^>]*)(>)",
+      "end": "(</)(isscript)\\s*(>)",
+      "beginCaptures": {
+        "1": {"name": "punctuation.definition.tag.begin.isml"},
+        "2": {"name": "entity.name.tag.isml"},
+        "3": {"patterns": [{"include": "#tag-attributes"}]},
+        "4": {"name": "punctuation.definition.tag.end.isml"}
+      },
+      "endCaptures": {
+        "1": {"name": "punctuation.definition.tag.begin.isml"},
+        "2": {"name": "entity.name.tag.isml"},
+        "3": {"name": "punctuation.definition.tag.end.isml"}
+      },
+      "patterns": [{"include": "source.js"}]
+    },
+    "isml-expression": {
+      "name": "meta.embedded.expression.isml",
+      "begin": "\\$\\{",
+      "end": "\\}",
+      "beginCaptures": {
+        "0": {"name": "punctuation.section.embedded.begin.isml"}
+      },
+      "endCaptures": {
+        "0": {"name": "punctuation.section.embedded.end.isml"}
+      },
+      "patterns": [
+        {"include": "#expression-content"}
+      ]
+    },
+    "expression-content": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.isml",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [{"name": "constant.character.escape.isml", "match": "\\\\."}]
+        },
+        {
+          "name": "string.quoted.single.isml",
+          "begin": "'",
+          "end": "'",
+          "patterns": [{"name": "constant.character.escape.isml", "match": "\\\\."}]
+        },
+        {
+          "name": "constant.numeric.isml",
+          "match": "\\b\\d+(\\.\\d+)?\\b"
+        },
+        {
+          "name": "constant.language.isml",
+          "match": "\\b(true|false|null|undefined)\\b"
+        },
+        {
+          "name": "keyword.operator.isml",
+          "match": "(===|!==|==|!=|<=|>=|&&|\\|\\||[+\\-*/%<>!?:])"
+        },
+        {
+          "name": "variable.other.isml",
+          "match": "\\b([a-zA-Z_$][\\w$]*)\\b"
+        }
+      ]
+    },
+    "isml-tag": {
+      "patterns": [
+        {"include": "#isml-tag-with-content"},
+        {"include": "#isml-self-closing-tag"}
+      ]
+    },
+    "isml-self-closing-tag": {
+      "name": "meta.tag.isml",
+      "begin": "(</?)(is[a-zA-Z][\\w-]*)\\b",
+      "end": "(/?>)",
+      "beginCaptures": {
+        "1": {"name": "punctuation.definition.tag.begin.isml"},
+        "2": {"name": "entity.name.tag.isml"}
+      },
+      "endCaptures": {
+        "1": {"name": "punctuation.definition.tag.end.isml"}
+      },
+      "patterns": [
+        {"include": "#tag-attributes"}
+      ]
+    },
+    "isml-tag-with-content": {
+      "patterns": []
+    },
+    "tag-attributes": {
+      "patterns": [
+        {
+          "name": "meta.attribute.isml",
+          "begin": "([a-zA-Z_:][\\w:.-]*)\\s*(=)\\s*",
+          "end": "(?<=\"|')|(?=[\\s/>])",
+          "beginCaptures": {
+            "1": {"name": "entity.other.attribute-name.isml"},
+            "2": {"name": "punctuation.separator.key-value.isml"}
+          },
+          "patterns": [
+            {"include": "#attribute-value"}
+          ]
+        },
+        {
+          "name": "entity.other.attribute-name.isml",
+          "match": "\\b[a-zA-Z_:][\\w:.-]*\\b"
+        }
+      ]
+    },
+    "attribute-value": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.isml",
+          "begin": "\"",
+          "end": "\"",
+          "beginCaptures": {
+            "0": {"name": "punctuation.definition.string.begin.isml"}
+          },
+          "endCaptures": {
+            "0": {"name": "punctuation.definition.string.end.isml"}
+          },
+          "patterns": [
+            {"include": "#isml-expression"}
+          ]
+        },
+        {
+          "name": "string.quoted.single.isml",
+          "begin": "'",
+          "end": "'",
+          "beginCaptures": {
+            "0": {"name": "punctuation.definition.string.begin.isml"}
+          },
+          "endCaptures": {
+            "0": {"name": "punctuation.definition.string.end.isml"}
+          },
+          "patterns": [
+            {"include": "#isml-expression"}
+          ]
+        },
+        {
+          "name": "string.unquoted.isml",
+          "match": "[^\\s'\"=<>`]+"
+        }
+      ]
+    }
+  }
+}
