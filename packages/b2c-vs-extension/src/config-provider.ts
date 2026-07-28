@@ -14,7 +14,7 @@ import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import {readFile} from 'fs/promises';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {findWorkspaceDwJson} from './workspace-discovery.js';
+import {findWorkspaceDwJson, isUnscannableRoot} from './workspace-discovery.js';
 
 const DW_JSON = 'dw.json';
 const DOT_ENV = '.env';
@@ -42,8 +42,16 @@ async function pathExists(p: string): Promise<boolean> {
 async function detectWorkingDirectory(log: vscode.OutputChannel): Promise<string> {
   const folders = vscode.workspace.workspaceFolders;
   if (!folders || folders.length === 0) {
-    log.appendLine('[Config] No workspace folders open, falling back to process.cwd()');
-    return process.cwd();
+    // No workspace folders (empty window). The extension can still be activated
+    // implicitly by its typescriptServerPlugins contribution when any JS/TS file
+    // is opened, so we must NOT fall back to process.cwd() here — the extension
+    // host's cwd is arbitrary (often the user's home directory), and downstream
+    // filesystem discovery (findCartridges / detectWorkspaceType) would then
+    // recursively scan it on the shared extension-host thread, freezing every
+    // other extension (W-23618508). Return no working directory so all
+    // discovery is skipped.
+    log.appendLine('[Config] No workspace folders open; skipping filesystem discovery (no working directory)');
+    return '';
   }
 
   const folderNames = folders.map((f) => f.uri.fsPath).join(', ');
@@ -277,7 +285,16 @@ export class B2CExtensionConfig implements vscode.Disposable {
         workingDirectory = await detectWorkingDirectory(this.log);
         this.pinned = false;
       }
-      if (!workingDirectory || workingDirectory === '/' || !(await pathExists(workingDirectory))) {
+      // Never resolve config or run discovery out of a home/root directory or a
+      // path that no longer exists. isUnscannableRoot() also covers ''/'/' — a
+      // home-directory-as-folder layout must not trigger recursive scans that
+      // would stall the extension host (W-23618508).
+      if (isUnscannableRoot(workingDirectory) || !(await pathExists(workingDirectory))) {
+        if (workingDirectory) {
+          this.log.appendLine(
+            `[Config] Working directory ${workingDirectory} is a home/root or missing path; skipping discovery`,
+          );
+        }
         workingDirectory = '';
       }
       this.detectedDirectory = workingDirectory;
