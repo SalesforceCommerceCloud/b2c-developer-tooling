@@ -16,6 +16,7 @@
  */
 import {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
+import {createSitesBackend} from '../sites/index.js';
 
 /**
  * IDs discovered on an instance, grouped by data-unit category. Each list is
@@ -34,9 +35,12 @@ export interface ExportableUnits {
   warnings: string[];
 }
 
-/** A discoverable category and the OCAPI path used to list it. */
-const DISCOVERABLE = [
-  {key: 'sites', path: '/sites', label: 'sites'},
+/**
+ * Discoverable categories that only have an OCAPI "list-all" endpoint. Sites
+ * are handled separately via the SCAPI-first sites backend (SCAPI has no
+ * catalogs/inventory-list listing, so those stay on OCAPI).
+ */
+const OCAPI_DISCOVERABLE = [
   {key: 'catalogs', path: '/catalogs', label: 'catalogs'},
   {key: 'inventoryLists', path: '/inventory_lists', label: 'inventory lists'},
 ] as const;
@@ -48,7 +52,7 @@ const PAGE_COUNT = 200;
  * Lists one paginated OCAPI collection, following `start`/`count` until all
  * documents are read. Returns the `id` of each document.
  */
-async function listIds(instance: B2CInstance, path: '/sites' | '/catalogs' | '/inventory_lists'): Promise<string[]> {
+async function listIds(instance: B2CInstance, path: '/catalogs' | '/inventory_lists'): Promise<string[]> {
   const ids: string[] = [];
   let start = 0;
 
@@ -99,8 +103,23 @@ export async function discoverExportableUnits(instance: B2CInstance): Promise<Ex
   const logger = getLogger();
   const result: ExportableUnits = {sites: [], catalogs: [], inventoryLists: [], warnings: []};
 
-  await Promise.all(
-    DISCOVERABLE.map(async ({key, path, label}) => {
+  await Promise.all([
+    // Sites: SCAPI (site/sites) with OCAPI fallback.
+    (async () => {
+      try {
+        const sites = await createSitesBackend({instance}).listSites();
+        result.sites = sites
+          .map((s) => s.id)
+          .filter((id): id is string => !!id)
+          .sort((a, b) => a.localeCompare(b));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        logger.debug({err: message}, 'Failed to discover sites');
+        result.warnings.push(`Could not list sites: ${message}`);
+      }
+    })(),
+    // Catalogs + inventory lists: OCAPI only (no SCAPI list-all endpoint).
+    ...OCAPI_DISCOVERABLE.map(async ({key, path, label}) => {
       try {
         result[key] = (await listIds(instance, path)).sort((a, b) => a.localeCompare(b));
       } catch (err) {
@@ -109,7 +128,7 @@ export async function discoverExportableUnits(instance: B2CInstance): Promise<Ex
         result.warnings.push(`Could not list ${label}: ${message}`);
       }
     }),
-  );
+  ]);
 
   return result;
 }

@@ -8,8 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {findCartridges} from '../operations/code/cartridges.js';
 import type {B2CInstance} from '../instance/index.js';
-import type {OcapiComponents} from '../clients/index.js';
-import {isOcapiDeprecatedFault, OcapiDeprecatedError} from '../clients/error-utils.js';
+import {createSitesBackend} from '../operations/sites/index.js';
 import type {ScaffoldChoice, ScaffoldParameter, DynamicParameterSource, SourceResult} from './types.js';
 
 /**
@@ -149,19 +148,12 @@ export async function resolveRemoteSource(
 ): Promise<ScaffoldChoice[]> {
   switch (source) {
     case 'sites': {
-      const {data, error} = await instance.ocapi.GET('/sites', {
-        params: {query: {select: '(**)'}},
-      });
-
-      if (error) {
-        if (isOcapiDeprecatedFault(error)) throw new OcapiDeprecatedError({cause: error});
-        throw new Error('Failed to fetch sites from B2C instance', {cause: error});
-      }
-
-      const sites = data as OcapiComponents['schemas']['sites'];
-      return (sites.data ?? []).map((s) => ({
+      // SCAPI (site/sites) with OCAPI fallback; the backend surfaces the
+      // OcapiDeprecatedError itself when only a deprecated OCAPI is reachable.
+      const sites = await createSitesBackend({instance}).listSites();
+      return sites.map((s) => ({
         value: s.id ?? '',
-        label: s.display_name?.default || s.id || '',
+        label: s.displayName || s.id || '',
       }));
     }
     default: {

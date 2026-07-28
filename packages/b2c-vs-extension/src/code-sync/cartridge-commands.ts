@@ -9,6 +9,7 @@ import {
   addCartridge,
   removeCartridge,
   getCartridgePath,
+  createSitesBackend,
   type CartridgePosition,
 } from '@salesforce/b2c-tooling-sdk/operations/sites';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
@@ -100,15 +101,11 @@ async function pickSite(instance: B2CInstance): Promise<string | undefined> {
   let siteItems: {label: string; siteId: string}[] = [];
 
   try {
-    const {data, error} = await instance.ocapi.GET('/sites', {
-      params: {query: {select: '(**)'}},
-    });
-    if (!error && data) {
-      const sites = (data as {data?: {id?: string}[]}).data ?? [];
-      siteItems = sites
-        .filter((s): s is {id: string} => typeof s.id === 'string')
-        .map((s) => ({label: s.id, siteId: s.id}));
-    }
+    // SCAPI (site/sites) with OCAPI fallback.
+    const sites = await createSitesBackend({instance}).listSites();
+    siteItems = sites
+      .filter((s): s is typeof s & {id: string} => typeof s.id === 'string')
+      .map((s) => ({label: s.id, siteId: s.id}));
   } catch {
     // OAuth not available — fall through to manual input
   }
