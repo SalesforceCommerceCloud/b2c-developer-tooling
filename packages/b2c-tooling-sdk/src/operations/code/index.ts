@@ -79,7 +79,7 @@ export {
   deleteCodeVersion,
   createCodeVersion,
 } from './versions.js';
-export type {CodeVersion, CodeVersionResult} from './versions.js';
+export type {CodeVersion, CodeVersionActivationResult, CodeVersionResult} from './versions.js';
 
 // Deployment
 export {findAndDeployCartridges, uploadCartridges, deleteCartridges} from './deploy.js';

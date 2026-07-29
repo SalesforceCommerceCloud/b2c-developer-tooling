@@ -174,6 +174,52 @@ Common log file prefixes:
 | `deprecation` | Deprecated API usage |
 | `quota` | Quota warnings |
 
+The prefixes above are the **built-in** log files. In addition, any script that logs through a *custom logger category* writes to its own dedicated file with a `custom-` prefix — **distinct from `customerror`**. Integration and job code (payment gateways, ERP/OMS/CRM syncs, feed and import jobs) almost always logs this way, so the entry you need for a triage is frequently in a `custom-*` file, not in `error`/`customerror`.
+
+Custom log file names follow this pattern:
+
+```
+custom-<prefix>-<hostname>-appserver-<date>.log
+```
+
+The `<prefix>` segment is the **first argument** passed to `Logger.getLogger(prefix, category)` in the emitting code, so it maps a log file straight back to the code that wrote it:
+
+| Code | Log file | Filter to read it |
+|------|----------|-------------------|
+| `Logger.getLogger('PaymentProcessor', 'payment')` | `custom-PaymentProcessor-*.log` | `--filter custom-PaymentProcessor` |
+| `Logger.getLogger('PimTaxImport', 'tax')` | `custom-PimTaxImport-*.log` | `--filter custom-PimTaxImport` |
+| `Logger.getLogger('orderexport', 'export')` | `custom-orderexport-*.log` | `--filter custom-orderexport` |
+
+(The second argument is the log *category*, used for configuration; it does not appear in the file name.) For the authoring side — how to create these loggers — see the `b2c:b2c-logging` skill.
+
+> **Note:** `--filter` does a **prefix (starts-with) match** on a file's log category, not an exact match — so `--filter custom-` sweeps every `custom-*` file, and `--filter custom-Payment` also matches `custom-PaymentProcessor`. The category is extracted by taking everything up to the *second* dash, so a custom logger name is treated as word characters only (no dashes): a file named `custom-payment-gateway-*.log` is seen as category `custom-payment`. To read one specific custom log, filter on its full extracted prefix (e.g. `--filter custom-PimTaxImport`); to sweep them all, use `--filter custom-`.
+
+## Discovering Custom Log Files
+
+Because custom log files are not covered by the default `error`/`customerror` retrieval, discover them explicitly when investigating an integration or job:
+
+```bash
+# 1. Enumerate all log files, or narrow to just custom ones
+b2c logs list
+b2c logs list --filter custom
+
+# 2. Scan the output for an unfamiliar custom-* prefix whose size or
+#    last-modified time grew when the incident started, then read it
+b2c logs get --filter custom-PimTaxImport --since 1h
+
+# 3. Read all custom logs at once when you don't yet know the prefix
+b2c logs get --filter custom-
+```
+
+`b2c logs list` reports each file with its size and last-modified timestamp, which is the fastest way to spot the custom logger that lit up during an incident. Once you have the prefix, `--filter custom-<prefix>` (or a bare `--filter custom-` to sweep them all) reads the entries.
+
+If `logs list` output is incomplete or you want to confirm the raw `*.log` filenames on the instance, fall back to WebDAV:
+
+```bash
+# Enumerate log filenames directly over WebDAV
+b2c webdav ls --root logs
+```
+
 ## Logs in Subdirectories
 
 The `Logs/` directory contains subdirectories such as `internal/` (e.g. `server`, `ccp`, `health`, `csrf-violations`, `internalquota`). These are **not** listed by default. To reach them, pass a path-like `--filter` (one containing a `/`): the tooling then recurses into that subdirectory and matches files by their path relative to `Logs/`.
@@ -199,3 +245,4 @@ See `b2c logs --help` for all available commands and options.
 
 - `b2c-cli:b2c-webdav` - Direct WebDAV file access for downloading full log files
 - `b2c-cli:b2c-config` - Verify configuration and credentials
+- `b2c:b2c-logging` - Authoring side: how server-side code creates custom logger categories that produce `custom-*` log files

@@ -22,6 +22,7 @@ Use the `b2c` CLI to search and read B2C Commerce documentation spanning multipl
 - **Online content with local cache** — Script API, Developer Center guides, and Salesforce Help are fetched online when you read them and cached locally (memory + on-disk, 7-day TTL) so repeat reads avoid the network; graceful offline fallback shows the summary + headings + both URLs
 - **Content-aware ranking** — BM25-style search indexes titles, section headings, summaries, and keywords for better recall on conceptual questions
 - **Dual URLs** — Every publicly-available doc entry carries both `url` (human-facing .html page) and `sourceUrl` (raw .md source). Script API entries link developer.salesforce.com; Salesforce Help entries link the live help.salesforce.com article while content is served from a raw markdown mirror. Content is fetched via sourceUrl with offline fallback
+- **Related content** — Developer Center guides include their immediate TOC parent and children as `relatedEntries`; Salesforce Help landing entries use the same field for linked child articles and include a matching **Related Content** section in their raw Markdown
 - **Topic allowlist** — Bound the entire corpus to chosen categories via `--topics` flag or `SFCC_DOCS_TOPICS` env var, or the `docsCategories` config field (dw.json `docs-categories`, `SFCC_DOCS_CATEGORIES`, package.json). The MCP server has a `--docs-topics` startup flag
 - **Payload-conscious defaults** — MCP tools limit result count (5) and return lean fields by default; CLI defaults to 20 results; verbose mode adds extended fields
 
@@ -58,6 +59,9 @@ b2c docs search "authentication setup" --category tooling
 
 # Limit results (CLI default is 20, MCP default is 5)
 b2c docs search authentication --limit 5
+
+# Read the next page of ranked results
+b2c docs search authentication --limit 5 --offset 5
 
 # Show extended fields (url, sourceUrl, summary, keywords)
 b2c docs search authentication --columns id,title,category,url,summary
@@ -222,16 +226,16 @@ xmllint --schema "$(b2c docs schema catalog --path)" my-catalog.xml --noout
 
 ## Documentation Categories
 
-| Category                  | Description                                               | Example IDs                                         |
-| ------------------------- | --------------------------------------------------------- | --------------------------------------------------- |
-| `script-api`              | Server-side Script API reference (`dw.*` classes/modules) | `dw.catalog.ProductMgr`, `dw.order.Basket`          |
-| `commerce-api`            | Commerce API (SCAPI/OCAPI) conceptual and how-to guides   | `commerce-api/slas-passwordless-login-registration` |
-| `pwa-kit-managed-runtime` | PWA Kit and Managed Runtime (MRT) guides                  | `pwa-kit-managed-runtime/getting-started`           |
-| `sfra`                    | Storefront Reference Architecture (SFRA) guides           | `sfra/controllers-and-routes`                       |
-| `sfnext`                  | Storefront Next (deprecated) guides                       | `sfnext/sfnext-get-started`                         |
-| `b2c-commerce`            | General B2C Commerce platform guides                      | `b2c-commerce/business-manager-overview`            |
-| `tooling`                 | B2C CLI, MCP, SDK, and VS Code extension guides           | `guide-authentication`, `guide-configuration`       |
-| `job-step`                | Standard (system) job step catalog                        | `ImportCatalog`, `ExportCatalog`, `job-steps`       |
+| Category                  | Description                                                                                                                      | Example IDs                                         |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `script-api`              | Server-side Script API reference (`dw.*` classes/modules)                                                                        | `dw.catalog.ProductMgr`, `dw.order.Basket`          |
+| `commerce-api`            | Commerce API (SCAPI/OCAPI) conceptual and how-to guides                                                                          | `commerce-api/slas-passwordless-login-registration` |
+| `pwa-kit-managed-runtime` | PWA Kit and Managed Runtime (MRT) guides                                                                                         | `pwa-kit-managed-runtime/getting-started`           |
+| `sfra`                    | Storefront Reference Architecture (SFRA) guides                                                                                  | `sfra/controllers-and-routes`                       |
+| `sfnext`                  | Storefront Next (deprecated) guides                                                                                              | `sfnext/sfnext-get-started`                         |
+| `b2c-commerce`            | General B2C Commerce platform guides                                                                                             | `b2c-commerce/business-manager-overview`            |
+| `tooling`                 | B2C CLI, MCP, SDK, and VS Code extension guides                                                                                  | `guide-authentication`, `guide-configuration`       |
+| `job-step`                | Standard (system) job step catalog                                                                                               | `ImportCatalog`, `ExportCatalog`, `job-steps`       |
 | `help-admin`              | Salesforce Help — administration/ops (import/export, jobs, replication, security, Account Manager, permissions, logs, inventory) | `help-admin/b2c_site_import_export`                 |
 | `help-merchant`           | Salesforce Help — merchandising (catalogs, products, promotions, search, content, analytics, SEO)                                | `help-merchant/b2c_creating_price_books`            |
 

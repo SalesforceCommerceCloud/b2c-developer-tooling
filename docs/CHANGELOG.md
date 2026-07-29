@@ -1,5 +1,23 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.16
+
+### Patch Changes
+
+- [#592](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/592) [`f6b4ced`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f6b4ced5d40b8fcd8a9fbaf524f6dcdd83852b02) - Detect nested `dw.json` project roots in VS Code workspaces and allow nested folders to be pinned from Explorer, so parent-folder and multi-root layouts connect to the intended project. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#590](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/590) [`3fb0871`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3fb08711a90f3dc216fce5b8418b6fef0a6dfca9) - Document the figma-to-sfnext-pagedesigner plugin in the Agent Skills guide (Thanks [@lukejohnson-sf](https://github.com/lukejohnson-sf)!)
+
+- [#592](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/592) [`f6b4ced`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f6b4ced5d40b8fcd8a9fbaf524f6dcdd83852b02) - Treat activation of an already-active code version as success, preserve useful OCAPI fault details, and avoid redundant activation choices in VS Code. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.3.15
+
+### Patch Changes
+
+- [#581](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/581) [`1fe5ff2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1fe5ff2e49b4aef66c81ad9b9c9dd4b92d1da405) - Expose directly related documentation IDs from Salesforce Help child-topic links and Developer Center guide TOCs, including articles previously omitted from composite Help maps or hyphenated topic filenames. CLI and MCP documentation search results can now be paged by ranked position, so agents can traverse the full published content without surfacing future-profiled Help content. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#587](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/587) [`afeccee`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/afecceed7c6e6ac2ab6e5eff1d2f6f8e59692f5b) - Update the VS Code extension docs for its Marketplace and Open VSX launch: lead with installing directly from the editor's Extensions view (search for "Salesforce B2C Commerce"), document Open VSX availability for Cursor, VSCodium, Windsurf, and other VS Code–compatible editors, and clarify that this is the official Salesforce B2C Commerce extension. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.14
 
 ### Patch Changes

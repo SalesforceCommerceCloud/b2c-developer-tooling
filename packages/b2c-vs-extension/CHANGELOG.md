@@ -1,5 +1,29 @@
 # Change Log
 
+## 1.0.5
+
+### Patch Changes
+
+- [#598](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/598) [`258f6bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/258f6bdfc9f698fcebefca192d6ce7dd54bb4f0e) - Stop the VS Code extension from blocking other extensions in empty or non-B2C windows. Because the extension registers a TypeScript server plugin, VS Code activates it whenever any JavaScript/TypeScript file is opened — including windows with no folder. In that case the extension no longer falls back to the process working directory, and all cartridge/workspace discovery now runs only from a concrete workspace folder and never from a home or filesystem-root directory, so it can't trigger a recursive filesystem scan that stalls the extension host. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.0.4
+
+### Patch Changes
+
+- [#592](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/592) [`f6b4ced`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f6b4ced5d40b8fcd8a9fbaf524f6dcdd83852b02) - Detect nested `dw.json` project roots in VS Code workspaces and allow nested folders to be pinned from Explorer, so parent-folder and multi-root layouts connect to the intended project. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#592](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/592) [`f6b4ced`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f6b4ced5d40b8fcd8a9fbaf524f6dcdd83852b02) - Treat activation of an already-active code version as success, preserve useful OCAPI fault details, and avoid redundant activation choices in VS Code. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`f6b4ced`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f6b4ced5d40b8fcd8a9fbaf524f6dcdd83852b02)]:
+  - @salesforce/b2c-tooling-sdk@1.21.2
+
+## 1.0.3
+
+### Patch Changes
+
+- Updated dependencies [[`1fe5ff2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1fe5ff2e49b4aef66c81ad9b9c9dd4b92d1da405)]:
+  - @salesforce/b2c-tooling-sdk@1.21.1
+
 ## 1.0.2
 
 ### Patch Changes

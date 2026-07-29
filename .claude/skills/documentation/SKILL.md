@@ -264,8 +264,9 @@ pnpm run docs:preview
 Separate from the Vitepress site above, the SDK bundles a search index that
 powers `b2c docs search` / `docs read` and the MCP `docs_*` tools. For the
 Developer Center guides corpus, only lightweight metadata is bundled
-(`packages/b2c-tooling-sdk/data/guides/index.json`); the page content itself is
-fetched live from developer.salesforce.com at read time.
+(`packages/b2c-tooling-sdk/data/guides/index.json`), including immediate parent
+and child relationships derived from the published TOCs; the page content
+itself is fetched live from developer.salesforce.com at read time.
 
 Regenerate the index from a local clone of the `commerce-cloud-docs` content
 repo (defaults to `~/code/commerce-cloud-docs`):

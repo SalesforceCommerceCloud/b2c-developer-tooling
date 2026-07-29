@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "Salesforce B2C Commerce",
   "description": "Tools for developing on Salesforce B2C Commerce, including cartridge deployment, script debugging and IntelliSense, and sandbox management.",
-  "version": "1.0.2",
+  "version": "1.0.5",
   "publisher": "Salesforce",
   "icon": "media/icon.png",
   "license": "Apache-2.0",
@@ -44,7 +44,7 @@
     "workspaceContains:**/commerce-app.json",
     "workspaceContains:**/cartridge/*.properties",
     "workspaceContains:**/.project",
-    "workspaceContains:dw.json"
+    "workspaceContains:**/dw.json"
   ],
   "main": "./dist/extension.cjs",
   "capabilities": {
@@ -1882,6 +1882,11 @@
           "command": "b2c-dx.cap.install",
           "when": "explorerResourceIsFolder && resource in b2c-dx.capDirectories",
           "group": "3_cap"
+        },
+        {
+          "command": "b2c-dx.setProjectRoot",
+          "when": "explorerResourceIsFolder && resourceScheme == file && !explorerResourceIsRoot",
+          "group": "9_configuration"
         }
       ],
       "commandPalette": [

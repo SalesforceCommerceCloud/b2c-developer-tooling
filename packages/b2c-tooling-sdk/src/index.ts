@@ -225,6 +225,7 @@ export type {
   CartridgeMapping,
   FindCartridgesOptions,
   CodeVersion,
+  CodeVersionActivationResult,
   CodeVersionResult,
   DeployOptions,
   DeployResult,

@@ -21,8 +21,9 @@
  *     (dev never serves it). The generator stages the tree under the SDK's `tmp/`
  *     purely to build the tarball; that staging dir is git-ignored.
  *  2. Emits the lightweight bundled search index at `data/help/index.json` (title,
- *     section headings, `<shortdesc>` summary, merged-section keywords, and the two
- *     URLs). The index ships in the SDK package; content does not.
+ *     section headings, `<shortdesc>` summary, merged-section keywords, related
+ *     entry ids, and the two URLs). The index ships in the SDK package; content
+ *     does not.
  *
  * ## DITA chunking
  *
@@ -33,14 +34,22 @@
  * the ditamaps with those semantics so the corpus cardinality matches the real
  * site navigation (no phantom per-fragment entries), while the merged sections'
  * titles/shortdescs still enrich the parent page's searchable signal.
+ * Non-chunked child pages remain separate entries and are also emitted as the
+ * parent's related-content list, matching the linked cards on Salesforce Help.
+ * Nodes marked `otherprops="future"` are excluded from both map traversal and
+ * topic conversion so unpublished content does not leak into the corpus.
  *
  * ## Category assignment
  *
- * Each leaf ditamap is classed `help-admin` (platform ops: import/export, jobs,
- * replication, security, Account Manager, permissions, logs, inventory ops) or
- * `help-merchant` (merchandising: catalogs, products, promotions, search, content,
- * analytics, SEO). A few maps are excluded (Data Cloud, Agentforce, Einstein, CDP
- * connector) — that content is feature-marketing or covered by other corpora.
+ * Each ditamap with directly published topics is classed `help-admin` (platform
+ * ops: import/export, jobs, replication, security, Account Manager, permissions,
+ * logs, inventory ops) or `help-merchant` (merchandising: catalogs, products,
+ * promotions, search, content, analytics, SEO). Composite maps can contain both
+ * direct topicrefs and maprefs; their direct topics are indexed here while the
+ * referenced maps are processed independently. Data 360, Agentforce, Einstein,
+ * and the legacy CDP Connector maps are deliberately excluded even though they
+ * contain published Help articles: they are product-specific guides outside this
+ * corpus's focused Business Manager administration and merchandising scope.
  *
  * ## URL derivation
  *
@@ -91,13 +100,16 @@ const pagesSourceUrl = (category: string, id: string): string => `${PAGES_BASE}/
 // ---------------------------------------------------------------------------
 type HelpCategory = 'help-admin' | 'help-merchant';
 
-/** Maps whose content is intentionally NOT indexed (feature marketing / covered elsewhere). */
+/**
+ * Published product-specific Help maps intentionally kept outside this corpus's
+ * Business Manager administration and merchandising scope. Do not remove an
+ * exclusion without an explicit corpus-scope decision.
+ */
 const EXCLUDED_MAPS = new Set(['b2c_data_cloud', 'b2c_agentforce', 'b2c_einstein', 'b2c_cdp_connector']);
 
-/** Aggregator maps that only compose other maps via <mapref>; never walked directly. */
-const AGGREGATOR_MAPS = new Set(['b2c_merchandiser_administrator', 'b2c_merch', 'b2c_administer']);
-
 const ADMIN_MAPS = new Set([
+  'b2c_merchandiser_administrator',
+  'b2c_administer',
   'b2c_getting_started',
   'b2c_permissions',
   'b2c_jobs_refactored',
@@ -114,6 +126,7 @@ const ADMIN_MAPS = new Set([
 ]);
 
 const MERCHANT_MAPS = new Set([
+  'b2c_merch',
   'b2c_catalogs',
   'b2c_categories',
   'b2c_products',
@@ -143,7 +156,7 @@ const MERCHANT_MAPS = new Set([
 ]);
 
 function categoryFor(mapName: string): HelpCategory | null {
-  if (EXCLUDED_MAPS.has(mapName) || AGGREGATOR_MAPS.has(mapName)) return null;
+  if (EXCLUDED_MAPS.has(mapName)) return null;
   if (ADMIN_MAPS.has(mapName)) return 'help-admin';
   if (MERCHANT_MAPS.has(mapName)) return 'help-merchant';
   return null; // unclassified leaf map -> excluded until explicitly placed
@@ -162,6 +175,7 @@ interface HelpEntry {
   headings?: string;
   summary?: string;
   keywords?: string[];
+  relatedEntries?: string[];
 }
 
 interface SearchIndex {
@@ -202,13 +216,15 @@ const parser = new XMLParser({
 });
 
 const tagOf = (node: XmlNode): string => Object.keys(node).find((k) => k !== ':@') as string;
-const childrenOf = (node: XmlNode): XmlNode[] => (node[tagOf(node)] as XmlNode[]) ?? [];
 const attrsOf = (node: XmlNode): Record<string, string> => (node[':@'] as Record<string, string>) ?? {};
+const isFuture = (node: XmlNode): boolean => /(^|\s)future($|\s)/i.test(attrsOf(node)['@_otherprops']?.trim() ?? '');
+const childrenOf = (node: XmlNode): XmlNode[] =>
+  ((node[tagOf(node)] as XmlNode[]) ?? []).filter((child) => !isFuture(child));
 const findChild = (arr: XmlNode[] | undefined, name: string): XmlNode | undefined =>
   (arr ?? []).find((n) => tagOf(n) === name);
 const findChildren = (arr: XmlNode[] | undefined, name: string): XmlNode[] =>
   (arr ?? []).filter((n) => tagOf(n) === name);
-const idFromHref = (href: string | undefined): string | null => href?.match(/([a-z0-9_]+)\.xml$/i)?.[1] ?? null;
+const idFromHref = (href: string | undefined): string | null => href?.match(/(?:^|\/)([^/]+)\.xml$/i)?.[1] ?? null;
 
 /** Collapse insignificant XML pretty-print whitespace into single spaces. */
 function textEsc(s: string): string {
@@ -318,8 +334,8 @@ function rawText(children: XmlNode[] | undefined): string {
 /** Cross-references to other help topics (`*.xml`) rewrite to the live Help URL. */
 function mdLink(label: string, href: string): string {
   if (!href) return label;
-  const m = href.match(/([a-z0-9_]+)\.xml$/i);
-  if (m) return `[${label}](${helpArticleUrl(m[1])})`;
+  const id = idFromHref(href);
+  if (id) return `[${label}](${helpArticleUrl(id)})`;
   return `[${label}](${href})`;
 }
 
@@ -621,7 +637,7 @@ interface ParsedTopic {
 function parseTopic(file: string): ParsedTopic | null {
   const tree = parser.parse(fs.readFileSync(file, 'utf-8')) as XmlNode[];
   const rootNode = tree.find((n) => ['concept', 'task', 'reference', 'topic', 'dita'].includes(tagOf(n)));
-  if (!rootNode) return null;
+  if (!rootNode || isFuture(rootNode)) return null;
   const id = attrsOf(rootNode)['@_id'];
   if (!id) return null; // topics with no id are not standalone-published
   const kids = childrenOf(rootNode);
@@ -647,6 +663,8 @@ function parseTopic(file: string): ParsedTopic | null {
 interface Page {
   id: string;
   sections: Array<{id: string; depth: number}>;
+  /** Direct child pages that Help renders as linked cards below this article. */
+  relatedIds: string[];
 }
 
 /** Walk a ditamap into published pages (chunk-aware); merged sections carry depth. */
@@ -658,33 +676,41 @@ function pagesFromMap(mapsDir: string, mapName: string): Page[] {
   if (!mapNode) return [];
   const pages: Page[] = [];
 
-  const walk = (node: XmlNode, chunkRoot: Page | null, depth: number): void => {
+  const walk = (node: XmlNode, chunkRoot: Page | null, parentPage: Page | null, depth: number): void => {
     const attrs = attrsOf(node);
     const id = idFromHref(attrs['@_href']);
     const chunk = attrs['@_chunk'];
     let nextRoot = chunkRoot;
+    let nextParent = parentPage;
     let nextDepth = depth;
     if (id) {
       if (chunk === 'to-content') {
-        const page: Page = {id, sections: []};
+        const page: Page = {id, sections: [], relatedIds: []};
         pages.push(page);
+        parentPage?.relatedIds.push(id);
         nextRoot = page;
+        nextParent = page;
         nextDepth = 1;
       } else if (chunkRoot) {
         chunkRoot.sections.push({id, depth});
         nextRoot = chunkRoot;
+        // This topic is merged into the chunk root rather than published as a
+        // page, so any nested chunk starts a related page of the chunk root.
+        nextParent = chunkRoot;
         nextDepth = depth + 1;
       } else {
-        const page: Page = {id, sections: []};
+        const page: Page = {id, sections: [], relatedIds: []};
         pages.push(page);
+        parentPage?.relatedIds.push(id);
         nextRoot = null;
+        nextParent = page;
         nextDepth = 1;
       }
     }
-    for (const c of findChildren(childrenOf(node), 'topicref')) walk(c, nextRoot, nextDepth);
+    for (const c of findChildren(childrenOf(node), 'topicref')) walk(c, nextRoot, nextParent, nextDepth);
   };
 
-  for (const tr of findChildren(childrenOf(mapNode), 'topicref')) walk(tr, null, 0);
+  for (const tr of findChildren(childrenOf(mapNode), 'topicref')) walk(tr, null, null, 0);
   return pages;
 }
 
@@ -755,6 +781,19 @@ function main(): void {
         if (body) parts.push('', body);
       }
 
+      const relatedTopics = page.relatedIds
+        .map((id) => resolveTopic(id))
+        .filter((topic): topic is ParsedTopic => topic !== null);
+      if (relatedTopics.length > 0) {
+        parts.push('', '## Related Content');
+        for (const topic of relatedTopics) {
+          parts.push(
+            '',
+            `- [${topic.title}](${helpArticleUrl(topic.id)})${topic.summary ? `\n  ${topic.summary}` : ''}`,
+          );
+        }
+      }
+
       const md =
         parts
           .join('\n')
@@ -772,10 +811,23 @@ function main(): void {
         ...(headings.length && {headings: headings.join(' • ')}),
         ...(rootTopic.summary && {summary: rootTopic.summary}),
         ...(keywords.length && {keywords}),
+        ...(relatedTopics.length && {
+          relatedEntries: relatedTopics.map((topic) => `${category}/${topic.id}`),
+        }),
       });
       perCategory[category] = (perCategory[category] ?? 0) + 1;
       perMap[mapName] = (perMap[mapName] ?? 0) + 1;
     }
+  }
+
+  // A topic can be referenced from more than one map. The first published page
+  // wins (matching the existing `seen` behavior), so discard any relationship
+  // whose category-qualified id did not make it into the final corpus.
+  const publishedIds = new Set(entries.map((entry) => entry.id));
+  for (const entry of entries) {
+    if (!entry.relatedEntries) continue;
+    entry.relatedEntries = [...new Set(entry.relatedEntries)].filter((id) => publishedIds.has(id));
+    if (entry.relatedEntries.length === 0) delete entry.relatedEntries;
   }
 
   entries.sort((a, b) => a.id.localeCompare(b.id));

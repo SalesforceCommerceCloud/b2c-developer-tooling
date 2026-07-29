@@ -156,6 +156,8 @@ export SFCC_PASSWORD=my-access-key
 b2c code deploy
 ```
 
+`--activate` is idempotent: if the target version is already active, deployment succeeds and no activation change is made. Use `--reload` when you need to force the instance to reload code that was uploaded to the active version.
+
 ### Cartridge Discovery
 
 Cartridges are discovered by searching for `.project` files (Eclipse project markers commonly used in SFCC development). The directory containing the `.project` file is considered a cartridge.
@@ -278,7 +280,7 @@ b2c code activate --code-version v2
 
 ### Reload vs Activate
 
-- **Activate**: Sets the specified code version as the active version
+- **Activate**: Sets the specified code version as active. If it is already active, the command succeeds without making a change.
 - **Reload**: Forces the instance to reload the code by temporarily activating a different version, then re-activating the target version
 
 Use `--reload` when you've made changes via WebDAV and need the instance to pick up the changes without deploying again.

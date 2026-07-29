@@ -4,7 +4,6 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {
-  findCartridges,
   uploadFiles,
   fileToCartridgePath,
   uploadCartridges,
@@ -15,6 +14,7 @@ import {
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {findCartridgesSafe} from '../workspace-discovery.js';
 
 const DEBOUNCE_MS = 150;
 const ERROR_RATE_LIMIT_MS = 5000;
@@ -59,7 +59,7 @@ export class CodeSyncManager implements vscode.Disposable {
     this.instance = instance;
 
     // Discover cartridges
-    const cartridges = findCartridges(directory);
+    const cartridges = findCartridgesSafe(directory);
     if (cartridges.length === 0) {
       vscode.window.showWarningMessage('B2C DX: No cartridges found (no .project files in workspace).');
       return;
@@ -119,7 +119,7 @@ export class CodeSyncManager implements vscode.Disposable {
   refreshCartridges(directory: string): void {
     if (!this.watching) return;
 
-    const cartridges = findCartridges(directory);
+    const cartridges = findCartridgesSafe(directory);
     const existingNames = new Set(this.cartridges.map((c) => c.name));
     const newCartridges = cartridges.filter((c) => !existingNames.has(c.name));
 
@@ -217,7 +217,7 @@ export class CodeSyncManager implements vscode.Disposable {
   }
 
   async uploadFileOrFolder(instance: B2CInstance, uri: vscode.Uri, directory: string): Promise<void> {
-    const cartridges = this.cartridges.length > 0 ? this.cartridges : findCartridges(directory);
+    const cartridges = this.cartridges.length > 0 ? this.cartridges : findCartridgesSafe(directory);
     const filePath = uri.fsPath;
 
     const cartridge = cartridges.find((c) => filePath.startsWith(c.src));

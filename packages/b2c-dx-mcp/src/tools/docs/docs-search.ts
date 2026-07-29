@@ -18,6 +18,7 @@ const DEFAULT_LIMIT = 5;
 
 interface SearchInput {
   limit?: number;
+  offset?: number;
   query: string;
   category?: DocCategory;
   workspace?: WorkspaceParam;
@@ -41,7 +42,11 @@ interface SearchOutput {
   query: string;
   category?: DocCategory;
   workspace?: ProjectType[];
+  total: number;
+  offset: number;
   results: LeanResult[];
+  truncated?: boolean;
+  nextOffset?: number;
 }
 
 /**
@@ -101,6 +106,12 @@ export function createDocsSearchTool(
           .positive()
           .optional()
           .describe(`Maximum number of results to return. Defaults to ${DEFAULT_LIMIT}.`),
+        offset: z
+          .number()
+          .int()
+          .nonnegative()
+          .optional()
+          .describe('Number of ranked results to skip (for pagination). Defaults to 0.'),
         verbose: z
           .boolean()
           .optional()
@@ -108,17 +119,27 @@ export function createDocsSearchTool(
       },
       async execute(args) {
         const workspace = resolveWorkspace(args.workspace, detectedWorkspaces);
-        const results = searchDocs(args.query, {
-          limit: args.limit ?? DEFAULT_LIMIT,
+        const limit = args.limit ?? DEFAULT_LIMIT;
+        const offset = args.offset ?? 0;
+        // The SDK returns top-N search hits. Retrieve the complete ranked set here
+        // so MCP can report a total and provide stable offset-based pagination.
+        const ranked = searchDocs(args.query, {
+          limit: Number.MAX_SAFE_INTEGER,
           category: args.category,
           workspace,
           enabledCategories,
         });
+        const results = ranked.slice(offset, offset + limit);
+        const end = offset + results.length;
+        const truncated = end < ranked.length;
         return {
           query: args.query,
           ...(args.category && {category: args.category}),
           ...(workspace && {workspace}),
+          total: ranked.length,
+          offset,
           results: results.map((r) => leanResult(r.entry, r.score, args.verbose ?? false)),
+          ...(truncated && {truncated: true, nextOffset: end}),
         };
       },
       formatOutput: (output) => jsonResult(output),
