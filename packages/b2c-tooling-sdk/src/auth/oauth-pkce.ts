@@ -317,6 +317,17 @@ export class PkceOAuthStrategy implements AuthStrategy {
       body.set('scope', this.config.scopes.join(' '));
     }
 
+    logger.debug({method: 'POST', url: tokenUrl}, '[Auth REQ] POST /dwsso/oauth2/access_token (refresh_token)');
+    // refresh_token is a secret; trace only the non-sensitive parameters.
+    logger.trace(
+      {
+        method: 'POST',
+        url: tokenUrl,
+        body: {grant_type: 'refresh_token', client_id: this.config.clientId, scope: this.config.scopes?.join(' ')},
+      },
+      '[Auth REQ BODY] POST /dwsso/oauth2/access_token (refresh_token)',
+    );
+
     let response: Response;
     try {
       response = await fetch(tokenUrl, {
@@ -330,8 +341,16 @@ export class PkceOAuthStrategy implements AuthStrategy {
       return null;
     }
 
+    logger.debug(
+      {url: tokenUrl, status: response.status},
+      `[Auth RESP] POST /dwsso/oauth2/access_token ${response.status}`,
+    );
     if (!response.ok) {
       const text = await response.text();
+      logger.trace(
+        {url: tokenUrl, status: response.status, body: text},
+        '[Auth RESP BODY] POST /dwsso/oauth2/access_token (refresh_token)',
+      );
       logger.debug({status: response.status, body: text}, '[Auth] PKCE refresh failed; falling back to browser flow');
       this._refreshToken = null;
       return null;
@@ -361,6 +380,11 @@ export class PkceOAuthStrategy implements AuthStrategy {
     };
     if (parsed.refresh_token) {
       this._refreshToken = parsed.refresh_token;
+    }
+    try {
+      logger.trace({jwt: decodeJWT(parsed.access_token).payload}, '[Auth] Refreshed PKCE access token JWT payload');
+    } catch {
+      // access token is not a JWT; nothing to trace
     }
     this.persistTokens(tokenResponse);
     logger.debug({clientId: this.config.clientId}, '[Auth] PKCE token refreshed silently');
@@ -404,8 +428,14 @@ export class PkceOAuthStrategy implements AuthStrategy {
 
   private async runFlow(): Promise<AccessTokenResponse> {
     const logger = getLogger();
+    logger.trace(
+      {clientId: this.config.clientId, scopes: this.config.scopes, redirectUri: this.redirectUri},
+      '[Auth] Starting Authorization Code + PKCE flow',
+    );
     const {verifier, challenge} = generatePkcePair();
     const state = base64url(randomBytes(16));
+    // Verifier is a secret; trace only the derived challenge and state.
+    logger.trace({codeChallenge: challenge, codeChallengeMethod: 'S256', state}, '[Auth] Generated PKCE challenge');
 
     const params = new URLSearchParams({
       client_id: this.config.clientId,
@@ -442,12 +472,31 @@ export class PkceOAuthStrategy implements AuthStrategy {
       code_verifier: verifier,
     });
 
+    logger.debug({method: 'POST', url: tokenUrl}, '[Auth REQ] POST /dwsso/oauth2/access_token (authorization_code)');
+    // Redact the single-use code and PKCE verifier from the traced body.
+    logger.trace(
+      {
+        method: 'POST',
+        url: tokenUrl,
+        body: {grant_type: 'authorization_code', redirect_uri: this.redirectUri, client_id: this.config.clientId},
+      },
+      '[Auth REQ BODY] POST /dwsso/oauth2/access_token',
+    );
+
     const tokenRes = await fetch(tokenUrl, {
       method: 'POST',
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       body: tokenBody.toString(),
     });
     const rawText = await tokenRes.text();
+    logger.debug(
+      {url: tokenUrl, status: tokenRes.status},
+      `[Auth RESP] POST /dwsso/oauth2/access_token ${tokenRes.status}`,
+    );
+    logger.trace(
+      {url: tokenUrl, status: tokenRes.status, body: rawText},
+      '[Auth RESP BODY] POST /dwsso/oauth2/access_token',
+    );
     if (!tokenRes.ok) {
       // Distinguish "this client can't do the code grant" (which the implicit
       // fallback can rescue) from real errors that would fail identically under
@@ -490,6 +539,12 @@ export class PkceOAuthStrategy implements AuthStrategy {
 
     if (parsed.refresh_token) {
       this._refreshToken = parsed.refresh_token;
+    }
+    logger.trace({scopes, expires, hasRefreshToken: !!parsed.refresh_token}, '[Auth] PKCE token exchange succeeded');
+    try {
+      logger.trace({jwt: decodeJWT(parsed.access_token).payload}, '[Auth] PKCE access token JWT payload');
+    } catch {
+      // access token is not a JWT; nothing to trace
     }
     this.persistTokens(tokenResponse);
 
