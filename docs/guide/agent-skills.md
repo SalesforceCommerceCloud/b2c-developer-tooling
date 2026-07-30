@@ -2,6 +2,8 @@
 description: Agentic B2C Developer Toolkit — AI agent skills, plugins, and the MCP server that teach Agentforce Vibes, Claude Code, Codex, Cursor, and GitHub Copilot the full B2C Commerce stack.
 ---
 
+<!-- docs-preview-refresh: 2026-07-30 -->
+
 # Agent Skills + MCP
 
 Turn your coding agent into a B2C Commerce specialist. **Skills** teach your agent how the platform works and which CLI commands to run; the **MCP server** adds project-aware tooling (live logs, debugging, scaffolding). Together they cover the full stack — storefront and headless development, operational workflows, and everything in between.
