@@ -18,7 +18,7 @@ b2c bm roles get Administrator
 
 | Command | Backend | Scope |
 |---|---|---|
-| `bm users list/get/update/delete` | SCAPI | `sfcc.users.rw` |
+| `bm users list/get/create/update/delete` | SCAPI | `sfcc.users.rw` |
 | `bm roles list/get/create/delete` | SCAPI | `sfcc.roles.rw` |
 | `bm roles grant/revoke` | SCAPI | `sfcc.roles.rw` |
 | `bm roles permissions get/set` | SCAPI | `sfcc.roles.rw` |
@@ -294,8 +294,8 @@ The file follows the OCAPI `role_permissions` schema with four sections:
 
 `b2c bm users` — query and manage instance-level Business Manager users via the OCAPI `/users` resource.
 
-::: tip
-Most production instances use SSO with Account Manager; creating *local* BM users via the Data API is rejected with `LocalUserCreationException`. These commands focus on read/search/lifecycle for AM-managed users plus access-key administration.
+::: warning Local user creation is often disabled
+`b2c bm users create` performs a create-or-replace. Most production instances use SSO with Account Manager and **reject creating *local* BM users** — the server responds with `LocalUserCreationException` ("creation of a local Business Manager user is not allowed with the current server settings"). Creation succeeds only when the instance is explicitly configured to allow local users; otherwise use Account Manager to provision users and manage them here (read/update/delete/search) plus access-key administration.
 :::
 
 ### b2c bm users list
@@ -363,6 +363,29 @@ b2c bm users search --search-phrase smith
 b2c bm users search --locked --sort-by last_login_date --sort-order desc
 b2c bm users search --query '{"text_query":{"fields":["login"],"search_phrase":"foo"}}'
 ```
+
+### b2c bm users create
+
+Create a Business Manager user (create-or-replace via `PUT /users/{login}`). `--email` is required; the login argument is the user's login (typically their email).
+
+::: warning
+This succeeds only on instances configured to allow local BM users. On SSO/Account-Manager–only instances the server rejects it with `LocalUserCreationException` — provision the user in Account Manager instead. Because it is create-or-replace, running it against an existing login replaces that user's attributes.
+:::
+
+```bash
+b2c bm users create <login> --email <email> [--first-name <name>] [--last-name <name>] \
+    [--external-id <id>] [--password <password>] [--role <role>...] \
+    [--disabled | --no-disabled] [--preferred-ui-locale <locale>] [--preferred-data-locale <locale>]
+```
+
+```bash
+b2c bm users create user@example.com --email user@example.com
+b2c bm users create user@example.com --email user@example.com --first-name Jane --last-name Doe
+b2c bm users create user@example.com --email user@example.com --role Administrator --role bm-admin
+b2c bm users create user@example.com --email user@example.com --external-id ext-123
+```
+
+`--password` applies only to local users and is ignored for SSO/AM-managed accounts. `--role` is repeatable.
 
 ### b2c bm users update
 

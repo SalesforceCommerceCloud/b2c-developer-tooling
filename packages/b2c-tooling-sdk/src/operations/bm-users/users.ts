@@ -9,9 +9,10 @@
  * Provides functions for querying and managing instance-level users via OCAPI Data API.
  *
  * Note: Most production B2C Commerce instances delegate user identity to Account Manager
- * (SSO), so creating local Business Manager users via the Data API typically fails with
- * `LocalUserCreationException`. These operations focus on read/search/lifecycle of
- * AM-managed users plus access-key administration.
+ * (SSO), so create-or-replace (PUT) is rejected with `LocalUserCreationException` unless the
+ * instance is configured to allow local Business Manager users. When SSO-managed, provision
+ * users in Account Manager and use these operations for read/search/update/delete plus
+ * access-key administration.
  */
 import type {B2CInstance} from '../../instance/index.js';
 import type {components} from '../../clients/ocapi.generated.js';

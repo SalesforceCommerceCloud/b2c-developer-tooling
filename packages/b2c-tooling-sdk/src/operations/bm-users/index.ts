@@ -9,9 +9,11 @@
  * Provides functions for querying and managing instance-level users via OCAPI Data API.
  * These are distinct from Account Manager users managed via {@link @salesforce/b2c-tooling-sdk/operations/users | operations/users}.
  *
- * On instances using SSO with Account Manager (the default for production), creating local
- * BM users via the Data API is rejected with `LocalUserCreationException`. These operations
- * focus on read/search/lifecycle of AM-managed users plus access-key administration.
+ * Create-or-replace is supported via the backend's `createOrReplaceUser` method (PUT), obtained
+ * from {@link createUsersBackend}. On instances using SSO with Account Manager (the default for
+ * production) this is rejected with `LocalUserCreationException` — local user creation must be
+ * enabled on the instance for it to succeed; otherwise provision users in Account Manager and
+ * use these operations for read/search/update/delete plus access-key administration.
  *
  * ## Core User Functions
  *

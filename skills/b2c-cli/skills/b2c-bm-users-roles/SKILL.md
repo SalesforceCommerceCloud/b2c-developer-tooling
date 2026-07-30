@@ -81,7 +81,7 @@ The permissions JSON has four sections: `functional`, `module`, `locale`, and `w
 
 ## Business Manager Users
 
-Most production instances use SSO with Account Manager — creating *local* BM users is rejected with `LocalUserCreationException`. These commands focus on **read/search/update/delete** for AM-managed users plus the per-user access-key administration below.
+These commands cover the full lifecycle — **create/read/search/update/delete** — for BM users, plus the per-user access-key administration below. Note that `bm users create` is a create-or-replace that only works on instances configured to allow *local* BM users; most production instances use SSO with Account Manager and reject it with `LocalUserCreationException`, in which case users are provisioned in Account Manager and managed here for the rest of their lifecycle.
 
 ```bash
 # list (default 25)
@@ -92,6 +92,11 @@ b2c bm users list --columns login,email,lastLogin  # custom column set
 
 # get one user by login (email)
 b2c bm users get user@example.com
+
+# create a user (create-or-replace; --email required, --role repeatable)
+# only on instances that allow local users — else LocalUserCreationException
+b2c bm users create user@example.com --email user@example.com
+b2c bm users create user@example.com --email user@example.com --first-name Jane --last-name Doe --role Administrator
 
 # search by attribute (any combination of flags)
 b2c bm users search --search-phrase smith
