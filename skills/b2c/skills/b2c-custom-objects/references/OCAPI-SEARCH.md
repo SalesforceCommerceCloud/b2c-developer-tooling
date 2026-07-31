@@ -5,7 +5,7 @@ Full reference for searching custom objects via OCAPI Data API.
 ## Search Endpoint
 
 ```http
-POST /s/-/dw/data/v24_1/custom_object_search/{object_type}
+POST /s/-/dw/data/v{version}/custom_objects_search/{object_type}
 Authorization: Bearer {token}
 Content-Type: application/json
 ```
@@ -40,28 +40,30 @@ Content-Type: application/json
 {
     "query": {
         "term_query": {
-            "field": "c_status",
-            "value": "active"
+            "fields": ["c_status"],
+            "operator": "is",
+            "values": ["active"]
         }
     }
 }
 ```
 
-Supports operators:
-- `is` (default): Exact match
+`fields` is a required array, and `operator` is required. `values`, when used, is an array;
+omit it for `is_null` and `is_not_null`. Supported operators:
+- `is`: Exact match
 - `one_of`: Match any value in array
 - `is_null`: Check for null
 - `is_not_null`: Check for non-null
-- `less`, `greater`, `less_or_equal`, `greater_or_equal`: Comparisons
+- `less`, `greater`: Comparisons
 - `not_in`: Exclude values
 - `neq`: Not equal
 
 ```json
 {
     "term_query": {
-        "field": "c_priority",
+        "fields": ["c_priority"],
         "operator": "greater",
-        "value": 5
+        "values": [5]
     }
 }
 ```
@@ -69,7 +71,7 @@ Supports operators:
 ```json
 {
     "term_query": {
-        "field": "c_status",
+        "fields": ["c_status"],
         "operator": "one_of",
         "values": ["active", "pending"]
     }
@@ -89,17 +91,24 @@ Supports operators:
 }
 ```
 
-### Range Query
+### Range Filter
+
+There is no `range_query`. Ranges are expressed as a `range_filter` inside a `filtered_query`:
 
 ```json
 {
     "query": {
-        "range_query": {
-            "field": "c_count",
-            "from": 1,
-            "to": 100,
-            "from_inclusive": true,
-            "to_inclusive": false
+        "filtered_query": {
+            "query": { "match_all_query": {} },
+            "filter": {
+                "range_filter": {
+                    "field": "c_count",
+                    "from": 1,
+                    "to": 100,
+                    "from_inclusive": true,
+                    "to_inclusive": false
+                }
+            }
         }
     }
 }
@@ -114,14 +123,14 @@ Combine multiple queries:
     "query": {
         "bool_query": {
             "must": [
-                { "term_query": { "field": "c_isActive", "value": true } },
-                { "term_query": { "field": "c_type", "value": "premium" } }
+                { "term_query": { "fields": ["c_isActive"], "operator": "is", "values": [true] } },
+                { "term_query": { "fields": ["c_type"], "operator": "is", "values": ["premium"] } }
             ],
             "should": [
-                { "term_query": { "field": "c_priority", "operator": "greater", "value": 5 } }
+                { "term_query": { "fields": ["c_priority"], "operator": "greater", "values": [5] } }
             ],
             "must_not": [
-                { "term_query": { "field": "c_status", "value": "deleted" } }
+                { "term_query": { "fields": ["c_status"], "operator": "is", "values": ["deleted"] } }
             ]
         }
     }
@@ -159,9 +168,10 @@ Combine query with filter (filter doesn't affect scoring):
                 }
             },
             "filter": {
-                "term_query": {
+                "term_filter": {
                     "field": "c_isActive",
-                    "value": true
+                    "operator": "is",
+                    "values": [true]
                 }
             }
         }
@@ -180,8 +190,9 @@ Query nested objects:
             "path": "c_addresses",
             "query": {
                 "term_query": {
-                    "field": "c_addresses.city",
-                    "value": "Boston"
+                    "fields": ["c_addresses.city"],
+                    "operator": "is",
+                    "values": ["Boston"]
                 }
             }
         }
@@ -218,29 +229,24 @@ Query nested objects:
 
 ## Response Structure
 
+This example assumes `MyType` defines a string key attribute named `customObjectId`.
+
 ```json
 {
-    "_v": "24.1",
-    "count": 25,
-    "data": [
-        {
-            "key_property": "key1",
-            "c_name": "Test Object",
-            "c_status": "active",
-            "creation_date": "2024-01-15T10:30:00.000Z"
-        }
-    ],
-    "expand": [],
+    "count": 1,
     "hits": [
         {
-            "data": { },
-            "relevant_attributes": ["c_name"]
+            "key_property": "customObjectId",
+            "key_value_string": "key1",
+            "object_type": "MyType",
+            "c_name": "Test Object",
+            "c_status": "active"
         }
     ],
-    "query": { },
+    "query": { "match_all_query": {} },
     "select": "(**)",
     "start": 0,
-    "total": 150
+    "total": 1
 }
 ```
 
@@ -248,11 +254,11 @@ Query nested objects:
 
 ```bash
 # First page
-curl -X POST ".../custom_object_search/MyType" \
+curl -X POST ".../custom_objects_search/MyType" \
   -d '{"query":{"match_all_query":{}},"start":0,"count":25}'
 
 # Second page
-curl -X POST ".../custom_object_search/MyType" \
+curl -X POST ".../custom_objects_search/MyType" \
   -d '{"query":{"match_all_query":{}},"start":25,"count":25}'
 ```
 
@@ -265,12 +271,13 @@ Find active premium configs modified in the last 7 days:
     "query": {
         "bool_query": {
             "must": [
-                { "term_query": { "field": "c_isActive", "value": true } },
-                { "term_query": { "field": "c_tier", "value": "premium" } },
+                { "term_query": { "fields": ["c_isActive"], "operator": "is", "values": [true] } },
+                { "term_query": { "fields": ["c_tier"], "operator": "is", "values": ["premium"] } },
                 {
-                    "range_query": {
-                        "field": "last_modified",
-                        "from": "2024-01-08T00:00:00.000Z"
+                    "term_query": {
+                        "fields": ["last_modified"],
+                        "operator": "greater",
+                        "values": ["2024-01-08T00:00:00.000Z"]
                     }
                 }
             ]
