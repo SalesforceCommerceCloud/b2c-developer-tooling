@@ -125,6 +125,7 @@ Use `WSUtil` for WS-Security headers:
 
 ```javascript
 var WSUtil = require('dw/ws/WSUtil');
+var HashMap = require('dw/util/HashMap');
 
 var secureService = LocalServiceRegistry.createService('my.secure.soap', {
     initServiceClient: function (svc) {
@@ -133,15 +134,20 @@ var secureService = LocalServiceRegistry.createService('my.secure.soap', {
 
     createRequest: function (svc, params) {
         var stub = svc.serviceClient;
-
-        // Add WS-Security UsernameToken
         var credential = svc.configuration.credential;
-        WSUtil.setWSSecurityUsernameToken(
-            stub,
-            credential.user,
-            credential.password,
-            null  // nonce (optional)
-        );
+
+        // Add a WS-Security UsernameToken via the WS-Security config map.
+        // The password is passed through the secrets map, keyed by user name.
+        var requestConfig = new HashMap();
+        requestConfig.put(WSUtil.WS_ACTION, WSUtil.WS_USERNAME_TOKEN);
+        requestConfig.put(WSUtil.WS_USER, credential.user);
+        requestConfig.put(WSUtil.WS_PASSWORD_TYPE, WSUtil.WS_PW_TEXT);
+
+        var secrets = new HashMap();
+        secrets.put(credential.user, credential.password);
+        requestConfig.put(WSUtil.WS_SECRETS_MAP, secrets);
+
+        WSUtil.setWSSecurityConfig(stub, requestConfig, null);
 
         var request = new webreferences2.SecureServiceWSDL.SecureRequest();
         request.setData(params.data);
@@ -165,16 +171,27 @@ var secureService = LocalServiceRegistry.createService('my.secure.soap', {
 
 ### WSUtil Methods
 
-| Method | Description |
-|--------|-------------|
-| `setWSSecurityUsernameToken(stub, user, pass, nonce)` | Add UsernameToken header |
-| `setProperty(stub, property, value)` | Set SOAP property |
-| `addSOAPHeader(stub, namespace, name, value)` | Add custom SOAP header |
+| Method                                                           | Description                                          |
+| ---------------------------------------------------------------- | ---------------------------------------------------- |
+| `setWSSecurityConfig(port, requestConfigMap, responseConfigMap)` | Configure WS-Security for request and response       |
+| `setUserNamePassword(user, password, port)`                      | HTTP Basic authentication (weaker than WS-Security)  |
+| `setProperty(key, value, port)`                                  | Set a SOAP property                                  |
+| `getProperty(key, port)`                                         | Read a SOAP property                                 |
+| `addSOAPHeader(port, xml, mustUnderstand, actor)`                | Add a custom SOAP header (2nd arg is the header XML) |
+| `clearSOAPHeaders(port)`                                         | Remove previously added headers                      |
+| `setRequestTimeout(ms, port)` / `setConnectionTimeout(ms, port)` | Timeouts                                             |
+| `setHTTPRequestHeader(port, key, value)`                         | Set an HTTP-level request header                     |
+
+Key WS-Security config constants: `WS_ACTION`, `WS_USERNAME_TOKEN`, `WS_TIMESTAMP`, `WS_SIGNATURE`,
+`WS_ENCRYPT`, `WS_NO_SECURITY`, `WS_USER`, `WS_PASSWORD_TYPE` (`WS_PW_TEXT` / `WS_PW_DIGEST`), and
+`WS_SECRETS_MAP`. There is no `setWSSecurityUsernameToken()` and no nonce generator — a UsernameToken
+is configured through the map shown above.
 
 ### WS-Security with Timestamps
 
 ```javascript
 var WSUtil = require('dw/ws/WSUtil');
+var HashMap = require('dw/util/HashMap');
 
 var timestampService = LocalServiceRegistry.createService('my.timestamp.soap', {
     initServiceClient: function (svc) {
@@ -186,15 +203,18 @@ var timestampService = LocalServiceRegistry.createService('my.timestamp.soap', {
         var credential = svc.configuration.credential;
 
         // Username token with timestamp
-        WSUtil.setWSSecurityUsernameToken(
-            stub,
-            credential.user,
-            credential.password,
-            WSUtil.generateNonce()
-        );
+        // Request both a Timestamp and a UsernameToken. WS_ACTION takes a
+        // space-separated list of actions.
+        var requestConfig = new HashMap();
+        requestConfig.put(WSUtil.WS_ACTION, WSUtil.WS_TIMESTAMP + ' ' + WSUtil.WS_USERNAME_TOKEN);
+        requestConfig.put(WSUtil.WS_USER, credential.user);
+        requestConfig.put(WSUtil.WS_PASSWORD_TYPE, WSUtil.WS_PW_DIGEST);
 
-        // Set timestamp properties
-        WSUtil.setProperty(stub, WSUtil.WS_ACTION, 'Timestamp UsernameToken');
+        var secrets = new HashMap();
+        secrets.put(credential.user, credential.password);
+        requestConfig.put(WSUtil.WS_SECRETS_MAP, secrets);
+
+        WSUtil.setWSSecurityConfig(stub, requestConfig, null);
 
         var request = new webreferences2.TimestampServiceWSDL.Request();
         request.setData(params.data);
@@ -219,6 +239,7 @@ var timestampService = LocalServiceRegistry.createService('my.timestamp.soap', {
 
 ```javascript
 var WSUtil = require('dw/ws/WSUtil');
+var StringUtils = require('dw/util/StringUtils');
 
 var headerService = LocalServiceRegistry.createService('my.header.soap', {
     initServiceClient: function (svc) {
@@ -228,12 +249,18 @@ var headerService = LocalServiceRegistry.createService('my.header.soap', {
     createRequest: function (svc, params) {
         var stub = svc.serviceClient;
 
-        // Add custom SOAP header
+        // Add custom SOAP header. The second argument is the complete header
+        // XML — namespaces are declared inline, not passed separately. Escape
+        // dynamic values so they cannot break or inject markup into the header.
         WSUtil.addSOAPHeader(
             stub,
-            'http://example.com/ns',
-            'CustomHeader',
-            '<customValue>' + params.headerValue + '</customValue>'
+            '<ns:CustomHeader xmlns:ns="http://example.com/ns">' +
+                '<ns:customValue>' +
+                StringUtils.stringToXml(String(params.headerValue)) +
+                '</ns:customValue>' +
+                '</ns:CustomHeader>',
+            false, // mustUnderstand
+            null // actor
         );
 
         var request = new webreferences2.HeaderServiceWSDL.Request();
@@ -529,12 +556,9 @@ var WSUtil = require('dw/ws/WSUtil');
 
 var mtomService = LocalServiceRegistry.createService('my.mtom.soap', {
     initServiceClient: function (svc) {
-        var stub = webreferences2.MTOMServiceWSDL.getDefaultService();
-
-        // Enable MTOM
-        WSUtil.setProperty(stub, WSUtil.WS_MTOM_ENABLED, true);
-
-        return stub;
+        // MTOM is enabled by the WSDL/web-reference binding, not by a WSUtil
+        // property — there is no MTOM constant on WSUtil.
+        return webreferences2.MTOMServiceWSDL.getDefaultService();
     },
 
     createRequest: function (svc, params) {

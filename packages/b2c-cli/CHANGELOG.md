@@ -1,5 +1,11 @@
 # @salesforce/b2c-cli
 
+## 1.21.3
+
+### Patch Changes
+
+- [#596](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/596) [`a5fbe3f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a5fbe3f324b102400173a3d92407cda2d4529f4e) - Fix `slas client update` corrupting existing callback URIs. When merging with the current client, the command split the API's pipe-delimited `callbackUri` value on commas instead of pipes, so the entire list was sent back as a single string and the update was rejected with "CallbackURI must be a valid URL". Callback URIs are now parsed with the same shared helper used for redirect URIs everywhere in the SLAS commands, so the two paths can no longer disagree. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.21.2
 
 ### Patch Changes

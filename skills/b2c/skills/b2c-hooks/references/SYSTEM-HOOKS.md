@@ -26,51 +26,69 @@ Calculate hooks control basket and order calculation logic.
 }
 ```
 
-### Implementation
+### SFRA Implementation
+
+SFRA registers all three extension points to
+`app_storefront_base/cartridge/scripts/hooks/cart/calculate.js`. Do not call `TaxMgr.applyTax()` from
+inside `calculateTax` — `applyTax` belongs in `dw.order.calculate` and dispatches to
+`dw.order.calculateTax` itself.
 
 ```javascript
 // calculate.js
 var Status = require('dw/system/Status');
-var HookMgr = require('dw/system/HookMgr');
 var ShippingMgr = require('dw/order/ShippingMgr');
 var TaxMgr = require('dw/order/TaxMgr');
+var collections = require('*/cartridge/scripts/util/collections');
 
-exports.calculate = function(lineItemCtnr) {
-    // 1. Calculate product prices
-    calculateProductPrices(lineItemCtnr);
-
-    // 2. Calculate shipping
-    HookMgr.callHook('dw.order.calculateShipping', 'calculateShipping', lineItemCtnr);
-
-    // 3. Calculate promotions
-    calculatePromotions(lineItemCtnr);
-
-    // 4. Calculate tax
-    HookMgr.callHook('dw.order.calculateTax', 'calculateTax', lineItemCtnr);
-
-    // 5. Calculate totals
-    lineItemCtnr.updateTotals();
-
+exports.calculateShipping = function(basket) {
+    ShippingMgr.applyShippingCost(basket);
     return new Status(Status.OK);
 };
 
-exports.calculateShipping = function(lineItemCtnr) {
-    var shipments = lineItemCtnr.shipments.iterator();
-    while (shipments.hasNext()) {
-        var shipment = shipments.next();
-        var method = shipment.shippingMethod;
-        if (method) {
-            var cost = ShippingMgr.getShippingCost(method, shipment);
-            shipment.setShippingLineItem(method);
-            shipment.shippingLineItem.setPriceValue(cost.amount.value);
+exports.calculateTax = function(basket) {
+    var basketCalculationHelpers = require('*/cartridge/scripts/helpers/basketCalculationHelpers');
+    var taxes = basketCalculationHelpers.calculateTaxes(basket);
+    var taxesMap = {};
+
+    taxes.taxes.forEach(function (item) {
+        taxesMap[item.uuid] = { value: item.value, amount: item.amount };
+    });
+
+    var lineItems = basket.getAllLineItems();
+
+    collections.forEach(lineItems, function (lineItem) {
+        var tax = taxesMap[lineItem.UUID];
+
+        if (tax) {
+            if (tax.amount) {
+                lineItem.updateTaxAmount(tax.value);
+            } else {
+                lineItem.updateTax(tax.value);
+            }
+        } else if (lineItem.taxClassID === TaxMgr.customRateTaxClassID) {
+            lineItem.updateTax(lineItem.taxRate);
+        } else {
+            lineItem.updateTax(null);
+        }
+    });
+
+    // Order-level price adjustments, including order-level shipping price adjustments
+    if (!basket.getPriceAdjustments().empty || !basket.getShippingPriceAdjustments().empty) {
+        if (collections.first(basket.getPriceAdjustments(), function (priceAdjustment) {
+            return taxesMap[priceAdjustment.UUID] === null;
+        }) || collections.first(basket.getShippingPriceAdjustments(), function (shippingPriceAdjustment) {
+            return taxesMap[shippingPriceAdjustment.UUID] === null;
+        })) {
+            basket.updateOrderLevelPriceAdjustmentTax();
         }
     }
-    return new Status(Status.OK);
-};
 
-exports.calculateTax = function(lineItemCtnr) {
-    // Use built-in tax calculation or external service
-    TaxMgr.applyDefaultTaxes(lineItemCtnr);
+    if (taxes.custom) {
+        Object.keys(taxes.custom).forEach(function (key) {
+            basket.custom[key] = taxes.custom[key];
+        });
+    }
+
     return new Status(Status.OK);
 };
 ```
@@ -278,27 +296,50 @@ Registration:
 
 ## Checkout Hooks
 
-| Extension Point | Function | Purpose |
-|-----------------|----------|---------|
-| `dw.order.hooks.validateOrder` | `validateOrder(basket)` | Validate before order creation |
+| Extension Point                    | Function                                    | Purpose                                |
+| ---------------------------------- | ------------------------------------------- | -------------------------------------- |
+| `dw.order.populateCustomerDetails` | `populateCustomerDetails(basket, customer)` | Populate customer data onto the basket |
+
+> **Note**: `dw.order.hooks` is the _package_ holding the hook interfaces — it is never part of the
+> extension point name. There is no `dw.order.hooks.validateOrder` system hook; order validation for
+> OCAPI/SCAPI order requests is `dw.ocapi.shop.order.validateOrder`, documented in
+> [OCAPI/SCAPI Hooks](./OCAPI-SCAPI-HOOKS.md).
 
 ## Return Hooks
 
-| Extension Point | Function | Purpose |
-|-----------------|----------|---------|
-| `dw.order.hooks.returnChangeStatus` | `changeStatus(return, returnWO)` | Handle return status changes |
+> **Inactive by default.** Return and shipping order hooks are order post-processing APIs and
+> **throw an exception if accessed**. Activation requires approval from Product Management.
+
+| Extension Point                      | Function                                                   | Purpose                      |
+| ------------------------------------ | ---------------------------------------------------------- | ---------------------------- |
+| `dw.order.return.createReturn`       | `createReturn(returnWO: ReturnWO)`                         | Create the return record     |
+| `dw.order.return.addReturnItem`      | `addReturnItem(retrn: Return, returnItemWO: ReturnItemWO)` | Add an item to a return      |
+| `dw.order.return.changeStatus`       | `changeStatus(retrn: Return, returnWO: ReturnWO)`          | Handle return status changes |
+| `dw.order.return.afterStatusChange`  | `afterStatusChange(retrn: Return)`                         | React after a status change  |
+| `dw.order.return.notifyStatusChange` | `notifyStatusChange(retrn: Return)`                        | Notify on status change      |
 
 ## Shipping Order Hooks
 
-| Extension Point | Function | Purpose |
-|-----------------|----------|---------|
-| `dw.order.hooks.shippingOrderChangeStatus` | `changeStatus(shippingOrder, shippingOrderWO)` | Handle shipping order status |
+> **Inactive by default.** Same order post-processing restriction as [Return Hooks](#return-hooks).
+
+| Extension Point                                      | Function                                                                       | Purpose                              |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------ |
+| `dw.order.shippingorder.prepareCreateShippingOrders` | `prepareCreateShippingOrders(order: Order)`                                    | Prepare shipping order creation      |
+| `dw.order.shippingorder.createShippingOrders`        | `createShippingOrders(order: Order)`                                           | Create shipping orders for an order  |
+| `dw.order.shippingorder.resolveShippingOrder`        | `resolveShippingOrder(shippingOrderWO: ShippingOrderWO)`                       | Resolve the target shipping order    |
+| `dw.order.shippingorder.changeStatus`                | `changeStatus(shippingOrder: ShippingOrder, shippingOrderWO: ShippingOrderWO)` | Handle shipping order status changes |
+| `dw.order.shippingorder.afterStatusChange`           | `afterStatusChange(shippingOrder: ShippingOrder)`                              | React after a status change          |
+| `dw.order.shippingorder.notifyStatusChange`          | `notifyStatusChange(shippingOrder: ShippingOrder)`                             | Notify on status change              |
+| `dw.order.shippingorder.updateShippingOrderItem`     | `updateShippingOrderItem(shippingOrder: ShippingOrder, itemWO: ShippingOrderItemWO)` | Update a shipping order item    |
+| `dw.order.shippingorder.setShippingOrderShipped`     | `setShippingOrderShipped(shippingOrderWO: ShippingOrderWO)`                    | Mark a shipping order shipped        |
+| `dw.order.shippingorder.setShippingOrderCancelled`   | `setShippingOrderCancelled(shippingOrderWO: ShippingOrderWO)`                  | Mark a shipping order cancelled      |
+| `dw.order.shippingorder.setShippingOrderWarehouse`   | `setShippingOrderWarehouse(shippingOrderWO: ShippingOrderWO)`                  | Set the warehouse                    |
 
 ## Basket Merge Hooks
 
-| Extension Point | Function | Purpose |
-|-----------------|----------|---------|
-| `dw.order.hooks.basketMerge` | `merge(sourceBasket, targetBasket)` | Custom basket merge logic |
+| Extension Point        | Function                             | Purpose                   |
+| ---------------------- | ------------------------------------ | ------------------------- |
+| `dw.order.mergeBasket` | `mergeBasket(source, currentBasket)` | Custom basket merge logic |
 
 ## Request Hooks
 

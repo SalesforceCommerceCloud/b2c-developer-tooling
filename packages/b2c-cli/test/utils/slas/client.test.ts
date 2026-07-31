@@ -6,7 +6,7 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {ux} from '@oclif/core';
-import {normalizeClientResponse, printClientDetails} from '../../../src/utils/slas/client.js';
+import {normalizeClientResponse, parseUriList, printClientDetails} from '../../../src/utils/slas/client.js';
 
 describe('utils/slas/client', () => {
   afterEach(() => {
@@ -275,6 +275,45 @@ describe('utils/slas/client', () => {
       expect(lines.find((l) => l.includes('https://a.example.com/cb'))).to.exist;
       expect(lines.find((l) => l.includes('https://b.example.com/cb'))).to.exist;
       expect(lines.find((l) => l.includes('https://c.example.com/cb'))).to.exist;
+    });
+  });
+
+  describe('parseUriList', () => {
+    it('splits the pipe-delimited string the API returns', () => {
+      expect(parseUriList('https://a/cb|https://b/reset|https://c/pwl')).to.deep.equal([
+        'https://a/cb',
+        'https://b/reset',
+        'https://c/pwl',
+      ]);
+    });
+
+    it('splits comma-delimited values produced by normalizeClientResponse', () => {
+      expect(parseUriList('https://a/cb, https://b/cb')).to.deep.equal(['https://a/cb', 'https://b/cb']);
+    });
+
+    it('prefers pipe over comma so callback URLs with commas stay intact', () => {
+      // A single URL may legally contain a comma (e.g. in a query string); pipe is the list separator.
+      expect(parseUriList('https://a/cb?x=1,2|https://b/cb')).to.deep.equal(['https://a/cb?x=1,2', 'https://b/cb']);
+    });
+
+    it('flattens an array response, splitting any pipe-delimited elements', () => {
+      expect(parseUriList(['https://a/cb|https://b/cb', 'https://c/cb'])).to.deep.equal([
+        'https://a/cb',
+        'https://b/cb',
+        'https://c/cb',
+      ]);
+    });
+
+    it('trims whitespace and drops empty segments', () => {
+      expect(parseUriList(' https://a/cb | | https://b/cb ')).to.deep.equal(['https://a/cb', 'https://b/cb']);
+    });
+
+    it('returns an empty array for undefined, null, or empty input', () => {
+      expect(parseUriList(undefined)).to.deep.equal([]);
+      // The API may return callbackUri as null.
+      expect(parseUriList(null)).to.deep.equal([]);
+      expect(parseUriList('')).to.deep.equal([]);
+      expect(parseUriList([])).to.deep.equal([]);
     });
   });
 });

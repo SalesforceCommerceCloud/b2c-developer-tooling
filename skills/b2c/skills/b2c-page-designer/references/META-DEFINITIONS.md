@@ -260,7 +260,10 @@ Component with nested regions:
 
 **Script for container:**
 
-> Illustrative SFRA pattern using custom PageRenderHelper utility; confirm current region rendering API with `docs_read dw.experience.PageMgr` (use PageMgr.renderRegion() for canonical approach).
+> This follows SFRA's container-component pattern: build the region registry with
+> `PageRenderHelper.getRegionModelRegistry(component)`, pass it to the template as `regions`, and
+> call `RegionModel.render()` in ISML. The region model preserves SFRA's region and component render
+> settings before delegating to `PageMgr.renderRegion()`.
 
 ```javascript
 'use strict';
@@ -273,15 +276,23 @@ module.exports.render = function (context) {
     var model = new HashMap();
     var component = context.component;
 
-    model.put('leftWidth', context.content.leftWidth || '50%');
-    model.put('gap', context.content.gap || 'medium');
-
-    // Render nested regions
-    model.put('leftRegion', PageRenderHelper.renderRegion(component.getRegion('left')));
-    model.put('rightRegion', PageRenderHelper.renderRegion(component.getRegion('right')));
+    model.regions = PageRenderHelper.getRegionModelRegistry(component);
 
     return new Template('experience/components/twocolumn').render(model).text;
 };
+```
+
+**Template for container:**
+
+```html
+<div class="two-column">
+    <div class="left-column">
+        <isprint value="${pdict.regions.left.render()}" encoding="off"/>
+    </div>
+    <div class="right-column">
+        <isprint value="${pdict.regions.right.render()}" encoding="off"/>
+    </div>
+</div>
 ```
 
 ## Page Script Context
