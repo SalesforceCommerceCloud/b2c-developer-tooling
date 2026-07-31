@@ -93,38 +93,38 @@ Page Designer files are in the cartridge's `experience` directory:
 
 var Template = require('dw/util/Template');
 var HashMap = require('dw/util/HashMap');
+var PageRenderHelper = require('*/cartridge/experience/utilities/PageRenderHelper.js');
 
 module.exports.render = function (context) {
     var model = new HashMap();
     var page = context.page;
 
-    model.put('page', page);
+    model.page = page;
+    model.regions = PageRenderHelper.getRegionModelRegistry(page);
 
     return new Template('experience/pages/homepage').render(model).text;
 };
 ```
 
-### Page Template (templates/experience/pages/homepage.isml)
+### Page Template (templates/default/experience/pages/homepage.isml)
 
-> Illustrative SFRA pattern using custom PageRenderHelper utility; confirm current region rendering API with `docs_read dw.experience.PageMgr` (use PageMgr.renderRegion() for canonical approach).
+> This follows SFRA's region-model pattern: the page script builds `pdict.regions` with
+> `PageRenderHelper.getRegionModelRegistry(page)`, and each `RegionModel.render()` call delegates to
+> the platform's `PageMgr.renderRegion()` with SFRA's render settings.
 
 ```html
 <isdecorate template="common/layout/page">
-    <isscript>
-        var PageRenderHelper = require('*/cartridge/experience/utilities/PageRenderHelper');
-    </isscript>
-
     <div class="homepage">
         <div class="hero-region">
-            <isprint value="${PageRenderHelper.renderRegion(pdict.page.getRegion('hero'))}" encoding="off"/>
+            <isprint value="${pdict.regions.hero.render()}" encoding="off"/>
         </div>
 
         <div class="content-region">
-            <isprint value="${PageRenderHelper.renderRegion(pdict.page.getRegion('content'))}" encoding="off"/>
+            <isprint value="${pdict.regions.content.render()}" encoding="off"/>
         </div>
 
         <div class="footer-region">
-            <isprint value="${PageRenderHelper.renderRegion(pdict.page.getRegion('footer'))}" encoding="off"/>
+            <isprint value="${pdict.regions.footer.render()}" encoding="off"/>
         </div>
     </div>
 </isdecorate>

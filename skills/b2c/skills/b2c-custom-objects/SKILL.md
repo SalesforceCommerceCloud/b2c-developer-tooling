@@ -161,7 +161,7 @@ Authorization: Bearer {token}
 ### Search Custom Objects
 
 ```http
-POST /s/-/dw/data/v25_6/custom_object_search/{object_type}
+POST /s/-/dw/data/v25_6/custom_objects_search/{object_type}
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -169,7 +169,7 @@ Content-Type: application/json
     "query": {
         "bool_query": {
             "must": [
-                { "term_query": { "field": "c_isActive", "value": true } }
+                { "term_query": { "fields": ["c_isActive"], "operator": "is", "values": [true] } }
             ]
         }
     },
@@ -184,9 +184,9 @@ Content-Type: application/json
 
 | Query Type | Description | Example |
 |------------|-------------|---------|
-| `term_query` | Exact match | `{"field": "c_status", "value": "active"}` |
+| `term_query` | Exact match / comparison | `{"fields": ["c_status"], "operator": "is", "values": ["active"]}` |
 | `text_query` | Full-text search | `{"fields": ["c_name"], "search_phrase": "test"}` |
-| `range_query` | Range comparison | `{"field": "c_count", "from": 1, "to": 10}` |
+| `filtered_query` | Query plus a filter — use with `range_filter` for ranges | `{"query": {"match_all_query": {}}, "filter": {"range_filter":{"field": "c_count", "from": 1, "to": 10}}}` |
 | `bool_query` | Combine queries | `{"must": [...], "should": [...], "must_not": [...]}` |
 | `match_all_query` | Match all records | `{}` |
 
