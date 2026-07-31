@@ -7,11 +7,19 @@ import {Args, Flags} from '@oclif/core';
 import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   commerceAppInstall,
+  readManifestFromTarget,
   validateCap,
   JobExecutionError,
   type CommerceAppInstallResult,
+  type CommerceAppManifest,
 } from '@salesforce/b2c-tooling-sdk/operations/cap';
+import {confirm} from '@salesforce/b2c-tooling-sdk/ux';
 import {t, withDocs} from '../../i18n/index.js';
+
+const NON_SFDC_WARNING =
+  'You are installing a Non-SFDC Application, as that term may be defined in the MSA between SFDC and Customer. ' +
+  'SFDC does not warrant or support Non-SFDC Applications or other non-SFDC products or services. ' +
+  'By proceeding, you acknowledge these terms.';
 
 export default class CapInstall extends JobCommand<typeof CapInstall> {
   static args = {
@@ -60,11 +68,18 @@ export default class CapInstall extends JobCommand<typeof CapInstall> {
         'Create a pull request against the connected Storefront Next repository when the app includes storefront content',
       default: false,
     }),
+    force: Flags.boolean({
+      char: 'f',
+      description: 'Skip the non-Salesforce app confirmation prompt',
+      default: false,
+    }),
   };
 
   protected operations = {
     commerceAppInstall,
+    readManifestFromTarget,
     validateCap,
+    confirm,
   };
 
   async run(): Promise<CommerceAppInstallResult> {
@@ -78,10 +93,12 @@ export default class CapInstall extends JobCommand<typeof CapInstall> {
       timeout,
       'skip-validate': skipValidate,
       'create-pr': createPr,
+      force,
     } = this.flags;
     const hostname = this.resolvedConfig.values.hostname!;
 
     // Validate first unless skipped
+    let manifest: CommerceAppManifest | undefined;
     if (!skipValidate) {
       this.log(t('commands.cap.install.validating', 'Validating CAP structure...'));
       const validation = await this.operations.validateCap(path);
@@ -99,15 +116,8 @@ export default class CapInstall extends JobCommand<typeof CapInstall> {
           this.log(`  ⚠ ${warn}`);
         }
       }
+      manifest = validation.manifest;
     }
-
-    this.log(
-      t('commands.cap.install.installing', 'Installing CAP {{path}} to {{hostname}} (site: {{site}})...', {
-        path,
-        hostname,
-        site,
-      }),
-    );
 
     const context = this.createContext('cap:install', {path, site, hostname});
     const beforeResult = await this.runBeforeHooks(context);
@@ -125,6 +135,28 @@ export default class CapInstall extends JobCommand<typeof CapInstall> {
         archiveKept: false,
       } as unknown as CommerceAppInstallResult;
     }
+
+    manifest ??= await this.operations.readManifestFromTarget(path);
+    if (manifest.provider !== 'salesforce') {
+      this.log(`⚠ ${NON_SFDC_WARNING}`);
+      if (!force && !this.jsonEnabled()) {
+        const proceed = await this.operations.confirm(
+          t('commands.cap.install.confirmNonSfdc', 'Proceed with installing this non-Salesforce app?'),
+        );
+        if (!proceed) {
+          this.log(t('commands.cap.install.cancelled', 'Install cancelled'));
+          this.exit(0);
+        }
+      }
+    }
+
+    this.log(
+      t('commands.cap.install.installing', 'Installing CAP {{path}} to {{hostname}} (site: {{site}})...', {
+        path,
+        hostname,
+        site,
+      }),
+    );
 
     try {
       const result = await this.operations.commerceAppInstall(this.instance, path, {
