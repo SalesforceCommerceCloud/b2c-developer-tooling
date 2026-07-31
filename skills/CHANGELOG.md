@@ -1,5 +1,17 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.7.0
+
+### Minor Changes
+
+- [#603](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/603) [`94c7ba9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/94c7ba979716e8401234f48178f488a4e5b29ac3) - Add Codex plugin packaging for the B2C DX MCP server so Codex CLI and Codex in the ChatGPT desktop app can install and load the MCP server directly through the B2C Developer Tooling plugin marketplace. Claude Code marketplace installation remains supported by the same plugin. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#603](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/603) [`94c7ba9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/94c7ba979716e8401234f48178f488a4e5b29ac3) - Fix skill installation output so mixed-source downloads do not show an unresolved version placeholder, repair the `b2c-hooks` skill frontmatter, and identify the affected skill path in future parsing warnings. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#601](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/601) [`332f0a4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/332f0a4f12c627031b01e1fb1b04559efa13354b) - Correct B2C agent skill examples to use supported Script APIs, hook extension points, OCAPI contracts, and schema-valid metadata. Generated implementations no longer rely on nonexistent APIs or invalid request and response shapes. (Thanks [@dkatashev](https://github.com/dkatashev)!)
+
 ## 1.6.2
 
 ### Patch Changes

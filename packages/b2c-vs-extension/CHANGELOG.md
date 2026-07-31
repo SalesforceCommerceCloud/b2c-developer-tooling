@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.0.6
+
+### Patch Changes
+
+- Updated dependencies [[`94c7ba9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/94c7ba979716e8401234f48178f488a4e5b29ac3)]:
+  - @salesforce/b2c-tooling-sdk@1.21.3
+
 ## 1.0.5
 
 ### Patch Changes

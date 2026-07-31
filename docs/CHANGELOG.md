@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.17
+
+### Patch Changes
+
+- [#603](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/603) [`94c7ba9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/94c7ba979716e8401234f48178f488a4e5b29ac3) - Add Codex plugin packaging for the B2C DX MCP server so Codex CLI and Codex in the ChatGPT desktop app can install and load the MCP server directly through the B2C Developer Tooling plugin marketplace. Claude Code marketplace installation remains supported by the same plugin. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.16
 
 ### Patch Changes
