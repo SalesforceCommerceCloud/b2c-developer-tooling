@@ -31,8 +31,11 @@ claude plugin install figma-to-sfnext-pagedesigner
 
 ```bash [Codex]
 codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-# Then in Codex, run /plugins, select the "B2C Developer Tooling"
-# marketplace, and select and install the desired plugins.
+
+# Core: CLI + platform skills + MCP server
+codex plugin add b2c-cli@b2c-developer-tooling
+codex plugin add b2c@b2c-developer-tooling
+codex plugin add b2c-dx-mcp@b2c-developer-tooling
 ```
 
 ```bash [Cursor]
@@ -175,9 +178,16 @@ Add the marketplace:
 codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 ```
 
-Then in Codex run `/plugins`, select the **B2C Developer Tooling** marketplace, and select and install the desired plugins.
+Install plugins from the command line:
 
-Codex does not yet support installing plugins from the command line — installs happen from the interactive `/plugins` picker. You can also point Codex at a local marketplace directory by running `codex plugin marketplace add <path-to-dir>`.
+```bash
+codex plugin add b2c-cli@b2c-developer-tooling
+codex plugin add b2c@b2c-developer-tooling
+codex plugin add b2c-dx-mcp@b2c-developer-tooling
+codex plugin add storefront-next@b2c-developer-tooling
+```
+
+Alternatively, run `/plugins`, select the **B2C Developer Tooling** marketplace, and install plugins interactively. Start a new Codex session after installation so bundled skills and MCP tools are loaded.
 
 Upgrade or remove the marketplace later with:
 
@@ -186,7 +196,7 @@ codex plugin marketplace upgrade b2c-developer-tooling
 codex plugin marketplace remove b2c-developer-tooling
 ```
 
-> **Note:** The `b2c-dx-mcp` plugin is available only for Claude Code. For other clients, install the MCP server directly — see [MCP Installation](/mcp/installation).
+> **Note:** Codex plugins are supported in Codex CLI and Codex in the ChatGPT desktop app. The Codex IDE extension supports MCP servers directly instead; see [MCP Installation](/mcp/installation).
 
 > **Note:** The `storefront-next-figma` plugin requires the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server) to be configured in your AI tool — its skills drive the Figma design kit (duplicating the kit, syncing brand variables, and publishing Code Connect) through Figma's MCP tools. Install it alongside `storefront-next` when you also manage the design system in Figma.
 

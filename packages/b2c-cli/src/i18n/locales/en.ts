@@ -174,7 +174,9 @@ export const en = {
     setup: {
       skills: {
         description: 'Install agent skills for AI-powered IDEs',
-        downloading: 'Downloading skills from release {{version}}...',
+        downloading: 'Downloading skills...',
+        downloadingRelease: 'Downloading skills from release {{version}}...',
+        downloadingRepo: 'Downloading skills from repository ({{ref}})...',
         detecting: 'Detecting installed IDEs...',
         noSkills: 'No skills found.',
         noSkillsToInstall: 'No skills to install.',

@@ -1,0 +1,38 @@
+{
+  "name": "b2c-dx-mcp",
+  "version": "1.9.2",
+  "description": "MCP server for AI-assisted Salesforce B2C Commerce development.",
+  "author": {
+    "name": "Salesforce",
+    "url": "https://www.salesforce.com/"
+  },
+  "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/",
+  "repository": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling",
+  "license": "Apache-2.0",
+  "keywords": [
+    "salesforce",
+    "b2c-commerce",
+    "commerce-cloud",
+    "mcp",
+    "developer-tools"
+  ],
+  "interface": {
+    "displayName": "B2C DX MCP",
+    "shortDescription": "B2C Commerce development tools for Codex.",
+    "longDescription": "Project-aware MCP tools for Salesforce B2C Commerce development, including documentation, SCAPI schemas, sandboxes, logs, deployments, and Managed Runtime workflows.",
+    "developerName": "Salesforce",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/",
+    "brandColor": "#0D9DDA",
+    "defaultPrompt": [
+      "Search the B2C Commerce documentation",
+      "Show the SCAPI schemas available for this project",
+      "Check my B2C Commerce sandbox logs"
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}
