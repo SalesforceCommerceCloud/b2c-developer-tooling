@@ -42,6 +42,12 @@
  * generate:guides-index to include it. It is intentionally not run here so this
  * refresh has no LLM/API-key dependency.
  *
+ * NOT covered here: the Salesforce Help corpus (data/help/) comes from the
+ * separate content-commerce-cloud DITA repo, not the DWAPP archive — refresh it
+ * with `generate:help-corpus`. The guides and help indexes each record the
+ * upstream git SHA they were built from in their index.json `source` block, so
+ * `git log <sha>..HEAD` in the source clone shows the delta before a refresh.
+ *
  * Partial-failure caveat: this is a maintainer script that mutates the committed
  * `data/` corpora in place and is NOT transactional. Each corpus's markdown is
  * replaced before its index is regenerated, so a mid-run failure (auth error,
@@ -159,7 +165,7 @@ async function main(): Promise<void> {
     run('pnpm', ['exec', 'tsx', 'scripts/generate-job-steps-docs.ts'], SDK_ROOT);
 
     console.log('→ Generating search indexes...');
-    run('pnpm', ['exec', 'tsx', 'scripts/generate-docs-index.ts'], SDK_ROOT);
+    run('pnpm', ['exec', 'tsx', 'scripts/generate-docs-index.ts', version], SDK_ROOT);
 
     // 8. Developer Center guides index (from a local commerce-cloud-docs clone).
     //    Metadata only — guide content is fetched online at read time.

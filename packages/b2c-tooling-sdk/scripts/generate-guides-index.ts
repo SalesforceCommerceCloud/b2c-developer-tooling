@@ -54,6 +54,8 @@ import {fileURLToPath} from 'node:url';
 
 import {load} from 'js-yaml';
 
+import {captureSourceProvenance, type SourceProvenance} from './source-provenance.js';
+
 /** Developer Center projects (categories) whose guides we index. */
 const CATEGORIES = ['commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra', 'b2c-commerce'] as const;
 
@@ -72,6 +74,7 @@ interface DocEntry {
 interface SearchIndex {
   version: string;
   generatedAt: string;
+  source?: SourceProvenance;
   entries: DocEntry[];
 }
 
@@ -230,6 +233,8 @@ function loadEnrichment(): Map<string, EnrichmentEntry> {
 
 function main(): void {
   const contentDir = resolveDocsRepo();
+  // contentDir is `<repo>/content/en-us`; capture provenance from the repo root.
+  const source = captureSourceProvenance(path.resolve(contentDir, '..', '..'));
   const enrichment = loadEnrichment();
   const published = collectTocBasenames(contentDir);
   const tocRelations = collectTocRelations(contentDir);
@@ -298,6 +303,7 @@ function main(): void {
   const index: SearchIndex = {
     version: '2.0.0',
     generatedAt: new Date().toISOString(),
+    ...(source && {source}),
     entries,
   };
 
@@ -311,6 +317,7 @@ function main(): void {
       `${skippedOrphans} orphan files skipped as not TOC-referenced) ` +
       `at ${path.join(GUIDES_DIR, 'index.json')}`,
   );
+  if (source) console.log(`  source: ${source.sha.slice(0, 12)} (${source.committedAt})`);
 }
 
 main();
