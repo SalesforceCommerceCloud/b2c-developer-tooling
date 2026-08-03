@@ -16,7 +16,7 @@ import JSZip from 'jszip';
 import {WebDavClient} from '../../../src/clients/webdav.js';
 import {createOcapiClient} from '../../../src/clients/ocapi.js';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
-import {commerceAppInstall} from '../../../src/operations/cap/install.js';
+import {commerceAppInstall, readManifestFromTarget} from '../../../src/operations/cap/install.js';
 
 const TEST_HOST = 'test.demandware.net';
 const WEBDAV_BASE = `https://${TEST_HOST}/on/demandware.servlet/webdav/Sites`;
@@ -308,6 +308,49 @@ describe('operations/cap/install', () => {
       // Zip target keeps its original filename.
       expect(result.archiveFilename).to.equal('my-app-v1.0.0.zip');
       expect(job.body().app_path).to.equal('webdav/Sites/Impex/commerce-apps/my-app-v1.0.0.zip');
+    });
+  });
+
+  describe('readManifestFromTarget', () => {
+    it('reads the manifest from a CAP directory, including the provider field', async () => {
+      const manifest = await readManifestFromTarget(FIXTURE_CAP);
+      expect(manifest.id).to.equal('avalara-tax');
+      expect(manifest.provider).to.equal('thirdParty');
+    });
+
+    it('reads the manifest from a CAP zip file', async () => {
+      const srcZip = new JSZip();
+      const root = srcZip.folder('my-app-v1.0.0')!;
+      root.file(
+        'commerce-app.json',
+        JSON.stringify({id: 'my-app', name: 'My App', version: '1.0.0', domain: 'tax', provider: 'salesforce'}),
+      );
+      const zipBuffer = await srcZip.generateAsync({type: 'nodebuffer'});
+      const zipPath = path.join(tempDir, 'my-app-v1.0.0.zip');
+      fs.writeFileSync(zipPath, zipBuffer);
+
+      const manifest = await readManifestFromTarget(zipPath);
+      expect(manifest.provider).to.equal('salesforce');
+    });
+
+    it('throws when the target does not exist', async () => {
+      try {
+        await readManifestFromTarget(path.join(tempDir, 'missing'));
+        expect.fail('Should have thrown');
+      } catch (error: any) {
+        expect(error.message).to.include('Target not found');
+      }
+    });
+
+    it('throws when the target is not a directory or zip file', async () => {
+      const filePath = path.join(tempDir, 'not-a-cap.txt');
+      fs.writeFileSync(filePath, 'hello');
+      try {
+        await readManifestFromTarget(filePath);
+        expect.fail('Should have thrown');
+      } catch (error: any) {
+        expect(error.message).to.include('must be a directory or .zip file');
+      }
     });
   });
 });
