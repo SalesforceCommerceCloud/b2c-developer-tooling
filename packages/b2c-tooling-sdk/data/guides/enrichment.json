@@ -4194,6 +4194,21 @@
       "custom data"
     ]
   },
+  "b2c-commerce/creatingcustombusinessobjectsinstance": {
+    "summary": "Create and manage custom object instances in Business Manager with site-specific or organization-wide storage options.",
+    "keywords": [
+      "custom object instance",
+      "Business Manager",
+      "custom object editor",
+      "create custom object",
+      "site-specific storage",
+      "organization-wide storage",
+      "custom object management",
+      "merchant tools",
+      "custom object attributes",
+      "custom object configuration"
+    ]
+  },
   "b2c-commerce/creatingcustombusinessobjectswithdemandwarebusinessmanager": {
     "summary": "Create custom business object definitions in Business Manager to store organization-wide data with custom attributes and attribute groupings.",
     "keywords": [
@@ -4325,6 +4340,89 @@
       "ecommerce platform structure",
       "Salesforce Commerce Cloud",
       "instance configuration"
+    ]
+  },
+  "b2c-commerce/hybrid-auth-environment-matrix": {
+    "summary": "Set up Hybrid Auth routing across B2C Commerce environments (PIG, ODS, localhost) for Storefront Next and PWA Kit architectures.",
+    "keywords": [
+      "Hybrid Auth",
+      "routing",
+      "PIG",
+      "ODS",
+      "Storefront Next",
+      "PWA Kit",
+      "Composable Storefront",
+      "environment setup",
+      "eCDN",
+      "localhost",
+      "hybrid implementation",
+      "traffic routing"
+    ]
+  },
+  "b2c-commerce/hybrid-auth-manual-setup": {
+    "summary": "Set up hybrid authentication manually for PWA Kit, SFRA, SiteGenesis, or headless storefronts by configuring MRT, SLAS, and eCDN.",
+    "keywords": [
+      "hybrid auth setup",
+      "manual hybrid authentication",
+      "PWA Kit",
+      "SFRA",
+      "SiteGenesis",
+      "Managed Runtime MRT",
+      "SLAS",
+      "headless storefront",
+      "session bridging",
+      "eCDN",
+      "Composable Storefront",
+      "hybrid storefront configuration"
+    ]
+  },
+  "b2c-commerce/hybrid-auth-quick-start": {
+    "summary": "Quickly set up a Storefront Next hybrid storefront with automated provisioning of MRT environment and eCDN through Business Manager.",
+    "keywords": [
+      "Storefront Next setup",
+      "automated setup",
+      "hybrid storefront",
+      "Managed Runtime",
+      "MRT environment",
+      "eCDN",
+      "hybrid auth",
+      "Business Manager provisioning",
+      "Storefront Next configuration",
+      "quick setup",
+      "hybrid authentication"
+    ]
+  },
+  "b2c-commerce/hybrid-auth-select-storefront": {
+    "summary": "Choose and set up your storefront architecture (Storefront Next, PWA Kit, or SFRA/SiteGenesis) with appropriate hybrid authentication configuration.",
+    "keywords": [
+      "storefront selection",
+      "storefront architecture",
+      "PWA Kit setup",
+      "Storefront Next",
+      "SFRA SiteGenesis",
+      "hybrid implementation",
+      "hybrid auth",
+      "composable storefront",
+      "storefront configuration",
+      "headless commerce",
+      "implementation guide"
+    ]
+  },
+  "b2c-commerce/hybrid-auth-troubleshooting": {
+    "summary": "Diagnose and resolve common Hybrid Auth implementation issues including token drift, routing mismatches, and SLAS configuration problems.",
+    "keywords": [
+      "Hybrid Auth troubleshooting",
+      "SLAS client ID",
+      "session bridge",
+      "eCDN routing",
+      "token drift",
+      "SCAPI short code",
+      "Hybrid Auth not applying",
+      "session-bridge authentication",
+      "hybrid routing matrix",
+      "localhost hybrid proxy",
+      "ODS sandbox",
+      "auth loops"
     ]
   },
   "b2c-commerce/integratingwithapplications": {
@@ -5816,6 +5914,23 @@
       "origin server caching"
     ]
   },
+  "commerce-api/cdn-caching": {
+    "summary": "Implement CDN caching for non-personalized SCAPI GET responses to reduce latency and improve headless storefront performance using the personalized=none parameter.",
+    "keywords": [
+      "SCAPI CDN caching",
+      "personalized=none",
+      "CDN edge cache",
+      "content delivery network",
+      "web-tier caching",
+      "non-personalized responses",
+      "latency reduction",
+      "headless storefront",
+      "cache hit",
+      "TTL",
+      "SCAPI performance",
+      "commerce API caching"
+    ]
+  },
   "commerce-api/cdn-pci-4-compliance": {
     "summary": "Monitor and secure client-side scripts on your storefront using eCDN PCI 4.0 compliance tools powered by Cloudflare Page Shield.",
     "keywords": [
@@ -6341,6 +6456,23 @@
       "cross-cutting concerns"
     ]
   },
+  "commerce-api/guest-order-access-code": {
+    "summary": "Enable guest shoppers to securely access and manage their orders after losing session via email-based one-time password (OTP) access codes.",
+    "keywords": [
+      "guest order access",
+      "OTP",
+      "one-time password",
+      "access code",
+      "order lookup",
+      "Shopper Orders API",
+      "guest checkout",
+      "order self-service",
+      "email hook",
+      "order management",
+      "guest authentication",
+      "session recovery"
+    ]
+  },
   "commerce-api/hook-method-details": {
     "summary": "Reference documentation for available SCAPI authentication hooks with method signatures, parameters, and return types for the Shopper API login endpoint.",
     "keywords": [
@@ -6372,6 +6504,23 @@
       "commerce-sdk-react",
       "package.json update",
       "storefront authentication"
+    ]
+  },
+  "commerce-api/hybrid-auth-shared-setup": {
+    "summary": "Configure shared Hybrid Auth setup across all storefront architectures including SLAS client, session bridging, and platform dependencies.",
+    "keywords": [
+      "hybrid auth setup",
+      "SLAS client configuration",
+      "session bridging",
+      "commerce API authentication",
+      "third-party IDP",
+      "social login",
+      "business manager",
+      "Storefront Next",
+      "PWA Kit",
+      "SFRA",
+      "shopper APIs",
+      "hybrid authentication"
     ]
   },
   "commerce-api/hybrid-authentication": {
@@ -7754,6 +7903,22 @@
       "multi-channel storefront"
     ]
   },
+  "pwa-kit-managed-runtime/hybrid-routing-matrix": {
+    "summary": "Configure routing between PWA Kit and SFRA/SiteGenesis using eCDN rules and app/routes.jsx filtering for hybrid storefronts.",
+    "keywords": [
+      "hybrid storefront routing",
+      "PWA Kit routing matrix",
+      "eCDN routing rules",
+      "app/routes.jsx",
+      "Composable Storefront",
+      "SFRA SiteGenesis",
+      "Managed Runtime MRT",
+      "Cloudflare rule expression",
+      "hybrid proxy local development",
+      "phased headless rollout",
+      "React Router navigation"
+    ]
+  },
   "pwa-kit-managed-runtime/hybrid-upgrade-v2.x": {
     "summary": "Upgrade PWA Kit 2.x hybrid storefronts to implement hybrid stability improvements and update Plugin SLAS to version 7.4.0.",
     "keywords": [
@@ -8318,6 +8483,23 @@
       "hybrid stability upgrade",
       "composable storefront hybrid",
       "headless rollout"
+    ]
+  },
+  "pwa-kit-managed-runtime/protect-storefront": {
+    "summary": "Enable Protected Storefronts in Business Manager to restrict storefront access during development to only authorized organization users via basic authentication.",
+    "keywords": [
+      "protected storefront",
+      "limit access",
+      "development environment",
+      "basic auth",
+      "site status",
+      "shared password",
+      "restrict access",
+      "storefront under development",
+      "Business Manager",
+      "access control",
+      "authentication",
+      "online protected"
     ]
   },
   "pwa-kit-managed-runtime/proxying-requests": {
@@ -9534,6 +9716,23 @@
       "locale detection"
     ]
   },
+  "sfnext/sfnext-load-more": {
+    "summary": "Configure load-more pagination on product listing pages to keep shoppers browsing without page reloads or scroll loss.",
+    "keywords": [
+      "load more pagination",
+      "product listing pages",
+      "pagination configuration",
+      "uiConfig.pages.category.pagination",
+      "load more button",
+      "numbered pagination",
+      "traditional pagination",
+      "infinite scroll",
+      "category page pagination",
+      "sfnext pagination",
+      "progress indicator",
+      "ui config"
+    ]
+  },
   "sfnext/sfnext-logging": {
     "summary": "Configure and use Storefront Next's built-in structured JSON logger with correlation IDs for server-side and client-side logging across your application.",
     "keywords": [
@@ -9754,6 +9953,21 @@
       "environment launch"
     ]
   },
+  "sfnext/sfnext-mrt-node-version": {
+    "summary": "Manage Node.js versions for Storefront Next Managed Runtime environments, understanding support lifecycles and upgrade requirements.",
+    "keywords": [
+      "Node.js version support",
+      "Node version upgrade",
+      "Managed Runtime Node",
+      "Storefront Next Node",
+      "Node.js deprecation",
+      "Node.js end of life",
+      "Runtime environment Node",
+      "Node version lifecycle",
+      "Node.js deployment",
+      "Runtime Admin notifications"
+    ]
+  },
   "sfnext/sfnext-mrt-overview": {
     "summary": "Managed Runtime provides cloud infrastructure to deploy, host, and monitor Storefront Next apps with serverless Node.js hosting, WAF protection, and environment management.",
     "keywords": [
@@ -9769,6 +9983,21 @@
       "Storefront Next hosting",
       "React Router 7",
       "TLS security"
+    ]
+  },
+  "sfnext/sfnext-mrt-release-notes": {
+    "summary": "Track Managed Runtime feature updates, changes, and new capabilities across releases.",
+    "keywords": [
+      "Managed Runtime release notes",
+      "MRT releases",
+      "sfnext updates",
+      "SSR bundle size limit",
+      "release changelog",
+      "feature updates",
+      "MRT changelog",
+      "version history",
+      "Managed Runtime changes",
+      "deployment updates"
     ]
   },
   "sfnext/sfnext-mrt-routing-bm": {
@@ -9836,6 +10065,22 @@
       "B2C Commerce checkout configuration",
       "sfnext checkout setup",
       "verify email address"
+    ]
+  },
+  "sfnext/sfnext-order-mgmt": {
+    "summary": "Connect Storefront Next with Salesforce Order Management to display and sync orders, enabling shoppers to track shipments and manage returns from the storefront.",
+    "keywords": [
+      "Storefront Next Order Management integration",
+      "SOM integration",
+      "order history page",
+      "order tracking",
+      "order synchronization",
+      "B2C Commerce Order Management",
+      "order status",
+      "return management",
+      "self-service order management",
+      "order detail page",
+      "connect B2C Commerce SOM"
     ]
   },
   "sfnext/sfnext-page-designer": {
@@ -9933,6 +10178,23 @@
       "Storefront Next",
       "config.server.ts",
       "shopper authentication"
+    ]
+  },
+  "sfnext/sfnext-pd-deploy-cartridge": {
+    "summary": "Deploy the Storefront Next cartridge to upload Page Designer metadata and components to your B2C Commerce instance after setup or modifications.",
+    "keywords": [
+      "deploy Storefront Next cartridge",
+      "Page Designer metadata",
+      "Page Designer components",
+      "dw.json configuration",
+      "B2C DX CLI deploy",
+      "cartridge deployment",
+      "Page Designer pages",
+      "Storefront Next setup",
+      "Business Manager deployment",
+      "upload Page Designer",
+      "code version deployment",
+      "sfnext cartridge"
     ]
   },
   "sfnext/sfnext-perf-section": {
@@ -10485,6 +10747,38 @@
       "local development",
       "B2C Commerce retail storefront",
       "get started sfnext"
+    ]
+  },
+  "sfnext/sfnext-release-notes": {
+    "summary": "Track new features and changes in Storefront Next monthly releases with links to detailed GitHub release information.",
+    "keywords": [
+      "Storefront Next release notes",
+      "sfnext releases",
+      "Storefront Next features",
+      "monthly releases",
+      "version updates",
+      "changelog",
+      "GitHub releases",
+      "Storefront Next v1.0.0",
+      "template updates",
+      "B2C Commerce releases"
+    ]
+  },
+  "sfnext/sfnext-salesforce-payments": {
+    "summary": "Set up Salesforce Payments for Storefront Next by configuring payment gateways, defining types, and updating configuration URLs.",
+    "keywords": [
+      "Salesforce Payments",
+      "Storefront Next",
+      "payment gateway configuration",
+      "Adyen",
+      "Stripe",
+      "PayPal",
+      "checkout",
+      "B2C Commerce payments",
+      "config.server.ts",
+      "payment methods",
+      "sdkUrl",
+      "metadataUrl"
     ]
   },
   "sfnext/sfnext-security-headers": {

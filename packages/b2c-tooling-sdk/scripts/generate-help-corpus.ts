@@ -76,6 +76,8 @@ import {fileURLToPath} from 'node:url';
 
 import {XMLParser} from 'fast-xml-parser';
 
+import {captureSourceProvenance, type SourceProvenance} from './source-provenance.js';
+
 // ---------------------------------------------------------------------------
 // Paths
 // ---------------------------------------------------------------------------
@@ -181,6 +183,7 @@ interface HelpEntry {
 interface SearchIndex {
   version: string;
   generatedAt: string;
+  source?: SourceProvenance;
   entries: HelpEntry[];
 }
 
@@ -719,6 +722,9 @@ function pagesFromMap(mapsDir: string, mapName: string): Page[] {
 // ---------------------------------------------------------------------------
 function main(): void {
   const contentBase = resolveContentRepo();
+  // contentBase is `<repo>/content/ht/en-us/b2c_merchandiser_administrator`;
+  // capture provenance from the repo root (four levels up).
+  const source = captureSourceProvenance(path.resolve(contentBase, '..', '..', '..', '..'));
   const mapsDir = path.join(contentBase, 'maps');
   const topicsDir = path.join(contentBase, 'topics');
 
@@ -835,6 +841,7 @@ function main(): void {
   const index: SearchIndex = {
     version: '2.0.0',
     generatedAt: new Date().toISOString(),
+    ...(source && {source}),
     entries,
   };
   fs.writeFileSync(path.join(HELP_DATA_DIR, 'index.json'), JSON.stringify(index, null, 2));
@@ -850,6 +857,7 @@ function main(): void {
         .map(([c, n]) => `${c}=${n}`)
         .join(', ')})`,
   );
+  if (source) console.log(`  source:  ${source.sha.slice(0, 12)} (${source.committedAt})`);
   console.log(`  index:   ${path.relative(REPO_ROOT, path.join(HELP_DATA_DIR, 'index.json'))}`);
   console.log(`  tarball: ${path.relative(REPO_ROOT, TARBALL)} (committed)`);
   console.log(`  staged:  ${path.relative(REPO_ROOT, CONTENT_DIR)}/ (transient, not committed)`);

@@ -136,7 +136,7 @@ This class does not have a constructor, so you cannot create it directly.
       
       ```
          var TaxMgr = require('dw/order/TaxMgr');
-         
+      
          calculateTaxes: function () {
             Basket basket = BasketMgr.getCurrentBasket();
             if ( basket.isExternallyTaxed() )
