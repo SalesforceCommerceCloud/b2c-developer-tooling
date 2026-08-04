@@ -448,9 +448,8 @@ describe('mrt bundle deploy', () => {
         expect.fail('Expected error');
       } catch {
         expect(errorStub.calledOnce).to.equal(true);
-        const [, options] = errorStub.firstCall.args;
-        expect(options).to.have.property('suggestions');
-        expect(options.suggestions[0]).to.include('b2c mrt project list --limit 10');
+        const [message] = errorStub.firstCall.args;
+        expect(message).to.include('b2c mrt project list --limit 10');
       }
     });
 
@@ -475,9 +474,8 @@ describe('mrt bundle deploy', () => {
         expect.fail('Expected error');
       } catch {
         expect(errorStub.calledOnce).to.equal(true);
-        const [, options] = errorStub.firstCall.args;
-        expect(options).to.have.property('suggestions');
-        expect(options.suggestions[0]).to.include('b2c mrt project list --limit 10');
+        const [message] = errorStub.firstCall.args;
+        expect(message).to.include('b2c mrt project list --limit 10');
       }
     });
 
@@ -502,8 +500,8 @@ describe('mrt bundle deploy', () => {
         expect.fail('Expected error');
       } catch {
         expect(errorStub.calledOnce).to.equal(true);
-        const [, options] = errorStub.firstCall.args;
-        expect(options).to.equal(undefined);
+        const [message] = errorStub.firstCall.args;
+        expect(message).to.not.include('b2c mrt project list');
       }
     });
 
@@ -528,8 +526,8 @@ describe('mrt bundle deploy', () => {
         expect.fail('Expected error');
       } catch {
         expect(errorStub.calledOnce).to.equal(true);
-        const [, options] = errorStub.firstCall.args;
-        expect(options).to.equal(undefined);
+        const [message] = errorStub.firstCall.args;
+        expect(message).to.not.include('b2c mrt project list');
       }
     });
   });

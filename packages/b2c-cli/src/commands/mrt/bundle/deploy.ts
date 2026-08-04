@@ -58,7 +58,14 @@ function parseSsrParams(params: string[]): Record<string, string> {
 type DeployResult = CreateDeploymentResult | MrtEnvironment | PushResult;
 
 /** Patterns that indicate a 403/authorization error, typically caused by an invalid project ID */
-const MRT_AUTH_ERROR_PATTERNS = ['403', 'forbidden', 'not authorized', 'unauthorized', 'permission denied'];
+const MRT_AUTH_ERROR_PATTERNS = [
+  '403',
+  'forbidden',
+  'not authorized',
+  'unauthorized',
+  'permission denied',
+  'do not have permission',
+];
 
 /** Suggestion shown when a deploy/push operation fails with a 403/authorization error */
 const MRT_PROJECT_SUGGESTION = 'To see projects you have access to, run: b2c mrt project list --limit 10';
@@ -230,7 +237,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
           message: error.message,
         });
         if (isMrtAuthError(error)) {
-          this.error(message, {suggestions: [MRT_PROJECT_SUGGESTION]});
+          this.error(`${message}\n\n${MRT_PROJECT_SUGGESTION}`);
         }
         this.error(message);
       }
@@ -316,7 +323,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
           message: error.message,
         });
         if (isMrtAuthError(error)) {
-          this.error(message, {suggestions: [MRT_PROJECT_SUGGESTION]});
+          this.error(`${message}\n\n${MRT_PROJECT_SUGGESTION}`);
         }
         this.error(message);
       }
