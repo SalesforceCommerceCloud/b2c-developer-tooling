@@ -91,6 +91,7 @@ export const en = {
         description: 'Activate or reload a code version',
         activating: 'Activating code version {{codeVersion}} on {{hostname}}...',
         activated: 'Code version {{codeVersion}} activated successfully',
+        alreadyActive: 'Code version {{codeVersion}} is already active; no changes made',
         reloading: 'Reloading code version{{version}} on {{hostname}}...',
         reloaded: 'Code version{{version}} reloaded successfully',
         failed: 'Failed to activate code version: {{message}}',
@@ -173,7 +174,9 @@ export const en = {
     setup: {
       skills: {
         description: 'Install agent skills for AI-powered IDEs',
-        downloading: 'Downloading skills from release {{version}}...',
+        downloading: 'Downloading skills...',
+        downloadingRelease: 'Downloading skills from release {{version}}...',
+        downloadingRepo: 'Downloading skills from repository ({{ref}})...',
         detecting: 'Detecting installed IDEs...',
         noSkills: 'No skills found.',
         noSkillsToInstall: 'No skills to install.',

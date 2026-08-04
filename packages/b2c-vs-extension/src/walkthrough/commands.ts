@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import {workspaceHasDwJson} from '../workspace-discovery.js';
 
 /**
  * Template for a basic dw.json configuration file.
@@ -1583,14 +1584,7 @@ async function addToGitignore(workspaceRoot: string): Promise<void> {
 export async function resetWorkspaceOnboardingIfFresh(context: vscode.ExtensionContext): Promise<void> {
   const folders = vscode.workspace.workspaceFolders ?? [];
   if (folders.length === 0) return;
-  for (const folder of folders) {
-    try {
-      await fs.access(path.join(folder.uri.fsPath, 'dw.json'));
-      return; // workspace already configured — leave state alone
-    } catch {
-      // keep checking
-    }
-  }
+  if (await workspaceHasDwJson()) return;
   await context.workspaceState.update('b2c-dx.setup.activeInstance', undefined);
   await context.workspaceState.update('b2c-dx.gettingStarted.autoOpened', undefined);
   void vscode.commands.executeCommand('setContext', 'b2c-dx.setupSessionActive', false);
@@ -1613,14 +1607,9 @@ export async function showWalkthroughOnFirstActivation(context: vscode.Extension
 
   // Skip auto-open when the workspace already has a dw.json — the user is
   // returning, not starting fresh.
-  for (const folder of folders) {
-    try {
-      await fs.access(path.join(folder.uri.fsPath, 'dw.json'));
-      await context.workspaceState.update(SEEN_KEY, true);
-      return;
-    } catch {
-      // not present here, keep checking
-    }
+  if (await workspaceHasDwJson()) {
+    await context.workspaceState.update(SEEN_KEY, true);
+    return;
   }
 
   setTimeout(() => {

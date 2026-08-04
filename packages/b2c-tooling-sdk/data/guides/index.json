@@ -1,6 +1,11 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-07-15T16:07:44.486Z",
+  "generatedAt": "2026-08-03T18:22:28.428Z",
+  "source": {
+    "sha": "2e8f2f4e0b521c1aa3dc8e97e0c1db05b2f9975a",
+    "committedAt": "2026-07-31T14:49:45-07:00",
+    "ref": "main"
+  },
   "entries": [
     {
       "id": "b2c-commerce/agentic-mcp-shopper-tools-quick-start",
@@ -23,6 +28,9 @@
         "ChatGPT commerce",
         "agent tools",
         "shopper experience"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/quick-start-landing-page"
       ]
     },
     {
@@ -45,6 +53,9 @@
         "Commerce API guide",
         "API documentation",
         "developer resources"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-legacy"
       ]
     },
     {
@@ -67,6 +78,9 @@
         "packaging structure",
         "customizations",
         "storefront next"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/commerce-apps-overview"
       ]
     },
     {
@@ -88,6 +102,16 @@
         "audit log",
         "CSV export",
         "B2C Commerce administration"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/monitor-maintain",
+        "b2c-commerce/b2c_cc_roles",
+        "b2c-commerce/b2c_cc_login",
+        "b2c-commerce/b2c_cc_manage_instances",
+        "b2c-commerce/b2c_cc_create_ods_instance",
+        "b2c-commerce/b2c_cc_ods_scheduler_intro",
+        "b2c-commerce/b2c_cc_view_ods_statistics",
+        "b2c-commerce/b2c_cc_clone_ods_instance"
       ]
     },
     {
@@ -110,6 +134,9 @@
         "sandbox credit consumption",
         "integrate cloned sandbox",
         "Business Manager customizations"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc_clone_ods_instance"
       ]
     },
     {
@@ -130,6 +157,15 @@
         "testing sandbox",
         "sandbox configuration",
         "sandbox workflow"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc",
+        "b2c-commerce/b2c_cc_create_clone",
+        "b2c-commerce/b2c_cc_monitor_clone",
+        "b2c-commerce/b2c_cc_view_clone_history",
+        "b2c-commerce/b2c_cc_filter_clone_history",
+        "b2c-commerce/b2c_cc_troubleshoot_clone",
+        "b2c-commerce/b2c_cc_clone_best_practices"
       ]
     },
     {
@@ -152,6 +188,9 @@
         "sandbox instances",
         "Control Center admin",
         "user management"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc_roles"
       ]
     },
     {
@@ -174,6 +213,9 @@
         "Sandbox_API_User",
         "clone operation",
         "sandbox configuration"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc_clone_ods_instance"
       ]
     },
     {
@@ -196,6 +238,10 @@
         "sandbox setup",
         "testing environment",
         "Sandbox_API_User"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc",
+        "b2c-commerce/b2c_cc_delete_ods_instance"
       ]
     },
     {
@@ -217,6 +263,9 @@
         "Operation Scheduler",
         "Account Manager",
         "Control Center"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc_ods_scheduler_intro"
       ]
     },
     {
@@ -237,6 +286,9 @@
         "sandbox management",
         "realm sandbox",
         "instance deletion"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc_create_ods_instance"
       ]
     },
     {
@@ -257,6 +309,9 @@
         "scheduler removal",
         "On-Demand Sandbox operations",
         "delete scheduler"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc_ods_scheduler_intro"
       ]
     },
     {
@@ -277,6 +332,9 @@
         "ODS modification",
         "scheduler management",
         "business needs adjustment"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc_ods_scheduler_intro"
       ]
     },
     {
@@ -297,6 +355,9 @@
         "source instance",
         "target instance",
         "clone search"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc_clone_ods_instance"
       ]
     },
     {
@@ -317,6 +378,9 @@
         "sandbox reset",
         "database reset",
         "temporary password"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc_manage_instances"
       ]
     },
     {
@@ -337,6 +401,9 @@
         "controlcenter.commercecloud.salesforce.com",
         "realm access",
         "organization dropdown"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc"
       ]
     },
     {
@@ -359,6 +426,11 @@
         "first party instance",
         "on-demand sandbox",
         "instance administration"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc",
+        "b2c-commerce/b2c_cc_initialize_an_instance",
+        "b2c-commerce/b2c_cc_start_and_stop_an_instance"
       ]
     },
     {
@@ -382,6 +454,9 @@
         "target sandbox status",
         "clone badge",
         "cloning completion"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc_clone_ods_instance"
       ]
     },
     {
@@ -402,6 +477,12 @@
         "credit consumption",
         "sandbox availability",
         "operation scheduler ODS"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc",
+        "b2c-commerce/b2c_cc_create_ods_scheduler",
+        "b2c-commerce/b2c_cc_edit_ods_scheduler",
+        "b2c-commerce/b2c_cc_delete_ods_scheduler"
       ]
     },
     {
@@ -424,6 +505,11 @@
         "user management",
         "role-based access",
         "B2C Commerce administration"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc",
+        "b2c-commerce/b2c_cc_create_a_role",
+        "b2c-commerce/b2c_cc_specify_instance_permissions"
       ]
     },
     {
@@ -446,6 +532,9 @@
         "Start/Stop permission",
         "Grant Permissions",
         "PIG SIG ODS instances"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc_roles"
       ]
     },
     {
@@ -466,6 +555,9 @@
         "instance status",
         "administratively down",
         "system down"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc_manage_instances"
       ]
     },
     {
@@ -489,6 +581,9 @@
         "sandbox clone issues",
         "B2C Commerce sandbox",
         "clone diagnostic"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc_clone_ods_instance"
       ]
     },
     {
@@ -511,6 +606,9 @@
         "sandbox monitoring",
         "clone details",
         "data copy history"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc_clone_ods_instance"
       ]
     },
     {
@@ -533,6 +631,9 @@
         "sandbox activity",
         "instance statistics",
         "usage metrics"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c_cc"
       ]
     },
     {
@@ -556,6 +657,11 @@
         "sorting rules",
         "API scripts",
         "data processing"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-custom",
+        "b2c-commerce/b2c-automating-feed-import-of-active-data",
+        "b2c-commerce/b2c-exporting-active-data"
       ]
     },
     {
@@ -578,6 +684,9 @@
         "feed integration",
         "data import job",
         "product index"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-active-data-for-developers"
       ]
     },
     {
@@ -599,6 +708,9 @@
         "file log",
         "inventory scheduling",
         "logging configuration"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -622,6 +734,9 @@
         "attribute grouping",
         "custom preferences",
         "B2C Commerce objects"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/creatingbusinessobjects"
       ]
     },
     {
@@ -645,6 +760,9 @@
         "extend functionality",
         "reusable code",
         "cartridge classpath"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-dev-components"
       ]
     },
     {
@@ -666,6 +784,9 @@
         "CI/CD pipelines",
         "sandbox provisioning",
         "bug reproduction"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-developer-sandboxes"
       ]
     },
     {
@@ -688,6 +809,10 @@
         "staging production",
         "code versioning",
         "deployment"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/understand-b2c",
+        "b2c-commerce/b2c-compatibility-mode-considerations"
       ]
     },
     {
@@ -710,6 +835,9 @@
         "template literals",
         "code migration",
         "version upgrade"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-code-deployment"
       ]
     },
     {
@@ -730,6 +858,9 @@
         "Adyen integration",
         "payment gateway customization",
         "merchant tools payment configuration"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-csc-customization"
       ]
     },
     {
@@ -752,6 +883,9 @@
         "storefront domain setup",
         "CSC storefront configuration",
         "host name alias"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-customer-service-center"
       ]
     },
     {
@@ -775,6 +909,9 @@
         "static files",
         "shared library",
         "searchableFlag"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/build-your-site"
       ]
     },
     {
@@ -797,6 +934,9 @@
         "cache middleware",
         "SFRA caching",
         "storefront caching"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-working-with-templates"
       ]
     },
     {
@@ -820,6 +960,9 @@
         "order details",
         "add note to order",
         "new order creation"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-customer-service-center"
       ]
     },
     {
@@ -841,6 +984,9 @@
         "import setup",
         "data import",
         "B2C Commerce imports"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -863,6 +1009,9 @@
         "address form",
         "UI customization",
         "CSC settings"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-customer-service-center"
       ]
     },
     {
@@ -886,6 +1035,9 @@
         "site development",
         "CSC settings",
         "customize forms"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-csc-customization"
       ]
     },
     {
@@ -909,6 +1061,18 @@
         "payment methods",
         "fraud checks",
         "Commerce Cloud customization"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-customer-service-center",
+        "b2c-commerce/b2c-configuring-a-hosted-payment-page",
+        "b2c-commerce/b2c-csc-psp",
+        "b2c-commerce/b2c-csc-order-calculation",
+        "b2c-commerce/b2c-csc-hooks",
+        "b2c-commerce/b2c-csc-ui-customization",
+        "b2c-commerce/b2c-csc-customizable-areas",
+        "b2c-commerce/b2c-csc-data-sources",
+        "b2c-commerce/b2c-customizable-grids",
+        "b2c-commerce/b2c-custom-actions"
       ]
     },
     {
@@ -931,6 +1095,9 @@
         "alternative data sources",
         "element data configuration",
         "agent customization"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-csc-customization"
       ]
     },
     {
@@ -954,6 +1121,9 @@
         "dw.ocapi.shop",
         "commerce order operations",
         "API customization"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-csc-customization"
       ]
     },
     {
@@ -976,6 +1146,9 @@
         "conditional visibility",
         "layout width offset",
         "B2C Commerce layouts"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-csc-ui-customization"
       ]
     },
     {
@@ -997,6 +1170,9 @@
         "SiteGenesis",
         "dw.order hooks",
         "cart calculation"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-csc-customization"
       ]
     },
     {
@@ -1019,6 +1195,9 @@
         "Shop API",
         "payment processing",
         "payment authorization"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-csc-customization"
       ]
     },
     {
@@ -1040,6 +1219,9 @@
         "system object types",
         "custom reason codes",
         "edit reason codes"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-customer-service-center"
       ]
     },
     {
@@ -1062,6 +1244,11 @@
         "custom attributes",
         "layout configuration",
         "Business Manager UI modification"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-csc-customization",
+        "b2c-commerce/b2c-csc-layouts",
+        "b2c-commerce/b2c-csc-widgets"
       ]
     },
     {
@@ -1084,6 +1271,9 @@
         "attribute metadata",
         "form elements",
         "widget customization"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-csc-ui-customization"
       ]
     },
     {
@@ -1107,6 +1297,16 @@
         "checkout customization",
         "AppExchange extensions",
         "server-side JavaScript"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/developer-workflow",
+        "b2c-commerce/b2c-promotions-for-developers",
+        "b2c-commerce/b2c-custom-job-steps",
+        "b2c-commerce/b2c-pipelet-to-script-conversion",
+        "b2c-commerce/b2c-customer-service-center",
+        "b2c-commerce/b2c-customize-business-manager",
+        "b2c-commerce/b2c-active-data-for-developers",
+        "b2c-commerce/b2c-recommendations-for-developers"
       ]
     },
     {
@@ -1130,6 +1330,9 @@
         "customer page",
         "basket page",
         "order page"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-csc-customization"
       ]
     },
     {
@@ -1153,6 +1356,9 @@
         "configuration caching",
         "application server cache",
         "cache memory management"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/best-practices"
       ]
     },
     {
@@ -1176,6 +1382,9 @@
         "timeout error page",
         "Site Development",
         "error page upload"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/test-launch"
       ]
     },
     {
@@ -1199,6 +1408,11 @@
         "job automation",
         "pipeline",
         "job framework"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-custom",
+        "b2c-commerce/b2c-step-types-json-example",
+        "b2c-commerce/b2c-step-types-xml-example"
       ]
     },
     {
@@ -1221,6 +1435,9 @@
         "LIKE ILIKE queries",
         "customer profiles",
         "batch processing"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-site-performance"
       ]
     },
     {
@@ -1244,6 +1461,9 @@
         "customer addresses",
         "customer baskets",
         "CSC"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-customer-service-center"
       ]
     },
     {
@@ -1265,6 +1485,19 @@
         "OCAPI hooks",
         "Shop API",
         "order customization"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-custom",
+        "b2c-commerce/b2c-specifying-customer-service-center-settings",
+        "b2c-commerce/b2c-setting-permissions-for-csc",
+        "b2c-commerce/b2c-starting-customer-service-center",
+        "b2c-commerce/b2c-create-and-find-orders",
+        "b2c-commerce/b2c-hand-off-a-basket",
+        "b2c-commerce/b2c-customer-records",
+        "b2c-commerce/b2c-csc-reason-codes",
+        "b2c-commerce/b2c-configuring-browse-on-behalf-of",
+        "b2c-commerce/b2c-creating-a-csc-ui-config-manually",
+        "b2c-commerce/b2c-csc-customization"
       ]
     },
     {
@@ -1288,6 +1521,9 @@
         "column headers",
         "grid data source",
         "admin configuration"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-csc-customization"
       ]
     },
     {
@@ -1311,6 +1547,9 @@
         "Business Manager UI",
         "extend Business Manager",
         "merchant extensions"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-custom"
       ]
     },
     {
@@ -1331,6 +1570,9 @@
         "SiteGenesis",
         "script reference",
         "import cleanup"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -1354,6 +1596,9 @@
         "developer efficiency",
         "storefront implementation",
         "file management"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-site-performance"
       ]
     },
     {
@@ -1374,6 +1619,14 @@
         "B2C Commerce architecture",
         "SFRA",
         "site development fundamentals"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/understand-b2c",
+        "b2c-commerce/b2c-cartridges",
+        "b2c-commerce/b2c-working-with-controllers",
+        "b2c-commerce/b2c-working-with-scripts",
+        "b2c-commerce/b2c-working-with-templates",
+        "b2c-commerce/b2c-forms"
       ]
     },
     {
@@ -1397,6 +1650,9 @@
         "Page Designer development",
         "merchant pages",
         "drag and drop pages"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/build-your-site"
       ]
     },
     {
@@ -1419,6 +1675,9 @@
         "OCAPI",
         "sandbox creation",
         "developer environment"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-developer-sandboxes"
       ]
     },
     {
@@ -1442,6 +1701,14 @@
         "Account Manager permissions",
         "sandbox uptime",
         "API sandbox creation"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/get-set-up",
+        "b2c-commerce/b2c-get-started-sandboxes",
+        "b2c-commerce/b2c-manage-sb",
+        "b2c-commerce/b2c-manage-sandboxes-from-control-center",
+        "b2c-commerce/b2c-clone-on-demand-sandboxes",
+        "b2c-commerce/b2c-develop-with-on-demand-sandbox"
       ]
     },
     {
@@ -1465,6 +1732,9 @@
         "developer tools",
         "CI pipeline",
         "Managed Runtime"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/quick-start-landing-page"
       ]
     },
     {
@@ -1488,6 +1758,9 @@
         "cartridge deployment",
         "sandbox management",
         "platform automation"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/quick-start-landing-page"
       ]
     },
     {
@@ -1509,6 +1782,9 @@
         "import scheduling",
         "SiteGenesis",
         "file handling"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -1530,6 +1806,9 @@
         "active data file format",
         "merchant tools",
         "online marketing"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-active-data-for-developers"
       ]
     },
     {
@@ -1553,6 +1832,9 @@
         "data storage",
         "localization",
         "custom objects"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-dev-components"
       ]
     },
     {
@@ -1576,6 +1858,9 @@
         "SCAPI",
         "template processor",
         "top-level variables"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-working-with-templates"
       ]
     },
     {
@@ -1596,6 +1881,9 @@
         "file handling",
         "SiteGenesis",
         "import automation"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -1616,6 +1904,9 @@
         "file retrieval",
         "FTP server",
         "inventory sync"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -1636,6 +1927,9 @@
         "import scheduling",
         "HTTP server",
         "sample code"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -1656,6 +1950,9 @@
         "sample script",
         "SiteGenesis",
         "import job scheduling"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -1679,6 +1976,9 @@
         "sandbox management",
         "self-service sandboxes",
         "sandbox setup"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-developer-sandboxes"
       ]
     },
     {
@@ -1699,6 +1999,9 @@
         "zip files",
         "sample code",
         "data import"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -1722,6 +2025,9 @@
         "two-factor authentication",
         "open source repos",
         "B2C Commerce code"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/build-your-site"
       ]
     },
     {
@@ -1745,6 +2051,9 @@
         "resource consumption",
         "performance optimization",
         "quota exceeded"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-site-performance"
       ]
     },
     {
@@ -1766,6 +2075,9 @@
         "shopping cart handoff",
         "order fulfillment",
         "basket session"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-customer-service-center"
       ]
     },
     {
@@ -1789,6 +2101,9 @@
         "job status",
         "staging process",
         "staging to production"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-troubleshooting"
       ]
     },
     {
@@ -1811,6 +2126,10 @@
         "inventory APIs",
         "SiteGenesis inventory",
         "cart checkout inventory"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/build-your-site",
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -1832,6 +2151,9 @@
         "storefront template",
         "analytics context",
         "product category"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -1853,6 +2175,9 @@
         "template configuration",
         "script tag placement",
         "htmlhead_UI.isml"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -1876,6 +2201,9 @@
         "template analytics",
         "HTTPS iframe",
         "emergency tracking disable"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -1897,6 +2225,9 @@
         "Apple Pay styling",
         "button customization",
         "product SKU basket"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -1919,6 +2250,9 @@
         "stop iteration",
         "loop control",
         "ISML loops"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -1940,6 +2274,9 @@
         "ispayment",
         "one-click purchase",
         "quick checkout"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -1962,6 +2299,9 @@
         "storefront caching",
         "cache type",
         "deprecation"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -1983,6 +2323,9 @@
         "confidential comments",
         "template instructions",
         "ISML syntax"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2005,6 +2348,9 @@
         "caching policy",
         "locale",
         "parameters"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2027,6 +2373,9 @@
         "character set",
         "isml",
         "response header"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2049,6 +2398,9 @@
         "jump to next",
         "loop flow control",
         "template scripting"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2070,6 +2422,9 @@
         "cookie comment",
         "persistent cookie",
         "browser cookie"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2091,6 +2446,9 @@
         "layout wrapper",
         "reusable templates",
         "template composition"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2112,6 +2470,9 @@
         "ISML",
         "template scripting",
         "conditional templates"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2134,6 +2495,9 @@
         "expression evaluation",
         "ISML",
         "template elements"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2156,6 +2520,9 @@
         "if expression",
         "conditional visualization",
         "template scripting"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2177,6 +2544,9 @@
         "nested templates",
         "dwMarker",
         "include depth limit"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2200,6 +2570,9 @@
         "last",
         "odd",
         "even"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2222,6 +2595,42 @@
         "page rendering",
         "dynamic data embedding",
         "Commerce template"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-working-with-templates",
+        "b2c-commerce/b2c-isml-expressions",
+        "b2c-commerce/b2c-isactivedatacontext",
+        "b2c-commerce/b2c-isactivedatahead",
+        "b2c-commerce/b2c-isanalyticsoff",
+        "b2c-commerce/b2c-isapplepay",
+        "b2c-commerce/b2c-isbreak",
+        "b2c-commerce/b2c-isbuynow",
+        "b2c-commerce/b2c-iscache",
+        "b2c-commerce/b2c-iscomment",
+        "b2c-commerce/b2c-iscomponent",
+        "b2c-commerce/b2c-iscontent",
+        "b2c-commerce/b2c-iscontinue",
+        "b2c-commerce/b2c-iscookie",
+        "b2c-commerce/b2c-isdecorate",
+        "b2c-commerce/b2c-iselse",
+        "b2c-commerce/b2c-iselseif",
+        "b2c-commerce/b2c-isif",
+        "b2c-commerce/b2c-isinclude",
+        "b2c-commerce/b2c-isloop",
+        "b2c-commerce/b2c-ismodule",
+        "b2c-commerce/b2c-isnext",
+        "b2c-commerce/b2c-isobject",
+        "b2c-commerce/b2c-ispayment",
+        "b2c-commerce/b2c-ispaymentmessages",
+        "b2c-commerce/b2c-isprint",
+        "b2c-commerce/b2c-isredirect",
+        "b2c-commerce/b2c-isremove",
+        "b2c-commerce/b2c-isreplace",
+        "b2c-commerce/b2c-isscript",
+        "b2c-commerce/b2c-isselect",
+        "b2c-commerce/b2c-isset",
+        "b2c-commerce/b2c-isslot",
+        "b2c-commerce/b2c-isstatus"
       ]
     },
     {
@@ -2244,6 +2653,9 @@
         "business API",
         "template programming",
         "ISML scripting"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2267,6 +2679,9 @@
         "tag definition",
         "reusable templates",
         "Pipeline Dictionary"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2288,6 +2703,9 @@
         "skip to next",
         "loop navigation",
         "ISML loops"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2311,6 +2729,9 @@
         "ProductHit",
         "storefront toolkit",
         "product analytics"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2333,6 +2754,9 @@
         "storefront payments",
         "payment integration",
         "isbuynow"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2354,6 +2778,9 @@
         "payment promotions",
         "credit options display",
         "storefront payment rendering"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2377,6 +2804,9 @@
         "site preferences",
         "instance preferences",
         "UTC time"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2400,6 +2830,9 @@
         "ISML redirect",
         "response redirect",
         "page redirect"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2423,6 +2856,9 @@
         "pipeline dictionary",
         "variable removal",
         "ISML tags"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2444,6 +2880,9 @@
         "template include",
         "isml decorator",
         "content placement"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2467,6 +2906,9 @@
         "page scope",
         "tag scope",
         "template context"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2490,6 +2932,9 @@
         "pipeline parameter",
         "dropdown",
         "list box"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2513,6 +2958,9 @@
         "B2C Commerce variables",
         "template variables",
         "variable lifetime"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2535,6 +2983,9 @@
         "content slot",
         "template placeholder",
         "slot id"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2557,6 +3008,9 @@
         "status code caching",
         "WebAdapter",
         "redirect"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-isml"
       ]
     },
     {
@@ -2580,6 +3034,9 @@
         "content JSON schemas",
         "ecommerce API reference",
         "custom development"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/api-doc"
       ]
     },
     {
@@ -2600,6 +3057,9 @@
         "config management",
         "SFCC configuration",
         "load task settings"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -2623,6 +3083,9 @@
         "product localization",
         "catalog localization",
         "site globalization"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/understand-b2c"
       ]
     },
     {
@@ -2646,6 +3109,9 @@
         "Custom Log Settings",
         "monitoring",
         "troubleshooting"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/monitor-maintain"
       ]
     },
     {
@@ -2667,6 +3133,9 @@
         "aliases",
         "Custom Maintenance Pages",
         "Administration"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/monitor-maintain"
       ]
     },
     {
@@ -2687,6 +3156,9 @@
         "instance monitoring",
         "sandbox administration",
         "instance operations"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-developer-sandboxes"
       ]
     },
     {
@@ -2710,6 +3182,9 @@
         "sandbox commands",
         "DX tooling",
         "commerce cloud sandbox"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-developer-sandboxes"
       ]
     },
     {
@@ -2732,6 +3207,9 @@
         "taxation",
         "storefront development",
         "site setup"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/build-your-site"
       ]
     },
     {
@@ -2753,6 +3231,9 @@
         "content mapping",
         "legacy developer docs",
         "release notes"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/which-product"
       ]
     },
     {
@@ -2775,6 +3256,9 @@
         "empty results page",
         "storefront content",
         "search merchandising"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-search-and-navigation-implementation-considerations"
       ]
     },
     {
@@ -2818,6 +3302,9 @@
         "Gillian package",
         "deprecated APIs",
         "B2C Commerce orders"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/build-your-site"
       ]
     },
     {
@@ -2839,6 +3326,9 @@
         "API deprecation",
         "controller script methods",
         "pipelet to JavaScript"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-custom"
       ]
     },
     {
@@ -2862,6 +3352,9 @@
         "campaign configuration",
         "promotion templates",
         "discount calculation"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-custom"
       ]
     },
     {
@@ -2885,6 +3378,9 @@
         "bc_api",
         "CurrentHttpParameterMap",
         "pagingcomponents.properties"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-search-and-navigation-implementation-considerations"
       ]
     },
     {
@@ -2907,6 +3403,9 @@
         "product linking migration",
         "storefront recommendations",
         "business manager"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-custom"
       ]
     },
     {
@@ -2927,6 +3426,9 @@
         "batch import",
         "inventory management",
         "SiteGenesis"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -2948,6 +3450,9 @@
         "Salesforce Help portal",
         "support ticket",
         "issue reporting"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-troubleshooting"
       ]
     },
     {
@@ -2970,6 +3475,11 @@
         "mobile search",
         "storefront navigation",
         "search optimization"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/build-your-site",
+        "b2c-commerce/b2c-search-suggestion-for-developers",
+        "b2c-commerce/b2c-search-and-navigation-implementation-considerations"
       ]
     },
     {
@@ -2993,6 +3503,12 @@
         "search placement",
         "search rank",
         "category search"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-search-and-navigation",
+        "b2c-commerce/b2c-understanding-the-search-pipeline",
+        "b2c-commerce/b2c-providing-a-view-all-button-for-search-results",
+        "b2c-commerce/b2c-merchandising-the-no-results-page"
       ]
     },
     {
@@ -3016,6 +3532,9 @@
         "SiteGenesis search",
         "suggestion popup",
         "search performance"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-search-and-navigation"
       ]
     },
     {
@@ -3038,6 +3557,9 @@
         "email scripts",
         "template email",
         "email queue"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/demandwarejavascript"
       ]
     },
     {
@@ -3060,6 +3582,9 @@
         "adjust order price",
         "locale permissions",
         "login on behalf"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-customer-service-center"
       ]
     },
     {
@@ -3083,6 +3608,12 @@
         "DOM rendering",
         "HTTP requests",
         "site traffic impact"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/best-practices",
+        "b2c-commerce/b2c-dev-best-practices",
+        "b2c-commerce/b2c-customer-data-for-developers",
+        "b2c-commerce/b2c-governance-and-quotas"
       ]
     },
     {
@@ -3103,6 +3634,9 @@
         "merchant tools site preferences",
         "CSC configuration",
         "staging production replication"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-customer-service-center"
       ]
     },
     {
@@ -3125,6 +3659,9 @@
         "site switching",
         "customer lookup",
         "order management"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-customer-service-center"
       ]
     },
     {
@@ -3146,6 +3683,9 @@
         "syntax validation",
         "B2C Commerce steps",
         "configuration example"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-custom-job-steps"
       ]
     },
     {
@@ -3165,6 +3705,9 @@
         "XML vs JSON",
         "code version",
         "step definition"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-custom-job-steps"
       ]
     },
     {
@@ -3186,6 +3729,9 @@
         "inventory batch import",
         "impex file processing",
         "import path retrieval"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -3207,6 +3753,9 @@
         "custom preference",
         "import settings",
         "sub-pipeline"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -3229,6 +3778,9 @@
         "scheduled imports",
         "file processing",
         "inventory scheduling"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -3249,6 +3801,9 @@
         "sub-pipeline",
         "import pipeline",
         "FTP configuration"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -3271,6 +3826,9 @@
         "file pattern matching",
         "server authentication",
         "import logger"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-supporting-scheduled-inventory-imports"
       ]
     },
     {
@@ -3293,6 +3851,25 @@
         "batch inventory import",
         "import sub-pipeline",
         "inventory scheduling"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-inventory-for-developers",
+        "b2c-commerce/b2c-sub-pipeline-get-exec-settings",
+        "b2c-commerce/b2c-sub-pipeline-get-unzip-file",
+        "b2c-commerce/b2c-sub-pipeline-load-files-from-ftp",
+        "b2c-commerce/b2c-sub-pipeline-load-files-from-http",
+        "b2c-commerce/b2c-sub-pipeline-do-inventory",
+        "b2c-commerce/b2c-begin-file-log-ds",
+        "b2c-commerce/b2c-create-impex-folder-structure-ds",
+        "b2c-commerce/b2c-del-file-ds",
+        "b2c-commerce/b2c-end-file-log-ds",
+        "b2c-commerce/b2c-get-files-from-directory-ds",
+        "b2c-commerce/b2c-get-files-from-ftp-server-ds",
+        "b2c-commerce/b2c-get-files-from-http-server-ds",
+        "b2c-commerce/b2c-get-imp-ex-processing-path-ds",
+        "b2c-commerce/b2c-get-unzip-ds",
+        "b2c-commerce/b2c-load-task-configuration-ds",
+        "b2c-commerce/b2c-rename-file-ds"
       ]
     },
     {
@@ -3314,6 +3891,9 @@
         "storefront templates",
         "active data",
         "page instrumentation"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-working-with-templates"
       ]
     },
     {
@@ -3337,6 +3917,9 @@
         "SFRA decorator",
         "external services",
         "payment providers"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/build-your-site"
       ]
     },
     {
@@ -3360,6 +3943,15 @@
         "error reproduction",
         "web adapter logs",
         "system troubleshooting"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/build-your-site",
+        "b2c-commerce/b2c-troubleshooting-infrastructure",
+        "b2c-commerce/b2c-troubleshooting-session-id-request-id",
+        "b2c-commerce/b2c-understanding-remote-includes",
+        "b2c-commerce/b2c-identifying-staging-problems",
+        "b2c-commerce/b2c-troubleshooting-platform-performance",
+        "b2c-commerce/b2c-reporting-to-support"
       ]
     },
     {
@@ -3382,6 +3974,9 @@
         "page cache",
         "firewall",
         "system components"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-troubleshooting"
       ]
     },
     {
@@ -3405,6 +4000,9 @@
         "pipeline optimization",
         "performance issues",
         "storefront performance"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-troubleshooting"
       ]
     },
     {
@@ -3428,6 +4026,9 @@
         "cookie",
         "_sid",
         "application pipelines"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-troubleshooting"
       ]
     },
     {
@@ -3449,6 +4050,9 @@
         "nested remote includes",
         "request tracking",
         "B2C Commerce remote includes"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-troubleshooting"
       ]
     },
     {
@@ -3472,6 +4076,9 @@
         "keyword search",
         "search indexes",
         "pagination"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-search-and-navigation-implementation-considerations"
       ]
     },
     {
@@ -3493,6 +4100,9 @@
         "conversion optimization",
         "deprecated resources",
         "high performing cart"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/best-practices"
       ]
     },
     {
@@ -3516,6 +4126,9 @@
         "page layouts",
         "dynamic content",
         "template design"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/build-your-site"
       ]
     },
     {
@@ -3539,6 +4152,9 @@
         "web service performance",
         "API calls",
         "call limits"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/build-your-site"
       ]
     },
     {
@@ -3562,6 +4178,9 @@
         "request handling",
         "controller exports",
         "public methods"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-dev-components"
       ]
     },
     {
@@ -3585,6 +4204,11 @@
         "Business Manager attributes",
         "queryable attributes",
         "script development"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-dev-components",
+        "b2c-commerce/usingjavascriptmodules",
+        "b2c-commerce/demandwarejavascript"
       ]
     },
     {
@@ -3608,6 +4232,13 @@
         "presentation logic",
         "page caching",
         "Pipeline Dictionary"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-dev-components",
+        "b2c-commerce/b2c-content-cache",
+        "b2c-commerce/b2c-isml",
+        "b2c-commerce/b2c-function-reference",
+        "b2c-commerce/b2c-tagging-pages-for-data-collection"
       ]
     },
     {
@@ -3630,6 +4261,12 @@
         "SEO",
         "optimization",
         "shopper experience"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/developer-workflow",
+        "b2c-commerce/b2c-site-performance",
+        "b2c-commerce/b2c-custom-caches",
+        "b2c-commerce/b2c-ux-for-checkout-and-cart"
       ]
     },
     {
@@ -3653,6 +4290,22 @@
         "custom business objects",
         "site creation",
         "merchandising"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/developer-workflow",
+        "b2c-commerce/b2c-github-repo-access",
+        "b2c-commerce/b2c-managing-sites-for-dev",
+        "commerce-api/hybrid-storefront-baskets",
+        "b2c-commerce/b2c-inventory-for-developers",
+        "b2c-commerce/creatingbusinessobjects",
+        "b2c-commerce/b2c-webservices",
+        "b2c-commerce/b2c-dev-for-page-designer",
+        "b2c-commerce/b2c-content-assets-for-developers",
+        "b2c-commerce/b2c-third-party",
+        "b2c-commerce/b2c-velocity-templates",
+        "b2c-commerce/b2c-troubleshooting",
+        "b2c-commerce/b2c-search-and-navigation",
+        "b2c-commerce/b2c-order-management-for-developers"
       ]
     },
     {
@@ -3661,7 +4314,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/building-your-app.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/building-your-app.md",
-      "headings": "Getting Started with Claude Code • Backend-Only Apps • Extension Points • Example: non-blocking error (returning `Status.ERROR`) • Example: blocking error (throwing an exception) • Implementation best practices • Optional: delivering Storefront Next components • UI-Only and Fullstack Apps • Building your Storefront Next extension • target-config.json • How UITarget replacement works at build time • Extension routes • Extension localization • Extension installation • Injecting External SDK Scripts • How script injection works in Storefront Next • Choosing the right mechanism • Example: Global SDK via contextProvider • Example: Checkout-scoped SDK via components • Handling SPA re-initialization • Script placement decision guide • Storefront Action Hooks • Available action hooks • Declaring and writing action hooks • Listing available extension points • Building the back-end • Extension Points • Custom SCAPI • Backend Development Notes • Example Apps in the Registry • Anti-patterns to avoid",
+      "headings": "Getting Started with Claude Code • Backend-Only Apps • Extension Points • Example: non-blocking error (returning `Status.ERROR`) • Example: blocking error (throwing an exception) • Implementation best practices • Optional: delivering Storefront Next components • Connection Health Check • Registering the hook • Implementing the hook • Status codes • Status details • Localizing health check messages • Best practices • Apps without a health check • UI-Only and Fullstack Apps • Building your Storefront Next extension • target-config.json • How UITarget replacement works at build time • Extension routes • Extension localization • Extension installation • Injecting External SDK Scripts • How script injection works in Storefront Next • Choosing the right mechanism • Example: Global SDK via contextProvider • Example: Checkout-scoped SDK via components • Handling SPA re-initialization • Script placement decision guide • Storefront Action Hooks • Available action hooks • Declaring and writing action hooks • Listing available extension points • Building the back-end • Extension Points • Custom SCAPI • Backend Development Notes • Example Apps in the Registry • Anti-patterns to avoid",
       "summary": "Build a Commerce App by choosing an architecture (UI-only, Backend-only, or Fullstack) and using Claude Code skills to scaffold and generate app structure with extension points.",
       "keywords": [
         "build commerce app",
@@ -3676,6 +4329,9 @@
         "app development",
         "cartridge development",
         "tax domain"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/commerce-apps-overview"
       ]
     },
     {
@@ -3699,6 +4355,17 @@
         "frontend UI components",
         "server-side code",
         "marketplace-ready"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/architecture",
+        "b2c-commerce/supported-domains",
+        "b2c-commerce/development-environment",
+        "b2c-commerce/building-your-app",
+        "b2c-commerce/packaging",
+        "b2c-commerce/testing-validation",
+        "b2c-commerce/submission-review",
+        "b2c-commerce/post-publication",
+        "b2c-commerce/reference"
       ]
     },
     {
@@ -3745,6 +4412,10 @@
         "data structure",
         "extend commerce",
         "custom data"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/build-your-site",
+        "b2c-commerce/b2c-business-objects"
       ]
     },
     {
@@ -3768,6 +4439,13 @@
         "compatibility mode",
         "JavaScript API",
         "ecommerce scripting"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-working-with-scripts",
+        "b2c-commerce/understandingserversidejavascript",
+        "b2c-commerce/thescriptingpipeletexplained",
+        "b2c-commerce/b2c-sending-email-via-scripts-or-hooks",
+        "b2c-commerce/integratingwithapplications"
       ]
     },
     {
@@ -3791,6 +4469,18 @@
         "quick start",
         "prerequisites",
         "B2C CLI"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/quick-start-landing-page",
+        "b2c-commerce/understand-b2c",
+        "b2c-commerce/get-set-up",
+        "b2c-commerce/build-your-site",
+        "b2c-commerce/b2c-custom",
+        "b2c-commerce/best-practices",
+        "b2c-commerce/test-launch",
+        "b2c-commerce/monitor-maintain",
+        "b2c-commerce/track-analytics",
+        "b2c-commerce/jdbc_intro"
       ]
     },
     {
@@ -3813,6 +4503,9 @@
         "Storefront Next",
         "Commerce App Registry",
         "environment configuration"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/commerce-apps-overview"
       ]
     },
     {
@@ -3858,6 +4551,10 @@
         "configuration",
         "developer setup",
         "initial setup"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/developer-workflow",
+        "b2c-commerce/b2c-developer-sandboxes"
       ]
     },
     {
@@ -3881,6 +4578,9 @@
         "ecommerce platform structure",
         "Salesforce Commerce Cloud",
         "instance configuration"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/understand-b2c"
       ]
     },
     {
@@ -3889,7 +4589,25 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-environment-matrix.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-environment-matrix.md",
-      "headings": "Setup Guide by Architecture and Environment • Configuration by Environment • Route Ownership • Canonical Routing Rules • Notes"
+      "headings": "Setup Guide by Architecture and Environment • Configuration by Environment • Route Ownership • Canonical Routing Rules • Notes",
+      "summary": "Set up Hybrid Auth routing across B2C Commerce environments (PIG, ODS, localhost) for Storefront Next and PWA Kit architectures.",
+      "keywords": [
+        "Hybrid Auth",
+        "routing",
+        "PIG",
+        "ODS",
+        "Storefront Next",
+        "PWA Kit",
+        "Composable Storefront",
+        "environment setup",
+        "eCDN",
+        "localhost",
+        "hybrid implementation",
+        "traffic routing"
+      ],
+      "relatedEntries": [
+        "commerce-api/hybrid-authentication"
+      ]
     },
     {
       "id": "b2c-commerce/hybrid-auth-manual-setup",
@@ -3897,7 +4615,25 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-manual-setup.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-manual-setup.md",
-      "headings": "Are You Starting Fresh or Coming from an Existing Setup? • Fresh Setup • Existing Setup • Set Up by Instance Type • PIG (Primary Instance Group) • ODS (On-Demand Sandbox) • Localhost (Local Development) • SFRA/SiteGenesis Proper + Hybrid Auth (Session Extension and SLAS Setup) • Scope • High-Level Steps • Validate the Setup • Migration Recommendation • Headless Storefronts + SFRA/SiteGenesis • When to Use This Path • Supported Scenario • Before You Begin • Step-by-Step Setup • Step 1: Authenticate Shoppers with SLAS • Step 2: Respect SLAS Set-Cookie Responses • Step 3: Send the `sfdc_dwsid` Header on SCAPI Calls • Step 4: Configure Route Ownership Between Headless and SFRA • Step 5: (Optional) Basket Merge and Shopper Context • Step 6: Validate Cross-Runtime Navigation • Next Steps"
+      "headings": "Are You Starting Fresh or Coming from an Existing Setup? • Fresh Setup • Existing Setup • Set Up by Instance Type • PIG (Primary Instance Group) • ODS (On-Demand Sandbox) • Localhost (Local Development) • SFRA/SiteGenesis Proper + Hybrid Auth (Session Extension and SLAS Setup) • Scope • High-Level Steps • Validate the Setup • Migration Recommendation • Headless Storefronts + SFRA/SiteGenesis • When to Use This Path • Supported Scenario • Before You Begin • Step-by-Step Setup • Step 1: Authenticate Shoppers with SLAS • Step 2: Respect SLAS Set-Cookie Responses • Step 3: Send the `sfdc_dwsid` Header on SCAPI Calls • Step 4: Configure Route Ownership Between Headless and SFRA • Step 5: (Optional) Basket Merge and Shopper Context • Step 6: Validate Cross-Runtime Navigation • Next Steps",
+      "summary": "Set up hybrid authentication manually for PWA Kit, SFRA, SiteGenesis, or headless storefronts by configuring MRT, SLAS, and eCDN.",
+      "keywords": [
+        "hybrid auth setup",
+        "manual hybrid authentication",
+        "PWA Kit",
+        "SFRA",
+        "SiteGenesis",
+        "Managed Runtime MRT",
+        "SLAS",
+        "headless storefront",
+        "session bridging",
+        "eCDN",
+        "Composable Storefront",
+        "hybrid storefront configuration"
+      ],
+      "relatedEntries": [
+        "commerce-api/hybrid-authentication"
+      ]
     },
     {
       "id": "b2c-commerce/hybrid-auth-quick-start",
@@ -3905,14 +4641,48 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-quick-start.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-quick-start.md",
-      "headings": "Before You Begin • Set Up by Instance Type • PIG (Primary Instance Group) • ODS (On-Demand Sandbox) • Localhost (Local Development) • Next Steps"
+      "headings": "Before You Begin • Set Up by Instance Type • PIG (Primary Instance Group) • ODS (On-Demand Sandbox) • Localhost (Local Development) • Next Steps",
+      "summary": "Quickly set up a Storefront Next hybrid storefront with automated provisioning of MRT environment and eCDN through Business Manager.",
+      "keywords": [
+        "Storefront Next setup",
+        "automated setup",
+        "hybrid storefront",
+        "Managed Runtime",
+        "MRT environment",
+        "eCDN",
+        "hybrid auth",
+        "Business Manager provisioning",
+        "Storefront Next configuration",
+        "quick setup",
+        "hybrid authentication"
+      ],
+      "relatedEntries": [
+        "commerce-api/hybrid-authentication"
+      ]
     },
     {
       "id": "b2c-commerce/hybrid-auth-select-storefront",
       "title": "Select Your Storefront",
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-select-storefront.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-select-storefront.md"
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-select-storefront.md",
+      "summary": "Choose and set up your storefront architecture (Storefront Next, PWA Kit, or SFRA/SiteGenesis) with appropriate hybrid authentication configuration.",
+      "keywords": [
+        "storefront selection",
+        "storefront architecture",
+        "PWA Kit setup",
+        "Storefront Next",
+        "SFRA SiteGenesis",
+        "hybrid implementation",
+        "hybrid auth",
+        "composable storefront",
+        "storefront configuration",
+        "headless commerce",
+        "implementation guide"
+      ],
+      "relatedEntries": [
+        "commerce-api/hybrid-authentication"
+      ]
     },
     {
       "id": "b2c-commerce/hybrid-auth-troubleshooting",
@@ -3920,7 +4690,25 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-troubleshooting.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-troubleshooting.md",
-      "headings": "Hybrid Auth Not Applying • Token or Session Drift Across Runtimes • eCDN Routing Mismatch • Localhost and Sandbox Differences • Missing SCAPI Short Code on On-Demand Sandboxes (ODS)"
+      "headings": "Hybrid Auth Not Applying • Token or Session Drift Across Runtimes • eCDN Routing Mismatch • Localhost and Sandbox Differences • Missing SCAPI Short Code on On-Demand Sandboxes (ODS)",
+      "summary": "Diagnose and resolve common Hybrid Auth implementation issues including token drift, routing mismatches, and SLAS configuration problems.",
+      "keywords": [
+        "Hybrid Auth troubleshooting",
+        "SLAS client ID",
+        "session bridge",
+        "eCDN routing",
+        "token drift",
+        "SCAPI short code",
+        "Hybrid Auth not applying",
+        "session-bridge authentication",
+        "hybrid routing matrix",
+        "localhost hybrid proxy",
+        "ODS sandbox",
+        "auth loops"
+      ],
+      "relatedEntries": [
+        "commerce-api/hybrid-authentication"
+      ]
     },
     {
       "id": "b2c-commerce/integratingwithapplications",
@@ -3942,6 +4730,9 @@
         "HTTP integration",
         "API integration",
         "system integration"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/demandwarejavascript"
       ]
     },
     {
@@ -3965,6 +4756,9 @@
         "tenant authentication",
         "download JDBC driver",
         "data warehouse setup"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_intro"
       ]
     },
     {
@@ -3987,6 +4781,37 @@
         "analytics tables",
         "data warehouse",
         "performance metrics"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_lakehouse_schema",
+        "b2c-commerce/jdbc_ccdw_aggr_controller_request",
+        "b2c-commerce/jdbc_ccdw_aggr_detail_product_recommendation_recommender",
+        "b2c-commerce/jdbc_ccdw_aggr_include_controller_request",
+        "b2c-commerce/jdbc_ccdw_aggr_inventory_by_location",
+        "b2c-commerce/jdbc_ccdw_aggr_inventory_by_location_group",
+        "b2c-commerce/jdbc_ccdw_aggr_ocapi_request",
+        "b2c-commerce/jdbc_ccdw_aggr_payment_sales_summary",
+        "b2c-commerce/jdbc_ccdw_aggr_product_cobuy",
+        "b2c-commerce/jdbc_ccdw_aggr_product_recommendation",
+        "b2c-commerce/jdbc_ccdw_aggr_product_recommendation_recommender",
+        "b2c-commerce/jdbc_ccdw_aggr_product_sales_summary",
+        "b2c-commerce/jdbc_ccdw_aggr_promotion_activation",
+        "b2c-commerce/jdbc_ccdw_aggr_promotion_cobuy",
+        "b2c-commerce/jdbc_ccdw_aggr_promotion_sales_summary",
+        "b2c-commerce/jdbc_ccdw_aggr_registration",
+        "b2c-commerce/jdbc_ccdw_aggr_sales_summary",
+        "b2c-commerce/jdbc_ccdw_aggr_scapi_request",
+        "b2c-commerce/jdbc_ccdw_aggr_search",
+        "b2c-commerce/jdbc_ccdw_aggr_search_conversion",
+        "b2c-commerce/jdbc_ccdw_aggr_search_query",
+        "b2c-commerce/jdbc_ccdw_aggr_source_code_activation",
+        "b2c-commerce/jdbc_ccdw_aggr_source_code_sales",
+        "b2c-commerce/jdbc_ccdw_aggr_visit",
+        "b2c-commerce/jdbc_ccdw_aggr_visit_checkout",
+        "b2c-commerce/jdbc_ccdw_aggr_visit_ip_address",
+        "b2c-commerce/jdbc_ccdw_aggr_visit_referrer",
+        "b2c-commerce/jdbc_ccdw_aggr_visit_robot",
+        "b2c-commerce/jdbc_ccdw_aggr_visit_user_agent"
       ]
     },
     {
@@ -4007,6 +4832,9 @@
         "daily performance data",
         "controller monitoring",
         "CCDW table"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4028,6 +4856,9 @@
         "CCDW recommendation analytics",
         "algorithm-specific product performance",
         "recommendation attribution revenue"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4050,6 +4881,9 @@
         "include controller analytics",
         "cache behavior metrics",
         "developer tools"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4072,6 +4906,9 @@
         "CCDW inventory",
         "stock by location",
         "fulfillment inventory"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4094,6 +4931,9 @@
         "inventory levels",
         "soft reserved",
         "inventory aggregation"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4116,6 +4956,9 @@
         "OCAPI analytics",
         "API debugging",
         "performance reporting"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4138,6 +4981,9 @@
         "refunded amount",
         "CCDW",
         "reporting"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4158,6 +5004,9 @@
         "commerce data warehouse",
         "CCDW table",
         "product relationships"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4180,6 +5029,9 @@
         "recommendation data warehouse",
         "aggregation table",
         "recommendation reporting"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4202,6 +5054,9 @@
         "recommendation reporting",
         "recommender analysis",
         "commerce recommendation"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4224,6 +5079,9 @@
         "sales dimensions",
         "order analytics",
         "reporting schema"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4246,6 +5104,9 @@
         "promotion reporting",
         "campaign activation",
         "device class"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4266,6 +5127,9 @@
         "promotion dimension",
         "purchase analysis",
         "promotion tracking"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4288,6 +5152,9 @@
         "data warehouse schema",
         "promotion dimensions",
         "sales metrics"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4310,6 +5177,9 @@
         "registration data warehouse",
         "CCDW aggregate",
         "registration summary"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4332,6 +5202,9 @@
         "customer registration",
         "first-time buyer",
         "device class"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4354,6 +5227,9 @@
         "SCAPI data warehouse",
         "Commerce Cloud API monitoring",
         "request statistics"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4375,6 +5251,9 @@
         "search performance",
         "search events",
         "CCDW search table"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4396,6 +5275,9 @@
         "search revenue",
         "data warehouse reporting",
         "search aggregation"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4418,6 +5300,9 @@
         "search without results",
         "search behavior",
         "commerce search reporting"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4439,6 +5324,9 @@
         "source code status",
         "activation aggregation",
         "B2C Commerce CCDW"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4461,6 +5349,9 @@
         "business channel",
         "source code group",
         "first-time buyer"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4483,6 +5374,9 @@
         "visit duration",
         "order data",
         "device class"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4505,6 +5399,9 @@
         "device class",
         "checkout conversion",
         "storefront analytics"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4527,6 +5424,9 @@
         "num_visits",
         "data warehouse table",
         "CCDW"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4548,6 +5448,9 @@
         "device class",
         "locale",
         "visitor registration"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4570,6 +5473,9 @@
         "device class",
         "locale code",
         "site traffic analysis"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4592,6 +5498,9 @@
         "CCDW table",
         "analytics query",
         "device metrics"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -4613,6 +5522,9 @@
         "dimension",
         "channel categorization",
         "CCDW"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4633,6 +5545,9 @@
         "campaign validity",
         "data warehouse schema",
         "CCDW tables"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4654,6 +5569,9 @@
         "data warehouse",
         "dimension table",
         "coupon schema"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4675,6 +5593,9 @@
         "data warehouse currency",
         "DCDW currency lookup",
         "currency reference data"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4697,6 +5618,9 @@
         "dimension table",
         "data warehouse",
         "B2C Commerce"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4719,6 +5643,9 @@
         "date lookups",
         "date components",
         "analytics"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4739,6 +5666,9 @@
         "dimensional table",
         "regional data",
         "country lookup"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4761,6 +5691,9 @@
         "multi-language",
         "dimension table",
         "localization"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4781,6 +5714,9 @@
         "location_id",
         "dimension table",
         "B2C Commerce data warehouse"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4802,6 +5738,9 @@
         "location management",
         "nlocation_group_id",
         "database tables"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4822,6 +5761,9 @@
         "data warehouse",
         "SMALLINT key",
         "payment lookup"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4844,6 +5786,9 @@
         "manufacturer SKU",
         "product master data",
         "bundle products"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4865,6 +5810,9 @@
         "data warehouse schema",
         "DW promotion",
         "promotion attributes"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4887,6 +5835,9 @@
         "site currency",
         "site timezone",
         "taxation rules"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4909,6 +5860,9 @@
         "analytics",
         "reporting",
         "normalized identifier"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4931,6 +5885,9 @@
         "12-hour format",
         "24-hour format",
         "AM PM"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4953,6 +5910,9 @@
         "CCDW schema",
         "data warehouse timezone",
         "timezone metadata"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4975,6 +5935,9 @@
         "ua_engine",
         "crawler detection",
         "device classification"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_dimension_tables"
       ]
     },
     {
@@ -4997,6 +5960,9 @@
         "temporal data",
         "dimension tables",
         "site metrics"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_fact_tables"
       ]
     },
     {
@@ -5018,6 +5984,9 @@
         "registration data",
         "customer tracking",
         "registration analytics"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_fact_tables"
       ]
     },
     {
@@ -5039,6 +6008,9 @@
         "reserved stock",
         "inventory fact table",
         "stock levels"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_fact_tables"
       ]
     },
     {
@@ -5061,6 +6033,9 @@
         "OCI inventory data",
         "available to fulfill",
         "inventory analytics"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_fact_tables"
       ]
     },
     {
@@ -5083,6 +6058,9 @@
         "order items",
         "commerce data",
         "CCDW"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_fact_tables"
       ]
     },
     {
@@ -5105,6 +6083,9 @@
         "data warehouse",
         "CCDW",
         "payment facts"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_fact_tables"
       ]
     },
     {
@@ -5127,6 +6108,9 @@
         "analytics",
         "reporting",
         "promotion tracking"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_fact_tables"
       ]
     },
     {
@@ -5149,6 +6133,9 @@
         "line item discount",
         "promotion tracking",
         "product promotion"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_fact_tables"
       ]
     },
     {
@@ -5170,6 +6157,9 @@
         "real-time analytics",
         "fact table columns",
         "metric tracking"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_fact_tables"
       ]
     },
     {
@@ -5191,6 +6181,9 @@
         "activation events",
         "commerce analytics",
         "source code tracking"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_fact_tables"
       ]
     },
     {
@@ -5213,6 +6206,27 @@
         "JDBC",
         "analytics schema",
         "dimensional modeling"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_lakehouse_schema",
+        "b2c-commerce/jdbc_ccdw_dim_business_channel",
+        "b2c-commerce/jdbc_ccdw_dim_campaign",
+        "b2c-commerce/jdbc_ccdw_dim_coupon",
+        "b2c-commerce/jdbc_ccdw_dim_currency",
+        "b2c-commerce/jdbc_ccdw_dim_customer",
+        "b2c-commerce/jdbc_ccdw_dim_date",
+        "b2c-commerce/jdbc_ccdw_dim_geography",
+        "b2c-commerce/jdbc_ccdw_dim_locale",
+        "b2c-commerce/jdbc_ccdw_dim_location",
+        "b2c-commerce/jdbc_ccdw_dim_location_group",
+        "b2c-commerce/jdbc_ccdw_dim_payment_method",
+        "b2c-commerce/jdbc_ccdw_dim_product",
+        "b2c-commerce/jdbc_ccdw_dim_promotion",
+        "b2c-commerce/jdbc_ccdw_dim_site",
+        "b2c-commerce/jdbc_ccdw_dim_source_code_group",
+        "b2c-commerce/jdbc_ccdw_dim_time",
+        "b2c-commerce/jdbc_ccdw_dim_timezone",
+        "b2c-commerce/jdbc_ccdw_dim_user_agent"
       ]
     },
     {
@@ -5235,6 +6249,19 @@
         "foreign keys",
         "analytics tables",
         "reporting schema"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_lakehouse_schema",
+        "b2c-commerce/jdbc_ccdw_fact_customer_list_snapshot",
+        "b2c-commerce/jdbc_ccdw_fact_customer_registration",
+        "b2c-commerce/jdbc_ccdw_fact_inventory_record_snapshot",
+        "b2c-commerce/jdbc_ccdw_fact_inventory_record_snapshot_hourly",
+        "b2c-commerce/jdbc_ccdw_fact_line_item",
+        "b2c-commerce/jdbc_ccdw_fact_order_payments",
+        "b2c-commerce/jdbc_ccdw_fact_promotion_activation",
+        "b2c-commerce/jdbc_ccdw_fact_promotion_line_item",
+        "b2c-commerce/jdbc_ccdw_fact_realtime_metric",
+        "b2c-commerce/jdbc_ccdw_fact_source_codes_activation"
       ]
     },
     {
@@ -5258,6 +6285,9 @@
         "revenue discrepancies",
         "multi-currency",
         "reporting currency"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_intro"
       ]
     },
     {
@@ -5278,6 +6308,13 @@
         "schema reference",
         "lakehouse schema",
         "analytics data access"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/developer-workflow",
+        "b2c-commerce/jdbc_access_guide",
+        "b2c-commerce/jdbc_use_cases",
+        "b2c-commerce/jdbc_field_guide_and_calculation_logic",
+        "b2c-commerce/jdbc_lakehouse_schema"
       ]
     },
     {
@@ -5298,6 +6335,13 @@
         "schema conventions",
         "data warehouse access",
         "SQL tables"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_intro",
+        "b2c-commerce/jdbc_schema_conventions",
+        "b2c-commerce/jdbc_dimension_tables",
+        "b2c-commerce/jdbc_fact_tables",
+        "b2c-commerce/jdbc_aggregate_tables"
       ]
     },
     {
@@ -5320,6 +6364,9 @@
         "table naming standards",
         "Commerce Cloud Data Warehouse",
         "schema organization"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_lakehouse_schema"
       ]
     },
     {
@@ -5343,6 +6390,9 @@
         "inventory analytics",
         "business intelligence",
         "DW queries"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/jdbc_intro"
       ]
     },
     {
@@ -5366,6 +6416,12 @@
         "performance monitoring",
         "post-launch maintenance",
         "site health"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/developer-workflow",
+        "b2c-commerce/b2c-log-files-overview",
+        "b2c-commerce/b2c_cc",
+        "b2c-commerce/b2c-maintenance-pages"
       ]
     },
     {
@@ -5389,6 +6445,9 @@
         "setup wizard",
         "app structure",
         "package deployment"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/commerce-apps-overview"
       ]
     },
     {
@@ -5412,6 +6471,9 @@
         "credentials management",
         "app lifecycle",
         "post-publication"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/commerce-apps-overview"
       ]
     },
     {
@@ -5435,6 +6497,12 @@
         "storefront options",
         "getting started B2C",
         "developer workflow"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/developer-workflow",
+        "b2c-commerce/b2c-developer-tooling",
+        "b2c-commerce/b2c-developer-tooling-agent-skills",
+        "b2c-commerce/agentic-mcp-shopper-tools-quick-start"
       ]
     },
     {
@@ -5443,7 +6511,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/reference.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/reference.md",
-      "headings": "commerce-app.json Schema • adminComponents.json Schema • Component Object Fields • `storefrontComponentVisibility` Attributes • Example • CI Validation • App-shipped string localization • Stable keys: `taskKey` and `componentKey` • `app-configuration/translations/<locale>.json` • Fallback chain • Locale rollout • Supported locales • CI validation • APIs • Install/Uninstall Jobs (OCAPI Data API) • Required OCAPI Permissions • Install Job Parameters • Uninstall Job Parameters • Job Execution Response • CommerceFeatureState Data Model • FeatureType Values • Multi-Site Behavior • Feature Toggles • Tax Domain Toggles • Install and Uninstall Flow Details • Install Flow • Uninstall Flow • App Registry Manifest • Manifest Entry Fields • Entry Types • Hub Display • Manifest and Catalog Cache TTL • Known Limitations • Storefront compatibility • Extension points • Installation and upgrades • Multi-site • Storefront Next extensions • External Documentation Links • Glossary",
+      "headings": "commerce-app.json Schema • adminComponents.json Schema • Component Object Fields • `storefrontComponentVisibility` Attributes • Example • CI Validation • App-shipped string localization • Stable keys: `taskKey` and `componentKey` • `app-configuration/translations/<locale>.json` • Fallback chain • Locale rollout • Supported locales • CI validation • adminComponents.json Schema • Component Object Fields • `storefrontComponentVisibility` Attributes • Example • CI Validation • App-shipped string localization • Stable keys: `taskKey` and `componentKey` • `app-configuration/translations/<locale>.json` • Fallback chain • Locale rollout • Supported locales • CI validation • APIs • Install/Uninstall Jobs (OCAPI Data API) • Required OCAPI Permissions • Install Job Parameters • Uninstall Job Parameters • Job Execution Response • CommerceFeatureState Data Model • FeatureType Values • Multi-Site Behavior • Feature Toggles • Tax Domain Toggles • Install and Uninstall Flow Details • Install Flow • Uninstall Flow • App Registry Manifest • Manifest Entry Fields • Entry Types • Hub Display • Manifest and Catalog Cache TTL • Manifest and Catalog Cache TTL • Known Limitations • Storefront compatibility • Extension points • Installation and upgrades • Multi-site • Storefront Next extensions • Connection Health Check • Extension Point • Status Interpretation • Status Detail Keys • Localization • Timeout Behavior • Availability • External Documentation Links • Glossary",
       "summary": "Define Commerce App package identity, metadata, and publisher details using the required commerce-app.json schema file.",
       "keywords": [
         "commerce-app.json",
@@ -5457,6 +6525,9 @@
         "app registry",
         "app domain",
         "Commerce App Package"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/commerce-apps-overview"
       ]
     },
     {
@@ -5480,6 +6551,9 @@
         "app approval",
         "b2c cap validate",
         "b2c cap package"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/commerce-apps-overview"
       ]
     },
     {
@@ -5503,6 +6577,9 @@
         "loyalty",
         "search",
         "analytics"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/commerce-apps-overview"
       ]
     },
     {
@@ -5526,6 +6603,10 @@
         "pre-launch checklist",
         "commerce cloud launch",
         "site testing"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/developer-workflow",
+        "b2c-commerce/b2c-custom-error-pages"
       ]
     },
     {
@@ -5549,6 +6630,9 @@
         "cartridge path verification",
         "configuration tasks",
         "app rejection reasons"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/commerce-apps-overview"
       ]
     },
     {
@@ -5572,6 +6656,9 @@
         "trace function",
         "pipeline dictionary",
         "dw.system.Logger"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/demandwarejavascript"
       ]
     },
     {
@@ -5594,6 +6681,9 @@
         "BI",
         "metrics",
         "tracking"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/developer-workflow"
       ]
     },
     {
@@ -5616,6 +6706,13 @@
         "B2C Commerce getting started",
         "commerce cloud developer",
         "storefront reference architecture"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/developer-workflow",
+        "b2c-commerce/get-started",
+        "b2c-commerce/b2c-dev-components",
+        "b2c-commerce/b2c-code-deployment",
+        "b2c-commerce/b2c-localization"
       ]
     },
     {
@@ -5639,6 +6736,9 @@
         "server-side execution",
         "script processing",
         "B2C development"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/demandwarejavascript"
       ]
     },
     {
@@ -5662,6 +6762,9 @@
         "B2C Commerce 13.6",
         "storefront code",
         "module system"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-working-with-scripts"
       ]
     },
     {
@@ -5685,6 +6788,9 @@
         "storefront comparison",
         "PWA storefront",
         "headless commerce"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-mappings"
       ]
     },
     {
@@ -5708,6 +6814,9 @@
         "API client configuration",
         "SLAS authorization",
         "catalog search"
+      ],
+      "relatedEntries": [
+        "commerce-api/scapi-get-started"
       ]
     },
     {
@@ -5731,6 +6840,9 @@
         "API access control",
         "read write permissions",
         "token security"
+      ],
+      "relatedEntries": [
+        "commerce-api/authorization"
       ]
     },
     {
@@ -5754,6 +6866,13 @@
         "Admin API",
         "Shopper API",
         "B2C Commerce authentication"
+      ],
+      "relatedEntries": [
+        "commerce-api/scapi-get-started",
+        "commerce-api/authorization-for-shopper-apis",
+        "commerce-api/authorization-for-admin-apis",
+        "commerce-api/auth-z-scope-catalog",
+        "commerce-api/standard-shopper-scope"
       ]
     },
     {
@@ -5776,6 +6895,9 @@
         "client secret",
         "Commerce API authorization",
         "SLAS vs Account Manager"
+      ],
+      "relatedEntries": [
+        "commerce-api/authorization"
       ]
     },
     {
@@ -5799,6 +6921,9 @@
         "shopper authentication",
         "SLAS setup",
         "Account Administrator"
+      ],
+      "relatedEntries": [
+        "commerce-api/authorization"
       ]
     },
     {
@@ -5822,6 +6947,9 @@
         "B2C Commerce API setup",
         "URL pattern",
         "API configuration"
+      ],
+      "relatedEntries": [
+        "commerce-api/scapi-get-started"
       ]
     },
     {
@@ -5843,6 +6971,9 @@
         "security logs",
         "page shield policy",
         "log search"
+      ],
+      "relatedEntries": [
+        "commerce-api/cdn-pci-4-compliance"
       ]
     },
     {
@@ -5865,6 +6996,35 @@
         "max-age",
         "cache configuration",
         "origin server caching"
+      ],
+      "relatedEntries": [
+        "commerce-api/cdn-zones"
+      ]
+    },
+    {
+      "id": "commerce-api/cdn-caching",
+      "title": "SCAPI CDN Caching",
+      "category": "commerce-api",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-caching.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-caching.md",
+      "headings": "How It Works • Enablement • Time-to-Live • Invalidation • Cache Tags • The personalized=none Query Parameter • Applicable APIs • The cf-cache-status Response Header • Example: How a Request Travels Through Both Cache Tiers • Troubleshooting • Custom APIs",
+      "summary": "Implement CDN caching for non-personalized SCAPI GET responses to reduce latency and improve headless storefront performance using the personalized=none parameter.",
+      "keywords": [
+        "SCAPI CDN caching",
+        "personalized=none",
+        "CDN edge cache",
+        "content delivery network",
+        "web-tier caching",
+        "non-personalized responses",
+        "latency reduction",
+        "headless storefront",
+        "cache hit",
+        "TTL",
+        "SCAPI performance",
+        "commerce API caching"
+      ],
+      "relatedEntries": [
+        "commerce-api/performance"
       ]
     },
     {
@@ -5888,6 +7048,11 @@
         "PCI compliance tools",
         "security alerts",
         "storefront security"
+      ],
+      "relatedEntries": [
+        "commerce-api/cdn-zones",
+        "commerce-api/cdn-supported-csp-directives",
+        "commerce-api/cdn-access-violation-logs"
       ]
     },
     {
@@ -5911,6 +7076,9 @@
         "rule expression",
         "mitigation timeout",
         "zone configuration"
+      ],
+      "relatedEntries": [
+        "commerce-api/cdn-zones"
       ]
     },
     {
@@ -5933,6 +7101,9 @@
         "default-src",
         "policy directives",
         "CSP values"
+      ],
+      "relatedEntries": [
+        "commerce-api/cdn-pci-4-compliance"
       ]
     },
     {
@@ -5956,6 +7127,20 @@
         "zones API",
         "zone configuration",
         "CDN setup"
+      ],
+      "relatedEntries": [
+        "commerce-api/use-admin-api",
+        "commerce-api/cdn-zones-cipher-suite-types",
+        "commerce-api/cdn-zones-logpush",
+        "commerce-api/cdn-zones-logpush-filter",
+        "commerce-api/cdn-zones-logpush-log-field",
+        "commerce-api/cdn-zones-automatic-certs",
+        "commerce-api/cdn-pci-4-compliance",
+        "commerce-api/cdn-zones-wafv2",
+        "commerce-api/cdn-zones-custom-rules",
+        "commerce-api/cdn-rate-limiting-rules",
+        "commerce-api/cdn-cache-rules",
+        "commerce-api/cdn-zones-turnstile"
       ]
     },
     {
@@ -5978,6 +7163,9 @@
         "automated certificates",
         "storefront HTTPS",
         "sfcc.cdn-zones.rw"
+      ],
+      "relatedEntries": [
+        "commerce-api/cdn-zones"
       ]
     },
     {
@@ -6001,6 +7189,9 @@
         "compatible cipher suites",
         "TLS 1.2",
         "security settings"
+      ],
+      "relatedEntries": [
+        "commerce-api/cdn-zones"
       ]
     },
     {
@@ -6009,7 +7200,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-zones-custom-rules.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-zones-custom-rules.md",
-      "headings": "Validation Overview • Rule Expression • Rule Actions • Rule Order • Position • Create a Custom Rule • Sample Success Response - 201 HttpStatus Code • Get All Custom Rules • Sample Success Response - 200 HttpStatus Code • Get a Custom Rule • Sample Success Response - 200 HttpStatus Code • Update a Custom Rule • Sample Success Response - 200 HttpStatus Code • Update the Order of All Custom Rules • Sample Success Response - 200 HttpStatus Code • Delete a Custom Rule • Sample Success Response - 204 HttpStatus Code (No Content) • Transition From Firewall Rules to Custom Rules • Manage Block All Rule Information • Create an Allowlist Using Custom Rules • Create a Blocklist Using Custom Rules • Custom Rules FAQ",
+      "headings": "Validation Overview • Rule Expression • Rule Actions • Rule Order • Position • Create a Custom Rule • Sample Success Response - 201 HttpStatus Code • Get All Custom Rules • Sample Success Response - 200 HttpStatus Code • Get a Custom Rule • Sample Success Response - 200 HttpStatus Code • Update a Custom Rule • Sample Success Response - 200 HttpStatus Code • Update the Order of All Custom Rules • Sample Success Response - 200 HttpStatus Code • Delete a Custom Rule • Sample Success Response - 204 HttpStatus Code (No Content) • Custom Rules FAQ",
       "summary": "Create and manage eCDN custom firewall rules to control incoming traffic using expressions, request parameters, and rule actions like block or js_challenge.",
       "keywords": [
         "eCDN custom rules",
@@ -6024,6 +7215,9 @@
         "firewall policies",
         "eCDN zone",
         "custom rule endpoints"
+      ],
+      "relatedEntries": [
+        "commerce-api/cdn-zones"
       ]
     },
     {
@@ -6047,6 +7241,9 @@
         "HTTP requests logging",
         "Logpush job",
         "log configuration"
+      ],
+      "relatedEntries": [
+        "commerce-api/cdn-zones"
       ]
     },
     {
@@ -6070,6 +7267,9 @@
         "firewall events",
         "log field filtering",
         "escaped JSON filter"
+      ],
+      "relatedEntries": [
+        "commerce-api/cdn-zones"
       ]
     },
     {
@@ -6091,6 +7291,9 @@
         "logpush job",
         "log fields reference",
         "automated traffic detection"
+      ],
+      "relatedEntries": [
+        "commerce-api/cdn-zones"
       ]
     },
     {
@@ -6114,6 +7317,9 @@
         "managed mode",
         "non-interactive",
         "invisible challenge"
+      ],
+      "relatedEntries": [
+        "commerce-api/cdn-zones"
       ]
     },
     {
@@ -6136,6 +7342,9 @@
         "Business Manager WAF",
         "ruleset customization",
         "zero-day vulnerabilities"
+      ],
+      "relatedEntries": [
+        "commerce-api/cdn-zones"
       ]
     },
     {
@@ -6157,6 +7366,9 @@
         "IP configuration",
         "shopper profile",
         "B2C Commerce API"
+      ],
+      "relatedEntries": [
+        "commerce-api/general-guidance"
       ]
     },
     {
@@ -6179,6 +7391,9 @@
         "API execution time",
         "shopper API monitoring",
         "admin API performance"
+      ],
+      "relatedEntries": [
+        "commerce-api/troubleshoot"
       ]
     },
     {
@@ -6222,6 +7437,9 @@
         "promotions",
         "shopper baskets",
         "commerce api"
+      ],
+      "relatedEntries": [
+        "commerce-api/work-with-baskets-orders"
       ]
     },
     {
@@ -6245,6 +7463,9 @@
         "API client scopes",
         "SLAS",
         "DX API"
+      ],
+      "relatedEntries": [
+        "commerce-api/custom-apis"
       ]
     },
     {
@@ -6253,6 +7474,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/custom-api-caching.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/custom-api-caching.md",
+      "headings": "CDN Caching",
       "summary": "Enable and configure response caching for Custom API endpoints using setExpires() and setVaryBy() methods to improve performance.",
       "keywords": [
         "caching custom API",
@@ -6267,6 +7489,9 @@
         "dw.system.Response",
         "cache optimization",
         "endpoint caching"
+      ],
+      "relatedEntries": [
+        "commerce-api/custom-apis"
       ]
     },
     {
@@ -6290,6 +7515,9 @@
         "request throttling",
         "load protection",
         "half-open state"
+      ],
+      "relatedEntries": [
+        "commerce-api/custom-apis"
       ]
     },
     {
@@ -6312,6 +7540,9 @@
         "components object",
         "custom APIs",
         "parameter references"
+      ],
+      "relatedEntries": [
+        "commerce-api/custom-apis"
       ]
     },
     {
@@ -6333,6 +7564,9 @@
         "cache performance",
         "cross-API requests",
         "API composition"
+      ],
+      "relatedEntries": [
+        "commerce-api/custom-apis"
       ]
     },
     {
@@ -6355,6 +7589,9 @@
         "endpoint registration failures",
         "API diagnostic tool",
         "custom endpoint monitoring"
+      ],
+      "relatedEntries": [
+        "commerce-api/custom-apis"
       ]
     },
     {
@@ -6378,6 +7615,9 @@
         "API version mismatch",
         "Custom API errors",
         "endpoint configuration"
+      ],
+      "relatedEntries": [
+        "commerce-api/custom-apis"
       ]
     },
     {
@@ -6400,6 +7640,16 @@
         "B2C Commerce Script API",
         "storefront integration",
         "API implementation"
+      ],
+      "relatedEntries": [
+        "commerce-api/extend",
+        "commerce-api/custom-api-authentication",
+        "commerce-api/custom-api-caching",
+        "commerce-api/custom-api-circuit-breaker",
+        "commerce-api/custom-api-remote-includes",
+        "commerce-api/custom-api-components-references",
+        "commerce-api/custom-api-status-report",
+        "commerce-api/custom-api-troubleshooting"
       ]
     },
     {
@@ -6422,6 +7672,9 @@
         "Shopper API",
         "extensibility",
         "hooks"
+      ],
+      "relatedEntries": [
+        "commerce-api/extensibility_via_hooks"
       ]
     },
     {
@@ -6430,7 +7683,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/develop.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/develop.md",
-      "headings": "Prerequisites • Next Steps",
+      "headings": "API Categories Overview • Start Here: Common Task Paths • Building a Storefront • Automating Backend Operations • Building with Storefront Next • Building with PWA Kit • Prerequisites • Next Steps",
       "summary": "Build applications using B2C Commerce APIs with resources for Shopper and Admin APIs, including prerequisites and best practices.",
       "keywords": [
         "B2C Commerce API",
@@ -6445,6 +7698,12 @@
         "API client setup",
         "commerce integration",
         "API best practices"
+      ],
+      "relatedEntries": [
+        "commerce-api/scapi-get-started",
+        "commerce-api/use-scapi-with-mulesoft",
+        "commerce-api/use-admin-api",
+        "commerce-api/use-shopper-api"
       ]
     },
     {
@@ -6468,6 +7727,9 @@
         "hybrid proxy",
         "PWA Kit",
         "B2C CLI"
+      ],
+      "relatedEntries": [
+        "commerce-api/hybrid-storefront-baskets"
       ]
     },
     {
@@ -6490,6 +7752,9 @@
         "multi-channel tracking",
         "commerce analytics",
         "phased rollout"
+      ],
+      "relatedEntries": [
+        "commerce-api/hybrid-storefront-baskets"
       ]
     },
     {
@@ -6512,6 +7777,9 @@
         "error messages",
         "status code reference",
         "API response handling"
+      ],
+      "relatedEntries": [
+        "commerce-api/troubleshoot"
       ]
     },
     {
@@ -6532,6 +7800,11 @@
         "B2C Commerce",
         "API extension",
         "customize APIs"
+      ],
+      "relatedEntries": [
+        "commerce-api/scapi-get-started",
+        "commerce-api/custom-apis",
+        "commerce-api/extensibility_via_hooks"
       ]
     },
     {
@@ -6555,6 +7828,12 @@
         "response modification",
         "commerce-api hooks",
         "B2C Commerce hooks"
+      ],
+      "relatedEntries": [
+        "commerce-api/extend",
+        "commerce-api/hook-method-details",
+        "commerce-api/custom-properties",
+        "commerce-api/remote-includes"
       ]
     },
     {
@@ -6577,6 +7856,38 @@
         "error handling",
         "best practices",
         "cross-cutting concerns"
+      ],
+      "relatedEntries": [
+        "commerce-api/scapi-get-started",
+        "commerce-api/client-ip-forwarding",
+        "commerce-api/scapi-property-selection",
+        "commerce-api/url-encode"
+      ]
+    },
+    {
+      "id": "commerce-api/guest-order-access-code",
+      "title": "Guest Order Access with an Access Code (OTP)",
+      "category": "commerce-api",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/guest-order-access-code.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/guest-order-access-code.md",
+      "headings": "What the Platform Does vs. What You Do • Capabilities With and Without OMS • Reach Orders No Longer in B2C Commerce • Flow Overview • Lookup Only (No OMS) • Full Self-Service (with Integrated OMS) • Implement the Delivery Hook • Register the Extension Point • Implement the Script • Hook Parameters • Return Values • Deliver Through a Non-Email Channel • Call the Shopper Orders Endpoints • Request an Access Code • Look Up the Order • Without Integrated OMS • With Integrated OMS (`expand=oms`) • Cancel an Order (Requires Integrated OMS) • Return Items (Requires Integrated OMS) • Access Code Rules • Limitations • Best Practices • See Also",
+      "summary": "Enable guest shoppers to securely access and manage their orders after losing session via email-based one-time password (OTP) access codes.",
+      "keywords": [
+        "guest order access",
+        "OTP",
+        "one-time password",
+        "access code",
+        "order lookup",
+        "Shopper Orders API",
+        "guest checkout",
+        "order self-service",
+        "email hook",
+        "order management",
+        "guest authentication",
+        "session recovery"
+      ],
+      "relatedEntries": [
+        "commerce-api/use-shopper-api"
       ]
     },
     {
@@ -6600,6 +7911,9 @@
         "dw.ocapi.shop.auth",
         "hook reference",
         "OCAPI hooks"
+      ],
+      "relatedEntries": [
+        "commerce-api/extensibility_via_hooks"
       ]
     },
     {
@@ -6622,6 +7936,9 @@
         "commerce-sdk-react",
         "package.json update",
         "storefront authentication"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/hybrid-implementation"
       ]
     },
     {
@@ -6630,7 +7947,25 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/hybrid-auth-shared-setup.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/hybrid-auth-shared-setup.md",
-      "headings": "Step 1: Set Up a SLAS Client • Step 2: Enable Session Bridging • Step 3: (Optional) Configure Third-Party IDP and Social Login • Step 4: Configure Business Manager • Step 5: Remove Plugin SLAS (If Migrating) • Step 6: Remove OCAPI Permissions (If Migrating from Plugin SLAS) • Step 7: (Optional) Set Shopper Context • Step 8: (Optional) Enable or Disable Do-Not-Track Synchronization • DNT Cookie Expiration • Next Steps"
+      "headings": "Step 1: Set Up a SLAS Client • Step 2: Enable Session Bridging • Step 3: (Optional) Configure Third-Party IDP and Social Login • Step 4: Configure Business Manager • Step 5: Remove Plugin SLAS (If Migrating) • Step 6: Remove OCAPI Permissions (If Migrating from Plugin SLAS) • Step 7: (Optional) Set Shopper Context • Step 8: (Optional) Enable or Disable Do-Not-Track Synchronization • DNT Cookie Expiration • Next Steps",
+      "summary": "Configure shared Hybrid Auth setup across all storefront architectures including SLAS client, session bridging, and platform dependencies.",
+      "keywords": [
+        "hybrid auth setup",
+        "SLAS client configuration",
+        "session bridging",
+        "commerce API authentication",
+        "third-party IDP",
+        "social login",
+        "business manager",
+        "Storefront Next",
+        "PWA Kit",
+        "SFRA",
+        "shopper APIs",
+        "hybrid authentication"
+      ],
+      "relatedEntries": [
+        "commerce-api/hybrid-authentication"
+      ]
     },
     {
       "id": "commerce-api/hybrid-authentication",
@@ -6653,6 +7988,15 @@
         "API access service",
         "token sync",
         "PWA Kit"
+      ],
+      "relatedEntries": [
+        "commerce-api/hybrid-storefront-baskets",
+        "b2c-commerce/hybrid-auth-select-storefront",
+        "commerce-api/hybrid-auth-shared-setup",
+        "b2c-commerce/hybrid-auth-quick-start",
+        "b2c-commerce/hybrid-auth-manual-setup",
+        "b2c-commerce/hybrid-auth-environment-matrix",
+        "b2c-commerce/hybrid-auth-troubleshooting"
       ]
     },
     {
@@ -6676,6 +8020,12 @@
         "storefront integration",
         "B2C Commerce hybrid",
         "SFRA PWA Kit combination"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/build-your-site",
+        "commerce-api/hybrid-authentication",
+        "commerce-api/ecdn-rules-for-phased-headless-rollout",
+        "commerce-api/einstein-activities-for-phased-headless-rollouts"
       ]
     },
     {
@@ -6699,6 +8049,9 @@
         "SKU batch update",
         "inventory impex",
         "inventory availability"
+      ],
+      "relatedEntries": [
+        "commerce-api/use-admin-api"
       ]
     },
     {
@@ -6720,6 +8073,9 @@
         "product recommendations",
         "MCP service",
         "commerce API agents"
+      ],
+      "relatedEntries": [
+        "commerce-api/use-shopper-api"
       ]
     },
     {
@@ -6742,6 +8098,9 @@
         "OAuth2 identity provider",
         "shopper authentication",
         "customer unification"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas"
       ]
     },
     {
@@ -6764,6 +8123,9 @@
         "B2C connector replacement",
         "Mule apps",
         "commerce API migration"
+      ],
+      "relatedEntries": [
+        "commerce-api/use-scapi-with-mulesoft"
       ]
     },
     {
@@ -6787,6 +8149,11 @@
         "API monitoring",
         "B2C Commerce APIs",
         "transaction performance"
+      ],
+      "relatedEntries": [
+        "commerce-api/scapi-get-started",
+        "commerce-api/server-side-web-tier-caching",
+        "commerce-api/cdn-caching"
       ]
     },
     {
@@ -6809,6 +8176,9 @@
         "shopper promotions",
         "promotional pricing",
         "promotion setup"
+      ],
+      "relatedEntries": [
+        "commerce-api/use-shopper-api"
       ]
     },
     {
@@ -6831,6 +8201,9 @@
         "additional product details",
         "include external data",
         "remote include caching"
+      ],
+      "relatedEntries": [
+        "commerce-api/extensibility_via_hooks"
       ]
     },
     {
@@ -6853,6 +8226,9 @@
         "B2C Commerce API",
         "maintenance mode",
         "error handling"
+      ],
+      "relatedEntries": [
+        "commerce-api/troubleshoot"
       ]
     },
     {
@@ -6876,6 +8252,9 @@
         "SCAPI endpoints",
         "Data API",
         "Shopper API"
+      ],
+      "relatedEntries": [
+        "commerce-api/security"
       ]
     },
     {
@@ -6899,6 +8278,18 @@
         "API authentication",
         "curl example",
         "Commerce SDK"
+      ],
+      "relatedEntries": [
+        "commerce-api/why-use-scapi",
+        "commerce-api/base-url",
+        "commerce-api/authorization",
+        "commerce-api/api-and-sdk-demo",
+        "commerce-api/general-guidance",
+        "commerce-api/develop",
+        "commerce-api/extend",
+        "commerce-api/security",
+        "commerce-api/performance",
+        "commerce-api/troubleshoot"
       ]
     },
     {
@@ -6922,6 +8313,9 @@
         "log search",
         "request response matching",
         "API monitoring"
+      ],
+      "relatedEntries": [
+        "commerce-api/troubleshoot"
       ]
     },
     {
@@ -6942,6 +8336,9 @@
         "complex properties",
         "query filtering",
         "response optimization"
+      ],
+      "relatedEntries": [
+        "commerce-api/general-guidance"
       ]
     },
     {
@@ -6965,6 +8362,10 @@
         "API gateway",
         "headless commerce security",
         "data privacy"
+      ],
+      "relatedEntries": [
+        "commerce-api/scapi-get-started",
+        "commerce-api/scapi-cors"
       ]
     },
     {
@@ -6987,6 +8388,9 @@
         "search API caching",
         "cache layers",
         "edge caching"
+      ],
+      "relatedEntries": [
+        "commerce-api/performance"
       ]
     },
     {
@@ -7009,6 +8413,15 @@
         "storefront personalization",
         "dynamic customer groups",
         "context state management"
+      ],
+      "relatedEntries": [
+        "commerce-api/use-shopper-api",
+        "commerce-api/shopper-context-best-practices",
+        "commerce-api/shopper-context-geolocation",
+        "commerce-api/shopper-context-api-personalized",
+        "commerce-api/shopper-context-api-future",
+        "commerce-api/shopper-context-api-store-specific",
+        "commerce-api/shopper-context-api-source-code"
       ]
     },
     {
@@ -7032,6 +8445,9 @@
         "price book",
         "temporal promotions",
         "promotion scheduling"
+      ],
+      "relatedEntries": [
+        "commerce-api/shopper-context-api"
       ]
     },
     {
@@ -7055,6 +8471,9 @@
         "commerce API integration",
         "shopper segmentation",
         "contextualized offers"
+      ],
+      "relatedEntries": [
+        "commerce-api/shopper-context-api"
       ]
     },
     {
@@ -7078,6 +8497,9 @@
         "dynamic customer groups",
         "assignment framework",
         "price book assignment"
+      ],
+      "relatedEntries": [
+        "commerce-api/shopper-context-api"
       ]
     },
     {
@@ -7101,6 +8523,9 @@
         "local store pricing",
         "dynamic pricing",
         "assignment framework"
+      ],
+      "relatedEntries": [
+        "commerce-api/shopper-context-api"
       ]
     },
     {
@@ -7124,6 +8549,9 @@
         "session management",
         "quota limits",
         "shopper context best practices"
+      ],
+      "relatedEntries": [
+        "commerce-api/shopper-context-api"
       ]
     },
     {
@@ -7147,6 +8575,9 @@
         "shopper context",
         "location targeting",
         "IP geolocation"
+      ],
+      "relatedEntries": [
+        "commerce-api/shopper-context-api"
       ]
     },
     {
@@ -7170,6 +8601,23 @@
         "secure access",
         "OCAPI",
         "shopper APIs"
+      ],
+      "relatedEntries": [
+        "commerce-api/use-shopper-api",
+        "commerce-api/slas-public-client",
+        "commerce-api/slas-private-client",
+        "commerce-api/slas-best-practices",
+        "commerce-api/slas-identity-providers",
+        "commerce-api/slas-validate-jwt-with-jwks",
+        "commerce-api/slas-session-bridge-overview",
+        "commerce-api/slas-trusted-agent",
+        "commerce-api/slas-trusted-system",
+        "commerce-api/slas-passwordless-login-overview",
+        "commerce-api/slas-password-reset",
+        "commerce-api/slas-password-reset-email",
+        "commerce-api/slas-custom-parameters",
+        "commerce-api/merge-shopper-profiles",
+        "commerce-api/slas-tracking-preferences"
       ]
     },
     {
@@ -7193,6 +8641,9 @@
         "SLAS security",
         "client authentication",
         "guest shopper security"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas"
       ]
     },
     {
@@ -7213,6 +8664,9 @@
         "SLAS configuration",
         "custom headers SLAS",
         "customers/auth hooks"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas"
       ]
     },
     {
@@ -7236,6 +8690,9 @@
         "authentication",
         "configure identity provider",
         "unsupported IDP"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas-identity-providers"
       ]
     },
     {
@@ -7258,6 +8715,12 @@
         "third party authentication",
         "SLAS client configuration",
         "IDP setup"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas",
+        "commerce-api/slas-default-idp",
+        "commerce-api/slas-salesforce-idp",
+        "commerce-api/slas-private-key-jwt"
       ]
     },
     {
@@ -7281,6 +8744,9 @@
         "passwordless login",
         "email verification flow",
         "registered users"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas-passwordless-login-overview"
       ]
     },
     {
@@ -7304,6 +8770,9 @@
         "password recovery",
         "authentication flow",
         "reset token"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas"
       ]
     },
     {
@@ -7327,6 +8796,9 @@
         "SLAS client",
         "passwordless login",
         "credential reset"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas"
       ]
     },
     {
@@ -7349,6 +8821,9 @@
         "authorizePasswordlessCustomer",
         "token exchange",
         "8-digit OTP"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas-passwordless-login-overview"
       ]
     },
     {
@@ -7371,6 +8846,9 @@
         "private client",
         "shopper authentication",
         "email authentication"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas-passwordless-login-overview"
       ]
     },
     {
@@ -7379,7 +8857,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/slas-passwordless-login-overview.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/slas-passwordless-login-overview.md",
-      "headings": "Passwordless Login Feature Support",
+      "headings": "Choosing a Passwordless Method • Decision Guidance • Passwordless Login Feature Support",
       "summary": "Implement secure passwordless authentication for shoppers using OTPs, SMS, or passkeys via SLAS.",
       "keywords": [
         "passwordless login",
@@ -7394,6 +8872,16 @@
         "phishing protection",
         "passwordless registration",
         "callback URI"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas",
+        "commerce-api/slas-passwordless-login",
+        "commerce-api/slas-passwordless-login-registration",
+        "commerce-api/slas-passwordless-sms",
+        "commerce-api/slas-passwordless-login-passkey",
+        "commerce-api/slas-passwordless-login-email",
+        "commerce-api/slas-otp-email-verification",
+        "commerce-api/slas-passwordless-login-troubleshoot"
       ]
     },
     {
@@ -7417,6 +8905,9 @@
         "secure login",
         "phishing prevention",
         "API access service"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas-passwordless-login-overview"
       ]
     },
     {
@@ -7440,6 +8931,9 @@
         "access token",
         "customer profile creation",
         "password-less auth"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas-passwordless-login-overview"
       ]
     },
     {
@@ -7463,6 +8957,9 @@
         "passwordless authentication debug",
         "SLAS client configuration",
         "callback endpoint"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas-passwordless-login-overview"
       ]
     },
     {
@@ -7486,6 +8983,9 @@
         "passwordless authentication",
         "SMS OTP",
         "shopper login SMS"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas-passwordless-login-overview"
       ]
     },
     {
@@ -7508,6 +9008,9 @@
         "SLAS admin setup",
         "client secret",
         "Shopper Login API"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas"
       ]
     },
     {
@@ -7531,6 +9034,9 @@
         "client credentials",
         "secure authentication",
         "okta integration"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas-identity-providers"
       ]
     },
     {
@@ -7554,6 +9060,9 @@
         "OAuth",
         "commerce API",
         "PWA Kit"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas"
       ]
     },
     {
@@ -7577,6 +9086,9 @@
         "consumer secret",
         "SLAS Admin",
         "Salesforce authentication"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas-identity-providers"
       ]
     },
     {
@@ -7600,6 +9112,9 @@
         "session signature",
         "Script API",
         "token conversion"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas-session-bridge-overview"
       ]
     },
     {
@@ -7623,6 +9138,10 @@
         "SLAS token",
         "authentication synchronization",
         "headless commerce"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas",
+        "commerce-api/slas-session-bridge-auth"
       ]
     },
     {
@@ -7646,6 +9165,9 @@
         "shopper privacy",
         "tracking opt-out",
         "SCAPI"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas"
       ]
     },
     {
@@ -7669,6 +9191,9 @@
         "PKCE flow",
         "Agentforce",
         "guest shopper"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas"
       ]
     },
     {
@@ -7691,6 +9216,9 @@
         "shopper on behalf authorization",
         "bot mitigation",
         "SLAS authorization"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas"
       ]
     },
     {
@@ -7714,6 +9242,9 @@
         "public key validation",
         "token authenticity",
         "SLAS tokens"
+      ],
+      "relatedEntries": [
+        "commerce-api/slas"
       ]
     },
     {
@@ -7737,6 +9268,9 @@
         "aggregated scope",
         "commerce API authorization",
         "client authentication"
+      ],
+      "relatedEntries": [
+        "commerce-api/authorization"
       ]
     },
     {
@@ -7760,6 +9294,9 @@
         "API protection",
         "availability",
         "commerce API limits"
+      ],
+      "relatedEntries": [
+        "commerce-api/troubleshoot"
       ]
     },
     {
@@ -7783,6 +9320,9 @@
         "CIP dashboard",
         "timeout threshold",
         "API performance"
+      ],
+      "relatedEntries": [
+        "commerce-api/troubleshoot"
       ]
     },
     {
@@ -7806,6 +9346,9 @@
         "timeout configuration",
         "API rate limits",
         "request timeout"
+      ],
+      "relatedEntries": [
+        "commerce-api/troubleshoot"
       ]
     },
     {
@@ -7814,6 +9357,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/troubleshoot.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/troubleshoot.md",
+      "headings": "Quick Triage: Find Your Solution • Troubleshooting Resources • Step-by-Step Troubleshooting Process • 1. Identify the Request • 2. Check the Response • 3. Review Logs • 4. Monitor Performance • 5. Verify Configuration • 6. Test and Validate",
       "summary": "Debug and resolve B2C Commerce API issues using error codes, response analysis, rate limits, timeouts, and performance monitoring tools.",
       "keywords": [
         "API troubleshooting",
@@ -7828,6 +9372,16 @@
         "logs",
         "request tracking",
         "SCAPI"
+      ],
+      "relatedEntries": [
+        "commerce-api/scapi-get-started",
+        "commerce-api/timeouts-limits",
+        "commerce-api/error-response-codes",
+        "commerce-api/throttle-rates",
+        "commerce-api/response-handling",
+        "commerce-api/code-profiler",
+        "commerce-api/timeout-troubleshoot",
+        "commerce-api/scapi-logs-request-tracking"
       ]
     },
     {
@@ -7849,6 +9403,9 @@
         "comma encoding",
         "request encoding",
         "resource identifiers"
+      ],
+      "relatedEntries": [
+        "commerce-api/general-guidance"
       ]
     },
     {
@@ -7872,6 +9429,9 @@
         "category mapping",
         "sfcc.shopper-seo scope",
         "SLAS API client"
+      ],
+      "relatedEntries": [
+        "commerce-api/use-shopper-api"
       ]
     },
     {
@@ -7880,7 +9440,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/use-admin-api.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/use-admin-api.md",
-      "headings": "Next Steps",
+      "headings": "Admin API Overview • Authentication Prerequisites • Common Automation Scenarios • Scenario 1: Automated Inventory Synchronization • Scenario 2: CDN Configuration Management • Scenario 3: Product Catalog Updates • Scenario 4: Customer Data Integration • Scenario 5: Multi-Site Configuration Deployment • Additional Resources • Next Steps",
       "summary": "Configure and manage SCAPI Admin APIs for CDN zones, inventory, WAF rules, certificates, and authentication settings.",
       "keywords": [
         "SCAPI Admin API",
@@ -7894,6 +9454,11 @@
         "inventory management",
         "API configuration",
         "commerce API administration"
+      ],
+      "relatedEntries": [
+        "commerce-api/develop",
+        "commerce-api/cdn-zones",
+        "commerce-api/inventory-impex-best-practices"
       ]
     },
     {
@@ -7914,6 +9479,10 @@
         "Mule 4",
         "HTTP request",
         "connector replacement"
+      ],
+      "relatedEntries": [
+        "commerce-api/develop",
+        "commerce-api/migrate-mulesoft-http-connector"
       ]
     },
     {
@@ -7922,7 +9491,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/use-shopper-api.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/use-shopper-api.md",
-      "headings": "Next Steps",
+      "headings": "Common Use Case Mappings • Building a Product Listing Page (PLP) • Building a Product Detail Page (PDP) • Building a Checkout Flow • Implementing Personalization • Additional Resources • Next Steps",
       "summary": "Access Shopper APIs for authentication, context management, and SEO to build B2C Commerce storefronts.",
       "keywords": [
         "Shopper APIs",
@@ -7937,6 +9506,16 @@
         "storefront development",
         "B2C Commerce API",
         "shopper profile"
+      ],
+      "relatedEntries": [
+        "commerce-api/develop",
+        "commerce-api/slas",
+        "commerce-api/shopper-context-api",
+        "commerce-api/work-with-baskets-orders",
+        "commerce-api/guest-order-access-code",
+        "commerce-api/promotion-details",
+        "commerce-api/mcp-shopper-tools",
+        "commerce-api/url-resolution"
       ]
     },
     {
@@ -7960,6 +9539,9 @@
         "scalability",
         "stateless",
         "SLAS"
+      ],
+      "relatedEntries": [
+        "commerce-api/scapi-get-started"
       ]
     },
     {
@@ -7982,6 +9564,10 @@
         "order creation",
         "payment processing",
         "commerce API"
+      ],
+      "relatedEntries": [
+        "commerce-api/use-shopper-api",
+        "commerce-api/coupons-giftcerts-bonus-products"
       ]
     },
     {
@@ -8004,6 +9590,9 @@
         "automated merchandising",
         "behavior tracking",
         "progressive web app"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/data-and-analytics"
       ]
     },
     {
@@ -8026,6 +9615,9 @@
         "MRT setup",
         "storefront",
         "B2C Commerce"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -8049,6 +9641,9 @@
         "storefront subpath",
         "environment configuration",
         "request routing"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/test-launch-monitor"
       ]
     },
     {
@@ -8072,6 +9667,31 @@
         "cache optimization",
         "PWA development",
         "composable storefront"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-developer-workflow",
+        "pwa-kit-managed-runtime/mcp-dx-intro",
+        "pwa-kit-managed-runtime/mcp-server-intro",
+        "pwa-kit-managed-runtime/page-designer",
+        "pwa-kit-managed-runtime/environment-variables",
+        "pwa-kit-managed-runtime/template-extensibility",
+        "pwa-kit-managed-runtime/order-mgmt",
+        "pwa-kit-managed-runtime/password-reset",
+        "pwa-kit-managed-runtime/passwordless-login",
+        "pwa-kit-managed-runtime/social-login",
+        "pwa-kit-managed-runtime/personalize-with-cookies",
+        "pwa-kit-managed-runtime/pwa-httponly-cookie",
+        "pwa-kit-managed-runtime/pwa-domain-cookie",
+        "pwa-kit-managed-runtime/personalize-with-shopper-context",
+        "pwa-kit-managed-runtime/store-locator",
+        "pwa-kit-managed-runtime/instore-pickup",
+        "pwa-kit-managed-runtime/multiple-shipments",
+        "pwa-kit-managed-runtime/address-autocomplete",
+        "pwa-kit-managed-runtime/one-click-checkout",
+        "pwa-kit-managed-runtime/tracking-consent",
+        "pwa-kit-managed-runtime/protect-storefront",
+        "pwa-kit-managed-runtime/maximizing-your-cache-hit-ratio",
+        "pwa-kit-managed-runtime/create-a-sitemap"
       ]
     },
     {
@@ -8094,6 +9714,9 @@
         "SFRA cartridge",
         "storefront dependencies",
         "version requirements"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/intro"
       ]
     },
     {
@@ -8117,6 +9740,9 @@
         "multi-site configuration",
         "managed runtime configuration",
         "pwa-kit setup"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-framework"
       ]
     },
     {
@@ -8139,6 +9765,9 @@
         "zone configuration",
         "traffic routing",
         "managed runtime"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/test-launch-monitor"
       ]
     },
     {
@@ -8160,6 +9789,9 @@
         "base template",
         "overrides folder",
         "index.jsx"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/template-extensibility"
       ]
     },
     {
@@ -8183,6 +9815,9 @@
         "SFRA",
         "composable storefront",
         "hybrid storefront"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -8205,6 +9840,9 @@
         "sandbox deployment",
         "pwa-kit storefront",
         "sample data import"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-get-set-up"
       ]
     },
     {
@@ -8228,6 +9866,9 @@
         "commerce data",
         "headless APIs",
         "demo site"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-get-set-up"
       ]
     },
     {
@@ -8250,6 +9891,9 @@
         "PWA Kit",
         "managed runtime",
         "component extension"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/template-extensibility"
       ]
     },
     {
@@ -8273,6 +9917,12 @@
         "B2C Commerce reports",
         "shopper behavior",
         "engagement events"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/enable-merchant-team",
+        "pwa-kit-managed-runtime/active-data",
+        "pwa-kit-managed-runtime/reports-and-dashboards",
+        "pwa-kit-managed-runtime/integrate-data-cloud"
       ]
     },
     {
@@ -8296,6 +9946,9 @@
         "browser console errors",
         "network debugging",
         "runtime performance"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/test-launch-monitor"
       ]
     },
     {
@@ -8318,6 +9971,9 @@
         "traffic routing",
         "CloudFlare Akamai",
         "hybrid storefront CDN"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-get-set-up"
       ]
     },
     {
@@ -8341,6 +9997,12 @@
         "managed runtime",
         "active data",
         "merchant capabilities"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-developer-workflow",
+        "pwa-kit-managed-runtime/storefront-preview-section",
+        "pwa-kit-managed-runtime/data-and-analytics",
+        "pwa-kit-managed-runtime/taob-in-composable"
       ]
     },
     {
@@ -8363,6 +10025,9 @@
         "PWA Kit configuration",
         "environment variable setup",
         "CMS integration"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/environment-variables"
       ]
     },
     {
@@ -8385,6 +10050,9 @@
         "pwa-kit-managed-runtime",
         "conditional rendering",
         "Node.js environment"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/environment-variables"
       ]
     },
     {
@@ -8408,6 +10076,11 @@
         "runtime admin",
         "managed runtime API",
         "environment-specific config"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize",
+        "pwa-kit-managed-runtime/env-var-3rd-party-CMS",
+        "pwa-kit-managed-runtime/env-var-feature-access"
       ]
     },
     {
@@ -8431,6 +10104,9 @@
         "pwa-kit",
         "Retail React App",
         "API-driven storefront"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-developer-workflow"
       ]
     },
     {
@@ -8454,6 +10130,9 @@
         "token synchronization",
         "Plugin SLAS migration",
         "B2C Commerce 25.3"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/hybrid-implementation"
       ]
     },
     {
@@ -8476,6 +10155,13 @@
         "Shopper Login API Access",
         "decoupled storefront",
         "multi-channel storefront"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-developer-workflow",
+        "pwa-kit-managed-runtime/hybrid-auth",
+        "commerce-api/hybrid-auth-pwa-kit-v2",
+        "pwa-kit-managed-runtime/hybrid-routing-matrix",
+        "pwa-kit-managed-runtime/plugin-slas-setup"
       ]
     },
     {
@@ -8484,7 +10170,24 @@
       "category": "pwa-kit-managed-runtime",
       "url": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/hybrid-routing-matrix.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/hybrid-routing-matrix.md",
-      "headings": "Use the Right Rule Syntax by Setup Type • Architectural Foundations • Matrix Configurations • Matrix-01: Modern Core (Home, PDP, PLP on PWA Kit) • Matrix-02: Modern Checkout (Cart and Checkout on PWA Kit) • Matrix-03: Modern Entry Only (Home on PWA Kit) • Matrix-04: Legacy Entry Only (Home on SFRA) • Matrix-05: Catalog-Only Migration (PLP/PDP on PWA Kit) • Matrix-06: Account and Auth Only (Identity Flows on PWA Kit) • Global Framework Requirements"
+      "headings": "Use the Right Rule Syntax by Setup Type • Architectural Foundations • Matrix Configurations • Matrix-01: Modern Core (Home, PDP, PLP on PWA Kit) • Matrix-02: Modern Checkout (Cart and Checkout on PWA Kit) • Matrix-03: Modern Entry Only (Home on PWA Kit) • Matrix-04: Legacy Entry Only (Home on SFRA) • Matrix-05: Catalog-Only Migration (PLP/PDP on PWA Kit) • Matrix-06: Account and Auth Only (Identity Flows on PWA Kit) • Global Framework Requirements",
+      "summary": "Configure routing between PWA Kit and SFRA/SiteGenesis using eCDN rules and app/routes.jsx filtering for hybrid storefronts.",
+      "keywords": [
+        "hybrid storefront routing",
+        "PWA Kit routing matrix",
+        "eCDN routing rules",
+        "app/routes.jsx",
+        "Composable Storefront",
+        "SFRA SiteGenesis",
+        "Managed Runtime MRT",
+        "Cloudflare rule expression",
+        "hybrid proxy local development",
+        "phased headless rollout",
+        "React Router navigation"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/hybrid-implementation"
+      ]
     },
     {
       "id": "pwa-kit-managed-runtime/hybrid-upgrade-v2.x",
@@ -8507,6 +10210,9 @@
         "performance optimization",
         "basket performance",
         "headless rollout"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/plugin-slas-setup"
       ]
     },
     {
@@ -8529,6 +10235,9 @@
         "hybrid authentication",
         "pwa-kit managed runtime",
         "session churn fix"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/plugin-slas-setup"
       ]
     },
     {
@@ -8552,6 +10261,9 @@
         "composable storefront",
         "fulfillment options",
         "store pickup implementation"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -8574,6 +10286,9 @@
         "storefront event collection",
         "Data Cloud connection",
         "web app data stream"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/data-and-analytics"
       ]
     },
     {
@@ -8597,6 +10312,15 @@
         "SCAPI",
         "MRT",
         "storefront setup"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-developer-workflow",
+        "pwa-kit-managed-runtime/pwa-best-practices",
+        "pwa-kit-managed-runtime/pwa-scapi",
+        "pwa-kit-managed-runtime/pwa-kit-overview",
+        "pwa-kit-managed-runtime/mrt-overview",
+        "pwa-kit-managed-runtime/using-the-managed-runtime-api",
+        "pwa-kit-managed-runtime/compatibility-matrix"
       ]
     },
     {
@@ -8620,6 +10344,9 @@
         "go live",
         "public web address",
         "pwa-kit"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/test-launch-monitor"
       ]
     },
     {
@@ -8643,6 +10370,14 @@
         "runtime updates",
         "managed runtime",
         "site upkeep"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-developer-workflow",
+        "pwa-kit-managed-runtime/upgrade-node-version",
+        "pwa-kit-managed-runtime/upgrade-to-v3",
+        "pwa-kit-managed-runtime/upgrade-to-v2-3",
+        "pwa-kit-managed-runtime/upgrade-to-v2",
+        "pwa-kit-managed-runtime/upgrade-shopper-baskets-to-v2"
       ]
     },
     {
@@ -8666,6 +10401,9 @@
         "runtime configuration",
         "B2C Commerce runtime",
         "storefront administration"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-get-set-up"
       ]
     },
     {
@@ -8689,6 +10427,9 @@
         "state sharing",
         "context provider",
         "reducer function"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-framework"
       ]
     },
     {
@@ -8712,6 +10453,9 @@
         "storefront performance",
         "getProps",
         "page caching"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -8733,6 +10477,9 @@
         "api.json discovery",
         "PWA Kit credentials",
         "credential setup"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/mcp-server-intro"
       ]
     },
     {
@@ -8755,6 +10502,9 @@
         "PWA Kit integration",
         "MCP tools",
         "developer tools"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/mcp-server-intro"
       ]
     },
     {
@@ -8776,6 +10526,9 @@
         "Cursor MCP configuration",
         "MCP server logs",
         "managed runtime development"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/mcp-server-intro"
       ]
     },
     {
@@ -8799,6 +10552,9 @@
         "Claude Cursor GitHub Copilot",
         "B2C Developer Toolkit",
         "MRT deployment"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -8819,6 +10575,9 @@
         "MCP configuration",
         "IDE integration",
         "PWA Kit MCP setup"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/mcp-server-intro"
       ]
     },
     {
@@ -8842,6 +10601,14 @@
         "developer workflow",
         "storefront development",
         "code quality"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize",
+        "pwa-kit-managed-runtime/mcp-configure-server",
+        "pwa-kit-managed-runtime/mcp-configure-credentials",
+        "pwa-kit-managed-runtime/mcp-telemetry",
+        "pwa-kit-managed-runtime/mcp-developing-features",
+        "pwa-kit-managed-runtime/mcp-server-ai-clients"
       ]
     },
     {
@@ -8865,6 +10632,9 @@
         "MCP server configuration",
         "data collection",
         "developer experience"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/mcp-server-intro"
       ]
     },
     {
@@ -8888,6 +10658,9 @@
         "managed runtime logs",
         "performance metrics",
         "real-time monitoring"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/test-launch-monitor"
       ]
     },
     {
@@ -8911,6 +10684,9 @@
         "microservices scaling",
         "pwa-kit",
         "deployment platform"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/intro"
       ]
     },
     {
@@ -8934,6 +10710,9 @@
         "multiple recipients",
         "shipping addresses",
         "store pickup"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -8957,6 +10736,9 @@
         "single codebase",
         "site ID mapping",
         "multi-locale"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-get-set-up"
       ]
     },
     {
@@ -8979,6 +10761,9 @@
         "shopper experience",
         "email verification",
         "checkout configuration"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -9002,6 +10787,9 @@
         "OrderMgr.placeOrder",
         "SOM connection",
         "order management system"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -9024,6 +10812,9 @@
         "dynamic pages",
         "Business Manager pages",
         "page designer config"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -9047,6 +10838,9 @@
         "password reset mode",
         "verification code",
         "storefront security"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -9070,6 +10864,9 @@
         "security login",
         "configure passwordless",
         "pwa-kit-managed-runtime"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -9093,6 +10890,12 @@
         "performance guide",
         "managed runtime",
         "performance measurement"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-developer-workflow",
+        "pwa-kit-managed-runtime/perf-pwa-arch",
+        "pwa-kit-managed-runtime/perf-tips",
+        "pwa-kit-managed-runtime/perf-monitor"
       ]
     },
     {
@@ -9116,6 +10919,9 @@
         "performance benchmarking",
         "storefront performance",
         "real-world metrics"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/perf-guide"
       ]
     },
     {
@@ -9139,6 +10945,9 @@
         "HTML generation",
         "page load performance",
         "SSR vs CSR"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/perf-guide"
       ]
     },
     {
@@ -9162,6 +10971,9 @@
         "client-side data loading",
         "TTFB time to first byte",
         "PWA Kit v3"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/perf-guide"
       ]
     },
     {
@@ -9185,6 +10997,9 @@
         "cookie-based content",
         "personalized content",
         "new vs returning shopper"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -9208,6 +11023,9 @@
         "commerce personalization",
         "tailored content",
         "context-based offers"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -9231,6 +11049,9 @@
         "progressive web app",
         "SFRA integration",
         "storefront configuration"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/plugin-slas-setup"
       ]
     },
     {
@@ -9252,6 +11073,38 @@
         "hybrid stability upgrade",
         "composable storefront hybrid",
         "headless rollout"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/hybrid-implementation",
+        "pwa-kit-managed-runtime/phased-headless-rollouts",
+        "pwa-kit-managed-runtime/hybrid-upgrade-v3.x",
+        "pwa-kit-managed-runtime/hybrid-upgrade-v2.x"
+      ]
+    },
+    {
+      "id": "pwa-kit-managed-runtime/protect-storefront",
+      "title": "Limit Access to a Storefront Under Development",
+      "category": "pwa-kit-managed-runtime",
+      "url": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/protect-storefront.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/protect-storefront.md",
+      "headings": "Enable a Protected Storefront • Limitations",
+      "summary": "Enable Protected Storefronts in Business Manager to restrict storefront access during development to only authorized organization users via basic authentication.",
+      "keywords": [
+        "protected storefront",
+        "limit access",
+        "development environment",
+        "basic auth",
+        "site status",
+        "shared password",
+        "restrict access",
+        "storefront under development",
+        "Business Manager",
+        "access control",
+        "authentication",
+        "online protected"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -9274,6 +11127,9 @@
         "storefront domain",
         "proxyConfig",
         "SSR parameters"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-framework"
       ]
     },
     {
@@ -9295,6 +11151,9 @@
         "CLI deployment",
         "authorization",
         "production environment"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-developer-workflow"
       ]
     },
     {
@@ -9318,6 +11177,9 @@
         "project timeline",
         "pwa-kit deployment",
         "storefront launch guide"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/intro"
       ]
     },
     {
@@ -9341,6 +11203,21 @@
         "performance guide",
         "headless commerce",
         "best practices"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/getting-started",
+        "pwa-kit-managed-runtime/quick-start",
+        "pwa-kit-managed-runtime/pushing-and-deploying-bundles",
+        "pwa-kit-managed-runtime/skills-for-success",
+        "pwa-kit-managed-runtime/intro",
+        "pwa-kit-managed-runtime/hybrid-implementation",
+        "pwa-kit-managed-runtime/pwa-framework",
+        "pwa-kit-managed-runtime/perf-guide",
+        "pwa-kit-managed-runtime/pwa-get-set-up",
+        "pwa-kit-managed-runtime/build-customize",
+        "pwa-kit-managed-runtime/enable-merchant-team",
+        "pwa-kit-managed-runtime/test-launch-monitor",
+        "pwa-kit-managed-runtime/maintain"
       ]
     },
     {
@@ -9364,6 +11241,9 @@
         "cart persistence",
         "cookie domain scope",
         "multi-subdomain storefront"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -9386,6 +11266,17 @@
         "Retail React App",
         "PWA components",
         "composable storefront"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-developer-workflow",
+        "pwa-kit-managed-runtime/configuration-options",
+        "pwa-kit-managed-runtime/proxying-requests",
+        "pwa-kit-managed-runtime/pwa-redirects",
+        "pwa-kit-managed-runtime/retail-react-app",
+        "pwa-kit-managed-runtime/rendering",
+        "pwa-kit-managed-runtime/routing",
+        "pwa-kit-managed-runtime/special-components",
+        "pwa-kit-managed-runtime/managing-global-state"
       ]
     },
     {
@@ -9408,6 +11299,18 @@
         "SLAS private client",
         "multiple sites",
         "project initialization"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-developer-workflow",
+        "pwa-kit-managed-runtime/decide-on-cdn",
+        "pwa-kit-managed-runtime/creating-an-on-demand-sandbox",
+        "pwa-kit-managed-runtime/create-storefront-using-sandbox",
+        "pwa-kit-managed-runtime/multiple-sites",
+        "pwa-kit-managed-runtime/managed-runtime-administration",
+        "pwa-kit-managed-runtime/setting-up-api-access",
+        "pwa-kit-managed-runtime/setting-up-your-local-environment",
+        "pwa-kit-managed-runtime/use-a-slas-private-client",
+        "pwa-kit-managed-runtime/salesforce-payments"
       ]
     },
     {
@@ -9431,6 +11334,9 @@
         "composable storefront security",
         "access token storage",
         "refresh token storage"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -9454,6 +11360,9 @@
         "service worker",
         "storefront setup",
         "PLP PDP checkout"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/intro"
       ]
     },
     {
@@ -9475,6 +11384,9 @@
         "routing",
         "managed runtime",
         "PWA Kit 3.9"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-framework"
       ]
     },
     {
@@ -9498,6 +11410,9 @@
         "headless implementation",
         "custom storefront",
         "React storefront"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/intro"
       ]
     },
     {
@@ -9520,6 +11435,9 @@
         "localhost:3000",
         "getting started PWA Kit",
         "storefront template"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-developer-workflow"
       ]
     },
     {
@@ -9543,6 +11461,9 @@
         "performance optimization",
         "CDN cache",
         "managed runtime"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-framework"
       ]
     },
     {
@@ -9566,6 +11487,9 @@
         "business intelligence B2C",
         "storefront analytics",
         "dashboard configuration"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/data-and-analytics"
       ]
     },
     {
@@ -9588,6 +11512,9 @@
         "progressive web app",
         "project setup",
         "configuration"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-framework"
       ]
     },
     {
@@ -9611,6 +11538,9 @@
         "PLP",
         "PDP",
         "request handler"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-framework"
       ]
     },
     {
@@ -9633,6 +11563,9 @@
         "eCDN routing",
         "payment setup",
         "Embedded CDN"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-get-set-up"
       ]
     },
     {
@@ -9656,6 +11589,9 @@
         "B2C Commerce API access",
         "client secret",
         "API credentials"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-get-set-up"
       ]
     },
     {
@@ -9679,6 +11615,9 @@
         "Linux setup",
         "Windows developer",
         "Node.js configuration"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-get-set-up"
       ]
     },
     {
@@ -9701,6 +11640,9 @@
         "async await",
         "fetch API",
         "prerequisites"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-developer-workflow"
       ]
     },
     {
@@ -9723,6 +11665,9 @@
         "Apple login",
         "Retail React App",
         "composable storefront"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -9746,6 +11691,9 @@
         "theming",
         "routeComponent",
         "storefront customization"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-framework"
       ]
     },
     {
@@ -9769,6 +11717,9 @@
         "in-store sales",
         "store locations",
         "Commerce SDK React"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -9792,6 +11743,9 @@
         "seasonal campaigns",
         "pricing preview",
         "marketing strategies"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/storefront-preview-section"
       ]
     },
     {
@@ -9815,6 +11769,9 @@
         "seasonal campaigns testing",
         "MRT environment",
         "headless design"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/storefront-preview-section"
       ]
     },
     {
@@ -9836,6 +11793,12 @@
         "pricing preview",
         "pre-production testing",
         "sale preview"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/enable-merchant-team",
+        "pwa-kit-managed-runtime/storefront-preview-bm",
+        "pwa-kit-managed-runtime/storefront-preview",
+        "pwa-kit-managed-runtime/storefront-preview-troubleshoot"
       ]
     },
     {
@@ -9859,6 +11822,9 @@
         "pwa-kit preview",
         "storefront preview setup",
         "preview communication layer"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/storefront-preview-section"
       ]
     },
     {
@@ -9881,6 +11847,9 @@
         "order on behalf of customer",
         "commerce-sdk-react",
         "agent authorization"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/enable-merchant-team"
       ]
     },
     {
@@ -9904,6 +11873,11 @@
         "package.json configuration",
         "override files",
         "Retail React App"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize",
+        "pwa-kit-managed-runtime/create-a-custom-component",
+        "pwa-kit-managed-runtime/customize-a-page"
       ]
     },
     {
@@ -9925,6 +11899,14 @@
         "Commerce storefront",
         "managed runtime",
         "monitor site health"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-developer-workflow",
+        "pwa-kit-managed-runtime/debugging",
+        "pwa-kit-managed-runtime/launching-your-storefront",
+        "pwa-kit-managed-runtime/configure-mrt-routing-bm",
+        "pwa-kit-managed-runtime/base-paths",
+        "pwa-kit-managed-runtime/monitor-site"
       ]
     },
     {
@@ -9948,6 +11930,9 @@
         "tracking preferences",
         "progressive web app",
         "cookie consent"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -9971,6 +11956,9 @@
         "deprecation",
         "package.json",
         "runtime environment"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/maintain"
       ]
     },
     {
@@ -9993,6 +11981,9 @@
         "V1 V2 compatibility",
         "customized templates",
         "shopperBaskets mutation"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/maintain"
       ]
     },
     {
@@ -10016,6 +12007,9 @@
         "package.json update",
         "import statements",
         "framework improvements"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/maintain"
       ]
     },
     {
@@ -10038,6 +12032,9 @@
         "useQuery",
         "locale configuration",
         "migration guide"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/maintain"
       ]
     },
     {
@@ -10061,6 +12058,9 @@
         "Commerce SDK React hooks",
         "PWA Kit v3 features",
         "upgrade guide"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/maintain"
       ]
     },
     {
@@ -10083,6 +12083,9 @@
         "PWA Kit 3.5",
         "secure authentication",
         "API client configuration"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/pwa-get-set-up"
       ]
     },
     {
@@ -10106,6 +12109,9 @@
         "environment management",
         "API rate limits",
         "mobify domain"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/intro"
       ]
     },
     {
@@ -10129,6 +12135,9 @@
         "engagement.adapters config",
         "lazy initialization",
         "code splitting"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -10151,6 +12160,9 @@
         "environment variables",
         "managed runtime",
         "sfnext"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -10174,6 +12186,9 @@
         "AI citation",
         "PDP",
         "PLP"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -10197,6 +12212,9 @@
         "sfnext analytics",
         "activity monitoring",
         "event tracking"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started"
       ]
     },
     {
@@ -10220,6 +12238,9 @@
         "openapi-fetch",
         "custom APIs",
         "authentication helpers"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -10242,6 +12263,28 @@
         "architecture",
         "Commerce API",
         "SCAPI"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started-section",
+        "sfnext/sfnext-project-config-build-tools",
+        "sfnext/sfnext-data-loading",
+        "sfnext/sfnext-suspense",
+        "sfnext/sfnext-state-management",
+        "sfnext/sfnext-basket-management",
+        "sfnext/sfnext-api-integration",
+        "sfnext/sfnext-caching-content",
+        "sfnext/sfnext-storage-sessions",
+        "sfnext/sfnext-shopper-context",
+        "sfnext/sfnext-server-routes",
+        "sfnext/sfnext-ui-styling",
+        "sfnext/sfnext-images",
+        "sfnext/sfnext-static-assets",
+        "sfnext/sfnext-seo-metadata",
+        "sfnext/sfnext-aeo-geo",
+        "sfnext/sfnext-multi-site",
+        "sfnext/sfnext-intl",
+        "sfnext/sfnext-adapters",
+        "sfnext/sfnext-security-headers"
       ]
     },
     {
@@ -10265,6 +12308,9 @@
         "sfnext configuration",
         "domain path mapping",
         "request routing"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -10288,6 +12334,9 @@
         "shopping cart",
         "basket snapshot",
         "sfnext basket"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -10310,6 +12359,9 @@
         "browser versions",
         "cross-browser support",
         "sfnext browsers"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started-section"
       ]
     },
     {
@@ -10333,6 +12385,9 @@
         "bundle optimization",
         "Rollup",
         "Vitest"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-project-config-build-tools"
       ]
     },
     {
@@ -10356,6 +12411,9 @@
         "cache hit ratio",
         "edge caching",
         "performance optimization"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -10379,6 +12437,9 @@
         "project setup",
         "deployment",
         "CLI reference"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started"
       ]
     },
     {
@@ -10402,6 +12463,9 @@
         "upgrade strategy",
         "conflict resolution",
         "component maintenance"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -10425,6 +12489,9 @@
         "MRT project connection",
         "site preferences sync",
         "external storefront linking"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started-section"
       ]
     },
     {
@@ -10446,6 +12513,9 @@
         "add page",
         "route file",
         "Tailwind styling"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -10468,6 +12538,34 @@
         "storefront features",
         "sfnext",
         "Commerce Apps"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started",
+        "sfnext/sfnext-mcp-server",
+        "sfnext/sfnext-mrt-data-store",
+        "sfnext/sfnext-customize",
+        "sfnext/sfnext-pd-deploy-cartridge",
+        "sfnext/sfnext-push-mrt-auto",
+        "sfnext/sfnext-modern-exp",
+        "sfnext/sfnext-instore-pickup",
+        "sfnext/sfnext-order-mgmt",
+        "sfnext/sfnext-shopping-agent",
+        "sfnext/sfnext-page-designer",
+        "sfnext/sfnext-one-click-checkout",
+        "sfnext/sfnext-address-autocomplete",
+        "sfnext/sfnext-salesforce-payments",
+        "sfnext/sfnext-passwordless-login",
+        "sfnext/sfnext-email-verification",
+        "sfnext/sfnext-social-login",
+        "sfnext/sfnext-password-reset",
+        "sfnext/sfnext-protect-storefront",
+        "sfnext/sfnext-extend",
+        "sfnext/sfnext-component-extend-upgrade",
+        "sfnext/sfnext-base-path",
+        "sfnext/sfnext-domain-cookie",
+        "sfnext/sfnext-hybrid",
+        "sfnext/sfnext-login-support",
+        "sfnext/sfnext-login-support-hybrid"
       ]
     },
     {
@@ -10491,6 +12589,9 @@
         "data loading",
         "middleware",
         "cookies sessions"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -10512,6 +12613,12 @@
         "debug locally",
         "performance optimization",
         "storefront next troubleshooting"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-test-debug-section",
+        "sfnext/sfnext-debug-troubleshoot",
+        "sfnext/sfnext-debug-locally",
+        "sfnext/sfnext-logging"
       ]
     },
     {
@@ -10535,6 +12642,9 @@
         "development server debug",
         "chrome://inspect",
         "debugger attachment"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-debug"
       ]
     },
     {
@@ -10557,6 +12667,9 @@
         "React Developer Tools",
         "browser console errors",
         "Storefront Next errors"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-debug"
       ]
     },
     {
@@ -10580,6 +12693,9 @@
         "cookie configuration",
         "shopper sessions",
         "PWA Kit"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -10603,6 +12719,9 @@
         "headless browser",
         "test environment setup",
         "B2C Commerce testing"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-test-debug-section"
       ]
     },
     {
@@ -10626,6 +12745,9 @@
         "Storefront Next",
         "site preferences",
         "SCAPI"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -10649,6 +12771,9 @@
         "extend storefront",
         "ISV extensions",
         "sfnext features"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -10671,6 +12796,16 @@
         "personalization",
         "Core Web Vitals",
         "modern storefront"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started-section",
+        "sfnext/sfnext-customize-sf",
+        "sfnext/sfnext-mrt-section",
+        "sfnext/sfnext-test-debug-section",
+        "sfnext/sfnext-perf-section",
+        "sfnext/sfnext-analytics",
+        "sfnext/sfnext-pwa-overview",
+        "sfnext/sfnext-cli"
       ]
     },
     {
@@ -10693,6 +12828,16 @@
         "B2C Commerce",
         "setup",
         "initialization"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started",
+        "sfnext/sfnext-release-notes",
+        "sfnext/sfnext-mrt-release-notes",
+        "sfnext/sfnext-architecture",
+        "sfnext/sfnext-browser-comp",
+        "sfnext/sfnext-quick-start-choice",
+        "sfnext/sfnext-mrt-create-environment",
+        "sfnext/sfnext-connect-storefront"
       ]
     },
     {
@@ -10716,6 +12861,12 @@
         "JWT",
         "hybrid proxy",
         "third-party IDP"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf",
+        "sfnext/sfnext-hybrid-ods",
+        "sfnext/sfnext-hybrid-proxy-local-dev",
+        "sfnext/sfnext-hybrid-routing-matrix"
       ]
     },
     {
@@ -10737,6 +12888,9 @@
         "SiteGenesis migration",
         "origin routing configuration",
         "ODS deployment"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-hybrid"
       ]
     },
     {
@@ -10760,6 +12914,9 @@
         "ODS sandbox",
         "HYBRID_ROUTING_RULES",
         "eCDN routing"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-hybrid"
       ]
     },
     {
@@ -10782,6 +12939,9 @@
         "PUBLIC__app__hybrid__legacyRoutes",
         "edge routing layer",
         "storefront split configuration"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-hybrid"
       ]
     },
     {
@@ -10805,6 +12965,9 @@
         "LCP",
         "image transformation",
         "CDN caching"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -10827,6 +12990,9 @@
         "inventory list",
         "product availability",
         "nearby stores"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -10850,6 +13016,35 @@
         "server-side i18n",
         "client-side i18n",
         "locale detection"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-load-more",
+      "title": "Keep Shoppers Browsing with Load More Pagination",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-load-more.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-load-more.md",
+      "headings": "Configure Pagination",
+      "summary": "Configure load-more pagination on product listing pages to keep shoppers browsing without page reloads or scroll loss.",
+      "keywords": [
+        "load more pagination",
+        "product listing pages",
+        "pagination configuration",
+        "uiConfig.pages.category.pagination",
+        "load more button",
+        "numbered pagination",
+        "traditional pagination",
+        "infinite scroll",
+        "category page pagination",
+        "sfnext pagination",
+        "progress indicator",
+        "ui config"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-modern-exp"
       ]
     },
     {
@@ -10873,6 +13068,9 @@
         "Log Center",
         "Managed Runtime",
         "request tracing"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-debug"
       ]
     },
     {
@@ -10896,6 +13094,9 @@
         "account management",
         "email verification",
         "user registration"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -10919,6 +13120,9 @@
         "account management",
         "shopper authentication",
         "multi-storefront"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -10941,6 +13145,9 @@
         "Managed Runtime MRT",
         "B2C CLI",
         "storefront development"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -10964,6 +13171,11 @@
         "omnichannel",
         "storefront template",
         "implementation blueprint"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf",
+        "sfnext/sfnext-prototyped-cmp",
+        "sfnext/sfnext-load-more"
       ]
     },
     {
@@ -10987,6 +13199,9 @@
         "Storefront Next",
         "Account Manager",
         "TLS certificates"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-mrt-section"
       ]
     },
     {
@@ -11010,6 +13225,9 @@
         "administration endpoints",
         "rate limits",
         "bearer token"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-mrt-section"
       ]
     },
     {
@@ -11033,6 +13251,9 @@
         "environment configuration",
         "sfnext environment",
         "storefront environment"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started-section"
       ]
     },
     {
@@ -11056,6 +13277,9 @@
         "environment variables",
         "root.tsx",
         "performance"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -11079,6 +13303,9 @@
         "env var setup",
         "MRT environment variables",
         "client-side variables"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-mrt-section"
       ]
     },
     {
@@ -11102,6 +13329,9 @@
         ".env file",
         "runtime admin",
         "environment management"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-mrt-section"
       ]
     },
     {
@@ -11125,6 +13355,9 @@
         "nested configuration",
         "storefront configuration",
         "secrets management"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-mrt-section"
       ]
     },
     {
@@ -11133,7 +13366,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-launch-storefront.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-launch-storefront.md",
-      "headings": "Before You Begin • Launching an Environment • 1. Import the Storefront to the Staging or Production Instance • 2. Perform the Cutover • Default Domain • Vanity Domain or New Zone • Set the MRT Access Control Header • Send the Access Control Header from eCDN to the MRT Origin • 3. Monitor the Site",
+      "headings": "Before You Begin • Launching an Environment • 1. Import the Storefront to the Staging or Production Instance • 2. Update the SLAS Client Redirect URI • 3. Perform the Cutover • Default Domain • Vanity Domain or New Zone • Send the Access Control Header from eCDN to the MRT Origin • 4. Finalize the Environment • 5. Monitor the Site",
       "summary": "Deploy and publish your Storefront Next to a public web address with proper DNS and Managed Runtime configuration.",
       "keywords": [
         "launch storefront",
@@ -11148,6 +13381,33 @@
         "go live",
         "publish storefront",
         "environment launch"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-mrt-section"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-mrt-node-version",
+      "title": "Node Version Support",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-node-version.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-node-version.md",
+      "headings": "Supported Node Versions • Opt Out of Email Notifications",
+      "summary": "Manage Node.js versions for Storefront Next Managed Runtime environments, understanding support lifecycles and upgrade requirements.",
+      "keywords": [
+        "Node.js version support",
+        "Node version upgrade",
+        "Managed Runtime Node",
+        "Storefront Next Node",
+        "Node.js deprecation",
+        "Node.js end of life",
+        "Runtime environment Node",
+        "Node version lifecycle",
+        "Node.js deployment",
+        "Runtime Admin notifications"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-mrt-section"
       ]
     },
     {
@@ -11171,6 +13431,33 @@
         "Storefront Next hosting",
         "React Router 7",
         "TLS security"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-mrt-section"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-mrt-release-notes",
+      "title": "Managed Runtime Release Notes",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-release-notes.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-release-notes.md",
+      "headings": "<Date> - vx.y.z • <Release note title> • 7/28/2026 • SSR Bundle Size Limit Lowered to 247 MB",
+      "summary": "Track Managed Runtime feature updates, changes, and new capabilities across releases.",
+      "keywords": [
+        "Managed Runtime release notes",
+        "MRT releases",
+        "sfnext updates",
+        "SSR bundle size limit",
+        "release changelog",
+        "feature updates",
+        "MRT changelog",
+        "version history",
+        "Managed Runtime changes",
+        "deployment updates"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started-section"
       ]
     },
     {
@@ -11193,6 +13480,9 @@
         "default domain",
         "traffic routing",
         "storefront configuration"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-mrt-section"
       ]
     },
     {
@@ -11215,6 +13505,18 @@
         "runtime API",
         "environment management",
         "CI/CD automation"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started",
+        "sfnext/sfnext-mrt-overview",
+        "sfnext/sfnext-mrt-administration",
+        "sfnext/sfnext-mrt-node-version",
+        "sfnext/sfnext-mrt-api",
+        "sfnext/sfnext-mrt-environment-vars",
+        "sfnext/sfnext-mrt-env-vars-api",
+        "sfnext/sfnext-mrt-env-var-troubleshoot",
+        "sfnext/sfnext-mrt-launch-storefront",
+        "sfnext/sfnext-mrt-routing-bm"
       ]
     },
     {
@@ -11238,6 +13540,9 @@
         "query parameters",
         "homepage routing",
         "site detection"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -11260,6 +13565,34 @@
         "B2C Commerce checkout configuration",
         "sfnext checkout setup",
         "verify email address"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-order-mgmt",
+      "title": "Integrate Storefront Next with Salesforce Order Management",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-order-mgmt.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-order-mgmt.md",
+      "headings": "Prerequisite: Connect Your B2C Commerce Instance and the Order Management Organization • Step 1: Connect a B2C Commerce Instance to the SOM organization • Step 2: Verify the Connection by Placing an Order • Storefront Next-SOM Integration Considerations • Getting Orders from SOM • Placing Orders in SOM • Managing Orders in SOM • Prerequisites • Accessing the Order Detail Page • Tracking Order Shipments • Canceling an Order • Returning Eligible Items • Order Refunds • Status Badge",
+      "summary": "Connect Storefront Next with Salesforce Order Management to display and sync orders, enabling shoppers to track shipments and manage returns from the storefront.",
+      "keywords": [
+        "Storefront Next Order Management integration",
+        "SOM integration",
+        "order history page",
+        "order tracking",
+        "order synchronization",
+        "B2C Commerce Order Management",
+        "order status",
+        "return management",
+        "self-service order management",
+        "order detail page",
+        "connect B2C Commerce SOM"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -11268,7 +13601,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-page-designer.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-page-designer.md",
-      "headings": "How It Works for Developers • Core Architecture • Prerequisites • Implement Page Designer Components • Component Structure • Metadata Decorators • Basic Component Example • Attribute Types • Component Patterns: Fallbacks and Loaders • Fallback Components • Data Loaders • Components with Regions • Region Definition Options • Implement Page Designer Pages • Page Structure • Page Metadata Options • Supported Aspect Types • Region Usage in Pages • Generate Cartridges • Automatic Generation on Build • Manual Generation • Generated Output Structure • Generated Metadata Format • Key Notes • Deploy Cartridges • Prerequisites • Deploy the Cartridge with the `push` Command • Manual Cartridge Deployment • Deployment Process • Business Manager Setup • Prerequisites • Using Page Designer • Page Assignment • Live Preview • Shopper Context Preview • Known Limitations • Local Development • Setup Steps • Troubleshooting • Merchant Storefront Next Customization • Content Slot Migration from SFRA",
+      "headings": "How It Works for Developers • Core Architecture • Implement Page Designer Components • Component Structure • Metadata Decorators • Basic Component Example • Attribute Types • Component Patterns: Fallbacks and Loaders • Fallback Components • Data Loaders • Components with Regions • Region Definition Options • Implement Page Designer Pages • Page Structure • Page Metadata Options • Supported Aspect Types • Region Usage in Pages • Generate Cartridges • Automatic Generation on Build • Manual Generation • Generated Output Structure • Generated Metadata Format • Key Notes • Deploy Cartridges • Prerequisites • Deploy the Cartridge with the `push` Command • Manual Cartridge Deployment • Deployment Process • Business Manager Setup • Prerequisites • Using Page Designer • Page Assignment • Live Preview • Shopper Context Preview • Known Limitations • Local Development • Setup Steps • Troubleshooting • Merchant Storefront Next Customization • Content Slot Migration from SFRA",
       "summary": "Build reusable React components for Page Designer in Storefront Next to enable merchants to create personalized pages without developer intervention.",
       "keywords": [
         "Page Designer",
@@ -11283,6 +13616,12 @@
         "component loaders",
         "visual page builder",
         "SFNEXT"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf",
+        "sfnext/sfnext-page-designer-customize-sf",
+        "sfnext/sfnext-page-designer-content-blocks",
+        "sfnext/sfnext-page-designer-content-slots"
       ]
     },
     {
@@ -11306,6 +13645,9 @@
         "brand consistency",
         "content management",
         "promotional content"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-page-designer"
       ]
     },
     {
@@ -11327,6 +13669,9 @@
         "reusable content",
         "content slot page type",
         "Storefront Next content management"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-page-designer"
       ]
     },
     {
@@ -11348,6 +13693,9 @@
         "storefront components",
         "content deployment",
         "page designer staging"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-page-designer"
       ]
     },
     {
@@ -11371,6 +13719,9 @@
         "sfnext",
         "account access",
         "verification code"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -11393,6 +13744,35 @@
         "Storefront Next",
         "config.server.ts",
         "shopper authentication"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-pd-deploy-cartridge",
+      "title": "Deploy the Storefront Next Cartridge for Page Designer",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-pd-deploy-cartridge.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-pd-deploy-cartridge.md",
+      "headings": "Prerequisites: • Automatic Cartridge Sync with the VS Code Extension",
+      "summary": "Deploy the Storefront Next cartridge to upload Page Designer metadata and components to your B2C Commerce instance after setup or modifications.",
+      "keywords": [
+        "deploy Storefront Next cartridge",
+        "Page Designer metadata",
+        "Page Designer components",
+        "dw.json configuration",
+        "B2C DX CLI deploy",
+        "cartridge deployment",
+        "Page Designer pages",
+        "Storefront Next setup",
+        "Business Manager deployment",
+        "upload Page Designer",
+        "code version deployment",
+        "sfnext cartridge"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -11413,6 +13793,12 @@
         "storefront optimization",
         "performance metrics",
         "development performance"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started",
+        "sfnext/sfnext-performance",
+        "sfnext/sfnext-perf-tools",
+        "sfnext/sfnext-seo-url-rules-best-practices"
       ]
     },
     {
@@ -11435,6 +13821,9 @@
         "performance benchmarks",
         "performance testing",
         "production monitoring"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-perf-section"
       ]
     },
     {
@@ -11458,6 +13847,9 @@
         "performance best practices",
         "storefront next perf",
         "page load optimization"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-perf-section"
       ]
     },
     {
@@ -11480,6 +13872,9 @@
         "metadata section",
         "runtime configuration",
         "app settings"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-project-config-build-tools"
       ]
     },
     {
@@ -11502,6 +13897,12 @@
         "deployment process",
         "app configuration",
         "build system"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture",
+        "sfnext/sfnext-project-structure",
+        "sfnext/sfnext-project-config",
+        "sfnext/sfnext-build-tools"
       ]
     },
     {
@@ -11525,6 +13926,9 @@
         "layout wrapper",
         "src directory",
         "storefront next"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-project-config-build-tools"
       ]
     },
     {
@@ -11548,6 +13952,9 @@
         "Business Manager",
         "online protected",
         "restrict storefront access"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -11571,6 +13978,9 @@
         "PDP",
         "placeholder components",
         "mock data"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-modern-exp"
       ]
     },
     {
@@ -11593,6 +14003,9 @@
         "redeploy storefront",
         "Runtime Admin",
         "Business Manager deployment"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -11616,6 +14029,9 @@
         "route loaders actions",
         "OpenAPI fetch",
         "commerce SDK comparison"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -11638,6 +14054,9 @@
         "React Query",
         "basket hydration",
         "commerce-sdk-react"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -11661,6 +14080,9 @@
         "sfnext build setup",
         "bundle analysis",
         "project setup"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -11684,6 +14106,9 @@
         "compile-time styling",
         "utility classes",
         "component patterns"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -11707,6 +14132,9 @@
         "client navigation",
         "isLoading flags",
         "use() hook"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -11730,6 +14158,9 @@
         "sfnext push",
         "Managed Runtime",
         "deployment differences"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -11753,6 +14184,9 @@
         "TypeScript configuration",
         "sfnext dev CLI",
         "port configuration"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -11776,6 +14210,26 @@
         "TypeScript workflow",
         "file-based routes",
         "Storefront Next setup"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started",
+        "sfnext/sfnext-pwa-project-structure",
+        "sfnext/sfnext-pwa-project-config",
+        "sfnext/sfnext-pwa-build-tools",
+        "sfnext/sfnext-pwa-dev-workflow",
+        "sfnext/sfnext-pwa-deployment",
+        "sfnext/sfnext-pwa-data-fetching",
+        "sfnext/sfnext-pwa-state-management",
+        "sfnext/sfnext-pwa-basket-management",
+        "sfnext/sfnext-pwa-rendering",
+        "sfnext/sfnext-pwa-api-integration",
+        "sfnext/sfnext-pwa-storage-sessions",
+        "sfnext/sfnext-pwa-server-routes",
+        "sfnext/sfnext-pwa-routing",
+        "sfnext/sfnext-pwa-styling",
+        "sfnext/sfnext-pwa-components",
+        "sfnext/sfnext-pwa-static-assets",
+        "sfnext/sfnext-pwa-seo-metadata"
       ]
     },
     {
@@ -11799,6 +14253,9 @@
         "client config",
         "config override",
         "configuration namespaces"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -11822,6 +14279,9 @@
         "framework conventions",
         "app structure",
         "vite config"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -11845,6 +14305,9 @@
         "middleware chain",
         "data fetching",
         "Suspense boundaries"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -11867,6 +14330,9 @@
         "Storefront Next routing",
         "route definitions",
         "React Router upgrade"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -11890,6 +14356,9 @@
         "meta tags management",
         "pageMetaTags",
         "robots control"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -11913,6 +14382,9 @@
         "dynamic routes",
         "server-side routing",
         "route differences"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -11936,6 +14408,9 @@
         "caching strategy",
         "SSR",
         "state persistence"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -11959,6 +14434,9 @@
         "public folder",
         "migration",
         "getAssetUrl"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -11982,6 +14460,9 @@
         "client-server auth differences",
         "useAuth hook",
         "SSR authentication"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -12005,6 +14486,9 @@
         "CSS variables",
         "styling migration",
         "prop-based vs class-based"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-pwa-overview"
       ]
     },
     {
@@ -12025,6 +14509,12 @@
         "storefront creation",
         "Managed Runtime",
         "terminal storefront"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started-section",
+        "sfnext/sfnext-quick-start-create-bm-github",
+        "sfnext/sfnext-quick-start-create-bm",
+        "sfnext/sfnext-quick-start-create-sf"
       ]
     },
     {
@@ -12033,7 +14523,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-bm.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-bm.md",
-      "headings": "Prerequisites • Constraints • Steps",
+      "headings": "Prerequisites • Constraints • Steps • Next Steps",
       "summary": "Create a Storefront Next in Business Manager and generate its code locally using Salesforce CLI.",
       "keywords": [
         "Storefront Next",
@@ -12048,6 +14538,9 @@
         "B2C Commerce storefront",
         "site configuration",
         "CLI setup"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-quick-start-choice"
       ]
     },
     {
@@ -12056,7 +14549,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-bm-github.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-bm-github.md",
-      "headings": "Prerequisites • Constraints • Steps",
+      "headings": "Prerequisites • Constraints • Steps • Next Steps",
       "summary": "Set up a Storefront Next instance in Business Manager by connecting a GitHub repository to create storefront code and dependent API and Managed Runtime resources.",
       "keywords": [
         "Storefront Next",
@@ -12071,6 +14564,9 @@
         "B2C Commerce storefront",
         "GitHub integration",
         "storefront provisioning"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-quick-start-choice"
       ]
     },
     {
@@ -12094,6 +14590,9 @@
         "local development",
         "B2C Commerce retail storefront",
         "get started sfnext"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-quick-start-choice"
       ]
     },
     {
@@ -12102,7 +14601,49 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-release-notes.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-release-notes.md",
-      "headings": "<Date> - vx.y.z • <Date> - B2C Commerce 26.x • <Release note title> • July 9, 2026 - v1.1.0 • Maintain Shopper Sessions Across Subdomains in Storefront Next • Secure Your Storefront and Stabilize APIs by Upgrading to React Router 7.18"
+      "headings": "<Date> - vx.y.z • <Date> - B2C Commerce 26.x • <Release note title> • August 4, 2026 - Storefront Next 1.2.0 • Integrate Storefront Next with Salesforce Order Management • Keep Shoppers Browsing with Load More Pagination • July 21, 2026 - B2C Commerce 26.8 • Speed Up Storefront Next Development with the Beauty Street Template • July 9, 2026 - Storefront Next 1.1.0 • Process Payments Natively in Storefront Next with Salesforce Payments • Maintain Shopper Sessions Across Subdomains in Storefront Next • Secure Your Storefront and Stabilize APIs by Upgrading to React Router 7.18",
+      "summary": "Track new features and changes in Storefront Next monthly releases with links to detailed GitHub release information.",
+      "keywords": [
+        "Storefront Next release notes",
+        "sfnext releases",
+        "Storefront Next features",
+        "monthly releases",
+        "version updates",
+        "changelog",
+        "GitHub releases",
+        "Storefront Next v1.0.0",
+        "template updates",
+        "B2C Commerce releases"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started-section"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-salesforce-payments",
+      "title": "Configure Salesforce Payments for Storefront Next",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-salesforce-payments.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-salesforce-payments.md",
+      "headings": "Set Up Salesforce Payments for Storefront Next • Prerequisites • Steps",
+      "summary": "Set up Salesforce Payments for Storefront Next by configuring payment gateways, defining types, and updating configuration URLs.",
+      "keywords": [
+        "Salesforce Payments",
+        "Storefront Next",
+        "payment gateway configuration",
+        "Adyen",
+        "Stripe",
+        "PayPal",
+        "checkout",
+        "B2C Commerce payments",
+        "config.server.ts",
+        "payment methods",
+        "sdkUrl",
+        "metadataUrl"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
+      ]
     },
     {
       "id": "sfnext/sfnext-security-headers",
@@ -12125,6 +14666,9 @@
         "config.server.ts",
         "storefront-next-runtime",
         "web security"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -12148,6 +14692,9 @@
         "search optimization",
         "localization",
         "alternate links"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -12170,6 +14717,9 @@
         "search engine optimization",
         "URL structure",
         "getUrlMapping"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-perf-section"
       ]
     },
     {
@@ -12192,6 +14742,9 @@
         "loader action",
         "React Router 7",
         "secure API calls"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -12215,6 +14768,9 @@
         "Shopper Context API",
         "middleware",
         "cookies state"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -12238,6 +14794,9 @@
         "guided shopping",
         "storefront configuration",
         "B2C agent"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -12261,6 +14820,9 @@
         "social sign-in",
         "OAuth",
         "authentication"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {
@@ -12284,6 +14846,9 @@
         "client-side state",
         "form submissions",
         "data synchronization"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -12306,6 +14871,9 @@
         "storefront next",
         "serve static files",
         "asset management"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -12329,6 +14897,9 @@
         "Storefront Next auth",
         "PublicSessionData",
         "auth.server.ts"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -12352,6 +14923,9 @@
         "sfnext preview",
         "pre-production testing",
         "shopper context API"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-test-debug-section"
       ]
     },
     {
@@ -12375,6 +14949,12 @@
         "accessibility testing",
         "Storefront Next",
         "component preview"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-test-debug-section",
+        "sfnext/sfnext-storybook-create-story",
+        "sfnext/sfnext-storybook-structure",
+        "sfnext/sfnext-storybook-test"
       ]
     },
     {
@@ -12398,6 +14978,9 @@
         "interaction coverage",
         "mock wrappers",
         "story best practices"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-storybook"
       ]
     },
     {
@@ -12419,6 +15002,9 @@
         "project structure",
         "Storybook setup",
         "sfnext"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-storybook"
       ]
     },
     {
@@ -12442,6 +15028,9 @@
         "command line tests",
         "component regression",
         "sfnext"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-storybook"
       ]
     },
     {
@@ -12465,6 +15054,9 @@
         "fallback UI",
         "Promise throwing",
         "concurrent rendering"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -12487,6 +15079,13 @@
         "automated testing",
         "Business Manager preview",
         "troubleshooting"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started",
+        "sfnext/sfnext-storefront-preview",
+        "sfnext/sfnext-storybook",
+        "sfnext/sfnext-e2e-testing",
+        "sfnext/sfnext-debug"
       ]
     },
     {
@@ -12510,6 +15109,9 @@
         "class-variance-authority",
         "tailwind-merge",
         "CSS variables"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-architecture"
       ]
     },
     {
@@ -12531,6 +15133,9 @@
         "Commerce Cloud repositories",
         "initial setup",
         "SFRA tools"
+      ],
+      "relatedEntries": [
+        "sfra/sfra-overview"
       ]
     },
     {
@@ -12552,6 +15157,9 @@
         "site settings",
         "SFRA setup",
         "instance configuration"
+      ],
+      "relatedEntries": [
+        "sfra/sfra-overview"
       ]
     },
     {
@@ -12575,6 +15183,9 @@
         "cartridge path",
         "extend SFRA",
         "brand-specific cartridges"
+      ],
+      "relatedEntries": [
+        "sfra/sfra-overview"
       ]
     },
     {
@@ -12621,6 +15232,9 @@
         "storefront consent",
         "site preference tracking",
         "privacy implementation"
+      ],
+      "relatedEntries": [
+        "sfra/b2c-sfra-features-and-comps"
       ]
     },
     {
@@ -12644,6 +15258,9 @@
         "automated testing",
         "code review",
         "submit PR"
+      ],
+      "relatedEntries": [
+        "sfra/sfra-overview"
       ]
     },
     {
@@ -12667,6 +15284,9 @@
         "Account-DataDownload route",
         "dataDownloadHelper",
         "storefront data implementation"
+      ],
+      "relatedEntries": [
+        "sfra/b2c-sfra-features-and-comps"
       ]
     },
     {
@@ -12689,6 +15309,9 @@
         "SFRA configuration",
         "storefront features",
         "cartridge implementation"
+      ],
+      "relatedEntries": [
+        "sfra/b2c-sfra-features-and-comps"
       ]
     },
     {
@@ -12711,6 +15334,16 @@
         "custom cartridges",
         "SFRA models",
         "storefront blueprint"
+      ],
+      "relatedEntries": [
+        "sfra/sfra-overview",
+        "sfra/b2c-sfra-features",
+        "sfra/b2c-sfra-hooks",
+        "sfra/b2c-sfra-modules",
+        "sfra/b2c-sfra-standards-compliance",
+        "sfra/b2c-testing-sfra",
+        "sfra/b2c-sfra-consent-tracking",
+        "sfra/b2c-sfra-download-pi-data"
       ]
     },
     {
@@ -12733,6 +15366,9 @@
         "B2C Commerce hooks",
         "hook definition",
         "storefront hooks"
+      ],
+      "relatedEntries": [
+        "sfra/b2c-sfra-features-and-comps"
       ]
     },
     {
@@ -12756,6 +15392,9 @@
         "SFRA server module",
         "ImportPackage vs Require",
         "B2C Commerce modules"
+      ],
+      "relatedEntries": [
+        "sfra/b2c-sfra-features-and-comps"
       ]
     },
     {
@@ -12779,6 +15418,9 @@
         "IE Edge Firefox Chrome Safari",
         "SFRA system requirements",
         "storefront reference architecture"
+      ],
+      "relatedEntries": [
+        "sfra/b2c-sfra-features-and-comps"
       ]
     },
     {
@@ -12802,6 +15444,9 @@
         "GitHub releases",
         "SFRA versioning",
         "plugin versions"
+      ],
+      "relatedEntries": [
+        "sfra/sfra-overview"
       ]
     },
     {
@@ -12825,6 +15470,9 @@
         "sinon",
         "proxyquire",
         "B2C Commerce testing"
+      ],
+      "relatedEntries": [
+        "sfra/b2c-sfra-features-and-comps"
       ]
     },
     {
@@ -12846,6 +15494,9 @@
         "Nobile_First",
         "SFRA issues",
         "code deployment"
+      ],
+      "relatedEntries": [
+        "sfra/sfra-overview"
       ]
     },
     {
@@ -12869,6 +15520,9 @@
         "cartridge",
         "themes plugin",
         "reference implementation"
+      ],
+      "relatedEntries": [
+        "sfra/sfra-overview"
       ]
     },
     {
@@ -12890,6 +15544,9 @@
         "site redesign",
         "storefront customization",
         "responsive design"
+      ],
+      "relatedEntries": [
+        "sfra/sfra-overview"
       ]
     },
     {
@@ -12913,6 +15570,9 @@
         "Einstein search",
         "product recommendations",
         "content slots"
+      ],
+      "relatedEntries": [
+        "sfra/sfra-overview"
       ]
     },
     {
@@ -12935,6 +15595,9 @@
         "SFRA documentation",
         "SFRA wireframes",
         "SFRA design"
+      ],
+      "relatedEntries": [
+        "sfra/sfra-overview"
       ]
     },
     {
@@ -12958,6 +15621,19 @@
         "mobile optimization",
         "storefront setup",
         "reference architecture guide"
+      ],
+      "relatedEntries": [
+        "sfra/sfra-faq",
+        "sfra/sfra-feature-list",
+        "sfra/sfra-learn-more",
+        "sfra/sfra-community-cloud-community-suite",
+        "sfra/b2c-sfra-features-and-comps",
+        "sfra/b2c-sfra-versions",
+        "sfra/b2c-build-sfra",
+        "sfra/b2c-configuring-sfra",
+        "sfra/b2c-customizing-sfra",
+        "sfra/b2c-troubleshooting-sfra",
+        "sfra/b2c-sfra-contributions"
       ]
     }
   ]

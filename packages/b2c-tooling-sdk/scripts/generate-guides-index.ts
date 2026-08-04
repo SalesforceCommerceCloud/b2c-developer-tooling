@@ -36,6 +36,9 @@
  * Optional enrichment: if `data/guides/enrichment.json` exists (produced by
  * `enrich-docs.ts`), each entry is augmented with an LLM-generated `summary` and
  * `keywords` for better recall. Missing enrichment is simply omitted.
+ * Immediate TOC relationships are emitted bidirectionally as `relatedEntries`,
+ * giving agents the parent overview and direct child guides without recursively
+ * expanding the entire subtree.
  *
  * Usage:
  *   COMMERCE_DOCS_REPO=/path/to/commerce-cloud-docs \
@@ -49,6 +52,10 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
+import {load} from 'js-yaml';
+
+import {captureSourceProvenance, type SourceProvenance} from './source-provenance.js';
+
 /** Developer Center projects (categories) whose guides we index. */
 const CATEGORIES = ['commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra', 'b2c-commerce'] as const;
 
@@ -61,11 +68,13 @@ interface DocEntry {
   headings?: string;
   summary?: string;
   keywords?: string[];
+  relatedEntries?: string[];
 }
 
 interface SearchIndex {
   version: string;
   generatedAt: string;
+  source?: SourceProvenance;
   entries: DocEntry[];
 }
 
@@ -139,6 +148,62 @@ function collectTocBasenames(contentDir: string): Set<string> {
   return basenames;
 }
 
+interface TocItem {
+  link?: unknown;
+  source?: unknown;
+  topics?: unknown;
+}
+
+function tocMarkdownLink(item: TocItem): string | null {
+  const value = typeof item.link === 'string' ? item.link : typeof item.source === 'string' ? item.source : null;
+  if (!value) return null;
+  const file = value.split(/[?#]/, 1)[0];
+  return file.endsWith('.md') ? file : null;
+}
+
+function guideIdForTocLink(contentDir: string, tocFile: string, link: string): string | null {
+  const file = path.resolve(path.dirname(tocFile), link);
+  const relative = path.relative(contentDir, file);
+  const [category, directory] = relative.split(path.sep);
+  if (!CATEGORIES.includes(category as (typeof CATEGORIES)[number]) || directory !== 'guides') return null;
+  return `${category}/${path.basename(file, '.md')}`;
+}
+
+/** Collects immediate parent/child TOC edges in both directions. */
+function collectTocRelations(contentDir: string): Map<string, Set<string>> {
+  const relations = new Map<string, Set<string>>();
+  const tocFiles = walkFiles(contentDir, (name) => name.endsWith('.yml'))
+    .filter((file) => file.includes(`${path.sep}guides${path.sep}`))
+    .sort();
+
+  const relate = (left: string, right: string): void => {
+    if (left === right) return;
+    const related = relations.get(left) ?? new Set<string>();
+    related.add(right);
+    relations.set(left, related);
+  };
+
+  const visit = (items: unknown, tocFile: string, parentId: string | null): void => {
+    if (!Array.isArray(items)) return;
+    for (const value of items) {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) continue;
+      const item = value as TocItem;
+      const link = tocMarkdownLink(item);
+      const id = link ? guideIdForTocLink(contentDir, tocFile, link) : null;
+      if (id && parentId) {
+        relate(parentId, id);
+        relate(id, parentId);
+      }
+      visit(item.topics, tocFile, id ?? parentId);
+    }
+  };
+
+  for (const tocFile of tocFiles) {
+    visit(load(fs.readFileSync(tocFile, 'utf-8')), tocFile, null);
+  }
+  return relations;
+}
+
 function extractTitle(md: string, fallback: string): string {
   const m = md.match(/^#\s+(.+)$/m);
   return m?.[1]?.trim() || fallback;
@@ -168,8 +233,11 @@ function loadEnrichment(): Map<string, EnrichmentEntry> {
 
 function main(): void {
   const contentDir = resolveDocsRepo();
+  // contentDir is `<repo>/content/en-us`; capture provenance from the repo root.
+  const source = captureSourceProvenance(path.resolve(contentDir, '..', '..'));
   const enrichment = loadEnrichment();
   const published = collectTocBasenames(contentDir);
+  const tocRelations = collectTocRelations(contentDir);
 
   const entries: DocEntry[] = [];
   // Maps an id to the file that first claimed it, so a duplicate warning can
@@ -221,11 +289,21 @@ function main(): void {
     }
   }
 
+  const indexedIds = new Set(entries.map((entry) => entry.id));
+  let relatedEdges = 0;
+  for (const entry of entries) {
+    const relatedEntries = [...(tocRelations.get(entry.id) ?? [])].filter((id) => indexedIds.has(id));
+    if (relatedEntries.length === 0) continue;
+    entry.relatedEntries = relatedEntries;
+    relatedEdges += relatedEntries.length;
+  }
+
   entries.sort((a, b) => a.id.localeCompare(b.id));
 
   const index: SearchIndex = {
     version: '2.0.0',
     generatedAt: new Date().toISOString(),
+    ...(source && {source}),
     entries,
   };
 
@@ -235,9 +313,11 @@ function main(): void {
   const enriched = entries.filter((e) => e.summary).length;
   console.log(
     `Generated guides index: ${entries.length} entries across ${CATEGORIES.length} categories ` +
-      `(${enriched} enriched, ${skippedOrphans} orphan files skipped as not TOC-referenced) ` +
+      `(${enriched} enriched, ${relatedEdges} directed TOC relationships, ` +
+      `${skippedOrphans} orphan files skipped as not TOC-referenced) ` +
       `at ${path.join(GUIDES_DIR, 'index.json')}`,
   );
+  if (source) console.log(`  source: ${source.sha.slice(0, 12)} (${source.committedAt})`);
 }
 
 main();

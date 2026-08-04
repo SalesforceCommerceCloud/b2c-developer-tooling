@@ -89,6 +89,45 @@ describe('slas client update', () => {
     expect(result.clientId).to.equal('my-client');
   });
 
+  it('splits pipe-delimited callbackUri from the API into individual URLs', async () => {
+    const command: any = await createCommand(
+      {
+        'tenant-id': 'abcd_123',
+        channels: ['NewSite'],
+      },
+      {clientId: 'my-client'},
+    );
+
+    stubAuthAndJson(command);
+
+    // The API returns callbackUri as a single pipe-delimited string, same as redirectUri.
+    const getStub = sinon.stub().resolves({
+      data: {
+        clientId: 'my-client',
+        name: 'Existing',
+        channels: ['OldSite'],
+        scopes: 'old.scope',
+        redirectUri: 'http://old/cb',
+        callbackUri: 'https://a.example.com/cb|https://b.example.com/reset|https://c.example.com/pwl',
+        isPrivateClient: true,
+      },
+      error: undefined,
+    });
+
+    const putStub = sinon.stub().resolves({data: {clientId: 'my-client'}, error: undefined});
+
+    sinon.stub(command, 'getSlasClient').returns({GET: getStub, PUT: putStub} as any);
+
+    await command.run();
+
+    const [, options] = putStub.firstCall.args as [string, any];
+    expect(options.body.callbackUri).to.deep.equal([
+      'https://a.example.com/cb',
+      'https://b.example.com/reset',
+      'https://c.example.com/pwl',
+    ]);
+  });
+
   it('appends list values with dedupe when --replace is false', async () => {
     const command: any = await createCommand(
       {

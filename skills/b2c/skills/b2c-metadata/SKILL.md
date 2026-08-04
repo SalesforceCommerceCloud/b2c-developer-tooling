@@ -367,17 +367,16 @@ var maxItems = Site.current.getCustomPreferenceValue('maxItemsPerPage');
     <description xml:lang="x-default">Description for BM tooltip</description>
     <type>string</type>
     <localizable-flag>false</localizable-flag>
-    <mandatory-flag>false</mandatory-flag>
-    <externally-managed-flag>false</externally-managed-flag>
-    <visible-flag>true</visible-flag>
     <site-specific-flag>false</site-specific-flag>
-    <order-required-flag>false</order-required-flag>
+    <mandatory-flag>false</mandatory-flag>
     <searchable-flag>false</searchable-flag>
+    <visible-flag>true</visible-flag>
+    <externally-managed-flag>false</externally-managed-flag>
+    <order-required-flag>false</order-required-flag>
     <min-length>0</min-length>
-    <max-length>256</max-length>
+    <field-length>256</field-length>
+    <unit xml:lang="x-default">kg</unit>
     <default-value>default</default-value>
-    <select-mode>none</select-mode>
-    <unit>kg</unit>
 </attribute-definition>
 ```
 

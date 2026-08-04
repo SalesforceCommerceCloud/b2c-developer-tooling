@@ -287,13 +287,21 @@ function sendWelcomeEmail(customer, locale) {
     mail.send();
 }
 
-// Helper for getting strings in specific locale
+// Helper for getting strings in a specific locale.
+// There is no API for reading a bundle in an arbitrary locale directly —
+// switch the request locale around the lookup and restore it afterwards.
 function getLocalizedString(key, bundle, locale) {
-    // This requires reading property files directly for non-current locale
-    // Or storing translations in a custom object
-    var ResourceBundle = require('dw/web/ResourceBundle');
-    var rb = ResourceBundle.getBundle(bundle, locale);
-    return rb.getString(key);
+    var previous = request.locale;
+    // Returns false if the locale is not allowed for the current site.
+    if (!request.setLocale(locale)) {
+        return Resource.msg(key, bundle, null);
+    }
+
+    try {
+        return Resource.msg(key, bundle, null);
+    } finally {
+        request.setLocale(previous);
+    }
 }
 ```
 

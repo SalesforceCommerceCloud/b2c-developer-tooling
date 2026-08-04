@@ -53,7 +53,7 @@ Tail sandbox logs into a VS Code output channel, install Commerce App Packages, 
 ## Get started
 
 1. Open a B2C Commerce project in VS Code.
-2. Add a `dw.json` file at the workspace root or use an existing B2C CLI configuration.
+2. Add a `dw.json` file at the project root or use an existing B2C CLI configuration. The project can be nested inside an open workspace folder.
 3. Select the active instance from the cloud icon in the status bar.
 4. Open an extension view from the activity bar or run an extension command from the Command Palette.
 

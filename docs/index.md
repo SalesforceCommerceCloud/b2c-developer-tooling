@@ -54,7 +54,7 @@ features:
       width: 48
       height: 48
     title: VS Code Extension
-    details: Activity-bar tools for sandbox lifecycle, cartridge code sync, WebDAV, content libraries, SCAPI, and a B2C script debugger — all driven by the same dw.json the CLI uses.
+    details: The official Salesforce B2C Commerce extension for VS Code. Activity-bar tools for sandbox lifecycle, cartridge code sync, WebDAV, content libraries, SCAPI, and a B2C script debugger. Shares configuration with the CLI, so it fits right into the rest of your toolkit.
     link: /vscode-extension/
     linkText: VS Code Extension
 ---
@@ -100,8 +100,9 @@ claude plugin install storefront-next-figma
 
 ```bash [Codex]
 codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-# Then in Codex, run /plugins, select the "B2C Developer Tooling"
-# marketplace, and select and install the desired plugins.
+codex plugin add b2c-cli@b2c-developer-tooling
+codex plugin add b2c@b2c-developer-tooling
+codex plugin add b2c-dx-mcp@b2c-developer-tooling
 ```
 
 ```bash [Cursor]
@@ -144,10 +145,6 @@ npx @salesforce/b2c-cli setup skills
 
 ## Install the VS Code Extension
 
-Install [Salesforce B2C Commerce](https://marketplace.visualstudio.com/items?itemName=Salesforce.b2c-vs-extension) from the Visual Studio Marketplace or run:
-
-```bash
-code --install-extension Salesforce.b2c-vs-extension
-```
+Open the Extensions view in your editor and search for **Salesforce B2C Commerce** — VS Code installs from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Salesforce.b2c-vs-extension), while Cursor, VSCodium, Windsurf, and other VS Code–compatible editors install from the [Open VSX Registry](https://open-vsx.org/extension/salesforce/b2c-vs-extension).
 
 Detailed setup: [Installation](/vscode-extension/installation) · [Configuration](/vscode-extension/configuration)

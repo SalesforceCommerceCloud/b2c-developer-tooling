@@ -29,6 +29,8 @@
             <xsd:element name="destination-url" type="Generic.String.256" minOccurs="0" maxOccurs="1" />
             <xsd:element name="additional-url-params" type="Generic.String.2048" minOccurs="0" maxOccurs="1" />
             <xsd:element name="copy-source-params" type="CopySourceParamsType" minOccurs="0" maxOccurs="1" />
+            <xsd:element name="online-from" type="xsd:dateTime" minOccurs="0" maxOccurs="1" nillable="true" />
+            <xsd:element name="online-to" type="xsd:dateTime" minOccurs="0" maxOccurs="1" nillable="true" />
         </xsd:sequence>
         <xsd:attribute name="uri" type="Generic.NonEmptyString.2048" use="optional" />
         <xsd:attribute name="source-id" type="Generic.NonEmptyString.256" use="optional" />

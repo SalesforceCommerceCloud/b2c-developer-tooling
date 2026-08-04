@@ -1,5 +1,23 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.21.3
+
+### Patch Changes
+
+- [#603](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/603) [`94c7ba9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/94c7ba979716e8401234f48178f488a4e5b29ac3) - Fix skill installation output so mixed-source downloads do not show an unresolved version placeholder, repair the `b2c-hooks` skill frontmatter, and identify the affected skill path in future parsing warnings. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.21.2
+
+### Patch Changes
+
+- [#592](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/592) [`f6b4ced`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f6b4ced5d40b8fcd8a9fbaf524f6dcdd83852b02) - Treat activation of an already-active code version as success, preserve useful OCAPI fault details, and avoid redundant activation choices in VS Code. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.21.1
+
+### Patch Changes
+
+- [#581](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/581) [`1fe5ff2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1fe5ff2e49b4aef66c81ad9b9c9dd4b92d1da405) - Expose directly related documentation IDs from Salesforce Help child-topic links and Developer Center guide TOCs, including articles previously omitted from composite Help maps or hyphenated topic filenames. CLI and MCP documentation search results can now be paged by ranked position, so agents can traverse the full published content without surfacing future-profiled Help content. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.21.0
 
 ### Minor Changes

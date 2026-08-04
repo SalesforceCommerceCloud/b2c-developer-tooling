@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {findCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {B2CScriptDebugAdapter} from '@salesforce/b2c-tooling-sdk/operations/debug';
 import type {DebugSessionConfig} from '@salesforce/b2c-tooling-sdk/operations/debug';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {markFeatureUsed} from '../telemetry.js';
+import {findCartridgesSafe} from '../workspace-discovery.js';
 
 const DEBUG_TYPE = 'b2c-script';
 
@@ -43,7 +43,7 @@ class B2CDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
     }
 
     const workingDirectory = this.configProvider.getWorkingDirectory();
-    const cartridges = findCartridges(workingDirectory);
+    const cartridges = findCartridgesSafe(workingDirectory);
 
     const sessionConfig: DebugSessionConfig = {
       hostname: values.hostname,

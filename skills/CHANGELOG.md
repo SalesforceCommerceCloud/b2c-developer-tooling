@@ -1,5 +1,43 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.7.0
+
+### Minor Changes
+
+- [#603](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/603) [`94c7ba9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/94c7ba979716e8401234f48178f488a4e5b29ac3) - Add Codex plugin packaging for the B2C DX MCP server so Codex CLI and Codex in the ChatGPT desktop app can install and load the MCP server directly through the B2C Developer Tooling plugin marketplace. Claude Code marketplace installation remains supported by the same plugin. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#603](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/603) [`94c7ba9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/94c7ba979716e8401234f48178f488a4e5b29ac3) - Fix skill installation output so mixed-source downloads do not show an unresolved version placeholder, repair the `b2c-hooks` skill frontmatter, and identify the affected skill path in future parsing warnings. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#601](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/601) [`332f0a4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/332f0a4f12c627031b01e1fb1b04559efa13354b) - Correct B2C agent skill examples to use supported Script APIs, hook extension points, OCAPI contracts, and schema-valid metadata. Generated implementations no longer rely on nonexistent APIs or invalid request and response shapes. (Thanks [@dkatashev](https://github.com/dkatashev)!)
+
+## 1.6.2
+
+### Patch Changes
+
+- [#588](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/588) [`3a7843d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3a7843d147d86135292b70d8fecdf1c54b2ac488) - Document the `sf-toolkit="off"` attribute on `<isinclude>` in the b2c-isml skill, explaining how to disable Storefront Toolkit markers and when to use it. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#577](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/577) [`fe264a7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/fe264a7a38383e4157fcc799cc474713390f67ff) - Document the order hook lifecycle in the b2c-hooks skill: the beforePOST → afterPOST → modifyPOSTResponse sequence, Status.ERROR rollback semantics per phase, the two-hook pattern for persisting a failed order while returning an HTTP error, and request.custom for inter-hook data passing. (Thanks [@charithaT07](https://github.com/charithaT07)!)
+
+## 1.6.1
+
+### Patch Changes
+
+- [#592](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/592) [`f6b4ced`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f6b4ced5d40b8fcd8a9fbaf524f6dcdd83852b02) - Treat activation of an already-active code version as success, preserve useful OCAPI fault details, and avoid redundant activation choices in VS Code. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.6.0
+
+### Minor Changes
+
+- [#589](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/589) [`886a33e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/886a33ee8490dc5707b18cac9f3d6f6dc62f95ff) - Add the `figma-to-sfnext-pagedesigner` plugin: an agent skill that converts a Figma frame into live Storefront Next Page Designer blocks — splitting the frame into one block per section, reconciling brand tokens, generating React + Tailwind components with Page Designer decorator metadata and SCAPI product loaders, and validating design fidelity. Requires the Figma MCP server. Install with `claude plugin install figma-to-sfnext-pagedesigner@b2c-developer-tooling`. (Thanks [@lukejohnson-sf](https://github.com/lukejohnson-sf)!)
+
+### Patch Changes
+
+- [#583](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/583) [`e9c5659`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e9c565945c35b3e0ef0fe11159a335635952a148) - The b2c-logs skill now documents custom-category log file discovery. It explains that a custom logger category writes to its own `custom-<prefix>-*.log` file (distinct from `customerror`), that the prefix is the first argument to `Logger.getLogger(prefix, category)`, and how to find and read these files with `logs list --filter custom` and `logs get --filter custom-<prefix>`, plus the `webdav ls --root logs` fallback. This makes the retrieval skill self-contained for triaging integration and job logs, which almost always use a custom category. (Thanks [@charithaT07](https://github.com/charithaT07)!)
+
+- [#581](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/581) [`1fe5ff2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1fe5ff2e49b4aef66c81ad9b9c9dd4b92d1da405) - Expose directly related documentation IDs from Salesforce Help child-topic links and Developer Center guide TOCs, including articles previously omitted from composite Help maps or hyphenated topic filenames. CLI and MCP documentation search results can now be paged by ranked position, so agents can traverse the full published content without surfacing future-profiled Help content. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.5.3
 
 ### Patch Changes

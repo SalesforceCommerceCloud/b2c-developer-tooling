@@ -562,6 +562,8 @@ function offlineFallback(entry: DocEntry, reason: string): string {
         .join('\n'),
       '',
     );
+  if (entry.relatedEntries?.length)
+    lines.push('## Related Entries', '', entry.relatedEntries.map((id) => `- \`${id}\``).join('\n'), '');
   // Surface every known URL so the caller (e.g. an agent) can retry retrieval
   // itself: the human-facing page and, when different, the raw markdown source
   // that this reader attempts to fetch.

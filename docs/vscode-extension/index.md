@@ -1,10 +1,10 @@
 ---
-description: Salesforce B2C Commerce VS Code Extension — sandbox management, cartridge code sync, WebDAV browser, content libraries, SCAPI API browser, script debugger, and project scaffolding.
+description: The official Salesforce B2C Commerce VS Code Extension — sandbox management, cartridge code sync, WebDAV browser, content libraries, SCAPI API browser, script debugger, and project scaffolding.
 ---
 
 # Salesforce B2C Commerce VS Code Extension
 
-Manage your B2C Commerce sandboxes, sync cartridges, browse content libraries and SCAPI schemas, debug server-side scripts, and scaffold new projects — all from inside VS Code. If your project already works with the [B2C CLI](../guide/), the extension picks up the same connection automatically.
+The **official Salesforce B2C Commerce extension for VS Code**, published by Salesforce. Manage your B2C Commerce sandboxes, sync cartridges, browse content libraries and SCAPI schemas, debug server-side scripts, and scaffold new projects — all from inside VS Code. If your project already works with the [B2C CLI](../guide/), the extension picks up the same connection automatically.
 
 [![Salesforce B2C Commerce activity bar](./images/overview.png)](./images/overview.png)
 

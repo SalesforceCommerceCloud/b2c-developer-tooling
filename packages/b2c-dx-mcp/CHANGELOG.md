@@ -1,5 +1,28 @@
 # @salesforce/b2c-dx-mcp
 
+## 1.9.3
+
+### Patch Changes
+
+- Updated dependencies [[`94c7ba9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/94c7ba979716e8401234f48178f488a4e5b29ac3)]:
+  - @salesforce/b2c-tooling-sdk@1.21.3
+
+## 1.9.2
+
+### Patch Changes
+
+- Updated dependencies [[`f6b4ced`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f6b4ced5d40b8fcd8a9fbaf524f6dcdd83852b02)]:
+  - @salesforce/b2c-tooling-sdk@1.21.2
+
+## 1.9.1
+
+### Patch Changes
+
+- [#581](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/581) [`1fe5ff2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1fe5ff2e49b4aef66c81ad9b9c9dd4b92d1da405) - Expose directly related documentation IDs from Salesforce Help child-topic links and Developer Center guide TOCs, including articles previously omitted from composite Help maps or hyphenated topic filenames. CLI and MCP documentation search results can now be paged by ranked position, so agents can traverse the full published content without surfacing future-profiled Help content. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`1fe5ff2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1fe5ff2e49b4aef66c81ad9b9c9dd4b92d1da405)]:
+  - @salesforce/b2c-tooling-sdk@1.21.1
+
 ## 1.9.0
 
 ### Minor Changes
