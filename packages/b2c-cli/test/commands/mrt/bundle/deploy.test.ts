@@ -425,4 +425,112 @@ describe('mrt bundle deploy', () => {
       }
     });
   });
+
+  describe('403 error guidance', () => {
+    it('shows project list suggestion when push fails with 403', async () => {
+      const command = createCommand();
+      stubParse(command, {project: 'wrong-project', 'build-dir': 'build', 'ssr-param': [], wait: false}, {});
+      await command.init();
+      stubCommonAuth(command);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      sinon.stub(command, 'resolvedConfig').get(() => ({
+        values: {mrtProject: 'wrong-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
+      }));
+
+      const pushStub = sinon.stub().rejects(new Error('403 Forbidden'));
+      command.operations = {...command.operations, pushBundle: pushStub};
+
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      try {
+        await command.run();
+        expect.fail('Expected error');
+      } catch {
+        expect(errorStub.calledOnce).to.equal(true);
+        const [, options] = errorStub.firstCall.args;
+        expect(options).to.have.property('suggestions');
+        expect(options.suggestions[0]).to.include('b2c mrt project list --limit 10');
+      }
+    });
+
+    it('shows project list suggestion when deploy fails with 403', async () => {
+      const command = createCommand();
+      stubParse(command, {project: 'wrong-project', environment: 'staging', wait: false}, {bundleId: 12_345});
+      await command.init();
+      stubCommonAuth(command);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      sinon.stub(command, 'resolvedConfig').get(() => ({
+        values: {mrtProject: 'wrong-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
+      }));
+
+      const deployStub = sinon.stub().rejects(new Error('403 Forbidden'));
+      command.operations = {...command.operations, createDeployment: deployStub};
+
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      try {
+        await command.run();
+        expect.fail('Expected error');
+      } catch {
+        expect(errorStub.calledOnce).to.equal(true);
+        const [, options] = errorStub.firstCall.args;
+        expect(options).to.have.property('suggestions');
+        expect(options.suggestions[0]).to.include('b2c mrt project list --limit 10');
+      }
+    });
+
+    it('does not show suggestion when push fails with non-403 error', async () => {
+      const command = createCommand();
+      stubParse(command, {project: 'my-project', 'build-dir': 'build', 'ssr-param': [], wait: false}, {});
+      await command.init();
+      stubCommonAuth(command);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      sinon.stub(command, 'resolvedConfig').get(() => ({
+        values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
+      }));
+
+      const pushStub = sinon.stub().rejects(new Error('Connection timeout'));
+      command.operations = {...command.operations, pushBundle: pushStub};
+
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      try {
+        await command.run();
+        expect.fail('Expected error');
+      } catch {
+        expect(errorStub.calledOnce).to.equal(true);
+        const [, options] = errorStub.firstCall.args;
+        expect(options).to.equal(undefined);
+      }
+    });
+
+    it('does not show suggestion when deploy fails with non-403 error', async () => {
+      const command = createCommand();
+      stubParse(command, {project: 'my-project', environment: 'staging', wait: false}, {bundleId: 12_345});
+      await command.init();
+      stubCommonAuth(command);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      sinon.stub(command, 'log').returns(void 0);
+      sinon.stub(command, 'resolvedConfig').get(() => ({
+        values: {mrtProject: 'my-project', mrtEnvironment: 'staging', mrtOrigin: 'https://example.com'},
+      }));
+
+      const deployStub = sinon.stub().rejects(new Error('Connection timeout'));
+      command.operations = {...command.operations, createDeployment: deployStub};
+
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      try {
+        await command.run();
+        expect.fail('Expected error');
+      } catch {
+        expect(errorStub.calledOnce).to.equal(true);
+        const [, options] = errorStub.firstCall.args;
+        expect(options).to.equal(undefined);
+      }
+    });
+  });
 });
