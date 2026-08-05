@@ -41,14 +41,7 @@ export SFCC_CLIENT_ID=your-client-id
 b2c auth login
 ```
 
-### Flags
-
-| Flag | Environment Variable | Description |
-|------|---------------------|-------------|
-| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (default: account.demandware.com) |
-| `--auth-scope` | `SFCC_OAUTH_SCOPES` | OAuth scopes to request (comma-separated or repeated flag) |
-
-After a successful login, subsequent commands use the stored token until it expires or you run `b2c auth logout`.
+After a successful login, subsequent commands reuse and refresh the stored token until the refresh token expires or you run `b2c auth logout`.
 
 ### Flags
 
@@ -56,7 +49,7 @@ After a successful login, subsequent commands use the stored token until it expi
 |------|---------------------|-------------|
 | `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname |
 | `--auth-scope` | `SFCC_OAUTH_SCOPES` | OAuth scopes to request (can be repeated) |
-| `--auth-methods` | | Browser-based flow to use: `user` (default — Authorization Code + PKCE) or `implicit` (deprecated) |
+| `--auth-methods` | `SFCC_AUTH_METHODS` | Browser-based flow to use: `user` (default — Authorization Code + PKCE) or `implicit` (deprecated) |
 
 ### Choosing a flow
 

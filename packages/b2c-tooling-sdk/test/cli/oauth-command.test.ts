@@ -20,7 +20,12 @@ import {
   clearAllAuthSessions,
   resetAuthSessionStoreForTesting,
 } from '@salesforce/b2c-tooling-sdk/auth';
-import {DEFAULT_PUBLIC_CLIENT_ID, getDefaultPublicClientId} from '@salesforce/b2c-tooling-sdk';
+import {
+  DEFAULT_PUBLIC_CLIENT_ID,
+  LEGACY_IMPLICIT_PUBLIC_CLIENT_ID,
+  getDefaultPublicClientId,
+  getLegacyImplicitPublicClientId,
+} from '@salesforce/b2c-tooling-sdk';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../helpers/stub-parse.js';
 
@@ -78,8 +83,10 @@ class TestOAuthCommandWithDefault extends OAuthCommand<typeof TestOAuthCommandWi
 
   async run(): Promise<void> {}
 
-  protected override getDefaultClientId(): string {
-    return getDefaultPublicClientId(this.accountManagerHost);
+  protected override getDefaultClientId(method: 'user' | 'implicit' = 'user'): string {
+    return method === 'implicit'
+      ? getLegacyImplicitPublicClientId(this.accountManagerHost)
+      : getDefaultPublicClientId(this.accountManagerHost);
   }
 
   public testHasOAuthCredentials() {
@@ -94,8 +101,8 @@ class TestOAuthCommandWithDefault extends OAuthCommand<typeof TestOAuthCommandWi
     return this.getOAuthStrategy();
   }
 
-  public testGetDefaultClientId() {
-    return this.getDefaultClientId();
+  public testGetDefaultClientId(method: 'user' | 'implicit' = 'user') {
+    return this.getDefaultClientId(method);
   }
 }
 
@@ -356,6 +363,17 @@ describe('cli/oauth-command', () => {
         expect(strategy).to.be.instanceOf(PkceWithImplicitFallbackStrategy);
       });
 
+      it('uses the legacy built-in client when implicit is explicitly selected', async () => {
+        stubParse(commandWithDefault, {'auth-methods': ['implicit']});
+        await commandWithDefault.init();
+        sinon.stub(commandWithDefault, 'warn');
+
+        const strategy = commandWithDefault.testGetOAuthStrategy();
+        expect(strategy).to.be.instanceOf(ImplicitOAuthStrategy);
+        const implicitConfig = (strategy as unknown as {config: {clientId: string}}).config;
+        expect(implicitConfig.clientId).to.equal(LEGACY_IMPLICIT_PUBLIC_CLIENT_ID);
+      });
+
       it('uses explicit clientId over default when provided', async () => {
         stubParse(commandWithDefault, {'client-id': 'explicit-client'});
         await commandWithDefault.init();
@@ -379,6 +397,7 @@ describe('cli/oauth-command', () => {
         await commandWithDefault.init();
 
         expect(commandWithDefault.testGetDefaultClientId()).to.equal('3f41a930-b2bb-42c9-907d-f06a33c85849');
+        expect(commandWithDefault.testGetDefaultClientId('implicit')).to.equal('c44527fe-66ff-4455-9eec-7287b2c66485');
       });
     });
   });
@@ -399,9 +418,33 @@ describe('cli/oauth-command', () => {
     it('returns standard default for unknown hosts', () => {
       expect(getDefaultPublicClientId('some-other-host.example.com')).to.equal(DEFAULT_PUBLIC_CLIENT_ID);
     });
+
+    it('returns the legacy built-in client only through the implicit helper', () => {
+      expect(getLegacyImplicitPublicClientId('account.demandware.com')).to.equal(LEGACY_IMPLICIT_PUBLIC_CLIENT_ID);
+      expect(getLegacyImplicitPublicClientId('account-pod5.demandware.net')).to.equal(
+        'c44527fe-66ff-4455-9eec-7287b2c66485',
+      );
+    });
   });
 
   describe('stored client-credentials sessions', () => {
+    it('reuses an unambiguous PKCE session without requiring clientId again', async () => {
+      saveAuthSession({
+        clientId: 'stored-pkce-client',
+        flow: 'pkce',
+        accessToken: makeValidJWT(),
+        refreshToken: 'stored-refresh-token',
+      });
+      const cmd = new TestOAuthCommand([], config);
+      stubParse(cmd);
+      await cmd.init();
+
+      const strategy = cmd.testGetOAuthStrategy();
+      expect(strategy).to.be.instanceOf(PkceWithImplicitFallbackStrategy);
+      const strategyConfig = (strategy as unknown as {config: {clientId: string}}).config;
+      expect(strategyConfig.clientId).to.equal('stored-pkce-client');
+    });
+
     it('hasOAuthCredentials returns true when a session exists for the configured clientId', async () => {
       saveAuthSession({
         clientId: 'stored-client',

@@ -8,7 +8,8 @@
  * store. Used for sessions minted by:
  *
  * - `auth client` — non-interactive client_credentials. NO refresh: when the
- *   stored access token expires, the user must re-run `auth client <id> <secret>`.
+ *   stored access token expires, the user must re-run
+ *   `auth client --client-id <id> --client-secret <secret>`.
  *   Client secrets are never persisted.
  * - `auth login` (PKCE) and the implicit flow also write here, but those
  *   strategies own their refresh logic. This strategy is only constructed
@@ -17,7 +18,7 @@
  *   `auth client`).
  *
  * On 401, this strategy clears the session and fails — the caller must
- * re-authenticate (re-run `auth client <id> <secret>` or `auth login`).
+ * re-authenticate (re-run `auth client --client-id <id> --client-secret <secret>` or `auth login`).
  *
  * @module auth/stateful-oauth-strategy
  */

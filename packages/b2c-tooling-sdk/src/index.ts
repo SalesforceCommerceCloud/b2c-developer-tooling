@@ -461,6 +461,7 @@ export {
   DEFAULT_PUBLIC_CLIENT_ID,
   LEGACY_IMPLICIT_PUBLIC_CLIENT_ID,
   getDefaultPublicClientId,
+  getLegacyImplicitPublicClientId,
 } from './defaults.js';
 
 // Version info

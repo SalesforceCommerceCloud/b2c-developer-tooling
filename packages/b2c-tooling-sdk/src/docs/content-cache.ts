@@ -46,7 +46,7 @@ let injectedCacheDir: string | undefined;
  * The CLI and MCP call this from `BaseCommand.init()` with `this.config.cacheDir`
  * so cached docs live alongside other oclif cache data (e.g. `~/.cache/b2c` on
  * Linux, `~/Library/Caches/b2c` on macOS) and honor any oclif dir overrides —
- * mirroring how {@link initializeStatefulStore} injects `dataDir`. Standalone SDK
+ * mirroring how `initializeFileAuthSessionStore` injects `dataDir`. Standalone SDK
  * use (no oclif) falls back to an OS-idiomatic path.
  *
  * @param cacheDir - oclif's resolved `this.config.cacheDir`

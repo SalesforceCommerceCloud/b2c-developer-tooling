@@ -47,6 +47,16 @@ describe('auth/session-store', () => {
       expect(findAuthSession('any-client')).to.be.null;
     });
 
+    it('does not hydrate the pre-PKCE legacy session file', () => {
+      writeFileSync(
+        join(testDir, 'auth-session.json'),
+        JSON.stringify({clientId: 'legacy-client', accessToken: makeJWT({}), renewBase: 'legacy-secret'}),
+      );
+
+      expect(findAuthSession('legacy-client')).to.be.null;
+      expect(listAuthSessions()).to.deep.equal([]);
+    });
+
     it('returns the session for a clientId', () => {
       saveAuthSession({
         clientId: 'my-client',
@@ -102,6 +112,20 @@ describe('auth/session-store', () => {
       saveAuthSession({clientId: 'b', flow: 'pkce', accessToken: 't', refreshToken: null});
       clearAllAuthSessions();
       expect(listAuthSessions()).to.have.length(0);
+    });
+
+    it('also removes the pre-PKCE legacy session file', () => {
+      const legacyFile = join(testDir, 'auth-session.json');
+      writeFileSync(
+        legacyFile,
+        JSON.stringify({clientId: 'legacy', accessToken: 'token', renewBase: 'encoded-client-secret'}),
+        'utf8',
+      );
+      expect(existsSync(legacyFile)).to.be.true;
+
+      clearAllAuthSessions();
+
+      expect(existsSync(legacyFile)).to.be.false;
     });
   });
 

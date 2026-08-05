@@ -154,11 +154,11 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   }
 
   /**
-   * Returns a default client ID for implicit OAuth flows when no client ID is configured.
+   * Returns a default client ID for browser OAuth flows when no client ID is configured.
    * Returns undefined by default. Subclasses (AmCommand, OdsCommand, etc.) override this
-   * to return DEFAULT_PUBLIC_CLIENT_ID for platform-level commands that support public client tokens.
+   * to return the appropriate PKCE or legacy implicit public client for platform-level commands.
    */
-  protected getDefaultClientId(): string | undefined {
+  protected getDefaultClientId(_method: 'user' | 'implicit' = 'user'): string | undefined {
     return undefined;
   }
 
@@ -168,8 +168,8 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    * Iterates through allowed methods (in priority order) and returns the first
    * strategy for which the required credentials are available.
    *
-   * For the implicit flow, falls back to getDefaultClientId() when no client ID
-   * is explicitly configured.
+   * Browser flows fall back to their method-specific getDefaultClientId()
+   * value when no client ID is explicitly configured.
    *
    * @returns An OAuth strategy instance ({@link OAuthStrategy}, {@link JwtOAuthStrategy}, {@link ImplicitOAuthStrategy}, or {@link StatefulOAuthStrategy}) based on configured credentials and allowed authentication methods.
    * @throws Error if no allowed method has the required credentials configured
@@ -189,12 +189,18 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     // getDefaultClientId() is a stateless fallback and must not prevent an
     // otherwise valid stored session from being reused.
     const configuredClientId = config.clientId;
+    const unconfiguredSessions = configuredClientId ? [] : listAuthSessions();
+    // The new multi-session store is safe to reuse without a configured client
+    // only when the choice is unambiguous. The pre-PKCE auth-session.json file
+    // is never loaded, so an upgrade still requires the requested re-login.
+    const unambiguousStoredSession =
+      explicitAuthFlags.length === 0 && unconfiguredSessions.length === 1 ? unconfiguredSessions[0] : null;
 
     // Stored `client-credentials` sessions (from `auth client`) are reusable
     // until expiry. PKCE / implicit sessions are handled inside their flow
     // strategies (which hydrate from the store and refresh themselves), so we
     // only need a special gate for client-credentials here.
-    const storedSession = configuredClientId ? findAuthSession(configuredClientId) : null;
+    const storedSession = configuredClientId ? findAuthSession(configuredClientId) : unambiguousStoredSession;
     if (storedSession?.flow === 'client-credentials') {
       const isValid = isAuthSessionTokenValid(storedSession, requiredScopes, undefined, configuredClientId);
       if (isValid && explicitAuthFlags.length === 0) {
@@ -218,7 +224,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
           t(
             'warning.statefulTokenExpiredNoRenew',
             '[StatefulAuth] Stored client-credentials access token is expired. ' +
-              'Run `b2c auth client <id> <secret>` to re-authenticate. ' +
+              'Run `b2c auth client --client-id <id> --client-secret <secret>` to re-authenticate. ' +
               'Falling back to stateless auth.',
           ),
         );
@@ -227,8 +233,6 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
 
     // Fall back to stateless auth
     const allowedMethods = config.authMethods || this.getDefaultAuthMethods();
-    const defaultClientId = this.getDefaultClientId();
-
     for (const method of allowedMethods) {
       switch (method) {
         case 'client-credentials':
@@ -267,9 +271,11 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
           break;
 
         case 'user': {
-          const effectiveClientId = config.clientId ?? defaultClientId;
+          const defaultClientId = this.getDefaultClientId('user');
+          const storedPkceClientId = storedSession?.flow === 'pkce' ? storedSession.clientId : undefined;
+          const effectiveClientId = config.clientId ?? storedPkceClientId ?? defaultClientId;
           if (effectiveClientId) {
-            if (!config.clientId && defaultClientId) {
+            if (!config.clientId && !storedPkceClientId && defaultClientId) {
               this.logger.debug('Using default B2C CLI public client for user authentication');
             }
             // PKCE with an automatic, WARN-logged fallback to the implicit flow
@@ -284,9 +290,11 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
         }
 
         case 'implicit': {
-          const effectiveClientId = config.clientId ?? defaultClientId;
+          const defaultClientId = this.getDefaultClientId('implicit');
+          const storedImplicitClientId = storedSession?.flow === 'implicit' ? storedSession.clientId : undefined;
+          const effectiveClientId = config.clientId ?? storedImplicitClientId ?? defaultClientId;
           if (effectiveClientId) {
-            if (!config.clientId && defaultClientId) {
+            if (!config.clientId && !storedImplicitClientId && defaultClientId) {
               this.logger.debug('Using default B2C CLI public client for authentication');
             }
             this.warn(
@@ -343,7 +351,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   /**
    * Check if OAuth credentials are available.
    * Returns true if clientId is configured (with or without clientSecret),
-   * or if a default client ID is available for implicit flows.
+   * or if a default client ID is available for browser flows.
    */
   protected hasOAuthCredentials(): boolean {
     if (this.resolvedConfig.hasOAuthConfig() || this.getDefaultClientId() !== undefined) return true;
@@ -362,7 +370,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
 
   /**
    * Validates that OAuth credentials are configured, errors if not.
-   * Only clientId is required (implicit flow can be used without clientSecret).
+   * Only clientId is required (browser flows can be used without clientSecret).
    */
   protected requireOAuthCredentials(): void {
     if (!this.hasOAuthCredentials()) {

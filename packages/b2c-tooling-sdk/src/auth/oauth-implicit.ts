@@ -414,17 +414,19 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
     logger.info({url: authorizeUrl}, `Login URL: ${authorizeUrl}`);
     logger.info('If the URL does not open automatically, copy/paste it into a browser on this machine.');
 
-    // Attempt to open the browser (prefer injected opener, fall back to `open` package)
-    logger.debug('[Auth] Attempting to open browser');
-    if (this.config.openBrowser) {
-      await this.config.openBrowser(authorizeUrl);
-    } else {
-      await openBrowserDefault(authorizeUrl);
-    }
-
     return new Promise<AccessTokenResponse>((resolve, reject) => {
       const sockets: Set<Socket> = new Set();
       const startTime = Date.now();
+      let settled = false;
+
+      const rejectAndClose = (error: Error) => {
+        if (settled) return;
+        settled = true;
+        server.close(() => reject(error));
+        setTimeout(() => {
+          for (const socket of sockets) socket.destroy();
+        }, 100);
+      };
 
       const server: Server = createServer((request: IncomingMessage, response: ServerResponse) => {
         const requestUrl = new URL(request.url || '/', `http://localhost:${this.localPort}`);
@@ -470,6 +472,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
             `[Auth] Token expires in ${expiresIn}s, scopes: ${scopes.join(' ')}`,
           );
 
+          settled = true;
           resolve({
             accessToken,
             expires: expiration,
@@ -496,6 +499,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
           response.writeHead(500, {'Content-Type': 'text/plain'});
           response.write(`Authentication failed: ${errorMessage}`);
           response.end();
+          settled = true;
           reject(new Error(`OAuth error: ${errorMessage}`));
 
           setTimeout(() => {
@@ -516,9 +520,21 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
         });
       });
 
-      server.listen(this.localPort, () => {
+      server.listen(this.localPort, async () => {
         logger.debug({port: this.localPort}, `[Auth] OAuth redirect server listening on port ${this.localPort}`);
         logger.info('Waiting for user to authenticate...');
+        // Bind the callback listener before opening the browser so an existing
+        // SSO session cannot redirect back to a closed port.
+        logger.debug('[Auth] Attempting to open browser');
+        try {
+          if (this.config.openBrowser) {
+            await this.config.openBrowser(authorizeUrl);
+          } else {
+            await openBrowserDefault(authorizeUrl);
+          }
+        } catch (error) {
+          rejectAndClose(error instanceof Error ? error : new Error(String(error)));
+        }
       });
 
       server.on('error', (err) => {
@@ -527,7 +543,10 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
           'code' in err && (err as NodeJS.ErrnoException).code === 'EADDRINUSE'
             ? ` Port ${this.localPort} is in use; set SFCC_OAUTH_LOCAL_PORT or pass localPort to use a different port.`
             : '';
-        reject(new Error(`Failed to start OAuth redirect server: ${err.message}.${hint}`));
+        if (!settled) {
+          settled = true;
+          reject(new Error(`Failed to start OAuth redirect server: ${err.message}.${hint}`));
+        }
       });
     });
   }

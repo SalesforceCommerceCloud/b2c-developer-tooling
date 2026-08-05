@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {createServer, get as httpGet} from 'node:http';
 import {expect} from 'chai';
 import {ImplicitOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 
@@ -15,6 +16,18 @@ type TokenResponse = {
 
 function futureDate(minutes: number): Date {
   return new Date(Date.now() + minutes * 60 * 1000);
+}
+
+async function getAvailablePort(): Promise<number> {
+  const server = createServer();
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const address = server.address();
+  if (!address || typeof address === 'string') throw new Error('Failed to allocate test port');
+  await new Promise<void>((resolve) => server.close(() => resolve()));
+  return address.port;
 }
 
 describe('auth/oauth-implicit', () => {
@@ -49,6 +62,32 @@ describe('auth/oauth-implicit', () => {
     expect(seenAuth).to.equal('Bearer tok-1');
     expect(seenClientId).to.equal(clientId);
 
+    strategy.invalidateToken();
+  });
+
+  it('starts the callback listener before invoking the browser opener', async () => {
+    const localPort = await getAvailablePort();
+    const strategy = new ImplicitOAuthStrategy({
+      clientId: 'implicit-listener-before-browser',
+      localPort,
+      persistSession: false,
+      openBrowser: async () => {
+        await new Promise<void>((resolve, reject) => {
+          const request = httpGet(
+            `http://localhost:${localPort}/?access_token=immediate-token&expires_in=1800&scope=test.scope`,
+            (response) => {
+              response.resume();
+              response.once('end', resolve);
+            },
+          );
+          request.once('error', reject);
+        });
+      },
+    });
+
+    const token = await strategy.getTokenResponse();
+    expect(token.accessToken).to.equal('immediate-token');
+    expect(token.scopes).to.deep.equal(['test.scope']);
     strategy.invalidateToken();
   });
 

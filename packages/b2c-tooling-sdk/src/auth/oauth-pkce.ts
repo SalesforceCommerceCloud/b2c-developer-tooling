@@ -8,6 +8,7 @@ import {createServer, type Server, type IncomingMessage, type ServerResponse} fr
 import type {Socket} from 'node:net';
 import {URL} from 'node:url';
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
+import {dispatchFetch} from './dispatch-fetch.js';
 import {getLogger} from '../logging/logger.js';
 import {decodeJWT} from './oauth.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
@@ -115,6 +116,18 @@ function generatePkcePair(): {verifier: string; challenge: string} {
   return {verifier, challenge};
 }
 
+function parseOAuthErrorBody(text: string): {error?: string; errorDescription?: string} {
+  try {
+    const parsed = JSON.parse(text) as {error?: unknown; error_description?: unknown};
+    return {
+      error: typeof parsed.error === 'string' ? parsed.error : undefined,
+      errorDescription: typeof parsed.error_description === 'string' ? parsed.error_description : undefined,
+    };
+  } catch {
+    return {};
+  }
+}
+
 async function openBrowserDefault(url: string): Promise<void> {
   try {
     const open = await import('open');
@@ -204,7 +217,7 @@ export class PkceOAuthStrategy implements AuthStrategy {
     headers.set('Authorization', `Bearer ${token}`);
     headers.set('x-dw-client-id', this.config.clientId);
 
-    let res = await fetch(url, {...init, headers} as RequestInit);
+    let res = await dispatchFetch(url, {...init, headers});
     logger.debug({method, url, status: res.status}, '[Auth] Response');
 
     if (res.status !== 401) {
@@ -216,7 +229,7 @@ export class PkceOAuthStrategy implements AuthStrategy {
       this.invalidateToken();
       const newToken = await this.getAccessToken();
       headers.set('Authorization', `Bearer ${newToken}`);
-      res = await fetch(url, {...init, headers} as RequestInit);
+      res = await dispatchFetch(url, {...init, headers});
       logger.debug({method, url, status: res.status}, '[Auth] Retry response');
     }
 
@@ -330,7 +343,7 @@ export class PkceOAuthStrategy implements AuthStrategy {
 
     let response: Response;
     try {
-      response = await fetch(tokenUrl, {
+      response = await dispatchFetch(tokenUrl, {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: body.toString(),
@@ -347,20 +360,24 @@ export class PkceOAuthStrategy implements AuthStrategy {
     );
     if (!response.ok) {
       const text = await response.text();
+      const oauthError = parseOAuthErrorBody(text);
       logger.trace(
-        {url: tokenUrl, status: response.status, body: text},
+        {url: tokenUrl, status: response.status, body: oauthError},
         '[Auth RESP BODY] POST /dwsso/oauth2/access_token (refresh_token)',
       );
-      logger.debug({status: response.status, body: text}, '[Auth] PKCE refresh failed; falling back to browser flow');
+      logger.debug(
+        {status: response.status, oauthError: oauthError.error},
+        '[Auth] PKCE refresh failed; falling back to browser flow',
+      );
       this._refreshToken = null;
       return null;
     }
 
     let parsed: {
-      access_token: string;
-      refresh_token?: string;
-      expires_in?: number;
-      scope?: string;
+      access_token?: unknown;
+      refresh_token?: unknown;
+      expires_in?: unknown;
+      scope?: unknown;
     };
     try {
       parsed = (await response.json()) as typeof parsed;
@@ -370,15 +387,21 @@ export class PkceOAuthStrategy implements AuthStrategy {
       return null;
     }
 
-    const expiresIn = parsed.expires_in ?? 0;
+    if (typeof parsed.access_token !== 'string' || parsed.access_token.length === 0) {
+      logger.debug('[Auth] PKCE refresh response did not contain an access token');
+      this._refreshToken = null;
+      return null;
+    }
+
+    const expiresIn = typeof parsed.expires_in === 'number' ? parsed.expires_in : 0;
     const expires = new Date(Date.now() + expiresIn * 1000);
-    const scopes = parsed.scope ? parsed.scope.split(' ') : (this.config.scopes ?? []);
+    const scopes = typeof parsed.scope === 'string' ? parsed.scope.split(' ') : (this.config.scopes ?? []);
     const tokenResponse: AccessTokenResponse = {
       accessToken: parsed.access_token,
       expires,
       scopes,
     };
-    if (parsed.refresh_token) {
+    if (typeof parsed.refresh_token === 'string' && parsed.refresh_token.length > 0) {
       this._refreshToken = parsed.refresh_token;
     }
     try {
@@ -454,13 +477,13 @@ export class PkceOAuthStrategy implements AuthStrategy {
     logger.info({url: authorizeUrl}, `Login URL: ${authorizeUrl}`);
     logger.info('If the URL does not open automatically, copy/paste it into a browser on this machine.');
 
-    if (this.config.openBrowser) {
-      await this.config.openBrowser(authorizeUrl);
-    } else {
-      await openBrowserDefault(authorizeUrl);
-    }
-
-    const code = await this.waitForAuthCode(state);
+    const code = await this.waitForAuthCode(state, async () => {
+      if (this.config.openBrowser) {
+        await this.config.openBrowser(authorizeUrl);
+      } else {
+        await openBrowserDefault(authorizeUrl);
+      }
+    });
     logger.debug({codePrefix: code.slice(0, 8)}, '[Auth] Got authorization code, exchanging for token');
 
     const tokenUrl = `https://${this.accountManagerHost}/dwsso/oauth2/access_token`;
@@ -483,7 +506,7 @@ export class PkceOAuthStrategy implements AuthStrategy {
       '[Auth REQ BODY] POST /dwsso/oauth2/access_token',
     );
 
-    const tokenRes = await fetch(tokenUrl, {
+    const tokenRes = await dispatchFetch(tokenUrl, {
       method: 'POST',
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       body: tokenBody.toString(),
@@ -493,23 +516,20 @@ export class PkceOAuthStrategy implements AuthStrategy {
       {url: tokenUrl, status: tokenRes.status},
       `[Auth RESP] POST /dwsso/oauth2/access_token ${tokenRes.status}`,
     );
-    logger.trace(
-      {url: tokenUrl, status: tokenRes.status, body: rawText},
-      '[Auth RESP BODY] POST /dwsso/oauth2/access_token',
-    );
     if (!tokenRes.ok) {
       // Distinguish "this client can't do the code grant" (which the implicit
       // fallback can rescue) from real errors that would fail identically under
       // implicit — e.g. invalid_scope, invalid_grant. Only the former is typed
       // as PkceGrantUnsupportedError; everything else is a plain Error so the
       // fallback wrapper propagates it instead of silently downgrading.
-      let oauthError: string | undefined;
-      try {
-        oauthError = (JSON.parse(rawText) as {error?: string}).error;
-      } catch {
-        // non-JSON body; leave oauthError undefined
-      }
-      const message = `PKCE token exchange failed (${tokenRes.status}): ${rawText}`;
+      const errorBody = parseOAuthErrorBody(rawText);
+      const oauthError = errorBody.error;
+      logger.trace(
+        {url: tokenUrl, status: tokenRes.status, body: errorBody},
+        '[Auth RESP BODY] POST /dwsso/oauth2/access_token',
+      );
+      const detail = errorBody.errorDescription ?? errorBody.error;
+      const message = `PKCE token exchange failed (${tokenRes.status})${detail ? `: ${detail}` : ''}`;
       if (isPkceGrantUnsupportedError(oauthError)) {
         throw new PkceGrantUnsupportedError(message, 'token', oauthError);
       }
@@ -517,27 +537,50 @@ export class PkceOAuthStrategy implements AuthStrategy {
     }
 
     let parsed: {
-      access_token: string;
-      refresh_token?: string;
-      expires_in?: number;
-      scope?: string;
+      access_token?: unknown;
+      refresh_token?: unknown;
+      expires_in?: unknown;
+      scope?: unknown;
     };
     try {
       parsed = JSON.parse(rawText);
     } catch {
-      throw new Error(`PKCE token exchange returned non-JSON response: ${rawText}`);
+      // Do not echo an untrusted response body: a malformed success response
+      // can still contain live token material.
+      throw new Error('PKCE token exchange returned a non-JSON response');
     }
 
-    const expiresIn = parsed.expires_in ?? 0;
+    if (typeof parsed.access_token !== 'string' || parsed.access_token.length === 0) {
+      throw new Error('PKCE token exchange response did not contain an access token');
+    }
+
+    // Never log the raw token response: it contains both the access token and
+    // the long-lived refresh token, and an opaque string bypasses pino's
+    // field-based redaction. JWT claims are traced below after decoding.
+    logger.trace(
+      {
+        url: tokenUrl,
+        status: tokenRes.status,
+        body: {
+          expires_in: parsed.expires_in,
+          scope: parsed.scope,
+          hasAccessToken: typeof parsed.access_token === 'string' && parsed.access_token.length > 0,
+          hasRefreshToken: typeof parsed.refresh_token === 'string' && parsed.refresh_token.length > 0,
+        },
+      },
+      '[Auth RESP BODY] POST /dwsso/oauth2/access_token',
+    );
+
+    const expiresIn = typeof parsed.expires_in === 'number' ? parsed.expires_in : 0;
     const expires = new Date(Date.now() + expiresIn * 1000);
-    const scopes = parsed.scope ? parsed.scope.split(' ') : (this.config.scopes ?? []);
+    const scopes = typeof parsed.scope === 'string' ? parsed.scope.split(' ') : (this.config.scopes ?? []);
     const tokenResponse: AccessTokenResponse = {
       accessToken: parsed.access_token,
       expires,
       scopes,
     };
 
-    if (parsed.refresh_token) {
+    if (typeof parsed.refresh_token === 'string' && parsed.refresh_token.length > 0) {
       this._refreshToken = parsed.refresh_token;
     }
     logger.trace({scopes, expires, hasRefreshToken: !!parsed.refresh_token}, '[Auth] PKCE token exchange succeeded');
@@ -551,15 +594,22 @@ export class PkceOAuthStrategy implements AuthStrategy {
     return tokenResponse;
   }
 
-  private waitForAuthCode(expectedState: string): Promise<string> {
+  private waitForAuthCode(expectedState: string, openBrowser: () => Promise<void>): Promise<string> {
     const logger = getLogger();
     return new Promise<string>((resolve, reject) => {
       const sockets: Set<Socket> = new Set();
-      const cleanup = () => {
-        setTimeout(() => {
-          server.close();
+      let settled = false;
+      const settleAfterClose = (settle: () => void) => {
+        if (settled) return;
+        settled = true;
+        const forceCloseTimer = setTimeout(() => {
           for (const socket of sockets) socket.destroy();
         }, 100);
+        server.close(() => {
+          clearTimeout(forceCloseTimer);
+          for (const socket of sockets) socket.destroy();
+          settle();
+        });
       };
 
       const server: Server = createServer((req: IncomingMessage, res: ServerResponse) => {
@@ -578,12 +628,10 @@ export class PkceOAuthStrategy implements AuthStrategy {
           // access_denied (cancelled consent) MUST NOT fall back, so type it
           // only for the grant-unsupported set; otherwise reject plainly.
           const message = `OAuth error: ${errorDescription ?? error}`;
-          reject(
-            isPkceGrantUnsupportedError(error)
-              ? new PkceGrantUnsupportedError(message, 'authorize', error)
-              : new Error(message),
-          );
-          cleanup();
+          const authError = isPkceGrantUnsupportedError(error)
+            ? new PkceGrantUnsupportedError(message, 'authorize', error)
+            : new Error(message);
+          settleAfterClose(() => reject(authError));
           return;
         }
 
@@ -596,15 +644,13 @@ export class PkceOAuthStrategy implements AuthStrategy {
         if (state !== expectedState) {
           res.writeHead(400, {'Content-Type': 'text/plain'});
           res.end('State mismatch.');
-          reject(new Error('OAuth state mismatch — aborting'));
-          cleanup();
+          settleAfterClose(() => reject(new Error('OAuth state mismatch — aborting')));
           return;
         }
 
         res.writeHead(200, {'Content-Type': 'text/plain'});
         res.end('Authentication successful! You may close this browser window and return to your terminal.');
-        resolve(code);
-        cleanup();
+        settleAfterClose(() => resolve(code));
       });
 
       server.on('connection', (socket) => {
@@ -612,9 +658,15 @@ export class PkceOAuthStrategy implements AuthStrategy {
         socket.on('close', () => sockets.delete(socket));
       });
 
-      server.listen(this.localPort, () => {
+      server.listen(this.localPort, async () => {
         logger.debug({port: this.localPort}, `[Auth] PKCE redirect server listening on port ${this.localPort}`);
         logger.info('Waiting for user to authenticate...');
+        try {
+          await openBrowser();
+        } catch (error) {
+          const browserError = error instanceof Error ? error : new Error(String(error));
+          settleAfterClose(() => reject(browserError));
+        }
       });
 
       server.on('error', (err) => {
@@ -622,7 +674,10 @@ export class PkceOAuthStrategy implements AuthStrategy {
           'code' in err && (err as NodeJS.ErrnoException).code === 'EADDRINUSE'
             ? ` Port ${this.localPort} is in use; set SFCC_OAUTH_LOCAL_PORT or pass localPort to use a different port.`
             : '';
-        reject(new Error(`Failed to start OAuth redirect server: ${err.message}.${hint}`));
+        if (!settled) {
+          settled = true;
+          reject(new Error(`Failed to start OAuth redirect server: ${err.message}.${hint}`));
+        }
       });
     });
   }

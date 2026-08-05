@@ -4,6 +4,9 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {mkdtempSync, rmSync, writeFileSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {ImplicitOAuthStrategy, PkceOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
@@ -83,5 +86,36 @@ describe('auth login', () => {
 
     expect(implicitStub.calledOnce).to.be.true;
     expect(pkceStub.called).to.be.false;
+  });
+
+  it('honors an explicit implicit selection from dw.json', async () => {
+    const configDir = mkdtempSync(join(tmpdir(), 'b2c-auth-login-config-'));
+    const configPath = join(configDir, 'dw.json');
+    writeFileSync(configPath, JSON.stringify({'client-id': 'configured-client', 'auth-methods': ['implicit']}), 'utf8');
+
+    try {
+      const pkceStub = sinon.stub(PkceOAuthStrategy.prototype, 'getTokenResponse').resolves({
+        accessToken: 'should-not-be-used',
+        expires: new Date(Date.now() + 30 * 60 * 1000),
+        scopes: [],
+      });
+      const implicitStub = sinon.stub(ImplicitOAuthStrategy.prototype, 'getTokenResponse').resolves({
+        accessToken: 'configured-implicit-token',
+        expires: new Date(Date.now() + 30 * 60 * 1000),
+        scopes: [],
+      });
+
+      const command = createCommand(['--config', configPath]);
+      await command.init();
+      sinon.stub(command, 'log');
+      sinon.stub(command, 'warn');
+
+      await command.run();
+
+      expect(implicitStub.calledOnce).to.be.true;
+      expect(pkceStub.called).to.be.false;
+    } finally {
+      rmSync(configDir, {recursive: true, force: true});
+    }
   });
 });

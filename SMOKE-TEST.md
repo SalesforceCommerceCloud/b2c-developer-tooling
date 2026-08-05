@@ -11,17 +11,11 @@ _what_ each scenario proves and _what to look for_; the script automates the _ru
 
 ---
 
-## ⚠️ Two things that will silently invalidate your results
+## ⚠️ Use a current working-tree build
 
-1. **Test from the working tree, not a checkout of HEAD.** The fallback wrapper
-   (`oauth-pkce-fallback.ts` + the `createUserAuthStrategy` wiring) is **uncommitted** — it exists
-   only in your working tree. A `git stash`, fresh clone, or CI checkout of the commit runs the
-   _old_ `new PkceOAuthStrategy` path with **no fallback**. Run via `./cli` (dev mode, uses source)
-   or a fresh `pnpm run build` of this working tree. The script uses `./cli` by default.
-2. **There is no `LEGACY_IMPLICIT_PUBLIC_CLIENT_ID` code path.** That constant is dead code —
-   defined and re-exported, never wired. Do **not** design a case around `--auth-methods implicit`
-   resolving to client `7eee11e3…`. Implicit only runs when _you_ pass an implicit client id, or
-   when the PKCE fallback kicks in.
+Run via `./cli` (dev mode, which uses source) or a fresh `pnpm run build` of this working tree. The
+script uses `./cli` by default. Platform commands use the PKCE-capable built-in client by default;
+an explicit `--auth-methods implicit` selection uses the retained legacy implicit built-in client.
 
 ---
 

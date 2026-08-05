@@ -11,7 +11,8 @@
  * - Implicit (legacy `--auth-methods implicit`) — stores access token only.
  * - `auth client` — stores access token only. The client secret is NEVER
  *   persisted; client_credentials sessions do not auto-renew. When the
- *   stored access token expires, the user re-runs `b2c auth client <id> <secret>`.
+ *   stored access token expires, the user re-runs
+ *   `b2c auth client --client-id <id> --client-secret <secret>`.
  *
  * Sessions are keyed by `clientId`, one record per client. Backends are
  * pluggable via {@link AuthSessionBackend}: the CLI uses
@@ -30,6 +31,8 @@ import {DEFAULT_EXPIRY_BUFFER_SEC, decodeJwtTokenInfo} from './jwt-utils.js';
 import {getLogger} from '../logging/logger.js';
 
 const SESSION_FILE = 'auth-sessions.json';
+/** Pre-PKCE stateful store; may contain base64-encoded client renewal credentials. */
+const LEGACY_SESSION_FILE = 'auth-session.json';
 
 /**
  * The auth flow that produced a stored session.
@@ -38,7 +41,7 @@ const SESSION_FILE = 'auth-sessions.json';
  * - `implicit`: legacy implicit grant; no refresh token.
  * - `client-credentials`: non-interactive `auth client`; no refresh, no
  *   stored secret. When the access token expires, the user re-runs
- *   `auth client <id> <secret>`.
+ *   `auth client --client-id <id> --client-secret <secret>`.
  */
 export type AuthSessionFlow = 'pkce' | 'implicit' | 'client-credentials';
 
@@ -66,7 +69,8 @@ export interface AuthSession {
  * read path so command initialization can decide auth flow without awaiting.
  * Backends with async-only native storage (VS Code SecretStorage, OS keychain)
  * maintain an in-memory snapshot hydrated at startup and persist writes
- * asynchronously via {@link write}; callers do not await write completion.
+ * asynchronously; implementations may expose a backend-specific flush hook for
+ * orderly shutdown.
  */
 export interface AuthSessionBackend {
   find(clientId: string): AuthSession | null;
@@ -117,13 +121,21 @@ export class FileAuthSessionBackend implements AuthSessionBackend {
   }
 
   clearAll(): void {
-    const filePath = this.filePath();
-    if (existsSync(filePath)) {
+    // Remove both the current multi-session store and the pre-PKCE single-session
+    // file. Old sessions are intentionally not migrated, but logout must still
+    // remove the legacy file because it may contain client renewal credentials.
+    const failures: string[] = [];
+    for (const filePath of [this.filePath(), join(this.dataDir, LEGACY_SESSION_FILE)]) {
+      if (!existsSync(filePath)) continue;
       try {
         unlinkSync(filePath);
       } catch (error) {
-        getLogger().debug({err: error, filePath}, '[AuthStore] Failed to remove session file');
+        getLogger().error({err: error, filePath}, '[AuthStore] Failed to remove session file');
+        failures.push(filePath);
       }
+    }
+    if (failures.length > 0) {
+      throw new Error(`Failed to remove stored authentication data: ${failures.join(', ')}`);
     }
   }
 

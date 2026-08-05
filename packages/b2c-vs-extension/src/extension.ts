@@ -46,6 +46,8 @@ import {
   OnboardingPanel,
 } from './walkthrough/index.js';
 
+let authSessionBackend: VsCodeSecretsAuthSessionBackend | undefined;
+
 function applyLogLevel(log: vscode.OutputChannel): void {
   const config = vscode.workspace.getConfiguration('b2c-dx');
   const level = config.get<string>('logLevel', 'info');
@@ -273,6 +275,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 export async function deactivate(): Promise<void> {
   sendEvent('EXTENSION_DEACTIVATED');
+  await authSessionBackend?.flush();
+  authSessionBackend = undefined;
+  setAuthSessionBackend(null);
   await disposeTelemetry();
 }
 
@@ -519,9 +524,9 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   // macOS/Windows/Linux, encrypted fallback otherwise — handled by VS Code).
   // Hydrate the in-memory snapshot before registering, so the SDK's sync
   // reads see existing sessions on first call.
-  const authBackend = new VsCodeSecretsAuthSessionBackend(context);
-  await authBackend.hydrate();
-  setAuthSessionBackend(authBackend);
+  authSessionBackend = new VsCodeSecretsAuthSessionBackend(context);
+  await authSessionBackend.hydrate();
+  setAuthSessionBackend(authSessionBackend);
 
   const configProvider = new B2CExtensionConfig(log, context.workspaceState);
   lateConfigProvider = configProvider;

@@ -5,9 +5,12 @@
  */
 
 import {mkdtempSync, rmSync} from 'node:fs';
+import {createServer, get as httpGet} from 'node:http';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {expect} from 'chai';
+import {MockAgent} from 'undici';
+import {configureLogger, resetLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {
   PkceOAuthStrategy,
   initializeFileAuthSessionStore,
@@ -25,6 +28,18 @@ type TokenResponse = {
 
 function futureDate(minutes: number): Date {
   return new Date(Date.now() + minutes * 60 * 1000);
+}
+
+async function getAvailablePort(): Promise<number> {
+  const server = createServer();
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const address = server.address();
+  if (!address || typeof address === 'string') throw new Error('Failed to allocate test port');
+  await new Promise<void>((resolve) => server.close(() => resolve()));
+  return address.port;
 }
 
 /**
@@ -45,6 +60,7 @@ describe('auth/oauth-pkce', () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    resetLogger();
   });
 
   describe('without persistence (persistSession: false)', () => {
@@ -73,6 +89,96 @@ describe('auth/oauth-pkce', () => {
       expect(seenAuth).to.equal('Bearer tok-1');
       expect(seenClientId).to.equal(clientId);
 
+      strategy.invalidateToken();
+    });
+
+    it('routes dispatcher-bearing resource requests through dispatchFetch', async () => {
+      const clientId = 'pkce-client-dispatcher';
+      const strategy = new PkceOAuthStrategy({clientId, persistSession: false});
+      stubRunFlow(strategy, async () => ({
+        accessToken: 'tok-dispatcher',
+        expires: futureDate(30),
+        scopes: [],
+      }));
+
+      const dispatcher = new MockAgent();
+      dispatcher.disableNetConnect();
+      dispatcher.get('https://dispatcher.example').intercept({path: '/resource'}).reply(200, 'ok');
+      try {
+        const response = await strategy.fetch('https://dispatcher.example/resource', {dispatcher});
+        expect(response.status).to.equal(200);
+        expect(await response.text()).to.equal('ok');
+      } finally {
+        await dispatcher.close();
+        strategy.invalidateToken();
+      }
+    });
+
+    it('starts the callback listener before invoking the browser opener', async () => {
+      const clientId = 'pkce-listener-before-browser';
+      const localPort = await getAvailablePort();
+      const strategy = new PkceOAuthStrategy({
+        clientId,
+        localPort,
+        persistSession: false,
+        openBrowser: async (authorizeUrl) => {
+          const state = new URL(authorizeUrl).searchParams.get('state');
+          await new Promise<void>((resolve, reject) => {
+            const request = httpGet(
+              `http://localhost:${localPort}/?code=immediate-code&state=${encodeURIComponent(state ?? '')}`,
+              (response) => {
+                response.resume();
+                response.once('end', resolve);
+              },
+            );
+            request.once('error', reject);
+          });
+        },
+      });
+
+      globalThis.fetch = async (input) => {
+        expect(String(input)).to.include('/dwsso/oauth2/access_token');
+        return Response.json({access_token: 'listener-token', refresh_token: 'listener-refresh', expires_in: 1800});
+      };
+
+      const token = await strategy.getTokenResponse();
+      expect(token.accessToken).to.equal('listener-token');
+      strategy.invalidateToken();
+    });
+
+    it('does not expose access or refresh tokens in trace output', async () => {
+      let logs = '';
+      configureLogger({
+        level: 'trace',
+        json: true,
+        redact: false,
+        destination: {
+          write(chunk) {
+            logs += String(chunk);
+            return true;
+          },
+        },
+      });
+
+      const strategy = new PkceOAuthStrategy({
+        clientId: 'pkce-trace-redaction',
+        persistSession: false,
+      });
+      (strategy as unknown as {waitForAuthCode: () => Promise<string>}).waitForAuthCode = async () => 'auth-code';
+      globalThis.fetch = async () =>
+        Response.json({
+          access_token: 'raw-access-token-must-not-appear',
+          refresh_token: 'raw-refresh-token-must-not-appear',
+          expires_in: 1800,
+        });
+
+      await strategy.getTokenResponse();
+      await new Promise<void>((resolve) => setImmediate(resolve));
+
+      expect(logs).not.to.include('raw-access-token-must-not-appear');
+      expect(logs).not.to.include('raw-refresh-token-must-not-appear');
+      expect(logs).to.include('"hasAccessToken":true');
+      expect(logs).to.include('"hasRefreshToken":true');
       strategy.invalidateToken();
     });
 
@@ -281,6 +387,13 @@ describe('auth/oauth-pkce', () => {
       expect(error).to.be.instanceOf(Error);
       expect((error as Error).name).to.not.equal('PkceGrantUnsupportedError');
     });
+
+    it('rejects a successful token response that omits access_token', async () => {
+      const error = await runTokenExchange('pkce-missing-token', 200, JSON.stringify({expires_in: 1800}));
+      expect(error).to.be.instanceOf(Error);
+      expect((error as Error).message).to.include('did not contain an access token');
+      expect((error as Error).name).to.not.equal('PkceGrantUnsupportedError');
+    });
   });
 
   describe('persistence and refresh', () => {
@@ -472,6 +585,32 @@ describe('auth/oauth-pkce', () => {
       const stored = findAuthSession(clientId);
       expect(stored!.accessToken).to.equal('at-from-browser');
       expect(stored!.refreshToken).to.equal('rt-fresh-after-browser');
+
+      strategy.invalidateToken();
+    });
+
+    it('falls back to the browser flow when refresh succeeds without an access token', async () => {
+      const clientId = 'pkce-refresh-missing-token';
+      saveAuthSession({
+        clientId,
+        flow: 'pkce',
+        accessToken: 'old-expired',
+        refreshToken: 'rt-valid',
+        scopes: ['a'],
+        expiresAt: new Date(Date.now() - 60_000).toISOString(),
+      });
+
+      const strategy = new PkceOAuthStrategy({clientId, scopes: ['a']});
+      const flowStub = stubRunFlow(strategy, async () => ({
+        accessToken: 'at-from-browser',
+        expires: futureDate(30),
+        scopes: ['a'],
+      }));
+      globalThis.fetch = async () => Response.json({expires_in: 1800});
+
+      const tokenResponse = await strategy.getTokenResponse();
+      expect(tokenResponse.accessToken).to.equal('at-from-browser');
+      expect(flowStub.calls).to.equal(1);
 
       strategy.invalidateToken();
     });

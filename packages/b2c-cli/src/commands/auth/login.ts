@@ -14,8 +14,8 @@ type LoginAuthMethod = (typeof LOGIN_AUTH_METHODS)[number];
 
 /**
  * Log in via browser (Authorization Code + PKCE) and persist the session for
- * stateful auth. Uses the same storage as sfcc-ci; when valid, subsequent
- * commands use this token until it expires or you run auth:logout.
+ * stateful auth. PKCE sessions use the CLI's unified multi-session store; old
+ * sfcc-ci-compatible renewal records are intentionally not reused.
  */
 export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
   static args = {
@@ -53,6 +53,7 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
     }),
     'auth-methods': Flags.string({
       description: 'Browser-based auth flow to use. Defaults to "user" (Authorization Code + PKCE).',
+      env: 'SFCC_AUTH_METHODS',
       options: [...LOGIN_AUTH_METHODS],
       multiple: true,
       multipleNonGreedy: true,
@@ -65,11 +66,13 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
 
   protected override loadConfiguration() {
     const scopes = this.flags['auth-scope'] as string[] | undefined;
+    const authMethods = this.flags['auth-methods'] as LoginAuthMethod[] | undefined;
     return loadConfig(
       {
         clientId: this.args.clientId ?? process.env.SFCC_CLIENT_ID,
         accountManagerHost: this.flags['account-manager-host'] as string | undefined,
         scopes: scopes && scopes.length > 0 ? scopes : undefined,
+        authMethods: authMethods && authMethods.length > 0 ? authMethods : undefined,
       },
       this.getBaseConfigOptions(),
     );
@@ -113,10 +116,13 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
   }
 
   private selectMethod(): LoginAuthMethod {
-    const methods = this.flags['auth-methods'] as string[] | undefined;
-    if (!methods || methods.length === 0) return 'user';
-    // oclif's `options` constraint already restricts values to LOGIN_AUTH_METHODS.
-    // Pick the first one as the chosen flow — login is single-flow by nature.
-    return methods[0] as LoginAuthMethod;
+    // CLI/env values are merged into resolvedConfig by loadConfiguration(), so
+    // this also honors an explicit dw.json `auth-methods` selection. Ignore
+    // non-browser methods because `auth login` is browser-only; absent an
+    // explicit browser method, PKCE remains the absolute default.
+    const method = this.resolvedConfig.values.authMethods?.find((candidate): candidate is LoginAuthMethod =>
+      LOGIN_AUTH_METHODS.includes(candidate as LoginAuthMethod),
+    );
+    return method ?? 'user';
   }
 }

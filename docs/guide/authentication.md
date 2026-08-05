@@ -62,7 +62,7 @@ After signing in with `auth login` or `auth client`, you can omit the client ID 
 
 ::: warning Stateful vs Stateless Precedence
 The stored session is used only when the token is valid **and** no explicit auth flags are provided. The CLI falls back to stateless auth when:
-- The stored token is **expired or invalid** — a warning suggests re-running `b2c auth client <id> <secret>` (for client-credentials sessions) or `b2c auth login` (for user sessions).
+- The stored token is **expired or invalid** — a warning suggests re-running `b2c auth client --client-id <id> --client-secret <secret>` (for client-credentials sessions) or `b2c auth login` (for user sessions).
 - **Explicit stateless auth flags** are passed (`--client-secret`, `--user-auth`, or `--auth-methods`) — a warning lists the flags that triggered the override. Remove them to use the stored session. Note that `--client-id` alone does not force stateless; the stored session is used if the configured client ID matches.
 
 To opt out of stateful auth entirely, run `b2c auth logout` to clear the stored session. The CLI will then use stateless auth exclusively.

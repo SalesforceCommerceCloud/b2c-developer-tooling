@@ -58,6 +58,11 @@ const HOST_CLIENT_ID_OVERRIDES: Record<string, string> = {
   'account-pod5.demandware.net': '3f41a930-b2bb-42c9-907d-f06a33c85849',
 };
 
+/** Host-specific legacy implicit clients retained for explicit opt-in only. */
+const LEGACY_IMPLICIT_HOST_CLIENT_ID_OVERRIDES: Record<string, string> = {
+  'account-pod5.demandware.net': 'c44527fe-66ff-4455-9eec-7287b2c66485',
+};
+
 /**
  * Returns the default public client ID for the given Account Manager host.
  * Falls back to {@link DEFAULT_PUBLIC_CLIENT_ID} for hosts without an override.
@@ -70,4 +75,19 @@ export function getDefaultPublicClientId(accountManagerHost?: string): string {
     return HOST_CLIENT_ID_OVERRIDES[accountManagerHost];
   }
   return DEFAULT_PUBLIC_CLIENT_ID;
+}
+
+/**
+ * Returns the legacy built-in implicit client ID for the given Account Manager
+ * host. This is used only when the caller explicitly selects the deprecated
+ * `implicit` auth method; default browser authentication always uses PKCE.
+ *
+ * @param accountManagerHost - The Account Manager hostname
+ * @returns The matching legacy implicit public client ID
+ */
+export function getLegacyImplicitPublicClientId(accountManagerHost?: string): string {
+  if (accountManagerHost && accountManagerHost in LEGACY_IMPLICIT_HOST_CLIENT_ID_OVERRIDES) {
+    return LEGACY_IMPLICIT_HOST_CLIENT_ID_OVERRIDES[accountManagerHost];
+  }
+  return LEGACY_IMPLICIT_PUBLIC_CLIENT_ID;
 }

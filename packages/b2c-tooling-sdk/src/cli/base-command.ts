@@ -214,7 +214,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
     // Initialize stateful auth store with oclif's data directory so session
     // files are stored alongside other CLI data (e.g. ~/Library/Application Support/@salesforce/b2c-cli).
-    // Tests may override the path via B2C_TEST_DATA_DIR to isolate the auth-session.json
+    // Tests may override the path via B2C_TEST_DATA_DIR to isolate the auth-sessions.json
     // file (e.g. per mocha worker) so they don't race on the developer's real session file.
     initializeFileAuthSessionStore(process.env.B2C_TEST_DATA_DIR ?? this.config.dataDir);
 

@@ -16,6 +16,7 @@ import {VsCodeSecretsAuthSessionBackend} from '../pkce-secret-store.js';
  */
 class FakeSecretStorage implements vscode.SecretStorage {
   readonly secrets = new Map<string, string>();
+  failStores = false;
   // SecretStorage exposes onDidChange in the real API; the backend doesn't
   // subscribe to it, but we still satisfy the type with a no-op event.
   onDidChange = (() => ({dispose() {}})) as unknown as vscode.Event<vscode.SecretStorageChangeEvent>;
@@ -25,6 +26,8 @@ class FakeSecretStorage implements vscode.SecretStorage {
   }
 
   async store(key: string, value: string): Promise<void> {
+    if (this.failStores) throw new Error('simulated SecretStorage failure');
+    await new Promise<void>((resolve) => setImmediate(resolve));
     this.secrets.set(key, value);
   }
 
@@ -39,6 +42,7 @@ class FakeSecretStorage implements vscode.SecretStorage {
 
 class FakeMemento implements vscode.Memento {
   readonly values = new Map<string, unknown>();
+  failUpdates = false;
 
   keys(): readonly string[] {
     return [...this.values.keys()];
@@ -51,6 +55,7 @@ class FakeMemento implements vscode.Memento {
   }
 
   async update(key: string, value: unknown): Promise<void> {
+    if (this.failUpdates) throw new Error('simulated globalState failure');
     if (value === undefined) {
       this.values.delete(key);
     } else {
@@ -66,16 +71,6 @@ function makeContext() {
   const globalState = new FakeMemento();
   const context = {secrets, globalState} as unknown as vscode.ExtensionContext;
   return {context, secrets, globalState};
-}
-
-/**
- * The backend writes to SecretStorage asynchronously after `save`/`delete`/
- * `clearAll` return. Tests need a way to await those writes. We resolve a
- * macrotask, which is sufficient because every async write in the backend is
- * a single `await secrets.x()` chained off a microtask.
- */
-function flush(): Promise<void> {
-  return new Promise((resolve) => setImmediate(resolve));
 }
 
 function makeSession(clientId: string, overrides: Partial<AuthSession> = {}): AuthSession {
@@ -115,7 +110,7 @@ suite('VsCodeSecretsAuthSessionBackend', () => {
     assert.strictEqual(typeof snapshot.lastUsedAt, 'string');
 
     // Background write completes, secret + index are persisted.
-    await flush();
+    await backend.flush();
     const persisted = secrets.secrets.get('b2c.auth.session.client-a');
     assert.ok(persisted, 'secret should be written to the keychain');
     const parsed = JSON.parse(persisted) as AuthSession;
@@ -157,10 +152,10 @@ suite('VsCodeSecretsAuthSessionBackend', () => {
     await backend.hydrate();
 
     backend.save(makeSession('client-a'));
-    await flush();
+    await backend.flush();
 
     backend.save(makeSession('client-a', {accessToken: 'at-rotated', refreshToken: 'rt-rotated'}));
-    await flush();
+    await backend.flush();
 
     const replaced = backend.find('client-a');
     assert.strictEqual(replaced?.accessToken, 'at-rotated');
@@ -177,10 +172,10 @@ suite('VsCodeSecretsAuthSessionBackend', () => {
 
     backend.save(makeSession('client-a'));
     backend.save(makeSession('client-b'));
-    await flush();
+    await backend.flush();
 
     backend.delete('client-a');
-    await flush();
+    await backend.flush();
 
     assert.strictEqual(backend.find('client-a'), null);
     assert.ok(backend.find('client-b'), 'unrelated session must remain');
@@ -195,10 +190,10 @@ suite('VsCodeSecretsAuthSessionBackend', () => {
 
     backend.save(makeSession('client-a'));
     backend.save(makeSession('client-b'));
-    await flush();
+    await backend.flush();
 
     backend.clearAll();
-    await flush();
+    await backend.flush();
 
     assert.strictEqual(backend.list().length, 0);
     assert.strictEqual(secrets.secrets.size, 0);
@@ -216,5 +211,56 @@ suite('VsCodeSecretsAuthSessionBackend', () => {
 
     assert.strictEqual(backend.find('broken'), null);
     assert.ok(backend.find('ok'));
+  });
+
+  test('serializes concurrent saves so both sessions remain indexed', async () => {
+    const {context, secrets, globalState} = makeContext();
+    const backend = new VsCodeSecretsAuthSessionBackend(context);
+    await backend.hydrate();
+
+    backend.save(makeSession('client-a'));
+    backend.save(makeSession('client-b'));
+    await backend.flush();
+
+    assert.ok(secrets.secrets.has('b2c.auth.session.client-a'));
+    assert.ok(secrets.secrets.has('b2c.auth.session.client-b'));
+    assert.deepStrictEqual(globalState.values.get('b2c.auth.sessions.index'), ['client-a', 'client-b']);
+  });
+
+  test('catches native persistence failures and keeps the queue usable', async () => {
+    const {context, secrets} = makeContext();
+    const backend = new VsCodeSecretsAuthSessionBackend(context);
+    await backend.hydrate();
+
+    secrets.failStores = true;
+    backend.save(makeSession('failed'));
+    await backend.flush();
+    assert.ok(backend.find('failed'), 'the synchronous snapshot remains available');
+
+    secrets.failStores = false;
+    backend.save(makeSession('recovered'));
+    await backend.flush();
+    assert.ok(secrets.secrets.has('b2c.auth.session.recovered'), 'later writes still run after a failure');
+  });
+
+  test('rolls back a secret when its index update fails', async () => {
+    const {context, secrets, globalState} = makeContext();
+    const backend = new VsCodeSecretsAuthSessionBackend(context);
+    await backend.hydrate();
+
+    globalState.failUpdates = true;
+    backend.save(makeSession('unindexed'));
+    await backend.flush();
+
+    assert.strictEqual(
+      secrets.secrets.has('b2c.auth.session.unindexed'),
+      false,
+      'an undiscoverable secret must not be orphaned',
+    );
+
+    globalState.failUpdates = false;
+    backend.save(makeSession('recovered'));
+    await backend.flush();
+    assert.deepStrictEqual(globalState.values.get('b2c.auth.sessions.index'), ['recovered']);
   });
 });

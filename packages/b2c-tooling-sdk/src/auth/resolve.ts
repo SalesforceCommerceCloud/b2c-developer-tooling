@@ -42,7 +42,8 @@ export interface ResolveAuthStrategyOptions {
   /**
    * Allowed authentication methods in priority order.
    * The first method with available credentials will be used.
-   * Defaults to: ['client-credentials', 'implicit', 'basic', 'api-key'].
+   * Defaults to {@link ALL_AUTH_METHODS}, where PKCE-based `user` auth is
+   * preferred over the deprecated `implicit` flow.
    *
    * Note: the `'jwt'` method is defined in the {@link AuthMethod} type but is
    * not automatically resolvable here, because JWT auth requires file paths
@@ -79,7 +80,7 @@ export interface AvailableAuthMethods {
  *   clientSecret: 'my-secret',
  * });
  *
- * console.log(result.available); // ['client-credentials', 'implicit']
+ * console.log(result.available); // ['client-credentials', 'user', 'implicit']
  * ```
  */
 export function checkAvailableAuthMethods(
@@ -148,7 +149,7 @@ export function checkAvailableAuthMethods(
  * ```typescript
  * import { resolveAuthStrategy } from '@salesforce/b2c-tooling-sdk';
  *
- * // Will use client-credentials if secret is available, otherwise implicit
+ * // Will use client-credentials if secret is available, otherwise PKCE user auth
  * const strategy = resolveAuthStrategy({
  *   clientId: 'my-client-id',
  *   clientSecret: process.env.CLIENT_SECRET, // may be undefined

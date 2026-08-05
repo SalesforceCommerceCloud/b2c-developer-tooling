@@ -14,7 +14,7 @@ import {PkceOAuthStrategy} from '../auth/oauth-pkce.js';
 import {PkceWithImplicitFallbackStrategy} from '../auth/oauth-pkce-fallback.js';
 import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
 import {StatefulOAuthStrategy} from '../auth/stateful-oauth-strategy.js';
-import {getDefaultPublicClientId} from '../defaults.js';
+import {getDefaultPublicClientId, getLegacyImplicitPublicClientId} from '../defaults.js';
 
 /** Account Manager role: User Administrator */
 const AM_USER_ADMIN = 'User Administrator';
@@ -58,8 +58,10 @@ const AUTH_ERROR_PATTERNS = [
  * }
  */
 export abstract class AmCommand<T extends typeof Command> extends OAuthCommand<T> {
-  protected override getDefaultClientId(): string {
-    return getDefaultPublicClientId(this.accountManagerHost);
+  protected override getDefaultClientId(method: 'user' | 'implicit' = 'user'): string {
+    return method === 'implicit'
+      ? getLegacyImplicitPublicClientId(this.accountManagerHost)
+      : getDefaultPublicClientId(this.accountManagerHost);
   }
 
   private _accountManagerClient?: AccountManagerClient;

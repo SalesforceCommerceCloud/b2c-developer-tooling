@@ -412,13 +412,13 @@ export interface ConfigSource {
  * Options for creating OAuth auth strategy.
  */
 export interface CreateOAuthOptions {
-  /** Allowed OAuth methods (default: ['client-credentials', 'implicit']) */
+  /** Allowed OAuth methods (default: client credentials, then PKCE user auth, then deprecated implicit auth) */
   allowedMethods?: AuthMethod[];
   /** Additional OAuth scopes to request beyond those in config */
   scopes?: string[];
-  /** Override redirect URI for implicit OAuth flow (e.g., for port forwarding in remote environments) */
+  /** Override redirect URI for browser OAuth flows (e.g., for port forwarding in remote environments) */
   redirectUri?: string;
-  /** Custom browser opener for implicit OAuth flow. Receives the authorization URL. */
+  /** Custom browser opener for browser OAuth flows. Receives the authorization URL. */
   openBrowser?: (url: string) => Promise<void>;
 }
 

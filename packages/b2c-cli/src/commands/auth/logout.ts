@@ -8,9 +8,9 @@ import {clearAllAuthSessions} from '@salesforce/b2c-tooling-sdk/auth';
 import {t, withDocs} from '../../i18n/index.js';
 
 /**
- * Clear the stored OAuth session (stateful auth).
- * Uses the same storage as sfcc-ci; after logout, commands use stateless auth
- * (client credentials or implicit) when configured.
+ * Clear all stored OAuth sessions, including the legacy sfcc-ci-compatible
+ * renewal record. After logout, commands resolve a configured stateless flow
+ * or start the default PKCE browser flow.
  */
 export default class AuthLogout extends BaseCommand<typeof AuthLogout> {
   static description = withDocs(
