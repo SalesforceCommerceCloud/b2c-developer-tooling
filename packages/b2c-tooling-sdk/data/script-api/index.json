@@ -1,6 +1,7 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-09T21:59:05.025Z",
+  "generatedAt": "2026-08-03T18:24:52.134Z",
+  "platformDocVersion": "DWAPP 26.8",
   "entries": [
     {
       "id": "dw.alert",
@@ -545,7 +546,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.catalog.ProductSearchModel.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.catalog.ProductSearchModel.md",
-      "headings": "Constant Summary • Property Summary • Constructor Summary • Method Summary • Methods inherited from class SearchModel • Methods inherited from class Object • Constant Details • CATEGORYID_PARAMETER • INVENTORY_LIST_IDS_PARAMETER • MAXIMUM_INVENTORY_LIST_IDS • MAXIMUM_PRODUCT_IDS • MAXIMUM_STORE_INVENTORY_FILTER_VALUES • PRICE_MAX_PARAMETER • PRICE_MIN_PARAMETER • PRODUCTID_PARAMETER • PROMOTIONID_PARAMETER • PROMOTION_PRODUCT_TYPE_ALL • PROMOTION_PRODUCT_TYPE_BONUS • PROMOTION_PRODUCT_TYPE_DISCOUNTED • PROMOTION_PRODUCT_TYPE_PARAMETER • PROMOTION_PRODUCT_TYPE_QUALIFYING • REFINE_NAME_PARAMETER_PREFIX • REFINE_VALUE_PARAMETER_PREFIX • SORTING_OPTION_PARAMETER • SORTING_RULE_PARAMETER • SORT_BY_PARAMETER_PREFIX • SORT_DIRECTION_PARAMETER_PREFIX • Property Details • category • categoryID • categorySearch • deepestCommonCategory • effectiveSortingRule • inventoryIDs • orderableProductsOnly • pageMetaTags • personalizedSort • priceMax • priceMin • productID • productIDs • productSearchHits • products • promotionID • promotionIDs • promotionProductType • recursiveCategorySearch • refinedByCategory • refinedByPrice • refinedByPromotion • refinedCategorySearch • refinementCategory • refinements • searchPhraseSuggestions • searchableImageUploadURL • sortingRule • storeInventoryFilter • suggestedSearchPhrase • suggestedSearchPhrases • trackingEmptySearchesEnabled • visualSearch • Constructor Details • ProductSearchModel() • Method Details • addHitTypeRefinement(String...) • excludeHitType(String...) • getCategory() • getCategoryID() • getDeepestCommonCategory() • getEffectiveSortingRule() • getInventoryIDs() • getOrderableProductsOnly() • getPageMetaTag(String) • getPageMetaTags() • getPriceMax() • getPriceMin() • getProductID() • getProductIDs() • getProductSearchHit(Product) • getProductSearchHits() • getProducts() • getPromotionID() • getPromotionIDs() • getPromotionProductType() • getRefinementCategory() • getRefinements() • getSearchPhraseSuggestions() • getSearchableImageUploadURL() • getSortingRule() • getStoreInventoryFilter() • getSuggestedSearchPhrase() • getSuggestedSearchPhrases() • isCategorySearch() • isPersonalizedSort() • isRecursiveCategorySearch() • isRefinedByCategory() • isRefinedByPrice() • isRefinedByPriceRange(Number, Number) • isRefinedByPromotion() • isRefinedByPromotion(String) • isRefinedCategorySearch() • isTrackingEmptySearchesEnabled() • isVisualSearch() • search() • setCategoryID(String) • setEnableTrackingEmptySearches(Boolean) • setInventoryListIDs(List) • setOrderableProductsOnly(Boolean) • setPriceMax(Number) • setPriceMin(Number) • setProductID(String) • setProductIDs(List) • setPromotionID(String) • setPromotionIDs(List) • setPromotionProductType(String) • setRecursiveCategorySearch(Boolean) • setRefinementCategory(Category) • setSearchableImageID(String) • setSortingCondition(String, Number) • setSortingOption(SortingOption) • setSortingRule(SortingRule) • setStoreInventoryFilter(StoreInventoryFilter) • urlForCategory(URL, String) • urlForCategory(String, String) • urlForProduct(URL, String, String) • urlForProduct(String, String, String) • urlForRefine(URL, String, String) • urlForRefine(String, String, String) • urlRefineCategory(URL, String) • urlRefineCategory(String, String) • urlRefinePrice(URL, Number, Number) • urlRefinePrice(String, Number, Number) • urlRefinePromotion(URL, String) • urlRefinePromotion(String, String) • urlRelaxCategory(URL) • urlRelaxCategory(String) • urlRelaxPrice(URL) • urlRelaxPrice(String) • urlRelaxPromotion(URL) • urlRelaxPromotion(String) • urlSortingOption(URL, SortingOption) • urlSortingOption(String, SortingOption) • urlSortingRule(URL, SortingRule) • urlSortingRule(String, SortingRule)",
+      "headings": "Constant Summary • Property Summary • Constructor Summary • Method Summary • Methods inherited from class SearchModel • Methods inherited from class Object • Constant Details • CATEGORYID_PARAMETER • INVENTORY_LIST_IDS_PARAMETER • MAXIMUM_INVENTORY_LIST_IDS • MAXIMUM_PRODUCT_IDS • MAXIMUM_STORE_INVENTORY_FILTER_VALUES • PRICE_MAX_PARAMETER • PRICE_MIN_PARAMETER • PRODUCTID_PARAMETER • PROMOTIONID_PARAMETER • PROMOTION_PRODUCT_TYPE_ALL • PROMOTION_PRODUCT_TYPE_BONUS • PROMOTION_PRODUCT_TYPE_DISCOUNTED • PROMOTION_PRODUCT_TYPE_PARAMETER • PROMOTION_PRODUCT_TYPE_QUALIFYING • REFINE_NAME_PARAMETER_PREFIX • REFINE_VALUE_PARAMETER_PREFIX • SORTING_OPTION_PARAMETER • SORTING_RULE_PARAMETER • SORT_BY_PARAMETER_PREFIX • SORT_DIRECTION_PARAMETER_PREFIX • Property Details • category • categoryID • categorySearch • deepestCommonCategory • effectiveSearchMode • effectiveSortingRule • inventoryIDs • orderableProductsOnly • pageMetaTags • personalizedSort • priceMax • priceMin • productID • productIDs • productSearchHits • products • promotionID • promotionIDs • promotionProductType • recursiveCategorySearch • refinedByCategory • refinedByPrice • refinedByPromotion • refinedCategorySearch • refinementCategory • refinements • searchMode • searchPhraseSuggestions • searchableImageUploadURL • sortingRule • storeInventoryFilter • suggestedSearchPhrase • suggestedSearchPhrases • trackingEmptySearchesEnabled • visualSearch • Constructor Details • ProductSearchModel() • Method Details • addHitTypeRefinement(String...) • excludeHitType(String...) • getCategory() • getCategoryID() • getDeepestCommonCategory() • getEffectiveSearchMode() • getEffectiveSortingRule() • getInventoryIDs() • getOrderableProductsOnly() • getPageMetaTag(String) • getPageMetaTags() • getPriceMax() • getPriceMin() • getProductID() • getProductIDs() • getProductSearchHit(Product) • getProductSearchHits() • getProducts() • getPromotionID() • getPromotionIDs() • getPromotionProductType() • getRefinementCategory() • getRefinements() • getSearchMode() • getSearchPhraseSuggestions() • getSearchableImageUploadURL() • getSortingRule() • getStoreInventoryFilter() • getSuggestedSearchPhrase() • getSuggestedSearchPhrases() • isCategorySearch() • isPersonalizedSort() • isRecursiveCategorySearch() • isRefinedByCategory() • isRefinedByPrice() • isRefinedByPriceRange(Number, Number) • isRefinedByPromotion() • isRefinedByPromotion(String) • isRefinedCategorySearch() • isTrackingEmptySearchesEnabled() • isVisualSearch() • search() • setCategoryID(String) • setEnableTrackingEmptySearches(Boolean) • setInventoryListIDs(List) • setOrderableProductsOnly(Boolean) • setPriceMax(Number) • setPriceMin(Number) • setProductID(String) • setProductIDs(List) • setPromotionID(String) • setPromotionIDs(List) • setPromotionProductType(String) • setRecursiveCategorySearch(Boolean) • setRefinementCategory(Category) • setSearchMode(String) • setSearchableImageID(String) • setSortingCondition(String, Number) • setSortingOption(SortingOption) • setSortingRule(SortingRule) • setStoreInventoryFilter(StoreInventoryFilter) • urlForCategory(URL, String) • urlForCategory(String, String) • urlForProduct(URL, String, String) • urlForProduct(String, String, String) • urlForRefine(URL, String, String) • urlForRefine(String, String, String) • urlRefineCategory(URL, String) • urlRefineCategory(String, String) • urlRefinePrice(URL, Number, Number) • urlRefinePrice(String, Number, Number) • urlRefinePromotion(URL, String) • urlRefinePromotion(String, String) • urlRelaxCategory(URL) • urlRelaxCategory(String) • urlRelaxPrice(URL) • urlRelaxPrice(String) • urlRelaxPromotion(URL) • urlRelaxPromotion(String) • urlSortingOption(URL, SortingOption) • urlSortingOption(String, SortingOption) • urlSortingRule(URL, SortingRule) • urlSortingRule(String, SortingRule)",
       "preview": "- [dw.catalog.SearchModel](dw.catalog.SearchModel.md)"
     },
     {
@@ -727,6 +728,40 @@
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.catalog.VariationGroup.md",
       "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class Product • Methods inherited from class ExtensibleObject • Methods inherited from class PersistentObject • Methods inherited from class Object • Property Details • EAN • UPC • allProductLinks • brand • classificationCategory • custom • image • longDescription • manufacturerName • manufacturerSKU • masterProduct • name • onlineFrom • onlineTo • optionProduct • pageDescription • pageKeywords • pageTitle • pageURL • productLinks • shortDescription • taxClassID • template • thumbnail • unit • unitQuantity • Method Details • getAllProductLinks() • getAllProductLinks(Number) • getBrand() • getClassificationCategory() • getCustom() • getEAN() • getImage() • getLongDescription() • getManufacturerName() • getManufacturerSKU() • getMasterProduct() • getName() • getOnlineFrom() • getOnlineTo() • getPageDescription() • getPageKeywords() • getPageTitle() • getPageURL() • getProductLinks() • getProductLinks(Number) • getRecommendations(Number) • getShortDescription() • getTaxClassID() • getTemplate() • getThumbnail() • getUPC() • getUnit() • getUnitQuantity() • isOptionProduct()",
       "preview": "- [dw.object.PersistentObject](dw.object.PersistentObject.md)"
+    },
+    {
+      "id": "dw.commerceapps",
+      "title": "Package dw.commerceapps",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.commerceapps.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.commerceapps.md",
+      "headings": "Classes"
+    },
+    {
+      "id": "dw.commerceapps.ConnectionHealthStatusCodes",
+      "title": "Class ConnectionHealthStatusCodes",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.commerceapps.ConnectionHealthStatusCodes.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.commerceapps.ConnectionHealthStatusCodes.md",
+      "headings": "Constant Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • DETAIL_MESSAGE • DETAIL_REMEDIATION • STATUS_CODE_DEGRADED • STATUS_CODE_UNHEALTHY • Constructor Details • ConnectionHealthStatusCodes()",
+      "preview": "- [dw.commerceapps.ConnectionHealthStatusCodes](dw.commerceapps.ConnectionHealthStatusCodes.md)"
+    },
+    {
+      "id": "dw.commerceapps.hooks",
+      "title": "Package dw.commerceapps.hooks",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.commerceapps.hooks.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.commerceapps.hooks.md",
+      "headings": "Classes"
+    },
+    {
+      "id": "dw.commerceapps.hooks.ConnectionHealthCheckHooks",
+      "title": "Class ConnectionHealthCheckHooks",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.commerceapps.hooks.ConnectionHealthCheckHooks.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.commerceapps.hooks.ConnectionHealthCheckHooks.md",
+      "headings": "Constructor Summary • Method Summary • Methods inherited from class Object • Method Details • checkConnectionHealth()",
+      "preview": "- [dw.commerceapps.hooks.ConnectionHealthCheckHooks](dw.commerceapps.hooks.ConnectionHealthCheckHooks.md)"
     },
     {
       "id": "dw.content",
@@ -2535,6 +2570,15 @@
       "preview": "- [dw.order.hooks.ReturnHooks](dw.order.hooks.ReturnHooks.md)"
     },
     {
+      "id": "dw.order.hooks.ShippingHooks",
+      "title": "Class ShippingHooks",
+      "category": "script-api",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.hooks.ShippingHooks.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.hooks.ShippingHooks.md",
+      "headings": "Constant Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • SHIPPING_DOMAIN • extensionPointCalculate • extensionPointQuote • Method Details • calculate(LineItemCtnr) • quote(Shipment, ShippingMethodResultWO)",
+      "preview": "- [dw.order.hooks.ShippingHooks](dw.order.hooks.ShippingHooks.md)"
+    },
+    {
       "id": "dw.order.hooks.ShippingOrderHooks",
       "title": "Class ShippingOrderHooks",
       "category": "script-api",
@@ -2864,7 +2908,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.ShippingMgr.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.order.ShippingMgr.md",
-      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Property Details • allShippingMethods • defaultShippingMethod • Method Details • applyShippingCost(LineItemCtnr) • getAllShippingMethods() • getDefaultShippingMethod() • getProductShippingModel(Product) • getShipmentShippingModel(Shipment) • getShippingCost(ShippingMethod, Money)",
+      "headings": "Property Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Property Details • allShippingMethods • defaultShippingMethod • Method Details • applyShipping(Basket) • applyShippingCost(LineItemCtnr) • getAllShippingMethods() • getDefaultShippingMethod() • getProductShippingModel(Product) • getShipmentShippingModel(Shipment) • getShippingCost(ShippingMethod, Money)",
       "preview": "- [dw.order.ShippingMgr](dw.order.ShippingMgr.md)"
     },
     {
@@ -3131,7 +3175,7 @@
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.suggest.SuggestModel.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/dw.suggest.SuggestModel.md",
-      "headings": "Constant Summary • Property Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • MAX_SUGGESTIONS • Property Details • brandSuggestions • categorySuggestions • contentSuggestions • customSuggestions • filteredByFolder • popularSearchPhrases • productSuggestions • recentSearchPhrases • Constructor Details • SuggestModel() • Method Details • addRefinementValues(String, String) • getBrandSuggestions() • getCategorySuggestions() • getContentSuggestions() • getCustomSuggestions() • getPopularSearchPhrases() • getProductSuggestions() • getRecentSearchPhrases() • isFilteredByFolder() • removeRefinementValues(String, String) • setCategoryID(String) • setFilteredByFolder(Boolean) • setMaxSuggestions(Number) • setRefinementValues(String, String) • setSearchPhrase(String)",
+      "headings": "Constant Summary • Property Summary • Constructor Summary • Method Summary • Methods inherited from class Object • Constant Details • MAX_SUGGESTIONS • Property Details • brandSuggestions • categorySuggestions • contentSuggestions • customSuggestions • effectiveSearchMode • filteredByFolder • popularSearchPhrases • productSuggestions • recentSearchPhrases • searchMode • Constructor Details • SuggestModel() • Method Details • addRefinementValues(String, String) • getBrandSuggestions() • getCategorySuggestions() • getContentSuggestions() • getCustomSuggestions() • getEffectiveSearchMode() • getPopularSearchPhrases() • getProductSuggestions() • getRecentSearchPhrases() • getSearchMode() • isFilteredByFolder() • removeRefinementValues(String, String) • setCategoryID(String) • setFilteredByFolder(Boolean) • setMaxSuggestions(Number) • setRefinementValues(String, String) • setSearchMode(String) • setSearchPhrase(String)",
       "preview": "- [dw.suggest.SuggestModel](dw.suggest.SuggestModel.md)"
     },
     {
@@ -4218,7 +4262,7 @@
     },
     {
       "id": "index",
-      "title": "B2C Commerce Script API 26.7",
+      "title": "B2C Commerce Script API 26.8",
       "category": "script-api",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/index.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/references/b2c-script-api/index.md",

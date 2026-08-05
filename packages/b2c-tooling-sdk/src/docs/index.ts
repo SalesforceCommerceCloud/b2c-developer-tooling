@@ -53,6 +53,7 @@ export type {
   SchemaEntry,
   SchemaIndex,
   SchemaSearchResult,
+  SourceProvenance,
 } from './types.js';
 
 // Search operations

@@ -41,18 +41,49 @@ describe('cap install', () => {
     archiveKept: true,
   };
 
+  const salesforceManifest = {id: 'my-app', name: 'My App', version: '1.0.0', domain: 'tax', provider: 'salesforce'};
+  const thirdPartyManifest = {
+    id: 'avalara-tax',
+    name: 'Avalara Tax',
+    version: '0.2.5',
+    domain: 'tax',
+    provider: 'thirdParty',
+  };
+  const noProviderManifest = {id: 'legacy-app', name: 'Legacy App', version: '1.0.0', domain: 'tax'};
+  const customManifest = {
+    id: 'internal-app',
+    name: 'Internal App',
+    version: '1.0.0',
+    domain: 'tax',
+    provider: 'custom',
+  };
+
+  /** Default operations stub set: validation passes, readManifestFromTarget resolves to a Salesforce-provider manifest. */
+  function defaultOperations(overrides: Record<string, unknown> = {}) {
+    return {
+      validateCap: sinon.stub().resolves({valid: true, errors: [], warnings: [], manifest: salesforceManifest}),
+      readManifestFromTarget: sinon.stub().resolves(salesforceManifest),
+      commerceAppInstall: sinon.stub().resolves(installResult),
+      confirm: sinon.stub().resolves(true),
+      ...overrides,
+    };
+  }
+
   it('validates before install and passes flags through to the install operation', async () => {
     // The oclif flag default (false) is applied at runtime; the test harness
     // does not apply defaults, so pass the resolved value explicitly here.
-    const command: any = await createCommand({'site-id': 'RefArch', 'create-pr': false}, {path: './my-cap'});
+    const command: any = await createCommand(
+      {'site-id': 'RefArch', 'create-pr': false, force: false},
+      {path: './my-cap'},
+    );
     const instance = stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
-    const validateStub = sinon.stub().resolves({valid: true, errors: [], warnings: []});
+    const validateStub = sinon.stub().resolves({valid: true, errors: [], warnings: [], manifest: salesforceManifest});
     const installStub = sinon.stub().resolves(installResult);
-    command.operations = {validateCap: validateStub, commerceAppInstall: installStub};
+    command.operations = defaultOperations({validateCap: validateStub, commerceAppInstall: installStub});
 
     const result = await command.run();
 
@@ -69,17 +100,17 @@ describe('cap install', () => {
   });
 
   it('passes shouldCreatePr=true when --create-pr is set', async () => {
-    const command: any = await createCommand({'site-id': 'RefArch', 'create-pr': true}, {path: './my-cap'});
+    const command: any = await createCommand(
+      {'site-id': 'RefArch', 'create-pr': true, force: false},
+      {path: './my-cap'},
+    );
     stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
     const installStub = sinon.stub().resolves(installResult);
-    command.operations = {
-      validateCap: sinon.stub().resolves({valid: true, errors: [], warnings: []}),
-      commerceAppInstall: installStub,
-    };
+    command.operations = defaultOperations({commerceAppInstall: installStub});
 
     await command.run();
 
@@ -87,49 +118,58 @@ describe('cap install', () => {
   });
 
   it('maps --clean-archive to keepArchive=false', async () => {
-    const command: any = await createCommand({'site-id': 'RefArch', 'clean-archive': true}, {path: './my-cap'});
+    const command: any = await createCommand(
+      {'site-id': 'RefArch', 'clean-archive': true, force: false},
+      {path: './my-cap'},
+    );
     stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
     const installStub = sinon.stub().resolves(installResult);
-    command.operations = {
-      validateCap: sinon.stub().resolves({valid: true, errors: [], warnings: []}),
-      commerceAppInstall: installStub,
-    };
+    command.operations = defaultOperations({commerceAppInstall: installStub});
 
     await command.run();
 
     expect(installStub.firstCall.args[2]).to.deep.include({keepArchive: false});
   });
 
-  it('skips validation when --skip-validate is set', async () => {
-    const command: any = await createCommand({'site-id': 'RefArch', 'skip-validate': true}, {path: './my-cap'});
+  it('skips validation when --skip-validate is set, still reading the manifest for the provider check', async () => {
+    const command: any = await createCommand(
+      {'site-id': 'RefArch', 'skip-validate': true, force: false},
+      {path: './my-cap'},
+    );
     stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
 
     const validateStub = sinon.stub().resolves({valid: true, errors: [], warnings: []});
+    const readManifestStub = sinon.stub().resolves(salesforceManifest);
     const installStub = sinon.stub().resolves(installResult);
-    command.operations = {validateCap: validateStub, commerceAppInstall: installStub};
+    command.operations = defaultOperations({
+      validateCap: validateStub,
+      readManifestFromTarget: readManifestStub,
+      commerceAppInstall: installStub,
+    });
 
     await command.run();
 
     expect(validateStub.called).to.be.false;
+    expect(readManifestStub.calledOnceWithExactly('./my-cap')).to.be.true;
     expect(installStub.calledOnce).to.be.true;
   });
 
   it('errors and does not install when validation fails', async () => {
-    const command: any = await createCommand({'site-id': 'RefArch'}, {path: './my-cap'});
+    const command: any = await createCommand({'site-id': 'RefArch', force: false}, {path: './my-cap'});
     stubCommon(command);
 
     const installStub = sinon.stub().resolves(installResult);
-    command.operations = {
+    command.operations = defaultOperations({
       validateCap: sinon.stub().resolves({valid: false, errors: ['missing commerce-app.json'], warnings: []}),
       commerceAppInstall: installStub,
-    };
+    });
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
@@ -141,21 +181,214 @@ describe('cap install', () => {
   });
 
   it('returns early without installing when a before hook skips', async () => {
-    const command: any = await createCommand({'site-id': 'RefArch', 'skip-validate': true}, {path: './my-cap'});
+    const command: any = await createCommand(
+      {'site-id': 'RefArch', 'skip-validate': true, force: false},
+      {path: './my-cap'},
+    );
     stubCommon(command);
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: true, skipReason: 'by plugin'});
     sinon.stub(command, 'runAfterHooks').rejects(new Error('Unexpected after hooks'));
 
+    const readManifestStub = sinon.stub().resolves(salesforceManifest);
     const installStub = sinon.stub().rejects(new Error('Unexpected install'));
-    command.operations = {
-      validateCap: sinon.stub().resolves({valid: true, errors: [], warnings: []}),
+    command.operations = defaultOperations({
+      readManifestFromTarget: readManifestStub,
       commerceAppInstall: installStub,
-    };
+    });
 
     const result: any = await command.run();
 
+    expect(readManifestStub.called).to.be.false;
     expect(installStub.called).to.be.false;
     expect(result.execution.execution_status).to.equal('finished');
+  });
+
+  describe('non-Salesforce provider warning', () => {
+    it('does not warn or prompt when a before hook skips the install, even for a non-Salesforce manifest', async () => {
+      const command: any = await createCommand(
+        {'site-id': 'RefArch', 'skip-validate': true, force: false},
+        {path: './my-cap'},
+      );
+      stubCommon(command);
+      sinon.stub(command, 'jsonEnabled').returns(false);
+
+      sinon.stub(command, 'runBeforeHooks').resolves({skip: true, skipReason: 'by plugin'});
+      sinon.stub(command, 'runAfterHooks').rejects(new Error('Unexpected after hooks'));
+
+      const readManifestStub = sinon.stub().resolves(thirdPartyManifest);
+      const confirmStub = sinon.stub().resolves(true);
+      const installStub = sinon.stub().rejects(new Error('Unexpected install'));
+      command.operations = defaultOperations({
+        readManifestFromTarget: readManifestStub,
+        confirm: confirmStub,
+        commerceAppInstall: installStub,
+      });
+
+      const result: any = await command.run();
+
+      expect(readManifestStub.called).to.be.false;
+      expect(confirmStub.called).to.be.false;
+      expect(command.log.getCalls().some((c: sinon.SinonSpyCall) => String(c.args[0]).includes('Non-SFDC Application')))
+        .to.be.false;
+      expect(installStub.called).to.be.false;
+      expect(result.execution.execution_status).to.equal('finished');
+    });
+
+    it('does not warn or prompt when the manifest provider is salesforce', async () => {
+      const command: any = await createCommand({'site-id': 'RefArch', force: false}, {path: './my-cap'});
+      stubCommon(command);
+
+      sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+      sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+      const confirmStub = sinon.stub().resolves(true);
+      command.operations = defaultOperations({
+        validateCap: sinon.stub().resolves({valid: true, errors: [], warnings: [], manifest: salesforceManifest}),
+        confirm: confirmStub,
+      });
+
+      await command.run();
+
+      expect(confirmStub.called).to.be.false;
+      expect(command.log.getCalls().some((c: sinon.SinonSpyCall) => String(c.args[0]).includes('Non-SFDC Application')))
+        .to.be.false;
+    });
+
+    it('warns and prompts when the manifest provider is thirdParty, proceeding on confirmation', async () => {
+      const command: any = await createCommand({'site-id': 'RefArch', force: false}, {path: './my-cap'});
+      stubCommon(command);
+      sinon.stub(command, 'jsonEnabled').returns(false);
+
+      sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+      sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+      const confirmStub = sinon.stub().resolves(true);
+      const installStub = sinon.stub().resolves(installResult);
+      command.operations = defaultOperations({
+        validateCap: sinon.stub().resolves({valid: true, errors: [], warnings: [], manifest: thirdPartyManifest}),
+        confirm: confirmStub,
+        commerceAppInstall: installStub,
+      });
+
+      const result = await command.run();
+
+      expect(command.log.getCalls().some((c: sinon.SinonSpyCall) => String(c.args[0]).includes('Non-SFDC Application')))
+        .to.be.true;
+      expect(confirmStub.calledOnce).to.be.true;
+      expect(installStub.calledOnce).to.be.true;
+      expect(result).to.equal(installResult);
+    });
+
+    it('warns and prompts when the manifest omits the provider field', async () => {
+      const command: any = await createCommand({'site-id': 'RefArch', force: false}, {path: './my-cap'});
+      stubCommon(command);
+      sinon.stub(command, 'jsonEnabled').returns(false);
+
+      sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+      sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+      const confirmStub = sinon.stub().resolves(true);
+      const installStub = sinon.stub().resolves(installResult);
+      command.operations = defaultOperations({
+        validateCap: sinon.stub().resolves({valid: true, errors: [], warnings: [], manifest: noProviderManifest}),
+        confirm: confirmStub,
+        commerceAppInstall: installStub,
+      });
+
+      const result = await command.run();
+
+      expect(command.log.getCalls().some((c: sinon.SinonSpyCall) => String(c.args[0]).includes('Non-SFDC Application')))
+        .to.be.true;
+      expect(confirmStub.calledOnce).to.be.true;
+      expect(installStub.calledOnce).to.be.true;
+      expect(result).to.equal(installResult);
+    });
+
+    it('warns and prompts when the manifest provider is custom, proceeding on confirmation', async () => {
+      const command: any = await createCommand({'site-id': 'RefArch', force: false}, {path: './my-cap'});
+      stubCommon(command);
+      sinon.stub(command, 'jsonEnabled').returns(false);
+
+      sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+      sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+      const confirmStub = sinon.stub().resolves(true);
+      const installStub = sinon.stub().resolves(installResult);
+      command.operations = defaultOperations({
+        validateCap: sinon.stub().resolves({valid: true, errors: [], warnings: [], manifest: customManifest}),
+        confirm: confirmStub,
+        commerceAppInstall: installStub,
+      });
+
+      const result = await command.run();
+
+      expect(command.log.getCalls().some((c: sinon.SinonSpyCall) => String(c.args[0]).includes('Non-SFDC Application')))
+        .to.be.true;
+      expect(confirmStub.calledOnce).to.be.true;
+      expect(installStub.calledOnce).to.be.true;
+      expect(result).to.equal(installResult);
+    });
+
+    it('cancels the install when the user declines the non-Salesforce confirmation', async () => {
+      const command: any = await createCommand({'site-id': 'RefArch', force: false}, {path: './my-cap'});
+      stubCommon(command);
+      sinon.stub(command, 'jsonEnabled').returns(false);
+      sinon.stub(command, 'exit').throws(new Error('EEXIT: 0'));
+
+      const installStub = sinon.stub().rejects(new Error('Unexpected install'));
+      command.operations = defaultOperations({
+        validateCap: sinon.stub().resolves({valid: true, errors: [], warnings: [], manifest: thirdPartyManifest}),
+        confirm: sinon.stub().resolves(false),
+        commerceAppInstall: installStub,
+      });
+
+      await expectError(() => command.run());
+
+      expect(installStub.called).to.be.false;
+    });
+
+    it('skips the confirmation prompt when --force is set', async () => {
+      const command: any = await createCommand({'site-id': 'RefArch', force: true}, {path: './my-cap'});
+      stubCommon(command);
+
+      sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+      sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+      const confirmStub = sinon.stub().resolves(true);
+      const installStub = sinon.stub().resolves(installResult);
+      command.operations = defaultOperations({
+        validateCap: sinon.stub().resolves({valid: true, errors: [], warnings: [], manifest: thirdPartyManifest}),
+        confirm: confirmStub,
+        commerceAppInstall: installStub,
+      });
+
+      await command.run();
+
+      expect(confirmStub.called).to.be.false;
+      expect(installStub.calledOnce).to.be.true;
+    });
+
+    it('skips the confirmation prompt in JSON mode', async () => {
+      const command: any = await createCommand({'site-id': 'RefArch', force: false, json: true}, {path: './my-cap'});
+      stubCommon(command);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+
+      sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+      sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+      const confirmStub = sinon.stub().resolves(true);
+      const installStub = sinon.stub().resolves(installResult);
+      command.operations = defaultOperations({
+        validateCap: sinon.stub().resolves({valid: true, errors: [], warnings: [], manifest: thirdPartyManifest}),
+        confirm: confirmStub,
+        commerceAppInstall: installStub,
+      });
+
+      await command.run();
+
+      expect(confirmStub.called).to.be.false;
+      expect(installStub.calledOnce).to.be.true;
+    });
   });
 });

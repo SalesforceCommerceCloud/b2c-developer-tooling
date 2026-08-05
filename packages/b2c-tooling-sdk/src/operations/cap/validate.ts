@@ -15,6 +15,14 @@ import * as path from 'node:path';
 import JSZip from 'jszip';
 
 /**
+ * Who authored a Commerce App.
+ * - `salesforce` - first-party Salesforce apps/features.
+ * - `thirdParty` - ISV / non-Salesforce apps.
+ * - `custom` - merchant-provided custom integrations.
+ */
+export type CommerceAppProvider = 'salesforce' | 'thirdParty' | 'custom';
+
+/**
  * Manifest from commerce-app.json.
  */
 export interface CommerceAppManifest {
@@ -25,6 +33,8 @@ export interface CommerceAppManifest {
   description?: string;
   publisher?: {name: string; url?: string; support?: string};
   dependencies?: Record<string, string>;
+  /** Who authored this app. Absent or non-`salesforce` apps are treated as non-Salesforce. */
+  provider?: CommerceAppProvider;
 }
 
 /**
