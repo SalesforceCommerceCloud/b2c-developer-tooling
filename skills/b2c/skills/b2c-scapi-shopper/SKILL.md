@@ -70,7 +70,7 @@ b2c slas client create \
   --redirect-uri http://localhost:3000/callback
 ```
 
-See [b2c-slas skill](../../b2c-cli/skills/b2c-slas/SKILL.md) for full client management.
+See [b2c-slas skill](../../../b2c-cli/skills/b2c-slas/SKILL.md) for full client management.
 
 ### Get Guest Token
 
@@ -348,9 +348,9 @@ Find logs in Log Center under `scapi.verbose` category.
 
 ## Related Skills
 
-- [b2c-slas](../../b2c-cli/skills/b2c-slas/SKILL.md) - Create and manage SLAS clients
+- [b2c-slas](../../../b2c-cli/skills/b2c-slas/SKILL.md) - Create and manage SLAS clients
 - [b2c-slas-auth-patterns](../b2c-slas-auth-patterns/SKILL.md) - Advanced auth: OTP, passkeys, session bridge
-- [b2c-scapi-schemas](../../b2c-cli/skills/b2c-scapi-schemas/SKILL.md) - Browse OpenAPI schemas
+- [b2c-scapi-schemas](../../../b2c-cli/skills/b2c-scapi-schemas/SKILL.md) - Browse OpenAPI schemas
 - [b2c-custom-api-development](../b2c-custom-api-development/SKILL.md) - Create custom endpoints
 - [b2c-hooks](../b2c-hooks/SKILL.md) - The `order.afterPOST` hook that authorizes payment and places/fails a headless order
 - [b2c-ordering](../b2c-ordering/SKILL.md) - Order lifecycle, status transitions, and failure handling
