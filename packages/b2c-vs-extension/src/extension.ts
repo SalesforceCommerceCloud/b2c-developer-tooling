@@ -4,8 +4,10 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {DwJsonSource} from '@salesforce/b2c-tooling-sdk/config';
+import {setAuthSessionBackend} from '@salesforce/b2c-tooling-sdk/auth';
 import {detectWorkspaceType} from '@salesforce/b2c-tooling-sdk/discovery';
 import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
+import {VsCodeSecretsAuthSessionBackend} from './pkce-secret-store.js';
 
 import * as cp from 'child_process';
 import * as https from 'https';
@@ -43,6 +45,8 @@ import {
   OnboardingStateStore,
   OnboardingPanel,
 } from './walkthrough/index.js';
+
+let authSessionBackend: VsCodeSecretsAuthSessionBackend | undefined;
 
 function applyLogLevel(log: vscode.OutputChannel): void {
   const config = vscode.workspace.getConfiguration('b2c-dx');
@@ -271,6 +275,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 export async function deactivate(): Promise<void> {
   sendEvent('EXTENSION_DEACTIVATED');
+  await authSessionBackend?.flush();
+  authSessionBackend = undefined;
+  setAuthSessionBackend(null);
   await disposeTelemetry();
 }
 
@@ -512,6 +519,14 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   void vscode.commands.executeCommand('setContext', 'b2c-dx.setupInstance', sessionInstance);
 
   registerJobLogViewer(context);
+
+  // Persist auth sessions via VS Code SecretStorage (OS keychain on
+  // macOS/Windows/Linux, encrypted fallback otherwise — handled by VS Code).
+  // Hydrate the in-memory snapshot before registering, so the SDK's sync
+  // reads see existing sessions on first call.
+  authSessionBackend = new VsCodeSecretsAuthSessionBackend(context);
+  await authSessionBackend.hydrate();
+  setAuthSessionBackend(authSessionBackend);
 
   const configProvider = new B2CExtensionConfig(log, context.workspaceState);
   lateConfigProvider = configProvider;

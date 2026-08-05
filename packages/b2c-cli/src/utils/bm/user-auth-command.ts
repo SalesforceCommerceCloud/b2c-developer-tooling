@@ -15,15 +15,16 @@ import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
  * (`/users/this`) and the access-key endpoints under
  * `/users/{login}/access_key`.
  *
- * Defaults `authMethods` to `['implicit']` so the underlying
+ * Defaults `authMethods` to `['user']` so the underlying
  * {@link InstanceCommand}'s `B2CInstance` chooses browser-based user-auth
- * rather than client-credentials. The default is applied *after* config
- * resolution and only when the user has not specified `authMethods` via
- * `--auth-methods`, `--user-auth`, dw.json, or `SFCC_AUTH_METHODS`.
+ * (Authorization Code + PKCE) rather than client-credentials. The default is
+ * applied *after* config resolution and only when the user has not specified
+ * `authMethods` via `--auth-methods`, `--user-auth`, dw.json, or
+ * `SFCC_AUTH_METHODS`.
  */
 export abstract class BmUserAuthCommand<T extends typeof Command> extends InstanceCommand<T> {
   protected override getDefaultAuthMethods(): AuthMethod[] {
-    return ['implicit'];
+    return ['user'];
   }
 
   protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {

@@ -31,6 +31,7 @@ import type {AuthStrategy, AuthMethod, AuthCredentials} from './types.js';
 import {ALL_AUTH_METHODS} from './types.js';
 import {OAuthStrategy} from './oauth.js';
 import {ImplicitOAuthStrategy} from './oauth-implicit.js';
+import {createUserAuthStrategy} from './oauth-pkce-fallback.js';
 import {BasicAuthStrategy} from './basic.js';
 import {ApiKeyStrategy} from './api-key.js';
 
@@ -41,7 +42,8 @@ export interface ResolveAuthStrategyOptions {
   /**
    * Allowed authentication methods in priority order.
    * The first method with available credentials will be used.
-   * Defaults to: ['client-credentials', 'implicit', 'basic', 'api-key'].
+   * Defaults to {@link ALL_AUTH_METHODS}, where PKCE-based `user` auth is
+   * preferred over the deprecated `implicit` flow.
    *
    * Note: the `'jwt'` method is defined in the {@link AuthMethod} type but is
    * not automatically resolvable here, because JWT auth requires file paths
@@ -78,7 +80,7 @@ export interface AvailableAuthMethods {
  *   clientSecret: 'my-secret',
  * });
  *
- * console.log(result.available); // ['client-credentials', 'implicit']
+ * console.log(result.available); // ['client-credentials', 'user', 'implicit']
  * ```
  */
 export function checkAvailableAuthMethods(
@@ -100,6 +102,7 @@ export function checkAvailableAuthMethods(
         }
         break;
 
+      case 'user':
       case 'implicit':
         if (credentials.clientId) {
           available.push(method);
@@ -146,7 +149,7 @@ export function checkAvailableAuthMethods(
  * ```typescript
  * import { resolveAuthStrategy } from '@salesforce/b2c-tooling-sdk';
  *
- * // Will use client-credentials if secret is available, otherwise implicit
+ * // Will use client-credentials if secret is available, otherwise PKCE user auth
  * const strategy = resolveAuthStrategy({
  *   clientId: 'my-client-id',
  *   clientSecret: process.env.CLIENT_SECRET, // may be undefined
@@ -178,6 +181,20 @@ export function resolveAuthStrategy(
             clientSecret: credentials.clientSecret,
             scopes: credentials.scopes,
             accountManagerHost: credentials.accountManagerHost,
+          });
+        }
+        break;
+
+      case 'user':
+        if (credentials.clientId) {
+          // PKCE with an automatic, WARN-logged fallback to the implicit flow
+          // for clients not yet registered for PKCE (see oauth-pkce-fallback).
+          return createUserAuthStrategy({
+            clientId: credentials.clientId,
+            scopes: credentials.scopes,
+            accountManagerHost: credentials.accountManagerHost,
+            redirectUri: credentials.redirectUri,
+            openBrowser: credentials.openBrowser,
           });
         }
         break;

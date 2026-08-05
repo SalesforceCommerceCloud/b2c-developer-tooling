@@ -313,7 +313,7 @@ The SDK provides a unified client for managing users, roles, organizations, and 
 
 ### Authentication
 
-Account Manager operations use **OAuth implicit flow** by default, which opens a browser for interactive authentication. This is ideal for development and manual operations where you want to use roles assigned to your user account.
+Account Manager operations use the **OAuth Authorization Code + PKCE flow** by default, which opens a browser for interactive authentication. This is ideal for development and manual operations where you want to use roles assigned to your user account. (The legacy implicit flow remains available via `ImplicitOAuthStrategy` but is deprecated for public clients under OAuth 2.1.)
 
 For CI/CD and automation, you can also use **OAuth client credentials flow** (requires both client ID and secret).
 
@@ -323,12 +323,12 @@ The recommended approach is to use the unified `createAccountManagerClient`, whi
 
 ```typescript
 import {createAccountManagerClient} from '@salesforce/b2c-tooling-sdk/clients';
-import {ImplicitOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {PkceOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 
-// Create Account Manager client with implicit OAuth (opens browser for login)
-const auth = new ImplicitOAuthStrategy({
+// Create Account Manager client with Authorization Code + PKCE (opens browser for login)
+const auth = new PkceOAuthStrategy({
   clientId: 'your-client-id',
-  // No clientSecret needed for implicit flow
+  // No clientSecret needed for a public (PKCE) client
 });
 
 const client = createAccountManagerClient({accountManagerHost: 'account.demandware.com'}, auth);
@@ -554,7 +554,7 @@ await client.deleteApiClient('api-client-uuid');
 Account Manager operations require:
 
 - Account Manager hostname configuration
-- For implicit flow: roles configured on your **user account**
+- For browser-based user auth (Authorization Code + PKCE): roles configured on your **user account**
 - For client credentials flow: roles configured on the **API client**
 
 ## Logging
