@@ -21,12 +21,17 @@ interface ContributedView {
   name: string;
   when?: string;
 }
+interface ContributedMenuItem {
+  command?: string;
+  when?: string;
+}
 interface PackageJson {
+  activationEvents: string[];
   contributes: {
     commands: ContributedCommand[];
     views: Record<string, ContributedView[]>;
     debuggers: Array<{type: string}>;
-    menus?: {commandPalette?: Array<{command: string; when?: string}>};
+    menus?: Record<string, ContributedMenuItem[]>;
     walkthroughs?: Array<{id: string; when?: string}>;
   };
 }
@@ -51,6 +56,22 @@ suite('extension activation', () => {
   test('extension activates without throwing', () => {
     const ext = vscode.extensions.getExtension(EXTENSION_ID);
     assert.ok(ext?.isActive, 'extension should be active after suiteSetup activate()');
+  });
+
+  test('nested dw.json files activate the extension', () => {
+    assert.ok(
+      pkg.activationEvents.includes('workspaceContains:**/dw.json'),
+      'activation events should include nested dw.json files',
+    );
+  });
+
+  test('nested folders expose the project-root command in Explorer', () => {
+    const submenu = pkg.contributes.menus?.['b2c-dx.submenu'] ?? [];
+    const projectRootItem = submenu.find((item) => item.command === 'b2c-dx.setProjectRoot');
+    assert.strictEqual(
+      projectRootItem?.when,
+      'explorerResourceIsFolder && resourceScheme == file && !explorerResourceIsRoot',
+    );
   });
 
   // This is the workhorse check. The extension's top-level try/catch
@@ -109,7 +130,7 @@ suite('extension activation', () => {
   });
 
   test('preview-feature palette commands are gated by their feature setting', () => {
-    const palette: Array<{command: string; when?: string}> = pkg.contributes.menus?.commandPalette ?? [];
+    const palette = pkg.contributes.menus?.commandPalette ?? [];
     const whenFor = (cmd: string) => palette.find((e) => e.command === cmd)?.when;
     const cases: Array<[string, string]> = [
       ['b2c-dx.jobs.run', 'config.b2c-dx.features.jobsExplorer'],

@@ -21,6 +21,7 @@ This class does not have a constructor, so you cannot create it directly.
 
 | Method | Description |
 | --- | --- |
+| static [applyShipping](dw.order.ShippingMgr.md#applyshippingbasket)([Basket](dw.order.Basket.md)) | Applies shipping to the given [Basket](dw.order.Basket.md) using the platform's shipping hook dispatch logic. |
 | static [applyShippingCost](dw.order.ShippingMgr.md#applyshippingcostlineitemctnr)([LineItemCtnr](dw.order.LineItemCtnr.md)) | Applies product and shipment-level shipping cost to the specified line  item container. |
 | static [getAllShippingMethods](dw.order.ShippingMgr.md#getallshippingmethods)() | Returns the active shipping methods of the current site applicable to the session currency and current customer group. |
 | static [getDefaultShippingMethod](dw.order.ShippingMgr.md#getdefaultshippingmethod)() | Returns the default shipping method of the current site applicable to the session currency. |
@@ -52,6 +53,63 @@ This class does not have a constructor, so you cannot create it directly.
 ---
 
 ## Method Details
+
+### applyShipping(Basket)
+- static applyShipping(basket: [Basket](dw.order.Basket.md)): void
+  - : Applies shipping to the given [Basket](dw.order.Basket.md) using the platform's shipping hook dispatch logic.
+      
+      
+      This method is intended for use in custom {@code dw.order.calculate} hook implementations (e.g., in SFRA or
+      SiteGenesis) that override the default basket calculation. Calling this method instead of directly invoking
+      {@code dw.order.calculateShipping} ensures that Commerce App shipping providers registered via
+      {@code sfcc.app.shipping.calculate} are invoked when available, with automatic fallback to the legacy
+      {@code dw.order.calculateShipping} hook or the platform default shipping calculation.
+      
+      
+      
+      
+      **WARNING:** Do NOT call this method from within a {@code dw.order.calculateShipping} hook
+      implementation, as this will cause infinite recursion. This method is designed to be called from
+      {@code dw.order.calculate} hooks only.
+      
+      
+      
+      
+      The dispatch precedence is:
+      
+      1. {@code sfcc.app.shipping.calculate}— if a Commerce App shipping provider is installed.
+      2. {@code dw.order.calculateShipping}— if registered by the storefront.
+      3. Platform default shipping calculation — using product and shipment shipping cost tables.
+      
+      
+      
+      
+      
+      **Typical usage in a custom {@code dw.order.calculate} hook:**
+      
+      
+      
+      
+      ```
+      var ShippingMgr = require('dw/order/ShippingMgr');
+      
+      exports.calculate = function (basket) {
+          // ... product prices, promotions ...
+          ShippingMgr.applyShipping(basket);
+          // ... tax ...
+          basket.updateTotals();
+      };
+      ```
+
+
+    **Parameters:**
+    - basket - the basket for which shipping should be calculated.
+
+    **Throws:**
+    - NullArgumentException - if {@code basket} is {@code null}.
+
+
+---
 
 ### applyShippingCost(LineItemCtnr)
 - static applyShippingCost(lineItemCtnr: [LineItemCtnr](dw.order.LineItemCtnr.md)): void

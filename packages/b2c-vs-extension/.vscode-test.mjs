@@ -49,4 +49,26 @@ export default defineConfig([
       timeout: 20000,
     },
   },
+  {
+    label: 'nested-dw-json',
+    files: 'out/test/config-provider.test.js',
+    version: 'stable',
+    workspaceFolder: 'src/test/fixtures/nested-workspace',
+    launchArgs: ['--user-data-dir', shortUserDataDir('nested-dw-json')],
+    mocha: {
+      ui: 'tdd',
+      timeout: 20000,
+    },
+  },
+  {
+    label: 'multi-root-dw-json',
+    files: 'out/test/config-provider.test.js',
+    version: 'stable',
+    workspaceFolder: 'src/test/fixtures/multi-root.code-workspace',
+    launchArgs: ['--user-data-dir', shortUserDataDir('multi-root-dw-json')],
+    mocha: {
+      ui: 'tdd',
+      timeout: 20000,
+    },
+  },
 ]);

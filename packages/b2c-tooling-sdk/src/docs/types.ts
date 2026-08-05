@@ -93,8 +93,35 @@ export interface DocEntry {
   summary?: string;
   /** Search keywords/synonyms an agent or developer might use to find this doc. */
   keywords?: string[];
+  /**
+   * IDs of directly related documentation entries. Salesforce Help landing
+   * articles use this for linked child topics, while Developer Center guides
+   * use it for immediate parent and child pages from the published TOC. Callers
+   * can pass any id directly to `docs read` / `docs_read`.
+   */
+  relatedEntries?: string[];
   /** Optional preview/excerpt from the document. */
   preview?: string;
+}
+
+/**
+ * Provenance of the upstream content a bundled corpus was generated from.
+ *
+ * Recorded in the index so a maintainer can diff the committed corpus against
+ * the current source repo (`git log <sha>..HEAD` in the local clone) to see
+ * exactly what changed before a refresh. Absent on corpora sourced from the
+ * DWAPP archive rather than a git repo (Script API, job steps).
+ *
+ * Only opaque values are stored — no repository URL — so no internal host name
+ * or maintainer credential can leak into the published package.
+ */
+export interface SourceProvenance {
+  /** Full git commit SHA the corpus was generated from. */
+  sha: string;
+  /** Commit date (ISO 8601) of that SHA. */
+  committedAt: string;
+  /** Branch/ref checked out at generation time, if known. */
+  ref?: string;
 }
 
 /**
@@ -105,6 +132,14 @@ export interface SearchIndex {
   version: string;
   /** Timestamp when the index was generated */
   generatedAt: string;
+  /** Provenance of the upstream source content, when generated from a git repo. */
+  source?: SourceProvenance;
+  /**
+   * Platform documentation version the corpus was generated from (e.g. "DWAPP
+   * 26.8"), for corpora sourced from the DWAPP archive rather than a git repo
+   * (Script API). Absent on git-sourced corpora, which use {@link source}.
+   */
+  platformDocVersion?: string;
   /** Array of documentation entries */
   entries: DocEntry[];
 }
@@ -137,6 +172,8 @@ export interface SchemaIndex {
   version: string;
   /** Timestamp when the index was generated */
   generatedAt: string;
+  /** Platform documentation version the schemas were extracted from (e.g. "DWAPP 26.8"). */
+  platformDocVersion?: string;
   /** Array of schema entries */
   entries: SchemaEntry[];
 }

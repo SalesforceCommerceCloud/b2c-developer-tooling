@@ -4,7 +4,6 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {
-  findCartridges,
   uploadCartridges,
   getActiveCodeVersion,
   activateCodeVersion,
@@ -12,6 +11,8 @@ import {
 } from '@salesforce/b2c-tooling-sdk/operations/code';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
+import {findCartridgesSafe} from '../workspace-discovery.js';
+import {getPostDeployActions} from './code-version-actions.js';
 
 export function createDeployCommand(
   configProvider: B2CExtensionConfig,
@@ -26,16 +27,18 @@ export function createDeployCommand(
 
     // Resolve code version
     let codeVersion = instance.config.codeVersion;
-    if (!codeVersion) {
-      try {
-        const active = await getActiveCodeVersion(instance);
+    let activeCodeVersionId: string | undefined;
+    try {
+      const active = await getActiveCodeVersion(instance);
+      activeCodeVersionId = active?.id;
+      if (!codeVersion) {
         if (active?.id) {
           codeVersion = active.id;
           instance.config.codeVersion = codeVersion;
         }
-      } catch {
-        // fall through
       }
+    } catch {
+      // The configured version can still be deployed when OCAPI discovery is unavailable.
     }
     if (!codeVersion) {
       vscode.window.showErrorMessage(
@@ -46,7 +49,7 @@ export function createDeployCommand(
 
     // Discover cartridges
     const directory = configProvider.getWorkingDirectory();
-    const cartridges = findCartridges(directory);
+    const cartridges = findCartridgesSafe(directory);
     if (cartridges.length === 0) {
       vscode.window.showWarningMessage('B2C DX: No cartridges found (no .project files in workspace).');
       return;
@@ -64,14 +67,9 @@ export function createDeployCommand(
     }
 
     // Choose post-deploy action
-    const actionPick = await vscode.window.showQuickPick(
-      [
-        {label: 'Deploy only', action: 'none' as const},
-        {label: 'Deploy & Activate', action: 'activate' as const},
-        {label: 'Deploy & Reload', description: 'Toggle activation to force reload', action: 'reload' as const},
-      ],
-      {title: 'Post-deploy action'},
-    );
+    const actionPick = await vscode.window.showQuickPick(getPostDeployActions(activeCodeVersionId === codeVersion), {
+      title: 'Post-deploy action',
+    });
     if (!actionPick) return;
 
     const hostname = instance.config.hostname ?? 'unknown';
@@ -100,8 +98,12 @@ export function createDeployCommand(
 
           if (actionPick.action === 'activate') {
             progress.report({message: 'Activating code version...'});
-            await activateCodeVersion(instance, codeVersion);
-            outputChannel.appendLine(`Code version "${codeVersion}" activated`);
+            const activation = await activateCodeVersion(instance, codeVersion);
+            outputChannel.appendLine(
+              activation.alreadyActive
+                ? `Code version "${codeVersion}" is already active; activation skipped`
+                : `Code version "${codeVersion}" activated`,
+            );
           } else if (actionPick.action === 'reload') {
             progress.report({message: 'Reloading code version...'});
             await reloadCodeVersion(instance, codeVersion);
@@ -174,7 +176,7 @@ export function createDeployOneCommand(
     }
 
     const directory = configProvider.getWorkingDirectory();
-    const cartridges = findCartridges(directory);
+    const cartridges = findCartridgesSafe(directory);
     if (cartridges.length === 0) {
       vscode.window.showWarningMessage('B2C DX: No cartridges found.');
       return;

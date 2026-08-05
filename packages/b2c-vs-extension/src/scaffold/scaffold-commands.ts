@@ -21,7 +21,7 @@ import {
   type ScaffoldGenerateResult,
   type SourceResult,
 } from '@salesforce/b2c-tooling-sdk/scaffold';
-import {findCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {findCartridgesSafe} from '../workspace-discovery.js';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {registerSafeCommand} from '../safety.js';
 
@@ -95,7 +95,7 @@ async function runScaffoldWizard(
 
   // Filter scaffolds based on context: inside a cartridge → show only cartridge-targeting scaffolds
   const insideCartridge = contextPath
-    ? findCartridges(projectRoot).some((c) => contextPath === c.src || contextPath.startsWith(c.src + path.sep))
+    ? findCartridgesSafe(projectRoot).some((c) => contextPath === c.src || contextPath.startsWith(c.src + path.sep))
     : false;
 
   if (insideCartridge) {

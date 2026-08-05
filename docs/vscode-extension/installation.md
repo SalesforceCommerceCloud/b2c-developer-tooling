@@ -1,5 +1,5 @@
 ---
-description: Install the B2C DX VS Code Extension from a pre-built .vsix release artifact.
+description: Install the official Salesforce B2C Commerce VS Code Extension from the Visual Studio Marketplace, the Open VSX Registry, or a .vsix release artifact.
 ---
 
 <script setup>
@@ -8,11 +8,46 @@ import {data as release} from './release.data.ts';
 
 # Installation
 
-::: warning Not on the Marketplace yet
-The extension isn't on the VS Code or Open VSX marketplaces yet. For now, grab the latest build from GitHub and install it manually — it only takes a minute.
-:::
+The **official Salesforce B2C Commerce extension**, published by Salesforce, is available on the Visual Studio Marketplace and the Open VSX Registry.
 
-## Get the latest build
+## Install from your editor
+
+Most of the time you'll install directly from your editor's Extensions view:
+
+1. Open the Extensions view (**Cmd+Shift+X** / **Ctrl+Shift+X**).
+2. Search for **Salesforce B2C Commerce**.
+3. Pick the extension published by **Salesforce** and click **Install**.
+4. Reload the window when prompted.
+
+The extension's developer, operations, API, and sandbox views appear in the activity bar.
+
+Your editor pulls from the right registry automatically:
+
+- **VS Code** installs from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Salesforce.b2c-vs-extension).
+- **Cursor**, **VSCodium**, **Windsurf**, **Eclipse Theia**, and other VS Code–compatible editors install from the [Open VSX Registry](https://open-vsx.org/extension/salesforce/b2c-vs-extension).
+
+Each release is published to both registries at the same time, so they stay in sync.
+
+## Install from the command line
+
+If you prefer the terminal, use your editor's `--install-extension` command:
+
+```bash
+# VS Code (Visual Studio Marketplace)
+code --install-extension Salesforce.b2c-vs-extension
+
+# Cursor (Open VSX)
+cursor --install-extension salesforce.b2c-vs-extension
+
+# VSCodium / Windsurf / other codium-based editors (Open VSX)
+codium --install-extension salesforce.b2c-vs-extension
+```
+
+## Install from a VSIX
+
+GitHub Releases also provides a pre-built `.vsix` for offline or air-gapped installs where neither registry is reachable.
+
+### Get the latest build
 
 <div v-if="!release.unavailable">
 
@@ -30,7 +65,7 @@ We couldn't find a published build right now. Head over to the [releases page]({
 
 </div>
 
-## Install it
+### Install it
 
 Once you've got the file, install it from the command line or from the Extensions view in VS Code.
 
@@ -54,16 +89,16 @@ cursor --install-extension b2c-vs-extension-X.Y.Z.vsix
 :::
 
 <!-- TODO(screenshot): replace ./images/install-vsix.svg with ./images/install-vsix.png — "Install from VSIX..." command palette entry -->
-![Install from VSIX](./images/install-vsix.png)
 
-Reload the window when prompted. You'll see new **B2C-DX**, **B2C-DX: SCAPI**, and **B2C-DX Sandboxes** icons in the activity bar.
+![Install from VSIX](./images/install-vsix.png)
 
 ## Before you start
 
 A few things to have ready:
 
-- **VS Code 1.105 or newer** (Cursor and VS Codium work too).
-- **The B2C CLI** installed — `npm install -g @salesforce/b2c-cli`. The extension uses it under the hood for some workflows. See the [CLI Installation guide](../guide/installation) for other install options.
+- **VS Code 1.105 or newer** (Cursor, VSCodium, Windsurf, and other VS Code–compatible editors work too — they install from [Open VSX](#install-from-your-editor)).
+- **Access to a B2C Commerce instance** for remote workflows.
+- **The B2C CLI is optional.** Install it when you want to run the same operations from the terminal or CI. See the [CLI Installation guide](../guide/installation) for installation options.
 
 ## Connect to your sandbox
 

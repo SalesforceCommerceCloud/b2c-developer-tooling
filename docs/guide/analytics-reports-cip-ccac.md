@@ -262,7 +262,7 @@ See the SDK API reference:
 
 ## VS Code IDE Integration
 
-The B2C Commerce Developer Tools VS Code extension exposes the same CIP analytics workflows as a graphical experience. Open the **B2C-DX Analytics** view in the activity bar to access them.
+The Salesforce B2C Commerce VS Code extension exposes the same CIP analytics workflows as a graphical experience. Open the **Analytics** view in the activity bar to access them.
 
 ::: tip
 You don't need to install or configure the CLI separately — the extension uses the same SDK under the hood and reads from your workspace `dw.json` (or environment variables).

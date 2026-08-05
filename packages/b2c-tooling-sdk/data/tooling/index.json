@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-07-10T21:10:52.949Z",
+  "generatedAt": "2026-08-03T18:28:01.841Z",
   "entries": [
     {
       "id": "guide-account-manager",
@@ -80,7 +80,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ide-integration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ide-integration.md",
-      "headings": "Script API IntelliSense • B2C DX VS Code Extension (recommended) • Standalone VS Code, WebStorm, or IntelliJ Ultimate • Neovim, Helix, Zed, Sublime, or other LSP-based editors • Notes • IntelliJ SFCC Plugin • Setup",
+      "headings": "Script API IntelliSense • Salesforce B2C Commerce VS Code Extension (recommended) • Standalone VS Code, WebStorm, or IntelliJ Ultimate • Neovim, Helix, Zed, Sublime, or other LSP-based editors • Notes • IntelliJ SFCC Plugin • Setup",
       "preview": "Configure IDE tooling like the IntelliJ SFCC plugin to consume resolved B2C CLI configuration, plus enable Script API IntelliSense via TypeScript definitions."
     },
     {

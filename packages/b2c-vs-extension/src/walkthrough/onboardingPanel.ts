@@ -20,8 +20,9 @@ import {
   DetectionSummary,
   StepDetection,
 } from './stepDetection.js';
-import {findCartridges, listCodeVersions, type CodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {listCodeVersions, type CodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import type {B2CExtensionConfig} from '../config-provider.js';
+import {findCartridgesSafe} from '../workspace-discovery.js';
 
 type InboundMessage =
   | {type: 'selectPersona'; personaId: PersonaId}
@@ -404,7 +405,8 @@ export class OnboardingPanel {
       return {persona: null, personas, steps: [], activeStepId: null, setupInstance};
     }
     const defs = resolveSteps(personaDef.id);
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const workspaceRoot =
+      this.getConfigProvider?.()?.getWorkingDirectory() || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     const detectionSummary = await detectStepConfigurations(workspaceRoot);
     const rawSteps = await Promise.all(defs.map((def) => this.buildStepView(personaDef.id, def, detectionSummary)));
     // Sequential gating: a step is locked until every step before it is done
@@ -572,7 +574,8 @@ export class OnboardingPanel {
    * caller can disable the primary action).
    */
   private async buildDeployBanner(): Promise<{html: string; alreadyDeployed: boolean; cartridgeName?: string} | null> {
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const workspaceRoot =
+      this.getConfigProvider?.()?.getWorkingDirectory() || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     const ctx = await readDeployContext(workspaceRoot);
     const lastScaffolded = this.context.workspaceState.get<string>('b2c-dx.scaffold.lastCartridgeName');
 
@@ -584,7 +587,7 @@ export class OnboardingPanel {
     let cartridgeSource: 'scaffolded' | 'only' | 'picker' | 'none' = 'none';
     if (workspaceRoot) {
       try {
-        const cartridges = findCartridges(workspaceRoot);
+        const cartridges = findCartridgesSafe(workspaceRoot);
         if (lastScaffolded && cartridges.some((c) => c.name === lastScaffolded)) {
           resolvedCartridge = lastScaffolded;
           cartridgeSource = 'scaffolded';

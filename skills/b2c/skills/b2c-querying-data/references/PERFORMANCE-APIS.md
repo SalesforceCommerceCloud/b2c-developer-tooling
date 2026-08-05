@@ -26,7 +26,8 @@ Complete reference for index-friendly vs database-intensive APIs in B2C Commerce
 | `ProductSearchModel.setCategoryID(id)` | Replaces `Category.getProducts()` |
 | `ProductSearchModel.setOrderableProductsOnly(true)` | Replaces `Category.getOnlineProducts()` + availability check |
 | `ProductSearchModel.getRefinements()` | Index-backed refinement values |
-| `ProductSearchRefinements.getNextLevelRefinementValues()` | Replaces `Category.getOnlineSubCategories()` for nav |
+| `ProductSearchRefinements.getNextLevelCategoryRefinementValues(category)` | Replaces `Category.getOnlineSubCategories()` for nav |
+| `ProductSearchRefinements.getAllRefinementValues(attributeName)` | Refinement values for one attribute |
 | `ProductSearchModel.getProductSearchHits()` | Efficient result iteration |
 | `ProductSearchHit.getMinPrice()` / `getMaxPrice()` | Replaces `Product.getPriceModel()` in search |
 | `ProductSearchHit.getRepresentedProductIDs()` | Replaces `Product.getVariants()` in search |

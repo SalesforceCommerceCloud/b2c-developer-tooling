@@ -151,8 +151,35 @@ describe('tools/docs', () => {
 
     it('defaults to a small result set when limit is omitted', async () => {
       const tool = createDocsSearchTool(loadServices);
-      const json = getResultJson<{results: unknown[]}>(await tool.handler({query: 'login'}));
+      const json = getResultJson<{results: unknown[]; total: number; offset: number}>(
+        await tool.handler({query: 'login'}),
+      );
       expect(json.results.length).to.be.at.most(5);
+      expect(json.total).to.be.at.least(json.results.length);
+      expect(json.offset).to.equal(0);
+    });
+
+    it('pages ranked search results with total and nextOffset', async () => {
+      const tool = createDocsSearchTool(loadServices);
+      const first = getResultJson<{
+        total: number;
+        offset: number;
+        results: Array<{id: string}>;
+        truncated?: boolean;
+        nextOffset?: number;
+      }>(await tool.handler({query: 'login', limit: 1}));
+      expect(first.total).to.be.greaterThan(1);
+      expect(first.offset).to.equal(0);
+      expect(first.results).to.have.length(1);
+      expect(first.truncated).to.equal(true);
+      expect(first.nextOffset).to.equal(1);
+
+      const second = getResultJson<{offset: number; results: Array<{id: string}>}>(
+        await tool.handler({query: 'login', limit: 1, offset: first.nextOffset}),
+      );
+      expect(second.offset).to.equal(1);
+      expect(second.results).to.have.length(1);
+      expect(second.results[0].id).to.not.equal(first.results[0].id);
     });
 
     it('returns empty results on a miss', async () => {
@@ -201,6 +228,28 @@ describe('tools/docs', () => {
       expect(json.entry.id).to.match(/ProductMgr/);
       expect(json.content).to.be.a('string').and.have.length.greaterThan(0);
       expect(json.totalLength).to.be.a('number');
+    });
+
+    it('returns related Help entry ids for landing articles', async () => {
+      const tool = createDocsReadTool(loadServices);
+      const result = await tool.handler({query: 'help-merchant/b2c_cb_page_designer'});
+      expect(result.isError).to.be.undefined;
+      const json = getResultJson<{entry: {relatedEntries?: string[]}}>(result);
+      expect(json.entry.relatedEntries).to.deep.equal([
+        'help-merchant/b2c_cb_save_as',
+        'help-merchant/b2c_cb_add_to_page',
+        'help-merchant/b2c_cb_edit',
+        'help-merchant/b2c_cb_remove_from_page',
+      ]);
+    });
+
+    it('returns immediate Developer Center TOC neighbors', async () => {
+      const tool = createDocsReadTool(loadServices);
+      const result = await tool.handler({query: 'b2c-commerce/quick-start-landing-page'});
+      expect(result.isError).to.be.undefined;
+      const json = getResultJson<{entry: {relatedEntries?: string[]}}>(result);
+      expect(json.entry.relatedEntries).to.include('b2c-commerce/developer-workflow');
+      expect(json.entry.relatedEntries).to.include('b2c-commerce/b2c-developer-tooling');
     });
 
     it('truncates long content to maxLength and pages via offset', async () => {

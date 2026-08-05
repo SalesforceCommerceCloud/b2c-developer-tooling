@@ -14,11 +14,11 @@ The debugger uses the same resolved credentials as the rest of the CLI (flags, `
 
 ## Choosing an interface
 
-| Use case                           | Interface                       | Reference                                                   |
-| ---------------------------------- | ------------------------------- | ----------------------------------------------------------- |
-| Debug from VS Code (recommended)   | B2C DX VS Code Extension        | [VS Code Extension](/vscode-extension/#b2c-script-debugger) |
-| Debug from another IDE (JetBrains) | `b2c debug` (DAP debug adapter) | [Debug Commands](/cli/debug#b2c-debug)                      |
-| Let an AI agent drive the debugger | MCP Script Debugger tools       | [Script Debugger](/mcp/tools/diagnostics)                   |
+| Use case                           | Interface                                 | Reference                                                   |
+| ---------------------------------- | ----------------------------------------- | ----------------------------------------------------------- |
+| Debug from VS Code (recommended)   | Salesforce B2C Commerce VS Code Extension | [VS Code Extension](/vscode-extension/#b2c-script-debugger) |
+| Debug from another IDE (JetBrains) | `b2c debug` (DAP debug adapter)           | [Debug Commands](/cli/debug#b2c-debug)                      |
+| Let an AI agent drive the debugger | MCP Script Debugger tools                 | [Script Debugger](/mcp/tools/diagnostics)                   |
 
 The **VS Code extension is the recommended interface** for interactive debugging — it provides the full graphical debugger (breakpoints, log points, watch expressions, step controls), just like any other Node project. The CLI's DAP debug adapter (`b2c debug`) also offers a headless terminal mode for scripting; see [Debug Commands](/cli/debug) for details.
 
@@ -33,7 +33,7 @@ A breakpoint only fires when the code runs on the **same application server** th
 To pin a triggering request to the correct app server, send it with the debugger's session cookie (`dwsid`). How you obtain the value depends on the interface:
 
 - **MCP:** `debug_start_session` and `debug_list_sessions` return a `session_cookie` (`{name, value}`). See [Script Debugger → Server affinity](/mcp/tools/diagnostics#server-affinity-hitting-breakpoints).
-- **VS Code:** the cookie is logged to the **B2C DX** output channel when the session connects, and the **Copy Debugger Session ID (dwsid)** command copies it to your clipboard.
+- **VS Code:** the cookie is logged to the extension output channel when the session connects, and the **Copy Debugger Session ID (dwsid)** command copies it to your clipboard.
 - **CLI:** the cookie is logged when the session connects (`Debug session cookie: dwsid=…`).
 
 Send the request that triggers your code — a browser session, `curl`, an integration test — with that cookie:

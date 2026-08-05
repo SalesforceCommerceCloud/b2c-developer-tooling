@@ -1,5 +1,49 @@
 # @salesforce/b2c-cli
 
+## 1.21.4
+
+### Patch Changes
+
+- [#603](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/603) [`94c7ba9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/94c7ba979716e8401234f48178f488a4e5b29ac3) - Fix skill installation output so mixed-source downloads do not show an unresolved version placeholder, repair the `b2c-hooks` skill frontmatter, and identify the affected skill path in future parsing warnings. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`94c7ba9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/94c7ba979716e8401234f48178f488a4e5b29ac3)]:
+  - @salesforce/b2c-tooling-sdk@1.21.3
+
+## 1.21.3
+
+### Patch Changes
+
+- [#596](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/596) [`a5fbe3f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a5fbe3f324b102400173a3d92407cda2d4529f4e) - Fix `slas client update` corrupting existing callback URIs. When merging with the current client, the command split the API's pipe-delimited `callbackUri` value on commas instead of pipes, so the entire list was sent back as a single string and the update was rejected with "CallbackURI must be a valid URL". Callback URIs are now parsed with the same shared helper used for redirect URIs everywhere in the SLAS commands, so the two paths can no longer disagree. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.21.2
+
+### Patch Changes
+
+- [#592](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/592) [`f6b4ced`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f6b4ced5d40b8fcd8a9fbaf524f6dcdd83852b02) - Treat activation of an already-active code version as success, preserve useful OCAPI fault details, and avoid redundant activation choices in VS Code. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`f6b4ced`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f6b4ced5d40b8fcd8a9fbaf524f6dcdd83852b02)]:
+  - @salesforce/b2c-tooling-sdk@1.21.2
+
+## 1.21.1
+
+### Patch Changes
+
+- [#581](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/581) [`1fe5ff2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1fe5ff2e49b4aef66c81ad9b9c9dd4b92d1da405) - Expose directly related documentation IDs from Salesforce Help child-topic links and Developer Center guide TOCs, including articles previously omitted from composite Help maps or hyphenated topic filenames. CLI and MCP documentation search results can now be paged by ranked position, so agents can traverse the full published content without surfacing future-profiled Help content. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`1fe5ff2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1fe5ff2e49b4aef66c81ad9b9c9dd4b92d1da405)]:
+  - @salesforce/b2c-tooling-sdk@1.21.1
+
+## 1.21.0
+
+### Minor Changes
+
+- [#568](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/568) [`633f3cb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/633f3cb7d409132f107b012e26448ab7812ed506) - Log commands and tools can now access logs in `Logs/` subdirectories (such as `internal/`). Pass a path-like `--filter`/`prefixes` value containing a `/` — e.g. `--filter internal/server` to target `server-*.log` files under `internal/`, or `--filter internal/` for everything in that subdirectory. Plain prefix filters (and the default listing) are unchanged and still only scan the top-level `Logs/` directory, so there is no performance impact unless you opt in with a path filter. Works across `logs list`, `logs get`, `logs tail`, and the corresponding MCP tools. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`f169fa1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f169fa153f75f4f3b76622b4300c11631deb50b0), [`633f3cb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/633f3cb7d409132f107b012e26448ab7812ed506)]:
+  - @salesforce/b2c-tooling-sdk@1.21.0
+
 ## 1.20.1
 
 ### Patch Changes

@@ -21,17 +21,26 @@ on:
 env:
   SFCC_DISABLE_TELEMETRY: ${{ vars.SFCC_DISABLE_TELEMETRY }}
 
+# Least-privilege default for every job; each job opts up to only what it needs.
+permissions:
+  contents: read
+
 jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
+    outputs:
+      release_type: ${{ steps.release-type.outputs.type }}
+      publish_vsx: ${{ steps.packages.outputs.publish_vsx }}
+      version_vsx: ${{ steps.packages.outputs.version_vsx }}
     if: >-
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
     permissions:
       actions: write # For triggering deploy-docs.yml via workflow_dispatch
       contents: write # For creating GitHub releases and tags
-      id-token: write # Required for npm OIDC trusted publishers
+      id-token: write # Required for npm OIDC trusted publishers AND SLSA build provenance
+      attestations: write # For actions/attest-build-provenance on the VSIX
       pull-requests: write # For creating merge-back PRs
     steps:
       - name: Checkout
@@ -42,8 +51,15 @@ jobs:
 
       - name: Determine release type
         id: release-type
+        env:
+          # Bind untrusted workflow_dispatch input to an env var; do not interpolate
+          # it into the shell. The 'choice' type is a UI hint only — API-driven
+          # dispatches can send an arbitrary string, and this job holds id-token/
+          # attestations/contents write (it is the SLSA signer), so an injection
+          # here would let an attacker forge provenance.
+          RELEASE_TYPE_INPUT: ${{ github.event.inputs.release_type }}
         run: |
-          if [[ "${{ github.event.inputs.release_type }}" == "stable" ]] || [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+          if [[ "$RELEASE_TYPE_INPUT" == "stable" ]] || [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
             echo "type=stable" >> $GITHUB_OUTPUT
             echo "tag=latest" >> $GITHUB_OUTPUT
           else
@@ -265,6 +281,41 @@ jobs:
         if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
         working-directory: packages/b2c-vs-extension
         run: pnpm run package
+
+      # Trust anchor: hash the exact artifact that will be uploaded to the release
+      # and attested below. b2c-dx re-computes and compares this before publishing.
+      # We resolve the filename ONCE here and reuse it for the hash, the attestation
+      # subject, and the release upload — so the hashed bytes, the attested bytes,
+      # and the uploaded bytes are provably the same file. A count!=1 guard fails
+      # closed: if `pnpm run package` ever emits more than one VSIX, a bare glob
+      # would let the hash anchor, the attested set, and the uploaded set diverge.
+      - name: Compute VSIX sha256
+        id: vsix-hash
+        if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
+        working-directory: packages/b2c-vs-extension
+        run: |
+          set -euo pipefail
+          COUNT=$(ls *.vsix 2>/dev/null | wc -l | tr -d ' ')
+          if [ "$COUNT" -ne 1 ]; then
+            echo "::error::expected exactly one .vsix from 'pnpm run package', found $COUNT"
+            exit 1
+          fi
+          VSIX=$(ls *.vsix)
+          SHA=$(sha256sum "$VSIX" | awk '{print $1}')
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "vsix_file=$VSIX" >> "$GITHUB_OUTPUT"
+          echo "::notice::VSIX $VSIX sha256=$SHA"
+
+      # SLSA build provenance: cryptographically binds the VSIX to this repo,
+      # commit, and workflow run. This is the provenance b2c-dx verifies with
+      # `gh attestation verify` before it can publish to the marketplaces.
+      # Attest the exact resolved file (not a glob) so the attested subject is
+      # identical to the hashed and uploaded artifact.
+      - name: Attest VSIX build provenance
+        if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: packages/b2c-vs-extension/${{ steps.vsix-hash.outputs.vsix_file }}
 
       - name: Create git tags
         if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
@@ -513,6 +564,8 @@ jobs:
         run: |
           VSX_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
           VSX_VERSION="${{ steps.packages.outputs.version_vsx }}"
+          # Upload the exact file that was hashed + attested above (not a glob).
+          VSIX_PATH="packages/b2c-vs-extension/${{ steps.vsix-hash.outputs.vsix_file }}"
 
           # Extract extension changelog for the dedicated release
           extract_latest() {
@@ -547,17 +600,24 @@ jobs:
           # Use --clobber on upload in case a previous run partially completed
           if gh release view "$VSX_TAG" >/dev/null 2>&1; then
             echo "Release $VSX_TAG already exists, uploading VSIX to it"
-            gh release upload "$VSX_TAG" packages/b2c-vs-extension/*.vsix --clobber
+            gh release upload "$VSX_TAG" "$VSIX_PATH" --clobber
           else
             gh release create "$VSX_TAG" \
               --title "VS Code Extension ${VSX_VERSION}" \
               --latest=false \
               --notes-file /tmp/vsx-release-notes.md
 
-            gh release upload "$VSX_TAG" packages/b2c-vs-extension/*.vsix
+            gh release upload "$VSX_TAG" "$VSIX_PATH"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # NOTE: This monorepo BUILDS + ATTESTS the VSIX and publishes it as a public
+      # GitHub release (above). Cross-repo delivery to forcedotcom/b2c-dx is PULL-based
+      # and lives entirely in b2c-dx: it polls this repo's public releases with its own
+      # GITHUB_TOKEN, re-verifies sha256 + SLSA build provenance, and opens its own
+      # release PR. The monorepo therefore holds NO cross-repo credential and fires no
+      # dispatch — the SLSA attestation is the trust anchor, not a push from here.
 
       - name: Trigger documentation deployment
         if: >-

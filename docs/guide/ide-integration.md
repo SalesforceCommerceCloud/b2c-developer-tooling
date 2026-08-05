@@ -6,7 +6,7 @@ description: Configure IDE tooling like the IntelliJ SFCC plugin to consume reso
 
 This guide explains how to connect third-party IDE tooling (such as the IntelliJ SFCC plugin) to your B2C CLI configuration, and how to enable Script API IntelliSense in any IDE.
 
-> Looking for the **Salesforce-published B2C DX VS Code Extension**? See the dedicated [VS Code Extension](../vscode-extension/) section — it consumes `dw.json` and the active instance directly, no bridge script required.
+> Looking for the **Salesforce B2C Commerce VS Code Extension**? See the dedicated [VS Code Extension](../vscode-extension/) section — it consumes `dw.json` and the active instance directly, no bridge script required.
 
 ## Script API IntelliSense
 
@@ -14,9 +14,9 @@ Get autocomplete and inline documentation on `require('dw/catalog/ProductMgr')`,
 
 There are three setup paths depending on your IDE:
 
-### B2C DX VS Code Extension (recommended)
+### Salesforce B2C Commerce VS Code Extension (recommended)
 
-If you have the B2C DX VS Code extension installed, IntelliSense is automatic:
+If you have the Salesforce B2C Commerce VS Code extension installed, IntelliSense is automatic:
 
 - No configuration files are written into your repository.
 - The extension registers a TypeScript Server plugin that resolves `dw/*` modules transparently for any file inside a detected cartridge (folders containing a `.project` file alongside a `cartridge/` directory).
@@ -31,7 +31,7 @@ The plugin also resolves SFCC cartridge-style requires, matching runtime semanti
 - `require('app_storefront_base/cartridge/scripts/foo')` — resolves only within the named cartridge.
 - `require('server')`, `require('server/middleware')`, etc. — bare requires resolve against the SFRA `modules` cartridge if present (its tree is exposed at the root, not under `cartridge/scripts/`). When a `modules` cartridge is detected, the plugin also injects ambient type declarations for the SFRA `server` API (Server, Route, Request, Response, middleware, forms, querystring) so cartridge code type-checks under `checkJs: true` despite the dynamic property assignments in `modules/server.js` that TypeScript can't infer on its own.
 
-Cartridge resolution order matches your runtime cartridge path: the `cartridges` field from your resolved configuration (`dw.json`, `SFCC_CARTRIDGES`, `.env`, etc.) wins. When that's not set, cartridges fall back to discovery order with known base cartridges (`app_storefront_base`, `modules`) sorted last. The same ordering also drives the **B2C-DX → Cartridges** tree view.
+Cartridge resolution order matches your runtime cartridge path: the `cartridges` field from your resolved configuration (`dw.json`, `SFCC_CARTRIDGES`, `.env`, etc.) wins. When that's not set, cartridges fall back to discovery order with known base cartridges (`app_storefront_base`, `modules`) sorted last. The same ordering also drives the extension's **Cartridges** tree view.
 
 ### Standalone VS Code, WebStorm, or IntelliJ Ultimate
 
@@ -74,7 +74,7 @@ The generated `jsconfig.json` looks like this — feel free to author it yoursel
 
 Modern editors that drive `tsserver` through the Language Server Protocol have two ways to wire up Script API IntelliSense:
 
-**Option A — vendored `jsconfig.json` (dw/* only).** Run `b2c setup ide vscode-types` at the repo root and your LSP picks it up on next start. Provides only `dw/*` resolution; cartridge-relative requires (`~/cartridge/...`, `*/cartridge/...`) are not handled because TypeScript `paths` mappings can't express multi-cartridge lookups.
+**Option A — vendored `jsconfig.json` (dw/\* only).** Run `b2c setup ide vscode-types` at the repo root and your LSP picks it up on next start. Provides only `dw/*` resolution; cartridge-relative requires (`~/cartridge/...`, `*/cartridge/...`) are not handled because TypeScript `paths` mappings can't express multi-cartridge lookups.
 
 **Option B — load the bundled TS Server plugin (full feature parity with the VS Code extension).** Configure your LSP client to load `@salesforce/b2c-script-types` as a TypeScript Server plugin via `init_options`. The plugin auto-discovers cartridges by walking the project for `.project` files, and honors `dw.json`'s `cartridges` field for ordering — no separate vendoring step.
 
@@ -116,7 +116,7 @@ If your editor's LSP client is launched outside the repo root (for example, open
 ### Notes
 
 - The bundle is version-locked to a Script API release (currently 26.7). Re-run `b2c setup ide vscode-types` after upgrading the CLI to refresh the vendored copy; use `--force` to overwrite existing files if they were previously created. The plugin path returned by `b2c setup ide tsserver-plugin` always points at the bundle shipped with your installed CLI.
-- The vendored `jsconfig.json` only configures `dw/*` IntelliSense. Cartridge-relative requires (`~/cartridge/...`, `*/cartridge/...`, `cartridgeName/cartridge/...`) cannot be expressed in standalone TypeScript `paths` mappings (TypeScript allows at most one `*` per pattern), so they will appear unresolved without the B2C DX VS Code extension or another host that loads `@salesforce/b2c-script-types/plugin` via LSP.
+- The vendored `jsconfig.json` only configures `dw/*` IntelliSense. Cartridge-relative requires (`~/cartridge/...`, `*/cartridge/...`, `cartridgeName/cartridge/...`) cannot be expressed in standalone TypeScript `paths` mappings (TypeScript allows at most one `*` per pattern), so they will appear unresolved without the Salesforce B2C Commerce VS Code extension or another host that loads `@salesforce/b2c-script-types/plugin` via LSP.
 
 ## IntelliJ SFCC Plugin
 

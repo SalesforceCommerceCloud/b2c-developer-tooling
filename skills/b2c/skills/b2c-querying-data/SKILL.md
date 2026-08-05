@@ -86,9 +86,7 @@ psm.search();
 
 // Get available refinement values for the current result set
 var refinements = psm.getRefinements();
-var colorValues = refinements.getNextLevelRefinementValues(
-    refinements.getRefinementDefinitionByName('color')
-);
+var colorValues = refinements.getAllRefinementValues('color');
 ```
 
 ### ProductSearchModel API Summary

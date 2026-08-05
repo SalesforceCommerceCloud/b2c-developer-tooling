@@ -3,14 +3,10 @@ description: Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, SD
 layout: b2c-home
 isHome: true
 
-renameNotice:
-  title: Formerly B2C DX
-  text: 'The project previously known as B2C DX (B2C Developer Tooling) is now the Agentic B2C Developer Toolkit. The CLI package name (@salesforce/b2c-cli), commands, and configuration remain the same.'
-
 hero:
   name: Agentic B2C Developer Toolkit
   text: ''
-  tagline: CLI, Agent Skills, MCP Server, and the B2C DX VS Code Extension for Salesforce Agentforce Commerce — everything you and your coding agent need to build, deploy, and operate B2C Commerce together.
+  tagline: CLI, Agent Skills, MCP Server, and the Salesforce B2C Commerce VS Code Extension — everything you and your coding agent need to build, deploy, and operate B2C Commerce together.
   image:
     src: /hero-collage.png
     alt: Agentic B2C Developer Toolkit — CLI, Agentforce Vibes, and Claude Code
@@ -57,15 +53,11 @@ features:
       src: /icons/cli.svg
       width: 48
       height: 48
-    title: VS Code Extension (Developer Preview)
-    details: B2C DX activity-bar containers for sandbox lifecycle, cartridge code sync, WebDAV, content libraries, SCAPI, and a B2C script debugger — all driven by the same dw.json the CLI uses.
+    title: VS Code Extension
+    details: The official Salesforce B2C Commerce extension for VS Code. Activity-bar tools for sandbox lifecycle, cartridge code sync, WebDAV, content libraries, SCAPI, and a B2C script debugger. Shares configuration with the CLI, so it fits right into the rest of your toolkit.
     link: /vscode-extension/
     linkText: VS Code Extension
 ---
-
-<script setup>
-import {data as vsxRelease} from './vscode-extension/release.data.ts';
-</script>
 
 ## Install the CLI
 
@@ -108,8 +100,9 @@ claude plugin install storefront-next-figma
 
 ```bash [Codex]
 codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-# Then in Codex, run /plugins, select the "B2C Developer Tooling"
-# marketplace, and select and install the desired plugins.
+codex plugin add b2c-cli@b2c-developer-tooling
+codex plugin add b2c@b2c-developer-tooling
+codex plugin add b2c-dx-mcp@b2c-developer-tooling
 ```
 
 ```bash [Cursor]
@@ -150,27 +143,8 @@ npx @salesforce/b2c-cli setup skills
 
 :::
 
-## Install the VS Code Extension <Badge type="warning" text="Developer Preview" />
+## Install the VS Code Extension
 
-The extension is not yet published to the VS Code Marketplace — install the latest pre-built `.vsix` from GitHub releases.
-
-<div v-if="!vsxRelease.unavailable" class="b2c-vsx-install">
-  <p>
-    Latest release: <strong>{{ vsxRelease.version }}</strong>
-    <span> · </span>
-    <a :href="vsxRelease.vsixDownloadUrl">Download {{ vsxRelease.vsixAssetName }}</a>
-    <span> · </span>
-    <a :href="vsxRelease.releasePageUrl">Release notes</a>
-  </p>
-  <p>Then install with:</p>
-  <pre><code>code --install-extension {{ vsxRelease.vsixAssetName }}
-# or, in Cursor:
-cursor --install-extension {{ vsxRelease.vsixAssetName }}</code></pre>
-</div>
-<div v-else>
-
-Browse the [GitHub releases page]({{ vsxRelease.fallbackUrl }}) for `b2c-vs-extension@*` tags and install the `.vsix` via `code --install-extension <file>.vsix`.
-
-</div>
+Open the Extensions view in your editor and search for **Salesforce B2C Commerce** — VS Code installs from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Salesforce.b2c-vs-extension), while Cursor, VSCodium, Windsurf, and other VS Code–compatible editors install from the [Open VSX Registry](https://open-vsx.org/extension/salesforce/b2c-vs-extension).
 
 Detailed setup: [Installation](/vscode-extension/installation) · [Configuration](/vscode-extension/configuration)

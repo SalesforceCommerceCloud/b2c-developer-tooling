@@ -14,6 +14,7 @@ import * as https from 'https';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {B2CExtensionConfig} from './config-provider.js';
+import {workspaceHasDwJson, isUnscannableRoot, WORKSPACE_DISCOVERY_MAX_DEPTH} from './workspace-discovery.js';
 import {CartridgeService} from './cartridges/cartridge-service.js';
 import {registerCap} from './cap/index.js';
 import {registerJobLogViewer} from './job-log-viewer.js';
@@ -85,10 +86,23 @@ async function updateStorefrontNextContext(
   log: vscode.OutputChannel,
 ): Promise<void> {
   const workingDir = configProvider.getWorkingDirectory();
-  log.appendLine(`[Workspace] Running detectWorkspaceType for cwd=${workingDir}`);
   let isStorefrontNext = false;
+  // Only run recursive workspace detection out of a concrete workspace folder.
+  // When there is no working directory (empty window) or it resolves to a
+  // home/root directory, skip it entirely: detectWorkspaceType('') would fall
+  // back to process.cwd() and recursively scan it on the extension-host thread
+  // (W-23618508). isUnscannableRoot('') is true, so this also covers the empty
+  // case.
+  if (isUnscannableRoot(workingDir)) {
+    log.appendLine('[Workspace] No concrete workspace folder; skipping storefront-next detection');
+    await vscode.commands.executeCommand('setContext', 'b2c-dx.isStorefrontNext', false);
+    return;
+  }
+  log.appendLine(`[Workspace] Running detectWorkspaceType for cwd=${workingDir}`);
   try {
-    const result = await detectWorkspaceType(workingDir);
+    // Depth-bound the scan as defense-in-depth so a deep tree can't stall
+    // activation (mirrors the MCP server's DISCOVERY_MAX_DEPTH).
+    const result = await detectWorkspaceType(workingDir, {maxDepth: WORKSPACE_DISCOVERY_MAX_DEPTH});
     log.appendLine(
       `[Workspace] Detection result: projectTypes=[${result.projectTypes.join(', ')}] matchedPatterns=[${result.matchedPatterns.join(', ')}]`,
     );
@@ -537,18 +551,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   configProvider.onDidReset(() => updateInstanceConnectedContext());
 
   const updateDwJsonContext = async () => {
-    const folders = vscode.workspace.workspaceFolders ?? [];
-    let exists = false;
-    for (const folder of folders) {
-      try {
-        await vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, 'dw.json'));
-        exists = true;
-        break;
-      } catch {
-        // not in this folder
-      }
-    }
-    await vscode.commands.executeCommand('setContext', 'b2c-dx.dwJsonExists', exists);
+    await vscode.commands.executeCommand('setContext', 'b2c-dx.dwJsonExists', await workspaceHasDwJson());
   };
   void updateDwJsonContext();
   const dwJsonWatcher = vscode.workspace.createFileSystemWatcher('**/dw.json');
@@ -867,19 +870,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   // Drop the per-workspace onboarding panel state (persona + step records)
   // when the workspace has no dw.json, so the deep-dive panel reopens with no
   // selection. Cheap to call: workspaceState writes are local.
-  const workspaceHasDwJson = await (async () => {
-    const folders = vscode.workspace.workspaceFolders ?? [];
-    for (const folder of folders) {
-      try {
-        await vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, 'dw.json'));
-        return true;
-      } catch {
-        // keep checking
-      }
-    }
-    return false;
-  })();
-  if (!workspaceHasDwJson) {
+  if (!(await workspaceHasDwJson())) {
     await onboardingStore.reset();
   }
 
