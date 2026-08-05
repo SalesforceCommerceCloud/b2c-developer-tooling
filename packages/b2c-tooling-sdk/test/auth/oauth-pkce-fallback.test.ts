@@ -14,16 +14,16 @@ import {
   createUserAuthStrategy,
   isPkceFallbackDisabled,
 } from '@salesforce/b2c-tooling-sdk/auth';
-import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import type {UserAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 
 /**
- * Build a fake AuthStrategy that records how many times each method is called
+ * Build a fake UserAuthStrategy that records how many times each method is called
  * and returns canned values, so tests can assert the wrapper delegated to the
  * implicit fallback without opening a browser.
  */
 function fakeStrategy(label: string) {
   const calls = {fetch: 0, getAuthorizationHeader: 0, getJWT: 0, getTokenResponse: 0, invalidateToken: 0};
-  const strategy: AuthStrategy = {
+  const strategy: UserAuthStrategy = {
     async fetch() {
       calls.fetch++;
       return new Response(label, {status: 200});
@@ -57,8 +57,8 @@ function instrument(
   implicitFake = fakeStrategy('implicit'),
 ) {
   const internal = wrapper as unknown as {
-    pkce: AuthStrategy;
-    implicit: AuthStrategy | null;
+    pkce: UserAuthStrategy;
+    implicit: UserAuthStrategy | null;
   };
   const pkceCalls = {fetch: 0, getAuthorizationHeader: 0, getJWT: 0, getTokenResponse: 0};
   const throwOrReturn = async <T>(value: T): Promise<T> => {
@@ -218,11 +218,11 @@ describe('auth/oauth-pkce-fallback', () => {
     it('builds a real ImplicitOAuthStrategy from the PKCE config when falling back', async () => {
       const wrapper = new PkceWithImplicitFallbackStrategy({clientId: 'c', scopes: ['a']});
       // Only stub the PKCE side so the real getImplicit() runs.
-      const internal = wrapper as unknown as {pkce: AuthStrategy};
+      const internal = wrapper as unknown as {pkce: UserAuthStrategy};
       internal.pkce.fetch = async () => {
         throw GRANT_ERROR;
       };
-      const built = (wrapper as unknown as {getImplicit: () => AuthStrategy}).getImplicit();
+      const built = (wrapper as unknown as {getImplicit: () => UserAuthStrategy}).getImplicit();
       expect(built).to.be.instanceOf(ImplicitOAuthStrategy);
     });
   });
