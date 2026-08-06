@@ -4,34 +4,28 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {
-  InstanceCommand,
-  TableRenderer,
-  columnFlagsFor,
-  selectColumns,
-  type ColumnDef,
-} from '@salesforce/b2c-tooling-sdk/cli';
-import {searchBmUsers, type BmUser, type BmUserSearchResult} from '@salesforce/b2c-tooling-sdk/operations/bm-users';
+import {BmCommand, TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
+import {type ListUsersResult, type UserInfo} from '@salesforce/b2c-tooling-sdk/operations/bm-users';
 import {t} from '../../../i18n/index.js';
 
-const COLUMNS: Record<string, ColumnDef<BmUser>> = {
+const COLUMNS: Record<string, ColumnDef<UserInfo>> = {
   login: {header: 'Login', get: (u) => u.login || '-'},
   email: {header: 'Email', get: (u) => u.email || '-'},
   name: {
     header: 'Name',
-    get: (u) => [u.first_name, u.last_name].filter(Boolean).join(' ') || '-',
+    get: (u) => [u.firstName, u.lastName].filter(Boolean).join(' ') || '-',
   },
   disabled: {header: 'Disabled', get: (u) => (u.disabled ? 'Yes' : 'No')},
   locked: {header: 'Locked', get: (u) => (u.locked ? 'Yes' : 'No')},
-  lastLogin: {header: 'Last Login', get: (u) => u.last_login_date || '-'},
-  externalId: {header: 'External ID', get: (u) => u.external_id || '-', extended: true},
+  lastLogin: {header: 'Last Login', get: (u) => u.lastLoginDate || '-'},
+  externalId: {header: 'External ID', get: (u) => u.externalId || '-', extended: true},
 };
 
 const DEFAULT_COLUMNS = ['login', 'name', 'disabled', 'locked', 'lastLogin'];
 
 const tableRenderer = new TableRenderer(COLUMNS);
 
-export default class BmUsersSearch extends InstanceCommand<typeof BmUsersSearch> {
+export default class BmUsersSearch extends BmCommand<typeof BmUsersSearch> {
   static description = t(
     'commands.bm.users.search.description',
     'Search Business Manager users by login, email, name, lock state, or disabled state',
@@ -89,7 +83,7 @@ export default class BmUsersSearch extends InstanceCommand<typeof BmUsersSearch>
     ...columnFlagsFor(COLUMNS),
   };
 
-  async run(): Promise<BmUserSearchResult> {
+  async run(): Promise<ListUsersResult> {
     this.requireOAuthCredentials();
 
     const hostname = this.resolvedConfig.values.hostname!;
@@ -110,7 +104,8 @@ export default class BmUsersSearch extends InstanceCommand<typeof BmUsersSearch>
 
     this.log(t('commands.bm.users.search.searching', 'Searching users on {{hostname}}...', {hostname}));
 
-    const result = await searchBmUsers(this.instance, {
+    const backend = this.createUsersBackend();
+    const result = await backend.searchUsers({
       query: parsedQuery,
       searchPhrase: flags['search-phrase'],
       login: flags.login,

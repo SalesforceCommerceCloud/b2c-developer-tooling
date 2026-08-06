@@ -4,7 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {findCartridgesSafe} from '../workspace-discovery.js';
-import {searchJobExecutions, type JobExecution} from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import type {JobExecution} from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import {createJobsCompatibilityBackend} from '@salesforce/b2c-tooling-sdk';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {showThrottledError} from '../notify.js';
@@ -864,13 +865,14 @@ export class JobsTreeDataProvider implements vscode.TreeDataProvider<JobsTreeNod
     if (this.discoveryExecutionCache) return;
 
     try {
+      const jobsBackend = createJobsCompatibilityBackend(instance);
       const discoveredExecutions: JobExecution[] = [];
       const scanLimit = getJobDiscoveryScanLimit();
       let start = 0;
 
       while (start < scanLimit) {
         const count = Math.min(JOBS_FETCH_LIMIT, scanLimit - start);
-        const result = await searchJobExecutions(instance, {
+        const result = await jobsBackend.searchJobExecutions({
           count,
           start,
           sortBy: 'start_time',

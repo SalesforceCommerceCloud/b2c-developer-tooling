@@ -75,16 +75,18 @@ When OCAPI direct permissions for `/sites/*/cartridges` are unavailable, cartrid
 
 **Key flags (inherited from InstanceCommand):**
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--server` | `-s` | B2C instance hostname (env: `SFCC_SERVER`) |
-| `--json` | | Output full site data as JSON |
-| `--instance` | | Named instance from config |
-| `--debug` | | Enable debug logging |
+| Flag         | Short | Description                                |
+| ------------ | ----- | ------------------------------------------ |
+| `--server`   | `-s`  | B2C instance hostname (env: `SFCC_SERVER`) |
+| `--json`     |       | Output full site data as JSON              |
+| `--instance` |       | Named instance from config                 |
+| `--debug`    |       | Enable debug logging                       |
 
 **Output columns:** ID, Display Name, Status (storefront_status).
 
-**JSON output** returns the full OCAPI sites response including all site properties (useful for extracting channel IDs, custom preferences, and other site metadata not shown in the table).
+**JSON output** returns the full site objects including all properties (useful for extracting channel IDs, custom preferences, and other site metadata not shown in the table).
+
+Site reads and cartridge-path writes run over SCAPI (the `site/sites` API) when `shortCode`, `tenantId`, and the `sfcc.sites` / `sfcc.sites.rw` scopes are configured. `auto` temporarily falls back to deprecated OCAPI on safe SCAPI rejections, and writes can fall back again to site archive import when direct APIs are unavailable.
 
 ## Common Use Cases
 

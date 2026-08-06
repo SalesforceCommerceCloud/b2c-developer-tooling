@@ -5,24 +5,32 @@ description: Manage Business Manager users, access roles, role permissions, and 
 
 # B2C Business Manager Users, Roles, and Access Keys
 
-Use the `b2c bm` commands to administer instance-level Business Manager resources via the OCAPI Data API. These commands target a specific Commerce Cloud instance — pass `--server`/`-s` or set the active instance in `dw.json` first.
+Use the `b2c bm` commands to administer instance-level Business Manager resources (users, roles, access keys) over SCAPI. These commands target a specific Commerce Cloud instance — pass `--server`/`-s` or set the active instance in `dw.json` first.
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli bm whoami`).
 
 For **Account Manager** user/role/client management (cross-instance, scoped to tenants), see the `b2c-cli:b2c-am` skill instead.
 
+## API Backend
+
+`bm users` (list, get, portable search, update, delete) and `bm roles` (all subcommands including permissions) run over the SCAPI Merchant Users / Merchant Roles APIs. Configure `shortCode`, `tenantId`, and the `sfcc.users(.rw)` / `sfcc.roles(.rw)` scopes to use SCAPI. Search is implemented by filtering the paginated SCAPI user listing.
+
+OCAPI-only operations (no SCAPI equivalent, unavailable on OCAPI-disabled instances): raw `bm users search --query` JSON, `bm whoami`, and `bm access-key *`.
+
+OCAPI is deprecated and disabled on newer instances. `--api-backend auto` (the default) falls back on safe SCAPI capability/auth/request rejections; force a backend with `--api-backend scapi|ocapi` if needed. SCAPI updates `disabled` by reading the current user and preserving its writable fields through PUT because PATCH omits that field.
+
 ## Authentication
 
 The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables, `dw.json` in the current or parent directories, `~/.mobify`, `package.json`, and configuration plugins. **Flags like `--server`, `--client-id`, and `--client-secret` are usually unnecessary** — only pass them to override what's auto-detected. Run `b2c setup inspect` to see the resolved configuration and which source provided each value. For precedence and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
-Most BM commands accept either client credentials or browser-based user auth. A handful require a *real BM user identity* and the CLI defaults those to user-auth automatically.
+SCAPI currently requires client credentials or JWT Bearer; it does not support browser-based user auth. User auth continues to work through OCAPI and WebDAV, and `auto` selects OCAPI for that flow. A handful of OCAPI endpoints require a _real BM user identity_ and default to user auth.
 
-| Command group | Default auth | Why |
-|---|---|---|
-| `b2c bm roles ...` | client-credentials → jwt → implicit | OCAPI permissions for `/roles` |
-| `b2c bm users {list,get,search,update,delete}` | client-credentials → jwt → implicit | OCAPI permissions for `/users` |
-| `b2c bm whoami` | **implicit (browser)** | OCAPI `/users/this` requires the token to resolve to a BM user |
-| `b2c bm access-key {get,create,set,delete}` | **implicit (browser)** | OCAPI access-key endpoints require "a valid user" plus `Manage_Users_Access_Keys` permission |
+| Command group                                  | Default auth                        | Why                                                                                          |
+| ---------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------- |
+| `b2c bm roles ...`                             | client-credentials → jwt → implicit | OCAPI permissions for `/roles`                                                               |
+| `b2c bm users {list,get,search,update,delete}` | client-credentials → jwt → implicit | OCAPI permissions for `/users`                                                               |
+| `b2c bm whoami`                                | **implicit (browser)**              | OCAPI `/users/this` requires the token to resolve to a BM user                               |
+| `b2c bm access-key {get,create,set,delete}`    | **implicit (browser)**              | OCAPI access-key endpoints require "a valid user" plus `Manage_Users_Access_Keys` permission |
 
 Override the default with `--auth-methods client-credentials` (or `--client-secret` flags) when your service-client setup is configured to issue user-bearing tokens.
 
@@ -73,7 +81,7 @@ The permissions JSON has four sections: `functional`, `module`, `locale`, and `w
 
 ## Business Manager Users
 
-Most production instances use SSO with Account Manager — creating *local* BM users is rejected with `LocalUserCreationException`. These commands focus on **read/search/update/delete** for AM-managed users plus the per-user access-key administration below.
+These commands cover the full lifecycle — **create/read/search/update/delete** — for BM users, plus the per-user access-key administration below. Note that `bm users create` is a create-or-replace that only works on instances configured to allow _local_ BM users; most production instances use SSO with Account Manager and reject it with `LocalUserCreationException`, in which case users are provisioned in Account Manager and managed here for the rest of their lifecycle.
 
 ```bash
 # list (default 25)
@@ -84,6 +92,11 @@ b2c bm users list --columns login,email,lastLogin  # custom column set
 
 # get one user by login (email)
 b2c bm users get user@example.com
+
+# create a user (create-or-replace; --email required, --role repeatable)
+# only on instances that allow local users — else LocalUserCreationException
+b2c bm users create user@example.com --email user@example.com
+b2c bm users create user@example.com --email user@example.com --first-name Jane --last-name Doe --role Administrator
 
 # search by attribute (any combination of flags)
 b2c bm users search --search-phrase smith
@@ -118,11 +131,11 @@ Defaults to browser-based user-auth — a fresh shell will trigger an `b2c auth 
 
 Access keys let SSO-managed BM users authenticate to non-OAuth surfaces (WebDAV, classic OCAPI/SCAPI Basic auth, or Storefront diagnostics). Three scopes exist; pick the one matching the surface you need to use.
 
-| Scope | Used for |
-|---|---|
+| Scope                         | Used for                                              |
+| ----------------------------- | ----------------------------------------------------- |
 | `WEBDAV_AND_STUDIO` (default) | WebDAV uploads (cartridge sync, IMPEX), Studio access |
-| `AGENT_USER_AND_OCAPI` | Customer Service Center (CSC) and OCAPI Basic auth |
-| `STOREFRONT` | Storefront diagnostic / agent login passwords |
+| `AGENT_USER_AND_OCAPI`        | Customer Service Center (CSC) and OCAPI Basic auth    |
+| `STOREFRONT`                  | Storefront diagnostic / agent login passwords         |
 
 `[LOGIN]` is **optional** on every access-key command — when omitted, the CLI calls `bm whoami` first and operates on your own user. Passing an explicit login lets administrators manage someone else's keys (requires `Manage_Users_Access_Keys` permission).
 

@@ -112,11 +112,19 @@ b2c code activate --reload
 b2c code delete <version-name>
 ```
 
+### API Backend
+
+`code list`, `code activate`, `code delete`, and the active-version discovery / activate / reload steps in `code deploy` run over SCAPI. Configure `shortCode`, `tenantId`, and the `sfcc.scripts` / `sfcc.scripts.rw` scopes and they work out of the box. Read scope (`sfcc.scripts`) covers `code list` / discovery; write scope (`sfcc.scripts.rw`) covers activate, delete, reload, and the `--activate` / `--reload` flags on deploy.
+
+`code deploy` (file upload itself), `code download`, and `code watch` always use WebDAV — only the surrounding code-version operations use SCAPI.
+
+OCAPI is deprecated and disabled on newer instances. `--api-backend auto` (the default) falls back to the OCAPI Data API on safe SCAPI capability/auth/request rejections; force a backend with `--api-backend scapi|ocapi` if needed. The `--reload` flag forces a code cache reload as activate(alternate) + activate(target), using whichever backend the command selected — so it works on OCAPI-disabled instances when SCAPI is configured.
+
 ### More Commands
 
 See `b2c code --help` for a full list of available commands and options in the `code` topic.
 
-> **Note:** `b2c code deploy` uploads cartridge *code* to an instance. To manage which cartridges are *active on a site* (the cartridge path), see the `b2c-cli:b2c-sites` skill for the `b2c sites cartridges` commands.
+> **Note:** `b2c code deploy` uploads cartridge _code_ to an instance. To manage which cartridges are _active on a site_ (the cartridge path), see the `b2c-cli:b2c-sites` skill for the `b2c sites cartridges` commands.
 
 ## Related Skills
 

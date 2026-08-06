@@ -22,6 +22,7 @@
     "../packages/b2c-tooling-sdk/src/operations/bm-roles/index.ts",
     "../packages/b2c-tooling-sdk/src/operations/bm-users/index.ts",
     "../packages/b2c-tooling-sdk/src/operations/sites/index.ts",
+    "../packages/b2c-tooling-sdk/src/operations/catalogs/index.ts",
     "../packages/b2c-tooling-sdk/src/operations/orgs/index.ts",
     "../packages/b2c-tooling-sdk/src/slas/index.ts",
     "../packages/b2c-tooling-sdk/src/safety/index.ts",

@@ -10,6 +10,18 @@ import sinon from 'sinon';
 import JobWait from '../../../src/commands/job/wait.js';
 import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
+function makeDispatcherFake() {
+  const runner = sinon.stub();
+  return {
+    runner,
+    dispatcher: {
+      active: 'scapi' as const,
+      run: runner,
+      runScapiOnly: sinon.stub(),
+    },
+  };
+}
+
 describe('job wait', () => {
   const hooks = createIsolatedConfigHooks();
 
@@ -21,23 +33,27 @@ describe('job wait', () => {
     return createTestCommand(JobWait, hooks.getConfig(), flags, args);
   }
 
-  it('waits using wrapper without real polling', async () => {
+  it('waits using dispatcher polling', async () => {
     const command: any = await createCommand({'poll-interval': 1, json: true}, {jobId: 'my-job', executionId: 'e1'});
 
-    const instance = {config: {hostname: 'example.com'}};
-
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'instance').get(() => instance);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', tenantId: 'tenant_test'}}));
+    sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'jsonEnabled').returns(true);
 
-    const waitStub = sinon.stub().resolves({id: 'e1', execution_status: 'finished'});
-    command.operations = {...command.operations, waitForJob: waitStub};
+    const {runner, dispatcher} = makeDispatcherFake();
+    runner.resolves({
+      id: 'e1',
+      jobId: 'my-job',
+      executionStatus: 'finished',
+      exitStatus: {code: 'OK', status: 'ok'},
+    });
+    sinon.stub(command, 'createJobsDispatcher').returns(dispatcher);
 
     const result = await command.run();
 
-    expect(waitStub.calledOnce).to.equal(true);
-    expect(waitStub.getCall(0).args[0]).to.equal(instance);
+    expect(runner.called).to.equal(true);
     expect(result.id).to.equal('e1');
   });
 });

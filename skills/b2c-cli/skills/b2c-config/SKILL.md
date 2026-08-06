@@ -28,15 +28,15 @@ When in doubt, **always run `b2c setup inspect` first** — it shows the resolve
 
 Field names in `dw.json` accept **both camelCase and kebab-case** — they're equivalent. For example:
 
-| Either form works |
-|---|
-| `clientId` ≡ `client-id` |
-| `clientSecret` ≡ `client-secret` |
-| `codeVersion` ≡ `code-version` |
-| `tenantId` ≡ `tenant-id` |
-| `shortCode` ≡ `short-code` ≡ `scapi-shortcode` |
+| Either form works                                                         |
+| ------------------------------------------------------------------------- |
+| `clientId` ≡ `client-id`                                                  |
+| `clientSecret` ≡ `client-secret`                                          |
+| `codeVersion` ≡ `code-version`                                            |
+| `tenantId` ≡ `tenant-id`                                                  |
+| `shortCode` ≡ `short-code` ≡ `scapi-shortcode`                            |
 | `webdavHostname` ≡ `webdav-hostname` ≡ `webdav-server` ≡ `secureHostname` |
-| `certificatePassphrase` ≡ `certificate-passphrase` ≡ `passphrase` |
+| `certificatePassphrase` ≡ `certificate-passphrase` ≡ `passphrase`         |
 
 Legacy aliases like `server` (for `hostname`) are also still supported. If a value isn't being picked up, casing is rarely the cause — check spelling, then run `b2c setup inspect` to see what the CLI actually parsed.
 
@@ -53,7 +53,7 @@ Most commands that interact with a B2C Commerce instance require authentication.
 
 ### `--user-auth` Flag
 
-Many commands support `--user-auth` to use browser-based implicit OAuth instead of client credentials. This is useful when:
+Many commands support `--user-auth` to use browser-based OAuth instead of client credentials. SCAPI Admin APIs do not currently support this flow; migrated commands use OCAPI in `auto` mode, while explicit SCAPI reports an authentication error. User auth remains useful when:
 
 - You don't have a `clientSecret` configured
 - You need user-level permissions (e.g., Account Manager admin roles)
@@ -169,6 +169,10 @@ b2c setup instance create staging --hostname staging.example.com
 # Create and set as active
 b2c setup instance create staging --hostname staging.example.com --active
 
+# Optionally save SCAPI coordinates and use SCAPI-first active-version detection
+b2c setup instance create staging --hostname staging.example.com \
+  --short-code kv7kzm78 --tenant-id zzxy_prd --api-backend auto
+
 # Non-interactive mode (for scripts)
 b2c setup instance create staging \
   --hostname staging.example.com \
@@ -176,6 +180,8 @@ b2c setup instance create staging \
   --password secret \
   --force
 ```
+
+`shortCode` and `tenantId` are optional. When present with stateless OAuth, setup tries SCAPI first to detect the active code version; otherwise `auto` uses OCAPI. If detection fails, interactive setup reports the reason and allows manual code-version entry.
 
 ### Switch Active Instance
 
@@ -213,7 +219,7 @@ The `setup inspect` command displays configuration organized by category:
 Each value shows its source in brackets:
 
 - `[DwJsonSource]` — Value from dw.json file
-- `[EnvSource]` — Value from an SFCC_* environment variable
+- `[EnvSource]` — Value from an SFCC\_\* environment variable
 - `[MobifySource]` — Value from ~/.mobify file
 - `[PackageJsonSource]` — Value from package.json `b2c` key
 - Plugin-provided source names (e.g., a credential plugin)
@@ -239,7 +245,7 @@ When troubleshooting, check the source column to understand which configuration 
 
 - The CLI is not finding `clientId`/`clientSecret`. Run `b2c setup inspect` and check the OAuth section.
 - Confirm `dw.json` exists in the current directory or a parent (the CLI walks up from `cwd`).
-- Confirm `SFCC_CLIENT_ID`/`SFCC_CLIENT_SECRET` env vars are exported in *this* shell, not just defined elsewhere.
+- Confirm `SFCC_CLIENT_ID`/`SFCC_CLIENT_SECRET` env vars are exported in _this_ shell, not just defined elsewhere.
 - Credential groups are **atomic**: if `clientId` comes from one source and `clientSecret` from a lower-priority one, the lower-priority secret is discarded. Provide both from the same source, or use a higher-priority override.
 
 ### Command targets the wrong instance
@@ -258,7 +264,7 @@ When troubleshooting, check the source column to understand which configuration 
 
 ### 401/403 errors on SCAPI/OCAPI calls
 
-- Confirm the resolved `clientId`/`clientSecret` belong to the *target* instance (Account Manager scopes the API client per tenant).
+- Confirm the resolved `clientId`/`clientSecret` belong to the _target_ instance (Account Manager scopes the API client per tenant).
 - Check OAuth scopes: required scopes vary by command (e.g., `sfcc.cdn-zones`, `sfcc.orders`). Pass `--auth-scope` or set `SFCC_OAUTH_SCOPES`.
 - For SCAPI commands, verify `tenantId` is correct — tenant IDs use underscores (`zzxy_001`), hostnames use hyphens (`zzxy-001`). The CLI normalizes between them, but a wrong tenant ID will produce 403s.
 

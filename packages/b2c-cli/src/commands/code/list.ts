@@ -5,16 +5,16 @@
  */
 import {ux} from '@oclif/core';
 import {
-  InstanceCommand,
+  CodeCommand,
   TableRenderer,
   columnFlagsFor,
   selectColumns,
   type ColumnDef,
 } from '@salesforce/b2c-tooling-sdk/cli';
-import {listCodeVersions, type CodeVersion, type CodeVersionResult} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {type CodeVersionInfo} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {t, withDocs} from '../../i18n/index.js';
 
-const COLUMNS: Record<string, ColumnDef<CodeVersion>> = {
+const COLUMNS: Record<string, ColumnDef<CodeVersionInfo>> = {
   id: {
     header: 'ID',
     get: (v) => v.id || '-',
@@ -29,7 +29,7 @@ const COLUMNS: Record<string, ColumnDef<CodeVersion>> = {
   },
   lastModified: {
     header: 'Last Modified',
-    get: (v) => (v.last_modification_time ? new Date(v.last_modification_time).toLocaleString() : '-'),
+    get: (v) => (v.lastModificationTime ? new Date(v.lastModificationTime).toLocaleString() : '-'),
   },
   cartridges: {
     header: 'Cartridges',
@@ -41,7 +41,13 @@ const DEFAULT_COLUMNS = ['id', 'active', 'rollback', 'lastModified', 'cartridges
 
 const tableRenderer = new TableRenderer(COLUMNS);
 
-export default class CodeList extends InstanceCommand<typeof CodeList> {
+interface CodeListResult {
+  count: number;
+  data: CodeVersionInfo[];
+  total: number;
+}
+
+export default class CodeList extends CodeCommand<typeof CodeList> {
   static description = withDocs(
     t('commands.code.list.description', 'List code versions on a B2C Commerce instance'),
     '/cli/code.html#b2c-code-list',
@@ -63,27 +69,27 @@ export default class CodeList extends InstanceCommand<typeof CodeList> {
 
   static hiddenAliases = ['code:list'];
 
-  async run(): Promise<CodeVersionResult> {
+  async run(): Promise<CodeListResult> {
     this.requireOAuthCredentials();
 
     const hostname = this.resolvedConfig.values.hostname!;
+    const backend = this.createScriptsBackend();
+    this.logger.debug(`Using ${backend.name} backend for code list`);
 
     this.log(t('commands.code.list.fetching', 'Fetching code versions from {{hostname}}...', {hostname}));
 
-    const versions = await listCodeVersions(this.instance);
+    const versions = await backend.listCodeVersions();
 
-    const result: CodeVersionResult = {
+    const result: CodeListResult = {
       count: versions.length,
       data: versions,
       total: versions.length,
     };
 
-    // In JSON mode, just return the data - oclif handles output to stdout
     if (this.jsonEnabled()) {
       return result;
     }
 
-    // Human-readable table output to stdout
     if (versions.length === 0) {
       ux.stdout(t('commands.code.list.noVersions', 'No code versions found.'));
       return result;

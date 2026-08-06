@@ -16,7 +16,11 @@ import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
-import {findAndDeployCartridges, getActiveCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {
+  createScriptsBackend,
+  findAndDeployCartridges,
+  getActiveCodeVersion,
+} from '@salesforce/b2c-tooling-sdk/operations/code';
 import type {DeployResult, DeployOptions, CodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
@@ -125,11 +129,14 @@ function createCartridgeDeployTool(
         const logger = getLogger();
 
         try {
+          const scriptsBackend = createScriptsBackend({instance});
           // If no code version specified, get the active one
           let codeVersion = instance.config.codeVersion;
           if (!codeVersion) {
             logger.debug('No code version specified, getting active version...');
-            const active = await getActiveCodeVersionFn(instance);
+            const active = injections?.getActiveCodeVersion
+              ? await getActiveCodeVersionFn(instance)
+              : await scriptsBackend.getActiveCodeVersion();
             if (!active?.id) {
               throw new Error(
                 'No code version specified and no active code version found. ' +
@@ -147,6 +154,7 @@ function createCartridgeDeployTool(
 
           // Parse options
           const options: DeployOptions = {
+            scriptsBackend,
             include: args.cartridges,
             exclude: args.exclude,
             reload: args.reload,

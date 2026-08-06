@@ -1,0 +1,793 @@
+openapi: 3.0.3
+info:
+    title: Jobs
+    version: 1.0.0
+    x-api-type: Admin
+    x-api-family: Operation
+servers:
+  -     url: "https://{shortCode}.api.commercecloud.salesforce.com/operation/jobs/v1"
+        variables:
+                shortCode:
+                          default: 123456gf
+paths:
+    /organizations/{organizationId}/job-execution-search:
+          post:
+                  operationId: searchJobExecutions
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                  requestBody:
+                            content:
+                                        application/json:
+                                                      schema:
+                                                                      $ref: "#/components/schemas/JobExecutionSearchRequest"
+                            required: true
+                  responses:
+                            200:
+                                        description: Returns job execution search results
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/JobExecutionSearchResult"
+                            400:
+                                        description: Bad Request - Malformed search query or invalid parameters
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            401:
+                                        description: Your access token is invalid or expired and can’t be used to identify a user.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            403:
+                                        description: Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.jobs, sfcc.jobs.rw]
+    /organizations/{organizationId}/jobs/{jobId}/executions:
+          post:
+                  operationId: createJobExecution
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: jobId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  requestBody:
+                            content:
+                                        application/json:
+                                                      schema:
+                                                                      $ref: "#/components/schemas/JobExecutionRequest"
+                            required: false
+                  responses:
+                            200:
+                                        description: The job execution was successfully created
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/JobExecution"
+                            400:
+                                        description: Bad Request - Invalid job execution request
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            401:
+                                        description: Your access token is invalid or expired and can’t be used to identify a user.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            403:
+                                        description: Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            404:
+                                        description: Job not found
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.jobs.rw]
+    /organizations/{organizationId}/jobs/{jobId}/executions/{executionId}:
+          get:
+                  operationId: getJobExecution
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: jobId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                    -           name: executionId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  responses:
+                            200:
+                                        description: Returns the job execution details
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/JobExecution"
+                            401:
+                                        description: Your access token is invalid or expired and can’t be used to identify a user.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            403:
+                                        description: Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            404:
+                                        description: Job execution not found
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.jobs, sfcc.jobs.rw]
+          delete:
+                  operationId: deleteJobExecution
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: jobId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                    -           name: executionId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  responses:
+                            204:
+                                        description: The job execution was successfully deleted
+                            401:
+                                        description: Your access token is invalid or expired and can’t be used to identify a user.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            403:
+                                        description: Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            404:
+                                        description: Job execution not found
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.jobs.rw]
+components:
+    schemas:
+          OrganizationId:
+                  type: string
+                  maxLength: 32
+                  minLength: 1
+          Query:
+                  type: object
+                  additionalProperties: false
+                  maxProperties: 1
+                  minProperties: 1
+                  properties:
+                            boolQuery:
+                                        $ref: "#/components/schemas/BoolQuery"
+                            filteredQuery:
+                                        $ref: "#/components/schemas/FilteredQuery"
+                            matchAllQuery:
+                                        $ref: "#/components/schemas/MatchAllQuery"
+                            nestedQuery:
+                                        $ref: "#/components/schemas/NestedQuery"
+                            termQuery:
+                                        $ref: "#/components/schemas/TermQuery"
+                            textQuery:
+                                        $ref: "#/components/schemas/TextQuery"
+          BoolQuery:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            must:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Query"
+                                                      type: string
+                            mustNot:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Query"
+                                                      type: string
+                            should:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Query"
+                                                      type: string
+          Filter:
+                  type: object
+                  additionalProperties: false
+                  maxProperties: 1
+                  minProperties: 1
+                  properties:
+                            boolFilter:
+                                        $ref: "#/components/schemas/BoolFilter"
+                            queryFilter:
+                                        $ref: "#/components/schemas/QueryFilter"
+                            range2Filter:
+                                        $ref: "#/components/schemas/Range2Filter"
+                            rangeFilter:
+                                        $ref: "#/components/schemas/RangeFilter"
+                            termFilter:
+                                        $ref: "#/components/schemas/TermFilter"
+          BoolFilter:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            filters:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Filter"
+                                                      type: string
+                            operator:
+                                        type: string
+                                        enum: [and, or, not]
+                  required: [operator]
+          QueryFilter:
+                  type: object
+                  properties:
+                            query:
+                                        $ref: "#/components/schemas/Query"
+                  required: [query]
+          Field:
+                  type: string
+                  maxLength: 260
+          Range2Filter:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            filterMode:
+                                        type: string
+                                        default: overlap
+                                        enum: [overlap, containing, contained]
+                            fromField:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/Field"
+                            fromInclusive:
+                                        type: boolean
+                                        default: true
+                            fromValue: {}
+                            toField:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/Field"
+                            toInclusive:
+                                        type: boolean
+                                        default: true
+                            toValue: {}
+                  required: [fromField, toField]
+          RangeFilter:
+                  type: object
+                  properties:
+                            field:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/Field"
+                            from:
+                                        oneOf:
+                                          -               type: string
+                                                          format: date-time
+                                          -               type: integer
+                                          -               type: number
+                            fromInclusive:
+                                        type: boolean
+                                        default: true
+                            to:
+                                        oneOf:
+                                          -               type: string
+                                                          format: date-time
+                                          -               type: integer
+                                          -               type: number
+                            toInclusive:
+                                        type: boolean
+                                        default: true
+                  required: [field]
+          TermFilter:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            field:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/Field"
+                            operator:
+                                        type: string
+                                        enum: [is, one_of, is_null, is_not_null, less, greater, not_in, neq]
+                            values:
+                                        type: array
+                                        items:
+                                                      type: string
+                  required: [field, operator]
+          FilteredQuery:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            filter:
+                                        $ref: "#/components/schemas/Filter"
+                            query:
+                                        $ref: "#/components/schemas/Query"
+                  required: [filter, query]
+          MatchAllQuery:
+                  type: object
+          NestedQuery:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            path:
+                                        type: string
+                                        maxLength: 2048
+                            query:
+                                        $ref: "#/components/schemas/Query"
+                            scoreMode:
+                                        type: string
+                                        enum: [avg, total, max, none]
+                  required: [path, query]
+          TermQuery:
+                  type: object
+                  properties:
+                            fields:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Field"
+                                                      type: string
+                                        minItems: 1
+                            operator:
+                                        type: string
+                                        enum: [is, one_of, is_null, is_not_null, less, greater, not_in, neq]
+                            values:
+                                        type: array
+                                        items:
+                                                      oneOf:
+                                                        -                 type: string
+                                                        -                 type: number
+                                                        -                 type: boolean
+                                                        -                 type: integer
+                                                      type: string
+                  required: [fields, operator]
+          TextQuery:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            fields:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Field"
+                                                      type: string
+                                        minItems: 1
+                            searchPhrase:
+                                        type: string
+                  required: [fields, searchPhrase]
+          Sort:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            field:
+                                        type: string
+                                        maxLength: 256
+                            sortOrder:
+                                        type: string
+                                        default: asc
+                                        enum: [asc, desc]
+                  required: [field]
+          Offset:
+                  type: integer
+                  format: int32
+                  default: 0
+                  minimum: 0
+          SearchRequest:
+                  type: object
+                  properties:
+                            limit:
+                                        type: integer
+                                        format: int32
+                                        maximum: 200
+                                        minimum: 1
+                            query:
+                                        $ref: "#/components/schemas/Query"
+                            sorts:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Sort"
+                                                      type: string
+                            offset:
+                                        $ref: "#/components/schemas/Offset"
+                  required: [query]
+          JobExecutionSearchRequest:
+                  allOf:
+                    -           $ref: "#/components/schemas/SearchRequest"
+          Total:
+                  type: integer
+                  format: int32
+                  default: 0
+                  minimum: 0
+          ResultBase:
+                  type: object
+                  properties:
+                            limit:
+                                        type: integer
+                                        format: int32
+                            total:
+                                        $ref: "#/components/schemas/Total"
+                  required: [limit, total]
+          PaginatedResultBase:
+                  allOf:
+                    -           $ref: "#/components/schemas/ResultBase"
+                  properties:
+                            offset:
+                                        $ref: "#/components/schemas/Offset"
+                  required: [limit, offset, total]
+          PaginatedSearchResult:
+                  additionalProperties: false
+                  allOf:
+                    -           $ref: "#/components/schemas/PaginatedResultBase"
+                  properties:
+                            query:
+                                        $ref: "#/components/schemas/Query"
+                            sorts:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Sort"
+                                                      type: string
+                            hits:
+                                        type: array
+                                        items:
+                                                      type: object
+                  required: [query]
+          ExecutionStatus:
+                  type: string
+                  enum: [pending, running, pausing, paused, resuming, resumed, restarting, restarted, retrying, retried, aborting, aborted, finished, unknown]
+          ExitStatus:
+                  type: object
+                  properties:
+                            code:
+                                        type: string
+                                        maxLength: 256
+                            message:
+                                        type: string
+                                        maxLength: 4000
+                            status:
+                                        type: string
+                                        enum: [ok, error]
+          StatusMetadata:
+                  type: object
+                  properties:
+                            clientId:
+                                        type: string
+                                        maxLength: 256
+                            reason:
+                                        type: string
+                                        maxLength: 4000
+                            userLogin:
+                                        type: string
+                                        maxLength: 256
+          JobParameter:
+                  type: object
+                  properties:
+                            name:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                                        pattern: \S|(\S(.*)\S)
+                            value:
+                                        type: string
+                                        maxLength: 1000
+                                        minLength: 0
+                                        pattern: \S|(\S(.*)\S)
+                  required: [name, value]
+          JobExecutionRetryInformation:
+                  type: object
+                  properties:
+                            currentRetryAttempt:
+                                        type: integer
+                                        format: int32
+                            maxRetries:
+                                        type: integer
+                                        format: int32
+          JobExecutionContinueInformation:
+                  type: object
+                  properties:
+                            isPending:
+                                        type: boolean
+                            continueStatus:
+                                        type: string
+                                        maxLength: 256
+          JobStepExecution:
+                  type: object
+                  properties:
+                            id:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            stepId:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            stepDescription:
+                                        type: string
+                                        maxLength: 4000
+                            stepTypeId:
+                                        type: string
+                                        maxLength: 256
+                            stepTypeInfo:
+                                        type: string
+                                        maxLength: 4000
+                            executionScope:
+                                        type: string
+                                        maxLength: 256
+                            executionStatus:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/ExecutionStatus"
+                            status:
+                                        type: string
+                                        maxLength: 256
+                            startTime:
+                                        type: string
+                                        format: date-time
+                            endTime:
+                                        type: string
+                                        format: date-time
+                            duration:
+                                        type: integer
+                                        format: int64
+                            modificationTime:
+                                        type: string
+                                        format: date-time
+                            statusMetadata:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/StatusMetadata"
+                            exitStatus:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/ExitStatus"
+                            includeStepsFromJobId:
+                                        type: string
+                                        maxLength: 256
+                            isChunkOriented:
+                                        type: boolean
+                            chunkSize:
+                                        type: integer
+                                        format: int32
+                            itemFilterCount:
+                                        type: integer
+                                        format: int32
+                            itemWriteCount:
+                                        type: integer
+                                        format: int32
+                            totalItemCount:
+                                        type: integer
+                                        format: int64
+          JobExecution:
+                  type: object
+                  properties:
+                            id:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            jobId:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            jobDescription:
+                                        type: string
+                                        maxLength: 4000
+                            clientId:
+                                        type: string
+                                        maxLength: 256
+                            userLogin:
+                                        type: string
+                                        maxLength: 256
+                            executionStatus:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/ExecutionStatus"
+                            status:
+                                        type: string
+                                        maxLength: 256
+                            startTime:
+                                        type: string
+                                        format: date-time
+                            endTime:
+                                        type: string
+                                        format: date-time
+                            creationDate:
+                                        type: string
+                                        format: date-time
+                            duration:
+                                        type: integer
+                                        format: int64
+                            effectiveDuration:
+                                        type: integer
+                                        format: int64
+                            modificationTime:
+                                        type: string
+                                        format: date-time
+                            lastModified:
+                                        type: string
+                                        format: date-time
+                            executedServerId:
+                                        type: string
+                                        maxLength: 256
+                            exitStatus:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/ExitStatus"
+                            statusMetadata:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/StatusMetadata"
+                            isLogFileExisting:
+                                        type: boolean
+                            isRestart:
+                                        type: boolean
+                            logFilePath:
+                                        type: string
+                                        maxLength: 4000
+                            parameters:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/JobParameter"
+                                                      type: string
+                            executionScopes:
+                                        type: array
+                                        items:
+                                                      type: string
+                                                      maxLength: 256
+                            retryInformation:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/JobExecutionRetryInformation"
+                            continueInformation:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/JobExecutionContinueInformation"
+                            stepExecutions:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/JobStepExecution"
+                                                      type: string
+                  required: [id, jobId, status]
+          JobExecutionSearchResult:
+                  allOf:
+                    -           $ref: "#/components/schemas/PaginatedSearchResult"
+                  properties:
+                            hits:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/JobExecution"
+                                                      type: string
+                  required: [hits, query]
+          ErrorResponse:
+                  type: object
+                  additionalProperties: true
+                  properties:
+                            title:
+                                        type: string
+                                        maxLength: 256
+                            type:
+                                        type: string
+                                        maxLength: 2048
+                            detail:
+                                        type: string
+                            instance:
+                                        type: string
+                                        maxLength: 2048
+                  required: [detail, title, type]
+          JobExecutionRequest:
+                  type: object
+                  properties:
+                            parameters:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/JobParameter"
+                                                      type: string
+    responses:
+          401unauthorized:
+                  description: Your access token is invalid or expired and can’t be used to identify a user.
+                  content:
+                            application/problem+json:
+                                        schema:
+                                                      $ref: "#/components/schemas/ErrorResponse"
+          403forbidden:
+                  description: Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.
+                  content:
+                            application/problem+json:
+                                        schema:
+                                                      $ref: "#/components/schemas/ErrorResponse"
+    parameters:
+          organizationId:
+                  name: organizationId
+                  in: path
+                  required: true
+                  style: simple
+                  explode: false
+                  schema:
+                            $ref: "#/components/schemas/OrganizationId"
+          jobId:
+                  name: jobId
+                  in: path
+                  required: true
+                  style: simple
+                  explode: false
+                  schema:
+                            type: string
+                            maxLength: 256
+                            minLength: 1
+          executionId:
+                  name: executionId
+                  in: path
+                  required: true
+                  style: simple
+                  explode: false
+                  schema:
+                            type: string
+                            maxLength: 256
+                            minLength: 1
+    securitySchemes:
+          AmOAuth2:
+                  type: oauth2
+                  flows:
+                            clientCredentials:
+                                        tokenUrl: "https://account.demandware.com/dw/oauth2/access_token"
+                                        scopes:
+                                                      sfcc.jobs: Read access to job resources
+                                                      sfcc.jobs.rw: Read and write access to job resources

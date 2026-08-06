@@ -6,11 +6,11 @@
 import fs from 'node:fs';
 import {Args, Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
-import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {getBmRolePermissions, type BmRolePermissions} from '@salesforce/b2c-tooling-sdk/operations/bm-roles';
+import {BmCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {type RolePermissionsInfo} from '@salesforce/b2c-tooling-sdk/operations/bm-roles';
 import {t} from '../../../../i18n/index.js';
 
-export default class BmRolesPermissionsGet extends InstanceCommand<typeof BmRolesPermissionsGet> {
+export default class BmRolesPermissionsGet extends BmCommand<typeof BmRolesPermissionsGet> {
   static args = {
     role: Args.string({
       description: 'Role ID (e.g. "Administrator")',
@@ -38,12 +38,15 @@ export default class BmRolesPermissionsGet extends InstanceCommand<typeof BmRole
     }),
   };
 
-  async run(): Promise<BmRolePermissions> {
+  async run(): Promise<RolePermissionsInfo> {
     this.requireOAuthCredentials();
 
     const {role: roleId} = this.args;
     const {output} = this.flags;
     const hostname = this.resolvedConfig.values.hostname!;
+
+    const backend = this.createRolesBackend();
+    this.logger.debug(`Using ${backend.name} backend for roles permissions get`);
 
     this.log(
       t('commands.bm.roles.permissions.get.fetching', 'Fetching permissions for role {{roleId}} on {{hostname}}...', {
@@ -52,7 +55,7 @@ export default class BmRolesPermissionsGet extends InstanceCommand<typeof BmRole
       }),
     );
 
-    const permissions = await getBmRolePermissions(this.instance, roleId);
+    const permissions = await backend.getPermissions(roleId);
 
     if (output) {
       fs.writeFileSync(output, JSON.stringify(permissions, null, 2) + '\n', 'utf8');
@@ -69,7 +72,7 @@ export default class BmRolesPermissionsGet extends InstanceCommand<typeof BmRole
     return permissions;
   }
 
-  private printPermissionsSummary(roleId: string, permissions: BmRolePermissions): void {
+  private printPermissionsSummary(roleId: string, permissions: RolePermissionsInfo): void {
     const ui = cliui({width: process.stdout.columns || 80});
 
     ui.div({text: `Permissions for ${roleId}`, padding: [1, 0, 0, 0]});
@@ -82,12 +85,12 @@ export default class BmRolesPermissionsGet extends InstanceCommand<typeof BmRole
     const localeUnscoped = permissions.locale?.unscoped ?? [];
     const webdavUnscoped = permissions.webdav?.unscoped ?? [];
 
-    const sections: [string, number, string[]][] = [
+    const sections: [string, number, (string | undefined)[]][] = [
       ['Functional (organization)', functionalOrg.length, functionalOrg.map((p) => p.name)],
       ['Functional (site)', functionalSite.length, functionalSite.map((p) => p.name)],
       ['Module (organization)', moduleOrg.length, moduleOrg.map((p) => `${p.application}:${p.name}`)],
       ['Module (site)', moduleSite.length, moduleSite.map((p) => `${p.application}:${p.name}`)],
-      ['Locale', localeUnscoped.length, localeUnscoped.map((p) => p.locale_id)],
+      ['Locale', localeUnscoped.length, localeUnscoped.map((p) => p.localeId)],
       ['WebDAV', webdavUnscoped.length, webdavUnscoped.map((p) => p.folder)],
     ];
 

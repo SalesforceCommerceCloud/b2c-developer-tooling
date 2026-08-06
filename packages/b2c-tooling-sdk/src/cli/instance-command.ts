@@ -20,6 +20,7 @@ import {
   type B2COperationLifecycleHookOptions,
   type B2COperationLifecycleHookResult,
 } from './lifecycle.js';
+import {BackendDispatcher, type ApiBackendPreference} from '../compat/dispatcher.js';
 
 /**
  * Base command for B2C instance operations.
@@ -102,6 +103,12 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       allowNo: true,
       helpGroup: 'AUTH',
     }),
+    'api-backend': Flags.option({
+      description: 'API backend for operations (auto detects SCAPI availability)',
+      options: ['ocapi', 'scapi', 'auto'] as const,
+      env: 'SFCC_API_BACKEND',
+      helpGroup: 'INSTANCE',
+    })(),
   };
 
   private _instance?: B2CInstance;
@@ -183,6 +190,67 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
 
   protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
     return loadConfig(extractInstanceFlags(this.flags as Record<string, unknown>), this.getBaseConfigOptions());
+  }
+
+  /**
+   * Creates a per-command {@link BackendDispatcher} for routing operations
+   * to SCAPI or OCAPI based on the user's `--api-backend` preference.
+   *
+   * Domain command bases (e.g., `JobCommand`) typically expose a thinner
+   * helper on top of this. SDK consumers don't use the dispatcher — they
+   * call SCAPI ops or OCAPI free functions directly.
+   *
+   * @param domainName - Used in fallback log lines, e.g. `'jobs'`.
+   * @param createScapi - Builds the SCAPI ops bundle. Should return
+   *   `undefined` when SCAPI is not configured.
+   */
+  protected createDispatcher<S>(domainName: string, createScapi: () => S | undefined): BackendDispatcher<S> {
+    return new BackendDispatcher<S>(this.apiBackendPreference, createScapi, domainName);
+  }
+
+  /** Resolved `--api-backend` preference (default `'auto'`). */
+  protected get apiBackendPreference(): ApiBackendPreference {
+    return this.resolvedConfig.values.apiBackend ?? 'auto';
+  }
+
+  /**
+   * True iff this instance can reach SCAPI under `auto` mode: shortCode +
+   * tenantId are configured AND the auth flow can request the `sfcc.*` scopes
+   * each domain needs.
+   *
+   * Delegates to {@link B2CInstance.scapiClientConfig} so the eligibility rule
+   * lives in exactly one place. Only the stateless OAuth flows (client-
+   * credentials, JWT Bearer) qualify — they go back to Account Manager per
+   * request and can ask for whatever scopes the operation requires. Stateful
+   * and implicit flows hold a fixed token whose scopes were chosen at
+   * acquisition; under `auto` they would route through SCAPI with a token that
+   * AM never granted SCAPI scopes for, and the SCAPI 403 isn't a fallback
+   * trigger. Those users opt in explicitly with `--api-backend scapi`.
+   */
+  protected hasScapiConfig(): boolean {
+    if (!this.resolvedConfig.hasB2CInstanceConfig()) {
+      return false;
+    }
+    return this.instance.scapiClientConfig !== undefined;
+  }
+
+  /**
+   * Legacy dual-backend factory bridge for domains (scripts, users, roles)
+   * that have not yet migrated to the dispatcher pattern. Will be removed
+   * once those domains move to SCAPI ops + dispatcher branches in CLI.
+   *
+   * SCAPI coordinates and auth are sourced from the instance
+   * ({@link B2CInstance.scapiClientConfig}); the factory honors the instance's
+   * `apiBackend` preference. The CLI flag flows into the instance via resolved
+   * config, so passing it again here is unnecessary.
+   *
+   * @deprecated Use {@link createDispatcher} and call SCAPI ops / OCAPI
+   * functions directly from CLI commands.
+   */
+  protected createBackend<T>(
+    factory: (config: import('../clients/dual-backend-factory.js').DualBackendConfig) => T,
+  ): T {
+    return factory({instance: this.instance});
   }
 
   /**
