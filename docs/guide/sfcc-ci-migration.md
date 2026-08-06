@@ -28,12 +28,12 @@ For users who prefer the sfcc-ci workflow, the B2C CLI includes a compatibility 
 | sfcc-ci | b2c-cli |
 |---------|---------|
 | `sfcc-ci client:auth <id> <secret>` | `b2c auth client --client-id <id> --client-secret <secret>` |
-| `sfcc-ci client:auth:renew` | `b2c auth client renew` |
+| `sfcc-ci client:auth:renew` | _no equivalent_ — re-run `b2c auth client --client-id <id> --client-secret <secret>` (the CLI does not persist the client secret) |
 | `sfcc-ci client:auth:token` | `b2c auth client token` |
 | `sfcc-ci auth:login [client]` | `b2c auth login [client]` |
 | `sfcc-ci auth:logout` | `b2c auth logout` |
 
-The colon-separated forms (e.g., `b2c client:auth:renew`, `b2c auth:login`) are accepted as aliases for backwards compatibility, but the canonical syntax above is preferred.
+Colon-separated forms that still have an equivalent (for example, `b2c auth:login`) are accepted as aliases for backwards compatibility, but the canonical syntax above is preferred. `client:auth:renew` has no equivalent because the CLI no longer persists client secrets.
 
 After authenticating, subsequent commands automatically use the stored token when it is valid. See [Auth Commands](/cli/auth) for full details.
 

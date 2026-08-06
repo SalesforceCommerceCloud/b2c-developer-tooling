@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {ux} from '@oclif/core';
-import {setStoredSession, clearStoredSession, resetStatefulStoreForTesting} from '@salesforce/b2c-tooling-sdk/auth';
+import {saveAuthSession, clearAllAuthSessions, resetAuthSessionStoreForTesting} from '@salesforce/b2c-tooling-sdk/auth';
 import AuthClientToken from '../../../../src/commands/auth/client/token.js';
 import {stubCommandConfigAndLogger, makeCommandThrowOnError} from '../../../helpers/test-setup.js';
 
@@ -38,17 +38,17 @@ describe('auth client token', () => {
 
   afterEach(() => {
     sinon.restore();
-    clearStoredSession();
-    resetStatefulStoreForTesting();
+    clearAllAuthSessions();
+    resetAuthSessionStoreForTesting();
   });
 
   after(() => {
     process.env.NODE_ENV = originalEnv;
   });
 
-  function createCommand(): any {
+  function createCommand(flags: Record<string, unknown> = {}): any {
     const command = new AuthClientToken([], {} as any);
-    (command as any).flags = {};
+    (command as any).flags = flags;
     stubCommandConfigAndLogger(command);
     return command;
   }
@@ -81,17 +81,16 @@ describe('auth client token', () => {
   describe('raw output (non-JSON mode)', () => {
     it('should print raw token to stdout', async () => {
       const token = makeValidJWT();
-      setStoredSession({
+      saveAuthSession({
         clientId: 'my-client',
+        flow: 'client-credentials',
         accessToken: token,
         refreshToken: null,
-        renewBase: null,
-        user: null,
+        sub: null,
       });
 
       const command = createCommand();
       sinon.stub(command, 'jsonEnabled').returns(false);
-      // ux.stdout is already stubbed by stubCommandConfigAndLogger; get a reference to the existing stub
       const stdoutStub = ux.stdout as unknown as sinon.SinonStub;
 
       await command.run();
@@ -102,14 +101,14 @@ describe('auth client token', () => {
   });
 
   describe('JSON output', () => {
-    it('should return full token metadata', async () => {
+    it('should return full token metadata for the only stored session', async () => {
       const token = makeValidJWT();
-      setStoredSession({
+      saveAuthSession({
         clientId: 'my-client',
+        flow: 'client-credentials',
         accessToken: token,
         refreshToken: null,
-        renewBase: 'b64creds',
-        user: 'admin@example.com',
+        sub: 'admin@example.com',
       });
 
       const command = createCommand();
@@ -120,37 +119,64 @@ describe('auth client token', () => {
       expect(result.accessToken).to.equal(token);
       expect(result.clientId).to.equal('my-client');
       expect(result.user).to.equal('admin@example.com');
-      expect(result.renewable).to.be.true;
       expect(result.scopes).to.include('sfcc.products');
       expect(result.scopes).to.include('sfcc.orders');
       expect(result.expires).to.be.a('string');
     });
 
-    it('should show renewable as false when no renewBase', async () => {
-      setStoredSession({
-        clientId: 'my-client',
-        accessToken: makeValidJWT(),
+    it('should select session by --client-id when multiple are stored', async () => {
+      saveAuthSession({
+        clientId: 'client-a',
+        flow: 'client-credentials',
+        accessToken: makeValidJWT({sub: 'a'}),
         refreshToken: null,
-        renewBase: null,
-        user: null,
+      });
+      saveAuthSession({
+        clientId: 'client-b',
+        flow: 'pkce',
+        accessToken: makeValidJWT({sub: 'b'}),
+        refreshToken: 'refresh-b',
       });
 
-      const command = createCommand();
+      const command = createCommand({'client-id': 'client-b'});
       sinon.stub(command, 'jsonEnabled').returns(true);
 
       const result = await command.run();
 
-      expect(result.renewable).to.be.false;
-      expect(result.user).to.be.null;
+      expect(result.clientId).to.equal('client-b');
+    });
+
+    it('should error when multiple sessions exist and no --client-id is given', async () => {
+      saveAuthSession({
+        clientId: 'client-a',
+        flow: 'client-credentials',
+        accessToken: makeValidJWT(),
+        refreshToken: null,
+      });
+      saveAuthSession({
+        clientId: 'client-b',
+        flow: 'pkce',
+        accessToken: makeValidJWT(),
+        refreshToken: 'refresh-b',
+      });
+
+      const command = createCommand();
+      makeCommandThrowOnError(command);
+
+      try {
+        await command.run();
+        expect.fail('Should have thrown');
+      } catch (error: unknown) {
+        expect((error as Error).message).to.include('Multiple stored sessions');
+      }
     });
 
     it('should warn when token is expired', async () => {
-      setStoredSession({
+      saveAuthSession({
         clientId: 'my-client',
+        flow: 'client-credentials',
         accessToken: makeExpiredJWT(),
         refreshToken: null,
-        renewBase: null,
-        user: null,
       });
 
       const command = createCommand();

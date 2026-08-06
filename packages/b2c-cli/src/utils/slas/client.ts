@@ -10,6 +10,7 @@ import {
   createSlasClient,
   getApiErrorMessage,
   getDefaultPublicClientId,
+  getLegacyImplicitPublicClientId,
   type SlasClient,
   type SlasComponents,
 } from '@salesforce/b2c-tooling-sdk';
@@ -225,8 +226,10 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
     }
   }
 
-  protected override getDefaultClientId(): string {
-    return getDefaultPublicClientId(this.accountManagerHost);
+  protected override getDefaultClientId(method: 'implicit' | 'user' = 'user'): string {
+    return method === 'implicit'
+      ? getLegacyImplicitPublicClientId(this.accountManagerHost)
+      : getDefaultPublicClientId(this.accountManagerHost);
   }
 
   /**
