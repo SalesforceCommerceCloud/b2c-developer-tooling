@@ -52,6 +52,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{organizationId}/sites/{siteId}/custom-cartridges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getSiteCustomCartridges"];
+        put: operations["replaceSiteCustomCartridges"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -194,7 +210,8 @@ export interface components {
             /** @enum {string} */
             storefrontStatus?: "online" | "maintenance" | "to_be_deleted" | "protected";
             siteCatalogId?: string;
-            cartridges?: string;
+            readonly cartridges?: string;
+            customCartridges?: string;
             /** Format: date-time */
             creationDate?: string;
             /** Format: date-time */
@@ -215,6 +232,9 @@ export interface components {
         Sites: {
             data: components["schemas"]["Site"][];
         } & components["schemas"]["PaginatedResultBase"];
+        SiteCustomCartridges: {
+            customCartridges: string;
+        };
     };
     responses: {
         /** @description Your access token is invalid or expired and can’t be used to identify a user. */
@@ -382,6 +402,87 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ErrorResponse"];
                 };
             };
+            /** @description Site Not Found - The requested site ID does not exist */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getSiteCustomCartridges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: components["schemas"]["OrganizationId"];
+                siteId: components["schemas"]["SiteId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Returns the site's custom cartridge path */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteCustomCartridges"];
+                };
+            };
+            401: components["responses"]["401unauthorized"];
+            403: components["responses"]["403forbidden"];
+            /** @description Site Not Found - The requested site ID does not exist */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    replaceSiteCustomCartridges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: components["schemas"]["OrganizationId"];
+                siteId: components["schemas"]["SiteId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SiteCustomCartridges"];
+            };
+        };
+        responses: {
+            /** @description Custom cartridge path successfully replaced */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteCustomCartridges"];
+                };
+            };
+            /** @description Bad Request - Invalid cartridge path */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["401unauthorized"];
+            403: components["responses"]["403forbidden"];
             /** @description Site Not Found - The requested site ID does not exist */
             404: {
                 headers: {

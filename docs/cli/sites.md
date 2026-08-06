@@ -8,9 +8,9 @@ Commands for managing sites on B2C Commerce instances.
 
 ## Authentication
 
-`sites list` and `sites cartridges list` (reads) run over SCAPI (the `site/sites` API). Configure `shortCode`, `tenantId`, and the `sfcc.sites` / `sfcc.sites.rw` scopes on your API client and they work out of the box.
+Site reads and cartridge-path writes run over SCAPI (the `site/sites` API). Configure `shortCode`, `tenantId`, and `sfcc.sites` / `sfcc.sites.rw` on your API client to use it.
 
-Cartridge-path **writes** (`add`/`remove`/`set`) have no SCAPI equivalent. They use the OCAPI Data API `/sites/*/cartridges` resource, automatically falling back to site archive import/export when direct OCAPI access is unavailable (which requires job execution permissions for `sfcc-site-archive-import` and WebDAV write access to `Impex/`).
+Cartridge-path writes (`add`/`remove`/`set`) require `sfcc.sites.rw`. In `auto` mode they temporarily fall back to the OCAPI Data API and then site archive import/export when direct API access is unavailable. The archive path requires job execution permissions for `sfcc-site-archive-import` and WebDAV write access to `Impex/`.
 
 ```bash
 export SFCC_CLIENT_ID=your-client-id
@@ -20,7 +20,7 @@ export SFCC_SHORTCODE=kv7kzm78
 ```
 
 ::: details Legacy OCAPI backend (deprecated)
-OCAPI is deprecated and disabled on newer instances. The read commands default to `--api-backend auto`, falling back to the OCAPI `/sites` resource only when SCAPI scopes are not configured; force a backend with `--api-backend scapi|ocapi`. For the OCAPI path, grant GET on `/sites` and `/sites/*`, and POST/PUT/DELETE on `/sites/*/cartridges` for cartridge-path writes.
+OCAPI is deprecated and disabled on newer instances. Commands default to `--api-backend auto`, falling back on safe SCAPI capability/auth/request rejections; force a backend with `--api-backend scapi|ocapi`. For the OCAPI path, grant GET on `/sites` and `/sites/*`, and POST/PUT/DELETE on `/sites/*/cartridges` for cartridge-path writes.
 :::
 
 For complete setup instructions, see the [Authentication Guide](/guide/authentication).
@@ -105,11 +105,11 @@ b2c sites cartridges list --bm
 
 #### Flags
 
-| Flag | Description |
-|------|-------------|
-| `--site-id <id>` | Site ID (e.g. `RefArch`) |
-| `--bm` | Use Business Manager site (`Sites-Site`) |
-| `--json` | Output as JSON |
+| Flag             | Description                              |
+| ---------------- | ---------------------------------------- |
+| `--site-id <id>` | Site ID (e.g. `RefArch`)                 |
+| `--bm`           | Use Business Manager site (`Sites-Site`) |
+| `--json`         | Output as JSON                           |
 
 One of `--site-id` or `--bm` is required.
 
@@ -140,19 +140,19 @@ b2c sites cartridges add <cartridge> --site-id <site-id> [--position <position>]
 
 #### Arguments
 
-| Argument | Description |
-|----------|-------------|
+| Argument    | Description                  |
+| ----------- | ---------------------------- |
 | `cartridge` | Name of the cartridge to add |
 
 #### Flags
 
-| Flag | Description |
-|------|-------------|
-| `--site-id <id>` | Site ID (e.g. `RefArch`) |
-| `--bm` | Use Business Manager site (`Sites-Site`) |
-| `--position <pos>` | Position: `first` (default), `last`, `before`, `after` |
-| `--target <name>` | Target cartridge (required when position is `before` or `after`) |
-| `--json` | Output as JSON |
+| Flag               | Description                                                      |
+| ------------------ | ---------------------------------------------------------------- |
+| `--site-id <id>`   | Site ID (e.g. `RefArch`)                                         |
+| `--bm`             | Use Business Manager site (`Sites-Site`)                         |
+| `--position <pos>` | Position: `first` (default), `last`, `before`, `after`           |
+| `--target <name>`  | Target cartridge (required when position is `before` or `after`) |
+| `--json`           | Output as JSON                                                   |
 
 #### Examples
 
@@ -188,17 +188,17 @@ b2c sites cartridges remove <cartridge> --site-id <site-id>
 
 #### Arguments
 
-| Argument | Description |
-|----------|-------------|
+| Argument    | Description                     |
+| ----------- | ------------------------------- |
 | `cartridge` | Name of the cartridge to remove |
 
 #### Flags
 
-| Flag | Description |
-|------|-------------|
-| `--site-id <id>` | Site ID (e.g. `RefArch`) |
-| `--bm` | Use Business Manager site (`Sites-Site`) |
-| `--json` | Output as JSON |
+| Flag             | Description                              |
+| ---------------- | ---------------------------------------- |
+| `--site-id <id>` | Site ID (e.g. `RefArch`)                 |
+| `--bm`           | Use Business Manager site (`Sites-Site`) |
+| `--json`         | Output as JSON                           |
 
 #### Examples
 
@@ -225,17 +225,17 @@ b2c sites cartridges set <cartridges> --site-id <site-id>
 
 #### Arguments
 
-| Argument | Description |
-|----------|-------------|
+| Argument     | Description                                                    |
+| ------------ | -------------------------------------------------------------- |
 | `cartridges` | New cartridge path (colon-separated, e.g. `cart1:cart2:cart3`) |
 
 #### Flags
 
-| Flag | Description |
-|------|-------------|
-| `--site-id <id>` | Site ID (e.g. `RefArch`) |
-| `--bm` | Use Business Manager site (`Sites-Site`) |
-| `--json` | Output as JSON |
+| Flag             | Description                              |
+| ---------------- | ---------------------------------------- |
+| `--site-id <id>` | Site ID (e.g. `RefArch`)                 |
+| `--bm`           | Use Business Manager site (`Sites-Site`) |
+| `--json`         | Output as JSON                           |
 
 #### Examples
 
@@ -243,4 +243,3 @@ b2c sites cartridges set <cartridges> --site-id <site-id>
 b2c sites cartridges set "app_storefront_base:plugin_applepay:plugin_wishlists" --site-id RefArch
 b2c sites cartridges set "bm_ext1:bm_ext2" --bm
 ```
-

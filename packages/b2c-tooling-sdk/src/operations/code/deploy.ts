@@ -9,9 +9,9 @@ import JSZip from 'jszip';
 import type {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
 import {findCartridges, type CartridgeMapping, type FindCartridgesOptions} from './cartridges.js';
-import {activateCodeVersion} from './versions.js';
 import {reloadCodeVersion} from './scripts-backend.js';
 import {OcapiScriptsBackend} from './ocapi-scripts-backend.js';
+import type {ScriptsBackend} from './scripts-types.js';
 import {UNZIP_TIMEOUT_MS} from './constants.js';
 import {NetworkError, describeNetworkErrorKind} from '../../errors/network-error.js';
 
@@ -37,6 +37,8 @@ export interface UploadOptions {
 }
 
 export interface DeployOptions extends FindCartridgesOptions {
+  /** Explicit code-version backend. Defaults to OCAPI for SDK compatibility. */
+  scriptsBackend?: ScriptsBackend;
   /** Activate the code version after deploy */
   activate?: boolean;
   /** Reload (toggle activation to force reload) the code version after deploy */
@@ -317,6 +319,7 @@ export async function findAndDeployCartridges(
 ): Promise<DeployResult> {
   const logger = getLogger();
   const codeVersion = instance.config.codeVersion;
+  const scriptsBackend = options.scriptsBackend ?? new OcapiScriptsBackend(instance);
 
   if (!codeVersion) {
     throw new Error('Code version required for deployment');
@@ -350,11 +353,11 @@ export async function findAndDeployCartridges(
   let reloaded = false;
   if (options.activate) {
     logger.debug('Activating code version...');
-    await activateCodeVersion(instance, codeVersion);
+    await scriptsBackend.activateCodeVersion(codeVersion);
     activated = true;
   } else if (options.reload) {
     logger.debug('Reloading code version...');
-    await reloadCodeVersion(new OcapiScriptsBackend(instance), codeVersion);
+    await reloadCodeVersion(scriptsBackend, codeVersion);
     activated = true;
     reloaded = true;
   }

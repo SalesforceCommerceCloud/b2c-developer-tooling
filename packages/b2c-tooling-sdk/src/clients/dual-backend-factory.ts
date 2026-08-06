@@ -63,8 +63,8 @@ export interface DualBackendCtors<T extends BackendBase> {
  *
  * - Explicit `'ocapi'` returns an OCAPI backend.
  * - Explicit `'scapi'` returns a SCAPI backend (throws if config missing).
- * - `'auto'` returns a fallback Proxy that tries SCAPI first, falls back to
- *   OCAPI on `invalid_scope`.
+ * - `'auto'` returns a fallback Proxy that tries SCAPI first and falls back to
+ *   OCAPI on safe capability/auth/request rejections.
  *
  * @example
  * ```ts

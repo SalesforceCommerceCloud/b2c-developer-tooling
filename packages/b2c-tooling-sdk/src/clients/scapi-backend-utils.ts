@@ -13,13 +13,14 @@
  * @module clients/scapi-backend-utils
  */
 import type {AuthStrategy} from '../auth/types.js';
+import {getApiErrorMessage} from './error-utils.js';
 
 /**
  * User-facing API backend preference.
  *
  * - `'ocapi'`: force OCAPI (always use the legacy Data API).
  * - `'scapi'`: force SCAPI (requires shortCode + tenantId; fails loudly if scopes missing).
- * - `'auto'`: prefer SCAPI when configured, transparently fall back to OCAPI on `invalid_scope`.
+ * - `'auto'`: prefer SCAPI when configured, with temporary safe OCAPI fallback.
  */
 export type ApiBackendPreference = 'ocapi' | 'scapi' | 'auto';
 
@@ -76,13 +77,55 @@ export class ScapiCapabilityUnsupportedError extends Error {
 }
 
 /**
+ * HTTP statuses that prove SCAPI rejected a request before performing it.
+ *
+ * These are safe for the temporary `auto` compatibility mode to retry over
+ * OCAPI. Ambiguous responses (`429`, `5xx`) and network failures are excluded
+ * because a mutating request might already have reached the platform.
+ */
+export const SAFE_SCAPI_FALLBACK_STATUSES = new Set([400, 401, 403, 404, 405, 406, 415]);
+
+/**
+ * A structured SCAPI response failure. Backends must retain the response
+ * status so the shared fallback policy can distinguish a definite rejection
+ * from an ambiguous transport/server failure.
+ */
+export class ScapiRequestError extends Error {
+  constructor(
+    message: string,
+    /** HTTP status returned by SCAPI. */
+    public readonly status: number,
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
+    this.name = 'ScapiRequestError';
+  }
+}
+
+/** Creates a structured SCAPI error using the repository's common formatter. */
+export function createScapiRequestError(
+  error: unknown,
+  response: Response | {status: number; statusText: string},
+  fallbackMessage: string,
+): ScapiRequestError {
+  const message = error ? getApiErrorMessage(error, response) : fallbackMessage;
+  return new ScapiRequestError(message || fallbackMessage, response.status, {cause: error});
+}
+
+/**
  * Detects whether an error should trigger an OCAPI fallback. Currently:
  *   - {@link isInvalidScopeError}: AM rejected the requested scope.
  *   - {@link ScapiCapabilityUnsupportedError}: the SCAPI surface lacks the
  *     capability the caller asked for.
+ *   - {@link ScapiRequestError}: SCAPI definitively rejected the request with
+ *     a safe client-error status.
  */
 export function isFallbackTrigger(error: unknown): boolean {
-  return isInvalidScopeError(error) || error instanceof ScapiCapabilityUnsupportedError;
+  return (
+    isInvalidScopeError(error) ||
+    error instanceof ScapiCapabilityUnsupportedError ||
+    (error instanceof ScapiRequestError && SAFE_SCAPI_FALLBACK_STATUSES.has(error.status))
+  );
 }
 
 /**

@@ -257,6 +257,7 @@ export type {
   UserInfo,
   ListUsersResult,
   ListUsersOptions,
+  SearchUsersOptions,
   CreateUserInput,
   UpdateUserChanges,
   ScapiUsersBackendConfig,
@@ -274,6 +275,19 @@ export type {
   CreateRoleInput,
   ScapiRolesBackendConfig,
 } from './operations/bm-roles/index.js';
+
+// Catalog backend abstraction
+export {createCatalogsBackend, OcapiCatalogsBackend, ScapiCatalogsBackend} from './operations/catalogs/index.js';
+export type {
+  CatalogsBackend,
+  CatalogsBackendConfig,
+  CatalogInfo,
+  ListCatalogsOptions,
+  ScapiCatalogsBackendConfig,
+} from './operations/catalogs/index.js';
+
+// Explicit transitional fallback surfaces
+export {createJobsCompatibilityBackend, JobsCompatibilityBackend} from './compat/index.js';
 
 // Operations - Jobs
 export {

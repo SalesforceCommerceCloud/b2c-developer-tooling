@@ -8,6 +8,7 @@ import type {OcapiComponents} from '../../clients/index.js';
 import {throwOcapiError} from '../../clients/error-utils.js';
 import {SCAPI_SITES_READ_AND_RW_SCOPES} from './sites-scopes.js';
 import type {SitesBackend, SiteInfo, ListSitesOptions} from './sites-types.js';
+import type {CartridgePosition} from './sites-types.js';
 
 type OcapiSite = OcapiComponents['schemas']['site'];
 type OcapiSites = OcapiComponents['schemas']['sites'];
@@ -76,5 +77,56 @@ export class OcapiSitesBackend implements SitesBackend {
       throwOcapiError(error, response, `Failed to get site ${siteId}`, SCAPI_SITES_READ_AND_RW_SCOPES);
     }
     return mapOcapiSite(data as OcapiSite);
+  }
+
+  async getCartridgePath(siteId: string): Promise<string> {
+    return (await this.getSite(siteId)).cartridges ?? '';
+  }
+
+  async setCartridgePath(siteId: string, cartridges: string): Promise<string> {
+    const {data, error, response} = await this.instance.ocapi.PUT('/sites/{site_id}/cartridges', {
+      params: {path: {site_id: siteId}},
+      body: {cartridges},
+    });
+    if (error || !data) {
+      throwOcapiError(
+        error,
+        response,
+        `Failed to set cartridge path for site ${siteId}`,
+        SCAPI_SITES_READ_AND_RW_SCOPES,
+      );
+    }
+    return (data as {cartridges?: string}).cartridges ?? cartridges;
+  }
+
+  async addCartridge(siteId: string, name: string, position: CartridgePosition, target?: string): Promise<string> {
+    const {data, error, response} = await this.instance.ocapi.POST('/sites/{site_id}/cartridges', {
+      params: {path: {site_id: siteId}},
+      body: {name, position, target},
+    });
+    if (error || !data) {
+      throwOcapiError(
+        error,
+        response,
+        `Failed to add cartridge ${name} to site ${siteId}`,
+        SCAPI_SITES_READ_AND_RW_SCOPES,
+      );
+    }
+    return data.cartridges ?? '';
+  }
+
+  async removeCartridge(siteId: string, name: string): Promise<string> {
+    const {data, error, response} = await this.instance.ocapi.DELETE('/sites/{site_id}/cartridges/{cartridge_name}', {
+      params: {path: {site_id: siteId, cartridge_name: name}},
+    });
+    if (error || !data) {
+      throwOcapiError(
+        error,
+        response,
+        `Failed to remove cartridge ${name} from site ${siteId}`,
+        SCAPI_SITES_READ_AND_RW_SCOPES,
+      );
+    }
+    return data.cartridges ?? '';
   }
 }

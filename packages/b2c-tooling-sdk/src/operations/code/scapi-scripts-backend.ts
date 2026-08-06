@@ -15,6 +15,7 @@ import {
 } from '../../clients/scapi-scripts.js';
 import {buildTenantScope, toOrganizationId} from '../../clients/custom-apis.js';
 import {ScopeTierManager} from '../../clients/scapi-scope-tier.js';
+import {createScapiRequestError} from '../../clients/scapi-backend-utils.js';
 import {getLogger} from '../../logging/logger.js';
 
 function mapScapiCodeVersion(scapi: ScapiCodeVersion): CodeVersionInfo {
@@ -58,11 +59,11 @@ export class ScapiScriptsBackend implements ScriptsBackend {
 
   async listCodeVersions(): Promise<CodeVersionInfo[]> {
     return this.scopeTier.tryRead(async (client) => {
-      const {data, error} = await client.GET('/organizations/{organizationId}/code-versions', {
+      const {data, error, response} = await client.GET('/organizations/{organizationId}/code-versions', {
         params: {path: {organizationId: this.organizationId}},
       });
       if (error || !data) {
-        throw new Error(toErrorMessage(error, 'Failed to list code versions'));
+        throw createScapiRequestError(error, response, 'Failed to list code versions');
       }
       const result = data as unknown as {data?: ScapiCodeVersion[]};
       return (result.data ?? []).map(mapScapiCodeVersion);
@@ -79,12 +80,12 @@ export class ScapiScriptsBackend implements ScriptsBackend {
     const logger = getLogger();
     logger.debug({codeVersionId}, `Activating code version ${codeVersionId}`);
 
-    const {error} = await client.PATCH('/organizations/{organizationId}/code-versions/{codeVersionId}', {
+    const {error, response} = await client.PATCH('/organizations/{organizationId}/code-versions/{codeVersionId}', {
       params: {path: {organizationId: this.organizationId, codeVersionId}},
       body: {active: true} as unknown as ScapiCodeVersion,
     });
     if (error) {
-      throw new Error(toErrorMessage(error, `Failed to activate code version ${codeVersionId}`));
+      throw createScapiRequestError(error, response, `Failed to activate code version ${codeVersionId}`);
     }
     logger.debug({codeVersionId}, `Code version ${codeVersionId} activated`);
     // SCAPI PATCH active=true is idempotent and does not surface a distinct
@@ -94,21 +95,21 @@ export class ScapiScriptsBackend implements ScriptsBackend {
 
   async deleteCodeVersion(codeVersionId: string): Promise<void> {
     const client = this.scopeTier.getClientForWrite();
-    const {error} = await client.DELETE('/organizations/{organizationId}/code-versions/{codeVersionId}', {
+    const {error, response} = await client.DELETE('/organizations/{organizationId}/code-versions/{codeVersionId}', {
       params: {path: {organizationId: this.organizationId, codeVersionId}},
     });
     if (error) {
-      throw new Error(toErrorMessage(error, `Failed to delete code version ${codeVersionId}`));
+      throw createScapiRequestError(error, response, `Failed to delete code version ${codeVersionId}`);
     }
   }
 
   async createCodeVersion(codeVersionId: string): Promise<void> {
     const client = this.scopeTier.getClientForWrite();
-    const {error} = await client.PUT('/organizations/{organizationId}/code-versions/{codeVersionId}', {
+    const {error, response} = await client.PUT('/organizations/{organizationId}/code-versions/{codeVersionId}', {
       params: {path: {organizationId: this.organizationId, codeVersionId}},
     });
     if (error) {
-      throw new Error(toErrorMessage(error, `Failed to create code version ${codeVersionId}`));
+      throw createScapiRequestError(error, response, `Failed to create code version ${codeVersionId}`);
     }
   }
 
@@ -120,9 +121,4 @@ export class ScapiScriptsBackend implements ScriptsBackend {
     };
     return createScapiScriptsClient(clientConfig, this.config.auth);
   }
-}
-
-function toErrorMessage(error: unknown, fallback: string): string {
-  const e = error as {detail?: string; title?: string} | undefined;
-  return e?.detail ?? e?.title ?? fallback;
 }

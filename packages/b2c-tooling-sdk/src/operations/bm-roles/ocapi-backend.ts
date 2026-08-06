@@ -4,6 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import type {B2CInstance} from '../../instance/index.js';
+import type {components as OcapiComponents} from '../../clients/ocapi.generated.js';
+import type {components as ScapiComponents} from '../../clients/scapi-merchant-roles.generated.js';
 import type {
   RolesBackend,
   RoleInfo,
@@ -38,10 +40,52 @@ function mapOcapiRole(ocapi: BmRole): RoleInfo {
   };
 }
 
-type LocalePermissionOcapi = {locale_id?: string; type?: string; values?: string[]; display_name?: unknown};
-type WebdavPermissionOcapi = {folder?: string; type?: string; values?: string[]};
-type ModulePermissionOcapi = {application?: string; name?: string; values?: string[]};
-type FunctionalPermissionOcapi = {name?: string; values?: string[]};
+type OcapiModulePermission = OcapiComponents['schemas']['role_module_permission'];
+type OcapiFunctionalPermission = OcapiComponents['schemas']['role_functional_permission'];
+type OcapiLocalePermission = OcapiComponents['schemas']['role_locale_permission'];
+type OcapiWebdavPermission = OcapiComponents['schemas']['role_webdav_permission'];
+type ScapiModulePermission = ScapiComponents['schemas']['RoleModulePermission'];
+type ScapiFunctionalPermission = ScapiComponents['schemas']['RoleFunctionalPermission'];
+type ScapiLocalePermission = ScapiComponents['schemas']['RoleLocalePermission'];
+type ScapiWebdavPermission = ScapiComponents['schemas']['RoleWebdavPermission'];
+
+function mapOcapiModulePermission(permission: OcapiModulePermission): ScapiModulePermission {
+  return {
+    application: permission.application,
+    name: permission.name,
+    type: permission.type,
+    system: permission.system,
+    value: permission.value,
+    values: permission.values,
+  };
+}
+
+function mapOcapiFunctionalPermission(permission: OcapiFunctionalPermission): ScapiFunctionalPermission {
+  return {
+    name: permission.name,
+    type: permission.type,
+    value: permission.value,
+    values: permission.values,
+  };
+}
+
+function mapOcapiLocalePermission(permission: OcapiLocalePermission): ScapiLocalePermission {
+  return {
+    localeId: permission.locale_id,
+    type: permission.type,
+    value: permission.value,
+    values: permission.values,
+  };
+}
+
+function mapOcapiWebdavPermission(permission: OcapiWebdavPermission): ScapiWebdavPermission {
+  return {
+    folder: permission.folder,
+    type: permission.type,
+    value: permission.value,
+    values: permission.values,
+  };
+}
 
 function mapOcapiPermissions(ocapi: BmRolePermissions): RolePermissionsInfo {
   // OCAPI uses snake_case for innermost permission fields (locale_id, etc.)
@@ -49,46 +93,24 @@ function mapOcapiPermissions(ocapi: BmRolePermissions): RolePermissionsInfo {
   const result: Record<string, unknown> = {};
   if (ocapi.module) {
     result.module = {
-      organization: ((ocapi.module.organization ?? []) as ModulePermissionOcapi[]).map((p) => ({
-        application: p.application,
-        name: p.name,
-        values: p.values,
-      })),
-      site: ((ocapi.module.site ?? []) as ModulePermissionOcapi[]).map((p) => ({
-        application: p.application,
-        name: p.name,
-        values: p.values,
-      })),
+      organization: (ocapi.module.organization ?? []).map(mapOcapiModulePermission),
+      site: (ocapi.module.site ?? []).map(mapOcapiModulePermission),
     };
   }
   if (ocapi.functional) {
     result.functional = {
-      organization: ((ocapi.functional.organization ?? []) as FunctionalPermissionOcapi[]).map((p) => ({
-        name: p.name,
-        values: p.values,
-      })),
-      site: ((ocapi.functional.site ?? []) as FunctionalPermissionOcapi[]).map((p) => ({
-        name: p.name,
-        values: p.values,
-      })),
+      organization: (ocapi.functional.organization ?? []).map(mapOcapiFunctionalPermission),
+      site: (ocapi.functional.site ?? []).map(mapOcapiFunctionalPermission),
     };
   }
   if (ocapi.locale) {
     result.locale = {
-      unscoped: ((ocapi.locale.unscoped ?? []) as LocalePermissionOcapi[]).map((p) => ({
-        localeId: p.locale_id,
-        type: p.type,
-        values: p.values,
-      })),
+      unscoped: (ocapi.locale.unscoped ?? []).map(mapOcapiLocalePermission),
     };
   }
   if (ocapi.webdav) {
     result.webdav = {
-      unscoped: ((ocapi.webdav.unscoped ?? []) as WebdavPermissionOcapi[]).map((p) => ({
-        folder: p.folder,
-        type: p.type,
-        values: p.values,
-      })),
+      unscoped: (ocapi.webdav.unscoped ?? []).map(mapOcapiWebdavPermission),
     };
   }
   return result as RolePermissionsInfo;
@@ -98,23 +120,31 @@ function mapScapiPermissionsToOcapi(perms: RolePermissionsInfo): BmRolePermissio
   // Reverse: camelCase → snake_case for the inner locale field.
   const result: Record<string, unknown> = {};
   if (perms.module) {
-    result.module = perms.module;
+    result.module = {
+      organization: (perms.module.organization ?? []).map((permission) => ({...permission})),
+      site: (perms.module.site ?? []).map((permission) => ({...permission})),
+    };
   }
   if (perms.functional) {
-    result.functional = perms.functional;
+    result.functional = {
+      organization: (perms.functional.organization ?? []).map((permission) => ({...permission})),
+      site: (perms.functional.site ?? []).map((permission) => ({...permission})),
+    };
   }
   if (perms.locale) {
-    type LocaleScapi = {localeId?: string; type?: string; values?: unknown};
     result.locale = {
-      unscoped: ((perms.locale.unscoped ?? []) as LocaleScapi[]).map((p) => ({
-        locale_id: p.localeId,
-        type: p.type,
-        values: p.values,
+      unscoped: (perms.locale.unscoped ?? []).map((permission) => ({
+        locale_id: permission.localeId,
+        type: permission.type,
+        value: permission.value,
+        values: permission.values,
       })),
     };
   }
   if (perms.webdav) {
-    result.webdav = perms.webdav;
+    result.webdav = {
+      unscoped: (perms.webdav.unscoped ?? []).map((permission) => ({...permission})),
+    };
   }
   return result as BmRolePermissions;
 }

@@ -5,8 +5,8 @@
  */
 /**
  * SCAPI Sites scopes named in OCAPI-deprecation error messages, derived from
- * the canonical cascade so they can't drift. Sites operations are read-only,
- * so the read cascade (rw then ro) is the relevant set.
+ * the canonical cascade so they can't drift. The union covers read-only and
+ * read-write operations.
  *
  * @module operations/sites/sites-scopes
  */

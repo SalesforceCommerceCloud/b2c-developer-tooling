@@ -12,8 +12,8 @@ import {createScriptsBackend, type ScriptsBackend} from '../operations/code/inde
  *
  * Provides `createScriptsBackend()` which selects between OCAPI and SCAPI
  * based on the `--api-backend` flag and `apiBackend` config field. In auto
- * mode, prefers SCAPI when shortCode + tenantId are configured, falling
- * back to OCAPI on `invalid_scope`.
+ * mode, prefers SCAPI when its coordinates and supported auth are available,
+ * falling back to OCAPI on safe capability/auth/request rejections.
  */
 export abstract class CodeCommand<T extends typeof Command> extends InstanceCommand<T> {
   protected createScriptsBackend(): ScriptsBackend {

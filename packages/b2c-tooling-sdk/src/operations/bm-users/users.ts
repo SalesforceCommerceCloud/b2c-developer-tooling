@@ -20,8 +20,8 @@ import {throwOcapiError} from '../../clients/error-utils.js';
 import {SCAPI_MERCHANT_USERS_READ_SCOPES, SCAPI_MERCHANT_USERS_RW_SCOPES} from '../../clients/scapi-merchant-users.js';
 
 // SCAPI Merchant Users scopes named in the OCAPI-deprecation message for the
-// dual-backend operations (list/get/update/delete). search, whoami, and the
-// access-key operations are OCAPI-only and use the generic guidance.
+// legacy OCAPI free functions. Portable search is also exposed by the
+// dual-backend interface; raw query DSL, whoami, and access keys stay here.
 const USERS_READ_SCOPES = [...SCAPI_MERCHANT_USERS_READ_SCOPES, ...SCAPI_MERCHANT_USERS_RW_SCOPES];
 const USERS_RW_SCOPES = SCAPI_MERCHANT_USERS_RW_SCOPES;
 

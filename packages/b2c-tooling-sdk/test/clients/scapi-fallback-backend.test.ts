@@ -5,7 +5,7 @@
  */
 import {expect} from 'chai';
 import {createFallbackBackend} from '../../src/clients/scapi-fallback-backend.js';
-import {ScapiCapabilityUnsupportedError} from '../../src/clients/scapi-backend-utils.js';
+import {ScapiCapabilityUnsupportedError, ScapiRequestError} from '../../src/clients/scapi-backend-utils.js';
 
 interface TestBackend {
   readonly name: 'ocapi' | 'scapi';
@@ -121,6 +121,32 @@ describe('createFallbackBackend', () => {
       await backend.doRead();
       await backend.doWrite('payload');
       expect(ocapiWriteCalls).to.equal(1);
+    });
+  });
+
+  describe('fallback path: SCAPI rejects a request before mutation', () => {
+    for (const status of [400, 401, 403, 404, 405, 406, 415]) {
+      it(`falls back on a typed HTTP ${status} rejection`, async () => {
+        const scapi = makeBackend('scapi', {
+          doRead: async () => {
+            throw new ScapiRequestError('SCAPI rejected request', status);
+          },
+        });
+        const ocapi = makeBackend('ocapi', {doRead: async () => 'ocapi-read'});
+
+        expect(await createFallbackBackend<TestBackend>(scapi, ocapi, 'test').doRead()).to.equal('ocapi-read');
+      });
+    }
+
+    it('does not fall back on a typed server error because completion is ambiguous', async () => {
+      const scapi = makeBackend('scapi', {
+        doRead: async () => {
+          throw new ScapiRequestError('SCAPI failed', 500);
+        },
+      });
+      const ocapi = makeBackend('ocapi', {doRead: async () => 'should-not-reach-this'});
+
+      await expectRejected(createFallbackBackend<TestBackend>(scapi, ocapi, 'test').doRead(), 'SCAPI failed');
     });
   });
 
@@ -242,3 +268,12 @@ describe('createFallbackBackend', () => {
     });
   });
 });
+
+async function expectRejected(promise: Promise<unknown>, message: string): Promise<void> {
+  try {
+    await promise;
+    expect.fail('should have thrown');
+  } catch (error) {
+    expect((error as Error).message).to.equal(message);
+  }
+}

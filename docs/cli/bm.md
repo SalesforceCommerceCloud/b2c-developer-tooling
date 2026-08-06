@@ -8,7 +8,7 @@ Commands for administering instance-level Business Manager resources. These are 
 
 ## API Backend
 
-`bm users` and `bm roles` run over the SCAPI Merchant Users / Merchant Roles APIs. Configure `shortCode`, `tenantId`, and the `sfcc.users(.rw)` / `sfcc.roles(.rw)` scopes on your API client and these commands work over SCAPI. A few commands have no SCAPI equivalent and use the OCAPI Data API (see the table below).
+`bm users` and `bm roles` run over the SCAPI Merchant Users / Merchant Roles APIs. Configure `shortCode`, `tenantId`, and the `sfcc.users(.rw)` / `sfcc.roles(.rw)` scopes to use SCAPI. In `auto` mode, missing SCAPI coordinates select the temporary OCAPI compatibility backend instead of being required up front.
 
 ```bash
 # Default — uses SCAPI for users/roles
@@ -16,46 +16,45 @@ b2c bm users list
 b2c bm roles get Administrator
 ```
 
-| Command | Backend | Scope |
-|---|---|---|
-| `bm users list/get/create/update/delete` | SCAPI | `sfcc.users.rw` |
-| `bm roles list/get/create/delete` | SCAPI | `sfcc.roles.rw` |
-| `bm roles grant/revoke` | SCAPI | `sfcc.roles.rw` |
-| `bm roles permissions get/set` | SCAPI | `sfcc.roles.rw` |
-| `bm users search` | OCAPI only | — |
-| `bm whoami` | OCAPI only | — |
-| `bm access-key *` | OCAPI only | — |
+| Command                                  | Backend                                      | Scope                           |
+| ---------------------------------------- | -------------------------------------------- | ------------------------------- |
+| `bm users list/get/create/update/delete` | SCAPI                                        | `sfcc.users.rw`                 |
+| `bm users search` (portable flags)       | SCAPI, client-side filtering over user pages | `sfcc.users` or `sfcc.users.rw` |
+| `bm roles list/get/create/delete`        | SCAPI                                        | `sfcc.roles.rw`                 |
+| `bm roles grant/revoke`                  | SCAPI                                        | `sfcc.roles.rw`                 |
+| `bm roles permissions get/set`           | SCAPI                                        | `sfcc.roles.rw`                 |
+| `bm users search --query`                | OCAPI only (raw OCAPI query DSL)             | —                               |
+| `bm whoami`                              | OCAPI only                                   | —                               |
+| `bm access-key *`                        | OCAPI only                                   | —                               |
 
 ::: details Legacy OCAPI backend (deprecated)
-OCAPI is deprecated and disabled on newer instances. The CLI defaults to `--api-backend auto`, which falls back to the OCAPI Data API only when SCAPI scopes are not configured. Force a backend if needed:
+OCAPI is deprecated and disabled on newer instances. The CLI defaults to `--api-backend auto`, which falls back to OCAPI on safe SCAPI capability/auth/request rejections. Force a backend if needed:
 
 ```bash
 b2c bm users list --api-backend scapi          # force SCAPI
 b2c bm roles get Administrator --api-backend ocapi   # force the legacy OCAPI backend
 ```
 
-Or set `"api-backend": "scapi"` in `dw.json`, or `SFCC_API_BACKEND=scapi`. The OCAPI-only commands (`bm users search`, `bm whoami`, `bm access-key`) are unavailable on OCAPI-disabled instances.
+Or set `"api-backend": "scapi"` in `dw.json`, or `SFCC_API_BACKEND=scapi`. The OCAPI-only operations (`bm users search --query`, `bm whoami`, `bm access-key`) are unavailable on OCAPI-disabled instances.
 :::
 
-::: warning
-The SCAPI Users PATCH endpoint does not support changing the `disabled` flag. `bm users update --disabled` falls back to OCAPI in auto mode (unavailable on OCAPI-disabled instances); with `--api-backend scapi` it errors with a clear message.
-:::
+The SCAPI Users PATCH endpoint does not include the `disabled` field, so `bm users update --disabled` reads the current user and preserves its writable fields through SCAPI PUT.
 
 ## Authentication
 
-BM commands authenticate via OAuth against the configured Commerce Cloud instance. Two flows are supported:
+BM commands authenticate via OAuth against the configured Commerce Cloud instance. SCAPI currently supports client credentials and JWT Bearer for these commands. Browser-based user auth remains supported through OCAPI and WebDAV, not SCAPI:
 
 - **Client credentials** — for automation and CI/CD. Configure an Account Manager API client and grant it the OCAPI permissions listed below. Pass credentials via `--client-id` / `--client-secret`, the `SFCC_CLIENT_ID` / `SFCC_CLIENT_SECRET` environment variables, or `dw.json`.
-- **User auth (browser)** — for interactive use. Pass `--user-auth` (or run `b2c auth login` once and reuse the saved session). The CLI opens a browser and the resulting token carries your BM user identity.
+- **User auth (browser)** — for interactive OCAPI/WebDAV use. Pass `--user-auth` (or run `b2c auth login` once and reuse the saved session). In `auto` mode migrated operations select OCAPI; explicit SCAPI reports that user auth is not currently supported.
 
-A handful of endpoints require *a real BM user identity* and cannot use service-client tokens — the CLI defaults those to user-auth automatically:
+A handful of endpoints require _a real BM user identity_ and cannot use service-client tokens — the CLI defaults those to user-auth automatically:
 
-| Command group | Default auth | Why |
-|---|---|---|
-| `b2c bm roles ...` | client-credentials → jwt → implicit | OCAPI permissions for `/roles` |
-| `b2c bm users {list,get,search,update,delete}` | client-credentials → jwt → implicit | OCAPI permissions for `/users` |
-| `b2c bm whoami` | **implicit (browser)** | `/users/this` requires the token to resolve to a BM user |
-| `b2c bm access-key ...` | **implicit (browser)** | Access-key endpoints require *a valid user* plus the `Manage_Users_Access_Keys` BM functional permission |
+| Command group                                  | Default auth                        | Why                                                                                                      |
+| ---------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `b2c bm roles ...`                             | client-credentials → jwt → implicit | OCAPI permissions for `/roles`                                                                           |
+| `b2c bm users {list,get,search,update,delete}` | client-credentials → jwt → implicit | OCAPI permissions for `/users`                                                                           |
+| `b2c bm whoami`                                | **implicit (browser)**              | `/users/this` requires the token to resolve to a BM user                                                 |
+| `b2c bm access-key ...`                        | **implicit (browser)**              | Access-key endpoints require _a valid user_ plus the `Manage_Users_Access_Keys` BM functional permission |
 
 Override the auto-defaulted user-auth with `--auth-methods client-credentials` (or `--client-secret`) when your service-client setup is configured to issue user-bearing tokens. The interactive defaults can also be skipped end-to-end by exporting `SFCC_AUTH_METHODS=client-credentials,jwt` in CI.
 
@@ -65,18 +64,18 @@ See the [Authentication Guide](/guide/authentication) for end-to-end setup, incl
 
 Add these resources to the Data API client configuration in Business Manager (**Administration** > **Site Development** > **Open Commerce API Settings** > **Data API**):
 
-| Resource | Methods | Used by |
-|----------|---------|---------|
-| `/roles` | GET | `bm roles list` |
-| `/roles/*` | GET, PUT, DELETE | `bm roles get/create/delete` |
-| `/roles/*/users` | GET | `bm roles get --expand users` |
-| `/roles/*/users/*` | PUT, DELETE | `bm roles grant/revoke` |
-| `/roles/*/permissions` | GET, PUT | `bm roles permissions get/set` |
-| `/users` | GET | `bm users list` |
-| `/users/*` | GET, PATCH, DELETE | `bm users get/update/delete` |
-| `/users/this` | GET | `bm whoami`, `bm access-key` (optional login fallback) |
-| `/users/*/access_key/*` | GET, PUT, PATCH, DELETE | `bm access-key get/create/set/delete` |
-| `/user_search` | POST | `bm users search` |
+| Resource                | Methods                 | Used by                                                |
+| ----------------------- | ----------------------- | ------------------------------------------------------ |
+| `/roles`                | GET                     | `bm roles list`                                        |
+| `/roles/*`              | GET, PUT, DELETE        | `bm roles get/create/delete`                           |
+| `/roles/*/users`        | GET                     | `bm roles get --expand users`                          |
+| `/roles/*/users/*`      | PUT, DELETE             | `bm roles grant/revoke`                                |
+| `/roles/*/permissions`  | GET, PUT                | `bm roles permissions get/set`                         |
+| `/users`                | GET                     | `bm users list`                                        |
+| `/users/*`              | GET, PATCH, DELETE      | `bm users get/update/delete`                           |
+| `/users/this`           | GET                     | `bm whoami`, `bm access-key` (optional login fallback) |
+| `/users/*/access_key/*` | GET, PUT, PATCH, DELETE | `bm access-key get/create/set/delete`                  |
+| `/user_search`          | POST                    | `bm users search`                                      |
 
 For an importable JSON snippet covering all BM administration endpoints, see [Minimal Configuration by Feature](/guide/authentication#minimal-configuration-by-feature) in the Authentication Guide.
 
@@ -118,12 +117,12 @@ List all access roles on an instance.
 b2c bm roles list [--count <n>] [--start <n>] [--columns <cols>] [--extended]
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--count`, `-n` | Number of roles to return (default 25) |
-| `--start` | Start index for pagination (default 0) |
-| `--columns`, `-c` | Comma-separated columns to display. Available: `id`, `description`, `userCount`, `userManager` |
-| `--extended`, `-x` | Show all columns including extended fields |
+| Flag               | Description                                                                                    |
+| ------------------ | ---------------------------------------------------------------------------------------------- |
+| `--count`, `-n`    | Number of roles to return (default 25)                                                         |
+| `--start`          | Start index for pagination (default 0)                                                         |
+| `--columns`, `-c`  | Comma-separated columns to display. Available: `id`, `description`, `userCount`, `userManager` |
+| `--extended`, `-x` | Show all columns including extended fields                                                     |
 
 ```bash
 b2c bm roles list
@@ -139,12 +138,12 @@ Get details of a specific access role.
 b2c bm roles get <role> [--expand <expansion>...]
 ```
 
-| Argument | Description |
-|----------|-------------|
-| `role` | Role ID (e.g. `Administrator`) |
+| Argument | Description                    |
+| -------- | ------------------------------ |
+| `role`   | Role ID (e.g. `Administrator`) |
 
-| Flag | Description |
-|------|-------------|
+| Flag             | Description                                               |
+| ---------------- | --------------------------------------------------------- |
 | `--expand`, `-e` | Expansions to apply (`users`, `permissions`). Repeatable. |
 
 ```bash
@@ -160,12 +159,12 @@ Create a new custom access role.
 b2c bm roles create <role> [--description <text>]
 ```
 
-| Argument | Description |
-|----------|-------------|
-| `role` | Role ID to create |
+| Argument | Description       |
+| -------- | ----------------- |
+| `role`   | Role ID to create |
 
-| Flag | Description |
-|------|-------------|
+| Flag                  | Description              |
+| --------------------- | ------------------------ |
 | `--description`, `-d` | Description for the role |
 
 ```bash
@@ -200,8 +199,8 @@ Assign a user to an access role.
 b2c bm roles grant <login> --role <role>
 ```
 
-| Flag | Description |
-|------|-------------|
+| Flag           | Description                 |
+| -------------- | --------------------------- |
 | `--role`, `-r` | Role ID to grant (required) |
 
 ```bash
@@ -228,8 +227,8 @@ Get permissions for an access role.
 b2c bm roles permissions get <role> [--output <file>]
 ```
 
-| Flag | Description |
-|------|-------------|
+| Flag             | Description                                       |
+| ---------------- | ------------------------------------------------- |
 | `--output`, `-o` | Write full permissions JSON to a file for editing |
 
 ```bash
@@ -251,8 +250,8 @@ Set (replace) all permissions for an access role from a JSON file.
 b2c bm roles permissions set <role> --file <path>
 ```
 
-| Flag | Description |
-|------|-------------|
+| Flag           | Description                                                             |
+| -------------- | ----------------------------------------------------------------------- |
 | `--file`, `-f` | JSON file containing permissions (`role_permissions` schema) (required) |
 
 ```bash
@@ -295,7 +294,7 @@ The file follows the OCAPI `role_permissions` schema with four sections:
 `b2c bm users` — query and manage instance-level Business Manager users via the OCAPI `/users` resource.
 
 ::: warning Local user creation is often disabled
-`b2c bm users create` performs a create-or-replace. Most production instances use SSO with Account Manager and **reject creating *local* BM users** — the server responds with `LocalUserCreationException` ("creation of a local Business Manager user is not allowed with the current server settings"). Creation succeeds only when the instance is explicitly configured to allow local users; otherwise use Account Manager to provision users and manage them here (read/update/delete/search) plus access-key administration.
+`b2c bm users create` performs a create-or-replace. Most production instances use SSO with Account Manager and **reject creating _local_ BM users** — the server responds with `LocalUserCreationException` ("creation of a local Business Manager user is not allowed with the current server settings"). Creation succeeds only when the instance is explicitly configured to allow local users; otherwise use Account Manager to provision users and manage them here (read/update/delete/search) plus access-key administration.
 :::
 
 ### b2c bm users list
@@ -306,12 +305,12 @@ List all users on the instance.
 b2c bm users list [--count <n>] [--start <n>] [--columns <cols>] [--extended]
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--count`, `-n` | Number of users to return (default 25) |
-| `--start` | Start index for pagination (default 0) |
-| `--columns`, `-c` | Comma-separated columns to display. Available: `login`, `email`, `name`, `disabled`, `locked`, `lastLogin`, `externalId` |
-| `--extended`, `-x` | Include extended columns (`lastLogin`, `externalId`) |
+| Flag               | Description                                                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `--count`, `-n`    | Number of users to return (default 25)                                                                                   |
+| `--start`          | Start index for pagination (default 0)                                                                                   |
+| `--columns`, `-c`  | Comma-separated columns to display. Available: `login`, `email`, `name`, `disabled`, `locked`, `lastLogin`, `externalId` |
+| `--extended`, `-x` | Include extended columns (`lastLogin`, `externalId`)                                                                     |
 
 ```bash
 b2c bm users list
@@ -343,20 +342,20 @@ b2c bm users search [--search-phrase <text>] [--login <login>] [--email <email>]
     [--query <json>] [--count <n>] [--start <n>] [--columns <cols>] [--extended]
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--search-phrase` | Free-text phrase searched across login/email/first_name/last_name |
-| `--login` | Match a specific login |
-| `--email` | Match a specific email |
-| `--locked` / `--no-locked` | Match locked / unlocked users |
-| `--disabled` / `--no-disabled` | Match disabled / enabled users |
-| `--sort-by` | Sort field (e.g. `last_login_date`) |
-| `--sort-order` | `asc` or `desc` |
-| `--query` | Raw OCAPI query JSON (overrides convenience flags) |
-| `--count`, `-n` | Number of users to return (default 25) |
-| `--start` | Start index for pagination (default 0) |
-| `--columns`, `-c` | Comma-separated columns to display. Available: `login`, `email`, `name`, `disabled`, `locked`, `lastLogin`, `externalId` |
-| `--extended`, `-x` | Include extended columns (`lastLogin`, `externalId`) |
+| Flag                           | Description                                                                                                              |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `--search-phrase`              | Free-text phrase searched across login/email/first_name/last_name                                                        |
+| `--login`                      | Match a specific login                                                                                                   |
+| `--email`                      | Match a specific email                                                                                                   |
+| `--locked` / `--no-locked`     | Match locked / unlocked users                                                                                            |
+| `--disabled` / `--no-disabled` | Match disabled / enabled users                                                                                           |
+| `--sort-by`                    | Sort field (e.g. `last_login_date`)                                                                                      |
+| `--sort-order`                 | `asc` or `desc`                                                                                                          |
+| `--query`                      | Raw OCAPI query JSON (overrides convenience flags)                                                                       |
+| `--count`, `-n`                | Number of users to return (default 25)                                                                                   |
+| `--start`                      | Start index for pagination (default 0)                                                                                   |
+| `--columns`, `-c`              | Comma-separated columns to display. Available: `login`, `email`, `name`, `disabled`, `locked`, `lastLogin`, `externalId` |
+| `--extended`, `-x`             | Include extended columns (`lastLogin`, `externalId`)                                                                     |
 
 ```bash
 b2c bm users search --search-phrase smith
@@ -411,8 +410,8 @@ Remove a user from the instance. Prompts for confirmation by default.
 b2c bm users delete <login> [--force]
 ```
 
-| Flag | Description |
-|------|-------------|
+| Flag      | Description                  |
+| --------- | ---------------------------- |
 | `--force` | Skip the confirmation prompt |
 
 ```bash
@@ -451,11 +450,11 @@ This command defaults to browser-based user-auth — a fresh shell triggers `b2c
 
 ### Scopes
 
-| Scope | Used for |
-|---|---|
+| Scope                         | Used for                                              |
+| ----------------------------- | ----------------------------------------------------- |
 | `WEBDAV_AND_STUDIO` (default) | WebDAV uploads (cartridge sync, IMPEX), Studio access |
-| `AGENT_USER_AND_OCAPI` | Customer Service Center (CSC) and OCAPI Basic auth |
-| `STOREFRONT` | Storefront diagnostic / agent login passwords |
+| `AGENT_USER_AND_OCAPI`        | Customer Service Center (CSC) and OCAPI Basic auth    |
+| `STOREFRONT`                  | Storefront diagnostic / agent login passwords         |
 
 ### b2c bm access-key get
 
@@ -465,12 +464,12 @@ Get the current state of an access key.
 b2c bm access-key get [<login>] [--scope <scope>]
 ```
 
-| Argument | Description |
-|----------|-------------|
+| Argument  | Description                                                       |
+| --------- | ----------------------------------------------------------------- |
 | `[login]` | User login (email). Defaults to the currently authenticated user. |
 
-| Flag | Description |
-|------|-------------|
+| Flag      | Description                                                                |
+| --------- | -------------------------------------------------------------------------- |
 | `--scope` | One of `WEBDAV_AND_STUDIO` (default), `AGENT_USER_AND_OCAPI`, `STOREFRONT` |
 
 ```bash
@@ -505,8 +504,8 @@ Enable or disable an existing access key.
 b2c bm access-key set [<login>] [--scope <scope>] (--enabled | --no-enabled)
 ```
 
-| Flag | Description |
-|------|-------------|
+| Flag                         | Description                          |
+| ---------------------------- | ------------------------------------ |
 | `--enabled` / `--no-enabled` | Enable or disable the key (required) |
 
 ```bash
@@ -523,8 +522,8 @@ Delete an access key. Prompts for confirmation by default.
 b2c bm access-key delete [<login>] [--scope <scope>] [--force]
 ```
 
-| Flag | Description |
-|------|-------------|
+| Flag      | Description                  |
+| --------- | ---------------------------- |
 | `--force` | Skip the confirmation prompt |
 
 ```bash

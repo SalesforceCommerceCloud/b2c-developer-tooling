@@ -45,37 +45,21 @@
  */
 import type {B2CInstance, ScapiClientConfig} from '../../instance/index.js';
 import {isOcapiDeprecatedFault, OcapiDeprecatedError} from '../../clients/error-utils.js';
-import {
-  isInvalidScopeError,
-  ScapiCapabilityUnsupportedError,
-  scapiUnavailableMessage,
-} from '../../clients/scapi-backend-utils.js';
+import {isFallbackTrigger, scapiUnavailableMessage} from '../../clients/scapi-backend-utils.js';
 import {createScapiJobsClient} from '../../clients/scapi-jobs.js';
 import {getLogger} from '../../logging/logger.js';
 import {mapCanonicalToOcapiExecution} from './ocapi-mapping.js';
-import {
-  executeJob as scapiExecuteJob,
-  getJobExecution as scapiGetJobExecution,
-  ScapiJobStartError,
-} from './scapi-ops.js';
+import {executeJob as scapiExecuteJob, getJobExecution as scapiGetJobExecution} from './scapi-ops.js';
 import {waitForJob, JobExecutionError, type JobExecution, type WaitForJobOptions} from './run.js';
 import {waitForJobExecution, CanonicalJobExecutionError} from './wait-canonical.js';
 
 /**
- * HTTP statuses on a SCAPI job-start response that prove the server *refused*
- * the request before creating a job execution — so re-running over OCAPI
- * cannot duplicate a mutating job. Ambiguous statuses (5xx, 429) and
- * network/timeout errors (no response at all) are deliberately excluded.
- */
-const SAFE_START_REJECTION_STATUSES = new Set([400, 401, 403, 404, 405, 406, 415]);
-
-/**
  * Decides whether a SCAPI start failure is provably safe to fall back to OCAPI
  * for. Safe cases guarantee no job was created:
- *   - {@link isInvalidScopeError}: Account Manager rejected the scope during
+ *   - `invalid_scope`: Account Manager rejected the scope during
  *     token acquisition — thrown before the job POST is ever sent.
- *   - {@link ScapiCapabilityUnsupportedError}: a purely local rejection.
- *   - a {@link ScapiJobStartError} whose HTTP status is a client-side rejection
+ *   - a SCAPI capability error: a purely local rejection.
+ *   - a typed SCAPI start error whose HTTP status is a client-side rejection
  *     (the server refused before starting the job).
  *
  * Everything else — a network/timeout error (which may have reached the server
@@ -83,10 +67,7 @@ const SAFE_START_REJECTION_STATUSES = new Set([400, 401, 403, 404, 405, 406, 415
  * trigger an OCAPI re-run of a mutating job.
  */
 function isSafeStartFallback(error: unknown): boolean {
-  if (isInvalidScopeError(error) || error instanceof ScapiCapabilityUnsupportedError) {
-    return true;
-  }
-  return error instanceof ScapiJobStartError && SAFE_START_REJECTION_STATUSES.has(error.status);
+  return isFallbackTrigger(error);
 }
 
 /**

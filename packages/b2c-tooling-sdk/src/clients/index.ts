@@ -423,8 +423,29 @@ export type {
   components as ScapiSitesComponents,
 } from './scapi-sites.js';
 
+// SCAPI Catalogs
+export {createScapiCatalogsClient, SCAPI_CATALOGS_CASCADE} from './scapi-catalogs.js';
+export type {
+  ScapiCatalogsClient,
+  ScapiCatalogsClientConfig,
+  Catalog as ScapiCatalog,
+  Catalogs as ScapiCatalogs,
+  paths as ScapiCatalogsPaths,
+  components as ScapiCatalogsComponents,
+} from './scapi-catalogs.js';
+
 // SCAPI dual-backend utilities (shared across SCAPI/OCAPI domains)
-export {isInvalidScopeError, resolveScapiOrOcapi, withScopes} from './scapi-backend-utils.js';
+export {
+  createScapiRequestError,
+  isFallbackTrigger,
+  isInvalidScopeError,
+  resolveScapiOrOcapi,
+  SAFE_SCAPI_FALLBACK_STATUSES,
+  ScapiCapabilityUnsupportedError,
+  ScapiRequestError,
+  scapiUnavailableMessage,
+  withScopes,
+} from './scapi-backend-utils.js';
 export type {ApiBackendPreference, BackendBase, ResolveBackendOptions} from './scapi-backend-utils.js';
 export {createFallbackBackend} from './scapi-fallback-backend.js';
 export {createDualBackend} from './dual-backend-factory.js';

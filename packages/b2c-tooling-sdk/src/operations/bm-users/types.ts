@@ -65,6 +65,19 @@ export interface ListUsersOptions {
   count?: number;
 }
 
+/** Portable user search criteria supported by both backends. */
+export interface SearchUsersOptions extends ListUsersOptions {
+  /** Raw OCAPI query. In auto mode this deliberately selects the OCAPI fallback. */
+  query?: unknown;
+  searchPhrase?: string;
+  login?: string;
+  email?: string;
+  locked?: boolean;
+  disabled?: boolean;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 /**
  * Body for create/replace (PUT). Required: login.
  */
@@ -84,12 +97,13 @@ export interface CreateUserInput {
 /**
  * Backend contract for BM user operations.
  *
- * Note: search and access-key operations remain OCAPI-only — they have
- * no SCAPI equivalent in `merchant/users/v1`. The `whoami` operation is
- * also OCAPI-only (resolves the BM identity behind the OAuth token).
+ * Merchant Users has no server-side search endpoint, so the SCAPI backend
+ * implements portable search criteria over its paginated user listing.
+ * Raw OCAPI query DSL, access keys, and `whoami` remain OCAPI-only.
  */
 export interface UsersBackend extends BackendBase {
   listUsers(options?: ListUsersOptions): Promise<ListUsersResult>;
+  searchUsers(options?: SearchUsersOptions): Promise<ListUsersResult>;
   getUser(login: string): Promise<UserInfo>;
   createOrReplaceUser(login: string, input: CreateUserInput): Promise<UserInfo>;
   updateUser(login: string, changes: UpdateUserChanges): Promise<UserInfo>;

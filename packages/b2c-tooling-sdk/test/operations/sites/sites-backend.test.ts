@@ -157,6 +157,52 @@ describe('operations/sites backend', () => {
         cartridges: 'a:b',
       });
     });
+
+    it('reads and writes the custom cartridge path with the SCAPI endpoint', async () => {
+      const backend = new ScapiSitesBackend({shortCode: 'abcd1234', tenantId: 'zzxy_dev', auth: fakeAuth});
+      const calls: Array<{method: string; path: string; body?: unknown}> = [];
+      (backend as unknown as {client: unknown}).client = {
+        async GET(path: string) {
+          calls.push({method: 'GET', path});
+          return {data: {customCartridges: 'app_a:app_b'}, error: undefined, response: {status: 200}};
+        },
+        async PUT(path: string, options: {body: unknown}) {
+          calls.push({method: 'PUT', path, body: options.body});
+          return {data: options.body, error: undefined, response: {status: 200}};
+        },
+      };
+
+      expect(await backend.getCartridgePath('RefArch')).to.equal('app_a:app_b');
+      expect(await backend.setCartridgePath('RefArch', 'app_c:app_a')).to.equal('app_c:app_a');
+      expect(calls).to.deep.equal([
+        {
+          method: 'GET',
+          path: '/organizations/{organizationId}/sites/{siteId}/custom-cartridges',
+        },
+        {
+          method: 'PUT',
+          path: '/organizations/{organizationId}/sites/{siteId}/custom-cartridges',
+          body: {customCartridges: 'app_c:app_a'},
+        },
+      ]);
+    });
+
+    it('implements SCAPI add/remove by replacing the custom cartridge path', async () => {
+      const backend = new ScapiSitesBackend({shortCode: 'abcd1234', tenantId: 'zzxy_dev', auth: fakeAuth});
+      let path = 'app_a:app_b';
+      (backend as unknown as {client: unknown}).client = {
+        async GET() {
+          return {data: {customCartridges: path}, error: undefined, response: {status: 200}};
+        },
+        async PUT(_endpoint: string, options: {body: {customCartridges: string}}) {
+          path = options.body.customCartridges;
+          return {data: {customCartridges: path}, error: undefined, response: {status: 200}};
+        },
+      };
+
+      expect(await backend.addCartridge('RefArch', 'app_c', 'after', 'app_a')).to.equal('app_a:app_c:app_b');
+      expect(await backend.removeCartridge('RefArch', 'app_a')).to.equal('app_c:app_b');
+    });
   });
 
   describe('ScapiSitesBackend pagination + enrichment', () => {

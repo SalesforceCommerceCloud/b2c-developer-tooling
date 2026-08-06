@@ -50,7 +50,7 @@
  * @module compat/dispatcher
  */
 import {getLogger} from '../logging/logger.js';
-import {isInvalidScopeError, type ApiBackendPreference} from '../clients/scapi-backend-utils.js';
+import {isFallbackTrigger, type ApiBackendPreference} from '../clients/scapi-backend-utils.js';
 
 export type {ApiBackendPreference};
 
@@ -70,7 +70,7 @@ export interface DispatchBranches<S, T> {
 
 /**
  * Stateful router that runs SCAPI optimistically and falls back to OCAPI
- * once on `invalid_scope`, caching the choice for the lifetime of the
+ * once on a safe capability/auth/request rejection, caching the choice for the lifetime of the
  * dispatcher. See the module-level docs for the full rationale.
  *
  * Construct one per logical operation (e.g. one per CLI command run, or
@@ -120,9 +120,8 @@ export class BackendDispatcher<S> {
 
   /**
    * Runs the operation against the resolved backend. If unresolved (auto
-   * with SCAPI configured), tries SCAPI first; on `invalid_scope`, falls
-   * back to OCAPI and caches the choice. Other errors propagate without
-   * fallback.
+   * with SCAPI configured), tries SCAPI first; on a safe fallback trigger,
+   * falls back to OCAPI and caches the choice. Ambiguous failures propagate.
    */
   async run<T>(branches: DispatchBranches<S, T>): Promise<T> {
     if (this.resolved === 'ocapi') return branches.ocapi();
@@ -133,8 +132,8 @@ export class BackendDispatcher<S> {
       this.resolved = 'scapi';
       return result;
     } catch (error) {
-      if (isInvalidScopeError(error)) {
-        getLogger().info(`SCAPI ${this.domainName} scope unavailable, falling back to OCAPI`);
+      if (isFallbackTrigger(error)) {
+        getLogger().info(`SCAPI ${this.domainName} unavailable for this operation, falling back to OCAPI`);
         this.resolved = 'ocapi';
         return branches.ocapi();
       }

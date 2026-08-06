@@ -23,6 +23,7 @@ import {
 } from '../../clients/scapi-merchant-roles.js';
 import {buildTenantScope, toOrganizationId} from '../../clients/custom-apis.js';
 import {ScopeTierManager} from '../../clients/scapi-scope-tier.js';
+import {createScapiRequestError} from '../../clients/scapi-backend-utils.js';
 
 function mapScapiRole(scapi: ScapiRole): RoleInfo {
   return {
@@ -63,14 +64,14 @@ export class ScapiRolesBackend implements RolesBackend {
     const {start = 0, count = 25, expand} = options;
 
     return this.scopeTier.tryRead(async (client) => {
-      const {data, error} = await client.GET('/organizations/{organizationId}/roles', {
+      const {data, error, response} = await client.GET('/organizations/{organizationId}/roles', {
         params: {
           path: {organizationId: this.organizationId},
           query: {limit: count, offset: start, expand},
         },
       });
       if (error || !data) {
-        throw new Error(toErrorMessage(error, 'Failed to list roles'));
+        throw createScapiRequestError(error, response, 'Failed to list roles');
       }
       const result = data as RoleSearch;
       return {
@@ -84,14 +85,14 @@ export class ScapiRolesBackend implements RolesBackend {
 
   async getRole(roleId: string, options?: {expand?: ('users' | 'permissions')[]}): Promise<RoleInfo> {
     return this.scopeTier.tryRead(async (client) => {
-      const {data, error} = await client.GET('/organizations/{organizationId}/roles/{roleId}', {
+      const {data, error, response} = await client.GET('/organizations/{organizationId}/roles/{roleId}', {
         params: {
           path: {organizationId: this.organizationId, roleId},
           query: {expand: options?.expand},
         },
       });
       if (error || !data) {
-        throw new Error(toErrorMessage(error, `Failed to get role ${roleId}`));
+        throw createScapiRequestError(error, response, `Failed to get role ${roleId}`);
       }
       return mapScapiRole(data);
     });
@@ -103,33 +104,33 @@ export class ScapiRolesBackend implements RolesBackend {
       id: roleId,
       description: input?.description,
     };
-    const {data, error} = await client.PUT('/organizations/{organizationId}/roles/{roleId}', {
+    const {data, error, response} = await client.PUT('/organizations/{organizationId}/roles/{roleId}', {
       params: {path: {organizationId: this.organizationId, roleId}},
       body,
     });
     if (error || !data) {
-      throw new Error(toErrorMessage(error, `Failed to create role ${roleId}`));
+      throw createScapiRequestError(error, response, `Failed to create role ${roleId}`);
     }
     return mapScapiRole(data);
   }
 
   async deleteRole(roleId: string): Promise<void> {
     const client = this.scopeTier.getClientForWrite();
-    const {error} = await client.DELETE('/organizations/{organizationId}/roles/{roleId}', {
+    const {error, response} = await client.DELETE('/organizations/{organizationId}/roles/{roleId}', {
       params: {path: {organizationId: this.organizationId, roleId}},
     });
     if (error) {
-      throw new Error(toErrorMessage(error, `Failed to delete role ${roleId}`));
+      throw createScapiRequestError(error, response, `Failed to delete role ${roleId}`);
     }
   }
 
   async getPermissions(roleId: string): Promise<RolePermissionsInfo> {
     return this.scopeTier.tryRead(async (client) => {
-      const {data, error} = await client.GET('/organizations/{organizationId}/roles/{roleId}/permissions', {
+      const {data, error, response} = await client.GET('/organizations/{organizationId}/roles/{roleId}/permissions', {
         params: {path: {organizationId: this.organizationId, roleId}},
       });
       if (error || !data) {
-        throw new Error(toErrorMessage(error, `Failed to get permissions for role ${roleId}`));
+        throw createScapiRequestError(error, response, `Failed to get permissions for role ${roleId}`);
       }
       return data;
     });
@@ -137,33 +138,33 @@ export class ScapiRolesBackend implements RolesBackend {
 
   async setPermissions(roleId: string, permissions: RolePermissionsInfo): Promise<RolePermissionsInfo> {
     const client = this.scopeTier.getClientForWrite();
-    const {data, error} = await client.PUT('/organizations/{organizationId}/roles/{roleId}/permissions', {
+    const {data, error, response} = await client.PUT('/organizations/{organizationId}/roles/{roleId}/permissions', {
       params: {path: {organizationId: this.organizationId, roleId}},
       body: permissions,
     });
     if (error || !data) {
-      throw new Error(toErrorMessage(error, `Failed to set permissions for role ${roleId}`));
+      throw createScapiRequestError(error, response, `Failed to set permissions for role ${roleId}`);
     }
     return data;
   }
 
   async grantRole(roleId: string, login: string): Promise<void> {
     const client = this.scopeTier.getClientForWrite();
-    const {error} = await client.PUT('/organizations/{organizationId}/roles/{roleId}/users/{login}', {
+    const {error, response} = await client.PUT('/organizations/{organizationId}/roles/{roleId}/users/{login}', {
       params: {path: {organizationId: this.organizationId, roleId, login}},
     });
     if (error) {
-      throw new Error(toErrorMessage(error, `Failed to grant role ${roleId} to ${login}`));
+      throw createScapiRequestError(error, response, `Failed to grant role ${roleId} to ${login}`);
     }
   }
 
   async revokeRole(roleId: string, login: string): Promise<void> {
     const client = this.scopeTier.getClientForWrite();
-    const {error} = await client.DELETE('/organizations/{organizationId}/roles/{roleId}/users/{login}', {
+    const {error, response} = await client.DELETE('/organizations/{organizationId}/roles/{roleId}/users/{login}', {
       params: {path: {organizationId: this.organizationId, roleId, login}},
     });
     if (error) {
-      throw new Error(toErrorMessage(error, `Failed to revoke role ${roleId} from ${login}`));
+      throw createScapiRequestError(error, response, `Failed to revoke role ${roleId} from ${login}`);
     }
   }
 
@@ -175,9 +176,4 @@ export class ScapiRolesBackend implements RolesBackend {
     };
     return createScapiMerchantRolesClient(clientConfig, this.config.auth);
   }
-}
-
-function toErrorMessage(error: unknown, fallback: string): string {
-  const e = error as {detail?: string; title?: string} | undefined;
-  return e?.detail ?? e?.title ?? fallback;
 }

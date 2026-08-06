@@ -18,6 +18,7 @@
  * @module operations/jobs/scapi-ops
  */
 import type {B2CInstance} from '../../instance/index.js';
+import {createScapiRequestError, ScapiRequestError} from '../../clients/scapi-backend-utils.js';
 import {SCOPE_MODE_HEADER} from '../../clients/middleware.js';
 import {
   toOrganizationId,
@@ -42,13 +43,13 @@ const WRITE_HEADERS = {[SCOPE_MODE_HEADER]: 'write'};
  * as a raw thrown error with no status, because the request may have reached
  * the server and the job may already be running.
  */
-export class ScapiJobStartError extends Error {
+export class ScapiJobStartError extends ScapiRequestError {
   constructor(
     message: string,
     /** HTTP status of the rejection response. */
     public readonly status: number,
   ) {
-    super(message);
+    super(message, status);
     this.name = 'ScapiJobStartError';
   }
 }
@@ -158,15 +159,16 @@ export async function getJobExecution(
 ): Promise<JobExecutionInfo> {
   const organizationId = toOrganizationId(tenantId);
 
-  const {data, error} = await client.GET('/organizations/{organizationId}/jobs/{jobId}/executions/{executionId}', {
-    params: {path: {organizationId, jobId, executionId}},
-    headers: READ_HEADERS,
-  });
+  const {data, error, response} = await client.GET(
+    '/organizations/{organizationId}/jobs/{jobId}/executions/{executionId}',
+    {
+      params: {path: {organizationId, jobId, executionId}},
+      headers: READ_HEADERS,
+    },
+  );
 
   if (error || !data) {
-    const errorBody = error as unknown as {detail?: string; title?: string};
-    const message = errorBody?.detail ?? `Failed to get job execution ${executionId}`;
-    throw new Error(message);
+    throw createScapiRequestError(error, response, `Failed to get job execution ${executionId}`);
   }
 
   return mapScapiExecution(data);
@@ -207,7 +209,7 @@ export async function searchJobExecutions(
     query = {boolQuery: {must: queries}};
   }
 
-  const {data, error} = await client.POST('/organizations/{organizationId}/job-execution-search', {
+  const {data, error, response} = await client.POST('/organizations/{organizationId}/job-execution-search', {
     params: {path: {organizationId}},
     headers: READ_HEADERS,
     body: {
@@ -219,9 +221,7 @@ export async function searchJobExecutions(
   });
 
   if (error || !data) {
-    const errorBody = error as unknown as {detail?: string; title?: string};
-    const message = errorBody?.detail ?? 'Failed to search job executions';
-    throw new Error(message);
+    throw createScapiRequestError(error, response, 'Failed to search job executions');
   }
 
   const result = data as unknown as {total?: number; limit?: number; offset?: number; hits?: ScapiJobExecution[]};
@@ -241,15 +241,16 @@ export async function deleteJobExecution(
 ): Promise<void> {
   const organizationId = toOrganizationId(tenantId);
 
-  const {error} = await client.DELETE('/organizations/{organizationId}/jobs/{jobId}/executions/{executionId}', {
-    params: {path: {organizationId, jobId, executionId}},
-    headers: WRITE_HEADERS,
-  });
+  const {error, response} = await client.DELETE(
+    '/organizations/{organizationId}/jobs/{jobId}/executions/{executionId}',
+    {
+      params: {path: {organizationId, jobId, executionId}},
+      headers: WRITE_HEADERS,
+    },
+  );
 
   if (error) {
-    const errorBody = error as unknown as {detail?: string; title?: string};
-    const message = errorBody?.detail ?? `Failed to delete job execution ${executionId}`;
-    throw new Error(message);
+    throw createScapiRequestError(error, response, `Failed to delete job execution ${executionId}`);
   }
 }
 

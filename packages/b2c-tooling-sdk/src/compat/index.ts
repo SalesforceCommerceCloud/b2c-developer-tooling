@@ -12,3 +12,4 @@
  */
 export {BackendDispatcher} from './dispatcher.js';
 export type {ApiBackendPreference, ResolvedBackend, DispatchBranches} from './dispatcher.js';
+export {createJobsCompatibilityBackend, JobsCompatibilityBackend} from './jobs-backend.js';

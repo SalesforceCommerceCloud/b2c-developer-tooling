@@ -89,6 +89,7 @@ export type {
   UserInfo,
   ListUsersResult,
   ListUsersOptions,
+  SearchUsersOptions,
   CreateUserInput,
   UpdateUserChanges,
 } from './types.js';

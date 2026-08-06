@@ -11,9 +11,8 @@
  * path). We expose a single canonical shape here so command code is agnostic
  * to which backend serves the request.
  *
- * The SCAPI Sites API is read-only; cartridge-path **writes** have no SCAPI
- * equivalent and remain OCAPI / site-archive-import only (see
- * {@link module:operations/sites/cartridges}).
+ * SCAPI Sites v1.3 exposes dedicated custom-cartridge read/write operations;
+ * OCAPI remains as the temporary compatibility backend.
  *
  * @module operations/sites/sites-types
  */
@@ -42,13 +41,19 @@ export interface ListSitesOptions {
   start?: number;
 }
 
+export type CartridgePosition = 'first' | 'last' | 'before' | 'after';
+
 /**
  * Backend contract for site read operations.
  *
- * Only reads are modeled — the SCAPI Sites API has no write surface, and
- * cartridge-path mutation is handled separately by the OCAPI/import path.
+ * Cartridge-path methods model the SCAPI v1.3 custom-cartridges resource and
+ * the equivalent OCAPI Data API resource.
  */
 export interface SitesBackend extends BackendBase {
   listSites(options?: ListSitesOptions): Promise<SiteInfo[]>;
   getSite(siteId: string): Promise<SiteInfo>;
+  getCartridgePath(siteId: string): Promise<string>;
+  setCartridgePath(siteId: string, cartridges: string): Promise<string>;
+  addCartridge(siteId: string, name: string, position: CartridgePosition, target?: string): Promise<string>;
+  removeCartridge(siteId: string, name: string): Promise<string>;
 }

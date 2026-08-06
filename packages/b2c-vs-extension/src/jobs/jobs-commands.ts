@@ -4,17 +4,16 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {
-  executeJob,
   getJobErrorMessage,
   getJobLog,
   siteArchiveExportToPath,
   siteArchiveImport,
-  waitForJob,
   type ExportDataUnitsConfiguration,
   type JobExecution,
   type JobExecutionParameter,
   JobExecutionError,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import {createJobsCompatibilityBackend} from '@salesforce/b2c-tooling-sdk';
 import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {createScaffoldRegistry, generateFromScaffold} from '@salesforce/b2c-tooling-sdk/scaffold';
 import {findCartridgesSafe} from '../workspace-discovery.js';
@@ -1074,18 +1073,18 @@ export function registerJobsCommands(
       void vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured. Configure dw.json first.');
       return;
     }
-
     const triggerAndWait = async (): Promise<JobExecution> => {
+      const jobsBackend = createJobsCompatibilityBackend(instance);
       return vscode.window.withProgress(
         {location: vscode.ProgressLocation.Notification, title: `Running job ${jobId}...`, cancellable: false},
         async (progress) => {
-          const execution = await executeJob(instance, jobId, {parameters});
+          const execution = await jobsBackend.executeJob(jobId, {parameters});
           const executionId = execution.id;
           if (!executionId) return execution;
 
           progress.report({message: `Execution ${executionId} started`});
           treeProvider.refresh();
-          return waitForJob(instance, jobId, executionId, {
+          return jobsBackend.waitForJob(jobId, executionId, {
             onPoll: (info) => progress.report({message: `${info.status} · ${info.elapsedSeconds}s elapsed`}),
           });
         },
@@ -1530,6 +1529,12 @@ export function registerJobsCommands(
     const instance = configProvider.getInstance();
     if (!instance) {
       void vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured. Configure dw.json first.');
+      return;
+    }
+    if (instance.apiBackend === 'scapi') {
+      void vscode.window.showErrorMessage(
+        'Stopping a running job is not supported by the current SCAPI Jobs API. Set apiBackend to ocapi or auto to use the temporary OCAPI compatibility operation.',
+      );
       return;
     }
 

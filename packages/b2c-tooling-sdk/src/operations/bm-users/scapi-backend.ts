@@ -11,6 +11,7 @@ import type {
   ListUsersOptions,
   UpdateUserChanges,
   CreateUserInput,
+  SearchUsersOptions,
 } from './types.js';
 import {
   createScapiMerchantUsersClient,
@@ -23,7 +24,7 @@ import {
   type UserSearch,
 } from '../../clients/scapi-merchant-users.js';
 import {buildTenantScope, toOrganizationId} from '../../clients/custom-apis.js';
-import {ScapiCapabilityUnsupportedError} from '../../clients/scapi-backend-utils.js';
+import {createScapiRequestError, ScapiCapabilityUnsupportedError} from '../../clients/scapi-backend-utils.js';
 import {ScopeTierManager} from '../../clients/scapi-scope-tier.js';
 
 function mapScapiUser(scapi: ScapiUser): UserInfo {
@@ -73,14 +74,14 @@ export class ScapiUsersBackend implements UsersBackend {
     const {start = 0, count = 25} = options;
 
     return this.scopeTier.tryRead(async (client) => {
-      const {data, error} = await client.GET('/organizations/{organizationId}/users', {
+      const {data, error, response} = await client.GET('/organizations/{organizationId}/users', {
         params: {
           path: {organizationId: this.organizationId},
           query: {limit: count, offset: start},
         },
       });
       if (error || !data) {
-        throw new Error(toErrorMessage(error, 'Failed to list users'));
+        throw createScapiRequestError(error, response, 'Failed to list users');
       }
       const result = data as UserSearch;
       return {
@@ -92,13 +93,58 @@ export class ScapiUsersBackend implements UsersBackend {
     });
   }
 
+  async searchUsers(options: SearchUsersOptions = {}): Promise<ListUsersResult> {
+    if (options.query !== undefined) {
+      throw new ScapiCapabilityUnsupportedError(
+        'Raw OCAPI user-search query JSON is not supported by SCAPI. Use portable search flags or --api-backend ocapi.',
+      );
+    }
+
+    const all: UserInfo[] = [];
+    let offset = 0;
+    const pageSize = 200;
+    do {
+      const page = await this.listUsers({start: offset, count: pageSize});
+      all.push(...page.hits);
+      offset += page.hits.length;
+      if (page.hits.length === 0 || offset >= page.total) break;
+    } while (true);
+
+    const phrase = options.searchPhrase?.toLocaleLowerCase();
+    const filtered = all.filter((user) => {
+      if (options.login !== undefined && user.login !== options.login) return false;
+      if (options.email !== undefined && user.email !== options.email) return false;
+      if (options.locked !== undefined && user.locked !== options.locked) return false;
+      if (options.disabled !== undefined && user.disabled !== options.disabled) return false;
+      if (!phrase) return true;
+      return [user.login, user.email, user.firstName, user.lastName].some((value) =>
+        value?.toLocaleLowerCase().includes(phrase),
+      );
+    });
+
+    if (options.sortBy) {
+      const field = toCanonicalSortField(options.sortBy);
+      const direction = options.sortOrder === 'desc' ? -1 : 1;
+      filtered.sort(
+        (left, right) =>
+          String(left[field] ?? '').localeCompare(String(right[field] ?? ''), undefined, {sensitivity: 'base'}) *
+          direction,
+      );
+    }
+
+    const start = options.start ?? 0;
+    const count = options.count ?? 25;
+    const hits = filtered.slice(start, start + count);
+    return {total: filtered.length, start, count: hits.length, hits};
+  }
+
   async getUser(login: string): Promise<UserInfo> {
     return this.scopeTier.tryRead(async (client) => {
-      const {data, error} = await client.GET('/organizations/{organizationId}/users/{login}', {
+      const {data, error, response} = await client.GET('/organizations/{organizationId}/users/{login}', {
         params: {path: {organizationId: this.organizationId, login}},
       });
       if (error || !data) {
-        throw new Error(toErrorMessage(error, `Failed to get user ${login}`));
+        throw createScapiRequestError(error, response, `Failed to get user ${login}`);
       }
       return mapScapiUser(data);
     });
@@ -118,20 +164,38 @@ export class ScapiUsersBackend implements UsersBackend {
       preferredUiLocale: input.preferredUiLocale,
       roles: input.roles,
     };
-    const {data, error} = await client.PUT('/organizations/{organizationId}/users/{login}', {
+    const {data, error, response} = await client.PUT('/organizations/{organizationId}/users/{login}', {
       params: {path: {organizationId: this.organizationId, login}},
       body,
     });
     if (error || !data) {
-      throw new Error(toErrorMessage(error, `Failed to create user ${login}`));
+      throw createScapiRequestError(error, response, `Failed to create user ${login}`);
     }
     return mapScapiUser(data);
   }
 
   async updateUser(login: string, changes: UpdateUserChanges): Promise<UserInfo> {
+    // PATCH does not expose `disabled`, but the live API's replace operation
+    // does. Preserve the current writable fields and use PUT for that case.
+    if (changes.disabled !== undefined) {
+      const current = await this.getUser(login);
+      if (!current.email) {
+        throw new Error(`Cannot update disabled status for ${login}: the current user response has no email`);
+      }
+      return this.createOrReplaceUser(login, {
+        login,
+        email: changes.email ?? current.email,
+        firstName: changes.firstName ?? current.firstName,
+        lastName: changes.lastName ?? current.lastName,
+        externalId: changes.externalId ?? current.externalId,
+        disabled: changes.disabled,
+        preferredDataLocale: changes.preferredDataLocale ?? current.preferredDataLocale,
+        preferredUiLocale: changes.preferredUiLocale ?? current.preferredUiLocale,
+        roles: current.roles,
+      });
+    }
+
     const client = this.scopeTier.getClientForWrite();
-    // SCAPI UserUpdateRequest doesn't include `disabled`. To toggle disabled,
-    // callers must use createOrReplaceUser (PUT) on SCAPI or the OCAPI backend.
     const body: UserUpdateRequest = {
       email: changes.email,
       firstName: changes.firstName,
@@ -140,32 +204,23 @@ export class ScapiUsersBackend implements UsersBackend {
       preferredDataLocale: changes.preferredDataLocale,
       preferredUiLocale: changes.preferredUiLocale,
     };
-    if (changes.disabled !== undefined) {
-      // Recognized as a fallback trigger by the SCAPI/OCAPI fallback wrapper:
-      // in `auto` mode this transparently routes the update through OCAPI;
-      // in explicit `scapi` mode the message surfaces to the user.
-      throw new ScapiCapabilityUnsupportedError(
-        'SCAPI Users API does not support updating the `disabled` flag via PATCH. ' +
-          'Use --api-backend ocapi (or auto) to change disabled status.',
-      );
-    }
-    const {data, error} = await client.PATCH('/organizations/{organizationId}/users/{login}', {
+    const {data, error, response} = await client.PATCH('/organizations/{organizationId}/users/{login}', {
       params: {path: {organizationId: this.organizationId, login}},
       body,
     });
     if (error || !data) {
-      throw new Error(toErrorMessage(error, `Failed to update user ${login}`));
+      throw createScapiRequestError(error, response, `Failed to update user ${login}`);
     }
     return mapScapiUser(data);
   }
 
   async deleteUser(login: string): Promise<void> {
     const client = this.scopeTier.getClientForWrite();
-    const {error} = await client.DELETE('/organizations/{organizationId}/users/{login}', {
+    const {error, response} = await client.DELETE('/organizations/{organizationId}/users/{login}', {
       params: {path: {organizationId: this.organizationId, login}},
     });
     if (error) {
-      throw new Error(toErrorMessage(error, `Failed to delete user ${login}`));
+      throw createScapiRequestError(error, response, `Failed to delete user ${login}`);
     }
   }
 
@@ -179,7 +234,14 @@ export class ScapiUsersBackend implements UsersBackend {
   }
 }
 
-function toErrorMessage(error: unknown, fallback: string): string {
-  const e = error as {detail?: string; title?: string} | undefined;
-  return e?.detail ?? e?.title ?? fallback;
+function toCanonicalSortField(field: string): keyof UserInfo {
+  const fields: Record<string, keyof UserInfo> = {
+    first_name: 'firstName',
+    last_name: 'lastName',
+    external_id: 'externalId',
+    last_login_date: 'lastLoginDate',
+    is_locked: 'locked',
+    is_disabled: 'disabled',
+  };
+  return fields[field] ?? (field as keyof UserInfo);
 }

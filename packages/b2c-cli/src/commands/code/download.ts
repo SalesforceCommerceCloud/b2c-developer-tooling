@@ -153,6 +153,7 @@ export default class CodeDownload extends CartridgeCommand<typeof CodeDownload> 
       };
 
       const result = await this.operations.downloadCartridges(this.instance, this.flags.output ?? 'cartridges', {
+        scriptsBackend: createScriptsBackend({instance: this.instance}),
         include: this.cartridgeOptions.include,
         exclude: this.cartridgeOptions.exclude,
         mirror,

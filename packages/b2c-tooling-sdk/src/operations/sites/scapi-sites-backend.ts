@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import type {AuthStrategy} from '../../auth/types.js';
-import type {SitesBackend, SiteInfo, ListSitesOptions} from './sites-types.js';
+import type {SitesBackend, SiteInfo, ListSitesOptions, CartridgePosition} from './sites-types.js';
 import {
   createScapiSitesClient,
   toOrganizationId,
@@ -13,8 +13,10 @@ import {
   type Site as ScapiSite,
 } from '../../clients/scapi-sites.js';
 import {SCOPE_MODE_HEADER} from '../../clients/middleware.js';
+import {createScapiRequestError} from '../../clients/scapi-backend-utils.js';
 
 const READ_HEADERS = {[SCOPE_MODE_HEADER]: 'read'};
+const WRITE_HEADERS = {[SCOPE_MODE_HEADER]: 'write'};
 
 /** SCAPI `getSites` caps `limit` at 50 (spec `site-sites-v1.yaml`). */
 const SCAPI_SITES_MAX_PAGE = 50;
@@ -46,9 +48,8 @@ export interface ScapiSitesBackendConfig {
 }
 
 /**
- * SCAPI Sites backend. Reads sites and per-site detail via the
- * `site/sites/v1` Admin API. Read-only — cartridge-path writes have no SCAPI
- * equivalent and are not part of this backend.
+ * SCAPI Sites backend. Reads sites and manages custom cartridge paths via the
+ * `site/sites/v1` Admin API.
  */
 export class ScapiSitesBackend implements SitesBackend {
   readonly name = 'scapi' as const;
@@ -93,12 +94,12 @@ export class ScapiSitesBackend implements SitesBackend {
       if (remaining <= 0) break;
       const limit = Math.min(SCAPI_SITES_MAX_PAGE, remaining);
 
-      const {data, error} = await this.client.GET('/organizations/{organizationId}/sites', {
+      const {data, error, response} = await this.client.GET('/organizations/{organizationId}/sites', {
         params: {path: {organizationId: this.organizationId}, query: {limit, offset}},
         headers: READ_HEADERS,
       });
       if (error || !data) {
-        throw new Error(toErrorMessage(error, 'Failed to list sites'));
+        throw createScapiRequestError(error, response, 'Failed to list sites');
       }
 
       const page = data as unknown as {data?: ScapiSite[]; total?: number};
@@ -135,18 +136,76 @@ export class ScapiSitesBackend implements SitesBackend {
   }
 
   async getSite(siteId: string): Promise<SiteInfo> {
-    const {data, error} = await this.client.GET('/organizations/{organizationId}/sites/{siteId}', {
+    const {data, error, response} = await this.client.GET('/organizations/{organizationId}/sites/{siteId}', {
       params: {path: {organizationId: this.organizationId, siteId}},
       headers: READ_HEADERS,
     });
     if (error || !data) {
-      throw new Error(toErrorMessage(error, `Failed to get site ${siteId}`));
+      throw createScapiRequestError(error, response, `Failed to get site ${siteId}`);
     }
     return mapScapiSite(data as ScapiSite);
   }
+
+  async getCartridgePath(siteId: string): Promise<string> {
+    const {data, error, response} = await this.client.GET(
+      '/organizations/{organizationId}/sites/{siteId}/custom-cartridges',
+      {
+        params: {path: {organizationId: this.organizationId, siteId}},
+        headers: READ_HEADERS,
+      },
+    );
+    if (error || !data) {
+      throw createScapiRequestError(error, response, `Failed to get cartridge path for site ${siteId}`);
+    }
+    return data.customCartridges;
+  }
+
+  async setCartridgePath(siteId: string, cartridges: string): Promise<string> {
+    const {data, error, response} = await this.client.PUT(
+      '/organizations/{organizationId}/sites/{siteId}/custom-cartridges',
+      {
+        params: {path: {organizationId: this.organizationId, siteId}},
+        headers: WRITE_HEADERS,
+        body: {customCartridges: cartridges},
+      },
+    );
+    if (error || !data) {
+      throw createScapiRequestError(error, response, `Failed to set cartridge path for site ${siteId}`);
+    }
+    return data.customCartridges;
+  }
+
+  async addCartridge(siteId: string, name: string, position: CartridgePosition, target?: string): Promise<string> {
+    const current = await this.getCartridgePath(siteId);
+    const cartridges = current ? current.split(':') : [];
+    if (cartridges.includes(name)) {
+      throw new Error(`Cartridge "${name}" already exists in the cartridge path for site "${siteId}"`);
+    }
+    insertCartridge(cartridges, name, position, target);
+    return this.setCartridgePath(siteId, cartridges.join(':'));
+  }
+
+  async removeCartridge(siteId: string, name: string): Promise<string> {
+    const current = await this.getCartridgePath(siteId);
+    const cartridges = current ? current.split(':') : [];
+    const index = cartridges.indexOf(name);
+    if (index < 0) throw new Error(`Cartridge "${name}" not found in the cartridge path for site "${siteId}"`);
+    cartridges.splice(index, 1);
+    return this.setCartridgePath(siteId, cartridges.join(':'));
+  }
 }
 
-function toErrorMessage(error: unknown, fallback: string): string {
-  const e = error as {detail?: string; title?: string} | undefined;
-  return e?.detail ?? e?.title ?? fallback;
+function insertCartridge(cartridges: string[], name: string, position: CartridgePosition, target?: string): void {
+  if (position === 'first') {
+    cartridges.unshift(name);
+    return;
+  }
+  if (position === 'last') {
+    cartridges.push(name);
+    return;
+  }
+  if (!target) throw new Error(`Target cartridge is required for position "${position}"`);
+  const targetIndex = cartridges.indexOf(target);
+  if (targetIndex < 0) throw new Error(`Target cartridge "${target}" not found in cartridge path`);
+  cartridges.splice(position === 'before' ? targetIndex : targetIndex + 1, 0, name);
 }

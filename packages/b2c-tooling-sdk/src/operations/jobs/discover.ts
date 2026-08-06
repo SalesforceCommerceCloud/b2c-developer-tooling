@@ -16,6 +16,7 @@
  */
 import {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
+import {createCatalogsBackend} from '../catalogs/index.js';
 import {createSitesBackend} from '../sites/index.js';
 
 /**
@@ -35,35 +36,26 @@ export interface ExportableUnits {
   warnings: string[];
 }
 
-/**
- * Discoverable categories that only have an OCAPI "list-all" endpoint. Sites
- * are handled separately via the SCAPI-first sites backend (SCAPI has no
- * catalogs/inventory-list listing, so those stay on OCAPI).
- */
-const OCAPI_DISCOVERABLE = [
-  {key: 'catalogs', path: '/catalogs', label: 'catalogs'},
-  {key: 'inventoryLists', path: '/inventory_lists', label: 'inventory lists'},
-] as const;
-
 /** Page size for paginated list endpoints (OCAPI default is 25). */
 const PAGE_COUNT = 200;
 
 /**
- * Lists one paginated OCAPI collection, following `start`/`count` until all
+ * Lists inventory lists through the remaining paginated OCAPI collection,
+ * following `start`/`count` until all
  * documents are read. Returns the `id` of each document.
  */
-async function listIds(instance: B2CInstance, path: '/catalogs' | '/inventory_lists'): Promise<string[]> {
+async function listInventoryListIds(instance: B2CInstance): Promise<string[]> {
   const ids: string[] = [];
   let start = 0;
 
   // OCAPI collections page via start/count; `total` reports the full size.
   for (;;) {
-    const {data, error} = await instance.ocapi.GET(path, {
+    const {data, error} = await instance.ocapi.GET('/inventory_lists', {
       params: {query: {start, count: PAGE_COUNT}},
     });
 
     if (error || !data) {
-      throw new Error(error?.fault?.message ?? `Failed to list ${path}`);
+      throw new Error(error?.fault?.message ?? 'Failed to list inventory lists');
     }
 
     for (const item of data.data ?? []) {
@@ -86,7 +78,7 @@ async function listIds(instance: B2CInstance, path: '/catalogs' | '/inventory_li
  * Discovers the data units that can be exported from an instance.
  *
  * Each category is read independently: a failure in one (e.g. the OCAPI client
- * lacks read permission for catalogs) records a warning and leaves that list
+ * lacks read permission for a category) records a warning and leaves that list
  * empty rather than failing the whole discovery, so the caller can still offer
  * the categories that succeeded.
  *
@@ -118,16 +110,28 @@ export async function discoverExportableUnits(instance: B2CInstance): Promise<Ex
         result.warnings.push(`Could not list sites: ${message}`);
       }
     })(),
-    // Catalogs + inventory lists: OCAPI only (no SCAPI list-all endpoint).
-    ...OCAPI_DISCOVERABLE.map(async ({key, path, label}) => {
+    // Catalogs: SCAPI product/catalogs with OCAPI fallback.
+    (async () => {
       try {
-        result[key] = (await listIds(instance, path)).sort((a, b) => a.localeCompare(b));
+        const catalogs = await createCatalogsBackend({instance}).listCatalogs();
+        result.catalogs = catalogs.map(({id}) => id).sort((a, b) => a.localeCompare(b));
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        logger.debug({path, err: message}, `Failed to discover ${label}`);
-        result.warnings.push(`Could not list ${label}: ${message}`);
+        logger.debug({err: message}, 'Failed to discover catalogs');
+        result.warnings.push(`Could not list catalogs: ${message}`);
       }
-    }),
+    })(),
+    // The live SCAPI inventory APIs expose list detail/records but no
+    // organization-level inventory-list enumeration endpoint yet.
+    (async () => {
+      try {
+        result.inventoryLists = (await listInventoryListIds(instance)).sort((a, b) => a.localeCompare(b));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        logger.debug({err: message}, 'Failed to discover inventory lists');
+        result.warnings.push(`Could not list inventory lists: ${message}`);
+      }
+    })(),
   ]);
 
   return result;

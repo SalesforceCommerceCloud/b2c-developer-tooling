@@ -12,8 +12,8 @@ import {createRolesBackend, type RolesBackend} from '../operations/bm-roles/inde
  * Base command for Business Manager (instance-level) operations.
  *
  * Provides backend factories that select between OCAPI and SCAPI based on
- * `--api-backend`. In auto mode, prefers SCAPI when shortCode + tenantId are
- * configured, falling back to OCAPI on `invalid_scope`.
+ * `--api-backend`. In auto mode, prefers SCAPI when its coordinates and
+ * supported auth are available, falling back on safe rejections.
  */
 export abstract class BmCommand<T extends typeof Command> extends InstanceCommand<T> {
   protected createUsersBackend(): UsersBackend {

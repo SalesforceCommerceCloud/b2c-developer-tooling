@@ -8,8 +8,8 @@
  *
  * Builds a Proxy that implements the same interface as the underlying
  * backends. Each method call routes through {@link withFallback}: try SCAPI
- * first; on a recognized fallback trigger (e.g. `invalid_scope` or a
- * SCAPI-side capability gap such as a downgraded scope tier), fall back to
+ * first; on a recognized safe fallback trigger (for example `invalid_scope`,
+ * a typed rejected HTTP response, or a SCAPI-side capability gap), fall back to
  * OCAPI for that call and pin to OCAPI for the rest of the wrapper's life.
  * Note that a successful SCAPI call only pins *softly* — a later call that
  * trips a fallback trigger still routes to OCAPI and re-pins, so a flow
@@ -76,7 +76,7 @@ async function withFallback<T extends BackendBase, R>(
  * Creates a fallback wrapper over `scapi` and `ocapi` backends.
  *
  * The returned object presents the same interface as `T`. Method calls are
- * intercepted: the first call tries SCAPI; on `invalid_scope` it falls back
+ * intercepted: the first call tries SCAPI; on a safe fallback trigger it falls back
  * to OCAPI. The choice is cached for the wrapper's lifetime.
  *
  * **Contract:**

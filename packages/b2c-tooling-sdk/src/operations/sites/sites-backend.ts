@@ -11,9 +11,9 @@ import {createDualBackend, type DualBackendConfig} from '../../clients/dual-back
 export type SitesBackendConfig = DualBackendConfig;
 
 /**
- * Builds a Sites backend for read operations (list/get). In `auto` mode
+ * Builds a Sites backend for site and cartridge-path operations. In `auto` mode
  * (the default) it prefers SCAPI (`site/sites/v1`) and falls back to the
- * deprecated OCAPI Data API on `invalid_scope`.
+ * deprecated OCAPI Data API on a safe capability/auth/request rejection.
  */
 export function createSitesBackend(config: SitesBackendConfig): SitesBackend {
   return createDualBackend<SitesBackend>(config, {

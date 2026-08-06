@@ -19,16 +19,16 @@ export type ScapiSitesError = components['schemas']['ErrorResponse'];
 export type Site = components['schemas']['Site'];
 export type Sites = components['schemas']['Sites'];
 export type SiteSearchResult = components['schemas']['SiteSearchResult'];
+export type SiteCustomCartridges = components['schemas']['SiteCustomCartridges'];
 
 /**
  * Per-operation scope cascade for SCAPI Sites.
  *
- * The Sites API is read-only (list, get, search), but exposes both a
- * read-only (`sfcc.sites`) and read-write (`sfcc.sites.rw`) scope. A given API
+ * The Sites API exposes both read and cartridge-path write operations and
+ * supports both a read-only (`sfcc.sites`) and read-write (`sfcc.sites.rw`) scope. A given API
  * client may have been granted only one of them, so reads try `rw` first
- * (which also grants read) and fall back to the read-only scope. There are no
- * write operations, but the `write` tier is defined for completeness so the
- * cascade type is satisfied.
+ * (which also grants read) and fall back to the read-only scope. Write
+ * operations use the rw tier exclusively.
  */
 export const SCAPI_SITES_CASCADE: ScopeCascade = {
   read: [['sfcc.sites.rw'], ['sfcc.sites']],

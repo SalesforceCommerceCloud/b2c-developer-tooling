@@ -11,6 +11,7 @@ import type {
   ListUsersOptions,
   UpdateUserChanges,
   CreateUserInput,
+  SearchUsersOptions,
 } from './types.js';
 import {
   listBmUsers as ocapiListBmUsers,
@@ -18,6 +19,7 @@ import {
   updateBmUser as ocapiUpdateBmUser,
   deleteBmUser as ocapiDeleteBmUser,
   type BmUser,
+  searchBmUsers as ocapiSearchBmUsers,
 } from './users.js';
 import {throwOcapiError} from '../../clients/error-utils.js';
 import {SCAPI_MERCHANT_USERS_RW_SCOPES} from '../../clients/scapi-merchant-users.js';
@@ -61,6 +63,17 @@ export class OcapiUsersBackend implements UsersBackend {
   async getUser(login: string): Promise<UserInfo> {
     const user = await ocapiGetBmUser(this.instance, login);
     return mapOcapiUser(user);
+  }
+
+  async searchUsers(options: SearchUsersOptions = {}): Promise<ListUsersResult> {
+    const result = await ocapiSearchBmUsers(this.instance, options);
+    const users = (result.hits ?? []) as BmUser[];
+    return {
+      total: result.total ?? 0,
+      start: result.start ?? options.start ?? 0,
+      count: result.count ?? users.length,
+      hits: users.map(mapOcapiUser),
+    };
   }
 
   async createOrReplaceUser(login: string, input: CreateUserInput): Promise<UserInfo> {

@@ -16,7 +16,7 @@ b2c code list
 ```
 
 ::: details Legacy OCAPI backend (deprecated)
-OCAPI is deprecated and disabled on newer instances. The CLI defaults to `--api-backend auto`, which falls back to the OCAPI Data API (`/code_versions`) only when SCAPI scopes are not configured. You can force a backend if needed:
+OCAPI is deprecated and disabled on newer instances. The CLI defaults to `--api-backend auto`, which falls back to the OCAPI Data API (`/code_versions`) on safe SCAPI capability/auth/request rejections. You can force a backend if needed:
 
 ```bash
 b2c code list --api-backend scapi   # force SCAPI
@@ -36,10 +36,10 @@ The `code deploy`, `code download`, and `code watch` commands always use WebDAV 
 
 Code commands use different authentication depending on the operation:
 
-| Operation | Auth Required |
-|-----------|--------------|
-| `code deploy`, `code download`, `code watch` | WebDAV (Basic Auth or OAuth) |
-| `code list`, `code activate`, `code delete` | OAuth + `sfcc.scripts` (read) or `sfcc.scripts.rw` (write) + tenant scope |
+| Operation                                    | Auth Required                                                             |
+| -------------------------------------------- | ------------------------------------------------------------------------- |
+| `code deploy`, `code download`, `code watch` | WebDAV (Basic Auth or OAuth)                                              |
+| `code list`, `code activate`, `code delete`  | OAuth + `sfcc.scripts` (read) or `sfcc.scripts.rw` (write) + tenant scope |
 
 ### WebDAV Operations (deploy, download, watch)
 
@@ -79,10 +79,10 @@ b2c code list
 
 In addition to [global instance and authentication flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--columns`, `-c` | Columns to display (comma-separated). Available: id, active, rollback, lastModified, cartridges | All columns |
-| `--extended`, `-x` | Show all columns including extended fields | `false` |
+| Flag               | Description                                                                                     | Default     |
+| ------------------ | ----------------------------------------------------------------------------------------------- | ----------- |
+| `--columns`, `-c`  | Columns to display (comma-separated). Available: id, active, rollback, lastModified, cartridges | All columns |
+| `--extended`, `-x` | Show all columns including extended fields                                                      | `false`     |
 
 ### Examples
 
@@ -136,21 +136,21 @@ b2c code deploy [CARTRIDGEPATH]
 
 ### Arguments
 
-| Argument | Description | Default |
-|----------|-------------|---------|
+| Argument        | Description                   | Default                 |
+| --------------- | ----------------------------- | ----------------------- |
 | `CARTRIDGEPATH` | Path to search for cartridges | `.` (current directory) |
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--activate`, `-a` | Activate code version after deploy | `false` |
-| `--reload`, `-r` | Reload (toggle activation to force reload) code version after deploy | `false` |
-| `--delete` | Delete existing cartridges before upload | `false` |
-| `--cartridge`, `-c` | Include specific cartridge(s) (comma-separated or repeated) | |
-| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated) | |
+| Flag                        | Description                                                          | Default |
+| --------------------------- | -------------------------------------------------------------------- | ------- |
+| `--activate`, `-a`          | Activate code version after deploy                                   | `false` |
+| `--reload`, `-r`            | Reload (toggle activation to force reload) code version after deploy | `false` |
+| `--delete`                  | Delete existing cartridges before upload                             | `false` |
+| `--cartridge`, `-c`         | Include specific cartridge(s) (comma-separated or repeated)          |         |
+| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated)          |         |
 
 ### Examples
 
@@ -206,20 +206,20 @@ b2c code download [CARTRIDGEPATH]
 
 ### Arguments
 
-| Argument | Description | Default |
-|----------|-------------|---------|
+| Argument        | Description                                                | Default                 |
+| --------------- | ---------------------------------------------------------- | ----------------------- |
 | `CARTRIDGEPATH` | Path to search for local cartridges (used with `--mirror`) | `.` (current directory) |
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--output`, `-o` | Output directory for downloaded cartridges | `cartridges` |
-| `--mirror`, `-m` | Extract cartridges to their local project locations | `false` |
-| `--cartridge`, `-c` | Include specific cartridge(s) (comma-separated or repeated) | |
-| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated) | |
+| Flag                        | Description                                                 | Default      |
+| --------------------------- | ----------------------------------------------------------- | ------------ |
+| `--output`, `-o`            | Output directory for downloaded cartridges                  | `cartridges` |
+| `--mirror`, `-m`            | Extract cartridges to their local project locations         | `false`      |
+| `--cartridge`, `-c`         | Include specific cartridge(s) (comma-separated or repeated) |              |
+| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated) |              |
 
 **Note:** The `--mirror` and `--output` flags are mutually exclusive. You must use one or the other, not both. Use `--output` to extract all cartridges to a single directory, or use `--mirror` to extract each cartridge to its local project location.
 
@@ -278,16 +278,16 @@ b2c code activate [CODEVERSION]
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
+| Argument      | Description                 | Required                        |
+| ------------- | --------------------------- | ------------------------------- |
 | `CODEVERSION` | Code version ID to activate | No (required unless `--reload`) |
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
+| Flag             | Description                                                 | Default |
+| ---------------- | ----------------------------------------------------------- | ------- |
 | `--reload`, `-r` | Reload the code version (toggle activation to force reload) | `false` |
 
 ### Examples
@@ -327,16 +327,16 @@ b2c code delete CODEVERSION
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `CODEVERSION` | Code version ID to delete | Yes |
+| Argument      | Description               | Required |
+| ------------- | ------------------------- | -------- |
+| `CODEVERSION` | Code version ID to delete | Yes      |
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
+| Flag            | Description              | Default |
+| --------------- | ------------------------ | ------- |
 | `--force`, `-f` | Skip confirmation prompt | `false` |
 
 ### Examples
@@ -370,17 +370,17 @@ b2c code watch [CARTRIDGEPATH]
 
 ### Arguments
 
-| Argument | Description | Default |
-|----------|-------------|---------|
+| Argument        | Description                   | Default                 |
+| --------------- | ----------------------------- | ----------------------- |
 | `CARTRIDGEPATH` | Path to search for cartridges | `.` (current directory) |
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description |
-|------|-------------|
-| `--cartridge`, `-c` | Include specific cartridge(s) (comma-separated or repeated) |
+| Flag                        | Description                                                 |
+| --------------------------- | ----------------------------------------------------------- |
+| `--cartridge`, `-c`         | Include specific cartridge(s) (comma-separated or repeated) |
 | `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated) |
 
 ### Examples
@@ -417,7 +417,6 @@ Press `Ctrl+C` to stop watching.
 
 ### Environment Variables
 
-| Variable | Description |
-|----------|-------------|
+| Variable                    | Description                                  |
+| --------------------------- | -------------------------------------------- |
 | `SFCC_UPLOAD_DEBOUNCE_TIME` | Debounce time in milliseconds (default: 100) |
-
