@@ -192,6 +192,36 @@ export function readManifest(capDir: string): CommerceAppManifest {
   }
 }
 
+/**
+ * Reads the commerce-app.json manifest from a CAP directory or zip file without
+ * uploading or installing anything.
+ *
+ * Useful for inspecting manifest fields (e.g. `provider`) before installing.
+ *
+ * @param target - Path to a CAP directory or .zip file
+ * @returns Parsed manifest object
+ * @throws Error if the target does not exist or is not a directory/.zip file
+ *
+ * @example
+ * ```typescript
+ * const manifest = await readManifestFromTarget('./my-commerce-app-v1.0.0.zip');
+ * console.log(`App: ${manifest.id}@${manifest.version}`);
+ * ```
+ */
+export async function readManifestFromTarget(target: string): Promise<CommerceAppManifest> {
+  if (!fs.existsSync(target)) {
+    throw new Error(`Target not found: ${target}`);
+  }
+  const stat = fs.statSync(target);
+  if (stat.isDirectory()) {
+    return readManifest(target);
+  }
+  if (stat.isFile() && target.endsWith('.zip')) {
+    return readManifestFromZip(target);
+  }
+  throw new Error(`Target must be a directory or .zip file: ${target}`);
+}
+
 async function readManifestFromZip(zipPath: string): Promise<CommerceAppManifest> {
   const data = await fs.promises.readFile(zipPath);
   const zip = await JSZip.loadAsync(data);

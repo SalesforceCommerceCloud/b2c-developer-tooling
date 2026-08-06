@@ -72,6 +72,22 @@ export interface AuthStrategy {
 }
 
 /**
+ * An interactive, token-bearing OAuth strategy — the "user" auth flow
+ * (Authorization Code + PKCE, with the legacy implicit flow as fallback).
+ *
+ * Unlike the base {@link AuthStrategy}, these always expose the access token /
+ * decoded JWT so callers like `auth token` can surface them. Implemented by
+ * `PkceOAuthStrategy`, `ImplicitOAuthStrategy`, and the transitional
+ * `PkceWithImplicitFallbackStrategy`.
+ */
+export interface UserAuthStrategy extends AuthStrategy {
+  getAuthorizationHeader(): Promise<string>;
+  getJWT(): Promise<DecodedJWT>;
+  getTokenResponse(): Promise<AccessTokenResponse>;
+  invalidateToken(): void;
+}
+
+/**
  * Configuration for Basic authentication (username/access-key).
  * Used primarily for WebDAV operations.
  */
@@ -95,9 +111,9 @@ export interface OAuthAuthConfig {
   jwtKeyPath?: string;
   /** Optional passphrase for an encrypted JWT private key */
   jwtPassphrase?: string;
-  /** Override redirect URI for implicit OAuth flow (e.g., for port forwarding in remote environments) */
+  /** Override redirect URI for browser OAuth flows (e.g., for port forwarding in remote environments) */
   redirectUri?: string;
-  /** Custom browser opener for implicit OAuth flow. Receives the authorization URL. */
+  /** Custom browser opener for browser OAuth flows. Receives the authorization URL. */
   openBrowser?: (url: string) => Promise<void>;
 }
 
@@ -152,14 +168,15 @@ export interface DecodedJWT {
  * Available authentication methods.
  * - 'client-credentials': OAuth client credentials flow (requires clientId + clientSecret)
  * - 'jwt': OAuth JWT Bearer flow (requires clientId + JWT certificate/key pair)
- * - 'implicit': Interactive browser-based OAuth (requires clientId only)
+ * - 'user': Interactive browser-based user authentication (Authorization Code + PKCE; requires clientId only)
+ * - 'implicit': Legacy interactive browser-based OAuth implicit flow (deprecated; kept for compatibility)
  * - 'basic': Username/password (access key) authentication
  * - 'api-key': API key authentication (for MRT, etc.)
  */
-export type AuthMethod = 'client-credentials' | 'jwt' | 'implicit' | 'basic' | 'api-key';
+export type AuthMethod = 'client-credentials' | 'jwt' | 'user' | 'implicit' | 'basic' | 'api-key';
 
 /** All available auth methods in default priority order */
-export const ALL_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'jwt', 'implicit', 'basic', 'api-key'];
+export const ALL_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'jwt', 'user', 'implicit', 'basic', 'api-key'];
 
 /**
  * Configuration for resolving an auth strategy.

@@ -52,7 +52,7 @@ b2c docs schema --list
                 <mandatory-flag>false</mandatory-flag>
                 <externally-managed-flag>true</externally-managed-flag>
                 <min-length>0</min-length>
-                <max-length>50</max-length>
+                <field-length>50</field-length>
             </attribute-definition>
 
             <!-- Enum attribute -->
@@ -201,7 +201,7 @@ b2c docs schema --list
             <display-name xml:lang="x-default">Email Address</display-name>
             <type>string</type>
             <min-length>5</min-length>
-            <max-length>256</max-length>
+            <field-length>256</field-length>
         </key-definition>
 
         <attribute-definitions>
@@ -238,7 +238,7 @@ b2c docs schema --list
                         <value>new-arrivals</value>
                     </value-definition>
                     <value-definition>
-                        <display xml:lang="x-default">Tips & Tricks</display>
+                        <display xml:lang="x-default">Tips &amp; Tricks</display>
                         <value>tips</value>
                     </value-definition>
                 </value-definitions>
@@ -340,8 +340,8 @@ Preferences can be set per instance type or for all instances:
             <custom-attribute attribute-id="weight">2.5</custom-attribute>
             <custom-attribute attribute-id="certifications">energy-star</custom-attribute>
             <custom-attribute attribute-id="certifications">ul-listed</custom-attribute>
-            <custom-attribute attribute-id="localDescription" xml:lang="en_US">US Description</custom-attribute>
-            <custom-attribute attribute-id="localDescription" xml:lang="fr_FR">Description en Français</custom-attribute>
+            <custom-attribute attribute-id="localDescription" xml:lang="en-US">US Description</custom-attribute>
+            <custom-attribute attribute-id="localDescription" xml:lang="fr-FR">Description en Français</custom-attribute>
         </custom-attributes>
     </product>
 </catalog>

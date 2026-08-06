@@ -90,7 +90,8 @@ if (pkgArgIndex === -1) {
 mcpArgs[pkgArgIndex] = `@salesforce/b2c-dx-mcp@${mcpVersion}`;
 writeJson(mcpConfigPath, mcpConfig);
 
-// (2) Stamp the MCP version onto its marketplace entry so clients re-pull.
+// (2) Stamp the MCP version onto its Claude marketplace entry so Claude Code
+// re-pulls the updated server pin.
 const mcpEntry = marketplace.plugins.find((plugin) => plugin.name === 'b2c-dx-mcp');
 if (!mcpEntry) {
   console.error('.claude-plugin/marketplace.json has no b2c-dx-mcp plugin entry');
@@ -98,5 +99,12 @@ if (!mcpEntry) {
 }
 mcpEntry.version = mcpVersion;
 writeJson(marketplacePath, marketplace);
+
+// (3) Stamp the MCP version onto the Codex plugin manifest. Codex reads the
+// version from this manifest rather than the marketplace entry.
+const codexMcpManifestPath = join(repoRoot, 'plugins/b2c-dx-mcp/.codex-plugin/plugin.json');
+const codexMcpManifest = readJson(codexMcpManifestPath);
+codexMcpManifest.version = mcpVersion;
+writeJson(codexMcpManifestPath, codexMcpManifest);
 
 console.log(`Pinned b2c-dx-mcp plugin to @salesforce/b2c-dx-mcp@${mcpVersion}`);

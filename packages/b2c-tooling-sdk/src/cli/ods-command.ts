@@ -8,7 +8,7 @@ import {OAuthCommand} from './oauth-command.js';
 import {loadConfig, extractOdsFlags} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
 import {createOdsClient, type OdsClient} from '../clients/ods.js';
-import {DEFAULT_ODS_HOST, getDefaultPublicClientId} from '../defaults.js';
+import {DEFAULT_ODS_HOST, getDefaultPublicClientId, getLegacyImplicitPublicClientId} from '../defaults.js';
 import {isUuid, parseFriendlySandboxId, SandboxNotFoundError} from '../operations/ods/sandbox-lookup.js';
 
 /**
@@ -33,8 +33,10 @@ import {isUuid, parseFriendlySandboxId, SandboxNotFoundError} from '../operation
  * }
  */
 export abstract class OdsCommand<T extends typeof Command> extends OAuthCommand<T> {
-  protected override getDefaultClientId(): string {
-    return getDefaultPublicClientId(this.accountManagerHost);
+  protected override getDefaultClientId(method: 'user' | 'implicit' = 'user'): string {
+    return method === 'implicit'
+      ? getLegacyImplicitPublicClientId(this.accountManagerHost)
+      : getDefaultPublicClientId(this.accountManagerHost);
   }
 
   static baseFlags = {

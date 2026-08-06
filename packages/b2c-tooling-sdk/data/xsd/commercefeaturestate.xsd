@@ -43,6 +43,7 @@
             <xsd:enumeration value="ISV_APP" />
             <xsd:enumeration value="NATIVE_FEATURE" />
             <xsd:enumeration value="CUSTOM_FEATURE" />
+            <xsd:enumeration value="CUSTOM_APP" />
         </xsd:restriction>
     </xsd:simpleType>
 

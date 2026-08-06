@@ -17,7 +17,7 @@ import {
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {createScaffoldRegistry, generateFromScaffold} from '@salesforce/b2c-tooling-sdk/scaffold';
-import {findCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {findCartridgesSafe} from '../workspace-discovery.js';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import JSZip from 'jszip';
 import * as fs from 'node:fs/promises';
@@ -421,7 +421,7 @@ async function promptForJobScaffoldPlan(
     return undefined;
   }
 
-  const cartridges = findCartridges(root.fsPath);
+  const cartridges = findCartridgesSafe(root.fsPath);
   if (cartridges.length === 0) {
     const choice = await vscode.window.showWarningMessage(
       'No cartridges found in this workspace. A custom job step must live in a cartridge. Create one first?',

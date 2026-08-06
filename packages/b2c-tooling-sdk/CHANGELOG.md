@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.21.3
+
+### Patch Changes
+
+- [#603](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/603) [`94c7ba9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/94c7ba979716e8401234f48178f488a4e5b29ac3) - Fix skill installation output so mixed-source downloads do not show an unresolved version placeholder, repair the `b2c-hooks` skill frontmatter, and identify the affected skill path in future parsing warnings. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.21.2
 
 ### Patch Changes

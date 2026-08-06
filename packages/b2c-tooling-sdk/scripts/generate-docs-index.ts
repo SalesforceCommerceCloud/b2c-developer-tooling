@@ -6,7 +6,15 @@
 /**
  * Generates the search indexes for Script API documentation and XSD schemas.
  *
- * Run with: pnpm --filter @salesforce/b2c-tooling-sdk run generate:docs-index
+ * Both corpora come from the DWAPP documentation archive (not a git repo), so
+ * their platform version is recorded in each index's `platformDocVersion` field
+ * — the traceability equivalent of the git `source` block the prose corpora use.
+ * The version is passed as the first CLI arg (the refresh script forwards the
+ * DWAPP version it parsed from the archive); if omitted, any existing
+ * `platformDocVersion` already in the committed index is preserved so a manual
+ * regen never silently drops it.
+ *
+ * Run with: pnpm --filter @salesforce/b2c-tooling-sdk run generate:docs-index [platformDocVersion]
  */
 
 import * as fs from 'node:fs';
@@ -40,18 +48,41 @@ interface SchemaEntry {
 interface SearchIndex {
   version: string;
   generatedAt: string;
+  platformDocVersion?: string;
   entries: DocEntry[];
 }
 
 interface SchemaIndex {
   version: string;
   generatedAt: string;
+  platformDocVersion?: string;
   entries: SchemaEntry[];
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCRIPT_API_DIR = path.resolve(__dirname, '../data/script-api');
 const XSD_DIR = path.resolve(__dirname, '../data/xsd');
+
+/**
+ * Resolves the platform doc version to write: an explicit CLI arg wins;
+ * otherwise the value already committed in `indexPath` is preserved so a manual
+ * regen (no arg) never drops the recorded version.
+ */
+function resolvePlatformDocVersion(cliVersion: string | undefined, indexPath: string): string | undefined {
+  if (cliVersion) return cliVersion;
+  try {
+    const existing = JSON.parse(fs.readFileSync(indexPath, 'utf-8')) as {platformDocVersion?: string};
+    return existing.platformDocVersion;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Normalizes a raw version token to the "DWAPP <x.y>" form job-steps also uses. */
+function normalizeVersion(v: string | undefined): string | undefined {
+  if (!v) return undefined;
+  return /^dwapp/i.test(v.trim()) ? v.trim() : `DWAPP ${v.trim()}`;
+}
 
 function extractTitle(content: string): string {
   // Match first # heading
@@ -110,7 +141,7 @@ function extractPreview(content: string): string | undefined {
   return preview;
 }
 
-async function generateScriptApiIndex(): Promise<void> {
+async function generateScriptApiIndex(platformDocVersion?: string): Promise<void> {
   const files = fs.readdirSync(SCRIPT_API_DIR).filter((f) => f.endsWith('.md'));
 
   const entries: DocEntry[] = [];
@@ -142,19 +173,24 @@ async function generateScriptApiIndex(): Promise<void> {
   // Sort by ID for consistent output
   entries.sort((a, b) => a.id.localeCompare(b.id));
 
+  const outputPath = path.join(SCRIPT_API_DIR, 'index.json');
+  const resolvedVersion = resolvePlatformDocVersion(platformDocVersion, outputPath);
   const index: SearchIndex = {
     version: '1.0.0',
     generatedAt: new Date().toISOString(),
+    ...(resolvedVersion && {platformDocVersion: resolvedVersion}),
     entries,
   };
 
-  const outputPath = path.join(SCRIPT_API_DIR, 'index.json');
   fs.writeFileSync(outputPath, JSON.stringify(index, null, 2));
 
-  console.log(`Generated Script API index with ${entries.length} entries at ${outputPath}`);
+  console.log(
+    `Generated Script API index with ${entries.length} entries` +
+      `${resolvedVersion ? ` (${resolvedVersion})` : ''} at ${outputPath}`,
+  );
 }
 
-async function generateXsdIndex(): Promise<void> {
+async function generateXsdIndex(platformDocVersion?: string): Promise<void> {
   const files = fs.readdirSync(XSD_DIR).filter((f) => f.endsWith('.xsd'));
 
   const entries: SchemaEntry[] = files.map((file) => ({
@@ -165,21 +201,27 @@ async function generateXsdIndex(): Promise<void> {
   // Sort by ID for consistent output
   entries.sort((a, b) => a.id.localeCompare(b.id));
 
+  const outputPath = path.join(XSD_DIR, 'index.json');
+  const resolvedVersion = resolvePlatformDocVersion(platformDocVersion, outputPath);
   const index: SchemaIndex = {
     version: '1.0.0',
     generatedAt: new Date().toISOString(),
+    ...(resolvedVersion && {platformDocVersion: resolvedVersion}),
     entries,
   };
 
-  const outputPath = path.join(XSD_DIR, 'index.json');
   fs.writeFileSync(outputPath, JSON.stringify(index, null, 2));
 
-  console.log(`Generated XSD index with ${entries.length} entries at ${outputPath}`);
+  console.log(
+    `Generated XSD index with ${entries.length} entries` +
+      `${resolvedVersion ? ` (${resolvedVersion})` : ''} at ${outputPath}`,
+  );
 }
 
 async function generateAllIndexes(): Promise<void> {
-  await generateScriptApiIndex();
-  await generateXsdIndex();
+  const platformDocVersion = normalizeVersion(process.argv[2]);
+  await generateScriptApiIndex(platformDocVersion);
+  await generateXsdIndex(platformDocVersion);
 }
 
 generateAllIndexes().catch((err) => {

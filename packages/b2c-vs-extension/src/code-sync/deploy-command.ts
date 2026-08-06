@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {findCartridges, uploadCartridges, reloadCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {reloadCodeVersion, uploadCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
-import {createScriptsBackendFromExtension} from './scripts-backend.js';
+import {findCartridgesSafe} from '../workspace-discovery.js';
 import {getPostDeployActions} from './code-version-actions.js';
+import {createScriptsBackendFromExtension} from './scripts-backend.js';
 
 export function createDeployCommand(
   configProvider: B2CExtensionConfig,
@@ -46,7 +47,7 @@ export function createDeployCommand(
 
     // Discover cartridges
     const directory = configProvider.getWorkingDirectory();
-    const cartridges = findCartridges(directory);
+    const cartridges = findCartridgesSafe(directory);
     if (cartridges.length === 0) {
       vscode.window.showWarningMessage('B2C DX: No cartridges found (no .project files in workspace).');
       return;
@@ -173,7 +174,7 @@ export function createDeployOneCommand(
     }
 
     const directory = configProvider.getWorkingDirectory();
-    const cartridges = findCartridges(directory);
+    const cartridges = findCartridgesSafe(directory);
     if (cartridges.length === 0) {
       vscode.window.showWarningMessage('B2C DX: No cartridges found.');
       return;

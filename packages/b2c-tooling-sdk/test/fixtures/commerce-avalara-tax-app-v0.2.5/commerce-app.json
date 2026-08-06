@@ -4,6 +4,7 @@
   "description": "Automated tax compliance solution by Avalara",
   "domain": "tax",
   "version": "0.2.5",
+  "provider": "thirdParty",
   "publisher": {
     "name": "Avalara",
     "url": "https://developer.avalara.com/",
