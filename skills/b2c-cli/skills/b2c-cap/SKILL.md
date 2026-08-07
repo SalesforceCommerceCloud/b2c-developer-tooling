@@ -88,6 +88,8 @@ b2c cap package ./commerce-avalara-tax-app-v0.2.5
 b2c cap package ./commerce-avalara-tax-app-v0.2.5 --output ./dist/my-app.zip
 ```
 
+> Every cartridge under `cartridges/site_cartridges/` and `cartridges/bm_cartridges/` must have a `.project` file. `cap package` auto-creates an empty one for any cartridge missing it (existing `.project` files, empty or full Eclipse XML, are left untouched); `cap validate` fails if any cartridge is still missing one.
+
 ### Install a CAP
 
 ```bash
