@@ -1,5 +1,39 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.22.0
+
+### Minor Changes
+
+- [#615](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/615) [`1f553b3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f553b3e26c57909ce654b61e25f4db537111312) - Added ordered, idempotent site archive import sets with verified WebDAV receipts, retry-until-receipted behavior, and serialized concurrent runners. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#574](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/574) [`8d096d0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d096d01a2f70eb979f1b6b246fd196b77f2acd0) - Add Authorization Code + PKCE support for browser-based OAuth (public clients) and make it the default for the `user` auth method, replacing the legacy `implicit` flow in the default chain. The default auth-method order is now `client-credentials`, `jwt`, `user`. The implicit flow is still selectable via `--auth-methods implicit` (or in dw.json) for backwards compatibility but emits a deprecation warning — OAuth 2.1 deprecates implicit for public clients. (Thanks [@clavery](https://github.com/clavery)!)
+
+  `b2c auth login` now uses Authorization Code + PKCE by default and persists a refresh token alongside the access token, so subsequent commands silently refresh without re-opening the browser. The new `--auth-methods` flag on `b2c auth login` lets you opt back into the legacy implicit flow (`--auth-methods implicit`). The POC `b2c auth pkce` command has been removed; use `b2c auth login` instead.
+
+  dw.json gains a `"user-auth": true` shorthand for `"auth-methods": ["user"]`. It is mutually exclusive with `"auth-methods"` — setting both is rejected during config mapping.
+
+  To smooth the migration, the `user` flow includes a transitional safety net: if the configured Account Manager client is not a PKCE-capable public client, it automatically falls back to the implicit flow for that client and logs a deprecation warning recommending you create a new public (PKCE) client and use it. (An AM client's type cannot be changed after creation, so a legacy implicit-only client must be replaced, not converted.) Set `SFCC_DISABLE_PKCE_FALLBACK=1` to disable the fallback and surface PKCE failures directly. This fallback is temporary and will be removed once public clients have migrated.
+
+  Persisted browser-auth sessions (which now hold long-lived PKCE refresh tokens) are written `0o600` in a `0o700` directory, so they are no longer world-readable.
+
+  The VS Code extension persists PKCE refresh tokens via OS-keychain-backed `SecretStorage` (with a sync-snapshot/async-write-through cache), keeping behavior compatible with the unified `AuthSessionBackend` used by the CLI.
+
+### Patch Changes
+
+- [#605](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/605) [`d5551f3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d5551f351836f12d2c167459441093671bcad9bc) - Refresh the bundled documentation corpora to the 26.8 release so `b2c docs (Thanks [@clavery](https://github.com/clavery)!)
+search`/`docs read` and the MCP `docs_*` tools surface the latest content:
+  - Script API reference and XSD schemas updated to DWAPP 26.8 (adds the
+    `dw.commerceapps` package, connection-health hooks, and `ShippingHooks`).
+  - Developer Center guides refreshed (adds newly published guides such as SCAPI
+    CDN caching, guest order access codes, and several Storefront Next topics).
+
+  Each corpus index now records where it came from so maintainers can spot the
+  delta before a refresh: git-sourced prose corpora store the upstream commit
+  (`source` block) and DWAPP-sourced corpora store the platform release
+  (`platformDocVersion`, e.g. "DWAPP 26.8").
+
+- [#604](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/604) [`2de9046`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2de904636dad1b1f23a80da8b640dc8acd6e97f3) - `cap:install` now warns and prompts for confirmation before installing a Commerce App from a non-Salesforce provider. Use `--force` to skip the prompt (e.g. in CI or scripted installs); the prompt is also skipped automatically in `--json` mode. (Thanks [@jbisaSF](https://github.com/jbisaSF)!)
+
 ## 1.21.3
 
 ### Patch Changes
