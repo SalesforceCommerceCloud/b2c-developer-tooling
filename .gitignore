@@ -42,6 +42,3 @@ skills/eval/project/.git
 skills/eval/results-*.json
 # Python bytecode
 __pycache__/
-
-# build-it run logs (local only)
-docs/superpowers/
