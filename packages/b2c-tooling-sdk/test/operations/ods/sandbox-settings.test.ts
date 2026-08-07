@@ -5,11 +5,15 @@
  */
 
 import {expect} from 'chai';
+import type {components} from '../../../src/clients/ods.generated.js';
 import {
   buildSandboxSettings,
   DEFAULT_OCAPI_RESOURCES,
   DEFAULT_WEBDAV_PERMISSIONS,
 } from '../../../src/operations/ods/sandbox-settings.js';
+
+type OcapiSettings = components['schemas']['OcapiSettings'];
+type WebDavSettings = components['schemas']['WebDavSettings'];
 
 describe('buildSandboxSettings', () => {
   it('grants default OCAPI and WebDAV permissions to the client ID', () => {
@@ -26,7 +30,7 @@ describe('buildSandboxSettings', () => {
   });
 
   it('uses custom OCAPI settings in place of the defaults', () => {
-    const custom = [{client_id: 'other', resources: [{resource_id: '/foo', methods: ['get'] as const}]}];
+    const custom: OcapiSettings = [{client_id: 'other', resources: [{resource_id: '/foo', methods: ['get']}]}];
     const settings = buildSandboxSettings({clientId: 'client-123', ocapiSettings: custom});
 
     expect(settings!.ocapi).to.deep.equal(custom);
@@ -35,7 +39,7 @@ describe('buildSandboxSettings', () => {
   });
 
   it('uses custom WebDAV settings in place of the defaults', () => {
-    const custom = [{client_id: 'other', permissions: [{path: '/impex', operations: ['read'] as const}]}];
+    const custom: WebDavSettings = [{client_id: 'other', permissions: [{path: '/impex', operations: ['read']}]}];
     const settings = buildSandboxSettings({clientId: 'client-123', webdavSettings: custom});
 
     expect(settings!.webdav).to.deep.equal(custom);
