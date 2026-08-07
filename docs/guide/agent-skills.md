@@ -6,7 +6,9 @@ description: Agentic B2C Developer Toolkit — AI agent skills and plugins that 
 
 Turn your coding agent into a B2C Commerce specialist. Skills cover the full platform — storefront and headless development, operational workflows, and everything in between — so your agent knows both how B2C Commerce works and which CLI commands to run.
 
-Skills follow the open [Agent Skills](https://agentskills.io/home) standard and work with Agentforce Vibes, Claude Code, Cursor, GitHub Copilot (VS Code and CLI), Codex, OpenCode, and others. Install from your IDE's plugin marketplace or the B2C CLI (`b2c setup skills`).
+Skills follow the open [Agent Skills](https://agentskills.io/home) standard and work with Agentforce Vibes, Claude Code, Cursor, GitHub Copilot (VS Code and CLI), Codex, Kiro, OpenCode, and others. Install from your IDE's plugin marketplace or the B2C CLI (`b2c setup skills`).
+
+These plugins are packaged to the open [Agent Plugins](https://agent-plugins.org/) standard: each plugin has a root `plugin.json` (targeting `https://agent-plugins.org/schemas/1.0.0/plugin.schema.json`) with its skills under `skills/`, and the MCP server plugin ships an `mcp.json`. Clients that read this standard — **Codex/ChatGPT, Cursor, GitHub Copilot, VS Code, and Kiro** — consume these manifests directly. **Claude Code** is the one exception: it installs via its own marketplace (`.claude-plugin/marketplace.json`), documented below.
 
 ## Quick Start
 

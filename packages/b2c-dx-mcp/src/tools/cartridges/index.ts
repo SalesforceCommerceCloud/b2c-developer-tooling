@@ -42,6 +42,12 @@ interface CartridgeDeployInput {
 
 /** Output type: deploy result plus reminder to update site cartridge path. */
 interface CartridgeDeployOutput extends DeployResult {
+  /**
+   * The absolute directory that was searched for cartridges. Reflected back so
+   * the agent can confirm which location was used when `directory` was omitted
+   * and the server fell back to the project directory or process cwd.
+   */
+  resolvedDirectory: string;
   /** Reminder to add deployed cartridges to the site cartridge path in Business Manager. */
   postInstructions?: string;
 }
@@ -169,6 +175,7 @@ function createCartridgeDeployTool(
 
           return {
             ...result,
+            resolvedDirectory: directory,
             postInstructions: CARTRIDGE_PATH_REMINDER,
           };
         } catch (error) {
