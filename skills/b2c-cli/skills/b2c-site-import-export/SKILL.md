@@ -1,6 +1,6 @@
 ---
 name: b2c-site-import-export
-description: Import and export site archives containing metadata XML on B2C Commerce instances using the b2c CLI. Use this skill whenever the user needs to import a site archive directory or zip to an instance, export site configuration as XML, structure a site archive folder (sites/site_template/meta/), write or debug metadata XML files (system-objecttype-extensions.xml, custom-objecttype-definitions.xml, preferences.xml), or push custom attributes, custom object types, or site preferences to a sandbox via site import. Also use when an import job fails with schema validation errors — even if they just say "push metadata to the sandbox" or "import my XML files".
+description: Import and export site archives containing metadata XML on B2C Commerce instances using the b2c CLI. Use this skill whenever the user needs to import a site archive directory or zip to an instance, apply an ordered set of archives idempotently, export site configuration as XML, structure a site archive folder (sites/site_template/meta/), write or debug metadata XML files (system-objecttype-extensions.xml, custom-objecttype-definitions.xml, preferences.xml), or push custom attributes, custom object types, or site preferences to a sandbox via site import. Also use when an import job fails with schema validation errors — even if they just say "push metadata to the sandbox" or "import my XML files".
 ---
 
 # Site Import/Export Skill
@@ -42,6 +42,19 @@ b2c job import ./my-site-data --show-log
 # Import an archive that already exists on the instance (in Impex/src/instance/)
 b2c job import existing-archive.zip --remote
 ```
+
+### Import an Ordered Set Once
+
+When a folder contains multiple archive directories or zip files that should be applied in filename order and skipped after a verified receipt exists, use:
+
+```bash
+b2c job import-set ./data-migrations --set-id storefront-data
+b2c job import-set ./data-migrations --set-id storefront-data --dry-run
+```
+
+Each immediate child directory or `.zip` file is one item. Keep each item as a valid site archive and prefix names with a timestamp or sequence number when order matters. Do not edit applied items; add a new item for each later change.
+
+For the authoritative receipt, retry, locking, crash-recovery, and stale-lock behavior, use the `b2c-cli:b2c-job` skill's **Apply an Ordered, Idempotent Import Set** section.
 
 ### Import Archives Larger Than the Instance Limit
 
@@ -264,7 +277,7 @@ b2c job import ./my-data --show-log
 1. **Test imports on sandbox first** before importing to staging/production
 2. Import waits for completion by default — use `--no-wait` only when you want to return immediately
 3. **Use `--show-log`** to debug failed imports
-4. **Keep archives organized** by feature or change type
+4. **Keep archives organized** by feature or change type; use `job import-set` when a growing ordered set should be safely repeatable
 5. **Version control your metadata** XML files
 
 ### Configuring External Services
@@ -290,4 +303,4 @@ Where `services-folder/services.xml` follows the patterns in the `b2c:b2c-webser
 
 - `b2c:b2c-webservices` - Service configurations (HTTP, FTP, SOAP), services.xml format
 - `b2c:b2c-metadata` - System object extensions and custom object definitions
-- `b2c-cli:b2c-job` - Running jobs and monitoring import status
+- `b2c-cli:b2c-job` - Canonical import-set receipt/locking behavior, running jobs, and monitoring import status

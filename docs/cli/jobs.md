@@ -22,7 +22,7 @@ Configure these resources in Business Manager under **Administration** > **Site 
 
 ### WebDAV Access
 
-The `job import`, `job export`, and `job log` commands also require WebDAV access for file transfer.
+The `job import`, `job import-set`, `job export`, and `job log` commands also require WebDAV access for file transfer and import-set state.
 
 ### Configuration
 
@@ -370,6 +370,74 @@ When you run a normal (non-`--split`) directory import and the assembled archive
 
 ---
 
+## b2c job import-set
+
+Apply an ordered directory of site archives idempotently. Each immediate child directory or `.zip` file is one import item; other files and hidden entries are ignored.
+
+### Usage
+
+```bash
+b2c job import-set DIRECTORY
+```
+
+For example:
+
+```text
+data-migrations/
+├── 20260801-add-preferences/
+│   ├── meta/
+│   └── sites/
+├── 20260802-seed-content.zip
+└── README.md                       # ignored
+```
+
+The CLI imports `20260801-add-preferences/` and then `20260802-seed-content.zip` in lexical filename order. Prefix item names with a timestamp or sequence number when order matters.
+
+### Flags
+
+In addition to [global flags](./index#global-flags):
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--set-id` | Stable state namespace for the set | Directory name |
+| `--dry-run` | Show pending and applied items without locking, importing, or writing state | `false` |
+| `--keep-archive`, `-k` | Keep each uploaded archive on the instance after import | `false` |
+| `--break-lock` | Remove an existing import-set lock before acquiring it | `false` |
+| `--stale-lock-seconds` | Take over a lock whose heartbeat is older than this many seconds | `1800` |
+| `--lock-poll-interval` | Seconds between checks while another runner holds the set lock | `3` |
+| `--timeout`, `-t` | Timeout in seconds for each import job | No timeout |
+| `--poll-interval` | Job polling interval in seconds | `3` |
+| `--show-log` | Show the job log when an import fails | `true` |
+
+### Examples
+
+```bash
+# Preview what would be imported
+b2c job import-set ./data-migrations --dry-run
+
+# Apply the set; repeat this command safely in local setup or CI
+b2c job import-set ./data-migrations --set-id storefront-data
+
+# Explicitly replace a lock after confirming its owner is no longer running
+b2c job import-set ./data-migrations --set-id storefront-data --break-lock
+```
+
+### Receipts and retry behavior
+
+The CLI hashes each item's contents and stores verified receipts in WebDAV under `Impex/b2c-cli/import-sets/<set-id>/receipts/`. An item with a matching receipt is skipped; an item with no valid receipt is imported and its receipt is written only after the platform import succeeds.
+
+This deliberately provides **at-least-once retry behavior until the receipt is durable**. If an import succeeds but the process crashes or WebDAV fails before the receipt is verified, the next invocation imports that item again. Site archive contents should therefore be safe to apply more than once.
+
+Once an item has a valid receipt, changing that same item's contents is an error. Add a new, later-sorting directory or zip file for the next change instead of editing an applied item. Use a stable `--set-id` in CI if the local directory name or checkout path may change.
+
+### Concurrent runners and stale locks
+
+Only one runner applies a set at a time. The CLI atomically creates a WebDAV collection as the set lock, writes owner metadata, and refreshes a heartbeat while imports run. Other runners wait and re-check receipts after acquiring the lock.
+
+A lock is automatically treated as stale after 30 minutes by default; tune this with `--stale-lock-seconds`. Use `--break-lock` only after confirming the recorded runner is gone. B2C Commerce WebDAV does not enforce conditional deletes, so stale or forced takeover is best-effort and is always reported in command output.
+
+---
+
 ## b2c job export
 
 Export a site archive from a B2C Commerce instance using the `sfcc-site-archive-export` system job.
@@ -451,4 +519,3 @@ When using `--global-data`, available types include:
 - `locales` - Locale configurations
 - `services` - Service configurations
 - And more (see OCAPI documentation)
-

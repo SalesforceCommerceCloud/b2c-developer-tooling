@@ -1,6 +1,6 @@
 ---
 name: b2c-webdav
-description: List, upload, download, and manage files on B2C Commerce instances via WebDAV. Use this skill whenever the user needs to upload files to IMPEX directories, download exports from an instance, list remote files, create or delete directories, or zip/unzip files on the server. Also use when managing file transfers to sandboxes or browsing instance file systems -- even if they just say 'upload a file to the instance' or 'check what's in the IMPEX folder'.
+description: List, upload, download, and manage files on B2C Commerce instances via WebDAV. Use this skill whenever the user needs to upload files to IMPEX directories, download exports from an instance, list remote files, create or delete directories, zip/unzip files on the server, or understand the WebDAV state behind idempotent import sets. Also use when managing file transfers to sandboxes or browsing instance file systems -- even if they just say 'upload a file to the instance' or 'check what's in the IMPEX folder'.
 ---
 
 # B2C WebDAV Skill
@@ -120,6 +120,18 @@ b2c webdav zip src/instance/my-folder
 b2c webdav unzip src/instance/archive.zip
 ```
 
+### WebDAV State for Idempotent Import Sets
+
+Do not manually script marker files when the goal is to apply a local set of site archives once. Use the higher-level command:
+
+```bash
+b2c job import-set ./data-migrations --set-id storefront-data
+```
+
+It manages content-hash receipts and a heartbeat lock under `Impex/b2c-cli/import-sets/<set-id>/`. A missing or invalid receipt causes the archive to run again, including after a successful import followed by a process crash before receipt verification.
+
+The lock uses atomic WebDAV collection creation (`MKCOL`). B2C Commerce does not provide reliable native locks or enforce ETag preconditions for writes/deletes, so stale takeover is best-effort. For the canonical workflow, flags, and recovery rules, use the `b2c-cli:b2c-job` skill's **Apply an Ordered, Idempotent Import Set** section.
+
 ### More Commands
 
 See `b2c webdav --help` for a full list of available commands and options in the `webdav` topic.
@@ -128,4 +140,4 @@ See `b2c webdav --help` for a full list of available commands and options in the
 
 - `b2c-cli:b2c-logs` - Filtered log retrieval, search, and real-time tailing (preferred for log exploration)
 - `b2c-cli:b2c-code` - Higher-level code deployment (preferred for cartridge upload)
-- `b2c-cli:b2c-job` - Import/export site archives
+- `b2c-cli:b2c-job` - Import/export site archives and canonical idempotent import-set guidance

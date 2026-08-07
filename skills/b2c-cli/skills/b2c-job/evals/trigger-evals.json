@@ -4,6 +4,8 @@
   {"query": "The nightly product export job keeps failing on our sandbox and I can't figure out why from Business Manager. Is there a way to run it and see the detailed logs?", "should_trigger": true},
   {"query": "I just updated a bunch of product descriptions via a data feed and now I need to make sure the search index picks them up before our QA team tests tomorrow morning. How do I kick off a reindex and confirm it completed?", "should_trigger": true},
   {"query": "I need to trigger a site export job on my instance and then download the resulting archive. How do I run the export and get the output files?", "should_trigger": true},
+  {"query": "We have a folder of numbered site archives that CI should apply in order, but reruns must skip migrations already recorded on the sandbox. How should we run that?", "should_trigger": true},
+  {"query": "Our data import completed and then the runner crashed before recording success. I want the next run to retry until a durable receipt exists.", "should_trigger": true},
   {"query": "We have a scheduled import that runs at 2am but it seems to be stuck in a running state for over 3 hours. I need to check what's happening with it — is there a way to see the execution status and logs for currently running processes on the instance?", "should_trigger": true},
   {"query": "I need to write a batch processing script that runs nightly to clean up expired promotions. What's the job step pattern?", "should_trigger": false},
   {"query": "How do I set up a cron job on our CI server to automatically run our test suite every night?", "should_trigger": false},
