@@ -82,6 +82,8 @@ export default class CloneGet extends OdsCommand<typeof CloneGet> {
       ['Storefront Count', clone?.storefrontCount?.toString()],
       ['Filesystem Usage Size', clone?.filesystemUsageSize?.toString()],
       ['Database Transfer Size', clone?.databaseTransferSize?.toString()],
+      ['Batch ID', clone?.batchId ?? undefined],
+      ['Sibling Clone IDs', clone?.siblingCloneIds?.length ? clone.siblingCloneIds.join(', ') : undefined],
     ];
   }
 

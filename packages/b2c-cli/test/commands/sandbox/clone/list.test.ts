@@ -79,6 +79,11 @@ describe('sandbox clone list', () => {
       expect(CloneList.flags).to.have.property('status');
       expect(CloneList.flags.status.options).to.deep.equal(['Pending', 'InProgress', 'Failed', 'Completed']);
     });
+
+    it('should have batch-id flag', () => {
+      expect(CloneList.flags).to.have.property('batch-id');
+      expect(CloneList.flags['batch-id'].required).to.be.false;
+    });
   });
 
   describe('createdAt column formatting', () => {
@@ -246,6 +251,26 @@ describe('sandbox clone list', () => {
       expect(capturedOptions?.params?.query?.fromDate).to.equal('2024-01-01');
       expect(capturedOptions?.params?.query?.toDate).to.equal('2024-12-31');
       expect(capturedOptions?.params?.query?.status).to.equal('COMPLETED');
+    });
+
+    it('should pass batch-id filter to API', async () => {
+      const command = new CloneList(['test-sandbox-id'], {} as any);
+      (command as any).args = {sandboxId: 'test-sandbox-id'};
+      (command as any).flags = {'batch-id': 'batch-abc'};
+      stubJsonEnabled(command, true);
+      stubCommandConfigAndLogger(command);
+      stubResolveSandboxId(command, async (id) => id);
+
+      let capturedOptions: any;
+
+      stubOdsClientGet(command, async (path: string, options?: any) => {
+        capturedOptions = options;
+        return {data: {data: []}, response: new Response()};
+      });
+
+      await command.run();
+
+      expect(capturedOptions?.params?.query?.batchId).to.equal('batch-abc');
     });
   });
 
