@@ -40,6 +40,10 @@ function isFeatureEnabled(): boolean {
   return vscode.workspace.getConfiguration('b2c-dx').get<boolean>('features.scriptTypes', true);
 }
 
+function isInferUsageEnabled(): boolean {
+  return vscode.workspace.getConfiguration('b2c-dx').get<boolean>('features.scriptTypesInferUsage', false);
+}
+
 export function registerScriptTypes(
   context: vscode.ExtensionContext,
   cartridgeService: CartridgeService,
@@ -58,11 +62,24 @@ export function registerScriptTypes(
   const push = async (): Promise<void> => {
     const a = await ensureApi();
     if (!a) return;
-    const enabled = isFeatureEnabled();
+    // Workspace Trust gate. This extension declares
+    // `capabilities.untrustedWorkspaces.supported: false`, so VS Code already
+    // withholds it entirely in an untrusted (Restricted Mode) workspace — but
+    // gate here too as defense in depth. The feature forwards cartridge names
+    // and filesystem paths derived from workspace content to the tsserver
+    // plugin, which resolves require() across the project and (with
+    // inferUsage) reads sibling files to synthesize hover/completion; none of
+    // that should act on an unvetted, freshly-cloned repository. If a future
+    // manifest change ever relaxes the trust requirement, this keeps the
+    // Script API IntelliSense feature specifically off until the user vouches
+    // for the workspace.
+    const trusted = vscode.workspace.isTrusted;
+    const enabled = trusted && isFeatureEnabled();
+    const inferUsage = enabled && isInferUsageEnabled();
     const cartridges = enabled ? cartridgeService.getCartridges().map((c) => ({name: c.name, src: c.src})) : [];
-    a.configurePlugin(PLUGIN_ID, {cartridges, enabled});
+    a.configurePlugin(PLUGIN_ID, {cartridges, enabled, inferUsage});
     log.appendLine(
-      `[ScriptTypes] Pushed ${cartridges.length} cartridge(s); enabled=${enabled}; order=[${cartridges.map((c) => c.name).join(', ')}].`,
+      `[ScriptTypes] Pushed ${cartridges.length} cartridge(s); trusted=${trusted}; enabled=${enabled}; inferUsage=${inferUsage}; order=[${cartridges.map((c) => c.name).join(', ')}].`,
     );
   };
 
@@ -71,18 +88,26 @@ export function registerScriptTypes(
   const cartridgesSub = cartridgeService.onDidChange(() => void push());
 
   const configChange = vscode.workspace.onDidChangeConfiguration((e) => {
-    if (e.affectsConfiguration('b2c-dx.features.scriptTypes')) {
+    if (
+      e.affectsConfiguration('b2c-dx.features.scriptTypes') ||
+      e.affectsConfiguration('b2c-dx.features.scriptTypesInferUsage')
+    ) {
       void push();
     }
   });
 
+  // Re-push once the user grants trust so the feature turns on without a
+  // reload (the initial push() while untrusted forwards a disabled config).
+  const trustChange = vscode.workspace.onDidGrantWorkspaceTrust(() => void push());
+
   const refreshCmd = registerSafeCommand('b2c-dx.scriptTypes.refresh', async () => {
     cartridgeService.refresh();
     const cartridges = cartridgeService.getCartridges();
+    const active = vscode.workspace.isTrusted && isFeatureEnabled();
     vscode.window.showInformationMessage(
-      `B2C DX: Script API IntelliSense — ${isFeatureEnabled() ? 'active' : 'disabled'} (${cartridges.length} cartridge${cartridges.length === 1 ? '' : 's'}).`,
+      `B2C DX: Script API IntelliSense — ${active ? 'active' : 'disabled'} (${cartridges.length} cartridge${cartridges.length === 1 ? '' : 's'}).`,
     );
   });
 
-  context.subscriptions.push(cartridgesSub, configChange, refreshCmd);
+  context.subscriptions.push(cartridgesSub, configChange, trustChange, refreshCmd);
 }
