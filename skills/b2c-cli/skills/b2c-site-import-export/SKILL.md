@@ -43,18 +43,48 @@ b2c job import ./my-site-data --show-log
 b2c job import existing-archive.zip --remote
 ```
 
-### Import an Ordered Set Once
+### Apply an Ordered, Idempotent Import Set
 
-When a folder contains multiple archive directories or zip files that should be applied in filename order and skipped after a verified receipt exists, use:
+Use `job import-set` when a directory contains multiple site archives that must be applied in order and skipped after the instance records their successful import. This section is the canonical import-set workflow.
 
-```bash
-b2c job import-set ./data-migrations --set-id storefront-data
-b2c job import-set ./data-migrations --set-id storefront-data --dry-run
+Each immediate child directory or `.zip` file is one item. Hidden entries and other files are ignored, and item names are sorted lexically:
+
+```text
+migrations/
+├── 20260801T140000-add-preferences/
+│   ├── meta/
+│   └── sites/
+├── 20260802T091500-seed-content.zip
+└── README.md                       # ignored
 ```
 
-Each immediate child directory or `.zip` file is one item. Keep each item as a valid site archive and prefix names with a timestamp or sequence number when order matters. Do not edit applied items; add a new item for each later change.
+Name every item `YYYYMMDDTHHmmss-description`, using UTC for cross-time-zone teams. The timestamp supplies ordering and makes receipt-name collisions across projects extremely unlikely.
 
-For the authoritative receipt, retry, locking, crash-recovery, and stale-lock behavior, use the `b2c-cli:b2c-job` skill's **Apply an Ordered, Idempotent Import Set** section.
+```bash
+# Show pending and already-applied items without writing anything
+b2c job import-set --dry-run
+
+# Apply the default ./migrations directory
+b2c job import-set
+
+# Apply a different directory
+b2c job import-set ./data-migrations
+
+# Keep uploaded archives for inspection
+b2c job import-set --keep-archive
+```
+
+Important semantics:
+
+- The CLI writes a durable receipt on the target instance after each successful import. Receipt identity is based only on the item name, so that name is skipped on later runs, including runs from other machines.
+- A missing or invalid receipt always causes another import. If the import succeeds and the process crashes before its receipt is written and verified, the next run imports that item again. Make archives safe to reapply.
+- Never edit an item after it has a valid receipt. Instances that already applied that name continue to skip it; add a new, later-sorting item for the next change.
+- Projects sharing an instance-wide receipt namespace must use distinct item names. UTC timestamps plus descriptive suffixes make accidental cross-project collisions unlikely.
+- Only one runner applies a given history at a time. Waiting runners re-check receipts after acquiring the lock.
+- A lock becomes stale after 30 minutes by default. Adjust this with `--stale-lock-seconds`; use `--break-lock` only after confirming the old owner has stopped.
+- `--timeout` applies to each archive import, `--poll-interval` controls job polling, and `--lock-poll-interval` controls lock waiting.
+
+The default directory is `./migrations`. Receipt and lock identity use the fixed instance-wide `migrations` namespace, regardless of the local path. Most users should omit `--set-id`; use it only when intentionally creating an independent history or preserving a legacy namespace.
 
 ### Import Archives Larger Than the Instance Limit
 
@@ -303,4 +333,4 @@ Where `services-folder/services.xml` follows the patterns in the `b2c:b2c-webser
 
 - `b2c:b2c-webservices` - Service configurations (HTTP, FTP, SOAP), services.xml format
 - `b2c:b2c-metadata` - System object extensions and custom object definitions
-- `b2c-cli:b2c-job` - Canonical import-set receipt/locking behavior, running jobs, and monitoring import status
+- `b2c-cli:b2c-job` - Running and monitoring jobs, including individual archive imports

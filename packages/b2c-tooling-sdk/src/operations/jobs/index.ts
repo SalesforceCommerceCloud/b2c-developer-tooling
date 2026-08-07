@@ -102,7 +102,7 @@ export {
 } from './site-archive.js';
 
 // Ordered, idempotent import sets
-export {discoverImportSet, siteArchiveImportSet, ImportSetChangedError, ImportSetStateError} from './import-set.js';
+export {discoverImportSet, siteArchiveImportSet, ImportSetStateError} from './import-set.js';
 
 export type {
   ImportSetItem,

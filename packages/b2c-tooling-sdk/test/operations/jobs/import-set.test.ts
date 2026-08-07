@@ -7,10 +7,10 @@ import {expect} from 'chai';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import {HTTPError} from '@salesforce/b2c-tooling-sdk/errors';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import {
   discoverImportSet,
-  ImportSetChangedError,
   siteArchiveImportSet,
   type ImportSetEvent,
   type SiteArchiveImportSetOptions,
@@ -20,15 +20,19 @@ class FakeWebDav {
   readonly directories = new Set(['Impex']);
   readonly files = new Map<string, string>();
   readonly requests: Array<{method: string; path: string}> = [];
-  failNextReceiptWrite = false;
+  failNextReceiptCreation = false;
 
   async request(remotePath: string, init: RequestInit = {}): Promise<Response> {
     const method = init.method ?? 'GET';
     this.requests.push({method, path: remotePath});
 
     if (method === 'MKCOL') {
-      if (this.directories.has(remotePath)) return response(405);
+      if (this.directories.has(remotePath) || this.files.has(remotePath)) return response(405);
       if (!this.directories.has(path.posix.dirname(remotePath))) return response(409);
+      if (this.failNextReceiptCreation && remotePath.includes('/receipts/')) {
+        this.failNextReceiptCreation = false;
+        return response(500);
+      }
       this.directories.add(remotePath);
       return response(201);
     }
@@ -44,10 +48,6 @@ class FakeWebDav {
 
     if (method === 'PUT') {
       if (!this.directories.has(path.posix.dirname(remotePath))) return response(409);
-      if (this.failNextReceiptWrite && remotePath.includes('/receipts/')) {
-        this.failNextReceiptWrite = false;
-        return response(500);
-      }
       this.files.set(remotePath, String(init.body ?? ''));
       return response(this.files.has(remotePath) ? 204 : 201);
     }
@@ -70,9 +70,11 @@ class FakeWebDav {
     return response(405);
   }
 
-  async propfind(remotePath: string): Promise<Array<{lastModified: Date}>> {
-    if (!this.directories.has(remotePath)) throw new Error('Not found');
-    return [{lastModified: new Date()}];
+  async propfind(remotePath: string): Promise<Array<{href: string; isCollection: boolean; lastModified: Date}>> {
+    if (!this.directories.has(remotePath) && !this.files.has(remotePath)) {
+      throw new HTTPError('Not found', response(404), 'PROPFIND');
+    }
+    return [{href: remotePath, isCollection: this.directories.has(remotePath), lastModified: new Date()}];
   }
 }
 
@@ -129,11 +131,10 @@ describe('operations/jobs/import-set', () => {
 
     expect(items.map((item) => item.id)).to.deep.equal(['20260101T000000-metadata', '20260102T000000-sites.zip']);
     expect(items.map((item) => item.kind)).to.deep.equal(['directory', 'zip']);
-    expect(items.every((item) => /^[a-f0-9]{64}$/.test(item.sha256))).to.equal(true);
   });
 
   it('imports pending items, verifies receipts, and skips them on the next run', async () => {
-    const {instance, imported, options} = createHarness();
+    const {instance, webdav, imported, options} = createHarness();
 
     const first = await siteArchiveImportSet(instance, importDirectory, options);
     const second = await siteArchiveImportSet(instance, importDirectory, options);
@@ -143,17 +144,36 @@ describe('operations/jobs/import-set', () => {
     expect(first.skipped).to.equal(0);
     expect(second.imported).to.equal(0);
     expect(second.skipped).to.equal(2);
+    expect([...webdav.directories].filter((entry) => entry.includes('/receipts/'))).to.have.lengthOf(2);
+    expect([...webdav.files.keys()].some((entry) => entry.includes('/receipts/'))).to.equal(false);
   });
 
-  it('reruns an import when the previous receipt write failed', async () => {
+  it('uses the same default receipt namespace for equivalent directories at different local paths', async () => {
+    const {instance, imported, options} = createHarness();
+    const anotherDirectory = createImportDirectory();
+
+    try {
+      const first = await siteArchiveImportSet(instance, importDirectory, options);
+      const second = await siteArchiveImportSet(instance, anotherDirectory, options);
+
+      expect(first.setId).to.equal('migrations');
+      expect(second.setId).to.equal('migrations');
+      expect(imported).to.have.lengthOf(2);
+      expect(second.skipped).to.equal(2);
+    } finally {
+      fs.rmSync(anotherDirectory, {recursive: true, force: true});
+    }
+  });
+
+  it('reruns an import when the previous receipt directory creation failed', async () => {
     const {instance, webdav, imported, options} = createHarness();
-    webdav.failNextReceiptWrite = true;
+    webdav.failNextReceiptCreation = true;
 
     try {
       await siteArchiveImportSet(instance, importDirectory, options);
       expect.fail('Expected receipt write failure');
     } catch (error) {
-      expect((error as Error).message).to.include('Unable to write WebDAV state');
+      expect((error as Error).message).to.include('Unable to create WebDAV receipt directory');
     }
 
     const result = await siteArchiveImportSet(instance, importDirectory, options);
@@ -162,10 +182,11 @@ describe('operations/jobs/import-set', () => {
     expect(result.imported).to.equal(2);
   });
 
-  it('reruns an import whose receipt is invalid', async () => {
+  it('reruns an import and replaces an invalid non-directory receipt marker', async () => {
     const {instance, webdav, imported, options} = createHarness();
     await siteArchiveImportSet(instance, importDirectory, options);
-    const receiptPath = [...webdav.files.keys()].find((remotePath) => remotePath.includes('/receipts/'))!;
+    const receiptPath = [...webdav.directories].find((remotePath) => remotePath.includes('/receipts/'))!;
+    webdav.directories.delete(receiptPath);
     webdav.files.set(receiptPath, 'incomplete');
 
     const result = await siteArchiveImportSet(instance, importDirectory, options);
@@ -175,7 +196,7 @@ describe('operations/jobs/import-set', () => {
     expect(result.skipped).to.equal(1);
   });
 
-  it('rejects changed contents under an already-applied item ID', async () => {
+  it('uses only the item name as receipt identity', async () => {
     const {instance, imported, options} = createHarness();
     await siteArchiveImportSet(instance, importDirectory, options);
     fs.writeFileSync(
@@ -183,18 +204,26 @@ describe('operations/jobs/import-set', () => {
       '<metadata changed="true"/>',
     );
 
-    try {
-      await siteArchiveImportSet(instance, importDirectory, options);
-      expect.fail('Expected changed item error');
-    } catch (error) {
-      expect(error).to.be.instanceOf(ImportSetChangedError);
-    }
+    const result = await siteArchiveImportSet(instance, importDirectory, options);
+
     expect(imported).to.have.lengthOf(2);
+    expect(result.skipped).to.equal(2);
+  });
+
+  it('keeps applied state when regular WebDAV files are cleaned', async () => {
+    const {instance, webdav, imported, options} = createHarness();
+    await siteArchiveImportSet(instance, importDirectory, options);
+
+    webdav.files.clear();
+    const result = await siteArchiveImportSet(instance, importDirectory, options);
+
+    expect(imported).to.have.lengthOf(2);
+    expect(result.skipped).to.equal(2);
   });
 
   it('uses MKCOL locking and waits for an active runner', async () => {
     const {instance, webdav, imported, options} = createHarness();
-    const setId = path.basename(importDirectory);
+    const setId = 'migrations';
     const setRoot = `Impex/b2c-cli/import-sets/${setId}`;
     for (const directory of [
       'Impex/b2c-cli',
@@ -236,7 +265,7 @@ describe('operations/jobs/import-set', () => {
 
   it('takes over stale locks and emits a visible takeover event', async () => {
     const {instance, webdav, options} = createHarness();
-    const setId = path.basename(importDirectory);
+    const setId = 'migrations';
     const setRoot = `Impex/b2c-cli/import-sets/${setId}`;
     for (const directory of [
       'Impex/b2c-cli',

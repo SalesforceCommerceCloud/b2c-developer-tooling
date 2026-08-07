@@ -377,21 +377,27 @@ Apply an ordered directory of site archives idempotently. Each immediate child d
 ### Usage
 
 ```bash
-b2c job import-set DIRECTORY
+b2c job import-set [DIRECTORY]
 ```
+
+### Arguments
+
+| Argument | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `DIRECTORY` | Directory whose immediate child directories and zip files form the ordered import set | No | `./migrations` |
 
 For example:
 
 ```text
-data-migrations/
-├── 20260801-add-preferences/
+migrations/
+├── 20260801T140000-add-preferences/
 │   ├── meta/
 │   └── sites/
-├── 20260802-seed-content.zip
+├── 20260802T091500-seed-content.zip
 └── README.md                       # ignored
 ```
 
-The CLI imports `20260801-add-preferences/` and then `20260802-seed-content.zip` in lexical filename order. Prefix item names with a timestamp or sequence number when order matters.
+The CLI imports `20260801T140000-add-preferences/` and then `20260802T091500-seed-content.zip` in lexical filename order. Name every item `YYYYMMDDTHHmmss-description` so the filename is both its ordering key and its stable, practically unique receipt identity across projects. Use UTC when teams work across time zones.
 
 ### Flags
 
@@ -399,7 +405,7 @@ In addition to [global flags](./index#global-flags):
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--set-id` | Stable state namespace for the set | Directory name |
+| `--set-id` | Advanced: remote receipt and lock namespace for an independent migration history | `migrations` |
 | `--dry-run` | Show pending and applied items without locking, importing, or writing state | `false` |
 | `--keep-archive`, `-k` | Keep each uploaded archive on the instance after import | `false` |
 | `--break-lock` | Remove an existing import-set lock before acquiring it | `false` |
@@ -413,22 +419,27 @@ In addition to [global flags](./index#global-flags):
 
 ```bash
 # Preview what would be imported
-b2c job import-set ./data-migrations --dry-run
+b2c job import-set --dry-run
 
-# Apply the set; repeat this command safely in local setup or CI
-b2c job import-set ./data-migrations --set-id storefront-data
+# Apply ./migrations; repeat this command safely in local setup or CI
+b2c job import-set
 
 # Explicitly replace a lock after confirming its owner is no longer running
-b2c job import-set ./data-migrations --set-id storefront-data --break-lock
+b2c job import-set --break-lock
+
+# Advanced: isolate a legacy migration history that cannot use unique timestamped names
+b2c job import-set ./legacy-migrations --set-id legacy-storefront-data
 ```
 
 ### Receipts and retry behavior
 
-The CLI hashes each item's contents and stores verified receipts in WebDAV under `Impex/b2c-cli/import-sets/<set-id>/receipts/`. An item with a matching receipt is skipped; an item with no valid receipt is imported and its receipt is written only after the platform import succeeds.
+The CLI creates and verifies a directory receipt on the target instance after each successful import. Receipt identity is based only on the item's directory or zip filename. An item whose name already has a receipt is skipped; its contents are not compared.
 
 This deliberately provides **at-least-once retry behavior until the receipt is durable**. If an import succeeds but the process crashes or WebDAV fails before the receipt is verified, the next invocation imports that item again. Site archive contents should therefore be safe to apply more than once.
 
-Once an item has a valid receipt, changing that same item's contents is an error. Add a new, later-sorting directory or zip file for the next change instead of editing an applied item. Use a stable `--set-id` in CI if the local directory name or checkout path may change.
+Never edit an applied item: instances that already have its name receipt continue to skip it, while a new instance would import the edited contents. Add a new, later-sorting directory or zip file for every change. Two projects using the same receipt namespace must also use distinct item names; the timestamp-and-description convention makes accidental collisions unlikely.
+
+Receipts and the concurrency lock use the fixed instance-wide `migrations` namespace by default, regardless of the local directory path. Most projects should not set `--set-id`; it exists only for intentionally independent histories or legacy item names that cannot follow the timestamp convention.
 
 ### Concurrent runners and stale locks
 

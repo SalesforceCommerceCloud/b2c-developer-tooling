@@ -13,11 +13,14 @@ import {
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t, withDocs} from '../../i18n/index.js';
 
+const DEFAULT_IMPORT_SET_DIRECTORY = './migrations';
+const DEFAULT_IMPORT_SET_ID = 'migrations';
+
 export default class JobImportSet extends JobCommand<typeof JobImportSet> {
   static args = {
     directory: Args.string({
       description: 'Directory whose immediate child directories and zip files form the ordered import set',
-      required: true,
+      default: DEFAULT_IMPORT_SET_DIRECTORY,
     }),
   };
 
@@ -32,16 +35,16 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
   static enableJsonFlag = true;
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> ./impex',
-    '<%= config.bin %> <%= command.id %> ./impex --dry-run',
-    '<%= config.bin %> <%= command.id %> ./impex --set-id storefront-data',
-    '<%= config.bin %> <%= command.id %> ./impex --break-lock',
+    '<%= config.bin %> <%= command.id %>',
+    '<%= config.bin %> <%= command.id %> --dry-run',
+    '<%= config.bin %> <%= command.id %> ./release-data',
+    '<%= config.bin %> <%= command.id %> --break-lock',
   ];
 
   static flags = {
     ...JobCommand.baseFlags,
     'set-id': Flags.string({
-      description: 'Stable state namespace (defaults to the directory name)',
+      description: 'Remote receipt and lock namespace for an independent migration history',
     }),
     'dry-run': Flags.boolean({
       description: 'Show pending and applied items without locking, importing, or writing state',
@@ -88,7 +91,7 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
     this.requireOAuthCredentials();
     this.requireWebDavCredentials();
 
-    const {directory} = this.args;
+    const directory = this.args.directory ?? DEFAULT_IMPORT_SET_DIRECTORY;
     const {
       'set-id': setId,
       'dry-run': dryRun,
@@ -107,9 +110,10 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
       if (jobEvaluation.action === 'confirm') await this.confirmOrBlock(jobEvaluation);
     }
 
+    const effectiveSetId = setId ?? DEFAULT_IMPORT_SET_ID;
     const context = this.createContext('job:import-set', {
       directory,
-      setId,
+      setId: effectiveSetId,
       dryRun,
       keepArchive,
       staleLockSeconds,
@@ -122,7 +126,7 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
         }),
       );
       return {
-        setId: setId ?? directory,
+        setId: effectiveSetId,
         directory,
         dryRun,
         runId: 'skipped',
@@ -142,7 +146,7 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
 
     try {
       const result = await this.operations.siteArchiveImportSet(this.instance, directory, {
-        setId,
+        setId: effectiveSetId,
         dryRun,
         keepArchive,
         breakLock,
@@ -262,7 +266,7 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
         this.warn(
           t(
             'commands.job.importSet.invalidReceipt',
-            'Receipt for {{item}} is missing or invalid; the item will be imported again.',
+            'Receipt marker for {{item}} is invalid; the item will be imported again.',
             {item: event.item.id},
           ),
         );

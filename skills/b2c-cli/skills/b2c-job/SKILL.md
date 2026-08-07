@@ -1,6 +1,6 @@
 ---
 name: b2c-job
-description: Run and monitor jobs on B2C Commerce instances using the b2c CLI, including site archive import/export, ordered idempotent import sets, and search indexing. Use this skill whenever the user needs to trigger a job, import one or more site archives, apply data migrations once, export site data, rebuild search indexes, check job status, or troubleshoot failed job executions — even if they just say "import this folder", "apply these migrations", or "rebuild the search index".
+description: Run and monitor jobs on B2C Commerce instances using the b2c CLI, including individual site archive imports and exports and search indexing. Use this skill whenever the user needs to trigger an existing job, import a single site archive, export site data, rebuild search indexes, check job status, or troubleshoot a failed job execution — even if they just say "run this job", "import this archive", or "rebuild the search index".
 ---
 
 # B2C Job Skill
@@ -98,42 +98,16 @@ b2c job import ./my-site-data sites/RefArch libraries/mylib
 b2c job import ./my-site-data 'libraries/**'
 ```
 
-### Apply an Ordered, Idempotent Import Set
+### Import Sets
 
-Use `job import-set` when a directory contains multiple site archives that should be applied in order and skipped after the instance has a verified receipt. This is the canonical guidance for import-set behavior; the `b2c-site-import-export` and `b2c-webdav` skills route here for archive structure and state-transfer questions.
-
-Each immediate child directory or `.zip` file is one item. Hidden entries and other files are ignored, and item names are sorted lexically:
-
-```text
-data-migrations/
-├── 20260801-add-preferences/
-│   ├── meta/
-│   └── sites/
-├── 20260802-seed-content.zip
-└── README.md                       # ignored
-```
+`job import-set` applies the archives in `./migrations` in order and skips imports already recorded on the target instance:
 
 ```bash
-# Show pending and already-applied items without writing anything
-b2c job import-set ./data-migrations --dry-run
-
-# Apply the set; use a stable ID in CI
-b2c job import-set ./data-migrations --set-id storefront-data
-
-# Keep uploaded archives if they are needed for inspection
-b2c job import-set ./data-migrations --set-id storefront-data --keep-archive
+b2c job import-set --dry-run
+b2c job import-set
 ```
 
-Important semantics:
-
-- The CLI stores content-hash receipts under `Impex/b2c-cli/import-sets/<set-id>/receipts/` on WebDAV. Matching receipts are skipped.
-- Missing or invalid receipts are always retried. If the platform import succeeds and the process crashes before a receipt is written and verified, the next run imports that item again. Design each archive to tolerate reapplication.
-- Never edit an item after it has a valid receipt. A hash mismatch fails the command; add a new, later-sorting item for the next change.
-- A WebDAV collection lock serializes runners for the same set. Waiting runners re-check receipts after acquiring it.
-- The lock heartbeat becomes stale after 30 minutes by default. Adjust with `--stale-lock-seconds`; use `--break-lock` only after confirming the old owner has stopped. Stale takeover is best-effort because B2C WebDAV does not enforce conditional deletes.
-- `--timeout` applies to each archive import, `--poll-interval` controls job polling, and `--lock-poll-interval` controls lock waiting.
-
-The set ID defaults to the directory basename. Prefer an explicit stable `--set-id` in automation so moving or renaming the local folder does not create a new receipt namespace.
+For the canonical archive layout, timestamp naming convention, receipt and retry behavior, concurrency, and recovery flags, use the `b2c-cli:b2c-site-import-export` skill's **Apply an Ordered, Idempotent Import Set** section.
 
 ### Export Site Archives
 
@@ -266,4 +240,4 @@ b2c job wait <job-id> <execution-id> --poll-interval 5
 
 - `b2c:b2c-custom-job-steps` - For **creating** new custom job steps and **chaining them with standard steps** (includes the standard step catalog, IMPEX hand-off, and in-flow-vs-CLI guidance)
 - `b2c-cli:b2c-docs` - To look up standard job step type IDs and their parameters (`b2c docs read job-steps`)
-- `b2c-cli:b2c-site-import-export` - For site archive structure and metadata XML patterns
+- `b2c-cli:b2c-site-import-export` - Canonical site archive and idempotent import-set guidance

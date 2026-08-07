@@ -6,11 +6,13 @@
 import {createHash, randomUUID} from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import {HTTPError} from '../../errors/http-error.js';
 import type {B2CInstance} from '../../instance/index.js';
 import {siteArchiveImport, type SiteArchiveImportOptions, type SiteArchiveImportResult} from './site-archive.js';
 import type {WaitForJobOptions} from './run.js';
 
 const DEFAULT_STATE_ROOT = 'Impex/b2c-cli/import-sets';
+const DEFAULT_SET_ID = 'migrations';
 const DEFAULT_STALE_LOCK_SECONDS = 30 * 60;
 const DEFAULT_LOCK_POLL_INTERVAL_SECONDS = 3;
 const DEFAULT_HEARTBEAT_INTERVAL_SECONDS = 30;
@@ -23,21 +25,15 @@ export interface ImportSetItem {
   target: string;
   /** Source kind. */
   kind: 'directory' | 'zip';
-  /** Deterministic SHA-256 of the contents and, for directories, relative paths. */
-  sha256: string;
 }
 
-/** Durable receipt written after an import completes successfully. */
+/** Durable directory receipt created after an import completes successfully. */
 export interface ImportSetReceipt {
   version: 1;
   setId: string;
   itemId: string;
-  sha256: string;
-  source: string;
-  appliedAt: string;
-  runId: string;
-  executionId?: string;
-  archiveFilename?: string;
+  /** WebDAV directory whose existence records the applied item name. */
+  receiptPath: string;
 }
 
 /** Result for one item in an import set. */
@@ -82,7 +78,7 @@ export interface ImportSetLockOwner {
 
 /** Options for {@link siteArchiveImportSet}. */
 export interface SiteArchiveImportSetOptions {
-  /** Stable set ID. Defaults to the import-set directory name. */
+  /** Stable receipt and lock namespace. Defaults to `migrations`. */
   setId?: string;
   /** Plan imports without creating state, locking, importing, or writing receipts. */
   dryRun?: boolean;
@@ -117,20 +113,6 @@ export interface SiteArchiveImportSetOptions {
   sleep?: (milliseconds: number) => Promise<void>;
 }
 
-/** Thrown when an applied item ID now resolves to different contents. */
-export class ImportSetChangedError extends Error {
-  constructor(
-    public readonly item: ImportSetItem,
-    public readonly receipt: ImportSetReceipt,
-  ) {
-    super(
-      `Import-set item "${item.id}" has changed since it was applied ` +
-        `(receipt ${receipt.sha256}, local ${item.sha256}). Add a new item instead of modifying an applied import.`,
-    );
-    this.name = 'ImportSetChangedError';
-  }
-}
-
 /** Thrown when WebDAV lock or receipt state cannot be safely read or written. */
 export class ImportSetStateError extends Error {
   constructor(message: string) {
@@ -145,6 +127,11 @@ interface JsonReadResult<T> {
   value?: T;
 }
 
+interface ReceiptDirectoryReadResult {
+  found: boolean;
+  valid: boolean;
+}
+
 interface LockInfo {
   owner?: ImportSetLockOwner;
   ageSeconds?: number;
@@ -152,7 +139,7 @@ interface LockInfo {
 
 /**
  * Discovers the immediate child directories and zip archives in an import-set
- * directory, sorts them by name, and computes deterministic content hashes.
+ * directory and sorts them by name.
  */
 export async function discoverImportSet(directory: string): Promise<ImportSetItem[]> {
   const resolvedDirectory = path.resolve(directory);
@@ -171,23 +158,18 @@ export async function discoverImportSet(directory: string): Promise<ImportSetIte
     throw new Error(`No import directories or zip archives found in ${resolvedDirectory}`);
   }
 
-  return Promise.all(
-    candidates.map(async (entry) => {
-      const target = path.join(resolvedDirectory, entry.name);
-      return {
-        id: entry.name,
-        target,
-        kind: entry.isDirectory() ? ('directory' as const) : ('zip' as const),
-        sha256: await hashImportTarget(target),
-      };
-    }),
-  );
+  return candidates.map((entry) => ({
+    id: entry.name,
+    target: path.join(resolvedDirectory, entry.name),
+    kind: entry.isDirectory() ? ('directory' as const) : ('zip' as const),
+  }));
 }
 
 /**
- * Applies an ordered set of site archives exactly until a verified receipt is
- * written for each item. A missing or invalid receipt always leaves the item
- * pending, even if a previous process may have completed the platform import.
+ * Applies an ordered set of site archives exactly until a verified receipt
+ * directory is created for each item name. A missing or invalid receipt always
+ * leaves the item pending, even if a previous process may have completed the
+ * platform import.
  *
  * The operation uses an exclusive WebDAV directory (`MKCOL`) as a best-effort
  * set-wide lock. B2C Commerce does not provide conditional WebDAV deletes, so
@@ -199,7 +181,7 @@ export async function siteArchiveImportSet(
   options: SiteArchiveImportSetOptions = {},
 ): Promise<ImportSetResult> {
   const resolvedDirectory = path.resolve(directory);
-  const setId = options.setId ?? path.basename(resolvedDirectory);
+  const setId = options.setId ?? DEFAULT_SET_ID;
   validateSetId(setId);
   validateStateRoot(options.stateRoot ?? DEFAULT_STATE_ROOT);
 
@@ -266,18 +248,8 @@ export async function siteArchiveImportSet(
       });
 
       if (heartbeatError) throw heartbeatError;
-      const receipt: ImportSetReceipt = {
-        version: 1,
-        setId,
-        itemId: itemResult.id,
-        sha256: itemResult.sha256,
-        source: path.basename(itemResult.target),
-        appliedAt: new Date().toISOString(),
-        runId,
-        executionId: importResult.execution.id,
-        archiveFilename: importResult.archiveFilename,
-      };
-      await writeAndVerifyReceipt(instance, receiptPath(receiptsRoot, itemResult.id), receipt);
+      const receipt = createReceipt(setId, receiptsRoot, itemResult.id);
+      await writeAndVerifyReceipt(instance, receipt.receiptPath);
 
       itemResult.status = 'imported';
       itemResult.receipt = receipt;
@@ -314,20 +286,17 @@ async function evaluateReceipts(
     const remotePath = receiptPath(receiptsRoot, item.id);
     // Receipt reads are intentionally sequential to avoid bursting WebDAV on large sets.
     // eslint-disable-next-line no-await-in-loop
-    const read = await readJson<ImportSetReceipt>(instance, remotePath);
+    const read = await readReceiptDirectory(instance, remotePath);
     if (!read.found) {
       results.push({...item, status: 'pending'});
       continue;
     }
-    if (!read.valid || !isReceipt(read.value, setId, item.id)) {
+    if (!read.valid) {
       onEvent?.({type: 'receipt-invalid', item, receiptPath: remotePath});
       results.push({...item, status: 'pending'});
       continue;
     }
-    if (read.value.sha256 !== item.sha256) {
-      throw new ImportSetChangedError(item, read.value);
-    }
-    results.push({...item, status: 'skipped', receipt: read.value});
+    results.push({...item, status: 'skipped', receipt: createReceipt(setId, receiptsRoot, item.id)});
   }
   return results;
 }
@@ -500,21 +469,38 @@ async function putJson(instance: B2CInstance, remotePath: string, value: unknown
   }
 }
 
-async function writeAndVerifyReceipt(
-  instance: B2CInstance,
-  remotePath: string,
-  receipt: ImportSetReceipt,
-): Promise<void> {
-  await putJson(instance, remotePath, receipt);
-  const verification = await readJson<ImportSetReceipt>(instance, remotePath);
-  if (
-    !verification.found ||
-    !verification.valid ||
-    !isReceipt(verification.value, receipt.setId, receipt.itemId) ||
-    verification.value?.runId !== receipt.runId ||
-    verification.value.sha256 !== receipt.sha256
-  ) {
-    throw new ImportSetStateError(`Receipt verification failed for ${receipt.itemId}; the import will be retried.`);
+async function readReceiptDirectory(instance: B2CInstance, remotePath: string): Promise<ReceiptDirectoryReadResult> {
+  try {
+    const entries = await instance.webdav.propfind(remotePath, '0');
+    return {found: true, valid: entries[0]?.isCollection === true};
+  } catch (error) {
+    if (error instanceof HTTPError && error.response.status === 404) return {found: false, valid: false};
+    throw new ImportSetStateError(
+      `Unable to read WebDAV receipt directory ${remotePath}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
+async function writeAndVerifyReceipt(instance: B2CInstance, remotePath: string): Promise<void> {
+  let response = await instance.webdav.request(remotePath, {method: 'MKCOL'});
+  if (response.status === 405) {
+    const existing = await readReceiptDirectory(instance, remotePath);
+    if (!existing.valid) {
+      await deletePath(instance, remotePath);
+      response = await instance.webdav.request(remotePath, {method: 'MKCOL'});
+    }
+  }
+  if (response.status !== 201 && response.status !== 405) {
+    throw new ImportSetStateError(
+      `Unable to create WebDAV receipt directory ${remotePath}: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  const verification = await readReceiptDirectory(instance, remotePath);
+  if (!verification.found || !verification.valid) {
+    throw new ImportSetStateError(
+      `Receipt directory verification failed for ${remotePath}; the import will be retried.`,
+    );
   }
 }
 
@@ -527,21 +513,12 @@ async function deletePath(instance: B2CInstance, remotePath: string): Promise<vo
   }
 }
 
-function isReceipt(value: ImportSetReceipt | undefined, setId: string, itemId: string): value is ImportSetReceipt {
-  return (
-    value?.version === 1 &&
-    value.setId === setId &&
-    value.itemId === itemId &&
-    /^[a-f\d]{64}$/.test(value.sha256) &&
-    typeof value.source === 'string' &&
-    Number.isFinite(Date.parse(value.appliedAt)) &&
-    typeof value.runId === 'string' &&
-    value.runId.length > 0
-  );
+function createReceipt(setId: string, receiptsRoot: string, itemId: string): ImportSetReceipt {
+  return {version: 1, setId, itemId, receiptPath: receiptPath(receiptsRoot, itemId)};
 }
 
 function receiptPath(receiptsRoot: string, itemId: string): string {
-  return `${receiptsRoot}/${createHash('sha256').update(itemId).digest('hex')}.json`;
+  return `${receiptsRoot}/${createHash('sha256').update(itemId).digest('hex')}`;
 }
 
 function emitPlan(options: SiteArchiveImportSetOptions, setId: string, items: ImportSetItemResult[]): void {
@@ -585,62 +562,4 @@ function validateStateRoot(stateRoot: string): void {
   if (segments[0]?.toLowerCase() !== 'impex' || segments.some((segment) => segment === '.' || segment === '..')) {
     throw new Error(`Import-set state root must be a path under Impex: ${stateRoot}`);
   }
-}
-
-async function hashImportTarget(target: string): Promise<string> {
-  const stat = await fs.promises.lstat(target);
-  const hash = createHash('sha256');
-  if (stat.isFile()) {
-    hash.update('F\0');
-    await updateHashFromFile(hash, target);
-    return hash.digest('hex');
-  }
-  if (!stat.isDirectory()) throw new Error(`Unsupported import-set item: ${target}`);
-
-  const entries = await collectDirectoryEntries(target);
-  for (const entry of entries) {
-    hash.update(entry.kind === 'directory' ? 'D\0' : 'F\0');
-    hash.update(entry.relativePath);
-    hash.update('\0');
-    if (entry.kind === 'file') {
-      // Reading files sequentially keeps hashing deterministic and bounds memory usage.
-      // eslint-disable-next-line no-await-in-loop
-      await updateHashFromFile(hash, entry.absolutePath);
-      hash.update('\0');
-    }
-  }
-  return hash.digest('hex');
-}
-
-async function collectDirectoryEntries(
-  root: string,
-): Promise<Array<{kind: 'directory' | 'file'; relativePath: string; absolutePath: string}>> {
-  const result: Array<{kind: 'directory' | 'file'; relativePath: string; absolutePath: string}> = [];
-
-  async function visit(directory: string): Promise<void> {
-    const entries = await fs.promises.readdir(directory, {withFileTypes: true});
-    entries.sort((a, b) => a.name.localeCompare(b.name, 'en', {numeric: false}));
-    for (const entry of entries) {
-      const absolutePath = path.join(directory, entry.name);
-      const relativePath = path.relative(root, absolutePath).split(path.sep).join('/');
-      if (entry.isSymbolicLink()) {
-        throw new Error(`Symbolic links are not supported in import sets: ${absolutePath}`);
-      }
-      if (entry.isDirectory()) {
-        result.push({kind: 'directory', relativePath, absolutePath});
-        // eslint-disable-next-line no-await-in-loop
-        await visit(absolutePath);
-      } else if (entry.isFile()) {
-        result.push({kind: 'file', relativePath, absolutePath});
-      }
-    }
-  }
-
-  await visit(root);
-  return result;
-}
-
-async function updateHashFromFile(hash: ReturnType<typeof createHash>, filename: string): Promise<void> {
-  const stream = fs.createReadStream(filename);
-  for await (const chunk of stream) hash.update(chunk);
 }

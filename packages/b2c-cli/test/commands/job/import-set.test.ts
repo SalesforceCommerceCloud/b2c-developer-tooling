@@ -90,6 +90,20 @@ describe('job import-set', () => {
     expect(options.waitOptions).to.include({timeoutSeconds: 600, pollIntervalSeconds: 2});
   });
 
+  it('uses the migrations directory when no directory is provided', async () => {
+    const command: any = await createCommand({json: true}, {});
+    const instance = stubCommon(command);
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+    const importSetStub = sinon.stub().resolves(result({directory: './migrations'}));
+    command.operations = {siteArchiveImportSet: importSetStub};
+
+    await command.run();
+
+    expect(importSetStub.calledOnceWith(instance, './migrations', sinon.match.object)).to.equal(true);
+    expect(importSetStub.firstCall.args[2].setId).to.equal('migrations');
+  });
+
   it('returns without importing when a lifecycle hook skips the operation', async () => {
     const command: any = await createCommand({json: true}, {directory: './impex'});
     stubCommon(command);
