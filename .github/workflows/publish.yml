@@ -4,18 +4,24 @@ on:
   workflow_run:
     workflows: ["CI"]
     types: [completed]
-    branches: ['release/**']
+    # CI-gated channels. The head branch of the completed CI run selects the
+    # channel: release/** -> stable (GA), develop -> beta (integration preview).
+    # A PR targeting develop carries the PR's source branch as head_branch, not
+    # literally 'develop', so this filter fires only on real pushes/merges.
+    branches: ['release/**', 'develop']
   schedule:
-    - cron: '0 2 * * 1-5' # Weekdays at 2 AM UTC (Mon-Fri)
+    - cron: '0 2 * * 1-5' # Weekdays at 2 AM UTC (Mon-Fri) — nightly
   workflow_dispatch:
     inputs:
       release_type:
-        description: 'Release type (ignored for release branch workflow_run — always stable)'
+        description: 'Release type (ignored for CI-gated workflow_run — branch decides: release/**=stable, develop=beta)'
         required: true
         default: 'nightly'
         type: choice
         options:
           - nightly
+          - beta
+          - rc
           - stable
 
 env:
@@ -33,6 +39,13 @@ jobs:
       release_type: ${{ steps.release-type.outputs.type }}
       publish_vsx: ${{ steps.packages.outputs.publish_vsx }}
       version_vsx: ${{ steps.packages.outputs.version_vsx }}
+      # Per-package publish decisions, consumed by the environment-gated
+      # publish-npm-rc job so the rc npm push mirrors exactly what this job
+      # resolved (single source of truth for "what changed this cycle").
+      publish_sdk: ${{ steps.packages.outputs.publish_sdk }}
+      publish_cli: ${{ steps.packages.outputs.publish_cli }}
+      publish_mcp: ${{ steps.packages.outputs.publish_mcp }}
+      publish_mrt: ${{ steps.packages.outputs.publish_mrt }}
     if: >-
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
@@ -58,17 +71,58 @@ jobs:
           # attestations/contents write (it is the SLSA signer), so an injection
           # here would let an attacker forge provenance.
           RELEASE_TYPE_INPUT: ${{ github.event.inputs.release_type }}
+          # Also bound (not interpolated) for the same reason: the head branch of
+          # the CI run that triggered us decides the CI-gated channel.
+          WORKFLOW_RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
-          if [[ "$RELEASE_TYPE_INPUT" == "stable" ]] || [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
-            echo "type=stable" >> $GITHUB_OUTPUT
-            echo "tag=latest" >> $GITHUB_OUTPUT
+          # Resolve the channel into TYPE (stable|rc|beta|nightly) and npm dist-TAG.
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
+            # CI-gated: the branch that passed CI selects the channel.
+            case "$WORKFLOW_RUN_BRANCH" in
+              develop)
+                TYPE=beta;   TAG=beta ;;
+              *)
+                # release/** (and any other CI-gated branch) publishes stable.
+                TYPE=stable; TAG=latest ;;
+            esac
+          elif [[ "$RELEASE_TYPE_INPUT" == "stable" ]]; then
+            TYPE=stable; TAG=latest
+          elif [[ "$RELEASE_TYPE_INPUT" == "rc" ]]; then
+            # rc is dispatched by changesets.yml when the version PR merges to
+            # main: package.json already carries the REAL target versions. rc
+            # publishes those to npm under the 'rc' dist-tag and cuts ONE
+            # prerelease GitHub release carrying every artifact; promotion later
+            # moves the tag rc -> latest (build-once, no republish).
+            TYPE=rc;     TAG=rc
+          elif [[ "$RELEASE_TYPE_INPUT" == "beta" ]]; then
+            TYPE=beta;   TAG=beta
           else
-            echo "type=nightly" >> $GITHUB_OUTPUT
-            echo "tag=nightly" >> $GITHUB_OUTPUT
+            TYPE=nightly; TAG=nightly
           fi
 
+          # Two release families:
+          #  - Snapshot (nightly, beta): ephemeral Changesets --snapshot previews,
+          #    gated on pending changesets, published under their own dist-tag,
+          #    cutting NO git tags or GitHub releases.
+          #  - Real (rc, stable): consume the (already-applied) changeset version
+          #    bump, publish real versions, and cut git tags + a GitHub release.
+          #    rc and stable share the whole build/determine path; they diverge
+          #    only in dist-tag, prerelease flag, and where npm publish runs.
+          if [[ "$TYPE" == "stable" || "$TYPE" == "rc" ]]; then
+            SNAPSHOT=false
+          else
+            SNAPSHOT=true
+          fi
+
+          echo "type=$TYPE" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "snapshot=$SNAPSHOT" >> $GITHUB_OUTPUT
+          echo "::notice::channel: type=$TYPE dist-tag=$TAG snapshot=$SNAPSHOT"
+
+      # rc and stable both consume the (already-applied) changeset bump, so both
+      # gate on 'no pending changesets left'. snapshot=='false' == (stable || rc).
       - name: Check for pending changesets
-        if: steps.release-type.outputs.type == 'stable'
+        if: steps.release-type.outputs.snapshot == 'false'
         id: changesets
         run: |
           PENDING=$(find .changeset -name '*.md' ! -name 'README.md' 2>/dev/null | wc -l | tr -d ' ')
@@ -79,8 +133,29 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
+      # Snapshot channels (nightly, beta) are the inverse of stable: a snapshot
+      # is a PREVIEW of what the pending changesets will release next, so it only
+      # makes sense when there ARE pending changesets. With none, `changeset
+      # version --snapshot` would bump nothing and every publish would try to
+      # re-push an already-released version (a hard npm failure), so we skip the
+      # whole snapshot run instead.
+      - name: Check for pending changesets (snapshot)
+        if: steps.release-type.outputs.snapshot == 'true'
+        id: snapshot-changesets
+        env:
+          CHANNEL: ${{ steps.release-type.outputs.type }}
+        run: |
+          PENDING=$(find .changeset -name '*.md' ! -name 'README.md' 2>/dev/null | wc -l | tr -d ' ')
+          if [[ "$PENDING" -gt 0 ]]; then
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "::notice::$PENDING pending changeset(s) — building $CHANNEL preview"
+          else
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "::notice::No pending changesets — nothing new to preview, skipping $CHANNEL"
+          fi
+
       - name: Quick version check
-        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true'
+        if: steps.release-type.outputs.snapshot == 'false' && steps.changesets.outputs.skip != 'true'
         id: quick-check
         run: |
           HAS_CHANGES=false
@@ -127,11 +202,11 @@ jobs:
           fi
 
       - name: Setup pnpm
-        if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
+        if: (steps.release-type.outputs.snapshot == 'true' && steps.snapshot-changesets.outputs.skip != 'true') || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - name: Setup Node.js
-        if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
+        if: (steps.release-type.outputs.snapshot == 'true' && steps.snapshot-changesets.outputs.skip != 'true') || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
           node-version: '24.18.0'
@@ -139,7 +214,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Upgrade npm for trusted publishing
-        if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
+        if: (steps.release-type.outputs.snapshot == 'true' && steps.snapshot-changesets.outputs.skip != 'true') || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
         # Pin to an exact, known-good npm. It must be >=11.5.1 (the OIDC
         # trusted-publishing minimum) but NOT npm@latest: npm@12.0.0's global
         # self-install is broken (prunes modules it needs, e.g. 'sigstore'),
@@ -148,11 +223,11 @@ jobs:
         run: npm install -g npm@11.16.0
 
       - name: Install dependencies
-        if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
+        if: (steps.release-type.outputs.snapshot == 'true' && steps.snapshot-changesets.outputs.skip != 'true') || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
         run: pnpm install --frozen-lockfile
 
       - name: Determine packages to publish
-        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
+        if: steps.release-type.outputs.snapshot == 'false' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
         id: packages
         run: |
           check_package() {
@@ -222,65 +297,258 @@ jobs:
           fi
           echo "@salesforce/b2c-agent-plugins: version=${PLUGINS_VERSION}"
 
+      # Snapshot channels (nightly, beta) = a PREVIEW of the next release. Rather
+      # than force every package to a synthetic 0.0.0-<channel>.<ts> (which sorts
+      # below every real version and republishes packages that never changed), we
+      # let Changesets compute each bumped package's real next semver and append
+      # the snapshot suffix. With snapshot.useCalculatedVersion +
+      # prereleaseTemplate "{tag}.{datetime}" in .changeset/config.json, a package
+      # bumping to 1.22.0 becomes 1.22.0-<channel>.<YYYYMMDDHHMMSS> (channel =
+      # nightly or beta, taken from the resolved dist-tag). Only packages with a
+      # pending changeset are bumped; the rest keep their released version and we
+      # do NOT publish them (publishing an unchanged version is a hard npm
+      # failure). This is an ephemeral, in-workspace bump only — nothing is
+      # committed or tagged.
       - name: Create snapshot versions
-        if: steps.release-type.outputs.type == 'nightly'
+        if: steps.release-type.outputs.snapshot == 'true' && steps.snapshot-changesets.outputs.skip != 'true'
+        id: snapshot
+        env:
+          # The dist-tag ('nightly' | 'beta') doubles as the snapshot suffix
+          # label. Bound to an env var (not interpolated) — it is the value
+          # `changeset version --snapshot` embeds into the published version.
+          CHANNEL: ${{ steps.release-type.outputs.tag }}
         run: |
-          SNAPSHOT="0.0.0-nightly.$(date +%Y%m%d%H%M%S)"
-          for pkg in packages/b2c-tooling-sdk packages/b2c-cli packages/b2c-dx-mcp packages/mrt-utilities; do
-            node -e "
-              const fs = require('fs');
-              const path = '$pkg/package.json';
-              const pkg = JSON.parse(fs.readFileSync(path));
-              pkg.version = '$SNAPSHOT';
-              fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
-            "
-          done
-          echo "Set snapshot version: $SNAPSHOT"
+          set -euo pipefail
+          pnpm changeset version --snapshot "$CHANNEL"
+
+          # A package was bumped iff its version now carries the -<channel>. suffix.
+          # Emit a per-package publish flag so the publish steps below only push
+          # the packages that actually changed this cycle.
+          snapshot_flag() {
+            local pkg_path=$1
+            local output_key=$2
+            local version
+            version=$(node -p "require('./${pkg_path}/package.json').version")
+            if [[ "$version" == *-"$CHANNEL".* ]]; then
+              echo "publish_snapshot_${output_key}=true" >> "$GITHUB_OUTPUT"
+              echo "::notice::$CHANNEL ${pkg_path} -> ${version}"
+            else
+              echo "publish_snapshot_${output_key}=false" >> "$GITHUB_OUTPUT"
+            fi
+          }
+
+          snapshot_flag "packages/b2c-tooling-sdk" "sdk"
+          snapshot_flag "packages/b2c-cli" "cli"
+          snapshot_flag "packages/b2c-dx-mcp" "mcp"
+          snapshot_flag "packages/mrt-utilities" "mrt"
 
       - name: Build packages
-        if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
+        if: (steps.release-type.outputs.snapshot == 'true' && steps.snapshot-changesets.outputs.skip != 'true') || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
         run: pnpm run build
 
       - name: Run tests
-        if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
+        if: (steps.release-type.outputs.snapshot == 'true' && steps.snapshot-changesets.outputs.skip != 'true') || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
         run: pnpm --filter '!b2c-vs-extension' run test
 
+      # Inline npm publish runs for snapshot (nightly/beta) and direct stable
+      # ONLY. rc is deliberately excluded here: its npm publish is deferred to
+      # the environment-gated `publish-npm-rc` job (manual approval) so a human
+      # approves the rc push, and promotion later moves the tag rc -> latest.
       - name: Publish SDK to npm
-        if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_sdk == 'true'
+        if: (steps.snapshot.outputs.publish_snapshot_sdk == 'true' || steps.packages.outputs.publish_sdk == 'true') && steps.release-type.outputs.type != 'rc'
         id: publish-sdk
         continue-on-error: true
         run: >-
           pnpm --filter @salesforce/b2c-tooling-sdk publish --provenance --no-git-checks
-          --tag ${{ steps.release-type.outputs.type == 'nightly' && 'nightly' || steps.packages.outputs.tag_sdk }}
+          --tag ${{ steps.release-type.outputs.snapshot == 'true' && steps.release-type.outputs.tag || steps.packages.outputs.tag_sdk }}
 
       - name: Publish CLI to npm
-        if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_cli == 'true'
+        if: (steps.snapshot.outputs.publish_snapshot_cli == 'true' || steps.packages.outputs.publish_cli == 'true') && steps.release-type.outputs.type != 'rc'
         id: publish-cli
         continue-on-error: true
         run: >-
           pnpm --filter @salesforce/b2c-cli publish --provenance --no-git-checks
-          --tag ${{ steps.release-type.outputs.type == 'nightly' && 'nightly' || steps.packages.outputs.tag_cli }}
+          --tag ${{ steps.release-type.outputs.snapshot == 'true' && steps.release-type.outputs.tag || steps.packages.outputs.tag_cli }}
 
       - name: Publish MCP to npm
-        if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_mcp == 'true'
+        if: (steps.snapshot.outputs.publish_snapshot_mcp == 'true' || steps.packages.outputs.publish_mcp == 'true') && steps.release-type.outputs.type != 'rc'
         id: publish-mcp
         continue-on-error: true
         run: >-
           pnpm --filter @salesforce/b2c-dx-mcp publish --provenance --no-git-checks
-          --tag ${{ steps.release-type.outputs.type == 'nightly' && 'nightly' || steps.packages.outputs.tag_mcp }}
+          --tag ${{ steps.release-type.outputs.snapshot == 'true' && steps.release-type.outputs.tag || steps.packages.outputs.tag_mcp }}
 
       - name: Publish MRT Utilities to npm
-        if: steps.release-type.outputs.type == 'nightly' || steps.packages.outputs.publish_mrt == 'true'
+        if: (steps.snapshot.outputs.publish_snapshot_mrt == 'true' || steps.packages.outputs.publish_mrt == 'true') && steps.release-type.outputs.type != 'rc'
         id: publish-mrt
         continue-on-error: true
         run: >-
           pnpm --filter @salesforce/mrt-utilities publish --provenance --no-git-checks
-          --tag ${{ steps.release-type.outputs.type == 'nightly' && 'nightly' || steps.packages.outputs.tag_mrt }}
+          --tag ${{ steps.release-type.outputs.snapshot == 'true' && steps.release-type.outputs.tag || steps.packages.outputs.tag_mrt }}
+
+      # The VSIX Marketplace number CANNOT be the changeset/npm version: the
+      # Marketplace rejects semver pre-release suffixes, caps each component at
+      # int32, requires every upload to be strictly higher than the highest
+      # already-published version, and forbids a pre-release and a stable sharing
+      # a number. So the VSIX rides its OWN monotonic line (even minor = stable,
+      # odd minor = pre-release), while the changeset version stays the release
+      # trigger + git-tag/npm identity.
+      #
+      # That line is SELF-REFERENTIAL — the next stable/pre-release derives from
+      # the CURRENT published stable, which is the highest EVEN-minor VSIX already
+      # present as an asset of a NON-prerelease b2c-vs-extension release. Reading
+      # it from release history (not package.json) is what keeps the line
+      # monotonic across cycles regardless of how the changeset semver walks.
+      # NON-prerelease is essential: the build-once candidate stable VSIX (e.g.
+      # 1.2.0) is attached to the rc PRERELEASE release before promotion, so
+      # counting prereleases would skip the line two minors ahead. Seed 1.0.2
+      # (the extension's real current stable) when no stable release exists yet.
+      # Every VSIX-building path (direct-stable, snapshot, rc build-once) reads
+      # this one output.
+      - name: Resolve current Marketplace stable (from release history)
+        id: mkt-base
+        if: >-
+          (steps.release-type.outputs.snapshot == 'true' && steps.snapshot-changesets.outputs.skip != 'true')
+          || (steps.release-type.outputs.type != '' && steps.packages.outputs.publish_vsx == 'true')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          CURRENT_STABLE="1.0.2"   # seed: the extension's real current stable
+          BEST_MAJOR=1; BEST_MINOR=0
+          while IFS= read -r name; do
+            ver=$(printf '%s\n' "$name" | sed -nE 's/^b2c-vs-extension-([0-9]+)\.([0-9]+)\.[0-9]+\.vsix$/\1 \2/p')
+            [ -n "$ver" ] || continue
+            mj=${ver%% *}; mn=${ver##* }
+            # even minor only (the stable track); odd minor = a pre-release asset.
+            [ $((mn % 2)) -eq 0 ] || continue
+            if [ "$mj" -gt "$BEST_MAJOR" ] || { [ "$mj" -eq "$BEST_MAJOR" ] && [ "$mn" -gt "$BEST_MINOR" ]; }; then
+              BEST_MAJOR=$mj; BEST_MINOR=$mn; CURRENT_STABLE="${mj}.${mn}.0"
+            fi
+          done < <(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases" --jq '.[] | select(.prerelease==false) | .assets[].name' 2>/dev/null || true)
+          echo "current_stable=$CURRENT_STABLE" >> "$GITHUB_OUTPUT"
+          echo "::notice::current Marketplace stable (from release history): $CURRENT_STABLE"
+
+      # Direct-stable escape hatch (release/** CI-success or manual stable).
+      # Stable ships the NEXT EVEN minor above the current published stable (e.g.
+      # 1.0.2 -> 1.2.0), computed from the release-history base above — NOT the
+      # changeset semver, which would sit below any already-published pre-release
+      # and be rejected as a regression. Both GA paths (direct-stable and rc
+      # promotion) therefore land on the SAME even-minor line, and b2c-dx
+      # classifies every stable asset uniformly. The git tag / release identity
+      # stays the changeset semver (steps.packages.outputs.version_vsx); only the
+      # baked VSIX version is the Marketplace scheme. Fails closed on any
+      # int32/semver/odd-minor breach before an irreversible publish.
+      - name: Resolve stable VSIX version (marketplace scheme)
+        if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
+        working-directory: packages/b2c-vs-extension
+        env:
+          CURRENT_STABLE: ${{ steps.mkt-base.outputs.current_stable }}
+        run: |
+          set -euo pipefail
+          VERSION=$(node scripts/marketplace-version.mjs --channel stable --current-stable "$CURRENT_STABLE" --write)
+          echo "::notice::stable VSIX marketplace version: $VERSION (current stable $CURRENT_STABLE)"
 
       - name: Package VS Code extension
         if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
         working-directory: packages/b2c-vs-extension
         run: pnpm run package
+
+      # --- Snapshot (nightly/beta) VSIX -> S3 delivery ------------------------
+      # Nightly and beta ALSO ship a VSIX to the Marketplace, but indirectly: the
+      # monorepo attests it and drops it in an S3 bucket, and b2c-dx pulls from
+      # there, re-verifies, and publishes to the public pre-release channel. The
+      # S3 infrastructure (OIDC role + bucket) is provisioned outside this repo,
+      # so — exactly like docs-preview.yml — we gate the whole path on the role
+      # secret existing and no-op green when it does not, rather than failing
+      # every nightly red until the infra lands.
+      - name: Check VSIX S3 delivery is configured
+        id: vsix-s3-cfg
+        if: >-
+          steps.release-type.outputs.snapshot == 'true'
+          && steps.snapshot-changesets.outputs.skip != 'true'
+        env:
+          VSIX_S3_ROLE_ARN: ${{ secrets.VSIX_S3_ROLE_ARN }}
+        run: |
+          if [ -n "$VSIX_S3_ROLE_ARN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::VSIX S3 delivery not configured (VSIX_S3_ROLE_ARN missing); skipping nightly/beta VSIX build + upload."
+          fi
+
+      # Credentials come before the version resolve because beta reads the S3
+      # channel prefix to compute its within-day sequence (see below).
+      - name: Configure AWS credentials for VSIX upload
+        if: >-
+          steps.release-type.outputs.snapshot == 'true'
+          && steps.snapshot-changesets.outputs.skip != 'true'
+          && steps.vsix-s3-cfg.outputs.enabled == 'true'
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ secrets.VSIX_S3_ROLE_ARN }}
+          aws-region: ${{ vars.VSIX_S3_REGION || 'us-east-1' }}
+
+      # The Marketplace rejects semver pre-release suffixes and caps every version
+      # component at int32, so the VSIX version CANNOT be the changeset/npm version
+      # (which `changeset version --snapshot` just rewrote in the working tree to
+      # e.g. 1.22.0-nightly.<ts>). marketplace-version.mjs computes the numeric-only,
+      # channel-encoded version on the odd-minor pre-release track derived from the
+      # CURRENT published stable (resolved from release history in the mkt-base step
+      # above — NOT the changeset semver) and --write's it back into package.json so
+      # `vsce package` bakes it in. The script fails closed on any int32/semver/
+      # odd-minor breach — a bad version must never reach an irreversible publish.
+      - name: Resolve pre-release VSIX version
+        id: vsix-version
+        if: >-
+          steps.release-type.outputs.snapshot == 'true'
+          && steps.snapshot-changesets.outputs.skip != 'true'
+          && steps.vsix-s3-cfg.outputs.enabled == 'true'
+        working-directory: packages/b2c-vs-extension
+        env:
+          CHANNEL: ${{ steps.release-type.outputs.type }} # nightly | beta
+          CURRENT_STABLE: ${{ steps.mkt-base.outputs.current_stable }}
+          VSIX_S3_BUCKET: ${{ secrets.VSIX_S3_BUCKET }}
+          VSIX_S3_PREFIX: ${{ vars.VSIX_S3_PREFIX }}
+        run: |
+          set -euo pipefail
+          DATE=$(date -u +%Y%m%d)
+
+          SEQ=0
+          if [ "$CHANNEL" = "beta" ]; then
+            # Beta encodes a within-day sequence NN (01..99). The authoritative
+            # record of today's betas is the S3 channel prefix we publish into, so
+            # list it and take max+1. Develop merges are effectively serialized by
+            # CI (workflow_run fires per completed CI run), so the list-then-bump
+            # race is negligible; NN>99 fails closed rather than overflow the slot.
+            PREFIX="${VSIX_S3_PREFIX:+${VSIX_S3_PREFIX%/}/}"
+            MAX=0
+            while IFS= read -r line; do
+              NN=$(printf '%s\n' "$line" | sed -nE "s/.*\.${DATE}([0-9]{2})\.vsix\$/\1/p")
+              [ -n "$NN" ] || continue
+              NN=$((10#$NN))
+              [ "$NN" -gt "$MAX" ] && MAX=$NN
+            done < <(aws s3 ls "s3://${VSIX_S3_BUCKET}/${PREFIX}beta/" 2>/dev/null || true)
+            SEQ=$((MAX + 1))
+            if [ "$SEQ" -gt 99 ]; then
+              echo "::error::beta within-day sequence exceeded 99 for ${DATE}"
+              exit 1
+            fi
+          fi
+
+          VERSION=$(node scripts/marketplace-version.mjs --channel "$CHANNEL" --current-stable "$CURRENT_STABLE" --date "$DATE" --seq "$SEQ" --write)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+          echo "::notice::pre-release VSIX version ($CHANNEL): $VERSION (current stable $CURRENT_STABLE)"
+
+      - name: Package VS Code extension (pre-release)
+        if: >-
+          steps.release-type.outputs.snapshot == 'true'
+          && steps.snapshot-changesets.outputs.skip != 'true'
+          && steps.vsix-s3-cfg.outputs.enabled == 'true'
+        working-directory: packages/b2c-vs-extension
+        run: pnpm run package:pre-release
 
       # Trust anchor: hash the exact artifact that will be uploaded to the release
       # and attested below. b2c-dx re-computes and compares this before publishing.
@@ -291,7 +559,9 @@ jobs:
       # would let the hash anchor, the attested set, and the uploaded set diverge.
       - name: Compute VSIX sha256
         id: vsix-hash
-        if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
+        if: >-
+          (steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true')
+          || (steps.release-type.outputs.snapshot == 'true' && steps.snapshot-changesets.outputs.skip != 'true' && steps.vsix-s3-cfg.outputs.enabled == 'true')
         working-directory: packages/b2c-vs-extension
         run: |
           set -euo pipefail
@@ -312,10 +582,132 @@ jobs:
       # Attest the exact resolved file (not a glob) so the attested subject is
       # identical to the hashed and uploaded artifact.
       - name: Attest VSIX build provenance
-        if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
+        if: >-
+          (steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true')
+          || (steps.release-type.outputs.snapshot == 'true' && steps.snapshot-changesets.outputs.skip != 'true' && steps.vsix-s3-cfg.outputs.enabled == 'true')
         uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
         with:
           subject-path: packages/b2c-vs-extension/${{ steps.vsix-hash.outputs.vsix_file }}
+
+      # Upload the attested nightly/beta VSIX + its sha256 sidecar to S3. b2c-dx
+      # polls this prefix, re-verifies the SLSA attestation and the sha256, and
+      # only then publishes to the public pre-release channel — so the bytes we
+      # hashed and attested just above are exactly the bytes that get published.
+      # The sha256 sidecar is the committed marker b2c-dx cross-checks against
+      # (mirrors the release-asset marker on the stable path). Layout:
+      #   s3://<bucket>/<prefix>/<channel>/<file>.vsix        (+ .vsix.sha256)
+      - name: Upload pre-release VSIX to S3
+        if: >-
+          steps.release-type.outputs.snapshot == 'true'
+          && steps.snapshot-changesets.outputs.skip != 'true'
+          && steps.vsix-s3-cfg.outputs.enabled == 'true'
+        working-directory: packages/b2c-vs-extension
+        env:
+          CHANNEL: ${{ steps.release-type.outputs.type }}
+          VSIX_FILE: ${{ steps.vsix-hash.outputs.vsix_file }}
+          VSIX_SHA256: ${{ steps.vsix-hash.outputs.sha256 }}
+          VSIX_S3_BUCKET: ${{ secrets.VSIX_S3_BUCKET }}
+          VSIX_S3_PREFIX: ${{ vars.VSIX_S3_PREFIX }}
+        run: |
+          set -euo pipefail
+          PREFIX="${VSIX_S3_PREFIX:+${VSIX_S3_PREFIX%/}/}"
+          DEST="s3://${VSIX_S3_BUCKET}/${PREFIX}${CHANNEL}"
+
+          # Write the sha256 marker sidecar (same digest attested above) alongside
+          # the VSIX so b2c-dx can fail closed on any mismatch before publishing.
+          printf '%s  %s\n' "$VSIX_SHA256" "$VSIX_FILE" > "${VSIX_FILE}.sha256"
+
+          # --no-guess-mime-type + explicit content-type keeps the object type
+          # stable regardless of the runner's mime db.
+          aws s3 cp "$VSIX_FILE" "${DEST}/${VSIX_FILE}" \
+            --no-guess-mime-type --content-type application/octet-stream
+          aws s3 cp "${VSIX_FILE}.sha256" "${DEST}/${VSIX_FILE}.sha256" \
+            --no-guess-mime-type --content-type text/plain
+          echo "::notice::uploaded $VSIX_FILE (+ .sha256) to ${DEST}/"
+
+      # --- rc build-once: BOTH VSIX (rc-prerelease + stable) in one release ----
+      # rc is the human-gated GA candidate. In a single run we build BOTH the
+      # rc-prerelease VSIX (odd minor, 1.1.<date>D, vsce --pre-release) AND the
+      # stable VSIX (next even minor, e.g. 1.2.0, no pre-release flag) from the
+      # SAME commit, attest both, and put both in ONE prerelease GitHub release.
+      # Promotion (promote.yml) later flips that same release to latest and b2c-dx
+      # publishes the STABLE asset — the exact bytes attested here, never rebuilt.
+      # Two VSIX cannot coexist in the package dir (the inject step + sha guard
+      # assume one), so each is built and moved into dist-vsix/ before the next.
+      # Both versions derive from the CURRENT published stable resolved from
+      # release history (mkt-base step) — NOT the changeset semver — so the
+      # Marketplace line stays monotonic across cycles.
+      - name: Build rc + stable VSIX (build-once)
+        id: rc-vsix
+        if: steps.release-type.outputs.type == 'rc' && steps.packages.outputs.publish_vsx == 'true'
+        working-directory: packages/b2c-vs-extension
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          CURRENT_STABLE: ${{ steps.mkt-base.outputs.current_stable }}
+        run: |
+          set -euo pipefail
+          DATE=$(date -u +%Y%m%d)
+          mkdir -p dist-vsix
+
+          # rc within-day sequence D (1..9). The authoritative record of today's
+          # rc cuts is the set of rc assets already attached to prerelease
+          # releases in this repo, so scan them and take max+1. A do-not-promote
+          # re-cut therefore gets the next D rather than colliding. >9 fails
+          # closed (the single-digit tail is a locked, irreversible scheme).
+          MAX=0
+          while IFS= read -r name; do
+            D=$(printf '%s\n' "$name" | sed -nE "s/^b2c-vs-extension-[0-9]+\.[0-9]+\.${DATE}([1-9])\.vsix\$/\1/p")
+            [ -n "$D" ] || continue
+            [ "$D" -gt "$MAX" ] && MAX=$D
+          done < <(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases" --jq '.[] | select(.prerelease==true) | .assets[].name' 2>/dev/null || true)
+          D=$((MAX + 1))
+          if [ "$D" -gt 9 ]; then
+            echo "::error::rc within-day sequence exceeded 9 for ${DATE}"
+            exit 1
+          fi
+
+          # Build one channel's VSIX, verify exactly one artifact, hash it, and
+          # stage it (+ sha256 sidecar) into dist-vsix/ before the next build.
+          build_one() {
+            local channel=$1 seq=$2 ver script
+            if [ "$channel" = "stable" ]; then
+              ver=$(node scripts/marketplace-version.mjs --channel stable --current-stable "$CURRENT_STABLE" --write)
+              script=package
+            else
+              ver=$(node scripts/marketplace-version.mjs --channel rc --current-stable "$CURRENT_STABLE" --date "$DATE" --seq "$seq" --write)
+              script=package:pre-release
+            fi
+            pnpm run "$script"
+            local count
+            count=$(ls ./*.vsix 2>/dev/null | wc -l | tr -d ' ')
+            if [ "$count" -ne 1 ]; then
+              echo "::error::expected exactly one .vsix for $channel, found $count"
+              exit 1
+            fi
+            local f sha
+            f=$(ls ./*.vsix); f=${f#./}
+            sha=$(sha256sum "$f" | awk '{print $1}')
+            mv "$f" dist-vsix/
+            printf '%s  %s\n' "$sha" "$f" > "dist-vsix/${f}.sha256"
+            echo "::notice::built $channel VSIX $f ($ver) sha256=$sha"
+            echo "${channel}_file=$f" >> "$GITHUB_OUTPUT"
+            echo "${channel}_version=$ver" >> "$GITHUB_OUTPUT"
+          }
+
+          build_one stable 0
+          build_one rc "$D"
+          echo "rc_seq=$D" >> "$GITHUB_OUTPUT"
+
+      # SLSA build provenance for BOTH staged VSIX at once. b2c-dx re-verifies this
+      # (with --source-ref refs/heads/main) before publishing either asset, so the
+      # attested bytes are exactly the published bytes on both the prerelease and
+      # the eventual stable publish.
+      - name: Attest rc + stable VSIX provenance
+        if: steps.release-type.outputs.type == 'rc' && steps.packages.outputs.publish_vsx == 'true'
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: packages/b2c-vs-extension/dist-vsix/*.vsix
 
       - name: Create git tags
         if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
@@ -389,8 +781,11 @@ jobs:
           git push origin "$DOCS_TAG"
           echo "Created docs tag: $DOCS_TAG"
 
+      # Runs for both real channels (stable and rc): builds the combined npm
+      # changelog that the stable "Version Packages" release AND the unified rc
+      # prerelease release both use as their notes body.
       - name: Extract changelogs for release
-        if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
+        if: steps.release-type.outputs.snapshot == 'false' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
         run: |
           # Function to extract the latest version section from a changelog
           extract_latest() {
@@ -451,6 +846,62 @@ jobs:
               echo ""
             fi
           } > /tmp/release-notes.md
+
+      # rc build-once: ONE unified prerelease release, tagged by the changeset VSX
+      # semver (the identity promote.yml flips). It carries the combined npm
+      # changelog (prepended with the build-once artifact table) AND both VSIX +
+      # their .sha256 markers. Marked --prerelease so b2c-dx publishes the rc asset
+      # now and only picks up the stable asset once the release is promoted;
+      # nothing is ever rebuilt. Idempotent on re-run via --clobber.
+      - name: Create unified rc prerelease release
+        if: steps.release-type.outputs.type == 'rc' && steps.packages.outputs.publish_vsx == 'true'
+        working-directory: packages/b2c-vs-extension
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VSX_SEMVER: ${{ steps.packages.outputs.version_vsx }}
+          RC_FILE: ${{ steps.rc-vsix.outputs.rc_file }}
+          RC_VERSION: ${{ steps.rc-vsix.outputs.rc_version }}
+          STABLE_FILE: ${{ steps.rc-vsix.outputs.stable_file }}
+          STABLE_VERSION: ${{ steps.rc-vsix.outputs.stable_version }}
+        run: |
+          set -euo pipefail
+          VSX_TAG="b2c-vs-extension@${VSX_SEMVER}"
+
+          # Prepend the build-once artifact table to the combined npm changelog
+          # produced by the previous step (/tmp/release-notes.md). Only the
+          # heredoc header is de-indented (sed); the changelog is appended verbatim
+          # so its own indentation (nested lists, code blocks) is preserved.
+          sed 's/^          //' > /tmp/rc-release-notes.md <<HEADER
+          ## Release Candidate — build-once
+
+          This release carries both VSIX artifacts, built once from this commit:
+
+          | Channel | Marketplace version | File |
+          | --- | --- | --- |
+          | Release candidate (pre-release) | ${RC_VERSION} | ${RC_FILE} |
+          | Stable (published on promotion) | ${STABLE_VERSION} | ${STABLE_FILE} |
+
+          While marked *pre-release*, b2c-dx publishes the release candidate to the
+          Marketplace pre-release channel. On promotion the same release is flipped
+          to latest and the stable artifact is published — the exact bytes attested
+          here, never rebuilt.
+
+          ---
+
+          HEADER
+          cat /tmp/release-notes.md >> /tmp/rc-release-notes.md
+
+          if gh release view "$VSX_TAG" >/dev/null 2>&1; then
+            echo "Release $VSX_TAG exists; refreshing assets"
+            gh release upload "$VSX_TAG" dist-vsix/* --clobber
+          else
+            gh release create "$VSX_TAG" \
+              --prerelease \
+              --latest=false \
+              --title "Release Candidate ${VSX_SEMVER}" \
+              --notes-file /tmp/rc-release-notes.md
+            gh release upload "$VSX_TAG" dist-vsix/*
+          fi
 
       - name: Create GitHub Release
         if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'
@@ -561,11 +1012,18 @@ jobs:
         if: >-
           steps.release-type.outputs.type == 'stable'
           && steps.packages.outputs.publish_vsx == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Release/tag identity is the changeset semver; the VSIX file itself is
+          # named for the marketplace stable version (1.2.0), which differs. Bind
+          # both (and the attested filename) as env vars — no shell interpolation.
+          VSX_SEMVER: ${{ steps.packages.outputs.version_vsx }}
+          VSIX_FILE: ${{ steps.vsix-hash.outputs.vsix_file }}
         run: |
-          VSX_TAG="b2c-vs-extension@${{ steps.packages.outputs.version_vsx }}"
-          VSX_VERSION="${{ steps.packages.outputs.version_vsx }}"
+          set -euo pipefail
+          VSX_TAG="b2c-vs-extension@${VSX_SEMVER}"
           # Upload the exact file that was hashed + attested above (not a glob).
-          VSIX_PATH="packages/b2c-vs-extension/${{ steps.vsix-hash.outputs.vsix_file }}"
+          VSIX_PATH="packages/b2c-vs-extension/${VSIX_FILE}"
 
           # Extract extension changelog for the dedicated release
           extract_latest() {
@@ -577,13 +1035,14 @@ jobs:
 
           VSX_CHANGELOG=$(extract_latest packages/b2c-vs-extension/CHANGELOG.md)
 
-          {
-            cat <<HEADER
-          ## B2C DX VS Code Extension v${VSX_VERSION}
+          # Install line references the ACTUAL attested filename (marketplace
+          # version), not the changeset semver, so the copy-paste works.
+          sed 's/^          //' > /tmp/vsx-release-notes.md <<HEADER
+          ## B2C DX VS Code Extension ${VSX_SEMVER}
 
-          Download the \`.vsix\` file below and install via:
+          Download the \`${VSIX_FILE}\` file below and install via:
           \`\`\`
-          code --install-extension b2c-vs-extension-${VSX_VERSION}.vsix
+          code --install-extension ${VSIX_FILE}
           \`\`\`
 
           Or in VS Code: Extensions → ⋯ → Install from VSIX...
@@ -593,8 +1052,7 @@ jobs:
           ### Changelog
 
           HEADER
-            echo "$VSX_CHANGELOG"
-          } | sed 's/^          //' > /tmp/vsx-release-notes.md
+          printf '%s\n' "$VSX_CHANGELOG" >> /tmp/vsx-release-notes.md
 
           # Create a dedicated release for the extension (not latest — main releases own that)
           # Use --clobber on upload in case a previous run partially completed
@@ -603,14 +1061,12 @@ jobs:
             gh release upload "$VSX_TAG" "$VSIX_PATH" --clobber
           else
             gh release create "$VSX_TAG" \
-              --title "VS Code Extension ${VSX_VERSION}" \
+              --title "VS Code Extension ${VSX_SEMVER}" \
               --latest=false \
               --notes-file /tmp/vsx-release-notes.md
 
             gh release upload "$VSX_TAG" "$VSIX_PATH"
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # NOTE: This monorepo BUILDS + ATTESTS the VSIX and publishes it as a public
       # GitHub release (above). Cross-repo delivery to forcedotcom/b2c-dx is PULL-based
@@ -627,8 +1083,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Only stable (release/** workflow_run) commits version bumps that need
+      # merging back to main. Beta also arrives via workflow_run (on develop) but
+      # is a --snapshot preview that commits nothing, so it must NOT open a
+      # develop -> main bump PR.
       - name: Create PR to merge version bumps back to main
-        if: github.event_name == 'workflow_run'
+        if: steps.release-type.outputs.type == 'stable' && github.event_name == 'workflow_run'
         run: |
           if [[ "${{ steps.packages.outputs.publish_sdk }}" == "true" ]] || \
              [[ "${{ steps.packages.outputs.publish_cli }}" == "true" ]] || \
@@ -657,6 +1117,130 @@ jobs:
         if: always() && (steps.publish-sdk.outcome == 'failure' || steps.publish-cli.outcome == 'failure' || steps.publish-mcp.outcome == 'failure' || steps.publish-mrt.outcome == 'failure')
         run: |
           echo "::error::One or more npm publishes failed:"
+          [[ "${{ steps.publish-sdk.outcome }}" == "failure" ]] && echo "  - SDK"
+          [[ "${{ steps.publish-cli.outcome }}" == "failure" ]] && echo "  - CLI"
+          [[ "${{ steps.publish-mcp.outcome }}" == "failure" ]] && echo "  - MCP"
+          [[ "${{ steps.publish-mrt.outcome }}" == "failure" ]] && echo "  - MRT"
+          exit 1
+
+  # Environment-gated npm publish for rc (approval #1). The `publish` job above
+  # ran automatically: it built + attested BOTH VSIX and cut the ONE prerelease
+  # release, but published NOTHING to npm for rc. This job holds the manual gate:
+  # a maintainer approves the `publish` environment, then the rc npm push runs.
+  # It rebuilds deterministically from the SAME commit (the build-once bytes are
+  # provenance-anchored via the release; npm re-derives its own provenance) and
+  # publishes each changed package's REAL target version under the 'rc' dist-tag.
+  # Promotion (promote.yml) later moves that tag rc -> latest — no republish.
+  publish-npm-rc:
+    name: Publish rc to npm (gated)
+    needs: publish
+    if: >-
+      needs.publish.outputs.release_type == 'rc' &&
+      (needs.publish.outputs.publish_sdk == 'true' ||
+       needs.publish.outputs.publish_cli == 'true' ||
+       needs.publish.outputs.publish_mcp == 'true' ||
+       needs.publish.outputs.publish_mrt == 'true')
+    runs-on: ubuntu-latest
+    # The protected environment is the human gate: a required reviewer must
+    # approve before this job (and therefore the npm publish) runs.
+    environment: publish
+    permissions:
+      contents: write # create npm version git tags
+      id-token: write # npm OIDC trusted publishing + --provenance
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          # Build from the exact commit the publish job attested from. For the
+          # rc dispatch (from changesets.yml on main) this is main's HEAD; the
+          # committed package.json already carries the real target versions.
+          ref: ${{ github.sha }}
+          fetch-depth: 0 # for git tag existence checks + push
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: '24.18.0'
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm for trusted publishing
+        # Same pin rationale as the publish job: >=11.5.1 for OIDC, not npm@latest.
+        run: npm install -g npm@11.16.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm run build
+
+      - name: Run tests
+        run: pnpm --filter '!b2c-vs-extension' run test
+
+      # Publish each changed package's committed (real) version under the 'rc'
+      # dist-tag. continue-on-error mirrors the stable path so one package's
+      # failure doesn't strand the others; the final step fails the job if any did.
+      - name: Publish SDK to npm (rc)
+        if: needs.publish.outputs.publish_sdk == 'true'
+        id: publish-sdk
+        continue-on-error: true
+        run: pnpm --filter @salesforce/b2c-tooling-sdk publish --provenance --no-git-checks --tag rc
+
+      - name: Publish CLI to npm (rc)
+        if: needs.publish.outputs.publish_cli == 'true'
+        id: publish-cli
+        continue-on-error: true
+        run: pnpm --filter @salesforce/b2c-cli publish --provenance --no-git-checks --tag rc
+
+      - name: Publish MCP to npm (rc)
+        if: needs.publish.outputs.publish_mcp == 'true'
+        id: publish-mcp
+        continue-on-error: true
+        run: pnpm --filter @salesforce/b2c-dx-mcp publish --provenance --no-git-checks --tag rc
+
+      - name: Publish MRT Utilities to npm (rc)
+        if: needs.publish.outputs.publish_mrt == 'true'
+        id: publish-mrt
+        continue-on-error: true
+        run: pnpm --filter @salesforce/mrt-utilities publish --provenance --no-git-checks --tag rc
+
+      # Tag the commit with each published npm version (idempotent). These mark
+      # "this version is on npm" — created now because rc is the run that pushes
+      # the real version; promotion only moves the dist-tag, it never republishes.
+      - name: Create npm version git tags
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TAGS_CREATED=""
+          create_tag() {
+            local tag="$1"
+            if git rev-parse -q --verify "refs/tags/$tag" >/dev/null || \
+               git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+              echo "Tag already exists, skipping: $tag"
+              return
+            fi
+            git tag "$tag"
+            TAGS_CREATED="$TAGS_CREATED $tag"
+          }
+          [[ "${{ needs.publish.outputs.publish_sdk }}" == "true" ]] && create_tag "@salesforce/b2c-tooling-sdk@$(node -p "require('./packages/b2c-tooling-sdk/package.json').version")"
+          [[ "${{ needs.publish.outputs.publish_cli }}" == "true" ]] && create_tag "@salesforce/b2c-cli@$(node -p "require('./packages/b2c-cli/package.json').version")"
+          [[ "${{ needs.publish.outputs.publish_mcp }}" == "true" ]] && create_tag "@salesforce/b2c-dx-mcp@$(node -p "require('./packages/b2c-dx-mcp/package.json').version")"
+          [[ "${{ needs.publish.outputs.publish_mrt }}" == "true" ]] && create_tag "@salesforce/mrt-utilities@$(node -p "require('./packages/mrt-utilities/package.json').version")"
+          if [ -n "$TAGS_CREATED" ]; then
+            git push origin $TAGS_CREATED
+            echo "Created tags:$TAGS_CREATED"
+          else
+            echo "No tags to create"
+          fi
+
+      - name: Fail if any publish failed
+        if: always() && (steps.publish-sdk.outcome == 'failure' || steps.publish-cli.outcome == 'failure' || steps.publish-mcp.outcome == 'failure' || steps.publish-mrt.outcome == 'failure')
+        run: |
+          echo "::error::One or more rc npm publishes failed:"
           [[ "${{ steps.publish-sdk.outcome }}" == "failure" ]] && echo "  - SDK"
           [[ "${{ steps.publish-cli.outcome }}" == "failure" ]] && echo "  - CLI"
           [[ "${{ steps.publish-mcp.outcome }}" == "failure" ]] && echo "  - MCP"
