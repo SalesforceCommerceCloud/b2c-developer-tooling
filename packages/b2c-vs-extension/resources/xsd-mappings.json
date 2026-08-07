@@ -1,0 +1,403 @@
+{
+  "$schema": "./xsd-mappings.schema.json",
+  "description": "Source-of-truth for XML→XSD validation contributed by this extension. The build step (scripts/sync-xsd.mjs) reads this file to (1) copy the listed schemas from the SDK into resources/xsd/ and (2) generate resources/xml-validation.generated.json — the runtime config the extension hands to redhat.vscode-xml. That sidecar holds: a `catalog` path (resources/xsd-catalog.xml, an OASIS XML catalog mapping each schema's targetNamespace → its bundled XSD, registered via addXMLCatalogs() so validation is chosen by the document's DECLARED NAMESPACE, path-independent); `fileAssociations` (path-glob → schema, registered via addXMLFileAssociations()) used only for schemas that CANNOT be catalogued by namespace because two mapped schemas share one targetNamespace (a catalog maps a namespace to exactly one file) — such collisions are auto-routed to path-based associations, whose distinct globs disambiguate them; and `detectionGlobs` (all fileMatch globs) used purely to recognize a B2C metadata XML on open for the install prompt. Each `mappings` fileMatch[] covers two workspace conventions: the canonical SFCC site-archive layout (sites/<id>/, catalogs/<id>/, …) and the exploded `metadata/` convention used by sfcc-ci-style projects. Every SDK schema must appear in `mappings` (bundled + catalogued or associated), `bundleOnly` (bundled because another schema imports it, but never a validation target), or `skipped` (excluded entirely). The build fails if any SDK schema is in none of those lists, or if a mapped schema declares no targetNamespace — preventing schemas from silently missing validation.",
+  "bundleOnly": [
+    "xml.xsd"
+  ],
+  "skipped": [
+    "bmext.xsd",
+    "customeractivedata.xsd",
+    "customerpaymentinstrument.xsd",
+    "feed.xsd",
+    "order.xsd",
+    "returnimportfeed.xsd",
+    "shippingorderupdatefeed.xsd"
+  ],
+  "mappings": [
+    {
+      "schema": "abtest.xsd",
+      "fileMatch": [
+        "**/sites/*/ab-tests.xml",
+        "**/metadata/sites/*/ab-tests.xml",
+        "**/metadata/ab-tests/*.xml"
+      ]
+    },
+    {
+      "schema": "abtestparticipants.xsd",
+      "fileMatch": [
+        "**/sites/*/abtest-participants.xml",
+        "**/metadata/sites/*/abtest-participants.xml"
+      ]
+    },
+    {
+      "schema": "assignment.xsd",
+      "fileMatch": [
+        "**/catalogs/*/assignments.xml",
+        "**/sites/*/assignments.xml",
+        "**/metadata/catalogs/*/assignments.xml"
+      ]
+    },
+    {
+      "schema": "cachesettings.xsd",
+      "fileMatch": [
+        "**/sites/*/cache-settings.xml",
+        "**/metadata/sites/*/cache-settings.xml",
+        "**/metadata/cache-settings/*.xml"
+      ]
+    },
+    {
+      "schema": "catalog.xsd",
+      "fileMatch": [
+        "**/catalogs/*/catalog.xml",
+        "**/metadata/catalogs/*/catalog.xml",
+        "**/metadata/catalogs/*.xml"
+      ]
+    },
+    {
+      "schema": "commercefeaturestate.xsd",
+      "fileMatch": [
+        "**/commerce-feature-states.xml",
+        "**/sites/*/commerce-feature-states.xml",
+        "**/metadata/**/commerce-feature-states.xml"
+      ]
+    },
+    {
+      "schema": "coupon.xsd",
+      "fileMatch": [
+        "**/sites/*/coupons.xml",
+        "**/metadata/sites/*/coupons.xml",
+        "**/metadata/coupons/*.xml"
+      ]
+    },
+    {
+      "schema": "couponredemption.xsd",
+      "fileMatch": [
+        "**/sites/*/coupon-redemptions.xml",
+        "**/metadata/**/coupon-redemptions.xml"
+      ]
+    },
+    {
+      "schema": "csrfwhitelists.xsd",
+      "fileMatch": [
+        "**/sites/*/csrf-whitelists.xml",
+        "**/sites/*/csrf-allowlists.xml",
+        "**/metadata/**/csrf-whitelists.xml",
+        "**/metadata/**/csrf-allowlists.xml"
+      ]
+    },
+    {
+      "schema": "customer.xsd",
+      "fileMatch": [
+        "**/customer_lists/*/customers.xml",
+        "**/customer_lists/*/customers/*.xml"
+      ]
+    },
+    {
+      "schema": "customercdnsettings.xsd",
+      "fileMatch": [
+        "**/sites/*/customer-cdn-settings.xml",
+        "**/metadata/sites/*/customer-cdn-settings.xml",
+        "**/metadata/customer-cdn-settings/*.xml"
+      ]
+    },
+    {
+      "schema": "customergroup.xsd",
+      "fileMatch": [
+        "**/sites/*/customer-groups.xml",
+        "**/metadata/sites/*/customer-groups.xml",
+        "**/metadata/customer-groups/*.xml"
+      ]
+    },
+    {
+      "schema": "customerlist.xsd",
+      "fileMatch": [
+        "**/customer_lists.xml",
+        "**/metadata/customer-lists/*.xml"
+      ]
+    },
+    {
+      "schema": "customerlist2.xsd",
+      "fileMatch": [
+        "**/customer_lists/*/customer-list.xml",
+        "**/customer_lists/*.xml"
+      ]
+    },
+    {
+      "schema": "customobject.xsd",
+      "fileMatch": [
+        "**/sites/*/custom-objects.xml",
+        "**/sites/*/custom-objects/*.xml",
+        "**/metadata/custom-objects/*.xml"
+      ]
+    },
+    {
+      "schema": "dcext.xsd",
+      "fileMatch": [
+        "**/sites/*/dcext.xml",
+        "**/metadata/sites/*/dcext.xml",
+        "**/metadata/dcext/*.xml"
+      ]
+    },
+    {
+      "schema": "eventrouting.xsd",
+      "fileMatch": [
+        "**/sites/*/event-routing.xml",
+        "**/metadata/sites/*/event-routing.xml",
+        "**/metadata/event-routing/*.xml"
+      ]
+    },
+    {
+      "schema": "form.xsd",
+      "fileMatch": [
+        "**/cartridges/*/cartridge/forms/**/*.xml"
+      ]
+    },
+    {
+      "schema": "geolocation.xsd",
+      "fileMatch": [
+        "**/geolocations.xml",
+        "**/sites/*/geolocations.xml",
+        "**/metadata/**/geolocations.xml"
+      ]
+    },
+    {
+      "schema": "giftcertificate.xsd",
+      "fileMatch": [
+        "**/gift_certificates/gift-certificates.xml",
+        "**/sites/*/gift-certificates.xml",
+        "**/metadata/**/gift-certificates.xml"
+      ]
+    },
+    {
+      "schema": "inventory.xsd",
+      "fileMatch": [
+        "**/inventory_lists/*.xml",
+        "**/inventory_lists/*/inventory.xml",
+        "**/metadata/inventory-lists/*.xml"
+      ]
+    },
+    {
+      "schema": "jobs.xsd",
+      "fileMatch": [
+        "**/jobs.xml",
+        "**/sites/*/jobs.xml",
+        "**/metadata/**/jobs.xml"
+      ]
+    },
+    {
+      "schema": "library.xsd",
+      "fileMatch": [
+        "**/libraries/*/library.xml",
+        "**/sites/*/library.xml",
+        "**/metadata/libraries/*.xml"
+      ]
+    },
+    {
+      "schema": "locales.xsd",
+      "fileMatch": [
+        "**/sites/*/locales.xml",
+        "**/locales.xml",
+        "**/metadata/**/locales.xml"
+      ]
+    },
+    {
+      "schema": "metadata.xsd",
+      "fileMatch": [
+        "**/meta/system-objecttype-extensions.xml",
+        "**/meta/custom-objecttype-definitions.xml",
+        "**/sites/*/meta/*.xml",
+        "**/metadata/meta/*.xml"
+      ]
+    },
+    {
+      "schema": "oauth.xsd",
+      "fileMatch": [
+        "**/sites/*/oauth-providers.xml",
+        "**/metadata/sites/*/oauth-providers.xml",
+        "**/metadata/oauth-providers/*.xml"
+      ]
+    },
+    {
+      "schema": "pagemetatag.xsd",
+      "fileMatch": [
+        "**/sites/*/page-meta-tags.xml",
+        "**/metadata/sites/*/page-meta-tags.xml",
+        "**/metadata/page-meta-tags/*.xml"
+      ]
+    },
+    {
+      "schema": "paymentmethod.xsd",
+      "fileMatch": [
+        "**/sites/*/payment-methods.xml",
+        "**/metadata/sites/*/payment-methods.xml",
+        "**/metadata/payment-methods/*.xml"
+      ]
+    },
+    {
+      "schema": "paymentprocessor.xsd",
+      "fileMatch": [
+        "**/sites/*/payment-processors.xml",
+        "**/metadata/sites/*/payment-processors.xml",
+        "**/metadata/payment-processors/*.xml"
+      ]
+    },
+    {
+      "schema": "preferences.xsd",
+      "fileMatch": [
+        "**/sites/*/preferences.xml",
+        "**/preferences.xml",
+        "**/metadata/preferences/*.xml"
+      ]
+    },
+    {
+      "schema": "priceadjustmentlimits.xsd",
+      "fileMatch": [
+        "**/price_adjustment_limits/price-adjustment-limits.xml",
+        "**/sites/*/price-adjustment-limits.xml",
+        "**/metadata/**/price-adjustment-limits.xml"
+      ]
+    },
+    {
+      "schema": "pricebook.xsd",
+      "fileMatch": [
+        "**/pricebooks/*.xml",
+        "**/pricebooks/*/pricebook.xml",
+        "**/metadata/pricebooks/*.xml"
+      ]
+    },
+    {
+      "schema": "productlist.xsd",
+      "fileMatch": [
+        "**/customer_lists/*/product-lists/*.xml",
+        "**/sites/*/product-lists.xml",
+        "**/metadata/**/product-lists.xml"
+      ]
+    },
+    {
+      "schema": "promotion.xsd",
+      "fileMatch": [
+        "**/sites/*/promotions.xml",
+        "**/metadata/sites/*/promotions.xml",
+        "**/metadata/promotions/*.xml"
+      ]
+    },
+    {
+      "schema": "redirecturl.xsd",
+      "fileMatch": [
+        "**/sites/*/redirect-urls.xml",
+        "**/metadata/sites/*/redirect-urls.xml",
+        "**/metadata/redirect-urls/*.xml"
+      ]
+    },
+    {
+      "schema": "schedules.xsd",
+      "fileMatch": [
+        "**/sites/*/schedules.xml",
+        "**/metadata/**/schedules.xml"
+      ]
+    },
+    {
+      "schema": "search.xsd",
+      "fileMatch": [
+        "**/sites/*/search.xml",
+        "**/metadata/sites/*/search.xml",
+        "**/metadata/search/*.xml"
+      ]
+    },
+    {
+      "schema": "search2.xsd",
+      "fileMatch": [
+        "**/sites/*/search2.xml",
+        "**/metadata/**/search2.xml"
+      ]
+    },
+    {
+      "schema": "services.xsd",
+      "fileMatch": [
+        "**/sites/*/services.xml",
+        "**/services.xml",
+        "**/metadata/**/services.xml"
+      ]
+    },
+    {
+      "schema": "shipping.xsd",
+      "fileMatch": [
+        "**/sites/*/shipping.xml",
+        "**/metadata/sites/*/shipping.xml",
+        "**/metadata/shipping/*.xml"
+      ]
+    },
+    {
+      "schema": "site.xsd",
+      "fileMatch": [
+        "**/sites/*/site.xml",
+        "**/metadata/sites/*.xml",
+        "**/metadata/sites/*/site.xml"
+      ]
+    },
+    {
+      "schema": "sitemapconfiguration.xsd",
+      "fileMatch": [
+        "**/sites/*/sitemap-configuration.xml",
+        "**/metadata/**/sitemap-configuration.xml"
+      ]
+    },
+    {
+      "schema": "slot.xsd",
+      "fileMatch": [
+        "**/sites/*/slots.xml",
+        "**/sites/*/slot-configurations.xml",
+        "**/metadata/sites/*/slots.xml",
+        "**/metadata/slots/*.xml"
+      ]
+    },
+    {
+      "schema": "sort.xsd",
+      "fileMatch": [
+        "**/sites/*/sorting-rules.xml",
+        "**/sites/*/sort.xml",
+        "**/metadata/**/sorting-rules.xml"
+      ]
+    },
+    {
+      "schema": "sourcecode.xsd",
+      "fileMatch": [
+        "**/sites/*/source-codes.xml",
+        "**/sites/*/sourcecodes.xml",
+        "**/metadata/sourcecodes/*.xml"
+      ]
+    },
+    {
+      "schema": "store.xsd",
+      "fileMatch": [
+        "**/sites/*/stores.xml",
+        "**/stores/stores.xml",
+        "**/metadata/stores/*.xml"
+      ]
+    },
+    {
+      "schema": "storefronts.xsd",
+      "fileMatch": [
+        "**/sites/*/storefronts.xml",
+        "**/metadata/sites/*/storefronts.xml",
+        "**/metadata/storefronts/*.xml"
+      ]
+    },
+    {
+      "schema": "tax.xsd",
+      "fileMatch": [
+        "**/sites/*/tax.xml",
+        "**/metadata/sites/*/tax.xml",
+        "**/metadata/tax/*.xml"
+      ]
+    },
+    {
+      "schema": "urlrules.xsd",
+      "fileMatch": [
+        "**/sites/*/url-rules.xml",
+        "**/metadata/sites/*/url-rules.xml",
+        "**/metadata/url-rules/*.xml"
+      ]
+    }
+  ]
+}

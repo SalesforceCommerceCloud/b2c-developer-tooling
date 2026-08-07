@@ -10,6 +10,7 @@
  */
 import {B2CInstance} from '../../instance/index.js';
 import type {components} from '../../clients/ocapi.generated.js';
+import {getApiErrorMessage} from '../../clients/error-utils.js';
 import {getLogger} from '../../logging/logger.js';
 
 /**
@@ -406,7 +407,7 @@ export async function searchJobExecutions(
     query = {bool_query: {must: queries}};
   }
 
-  const {data, error} = await instance.ocapi.POST('/job_execution_search', {
+  const {data, error, response} = await instance.ocapi.POST('/job_execution_search', {
     body: {
       query,
       count,
@@ -416,8 +417,9 @@ export async function searchJobExecutions(
   });
 
   if (error || !data) {
-    const message = error?.fault?.message ?? 'Failed to search job executions';
-    throw new Error(message);
+    const message =
+      error && response ? getApiErrorMessage(error, response) : (error?.fault?.message ?? 'Unknown error');
+    throw new Error(`Failed to search job executions: ${message}`);
   }
 
   return {

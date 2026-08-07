@@ -116,6 +116,11 @@ curl -H "Authorization: Bearer $TOKEN" "https://$SHORTCODE.api.commercecloud.sal
 
 # Override the SLAS client explicitly (e.g., targeting a private client for client_credentials flow)
 b2c slas token --site-id RefArch --slas-client-id my-client --slas-client-secret sk_xxx
+
+# Registered customer token against a private client (registered login is always PKCE-protected;
+# the client secret is sent as Basic auth in addition to the PKCE code_verifier)
+b2c slas token --site-id RefArch --slas-client-id my-client --slas-client-secret sk_xxx \
+  --shopper-login user@example.com --shopper-password secret
 ```
 
 ### Update SLAS Client

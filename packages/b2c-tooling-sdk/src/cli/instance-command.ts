@@ -5,6 +5,7 @@
  */
 import {Command, Flags} from '@oclif/core';
 import {OAuthCommand} from './oauth-command.js';
+import {ERROR_CODE} from './base-command.js';
 import {loadConfig, extractInstanceFlags} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
 import type {B2CInstance} from '../instance/index.js';
@@ -218,7 +219,11 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
    */
   protected requireServer(): void {
     if (!this.resolvedConfig.hasB2CInstanceConfig()) {
-      this.error(t('error.serverRequired', 'Server is required. Set via --server, SFCC_SERVER env var, or dw.json.'));
+      this.error(
+        t('error.serverRequired', 'Server is required. Set via --server, SFCC_SERVER env var, or dw.json.') +
+          this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
+      );
     }
   }
 
@@ -231,7 +236,8 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
         t(
           'error.codeVersionRequired',
           'Code version is required. Set via --code-version, SFCC_CODE_VERSION env var, or dw.json.',
-        ),
+        ) + this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
   }
@@ -245,7 +251,8 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
         t(
           'error.webdavCredentialsRequiredShort',
           'WebDAV credentials required. Provide --username/--password or --client-id/--client-secret, or set corresponding SFCC_* env vars.',
-        ),
+        ) + this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
   }

@@ -20,7 +20,7 @@ const COLUMNS: Record<string, ColumnDef<MrtProject>> = {
     get: (proj) => proj.name,
   },
   slug: {
-    header: 'Slug',
+    header: 'ID',
     get: (proj) => proj.slug ?? '',
   },
   organization: {

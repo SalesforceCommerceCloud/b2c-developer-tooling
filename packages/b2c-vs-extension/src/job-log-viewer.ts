@@ -19,10 +19,15 @@ export function registerJobLogViewer(context: vscode.ExtensionContext): void {
   context.subscriptions.push(vscode.workspace.registerTextDocumentContentProvider(JOB_LOG_SCHEME, jobLogProvider));
 }
 
-/** Open a job log as a read-only virtual document (no save prompt on close). */
-export async function openJobLog(executionId: string, content: string): Promise<void> {
+/**
+ * Open a job log as a read-only virtual document (no save prompt on close).
+ *
+ * `viewColumn` lets callers control placement — e.g. opening Beside the History
+ * Table webview so the log doesn't replace the table in the same editor group.
+ */
+export async function openJobLog(executionId: string, content: string, viewColumn?: vscode.ViewColumn): Promise<void> {
   const uri = vscode.Uri.parse(`${JOB_LOG_SCHEME}:${executionId}.log`);
   jobLogContents.set(uri.toString(), content);
   const doc = await vscode.workspace.openTextDocument(uri);
-  await vscode.window.showTextDocument(doc);
+  await vscode.window.showTextDocument(doc, viewColumn ? {viewColumn, preview: false} : undefined);
 }

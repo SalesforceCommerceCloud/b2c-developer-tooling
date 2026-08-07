@@ -22,30 +22,29 @@ The `sfnext_get_guidelines` tool provides essential development guidance for Sto
 
 This tool is part of the STOREFRONTNEXT toolset and is auto-enabled for Storefront Next projects (detected by `@salesforce/storefront-next*` dependencies).
 
-
 ## Parameters
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `sections` | string[] | No | `['quick-reference', 'data-fetching', 'components', 'testing']` | Optional array of specific sections to retrieve. If not specified, returns comprehensive guidelines. Pass an empty array to return an empty string. |
+| Parameter  | Type     | Required | Default                                                         | Description                                                                                                                                         |
+| ---------- | -------- | -------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sections` | string[] | No       | `['quick-reference', 'data-fetching', 'components', 'testing']` | Optional array of specific sections to retrieve. If not specified, returns comprehensive guidelines. Pass an empty array to return an empty string. |
 
 ### Available Sections
 
-| Section | Topics Covered |
-|---------|----------------|
-| `quick-reference` | Critical rules, architecture principles, quick patterns |
-| `data-fetching` | Server-only data loading (no client loaders), synchronous loaders for streaming, data fetching patterns |
-| `state-management` | State management patterns |
-| `auth` | Authentication and session management |
-| `config` | Configuration system |
-| `i18n` | i18n patterns and internationalization |
-| `components` | Component best practices |
-| `styling` | Tailwind CSS 4, Shadcn/ui, styling guidelines |
-| `page-designer` | Page Designer integration |
-| `performance` | Performance optimization |
-| `testing` | Testing strategies |
-| `extensions` | Framework extensions |
-| `pitfalls` | Common pitfalls to avoid |
+| Section            | Topics Covered                                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------------------------- |
+| `quick-reference`  | Critical rules, architecture principles, quick patterns                                                 |
+| `data-fetching`    | Server-only data loading (no client loaders), synchronous loaders for streaming, data fetching patterns |
+| `state-management` | State management patterns                                                                               |
+| `auth`             | Authentication and session management                                                                   |
+| `config`           | Configuration system                                                                                    |
+| `i18n`             | i18n patterns and internationalization                                                                  |
+| `components`       | Component best practices                                                                                |
+| `styling`          | Tailwind CSS 4, Shadcn/ui, styling guidelines                                                           |
+| `page-designer`    | Page Designer integration                                                                               |
+| `performance`      | Performance optimization                                                                                |
+| `testing`          | Testing strategies                                                                                      |
+| `extensions`       | Framework extensions                                                                                    |
+| `pitfalls`         | Common pitfalls to avoid                                                                                |
 
 ## Usage Examples
 
@@ -94,7 +93,6 @@ The returned content includes:
 - Code examples (correct ✅ and incorrect ❌ patterns)
 - Quick reference snippets
 - Framework-specific patterns for React Server Components
-
 
 ## Related Tools
 

@@ -27,6 +27,7 @@ Pay special attention to PCI DSS v3. requirements 2, 4, and 12.
 | [customer](#customer): [Customer](dw.customer.Customer.md) `(read-only)` | Returns the customer object related to this profile. |
 | [customerNo](#customerno): [String](TopLevel.String.md) `(read-only)` | Returns the customer's number, which is a number used to identify the Customer. |
 | [email](#email): [String](TopLevel.String.md) | Returns the customer's email address. |
+| [emailVerified](#emailverified): [Boolean](TopLevel.Boolean.md) `(read-only)` | Returns whether the customer's email has been verified. |
 | [fax](#fax): [String](TopLevel.String.md) | Returns the fax number to use for the customer. |
 | [female](#female): [Boolean](TopLevel.Boolean.md) `(read-only)` | Indicates that the customer is female when set to true. |
 | [firstName](#firstname): [String](TopLevel.String.md) | Returns the customer's first name. |
@@ -88,6 +89,7 @@ This class does not have a constructor, so you cannot create it directly.
 | [getTaxIDType](dw.customer.Profile.md#gettaxidtype)() | Returns the tax ID type. |
 | [getTitle](dw.customer.Profile.md#gettitle)() | Returns the customer's title, such as "Mrs" or "Mr". |
 | [getWallet](dw.customer.Profile.md#getwallet)() | Returns the wallet of this customer. |
+| [isEmailVerified](dw.customer.Profile.md#isemailverified)() | Returns whether the customer's email has been verified. |
 | [isFemale](dw.customer.Profile.md#isfemale)() | Indicates that the customer is female when set to true. |
 | [isMale](dw.customer.Profile.md#ismale)() | Indicates that the customer is male when set to true. |
 | [setBirthday](dw.customer.Profile.md#setbirthdaydate)([Date](TopLevel.Date.md)) | Sets the customer's birthday as a date. |
@@ -166,6 +168,26 @@ This class does not have a constructor, so you cannot create it directly.
 ### email
 - email: [String](TopLevel.String.md)
   - : Returns the customer's email address.
+
+
+---
+
+### emailVerified
+- emailVerified: [Boolean](TopLevel.Boolean.md) `(read-only)`
+  - : Returns whether the customer's email has been verified.
+      
+      
+      This is a read-only field. The field value cannot be set externally and will be set in platform based on
+      following rules:
+      
+      
+      
+      - If the Email Verification Site Preference under LoginPreferences is disabled: the value for this field will  always be NULL;
+      - If the Email Verification Site Preference under LoginPreferences is enabled:  
+        - If the incoming email value is the same as existing email and email was previously verified, the value for    this field will remain unchanged as TRUE;
+        - If the incoming email value is the same as existing email and email was not previously verified, the value    for this field will remain unchanged as FALSE;
+        - If the incoming email value is not the same as existing email, the value for this field will be set to FALSE    no matter the previous state;
+
 
 
 ---
@@ -662,6 +684,29 @@ This class does not have a constructor, so you cannot create it directly.
 
     **Returns:**
     - the wallet of this customer.
+
+
+---
+
+### isEmailVerified()
+- isEmailVerified(): [Boolean](TopLevel.Boolean.md)
+  - : Returns whether the customer's email has been verified.
+      
+      
+      This is a read-only field. The field value cannot be set externally and will be set in platform based on
+      following rules:
+      
+      
+      
+      - If the Email Verification Site Preference under LoginPreferences is disabled: the value for this field will  always be NULL;
+      - If the Email Verification Site Preference under LoginPreferences is enabled:  
+        - If the incoming email value is the same as existing email and email was previously verified, the value for    this field will remain unchanged as TRUE;
+        - If the incoming email value is the same as existing email and email was not previously verified, the value    for this field will remain unchanged as FALSE;
+        - If the incoming email value is not the same as existing email, the value for this field will be set to FALSE    no matter the previous state;
+
+
+    **Returns:**
+    - true if the email is verified, false if not verified, or null if the verification status has not been set.
 
 
 ---

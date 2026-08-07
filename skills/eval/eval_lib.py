@@ -82,7 +82,7 @@ def _sync_skills(eval_dir: Path, project_dir: Path) -> None:
     target_root.mkdir(parents=True, exist_ok=True)
 
     # Discover all skill directories that have a SKILL.md
-    for plugin_dir in ("b2c", "b2c-cli", "b2c-experimental"):
+    for plugin_dir in ("b2c", "b2c-cli", "b2c-experimental", "storefront-next"):
         skills_parent = repo_root / "skills" / plugin_dir / "skills"
         if not skills_parent.is_dir():
             continue

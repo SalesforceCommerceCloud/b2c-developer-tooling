@@ -81,7 +81,7 @@ runs:
   using: 'composite'
   steps:
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ inputs.node-version }}
 
@@ -118,65 +118,85 @@ runs:
 
     - name: Set environment variables
       shell: bash
+      # Inputs are forwarded through this step's env block — NOT interpolated
+      # directly into the script body below. GitHub injects env values into the
+      # process verbatim, so a credential is never re-parsed by the shell. If we
+      # inlined `${{ inputs.password }}` into a double-quoted `echo`, the runner
+      # would expand the expression into the literal credential text first, then
+      # bash would perform its OWN expansion on that text: any `$WORD` (e.g. in a
+      # WebDAV access key like `abc$FOO123`) would be stripped to empty, silently
+      # corrupting the credential and surfacing later as an unexplained 401. The
+      # same inlining would also let metacharacters (`"`, backtick, `$(...)`) run
+      # as code. Routing through env + a heredoc write avoids both. (W-23178876)
+      env:
+        IN_CLIENT_ID: ${{ inputs.client-id }}
+        IN_CLIENT_SECRET: ${{ inputs.client-secret }}
+        IN_SERVER: ${{ inputs.server }}
+        IN_CODE_VERSION: ${{ inputs.code-version }}
+        IN_USERNAME: ${{ inputs.username }}
+        IN_PASSWORD: ${{ inputs.password }}
+        IN_SHORT_CODE: ${{ inputs.short-code }}
+        IN_TENANT_ID: ${{ inputs.tenant-id }}
+        IN_MRT_API_KEY: ${{ inputs.mrt-api-key }}
+        IN_MRT_PROJECT: ${{ inputs.mrt-project }}
+        IN_MRT_ENVIRONMENT: ${{ inputs.mrt-environment }}
+        IN_ACCOUNT_MANAGER_HOST: ${{ inputs.account-manager-host }}
+        IN_WEBDAV_SERVER: ${{ inputs.webdav-server }}
+        IN_CERTIFICATE: ${{ inputs.certificate }}
+        IN_CERTIFICATE_PASSPHRASE: ${{ inputs.certificate-passphrase }}
+        IN_SELFSIGNED: ${{ inputs.selfsigned }}
+        IN_LOG_LEVEL: ${{ inputs.log-level }}
       run: |
         # CI defaults
         echo "NO_COLOR=1" >> "$GITHUB_ENV"
 
+        # A random delimiter for the heredoc form below. Generated per-run so a
+        # credential value can never accidentally contain (and thus prematurely
+        # close) the delimiter line.
+        ENV_DELIMITER="__B2C_ENV_$(openssl rand -hex 16 2>/dev/null || date +%s%N)__"
+
+        # Append a value to $GITHUB_ENV, but only when it is non-empty. Uses
+        # GitHub's documented multiline heredoc syntax (NAME<<DELIM ... DELIM) —
+        # the same mechanism @actions/core uses. The value is emitted via printf
+        # as an ARGUMENT (never spliced into the format string or script text), so
+        # it is written byte-for-byte: `$`, `%`, quotes, backticks AND embedded
+        # newlines or `=` are all preserved literally, with no shell, printf, or
+        # $GITHUB_ENV-format reinterpretation.
+        set_env() {
+          # $1 = target env var name, $2 = value
+          if [ -n "$2" ]; then
+            {
+              printf '%s<<%s\n' "$1" "$ENV_DELIMITER"
+              printf '%s\n' "$2"
+              printf '%s\n' "$ENV_DELIMITER"
+            } >> "$GITHUB_ENV"
+          fi
+        }
+
         # Auth and config — only set if provided
-        if [ -n "${{ inputs.client-id }}" ]; then
-          echo "SFCC_CLIENT_ID=${{ inputs.client-id }}" >> "$GITHUB_ENV"
-        fi
-        if [ -n "${{ inputs.client-secret }}" ]; then
-          echo "SFCC_CLIENT_SECRET=${{ inputs.client-secret }}" >> "$GITHUB_ENV"
-        fi
-        if [ -n "${{ inputs.server }}" ]; then
-          echo "SFCC_SERVER=${{ inputs.server }}" >> "$GITHUB_ENV"
-        fi
-        if [ -n "${{ inputs.code-version }}" ]; then
-          echo "SFCC_CODE_VERSION=${{ inputs.code-version }}" >> "$GITHUB_ENV"
-        fi
-        if [ -n "${{ inputs.username }}" ]; then
-          echo "SFCC_USERNAME=${{ inputs.username }}" >> "$GITHUB_ENV"
-        fi
-        if [ -n "${{ inputs.password }}" ]; then
-          echo "SFCC_PASSWORD=${{ inputs.password }}" >> "$GITHUB_ENV"
-        fi
-        if [ -n "${{ inputs.short-code }}" ]; then
-          echo "SFCC_SHORTCODE=${{ inputs.short-code }}" >> "$GITHUB_ENV"
-        fi
-        if [ -n "${{ inputs.tenant-id }}" ]; then
-          echo "SFCC_TENANT_ID=${{ inputs.tenant-id }}" >> "$GITHUB_ENV"
-        fi
-        if [ -n "${{ inputs.mrt-api-key }}" ]; then
-          echo "MRT_API_KEY=${{ inputs.mrt-api-key }}" >> "$GITHUB_ENV"
-        fi
-        if [ -n "${{ inputs.mrt-project }}" ]; then
-          echo "MRT_PROJECT=${{ inputs.mrt-project }}" >> "$GITHUB_ENV"
-        fi
-        if [ -n "${{ inputs.mrt-environment }}" ]; then
-          echo "MRT_ENVIRONMENT=${{ inputs.mrt-environment }}" >> "$GITHUB_ENV"
-        fi
-        if [ -n "${{ inputs.account-manager-host }}" ]; then
-          echo "SFCC_ACCOUNT_MANAGER_HOST=${{ inputs.account-manager-host }}" >> "$GITHUB_ENV"
-        fi
-        if [ -n "${{ inputs.webdav-server }}" ]; then
-          echo "SFCC_WEBDAV_SERVER=${{ inputs.webdav-server }}" >> "$GITHUB_ENV"
-        fi
-        if [ -n "${{ inputs.certificate }}" ]; then
-          echo "SFCC_CERTIFICATE=${{ inputs.certificate }}" >> "$GITHUB_ENV"
-        fi
-        if [ -n "${{ inputs.certificate-passphrase }}" ]; then
-          echo "SFCC_CERTIFICATE_PASSPHRASE=${{ inputs.certificate-passphrase }}" >> "$GITHUB_ENV"
-        fi
+        set_env SFCC_CLIENT_ID "$IN_CLIENT_ID"
+        set_env SFCC_CLIENT_SECRET "$IN_CLIENT_SECRET"
+        set_env SFCC_SERVER "$IN_SERVER"
+        set_env SFCC_CODE_VERSION "$IN_CODE_VERSION"
+        set_env SFCC_USERNAME "$IN_USERNAME"
+        set_env SFCC_PASSWORD "$IN_PASSWORD"
+        set_env SFCC_SHORTCODE "$IN_SHORT_CODE"
+        set_env SFCC_TENANT_ID "$IN_TENANT_ID"
+        set_env MRT_API_KEY "$IN_MRT_API_KEY"
+        set_env MRT_PROJECT "$IN_MRT_PROJECT"
+        set_env MRT_ENVIRONMENT "$IN_MRT_ENVIRONMENT"
+        set_env SFCC_ACCOUNT_MANAGER_HOST "$IN_ACCOUNT_MANAGER_HOST"
+        set_env SFCC_WEBDAV_SERVER "$IN_WEBDAV_SERVER"
+        set_env SFCC_CERTIFICATE "$IN_CERTIFICATE"
+        set_env SFCC_CERTIFICATE_PASSPHRASE "$IN_CERTIFICATE_PASSPHRASE"
+        set_env SFCC_LOG_LEVEL "$IN_LOG_LEVEL"
+
         # Only export SFCC_SELFSIGNED when explicitly truthy. The SDK's env-var
         # source treats only "true"/"1" as enabling self-signed mode, but oclif
         # boolean flags map any non-empty env value to true. Skipping export for
         # other values avoids that asymmetry — leaving the flag at its default.
-        if [ "${{ inputs.selfsigned }}" = "true" ] || [ "${{ inputs.selfsigned }}" = "1" ]; then
+        if [ "$IN_SELFSIGNED" = "true" ] || [ "$IN_SELFSIGNED" = "1" ]; then
           echo "SFCC_SELFSIGNED=true" >> "$GITHUB_ENV"
-        fi
-        if [ -n "${{ inputs.log-level }}" ]; then
-          echo "SFCC_LOG_LEVEL=${{ inputs.log-level }}" >> "$GITHUB_ENV"
         fi
 
     - name: Install plugins

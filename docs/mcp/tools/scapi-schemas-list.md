@@ -2,158 +2,61 @@
 description: List or fetch SCAPI schema metadata and OpenAPI specs for standard and custom APIs.
 ---
 
-# scapi_schemas_list
+# SCAPI Schemas
 
-List or fetch SCAPI schema metadata and OpenAPI specs for standard SCAPI (Shop/Admin/Shopper) and custom APIs. Supports both discovery (list mode) and detailed schema fetching.
+MCP tools for discovering and retrieving SCAPI schemas. Available in the **SCAPI**, **PWAV3**, and **STOREFRONTNEXT** toolsets (SCAPI is always enabled).
 
-## Overview
+## scapi_schemas_list
 
-The `scapi_schemas_list` tool provides two modes of operation.
+Browse available SCAPI schemas (list mode) or fetch complete OpenAPI specifications (fetch mode). Works with standard SCAPI (Shop/Admin/Shopper) and custom APIs.
 
-1. **List (Discovery)**: Browse available schemas without fetching full OpenAPI specs.
-2. **Fetch**: Retrieve complete OpenAPI schema for a specific API.
-
-This tool works with both standard SCAPI (Shop, Admin, Shopper APIs) and custom APIs. For endpoint registration status, use [`scapi_custom_apis_get_status`](./scapi-custom-apis-get-status) instead.
-
-## Authentication
+### Authentication
 
 Requires OAuth credentials with `sfcc.scapi-schemas` scope. See [B2C Credentials](../configuration#b2c-credentials-dwjson) for complete details. For scope configuration, see [Configuring Scopes](../../guide/authentication#configuring-scopes).
 
-**Configuration priority:**
-1. Flags (`--server`, `--client-id`, `--client-secret`)
-2. Environment variables (`SFCC_SERVER`, `SFCC_CLIENT_ID`, `SFCC_CLIENT_SECRET`)
-3. `dw.json` config file
+**Configuration priority:** Flags → Environment variables → `dw.json` config file
 
-## Parameters
+### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `apiFamily` | string | No | Filter by API family (for example, `"shopper"`, `"product"`, `"checkout"`, `"custom"`). Use `"custom"` for custom APIs. |
-| `apiName` | string | No | Filter by API name (for example, `"shopper-products"`, `"shopper-baskets"`). |
-| `apiVersion` | string | No | Filter by API version (for example, `"v1"`, `"v2"`). |
-| `status` | `"current"` \| `"deprecated"` | No | Filter by schema status. Use `"current"` for active schemas, `"deprecated"` for phased-out schemas. Only works in list mode. |
-| `includeSchemas` | boolean | No | Include full OpenAPI schemas. Requires all three: `apiFamily`, `apiName`, and `apiVersion`. |
-| `expandAll` | boolean | No | Return the full schema without collapsing. Only works when `includeSchemas: true`. |
+| Parameter        | Type                          | Required | Description                                                                                                  |
+| ---------------- | ----------------------------- | -------- | ------------------------------------------------------------------------------------------------------------ |
+| `apiFamily`      | string                        | No       | Filter by API family (e.g., `"shopper"`, `"product"`, `"checkout"`, `"custom"`). Custom APIs use `"custom"`. |
+| `apiName`        | string                        | No       | Filter by API name (e.g., `"shopper-products"`, `"shopper-baskets"`).                                        |
+| `apiVersion`     | string                        | No       | Filter by API version (e.g., `"v1"`, `"v2"`).                                                                |
+| `status`         | `"current"` \| `"deprecated"` | No       | Filter by schema status. Only works in list mode.                                                            |
+| `includeSchemas` | boolean                       | No       | Fetch full OpenAPI schema. Requires all three: `apiFamily`, `apiName`, and `apiVersion`.                     |
+| `expandAll`      | boolean                       | No       | Return the full schema without collapsing. Requires `includeSchemas: true`.                                  |
 
-## Operation Modes
+**List mode:** omit `includeSchemas` or any identifier to browse available schemas.  
+**Fetch mode:** set `includeSchemas: true` and provide all three identifiers (`apiFamily`, `apiName`, `apiVersion`).
 
-### List Mode (Discovery)
+**Returns (list mode):** `{schemas, total, availableApiFamilies, availableApiNames, availableApiVersions, timestamp}`.  
+**Returns (fetch mode):** Full OpenAPI schema specification (JSON). Use `expandAll: true` to get the complete schema without collapsing.
 
-Omit `includeSchemas` or any identifier to browse available schemas:
+### Usage
 
-**Returns:**
-- `schemas` - Array of schema metadata
-- `total` - Total number of schemas found
-- `availableApiFamilies` - List of available API families
-- `availableApiNames` - List of available API names
-- `availableApiVersions` - List of available API versions
-
-### Fetch Mode
-
-Set `includeSchemas: true` and provide all three identifiers (`apiFamily`, `apiName`, `apiVersion`) to fetch a complete OpenAPI schema:
-
-**Returns:**
-- Full OpenAPI schema specification
-- Use `expandAll: true` to get the complete schema without collapsing
-
-## Usage Examples
-
-### Standard SCAPI Discovery
-
-List all available SCAPI schemas:
+List all available schemas:
 
 ```
-Use the MCP tool to list all available SCAPI schemas.
+List all available SCAPI schemas.
 ```
 
-Filter by API family:
+Fetch a specific schema:
 
 ```
-Use the MCP tool to show me what checkout APIs exist.
+Get the OpenAPI schema for shopper-baskets v1.
 ```
 
-```
-Use the MCP tool to discover SCAPI product endpoints.
-```
-
-### Custom API Discovery
-
-List custom API definitions:
+Discover custom APIs:
 
 ```
-Use the MCP tool to list custom API definitions.
+List custom API definitions.
 ```
-
-Fetch a specific custom API schema:
-
-```
-Use the MCP tool to show me the loyalty-points custom API schema.
-```
-
-### Fetch Full Schema
-
-Get complete OpenAPI specification:
-
-```
-Use the MCP tool to get the OpenAPI schema for shopper-baskets v1.
-```
-
-Get expanded schema without collapsing:
-
-```
-Use the MCP tool to show me the full OpenAPI spec for shopper-products v1.
-```
-
-## Rules and Constraints
-
-- `includeSchemas` requires all three identifiers: `apiFamily`, `apiName`, and `apiVersion`
-- `status` only works in list mode (discovery)
-- Custom APIs use `apiFamily: "custom"`
-- `expandAll` only works when `includeSchemas: true`
-
-## Output
-
-### List Mode Output
-
-```json
-{
-  "schemas": [...],
-  "total": 42,
-  "availableApiFamilies": ["shopper", "admin", "shop"],
-  "availableApiNames": ["shopper-products", "shopper-baskets", ...],
-  "availableApiVersions": ["v1", "v2"],
-  "timestamp": "2025-01-01T00:00:00.000Z"
-}
-```
-
-### Fetch Mode Output
-
-```json
-{
-  "openapi": "3.0.0",
-  "info": {...},
-  "paths": {...},
-  "components": {...}
-}
-```
-
-## Requirements
-
-- OAuth credentials with `sfcc.scapi-schemas` scope (for fetch mode)
-- B2C Commerce instance hostname
-- Organization ID (auto-detected from credentials)
-
-## Related Tools
-
-- Part of the [SCAPI](../toolsets#scapi), [PWAV3](../toolsets#pwav3), and [STOREFRONTNEXT](../toolsets#storefrontnext) toolsets
-- Always enabled (base toolset)
-- For endpoint registration status, use [`scapi_custom_apis_get_status`](./scapi-custom-apis-get-status)
 
 ## See Also
 
+- [SCAPI Custom APIs](./scapi-custom-apis) - Scaffold custom endpoints and check their registration status
 - [SCAPI Toolset](../toolsets#scapi) - Overview of SCAPI discovery tools
-- [scapi_custom_apis_get_status](./scapi-custom-apis-get-status) - Check custom API endpoint registration status
-- [scapi_custom_api_generate_scaffold](./scapi-custom-api-generate-scaffold) - Generate a new custom API in a cartridge
 - [Authentication Setup](../../guide/authentication#scapi-authentication) - Set up SCAPI authentication with required roles and scopes
 - [Configuration](../configuration) - Configure OAuth credentials
 - [CLI Reference](../../cli/scapi-schemas) - Equivalent CLI commands: `b2c scapi schemas list` and `b2c scapi schemas get`

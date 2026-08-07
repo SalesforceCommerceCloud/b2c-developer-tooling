@@ -136,6 +136,8 @@ b2c slas client create \
 
 ## Default Scopes
 
+> Default scopes change over time - verify current defaults in the [Authorization Scopes Catalog](https://developer.salesforce.com/docs/commerce/commerce-api/guide/auth-z-scope-catalog) or via `b2c docs read commerce-api/auth-z-scope-catalog` before implementation.
+
 When using `--default-scopes`, these scopes are automatically included:
 
 ```

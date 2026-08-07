@@ -9,7 +9,7 @@ import {loadConfig, extractOAuthFlags} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {toOrganizationId, decodeJWT} from '@salesforce/b2c-tooling-sdk';
 import {getGuestToken, getRegisteredToken, type SlasTokenConfig} from '@salesforce/b2c-tooling-sdk/slas';
-import {SlasClientCommand, normalizeClientResponse, parseRedirectUris, type Client} from '../../utils/slas/client.js';
+import {SlasClientCommand, normalizeClientResponse, parseUriList, type Client} from '../../utils/slas/client.js';
 import {t, withDocs} from '../../i18n/index.js';
 
 const DEFAULT_REDIRECT_URI = 'http://localhost:3000/callback';
@@ -268,7 +268,7 @@ export default class SlasToken extends SlasClientCommand<typeof SlasToken> {
       discovered.siteId = publicClient.channels[0];
     }
     if (!options.redirectUri && publicClient.redirectUri) {
-      const uris = parseRedirectUris(publicClient.redirectUri);
+      const uris = parseUriList(publicClient.redirectUri);
       if (uris.length > 0) {
         discovered.redirectUri = uris[0];
       }

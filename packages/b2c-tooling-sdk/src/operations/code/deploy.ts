@@ -10,6 +10,8 @@ import type {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
 import {findCartridges, type CartridgeMapping, type FindCartridgesOptions} from './cartridges.js';
 import {activateCodeVersion, reloadCodeVersion} from './versions.js';
+import {UNZIP_TIMEOUT_MS} from './constants.js';
+import {NetworkError, describeNetworkErrorKind} from '../../errors/network-error.js';
 
 const UNZIP_BODY = new URLSearchParams({method: 'UNZIP'}).toString();
 
@@ -202,7 +204,16 @@ export async function uploadCartridges(
   }
   logger.debug('Archive uploaded');
 
-  // Unzip on server
+  // Unzip on server. Single attempt — deliberately NOT retried on a network drop.
+  //
+  // The unzip is a synchronous WebDAV POST with no server-side job handle, so a
+  // dropped connection is only a client-side observation: it tells us our socket
+  // died, not whether the backend is still extracting the archive. Re-issuing
+  // UNZIP could start a SECOND extraction concurrently with one still in progress,
+  // racing writes into the same Cartridges/<version>/ directory and corrupting the
+  // code version. So on a drop we surface a clear, actionable error that warns the
+  // extraction may still be running, and we leave the uploaded archive in place so
+  // the user can verify and decide — we never silently re-run.
   stopProgress = startProgress('unzipping');
   logger.debug('Unzipping archive on server...');
   let response: Response;
@@ -213,11 +224,32 @@ export async function uploadCartridges(
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
+      signal: AbortSignal.timeout(UNZIP_TIMEOUT_MS),
     });
-  } finally {
     stopProgress();
+  } catch (error) {
+    stopProgress();
+    // Enrich network failures with deploy-specific context and an explicit
+    // warning that the server-side extraction may still be in progress.
+    if (error instanceof NetworkError) {
+      const {summary, hint} = describeNetworkErrorKind(error.kind);
+      throw new NetworkError(
+        `Server-side unzip of cartridge archive failed: ${summary}. ${hint} ` +
+          `Note: the connection dropped, but the server may still be extracting the archive — ` +
+          `do not assume the deploy failed. The uploaded archive remains at "${uploadPath}". ` +
+          `Wait for any in-progress extraction to finish and verify the code version before re-deploying.`,
+        {
+          kind: error.kind,
+          operation: 'server-side unzip of cartridge archive',
+          host: instance.config.hostname,
+          cause: error.cause,
+        },
+      );
+    }
+    throw error;
   }
 
+  // Check response status (non-throwing error from server)
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`Failed to unzip archive: ${response.status} ${response.statusText} - ${text}`);

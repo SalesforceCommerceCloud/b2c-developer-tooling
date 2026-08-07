@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+        targetNamespace="http://www.demandware.com/xml/impex/eventrouting/2026-04-16"
+        xmlns="http://www.demandware.com/xml/impex/eventrouting/2026-04-16"
+        elementFormDefault="qualified"
+        attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd" />
+
+    <!-- Root element -->
+    <xsd:element name="event-routing">
+        <xsd:annotation>
+            <xsd:documentation>
+                Root element for event routing configuration. Contains endpoint definitions and route mappings.
+                Endpoints define where events are sent (e.g., webhook URLs), and route mappings connect event types to endpoints.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType mixed="false">
+            <xsd:sequence>
+                <xsd:element name="endpoint" type="complexType.Endpoint" minOccurs="0" maxOccurs="unbounded" />
+                <xsd:element name="route-mapping" type="complexType.RouteMapping" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- Global element declarations (required by StAX item reader for individual element unmarshalling) -->
+    <xsd:element name="endpoint" type="complexType.Endpoint" />
+    <xsd:element name="route-mapping" type="complexType.RouteMapping" />
+
+    <!-- Endpoint complex type -->
+    <xsd:complexType name="complexType.Endpoint">
+        <xsd:sequence>
+            <xsd:element name="endpoint-type" type="simpleType.Generic.NonEmptyString.256" minOccurs="1" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The type of endpoint. Currently supported values: "webhook".
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="url" type="simpleType.Generic.String.2048" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The endpoint URL (required for webhook endpoints). URLs are normalized during import: scheme and host are lowercased, path/query/fragment preserve original case.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="user" type="simpleType.Generic.String.256" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Optional username for HTTP Basic Authentication.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="password" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Optional password for HTTP Basic Authentication. Can be plain text or encrypted with common.export algorithm.
+                        If encrypted="true", the encryption-type attribute should be set to "common.export".
+                    </xsd:documentation>
+                </xsd:annotation>
+                <xsd:complexType>
+                    <xsd:simpleContent>
+                        <xsd:extension base="simpleType.Generic.String.4000">
+                            <xsd:attribute name="encrypted" type="xsd:boolean">
+                                <xsd:annotation>
+                                    <xsd:documentation>
+                                        Set to true if the password value is encrypted. If false or omitted, the value is treated as plain text.
+                                    </xsd:documentation>
+                                </xsd:annotation>
+                            </xsd:attribute>
+                            <xsd:attribute name="encryption-type" use="optional">
+                                <xsd:annotation>
+                                    <xsd:documentation>
+                                        The encryption algorithm used. Currently only "common.export" is supported. If encrypted="true" and this is omitted or set to an unknown value, an import error will occur.
+                                    </xsd:documentation>
+                                </xsd:annotation>
+                                <xsd:simpleType>
+                                    <xsd:restriction base="xsd:string">
+                                        <xsd:enumeration value="common.export" />
+                                    </xsd:restriction>
+                                </xsd:simpleType>
+                            </xsd:attribute>
+                        </xsd:extension>
+                    </xsd:simpleContent>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="headers" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Optional custom HTTP headers to send with webhook requests. Each header value is limited to 4000 characters.
+                    </xsd:documentation>
+                </xsd:annotation>
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="header" minOccurs="0" maxOccurs="unbounded">
+                            <xsd:complexType>
+                                <xsd:simpleContent>
+                                    <xsd:extension base="simpleType.Generic.String.4000">
+                                        <xsd:attribute name="name" type="simpleType.Generic.NonEmptyString.256" use="required">
+                                            <xsd:annotation>
+                                                <xsd:documentation>
+                                                    The HTTP header name.
+                                                </xsd:documentation>
+                                            </xsd:annotation>
+                                        </xsd:attribute>
+                                        <xsd:attribute name="encrypted" type="xsd:boolean">
+                                            <xsd:annotation>
+                                                <xsd:documentation>
+                                                    Set to true if the header value is encrypted. If false or omitted, the value is treated as plain text.
+                                                </xsd:documentation>
+                                            </xsd:annotation>
+                                        </xsd:attribute>
+                                        <xsd:attribute name="encryption-type" use="optional">
+                                            <xsd:annotation>
+                                                <xsd:documentation>
+                                                    The encryption algorithm used. Currently only "common.export" is supported. If encrypted="true" and this is omitted or set to an unknown value, an import error will occur.
+                                                </xsd:documentation>
+                                            </xsd:annotation>
+                                            <xsd:simpleType>
+                                                <xsd:restriction base="xsd:string">
+                                                    <xsd:enumeration value="common.export" />
+                                                </xsd:restriction>
+                                            </xsd:simpleType>
+                                        </xsd:attribute>
+                                    </xsd:extension>
+                                </xsd:simpleContent>
+                            </xsd:complexType>
+                        </xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:sequence>
+        <xsd:attribute name="endpoint-id" type="simpleType.Generic.NonEmptyString.256" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                    Unique identifier for this endpoint. Used to reference the endpoint in route mappings.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" use="optional">
+            <xsd:annotation>
+                <xsd:documentation>
+                    Import mode for this endpoint. If omitted, the endpoint is created if it doesn't exist or updated if it does.
+                    "delete" mode removes the endpoint.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <!-- Route Mapping complex type -->
+    <xsd:complexType name="complexType.RouteMapping">
+        <xsd:sequence>
+            <xsd:element name="event-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="1" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The event type identifier. Must match a registered event type in the system.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="endpoint-id" type="simpleType.Generic.NonEmptyString.256" minOccurs="1" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        References an endpoint-id from an endpoint definition. The endpoint must exist before creating the route mapping.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="scope" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Defines the scope for this route mapping. If omitted, defaults to organization scope (equivalent to type="organization").
+                        When type="organization", the route applies to all events organization-wide.
+                        When type="sites", the route applies only to events from the specified sites.
+                    </xsd:documentation>
+                </xsd:annotation>
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="site" minOccurs="0" maxOccurs="unbounded">
+                            <xsd:complexType>
+                                <xsd:attribute name="site-name" type="simpleType.Generic.NonEmptyString.256" use="required" />
+                            </xsd:complexType>
+                        </xsd:element>
+                    </xsd:sequence>
+                    <xsd:attribute name="type" use="required">
+                        <xsd:simpleType>
+                            <xsd:restriction base="xsd:string">
+                                <xsd:enumeration value="organization" />
+                                <xsd:enumeration value="sites" />
+                            </xsd:restriction>
+                        </xsd:simpleType>
+                    </xsd:attribute>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:sequence>
+        <xsd:attribute name="mode" type="simpleType.ImportMode" use="optional">
+            <xsd:annotation>
+                <xsd:documentation>
+                    Import mode for this route mapping. If omitted, the route mapping is created if it doesn't exist or updated if it does.
+                    "delete" mode removes the route mapping.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <!-- Simple types (reuse from services.xsd pattern) -->
+    <xsd:simpleType name="simpleType.Generic.String">
+        <xsd:restriction base="xsd:string" />
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.NonEmptyString.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="256" />
+            <xsd:pattern value="\S|(\S(.*)\S)" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.2048">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="2048" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.4000">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0" />
+            <xsd:maxLength value="4000" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.ImportMode">
+        <xsd:annotation>
+            <xsd:documentation>
+                Import mode enumeration. Only "delete" is explicitly defined in the schema.
+                When omitted from an element's mode attribute, the import creates or updates the element.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="delete">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Delete mode removes the endpoint or route mapping if it exists.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

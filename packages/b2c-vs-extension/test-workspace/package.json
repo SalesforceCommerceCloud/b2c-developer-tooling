@@ -1,0 +1,12 @@
+{
+  "name": "b2c-test-workspace",
+  "version": "1.0.0",
+  "description": "Test workspace for B2C DX VS Code Extension",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Test workspace - no scripts needed\""
+  },
+  "keywords": ["b2c", "commerce", "test"],
+  "author": "Salesforce",
+  "license": "Apache-2.0"
+}

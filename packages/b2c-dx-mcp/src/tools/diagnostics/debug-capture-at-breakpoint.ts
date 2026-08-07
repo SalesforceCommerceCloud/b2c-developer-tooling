@@ -47,7 +47,13 @@ interface CaptureOutput {
   evaluations?: Array<{expression: string; result: string}>;
   auto_continued: boolean;
   trigger_status?: number;
+  hint?: string;
 }
+
+const TIMEOUT_HINT =
+  'Breakpoint not hit. First confirm the triggered request actually exercised this code path and the breakpoint line is reachable. ' +
+  'In some production instance group configurations (which can run multiple app servers — this never applies to sandboxes), a breakpoint may be missed because the request landed on a different app server than the one holding the debug session. ' +
+  'Only in that specific case, retrieve session_cookie from debug_list_sessions and resend the triggering request with that cookie (Cookie: <name>=<value>) to pin it to the app server holding the session.';
 
 export function createDebugCaptureAtBreakpointTool(
   loadServices: () => Promise<Services> | Services,
@@ -128,6 +134,7 @@ export function createDebugCaptureAtBreakpointTool(
             halted: false,
             timed_out: true,
             auto_continued: false,
+            hint: TIMEOUT_HINT,
           };
         }
 

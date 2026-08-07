@@ -48,12 +48,12 @@
  */
 
 export {validateCap} from './validate.js';
-export type {CapValidationResult, CommerceAppManifest} from './validate.js';
+export type {CapValidationResult, CommerceAppManifest, CommerceAppProvider} from './validate.js';
 
 // Re-export JobExecutionError for convenience in CLI commands
 export {JobExecutionError} from '../jobs/run.js';
 
-export {commerceAppInstall, readManifest} from './install.js';
+export {commerceAppInstall, readManifest, readManifestFromTarget} from './install.js';
 export type {CommerceAppInstallOptions, CommerceAppInstallResult} from './install.js';
 
 export {commerceAppUninstall} from './uninstall.js';

@@ -51,10 +51,12 @@ import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {
   createCustomApisClient,
+  createMetricsClient,
   createScapiSchemasClient,
   toOrganizationId,
   WebDavClient,
   type CustomApisClient,
+  type MetricsClient,
   type ScapiSchemasClient,
 } from '@salesforce/b2c-tooling-sdk/clients';
 
@@ -225,6 +227,34 @@ export class Services {
    */
   public getHomeDir(): string {
     return os.homedir();
+  }
+
+  /**
+   * Get Metrics client for accessing SCAPI observability metrics.
+   * Requires shortCode, tenantId, and OAuth credentials to be configured.
+   *
+   * @throws Error if shortCode, tenantId, or OAuth credentials are missing
+   * @returns Typed Metrics client
+   */
+  public getMetricsClient(): MetricsClient {
+    const {shortCode, tenantId} = this.resolvedConfig.values;
+
+    if (!shortCode) {
+      throw new Error(
+        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
+      );
+    }
+
+    if (!tenantId) {
+      throw new Error(
+        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.',
+      );
+    }
+
+    // This will throw if OAuth credentials are missing
+    const oauthStrategy = this.getOAuthStrategy();
+
+    return createMetricsClient({shortCode, tenantId}, oauthStrategy);
   }
 
   /**

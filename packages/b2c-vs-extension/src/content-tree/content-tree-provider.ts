@@ -10,6 +10,7 @@ import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
 import {contentItemUri} from './content-fs-provider.js';
 import {webdavPathToUri} from '../webdav-tree/webdav-fs-provider.js';
+import {showThrottledError} from '../notify.js';
 
 type ContentNodeType = 'library' | 'page' | 'content' | 'component' | 'static';
 
@@ -211,7 +212,9 @@ export class ContentTreeDataProvider implements vscode.TreeDataProvider<ContentT
         this.configProvider.setCachedLibrary(element.libraryId, library);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        vscode.window.showErrorMessage(`Failed to fetch library ${element.libraryId}: ${message}`);
+        // Expand/collapse cycles re-fetch the library, so throttle per library
+        // to avoid stacking identical toasts when the instance is unreachable.
+        showThrottledError(`Failed to fetch library ${element.libraryId}: ${message}`, `content:${element.libraryId}`);
         return [];
       }
     }

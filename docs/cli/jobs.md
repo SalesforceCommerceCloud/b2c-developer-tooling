@@ -22,7 +22,7 @@ Configure these resources in Business Manager under **Administration** > **Site 
 
 ### WebDAV Access
 
-The `job import`, `job export`, and `job log` commands also require WebDAV access for file transfer.
+The `job import`, `job import-set`, `job export`, and `job log` commands also require WebDAV access for file transfer and import-set state.
 
 ### Configuration
 
@@ -102,6 +102,32 @@ b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":[
 # Run search index job for a single site
 b2c job run sfcc-search-index-product-full-update --wait --body '{"site_scope":["RefArch"]}'
 ```
+
+---
+
+## Standard (system) job steps
+
+B2C Commerce ships a catalog of **standard job steps** — built-in step **type IDs** (for example `ImportCatalog`, `ExportCatalog`, `ImportInventoryLists`) that you add to a job flow in **Business Manager → Administration → Operations → Jobs**, or reference by type ID in a `jobs.xml` flow inside a site-import archive. These are distinct from **custom** job steps, which you author yourself (see the `b2c:b2c-custom-job-steps` skill).
+
+The full catalog — each step's purpose and its configuration parameters — is bundled with the CLI and searchable through the [docs commands](/cli/docs):
+
+```bash
+# Browse the standard step catalog
+b2c docs read job-steps
+
+# Look up a specific step's parameters
+b2c docs read ImportCatalog
+b2c docs search ExportInventoryLists
+```
+
+### In-flow system step vs. the CLI equivalent
+
+Some standard steps overlap with CLI commands. Use whichever fits the workflow:
+
+- **In-flow system step** (for example the standard `ImportCatalog` step, or the `sfcc-site-archive-import` job behind `b2c job import`): runs entirely on the instance, against a file already staged in IMPEX. Choose this when the file is produced by an earlier step in the **same** job flow (no round-trip to your machine), when operations should run on a Business Manager schedule, or when you want catalog/inventory imports to follow your custom processing without leaving the server.
+- **CLI command** (`b2c job import`, `b2c job export`): drives the operation from your machine — uploading a local archive, downloading an export, or scripting a one-off from CI. Choose this for local-to-instance transfer, ad-hoc runs, and pipelines that originate outside the instance.
+
+In short: keep it an **in-flow standard step** when the data already lives on (or is generated on) the instance and should stay there; reach for the **CLI** when you are moving data between your machine and the instance. For chaining custom and standard steps in one flow — and handing a custom-generated IMPEX file to a standard import step — see the `b2c:b2c-custom-job-steps` skill.
 
 ---
 
@@ -344,6 +370,85 @@ When you run a normal (non-`--split`) directory import and the assembled archive
 
 ---
 
+## b2c job import-set
+
+Apply an ordered directory of site archives idempotently. Each immediate child directory or `.zip` file is one import item; other files and hidden entries are ignored.
+
+### Usage
+
+```bash
+b2c job import-set [DIRECTORY]
+```
+
+### Arguments
+
+| Argument | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `DIRECTORY` | Directory whose immediate child directories and zip files form the ordered import set | No | `./migrations` |
+
+For example:
+
+```text
+migrations/
+├── 20260801T140000-add-preferences/
+│   ├── meta/
+│   └── sites/
+├── 20260802T091500-seed-content.zip
+└── README.md                       # ignored
+```
+
+The CLI imports `20260801T140000-add-preferences/` and then `20260802T091500-seed-content.zip` in lexical filename order. Name every item `YYYYMMDDTHHmmss-description` so the filename is both its ordering key and its stable, practically unique receipt identity across projects. Use UTC when teams work across time zones.
+
+### Flags
+
+In addition to [global flags](./index#global-flags):
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--set-id` | Advanced: remote receipt and lock namespace for an independent migration history | `migrations` |
+| `--dry-run` | Show pending and applied items without locking, importing, or writing state | `false` |
+| `--keep-archive`, `-k` | Keep each uploaded archive on the instance after import | `false` |
+| `--break-lock` | Remove an existing import-set lock before acquiring it | `false` |
+| `--stale-lock-seconds` | Take over a lock whose heartbeat is older than this many seconds | `1800` |
+| `--lock-poll-interval` | Seconds between checks while another runner holds the set lock | `3` |
+| `--timeout`, `-t` | Timeout in seconds for each import job | No timeout |
+| `--poll-interval` | Job polling interval in seconds | `3` |
+| `--show-log` | Show the job log when an import fails | `true` |
+
+### Examples
+
+```bash
+# Preview what would be imported
+b2c job import-set --dry-run
+
+# Apply ./migrations; repeat this command safely in local setup or CI
+b2c job import-set
+
+# Explicitly replace a lock after confirming its owner is no longer running
+b2c job import-set --break-lock
+
+# Advanced: isolate a legacy migration history that cannot use unique timestamped names
+b2c job import-set ./legacy-migrations --set-id legacy-storefront-data
+```
+
+### Receipts and retry behavior
+
+The CLI creates and verifies a directory receipt on the target instance after each successful import. Receipt identity is based only on the item's directory or zip filename. An item whose name already has a receipt is skipped; its contents are not compared.
+
+This deliberately provides **at-least-once retry behavior until the receipt is durable**. If an import succeeds but the process crashes or WebDAV fails before the receipt is verified, the next invocation imports that item again. Site archive contents should therefore be safe to apply more than once.
+
+Never edit an applied item: instances that already have its name receipt continue to skip it, while a new instance would import the edited contents. Add a new, later-sorting directory or zip file for every change. Two projects using the same receipt namespace must also use distinct item names; the timestamp-and-description convention makes accidental collisions unlikely.
+
+Receipts and the concurrency lock use the fixed instance-wide `migrations` namespace by default, regardless of the local directory path. Most projects should not set `--set-id`; it exists only for intentionally independent histories or legacy item names that cannot follow the timestamp convention.
+
+### Concurrent runners and stale locks
+
+Only one runner applies a set at a time. The CLI atomically creates a WebDAV collection as the set lock, writes owner metadata, and refreshes a heartbeat while imports run. Other runners wait and re-check receipts after acquiring the lock.
+
+A lock is automatically treated as stale after 30 minutes by default; tune this with `--stale-lock-seconds`. Use `--break-lock` only after confirming the recorded runner is gone. B2C Commerce WebDAV does not enforce conditional deletes, so stale or forced takeover is best-effort and is always reported in command output.
+
+---
+
 ## b2c job export
 
 Export a site archive from a B2C Commerce instance using the `sfcc-site-archive-export` system job.
@@ -425,4 +530,3 @@ When using `--global-data`, available types include:
 - `locales` - Locale configurations
 - `services` - Service configurations
 - And more (see OCAPI documentation)
-

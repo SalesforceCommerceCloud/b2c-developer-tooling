@@ -394,7 +394,6 @@ Use [Response.addHttpCookie(Cookie)](dw.system.Response.md#addhttpcookiecookie) 
 :::
     **API Version:**
 :::note
-No longer available as of version 99.2.
 This method is deprecated and will be removed in the next API version.
 :::
 

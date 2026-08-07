@@ -129,7 +129,7 @@ This class does not have a constructor, so you cannot create it directly.
 
 
     **Returns:**
-    - `true` if the {@code SitemapFile} is valid, `false` otherwise.
+    - `true` if the `SitemapFile` is valid, `false` otherwise.
 
 
 ---

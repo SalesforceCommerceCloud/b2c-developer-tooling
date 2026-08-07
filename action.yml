@@ -60,6 +60,18 @@ inputs:
   account-manager-host:
     description: 'Account Manager hostname → SFCC_ACCOUNT_MANAGER_HOST'
     required: false
+  webdav-server:
+    description: 'Separate WebDAV hostname (used for staging cert. hostnames) → SFCC_WEBDAV_SERVER'
+    required: false
+  certificate:
+    description: 'Path to PKCS12 client certificate for two-factor (mTLS) auth → SFCC_CERTIFICATE'
+    required: false
+  certificate-passphrase:
+    description: 'Passphrase for the PKCS12 client certificate → SFCC_CERTIFICATE_PASSPHRASE'
+    required: false
+  selfsigned:
+    description: 'Allow self-signed server certificates → SFCC_SELFSIGNED. Set to "true" to enable; omit otherwise.'
+    required: false
 
 outputs:
   cli-version:
@@ -93,6 +105,10 @@ runs:
         mrt-project: ${{ inputs.mrt-project }}
         mrt-environment: ${{ inputs.mrt-environment }}
         account-manager-host: ${{ inputs.account-manager-host }}
+        webdav-server: ${{ inputs.webdav-server }}
+        certificate: ${{ inputs.certificate }}
+        certificate-passphrase: ${{ inputs.certificate-passphrase }}
+        selfsigned: ${{ inputs.selfsigned }}
 
     - name: Run command
       id: command

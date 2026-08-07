@@ -4,15 +4,18 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
-import {ImplicitOAuthStrategy, setStoredSession, decodeJWT} from '@salesforce/b2c-tooling-sdk/auth';
+import {BaseCommand, ERROR_CODE, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
+import {ImplicitOAuthStrategy, createUserAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
 
+const LOGIN_AUTH_METHODS = ['user', 'implicit'] as const;
+type LoginAuthMethod = (typeof LOGIN_AUTH_METHODS)[number];
+
 /**
- * Log in via browser (implicit OAuth) and persist the session for stateful auth.
- * Uses the same storage as sfcc-ci; when valid, subsequent commands use this token
- * until it expires or you run auth:logout.
+ * Log in via browser (Authorization Code + PKCE) and persist the session for
+ * stateful auth. PKCE sessions use the CLI's unified multi-session store; old
+ * sfcc-ci-compatible renewal records are intentionally not reused.
  */
 export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
   static args = {
@@ -27,7 +30,11 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
     '/cli/auth.html#b2c-auth-login',
   );
 
-  static examples = ['<%= config.bin %> <%= command.id %>', '<%= config.bin %> <%= command.id %> your-client-id'];
+  static examples = [
+    '<%= config.bin %> <%= command.id %>',
+    '<%= config.bin %> <%= command.id %> your-client-id',
+    '<%= config.bin %> <%= command.id %> --auth-methods implicit',
+  ];
 
   static flags = {
     'account-manager-host': Flags.string({
@@ -44,17 +51,28 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
       delimiter: ',',
       helpGroup: 'AUTH',
     }),
+    'auth-methods': Flags.string({
+      description: 'Browser-based auth flow to use. Defaults to "user" (Authorization Code + PKCE).',
+      env: 'SFCC_AUTH_METHODS',
+      options: [...LOGIN_AUTH_METHODS],
+      multiple: true,
+      multipleNonGreedy: true,
+      delimiter: ',',
+      helpGroup: 'AUTH',
+    }),
   };
 
   static hiddenAliases = ['auth:login'];
 
   protected override loadConfiguration() {
     const scopes = this.flags['auth-scope'] as string[] | undefined;
+    const authMethods = this.flags['auth-methods'] as LoginAuthMethod[] | undefined;
     return loadConfig(
       {
         clientId: this.args.clientId ?? process.env.SFCC_CLIENT_ID,
         accountManagerHost: this.flags['account-manager-host'] as string | undefined,
         scopes: scopes && scopes.length > 0 ? scopes : undefined,
+        authMethods: authMethods && authMethods.length > 0 ? authMethods : undefined,
       },
       this.getBaseConfigOptions(),
     );
@@ -67,39 +85,44 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
         t(
           'error.oauthClientIdRequired',
           'OAuth client ID required. Provide a client ID argument or set SFCC_CLIENT_ID.',
-        ),
+        ) + this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
 
     const accountManagerHost = this.resolvedConfig.values.accountManagerHost ?? DEFAULT_ACCOUNT_MANAGER_HOST;
     const scopes = this.resolvedConfig.values.scopes;
+    const method = this.selectMethod();
 
-    const strategy = new ImplicitOAuthStrategy({
-      clientId,
-      scopes,
-      accountManagerHost,
-    });
-
-    const tokenResponse = await strategy.getTokenResponse();
-
-    let user: null | string = null;
-    try {
-      const decoded = decodeJWT(tokenResponse.accessToken);
-      if (typeof decoded.payload.sub === 'string') {
-        user = decoded.payload.sub;
-      }
-    } catch {
-      // ignore
+    if (method === 'implicit') {
+      this.warn(
+        t(
+          'warning.implicitFlowDeprecated',
+          'The OAuth implicit flow is deprecated. Create a new public OAuth client in Account Manager ' +
+            'and use Authorization Code + PKCE (the default) instead. ' +
+            'See https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html#implicit-flow-deprecation',
+        ),
+      );
+      const strategy = new ImplicitOAuthStrategy({clientId, scopes, accountManagerHost});
+      await strategy.getTokenResponse();
+    } else {
+      // PKCE with an automatic, WARN-logged fallback to the implicit flow for
+      // clients not yet registered for PKCE (see oauth-pkce-fallback in the SDK).
+      const strategy = createUserAuthStrategy({clientId, scopes, accountManagerHost});
+      await strategy.getTokenResponse();
     }
 
-    setStoredSession({
-      clientId,
-      accessToken: tokenResponse.accessToken,
-      refreshToken: null,
-      renewBase: null,
-      user,
-    });
-
     this.log(t('commands.auth.login.success', 'Login succeeded. Session saved for stateful auth.'));
+  }
+
+  private selectMethod(): LoginAuthMethod {
+    // CLI/env values are merged into resolvedConfig by loadConfiguration(), so
+    // this also honors an explicit dw.json `auth-methods` selection. Ignore
+    // non-browser methods because `auth login` is browser-only; absent an
+    // explicit browser method, PKCE remains the absolute default.
+    const method = this.resolvedConfig.values.authMethods?.find((candidate): candidate is LoginAuthMethod =>
+      LOGIN_AUTH_METHODS.includes(candidate as LoginAuthMethod),
+    );
+    return method ?? 'user';
   }
 }

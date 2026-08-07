@@ -52,4 +52,10 @@ export interface StartupFlags {
   configPath?: string;
   /** Project project directory for tools (auto-discovery, scaffolding, etc.) */
   projectDirectory?: string;
+  /**
+   * Comma-separated allowlist of documentation categories the docs tools may
+   * expose (from `--docs-topics` / `SFCC_DOCS_TOPICS`). Bounds the whole docs
+   * corpus at startup; unset means all categories.
+   */
+  docsTopics?: string;
 }

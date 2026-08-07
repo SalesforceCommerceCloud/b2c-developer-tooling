@@ -13,7 +13,7 @@ All eCDN commands support these flags:
 | Flag | Description | Environment Variable |
 |------|-------------|---------------------|
 | `--tenant-id` | B2C Commerce tenant ID | `SFCC_TENANT_ID` |
-| `--short-code` | API short code | `SFCC_SHORT_CODE` |
+| `--short-code` | API short code | `SFCC_SHORTCODE` |
 | `--json` | Output as JSON | - |
 
 ### Zone Selection

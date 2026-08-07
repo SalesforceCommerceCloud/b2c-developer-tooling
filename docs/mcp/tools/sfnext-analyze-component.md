@@ -32,25 +32,25 @@ See [Figma-to-Component Tools Setup](../figma-tools-setup) for complete prerequi
 
 ## Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `figmaMetadata` | string | Yes | JSON string containing design metadata (from Figma MCP or empty). Can be empty string if metadata was not fetched. |
-| `figmaCode` | string | Yes | React code from design (e.g., from Figma `mcp__figma__get_design_context`, or design handoff). |
-| `componentName` | string | Yes | Suggested name for the component extracted from the design. |
-| `discoveredComponents` | array | Yes | Array of similar components discovered using Glob/Grep/Read. Pass empty array if no similar components found. |
-| `workspacePath` | string | No | Optional workspace root path. Defaults to the MCP server project directory. |
+| Parameter              | Type   | Required | Description                                                                                                        |
+| ---------------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------ |
+| `figmaMetadata`        | string | Yes      | JSON string containing design metadata (from Figma MCP or empty). Can be empty string if metadata was not fetched. |
+| `figmaCode`            | string | Yes      | React code from design (e.g., from Figma `mcp__figma__get_design_context`, or design handoff).                     |
+| `componentName`        | string | Yes      | Suggested name for the component extracted from the design.                                                        |
+| `discoveredComponents` | array  | Yes      | Array of similar components discovered using Glob/Grep/Read. Pass empty array if no similar components found.      |
+| `workspacePath`        | string | No       | Optional workspace root path. Defaults to the MCP server project directory.                                        |
 
 ### Discovered Component Schema
 
 Each item in `discoveredComponents` must have:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `path` | string | Absolute file path to the component |
-| `name` | string | Component name |
-| `similarity` | number | Similarity score (0–100) |
-| `matchType` | string | One of `'name'`, `'structure'`, `'visual'` |
-| `code` | string | Full source code of the component |
+| Field        | Type   | Description                                |
+| ------------ | ------ | ------------------------------------------ |
+| `path`       | string | Absolute file path to the component        |
+| `name`       | string | Component name                             |
+| `similarity` | number | Similarity score (0–100)                   |
+| `matchType`  | string | One of `'name'`, `'structure'`, `'visual'` |
+| `code`       | string | Full source code of the component          |
 
 ## Usage Examples
 

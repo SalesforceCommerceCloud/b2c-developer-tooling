@@ -25,27 +25,27 @@ The tool uses component discovery to find components by name (e.g., "ProductItem
 
 ## Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `component` | string | Yes | Component name (for example, `"ProductItem"`, `"ProductTile"`) or file path (for example, `"src/components/ProductItem.tsx"`). When a name is provided, the tool automatically searches common component directories. |
-| `searchPaths` | string[] | No | Additional directories to search for components (for example, `["packages/retail/src", "app/features"]`). Only used when a component is specified by name (not path). |
-| `autoMode` | boolean | No | Auto-generate all configurations with sensible defaults (skip interactive workflow). When enabled, automatically selects suitable props, infers types, and generates decorators without user confirmation. |
-| `componentId` | string | No | Override component ID (default: auto-generated from component name). |
-| `conversationContext` | object | No | Context for interactive mode workflow. See [Interactive Mode](#interactive-mode) for details. |
+| Parameter             | Type     | Required | Description                                                                                                                                                                                                           |
+| --------------------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `component`           | string   | Yes      | Component name (for example, `"ProductItem"`, `"ProductTile"`) or file path (for example, `"src/components/ProductItem.tsx"`). When a name is provided, the tool automatically searches common component directories. |
+| `searchPaths`         | string[] | No       | Additional directories to search for components (for example, `["packages/retail/src", "app/features"]`). Only used when a component is specified by name (not path).                                                 |
+| `autoMode`            | boolean  | No       | Auto-generate all configurations with sensible defaults (skip interactive workflow). When enabled, automatically selects suitable props, infers types, and generates decorators without user confirmation.            |
+| `componentId`         | string   | No       | Override component ID (default: auto-generated from component name).                                                                                                                                                  |
+| `conversationContext` | object   | No       | Context for interactive mode workflow. See [Interactive Mode](#interactive-mode) for details.                                                                                                                         |
 
 ### Conversation Context (Interactive Mode)
 
 When using interactive mode, provide `conversationContext` with the following structure:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `step` | `"analyze"` \| `"select_props"` \| `"configure_attrs"` \| `"configure_regions"` \| `"confirm_generation"` | Current step in the conversation workflow |
-| `componentInfo` | object | Cached component analysis from previous step |
-| `selectedProps` | string[] | Props from component interface selected to expose in Page Designer |
-| `newAttributes` | object[] | New attributes to add (not in existing props) |
-| `attributeConfig` | object | Configuration for each attribute (explicit types, names, defaults, etc.) |
-| `componentMetadata` | object | Component decorator configuration (id, name, description, group) |
-| `regionConfig` | object | Region configuration (enabled, regions array) |
+| Field               | Type                                                                                                      | Description                                                              |
+| ------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `step`              | `"analyze"` \| `"select_props"` \| `"configure_attrs"` \| `"configure_regions"` \| `"confirm_generation"` | Current step in the conversation workflow                                |
+| `componentInfo`     | object                                                                                                    | Cached component analysis from previous step                             |
+| `selectedProps`     | string[]                                                                                                  | Props from component interface selected to expose in Page Designer       |
+| `newAttributes`     | object[]                                                                                                  | New attributes to add (not in existing props)                            |
+| `attributeConfig`   | object                                                                                                    | Configuration for each attribute (explicit types, names, defaults, etc.) |
+| `componentMetadata` | object                                                                                                    | Component decorator configuration (id, name, description, group)         |
+| `regionConfig`      | object                                                                                                    | Region configuration (enabled, regions array)                            |
 
 ## Operation Modes
 
@@ -79,21 +79,25 @@ The tool automatically searches for components in these locations (in order):
 ## Usage Examples
 
 **Auto mode (quick setup):**
+
 ```
 Use the MCP tool to add Page Designer decorators to my ProductItem component.
 ```
 
 **Interactive mode (fine-tuned control):**
+
 ```
 Use the MCP tool to add Page Designer decorators to my ProductTile component interactively.
 ```
 
 **With custom search paths:**
+
 ```
 Use the MCP tool to add Page Designer decorators to ProductItem, searching in packages/retail/src and app/features.
 ```
 
 **Using component path:**
+
 ```
 Use the MCP tool to add Page Designer decorators to src/components/ProductItem.tsx.
 ```
@@ -101,7 +105,6 @@ Use the MCP tool to add Page Designer decorators to src/components/ProductItem.t
 ## Output
 
 The tool returns generated Page Designer decorator code that you can add to your component file. The decorators include component metadata, attribute definitions for props, and region definitions (if configured).
-
 
 ## Related Tools
 

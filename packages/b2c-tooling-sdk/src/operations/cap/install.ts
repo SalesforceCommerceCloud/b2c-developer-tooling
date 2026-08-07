@@ -27,6 +27,11 @@ export interface CommerceAppInstallOptions {
   siteId: string;
   /** Keep the uploaded zip on the instance after install (default: false). */
   keepArchive?: boolean;
+  /**
+   * Create a pull request against the connected Storefront Next repository
+   * when the app includes storefront content (default: false).
+   */
+  shouldCreatePr?: boolean;
   /** Wait options for job completion. */
   waitOptions?: WaitForJobOptions;
 }
@@ -73,7 +78,7 @@ export async function commerceAppInstall(
   options: CommerceAppInstallOptions,
 ): Promise<CommerceAppInstallResult> {
   const logger = getLogger();
-  const {siteId: rawSiteId, keepArchive = false, waitOptions} = options;
+  const {siteId: rawSiteId, keepArchive = false, shouldCreatePr = false, waitOptions} = options;
   const siteId = normalizeSiteId(rawSiteId);
 
   if (!fs.existsSync(target)) {
@@ -121,6 +126,7 @@ export async function commerceAppInstall(
       app_domain: manifest.domain,
       site_id: siteId,
       app_path: appPath,
+      should_create_pr: shouldCreatePr,
     } as unknown as string,
   });
 
@@ -140,6 +146,7 @@ export async function commerceAppInstall(
           {name: 'AppDomain', value: manifest.domain},
           {name: 'SiteId', value: siteId},
           {name: 'AppPath', value: appPath},
+          {name: 'ShouldCreatePR', value: String(shouldCreatePr)},
         ],
       } as unknown as string,
     });
@@ -211,6 +218,36 @@ export function readManifest(capDir: string): CommerceAppManifest {
   } catch {
     throw new Error(`Failed to parse commerce-app.json in: ${capDir}`);
   }
+}
+
+/**
+ * Reads the commerce-app.json manifest from a CAP directory or zip file without
+ * uploading or installing anything.
+ *
+ * Useful for inspecting manifest fields (e.g. `provider`) before installing.
+ *
+ * @param target - Path to a CAP directory or .zip file
+ * @returns Parsed manifest object
+ * @throws Error if the target does not exist or is not a directory/.zip file
+ *
+ * @example
+ * ```typescript
+ * const manifest = await readManifestFromTarget('./my-commerce-app-v1.0.0.zip');
+ * console.log(`App: ${manifest.id}@${manifest.version}`);
+ * ```
+ */
+export async function readManifestFromTarget(target: string): Promise<CommerceAppManifest> {
+  if (!fs.existsSync(target)) {
+    throw new Error(`Target not found: ${target}`);
+  }
+  const stat = fs.statSync(target);
+  if (stat.isDirectory()) {
+    return readManifest(target);
+  }
+  if (stat.isFile() && target.endsWith('.zip')) {
+    return readManifestFromZip(target);
+  }
+  throw new Error(`Target must be a directory or .zip file: ${target}`);
 }
 
 async function readManifestFromZip(zipPath: string): Promise<CommerceAppManifest> {

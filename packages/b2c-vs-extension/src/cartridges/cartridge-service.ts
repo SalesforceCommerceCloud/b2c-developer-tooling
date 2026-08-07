@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {findCartridges, type CartridgeMapping} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {type CartridgeMapping} from '@salesforce/b2c-tooling-sdk/operations/code';
 
 import * as vscode from 'vscode';
 
 import type {B2CExtensionConfig} from '../config-provider.js';
+import {findCartridgesSafe} from '../workspace-discovery.js';
 
 // Cartridges that conventionally sit at the bottom of the cartridge path when
 // the user hasn't told us otherwise (no `cartridges` in dw.json/SFCC_CARTRIDGES).
@@ -103,14 +104,12 @@ export class CartridgeService implements vscode.Disposable {
 
   private reload(): void {
     const cwd = this.configProvider.getWorkingDirectory();
-    if (!cwd) {
-      this.cartridges = [];
-      this.loaded = true;
-      return;
-    }
+    // findCartridgesSafe returns [] for an empty/home/root working directory and
+    // depth-bounds the scan, so a workspace with no concrete B2C folder never
+    // triggers a recursive walk on the extension-host thread (W-23618508).
     let discovered: CartridgeMapping[];
     try {
-      discovered = findCartridges(cwd);
+      discovered = findCartridgesSafe(cwd);
     } catch {
       discovered = [];
     }

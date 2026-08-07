@@ -17,14 +17,17 @@ const BASE_URL = `https://${TEST_HOST}/on/demandware.servlet/webdav/Sites`;
 /**
  * Generates a PROPFIND XML response for testing.
  */
-function generatePropfindXml(entries: {name: string; size: number; date: Date; isDir?: boolean}[]): string {
+function generatePropfindXml(
+  entries: {name: string; size: number; date: Date; isDir?: boolean}[],
+  dirHref = 'Logs',
+): string {
   const responses = entries.map(({name, size, date, isDir}) => {
     const resourceType = isDir ? '<D:collection/>' : '';
     const contentLength = isDir ? '' : `<D:getcontentlength>${size}</D:getcontentlength>`;
 
     return `
     <D:response>
-      <D:href>/on/demandware.servlet/webdav/Sites/Logs/${name}</D:href>
+      <D:href>/on/demandware.servlet/webdav/Sites/${dirHref}/${name}</D:href>
       <D:propstat>
         <D:prop>
           <D:displayname>${name}</D:displayname>
@@ -245,6 +248,120 @@ describe('operations/logs/list', () => {
       const files = await listLogFiles(instance as never, {prefixes: ['debug']});
 
       expect(files).to.have.length(0);
+    });
+
+    /**
+     * Routes PROPFIND requests by their target directory so subdirectory
+     * recursion can be exercised. Maps a relative dir ("" = root) to its entries.
+     */
+    function useDirHandlers(dirs: Record<string, {name: string; size: number; date: Date; isDir?: boolean}[]>): void {
+      server.use(
+        http.all(`${BASE_URL}/*`, ({request}) => {
+          if (request.method !== 'PROPFIND') {
+            return new HttpResponse(null, {status: 404});
+          }
+          // Determine which dir is being listed from the URL suffix after /Logs
+          const url = new URL(request.url);
+          const afterLogs = url.pathname.split('/Logs')[1]?.replace(/^\/|\/$/g, '') ?? '';
+          const entries = dirs[afterLogs];
+          if (!entries) {
+            return new HttpResponse(null, {status: 404});
+          }
+          const dirHref = afterLogs ? `Logs/${afterLogs}` : 'Logs';
+          return new HttpResponse(generatePropfindXml(entries, dirHref), {
+            status: 207,
+            headers: {'Content-Type': 'application/xml'},
+          });
+        }),
+      );
+    }
+
+    it('does not recurse into subdirectories without a path filter', async () => {
+      const now = new Date();
+      useDirHandlers({
+        '': [
+          {name: 'error-blade1-20250125.log', size: 1234, date: now},
+          {name: 'internal', size: 0, date: now, isDir: true},
+        ],
+        internal: [{name: 'server-blade1-20250125.log', size: 5678, date: now}],
+      });
+
+      const instance = createMockInstance();
+      const files = await listLogFiles(instance as never);
+
+      // Only the top-level file; the directory entry is excluded and not recursed.
+      expect(files).to.have.length(1);
+      expect(files[0].name).to.equal('error-blade1-20250125.log');
+    });
+
+    it('recurses into a subdirectory for a path-like filter', async () => {
+      const now = new Date();
+      useDirHandlers({
+        '': [{name: 'error-blade1-20250125.log', size: 1234, date: now}],
+        internal: [
+          {name: 'server-blade1-20250125.log', size: 5678, date: now},
+          {name: 'ccp-blade1-20250125.log', size: 90, date: now},
+        ],
+      });
+
+      const instance = createMockInstance();
+      const files = await listLogFiles(instance as never, {prefixes: ['internal/server']});
+
+      expect(files).to.have.length(1);
+      expect(files[0].name).to.equal('internal/server-blade1-20250125.log');
+      expect(files[0].path).to.equal('Logs/internal/server-blade1-20250125.log');
+    });
+
+    it('matches all files in a subdirectory with a trailing-slash path filter', async () => {
+      const now = new Date();
+      useDirHandlers({
+        '': [{name: 'error-blade1-20250125.log', size: 1234, date: now}],
+        internal: [
+          {name: 'server-blade1-20250125.log', size: 5678, date: now},
+          {name: 'ccp-blade1-20250125.log', size: 90, date: now},
+        ],
+      });
+
+      const instance = createMockInstance();
+      const files = await listLogFiles(instance as never, {prefixes: ['internal/']});
+
+      expect(files.map((f) => f.name).sort()).to.deep.equal([
+        'internal/ccp-blade1-20250125.log',
+        'internal/server-blade1-20250125.log',
+      ]);
+    });
+
+    it('combines top-level prefix filters with path filters', async () => {
+      const now = new Date();
+      useDirHandlers({
+        '': [
+          {name: 'error-blade1-20250125.log', size: 1234, date: now},
+          {name: 'debug-blade1-20250125.log', size: 1, date: now},
+        ],
+        internal: [{name: 'server-blade1-20250125.log', size: 5678, date: now}],
+      });
+
+      const instance = createMockInstance();
+      const files = await listLogFiles(instance as never, {prefixes: ['error', 'internal/server']});
+
+      expect(files.map((f) => f.name).sort()).to.deep.equal([
+        'error-blade1-20250125.log',
+        'internal/server-blade1-20250125.log',
+      ]);
+    });
+
+    it('treats a missing subdirectory as empty without failing', async () => {
+      const now = new Date();
+      useDirHandlers({
+        '': [{name: 'error-blade1-20250125.log', size: 1234, date: now}],
+        // no "nonexistent" dir -> PROPFIND returns 404
+      });
+
+      const instance = createMockInstance();
+      const files = await listLogFiles(instance as never, {prefixes: ['error', 'nonexistent/foo']});
+
+      expect(files).to.have.length(1);
+      expect(files[0].name).to.equal('error-blade1-20250125.log');
     });
   });
 });

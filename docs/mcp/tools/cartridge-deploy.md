@@ -2,27 +2,20 @@
 description: Deploy cartridges to a B2C Commerce instance via WebDAV with automatic code version reload.
 ---
 
-# cartridge_deploy
+# Cartridge Deployment
 
-Deploys cartridges to a B2C Commerce instance via WebDAV. Finds cartridges by `.project` files, creates a ZIP archive, uploads via WebDAV, and optionally reloads the code version.
+MCP tools for deploying cartridge code to a B2C Commerce instance. Part of the **CARTRIDGES** toolset; auto-enabled for cartridge projects.
 
-## Overview
+## cartridge_deploy
 
-The `cartridge_deploy` tool automates cartridge deployment to B2C Commerce instances. It:
+Deploys cartridges to a B2C Commerce instance via WebDAV. Searches for cartridges by `.project` files, creates a ZIP archive, uploads it, and optionally reloads the code version.
 
-1. Searches the specified directory for cartridges (identified by `.project` files).
-2. Applies the include/exclude filters to select which cartridges to deploy.
-3. Creates a ZIP archive of all selected cartridge directories.
-4. Uploads the ZIP to WebDAV and triggers server-side unzip.
-5. Optionally reloads the code version after deployment.
-
-This tool is useful for deploying custom code cartridges for SFRA or other B2C Commerce code. It requires the instance to have a code version configured.
-
-## Authentication
+### Authentication
 
 Requires WebDAV access credentials. Supports two authentication methods:
 
 **Required:**
+
 - **Basic Auth (recommended)** - `hostname`, `username`, and `password` (WebDAV access key). Provides better performance for WebDAV operations.
 - **OAuth** - `hostname`, `client-id`, and `client-secret`. Requires WebDAV Client Permissions configured.
 
@@ -30,68 +23,30 @@ Requires WebDAV access credentials. Supports two authentication methods:
 
 See [Configuration](../configuration) for complete credential setup details including flags and environment variables. See [Authentication Setup](../../guide/authentication#webdav-access) for WebDAV access key and OAuth configuration instructions.
 
-## Parameters
+### Parameters
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `directory` | string | No | Project directory (from `--project-directory` or auto-detected) | Path to directory to search for cartridges. The tool recursively searches for `.project` files to identify cartridges. |
-| `cartridges` | string[] | No | All found cartridges | Array of cartridge names to include in the deployment. Use this to selectively deploy specific cartridges when you have multiple cartridges but only want to update some. If not specified, all cartridges found in the directory are deployed. |
-| `exclude` | string[] | No | None | Array of cartridge names to exclude from the deployment. Use this to skip deploying certain cartridges, such as third-party or unchanged cartridges. Applied after the include filter. |
-| `reload` | boolean | No | `false` | Whether to reload the code version after deployment. When `true`, the tool triggers a code version reload on the instance. |
+| Parameter    | Type     | Required | Default                                                         | Description                                                                                                                                                                                                                                     |
+| ------------ | -------- | -------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `directory`  | string   | No       | Project directory (from `--project-directory` or auto-detected) | Path to directory to search for cartridges. The tool recursively searches for `.project` files to identify cartridges.                                                                                                                          |
+| `cartridges` | string[] | No       | All found cartridges                                            | Array of cartridge names to include in the deployment. Use this to selectively deploy specific cartridges when you have multiple cartridges but only want to update some. If not specified, all cartridges found in the directory are deployed. |
+| `exclude`    | string[] | No       | None                                                            | Array of cartridge names to exclude from the deployment. Use this to skip deploying certain cartridges, such as third-party or unchanged cartridges. Applied after the include filter.                                                          |
+| `reload`     | boolean  | No       | `false`                                                         | Whether to reload the code version after deployment. When `true`, the tool triggers a code version reload on the instance.                                                                                                                      |
 
-## Usage Examples
+### Usage
 
-### Basic Deployment
-
-Deploy all cartridges found in the current directory:
+Deploy all cartridges:
 
 ```
-Use the MCP tool to deploy my cartridges to the sandbox instance.
+Deploy my cartridges to the sandbox instance.
 ```
 
-### Deploy Specific Cartridges
-
-Deploy only selected cartridges:
+Deploy specific cartridges and reload the code version:
 
 ```
-Use the MCP tool to deploy only the app_storefront_base cartridge to production.
+Deploy app_storefront_base and reload the code version.
 ```
 
-### Deploy from Specific Directory
-
-Deploy cartridges from a specific directory:
-
-```
-Use the MCP tool to deploy cartridges from the ./cartridges directory and reload the code version.
-```
-
-### Exclude Cartridges
-
-Deploy all cartridges except certain ones:
-
-```
-Use the MCP tool to deploy cartridges excluding test_cartridge and bm_extensions.
-```
-
-## Output
-
-Returns a deployment result object containing:
-
-- `cartridges` - Array of cartridge mappings that were deployed (each with name, src, dest)
-- `codeVersion` - Code version name used for deployment
-- `reloaded` - Whether the code version was reloaded (if `reload: true`)
-
-## Requirements
-
-- B2C Commerce instance with WebDAV access
-- Code version configured on the instance
-- Cartridges must have `.project` files in their directories
-- Valid authentication credentials (Basic auth or OAuth)
-
-## Related Tools
-
-- Part of the [CARTRIDGES](../toolsets#cartridges) toolset
-- Auto-enabled for cartridge projects (detected by `.project` file)
+**Returns:** `{cartridges, codeVersion, reloaded}` — array of deployed cartridge mappings, code version name, and whether the code version was reloaded.
 
 ## See Also
 

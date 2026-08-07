@@ -42,7 +42,11 @@ export interface LogEntry {
 export interface ListLogsOptions {
   /**
    * Filter by log prefixes (e.g., ["error", "customerror"]).
-   * If not specified, returns all log files.
+   *
+   * A filter containing a "/" (e.g. "internal/server") is treated as a path
+   * filter: it recurses into that subdirectory of `Logs/` and matches files by
+   * their path relative to `Logs/`. Filters without a "/" match the top-level
+   * log-category prefix. If not specified, returns all top-level log files.
    */
   prefixes?: string[];
   /**

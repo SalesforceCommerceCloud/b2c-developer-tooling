@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import type {B2CInstance} from '../../instance/index.js';
-import {type OcapiComponents} from '../../clients/index.js';
+import {getApiErrorMessage, type OcapiComponents} from '../../clients/index.js';
 import {getLogger} from '../../logging/logger.js';
 
 /** Code version type from OCAPI */
@@ -12,6 +12,29 @@ export type CodeVersion = OcapiComponents['schemas']['code_version'];
 
 /** Result of listing code versions */
 export type CodeVersionResult = OcapiComponents['schemas']['code_version_result'];
+
+/** Result of requesting code-version activation. */
+export interface CodeVersionActivationResult {
+  /** Whether the target was already active and no server-side change was needed. */
+  alreadyActive: boolean;
+}
+
+function isAlreadyActiveFault(error: unknown, status: number, codeVersionId: string): boolean {
+  if (status !== 400 || !error || typeof error !== 'object') return false;
+
+  const fault = (error as {fault?: unknown}).fault;
+  if (!fault || typeof fault !== 'object') return false;
+
+  const typedFault = fault as {
+    arguments?: {codeVersionId?: unknown};
+    type?: unknown;
+  };
+  const faultCodeVersionId = typedFault.arguments?.codeVersionId;
+  return (
+    typedFault.type === 'CodeVersionModificationException' &&
+    (faultCodeVersionId === undefined || faultCodeVersionId === codeVersionId)
+  );
+}
 
 /**
  * Lists all code versions on an instance.
@@ -62,7 +85,9 @@ export async function getActiveCodeVersion(instance: B2CInstance): Promise<CodeV
  *
  * @param instance - B2C instance
  * @param codeVersionId - Code version ID to activate
- * @returns Promise that resolves when the code version is activated
+ * Activating the current active version is treated as an idempotent success.
+ *
+ * @returns Whether the code version was already active
  * @throws Error if activation fails
  *
  * @example
@@ -71,20 +96,30 @@ export async function getActiveCodeVersion(instance: B2CInstance): Promise<CodeV
  * console.log('Code version v2 is now active');
  * ```
  */
-export async function activateCodeVersion(instance: B2CInstance, codeVersionId: string): Promise<void> {
+export async function activateCodeVersion(
+  instance: B2CInstance,
+  codeVersionId: string,
+): Promise<CodeVersionActivationResult> {
   const logger = getLogger();
   logger.debug({codeVersionId}, `Activating code version ${codeVersionId}`);
 
-  const {error} = await instance.ocapi.PATCH('/code_versions/{code_version_id}', {
+  const {error, response} = await instance.ocapi.PATCH('/code_versions/{code_version_id}', {
     params: {path: {code_version_id: codeVersionId}},
     body: {active: true},
   });
 
   if (error) {
-    throw new Error('Failed to activate code version', {cause: error});
+    if (isAlreadyActiveFault(error, response.status, codeVersionId)) {
+      logger.debug({codeVersionId}, `Code version ${codeVersionId} is already active`);
+      return {alreadyActive: true};
+    }
+    throw new Error(`Could not activate code version "${codeVersionId}": ${getApiErrorMessage(error, response)}`, {
+      cause: error,
+    });
   }
 
   logger.debug({codeVersionId}, `Code version ${codeVersionId} activated`);
+  return {alreadyActive: false};
 }
 
 /**

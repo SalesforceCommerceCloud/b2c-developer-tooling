@@ -7,10 +7,11 @@ import {expect} from 'chai';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {validateCap} from '../../../src/operations/cap/validate.js';
 
 const FIXTURE_CAP = path.join(
-  path.dirname(new URL(import.meta.url).pathname),
+  path.dirname(fileURLToPath(import.meta.url)),
   '../../fixtures/commerce-avalara-tax-app-v0.2.5',
 );
 

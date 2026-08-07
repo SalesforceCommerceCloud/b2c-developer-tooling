@@ -20,12 +20,12 @@ b2c setup inspect [FLAGS]
 
 ### Flags
 
-| Flag                     | Description                                                   | Default                  |
-| ------------------------ | ------------------------------------------------------------- | ------------------------ |
-| `--unmask`               | Show sensitive values unmasked (passwords, secrets, API keys) | `false`                  |
-| `--account-manager-host` | Account Manager hostname for OAuth                            | `account.demandware.com` |
+| Flag                     | Description                                                   | Default                    |
+| ------------------------ | ------------------------------------------------------------- | -------------------------- |
+| `--unmask`               | Show sensitive values unmasked (passwords, secrets, API keys) | `false`                    |
+| `--account-manager-host` | Account Manager hostname for OAuth                            | `account.demandware.com`   |
 | `--cloud-origin`         | MRT cloud origin URL                                          | `https://cloud.mobify.com` |
-| `--json`                 | Output results as JSON                                        | `false`                  |
+| `--json`                 | Output results as JSON                                        | `false`                    |
 
 ### Examples
 
@@ -128,16 +128,13 @@ b2c setup ide vscode-types
 
 # Print TS Server plugin path for LSP-based editors (Neovim, Helix, Zed, etc.)
 b2c setup ide tsserver-plugin --json
-
-# Generate Prophet integration script
-b2c setup ide prophet
 ```
 
 ## b2c setup ide vscode-types
 
 Vendor B2C Commerce Script API TypeScript definitions and write a `jsconfig.json` into the workspace so any IDE that drives `tsserver` (plain VS Code, WebStorm, IntelliJ Ultimate, Neovim, Helix, Zed, Sublime Text) gets `dw/*` IntelliSense, hover docs, and signature help in cartridge JavaScript files.
 
-The B2C DX VS Code extension does not need this command — it injects the same TypeScript Server plugin at runtime without writing files into your repo. Use this command only when you're not running the extension.
+The Salesforce B2C Commerce VS Code extension does not need this command — it injects the same TypeScript Server plugin at runtime without writing files into your repo. Use this command only when you're not running the extension.
 
 ### Usage
 
@@ -147,12 +144,12 @@ b2c setup ide vscode-types [FLAGS]
 
 ### Flags
 
-| Flag             | Description                                                       | Default          |
-| ---------------- | ----------------------------------------------------------------- | ---------------- |
-| `--output`, `-o` | Path for the generated `jsconfig.json` (relative to project root) | `jsconfig.json`  |
-| `--force`, `-f`  | Overwrite output files if they already exist                      | `false`          |
-| `--[no-]copy`    | Copy bundled types into `./.b2c-script-types/`                    | `true`           |
-| `--json`         | Output results as JSON                                            | `false`          |
+| Flag             | Description                                                       | Default         |
+| ---------------- | ----------------------------------------------------------------- | --------------- |
+| `--output`, `-o` | Path for the generated `jsconfig.json` (relative to project root) | `jsconfig.json` |
+| `--force`, `-f`  | Overwrite output files if they already exist                      | `false`         |
+| `--[no-]copy`    | Copy bundled types into `./.b2c-script-types/`                    | `true`          |
+| `--json`         | Output results as JSON                                            | `false`         |
 
 The generated `paths` mappings are written relative to the repo root, so `--output` is only intended for renaming the file itself (e.g., `--output jsconfig.cartridges.json`), not for relocating it into a subdirectory.
 
@@ -174,13 +171,13 @@ b2c setup ide vscode-types --no-copy --force
 The command produces:
 
 - `./.b2c-script-types/types/` — vendored copy of the Script API definitions, version-pinned to the CLI release. Safe to commit.
-- `./jsconfig.json` (or the path passed to `--output`) — TypeScript Language Service configuration mapping `dw/*` to the vendored types. Cartridge-relative requires (`~/cartridge/...`, `*/cartridge/...`) can't be expressed in standalone TypeScript `paths` mappings and will appear unresolved without the B2C DX VS Code extension.
+- `./jsconfig.json` (or the path passed to `--output`) — TypeScript Language Service configuration mapping `dw/*` to the vendored types. Cartridge-relative requires (`~/cartridge/...`, `*/cartridge/...`) can't be expressed in standalone TypeScript `paths` mappings and will appear unresolved without the Salesforce B2C Commerce VS Code extension.
 
 See the [IDE Integration guide](/guide/ide-integration#script-api-intellisense) for editor-specific setup notes (Neovim, Helix, Zed, etc.).
 
 ## b2c setup ide tsserver-plugin
 
-Print absolute paths to the bundled `@salesforce/b2c-script-types` TypeScript Server plugin and types directory. Use this when configuring an LSP-based editor (Neovim, Helix, Zed, Sublime, etc.) to load the plugin via `init_options.plugins[]` — full feature parity with the B2C DX VS Code extension, including cartridge-relative require resolution.
+Print absolute paths to the bundled `@salesforce/b2c-script-types` TypeScript Server plugin and types directory. Use this when configuring an LSP-based editor (Neovim, Helix, Zed, Sublime, etc.) to load the plugin via `init_options.plugins[]` — full feature parity with the Salesforce B2C Commerce VS Code extension, including cartridge-relative require resolution.
 
 The command performs no filesystem writes; it just resolves and prints paths.
 
@@ -218,56 +215,6 @@ b2c setup ide tsserver-plugin --json
 ```
 
 Pass `pluginName` as `name` and `pluginPath` as `location` in your editor's `tsserver` `init_options.plugins[]` entry. The plugin auto-discovers cartridges in the project root and honors `dw.json`'s `cartridges` field for ordering — no host-side wiring needed.
-
-## b2c setup ide prophet
-
-Generate a `dw.js` script for the [Prophet VS Code extension](https://marketplace.visualstudio.com/items?itemName=SqrTT.prophet).
-
-The script runs `b2c setup inspect --json --unmask` at runtime and maps the resolved configuration into a `dw.json`-compatible structure that Prophet can consume.
-
-### Usage
-
-```bash
-b2c setup ide prophet [FLAGS]
-```
-
-### Flags
-
-| Flag             | Description                                | Default |
-| ---------------- | ------------------------------------------ | ------- |
-| `--output`, `-o` | Path for generated script file             | `dw.js` |
-| `--force`, `-f`  | Overwrite output file if it already exists | `false` |
-| `--json`         | Output results as JSON                     | `false` |
-
-### Examples
-
-```bash
-# Generate ./dw.js
-b2c setup ide prophet
-
-# Overwrite existing dw.js
-b2c setup ide prophet --force
-
-# Generate into .vscode folder
-b2c setup ide prophet --output .vscode/dw.js
-
-# Pin generated script to a specific instance context
-b2c setup ide prophet --instance staging
-```
-
-### Output
-
-The command creates a JavaScript file that:
-
-1. Executes `setup inspect --json --unmask`
-2. Reads resolved config values (including plugin-provided sources)
-3. Falls back to loading `dw.json` from `SFCC_CONFIG` or the `dw.js` directory if inspect cannot run
-4. Exports the final object via `module.exports = dwJson`
-5. Emits Prophet-compatible keys such as:
-   - `hostname`, `username`, `password`
-   - `code-version`
-   - `cartridgesPath`, `siteID`, `storefrontPassword` (when present)
-6. Logs diagnostics to both stdout and stderr when resolution fails
 
 ## b2c setup instance list
 
@@ -465,38 +412,38 @@ b2c setup skills [SKILLSET]
 
 ### Arguments
 
-| Argument   | Description                              | Default                |
-| ---------- | ---------------------------------------- | ---------------------- |
+| Argument   | Description                                                             | Default                |
+| ---------- | ----------------------------------------------------------------------- | ---------------------- |
 | `SKILLSET` | Skill set to install: `b2c`, `b2c-cli`, `storefront-next`, or `cap-dev` | Prompted interactively |
 
 ### Flags
 
-| Flag                  | Description                                                                                    | Default     |
-| --------------------- | ---------------------------------------------------------------------------------------------- | ----------- |
-| `--list`, `-l`        | List available skills without installing                                                       | `false`     |
-| `--skill`             | Install specific skill(s) (can be repeated)                                                    |             |
-| `--ide`               | Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, agentforce-vibes, manual | Auto-detect |
-| `--directory`, `-d`   | Custom installation directory (overrides IDE default path)                                     |             |
-| `--global`, `-g`      | Install to user home directory (global scope)                                                  | `false`     |
-| `--update`, `-u`      | Update existing skills (overwrite)                                                             | `false`     |
-| `--version`           | Specific release version                                                                       | `latest`    |
-| `--force`             | Skip confirmation prompts (non-interactive)                                                    | `false`     |
-| `--columns`, `-c`     | Columns to display (comma-separated): name, description, skillSet, hasReferences               |             |
-| `--extended`, `-x`    | Show all columns including extended fields                                                     | `false`     |
-| `--json`              | Output results as JSON                                                                         | `false`     |
+| Flag                | Description                                                                                     | Default     |
+| ------------------- | ----------------------------------------------------------------------------------------------- | ----------- |
+| `--list`, `-l`      | List available skills without installing                                                        | `false`     |
+| `--skill`           | Install specific skill(s) (can be repeated)                                                     |             |
+| `--ide`             | Target IDE(s): claude-code, cursor, windsurf, vscode, codex, opencode, agentforce-vibes, manual | Auto-detect |
+| `--directory`, `-d` | Custom installation directory (overrides IDE default path)                                      |             |
+| `--global`, `-g`    | Install to user home directory (global scope)                                                   | `false`     |
+| `--update`, `-u`    | Update existing skills (overwrite)                                                              | `false`     |
+| `--version`         | Specific release version                                                                        | `latest`    |
+| `--force`           | Skip confirmation prompts (non-interactive)                                                     | `false`     |
+| `--columns`, `-c`   | Columns to display (comma-separated): name, description, skillSet, hasReferences                |             |
+| `--extended`, `-x`  | Show all columns including extended fields                                                      | `false`     |
+| `--json`            | Output results as JSON                                                                          | `false`     |
 
 ### Supported IDEs
 
-| IDE Value          | IDE Name                 | Project Path          | Global Path                                         |
-| ------------------ | ------------------------ | --------------------- | --------------------------------------------------- |
-| `claude-code`      | Claude Code              | `.claude/skills/`     | `~/.claude/skills/`                                 |
-| `cursor`           | Cursor                   | `.cursor/skills/`     | `~/.cursor/skills/`                                 |
-| `windsurf`         | Windsurf                 | `.windsurf/skills/`   | `~/.codeium/windsurf/skills/`                       |
-| `vscode`           | VS Code / GitHub Copilot | `.github/skills/`     | `~/.copilot/skills/`                                |
-| `codex`            | OpenAI Codex CLI         | `.codex/skills/`      | `~/.codex/skills/`                                  |
-| `opencode`         | OpenCode                 | `.opencode/skills/`   | `~/.config/opencode/skills/`                        |
-| `agentforce-vibes` | Agentforce Vibes         | `.a4drules/skills/`   | `~/Library/Application Support/Code/User/globalStorage` (macOS) |
-| `manual`           | Manual                   | `.agents/skills/`     | `~/.agents/skills/`                                 |
+| IDE Value          | IDE Name                 | Project Path        | Global Path                                                     |
+| ------------------ | ------------------------ | ------------------- | --------------------------------------------------------------- |
+| `claude-code`      | Claude Code              | `.claude/skills/`   | `~/.claude/skills/`                                             |
+| `cursor`           | Cursor                   | `.cursor/skills/`   | `~/.cursor/skills/`                                             |
+| `windsurf`         | Windsurf                 | `.windsurf/skills/` | `~/.codeium/windsurf/skills/`                                   |
+| `vscode`           | VS Code / GitHub Copilot | `.github/skills/`   | `~/.copilot/skills/`                                            |
+| `codex`            | OpenAI Codex CLI         | `.codex/skills/`    | `~/.codex/skills/`                                              |
+| `opencode`         | OpenCode                 | `.opencode/skills/` | `~/.config/opencode/skills/`                                    |
+| `agentforce-vibes` | Agentforce Vibes         | `.a4drules/skills/` | `~/Library/Application Support/Code/User/globalStorage` (macOS) |
+| `manual`           | Manual                   | `.agents/skills/`   | `~/.agents/skills/`                                             |
 
 Use `agentforce-vibes` for Salesforce Agentforce for VS Code. Use `manual` for generic installation with a custom `--directory` path.
 
@@ -579,13 +526,13 @@ Use `--ide manual` if you prefer manual installation, or `--ide agentforce-vibes
 
 ### Skill Sets
 
-| Skill Set               | Description                                                         |
-| ----------------------- | ------------------------------------------------------------------- |
-| `b2c`                   | B2C Commerce development patterns and practices                     |
-| `b2c-cli`               | B2C CLI commands and operations                                     |
-| `storefront-next`       | Storefront Next development — routing, components, deployment       |
+| Skill Set               | Description                                                            |
+| ----------------------- | ---------------------------------------------------------------------- |
+| `b2c`                   | B2C Commerce development patterns and practices                        |
+| `b2c-cli`               | B2C CLI commands and operations                                        |
+| `storefront-next`       | Storefront Next development — routing, components, deployment          |
 | `storefront-next-figma` | Storefront Next Figma design-kit workflows (requires Figma MCP server) |
-| `cap-dev`               | Commerce App Package scaffolding, validation, and submission        |
+| `cap-dev`               | Commerce App Package scaffolding, validation, and submission           |
 
 ### Output
 

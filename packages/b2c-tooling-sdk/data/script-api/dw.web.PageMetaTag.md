@@ -6,7 +6,8 @@
 
 Page meta tags are used in HTML documents to provide structured data about a web
 page. They are usually part of the head section. Common tags are for example robots,
-description or social tags like open graph (e.g. 'og:title'). 
+description or social tags like open graph (e.g. 'og:title'), or additionally
+adding json-ld (JSON for linked data) and provides structured data that is easily crawlable. 
 
 
 Page meta tags can be obtained within:
@@ -37,6 +38,7 @@ page meta tag elements.
 | --- | --- |
 | [ID](#id): [String](TopLevel.String.md) `(read-only)` | Returns the page meta tag ID. |
 | [content](#content): [String](TopLevel.String.md) `(read-only)` | Returns the page meta tag content. |
+| [jsonLd](#jsonld): [Boolean](TopLevel.Boolean.md) `(read-only)` | Returns true if the page meta tag type is json-ld (JSON for linked data) and provides  structured data about the page for crawlers, false otherwise. |
 | [name](#name): [Boolean](TopLevel.Boolean.md) `(read-only)` | Returns true if the page meta tag type is name, false otherwise. |
 | [property](#property): [Boolean](TopLevel.Boolean.md) `(read-only)` | Returns true if the page meta tag type is property, false otherwise. |
 | [title](#title): [Boolean](TopLevel.Boolean.md) `(read-only)` | Returns true if the page meta tag type is title, false otherwise. |
@@ -50,6 +52,7 @@ This class does not have a constructor, so you cannot create it directly.
 | --- | --- |
 | [getContent](dw.web.PageMetaTag.md#getcontent)() | Returns the page meta tag content. |
 | [getID](dw.web.PageMetaTag.md#getid)() | Returns the page meta tag ID. |
+| [isJsonLd](dw.web.PageMetaTag.md#isjsonld)() | Returns true if the page meta tag type is json-ld (JSON for linked data) and provides  structured data about the page for crawlers, false otherwise. |
 | [isName](dw.web.PageMetaTag.md#isname)() | Returns true if the page meta tag type is name, false otherwise. |
 | [isProperty](dw.web.PageMetaTag.md#isproperty)() | Returns true if the page meta tag type is property, false otherwise. |
 | [isTitle](dw.web.PageMetaTag.md#istitle)() | Returns true if the page meta tag type is title, false otherwise. |
@@ -69,6 +72,15 @@ This class does not have a constructor, so you cannot create it directly.
 ### content
 - content: [String](TopLevel.String.md) `(read-only)`
   - : Returns the page meta tag content.
+
+
+---
+
+### jsonLd
+- jsonLd: [Boolean](TopLevel.Boolean.md) `(read-only)`
+  - : Returns true if the page meta tag type is json-ld (JSON for linked data) and provides
+      structured data about the page for crawlers, false otherwise.
+
 
 
 ---
@@ -112,6 +124,18 @@ This class does not have a constructor, so you cannot create it directly.
 
     **Returns:**
     - page meta tag ID
+
+
+---
+
+### isJsonLd()
+- isJsonLd(): [Boolean](TopLevel.Boolean.md)
+  - : Returns true if the page meta tag type is json-ld (JSON for linked data) and provides
+      structured data about the page for crawlers, false otherwise.
+
+
+    **Returns:**
+    - true if the page meta tag type is json-ld, false otherwise
 
 
 ---
