@@ -1,0 +1,44 @@
+apiVersion: 1
+
+datasources:
+  # ============================================================================
+  # DEMO MODE: Uses mock-metrics service with synthetic data
+  # ============================================================================
+  - name: B2C Commerce Metrics (Demo)
+    uid: b2c-metrics-demo
+    type: salesforce-b2c-metrics-datasource
+    access: proxy
+    isDefault: true
+    editable: true
+    jsonData:
+      # Mock service URLs (point to mock-metrics container)
+      apiUrl: "http://mock-metrics:8080/observability/metrics/v1"
+      tokenUrl: "http://mock-metrics:8080/dwsso/oauth2/access_token"
+      # Demo credentials (accepted by mock)
+      shortCode: "demo"
+      tenantId: "f_ecom_bdpx_prd"
+      clientId: "demo"
+    secureJsonData:
+      clientSecret: "demo"
+    version: 1
+
+  # ============================================================================
+  # PRODUCTION MODE (commented out - uncomment and configure for real tenant)
+  # ============================================================================
+  # - name: B2C Commerce Metrics (Production)
+  #   uid: b2c-metrics-prod
+  #   type: salesforce-b2c-metrics-datasource
+  #   access: proxy
+  #   isDefault: false
+  #   editable: true
+  #   jsonData:
+  #     # Production URLs (leave empty to derive from shortCode/accountManagerHost)
+  #     # apiUrl: ""  # Empty → https://{shortCode}.api.commercecloud.salesforce.com/observability/metrics/v1
+  #     # tokenUrl: ""  # Empty → https://{accountManagerHost}/dwsso/oauth2/access_token
+  #     shortCode: "${B2C_SHORT_CODE}"  # e.g., "zzrj-001"
+  #     tenantId: "${B2C_TENANT_ID}"    # e.g., "f_ecom_zzrj_prd"
+  #     clientId: "${B2C_CLIENT_ID}"    # API Client ID
+  #     accountManagerHost: "account.demandware.com"  # Optional (defaults to account.demandware.com)
+  #   secureJsonData:
+  #     clientSecret: "${B2C_CLIENT_SECRET}"  # API Client Secret (encrypted)
+  #   version: 1

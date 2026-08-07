@@ -5,6 +5,8 @@ This is a monorepo project with the following packages:
 - `./packages/b2c-tooling-sdk` - the SDK/library for B2C Commerce operations; supports the CLI and can be used standalone
 - `./packages/b2c-dx-mcp` - Model Context Protocol server; also built with oclif
 - `./packages/b2c-vs-extension` - VS Code extension (not published to npm; packaged as VSIX and versioned via git tags)
+- `./packages/b2c-grafana-datasource` - Grafana datasource plugins (Metrics + CIP) with Go backend; versioned via git tags
+- `./packages/b2c-tooling-sdk-go` - Go SDK for Metrics API and CIP; standalone, used by Grafana plugins; versioned via git tags
 - `./docs` - documentation site (private `@salesforce/b2c-dx-docs` workspace package; not published to npm)
 
 ## Common Commands
@@ -24,6 +26,29 @@ pnpm --filter @salesforce/b2c-tooling-sdk run build
 pnpm --filter @salesforce/b2c-cli run dev
 # or using convenience script
 ./cli
+```
+
+## Grafana Plugin / Go SDK Development
+
+The Grafana plugin and Go SDK are separate from the Node.js/TypeScript packages:
+
+```bash
+# Build Grafana plugin (both datasources)
+cd packages/b2c-grafana-datasource
+npm run build              # Frontend + both backend binaries
+go build -o dist/gpx_b2c_metrics ./pkg
+go build -o dist/gpx_b2c_cip ./pkg/cip
+
+# Test Go SDK
+cd packages/b2c-tooling-sdk-go
+go test ./...
+go test -cover ./...
+
+# Run Grafana demo (Docker-based)
+cd packages/b2c-grafana-datasource
+make demo                  # Mock data, no credentials
+make real INSTANCE=bdpx-prd  # Live B2C tenant via b2c CLI
+make down                  # Stop demo
 ```
 
 ## Commands for Coding Agents

@@ -1,0 +1,51 @@
+apiVersion: 1
+
+# ============================================================================
+# REAL MODE: connects to the live SCAPI Observability Metrics API.
+# Credentials are injected as environment variables at `docker compose up` time
+# (see Makefile `real` target, which sources them from the b2c CLI keychain —
+# no secrets are written to disk). Grafana interpolates ${VAR} from the
+# container environment when provisioning this datasource.
+#
+# Same uid as the demo datasource (b2c-metrics-demo) so the existing demo
+# dashboard renders real data unchanged.
+# ============================================================================
+datasources:
+  - name: B2C Commerce Metrics (Real)
+    uid: b2c-metrics-demo
+    type: salesforce-b2c-metrics-datasource
+    access: proxy
+    isDefault: true
+    editable: true
+    jsonData:
+      # Empty apiUrl/tokenUrl → the backend derives the real production URLs:
+      #   https://{shortCode}.api.commercecloud.salesforce.com/observability/metrics/v1
+      #   https://{accountManagerHost}/dwsso/oauth2/access_token
+      apiUrl: ""
+      tokenUrl: ""
+      shortCode: "${B2C_SHORT_CODE}"
+      tenantId: "${B2C_TENANT_ID}"
+      clientId: "${B2C_CLIENT_ID}"
+      accountManagerHost: "${B2C_ACCOUNT_MANAGER_HOST}"
+    secureJsonData:
+      clientSecret: "${B2C_CLIENT_SECRET}"
+    version: 1
+
+  # ============================================================================
+  # CIP (Commerce Intelligence Platform) — raw Calcite SQL over the analytics
+  # warehouse. Real-mode only (Avatica/protobuf can't be mocked like REST).
+  # Shares the same OAuth client; instance = tenant id (e.g. bdpx_prd).
+  # ============================================================================
+  - name: B2C Commerce Intelligence (CIP)
+    uid: b2c-cip
+    type: salesforce-b2c-cip-datasource
+    access: proxy
+    isDefault: false
+    editable: true
+    jsonData:
+      instance: "${B2C_TENANT_ID}"
+      clientId: "${B2C_CLIENT_ID}"
+      accountManagerHost: "${B2C_ACCOUNT_MANAGER_HOST}"
+    secureJsonData:
+      clientSecret: "${B2C_CLIENT_SECRET}"
+    version: 1

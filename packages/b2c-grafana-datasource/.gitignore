@@ -1,0 +1,24 @@
+# Build outputs
+dist/
+
+# Go binaries
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Demo binaries
+demo/mock-metrics/mock-metrics
+
+# Node.js
+node_modules/
+*.log
+*.boot.log
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

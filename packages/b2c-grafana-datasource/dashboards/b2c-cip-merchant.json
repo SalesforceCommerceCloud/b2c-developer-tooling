@@ -1,0 +1,608 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Revenue",
+      "type": "stat",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "Standardized revenue over the selected range (sales-analytics)",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT SUM(ss.std_revenue) FROM warehouse.ccdw_aggr_sales_summary ss JOIN warehouse.ccdw_dim_site s ON s.site_id=ss.site_id WHERE $__timeFilter(ss.submit_date) AND s.nsite_id='$site'",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Orders",
+      "type": "stat",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT SUM(ss.num_orders) FROM warehouse.ccdw_aggr_sales_summary ss JOIN warehouse.ccdw_dim_site s ON s.site_id=ss.site_id WHERE $__timeFilter(ss.submit_date) AND s.nsite_id='$site'",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Avg Order Value",
+      "type": "stat",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT CAST(SUM(ss.std_revenue)/NULLIF(SUM(ss.num_orders),0) AS DECIMAL(15,2)) FROM warehouse.ccdw_aggr_sales_summary ss JOIN warehouse.ccdw_dim_site s ON s.site_id=ss.site_id WHERE $__timeFilter(ss.submit_date) AND s.nsite_id='$site'",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Units",
+      "type": "stat",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT SUM(ss.num_units) FROM warehouse.ccdw_aggr_sales_summary ss JOIN warehouse.ccdw_dim_site s ON s.site_id=ss.site_id WHERE $__timeFilter(ss.submit_date) AND s.nsite_id='$site'",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 5,
+      "title": "Daily Revenue & Orders",
+      "type": "timeseries",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "sales-analytics: daily std revenue (left) and order count (right axis)",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT $__timeGroupAlias(ss.submit_date, '1d'), SUM(ss.std_revenue) AS revenue, SUM(ss.num_orders) AS orders FROM warehouse.ccdw_aggr_sales_summary ss JOIN warehouse.ccdw_dim_site s ON s.site_id=ss.site_id WHERE $__timeFilter(ss.submit_date) AND s.nsite_id='$site' GROUP BY 1 ORDER BY 1",
+          "format": 0
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisPlacement": "auto"
+          },
+          "mappings": [],
+          "unit": "currencyUSD"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "orders"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Revenue by Channel / Device",
+      "type": "table",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "revenue-by-channel",
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT bc.order_channel, ss.device_class_code AS device, SUM(ss.std_revenue) AS revenue, SUM(ss.num_orders) AS orders, CAST(SUM(ss.std_revenue)/NULLIF(SUM(ss.num_orders),0) AS DECIMAL(15,2)) AS aov FROM warehouse.ccdw_aggr_sales_summary ss JOIN warehouse.ccdw_dim_site s ON s.site_id=ss.site_id JOIN warehouse.ccdw_dim_business_channel bc ON bc.business_channel_id=ss.business_channel_id WHERE $__timeFilter(ss.submit_date) AND s.nsite_id='$site' GROUP BY bc.order_channel, ss.device_class_code ORDER BY revenue DESC",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Payment Methods",
+      "type": "table",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "payment-method-performance",
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT pm.display_name AS payment_method, SUM(pss.num_payments) AS payments, SUM(pss.num_orders) AS orders, SUM(pss.std_captured_amount) AS captured FROM warehouse.ccdw_aggr_payment_sales_summary pss JOIN warehouse.ccdw_dim_payment_method pm ON pm.payment_method_id=pss.payment_method_id JOIN warehouse.ccdw_dim_site s ON s.site_id=pss.site_id WHERE $__timeFilter(pss.submit_date) AND s.nsite_id='$site' GROUP BY pm.display_name ORDER BY captured DESC",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Top Selling Products",
+      "type": "table",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "top-selling-products",
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 21
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT p.product_display_name AS product, SUM(pss.num_units) AS units, SUM(pss.std_revenue) AS revenue, SUM(pss.num_orders) AS orders FROM warehouse.ccdw_aggr_product_sales_summary pss JOIN warehouse.ccdw_dim_product p ON p.product_id=pss.product_id JOIN warehouse.ccdw_dim_site s ON s.site_id=pss.site_id WHERE $__timeFilter(pss.submit_date) AND s.nsite_id='$site' GROUP BY p.product_display_name ORDER BY revenue DESC LIMIT 25",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Top Converting Searches",
+      "type": "table",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "search-query-performance (has_results=true)",
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 21
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT LOWER(sc.query) AS query, SUM(sc.num_searches) AS searches, SUM(sc.num_orders) AS orders, SUM(sc.std_revenue) AS revenue FROM warehouse.ccdw_aggr_search_conversion sc JOIN warehouse.ccdw_dim_site s ON s.site_id=sc.site_id WHERE $__timeFilter(sc.search_date) AND s.nsite_id='$site' AND sc.has_results=TRUE GROUP BY LOWER(sc.query) ORDER BY revenue DESC LIMIT 25",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "New Registrations by Device",
+      "type": "timeseries",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "customer-registration-trends",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 30
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT $__timeGroupAlias(r.registration_date, '1d'), r.device_class_code AS device, SUM(r.num_registrations) AS registrations FROM warehouse.ccdw_aggr_registration r JOIN warehouse.ccdw_dim_site s ON s.site_id=r.site_id WHERE $__timeFilter(r.registration_date) AND s.nsite_id='$site' GROUP BY 1, r.device_class_code ORDER BY 1",
+          "format": 0
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisPlacement": "auto"
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Top Traffic Referrers",
+      "type": "table",
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "description": "top-referrers",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 30
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT vr.referrer_medium AS medium, vr.referrer_source AS source, SUM(vr.num_visits) AS visits FROM warehouse.ccdw_aggr_visit_referrer vr JOIN warehouse.ccdw_dim_site s ON s.site_id=vr.site_id WHERE $__timeFilter(vr.visit_date) AND s.nsite_id='$site' GROUP BY vr.referrer_medium, vr.referrer_source ORDER BY visits DESC LIMIT 20",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      }
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 39,
+  "tags": [
+    "b2c",
+    "cip",
+    "merchant"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "site",
+        "label": "Site",
+        "type": "query",
+        "datasource": {
+          "type": "salesforce-b2c-cip-datasource",
+          "uid": "b2c-cip"
+        },
+        "query": {
+          "query": "sites"
+        },
+        "definition": "sites",
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "current": {
+          "text": "Sites-NTOSFRA-Site",
+          "value": "Sites-NTOSFRA-Site",
+          "selected": true
+        },
+        "options": [],
+        "description": "Storefront nsite_id, populated from CIP (distinct ccdw_dim_site.nsite_id).",
+        "hide": 0
+      }
+    ]
+  },
+  "time": {
+    "from": "now-90d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "B2C Commerce \u2014 Merchant Analytics (CIP)",
+  "uid": "b2c-cip-merchant",
+  "version": 1,
+  "weekStart": ""
+}
