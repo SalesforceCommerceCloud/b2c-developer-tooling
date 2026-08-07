@@ -6,6 +6,10 @@ description: Set up authentication for the B2C CLI including Account Manager API
 
 This guide covers setting up authentication for the B2C CLI, including Account Manager API clients, OCAPI permissions, and WebDAV access.
 
+::: tip Prefer a guided path?
+The [Quickstart](/quickstart/) picks the minimum auth + permissions you need for a specific task (e.g. *deploy cartridge code*, *run jobs*, *work with Page Designer content*) and produces a copy-pasteable `dw.json` plus a verify command.
+:::
+
 ## Overview
 
 The CLI uses different authentication mechanisms depending on the operation:
