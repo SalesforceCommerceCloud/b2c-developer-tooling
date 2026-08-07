@@ -1,5 +1,13 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.7.1
+
+### Patch Changes
+
+- [#615](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/615) [`1f553b3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f553b3e26c57909ce654b61e25f4db537111312) - Added ordered, idempotent site archive import sets with verified WebDAV receipts, retry-until-receipted behavior, and serialized concurrent runners. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#609](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/609) [`af06784`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/af0678464059c66748ab9bd20075dab5c5707842) - Fix six cross-pack skill links in `b2c-scapi-admin` and `b2c-scapi-shopper` that were one directory level short and resolved to paths that do not exist. (Thanks [@dkatashev](https://github.com/dkatashev)!)
+
 ## 1.7.0
 
 ### Minor Changes

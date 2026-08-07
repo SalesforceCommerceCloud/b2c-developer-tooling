@@ -1,5 +1,13 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.18
+
+### Patch Changes
+
+- [#615](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/615) [`1f553b3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f553b3e26c57909ce654b61e25f4db537111312) - Added ordered, idempotent site archive import sets with verified WebDAV receipts, retry-until-receipted behavior, and serialized concurrent runners. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#615](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/615) [`1f553b3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f553b3e26c57909ce654b61e25f4db537111312) - Added the data migrations plugin to the third-party plugins guide so users can discover idempotent, version-controlled IMPEX and scripted deployments. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.17
 
 ### Patch Changes
