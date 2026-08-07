@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
+import {buildSandboxSettings, getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
 import {createOdsClient} from '@salesforce/b2c-tooling-sdk/clients';
 import * as vscode from 'vscode';
 import {registerSafeCommand, runWithSafety} from '../safety.js';
@@ -113,8 +113,13 @@ export function registerSandboxCommands(
       async () => {
         try {
           const odsClient = await getOdsClientFromConfig(configProvider);
+          // Grant the configured client the default OCAPI/WebDAV permissions so
+          // it can deploy code and run jobs against the new sandbox, matching the
+          // behavior of the CLI's `sandbox create` command.
+          const clientId = configProvider.getConfigProvider().getConfig()?.values.clientId;
+          const settings = buildSandboxSettings({clientId});
           const result = await odsClient.POST('/sandboxes', {
-            body: {realm: realm!, ttl, analyticsEnabled: false},
+            body: {realm: realm!, ttl, analyticsEnabled: false, settings},
           });
           if (result.error) {
             vscode.window.showErrorMessage(
