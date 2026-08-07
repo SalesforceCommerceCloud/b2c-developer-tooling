@@ -48,6 +48,7 @@ import type {Logger} from '../logging/index.js';
 export type B2COperationType =
   | 'job:run'
   | 'job:import'
+  | 'job:import-set'
   | 'job:export'
   | 'code:deploy'
   | 'code:download'

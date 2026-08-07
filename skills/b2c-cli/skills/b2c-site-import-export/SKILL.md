@@ -1,6 +1,6 @@
 ---
 name: b2c-site-import-export
-description: Import and export site archives containing metadata XML on B2C Commerce instances using the b2c CLI. Use this skill whenever the user needs to import a site archive directory or zip to an instance, export site configuration as XML, structure a site archive folder (sites/site_template/meta/), write or debug metadata XML files (system-objecttype-extensions.xml, custom-objecttype-definitions.xml, preferences.xml), or push custom attributes, custom object types, or site preferences to a sandbox via site import. Also use when an import job fails with schema validation errors — even if they just say "push metadata to the sandbox" or "import my XML files".
+description: Import and export site archives containing metadata XML on B2C Commerce instances using the b2c CLI. Use this skill whenever the user needs to import a site archive directory or zip to an instance, apply an ordered set of archives idempotently, export site configuration as XML, structure a site archive folder (sites/site_template/meta/), write or debug metadata XML files (system-objecttype-extensions.xml, custom-objecttype-definitions.xml, preferences.xml), or push custom attributes, custom object types, or site preferences to a sandbox via site import. Also use when an import job fails with schema validation errors — even if they just say "push metadata to the sandbox" or "import my XML files".
 ---
 
 # Site Import/Export Skill
@@ -42,6 +42,49 @@ b2c job import ./my-site-data --show-log
 # Import an archive that already exists on the instance (in Impex/src/instance/)
 b2c job import existing-archive.zip --remote
 ```
+
+### Apply an Ordered, Idempotent Import Set
+
+Use `job import-set` when a directory contains multiple site archives that must be applied in order and skipped after the instance records their successful import. This section is the canonical import-set workflow.
+
+Each immediate child directory or `.zip` file is one item. Hidden entries and other files are ignored, and item names are sorted lexically:
+
+```text
+migrations/
+├── 20260801T140000-add-preferences/
+│   ├── meta/
+│   └── sites/
+├── 20260802T091500-seed-content.zip
+└── README.md                       # ignored
+```
+
+Name every item `YYYYMMDDTHHmmss-description`, using UTC for cross-time-zone teams. The timestamp supplies ordering and makes receipt-name collisions across projects extremely unlikely.
+
+```bash
+# Show pending and already-applied items without writing anything
+b2c job import-set --dry-run
+
+# Apply the default ./migrations directory
+b2c job import-set
+
+# Apply a different directory
+b2c job import-set ./data-migrations
+
+# Keep uploaded archives for inspection
+b2c job import-set --keep-archive
+```
+
+Important semantics:
+
+- The CLI writes a durable receipt on the target instance after each successful import. Receipt identity is based only on the item name, so that name is skipped on later runs, including runs from other machines.
+- A missing or invalid receipt always causes another import. If the import succeeds and the process crashes before its receipt is written and verified, the next run imports that item again. Make archives safe to reapply.
+- Never edit an item after it has a valid receipt. Instances that already applied that name continue to skip it; add a new, later-sorting item for the next change.
+- Projects sharing an instance-wide receipt namespace must use distinct item names. UTC timestamps plus descriptive suffixes make accidental cross-project collisions unlikely.
+- Only one runner applies a given history at a time. Waiting runners re-check receipts after acquiring the lock.
+- A lock becomes stale after 30 minutes by default. Adjust this with `--stale-lock-seconds`; use `--break-lock` only after confirming the old owner has stopped.
+- `--timeout` applies to each archive import, `--poll-interval` controls job polling, and `--lock-poll-interval` controls lock waiting.
+
+The default directory is `./migrations`. Receipt and lock identity use the fixed instance-wide `migrations` namespace, regardless of the local path. Most users should omit `--set-id`; use it only when intentionally creating an independent history or preserving a legacy namespace.
 
 ### Import Archives Larger Than the Instance Limit
 
@@ -264,7 +307,7 @@ b2c job import ./my-data --show-log
 1. **Test imports on sandbox first** before importing to staging/production
 2. Import waits for completion by default — use `--no-wait` only when you want to return immediately
 3. **Use `--show-log`** to debug failed imports
-4. **Keep archives organized** by feature or change type
+4. **Keep archives organized** by feature or change type; use `job import-set` when a growing ordered set should be safely repeatable
 5. **Version control your metadata** XML files
 
 ### Configuring External Services
@@ -290,4 +333,4 @@ Where `services-folder/services.xml` follows the patterns in the `b2c:b2c-webser
 
 - `b2c:b2c-webservices` - Service configurations (HTTP, FTP, SOAP), services.xml format
 - `b2c:b2c-metadata` - System object extensions and custom object definitions
-- `b2c-cli:b2c-job` - Running jobs and monitoring import status
+- `b2c-cli:b2c-job` - Running and monitoring jobs, including individual archive imports
