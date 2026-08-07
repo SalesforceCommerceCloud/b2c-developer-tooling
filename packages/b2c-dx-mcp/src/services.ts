@@ -284,6 +284,19 @@ export class Services {
   }
 
   /**
+   * Get the resolved configuration (values, sources, warnings).
+   *
+   * Exposed for the `config_inspect` tool so agents can see the effective,
+   * source-attributed configuration the server resolved. Callers displaying
+   * these values must redact secrets (see `redactConfigValues`).
+   *
+   * @returns The resolved B2C configuration
+   */
+  public getResolvedConfig(): ResolvedB2CConfig {
+    return this.resolvedConfig;
+  }
+
+  /**
    * Get SCAPI Schemas client for discovering available SCAPI APIs.
    * Requires shortCode, tenantId, and OAuth credentials to be configured.
    *
@@ -399,16 +412,51 @@ export class Services {
   }
 
   /**
+   * Resolve the effective project directory for a tool call, reporting which
+   * source it came from.
+   *
+   * MCP clients disagree on the working directory a stdio server is spawned
+   * with (Claude Code / Cursor often use the user's home directory rather than
+   * the open project — see https://agent-plugins.org/plugin-authors/mcp-servers),
+   * so the resolved value is deliberately explicit. Precedence:
+   *
+   *   1. `override` — a per-call `projectDirectory` tool argument (highest)
+   *   2. `projectDirectory` from `--project-directory` / `SFCC_PROJECT_DIRECTORY`
+   *   3. `process.cwd()` (fallback; unreliable across clients)
+   *
+   * Tools should surface the returned `{path, source}` in their output so the
+   * agent can see which directory was used when it did not pass one explicitly.
+   *
+   * @param override - Optional explicit project directory from a tool argument
+   * @returns The absolute project directory and the source it was resolved from
+   */
+  public resolveProjectDirectory(override?: string): {path: string; source: 'argument' | 'config' | 'cwd'} {
+    if (override) {
+      return {path: path.resolve(override), source: 'argument'};
+    }
+    const configured = this.resolvedConfig.values.projectDirectory;
+    if (configured) {
+      return {path: path.resolve(configured), source: 'config'};
+    }
+    return {path: process.cwd(), source: 'cwd'};
+  }
+
+  /**
    * Resolve a path relative to the project directory.
    * If path is not supplied, returns the project directory.
    * If path is absolute, returns it as-is.
    * If path is relative, resolves it relative to the project directory.
    *
+   * An optional explicit project-directory override (typically a per-call
+   * `projectDirectory` tool argument) takes precedence over the configured
+   * project directory and cwd — see {@link Services.resolveProjectDirectory}.
+   *
    * @param pathArg - Optional path to resolve
+   * @param projectDirectoryOverride - Optional explicit project directory to resolve against
    * @returns Resolved absolute path
    */
-  public resolveWithProjectDirectory(pathArg?: string): string {
-    const projectDir = this.resolvedConfig.values.projectDirectory ?? process.cwd();
+  public resolveWithProjectDirectory(pathArg?: string, projectDirectoryOverride?: string): string {
+    const projectDir = this.resolveProjectDirectory(projectDirectoryOverride).path;
     if (!pathArg) {
       return projectDir;
     }
