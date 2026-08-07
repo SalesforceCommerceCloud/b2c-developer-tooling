@@ -140,6 +140,7 @@ describe('operations/cap/validate', () => {
           );
           fs.mkdirSync(siteCartridgeDir, {recursive: true});
           fs.writeFileSync(path.join(siteCartridgeDir, 'MyController.js'), '// controller');
+          fs.writeFileSync(path.join(dir, 'cartridges', 'site_cartridges', 'int_myapp', '.project'), '');
         },
         async (dir) => {
           const result = await validateCap(dir);
@@ -156,6 +157,7 @@ describe('operations/cap/validate', () => {
           const pipelineDir = path.join(dir, 'cartridges', 'site_cartridges', 'int_myapp', 'cartridge', 'pipeline');
           fs.mkdirSync(pipelineDir, {recursive: true});
           fs.writeFileSync(path.join(pipelineDir, 'Start.xml'), '<pipeline/>');
+          fs.writeFileSync(path.join(dir, 'cartridges', 'site_cartridges', 'int_myapp', '.project'), '');
         },
         async (dir) => {
           const result = await validateCap(dir);
@@ -172,6 +174,7 @@ describe('operations/cap/validate', () => {
           const cartDir = path.join(dir, 'cartridges', 'site_cartridges', 'int_myapp', 'cartridge');
           fs.mkdirSync(cartDir, {recursive: true});
           fs.writeFileSync(path.join(cartDir, 'Start.ds'), '<pipeline/>');
+          fs.writeFileSync(path.join(dir, 'cartridges', 'site_cartridges', 'int_myapp', '.project'), '');
         },
         async (dir) => {
           const result = await validateCap(dir);
@@ -221,6 +224,79 @@ describe('operations/cap/validate', () => {
       );
     });
 
+    it('should error when a site cartridge is missing .project', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          const cartridgeDir = path.join(dir, 'cartridges', 'site_cartridges', 'int_myapp', 'cartridge');
+          fs.mkdirSync(cartridgeDir, {recursive: true});
+          fs.writeFileSync(path.join(cartridgeDir, 'index.js'), '// noop');
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.valid).to.be.false;
+          expect(result.errors).to.include('Cartridge missing .project file: site_cartridges/int_myapp');
+        },
+      );
+    });
+
+    it('should error when a bm cartridge is missing .project', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          const cartridgeDir = path.join(dir, 'cartridges', 'bm_cartridges', 'bm_myapp', 'cartridge');
+          fs.mkdirSync(cartridgeDir, {recursive: true});
+          fs.writeFileSync(path.join(cartridgeDir, 'index.js'), '// noop');
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.valid).to.be.false;
+          expect(result.errors).to.include('Cartridge missing .project file: bm_cartridges/bm_myapp');
+        },
+      );
+    });
+
+    it('should pass when a cartridge has an empty .project file', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          const cartridgeRoot = path.join(dir, 'cartridges', 'site_cartridges', 'int_myapp');
+          fs.mkdirSync(path.join(cartridgeRoot, 'cartridge'), {recursive: true});
+          fs.writeFileSync(path.join(cartridgeRoot, '.project'), '');
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.errors.some((e) => e.includes('missing .project'))).to.be.false;
+        },
+      );
+    });
+
+    it('should pass when a cartridge has a full Eclipse XML .project file', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          const cartridgeRoot = path.join(dir, 'cartridges', 'site_cartridges', 'int_myapp');
+          fs.mkdirSync(path.join(cartridgeRoot, 'cartridge'), {recursive: true});
+          const eclipseProjectXml = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<projectDescription>',
+            '\t<name>int_myapp</name>',
+            '\t<comment></comment>',
+            '\t<projects></projects>',
+            '\t<buildSpec></buildSpec>',
+            '\t<natures></natures>',
+            '</projectDescription>',
+            '',
+          ].join('\n');
+          fs.writeFileSync(path.join(cartridgeRoot, '.project'), eclipseProjectXml);
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.errors.some((e) => e.includes('missing .project'))).to.be.false;
+        },
+      );
+    });
+
     it('should allow controllers in bm_cartridges', async () => {
       await withTempCap(
         (dir) => {
@@ -228,6 +304,7 @@ describe('operations/cap/validate', () => {
           const bmControllers = path.join(dir, 'cartridges', 'bm_cartridges', 'bm_myapp', 'cartridge', 'controllers');
           fs.mkdirSync(bmControllers, {recursive: true});
           fs.writeFileSync(path.join(bmControllers, 'BM_Controller.js'), '// bm controller');
+          fs.writeFileSync(path.join(dir, 'cartridges', 'bm_cartridges', 'bm_myapp', '.project'), '');
         },
         async (dir) => {
           const result = await validateCap(dir);
