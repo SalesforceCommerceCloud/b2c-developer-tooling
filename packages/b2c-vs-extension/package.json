@@ -2093,18 +2093,6 @@
           "when": "false"
         },
         {
-          "command": "b2c-dx.sandbox.start",
-          "when": "false"
-        },
-        {
-          "command": "b2c-dx.sandbox.stop",
-          "when": "false"
-        },
-        {
-          "command": "b2c-dx.sandbox.restart",
-          "when": "false"
-        },
-        {
           "command": "b2c-dx.sandbox.viewDetails",
           "when": "false"
         },
