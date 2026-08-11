@@ -15,7 +15,7 @@ For **Account Manager** user/role/client management (cross-instance, scoped to t
 
 `bm users` (list, get, portable search, update, delete) and `bm roles` (all subcommands including permissions) run over the SCAPI Merchant Users / Merchant Roles APIs. Configure `shortCode`, `tenantId`, and the `sfcc.users(.rw)` / `sfcc.roles(.rw)` scopes to use SCAPI. Search is implemented by filtering the paginated SCAPI user listing.
 
-OCAPI-only operations (no SCAPI equivalent, unavailable on OCAPI-disabled instances): raw `bm users search --query` JSON, `bm whoami`, and `bm access-key *`.
+OCAPI-only operations as of B2C Commerce release 26.8 (no current live SCAPI equivalent, unavailable on OCAPI-disabled instances): raw `bm users search --query` JSON, `bm whoami`, and `bm access-key *`. `auto` uses the temporary OCAPI compatibility path. Explicit SCAPI mode fails before contacting OCAPI and directs the user to `--api-backend ocapi` until support becomes available.
 
 OCAPI is deprecated and disabled on newer instances. `--api-backend auto` (the default) falls back on safe SCAPI capability/auth/request rejections; force a backend with `--api-backend scapi|ocapi` if needed. SCAPI updates `disabled` by reading the current user and preserving its writable fields through PUT because PATCH omits that field.
 
@@ -23,7 +23,7 @@ OCAPI is deprecated and disabled on newer instances. `--api-backend auto` (the d
 
 The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables, `dw.json` in the current or parent directories, `~/.mobify`, `package.json`, and configuration plugins. **Flags like `--server`, `--client-id`, and `--client-secret` are usually unnecessary** — only pass them to override what's auto-detected. Run `b2c setup inspect` to see the resolved configuration and which source provided each value. For precedence and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
-SCAPI currently requires client credentials or JWT Bearer; it does not support browser-based user auth. User auth continues to work through OCAPI and WebDAV, and `auto` selects OCAPI for that flow. A handful of OCAPI endpoints require a _real BM user identity_ and default to user auth.
+As of release 26.8, SCAPI Admin APIs require client credentials or JWT Bearer and do not support browser-based user auth. User auth continues to work through OCAPI and WebDAV, and `auto` selects OCAPI for that flow. Explicit SCAPI fails with actionable guidance. A handful of OCAPI endpoints require a _real BM user identity_ and default to user auth.
 
 | Command group                                  | Default auth                        | Why                                                                                          |
 | ---------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------- |

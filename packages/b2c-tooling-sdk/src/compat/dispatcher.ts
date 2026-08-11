@@ -50,7 +50,7 @@
  * @module compat/dispatcher
  */
 import {getLogger} from '../logging/logger.js';
-import {isFallbackTrigger, type ApiBackendPreference} from '../clients/scapi-backend-utils.js';
+import {isFallbackTrigger, scapiUnavailableMessage, type ApiBackendPreference} from '../clients/scapi-backend-utils.js';
 
 export type {ApiBackendPreference};
 
@@ -103,10 +103,7 @@ export class BackendDispatcher<S> {
     if (probe !== undefined) this.opsCache = probe;
 
     if (preference === 'scapi' && !hasScapi) {
-      throw new Error(
-        `${domainName} SCAPI backend requires shortCode, tenantId, and OAuth credentials. ` +
-          `Configure them in dw.json or set apiBackend to ocapi.`,
-      );
+      throw new Error(scapiUnavailableMessage(domainName));
     }
     if (preference === 'scapi') this.resolved = 'scapi';
     if (preference === 'ocapi') this.resolved = 'ocapi';

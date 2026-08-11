@@ -14,15 +14,11 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import type {SchemaEntry} from './api-browser-tree-provider.js';
+import {resolveApiBrowserTenantId} from './tenant.js';
 
 type SlasClientEntry = SlasComponents['schemas']['Client'];
 
 type ApiType = 'Admin' | 'Shopper';
-
-function deriveTenantId(hostname: unknown): string {
-  const firstPart = hostname && typeof hostname === 'string' ? (hostname.split('.')[0] ?? '') : '';
-  return firstPart ? firstPart.replace(/-/g, '_') : '';
-}
 
 /**
  * Pre-fill default values for known parameters (e.g. organizationId, siteId)
@@ -348,7 +344,7 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     }
 
     // Derive organizationId and pre-fill it in the spec
-    const tenantId = deriveTenantId(config.values.hostname);
+    const tenantId = resolveApiBrowserTenantId(config.values);
     const organizationId = tenantId ? toOrganizationId(tenantId) : '';
 
     // Override servers to point to the correct base URL
@@ -445,8 +441,8 @@ export class SwaggerWebviewManager implements vscode.Disposable {
       const spec = await vscode.window.withProgress(
         {location: vscode.ProgressLocation.Notification, title: `Loading ${schema.apiName} spec...`},
         async () => {
-          const tenantId = deriveTenantId(config.values.hostname);
-          if (!tenantId) throw new Error('Could not derive tenant ID from hostname.');
+          const tenantId = resolveApiBrowserTenantId(config.values);
+          if (!tenantId) throw new Error('Tenant ID not found. Set tenant-id in dw.json.');
 
           const oauthOptions = await this.configProvider.getImplicitAuthOptions();
           const oauthStrategy = config.createOAuth(oauthOptions);
@@ -638,7 +634,7 @@ export class SwaggerWebviewManager implements vscode.Disposable {
 
     if (!slasClientId || !siteId) return null;
 
-    const tenantId = deriveTenantId(config.values.hostname);
+    const tenantId = resolveApiBrowserTenantId(config.values);
     if (!tenantId) return null;
 
     const tokenResponse = await getGuestToken({
@@ -661,7 +657,7 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     config: ResolvedB2CConfig,
     shortCode: string,
   ): Promise<{clientId: string; siteId?: string; redirectUri?: string} | null> {
-    const tenantId = deriveTenantId(config.values.hostname);
+    const tenantId = resolveApiBrowserTenantId(config.values);
     if (!tenantId) return null;
 
     try {

@@ -238,7 +238,7 @@ Job commands run over SCAPI. Configure `shortCode`, `tenantId`, and the SCAPI sc
 
 OCAPI is deprecated and disabled on newer instances. `--api-backend auto` (the default) falls back to the OCAPI Data API on safe SCAPI capability/auth/request rejections; force a backend with `--api-backend scapi|ocapi`, dw.json `"api-backend": "scapi"`, or `SFCC_API_BACKEND=scapi`.
 
-Stopping a running execution has no equivalent operation in the current SCAPI Jobs schema. Use the temporary explicit OCAPI compatibility path for cancellation; SCAPI `DELETE` removes an execution record and is not used as a substitute.
+SCAPI `DELETE` removes a completed execution record; it does not cancel a running job. The CLI does not expose job cancellation because the underlying job APIs do not provide that operation.
 
 > **Note:** `job import` and `job export` trigger the site-archive system jobs and transfer archive files over WebDAV. The job trigger honors `--api-backend`: in `auto` mode it runs over SCAPI (needs `sfcc.jobs.rw`) with OCAPI fallback if the SCAPI start is rejected. The archive transfer always uses WebDAV.
 

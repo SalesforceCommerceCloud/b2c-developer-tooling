@@ -7,6 +7,7 @@ import {expect} from 'chai';
 import {ImplicitOAuthStrategy, PkceOAuthStrategy} from '../../src/auth/index.js';
 import {createFallbackBackend} from '../../src/clients/scapi-fallback-backend.js';
 import {
+  assertOcapiCompatibilityAllowed,
   ScapiCapabilityUnsupportedError,
   ScapiRequestError,
   ScapiUserAuthUnsupportedError,
@@ -37,9 +38,26 @@ describe('SCAPI Admin authentication guard', () => {
     new ImplicitOAuthStrategy({clientId: 'public-client', persistSession: false}),
   ]) {
     it(`rejects ${strategy.authMethod} browser user auth before making a request`, () => {
-      expect(() => withScopes(strategy, ['sfcc.jobs'])).to.throw(ScapiUserAuthUnsupportedError);
+      expect(() => withScopes(strategy, ['sfcc.jobs']))
+        .to.throw(ScapiUserAuthUnsupportedError)
+        .with.property('message')
+        .that.includes('release 26.8');
     });
   }
+});
+
+describe('OCAPI compatibility guard', () => {
+  it('allows auto and explicit OCAPI compatibility operations', () => {
+    expect(() => assertOcapiCompatibilityAllowed('auto', 'inventory-list enumeration')).not.to.throw();
+    expect(() => assertOcapiCompatibilityAllowed('ocapi', 'inventory-list enumeration')).not.to.throw();
+  });
+
+  it('rejects compatibility operations in explicit SCAPI mode with release guidance', () => {
+    expect(() => assertOcapiCompatibilityAllowed('scapi', 'inventory-list enumeration'))
+      .to.throw(ScapiCapabilityUnsupportedError)
+      .with.property('message')
+      .that.includes('SCAPI does not currently support inventory-list enumeration as of B2C Commerce release 26.8');
+  });
 });
 
 describe('createFallbackBackend', () => {

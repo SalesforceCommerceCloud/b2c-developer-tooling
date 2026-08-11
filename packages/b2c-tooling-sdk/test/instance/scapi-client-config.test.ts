@@ -22,6 +22,10 @@ function instance(config: Partial<InstanceConfig>, auth: AuthConfig): B2CInstanc
   return new B2CInstance({hostname: 'test.demandware.net', ...config}, auth);
 }
 
+function resolvedOAuthStrategy(b2c: B2CInstance): unknown {
+  return (b2c as unknown as {getOAuthStrategy(): unknown}).getOAuthStrategy();
+}
+
 describe('instance/B2CInstance.scapiClientConfig', () => {
   describe('returns config (SCAPI eligible)', () => {
     it('builds a client-credentials strategy when clientId + clientSecret are present', () => {
@@ -115,6 +119,25 @@ describe('instance/B2CInstance.scapiClientConfig', () => {
     it('reflects the configured preference', () => {
       expect(instance({...SCAPI_COORDS, apiBackend: 'ocapi'}, {}).apiBackend).to.equal('ocapi');
       expect(instance({...SCAPI_COORDS, apiBackend: 'scapi'}, {}).apiBackend).to.equal('scapi');
+    });
+  });
+
+  describe('OCAPI OAuth strategy', () => {
+    it('uses JWT when it is the only configured system OAuth method', () => {
+      const b2c = instance(SCAPI_COORDS, {
+        oauth: {clientId: 'client', jwtCertPath: TEST_CERT_PATH, jwtKeyPath: TEST_KEY_PATH},
+      });
+
+      expect(resolvedOAuthStrategy(b2c)).to.be.instanceOf(JwtOAuthStrategy);
+    });
+
+    it('honors JWT priority over client credentials', () => {
+      const b2c = instance(SCAPI_COORDS, {
+        authMethods: ['jwt', 'client-credentials'],
+        oauth: {clientId: 'client', clientSecret: 'secret', jwtCertPath: TEST_CERT_PATH, jwtKeyPath: TEST_KEY_PATH},
+      });
+
+      expect(resolvedOAuthStrategy(b2c)).to.be.instanceOf(JwtOAuthStrategy);
     });
   });
 });

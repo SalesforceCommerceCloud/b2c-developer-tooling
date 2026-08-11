@@ -509,7 +509,7 @@ export class OnboardingPanel {
 
   /**
    * Fetch the cartridges currently deployed to the active code version.
-   * Tries OCAPI `/code_versions` first (richer data) and falls back to a
+   * Tries the configured SCAPI-first code-version backend and falls back to a
    * WebDAV PROPFIND on `Cartridges/<codeVersion>/` (which is what the deploy
    * command itself uses, so credentials are usually already set up).
    *

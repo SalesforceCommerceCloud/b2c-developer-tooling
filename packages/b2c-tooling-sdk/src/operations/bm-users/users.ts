@@ -17,6 +17,7 @@
 import type {B2CInstance} from '../../instance/index.js';
 import type {components} from '../../clients/ocapi.generated.js';
 import {throwOcapiError} from '../../clients/error-utils.js';
+import {assertOcapiCompatibilityAllowed} from '../../clients/scapi-backend-utils.js';
 import {SCAPI_MERCHANT_USERS_READ_SCOPES, SCAPI_MERCHANT_USERS_RW_SCOPES} from '../../clients/scapi-merchant-users.js';
 
 // SCAPI Merchant Users scopes named in the OCAPI-deprecation message for the
@@ -166,6 +167,7 @@ export async function getBmUser(instance: B2CInstance, login: string): Promise<B
  * @returns Current user details (includes password expiration info)
  */
 export async function whoamiBmUser(instance: B2CInstance): Promise<BmUser> {
+  assertOcapiCompatibilityAllowed(instance.apiBackend, 'Business Manager current-user lookup (whoami)');
   const {data, error, response} = await instance.ocapi.GET('/users/this');
 
   if (error) {
@@ -312,6 +314,7 @@ export async function getBmUserAccessKey(
   login: string,
   scope: string,
 ): Promise<BmAccessKeyDetails> {
+  assertOcapiCompatibilityAllowed(instance.apiBackend, 'Business Manager access-key administration');
   const {data, error, response} = await instance.ocapi.GET('/users/{login}/access_key/{scope}', {
     params: {path: {login, scope}},
   });
@@ -340,6 +343,7 @@ export async function createBmUserAccessKey(
   login: string,
   scope: string,
 ): Promise<BmAccessKeyDetails> {
+  assertOcapiCompatibilityAllowed(instance.apiBackend, 'Business Manager access-key administration');
   const {data, error, response} = await instance.ocapi.PUT('/users/{login}/access_key/{scope}', {
     params: {path: {login, scope}},
   });
@@ -366,6 +370,7 @@ export async function setBmUserAccessKeyEnabled(
   scope: string,
   enabled: boolean,
 ): Promise<BmAccessKeyDetails> {
+  assertOcapiCompatibilityAllowed(instance.apiBackend, 'Business Manager access-key administration');
   const {data, error, response} = await instance.ocapi.PATCH('/users/{login}/access_key/{scope}', {
     params: {path: {login, scope}},
     body: {enabled} as components['schemas']['access_key_update_request'],
@@ -386,6 +391,7 @@ export async function setBmUserAccessKeyEnabled(
  * @param scope - Access key scope
  */
 export async function deleteBmUserAccessKey(instance: B2CInstance, login: string, scope: string): Promise<void> {
+  assertOcapiCompatibilityAllowed(instance.apiBackend, 'Business Manager access-key administration');
   const {error, response} = await instance.ocapi.DELETE('/users/{login}/access_key/{scope}', {
     params: {path: {login, scope}},
   });

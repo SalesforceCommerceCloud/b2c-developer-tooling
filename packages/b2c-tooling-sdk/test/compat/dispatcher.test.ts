@@ -17,9 +17,10 @@ const invalidScopeError = () => new Error('Failed to get access token: 400 inval
 describe('BackendDispatcher', () => {
   describe('preference handling', () => {
     it('throws when scapi is forced but not configured', () => {
-      expect(() => new BackendDispatcher<FakeOps>('scapi', () => undefined, 'jobs')).to.throw(
-        /shortCode, tenantId, and OAuth/,
-      );
+      expect(() => new BackendDispatcher<FakeOps>('scapi', () => undefined, 'jobs'))
+        .to.throw(/shortCode, tenantId, and a stateless OAuth flow/)
+        .with.property('message')
+        .that.includes('release 26.8');
     });
 
     it('resolves to ocapi immediately when forced', () => {

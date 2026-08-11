@@ -53,7 +53,7 @@ Most commands that interact with a B2C Commerce instance require authentication.
 
 ### `--user-auth` Flag
 
-Many commands support `--user-auth` to use browser-based OAuth instead of client credentials. SCAPI Admin APIs do not currently support this flow; migrated commands use OCAPI in `auto` mode, while explicit SCAPI reports an authentication error. User auth remains useful when:
+Many commands support `--user-auth` to use browser-based OAuth instead of client credentials. As of B2C Commerce release 26.8, SCAPI Admin APIs do not support this flow; migrated commands use OCAPI in `auto` mode, while explicit SCAPI reports an actionable authentication error before making an API request. User auth remains useful when:
 
 - You don't have a `clientSecret` configured
 - You need user-level permissions (e.g., Account Manager admin roles)

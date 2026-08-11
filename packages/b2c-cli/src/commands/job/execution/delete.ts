@@ -6,6 +6,7 @@
 import {Args} from '@oclif/core';
 import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {scapiDeleteJobExecution} from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import {scapiUnavailableMessage} from '@salesforce/b2c-tooling-sdk/clients';
 import {t, withDocs} from '../../../i18n/index.js';
 
 export default class JobExecutionDelete extends JobCommand<typeof JobExecutionDelete> {
@@ -56,12 +57,7 @@ export default class JobExecutionDelete extends JobCommand<typeof JobExecutionDe
 
     const client = this.buildScapiJobsClient();
     if (!client || !tenantId) {
-      this.error(
-        t(
-          'commands.job.execution.delete.scapiNotConfigured',
-          'Deleting job executions requires SCAPI. Configure shortCode, tenantId, and OAuth credentials.',
-        ),
-      );
+      this.error(t('commands.job.execution.delete.scapiNotConfigured', scapiUnavailableMessage('Jobs')));
     }
 
     this.log(

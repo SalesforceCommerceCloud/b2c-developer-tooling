@@ -24,7 +24,11 @@ import {
   type UserSearch,
 } from '../../clients/scapi-merchant-users.js';
 import {buildTenantScope, toOrganizationId} from '../../clients/custom-apis.js';
-import {createScapiRequestError, ScapiCapabilityUnsupportedError} from '../../clients/scapi-backend-utils.js';
+import {
+  createScapiRequestError,
+  ScapiCapabilityUnsupportedError,
+  scapiCapabilityUnsupportedMessage,
+} from '../../clients/scapi-backend-utils.js';
 import {ScopeTierManager} from '../../clients/scapi-scope-tier.js';
 
 function mapScapiUser(scapi: ScapiUser): UserInfo {
@@ -96,7 +100,7 @@ export class ScapiUsersBackend implements UsersBackend {
   async searchUsers(options: SearchUsersOptions = {}): Promise<ListUsersResult> {
     if (options.query !== undefined) {
       throw new ScapiCapabilityUnsupportedError(
-        'Raw OCAPI user-search query JSON is not supported by SCAPI. Use portable search flags or --api-backend ocapi.',
+        `${scapiCapabilityUnsupportedMessage('raw OCAPI user-search JSON')} Use portable search flags to stay on SCAPI.`,
       );
     }
 

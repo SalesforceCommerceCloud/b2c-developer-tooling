@@ -437,15 +437,18 @@ export type {
 // SCAPI dual-backend utilities (shared across SCAPI/OCAPI domains)
 export {
   createScapiRequestError,
+  assertOcapiCompatibilityAllowed,
   assertScapiAdminAuthSupported,
   isFallbackTrigger,
   isInvalidScopeError,
   resolveScapiOrOcapi,
   SAFE_SCAPI_FALLBACK_STATUSES,
+  SCAPI_CAPABILITY_BASELINE_RELEASE,
   ScapiCapabilityUnsupportedError,
   ScapiRequestError,
   ScapiUserAuthUnsupportedError,
   scapiUnavailableMessage,
+  scapiCapabilityUnsupportedMessage,
   withScopes,
 } from './scapi-backend-utils.js';
 export type {ApiBackendPreference, BackendBase, ResolveBackendOptions} from './scapi-backend-utils.js';

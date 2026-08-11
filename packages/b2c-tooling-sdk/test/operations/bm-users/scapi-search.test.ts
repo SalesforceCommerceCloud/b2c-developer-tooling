@@ -54,6 +54,10 @@ describe('ScapiUsersBackend search', () => {
       expect.fail('should have thrown');
     } catch (error) {
       expect(error).to.be.instanceOf(ScapiCapabilityUnsupportedError);
+      expect((error as Error).message).to.include(
+        'SCAPI does not currently support raw OCAPI user-search JSON as of B2C Commerce release 26.8',
+      );
+      expect((error as Error).message).to.include('Use portable search flags to stay on SCAPI');
     }
   });
 

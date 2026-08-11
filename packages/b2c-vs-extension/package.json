@@ -19,9 +19,9 @@
   "dependencies": {
     "@salesforce/b2c-script-types": "workspace:*",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
-    "swagger-ui-dist": "^5.18.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "swagger-ui-dist": "^5.18.0",
     "vscode-html-languageservice": "catalog:"
   },
   "engines": {
@@ -453,7 +453,7 @@
       },
       {
         "view": "b2cApiBrowser",
-        "contents": "Browse SCAPI OpenAPI schemas for your Commerce Cloud instance.\n\nRequires OAuth credentials (`client-id`, `client-secret`, `shortCode`) in dw.json.\n\n[Connect & authenticate](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22connect%22%5D)\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
+        "contents": "Browse SCAPI OpenAPI schemas for your Commerce Cloud instance.\n\nRequires OAuth credentials (`client-id`, `client-secret`, `short-code`, `tenant-id`) in dw.json.\n\n[Connect & authenticate](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22connect%22%5D)\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
       },
       {
         "view": "b2cSandboxExplorer",
@@ -859,12 +859,6 @@
         "command": "b2c-dx.jobs.rerun",
         "title": "Re-Run Job",
         "icon": "$(debug-restart)",
-        "category": "B2C DX - Job History"
-      },
-      {
-        "command": "b2c-dx.jobs.stop",
-        "title": "Stop Execution",
-        "icon": "$(debug-stop)",
         "category": "B2C DX - Job History"
       },
       {
@@ -1773,11 +1767,6 @@
           "group": "1_lifecycle@2"
         },
         {
-          "command": "b2c-dx.jobs.stop",
-          "when": "view == b2cJobsExplorer && viewItem == jobExecution-running",
-          "group": "1_lifecycle@3"
-        },
-        {
           "command": "b2c-dx.jobs.openExecutionLog",
           "when": "view == b2cJobsExplorer && viewItem =~ /^jobExecution-/",
           "group": "2_logs@1"
@@ -2129,10 +2118,6 @@
           "when": "false"
         },
         {
-          "command": "b2c-dx.jobs.stop",
-          "when": "false"
-        },
-        {
           "command": "b2c-dx.jobs.viewExecutionDetails",
           "when": "false"
         },
@@ -2289,16 +2274,16 @@
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "@types/vscode": "^1.105.1",
-    "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^3.9.1",
     "c8": "catalog:",
     "esbuild": "^0.24.0",
-    "jszip": "3.10.1",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-header": "catalog:",
     "eslint-plugin-prettier": "catalog:",
+    "jszip": "3.10.1",
     "prettier": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:"

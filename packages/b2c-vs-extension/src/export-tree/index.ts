@@ -10,9 +10,13 @@ import {registerExportCommands} from './export-commands.js';
 import {ExportSelection, type SimpleCategory} from './export-selection.js';
 import {ExportTreeDataProvider, type ExportTreeItem} from './export-tree-provider.js';
 
-export function registerExportTree(context: vscode.ExtensionContext, configProvider: B2CExtensionConfig): void {
+export function registerExportTree(
+  context: vscode.ExtensionContext,
+  configProvider: B2CExtensionConfig,
+  log: vscode.OutputChannel,
+): void {
   const selection = new ExportSelection();
-  const treeProvider = new ExportTreeDataProvider(configProvider, selection);
+  const treeProvider = new ExportTreeDataProvider(configProvider, selection, log);
 
   const treeView = vscode.window.createTreeView('b2cExportExplorer', {
     treeDataProvider: treeProvider,

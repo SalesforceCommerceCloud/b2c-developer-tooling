@@ -56,6 +56,7 @@ export class ExportTreeDataProvider implements vscode.TreeDataProvider<ExportTre
   constructor(
     private readonly configProvider: B2CExtensionConfig,
     readonly selection: ExportSelection,
+    private readonly log: vscode.OutputChannel,
   ) {}
 
   refresh(): void {
@@ -217,7 +218,7 @@ export class ExportTreeDataProvider implements vscode.TreeDataProvider<ExportTre
           );
           this.discovered = units;
           if (units.warnings.length > 0) {
-            vscode.window.showWarningMessage(`B2C Export: ${units.warnings.join('; ')}`);
+            this.log.appendLine(`[Export] Partial discovery: ${units.warnings.join('; ')}`);
           }
           return units;
         } catch (err) {

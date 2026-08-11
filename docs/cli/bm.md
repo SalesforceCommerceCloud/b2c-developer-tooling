@@ -35,17 +35,17 @@ b2c bm users list --api-backend scapi          # force SCAPI
 b2c bm roles get Administrator --api-backend ocapi   # force the legacy OCAPI backend
 ```
 
-Or set `"api-backend": "scapi"` in `dw.json`, or `SFCC_API_BACKEND=scapi`. The OCAPI-only operations (`bm users search --query`, `bm whoami`, `bm access-key`) are unavailable on OCAPI-disabled instances.
+Or set `"api-backend": "scapi"` in `dw.json`, or `SFCC_API_BACKEND=scapi`. As of B2C Commerce release 26.8, the live SCAPI schemas do not expose equivalents for `bm users search --query`, `bm whoami`, or `bm access-key`. In `auto` mode these use the temporary OCAPI compatibility path. Explicit SCAPI mode fails before contacting OCAPI and directs the user to `--api-backend ocapi` until platform support becomes available.
 :::
 
 The SCAPI Users PATCH endpoint does not include the `disabled` field, so `bm users update --disabled` reads the current user and preserves its writable fields through SCAPI PUT.
 
 ## Authentication
 
-BM commands authenticate via OAuth against the configured Commerce Cloud instance. SCAPI currently supports client credentials and JWT Bearer for these commands. Browser-based user auth remains supported through OCAPI and WebDAV, not SCAPI:
+BM commands authenticate via OAuth against the configured Commerce Cloud instance. As of release 26.8, SCAPI supports client credentials and JWT Bearer for these commands. Browser-based user auth remains supported through OCAPI and WebDAV, not SCAPI:
 
 - **Client credentials** — for automation and CI/CD. Configure an Account Manager API client and grant it the OCAPI permissions listed below. Pass credentials via `--client-id` / `--client-secret`, the `SFCC_CLIENT_ID` / `SFCC_CLIENT_SECRET` environment variables, or `dw.json`.
-- **User auth (browser)** — for interactive OCAPI/WebDAV use. Pass `--user-auth` (or run `b2c auth login` once and reuse the saved session). In `auto` mode migrated operations select OCAPI; explicit SCAPI reports that user auth is not currently supported.
+- **User auth (browser)** — for interactive OCAPI/WebDAV use. Pass `--user-auth` (or run `b2c auth login` once and reuse the saved session). In `auto` mode migrated operations select OCAPI; explicit SCAPI reports that browser user authentication is not supported by SCAPI Admin APIs as of release 26.8 and directs the user to system authentication or OCAPI.
 
 A handful of endpoints require _a real BM user identity_ and cannot use service-client tokens — the CLI defaults those to user-auth automatically:
 

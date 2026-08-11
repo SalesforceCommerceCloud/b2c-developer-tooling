@@ -326,7 +326,7 @@ b2c code list --auth-methods jwt
 ## OCAPI Configuration
 
 ::: warning OCAPI is deprecated
-OCAPI (the Open Commerce API / Data API) is **deprecated** and is being disabled across instances. Newer instances reject OCAPI calls entirely (`OcapiDeprecatedException`). Prefer [SCAPI](#scapi-authentication) for code, jobs, BM users/roles, sites, and catalog discovery. The CLI uses SCAPI first and temporarily falls back on safe capability/auth/request rejections. Configure OCAPI only for compatible instances or operations with no live SCAPI equivalent, such as inventory-list enumeration, BM `whoami` / access keys / raw user-search JSON, and running-job cancellation.
+OCAPI (the Open Commerce API / Data API) is **deprecated** and is being disabled across instances. Newer instances reject OCAPI calls entirely (`OcapiDeprecatedException`). Prefer [SCAPI](#scapi-authentication) for code, jobs, BM users/roles, sites, and catalog discovery. The CLI uses SCAPI first and temporarily falls back on safe capability/auth/request rejections. Configure OCAPI only for compatible instances or operations with no live SCAPI equivalent as of release 26.8, such as inventory-list enumeration and BM `whoami` / access keys / raw user-search JSON. Explicit SCAPI mode rejects these operations before contacting OCAPI.
 
 If a command fails with "OCAPI is deprecated and disabled for this instance," configure [SCAPI scopes](#scapi-authentication) on your API client instead.
 :::
@@ -495,7 +495,7 @@ For operations that interact with B2C Commerce instances (code deployment, jobs,
 
 SCAPI (the Salesforce Commerce API) is the **preferred, modern** API surface and the CLI's default for every operation that supports it. SCAPI-native commands (eCDN, SCAPI schemas, custom APIs) require it, and dual-backend commands use it first with a temporary [deprecated OCAPI fallback](#ocapi-configuration). All require OAuth authentication with specific roles and scopes.
 
-The SCAPI Admin APIs used here currently support stateless client-credentials or JWT Bearer authentication, not browser-based user authentication. `--user-auth` continues to work with OCAPI and WebDAV. In `auto` mode a user-authenticated migrated command selects OCAPI; `--api-backend scapi --user-auth` errors clearly. Platform support for SCAPI user authentication may be added later.
+As of B2C Commerce release 26.8, the SCAPI Admin APIs used here support stateless client-credentials or JWT Bearer authentication, not browser-based user authentication. `--user-auth` continues to work with OCAPI and WebDAV. In `auto` mode a user-authenticated migrated command selects OCAPI; `--api-backend scapi --user-auth` errors clearly and directs the user to system authentication or OCAPI. The tooling will be updated when platform support becomes available.
 
 ### Required Setup
 
@@ -644,7 +644,7 @@ Here's a complete example for setting up CLI access:
 
 ### 2. (Optional) Configure OCAPI fallback
 
-With the SCAPI scopes above configured, `code`, `jobs`, `bm users/roles`, `sites`, and catalog discovery run over SCAPI. Configure OCAPI only for operations with no live equivalent — inventory-list enumeration, BM `whoami`, access keys, raw `bm users search --query`, and running-job cancellation — or as the temporary `auto` fallback. Note that OCAPI is [deprecated](#ocapi-configuration) and disabled on newer instances. To set it up, add the JSON configuration shown in [OCAPI Configuration](#ocapi-configuration).
+With the SCAPI scopes above configured, `code`, `jobs`, `bm users/roles`, `sites`, and catalog discovery run over SCAPI. Configure OCAPI only for operations with no live equivalent as of release 26.8 — inventory-list enumeration, BM `whoami`, access keys, and raw `bm users search --query` — or as the temporary `auto` fallback. Explicit SCAPI mode raises a capability error before contacting OCAPI. Note that OCAPI is [deprecated](#ocapi-configuration) and disabled on newer instances. To set it up, add the JSON configuration shown in [OCAPI Configuration](#ocapi-configuration).
 
 ### 3. Configure WebDAV Access (for code deploy/watch, webdav commands)
 

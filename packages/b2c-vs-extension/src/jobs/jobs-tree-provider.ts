@@ -197,7 +197,7 @@ function formatJobsFetchError(error: unknown): string {
     lowered.includes('http 401') ||
     lowered.includes('http 403')
   ) {
-    return 'Unable to fetch jobs due to missing OCAPI scopes or client permissions. Ensure API client access to /job_execution_search and /jobs/*/executions*.';
+    return 'Unable to fetch jobs due to missing SCAPI/OCAPI scopes or client permissions. Grant sfcc.jobs (or sfcc.jobs.rw) for SCAPI, or the corresponding temporary OCAPI job resources.';
   }
 
   if (
@@ -429,7 +429,7 @@ export class JobsLoadHintTreeItem extends vscode.TreeItem {
     this.iconPath = new vscode.ThemeIcon('cloud-download');
     this.description = 'Click to fetch from the configured instance';
     this.tooltip = new vscode.MarkdownString(
-      'Job History is not loaded by default to avoid unwanted OCAPI traffic.\n\nClick to load, or enable **Auto-Refresh** in the title bar to load automatically and refresh on a schedule.',
+      'Job History is not loaded by default to avoid unwanted API traffic.\n\nClick to load, or enable **Auto-Refresh** in the title bar to load automatically and refresh on a schedule.',
     );
     this.command = {
       command: 'b2c-dx.jobs.refresh',

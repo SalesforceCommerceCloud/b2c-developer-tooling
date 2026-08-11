@@ -86,14 +86,14 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
     let version = this.resolvedConfig.values.codeVersion;
 
     // OAuth is required if:
-    // 1. No code version specified (need to auto-discover via OCAPI)
-    // 2. --activate or --reload flag is set (need to call OCAPI)
+    // 1. No code version is specified (active-version API discovery)
+    // 2. --activate or --reload is set (code-version API mutation)
     const needsOAuth = !version || this.flags.activate || this.flags.reload;
     if (needsOAuth && !this.hasOAuthCredentials()) {
       const reason = version
         ? t(
             'commands.code.deploy.oauthRequiredForActivate',
-            'The --activate/--reload flag requires OAuth credentials to manage the code version via OCAPI.',
+            'The --activate/--reload flag requires OAuth credentials to manage the code version via SCAPI or the temporary OCAPI fallback.',
           )
         : t(
             'commands.code.deploy.oauthRequiredForDiscovery',

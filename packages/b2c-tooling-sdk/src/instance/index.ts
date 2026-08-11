@@ -299,18 +299,36 @@ export class B2CInstance {
       openBrowser: this.auth.oauth.openBrowser,
     };
 
-    // Filter to only OAuth methods (client-credentials, user, implicit)
-    const oauthMethods = (this.auth.authMethods || (['client-credentials', 'user'] as AuthMethod[])).filter(
-      (m): m is 'client-credentials' | 'user' | 'implicit' =>
-        m === 'client-credentials' || m === 'user' || m === 'implicit',
+    // Filter to OAuth methods while preserving the configured priority. JWT
+    // is equivalent to client credentials once it has obtained an AM token,
+    // so it must remain eligible for OCAPI and WebDAV OAuth calls as well as
+    // SCAPI.
+    const oauthMethods = (this.auth.authMethods || (['client-credentials', 'jwt', 'user'] as AuthMethod[])).filter(
+      (m): m is 'client-credentials' | 'jwt' | 'user' | 'implicit' =>
+        m === 'client-credentials' || m === 'jwt' || m === 'user' || m === 'implicit',
     );
 
     if (oauthMethods.length === 0) {
       throw new Error('No OAuth methods allowed. Check authMethods configuration.');
     }
 
-    this._oauthStrategy = resolveAuthStrategy(credentials, {allowedMethods: oauthMethods});
-    return this._oauthStrategy;
+    for (const method of oauthMethods) {
+      if (method === 'client-credentials' || method === 'jwt') {
+        const systemStrategy = this.buildSystemOAuthStrategy(method);
+        if (systemStrategy) {
+          this._oauthStrategy = systemStrategy;
+          return this._oauthStrategy;
+        }
+        continue;
+      }
+
+      if (credentials.clientId) {
+        this._oauthStrategy = resolveAuthStrategy(credentials, {allowedMethods: [method]});
+        return this._oauthStrategy;
+      }
+    }
+
+    throw new Error(`No valid OAuth method available. Allowed methods: [${oauthMethods.join(', ')}].`);
   }
 
   /**
@@ -328,34 +346,46 @@ export class B2CInstance {
    * basic-only configs.
    */
   private buildScapiAuthStrategy(): AuthStrategy | undefined {
-    const oauth = this.auth.oauth;
-    if (!oauth) {
+    if (!this.auth.oauth) {
       return undefined;
     }
 
-    const accountManagerHost = oauth.accountManagerHost ?? DEFAULT_ACCOUNT_MANAGER_HOST;
     const methods = this.auth.authMethods ?? (['client-credentials', 'jwt'] as AuthMethod[]);
 
     for (const method of methods) {
-      if (method === 'client-credentials' && oauth.clientSecret) {
-        return new OAuthStrategy({
-          clientId: oauth.clientId,
-          clientSecret: oauth.clientSecret,
-          scopes: oauth.scopes,
-          accountManagerHost,
-        });
+      if (method === 'client-credentials' || method === 'jwt') {
+        const strategy = this.buildSystemOAuthStrategy(method);
+        if (strategy) return strategy;
       }
+    }
 
-      if (method === 'jwt' && oauth.jwtCertPath && oauth.jwtKeyPath) {
-        return new JwtOAuthStrategy({
-          clientId: oauth.clientId,
-          certPath: oauth.jwtCertPath,
-          keyPath: oauth.jwtKeyPath,
-          passphrase: oauth.jwtPassphrase,
-          accountManagerHost,
-          scopes: oauth.scopes,
-        });
-      }
+    return undefined;
+  }
+
+  /** Builds a configured non-interactive OAuth strategy for SCAPI or OCAPI. */
+  private buildSystemOAuthStrategy(method: 'client-credentials' | 'jwt'): AuthStrategy | undefined {
+    const oauth = this.auth.oauth;
+    if (!oauth) return undefined;
+
+    const accountManagerHost = oauth.accountManagerHost ?? DEFAULT_ACCOUNT_MANAGER_HOST;
+    if (method === 'client-credentials' && oauth.clientSecret) {
+      return new OAuthStrategy({
+        clientId: oauth.clientId,
+        clientSecret: oauth.clientSecret,
+        scopes: oauth.scopes,
+        accountManagerHost,
+      });
+    }
+
+    if (method === 'jwt' && oauth.jwtCertPath && oauth.jwtKeyPath) {
+      return new JwtOAuthStrategy({
+        clientId: oauth.clientId,
+        certPath: oauth.jwtCertPath,
+        keyPath: oauth.jwtKeyPath,
+        passphrase: oauth.jwtPassphrase,
+        accountManagerHost,
+        scopes: oauth.scopes,
+      });
     }
 
     return undefined;

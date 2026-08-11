@@ -24,6 +24,9 @@ import {getApiErrorMessage} from './error-utils.js';
  */
 export type ApiBackendPreference = 'ocapi' | 'scapi' | 'auto';
 
+/** Platform release used when documenting currently-unavailable SCAPI capabilities. */
+export const SCAPI_CAPABILITY_BASELINE_RELEASE = '26.8';
+
 /**
  * Common shape of every dual-backend implementation. Each canonical backend
  * (e.g., `JobsBackend`) extends this so a generic fallback wrapper can read
@@ -37,8 +40,9 @@ export interface BackendBase {
 export class ScapiUserAuthUnsupportedError extends Error {
   constructor() {
     super(
-      'SCAPI Admin APIs currently support system authentication only. ' +
-        'Use client credentials or JWT Bearer authentication; PKCE/implicit user auth remains available for OCAPI.',
+      `SCAPI Admin APIs do not currently support browser user authentication as of B2C Commerce release ${SCAPI_CAPABILITY_BASELINE_RELEASE}. ` +
+        'Use client credentials or JWT Bearer authentication, or set apiBackend to "ocapi" ' +
+        '(CLI: --api-backend ocapi) for now. The tooling will be updated when SCAPI support becomes available.',
     );
     this.name = 'ScapiUserAuthUnsupportedError';
   }
@@ -92,6 +96,30 @@ export class ScapiCapabilityUnsupportedError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'ScapiCapabilityUnsupportedError';
+  }
+}
+
+/** Builds the canonical error for a capability absent from the current live SCAPI schemas. */
+export function scapiCapabilityUnsupportedMessage(capability: string): string {
+  return (
+    `SCAPI does not currently support ${capability} as of B2C Commerce release ${SCAPI_CAPABILITY_BASELINE_RELEASE}. ` +
+    'Set apiBackend to "ocapi" (CLI: --api-backend ocapi) for now. ' +
+    'The tooling will be updated when SCAPI support becomes available.'
+  );
+}
+
+/**
+ * Prevents an OCAPI-only compatibility operation from silently contacting
+ * OCAPI when the caller explicitly selected SCAPI. `auto` remains eligible
+ * for the temporary compatibility path, while explicit OCAPI is always
+ * allowed.
+ */
+export function assertOcapiCompatibilityAllowed(
+  preference: ApiBackendPreference | undefined,
+  capability: string,
+): void {
+  if (preference === 'scapi') {
+    throw new ScapiCapabilityUnsupportedError(scapiCapabilityUnsupportedMessage(capability));
   }
 }
 
@@ -173,9 +201,11 @@ export function scapiUnavailableMessage(domainName: string): string {
   return (
     `${domainName} SCAPI backend requires shortCode, tenantId, and a stateless OAuth flow ` +
     `(client-credentials or JWT Bearer) that can request the required scopes. ` +
-    `Browser user auth (Authorization Code + PKCE or implicit) is currently OCAPI/WebDAV-only, ` +
-    `and fixed-token stored sessions cannot request SCAPI scopes — ` +
-    `use client-credentials/JWT, or set --api-backend ocapi.`
+    `Browser user auth (Authorization Code + PKCE or implicit) is not supported by SCAPI Admin APIs ` +
+    `as of B2C Commerce release ${SCAPI_CAPABILITY_BASELINE_RELEASE} and is currently OCAPI/WebDAV-only; ` +
+    `fixed-token stored sessions cannot request SCAPI scopes — ` +
+    `use client-credentials/JWT, or set --api-backend ocapi for now. ` +
+    `The tooling will be updated when SCAPI support becomes available.`
   );
 }
 
@@ -187,7 +217,9 @@ export function scapiUnavailableMessage(domainName: string): string {
  * - `'auto'` returns `'scapi'` if SCAPI config is available, otherwise `'ocapi'`.
  *
  * Throws an error with the domain name in the message when explicit SCAPI is
- * requested without the required configuration.
+ * requested without the required configuration. The error identifies release
+ * 26.8 as the current platform capability baseline so it can be revised when
+ * SCAPI adds support.
  */
 export function resolveScapiOrOcapi(opts: ResolveBackendOptions): 'ocapi' | 'scapi' {
   const {preference, hasScapiConfig, domainName} = opts;

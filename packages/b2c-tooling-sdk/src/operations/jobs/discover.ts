@@ -16,6 +16,7 @@
  */
 import {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
+import {assertOcapiCompatibilityAllowed} from '../../clients/scapi-backend-utils.js';
 import {createCatalogsBackend} from '../catalogs/index.js';
 import {createSitesBackend} from '../sites/index.js';
 
@@ -45,6 +46,7 @@ const PAGE_COUNT = 200;
  * documents are read. Returns the `id` of each document.
  */
 async function listInventoryListIds(instance: B2CInstance): Promise<string[]> {
+  assertOcapiCompatibilityAllowed(instance.apiBackend, 'inventory-list enumeration');
   const ids: string[] = [];
   let start = 0;
 
