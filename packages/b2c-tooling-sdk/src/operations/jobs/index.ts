@@ -12,6 +12,9 @@
  * arbitrates between them based on the user's `apiBackend` preference;
  * that policy lives in the CLI layer.
  *
+ * Ordered import sets are exported from `./import-set` and continue to use
+ * the site-archive/WebDAV workflow.
+ *
  * @module operations/jobs
  */
 
@@ -65,6 +68,19 @@ export {
   siteArchiveExportToBuffer,
   siteArchiveExportToPath,
 } from './site-archive.js';
+
+// Ordered, idempotent import sets
+export {discoverImportSet, siteArchiveImportSet, ImportSetStateError} from './import-set.js';
+
+export type {
+  ImportSetItem,
+  ImportSetReceipt,
+  ImportSetItemResult,
+  ImportSetResult,
+  ImportSetEvent,
+  ImportSetLockOwner,
+  SiteArchiveImportSetOptions,
+} from './import-set.js';
 
 export type {
   SiteArchiveImportOptions,

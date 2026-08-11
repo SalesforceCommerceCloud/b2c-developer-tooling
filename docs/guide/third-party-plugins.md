@@ -1,5 +1,5 @@
 ---
-description: Community plugins for the B2C CLI including IntelliJ SFCC config integration, credential storage, docs search, catalog reduction, and pipeline visualization.
+description: Community plugins for the B2C CLI including data migrations, IntelliJ SFCC config integration, credential storage, docs search, catalog reduction, and pipeline visualization.
 ---
 
 # 3rd Party Plugins
@@ -25,6 +25,42 @@ b2c plugins uninstall b2c-plugin-intellij-sfcc-config
 ```
 
 ## Available Plugins
+
+### Data Migrations Plugin
+
+**Repository:** [sfcc-solutions-share/b2c-plugin-data-migrations](https://github.com/sfcc-solutions-share/b2c-plugin-data-migrations)
+
+Applies version-controlled data migrations to B2C Commerce instances. The plugin tracks migration state on each instance, so ordered IMPEX archives and JavaScript migration scripts run only once by default.
+
+#### Installation
+
+```bash
+b2c plugins install sfcc-solutions-share/b2c-plugin-data-migrations
+```
+
+#### Features
+
+- Runs pending directory-based site archives and JavaScript migrations in filename order
+- Records applied migrations on the instance for idempotent deployments
+- Supports dry runs, exclusions, migration notes, and runtime variables
+- Provides lifecycle hooks for project-specific setup and migration behavior
+- Deploys and manages reusable features that can include migrations, cartridges, and configuration
+
+#### Usage
+
+```bash
+# Apply pending migrations from ./migrations
+b2c migrations run
+
+# Preview pending migrations without applying them
+b2c migrations run --dry-run
+
+# Use a different migration directory and pass a runtime variable
+b2c migrations run --migrations-dir ./data/migrations --vars siteId=RefArch
+
+# Deploy a reusable feature
+b2c migrations feature deploy my-feature
+```
 
 ### IntelliJ SFCC Config Plugin
 

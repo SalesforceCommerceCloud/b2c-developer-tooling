@@ -70,6 +70,17 @@ export interface ScapiClientConfig {
 }
 
 /**
+ * Optional runtime dependencies for a {@link B2CInstance}.
+ *
+ * The OAuth strategy factory lets CLI commands reuse their session-aware auth
+ * resolution (including PKCE refresh and the temporary implicit fallback)
+ * without eagerly starting browser authentication for Basic-only WebDAV work.
+ */
+export interface B2CInstanceOptions {
+  oauthStrategy?: AuthStrategy | (() => AuthStrategy);
+}
+
+/**
  * Instance configuration (hostname, code version, etc.)
  */
 export interface InstanceConfig {
@@ -124,16 +135,19 @@ export interface InstanceConfig {
 export class B2CInstance {
   private _webdav?: WebDavClient;
   private _ocapi?: OcapiClient;
+  private _oauthStrategy?: AuthStrategy;
 
   /**
    * Creates a new B2CInstance.
    *
    * @param config - Instance configuration (hostname, code version)
    * @param auth - Authentication configuration
+   * @param options - Optional runtime dependencies, including a pre-resolved OAuth strategy
    */
   constructor(
     public readonly config: InstanceConfig,
     public readonly auth: AuthConfig,
+    private readonly options: B2CInstanceOptions = {},
   ) {}
 
   /**
@@ -167,9 +181,11 @@ export class B2CInstance {
    *      client-credentials (clientId + clientSecret) or JWT Bearer
    *      (clientId + cert/key).
    *
-   * Stateful and implicit flows are excluded on purpose: they hold a fixed
-   * token whose scopes were chosen at acquisition, so they cannot request the
-   * `sfcc.*` scopes SCAPI needs. This is not an `auto`-only restriction —
+   * Browser user-auth flows (Authorization Code + PKCE and deprecated
+   * implicit) are excluded on purpose because SCAPI Admin APIs currently only
+   * support system authentication. Fixed-token stored sessions are also
+   * excluded because they cannot request the `sfcc.*` scopes SCAPI needs.
+   * This is not an `auto`-only restriction —
    * because both consumers (the dual-backend factory and the system-job runner)
    * gate on this getter, even explicit `--api-backend scapi` cannot use SCAPI
    * with implicit/stateful auth; it fails with a clear error naming the flow
@@ -259,6 +275,16 @@ export class B2CInstance {
    * @throws Error if no valid OAuth method is available
    */
   private getOAuthStrategy(): AuthStrategy {
+    if (this._oauthStrategy) {
+      return this._oauthStrategy;
+    }
+
+    if (this.options.oauthStrategy) {
+      this._oauthStrategy =
+        typeof this.options.oauthStrategy === 'function' ? this.options.oauthStrategy() : this.options.oauthStrategy;
+      return this._oauthStrategy;
+    }
+
     if (!this.auth.oauth) {
       throw new Error('OAuth credentials required. Provide at least clientId.');
     }
@@ -283,7 +309,8 @@ export class B2CInstance {
       throw new Error('No OAuth methods allowed. Check authMethods configuration.');
     }
 
-    return resolveAuthStrategy(credentials, {allowedMethods: oauthMethods});
+    this._oauthStrategy = resolveAuthStrategy(credentials, {allowedMethods: oauthMethods});
+    return this._oauthStrategy;
   }
 
   /**

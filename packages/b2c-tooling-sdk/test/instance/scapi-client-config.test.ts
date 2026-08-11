@@ -7,7 +7,7 @@ import {expect} from 'chai';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
-import {OAuthStrategy, JwtOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {OAuthStrategy, JwtOAuthStrategy, PkceWithImplicitFallbackStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import type {AuthConfig, InstanceConfig} from '@salesforce/b2c-tooling-sdk/instance';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -82,6 +82,23 @@ describe('instance/B2CInstance.scapiClientConfig', () => {
     it('when the OAuth flow is implicit (clientId only, no secret or JWT)', () => {
       const scapi = instance(SCAPI_COORDS, {oauth: {clientId: 'client'}}).scapiClientConfig;
       expect(scapi).to.equal(undefined);
+    });
+
+    it('does not use an injected PKCE user strategy for SCAPI Admin APIs', () => {
+      let strategyResolved = false;
+      const b2c = new B2CInstance(
+        {hostname: 'test.demandware.net', ...SCAPI_COORDS},
+        {authMethods: ['user'], oauth: {clientId: 'client'}},
+        {
+          oauthStrategy: () => {
+            strategyResolved = true;
+            return new PkceWithImplicitFallbackStrategy({clientId: 'client', persistSession: false});
+          },
+        },
+      );
+
+      expect(b2c.scapiClientConfig).to.equal(undefined);
+      expect(strategyResolved).to.equal(false);
     });
 
     it('when only basic auth is configured', () => {

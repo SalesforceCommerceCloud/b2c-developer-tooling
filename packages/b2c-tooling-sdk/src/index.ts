@@ -24,6 +24,7 @@ export type {
   ConfigSource,
   ResolveConfigOptions,
   CreateOAuthOptions,
+  CreateB2CInstanceOptions,
 } from './config/index.js';
 
 // Auth Layer - Strategies and Resolution
@@ -59,7 +60,7 @@ export type {
 
 // Context Layer - Instance
 export {B2CInstance} from './instance/index.js';
-export type {InstanceConfig} from './instance/index.js';
+export type {B2CInstanceOptions, InstanceConfig, ScapiClientConfig} from './instance/index.js';
 
 // Clients
 export {

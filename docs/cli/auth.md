@@ -264,7 +264,7 @@ For complete authentication setup instructions, see the [Authentication Setup Gu
 | [Code](/cli/code) list/activate/delete, [Jobs](/cli/jobs), [BM](/cli/bm) users/roles               | OAuth + SCAPI scopes (OCAPI fallback; OCAPI is [deprecated](/guide/authentication#ocapi-configuration)) |
 | [Sites](/cli/sites) list/cartridge reads                                                           | OAuth + SCAPI scopes (`sfcc.sites`; OCAPI fallback)                                                     |
 | [Sites](/cli/sites) cartridge-path writes                                                          | OAuth + `sfcc.sites.rw` (OCAPI / site-archive fallback)                                                 |
-| SCAPI commands ([eCDN](/cli/ecdn), [schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis)) | OAuth + SCAPI scopes                                                                                    |
+| SCAPI commands ([eCDN](/cli/ecdn), [schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis)) | System OAuth (client credentials/JWT) + SCAPI scopes; browser PKCE/implicit is rejected                 |
 | [Sandbox](/cli/sandbox), [SLAS](/cli/slas)                                                         | OAuth + appropriate roles                                                                               |
 | [MRT](/cli/mrt)                                                                                    | API Key                                                                                                 |
 

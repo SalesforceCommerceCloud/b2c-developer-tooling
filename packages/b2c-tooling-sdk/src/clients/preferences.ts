@@ -16,12 +16,11 @@
  */
 import createClient, {type Client} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
-import {OAuthStrategy} from '../auth/oauth.js';
-import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
 import type {paths, components} from './preferences.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
 import {toOrganizationId, normalizeTenantId, buildTenantScope} from './custom-apis.js';
+import {withScopes} from './scapi-backend-utils.js';
 
 export type {paths, components};
 export {toOrganizationId, normalizeTenantId, buildTenantScope};
@@ -110,10 +109,7 @@ export function createPreferencesClient(
   const domainScopes = options?.readWrite ? PREFERENCES_RW_SCOPES : PREFERENCES_READ_SCOPES;
   const requiredScopes = config.scopes ?? [...domainScopes, buildTenantScope(config.tenantId)];
 
-  const scopedAuth =
-    auth instanceof OAuthStrategy || auth instanceof JwtOAuthStrategy
-      ? auth.withAdditionalScopes(requiredScopes)
-      : auth;
+  const scopedAuth = withScopes(auth, requiredScopes);
 
   client.use(createAuthMiddleware(scopedAuth));
 

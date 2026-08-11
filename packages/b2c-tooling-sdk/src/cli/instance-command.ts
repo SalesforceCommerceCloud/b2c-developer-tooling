@@ -221,11 +221,10 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
    * Delegates to {@link B2CInstance.scapiClientConfig} so the eligibility rule
    * lives in exactly one place. Only the stateless OAuth flows (client-
    * credentials, JWT Bearer) qualify — they go back to Account Manager per
-   * request and can ask for whatever scopes the operation requires. Stateful
-   * and implicit flows hold a fixed token whose scopes were chosen at
-   * acquisition; under `auto` they would route through SCAPI with a token that
-   * AM never granted SCAPI scopes for, and the SCAPI 403 isn't a fallback
-   * trigger. Those users opt in explicitly with `--api-backend scapi`.
+   * request and can ask for whatever scopes the operation requires. Browser
+   * user auth (PKCE or deprecated implicit) remains OCAPI/WebDAV-only because
+   * SCAPI Admin APIs do not currently support it. `auto` therefore selects
+   * OCAPI for user auth, while explicit `scapi` fails with a clear message.
    */
   protected hasScapiConfig(): boolean {
     if (!this.resolvedConfig.hasB2CInstanceConfig()) {
@@ -269,7 +268,11 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
   protected get instance(): B2CInstance {
     if (!this._instance) {
       this.requireServer();
-      this._instance = this.resolvedConfig.createB2CInstance();
+      // Reuse OAuthCommand's resolver instead of reconstructing auth inside
+      // B2CInstance. This preserves stored PKCE sessions, refresh tokens,
+      // default public clients, and the transitional PKCE→implicit fallback.
+      // Keep it lazy so Basic-only WebDAV commands never resolve OAuth.
+      this._instance = this.resolvedConfig.createB2CInstance({oauthStrategy: () => this.getOAuthStrategy()});
     }
     return this._instance;
   }

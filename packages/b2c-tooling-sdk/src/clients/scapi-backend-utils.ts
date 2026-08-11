@@ -33,6 +33,24 @@ export interface BackendBase {
   readonly name: 'ocapi' | 'scapi';
 }
 
+/** Error raised when browser-based Account Manager user auth is passed to a SCAPI Admin client. */
+export class ScapiUserAuthUnsupportedError extends Error {
+  constructor() {
+    super(
+      'SCAPI Admin APIs currently support system authentication only. ' +
+        'Use client credentials or JWT Bearer authentication; PKCE/implicit user auth remains available for OCAPI.',
+    );
+    this.name = 'ScapiUserAuthUnsupportedError';
+  }
+}
+
+/** Reject browser user-auth strategies before a SCAPI request is attempted. */
+export function assertScapiAdminAuthSupported(auth: AuthStrategy): void {
+  if ('authMethod' in auth && (auth.authMethod === 'user' || auth.authMethod === 'implicit')) {
+    throw new ScapiUserAuthUnsupportedError();
+  }
+}
+
 /**
  * Returns a copy of `auth` with `additionalScopes` merged in, or the original
  * `auth` if the strategy doesn't support scope merging (e.g., basic/api-key
@@ -42,6 +60,7 @@ export interface BackendBase {
  * `instanceof` chain as new OAuth strategy types are added.
  */
 export function withScopes(auth: AuthStrategy, additionalScopes: string[]): AuthStrategy {
+  assertScapiAdminAuthSupported(auth);
   if (typeof auth.withAdditionalScopes === 'function') {
     return auth.withAdditionalScopes(additionalScopes);
   }
@@ -146,15 +165,16 @@ export interface ResolveBackendOptions {
  * Names both reasons the SCAPI client config can be unavailable — missing
  * coordinates OR an auth flow that can't request scopes — because a user who
  * hits this in explicit `--api-backend scapi` mode often *does* have shortCode
- * and tenantId configured; the real blocker is that implicit/stateful OAuth
- * holds a fixed-scope token and can't request the `sfcc.*` scopes SCAPI needs.
+ * and tenantId configured; the real blocker can be browser user auth, which
+ * SCAPI Admin APIs do not currently support, or a fixed-scope stored token.
  * The old message only mentioned missing credentials, which was misleading.
  */
 export function scapiUnavailableMessage(domainName: string): string {
   return (
     `${domainName} SCAPI backend requires shortCode, tenantId, and a stateless OAuth flow ` +
     `(client-credentials or JWT Bearer) that can request the required scopes. ` +
-    `Implicit and stateful (stored-session) auth cannot request SCAPI scopes — ` +
+    `Browser user auth (Authorization Code + PKCE or implicit) is currently OCAPI/WebDAV-only, ` +
+    `and fixed-token stored sessions cannot request SCAPI scopes — ` +
     `use client-credentials/JWT, or set --api-backend ocapi.`
   );
 }

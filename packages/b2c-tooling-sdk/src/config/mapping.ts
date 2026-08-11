@@ -17,7 +17,7 @@ import {parseSafetyLevelString} from '../safety/safety-middleware.js';
 import {isValidSafetyAction} from '../safety/types.js';
 import type {SafetyRule} from '../safety/types.js';
 import type {DwJsonConfig} from './dw-json.js';
-import type {LibraryEntry, NormalizedConfig, ConfigWarning} from './types.js';
+import type {CreateB2CInstanceOptions, LibraryEntry, NormalizedConfig, ConfigWarning} from './types.js';
 
 /**
  * Normalizes a URL origin string by ensuring it has an `https://` protocol prefix.
@@ -673,10 +673,7 @@ export function buildAuthConfigFromNormalized(config: NormalizedConfig): AuthCon
  * await instance.webdav.mkcol('Cartridges/v1');
  * ```
  */
-export function createInstanceFromConfig(
-  config: NormalizedConfig,
-  options?: {redirectUri?: string; openBrowser?: (url: string) => Promise<void>},
-): B2CInstance {
+export function createInstanceFromConfig(config: NormalizedConfig, options?: CreateB2CInstanceOptions): B2CInstance {
   if (!config.hostname) {
     throw new Error('Hostname is required. Set in dw.json or provide via overrides.');
   }
@@ -712,5 +709,5 @@ export function createInstanceFromConfig(
     };
   }
 
-  return new B2CInstance(instanceConfig, authConfig);
+  return new B2CInstance(instanceConfig, authConfig, {oauthStrategy: options?.oauthStrategy});
 }

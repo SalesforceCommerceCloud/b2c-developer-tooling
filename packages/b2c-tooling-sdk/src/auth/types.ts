@@ -81,6 +81,8 @@ export interface AuthStrategy {
  * `PkceWithImplicitFallbackStrategy`.
  */
 export interface UserAuthStrategy extends AuthStrategy {
+  /** Browser auth method represented by this strategy. */
+  readonly authMethod: 'user' | 'implicit';
   getAuthorizationHeader(): Promise<string>;
   getJWT(): Promise<DecodedJWT>;
   getTokenResponse(): Promise<AccessTokenResponse>;

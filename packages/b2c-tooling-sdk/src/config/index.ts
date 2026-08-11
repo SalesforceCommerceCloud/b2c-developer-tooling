@@ -112,6 +112,7 @@ export type {
   ResolveConfigOptions,
   ResolvedB2CConfig,
   CreateOAuthOptions,
+  CreateB2CInstanceOptions,
   InstanceInfo,
   CreateInstanceOptions,
 } from './types.js';

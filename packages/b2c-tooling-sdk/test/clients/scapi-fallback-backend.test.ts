@@ -4,8 +4,14 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
+import {ImplicitOAuthStrategy, PkceOAuthStrategy} from '../../src/auth/index.js';
 import {createFallbackBackend} from '../../src/clients/scapi-fallback-backend.js';
-import {ScapiCapabilityUnsupportedError, ScapiRequestError} from '../../src/clients/scapi-backend-utils.js';
+import {
+  ScapiCapabilityUnsupportedError,
+  ScapiRequestError,
+  ScapiUserAuthUnsupportedError,
+  withScopes,
+} from '../../src/clients/scapi-backend-utils.js';
 
 interface TestBackend {
   readonly name: 'ocapi' | 'scapi';
@@ -24,6 +30,17 @@ function makeBackend(name: 'ocapi' | 'scapi', impl: Partial<TestBackend>): TestB
 }
 
 const invalidScopeError = () => new Error('Failed to get access token: 400 invalid_scope');
+
+describe('SCAPI Admin authentication guard', () => {
+  for (const strategy of [
+    new PkceOAuthStrategy({clientId: 'public-client', persistSession: false}),
+    new ImplicitOAuthStrategy({clientId: 'public-client', persistSession: false}),
+  ]) {
+    it(`rejects ${strategy.authMethod} browser user auth before making a request`, () => {
+      expect(() => withScopes(strategy, ['sfcc.jobs'])).to.throw(ScapiUserAuthUnsupportedError);
+    });
+  }
+});
 
 describe('createFallbackBackend', () => {
   describe('happy path: SCAPI works', () => {

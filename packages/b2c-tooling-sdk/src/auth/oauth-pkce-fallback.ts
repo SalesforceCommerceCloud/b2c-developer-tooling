@@ -57,6 +57,7 @@ export function isPkceFallbackDisabled(): boolean {
  * the failing PKCE flow.
  */
 export class PkceWithImplicitFallbackStrategy implements UserAuthStrategy {
+  readonly authMethod = 'user' as const;
   private readonly pkce: PkceOAuthStrategy;
   private implicit: ImplicitOAuthStrategy | null = null;
   /** Once PKCE has failed with a grant error, route everything to implicit. */

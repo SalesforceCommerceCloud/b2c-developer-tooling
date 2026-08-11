@@ -437,12 +437,14 @@ export type {
 // SCAPI dual-backend utilities (shared across SCAPI/OCAPI domains)
 export {
   createScapiRequestError,
+  assertScapiAdminAuthSupported,
   isFallbackTrigger,
   isInvalidScopeError,
   resolveScapiOrOcapi,
   SAFE_SCAPI_FALLBACK_STATUSES,
   ScapiCapabilityUnsupportedError,
   ScapiRequestError,
+  ScapiUserAuthUnsupportedError,
   scapiUnavailableMessage,
   withScopes,
 } from './scapi-backend-utils.js';
