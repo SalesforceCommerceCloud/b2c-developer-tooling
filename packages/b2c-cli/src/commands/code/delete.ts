@@ -4,12 +4,11 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {deleteCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {CodeCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {t, withDocs} from '../../i18n/index.js';
 import {confirm} from '../../prompts.js';
 
-export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
+export default class CodeDelete extends CodeCommand<typeof CodeDelete> {
   static args = {
     codeVersion: Args.string({
       description: 'Code version ID to delete',
@@ -29,7 +28,7 @@ export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
   ];
 
   static flags = {
-    ...InstanceCommand.baseFlags,
+    ...CodeCommand.baseFlags,
     force: Flags.boolean({
       char: 'f',
       description: 'Skip confirmation prompt',
@@ -41,11 +40,9 @@ export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
 
   protected operations = {
     confirm,
-    deleteCodeVersion,
   };
 
   async run(): Promise<void> {
-    // Prevent deletion in safe mode
     this.assertDestructiveOperationAllowed('delete code version');
 
     this.requireOAuthCredentials();
@@ -53,7 +50,6 @@ export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
     const codeVersion = this.args.codeVersion;
     const hostname = this.resolvedConfig.values.hostname!;
 
-    // Confirm deletion unless --force is used
     if (!this.flags.force) {
       const confirmed = await this.operations.confirm(
         t(
@@ -69,6 +65,9 @@ export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
       }
     }
 
+    const backend = this.createScriptsBackend();
+    this.logger.debug(`Using ${backend.name} backend for code delete`);
+
     this.log(
       t('commands.code.delete.deleting', 'Deleting code version {{codeVersion}} from {{hostname}}...', {
         hostname,
@@ -76,7 +75,7 @@ export default class CodeDelete extends InstanceCommand<typeof CodeDelete> {
       }),
     );
 
-    await this.operations.deleteCodeVersion(this.instance, codeVersion);
+    await backend.deleteCodeVersion(codeVersion);
     this.log(t('commands.code.delete.deleted', 'Code version {{codeVersion}} deleted successfully', {codeVersion}));
   }
 }

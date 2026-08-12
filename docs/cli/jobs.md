@@ -6,19 +6,52 @@ description: Commands for executing jobs, importing and exporting site archives,
 
 Commands for executing and monitoring jobs on B2C Commerce instances.
 
+## API Backend
+
+Job commands run over SCAPI (the `operation/jobs` API). Configure `shortCode`, `tenantId`, and the `sfcc.jobs` / `sfcc.jobs.rw` scopes on your API client and `job run`, `job search`, `job wait`, and `job log` work out of the box.
+
+```bash
+# Default — uses SCAPI
+b2c job run my-job
+```
+
+::: details Legacy OCAPI backend (deprecated)
+OCAPI is deprecated and disabled on newer instances. The CLI defaults to `--api-backend auto`, which falls back to the OCAPI Data API on safe SCAPI capability/auth/request rejections. Force a backend if needed:
+
+```bash
+b2c job run my-job --api-backend scapi   # force SCAPI
+b2c job run my-job --api-backend ocapi   # force the legacy OCAPI backend
+```
+
+Or set `"api-backend": "scapi"` in `dw.json`, or `SFCC_API_BACKEND=scapi`.
+:::
+
+::: tip
+The `job import` and `job export` commands trigger the `sfcc-site-archive-import`/`-export` system jobs and transfer archive files over WebDAV. The job-execution trigger honors `--api-backend`: in `auto` mode it starts the system job over SCAPI (requires the `sfcc.jobs.rw` scope) and falls back to OCAPI only if the SCAPI start is rejected. WebDAV is always used for the archive transfer itself regardless of backend.
+:::
+
 ## Authentication
 
-Job commands require OAuth authentication with OCAPI permissions.
+### SCAPI (recommended)
 
-### Required OCAPI Permissions
+When using SCAPI, your API client needs the appropriate scopes in Account Manager:
+
+| Scope          | Operations                                                    |
+| -------------- | ------------------------------------------------------------- |
+| `sfcc.jobs.rw` | Execute, delete, search, and get job executions (recommended) |
+| `sfcc.jobs`    | Search and get job executions (read-only)                     |
+
+You also need `shortCode` and `tenantId` configured (in `dw.json` or via flags).
+
+### OCAPI
 
 Configure these resources in Business Manager under **Administration** > **Site Development** > **Open Commerce API Settings**:
 
-| Resource | Methods | Commands |
-|----------|---------|----------|
-| `/jobs/*/executions` | POST | `job run` |
-| `/jobs/*/executions/*` | GET | `job run --wait`, `job wait`, `job log` |
-| `/job_execution_search` | POST | `job search`, `job log` |
+| Resource                | Methods | Commands                                |
+| ----------------------- | ------- | --------------------------------------- |
+| `/jobs/*/executions`    | POST    | `job run`                               |
+| `/jobs/*/executions/*`  | GET     | `job run --wait`, `job wait`, `job log` |
+| `/job_execution_search` | POST    | `job search`, `job log`                 |
 
 ### WebDAV Access
 
@@ -52,23 +85,23 @@ b2c job run JOBID
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `JOBID` | Job ID to execute | Yes |
+| Argument | Description       | Required |
+| -------- | ----------------- | -------- |
+| `JOBID`  | Job ID to execute | Yes      |
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--wait`, `-w` | Wait for job to complete | `false` |
-| `--timeout`, `-t` | Timeout in seconds when waiting | No timeout |
-| `--poll-interval` | Polling interval in seconds when using `--wait` | `3` |
-| `--param`, `-P` | Job parameter in format "name=value" (repeatable) | |
-| `--body`, `-B` | Raw JSON request body (for system jobs with non-standard schemas) | |
-| `--no-wait-running` | Do not wait for running job to finish before starting | `false` |
-| `--show-log` | Show job log on failure | `true` |
+| Flag                | Description                                                       | Default    |
+| ------------------- | ----------------------------------------------------------------- | ---------- |
+| `--wait`, `-w`      | Wait for job to complete                                          | `false`    |
+| `--timeout`, `-t`   | Timeout in seconds when waiting                                   | No timeout |
+| `--poll-interval`   | Polling interval in seconds when using `--wait`                   | `3`        |
+| `--param`, `-P`     | Job parameter in format "name=value" (repeatable)                 |            |
+| `--body`, `-B`      | Raw JSON request body (for system jobs with non-standard schemas) |            |
+| `--no-wait-running` | Do not wait for running job to finish before starting             | `false`    |
+| `--show-log`        | Show job log on failure                                           | `true`     |
 
 Note: `--param` and `--body` are mutually exclusive.
 
@@ -143,20 +176,20 @@ b2c job wait JOBID EXECUTIONID
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `JOBID` | Job ID | Yes |
-| `EXECUTIONID` | Execution ID to wait for | Yes |
+| Argument      | Description              | Required |
+| ------------- | ------------------------ | -------- |
+| `JOBID`       | Job ID                   | Yes      |
+| `EXECUTIONID` | Execution ID to wait for | Yes      |
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--timeout`, `-t` | Timeout in seconds | No timeout |
-| `--poll-interval` | Polling interval in seconds | `3` |
-| `--show-log` | Show job log on failure | `true` |
+| Flag              | Description                 | Default    |
+| ----------------- | --------------------------- | ---------- |
+| `--timeout`, `-t` | Timeout in seconds          | No timeout |
+| `--poll-interval` | Polling interval in seconds | `3`        |
+| `--show-log`      | Show job log on failure     | `true`     |
 
 ### Examples
 
@@ -187,16 +220,16 @@ b2c job search
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--job-id`, `-j` | Filter by job ID | |
-| `--status` | Filter by status (comma-separated: RUNNING,PENDING,OK,ERROR) | |
-| `--count`, `-n` | Maximum number of results | `25` |
-| `--start` | Starting index for pagination | `0` |
-| `--sort-by` | Sort by field (start_time, end_time, job_id, status) | `start_time` |
-| `--sort-order` | Sort order (asc, desc) | `desc` |
-| `--columns`, `-c` | Columns to display (comma-separated): id, jobId, status, startTime | |
-| `--extended`, `-x` | Show all columns including extended fields | `false` |
+| Flag               | Description                                                        | Default      |
+| ------------------ | ------------------------------------------------------------------ | ------------ |
+| `--job-id`, `-j`   | Filter by job ID                                                   |              |
+| `--status`         | Filter by status (comma-separated: RUNNING,PENDING,OK,ERROR)       |              |
+| `--count`, `-n`    | Maximum number of results                                          | `25`         |
+| `--start`          | Starting index for pagination                                      | `0`          |
+| `--sort-by`        | Sort by field (start_time, end_time, job_id, status)               | `start_time` |
+| `--sort-order`     | Sort order (asc, desc)                                             | `desc`       |
+| `--columns`, `-c`  | Columns to display (comma-separated): id, jobId, status, startTime |              |
+| `--extended`, `-x` | Show all columns including extended fields                         | `false`      |
 
 ### Examples
 
@@ -240,17 +273,17 @@ b2c job log JOBID [EXECUTIONID]
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `JOBID` | Job ID | Yes |
-| `EXECUTIONID` | Execution ID (if omitted, finds the most recent execution with a log) | No |
+| Argument      | Description                                                           | Required |
+| ------------- | --------------------------------------------------------------------- | -------- |
+| `JOBID`       | Job ID                                                                | Yes      |
+| `EXECUTIONID` | Execution ID (if omitted, finds the most recent execution with a log) | No       |
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
+| Flag       | Description                                      | Default |
+| ---------- | ------------------------------------------------ | ------- |
 | `--failed` | Find the most recent failed execution with a log | `false` |
 
 ### Examples
@@ -281,6 +314,37 @@ b2c job log my-custom-job > job.log
 
 ---
 
+## b2c job execution delete
+
+Delete a job execution record. This command requires the SCAPI backend (`sfcc.jobs.rw` scope).
+
+### Usage
+
+```bash
+b2c job execution delete JOBID EXECUTIONID
+```
+
+### Arguments
+
+| Argument      | Description            | Required |
+| ------------- | ---------------------- | -------- |
+| `JOBID`       | Job ID                 | Yes      |
+| `EXECUTIONID` | Execution ID to delete | Yes      |
+
+### Examples
+
+```bash
+# Delete a specific execution
+b2c job execution delete my-job abc123-def456
+```
+
+### Notes
+
+- Requires SCAPI backend — not available via OCAPI.
+- Requires the `sfcc.jobs.rw` scope on your API client.
+
+---
+
 ## b2c job import
 
 Import a site archive to a B2C Commerce instance using the `sfcc-site-archive-import` system job.
@@ -293,24 +357,24 @@ b2c job import TARGET [PATHS...]
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `TARGET` | Directory, zip file, or remote filename to import | Yes |
-| `PATHS...` | Optional subset of files, directories, or glob patterns under `TARGET` to include in the archive. When omitted, the entire directory is archived. Only valid when `TARGET` is a directory. | No |
+| Argument   | Description                                                                                                                                                                                | Required |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| `TARGET`   | Directory, zip file, or remote filename to import                                                                                                                                          | Yes      |
+| `PATHS...` | Optional subset of files, directories, or glob patterns under `TARGET` to include in the archive. When omitted, the entire directory is archived. Only valid when `TARGET` is a directory. | No       |
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--keep-archive`, `-k` | Keep archive on instance after import | `false` |
-| `--remote`, `-r` | Target is a filename already on the instance (in Impex/src/instance/) | `false` |
-| `--split`, `-s` | Split a large directory import into multiple archive parts to stay under the instance size limit | `false` |
-| `--max-size` | Per-archive size limit for `--split` (e.g. `190`, `190mb`, `512kb`; a bare number is MiB) | `190mb` |
-| `--timeout`, `-t` | Timeout in seconds | No timeout |
-| `--wait`, `-w` | Wait for import job to complete | `true` |
-| `--show-log` | Show job log on failure | `true` |
+| Flag                   | Description                                                                                      | Default    |
+| ---------------------- | ------------------------------------------------------------------------------------------------ | ---------- |
+| `--keep-archive`, `-k` | Keep archive on instance after import                                                            | `false`    |
+| `--remote`, `-r`       | Target is a filename already on the instance (in Impex/src/instance/)                            | `false`    |
+| `--split`, `-s`        | Split a large directory import into multiple archive parts to stay under the instance size limit | `false`    |
+| `--max-size`           | Per-archive size limit for `--split` (e.g. `190`, `190mb`, `512kb`; a bare number is MiB)        | `190mb`    |
+| `--timeout`, `-t`      | Timeout in seconds                                                                               | No timeout |
+| `--wait`, `-w`         | Wait for import job to complete                                                                  | `true`     |
+| `--show-log`           | Show job log on failure                                                                          | `true`     |
 
 ### Examples
 
@@ -463,22 +527,22 @@ b2c job export
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--output`, `-o` | Output path for the export | `./export` |
-| `--data-units` | Data units JSON configuration | |
-| `--site` | Site ID(s) to export (comma-separated, repeatable) | |
-| `--site-data` | Site data types to export (comma-separated) | |
-| `--global-data` | Global data types to export (comma-separated) | |
-| `--catalog` | Catalog ID(s) to export (comma-separated) | |
-| `--price-book` | Pricebook ID(s) to export (comma-separated) | |
-| `--library` | Library ID(s) to export (comma-separated) | |
-| `--inventory-list` | Inventory list ID(s) to export (comma-separated) | |
-| `--keep-archive`, `-k` | Keep archive on instance after download | `false` |
-| `--no-download` | Do not download archive (implies --keep-archive) | `false` |
-| `--zip-only` | Save as zip file without extracting | `false` |
-| `--timeout`, `-t` | Timeout in seconds | No timeout |
-| `--show-log` | Show job log on failure | `true` |
+| Flag                   | Description                                        | Default    |
+| ---------------------- | -------------------------------------------------- | ---------- |
+| `--output`, `-o`       | Output path for the export                         | `./export` |
+| `--data-units`         | Data units JSON configuration                      |            |
+| `--site`               | Site ID(s) to export (comma-separated, repeatable) |            |
+| `--site-data`          | Site data types to export (comma-separated)        |            |
+| `--global-data`        | Global data types to export (comma-separated)      |            |
+| `--catalog`            | Catalog ID(s) to export (comma-separated)          |            |
+| `--price-book`         | Pricebook ID(s) to export (comma-separated)        |            |
+| `--library`            | Library ID(s) to export (comma-separated)          |            |
+| `--inventory-list`     | Inventory list ID(s) to export (comma-separated)   |            |
+| `--keep-archive`, `-k` | Keep archive on instance after download            | `false`    |
+| `--no-download`        | Do not download archive (implies --keep-archive)   | `false`    |
+| `--zip-only`           | Save as zip file without extracting                | `false`    |
+| `--timeout`, `-t`      | Timeout in seconds                                 | No timeout |
+| `--show-log`           | Show job log on failure                            | `true`     |
 
 ### Examples
 
@@ -512,6 +576,7 @@ The export is configured using "data units" which specify what data to export. Y
 #### Site Data Types
 
 When using `--site-data`, available types include:
+
 - `all` - Export all site data
 - `content` - Content assets and slots
 - `site_preferences` - Site preferences
@@ -523,6 +588,7 @@ When using `--site-data`, available types include:
 #### Global Data Types
 
 When using `--global-data`, available types include:
+
 - `all` - Export all global data
 - `meta_data` - System and custom object metadata
 - `custom_types` - Custom object type definitions

@@ -9,7 +9,7 @@ Use the `b2c` CLI plugin to **run existing jobs** and import/export site archive
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli job run`).
 
-> **Creating a new job?** If you need to write custom job step *code* (batch processing, scheduled tasks, data sync) **or author the `jobs.xml` job definition** that makes a job exist (so it can be run/scheduled), use the `b2c:b2c-custom-job-steps` skill — see its [jobs.xml Reference](../../../b2c/skills/b2c-custom-job-steps/references/JOBS-XML.md). `b2c job run` only executes jobs that already exist on the instance.
+> **Creating a new job?** If you need to write custom job step _code_ (batch processing, scheduled tasks, data sync) **or author the `jobs.xml` job definition** that makes a job exist (so it can be run/scheduled), use the `b2c:b2c-custom-job-steps` skill — see its [jobs.xml Reference](../../../b2c/skills/b2c-custom-job-steps/references/JOBS-XML.md). `b2c job run` only executes jobs that already exist on the instance.
 
 ## Configuration & Authentication
 
@@ -168,14 +168,14 @@ b2c job export --global-data meta_data --timeout 600
 
 **Top-level categories** (each takes one or more IDs via flags):
 
-| Flag | Description |
-|---|---|
-| `--site` | Site IDs to export (use `--site-data` to pick specific units, defaults to all) |
-| `--catalog` | Catalog IDs |
-| `--library` | Library IDs |
-| `--inventory-list` | Inventory list IDs |
-| `--price-book` | Price book IDs |
-| `--global-data` | Global data units (comma-separated names from the list below) |
+| Flag               | Description                                                                    |
+| ------------------ | ------------------------------------------------------------------------------ |
+| `--site`           | Site IDs to export (use `--site-data` to pick specific units, defaults to all) |
+| `--catalog`        | Catalog IDs                                                                    |
+| `--library`        | Library IDs                                                                    |
+| `--inventory-list` | Inventory list IDs                                                             |
+| `--price-book`     | Price book IDs                                                                 |
+| `--global-data`    | Global data units (comma-separated names from the list below)                  |
 
 **Site data units** (use with `--site-data`):
 
@@ -222,6 +222,25 @@ b2c job search --sort-by start_time --sort-order desc
 # search with JSON output
 b2c job search --json
 ```
+
+### Delete Job Executions
+
+```bash
+# delete a job execution record (requires SCAPI)
+b2c job execution delete my-job abc123-def456
+```
+
+### API Backend
+
+Job commands run over SCAPI. Configure `shortCode`, `tenantId`, and the SCAPI scopes and `job run`, `job search`, `job wait`, and `job log` work out of the box.
+
+**SCAPI scopes**: `sfcc.jobs.rw` (recommended) for full access, or `sfcc.jobs` for read-only (search, wait, log).
+
+OCAPI is deprecated and disabled on newer instances. `--api-backend auto` (the default) falls back to the OCAPI Data API on safe SCAPI capability/auth/request rejections; force a backend with `--api-backend scapi|ocapi`, dw.json `"api-backend": "scapi"`, or `SFCC_API_BACKEND=scapi`.
+
+SCAPI `DELETE` removes a completed execution record; it does not cancel a running job. The CLI does not expose job cancellation because the underlying job APIs do not provide that operation.
+
+> **Note:** `job import` and `job export` trigger the site-archive system jobs and transfer archive files over WebDAV. The job trigger honors `--api-backend`: in `auto` mode it runs over SCAPI (needs `sfcc.jobs.rw`) with OCAPI fallback if the SCAPI start is rejected. The archive transfer always uses WebDAV.
 
 ### Wait for Job Completion
 

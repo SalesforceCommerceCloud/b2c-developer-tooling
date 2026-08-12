@@ -15,6 +15,7 @@ import JSZip from 'jszip';
 import * as xml2js from 'xml2js';
 import {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
+import {createSitesBackend} from '../sites/index.js';
 import {siteArchiveExportToBuffer} from '../jobs/site-archive.js';
 import type {JobExecution, WaitForJobOptions} from '../jobs/run.js';
 import {readManifest} from './install.js';
@@ -163,14 +164,9 @@ export async function listInstalledApps(
   if (options.sites && options.sites.length > 0) {
     siteIds = options.sites;
   } else {
-    logger.debug('No sites specified, discovering all sites via OCAPI');
-    const {data, error} = await instance.ocapi.GET('/sites', {
-      params: {query: {select: '(**)'}},
-    });
-    if (error || !data) {
-      throw new Error(error?.fault?.message ?? 'Failed to list sites');
-    }
-    siteIds = (data.data ?? []).map((s) => s.id).filter((id): id is string => !!id);
+    logger.debug('No sites specified, discovering all sites (SCAPI with OCAPI fallback)');
+    const sites = await createSitesBackend({instance}).listSites();
+    siteIds = sites.map((s) => s.id).filter((id): id is string => !!id);
     logger.debug({siteIds}, `Discovered ${siteIds.length} site(s)`);
   }
 

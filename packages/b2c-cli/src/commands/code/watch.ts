@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {watchCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {createScriptsBackend, watchCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -40,7 +40,7 @@ export default class CodeWatch extends CartridgeCommand<typeof CodeWatch> {
     const hostname = this.resolvedConfig.values.hostname!;
     const version = this.resolvedConfig.values.codeVersion;
 
-    // OAuth is only required if no code version specified (need to auto-discover via OCAPI)
+    // OAuth is only required if no code version is specified (backend discovery).
     if (!version && !this.hasOAuthCredentials()) {
       this.error(
         t(
@@ -67,6 +67,7 @@ export default class CodeWatch extends CartridgeCommand<typeof CodeWatch> {
     try {
       const result = await this.operations.watchCartridges(this.instance, this.cartridgePath, {
         ...this.cartridgeOptions,
+        scriptsBackend: createScriptsBackend({instance: this.instance}),
         onUpload: (files) => {
           this.log(t('commands.code.watch.uploaded', '[UPLOAD] {{count}} file(s)', {count: files.length}));
         },

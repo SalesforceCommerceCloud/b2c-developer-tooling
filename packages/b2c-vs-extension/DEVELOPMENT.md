@@ -68,7 +68,7 @@ The **Run Extension** launch configuration performs a production build as a pre-
    - Tune `b2c-dx.jobs.discoveryExecutionScanLimit` to scan more executions and discover additional job IDs.
    - Optionally define `b2c-dx.jobs.knownJobIds` to provide quick-pick suggestions before history is populated.
 4. Expand a job and verify its execution history and step-level details.
-5. Run **Run Job**, **Re-Run Job**, and **Stop Execution** from the view context menu.
+5. Run **Run Job** and **Re-Run Job** from the view context menu.
 6. Run **Create Job Scaffold** and verify that it creates `jobs.xml`, `README.md`, and a script stub under `b2c-jobs/<job-id>/`.
 7. Run **Deploy Job Scaffold**, select the generated `jobs.xml`, confirm the target instance, and verify that deployment completes.
 8. Open **Business Manager Jobs** from the success prompt and confirm that the new job definition is present and disabled by default.

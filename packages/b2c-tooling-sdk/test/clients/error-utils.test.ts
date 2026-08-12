@@ -4,7 +4,14 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
-import {getApiErrorMessage} from '../../src/clients/error-utils.js';
+import {
+  getApiErrorMessage,
+  isOcapiDeprecatedFault,
+  throwOcapiError,
+  OcapiDeprecatedError,
+  OCAPI_DEPRECATED_MESSAGE,
+  ocapiDeprecatedMessage,
+} from '../../src/clients/error-utils.js';
 
 describe('getApiErrorMessage', () => {
   // Mock response object for testing
@@ -166,6 +173,96 @@ describe('getApiErrorMessage', () => {
         headers: new Headers(),
       };
       expect(getApiErrorMessage(error, response as Response)).to.equal('HTTP 521 Web Server Is Down');
+    });
+  });
+
+  describe('OCAPI deprecation (D1)', () => {
+    const deprecatedFault = {
+      fault: {
+        type: 'OcapiDeprecatedException',
+        message: 'OCAPI has been deprecated. Access is not available for this instance.',
+      },
+    };
+
+    it('isOcapiDeprecatedFault matches the deprecation fault type', () => {
+      expect(isOcapiDeprecatedFault(deprecatedFault)).to.equal(true);
+    });
+
+    it('isOcapiDeprecatedFault is false for other faults and non-objects', () => {
+      expect(isOcapiDeprecatedFault({fault: {type: 'NotFoundException', message: 'x'}})).to.equal(false);
+      expect(isOcapiDeprecatedFault({fault: {type: 'InvalidAccessTokenException'}})).to.equal(false);
+      expect(isOcapiDeprecatedFault(null)).to.equal(false);
+      expect(isOcapiDeprecatedFault('string')).to.equal(false);
+      expect(isOcapiDeprecatedFault({})).to.equal(false);
+    });
+
+    it('getApiErrorMessage is a pure extractor — it does NOT substitute the deprecation fault', () => {
+      // Deprecation handling lives at the OCAPI-terminal call sites (throwOcapiError),
+      // not in the extractor, so the raw fault message comes through here.
+      const message = getApiErrorMessage(deprecatedFault, mockResponse(403, 'Forbidden'));
+      expect(message).to.equal('OCAPI has been deprecated. Access is not available for this instance.');
+    });
+  });
+
+  describe('ocapiDeprecatedMessage', () => {
+    it('uses generic sfcc.* phrasing when no scopes are given', () => {
+      const msg = ocapiDeprecatedMessage();
+      expect(msg).to.equal(OCAPI_DEPRECATED_MESSAGE);
+      expect(msg).to.include('OCAPI is deprecated');
+      expect(msg).to.include('the required sfcc.* scopes');
+      expect(msg).to.include('#scapi-authentication');
+    });
+
+    it('names a single required scope', () => {
+      const msg = ocapiDeprecatedMessage(['sfcc.scripts.rw']);
+      expect(msg).to.include('the "sfcc.scripts.rw" scope');
+    });
+
+    it('lists multiple scopes with "or"', () => {
+      const msg = ocapiDeprecatedMessage(['sfcc.scripts', 'sfcc.scripts.rw']);
+      expect(msg).to.include('the "sfcc.scripts" or "sfcc.scripts.rw" scope');
+    });
+  });
+
+  describe('throwOcapiError', () => {
+    it('throws OcapiDeprecatedError for the deprecation fault, naming the operation scope', () => {
+      const fault = {fault: {type: 'OcapiDeprecatedException', message: 'deprecated'}};
+      try {
+        throwOcapiError(fault, mockResponse(403, 'Forbidden'), 'Failed to list code versions', [
+          'sfcc.scripts',
+          'sfcc.scripts.rw',
+        ]);
+        expect.fail('should have thrown');
+      } catch (e) {
+        expect(e).to.be.instanceOf(OcapiDeprecatedError);
+        expect((e as Error).message).to.include('the "sfcc.scripts" or "sfcc.scripts.rw" scope');
+        expect((e as Error).cause).to.equal(fault);
+      }
+    });
+
+    it('uses the generic message when no scopes are supplied (OCAPI-only operations)', () => {
+      const fault = {fault: {type: 'OcapiDeprecatedException', message: 'deprecated'}};
+      try {
+        throwOcapiError(fault, mockResponse(403, 'Forbidden'), 'Failed to search users');
+        expect.fail('should have thrown');
+      } catch (e) {
+        expect(e).to.be.instanceOf(OcapiDeprecatedError);
+        expect((e as Error).message).to.include('the required sfcc.* scopes');
+      }
+    });
+
+    it('prefixes non-deprecation errors with the fault message and attaches cause', () => {
+      const fault = {fault: {type: 'NotFoundException', message: 'Site not found'}};
+      try {
+        throwOcapiError(fault, mockResponse(404, 'Not Found'), 'Failed to list code versions');
+        expect.fail('should have thrown');
+      } catch (e) {
+        const err = e as Error;
+        expect(err).to.be.instanceOf(Error);
+        expect(err).to.not.be.instanceOf(OcapiDeprecatedError);
+        expect(err.message).to.equal('Failed to list code versions: Site not found');
+        expect(err.cause).to.equal(fault);
+      }
     });
   });
 });

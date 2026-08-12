@@ -1,5 +1,5 @@
 ---
-description: Set up authentication for the B2C CLI including Account Manager API clients, OCAPI permissions, and WebDAV access keys.
+description: Set up authentication for the B2C CLI including Account Manager API clients, SCAPI scopes, OCAPI permissions, and WebDAV access keys.
 ---
 
 # Authentication Setup
@@ -10,17 +10,20 @@ This guide covers setting up authentication for the B2C CLI, including Account M
 
 The CLI uses different authentication mechanisms depending on the operation:
 
-| Operation                                                                                          | Auth Method                  | Setup Required                                                                           |
-| -------------------------------------------------------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------- |
-| [Code](/cli/code) deploy, watch (file upload)                                                      | WebDAV (Basic Auth or OAuth) | [WebDAV Access](#webdav-access)                                                          |
-| [Code](/cli/code) list, activate, delete                                                           | OAuth + OCAPI                | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration)                |
-| [Jobs](/cli/jobs), [Sites](/cli/sites)                                                             | OAuth + OCAPI                | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration)                |
-| SCAPI commands ([schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis), [eCDN](/cli/ecdn)) | OAuth + SCAPI scopes         | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication)        |
-| [CIP analytics](/cli/cip) (`cip query`, `cip report`)                                              | OAuth + Client Credentials   | [API Client](#account-manager-api-client) + Salesforce Commerce API role + tenant filter |
-| [SLAS](/cli/slas) client management                                                                | OAuth                        | None (uses built-in client) or [API Client](#account-manager-api-client)                 |
-| [Sandbox](/cli/sandbox) management                                                                 | OAuth                        | None (uses built-in client) or [API Client](#account-manager-api-client)                 |
-| [Account Manager](/cli/account-manager)                                                            | OAuth                        | None (uses built-in client) or [API Client](#account-manager-api-client)                 |
-| [MRT](/cli/mrt) commands                                                                           | MRT API Key                  | [MRT API Key](#managed-runtime-api-key)                                                  |
+| Operation                                                                                          | Auth Method                                                           | Setup Required                                                                                                       |
+| -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| [Code](/cli/code) deploy, watch (file upload)                                                      | WebDAV (Basic Auth or OAuth)                                          | [WebDAV Access](#webdav-access)                                                                                      |
+| [Code](/cli/code) list, activate, delete                                                           | OAuth + SCAPI (`sfcc.scripts` / `sfcc.scripts.rw`), OCAPI fallback    | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) (or [OCAPI](#ocapi-configuration)) |
+| [Jobs](/cli/jobs)                                                                                  | OAuth + SCAPI (`sfcc.jobs` / `sfcc.jobs.rw`), OCAPI fallback          | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) (or [OCAPI](#ocapi-configuration)) |
+| [BM users / roles](/cli/bm)                                                                        | OAuth + SCAPI (`sfcc.users(.rw)` / `sfcc.roles(.rw)`), OCAPI fallback | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) (or [OCAPI](#ocapi-configuration)) |
+| [Sites](/cli/sites) list, cartridge path (read)                                                    | OAuth + SCAPI (`sfcc.sites` / `sfcc.sites.rw`), OCAPI fallback        | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) (or [OCAPI](#ocapi-configuration)) |
+| [Sites](/cli/sites) cartridge path (add/remove/set)                                                | OAuth + OCAPI / site import                                           | [API Client](#account-manager-api-client) + [OCAPI](#ocapi-configuration)                                            |
+| SCAPI commands ([schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis), [eCDN](/cli/ecdn)) | System OAuth + SCAPI scopes                                           | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication)                                    |
+| [CIP analytics](/cli/cip) (`cip query`, `cip report`)                                              | OAuth + Client Credentials                                            | [API Client](#account-manager-api-client) + Salesforce Commerce API role + tenant filter                             |
+| [SLAS](/cli/slas) client management                                                                | OAuth                                                                 | None (uses built-in client) or [API Client](#account-manager-api-client)                                             |
+| [Sandbox](/cli/sandbox) management                                                                 | OAuth                                                                 | None (uses built-in client) or [API Client](#account-manager-api-client)                                             |
+| [Account Manager](/cli/account-manager)                                                            | OAuth                                                                 | None (uses built-in client) or [API Client](#account-manager-api-client)                                             |
+| [MRT](/cli/mrt) commands                                                                           | MRT API Key                                                           | [MRT API Key](#managed-runtime-api-key)                                                                              |
 
 ::: tip Zero-Config for Platform Commands
 Sandbox, SLAS, and Account Manager commands work out of the box without any client configuration. The CLI includes a built-in public client that authenticates via browser login (Authorization Code + PKCE). You only need to configure an API client if you want to use client credentials for automation/CI or need specific scopes.
@@ -38,13 +41,13 @@ Most CLI operations require an Account Manager API Client. This is configured in
 
 The CLI supports five authentication methods:
 
-| Method                             | When Used                                                                                      | Role Configuration                        |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| **User Authentication**            | When `--user-auth` is passed, or when only a client ID is provided (no secret)                 | Roles configured on your **user account** |
-| **Client Credentials**             | When both `--client-id` and `--client-secret` are provided                                     | Roles configured on the **API client**    |
-| **JWT Bearer**                     | When `--jwt-cert` and `--jwt-key` are provided (certificate-based authentication)              | Roles configured on the **API client**    |
-| **Stateful User Authentication**   | After running `b2c auth login` — browser-based login, token stored and reused                  | Roles configured on your **user account** |
-| **Stateful Client Authentication** | After running `b2c auth client` — client credentials login, token stored and reused            | Roles configured on the **API client**    |
+| Method                             | When Used                                                                           | Role Configuration                        |
+| ---------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------- |
+| **User Authentication**            | When `--user-auth` is passed, or when only a client ID is provided (no secret)      | Roles configured on your **user account** |
+| **Client Credentials**             | When both `--client-id` and `--client-secret` are provided                          | Roles configured on the **API client**    |
+| **JWT Bearer**                     | When `--jwt-cert` and `--jwt-key` are provided (certificate-based authentication)   | Roles configured on the **API client**    |
+| **Stateful User Authentication**   | After running `b2c auth login` — browser-based login, token stored and reused       | Roles configured on your **user account** |
+| **Stateful Client Authentication** | After running `b2c auth client` — client credentials login, token stored and reused | Roles configured on the **API client**    |
 
 **User Authentication** opens a browser for interactive login and uses roles assigned to your user account. This is ideal for development and manual operations. Use `--user-auth` as a shorthand for `--auth-methods user` on any OAuth command — both select the Authorization Code + PKCE flow.
 
@@ -54,7 +57,7 @@ In dw.json, the same shorthand is available as `"user-auth": true`. It is mutual
 
 **JWT Bearer** uses a public/private certificate pair for authentication without storing client secrets. See [JWT Authentication](#jwt-authentication-certificate-based) for details.
 
-**Stateful User Auth** uses `b2c auth login` to open a browser for interactive login once (Authorization Code + PKCE). The CLI persists both the access token *and* a long-lived refresh token, so subsequent commands silently refresh expired access tokens without re-opening the browser. Clear the session with `b2c auth logout`. See [Auth Commands](/cli/auth#b2c-auth-login) for details.
+**Stateful User Auth** uses `b2c auth login` to open a browser for interactive login once (Authorization Code + PKCE). The CLI persists both the access token _and_ a long-lived refresh token, so subsequent commands silently refresh expired access tokens without re-opening the browser. Clear the session with `b2c auth logout`. See [Auth Commands](/cli/auth#b2c-auth-login) for details.
 
 **Stateful Client Auth** uses `b2c auth client` to authenticate once with client credentials (or user/password) and store the **access token** for reuse across subsequent commands. The client secret is never persisted, and there is no automatic refresh — when the access token expires, re-run `b2c auth client` with the same credentials. For refresh-capable user authentication, use `b2c auth login` instead. See [Auth Commands](/cli/auth#b2c-auth-client) for details.
 
@@ -62,6 +65,7 @@ After signing in with `auth login` or `auth client`, you can omit the client ID 
 
 ::: warning Stateful vs Stateless Precedence
 The stored session is used only when the token is valid **and** no explicit auth flags are provided. The CLI falls back to stateless auth when:
+
 - The stored token is **expired or invalid** — a warning suggests re-running `b2c auth client --client-id <id> --client-secret <secret>` (for client-credentials sessions) or `b2c auth login` (for user sessions).
 - **Explicit stateless auth flags** are passed (`--client-secret`, `--user-auth`, or `--auth-methods`) — a warning lists the flags that triggered the override. Remove them to use the stored session. Note that `--client-id` alone does not force stateless; the stored session is used if the configured client ID matches.
 
@@ -96,10 +100,10 @@ Roles grant permission to perform specific operations. Roles are configured diff
 
 Most roles require a **tenant filter** that specifies which tenants/realms the role applies to. This is configured alongside the role assignment.
 
-| Role                              | Operations                                | Notes                                       |
-| --------------------------------- | ----------------------------------------- | ------------------------------------------- |
+| Role                              | Operations                                | Notes                                         |
+| --------------------------------- | ----------------------------------------- | --------------------------------------------- |
 | `Salesforce Commerce API`         | SCAPI commands and CIP analytics commands | API clients only. Requires a tenant filter.   |
-| `Sandbox API User`                | ODS management, SLAS client management    | Requires tenant filter with realm/org IDs.  |
+| `Sandbox API User`                | ODS management, SLAS client management    | Requires tenant filter with realm/org IDs.    |
 | `SLAS Organization Administrator` | SLAS client management (user auth only)   | User accounts only. Requires a tenant filter. |
 
 #### For Client Credentials (Roles on API Client)
@@ -199,6 +203,7 @@ openssl req -x509 -newkey rsa:4096 \
 ```
 
 This creates two files:
+
 - `cert.pem` - Public certificate (upload to Account Manager)
 - `key.pem` - Private key (keep secure on your machine)
 
@@ -216,6 +221,7 @@ For additional security, generate an encrypted private key by omitting `-nodes` 
 
 ::: tip Multiple Certificates per Client
 You can register **multiple certificates** for the same API client. This is useful for:
+
 - **Team collaboration**: Each developer generates their own key pair and registers their certificate
 - **Key rotation**: Add a new certificate before removing the old one (zero downtime)
 - **Multi-environment**: Different certificates for CI/CD, staging, production
@@ -289,19 +295,23 @@ b2c code list --auth-methods jwt
 ### Troubleshooting
 
 **"JWT certificate file not found"**
+
 - Verify the certificate path is correct
 - Use absolute paths or paths relative to current directory
 
 **"Invalid JWT private key"**
+
 - Check that the key file is in PEM format
 - If encrypted, ensure you provide the correct passphrase via `--jwt-passphrase`
 
 **"JWT authentication failed (401)"**
+
 - Verify the certificate is registered in Account Manager
 - Ensure the Token Endpoint Auth Method is set to `private_key_jwt`
 - Check that the client ID matches the API client with the registered certificate
 
 **"Invalid certificate format"**
+
 - The certificate must be in PEM format (starts with `-----BEGIN CERTIFICATE-----`)
 - Regenerate the certificate using the OpenSSL command above
 
@@ -314,6 +324,12 @@ b2c code list --auth-methods jwt
 - **Store passphrases securely**: Use secret managers for passphrases in CI/CD
 
 ## OCAPI Configuration
+
+::: warning OCAPI is deprecated
+OCAPI (the Open Commerce API / Data API) is **deprecated** and is being disabled across instances. Newer instances reject OCAPI calls entirely (`OcapiDeprecatedException`). Prefer [SCAPI](#scapi-authentication) for code, jobs, BM users/roles, sites, and catalog discovery. The CLI uses SCAPI first and temporarily falls back on safe capability/auth/request rejections. Configure OCAPI only for compatible instances or operations with no live SCAPI equivalent as of release 26.8, such as inventory-list enumeration and BM `whoami` / access keys / raw user-search JSON. Explicit SCAPI mode rejects these operations before contacting OCAPI.
+
+If a command fails with "OCAPI is deprecated and disabled for this instance," configure [SCAPI scopes](#scapi-authentication) on your API client instead.
+:::
 
 For operations that interact with B2C Commerce instances (code deployment, jobs, sites), you need to configure OCAPI permissions on each instance.
 
@@ -472,12 +488,14 @@ For operations that interact with B2C Commerce instances (code deployment, jobs,
 ```
 
 ::: tip BM functional permissions
-`bm whoami` and the `bm access-key` family additionally require *a real BM user identity*. Service-client tokens cannot resolve to a BM user, so the CLI defaults these commands to browser-based user auth. Access-key writes also require the **Manage_Users_Access_Keys** BM functional permission on the user account performing the request — grant it via **Administration** > **Roles & Permissions** in Business Manager. See [BM Commands → Authentication](/cli/bm#authentication) for details.
+`bm whoami` and the `bm access-key` family additionally require _a real BM user identity_. Service-client tokens cannot resolve to a BM user, so the CLI defaults these commands to browser-based user auth. Access-key writes also require the **Manage_Users_Access_Keys** BM functional permission on the user account performing the request — grant it via **Administration** > **Roles & Permissions** in Business Manager. See [BM Commands → Authentication](/cli/bm#authentication) for details.
 :::
 
 ## SCAPI Authentication
 
-SCAPI commands (eCDN, SCAPI schemas, custom APIs) require OAuth authentication with specific roles and scopes.
+SCAPI (the Salesforce Commerce API) is the **preferred, modern** API surface and the CLI's default for every operation that supports it. SCAPI-native commands (eCDN, SCAPI schemas, custom APIs) require it, and dual-backend commands use it first with a temporary [deprecated OCAPI fallback](#ocapi-configuration). All require OAuth authentication with specific roles and scopes.
+
+As of B2C Commerce release 26.8, the SCAPI Admin APIs used here support stateless client-credentials or JWT Bearer authentication, not browser-based user authentication. `--user-auth` continues to work with OCAPI and WebDAV. In `auto` mode a user-authenticated migrated command selects OCAPI; `--api-backend scapi --user-auth` errors clearly and directs the user to system authentication or OCAPI. The tooling will be updated when platform support becomes available.
 
 ### Required Setup
 
@@ -486,14 +504,30 @@ SCAPI commands (eCDN, SCAPI schemas, custom APIs) require OAuth authentication w
 
 ### Scopes by Command
 
-| Command                       | Required Scope       | Reference                           |
-| ----------------------------- | -------------------- | ----------------------------------- |
-| `b2c scapi schemas list/get`  | `sfcc.scapi-schemas` | [SCAPI Schemas](/cli/scapi-schemas) |
-| `b2c scapi custom status`     | `sfcc.custom-apis`   | [Custom APIs](/cli/custom-apis)     |
-| `b2c ecdn` (read operations)  | `sfcc.cdn-zones`     | [eCDN](/cli/ecdn)                   |
-| `b2c ecdn` (write operations) | `sfcc.cdn-zones.rw`  | [eCDN](/cli/ecdn)                   |
+| Command                                               | Required Scope                        | Reference                           |
+| ----------------------------------------------------- | ------------------------------------- | ----------------------------------- |
+| `b2c scapi schemas list/get`                          | `sfcc.scapi-schemas`                  | [SCAPI Schemas](/cli/scapi-schemas) |
+| `b2c scapi custom status`                             | `sfcc.custom-apis`                    | [Custom APIs](/cli/custom-apis)     |
+| `b2c ecdn` (read operations)                          | `sfcc.cdn-zones`                      | [eCDN](/cli/ecdn)                   |
+| `b2c ecdn` (write operations)                         | `sfcc.cdn-zones.rw`                   | [eCDN](/cli/ecdn)                   |
+| `b2c jobs` (read; e.g. `list`, `get`, `wait`)         | `sfcc.jobs` or `sfcc.jobs.rw`         | [Jobs](/cli/jobs)                   |
+| `b2c jobs` (write; e.g. `run`, `delete`)              | `sfcc.jobs.rw`                        | [Jobs](/cli/jobs)                   |
+| `b2c code list`                                       | `sfcc.scripts` or `sfcc.scripts.rw`   | [Code](/cli/code)                   |
+| `b2c code activate`, `code delete`                    | `sfcc.scripts.rw`                     | [Code](/cli/code)                   |
+| `b2c bm users list/get`                               | `sfcc.users` or `sfcc.users.rw`       | [BM](/cli/bm)                       |
+| `b2c bm users search`                                 | `sfcc.users` or `sfcc.users.rw`       | [BM](/cli/bm)                       |
+| `b2c bm users create/update/delete`                   | `sfcc.users.rw`                       | [BM](/cli/bm)                       |
+| `b2c bm roles list/get`                               | `sfcc.roles` or `sfcc.roles.rw`       | [BM](/cli/bm)                       |
+| `b2c bm roles create/delete/grant/revoke/permissions` | `sfcc.roles.rw`                       | [BM](/cli/bm)                       |
+| `b2c sites list`, `sites cartridges list`             | `sfcc.sites` or `sfcc.sites.rw`       | [Sites](/cli/sites)                 |
+| `b2c sites cartridges add/remove/set`                 | `sfcc.sites.rw`                       | [Sites](/cli/sites)                 |
+| Catalog discovery used by export/VS Code              | `sfcc.catalogs` or `sfcc.catalogs.rw` | [Jobs](/cli/jobs)                   |
 
 The CLI automatically requests these scopes. Your API client must have them in the Default Scopes list.
+
+The `code`, `jobs`, `bm users`, `bm roles`, and `sites` commands run over SCAPI where the live API provides an equivalent operation. The CLI defaults to `--api-backend auto`: it tries SCAPI when `shortCode`, `tenantId`, and supported stateless OAuth are detected, then falls back to deprecated OCAPI only for safe capability/auth/request rejections. Missing SCAPI coordinates select OCAPI directly; they are not required for `auto`. If neither backend is usable, the command reports the missing configuration or permission instead of requiring SCAPI coordinates up front. Use `--api-backend scapi` or `--api-backend ocapi` to force a backend explicitly.
+
+Inventory-list enumeration, BM `whoami`, BM access-key administration, raw OCAPI user-search query JSON, and cancellation of a running job currently have no equivalent live SCAPI operation. Those remain explicit temporary OCAPI compatibility paths. Site cartridge-path writes and catalog enumeration are supported by SCAPI.
 
 ::: tip
 For detailed authentication requirements including specific scopes for each command, see the individual [CLI command reference pages](/cli/).
@@ -605,11 +639,12 @@ Here's a complete example for setting up CLI access:
      - `Salesforce Commerce API` - add tenant filter with your tenant IDs
      - `Sandbox API User` - if using ODS (add tenant filter)
    - **Default Scopes**: `mail roles tenantFilter openid sfcc.cdn-zones`
+   - For SCAPI-backed dual commands, also add the relevant `sfcc.jobs(.rw)`, `sfcc.scripts(.rw)`, `sfcc.users(.rw)`, `sfcc.roles(.rw)` scopes — see [Scopes by Command](#scopes-by-command).
    - **Redirect URLs**: `http://localhost:8080` (for user authentication)
 
-### 2. Configure OCAPI (for code list/activate/delete, jobs, sites)
+### 2. (Optional) Configure OCAPI fallback
 
-Add the JSON configuration shown in [OCAPI Configuration](#ocapi-configuration) to enable code version and job APIs.
+With the SCAPI scopes above configured, `code`, `jobs`, `bm users/roles`, `sites`, and catalog discovery run over SCAPI. Configure OCAPI only for operations with no live equivalent as of release 26.8 — inventory-list enumeration, BM `whoami`, access keys, and raw `bm users search --query` — or as the temporary `auto` fallback. Explicit SCAPI mode raises a capability error before contacting OCAPI. Note that OCAPI is [deprecated](#ocapi-configuration) and disabled on newer instances. To set it up, add the JSON configuration shown in [OCAPI Configuration](#ocapi-configuration).
 
 ### 3. Configure WebDAV Access (for code deploy/watch, webdav commands)
 
@@ -625,10 +660,11 @@ Either:
 export SFCC_CLIENT_ID=your-client-id
 export SFCC_CLIENT_SECRET=your-client-secret
 
-# Instance (for OCAPI commands)
+# Instance hostname (used by WebDAV and OCAPI)
 export SFCC_SERVER=your-instance.demandware.net
 
-# SCAPI (for eCDN, schemas, custom-apis)
+# SCAPI — required for SCAPI-only commands (eCDN, schemas, custom-apis) and
+# enables `auto` mode to prefer SCAPI for code/jobs/bm commands.
 export SFCC_TENANT_ID=zzxy_prd
 export SFCC_SHORTCODE=kv7kzm78
 
@@ -640,7 +676,7 @@ export SFCC_PASSWORD=your-webdav-access-key
 ### 5. Test the Configuration
 
 ```bash
-# Test OAuth + OCAPI
+# Test OAuth + SCAPI (code uses SCAPI when sfcc.scripts is configured)
 b2c code list
 
 # Test WebDAV

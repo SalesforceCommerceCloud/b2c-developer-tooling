@@ -21,50 +21,58 @@ describe('bm users delete', () => {
     return createTestCommand(BmUsersDelete, hooks.getConfig(), flags, args);
   }
 
+  function createMockBackend() {
+    return {
+      name: 'ocapi' as const,
+      listUsers: sinon.stub(),
+      getUser: sinon.stub(),
+      createOrReplaceUser: sinon.stub(),
+      updateUser: sinon.stub(),
+      deleteUser: sinon.stub(),
+    };
+  }
+
   function stubCommon(command: any, {jsonEnabled}: {jsonEnabled: boolean}) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));
     sinon.stub(command, 'jsonEnabled').returns(jsonEnabled);
+    const backend = createMockBackend();
+    sinon.stub(command, 'createUsersBackend').returns(backend);
+    return backend;
   }
 
   it('deletes user with --force in JSON mode', async () => {
     const command: any = await createCommand({force: true}, {login: 'user@x.com'});
-    stubCommon(command, {jsonEnabled: true});
+    const backend = stubCommon(command, {jsonEnabled: true});
 
-    const ocapiDelete = sinon.stub().resolves({data: undefined, error: undefined});
-    sinon.stub(command, 'instance').get(() => ({ocapi: {DELETE: ocapiDelete}}));
+    backend.deleteUser.resolves();
 
     const result = await command.run();
     expect(result.success).to.equal(true);
     expect(result.login).to.equal('user@x.com');
     expect(result.hostname).to.equal('example.com');
-    expect(ocapiDelete.calledOnce).to.equal(true);
+    expect(backend.deleteUser.calledOnce).to.equal(true);
   });
 
   it('throws on 404', async () => {
     const command: any = await createCommand({force: true}, {login: 'missing@x.com'});
-    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    const backend = stubCommon(command, {jsonEnabled: false});
+    sinon.stub(command, 'log').returns(void 0);
 
-    const ocapiDelete = sinon.stub().resolves({
-      data: undefined,
-      error: {fault: {message: 'User not found'}},
-      response: {status: 404, statusText: 'Not Found'},
-    });
-    sinon.stub(command, 'instance').get(() => ({ocapi: {DELETE: ocapiDelete}}));
+    backend.deleteUser.rejects(new Error('Failed to delete user missing@x.com: User not found'));
 
     await expectError(() => command.run(), /Failed to delete user/);
   });
 
   it('skips confirmation prompt in JSON mode without --force', async () => {
     const command: any = await createCommand({}, {login: 'user@x.com'});
-    stubCommon(command, {jsonEnabled: true});
+    const backend = stubCommon(command, {jsonEnabled: true});
 
-    const ocapiDelete = sinon.stub().resolves({data: undefined, error: undefined});
-    sinon.stub(command, 'instance').get(() => ({ocapi: {DELETE: ocapiDelete}}));
+    backend.deleteUser.resolves();
 
     const result = await command.run();
     expect(result.success).to.equal(true);
-    expect(ocapiDelete.calledOnce).to.equal(true);
+    expect(backend.deleteUser.calledOnce).to.equal(true);
   });
 });

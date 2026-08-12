@@ -17,7 +17,7 @@ import {parseSafetyLevelString} from '../safety/safety-middleware.js';
 import {isValidSafetyAction} from '../safety/types.js';
 import type {SafetyRule} from '../safety/types.js';
 import type {DwJsonConfig} from './dw-json.js';
-import type {LibraryEntry, NormalizedConfig, ConfigWarning} from './types.js';
+import type {CreateB2CInstanceOptions, LibraryEntry, NormalizedConfig, ConfigWarning} from './types.js';
 
 /**
  * Normalizes a URL origin string by ensuring it has an `https://` protocol prefix.
@@ -83,6 +83,7 @@ export const CONFIG_KEY_ALIASES: Record<string, string> = {
   'oauth-scopes': 'oauthScopes',
   'auth-methods': 'authMethods',
   'cip-host': 'cipHost',
+  'api-backend': 'apiBackend',
 };
 
 /**
@@ -198,6 +199,8 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     certificate: json.certificate,
     certificatePassphrase: json.certificatePassphrase,
     selfSigned: json.selfSigned,
+    // API backend
+    apiBackend: json.apiBackend,
     // JWT Bearer auth options
     jwtCertPath: json.jwtCertPath,
     jwtKeyPath: json.jwtKeyPath,
@@ -342,6 +345,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.selfSigned !== undefined) {
     result.selfSigned = config.selfSigned;
+  }
+  if (config.apiBackend !== undefined) {
+    result.apiBackend = config.apiBackend;
   }
   if (config.jwtCertPath !== undefined) {
     result.jwtCertPath = config.jwtCertPath;
@@ -557,6 +563,8 @@ export function mergeConfigsWithProtection(
       certificate: overrides.certificate ?? base.certificate,
       certificatePassphrase: overrides.certificatePassphrase ?? base.certificatePassphrase,
       selfSigned: overrides.selfSigned ?? base.selfSigned,
+      // API backend
+      apiBackend: overrides.apiBackend ?? base.apiBackend,
       // JWT Bearer auth options
       jwtCertPath: overrides.jwtCertPath ?? base.jwtCertPath,
       jwtKeyPath: overrides.jwtKeyPath ?? base.jwtKeyPath,
@@ -636,6 +644,9 @@ export function buildAuthConfigFromNormalized(config: NormalizedConfig): AuthCon
       clientSecret: config.clientSecret,
       scopes: config.scopes,
       accountManagerHost: config.accountManagerHost,
+      jwtCertPath: config.jwtCertPath,
+      jwtKeyPath: config.jwtKeyPath,
+      jwtPassphrase: config.jwtPassphrase,
     };
   }
 
@@ -662,10 +673,7 @@ export function buildAuthConfigFromNormalized(config: NormalizedConfig): AuthCon
  * await instance.webdav.mkcol('Cartridges/v1');
  * ```
  */
-export function createInstanceFromConfig(
-  config: NormalizedConfig,
-  options?: {redirectUri?: string; openBrowser?: (url: string) => Promise<void>},
-): B2CInstance {
+export function createInstanceFromConfig(config: NormalizedConfig, options?: CreateB2CInstanceOptions): B2CInstance {
   if (!config.hostname) {
     throw new Error('Hostname is required. Set in dw.json or provide via overrides.');
   }
@@ -674,6 +682,11 @@ export function createInstanceFromConfig(
     hostname: config.hostname,
     codeVersion: config.codeVersion,
     webdavHostname: config.webdavHostname,
+    // SCAPI coordinates + backend preference so SCAPI operations can be driven
+    // from the instance alone (see B2CInstance.scapiClientConfig).
+    shortCode: config.shortCode,
+    tenantId: config.tenantId,
+    apiBackend: config.apiBackend,
     // Include TLS options if certificate or self-signed mode is configured
     tlsOptions:
       config.certificate || config.selfSigned
@@ -696,5 +709,5 @@ export function createInstanceFromConfig(
     };
   }
 
-  return new B2CInstance(instanceConfig, authConfig);
+  return new B2CInstance(instanceConfig, authConfig, {oauthStrategy: options?.oauthStrategy});
 }

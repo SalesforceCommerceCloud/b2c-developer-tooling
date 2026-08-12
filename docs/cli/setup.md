@@ -275,17 +275,20 @@ b2c setup instance create [NAME] [FLAGS]
 
 ### Flags
 
-| Flag               | Description            | Default                   |
-| ------------------ | ---------------------- | ------------------------- |
-| `--hostname`, `-s` | B2C instance hostname  | Prompted                  |
-| `--username`       | WebDAV username        |                           |
-| `--password`       | WebDAV password        | Prompted if username set  |
-| `--client-id`      | OAuth client ID        |                           |
-| `--client-secret`  | OAuth client secret    | Prompted if client-id set |
-| `--code-version`   | Code version           |                           |
-| `--active`         | Set as active instance | `false`                   |
-| `--force`          | Non-interactive mode   | `false`                   |
-| `--json`           | Output results as JSON | `false`                   |
+| Flag               | Description                                                             | Default                   |
+| ------------------ | ----------------------------------------------------------------------- | ------------------------- |
+| `--hostname`, `-s` | B2C instance hostname                                                   | Prompted                  |
+| `--username`       | WebDAV username                                                         |                           |
+| `--password`       | WebDAV password                                                         | Prompted if username set  |
+| `--client-id`      | OAuth client ID                                                         |                           |
+| `--client-secret`  | OAuth client secret                                                     | Prompted if client-id set |
+| `--short-code`     | SCAPI short code (optional; enables SCAPI-first code-version detection) |                           |
+| `--tenant-id`      | SCAPI tenant/organization ID (optional; enables SCAPI-first detection)  |                           |
+| `--api-backend`    | Saved API preference: `auto`, `scapi`, or `ocapi`                       | `auto`                    |
+| `--code-version`   | Code version                                                            | Auto-detected or prompted |
+| `--active`         | Set as active instance                                                  | `false`                   |
+| `--force`          | Non-interactive mode                                                    | `false`                   |
+| `--json`           | Output results as JSON                                                  | `false`                   |
 
 ### Examples
 
@@ -311,8 +314,9 @@ When run without `--force`, the command provides an interactive experience:
 2. Prompts for hostname (if not provided)
 3. Prompts for authentication type (Basic, OAuth, Both, or Skip)
 4. Prompts for credentials based on selection
-5. Asks whether to set as active instance
-6. Shows summary and confirms before creating
+5. Tries SCAPI-first/OCAPI-compatible active code-version detection when OAuth is configured, then prompts for manual entry if detection is unavailable
+6. Asks whether to set as active instance
+7. Shows summary and confirms before creating
 
 ## b2c setup instance remove
 

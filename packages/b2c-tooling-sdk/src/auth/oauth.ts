@@ -93,12 +93,56 @@ export function setCachedOAuthToken(cacheKey: string, tokenResponse: AccessToken
 }
 
 /**
- * Invalidates a cached OAuth token.
+ * Scans the cache for a non-expired token (matching the supplied identity
+ * prefix) whose scopes are a superset of `requiredScopes`.
  *
- * @param cacheKey - Cache key from getOAuthCacheKey()
+ * Used by cascade resolution: a cached token granted with broader scopes
+ * (e.g. `sfcc.jobs.rw`) automatically satisfies a later request that needs
+ * a narrower scope (e.g. `sfcc.jobs`), with no extra AM round trip.
+ *
+ * The identity prefix is `${accountManagerHost}:${clientId}:${method}:` —
+ * the same prefix `getOAuthCacheKey` produces. We iterate cache values that
+ * share this prefix; in practice 1-3 entries per identity.
+ *
+ * @returns The first satisfying token, or undefined if none.
  */
-export function invalidateCachedOAuthToken(cacheKey: string): void {
-  ACCESS_TOKEN_CACHE.delete(cacheKey);
+export function findCachedTokenSatisfying(
+  identityPrefix: string,
+  requiredScopes: string[],
+): AccessTokenResponse | undefined {
+  const now = new Date();
+  for (const [key, entry] of ACCESS_TOKEN_CACHE) {
+    if (!key.startsWith(identityPrefix)) continue;
+    if (now.getTime() > entry.expires.getTime()) {
+      ACCESS_TOKEN_CACHE.delete(key);
+      continue;
+    }
+    if (requiredScopes.every((s) => entry.scopes.includes(s))) {
+      return entry;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Invalidates **every** cached token for an identity prefix
+ * (`${accountManagerHost}:${clientId}:${method}:`).
+ *
+ * A cascade-resolving strategy caches tokens under *merged-scope* keys (e.g.
+ * base ∪ `sfcc.jobs.rw`), which differ from the strategy's configured base-
+ * scope {@link getOAuthCacheKey}. Deleting only the base key on a 401 would
+ * leave the rejected merged token cached, so the retry's cascade cache-scan
+ * ({@link findCachedTokenSatisfying}) would re-hand out the same rejected
+ * token. Clearing by identity prefix evicts all of them so the retry re-
+ * requests from Account Manager. The prefix scopes deletion to this
+ * client/method/AM host, so unrelated identities are untouched.
+ */
+export function invalidateCachedTokensForIdentity(identityPrefix: string): void {
+  for (const key of ACCESS_TOKEN_CACHE.keys()) {
+    if (key.startsWith(identityPrefix)) {
+      ACCESS_TOKEN_CACHE.delete(key);
+    }
+  }
 }
 
 /**
@@ -126,6 +170,7 @@ export class OAuthStrategy implements AuthStrategy {
   private accountManagerHost: string;
   private _hasHadSuccess = false;
   private cacheKey: string;
+  private identityPrefix: string;
 
   /**
    * Creates a new OAuthStrategy instance with the provided OAuth configuration.
@@ -140,6 +185,7 @@ export class OAuthStrategy implements AuthStrategy {
       this.accountManagerHost,
       this.config.scopes,
     );
+    this.identityPrefix = `${this.accountManagerHost}:${this.config.clientId}:client-credentials:`;
   }
 
   /**
@@ -211,10 +257,14 @@ export class OAuthStrategy implements AuthStrategy {
   }
 
   /**
-   * Invalidates the cached token, forcing re-authentication on next request
+   * Invalidates cached tokens, forcing re-authentication on next request.
+   *
+   * Clears every token for this client/method/AM-host identity — not just the
+   * base-scope key — so a 401 retry can't re-use a rejected token that was
+   * cached under a merged cascade-scope key.
    */
   invalidateToken(): void {
-    invalidateCachedOAuthToken(this.cacheKey);
+    invalidateCachedTokensForIdentity(this.identityPrefix);
   }
 
   /**
@@ -230,6 +280,63 @@ export class OAuthStrategy implements AuthStrategy {
       ...this.config,
       scopes: mergedScopes,
     });
+  }
+
+  /**
+   * Resolves a scope cascade. See {@link AuthStrategy.getAccessTokenForCascade}.
+   *
+   * Each candidate is merged with this strategy's base scopes (e.g. tenant
+   * scope baked in via {@link withAdditionalScopes}) before being sent to AM.
+   *
+   * Cache strategy:
+   *   1. For each candidate, scan the cache for any non-expired token whose
+   *      scopes ⊇ (base ∪ candidate). First hit wins, no AM call.
+   *   2. On miss, request each candidate from AM in order. Cache successes.
+   *   3. On `invalid_scope` for a candidate, continue to the next candidate.
+   *      On any other error, rethrow.
+   */
+  async getAccessTokenForCascade(candidates: string[][]): Promise<string> {
+    const logger = getLogger();
+    const baseScopes = this.config.scopes ?? [];
+    const identityPrefix = this.identityPrefix;
+
+    // Pass 1: cache scan. Return the first cached token that satisfies any
+    // candidate.
+    for (const candidate of candidates) {
+      const required = [...new Set([...baseScopes, ...candidate])];
+      const cached = findCachedTokenSatisfying(identityPrefix, required);
+      if (cached) {
+        logger.debug(
+          {required, cachedScopes: cached.scopes},
+          `[OAuthStrategy] Cache hit: cached token satisfies cascade candidate ${JSON.stringify(candidate)}`,
+        );
+        return cached.accessToken;
+      }
+    }
+
+    // Pass 2: try each candidate against AM in order.
+    let lastError: unknown;
+    for (const candidate of candidates) {
+      const merged = [...new Set([...baseScopes, ...candidate])];
+      try {
+        logger.debug({scopes: merged}, `[OAuthStrategy] Cascade trying scopes ${JSON.stringify(candidate)}`);
+        const tokenResponse = await this.refreshTokenForScopes(merged);
+        return tokenResponse.accessToken;
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('invalid_scope')) {
+          logger.debug(
+            {scopes: merged},
+            `[OAuthStrategy] Cascade candidate ${JSON.stringify(candidate)} rejected (invalid_scope), trying next`,
+          );
+          lastError = error;
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    // All candidates exhausted. Rethrow the last invalid_scope.
+    throw lastError ?? new Error('All scope cascade candidates failed');
   }
 
   /**
@@ -254,28 +361,40 @@ export class OAuthStrategy implements AuthStrategy {
    * when many requests trigger refresh at once.
    */
   private refreshTokenSingleflight(): Promise<AccessTokenResponse> {
-    const existing = PENDING_TOKEN_REQUESTS.get(this.cacheKey);
+    return this.refreshTokenForScopes(this.config.scopes);
+  }
+
+  /**
+   * Variant of {@link refreshTokenSingleflight} that requests a specific scope
+   * set rather than the strategy's configured scopes. Used by cascade
+   * resolution. Caches under a key derived from the requested scopes.
+   */
+  private refreshTokenForScopes(scopes: string[] | undefined): Promise<AccessTokenResponse> {
+    const cacheKey = getOAuthCacheKey(this.config.clientId, 'client-credentials', this.accountManagerHost, scopes);
+    const existing = PENDING_TOKEN_REQUESTS.get(cacheKey);
     if (existing) {
       getLogger().debug('[OAuthStrategy] Joining in-flight token request');
       return existing;
     }
     const pending = (async () => {
-      getLogger().debug('[OAuthStrategy] Requesting new access token');
-      const tokenResponse = await this.clientCredentialsGrant();
-      setCachedOAuthToken(this.cacheKey, tokenResponse);
+      getLogger().debug({scopes}, '[OAuthStrategy] Requesting new access token');
+      const tokenResponse = await this.clientCredentialsGrant(scopes);
+      setCachedOAuthToken(cacheKey, tokenResponse);
       return tokenResponse;
     })().finally(() => {
-      PENDING_TOKEN_REQUESTS.delete(this.cacheKey);
+      PENDING_TOKEN_REQUESTS.delete(cacheKey);
     });
-    PENDING_TOKEN_REQUESTS.set(this.cacheKey, pending);
+    PENDING_TOKEN_REQUESTS.set(cacheKey, pending);
     return pending;
   }
 
   /**
-   * Performs client credentials grant flow
+   * Performs client credentials grant flow with the given scope set.
+   * Defaults to the strategy's configured scopes when `scopes` is omitted.
    */
-  private async clientCredentialsGrant(): Promise<AccessTokenResponse> {
+  private async clientCredentialsGrant(scopeOverride?: string[]): Promise<AccessTokenResponse> {
     const logger = getLogger();
+    const requestedScopes = scopeOverride ?? this.config.scopes;
     const url = `https://${this.accountManagerHost}/dwsso/oauth2/access_token`;
     const method = 'POST';
 
@@ -283,8 +402,8 @@ export class OAuthStrategy implements AuthStrategy {
       grant_type: 'client_credentials',
     });
 
-    if (this.config.scopes && this.config.scopes.length > 0) {
-      params.append('scope', this.config.scopes.join(' '));
+    if (requestedScopes && requestedScopes.length > 0) {
+      params.append('scope', requestedScopes.join(' '));
     }
 
     const credentials = encodeBasicClientCredentials(this.config.clientId, this.config.clientSecret);
@@ -365,7 +484,10 @@ export class OAuthStrategy implements AuthStrategy {
 
     const now = new Date();
     const expiration = new Date(now.getTime() + data.expires_in * 1000);
-    const scopes = data.scope?.split(' ') ?? [];
+    // AM normally echoes back the granted scopes; some configurations omit
+    // the `scope` claim in the token response. Fall back to what we
+    // requested so cache satisfies-checks (cascade resolution) still work.
+    const scopes = data.scope?.split(' ') ?? requestedScopes ?? [];
 
     return {
       accessToken: data.access_token,

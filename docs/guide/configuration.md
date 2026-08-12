@@ -71,42 +71,42 @@ See [Configure WebDAV File Access](https://help.salesforce.com/s/articleView?id=
 
 You can configure the CLI using environment variables:
 
-| Variable                      | Description                                                    |
-| ----------------------------- | -------------------------------------------------------------- |
-| `SFCC_PROJECT_DIRECTORY`      | Project directory                                              |
-| `SFCC_CONFIG`                 | Path to config file (dw.json format)                           |
-| `SFCC_INSTANCE`               | Instance name from config file                                 |
-| `SFCC_SERVER`                 | The B2C instance hostname                                      |
-| `SFCC_WEBDAV_SERVER`          | Separate hostname for WebDAV (if different from main hostname) |
-| `SFCC_CODE_VERSION`           | Code version for deployments                                   |
-| `SFCC_CLIENT_ID`              | OAuth client ID                                                |
-| `SFCC_CLIENT_SECRET`          | OAuth client secret                                            |
-| `SFCC_JWT_CERT`               | Path to JWT certificate file (cert.pem) for JWT Bearer auth    |
-| `SFCC_JWT_KEY`                | Path to JWT private key file (key.pem) for JWT Bearer auth     |
-| `SFCC_JWT_PASSPHRASE`         | Passphrase for encrypted JWT private key                       |
-| `SFCC_OAUTH_SCOPES`           | OAuth scopes to request                                        |
-| `SFCC_AUTH_METHODS`           | Comma-separated list of allowed auth methods                   |
-| `SFCC_SHORTCODE`              | SCAPI short code                                               |
-| `SFCC_TENANT_ID`              | Organization/tenant ID for SCAPI                               |
-| `SFCC_ACCOUNT_MANAGER_HOST`   | Account Manager hostname for OAuth                             |
-| `SFCC_REDIRECT_URI`           | Override redirect URI for browser-based OAuth flows (e.g., when behind a proxy) |
-| `SFCC_OAUTH_LOCAL_PORT`       | Local port for the browser-based OAuth redirect server (default: `8080`) |
-| `SFCC_DISABLE_PKCE_FALLBACK`  | Disable the automatic PKCE→implicit fallback for clients not yet registered for PKCE (set to `1`) |
-| `SFCC_USERNAME`               | Basic auth username                                            |
-| `SFCC_PASSWORD`               | Basic auth password                                            |
-| `SFCC_CERTIFICATE`            | Path to PKCS12 certificate for two-factor auth (mTLS)          |
-| `SFCC_CERTIFICATE_PASSPHRASE` | Passphrase for the certificate                                 |
-| `SFCC_SELFSIGNED`             | Allow self-signed server certificates                          |
-| `SFCC_SANDBOX_API_HOST`       | ODS (sandbox) API hostname                                     |
-| `SFCC_CIP_HOST`               | CIP analytics host override                                    |
-| `SFCC_CIP_STAGING`            | Use staging CIP analytics host (`true`/`false`)                |
-| `MRT_API_KEY`                 | MRT API key (`SFCC_MRT_API_KEY` also supported)                |
-| `MRT_PROJECT`                 | MRT project slug (`SFCC_MRT_PROJECT` also supported)           |
-| `MRT_ENVIRONMENT`             | MRT environment name (`SFCC_MRT_ENVIRONMENT`, `MRT_TARGET` also supported) |
-| `MRT_CLOUD_ORIGIN`            | MRT API origin URL override (`SFCC_MRT_CLOUD_ORIGIN` also supported) |
-| `SFCC_SAFETY_LEVEL`           | Safety mode: `NONE`, `NO_DELETE`, `NO_UPDATE`, `READ_ONLY` (see [Safety Mode](/guide/safety)) |
+| Variable                      | Description                                                                                             |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `SFCC_PROJECT_DIRECTORY`      | Project directory                                                                                       |
+| `SFCC_CONFIG`                 | Path to config file (dw.json format)                                                                    |
+| `SFCC_INSTANCE`               | Instance name from config file                                                                          |
+| `SFCC_SERVER`                 | The B2C instance hostname                                                                               |
+| `SFCC_WEBDAV_SERVER`          | Separate hostname for WebDAV (if different from main hostname)                                          |
+| `SFCC_CODE_VERSION`           | Code version for deployments                                                                            |
+| `SFCC_CLIENT_ID`              | OAuth client ID                                                                                         |
+| `SFCC_CLIENT_SECRET`          | OAuth client secret                                                                                     |
+| `SFCC_JWT_CERT`               | Path to JWT certificate file (cert.pem) for JWT Bearer auth                                             |
+| `SFCC_JWT_KEY`                | Path to JWT private key file (key.pem) for JWT Bearer auth                                              |
+| `SFCC_JWT_PASSPHRASE`         | Passphrase for encrypted JWT private key                                                                |
+| `SFCC_OAUTH_SCOPES`           | OAuth scopes to request                                                                                 |
+| `SFCC_AUTH_METHODS`           | Comma-separated list of allowed auth methods                                                            |
+| `SFCC_SHORTCODE`              | SCAPI short code                                                                                        |
+| `SFCC_TENANT_ID`              | Organization/tenant ID for SCAPI                                                                        |
+| `SFCC_ACCOUNT_MANAGER_HOST`   | Account Manager hostname for OAuth                                                                      |
+| `SFCC_REDIRECT_URI`           | Override redirect URI for browser-based OAuth flows (e.g., when behind a proxy)                         |
+| `SFCC_OAUTH_LOCAL_PORT`       | Local port for the browser-based OAuth redirect server (default: `8080`)                                |
+| `SFCC_DISABLE_PKCE_FALLBACK`  | Disable the automatic PKCE→implicit fallback for clients not yet registered for PKCE (set to `1`)       |
+| `SFCC_USERNAME`               | Basic auth username                                                                                     |
+| `SFCC_PASSWORD`               | Basic auth password                                                                                     |
+| `SFCC_CERTIFICATE`            | Path to PKCS12 certificate for two-factor auth (mTLS)                                                   |
+| `SFCC_CERTIFICATE_PASSPHRASE` | Passphrase for the certificate                                                                          |
+| `SFCC_SELFSIGNED`             | Allow self-signed server certificates                                                                   |
+| `SFCC_SANDBOX_API_HOST`       | ODS (sandbox) API hostname                                                                              |
+| `SFCC_CIP_HOST`               | CIP analytics host override                                                                             |
+| `SFCC_CIP_STAGING`            | Use staging CIP analytics host (`true`/`false`)                                                         |
+| `MRT_API_KEY`                 | MRT API key (`SFCC_MRT_API_KEY` also supported)                                                         |
+| `MRT_PROJECT`                 | MRT project slug (`SFCC_MRT_PROJECT` also supported)                                                    |
+| `MRT_ENVIRONMENT`             | MRT environment name (`SFCC_MRT_ENVIRONMENT`, `MRT_TARGET` also supported)                              |
+| `MRT_CLOUD_ORIGIN`            | MRT API origin URL override (`SFCC_MRT_CLOUD_ORIGIN` also supported)                                    |
+| `SFCC_SAFETY_LEVEL`           | Safety mode: `NONE`, `NO_DELETE`, `NO_UPDATE`, `READ_ONLY` (see [Safety Mode](/guide/safety))           |
 | `SFCC_SAFETY_CONFIRM`         | Enable confirmation mode for safety: `true` or `1` (see [Safety Mode](/guide/safety#confirmation-mode)) |
-| `SFCC_SAFETY_CONFIG`          | Path to global safety config file (see [Safety Mode](/guide/safety#global-safety-config)) |
+| `SFCC_SAFETY_CONFIG`          | Path to global safety config file (see [Safety Mode](/guide/safety#global-safety-config))               |
 
 ## .env File
 
@@ -212,7 +212,7 @@ b2c setup instance create staging \
   --force
 ```
 
-The interactive mode auto-detects the active code version via OCAPI when OAuth credentials are provided, and the first instance you create is automatically set as active.
+The interactive mode auto-detects the active code version when OAuth credentials are provided, and the first instance you create is automatically set as active.
 
 #### Switching Instances
 
@@ -244,37 +244,38 @@ For the full command reference with all flags, see [Setup Commands](/cli/setup).
 
 ### Supported Fields
 
-| Field                    | Description                                                                                                                         |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `hostname`               | B2C instance hostname. Also accepts `server`.                                                                                       |
-| `webdav-hostname`        | Separate hostname for WebDAV (if different from main hostname). Also accepts `webdav-server`, `secureHostname`, or `secure-server`. |
-| `code-version`           | Code version for deployments                                                                                                        |
-| `client-id`              | OAuth client ID                                                                                                                     |
-| `client-secret`          | OAuth client secret                                                                                                                 |
-| `jwt-cert-path`          | Path to JWT certificate file (cert.pem) for JWT Bearer authentication. Also accepts `jwtCertPath`.                                  |
-| `jwt-key-path`           | Path to JWT private key file (key.pem) for JWT Bearer authentication. Also accepts `jwtKeyPath`.                                    |
-| `jwt-passphrase`         | Passphrase for encrypted JWT private key. Also accepts `jwtPassphrase`.                                                             |
-| `username`               | Basic auth username (WebDAV)                                                                                                        |
-| `password`               | Basic auth access key (WebDAV)                                                                                                      |
-| `oauth-scopes`           | OAuth scopes (array of strings)                                                                                                     |
-| `auth-methods`           | Authentication methods in priority order (array of strings)                                                                         |
-| `user-auth`              | Boolean shorthand for `"auth-methods": ["user"]`. Mutually exclusive with `auth-methods` — set one or the other.                    |
-| `account-manager-host`   | Account Manager hostname for OAuth                                                                                                  |
-| `shortCode`              | SCAPI short code. Also accepts `short-code` or `scapi-shortcode`.                                                                   |
-| `content-library`        | Default content library ID for `content export` and `content list` commands                                                         |
-| `libraries`              | Library IDs for the WebDAV browser and Content Libraries tree. Accepts `string[]` or `[{id, siteLibrary?}]`; elements may be mixed  |
-| `asset-query`            | JSON dot-paths used to extract static asset URLs during content library parsing (default `["image.path"]`). Also accepts `assetQuery` |
-| `tenant-id`              | Organization/tenant ID for SCAPI                                                                                                    |
-| `sandbox-api-host`       | ODS (sandbox) API hostname                                                                                                          |
-| `realm`                  | Default ODS realm for sandbox operations                                                                                            |
-| `cip-host`               | CIP analytics host override                                                                                                         |
-| `mrtApiKey`              | MRT API key                                                                                                                         |
-| `mrtProject`             | MRT project slug                                                                                                                    |
-| `mrtEnvironment`         | MRT environment name                                                                                                                |
-| `mrtOrigin`              | MRT API origin URL override. Also accepts `cloudOrigin`.                                                                            |
-| `certificate`            | Path to PKCS12 certificate for two-factor auth (mTLS)                                                                               |
-| `certificate-passphrase` | Passphrase for the certificate. Also accepts `passphrase`.                                                                          |
-| `self-signed`            | Allow self-signed server certificates. Also accepts `selfsigned`.                                                                   |
+| Field                    | Description                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hostname`               | B2C instance hostname. Also accepts `server`.                                                                                                                                                                                                                                                                                                                                                                                          |
+| `webdav-hostname`        | Separate hostname for WebDAV (if different from main hostname). Also accepts `webdav-server`, `secureHostname`, or `secure-server`.                                                                                                                                                                                                                                                                                                    |
+| `code-version`           | Code version for deployments                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `client-id`              | OAuth client ID                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `client-secret`          | OAuth client secret                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `jwt-cert-path`          | Path to JWT certificate file (cert.pem) for JWT Bearer authentication. Also accepts `jwtCertPath`.                                                                                                                                                                                                                                                                                                                                     |
+| `jwt-key-path`           | Path to JWT private key file (key.pem) for JWT Bearer authentication. Also accepts `jwtKeyPath`.                                                                                                                                                                                                                                                                                                                                       |
+| `jwt-passphrase`         | Passphrase for encrypted JWT private key. Also accepts `jwtPassphrase`.                                                                                                                                                                                                                                                                                                                                                                |
+| `username`               | Basic auth username (WebDAV)                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `password`               | Basic auth access key (WebDAV)                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `oauth-scopes`           | OAuth scopes (array of strings)                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `auth-methods`           | Authentication methods in priority order (array of strings)                                                                                                                                                                                                                                                                                                                                                                            |
+| `user-auth`              | Boolean shorthand for `"auth-methods": ["user"]`. Mutually exclusive with `auth-methods` — set one or the other.                                                                                                                                                                                                                                                                                                                       |
+| `account-manager-host`   | Account Manager hostname for OAuth                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `shortCode`              | SCAPI short code. Also accepts `short-code` or `scapi-shortcode`.                                                                                                                                                                                                                                                                                                                                                                      |
+| `content-library`        | Default content library ID for `content export` and `content list` commands                                                                                                                                                                                                                                                                                                                                                            |
+| `libraries`              | Library IDs for the WebDAV browser and Content Libraries tree. Accepts `string[]` or `[{id, siteLibrary?}]`; elements may be mixed                                                                                                                                                                                                                                                                                                     |
+| `asset-query`            | JSON dot-paths used to extract static asset URLs during content library parsing (default `["image.path"]`). Also accepts `assetQuery`                                                                                                                                                                                                                                                                                                  |
+| `tenant-id`              | Organization/tenant ID for SCAPI                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `sandbox-api-host`       | ODS (sandbox) API hostname                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `realm`                  | Default ODS realm for sandbox operations                                                                                                                                                                                                                                                                                                                                                                                               |
+| `cip-host`               | CIP analytics host override                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `mrtApiKey`              | MRT API key                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `mrtProject`             | MRT project slug                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `mrtEnvironment`         | MRT environment name                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `mrtOrigin`              | MRT API origin URL override. Also accepts `cloudOrigin`.                                                                                                                                                                                                                                                                                                                                                                               |
+| `certificate`            | Path to PKCS12 certificate for two-factor auth (mTLS)                                                                                                                                                                                                                                                                                                                                                                                  |
+| `certificate-passphrase` | Passphrase for the certificate. Also accepts `passphrase`.                                                                                                                                                                                                                                                                                                                                                                             |
+| `self-signed`            | Allow self-signed server certificates. Also accepts `selfsigned`.                                                                                                                                                                                                                                                                                                                                                                      |
+| `api-backend`            | API backend for SCAPI-migrated commands: `scapi`, `auto` (default), or `ocapi`. `auto` tries SCAPI when its coordinates and supported authentication are detected, then temporarily falls back to deprecated OCAPI on a safe capability/auth/request rejection. Missing SCAPI coordinates do not make `auto` invalid; OCAPI is selected directly. Set `ocapi` to force the [deprecated](./authentication#ocapi-configuration) backend. |
 
 ### Two-Factor Authentication (mTLS)
 
@@ -332,18 +333,18 @@ You can store project-level defaults in your `package.json` file under the `b2c`
 
 Only non-sensitive, project-level fields can be configured in `package.json`. Both camelCase and kebab-case are accepted (e.g., `shortCode` or `short-code`):
 
-| Field                | Description                                                                                                                              |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `shortCode`          | SCAPI short code                                                                                                                         |
-| `clientId`           | OAuth client ID (for browser login discovery)                                                                                            |
-| `contentLibrary`     | Default content library ID for `content export` and `content list` commands                                                              |
-| `libraries`          | Library IDs for the WebDAV browser and Content Libraries tree. Accepts `string[]` or `[{id, siteLibrary?}]`; elements may be mixed       |
-| `assetQuery`         | JSON dot-paths used to extract static asset URLs during content library parsing (default `["image.path"]`)                               |
-| `mrtProject`         | MRT project slug                                                                                                                         |
-| `mrtOrigin`          | MRT API origin URL override                                                                                                              |
-| `accountManagerHost` | Account Manager hostname for OAuth                                                                                                       |
-| `sandboxApiHost`     | ODS (sandbox) API hostname                                                                                                               |
-| `realm`              | Default ODS realm for sandbox operations                                                                                                 |
+| Field                | Description                                                                                                                        |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `shortCode`          | SCAPI short code                                                                                                                   |
+| `clientId`           | OAuth client ID (for browser login discovery)                                                                                      |
+| `contentLibrary`     | Default content library ID for `content export` and `content list` commands                                                        |
+| `libraries`          | Library IDs for the WebDAV browser and Content Libraries tree. Accepts `string[]` or `[{id, siteLibrary?}]`; elements may be mixed |
+| `assetQuery`         | JSON dot-paths used to extract static asset URLs during content library parsing (default `["image.path"]`)                         |
+| `mrtProject`         | MRT project slug                                                                                                                   |
+| `mrtOrigin`          | MRT API origin URL override                                                                                                        |
+| `accountManagerHost` | Account Manager hostname for OAuth                                                                                                 |
+| `sandboxApiHost`     | ODS (sandbox) API hostname                                                                                                         |
+| `realm`              | Default ODS realm for sandbox operations                                                                                           |
 
 ::: warning Security Note
 Sensitive fields like `hostname`, `password`, `clientSecret`, `username`, and `mrtApiKey` are intentionally **not** supported in `package.json`. These should be configured via `dw.json` (which should be in `.gitignore`), environment variables, or secure credential stores.
@@ -362,10 +363,7 @@ A bare string is treated as a shared library; an object can mark a library as si
 ```json
 {
   "b2c": {
-    "libraries": [
-      "RefArchSharedLibrary",
-      { "id": "SiteGenesis", "siteLibrary": true }
-    ]
+    "libraries": ["RefArchSharedLibrary", {"id": "SiteGenesis", "siteLibrary": true}]
   }
 }
 ```
@@ -442,7 +440,7 @@ For platform-level commands (Sandbox, SLAS, and Account Manager), the CLI includ
 
 - `client-credentials` - OAuth 2.0 client credentials flow (requires client ID and secret). Used for SCAPI/OCAPI and WebDAV.
 - `jwt` - OAuth 2.0 JWT Bearer flow (requires client ID, certificate, and private key). Used for SCAPI/OCAPI and WebDAV. More secure than client credentials.
-- `user` - OAuth 2.0 Authorization Code + PKCE flow (requires client ID only, opens browser for login). Used for SCAPI/OCAPI and WebDAV.
+- `user` - OAuth 2.0 Authorization Code + PKCE flow (requires client ID only, opens browser for login). Currently supported by OCAPI and WebDAV, but not by the SCAPI Admin APIs used in this migration. In `auto` mode these operations select OCAPI; explicit `scapi` reports the unsupported authentication flow. SCAPI user authentication may be supported by the platform in the future.
 - `implicit` - OAuth 2.0 implicit flow (deprecated — opt-in only). Selectable via `--auth-methods implicit` for backwards compatibility, but emits a deprecation warning. OAuth 2.1 deprecates implicit for public clients.
 - `basic` - Basic authentication with username and access key. Used for WebDAV operations only.
 - `api-key` - API key authentication. Used for MRT commands only.

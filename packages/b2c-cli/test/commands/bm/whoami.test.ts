@@ -84,4 +84,18 @@ describe('bm whoami', () => {
 
     await expectError(() => command.run(), /Failed to get current user/);
   });
+
+  it('fails visibly without contacting OCAPI when SCAPI is explicitly selected', async () => {
+    const command: any = await createCommand();
+    stubCommon(command, {jsonEnabled: true});
+    sinon.stub(command, 'log').returns(void 0);
+    const ocapiGet = sinon.stub();
+    sinon.stub(command, 'instance').get(() => ({apiBackend: 'scapi', ocapi: {GET: ocapiGet}}));
+
+    await expectError(
+      () => command.run(),
+      /SCAPI does not currently support Business Manager current-user lookup \(whoami\).*release 26\.8/,
+    );
+    expect(ocapiGet.called).to.equal(false);
+  });
 });

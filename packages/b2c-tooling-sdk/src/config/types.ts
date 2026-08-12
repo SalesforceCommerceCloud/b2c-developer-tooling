@@ -180,6 +180,10 @@ export interface NormalizedConfig {
   /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
   selfSigned?: boolean;
 
+  // API backend
+  /** API backend preference for operations that support both OCAPI and SCAPI */
+  apiBackend?: 'ocapi' | 'scapi' | 'auto';
+
   // Safety
   /** Safety configuration for this instance */
   safety?: {
@@ -422,6 +426,16 @@ export interface CreateOAuthOptions {
   openBrowser?: (url: string) => Promise<void>;
 }
 
+/** Options for constructing a B2C instance from resolved configuration. */
+export interface CreateB2CInstanceOptions extends Pick<CreateOAuthOptions, 'redirectUri' | 'openBrowser'> {
+  /**
+   * Pre-resolved OAuth strategy, or a lazy factory for one. CLI command bases
+   * use the factory form to preserve stored PKCE sessions and avoid prompting
+   * unless an OAuth-backed client is actually used.
+   */
+  oauthStrategy?: AuthStrategy | (() => AuthStrategy);
+}
+
 /**
  * Information about a configured instance.
  */
@@ -517,10 +531,10 @@ export interface ResolvedB2CConfig {
 
   /**
    * Creates a B2CInstance from the resolved configuration.
-   * @param options - Options for implicit OAuth (redirectUri, openBrowser)
+   * @param options - OAuth runtime options and optional pre-resolved strategy
    * @throws Error if hostname is not configured
    */
-  createB2CInstance(options?: Pick<CreateOAuthOptions, 'redirectUri' | 'openBrowser'>): B2CInstance;
+  createB2CInstance(options?: CreateB2CInstanceOptions): B2CInstance;
 
   /**
    * Creates a Basic auth strategy.
