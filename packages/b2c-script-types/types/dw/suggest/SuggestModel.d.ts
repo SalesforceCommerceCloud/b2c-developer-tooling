@@ -74,6 +74,12 @@ declare class SuggestModel {
      */
     readonly customSuggestions: CustomSuggestions;
     /**
+     * Returns the effective search mode that was used for the last suggestion execution. This reflects the actual
+     * matching approach that ran, which may differ from the requested mode if a fallback occurred. Returns null
+     * if no suggestions have been executed yet.
+     */
+    readonly effectiveSearchMode: string | null;
+    /**
      * The method returns true, if the search suggestions are filtered by the folder. If this returns true it is not
      * possible for search suggestions to contain Page Designer content as it belongs to no folder.
      */
@@ -101,6 +107,14 @@ declare class SuggestModel {
      * The user is being identified by the CQuotient tracking cookie.
      */
     readonly recentSearchPhrases: utilIterator<any>;
+    /**
+     * Returns the search mode that was requested for the next suggestion execution via setSearchMode,
+     * or null if no mode was explicitly requested. This reflects the caller's requested preference, not the
+     * mode that actually ran — the requested mode is non-authoritative and "semantic" may still be demoted to
+     * "lexical" by the search router. Use getEffectiveSearchMode to obtain the mode that was
+     * actually used.
+     */
+    searchMode: string | null;
     /**
      * Constructs a new SuggestModel.
      */
@@ -146,6 +160,12 @@ declare class SuggestModel {
      */
     getCustomSuggestions(): CustomSuggestions;
     /**
+     * Returns the effective search mode that was used for the last suggestion execution. This reflects the actual
+     * matching approach that ran, which may differ from the requested mode if a fallback occurred. Returns null
+     * if no suggestions have been executed yet.
+     */
+    getEffectiveSearchMode(): string | null;
+    /**
      * Use this method to obtain a list of search phrases
      * that currently are very popular among all users across the Site.
      * 
@@ -168,6 +188,14 @@ declare class SuggestModel {
      * The user is being identified by the CQuotient tracking cookie.
      */
     getRecentSearchPhrases(): utilIterator<any>;
+    /**
+     * Returns the search mode that was requested for the next suggestion execution via setSearchMode,
+     * or null if no mode was explicitly requested. This reflects the caller's requested preference, not the
+     * mode that actually ran — the requested mode is non-authoritative and "semantic" may still be demoted to
+     * "lexical" by the search router. Use getEffectiveSearchMode to obtain the mode that was
+     * actually used.
+     */
+    getSearchMode(): string | null;
     /**
      * The method returns true, if the search suggestions are filtered by the folder. If this returns true it is not
      * possible for search suggestions to contain Page Designer content as it belongs to no folder.
@@ -211,6 +239,13 @@ declare class SuggestModel {
      * Existing refinement values for the attribute will be removed.
      */
     setRefinementValues(attributeID: string, values: string | null): void;
+    /**
+     * Sets the search mode for the next suggestion execution. The mode influences the routing decision made by the
+     * search router, but is non-authoritative — "semantic" still runs the full routing cascade and may be
+     * demoted to "lexical" based on availability and query characteristics.
+     * @throws IllegalArgumentException if the mode is not one of the allowed values
+     */
+    setSearchMode(mode: string): void;
     /**
      * Sets the user input search phrase. This search phrase is being processed
      * by applying auto completion, spell correction and enhancement with alternative

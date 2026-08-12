@@ -10,7 +10,7 @@ This guide explains how to connect third-party IDE tooling (such as the IntelliJ
 
 ## Script API IntelliSense
 
-Get autocomplete and inline documentation on `require('dw/catalog/ProductMgr')`, hover docs from JSDoc, signature help, and member completion in cartridge JavaScript files. The B2C tooling ships TypeScript definitions for the Script API (currently version 26.7) covering all `dw/*` modules, top-level globals (`request`, `customer`, `session`), and the `ICustomAttributes` extension hook.
+Get autocomplete and inline documentation on `require('dw/catalog/ProductMgr')`, hover docs from JSDoc, signature help, and member completion in cartridge JavaScript files. The B2C tooling ships TypeScript definitions for the Script API (currently version 26.9) covering all `dw/*` modules, top-level globals (`request`, `customer`, `session`), and the `ICustomAttributes` extension hook.
 
 There are three setup paths depending on your IDE:
 
@@ -82,7 +82,7 @@ Resolve the plugin location via the CLI:
 
 ```bash
 b2c setup ide tsserver-plugin --json
-# {"pluginName":"@salesforce/b2c-script-types","pluginPath":"/usr/lib/.../dist/script-types","typesPath":"...","version":"26.7.0"}
+# {"pluginName":"@salesforce/b2c-script-types","pluginPath":"/usr/lib/.../dist/script-types","typesPath":"...","version":"26.9.0"}
 ```
 
 The recommended language servers and what to install:
@@ -115,7 +115,7 @@ If your editor's LSP client is launched outside the repo root (for example, open
 
 ### Notes
 
-- The bundle is version-locked to a Script API release (currently 26.7). Re-run `b2c setup ide vscode-types` after upgrading the CLI to refresh the vendored copy; use `--force` to overwrite existing files if they were previously created. The plugin path returned by `b2c setup ide tsserver-plugin` always points at the bundle shipped with your installed CLI.
+- The bundle is version-locked to a Script API release (currently 26.9). Re-run `b2c setup ide vscode-types` after upgrading the CLI to refresh the vendored copy; use `--force` to overwrite existing files if they were previously created. The plugin path returned by `b2c setup ide tsserver-plugin` always points at the bundle shipped with your installed CLI.
 - The vendored `jsconfig.json` only configures `dw/*` IntelliSense. Cartridge-relative requires (`~/cartridge/...`, `*/cartridge/...`, `cartridgeName/cartridge/...`) cannot be expressed in standalone TypeScript `paths` mappings (TypeScript allows at most one `*` per pattern), so they will appear unresolved without the Salesforce B2C Commerce VS Code extension or another host that loads `@salesforce/b2c-script-types/plugin` via LSP.
 
 ## IntelliJ SFCC Plugin

@@ -65,6 +65,15 @@ declare class SitemapMgr {
      * - Hostname 2 => [SitemapFile hostname2_sitemapfile1]
      */
     static getCustomSitemapFiles(): utilMap<any, any>;
+    /**
+     * Reads the content of the specified sitemap file and returns it as a String.
+     * 
+     * The file is looked up in the shared sitemap directory for the current site,
+     * using the hostname from the current storefront request. If the file is not found
+     * in the new framework location (../sitemaps/<hostname>/), the old
+     * location (../sitemaps/) is used as a fallback.
+     */
+    static getSitemap(fileName: string): string | null;
 }
 
 export = SitemapMgr;
