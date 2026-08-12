@@ -1,0 +1,115 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never"
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": 0,
+          "rawSql": "SELECT $__timeGroupAlias(submit_date, '1d'), SUM(num_orders) AS orders\nFROM warehouse.ccdw_aggr_sales_summary\nWHERE $__timeFilter(submit_date)\nGROUP BY 1\nORDER BY 1"
+        }
+      ],
+      "title": "Daily Orders (CIP sales warehouse)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "salesforce-b2c-cip-datasource",
+        "uid": "b2c-cip"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 2,
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": 1,
+          "rawSql": "SELECT tableSchem, tableName, tableType FROM metadata.TABLES WHERE tableSchem = 'warehouse' ORDER BY tableName"
+        }
+      ],
+      "title": "CIP Warehouse Tables",
+      "type": "table"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 39,
+  "tags": [
+    "b2c",
+    "cip",
+    "analytics"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-3y",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "B2C Commerce Intelligence \u2014 CIP Demo",
+  "uid": "b2c-cip-demo",
+  "version": 1,
+  "weekStart": ""
+}

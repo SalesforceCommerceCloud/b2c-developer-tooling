@@ -152,10 +152,15 @@ describe('parseSeriesTags', () => {
       expect(tags.realm).to.equal('bdpx');
     });
 
-    it('does not echo the metric id back as a `series` tag (value-less fallback series)', () => {
+    it('tags a metric-id-echo series as an aggregate rollup, not a `series`/apiFamily dimension', () => {
+      // A series whose id is just the metric id (e.g. `errorRate`, `cacheHitRate`,
+      // `errors4xx`) is a rollup carrying no per-series dimension. It must not be
+      // mis-tagged as apiFamily/series; it is marked aggregation=total instead.
       const tags = parseSeriesTags({category: 'mrt', metricId: 'errorRate', seriesId: 'errorRate', context: CTX});
       expect(tags.series).to.equal(undefined);
-      expect(Object.keys(tags)).to.deep.equal(['realm', 'environment']);
+      expect(tags.apiFamily).to.equal(undefined);
+      expect(tags.aggregation).to.equal('total');
+      expect(Object.keys(tags).sort()).to.deep.equal(['aggregation', 'environment', 'realm']);
     });
   });
 

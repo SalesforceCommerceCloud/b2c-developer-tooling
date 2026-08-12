@@ -1,0 +1,59 @@
+services:
+  # Mock Metrics API server (OAuth + Metrics endpoints with synthetic data)
+  mock-metrics:
+    build:
+      context: ./demo/mock-metrics
+      dockerfile: Dockerfile
+    container_name: b2c-mock-metrics
+    # Host mapping is only for optional debugging; Grafana reaches the mock over the
+    # compose network at mock-metrics:8080. Published on 18080 to avoid colliding with
+    # anything already bound to 8080 on the host.
+    ports:
+      - "18080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - grafana-net
+
+  # Grafana with embedded B2C Metrics datasource plugin
+  grafana:
+    build:
+      context: ../  # Build from packages/ dir to access both plugin + SDK
+      dockerfile: b2c-grafana-datasource/Dockerfile
+    container_name: b2c-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      # Allow unsigned plugins (both datasource types)
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: "salesforce-b2c-metrics-datasource,salesforce-b2c-cip-datasource"
+      # Anonymous admin for demo
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+      GF_SECURITY_ADMIN_USER: "admin"
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+      # Provisioning
+      GF_PATHS_PROVISIONING: "/etc/grafana/provisioning"
+    volumes:
+      # Mount provisioning configs
+      - ./provisioning:/etc/grafana/provisioning:ro
+      # Mount dashboards
+      - ./dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      mock-metrics:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - grafana-net
+
+networks:
+  grafana-net:
+    driver: bridge

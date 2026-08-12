@@ -1,0 +1,21 @@
+# Exclude everything except what we need
+*
+
+# Allow the two packages we need
+!b2c-grafana-datasource/
+!b2c-tooling-sdk-go/
+
+# Exclude build artifacts and dependencies
+b2c-grafana-datasource/node_modules/
+b2c-grafana-datasource/dist/
+b2c-grafana-datasource/.git/
+b2c-tooling-sdk-go/.git/
+
+# Exclude other packages (if building from packages/ dir)
+b2c-cli/
+b2c-tooling-sdk/
+b2c-dx-mcp/
+b2c-vs-extension/
+b2c-agent-plugins/
+mrt-utilities/
+.git/
