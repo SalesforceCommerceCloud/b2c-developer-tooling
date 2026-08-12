@@ -210,7 +210,7 @@ b2c setup ide tsserver-plugin --json
   "pluginName": "@salesforce/b2c-script-types",
   "pluginPath": "/usr/local/lib/node_modules/@salesforce/b2c-cli/dist/script-types",
   "typesPath": "/usr/local/lib/node_modules/@salesforce/b2c-cli/dist/script-types/types",
-  "version": "26.7.0"
+  "version": "26.9.0"
 }
 ```
 

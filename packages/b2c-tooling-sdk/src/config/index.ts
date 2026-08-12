@@ -142,6 +142,9 @@ export type {
 // Instance management
 export {InstanceManager, createInstanceManager} from './instance-manager.js';
 
+// Redaction helpers for displaying resolved config (CLI inspect, MCP config_inspect)
+export {SENSITIVE_CONFIG_FIELDS, isSensitiveConfigField, maskConfigValue, redactConfigValues} from './redaction.js';
+
 // Config source registry (global, auto-included in resolveConfig)
 export {ConfigSourceRegistry, globalConfigSourceRegistry} from './config-source-registry.js';
 

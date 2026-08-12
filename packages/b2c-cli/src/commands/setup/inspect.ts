@@ -7,21 +7,15 @@ import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
 import type {NormalizedConfig, ConfigSourceInfo, ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
-import {EnvSource} from '@salesforce/b2c-tooling-sdk/config';
+import {
+  EnvSource,
+  isSensitiveConfigField,
+  maskConfigValue,
+  redactConfigValues,
+} from '@salesforce/b2c-tooling-sdk/config';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
 import {DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
 import {withDocs} from '../../i18n/index.js';
-
-/**
- * Sensitive fields that should be masked by default.
- */
-const SENSITIVE_FIELDS = new Set<keyof NormalizedConfig>([
-  'certificatePassphrase',
-  'clientSecret',
-  'mrtApiKey',
-  'password',
-  'slasClientSecret',
-]);
 
 /**
  * JSON output structure for the inspect command.
@@ -30,24 +24,6 @@ interface SetupInspectResponse {
   config: Record<string, unknown>;
   sources: ConfigSourceInfo[];
   warnings?: string[];
-}
-
-/**
- * Mask a sensitive value, showing first 4 characters.
- * Matches the pattern used in the logger for consistency.
- */
-function maskValue(value: string): string {
-  if (value.length > 10) {
-    return `${value.slice(0, 4)}...REDACTED`;
-  }
-  return 'REDACTED';
-}
-
-/**
- * Check if a field is sensitive and should be masked.
- */
-function isSensitiveField(field: string): boolean {
-  return SENSITIVE_FIELDS.has(field as keyof NormalizedConfig);
 }
 
 /**
@@ -64,8 +40,8 @@ function getDisplayValue(field: string, value: unknown, unmask: boolean): string
 
   const strValue = String(value);
 
-  if (!unmask && isSensitiveField(field)) {
-    return maskValue(strValue);
+  if (!unmask && isSensitiveConfigField(field)) {
+    return maskConfigValue(strValue);
   }
 
   return strValue;
@@ -135,12 +111,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
     const unmask = this.flags.unmask;
 
     // Build output config with masking applied
-    const outputConfig: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(values)) {
-      if (value !== undefined) {
-        outputConfig[key] = isSensitiveField(key) && !unmask ? maskValue(String(value)) : value;
-      }
-    }
+    const outputConfig = redactConfigValues(values, {unmask});
 
     const result: SetupInspectResponse = {
       config: outputConfig,

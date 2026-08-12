@@ -87,6 +87,26 @@ b2c sandbox restart zzzv-123
 b2c sandbox delete zzzv-123 --force
 ```
 
+### Clone Sandbox
+
+```bash
+# clone a sandbox (defaults to source profile, 24h TTL)
+b2c sandbox clone create zzzv-123
+
+# clone with a different profile and wait for completion
+b2c sandbox clone create zzzv-123 --target-profile large --wait
+
+# create 3 clones from the same source in one request (1 to many cloning), and wait for all of them
+b2c sandbox clone create zzzv-123 --target-count 3 --wait
+
+# list clones for a sandbox, optionally filtered to a specific 1 to many batch
+b2c sandbox clone list zzzv-123
+b2c sandbox clone list zzzv-123 --batch-id batch-abcd-002-1700000000000-a1b2c3d4
+
+# get details for a specific clone
+b2c sandbox clone get zzzv-123 aaaa-002-1642780893121
+```
+
 ### More Commands
 
 See `b2c sandbox --help` for a full list of available commands and options in the `sandbox` topic.

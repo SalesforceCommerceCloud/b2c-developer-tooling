@@ -48,7 +48,7 @@ b2c setup skills storefront-next-figma --ide cursor
 
 ## Repository Layout
 
-Each plugin is a directory containing a `.codex-plugin/plugin.json` manifest and a `skills/` subdirectory. Every skill is a folder with a `SKILL.md` file (instructions + frontmatter), optionally alongside `references/`, `assets/`, and `evals/`.
+Each plugin is a directory containing a root `plugin.json` manifest ([Agent Plugins](https://agent-plugins.org/) standard) and a `skills/` subdirectory. Client-specific display metadata (the Codex/`com.openai` interface block) lives under the manifest's `extensions` key. A legacy `.codex-plugin/plugin.json` is also kept alongside it for now, so users on Codex CLI versions older than 0.146.0 (which predate root-`plugin.json` support) keep working; newer Codex reads the root manifest and treats the legacy file as an overlay. Both manifests are kept in version lockstep by `scripts/sync-plugin-versions.mjs`. Every skill is a folder with a `SKILL.md` file (instructions + frontmatter), optionally alongside `references/`, `assets/`, and `evals/`.
 
 ```
 skills/

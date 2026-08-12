@@ -4,6 +4,7 @@ import CheckoutHooks = require('./CheckoutHooks');
 import OrderHooks = require('./OrderHooks');
 import PaymentHooks = require('./PaymentHooks');
 import ReturnHooks = require('./ReturnHooks');
+import ShippingHooks = require('./ShippingHooks');
 import ShippingOrderHooks = require('./ShippingOrderHooks');
 import TaxHooks = require('./TaxHooks');
 
@@ -14,6 +15,7 @@ export {
     OrderHooks,
     PaymentHooks,
     ReturnHooks,
+    ShippingHooks,
     ShippingOrderHooks,
     TaxHooks
 };

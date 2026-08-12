@@ -6,6 +6,7 @@ import ShipmentShippingModel = require('./ShipmentShippingModel');
 import Shipment = require('./Shipment');
 import Collection = require('../util/Collection');
 import LineItemCtnr = require('./LineItemCtnr');
+import Basket = require('./Basket');
 
 /**
  * Provides methods to access the shipping information.
@@ -23,6 +24,38 @@ declare class ShippingMgr {
      */
     static readonly defaultShippingMethod: ShippingMethod | null;
     private constructor();
+    /**
+     * Applies shipping to the given dw.order.Basket using the platform's shipping hook dispatch logic.
+     * 
+     * This method is intended for use in custom dw.order.calculate hook implementations (e.g., in SFRA or
+     * SiteGenesis) that override the default basket calculation. Calling this method instead of directly invoking
+     * dw.order.calculateShipping ensures that Commerce App shipping providers registered via
+     * sfcc.app.shipping.calculate are invoked when available, with automatic fallback to the legacy
+     * dw.order.calculateShipping hook or the platform default shipping calculation.
+     * 
+     * WARNING: Do NOT call this method from within a dw.order.calculateShipping hook
+     * implementation, as this will cause infinite recursion. This method is designed to be called from
+     * dw.order.calculate hooks only.
+     * 
+     * The dispatch precedence is:
+     * 
+     * - sfcc.app.shipping.calculate — if a Commerce App shipping provider is installed.
+     * - dw.order.calculateShipping — if registered by the storefront.
+     * - Platform default shipping calculation — using product and shipment shipping cost tables.
+     * 
+     * Typical usage in a custom dw.order.calculate hook:
+     * @example
+     * var ShippingMgr = require('dw/order/ShippingMgr');
+     * 
+     * exports.calculate = function (basket) {
+     * // ... product prices, promotions ...
+     * ShippingMgr.applyShipping(basket);
+     * // ... tax ...
+     * basket.updateTotals();
+     * };
+     * @throws NullArgumentException if  basket  is  null .
+     */
+    static applyShipping(basket: Basket): void;
     /**
      * Applies product and shipment-level shipping cost to the specified line
      * item container.

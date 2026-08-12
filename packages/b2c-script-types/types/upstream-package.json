@@ -1,6 +1,6 @@
 {
     "name": "dw-types",
-    "version": "26.7.0",
+    "version": "26.9.0",
     "description": "TypeScript definitions for B2C Commerce Script API",
     "types": "global.d.ts",
     "main": ""

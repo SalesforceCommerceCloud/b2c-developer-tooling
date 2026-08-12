@@ -1,7 +1,9 @@
 {
     "compilerOptions": {
-        "noLib": true,
-        "target": "es5",
-        "baseUrl": "./"
+        "target": "ES2020",
+        "lib": ["ES2020"],
+        "moduleResolution": "node",
+        "baseUrl": "./",
+        "paths": { "dw/*": ["./dw/*"] }
     }
 }

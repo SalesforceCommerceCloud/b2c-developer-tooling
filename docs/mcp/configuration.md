@@ -76,6 +76,24 @@ MRT tools require an API key. You can include `mrtApiKey`, `mrtProject`, and `mr
 
 If both `dw.json` and `~/.mobify` contain an API key, `dw.json` takes precedence. For complete setup instructions, see the [Authentication Guide](../guide/authentication#managed-runtime-api-key).
 
+## Project Directory {#project-directory}
+
+Several tools operate on files in your project — for example, `cartridge_deploy` searches for cartridges and `scapi_custom_api_generate_scaffold` writes generated files. These tools need to know which directory is your project root.
+
+The server resolves the project directory in this order:
+
+1. **Per-call tool argument** (highest) — tools that touch the filesystem accept an explicit `projectDirectory` (or an equivalent like `directory` / `projectRoot`). This is the reliable outlet when the agent knows the project path.
+2. **`--project-directory` flag / `SFCC_PROJECT_DIRECTORY` env var** — set once in `mcp.json` for the whole server.
+3. **Process working directory** (`cwd`) — the fallback, but **MCP clients disagree on what the working directory is**. Claude Code and GitHub Copilot set it to the project root; Cursor user-level config (`~/.cursor/mcp.json`) sets it to your home directory. Because it's inconsistent, don't rely on it alone.
+
+For reliable behavior, either set `--project-directory "${workspaceFolder}"` (or your client's project-path variable) in `mcp.json`, or let the agent pass `projectDirectory` per call. Tools echo the resolved directory back in their output, so you can confirm which path was used when none was passed explicitly.
+
+::: tip Diagnosing configuration
+Run the `config_inspect` tool (ask your agent to "inspect the B2C MCP configuration") to see the resolved configuration — instance, auth, SCAPI/MRT settings, and which source provided each value — along with the effective project directory and how it was resolved. Secrets are redacted by default.
+:::
+
+This is the [Agent Plugins](https://agent-plugins.org/plugin-authors/mcp-servers) `cwd` model: when a plugin declares an MCP server without an explicit `cwd`, the working directory defaults to the plugin root rather than your open project — which is exactly why the explicit outlets above matter.
+
 ## Configuration Priority
 
 When the same setting is provided in multiple places, the server resolves values in this order:

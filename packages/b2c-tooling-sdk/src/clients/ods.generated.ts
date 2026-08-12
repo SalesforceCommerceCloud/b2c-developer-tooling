@@ -825,13 +825,27 @@ export interface components {
             filesystemUsageSize?: number;
             /** Format: int64 */
             databaseTransferSize?: number;
+            /** @description Shared batch identifier for clones created together via 1 to many cloning. Absent for single (1:1) clones. */
+            batchId?: string | null;
+            /** @description cloneIds of all clones in the same 1 to many batch, in target-index order (element i = cloneId of target index i). Includes this clone. Absent for single (1:1) clones. */
+            siblingCloneIds?: string[] | null;
         };
         SandboxCloneCreateModel: {
             /** @example zyom-002-017-180620251331 */
             cloneId?: string;
+            /** @description Shared batch identifier when this create fanned out to multiple clones (1 to many). Absent for single (1:1) clones. */
+            batchId?: string | null;
+            /** @description cloneIds of all clones created by this 1 to many request. Absent for single (1:1) clones. */
+            siblingCloneIds?: string[] | null;
         };
         SandboxCloneProvisioningRequestModel: {
             targetProfile?: components["schemas"]["SandboxResourceProfile"];
+            /**
+             * Format: int32
+             * @description Number of sandbox clones to create from this source (1 to many cloning). Valid values are 1 to 5. Defaults to 1 (a single 1:1 clone). When greater than 1, the clones fan out as a batch sharing a batchId.
+             * @default 1
+             */
+            targetCount: number;
             /**
              * @example [
              *       "email1@example.com",
@@ -2308,6 +2322,8 @@ export interface operations {
                 toDate?: string;
                 /** @description Filter clones by status (Pending, InProgress, Failed, or Completed). If not provided, returns all clones regardless of status. */
                 status?: "Pending" | "InProgress" | "Failed" | "Completed";
+                /** @description Filter clones by their 1 to many batch identifier. When provided, returns only clones belonging to that batch. Optional. */
+                batchId?: string;
             };
             header?: never;
             path: {

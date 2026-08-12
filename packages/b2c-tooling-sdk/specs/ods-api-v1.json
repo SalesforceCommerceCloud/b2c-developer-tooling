@@ -1251,6 +1251,15 @@
                                 "Completed"
                             ]
                         }
+                    },
+                    {
+                        "name": "batchId",
+                        "in": "query",
+                        "description": "Filter clones by their 1 to many batch identifier. When provided, returns only clones belonging to that batch. Optional.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {
@@ -2916,6 +2925,19 @@
                     "databaseTransferSize": {
                         "type": "integer",
                         "format": "int64"
+                    },
+                    "batchId": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Shared batch identifier for clones created together via 1 to many cloning. Absent for single (1:1) clones."
+                    },
+                    "siblingCloneIds": {
+                        "type": "array",
+                        "nullable": true,
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "cloneIds of all clones in the same 1 to many batch, in target-index order (element i = cloneId of target index i). Includes this clone. Absent for single (1:1) clones."
                     }
                 }
             },
@@ -2925,6 +2947,19 @@
                     "cloneId": {
                         "type": "string",
                         "example": "zyom-002-017-180620251331"
+                    },
+                    "batchId": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Shared batch identifier when this create fanned out to multiple clones (1 to many). Absent for single (1:1) clones."
+                    },
+                    "siblingCloneIds": {
+                        "type": "array",
+                        "nullable": true,
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "cloneIds of all clones created by this 1 to many request. Absent for single (1:1) clones."
                     }
                 }
             },
@@ -2933,6 +2968,14 @@
                 "properties": {
                     "targetProfile": {
                         "$ref": "#/components/schemas/SandboxResourceProfile"
+                    },
+                    "targetCount": {
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 1,
+                        "maximum": 5,
+                        "default": 1,
+                        "description": "Number of sandbox clones to create from this source (1 to many cloning). Valid values are 1 to 5. Defaults to 1 (a single 1:1 clone). When greater than 1, the clones fan out as a batch sharing a batchId."
                     },
                     "emails": {
                         "type": "array",
