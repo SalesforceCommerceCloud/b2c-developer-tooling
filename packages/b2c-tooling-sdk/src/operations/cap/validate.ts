@@ -193,6 +193,7 @@ export async function validateCap(target: string): Promise<CapValidationResult> 
  * - No pipeline/ directories
  * - No *.ds pipeline descriptor files
  * - Site cartridges must not have controllers/
+ * - Every cartridge must have a .project file (empty or full Eclipse XML)
  */
 function validateCartridges(cartridgesDir: string, errors: string[]): void {
   // Check entire cartridges tree for pipelines
@@ -218,6 +219,35 @@ function validateCartridges(cartridgesDir: string, errors: string[]): void {
         );
       }
     });
+  }
+
+  // Every cartridge directory must have a .project file (presence check only —
+  // an existing non-empty Eclipse .project is just as valid as an empty one).
+  validateCartridgesHaveProjectFile(cartridgesDir, 'site_cartridges', errors);
+  validateCartridgesHaveProjectFile(cartridgesDir, 'bm_cartridges', errors);
+}
+
+/**
+ * Requires a `.project` file in every immediate child directory of
+ * `cartridgesDir/<groupName>` (e.g. `site_cartridges/int_myapp/.project`).
+ */
+function validateCartridgesHaveProjectFile(cartridgesDir: string, groupName: string, errors: string[]): void {
+  const groupDir = path.join(cartridgesDir, groupName);
+  if (!fs.existsSync(groupDir)) return;
+
+  let entries: fs.Dirent[];
+  try {
+    entries = fs.readdirSync(groupDir, {withFileTypes: true});
+  } catch {
+    return;
+  }
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const cartridgeRoot = path.join(groupDir, entry.name);
+    if (!fs.existsSync(path.join(cartridgeRoot, '.project'))) {
+      errors.push(`Cartridge missing .project file: ${groupName}/${entry.name}`);
+    }
   }
 }
 
