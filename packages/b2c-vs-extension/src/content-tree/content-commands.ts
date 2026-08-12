@@ -11,7 +11,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
 import type {ContentFileSystemProvider} from './content-fs-provider.js';
-import {importLibraryXML} from './content-fs-provider.js';
+import {generateContentXML, importLibraryXML} from './content-fs-provider.js';
 import type {ContentTreeDataProvider, ContentTreeItem} from './content-tree-provider.js';
 import {openJobLog} from '../job-log-viewer.js';
 import {registerSafeCommand} from '../safety.js';
@@ -270,12 +270,10 @@ export function registerContentCommands(
   });
 
   // Convert a component (assigned inline to a page/region) into a shared content
-  // block. Reproduces Page Designer's in-place conversion: the SDK builds a
-  // delete+recreate archive that re-types the element to fragment.*, recreates
-  // its descendants, and re-imports every referrer so existing content-links
-  // survive (a plain merge import would silently ignore the <type> change, and a
-  // bare delete would orphan the element from its pages). Verified byte-for-byte
-  // against a manual conversion.
+  // block. Reproduces Page Designer's in-place conversion: re-type the element
+  // to fragment.* (display-name first, own region-link types flipped) and import
+  // just that element with a normal merge. The platform applies the type change
+  // in place and preserves incoming content-links.
   const convertToBlock = registerSafeCommand('b2c-dx.content.convertToBlock', async (node: ContentTreeItem) => {
     if (!node || node.nodeType !== 'component' || !node.libraryNode) {
       return;
@@ -305,8 +303,10 @@ export function registerContentCommands(
     if (displayName === undefined) return; // cancelled
 
     try {
-      // The SDK builds the full delete+recreate+relink archive for this conversion.
-      const contentXML = await library.buildContentBlockConversionXML(node.contentId, displayName.trim());
+      // Re-type the node in place (component.* -> fragment.*, display-name first)
+      // and import just that element and its descendants.
+      node.libraryNode.convertToFragment(displayName.trim());
+      const contentXML = generateContentXML(library, node.contentId);
       await vscode.window.withProgress(
         {location: vscode.ProgressLocation.Notification, title: `Converting ${node.contentId} to a content block...`},
         async () => {
