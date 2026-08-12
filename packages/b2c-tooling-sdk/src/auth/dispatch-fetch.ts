@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {fetch as undiciFetch} from 'undici';
+import {wrapNetworkError} from '../errors/network-error.js';
 import type {FetchInit} from './types.js';
 
 // undiciFetch returns undici's Response type; cast to the global Response at the
@@ -36,7 +37,12 @@ type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
  * @param init - Fetch init; may include an undici `dispatcher`
  * @returns The fetch response
  */
-export function dispatchFetch(url: string, init: FetchInit = {}): Promise<Response> {
+export async function dispatchFetch(url: string, init: FetchInit = {}): Promise<Response> {
   const fetchFn = (init.dispatcher ? undiciFetch : fetch) as FetchFn;
-  return fetchFn(url, init as RequestInit);
+  try {
+    return await fetchFn(url, init as RequestInit);
+  } catch (err) {
+    const host = new URL(url).host;
+    throw wrapNetworkError(err, {operation: 'HTTPS request', host});
+  }
 }

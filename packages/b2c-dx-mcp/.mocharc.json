@@ -5,9 +5,10 @@
   "recursive": true,
   "reporter": "spec",
   "timeout": 60000,
+  "exit": true,
   "require": ["test/setup.ts"],
   "node-option": [
-    "import=tsx",
+    "import=tsx/esm",
     "conditions=development"
   ]
 }

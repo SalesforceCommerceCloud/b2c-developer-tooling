@@ -12,7 +12,7 @@
     <xsd:element name="storefronts">
         <xsd:complexType>
             <xsd:sequence>
-                <xsd:element name="storefront" type="complexType.Storefront" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="storefront" type="complexType.Storefront" minOccurs="0" maxOccurs="1"/>
             </xsd:sequence>
         </xsd:complexType>
     </xsd:element>
@@ -25,15 +25,29 @@
         <xsd:sequence>
             <xsd:element name="ecom-site" type="simpleType.Generic.String.48" minOccurs="0" maxOccurs="1"/>
             <xsd:element name="storefront-type" type="simpleType.StorefrontType" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="storefront-status" type="simpleType.StorefrontStatus" minOccurs="1" maxOccurs="1"/>
             <xsd:element name="associated-sites" type="complexType.AssociatedSites" minOccurs="0" maxOccurs="1"/>
             <xsd:element name="user-id" type="simpleType.Generic.String.48" minOccurs="1" maxOccurs="1"/>
             <xsd:element name="org-slug" type="simpleType.Generic.String.64" minOccurs="1" maxOccurs="1"/>
             <xsd:element name="mrt-site" type="simpleType.Generic.String.64" minOccurs="1" maxOccurs="1"/>
             <xsd:element name="scm-repo" type="simpleType.Generic.String.512" minOccurs="0" maxOccurs="1"/>
             <xsd:element name="scm-target" type="simpleType.Generic.String.64" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="github-app-installation" type="complexType.GitHubAppInstallation" minOccurs="0" maxOccurs="1"/>
         </xsd:sequence>
         <xsd:attribute name="storefront-name" type="simpleType.Generic.NonEmptyString.64" use="required"/>
         <xsd:attribute name="mode" type="simpleType.ImportMode"/>
+    </xsd:complexType>
+
+    <!-- GitHub App Installation -->
+    <xsd:complexType name="complexType.GitHubAppInstallation" mixed="false">
+        <xsd:sequence>
+            <xsd:element name="app-id" type="simpleType.Generic.String.64" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="installation-id" type="simpleType.Generic.String.64" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="target-id" type="simpleType.Generic.String.64" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="target-name" type="simpleType.Generic.String.256" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="target-url" type="simpleType.Generic.String.512" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="target-type" type="simpleType.Generic.String.32" minOccurs="1" maxOccurs="1"/>
+        </xsd:sequence>
     </xsd:complexType>
 
     <!-- Associated Sites -->
@@ -51,6 +65,34 @@
         </xsd:restriction>
     </xsd:simpleType>
 
+    <!--
+        Storefront Status enumeration.
+
+        These values must stay in sync with StorefrontSetupStatusEnum (core/internal/storefront).
+        There is no compile-time link between this XSD and the Java enum; drift is caught by
+        comparing the JAXB-generated SimpleTypeStorefrontStatus against StorefrontSetupStatusEnum
+        in _JAXBStorefrontExportHandler (testStorefrontStatusEnumAndXsdInSync).
+
+        Export currently restricts output to SUCCESS storefronts only
+        (JAXBStorefrontExportHandler.mapStorefront). Adding a new exportable status requires:
+          1. Adding the value here
+          2. Adding the enum constant in StorefrontSetupStatusEnum
+          3. Updating the export guard in mapStorefront to allow the new status
+          4. Updating the sync unit test's expected set if needed
+    -->
+    <xsd:simpleType name="simpleType.StorefrontStatus">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="in_progress"/>
+            <xsd:enumeration value="success"/>
+            <xsd:enumeration value="backfilled"/>
+            <xsd:enumeration value="failed"/>
+            <xsd:enumeration value="delete_in_progress"/>
+            <xsd:enumeration value="delete_failed"/>
+            <xsd:enumeration value="deleted"/>
+            <xsd:enumeration value="unknown"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
     <!-- Import Mode -->
     <xsd:simpleType name="simpleType.ImportMode">
         <xsd:restriction base="xsd:string">
@@ -61,6 +103,13 @@
     <!-- simple generic types -->
     <xsd:simpleType name="simpleType.Generic.String">
         <xsd:restriction base="xsd:string"/>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.32">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0"/>
+            <xsd:maxLength value="32"/>
+        </xsd:restriction>
     </xsd:simpleType>
 
     <xsd:simpleType name="simpleType.Generic.String.48">
@@ -74,6 +123,13 @@
         <xsd:restriction base="simpleType.Generic.String">
             <xsd:minLength value="0"/>
             <xsd:maxLength value="64"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="simpleType.Generic.String.256">
+        <xsd:restriction base="simpleType.Generic.String">
+            <xsd:minLength value="0"/>
+            <xsd:maxLength value="256"/>
         </xsd:restriction>
     </xsd:simpleType>
 

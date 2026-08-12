@@ -80,7 +80,7 @@ export async function scanSkills(skillsDir: string, skillSet: SkillSet): Promise
       const frontmatter = parseSkillFrontmatter(content);
 
       if (!frontmatter) {
-        logger.warn({skillPath}, 'Invalid frontmatter in SKILL.md');
+        logger.warn({skillPath}, `Invalid frontmatter in ${skillPath}`);
         continue;
       }
 
@@ -96,7 +96,7 @@ export async function scanSkills(skillsDir: string, skillSet: SkillSet): Promise
         hasReferences,
       });
     } catch (error) {
-      logger.warn({skillPath, error}, 'Failed to parse SKILL.md');
+      logger.warn({skillPath, error}, `Failed to parse ${skillPath}`);
     }
   }
 

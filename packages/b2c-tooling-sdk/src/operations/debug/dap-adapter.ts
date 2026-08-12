@@ -215,6 +215,24 @@ export class B2CScriptDebugAdapter extends LoggingDebugSession {
     this.sendResponse(response);
   }
 
+  /**
+   * Custom DAP requests not part of the base protocol.
+   *
+   * - `b2c/sessionCookie`: returns `{name, value}` for the debugger's session
+   *   cookie (`dwsid`), or `{name, value: null}` if not connected. Used by the
+   *   VS Code extension to let users copy the cookie and route a triggering
+   *   request to the same app server (server affinity).
+   */
+  protected override customRequest(command: string, response: DebugProtocol.Response, args: unknown): void {
+    if (command === 'b2c/sessionCookie') {
+      const value = this.session?.getSessionCookie() ?? null;
+      response.body = {name: 'dwsid', value};
+      this.sendResponse(response);
+      return;
+    }
+    super.customRequest(command, response, args);
+  }
+
   // -----------------------------------------------------------------------
   // Breakpoints
   // -----------------------------------------------------------------------

@@ -46,6 +46,7 @@ export function createSiteThemingTool(loadServices: () => Promise<Services> | Se
     {
       name: 'sfnext_configure_theme',
       description:
+        '[DEPRECATED] Superseded by the storefront-next and storefront-next-figma agent-skills plugins and NOT compatible with the Storefront Next 1.0 GA release. Will be removed in a future release. ' +
         '⚠️ MANDATORY: Call this tool FIRST before implementing any theming changes. ' +
         'Provides theming guidelines, questions, and automatic validation. ' +
         'CRITICAL RULES: Call immediately when user requests theming (even if colors/fonts provided). ' +
@@ -55,7 +56,7 @@ export function createSiteThemingTool(loadServices: () => Promise<Services> | Se
         'DEFAULT FILES: theming-questions, theming-validation, theming-accessibility. ' +
         'Use fileKeys to add custom files. ' +
         'WORKFLOW: Call tool → Ask questions → Call with colorMapping (validation) → Present findings → Wait confirmation → Implement',
-      toolsets: ['STOREFRONTNEXT'],
+      toolsets: ['STOREFRONTNEXT_DEPRECATED'],
       isGA: false,
       requiresInstance: false,
       inputSchema: {

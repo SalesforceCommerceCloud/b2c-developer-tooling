@@ -154,6 +154,14 @@ The documentation site serves two versions:
 
 Stable docs are rebuilt only when a package publishes to `@latest` (hotfix from the current minor or a regular release) or when a doc-only release is created. Maintenance patches on older minors (which publish to scoped dist-tags like `@release-0.4`) do not trigger a docs rebuild.
 
+### PR Previews
+
+Pull requests that change `docs/**` get a temporary rendered preview of the docs site so reviewers can see the changes before merge. The `Docs Preview` workflow (`.github/workflows/docs-preview.yml`) builds the site with a per-PR base path (`/pr-<number>/`), publishes it to S3 behind CloudFront, and posts the preview URL as a PR comment. The comment updates on every push and the preview is removed when the PR is closed.
+
+You can also build a preview on demand — including for a PR that didn't touch `docs/**` — via **Actions → Docs Preview → Run workflow**, passing the PR number as the `pr_number` input. (Dispatching the workflow requires write access, so this is maintainer-gated.)
+
+Previews run only for PRs raised from branches in this repository — **not from forks** (forks can't access the deployment credentials). Fork PRs still have their docs build validated by the `Docs Build` workflow; they just don't get a hosted preview. The preview deploy is a no-op until the AWS preview infrastructure (S3 bucket, CloudFront distribution, and OIDC role) and the corresponding repo secrets/variables are configured.
+
 ## Local Testing
 
 ```bash

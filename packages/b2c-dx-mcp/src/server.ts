@@ -84,11 +84,15 @@ export class B2CDxMcpServer extends McpServer {
         const result = await handler(args);
         const runTimeMs = Date.now() - startTime;
 
+        // Extract error message from CallToolResult content when isError is true
+        const errorMessage = result.isError ? result.content?.find((c) => c.type === 'text')?.text : undefined;
+
         await this.telemetry
           ?.sendEventAndFlush('TOOL_CALLED', {
             toolName: name,
             runTimeMs,
             isError: result.isError ?? false,
+            ...(errorMessage ? {errorMessage} : {}),
           })
           .catch((error_: unknown) => {
             getLogger().debug({err: error_, toolName: name}, '[mcp] telemetry sendEventAndFlush failed');
@@ -103,6 +107,8 @@ export class B2CDxMcpServer extends McpServer {
             toolName: name,
             runTimeMs,
             isError: true,
+            errorMessage: error instanceof Error ? error.message : String(error),
+            ...(error instanceof Error && error.cause ? {errorCause: String(error.cause)} : {}),
           })
           .catch((error_: unknown) => {
             getLogger().debug({err: error_, toolName: name}, '[mcp] telemetry sendEventAndFlush failed');

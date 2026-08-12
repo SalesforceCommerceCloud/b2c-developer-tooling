@@ -108,13 +108,14 @@ export function createDeveloperGuidelinesTool(loadServices: () => Promise<Servic
     {
       name: 'sfnext_get_guidelines',
       description:
+        '[DEPRECATED] Superseded by the storefront-next and storefront-next-figma agent-skills plugins and NOT compatible with the Storefront Next 1.0 GA release. Will be removed in a future release. ' +
         'ESSENTIAL FIRST STEP for Storefront Next development. Returns critical architecture rules, coding standards, and best practices. ' +
         'Use this tool FIRST before writing any Storefront Next code to understand non-negotiable patterns for React Server Components, ' +
         'data loading, and framework constraints. Returns comprehensive guidelines by default (quick-reference + key sections); ' +
         'supports retrieving specific topic sections. ' +
         'CRITICAL INSTRUCTION: ALWAYS present ALL returned content in FULL - DO NOT SUMMARIZE, DO NOT ADD SUMMARIES, ' +
         'DO NOT ADD OVERVIEWS. The returned content IS the complete answer - display it exactly as provided.',
-      toolsets: ['STOREFRONTNEXT'],
+      toolsets: ['STOREFRONTNEXT_DEPRECATED'],
       isGA: false,
       requiresInstance: false,
       inputSchema: {

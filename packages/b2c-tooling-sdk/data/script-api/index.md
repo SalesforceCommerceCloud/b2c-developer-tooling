@@ -1,4 +1,4 @@
-# B2C Commerce Script API 26.2
+# B2C Commerce Script API 26.8
 
 ## Packages
 | Package | Description |
@@ -7,9 +7,12 @@
 | [dw.alert](dw.alert.md) |  |
 | [dw.campaign](dw.campaign.md) | Contains classes that allow you to interact with promotions and campaigns. |
 | [dw.catalog](dw.catalog.md) | Contains classes that allow you to interact with Products. |
+| [dw.commerceapps](dw.commerceapps.md) |  |
+| [dw.commerceapps.hooks](dw.commerceapps.hooks.md) |  |
 | [dw.content](dw.content.md) | Contains classes that allow you to access content. |
 | [dw.crypto](dw.crypto.md) | Contains classes that allow you to perform cryptographic operations. |
 | [dw.customer](dw.customer.md) | Contains classes that allow you to interact with and manage Customer-related information. |
+| [dw.customer.consent](dw.customer.consent.md) |  |
 | [dw.customer.oauth](dw.customer.oauth.md) |  |
 | [dw.customer.shoppercontext](dw.customer.shoppercontext.md) |  |
 | [dw.experience](dw.experience.md) |  |

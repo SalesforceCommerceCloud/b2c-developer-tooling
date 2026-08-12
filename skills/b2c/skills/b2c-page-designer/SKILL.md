@@ -7,6 +7,20 @@ description: Define Page Designer page types and component types with regions, a
 
 This skill guides you through creating custom Page Designer page types and component types for Salesforce B2C Commerce.
 
+## Scope & grounding
+
+This skill covers B2C Commerce Page Designer (dw.experience package) with version-agnostic patterns, JSON schema structures, and code examples. JSON schemas and Script API signatures shown are illustrative and may drift across platform versions. Before answering questions that name a framework/version, or before emitting code the user will run, confirm against the docs via `docs_search`/`docs_read` (MCP) or `b2c docs search`/`b2c docs read` (CLI). The B2C Commerce documentation is the canonical grounding source for Script API methods, attribute schema requirements, and version-specific behaviors not covered here.
+
+**Canonical docs:**
+- `dw.experience.PageMgr` - rendering pages and regions
+- `dw.experience.PageScriptContext` - page script context API
+- `dw.experience.ComponentScriptContext` - component script context API
+- `dw.experience.Page` - page object methods
+- `dw.experience.Component` - component object methods
+- `dw.experience.Region` - region object methods
+- `dw.experience.image.Image` - image attribute type
+- `dw.experience` - package overview
+
 ## Overview
 
 Page Designer allows merchants to create and manage content pages through a visual editor. Developers create:
@@ -45,6 +59,8 @@ Page Designer files are in the cartridge's `experience` directory:
 
 ### Meta Definition (pages/homepage.json)
 
+> Illustrative JSON schema; confirm version-specific page type schema requirements with official platform documentation.
+
 ```json
 {
     "name": "Home Page",
@@ -77,36 +93,38 @@ Page Designer files are in the cartridge's `experience` directory:
 
 var Template = require('dw/util/Template');
 var HashMap = require('dw/util/HashMap');
+var PageRenderHelper = require('*/cartridge/experience/utilities/PageRenderHelper.js');
 
 module.exports.render = function (context) {
     var model = new HashMap();
     var page = context.page;
 
-    model.put('page', page);
+    model.page = page;
+    model.regions = PageRenderHelper.getRegionModelRegistry(page);
 
     return new Template('experience/pages/homepage').render(model).text;
 };
 ```
 
-### Page Template (templates/experience/pages/homepage.isml)
+### Page Template (templates/default/experience/pages/homepage.isml)
+
+> This follows SFRA's region-model pattern: the page script builds `pdict.regions` with
+> `PageRenderHelper.getRegionModelRegistry(page)`, and each `RegionModel.render()` call delegates to
+> the platform's `PageMgr.renderRegion()` with SFRA's render settings.
 
 ```html
 <isdecorate template="common/layout/page">
-    <isscript>
-        var PageRenderHelper = require('*/cartridge/experience/utilities/PageRenderHelper');
-    </isscript>
-
     <div class="homepage">
         <div class="hero-region">
-            <isprint value="${PageRenderHelper.renderRegion(pdict.page.getRegion('hero'))}" encoding="off"/>
+            <isprint value="${pdict.regions.hero.render()}" encoding="off"/>
         </div>
 
         <div class="content-region">
-            <isprint value="${PageRenderHelper.renderRegion(pdict.page.getRegion('content'))}" encoding="off"/>
+            <isprint value="${pdict.regions.content.render()}" encoding="off"/>
         </div>
 
         <div class="footer-region">
-            <isprint value="${PageRenderHelper.renderRegion(pdict.page.getRegion('footer'))}" encoding="off"/>
+            <isprint value="${pdict.regions.footer.render()}" encoding="off"/>
         </div>
     </div>
 </isdecorate>
@@ -115,6 +133,8 @@ module.exports.render = function (context) {
 ## Component Types
 
 ### Meta Definition (components/banner.json)
+
+> Illustrative JSON schema; confirm version-specific component type schema requirements with official platform documentation.
 
 ```json
 {
@@ -264,6 +284,8 @@ function getColor(colorAttr) {
 
 ## Attribute Types
 
+> Illustrative attribute schema; confirm version-specific attribute_definition syntax with official platform documentation.
+
 | Type | Description | Returns |
 |------|-------------|---------|
 | `string` | Text input | String |
@@ -271,7 +293,7 @@ function getColor(colorAttr) {
 | `markup` | Rich text editor | Markup string (use `encoding="off"`) |
 | `boolean` | Checkbox | Boolean |
 | `integer` | Number input | Integer |
-| `enum` | Single select dropdown | String |
+| `enum` | Single select dropdown | String or integer (depends on values) |
 | `image` | Image picker | Image object with `file.absURL` |
 | `file` | File picker | File object |
 | `url` | URL picker | URL string |
@@ -280,7 +302,7 @@ function getColor(colorAttr) {
 | `page` | Page selector | Page object |
 | `custom` | JSON object or custom editor | Object (or editor-specific) |
 
-**Enum — critical for component visibility:** Use a **string array** for `values`: `"values": ["left", "center", "right"]`. Do **not** use objects like `{ "value": "x", "display_value": "X" }`; that format can cause the component type to be rejected and **not appear** in the Page Designer component list.
+**Enum — critical for component visibility:** Use a **string array** for `values`: `"values": ["left", "center", "right"]`. Do **not** use objects like `{ "value": "x", "display_value": "X" }`; that format can cause the component type to be rejected and **not appear** in the Page Designer component list. Enum attributes return string when values are strings, integer when values are numeric.
 
 **Custom and colors:** `type: "custom"` with e.g. `editor_definition.type: "styling.colorPicker"` requires a cartridge that provides that editor on the **Business Manager** site cartridge path. If the component does not show up in the editor, use `type: "string"` for color attributes (merchant types a hex). In the script, support both: accept a string or an object like `{ color: "#hex" }` (e.g. a small `getColor(attr)` helper that returns the string).
 

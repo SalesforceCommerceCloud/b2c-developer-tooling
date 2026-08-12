@@ -125,6 +125,12 @@ declare class ProductSearchModel extends SearchModel {
      */
     readonly deepestCommonCategory: Category;
     /**
+     * Returns the effective search mode that was used for the last search execution. This reflects the actual matching
+     * approach that ran, which may differ from the requested mode if a fallback occurred. Returns null before
+     * search has been called.
+     */
+    readonly effectiveSearchMode: string | null;
+    /**
      * Returns the sorting rule used to order the products in the results of this query,
      * or `null` if no search has been executed yet.
      * 
@@ -245,6 +251,14 @@ declare class ProductSearchModel extends SearchModel {
      * Hint: If you want to use the same refinements for all searches, consider defining them in one category (usually root) and using setRefinementCategory to avoid unnecessary calculation of the deepest common category.
      */
     readonly refinements: ProductSearchRefinements;
+    /**
+     * Returns the search mode that was requested for the next search execution via setSearchMode, or
+     * null if no mode was explicitly requested. This reflects the caller's requested preference, not the mode
+     * that actually ran — the requested mode is non-authoritative and "semantic" may still be demoted to
+     * "lexical" by the search router. Use getEffectiveSearchMode to obtain the mode that was
+     * actually used after search.
+     */
+    searchMode: string | null;
     /**
      * Returns search phrase suggestions for the current search phrase.
      * Search phrase suggestions may contain alternative search phrases as well
@@ -369,6 +383,12 @@ declare class ProductSearchModel extends SearchModel {
      */
     getDeepestCommonCategory(): Category;
     /**
+     * Returns the effective search mode that was used for the last search execution. This reflects the actual matching
+     * approach that ran, which may differ from the requested mode if a fallback occurred. Returns null before
+     * search has been called.
+     */
+    getEffectiveSearchMode(): string | null;
+    /**
      * Returns the sorting rule used to order the products in the results of this query,
      * or `null` if no search has been executed yet.
      * 
@@ -478,6 +498,14 @@ declare class ProductSearchModel extends SearchModel {
      * Hint: If you want to use the same refinements for all searches, consider defining them in one category (usually root) and using setRefinementCategory to avoid unnecessary calculation of the deepest common category.
      */
     getRefinements(): ProductSearchRefinements;
+    /**
+     * Returns the search mode that was requested for the next search execution via setSearchMode, or
+     * null if no mode was explicitly requested. This reflects the caller's requested preference, not the mode
+     * that actually ran — the requested mode is non-authoritative and "semantic" may still be demoted to
+     * "lexical" by the search router. Use getEffectiveSearchMode to obtain the mode that was
+     * actually used after search.
+     */
+    getSearchMode(): string | null;
     /**
      * Returns search phrase suggestions for the current search phrase.
      * Search phrase suggestions may contain alternative search phrases as well
@@ -651,6 +679,13 @@ declare class ProductSearchModel extends SearchModel {
      * @throws IllegalArgumentException if the refinement category does not reside in the storefront catalog
      */
     setRefinementCategory(refinementCategory: Category): void;
+    /**
+     * Sets the search mode for the next search execution. The mode influences the routing decision made by the search
+     * router, but is non-authoritative — "semantic" still runs the full routing cascade and may be demoted to
+     * "lexical" based on availability and query characteristics.
+     * @throws IllegalArgumentException if the mode is not one of the allowed values
+     */
+    setSearchMode(mode: string): void;
     /**
      * An image ID can be retrieved by uploading an image with a multipart/form-data POST
      * request to 'https://api.cquotient.com/v3/image/search/upload/{siteID}'. This method sets product IDs retrieved

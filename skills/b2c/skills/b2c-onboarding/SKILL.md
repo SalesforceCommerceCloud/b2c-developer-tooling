@@ -36,15 +36,15 @@ This onboarding skill is part of the `b2c` plugin. For a full B2C Commerce setup
 
 | Client        | Install command(s) |
 |---------------|--------------------|
-| `claude-code` | `/plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling` then `/plugin install b2c-cli@b2c-developer-tooling` (and optionally `/plugin install b2c-dx-mcp@b2c-developer-tooling` for the MCP server — Claude Code only) |
+| `claude-code` | `/plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling` then `/plugin install b2c-cli@b2c-developer-tooling` (and optionally `/plugin install b2c-dx-mcp@b2c-developer-tooling` for the MCP server) |
 | `vscode` (GitHub Copilot) | Command Palette (Cmd+Shift+P) → **Chat: Install Plugin From Source** → enter the repo `SalesforceCommerceCloud/b2c-developer-tooling` |
 | GitHub Copilot CLI | `copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling` then `copilot plugin install b2c-cli@b2c-developer-tooling` |
 | `cursor`      | Cursor Settings → Plugins → add marketplace URL `https://github.com/SalesforceCommerceCloud/b2c-developer-tooling`, then install `b2c-cli` |
-| `codex`       | Open the repo as a workspace, restart Codex, then install `b2c-cli` from the **B2C Developer Tooling** marketplace in the plugin directory |
+| `codex`       | `codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling`, then `codex plugin add b2c-cli@b2c-developer-tooling` (and optionally `codex plugin add b2c-dx-mcp@b2c-developer-tooling` for the MCP server) |
 | `gemini-cli`  | `gemini extensions install https://github.com/SalesforceCommerceCloud/b2c-developer-tooling` (run in terminal, not inside the CLI) |
 | `other`       | Use the file-copy installer below |
 
-For clients other than Claude Code, the `b2c-dx-mcp` MCP server can be installed directly — see the [MCP installation docs](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation).
+For clients without MCP-enabled plugin support, the `b2c-dx-mcp` server can be installed directly — see the [MCP installation docs](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation).
 
 **Alternative — file-copy installer for any IDE** (also the right command to **update** already-installed skills or add a specific skill set):
 

@@ -262,12 +262,13 @@ export function createMapTokensToThemeTool(loadServices: () => Promise<Services>
     {
       name: 'sfnext_match_tokens_to_theme',
       description:
+        '[DEPRECATED] Superseded by the storefront-next and storefront-next-figma agent-skills plugins and NOT compatible with the Storefront Next 1.0 GA release. Will be removed in a future release. ' +
         'Maps Figma design tokens to existing StorefrontNext theme tokens in app.css. ' +
         'Analyzes Figma design tokens (colors, spacing, radius, etc.) and finds exact matches, ' +
         'provides fuzzy matches with confidence scores, suggests new token names for unmatched values, ' +
         'and recommends where to add new tokens in the CSS file. ' +
         'Use this tool after retrieving design variables from Figma MCP to ensure components use theme tokens instead of hardcoded values.',
-      toolsets: ['STOREFRONTNEXT'],
+      toolsets: ['STOREFRONTNEXT_DEPRECATED'],
       isGA: false,
       requiresInstance: false,
       inputSchema: mapTokensToThemeSchema.shape,

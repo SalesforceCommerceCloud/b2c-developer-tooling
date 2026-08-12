@@ -632,6 +632,7 @@ export function createPageDesignerDecoratorTool(loadServices: () => Promise<Serv
     name: 'sfnext_add_page_designer_decorator',
 
     description:
+      '[DEPRECATED] Superseded by the storefront-next and storefront-next-figma agent-skills plugins and NOT compatible with the Storefront Next 1.0 GA release. Will be removed in a future release. ' +
       'Adds Page Designer decorators (@Component, @AttributeDefinition, @RegionDefinition) to React components. ' +
       'Two modes: autoMode=true for quick setup with defaults, or interactive mode via conversationContext.step. ' +
       'Component discovery uses --project-directory flag or SFCC_PROJECT_DIRECTORY env var. ' +
@@ -639,7 +640,7 @@ export function createPageDesignerDecoratorTool(loadServices: () => Promise<Serv
       'Interactive mode: multi-step workflow (analyze → select_props → configure_attrs → configure_regions → confirm_generation).',
 
     inputSchema: pageDesignerDecoratorSchema.shape as ZodRawShape,
-    toolsets: ['STOREFRONTNEXT'],
+    toolsets: ['STOREFRONTNEXT_DEPRECATED'],
     isGA: false,
 
     async handler(args: Record<string, unknown>) {

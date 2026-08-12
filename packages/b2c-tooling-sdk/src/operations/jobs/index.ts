@@ -21,6 +21,7 @@
  * ## System Jobs
  *
  * - {@link siteArchiveImport} - Import a site archive
+ * - {@link siteArchiveImportSet} - Apply an ordered, receipted set of site archives
  * - {@link siteArchiveImportSplit} - Import a large site archive in multiple parts
  * - {@link siteArchiveExport} - Export a site archive
  * - {@link siteArchiveExportToPath} - Export and save to local path
@@ -100,6 +101,19 @@ export {
   siteArchiveExportToPath,
 } from './site-archive.js';
 
+// Ordered, idempotent import sets
+export {discoverImportSet, siteArchiveImportSet, ImportSetStateError} from './import-set.js';
+
+export type {
+  ImportSetItem,
+  ImportSetReceipt,
+  ImportSetItemResult,
+  ImportSetResult,
+  ImportSetEvent,
+  ImportSetLockOwner,
+  SiteArchiveImportSetOptions,
+} from './import-set.js';
+
 export type {
   SiteArchiveImportOptions,
   SiteArchiveImportResult,
@@ -112,3 +126,8 @@ export type {
   ExportSitesConfiguration,
   ExportGlobalDataConfiguration,
 } from './site-archive.js';
+
+// Exportable data unit discovery
+export {discoverExportableUnits} from './discover.js';
+
+export type {ExportableUnits} from './discover.js';

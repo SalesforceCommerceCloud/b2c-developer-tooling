@@ -50,7 +50,7 @@ export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig>
   const authMethodValues = flags['auth-methods'] as string[] | undefined;
   let authMethods: AuthMethod[] | undefined;
   if (flags['user-auth']) {
-    authMethods = ['implicit'];
+    authMethods = ['user'];
   } else if (authMethodValues && authMethodValues.length > 0) {
     const methods = authMethodValues
       .map((s) => s.trim())
@@ -258,6 +258,7 @@ export async function loadConfig(
     projectDirectory: options.projectDirectory,
     workingDirectory: options.workingDirectory,
     hostnameProtection: true,
+    clientIdProtection: true,
     cloudOrigin: options.cloudOrigin,
     credentialsFile: options.credentialsFile,
     accountManagerHost: options.accountManagerHost,

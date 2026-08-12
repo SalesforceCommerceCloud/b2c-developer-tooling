@@ -2,6 +2,8 @@
 
 ## Complete Implementation Example
 
+> Illustrative Script API integration; confirm current Custom API request handling, path parameter access, and response patterns with `b2c docs read commerce-api/custom-api-components-references` and Script API docs for `dw.system.Request`.
+
 ```javascript
 var RESTResponseMgr = require('dw/system/RESTResponseMgr');
 
@@ -138,6 +140,8 @@ Import with: `b2c job import ./my-services-folder`
 - OPTIONS
 
 ## Circuit Breaker Protection
+
+> Illustrative thresholds; confirm current circuit breaker behavior, error rate calculations, and timeout values with `b2c docs read commerce-api/custom-api-circuit-breaker`.
 
 Custom APIs have a circuit breaker that blocks requests when error rate exceeds 50%:
 

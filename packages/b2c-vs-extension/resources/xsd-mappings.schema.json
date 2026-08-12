@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://salesforce.com/b2c-vs-extension/xsd-mappings.schema.json",
+  "title": "B2C VS Extension XSD Mappings",
+  "description": "Source-of-truth for XML→XSD validation contributed by the B2C VS extension. Read by scripts/sync-xsd.mjs at build time to (1) bundle the listed schemas from the SDK into resources/xsd/ and (2) regenerate package.json#contributes.xmlValidation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mappings"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to this JSON Schema for editor validation."
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable explanation of how this file is used."
+    },
+    "mappings": {
+      "type": "array",
+      "description": "Schemas that are bundled AND contributed as fileMatch entries to package.json#contributes.xmlValidation. These are the user-facing validation targets.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schema", "fileMatch"],
+        "properties": {
+          "schema": {
+            "type": "string",
+            "description": "Filename of the XSD inside packages/b2c-tooling-sdk/data/xsd/ (e.g., \"catalog.xsd\").",
+            "pattern": "^[a-zA-Z0-9_-]+\\.xsd$"
+          },
+          "fileMatch": {
+            "type": "array",
+            "description": "VS Code glob patterns (relative to the workspace root) that should validate against this schema.",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "bundleOnly": {
+      "type": "array",
+      "description": "Schemas that are bundled because they are imported by other XSDs (e.g., xml.xsd providing the W3C xml: namespace), but never the validation target themselves. These are NOT contributed to package.json.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9_-]+\\.xsd$"
+      }
+    },
+    "skipped": {
+      "type": "array",
+      "description": "Schemas intentionally excluded from the extension entirely — typically internal data feeds, OMS integration files, or schemas with no canonical workspace location.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9_-]+\\.xsd$"
+      }
+    }
+  }
+}

@@ -189,6 +189,12 @@ export interface CreateDeploymentResult {
    * Initial deployment status.
    */
   status: string;
+
+  /**
+   * Non-blocking warnings returned by MRT for this deployment (e.g. x86 deprecation).
+   * Optional — absent if the deploy endpoint returns no warnings.
+   */
+  warnings?: string[];
 }
 
 /**
@@ -229,7 +235,7 @@ export async function createDeployment(
 
   const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, auth);
 
-  const {error} = await client.POST('/api/projects/{project_slug}/target/{target_slug}/deploy/', {
+  const {data, error} = await client.POST('/api/projects/{project_slug}/target/{target_slug}/deploy/', {
     params: {
       path: {project_slug: projectSlug, target_slug: targetSlug},
     },
@@ -246,11 +252,18 @@ export async function createDeployment(
     throw new Error(`Failed to create deployment: ${errorMessage}`);
   }
 
+  // Defensive: the deploy endpoint response shape is not strongly typed and may not
+  // include `warnings`; default to [] so nothing breaks. We return these for the caller
+  // (e.g. the CLI) to surface — we don't log them here, to avoid double-printing.
+  const deployData = (data ?? {}) as {warnings?: string[]};
+  const warnings = deployData.warnings ?? [];
+
   logger.debug({bundleId}, '[MRT] Deployment created');
 
   return {
     bundleId,
     targetSlug,
     status: 'pending',
+    warnings,
   };
 }

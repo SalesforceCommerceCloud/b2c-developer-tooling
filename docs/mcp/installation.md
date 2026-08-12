@@ -49,6 +49,25 @@ claude mcp add --transport stdio --scope user b2c-dx-mcp -- npx -y @salesforce/b
 
 See the [Claude Code MCP documentation](https://docs.claude.com/en/docs/claude-code/mcp) for details on scope options and configuration.
 
+## Codex
+
+### Plugin Marketplace
+
+Install the MCP server as a Codex plugin:
+
+```bash
+codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+codex plugin add b2c-dx-mcp@b2c-developer-tooling
+```
+
+Start a new Codex session after installation so the bundled MCP server is loaded. You can also install it interactively from `/plugins` under the **B2C Developer Tooling** marketplace.
+
+Codex plugins are supported in Codex CLI and Codex in the ChatGPT desktop app. For the Codex IDE extension, add the MCP server directly:
+
+```bash
+codex mcp add b2c-dx-mcp -- npx -y @salesforce/b2c-dx-mcp@latest --allow-non-ga-tools
+```
+
 ## Cursor
 
 Cursor supports project-level configuration via `.cursor/mcp.json` in your project root.
@@ -91,7 +110,13 @@ Alternatively, use the "Add to Cursor" link to add to user-level configuration:
   "mcpServers": {
     "b2c-dx-mcp": {
       "command": "npx",
-      "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+      "args": [
+        "-y",
+        "@salesforce/b2c-dx-mcp@latest",
+        "--project-directory",
+        "${workspaceFolder}",
+        "--allow-non-ga-tools"
+      ]
     }
   }
 }
@@ -152,6 +177,7 @@ This error occurs when npx uses a cached broken version (`0.0.1`) instead of the
 **Solution:**
 
 1. **Update your MCP configuration** to use `@latest`:
+
    ```json
    {
      "mcpServers": {

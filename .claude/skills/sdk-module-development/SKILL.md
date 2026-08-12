@@ -399,6 +399,55 @@ import { WebDavClient } from '@salesforce/b2c-tooling-sdk/clients';
 import { WebDavClient } from '../../src/clients/webdav.js';
 ```
 
+## Refreshing Bundled Platform Data (Docs, Schemas, Job Steps)
+
+The SDK ships several corpora derived from the B2C Commerce platform under
+`packages/b2c-tooling-sdk/data/`:
+
+| Directory | Contents | Consumed by |
+| --- | --- | --- |
+| `data/script-api/` | Script API reference markdown + `index.json` | `docs search` / `docs read`, MCP `docs_*` |
+| `data/content-schemas/` | Page Designer / content metadefinition JSON schemas | `content validate` |
+| `data/xsd/` | Import/export XSD schemas + `index.json` | `docs schema *`, XML validation |
+| `data/job-steps/` | Standard job-step markdown + dataset + `index.json` | `docs search` / `docs read` |
+
+All of these originate from the **same documentation archive** (`demandware-mock.zip`)
+that `b2c docs download` fetches from an instance — the inner `DWAPP-<version>-API-doc.zip`
+contains `sfdocs/script-api/`, `content/`, `xsd/`, and `jobstepapi/`. Note that the
+user-facing `docs download` command only extracts the Script API markdown; it does **not**
+update the bundled data files.
+
+### Refresh all data at once
+
+Run the maintainer script against a current instance (uses your default instance/auth
+via the CLI, so no extra setup):
+
+```bash
+pnpm --filter @salesforce/b2c-tooling-sdk run refresh:docs-data
+
+# Target a non-default instance, or keep the temp workdir for inspection:
+B2C_INSTANCE=my-sandbox KEEP_WORKDIR=1 pnpm --filter @salesforce/b2c-tooling-sdk run refresh:docs-data
+```
+
+`scripts/refresh-docs-data.ts` downloads the archive via `b2c docs download`, repopulates
+every `data/` directory above from the inner API-doc zip, then regenerates the derived
+datasets and search indexes (`build:job-steps-dataset`, `generate:job-steps-docs`,
+`generate:docs-index`). It prints the detected platform version (e.g. `DWAPP 26.7`).
+
+### After refreshing
+
+- **Review the diff** under `packages/b2c-tooling-sdk/data/`. Index files change their
+  `generatedAt` timestamp every run; look for substantive schema/doc changes.
+- The refresh **overwrites files wholesale** — there are no hand-maintained local patches
+  to preserve today. If a platform schema change alters validation behavior (e.g. a
+  `content-schemas/*.json` rule), update the affected tests to match the new platform rule.
+- Run `pnpm --filter @salesforce/b2c-tooling-sdk run test:agent` and add a changeset when
+  the refresh changes user-facing behavior (bump the platform version, note the change).
+
+The individual generation scripts can still be run standalone (see each script's header
+comment), but `refresh:docs-data` is the one-step path that keeps every corpus in sync
+with a single platform release.
+
 ## New Module Checklist
 
 1. Create module directory under `src/`

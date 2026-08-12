@@ -33,6 +33,10 @@ export const COLUMNS: Record<string, ColumnDef<SandboxCloneGetModel>> = {
     header: 'Status',
     get: (c) => c.status || '-',
   },
+  batchId: {
+    header: 'Batch ID',
+    get: (c) => c.batchId || '-',
+  },
   progressPercentage: {
     header: 'Progress %',
     get: (c) => (c.progressPercentage === undefined ? '-' : `${c.progressPercentage}%`),
@@ -66,7 +70,15 @@ export const COLUMNS: Record<string, ColumnDef<SandboxCloneGetModel>> = {
   },
 };
 
-const DEFAULT_COLUMNS = ['cloneId', 'sourceInstance', 'targetInstance', 'status', 'progressPercentage', 'createdAt'];
+const DEFAULT_COLUMNS = [
+  'cloneId',
+  'sourceInstance',
+  'targetInstance',
+  'batchId',
+  'status',
+  'progressPercentage',
+  'createdAt',
+];
 
 /**
  * Command to list sandbox clones for a specific sandbox.
@@ -90,6 +102,7 @@ export default class CloneList extends OdsCommand<typeof CloneList> {
     '<%= config.bin %> <%= command.id %> <sandboxId> --status COMPLETED',
     '<%= config.bin %> <%= command.id %> <sandboxId> --from 2024-01-01 --to 2024-12-31',
     '<%= config.bin %> <%= command.id %> <sandboxId> --extended',
+    '<%= config.bin %> <%= command.id %> <sandboxId> --batch-id batch-abcd-002-1700000000000-a1b2c3d4',
   ];
 
   static flags = {
@@ -106,12 +119,16 @@ export default class CloneList extends OdsCommand<typeof CloneList> {
       required: false,
       options: ['Pending', 'InProgress', 'Failed', 'Completed'],
     }),
+    'batch-id': Flags.string({
+      description: 'Filter clones by their 1 to many batch identifier',
+      required: false,
+    }),
     ...columnFlagsFor(COLUMNS),
   };
 
   async run(): Promise<{data?: SandboxCloneGetModel[]}> {
     const {sandboxId: rawSandboxId} = this.args;
-    const {from: fromDate, to: toDate, status} = this.flags;
+    const {from: fromDate, to: toDate, status, 'batch-id': batchId} = this.flags;
 
     // Resolve sandbox ID (handles both UUID and friendly format)
     const sandboxId = await this.resolveSandboxId(rawSandboxId);
@@ -125,6 +142,7 @@ export default class CloneList extends OdsCommand<typeof CloneList> {
           fromDate,
           toDate,
           status: status as 'Completed' | 'Failed' | 'InProgress' | 'Pending' | undefined,
+          batchId,
         },
       },
     });

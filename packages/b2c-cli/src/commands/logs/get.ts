@@ -48,7 +48,8 @@ export default class LogsGet extends InstanceCommand<typeof LogsGet> {
     ...InstanceCommand.baseFlags,
     filter: Flags.string({
       char: 'f',
-      description: 'Log prefixes to filter (can specify multiple)',
+      description:
+        'Log prefixes to filter (can specify multiple). Use a path like "internal/server" to fetch logs from a subdirectory.',
       multiple: true,
       default: DEFAULT_PREFIXES,
     }),

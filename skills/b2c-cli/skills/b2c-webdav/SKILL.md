@@ -1,6 +1,6 @@
 ---
 name: b2c-webdav
-description: List, upload, download, and manage files on B2C Commerce instances via WebDAV. Use this skill whenever the user needs to upload files to IMPEX directories, download exports from an instance, list remote files, create or delete directories, or zip/unzip files on the server. Also use when managing file transfers to sandboxes or browsing instance file systems -- even if they just say 'upload a file to the instance' or 'check what's in the IMPEX folder'.
+description: List, upload, download, and manage files on B2C Commerce instances via WebDAV. Use this skill whenever the user needs to upload files to IMPEX directories, download exports from an instance, list remote files, create or delete directories, zip or unzip files on the server, manage file transfers to sandboxes, or browse instance file systems — even if they just say "upload a file to the instance" or "check what's in the IMPEX folder".
 ---
 
 # B2C WebDAV Skill
@@ -120,6 +120,18 @@ b2c webdav zip src/instance/my-folder
 b2c webdav unzip src/instance/archive.zip
 ```
 
+### Import-Set Managed State
+
+Do not manually script marker files when the goal is to apply a local set of site archives once. Use the higher-level command:
+
+```bash
+b2c job import-set
+```
+
+The command manages its own receipt directories so routine file cleanup does not remove applied state and reruns work across machines. Do not edit or delete that managed state unless deliberately resetting an import history: removing a receipt makes the corresponding archive eligible to run again.
+
+For the canonical workflow, naming convention, retry behavior, and recovery rules, use the `b2c-cli:b2c-site-import-export` skill's **Apply an Ordered, Idempotent Import Set** section.
+
 ### More Commands
 
 See `b2c webdav --help` for a full list of available commands and options in the `webdav` topic.
@@ -128,4 +140,5 @@ See `b2c webdav --help` for a full list of available commands and options in the
 
 - `b2c-cli:b2c-logs` - Filtered log retrieval, search, and real-time tailing (preferred for log exploration)
 - `b2c-cli:b2c-code` - Higher-level code deployment (preferred for cartridge upload)
-- `b2c-cli:b2c-job` - Import/export site archives
+- `b2c-cli:b2c-site-import-export` - Canonical site archive and idempotent import-set guidance
+- `b2c-cli:b2c-job` - Run and monitor jobs

@@ -25,7 +25,7 @@ describe('discovery/patterns/sfra', () => {
   describe('sfraPattern', () => {
     it('should have correct metadata', () => {
       expect(sfraPattern.name).to.equal('sfra');
-      expect(sfraPattern.projectType).to.equal('cartridges');
+      expect(sfraPattern.projectType).to.equal('sfra');
     });
 
     describe('app_storefront_base cartridge detection', () => {

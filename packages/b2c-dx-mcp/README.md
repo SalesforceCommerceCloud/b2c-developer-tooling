@@ -80,8 +80,11 @@ See the [Configuration Guide](https://salesforcecommercecloud.github.io/b2c-deve
 | CARTRIDGES | `cartridge_deploy` | [toolsets#cartridges](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#cartridges) |
 | MRT | `mrt_bundle_push` | [toolsets#mrt](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#mrt) |
 | SCAPI | `scapi_schemas_list`, `scapi_custom_apis_get_status`, `scapi_custom_api_generate_scaffold` | [toolsets#scapi](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#scapi) |
-| STOREFRONTNEXT | `sfnext_get_guidelines`, `sfnext_add_page_designer_decorator`, `sfnext_configure_theme`, `sfnext_start_figma_workflow`, `sfnext_analyze_component`, `sfnext_match_tokens_to_theme` | [toolsets#storefrontnext](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#storefrontnext) |
+| STOREFRONTNEXT | `mrt_bundle_push` + SCAPI tools (auto-enabled for Storefront Next projects) | [toolsets#storefrontnext](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#storefrontnext) |
+| STOREFRONTNEXT_DEPRECATED ⛔ | `sfnext_get_guidelines`, `sfnext_add_page_designer_decorator`, `sfnext_configure_theme`, `sfnext_start_figma_workflow`, `sfnext_analyze_component`, `sfnext_match_tokens_to_theme` — **deprecated, see note below** | [toolsets#storefrontnext-deprecated](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#storefrontnext-deprecated) |
 | PWAV3 | `pwakit_get_guidelines` + SCAPI tools | [toolsets#pwav3](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#pwav3) |
+
+> **⛔ `sfnext_*` tools are deprecated.** The Storefront Next MCP tools are **not compatible with the Storefront Next 1.0 GA release** and have been superseded by the [`storefront-next` and `storefront-next-figma` agent-skills plugins](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills), which stay current with the GA release. They have moved to the `STOREFRONTNEXT_DEPRECATED` toolset, which is **never auto-enabled** and **excluded from `--toolsets all`**; to use them you must request the toolset explicitly (`--toolsets STOREFRONTNEXT_DEPRECATED --allow-non-ga-tools`). They will be removed in a future release.
 
 ### cartridge_deploy
 
@@ -117,6 +120,10 @@ Generate new custom SCAPI endpoint in a cartridge. [Details](https://salesforcec
 
 - "Use the MCP tool to scaffold a new custom API named my-products."
 - "Use the MCP tool to create a custom admin API called customer-trips."
+
+## Deprecated: Storefront Next (`sfnext_*`) tools
+
+> **⛔ Deprecated and not compatible with the Storefront Next 1.0 GA release.** The tools below have been superseded by the [`storefront-next` and `storefront-next-figma` agent-skills plugins](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills) and will be removed in a future release. They no longer auto-enable for Storefront Next projects and are excluded from `--toolsets all`; to use them, request `--toolsets STOREFRONTNEXT_DEPRECATED --allow-non-ga-tools`. Migrate to the skills plugins.
 
 ### sfnext_get_guidelines
 

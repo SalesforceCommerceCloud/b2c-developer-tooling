@@ -200,20 +200,38 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       let reloaded = false;
       try {
         if (this.flags.activate) {
-          await this.operations.activateCodeVersion(this.instance, version);
+          const activation = await this.operations.activateCodeVersion(this.instance, version);
           activated = true;
+          if (activation?.alreadyActive) {
+            this.log(
+              t(
+                'commands.code.deploy.alreadyActive',
+                'Code version "{{version}}" is already active; no activation was needed.',
+                {version},
+              ),
+            );
+          }
         } else if (this.flags.reload) {
           await this.operations.reloadCodeVersion(this.instance, version);
           activated = true;
           reloaded = true;
         }
       } catch (error) {
-        const clientId = this.resolvedConfig.values.clientId ?? 'unknown';
+        const message = error instanceof Error ? error.message : String(error);
+        if (this.flags.reload) {
+          this.error(
+            t(
+              'commands.code.deploy.reloadFailed',
+              'Cartridges were deployed, but code version "{{version}}" could not be reloaded: {{message}}',
+              {version, message},
+            ),
+          );
+        }
         this.error(
           t(
             'commands.code.deploy.activateFailed',
-            'Failed to activate code version "{{version}}": {{message}}\n\nEnsure your OCAPI client ({{clientId}}) is configured with Data API permissions.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html#ocapi-configuration',
-            {version, message: error instanceof Error ? error.message : String(error), clientId},
+            'Cartridges were deployed, but code version "{{version}}" could not be activated: {{message}}',
+            {version, message},
           ),
         );
       }

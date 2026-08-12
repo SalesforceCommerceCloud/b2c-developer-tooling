@@ -16,6 +16,6 @@ export function registerScaffold(
 ): void {
   const builtInScaffoldsDir = path.join(context.extensionPath, 'dist', 'data', 'scaffolds');
   log.appendLine(`[Scaffold] Built-in scaffolds dir: ${builtInScaffoldsDir}`);
-  const disposables = registerScaffoldCommands(configProvider, log, builtInScaffoldsDir);
+  const disposables = registerScaffoldCommands(context, configProvider, log, builtInScaffoldsDir);
   context.subscriptions.push(...disposables);
 }

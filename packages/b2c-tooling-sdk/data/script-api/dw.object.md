@@ -4,7 +4,7 @@
 | Class | Description |
 | --- | --- |
 | [ActiveData](dw.object.ActiveData.md) | Represents the active data for an object in Commerce Cloud Digital. |
-| [CustomAttributes](dw.object.CustomAttributes.md) | This class is used together with other classes that contain custom attributes  and is used to read and write these attributes. |
+| [CustomAttributes](dw.object.CustomAttributes.md) | This class is used together with other classes that contain custom attributes and is used to read and write these  attributes. |
 | [CustomObject](dw.object.CustomObject.md) | Represents a custom object and its corresponding attributes. |
 | [CustomObjectMgr](dw.object.CustomObjectMgr.md) | Manager class which provides methods for creating, retrieving, deleting,  and searching for custom objects. |
 | [Extensible](dw.object.Extensible.md) | Base class alternative to ExtensibleObject for objects customizable through the metadata system. |

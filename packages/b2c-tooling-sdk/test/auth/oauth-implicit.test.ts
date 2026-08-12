@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {createServer, get as httpGet} from 'node:http';
 import {expect} from 'chai';
 import {ImplicitOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 
@@ -17,6 +18,18 @@ function futureDate(minutes: number): Date {
   return new Date(Date.now() + minutes * 60 * 1000);
 }
 
+async function getAvailablePort(): Promise<number> {
+  const server = createServer();
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const address = server.address();
+  if (!address || typeof address === 'string') throw new Error('Failed to allocate test port');
+  await new Promise<void>((resolve) => server.close(() => resolve()));
+  return address.port;
+}
+
 describe('auth/oauth-implicit', () => {
   const originalFetch = globalThis.fetch;
 
@@ -26,7 +39,7 @@ describe('auth/oauth-implicit', () => {
 
   it('adds Authorization and x-dw-client-id headers on fetch', async () => {
     const clientId = 'implicit-client-headers';
-    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a']});
+    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a'], persistSession: false});
 
     (strategy as unknown as {implicitFlowLogin: () => Promise<TokenResponse>}).implicitFlowLogin = async () => ({
       accessToken: 'tok-1',
@@ -52,9 +65,35 @@ describe('auth/oauth-implicit', () => {
     strategy.invalidateToken();
   });
 
+  it('starts the callback listener before invoking the browser opener', async () => {
+    const localPort = await getAvailablePort();
+    const strategy = new ImplicitOAuthStrategy({
+      clientId: 'implicit-listener-before-browser',
+      localPort,
+      persistSession: false,
+      openBrowser: async () => {
+        await new Promise<void>((resolve, reject) => {
+          const request = httpGet(
+            `http://localhost:${localPort}/?access_token=immediate-token&expires_in=1800&scope=test.scope`,
+            (response) => {
+              response.resume();
+              response.once('end', resolve);
+            },
+          );
+          request.once('error', reject);
+        });
+      },
+    });
+
+    const token = await strategy.getTokenResponse();
+    expect(token.accessToken).to.equal('immediate-token');
+    expect(token.scopes).to.deep.equal(['test.scope']);
+    strategy.invalidateToken();
+  });
+
   it('retries once on 401 after invalidating the cached token', async () => {
     const clientId = 'implicit-client-401';
-    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a']});
+    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a'], persistSession: false});
 
     let tokenCalls = 0;
     (strategy as unknown as {implicitFlowLogin: () => Promise<TokenResponse>}).implicitFlowLogin = async () => {
@@ -107,7 +146,7 @@ describe('auth/oauth-implicit', () => {
 
   it('does not retry on initial 401 when no prior success', async () => {
     const clientId = 'implicit-client-no-retry';
-    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a']});
+    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a'], persistSession: false});
 
     let tokenCalls = 0;
     (strategy as unknown as {implicitFlowLogin: () => Promise<TokenResponse>}).implicitFlowLogin = async () => {
@@ -138,7 +177,7 @@ describe('auth/oauth-implicit', () => {
 
   it('reuses cached token when scopes and expiry are valid', async () => {
     const clientId = 'implicit-client-cache';
-    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a']});
+    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a'], persistSession: false});
 
     let tokenCalls = 0;
     (strategy as unknown as {implicitFlowLogin: () => Promise<TokenResponse>}).implicitFlowLogin = async () => {
@@ -161,7 +200,7 @@ describe('auth/oauth-implicit', () => {
 
   it('re-authenticates when cached token is missing required scopes', async () => {
     const clientId = 'implicit-client-scopes';
-    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a', 'b']});
+    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a', 'b'], persistSession: false});
 
     let tokenCalls = 0;
     (strategy as unknown as {implicitFlowLogin: () => Promise<TokenResponse>}).implicitFlowLogin = async () => {
@@ -185,7 +224,7 @@ describe('auth/oauth-implicit', () => {
 
   it('deduplicates concurrent token requests using pending auth mutex', async () => {
     const clientId = 'implicit-client-pending';
-    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a']});
+    const strategy = new ImplicitOAuthStrategy({clientId, scopes: ['a'], persistSession: false});
 
     let resolveToken: ((t: TokenResponse) => void) | undefined;
     let tokenCalls = 0;

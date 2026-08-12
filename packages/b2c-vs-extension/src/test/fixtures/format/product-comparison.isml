@@ -1,0 +1,30 @@
+<isdecorate template="common/layout/page">
+    <isscript>
+        var assets = require('*/cartridge/scripts/assets');
+        assets.addJs('/js/search.js');
+        assets.addCss('/css/search.css');
+    </isscript>
+
+    <div class="container product-comparison">
+        <div class="row">
+            <div class="col-3 back-to-results">
+                <a class="continue-shopping-link" href="${'#'}" onclick="history.back();"
+                    title="${Resource.msg('link.label.backtoresults', 'product', null)}">
+                    &lt; ${Resource.msg('link.label.backtoresults', 'product', null)}
+                </a>
+            </div>
+        </div>
+        <isif condition="${pdict.attributes.length > 0}">
+            <isinclude template="product/compareAttributes" />
+        <iselse/>
+            <div class="row">
+                <isloop items="${pdict.pids}" var="productId">
+                    <div class="col">
+                        <isinclude
+                            url="${URLUtils.url('Tile-Show', 'pid', productId, 'swatches', false, 'ratings', true, 'compare', false)}" />
+                    </div>
+                </isloop>
+            </div>
+        </isif>
+    </div>
+</isdecorate>

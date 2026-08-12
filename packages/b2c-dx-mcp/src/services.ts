@@ -51,10 +51,12 @@ import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {
   createCustomApisClient,
+  createMetricsClient,
   createScapiSchemasClient,
   toOrganizationId,
   WebDavClient,
   type CustomApisClient,
+  type MetricsClient,
   type ScapiSchemasClient,
 } from '@salesforce/b2c-tooling-sdk/clients';
 
@@ -228,6 +230,34 @@ export class Services {
   }
 
   /**
+   * Get Metrics client for accessing SCAPI observability metrics.
+   * Requires shortCode, tenantId, and OAuth credentials to be configured.
+   *
+   * @throws Error if shortCode, tenantId, or OAuth credentials are missing
+   * @returns Typed Metrics client
+   */
+  public getMetricsClient(): MetricsClient {
+    const {shortCode, tenantId} = this.resolvedConfig.values;
+
+    if (!shortCode) {
+      throw new Error(
+        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
+      );
+    }
+
+    if (!tenantId) {
+      throw new Error(
+        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.',
+      );
+    }
+
+    // This will throw if OAuth credentials are missing
+    const oauthStrategy = this.getOAuthStrategy();
+
+    return createMetricsClient({shortCode, tenantId}, oauthStrategy);
+  }
+
+  /**
    * Get organization ID for SCAPI API calls.
    * Ensures the tenant ID has the required f_ecom_ prefix.
    *
@@ -251,6 +281,19 @@ export class Services {
    */
   public getPlatform(): NodeJS.Platform {
     return os.platform();
+  }
+
+  /**
+   * Get the resolved configuration (values, sources, warnings).
+   *
+   * Exposed for the `config_inspect` tool so agents can see the effective,
+   * source-attributed configuration the server resolved. Callers displaying
+   * these values must redact secrets (see `redactConfigValues`).
+   *
+   * @returns The resolved B2C configuration
+   */
+  public getResolvedConfig(): ResolvedB2CConfig {
+    return this.resolvedConfig;
   }
 
   /**
@@ -369,16 +412,55 @@ export class Services {
   }
 
   /**
+   * Resolve the effective project directory for a tool call, reporting which
+   * source it came from.
+   *
+   * MCP clients disagree on the working directory a stdio server is spawned
+   * with (Claude Code / Cursor often use the user's home directory rather than
+   * the open project — see https://agent-plugins.org/plugin-authors/mcp-servers),
+   * so the resolved value is deliberately explicit. Precedence:
+   *
+   *   1. `override` — a per-call `projectDirectory` tool argument (highest)
+   *   2. `projectDirectory` from `--project-directory` / `SFCC_PROJECT_DIRECTORY`
+   *   3. `process.cwd()` (fallback; unreliable across clients)
+   *
+   * Tools should surface the returned `{path, source}` in their output so the
+   * agent can see which directory was used when it did not pass one explicitly.
+   *
+   * The `override` and configured values are returned as-supplied (not
+   * re-resolved against cwd); callers pass absolute paths, and `path.resolve`
+   * would otherwise drive-prefix a POSIX-style path on Windows.
+   *
+   * @param override - Optional explicit project directory from a tool argument
+   * @returns The project directory and the source it was resolved from
+   */
+  public resolveProjectDirectory(override?: string): {path: string; source: 'argument' | 'config' | 'cwd'} {
+    if (override) {
+      return {path: override, source: 'argument'};
+    }
+    const configured = this.resolvedConfig.values.projectDirectory;
+    if (configured) {
+      return {path: configured, source: 'config'};
+    }
+    return {path: process.cwd(), source: 'cwd'};
+  }
+
+  /**
    * Resolve a path relative to the project directory.
    * If path is not supplied, returns the project directory.
    * If path is absolute, returns it as-is.
    * If path is relative, resolves it relative to the project directory.
    *
+   * An optional explicit project-directory override (typically a per-call
+   * `projectDirectory` tool argument) takes precedence over the configured
+   * project directory and cwd — see {@link Services.resolveProjectDirectory}.
+   *
    * @param pathArg - Optional path to resolve
+   * @param projectDirectoryOverride - Optional explicit project directory to resolve against
    * @returns Resolved absolute path
    */
-  public resolveWithProjectDirectory(pathArg?: string): string {
-    const projectDir = this.resolvedConfig.values.projectDirectory ?? process.cwd();
+  public resolveWithProjectDirectory(pathArg?: string, projectDirectoryOverride?: string): string {
+    const projectDir = this.resolveProjectDirectory(projectDirectoryOverride).path;
     if (!pathArg) {
       return projectDir;
     }

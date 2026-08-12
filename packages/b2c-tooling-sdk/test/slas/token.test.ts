@@ -193,9 +193,19 @@ describe('slas/token', () => {
   });
 
   describe('getRegisteredToken - private client', () => {
-    it('logs in with shopper credentials and exchanges code with Basic auth', async () => {
+    it('exchanges code via PKCE with Basic auth (sends code_verifier)', async () => {
+      // Regression test for W-23235332: the login step always presents a
+      // code_challenge, so the private-client token exchange must send the
+      // matching code_verifier with the authorization_code_pkce grant. The
+      // previous behavior used grant_type=authorization_code WITHOUT a
+      // code_verifier, which SLAS rejects with "400 code_verifier is required".
+      let loginChallenge: string | null = null;
       server.use(
-        http.post(`${BASE_URL}/oauth2/login`, () => {
+        http.post(`${BASE_URL}/oauth2/login`, async ({request}) => {
+          const params = new URLSearchParams(await request.text());
+          loginChallenge = params.get('code_challenge');
+          expect(loginChallenge).to.be.a('string');
+
           return new HttpResponse(null, {
             status: 303,
             headers: {
@@ -210,8 +220,13 @@ describe('slas/token', () => {
 
           const body = await request.text();
           const params = new URLSearchParams(body);
-          expect(params.get('grant_type')).to.equal('authorization_code');
+          expect(params.get('grant_type')).to.equal('authorization_code_pkce');
+          expect(params.get('client_id')).to.equal('test-client-id');
           expect(params.get('code')).to.equal('priv-code');
+          // The verifier must be present so SLAS can validate the challenge.
+          expect(params.get('code_verifier')).to.be.a('string').and.not.empty;
+          expect(params.get('channel_id')).to.equal('RefArch');
+          expect(params.get('usid')).to.equal('usid-priv');
 
           return HttpResponse.json(MOCK_TOKEN_RESPONSE);
         }),

@@ -245,6 +245,50 @@ describe('services', () => {
       // rooted POSIX-style path produces a drive-prefixed, backslash-separated path).
       expect(services.resolveWithProjectDirectory('subdir')).to.equal(path.resolve(projectDir, 'subdir'));
     });
+
+    it('should honor an explicit project-directory override argument', () => {
+      const config = createMockResolvedConfig({projectDirectory: '/path/to/project'});
+      const services = new Services({resolvedConfig: config});
+
+      // Override wins over the configured project directory for path resolution.
+      expect(services.resolveWithProjectDirectory('subdir', '/other/root')).to.equal(
+        path.resolve('/other/root', 'subdir'),
+      );
+    });
+  });
+
+  describe('resolveProjectDirectory', () => {
+    it('reports source "argument" when an override is provided', () => {
+      const config = createMockResolvedConfig({projectDirectory: '/path/to/project'});
+      const services = new Services({resolvedConfig: config});
+
+      // Returned as-supplied (not re-resolved against cwd) so a POSIX-style
+      // absolute path is not drive-prefixed on Windows.
+      expect(services.resolveProjectDirectory('/override/root')).to.deep.equal({
+        path: '/override/root',
+        source: 'argument',
+      });
+    });
+
+    it('reports source "config" when only the configured project directory is set', () => {
+      const config = createMockResolvedConfig({projectDirectory: '/path/to/project'});
+      const services = new Services({resolvedConfig: config});
+
+      expect(services.resolveProjectDirectory()).to.deep.equal({
+        path: '/path/to/project',
+        source: 'config',
+      });
+    });
+
+    it('reports source "cwd" when nothing is configured', () => {
+      const config = createMockResolvedConfig();
+      const services = new Services({resolvedConfig: config});
+
+      expect(services.resolveProjectDirectory()).to.deep.equal({
+        path: process.cwd(),
+        source: 'cwd',
+      });
+    });
   });
 
   describe('getHomeDir', () => {
@@ -253,6 +297,66 @@ describe('services', () => {
       const services = new Services({resolvedConfig: config});
 
       expect(services.getHomeDir()).to.equal(os.homedir());
+    });
+  });
+
+  describe('getMetricsClient', () => {
+    it('should create a Metrics client wired to createOAuth and the right base URL', async () => {
+      const config = createMockResolvedConfig({
+        shortCode: 'test-shortcode',
+        tenantId: 'test_tenant',
+      });
+      stub(config, 'hasOAuthConfig').returns(true);
+      const createOAuthStub = stub(config, 'createOAuth').returns(mockOAuthStrategy);
+
+      const services = new Services({resolvedConfig: config});
+      const client = services.getMetricsClient();
+
+      expect(createOAuthStub.calledOnce, 'createOAuth must be invoked exactly once').to.be.true;
+      expect(createOAuthStub.firstCall.args).to.deep.equal([]);
+
+      expect(client.GET).to.be.a('function');
+      expect(client.use).to.be.a('function');
+
+      const capturedUrls: string[] = [];
+      client.use({
+        async onRequest({request}) {
+          capturedUrls.push(request.url);
+          return new Response('{}', {status: 200, headers: {'content-type': 'application/json'}});
+        },
+      });
+      await client.GET('/organizations/{organizationId}/metrics/overall', {
+        params: {path: {organizationId: 'f_ecom_test_tenant'}},
+      });
+      expect(capturedUrls).to.have.lengthOf(1);
+      expect(capturedUrls[0]).to.match(
+        /^https:\/\/test-shortcode\.api\.commercecloud\.salesforce\.com\/observability\/metrics\/v1\//,
+      );
+    });
+
+    it('should throw error when shortCode is missing', () => {
+      const config = createMockResolvedConfig({tenantId: 'test_tenant'});
+      const services = new Services({resolvedConfig: config});
+
+      expect(() => services.getMetricsClient()).to.throw('SCAPI short code required');
+    });
+
+    it('should throw error when tenantId is missing', () => {
+      const config = createMockResolvedConfig({shortCode: 'test-shortcode'});
+      const services = new Services({resolvedConfig: config});
+
+      expect(() => services.getMetricsClient()).to.throw('Tenant ID required');
+    });
+
+    it('should throw error when OAuth is missing', () => {
+      const config = createMockResolvedConfig({
+        shortCode: 'test-shortcode',
+        tenantId: 'test_tenant',
+      });
+      stub(config, 'hasOAuthConfig').returns(false);
+      const services = new Services({resolvedConfig: config});
+
+      expect(() => services.getMetricsClient()).to.throw('OAuth client ID required');
     });
   });
 

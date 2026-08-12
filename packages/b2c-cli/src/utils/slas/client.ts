@@ -10,6 +10,7 @@ import {
   createSlasClient,
   getApiErrorMessage,
   getDefaultPublicClientId,
+  getLegacyImplicitPublicClientId,
   type SlasClient,
   type SlasComponents,
 } from '@salesforce/b2c-tooling-sdk';
@@ -75,14 +76,14 @@ export function printClientDetails(output: ClientOutput, showSecret = true): voi
   ui.div({text: 'Channels:', width: labelWidth}, {text: output.channels.join(', ')});
   ui.div({text: 'Scopes:', width: labelWidth}, {text: output.scopes.join('\n' + ' '.repeat(labelWidth))});
 
-  const redirectUris = parseRedirectUris(output.redirectUri);
+  const redirectUris = parseUriList(output.redirectUri);
   ui.div(
     {text: 'Redirect URIs:', width: labelWidth},
     {text: redirectUris.length > 0 ? redirectUris.join('\n' + ' '.repeat(labelWidth)) : ''},
   );
 
   if (output.callbackUri) {
-    const callbackUris = parseRedirectUris(output.callbackUri);
+    const callbackUris = parseUriList(output.callbackUri);
     ui.div(
       {text: 'Callback URIs:', width: labelWidth},
       {text: callbackUris.length > 0 ? callbackUris.join('\n' + ' '.repeat(labelWidth)) : output.callbackUri},
@@ -104,22 +105,36 @@ export function printClientDetails(output: ClientOutput, showSecret = true): voi
 }
 
 /**
- * Parse a redirectUri string into individual URIs.
- * The SLAS API returns redirect URIs as a pipe-delimited string (e.g. "http://a|http://b"),
- * while normalizeClientResponse may produce comma-separated values from an array response.
- * This helper handles both formats.
+ * Parse a SLAS URI list (redirect URIs or callback URIs) into individual URIs.
+ *
+ * The SLAS API returns both fields as a single pipe-delimited string (e.g. "http://a|http://b").
+ * This helper also accepts:
+ * - an array response, where each element is a URI (and may itself be pipe-delimited); and
+ * - a comma-delimited string, which is what {@link normalizeClientResponse} produces when it
+ *   joins an array response for display.
+ *
+ * This is the single source of truth for splitting SLAS URI lists — both the display path and
+ * the update request-building path use it, so the two cannot drift (as they previously did when
+ * update split callback URIs on commas instead of pipes).
+ *
+ * Empty segments are dropped.
  */
-export function parseRedirectUris(redirectUri: string): string[] {
-  if (redirectUri.includes('|')) {
-    return redirectUri
-      .split('|')
+export function parseUriList(value: null | string | string[] | undefined): string[] {
+  if (value === undefined || value === null) {
+    return [];
+  }
+  if (Array.isArray(value)) {
+    // Each element is a URI, but a single element may itself be pipe-delimited.
+    return value
+      .filter((s): s is string => typeof s === 'string')
+      .flatMap((s) => s.split('|'))
       .map((s) => s.trim())
       .filter(Boolean);
   }
-  return redirectUri
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
+  // A single string is pipe-delimited from the API, or comma-delimited when produced by
+  // normalizeClientResponse joining an array response.
+  const parts = value.includes('|') ? value.split('|') : value.split(',');
+  return parts.map((s) => s.trim()).filter(Boolean);
 }
 
 // Backwards-compatible alias for SDK's getApiErrorMessage; existing call sites
@@ -211,8 +226,10 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
     }
   }
 
-  protected override getDefaultClientId(): string {
-    return getDefaultPublicClientId(this.accountManagerHost);
+  protected override getDefaultClientId(method: 'implicit' | 'user' = 'user'): string {
+    return method === 'implicit'
+      ? getLegacyImplicitPublicClientId(this.accountManagerHost)
+      : getDefaultPublicClientId(this.accountManagerHost);
   }
 
   /**

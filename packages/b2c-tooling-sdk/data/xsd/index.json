@@ -1,6 +1,7 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-04-21T18:00:00.000Z",
+  "generatedAt": "2026-08-03T18:24:52.137Z",
+  "platformDocVersion": "DWAPP 26.8",
   "entries": [
     {
       "id": "abtest",
@@ -77,6 +78,10 @@
     {
       "id": "dcext",
       "filePath": "dcext.xsd"
+    },
+    {
+      "id": "eventrouting",
+      "filePath": "eventrouting.xsd"
     },
     {
       "id": "feed",

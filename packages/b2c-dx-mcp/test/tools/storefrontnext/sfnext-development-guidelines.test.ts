@@ -65,8 +65,14 @@ describe('tools/storefrontnext/sfnext-development-guidelines', () => {
       expect(desc).to.match(/comprehensive|quick reference/i);
 
       // Should be reasonably short (optimized for LLM consumption)
-      // Note: Description includes critical instructions, so slightly longer than ideal
-      expect(desc.length).to.be.lessThan(650);
+      // Note: Description includes critical instructions plus a deprecation
+      // notice prefix, so slightly longer than ideal.
+      expect(desc.length).to.be.lessThan(900);
+    });
+
+    it('should carry a deprecation notice', () => {
+      const tool = createDeveloperGuidelinesTool(() => services);
+      expect(tool.description).to.include('[DEPRECATED]');
     });
 
     it('should list all sections in inputSchema description', () => {
@@ -105,8 +111,9 @@ describe('tools/storefrontnext/sfnext-development-guidelines', () => {
       const desc = tool.description;
 
       // Main description should be concise, not list all topics
-      // Note: Description includes critical instructions, so slightly longer than ideal
-      expect(desc.length).to.be.lessThan(650);
+      // Note: Description includes critical instructions plus a deprecation
+      // notice prefix, so slightly longer than ideal.
+      expect(desc.length).to.be.lessThan(900);
 
       // Main description focuses on WHEN and WHY
       expect(desc).to.include('ESSENTIAL FIRST STEP');
@@ -116,9 +123,9 @@ describe('tools/storefrontnext/sfnext-development-guidelines', () => {
       // This keeps main description scannable for LLMs while providing full detail where needed
     });
 
-    it('should be in STOREFRONTNEXT toolset', () => {
+    it('should be in STOREFRONTNEXT_DEPRECATED toolset', () => {
       const tool = createDeveloperGuidelinesTool(() => services);
-      expect(tool.toolsets).to.include('STOREFRONTNEXT');
+      expect(tool.toolsets).to.include('STOREFRONTNEXT_DEPRECATED');
       expect(tool.toolsets).to.have.lengthOf(1);
     });
 

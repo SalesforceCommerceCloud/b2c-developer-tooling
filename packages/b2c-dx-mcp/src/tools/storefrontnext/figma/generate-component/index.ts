@@ -136,13 +136,14 @@ export function createGenerateComponentTool(loadServices: () => Promise<Services
     {
       name: 'sfnext_analyze_component',
       description:
+        '[DEPRECATED] Superseded by the storefront-next and storefront-next-figma agent-skills plugins and NOT compatible with the Storefront Next 1.0 GA release. Will be removed in a future release. ' +
         'Analyzes Figma design and discovered components to recommend component generation strategy. ' +
         'Workflow: 1) Discover similar components using Glob/Grep/Read tools, ' +
         '2) Call this tool with the discoveredComponents parameter, ' +
         '3) Tool analyzes differences and recommends REUSE/EXTEND/CREATE action, ' +
         '4) Tool provides formatted recommendation with code examples and workflow steps. ' +
         'Call this tool AFTER retrieving Figma design data and discovering similar components.',
-      toolsets: ['STOREFRONTNEXT'],
+      toolsets: ['STOREFRONTNEXT_DEPRECATED'],
       isGA: false,
       requiresInstance: false,
       inputSchema: generateComponentSchema.shape,

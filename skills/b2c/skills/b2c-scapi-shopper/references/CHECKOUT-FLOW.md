@@ -237,8 +237,12 @@ const order = await fetch(
     }
 ).then(r => r.json());
 
-// order.orderNo contains the order confirmation number
-console.log(`Order created: ${order.orderNo}`);
+// order.orderNo contains the order confirmation number.
+// NOTE: the order is in CREATED status here — it is NOT yet placed.
+// Server-side payment authorization and the CREATED -> NEW / FAILED transition
+// are owned by the dw.ocapi.shop.order.afterPOST hook (see b2c-hooks). Without
+// that hook the order stays stranded in CREATED.
+console.log(`Order created (status CREATED): ${order.orderNo}`);
 ```
 
 ## Single-Request Basket Creation

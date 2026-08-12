@@ -259,6 +259,12 @@ Component with nested regions:
 ```
 
 **Script for container:**
+
+> This follows SFRA's container-component pattern: build the region registry with
+> `PageRenderHelper.getRegionModelRegistry(component)`, pass it to the template as `regions`, and
+> call `RegionModel.render()` in ISML. The region model preserves SFRA's region and component render
+> settings before delegating to `PageMgr.renderRegion()`.
+
 ```javascript
 'use strict';
 
@@ -270,25 +276,35 @@ module.exports.render = function (context) {
     var model = new HashMap();
     var component = context.component;
 
-    model.put('leftWidth', context.content.leftWidth || '50%');
-    model.put('gap', context.content.gap || 'medium');
-
-    // Render nested regions
-    model.put('leftRegion', PageRenderHelper.renderRegion(component.getRegion('left')));
-    model.put('rightRegion', PageRenderHelper.renderRegion(component.getRegion('right')));
+    model.regions = PageRenderHelper.getRegionModelRegistry(component);
 
     return new Template('experience/components/twocolumn').render(model).text;
 };
 ```
 
+**Template for container:**
+
+```html
+<div class="two-column">
+    <div class="left-column">
+        <isprint value="${pdict.regions.left.render()}" encoding="off"/>
+    </div>
+    <div class="right-column">
+        <isprint value="${pdict.regions.right.render()}" encoding="off"/>
+    </div>
+</div>
+```
+
 ## Page Script Context
+
+> Illustrative context API; confirm current PageScriptContext properties with `docs_read dw.experience.PageScriptContext` (note: renderParameters is deprecated, use getRuntimeParameters() instead).
 
 Properties available in `context` parameter:
 
 ```javascript
 module.exports.render = function (context) {
     var page = context.page;                    // dw.experience.Page
-    var renderParameters = context.renderParameters;  // HashMap from PageMgr.renderPage()
+    var renderParameters = context.renderParameters;  // DEPRECATED - use context.getRuntimeParameters()
 
     // Page methods
     var pageId = page.ID;
@@ -299,6 +315,8 @@ module.exports.render = function (context) {
 ```
 
 ## Component Script Context
+
+> Illustrative context API; confirm current ComponentScriptContext properties with `docs_read dw.experience.ComponentScriptContext`.
 
 Properties available in `context` parameter:
 

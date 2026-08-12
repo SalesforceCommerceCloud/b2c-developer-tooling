@@ -45,9 +45,11 @@ certificates are not considered merchandise as they do not represent a product.
 | [BUSINESS_TYPE_B2B](#business_type_b2b): [Number](TopLevel.Number.md) = 2 | constant for Business Type B2B |
 | [BUSINESS_TYPE_B2C](#business_type_b2c): [Number](TopLevel.Number.md) = 1 | constant for Business Type B2C |
 | [CHANNEL_TYPE_CALLCENTER](#channel_type_callcenter): [Number](TopLevel.Number.md) = 2 | constant for Channel Type CallCenter |
+| [CHANNEL_TYPE_CHATGPT](#channel_type_chatgpt): [Number](TopLevel.Number.md) = 18 | constant for Channel Type ChatGPT |
 | [CHANNEL_TYPE_CUSTOMERSERVICECENTER](#channel_type_customerservicecenter): [Number](TopLevel.Number.md) = 11 | constant for Channel Type Customer Service Center |
 | [CHANNEL_TYPE_DSS](#channel_type_dss): [Number](TopLevel.Number.md) = 4 | constant for Channel Type DSS |
 | [CHANNEL_TYPE_FACEBOOKADS](#channel_type_facebookads): [Number](TopLevel.Number.md) = 8 | constant for Channel Type Facebook Ads |
+| [CHANNEL_TYPE_GEMINI](#channel_type_gemini): [Number](TopLevel.Number.md) = 19 | constant for Channel Type Gemini |
 | [CHANNEL_TYPE_GOOGLE](#channel_type_google): [Number](TopLevel.Number.md) = 13 | constant for Channel Type Google |
 | [CHANNEL_TYPE_INSTAGRAMCOMMERCE](#channel_type_instagramcommerce): [Number](TopLevel.Number.md) = 12 | constant for Channel Type Instagram Commerce |
 | [CHANNEL_TYPE_MARKETPLACE](#channel_type_marketplace): [Number](TopLevel.Number.md) = 3 | constant for Channel Type Marketplace |
@@ -263,6 +265,14 @@ This class does not have a constructor, so you cannot create it directly.
 
 ---
 
+### CHANNEL_TYPE_CHATGPT
+
+- CHANNEL_TYPE_CHATGPT: [Number](TopLevel.Number.md) = 18
+  - : constant for Channel Type ChatGPT
+
+
+---
+
 ### CHANNEL_TYPE_CUSTOMERSERVICECENTER
 
 - CHANNEL_TYPE_CUSTOMERSERVICECENTER: [Number](TopLevel.Number.md) = 11
@@ -283,6 +293,14 @@ This class does not have a constructor, so you cannot create it directly.
 
 - CHANNEL_TYPE_FACEBOOKADS: [Number](TopLevel.Number.md) = 8
   - : constant for Channel Type Facebook Ads
+
+
+---
+
+### CHANNEL_TYPE_GEMINI
+
+- CHANNEL_TYPE_GEMINI: [Number](TopLevel.Number.md) = 19
+  - : constant for Channel Type Gemini
 
 
 ---
@@ -568,7 +586,8 @@ Use [getGiftCertificateLineItems()](dw.order.LineItemCtnr.md#getgiftcertificatel
       [CHANNEL_TYPE_SUBSCRIPTIONS](dw.order.LineItemCtnr.md#channel_type_subscriptions), [CHANNEL_TYPE_ONLINERESERVATION](dw.order.LineItemCtnr.md#channel_type_onlinereservation),
       [CHANNEL_TYPE_CUSTOMERSERVICECENTER](dw.order.LineItemCtnr.md#channel_type_customerservicecenter), [CHANNEL_TYPE_INSTAGRAMCOMMERCE](dw.order.LineItemCtnr.md#channel_type_instagramcommerce),
       [CHANNEL_TYPE_GOOGLE](dw.order.LineItemCtnr.md#channel_type_google), [CHANNEL_TYPE_YOUTUBE](dw.order.LineItemCtnr.md#channel_type_youtube), [CHANNEL_TYPE_TIKTOK](dw.order.LineItemCtnr.md#channel_type_tiktok),
-      [CHANNEL_TYPE_SNAPCHAT](dw.order.LineItemCtnr.md#channel_type_snapchat), [CHANNEL_TYPE_WHATSAPP](dw.order.LineItemCtnr.md#channel_type_whatsapp)
+      [CHANNEL_TYPE_SNAPCHAT](dw.order.LineItemCtnr.md#channel_type_snapchat), [CHANNEL_TYPE_WHATSAPP](dw.order.LineItemCtnr.md#channel_type_whatsapp), [CHANNEL_TYPE_CHATGPT](dw.order.LineItemCtnr.md#channel_type_chatgpt),
+      [CHANNEL_TYPE_GEMINI](dw.order.LineItemCtnr.md#channel_type_gemini)
 
 
 
@@ -623,10 +642,15 @@ Use [getGiftCertificateLineItems()](dw.order.LineItemCtnr.md#getgiftcertificatel
 
 ### defaultShipment
 - defaultShipment: [Shipment](dw.order.Shipment.md) `(read-only)`
-  - : Returns the default shipment of the line item container. Every basket and order has a default shipment with the
-      id "me". If you call a process that accesses a shipment, and you don't specify the shipment, then the process
-      uses the default shipment. You can't remove a default shipment. Calling [removeShipment(Shipment)](dw.order.LineItemCtnr.md#removeshipmentshipment) on it
-      throws an exception.
+  - : Returns the default shipment of the line item container. Baskets always have a default shipment with ID "me".
+      For orders, this can differ, for example: [OrderMgr.createOrder(Basket)](dw.order.OrderMgr.md#createorderbasket) removes empty
+      shipments, so if the basket's "me" shipment was empty at order creation, the order has no "me" shipment. In
+      that case, the shipment with the lowest ID is returned as the fallback, or `null` if the order has
+      no shipments. See [Shipment.isDefault()](dw.order.Shipment.md#isdefault) for the matching logic.
+      
+      
+      Processes that access a shipment use the default shipment when none is specified. The default shipment can't be
+      removed. Calling [removeShipment(Shipment)](dw.order.LineItemCtnr.md#removeshipmentshipment) on it throws an exception.
 
 
 
@@ -1574,7 +1598,8 @@ Use [getGiftCertificateLineItems()](dw.order.LineItemCtnr.md#getgiftcertificatel
       [CHANNEL_TYPE_SUBSCRIPTIONS](dw.order.LineItemCtnr.md#channel_type_subscriptions), [CHANNEL_TYPE_ONLINERESERVATION](dw.order.LineItemCtnr.md#channel_type_onlinereservation),
       [CHANNEL_TYPE_CUSTOMERSERVICECENTER](dw.order.LineItemCtnr.md#channel_type_customerservicecenter), [CHANNEL_TYPE_INSTAGRAMCOMMERCE](dw.order.LineItemCtnr.md#channel_type_instagramcommerce),
       [CHANNEL_TYPE_GOOGLE](dw.order.LineItemCtnr.md#channel_type_google), [CHANNEL_TYPE_YOUTUBE](dw.order.LineItemCtnr.md#channel_type_youtube), [CHANNEL_TYPE_TIKTOK](dw.order.LineItemCtnr.md#channel_type_tiktok),
-      [CHANNEL_TYPE_SNAPCHAT](dw.order.LineItemCtnr.md#channel_type_snapchat), [CHANNEL_TYPE_WHATSAPP](dw.order.LineItemCtnr.md#channel_type_whatsapp)
+      [CHANNEL_TYPE_SNAPCHAT](dw.order.LineItemCtnr.md#channel_type_snapchat), [CHANNEL_TYPE_WHATSAPP](dw.order.LineItemCtnr.md#channel_type_whatsapp), [CHANNEL_TYPE_CHATGPT](dw.order.LineItemCtnr.md#channel_type_chatgpt),
+      [CHANNEL_TYPE_GEMINI](dw.order.LineItemCtnr.md#channel_type_gemini)
 
 
     **Returns:**
@@ -1663,14 +1688,19 @@ Use [getGiftCertificateLineItems()](dw.order.LineItemCtnr.md#getgiftcertificatel
 
 ### getDefaultShipment()
 - getDefaultShipment(): [Shipment](dw.order.Shipment.md)
-  - : Returns the default shipment of the line item container. Every basket and order has a default shipment with the
-      id "me". If you call a process that accesses a shipment, and you don't specify the shipment, then the process
-      uses the default shipment. You can't remove a default shipment. Calling [removeShipment(Shipment)](dw.order.LineItemCtnr.md#removeshipmentshipment) on it
-      throws an exception.
+  - : Returns the default shipment of the line item container. Baskets always have a default shipment with ID "me".
+      For orders, this can differ, for example: [OrderMgr.createOrder(Basket)](dw.order.OrderMgr.md#createorderbasket) removes empty
+      shipments, so if the basket's "me" shipment was empty at order creation, the order has no "me" shipment. In
+      that case, the shipment with the lowest ID is returned as the fallback, or `null` if the order has
+      no shipments. See [Shipment.isDefault()](dw.order.Shipment.md#isdefault) for the matching logic.
+      
+      
+      Processes that access a shipment use the default shipment when none is specified. The default shipment can't be
+      removed. Calling [removeShipment(Shipment)](dw.order.LineItemCtnr.md#removeshipmentshipment) on it throws an exception.
 
 
     **Returns:**
-    - the default shipment of the container
+    - the default shipment of the container, or `null` if the order has no shipments
 
 
 ---

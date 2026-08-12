@@ -66,7 +66,8 @@
 export {WorkspaceTypeDetector, detectWorkspaceType} from './detector.js';
 
 // Types
-export type {ProjectType, DetectionPattern, DetectionResult, DetectOptions} from './types.js';
+export type {ProjectType, DetectionContext, DetectionPattern, DetectionResult, DetectOptions} from './types.js';
+export {PROJECT_TYPES} from './types.js';
 
 // Patterns (for customization)
 export {

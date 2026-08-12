@@ -57,6 +57,24 @@ function parseSsrParams(params: string[]): Record<string, string> {
 
 type DeployResult = CreateDeploymentResult | MrtEnvironment | PushResult;
 
+/** Patterns that indicate a 403/authorization error, typically caused by an invalid project ID */
+const MRT_AUTH_ERROR_PATTERNS = [
+  '403',
+  'forbidden',
+  'not authorized',
+  'unauthorized',
+  'permission denied',
+  'do not have permission',
+];
+
+/** Suggestion shown when a deploy/push operation fails with a 403/authorization error */
+const MRT_PROJECT_SUGGESTION = 'To see projects you have access to, run: b2c mrt project list --limit 10';
+
+function isMrtAuthError(error: Error): boolean {
+  const message = error.message.toLowerCase();
+  return MRT_AUTH_ERROR_PATTERNS.some((pattern) => message.includes(pattern));
+}
+
 /**
  * Deploy a bundle to Managed Runtime.
  *
@@ -206,6 +224,8 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
         }
       }
 
+      for (const w of result.warnings ?? []) this.warn(w);
+
       if (this.flags.wait) {
         return this.waitForDeployment(project, environment);
       }
@@ -213,11 +233,13 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       return result;
     } catch (error) {
       if (error instanceof Error) {
-        this.error(
-          t('commands.mrt.bundle.deploy.deployFailed', 'Failed to create deployment: {{message}}', {
-            message: error.message,
-          }),
-        );
+        const message = t('commands.mrt.bundle.deploy.deployFailed', 'Failed to create deployment: {{message}}', {
+          message: error.message,
+        });
+        if (isMrtAuthError(error)) {
+          this.error(`${message}\n\n${MRT_PROJECT_SUGGESTION}`);
+        }
+        this.error(message);
       }
       throw error;
     }
@@ -284,6 +306,8 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
         ),
       );
 
+      for (const w of result.warnings ?? []) this.warn(w);
+
       if (this.flags.wait) {
         if (!target) {
           this.warn('--wait was specified but no environment target was provided. Skipping wait.');
@@ -295,7 +319,13 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       return result;
     } catch (error) {
       if (error instanceof Error) {
-        this.error(t('commands.mrt.bundle.deploy.pushFailed', 'Push failed: {{message}}', {message: error.message}));
+        const message = t('commands.mrt.bundle.deploy.pushFailed', 'Push failed: {{message}}', {
+          message: error.message,
+        });
+        if (isMrtAuthError(error)) {
+          this.error(`${message}\n\n${MRT_PROJECT_SUGGESTION}`);
+        }
+        this.error(message);
       }
       throw error;
     }
