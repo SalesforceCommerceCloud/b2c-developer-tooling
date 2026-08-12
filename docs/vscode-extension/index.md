@@ -28,7 +28,7 @@ Generate new cartridges, controllers, hooks, jobs, and other boilerplate from a 
 
 ### Sandbox Realm Explorer
 
-Spin up, start, stop, clone, and clean up your on-demand sandboxes from a tree view. Cloned sandboxes are clearly marked, and the right-click menu only shows actions that make sense for the sandbox's current state.
+Spin up, start, stop, clone, and clean up your on-demand sandboxes from a tree view. Cloned sandboxes are clearly marked, and the right-click menu only shows actions that make sense for the sandbox's current state. From the Command Palette, **Start/Stop/Restart Sandbox** targets the active status-bar instance (OAuth + ODS sandbox hostname required).
 
 [![Sandbox Realm Explorer](./images/sandbox-explorer.png)](./images/sandbox-explorer.png)
 
@@ -58,7 +58,7 @@ Stream live `error-*.log`, `warn-*.log`, and `info-*.log` files from your sandbo
 
 ### Active Instance Status Bar
 
-The bottom-left of the window shows your active instance — the name, the hostname, and a pin icon if you've locked a particular folder as the project root. Click it to switch instances; every view updates instantly.
+The bottom-left of the window shows your active instance — the name, the hostname, and a pin icon if you've locked a particular folder as the project root. Click it to switch instances; every view updates instantly. Palette **Start/Stop/Restart Sandbox** commands use this active instance.
 
 ### B2C CLI Plugin Support
 

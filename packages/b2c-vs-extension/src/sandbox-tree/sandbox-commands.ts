@@ -3,11 +3,17 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
+import {
+  getApiErrorMessage,
+  parseFriendlySandboxId,
+  resolveSandboxId,
+  SandboxNotFoundError,
+} from '@salesforce/b2c-tooling-sdk';
 import {createOdsClient} from '@salesforce/b2c-tooling-sdk/clients';
 import type {OdsClient} from '@salesforce/b2c-tooling-sdk/clients';
 import * as vscode from 'vscode';
 import {registerSafeCommand, runWithSafety} from '../safety.js';
+import {friendlyIdFromHostname} from './active-sandbox.js';
 import {
   CLONE_PROFILES,
   getExplicitCloneTargetProfiles,
@@ -16,7 +22,7 @@ import {
   type CloneProfile,
 } from './sandbox-clone-helpers.js';
 import type {SandboxConfigProvider} from './sandbox-config.js';
-import type {RealmTreeItem, SandboxTreeDataProvider, SandboxTreeItem} from './sandbox-tree-provider.js';
+import {SandboxTreeItem, type RealmTreeItem, type SandboxTreeDataProvider} from './sandbox-tree-provider.js';
 
 const DEFAULT_ODS_HOST = 'admin.dx.commercecloud.salesforce.com';
 
@@ -269,8 +275,88 @@ export function registerSandboxCommands(
     );
   });
 
-  const sandboxOperation = (operationType: 'start' | 'stop' | 'restart') => async (node: SandboxTreeItem) => {
-    if (!node) return;
+  const operateOnActiveSandbox = async (operationType: 'start' | 'stop' | 'restart') => {
+    const config = configProvider.getConfigProvider().getConfig();
+    if (!config) {
+      vscode.window.showErrorMessage('No B2C Commerce configuration found. Configure dw.json or SFCC_* env vars.');
+      return;
+    }
+    if (!config.hasOAuthConfig()) {
+      vscode.window.showErrorMessage('OAuth credentials required. Set clientId and clientSecret in dw.json.');
+      return;
+    }
+
+    const hostname = typeof config.values.hostname === 'string' ? config.values.hostname : undefined;
+    const friendlyId = friendlyIdFromHostname(hostname);
+    if (!friendlyId) {
+      vscode.window.showErrorMessage(
+        'Active instance hostname does not look like an ODS sandbox. Switch to a sandbox instance or use Realm Explorer.',
+      );
+      return;
+    }
+
+    if (operationType === 'stop') {
+      const choice = await vscode.window.showWarningMessage(
+        `Stop sandbox "${friendlyId}"? Running processes will be terminated.`,
+        {modal: true},
+        'Stop',
+        'Cancel',
+      );
+      if (choice !== 'Stop') return;
+    }
+
+    const gerund = `${operationType.charAt(0).toUpperCase() + operationType.slice(1)}ing`;
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: `${gerund} sandbox ${friendlyId}...`,
+      },
+      async () => {
+        try {
+          const odsClient = await getOdsClientFromConfig(configProvider);
+          const sandboxId = await resolveSandboxId(odsClient, friendlyId);
+          const result = await runWithSafety(
+            () =>
+              odsClient.POST('/sandboxes/{sandboxId}/operations', {
+                params: {path: {sandboxId}},
+                body: {operation: operationType},
+              }),
+            `${operationType.charAt(0).toUpperCase() + operationType.slice(1)} sandbox "${friendlyId}"?`,
+          );
+          if (result.error) {
+            vscode.window.showErrorMessage(
+              `Sandbox ${operationType} failed: ${getApiErrorMessage(result.error, result.response)}`,
+            );
+            return;
+          }
+          vscode.window.showInformationMessage(`Sandbox ${operationType} initiated for ${friendlyId}.`);
+          const realm = parseFriendlySandboxId(friendlyId)?.realm;
+          if (realm) {
+            treeProvider.refreshRealm(realm);
+            treeProvider.startPollingRealm(realm);
+          }
+        } catch (err) {
+          if (err instanceof SandboxNotFoundError) {
+            vscode.window.showErrorMessage(err.message);
+            return;
+          }
+          const message = err instanceof Error ? err.message : String(err);
+          vscode.window.showErrorMessage(`Sandbox ${operationType} failed: ${message}`);
+        }
+      },
+    );
+  };
+
+  /**
+   * Context menu: acts on the selected Realm Explorer item.
+   * Command Palette (no arg): acts on the active dw.json / status-bar instance.
+   * Stop confirms in both paths.
+   */
+  const sandboxOperation = (operationType: 'start' | 'stop' | 'restart') => async (node?: SandboxTreeItem) => {
+    if (!(node instanceof SandboxTreeItem)) {
+      await operateOnActiveSandbox(operationType);
+      return;
+    }
 
     if (operationType === 'stop') {
       const choice = await vscode.window.showWarningMessage(
