@@ -70,7 +70,7 @@ declare class ShopperConsentMgr {
      * 
      * This method updates the consent status in Salesforce Core for the specified
      * contact point and subscription channel combination.
-     * @throws ShopperConsentException if the consent feature is not enabled or update fails.
+     * @throws ShopperConsentException whose  errorCode  identifies the specific reason — one of ShopperConsentErrorCodes.INVALID_CHANNEL , ShopperConsentErrorCodes.INVALID_CONSENT_STATUS , ShopperConsentErrorCodes.INVALID_CONTACT_POINT_VALUE , ShopperConsentErrorCodes.FEATURE_DISABLED , ShopperConsentErrorCodes.CONTACT_POINT_VALUE_TOO_LONG , ShopperConsentErrorCodes.SUBSCRIPTION_ID_TOO_LONG , ShopperConsentErrorCodes.UPDATE_ERROR , or ShopperConsentErrorCodes.INTERNAL_ERROR .
      */
     static updateSubscription(contactPointValue: string, subscriptionId: string, channel: string, status: string): void;
 }

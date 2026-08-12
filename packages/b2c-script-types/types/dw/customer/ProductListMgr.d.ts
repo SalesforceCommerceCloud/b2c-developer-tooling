@@ -183,6 +183,9 @@ declare class ProductListMgr {
     static queryProductLists(queryString: string, sortString: string | null, ...args: any[]): SeekableIterator<ProductList>;
     /**
      * Removes the specified product list from the system.
+     * By default, ownership verification is enforced - the current session customer must be the owner of the product list.
+     * This check can be disabled via the DisableCrossAccountProductListDeletionCheck emergency toggle.
+     * @throws SecurityException if ownership verification is enabled and the current session customer is not the owner of the product list.
      */
     static removeProductList(productList: ProductList): void;
 }

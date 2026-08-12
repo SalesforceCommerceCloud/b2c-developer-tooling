@@ -1,4 +1,4 @@
-// Type definitions for B2C Commerce Script API 26.7
+// Type definitions for B2C Commerce Script API 26.9
 
 // TopLevel
 import topLevelAPIException = require('./TopLevel/APIException');
@@ -105,6 +105,12 @@ import catalogStoreInventoryFilterValue = require('./dw/catalog/StoreInventoryFi
 import catalogStoreMgr = require('./dw/catalog/StoreMgr');
 import catalogVariant = require('./dw/catalog/Variant');
 import catalogVariationGroup = require('./dw/catalog/VariationGroup');
+
+// dw.commerceapps
+import commerceappsConnectionHealthStatusCodes = require('./dw/commerceapps/ConnectionHealthStatusCodes');
+
+// dw.commerceapps.hooks
+import commerceappshooksConnectionHealthCheckHooks = require('./dw/commerceapps/hooks/ConnectionHealthCheckHooks');
 
 // dw.content
 import contentContent = require('./dw/content/Content');
@@ -372,6 +378,7 @@ import orderhooksCheckoutHooks = require('./dw/order/hooks/CheckoutHooks');
 import orderhooksOrderHooks = require('./dw/order/hooks/OrderHooks');
 import orderhooksPaymentHooks = require('./dw/order/hooks/PaymentHooks');
 import orderhooksReturnHooks = require('./dw/order/hooks/ReturnHooks');
+import orderhooksShippingHooks = require('./dw/order/hooks/ShippingHooks');
 import orderhooksShippingOrderHooks = require('./dw/order/hooks/ShippingOrderHooks');
 import orderhooksTaxHooks = require('./dw/order/hooks/TaxHooks');
 
@@ -539,6 +546,7 @@ declare global {
     const request: systemRequest;
     const response: systemResponse;
     const customer: customerCustomer;
+    function parseInt(s: string): number;
     function parseInt(s: string, radix: number): number;
     function parseFloat(s: string): number;
     function decodeURI(uri: string): string;
@@ -668,6 +676,12 @@ declare global {
             export { catalogStoreMgr as StoreMgr };
             export { catalogVariant as Variant };
             export { catalogVariationGroup as VariationGroup };
+        }
+        module commerceapps {
+            export { commerceappsConnectionHealthStatusCodes as ConnectionHealthStatusCodes };
+            module hooks {
+                export { commerceappshooksConnectionHealthCheckHooks as ConnectionHealthCheckHooks };
+            }
         }
         module content {
             export { contentContent as Content };
@@ -936,6 +950,7 @@ declare global {
                 export { orderhooksOrderHooks as OrderHooks };
                 export { orderhooksPaymentHooks as PaymentHooks };
                 export { orderhooksReturnHooks as ReturnHooks };
+                export { orderhooksShippingHooks as ShippingHooks };
                 export { orderhooksShippingOrderHooks as ShippingOrderHooks };
                 export { orderhooksTaxHooks as TaxHooks };
             }
