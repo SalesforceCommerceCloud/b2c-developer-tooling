@@ -5,7 +5,6 @@
  */
 
 import {expect} from 'chai';
-import path from 'node:path';
 import {createConfigInspectTool} from '../../../src/tools/diagnostics/config-inspect.js';
 import {Services} from '../../../src/services.js';
 import {createMockResolvedConfig, createMockLoadServices} from '../../test-helpers.js';
@@ -74,7 +73,7 @@ describe('config_inspect tool', () => {
     const result = getResultJson<ConfigInspectOutput>(await tool.handler({}));
 
     expect(result.projectDirectory.source).to.equal('config');
-    expect(result.projectDirectory.path).to.equal(path.resolve('/tmp/my-project'));
+    expect(result.projectDirectory.path).to.equal('/tmp/my-project');
   });
 
   it('falls back to cwd when no project directory is configured', async () => {

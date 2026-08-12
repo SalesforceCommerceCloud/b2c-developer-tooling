@@ -18,7 +18,7 @@ Cartridge deployment and code version management. **Auto-enabled for** cartridge
 
 Script debugger, runtime log inspection, and multi-corpus documentation search. **Always enabled.** The debugger and log tools also appear in `CARTRIDGES` and `SCAPI`; the documentation tools appear in every toolset.
 
-- `config_inspect` — show the resolved configuration (instance, auth, SCAPI/MRT settings) with the contributing source for each value, plus the effective [project directory](../configuration#project-directory) and how it was resolved. Secrets are redacted by default. Use it first when configuration seems wrong or the server appears to target the wrong instance or directory.
+- `config_inspect` — show the resolved configuration (instance, auth, SCAPI/MRT settings) with the contributing source for each value, plus the effective [project directory](./configuration#project-directory) and how it was resolved. Secrets are redacted by default. Use it first when configuration seems wrong or the server appears to target the wrong instance or directory.
 - [Script Debugger](./tools/diagnostics) — `debug_*` tools: manage SDAPI sessions, set breakpoints, step execution, inspect stack/variables, and capture at a breakpoint
 - [Instance logs](./tools/logs#instance-logs) — `logs_*` tools: list files, fetch recent entries, and run buffered watches
 - [MRT logs](./tools/logs#mrt-logs) — `mrt_logs_*` tools: buffered tail of Managed Runtime application logs over a WebSocket

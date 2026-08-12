@@ -427,16 +427,20 @@ export class Services {
    * Tools should surface the returned `{path, source}` in their output so the
    * agent can see which directory was used when it did not pass one explicitly.
    *
+   * The `override` and configured values are returned as-supplied (not
+   * re-resolved against cwd); callers pass absolute paths, and `path.resolve`
+   * would otherwise drive-prefix a POSIX-style path on Windows.
+   *
    * @param override - Optional explicit project directory from a tool argument
-   * @returns The absolute project directory and the source it was resolved from
+   * @returns The project directory and the source it was resolved from
    */
   public resolveProjectDirectory(override?: string): {path: string; source: 'argument' | 'config' | 'cwd'} {
     if (override) {
-      return {path: path.resolve(override), source: 'argument'};
+      return {path: override, source: 'argument'};
     }
     const configured = this.resolvedConfig.values.projectDirectory;
     if (configured) {
-      return {path: path.resolve(configured), source: 'config'};
+      return {path: configured, source: 'config'};
     }
     return {path: process.cwd(), source: 'cwd'};
   }

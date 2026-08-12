@@ -262,8 +262,10 @@ describe('services', () => {
       const config = createMockResolvedConfig({projectDirectory: '/path/to/project'});
       const services = new Services({resolvedConfig: config});
 
+      // Returned as-supplied (not re-resolved against cwd) so a POSIX-style
+      // absolute path is not drive-prefixed on Windows.
       expect(services.resolveProjectDirectory('/override/root')).to.deep.equal({
-        path: path.resolve('/override/root'),
+        path: '/override/root',
         source: 'argument',
       });
     });
@@ -273,7 +275,7 @@ describe('services', () => {
       const services = new Services({resolvedConfig: config});
 
       expect(services.resolveProjectDirectory()).to.deep.equal({
-        path: path.resolve('/path/to/project'),
+        path: '/path/to/project',
         source: 'config',
       });
     });
