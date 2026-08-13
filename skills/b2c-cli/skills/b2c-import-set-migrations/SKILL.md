@@ -1,11 +1,14 @@
 ---
 name: b2c-import-set-migrations
-description: Apply an ordered, idempotent set of B2C Commerce site archives as repeatable "migrations" using `b2c job import-set`. Use this skill whenever the user needs to run a growing sequence of site-import archives that must apply in order, skip anything already applied on the target instance, and stay safe to re-run in local setup, onboarding, or CI/CD — even if they just say "run my migrations", "apply the import set", "set up idempotent site imports", or "make my metadata imports repeatable". Also use when they ask how to document per-migration manual follow-up steps (post-import README notes), how receipts and locking work, or how to recover a stuck import set.
+description: Apply an ordered, idempotent set of B2C Commerce site archives as repeatable "migrations" using `b2c job import-set`. This is an OPT-IN, project-level convention — use this skill only when the project has explicitly adopted an import-set/migrations directory (e.g. a committed `./migrations` folder) or the user explicitly asks for import sets or migrations. Do NOT apply it implicitly to projects that simply do one-off site imports; those use the `b2c-cli:b2c-site-import-export` skill. Applies when the user needs to run a growing sequence of site-import archives that must apply in order, skip anything already applied on the target instance, and stay safe to re-run in local setup, onboarding, or CI/CD — e.g. "run my migrations", "apply the import set", "set up idempotent site imports". Also use when they ask how to document per-migration manual follow-up steps (post-import README notes), how receipts and locking work, or how to recover a stuck import set.
 ---
 
 # Import Set Migrations Skill
 
 Use `b2c job import-set` to apply an ordered directory of site archives idempotently. Think of it as database-style migrations for B2C Commerce site data: each archive is applied once per instance, in order, and skipped on every later run once the instance records its success. Re-running the command is always safe — it is the intended workflow for local setup, developer onboarding, and CI/CD.
+
+> [!IMPORTANT]
+> **This is an optional, opt-in, project-level convention — not a default workflow.** A project adopts it deliberately, typically by committing a migrations directory (e.g. `./migrations`) and running `b2c job import-set` from setup scripts or CI. Do **not** introduce it, create a `./migrations` directory, or run `job import-set` in a project that has not opted in. If a project only performs occasional one-off site imports, use the `b2c-cli:b2c-site-import-export` skill instead. When it is unclear whether the project uses import sets, check for an existing migrations directory or ask the user before proceeding.
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli job import-set`).
 
