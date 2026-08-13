@@ -1,6 +1,6 @@
 ---
 name: b2c-import-set-migrations
-description: Apply an ordered, idempotent set of B2C Commerce site archives as repeatable "migrations" using `b2c job import-set`. This is an OPT-IN, project-level approach: use this skill when a project has adopted an import-set/migrations directory (e.g. a committed `./migrations` folder), when the user asks for import sets or migrations, or when the user's goal fits it — a growing sequence of site-import archives that must apply in order, skip anything already applied on the target instance, and stay safe to re-run in local setup, onboarding, or CI/CD. In that last case, present it as a suggested approach rather than adopting it silently. Do NOT restructure a project that only performs occasional one-off site imports into import sets on your own; those use the `b2c-cli:b2c-site-import-export` skill. Also covers documenting per-migration manual follow-up steps (post-import README notes), how receipts and locking work, and how to recover a stuck import set.
+description: Apply an ordered, idempotent set of B2C Commerce site archives as repeatable "migrations" using `b2c job import-set`. This is an OPT-IN, project-level approach — use it when a project has adopted a migrations directory (e.g. a committed `./migrations` folder), when the user asks for import sets or migrations, or when the goal fits: a growing sequence of site-import archives that apply in order, skip anything already applied on the instance, and stay safe to re-run in setup, onboarding, or CI/CD. When the project has not opted in, propose it rather than adopting it silently; never restructure occasional one-off imports into import sets on your own (those use the `b2c-cli:b2c-site-import-export` skill). Also covers per-migration manual follow-up notes (post-import README), receipts and locking, and recovering a stuck import set.
 ---
 
 # Import Set Migrations Skill
@@ -11,8 +11,6 @@ Use `b2c job import-set` to apply an ordered directory of site archives idempote
 > **This is an optional, opt-in, project-level approach — not a default workflow.** A project adopts it deliberately, typically by committing a migrations directory (e.g. `./migrations`) and running `b2c job import-set` from setup scripts or CI. When a project already uses it, follow its conventions. When it doesn't but the user's goal fits (a repeatable, ordered, idempotent sequence of site imports), you may **propose** it as an approach and set it up once the user agrees. What you should not do is silently restructure a project that only does one-off site imports into an import set, or run `job import-set` / create a `./migrations` directory without the project having opted in. If it's unclear, check for an existing migrations directory or ask. For occasional one-off imports, use the `b2c-cli:b2c-site-import-export` skill instead.
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli job import-set`).
-
-This skill is the canonical, in-depth reference for the migration workflow. For single one-off archive imports/exports and site-archive/metadata XML structure, use the `b2c-cli:b2c-site-import-export` skill.
 
 ## Configuration & Authentication
 
@@ -41,9 +39,7 @@ Each item directory (or the contents of each zip) is a standard site archive —
 
 ### Naming convention
 
-Name every item `YYYYMMDDTHHmmss-description`, for example `20260801T140000-add-preferences`. Use **UTC** so ordering is stable for teams across time zones.
-
-The timestamp does double duty: it is the **ordering key** and part of the item's **stable receipt identity**. Because receipt identity is the item name only (not its contents or local path), the timestamp-plus-description convention makes accidental collisions between projects sharing an instance extremely unlikely.
+Name every item `YYYYMMDDTHHmmss-description`, e.g. `20260801T140000-add-preferences`. Use **UTC** so ordering is stable for teams across time zones. The timestamp is both the **ordering key** and part of the item's **stable receipt identity** — and since identity is the item name only (not its contents or path), this convention keeps names from colliding across projects sharing an instance.
 
 ## Commands
 
@@ -109,7 +105,7 @@ Behavior:
 - The top-level README of the set directory itself is never treated as an item and is not printed — use it for human-facing docs about the set as a whole.
 - With `--json`, notes are not printed; each item's note text is available on the item in the JSON result instead.
 
-This is the idiomatic place to record "what a human must still do" for a migration. Keep archive contents safe to reapply and push all environment-specific manual work into the note.
+This is the idiomatic place to record "what a human must still do" for a migration — keep archive contents safe to reapply and push environment-specific manual work into the note.
 
 ## Idempotency: receipts and retry behavior
 

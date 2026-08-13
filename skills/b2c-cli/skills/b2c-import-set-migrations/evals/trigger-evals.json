@@ -1,0 +1,12 @@
+[
+  {"query": "We keep a ./migrations folder in the repo with timestamped site archives. How do I apply the ones that haven't run yet on my sandbox and skip the ones already imported?", "should_trigger": true},
+  {"query": "I want site imports to work like database migrations — an ordered set of archives that apply once per instance, in order, and are safe to re-run in CI without reimporting what's already applied.", "should_trigger": true},
+  {"query": "Our onboarding has ten metadata and content archives that must import in a fixed order, and new hires re-run them all the time. What's the idempotent way to do this with the CLI?", "should_trigger": true},
+  {"query": "Some of our migrations need a manual step afterward, like flipping a site preference in Business Manager per environment. Is there a way to document that so it shows up when the import runs?", "should_trigger": true},
+  {"query": "A CI runner crashed partway through applying our import set and now the lock seems stuck. How do I recover and re-run so it retries only the unapplied archives?", "should_trigger": true},
+  {"query": "How do I preview which archives in my migrations directory are pending versus already applied before I actually run the imports?", "should_trigger": true},
+  {"query": "I have a single site archive zip and I just need to import it to my sandbox once and wait for it to finish. What's the command?", "should_trigger": false},
+  {"query": "I need to export the full site configuration from staging as XML so I can diff it against production.", "should_trigger": false},
+  {"query": "How do I push my updated cartridge code to the sandbox so my controller changes take effect?", "should_trigger": false},
+  {"query": "The product search index looks stale after a data feed update. How do I trigger a reindex job and confirm it completed?", "should_trigger": false}
+]
