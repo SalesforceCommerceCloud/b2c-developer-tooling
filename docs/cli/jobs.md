@@ -391,10 +391,11 @@ For example:
 ```text
 migrations/
 ├── 20260801T140000-add-preferences/
+│   ├── README.md                   # post-import note for this item (see below)
 │   ├── meta/
 │   └── sites/
 ├── 20260802T091500-seed-content.zip
-└── README.md                       # ignored
+└── README.md                       # top-level README is ignored as an item
 ```
 
 The CLI imports `20260801T140000-add-preferences/` and then `20260802T091500-seed-content.zip` in lexical filename order. Name every item `YYYYMMDDTHHmmss-description` so the filename is both its ordering key and its stable, practically unique receipt identity across projects. Use UTC when teams work across time zones.
@@ -430,6 +431,27 @@ b2c job import-set --break-lock
 # Advanced: isolate a legacy migration history that cannot use unique timestamped names
 b2c job import-set ./legacy-migrations --set-id legacy-storefront-data
 ```
+
+### Post-import notes
+
+Some migrations require **manual follow-up** that cannot live in a site archive — enabling an instance-specific site preference, wiring a service credential in Business Manager, or flipping a feature toggle after data lands. Document these steps in a `README.md` (or `README`) file at the top of that item's directory.
+
+After a run, the CLI prints the README contents of every item it applied in a consolidated **Post-import notes** summary, so the operator sees what still needs doing and for which migration:
+
+```text
+Import set complete: 1 imported, 3 skipped
+
+Post-import notes:
+
+  20260801T140000-add-preferences
+    # Add feature-X preferences
+    Set the Feature X API endpoint in Business Manager (differs per environment).
+```
+
+- Notes are shown only for items **applied in this run**; items already applied on the instance (skipped) do not repeat their notes.
+- `--dry-run` previews the notes for **pending** items so you can review manual steps before importing.
+- Only directory items are scanned; `.zip` items are not. `README.md` takes precedence over `README`, and an empty README produces no note. The top-level README of the set directory is never printed.
+- With `--json`, notes are not printed; each item's note text is available on the item in the JSON result.
 
 ### Receipts and retry behavior
 

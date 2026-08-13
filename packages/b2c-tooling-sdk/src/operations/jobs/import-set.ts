@@ -25,6 +25,13 @@ export interface ImportSetItem {
   target: string;
   /** Source kind. */
   kind: 'directory' | 'zip';
+  /**
+   * Contents of a `README.md` or `README` file found at the top of a directory
+   * item, trimmed of surrounding whitespace. Used to surface manual follow-up
+   * steps after the item is imported. Undefined when no README is present or
+   * for zip items.
+   */
+  note?: string;
 }
 
 /** Durable directory receipt created after an import completes successfully. */
@@ -158,11 +165,36 @@ export async function discoverImportSet(directory: string): Promise<ImportSetIte
     throw new Error(`No import directories or zip archives found in ${resolvedDirectory}`);
   }
 
-  return candidates.map((entry) => ({
-    id: entry.name,
-    target: path.join(resolvedDirectory, entry.name),
-    kind: entry.isDirectory() ? ('directory' as const) : ('zip' as const),
-  }));
+  return Promise.all(
+    candidates.map(async (entry) => {
+      const target = path.join(resolvedDirectory, entry.name);
+      const kind = entry.isDirectory() ? ('directory' as const) : ('zip' as const);
+      return {
+        id: entry.name,
+        target,
+        kind,
+        note: kind === 'directory' ? await readItemNote(target) : undefined,
+      };
+    }),
+  );
+}
+
+/** README filenames checked, in priority order, at the top of a directory item. */
+const README_FILENAMES = ['README.md', 'README'];
+
+/**
+ * Reads the first README file at the top of a directory item, if present.
+ * Returns the trimmed contents, or undefined when no README exists or it is empty.
+ */
+async function readItemNote(directory: string): Promise<string | undefined> {
+  for (const filename of README_FILENAMES) {
+    // eslint-disable-next-line no-await-in-loop
+    const contents = await fs.promises.readFile(path.join(directory, filename), 'utf8').catch(() => undefined);
+    if (contents === undefined) continue;
+    const trimmed = contents.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+  return undefined;
 }
 
 /**
