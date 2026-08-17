@@ -48,14 +48,51 @@ const DAL_CONNECTION_TIMEOUT_MS = 300;
  * this leaves a large multiple of headroom over p99 while still failing fast on a genuine
  * hang. See {@link DAL_MAX_ATTEMPTS} for the timeout/attempt invariant relative to the
  * surrounding function timeout — with these defaults the worst-case timeout path is
- * `DAL_MAX_ATTEMPTS × DAL_REQUEST_TIMEOUT_MS` = ~1s.
+ * roughly `DAL_MAX_ATTEMPTS × DAL_REQUEST_TIMEOUT_MS` (≈1s) plus adaptive-retry backoff
+ * between attempts.
  */
 const DAL_REQUEST_TIMEOUT_MS = 500;
 
 /**
- * DynamoDB error names that indicate the request was throttled.
+ * Error names that indicate the request was throttled.
+ *
+ * Mirrors the AWS SDK's own throttling classification so the telemetry flag agrees with
+ * what actually drove adaptive backoff, rather than a hand-maintained subset.
  */
-const THROTTLING_ERROR_NAMES = new Set(['ThrottlingException', 'ProvisionedThroughputExceededException']);
+const THROTTLING_ERROR_NAMES = new Set([
+  'ThrottlingException',
+  'ProvisionedThroughputExceededException',
+  'RequestLimitExceeded',
+  'RequestThrottled',
+  'RequestThrottledException',
+  'TooManyRequestsException',
+  'ThrottledException',
+  'Throttling',
+]);
+
+/**
+ * Whether an error represents a throttling response.
+ *
+ * Checks the SDK's retryable-throttling trait and an HTTP 429 status in addition to the
+ * known throttling error names, so throttles surfaced only via metadata are still flagged.
+ */
+function isThrottlingError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) {
+    return false;
+  }
+  const candidate = error as {
+    name?: unknown;
+    $retryable?: {throttling?: unknown};
+    $metadata?: {httpStatusCode?: unknown};
+  };
+  if (candidate.$retryable?.throttling === true) {
+    return true;
+  }
+  if (candidate.$metadata?.httpStatusCode === 429) {
+    return true;
+  }
+  return typeof candidate.name === 'string' && THROTTLING_ERROR_NAMES.has(candidate.name);
+}
 
 /**
  * Create the DynamoDB client used by the data store, configured for resilient reads under
@@ -69,10 +106,14 @@ export function createDalDynamoDBClient(): DynamoDBClient {
     retryMode: DAL_RETRY_MODE,
     maxAttempts: DAL_MAX_ATTEMPTS,
     // Passing a plain object lets the SDK construct its default NodeHttpHandler with these
-    // bounds — no direct dependency on the handler package required.
+    // bounds — no direct dependency on the handler package required. `throwOnRequestTimeout`
+    // is required for `requestTimeout` to actually abort a hung request: without it the
+    // handler only logs a warning and lets the request run on. Safe here because a DAL read
+    // is a simple request/response, not a long-lived stream.
     requestHandler: {
       connectionTimeout: DAL_CONNECTION_TIMEOUT_MS,
       requestTimeout: DAL_REQUEST_TIMEOUT_MS,
+      throwOnRequestTimeout: true,
     },
   });
 }
@@ -171,7 +212,7 @@ export class DataStore {
       );
     } catch (error) {
       const errorName = error instanceof Error ? error.name : undefined;
-      const throttled = errorName !== undefined && THROTTLING_ERROR_NAMES.has(errorName);
+      const throttled = isThrottlingError(error);
       const logFn = DataStore._testLogMRTError ?? logMRTError;
       logFn('data_store', error, {key, tableName: this._tableName, errorName, throttled});
       throw new DataStoreServiceError('Data store request failed.');

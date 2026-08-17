@@ -155,7 +155,12 @@ describe('DataStore', () => {
       ).to.be.true;
     });
 
-    for (const throttleName of ['ThrottlingException', 'ProvisionedThroughputExceededException']) {
+    for (const throttleName of [
+      'ThrottlingException',
+      'ProvisionedThroughputExceededException',
+      'RequestLimitExceeded',
+      'TooManyRequestsException',
+    ]) {
       it(`marks ${throttleName} as throttled in the log context`, async () => {
         const dynamoError = new Error('rate exceeded');
         dynamoError.name = throttleName;
@@ -182,6 +187,50 @@ describe('DataStore', () => {
         ).to.be.true;
       });
     }
+
+    it('marks an error carrying the retryable throttling trait as throttled', async () => {
+      const dynamoError = Object.assign(new Error('slow down'), {
+        name: 'ServiceError',
+        $retryable: {throttling: true},
+      });
+      mockSend.rejects(dynamoError);
+
+      const logStub = sinon.stub();
+      DataStore._testLogMRTError = logStub;
+
+      const store = DataStore.getDataStore();
+
+      try {
+        await store.getEntry('my-key');
+        expect.fail('should have thrown');
+      } catch (e) {
+        expect(e).to.be.an.instanceOf(DataStoreServiceError);
+      }
+      const context = logStub.firstCall.args[2] as {throttled: boolean};
+      expect(context.throttled).to.equal(true);
+    });
+
+    it('marks an HTTP 429 response as throttled', async () => {
+      const dynamoError = Object.assign(new Error('too many requests'), {
+        name: 'ServiceError',
+        $metadata: {httpStatusCode: 429},
+      });
+      mockSend.rejects(dynamoError);
+
+      const logStub = sinon.stub();
+      DataStore._testLogMRTError = logStub;
+
+      const store = DataStore.getDataStore();
+
+      try {
+        await store.getEntry('my-key');
+        expect.fail('should have thrown');
+      } catch (e) {
+        expect(e).to.be.an.instanceOf(DataStoreServiceError);
+      }
+      const context = logStub.firstCall.args[2] as {throttled: boolean};
+      expect(context.throttled).to.equal(true);
+    });
 
     it('records errorName as undefined and not throttled for a non-Error rejection', async () => {
       // Reject with a raw string (not an Error) to exercise the non-Error branch.
@@ -264,10 +313,16 @@ describe('createDalDynamoDBClient', () => {
     const client = createDalDynamoDBClient();
     const config = await (
       client.config.requestHandler as unknown as {
-        configProvider: Promise<{connectionTimeout?: number; requestTimeout?: number}>;
+        configProvider: Promise<{
+          connectionTimeout?: number;
+          requestTimeout?: number;
+          throwOnRequestTimeout?: boolean;
+        }>;
       }
     ).configProvider;
     expect(config.connectionTimeout).to.equal(300);
     expect(config.requestTimeout).to.equal(500);
+    // Required for requestTimeout to actually abort a hung request rather than only warn.
+    expect(config.throwOnRequestTimeout).to.equal(true);
   });
 });
