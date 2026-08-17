@@ -13,6 +13,71 @@ import {logMRTError} from '../utils/utils.js';
 export {DataStoreNotFoundError, DataStoreServiceError, DataStoreUnavailableError} from './errors.js';
 
 /**
+ * Retry mode for the data store DynamoDB client.
+ *
+ * `'adaptive'` adds a client-side rate limiter that backs off proactively when the table
+ * signals throttling, instead of retrying blindly into an already-saturated table. The
+ * rate limiter keeps state on the client instance, so it only helps across invocations on
+ * a warm container — the memoized client preserves that state.
+ */
+const DAL_RETRY_MODE = 'adaptive';
+
+/**
+ * Maximum number of attempts (initial request + retries) per data store request.
+ *
+ * Bounds retry fan-out under sustained throttling. Chosen together with
+ * {@link DAL_REQUEST_TIMEOUT_MS} so that `DAL_MAX_ATTEMPTS × DAL_REQUEST_TIMEOUT_MS` stays
+ * comfortably under the surrounding request/function timeout.
+ */
+const DAL_MAX_ATTEMPTS = 2;
+
+/**
+ * Maximum time (ms) to wait for a connection to be established per attempt.
+ *
+ * A hard per-attempt ceiling so a slow/hung connection cannot consume the whole budget.
+ * The client is memoized on a warm container and reuses keep-alive connections, so most
+ * attempts do not open a new connection; a fresh connect exceeding this is already
+ * abnormal.
+ */
+const DAL_CONNECTION_TIMEOUT_MS = 300;
+
+/**
+ * Maximum time (ms) to wait for a response per attempt.
+ *
+ * A hard per-attempt ceiling. A single-key DynamoDB read is typically single-digit ms, so
+ * this leaves a large multiple of headroom over p99 while still failing fast on a genuine
+ * hang. See {@link DAL_MAX_ATTEMPTS} for the timeout/attempt invariant relative to the
+ * surrounding function timeout — with these defaults the worst-case timeout path is
+ * `DAL_MAX_ATTEMPTS × DAL_REQUEST_TIMEOUT_MS` = ~1s.
+ */
+const DAL_REQUEST_TIMEOUT_MS = 500;
+
+/**
+ * DynamoDB error names that indicate the request was throttled.
+ */
+const THROTTLING_ERROR_NAMES = new Set(['ThrottlingException', 'ProvisionedThroughputExceededException']);
+
+/**
+ * Create the DynamoDB client used by the data store, configured for resilient reads under
+ * throttling: adaptive retries, bounded attempts, and hard per-attempt timeouts.
+ *
+ * @returns A configured DynamoDB client
+ */
+export function createDalDynamoDBClient(): DynamoDBClient {
+  return new DynamoDBClient({
+    region: process.env.AWS_REGION,
+    retryMode: DAL_RETRY_MODE,
+    maxAttempts: DAL_MAX_ATTEMPTS,
+    // Passing a plain object lets the SDK construct its default NodeHttpHandler with these
+    // bounds — no direct dependency on the handler package required.
+    requestHandler: {
+      connectionTimeout: DAL_CONNECTION_TIMEOUT_MS,
+      requestTimeout: DAL_REQUEST_TIMEOUT_MS,
+    },
+  });
+}
+
+/**
  * A class for reading entries from the data store.
  *
  * This class uses a singleton pattern.
@@ -51,11 +116,7 @@ export class DataStore {
 
     if (!this._ddb) {
       this._tableName = `DataAccessLayer-${process.env.AWS_REGION}`;
-      this._ddb = DynamoDBDocumentClient.from(
-        new DynamoDBClient({
-          region: process.env.AWS_REGION,
-        }),
-      );
+      this._ddb = DynamoDBDocumentClient.from(createDalDynamoDBClient());
     }
 
     return this._ddb;
@@ -109,8 +170,10 @@ export class DataStore {
         }),
       );
     } catch (error) {
+      const errorName = error instanceof Error ? error.name : undefined;
+      const throttled = errorName !== undefined && THROTTLING_ERROR_NAMES.has(errorName);
       const logFn = DataStore._testLogMRTError ?? logMRTError;
-      logFn('data_store', error, {key, tableName: this._tableName});
+      logFn('data_store', error, {key, tableName: this._tableName, errorName, throttled});
       throw new DataStoreServiceError('Data store request failed.');
     }
 

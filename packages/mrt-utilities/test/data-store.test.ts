@@ -8,6 +8,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import type {DynamoDBDocumentClient} from '@aws-sdk/lib-dynamodb';
 import {
+  createDalDynamoDBClient,
   DataStore,
   DataStoreNotFoundError,
   DataStoreServiceError,
@@ -129,7 +130,7 @@ describe('DataStore', () => {
     }
 
     it('throws DataStoreServiceError and logs internal error when send throws', async () => {
-      const dynamoError = new Error('DynamoDB throttled');
+      const dynamoError = new Error('boom');
       mockSend.rejects(dynamoError);
 
       const logStub = sinon.stub();
@@ -148,8 +149,58 @@ describe('DataStore', () => {
         logStub.calledOnceWith('data_store', dynamoError, {
           key: 'my-key',
           tableName: 'DataAccessLayer-ca-central-1',
+          errorName: 'Error',
+          throttled: false,
         }),
       ).to.be.true;
+    });
+
+    for (const throttleName of ['ThrottlingException', 'ProvisionedThroughputExceededException']) {
+      it(`marks ${throttleName} as throttled in the log context`, async () => {
+        const dynamoError = new Error('rate exceeded');
+        dynamoError.name = throttleName;
+        mockSend.rejects(dynamoError);
+
+        const logStub = sinon.stub();
+        DataStore._testLogMRTError = logStub;
+
+        const store = DataStore.getDataStore();
+
+        try {
+          await store.getEntry('my-key');
+          expect.fail('should have thrown');
+        } catch (e) {
+          expect(e).to.be.an.instanceOf(DataStoreServiceError);
+        }
+        expect(
+          logStub.calledOnceWith('data_store', dynamoError, {
+            key: 'my-key',
+            tableName: 'DataAccessLayer-ca-central-1',
+            errorName: throttleName,
+            throttled: true,
+          }),
+        ).to.be.true;
+      });
+    }
+
+    it('records errorName as undefined and not throttled for a non-Error rejection', async () => {
+      // Reject with a raw string (not an Error) to exercise the non-Error branch.
+      mockSend.callsFake(() => Promise.reject('a string failure'));
+
+      const logStub = sinon.stub();
+      DataStore._testLogMRTError = logStub;
+
+      const store = DataStore.getDataStore();
+
+      try {
+        await store.getEntry('my-key');
+        expect.fail('should have thrown');
+      } catch (e) {
+        expect(e).to.be.an.instanceOf(DataStoreServiceError);
+      }
+      const context = logStub.firstCall.args[2] as {errorName: unknown; throttled: boolean};
+      expect(context.errorName).to.equal(undefined);
+      expect(context.throttled).to.equal(false);
     });
   });
 });
@@ -178,5 +229,45 @@ describe('DataStoreServiceError', () => {
     expect(err.name).to.equal('DataStoreServiceError');
     expect(err.message).to.equal('this request failed');
     expect(err).to.be.an.instanceOf(Error);
+  });
+});
+
+describe('createDalDynamoDBClient', () => {
+  let originalEnv: NodeJS.ProcessEnv;
+
+  beforeEach(() => {
+    originalEnv = {...process.env};
+    process.env.AWS_REGION = 'ca-central-1';
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it('configures the client region from AWS_REGION', async () => {
+    const client = createDalDynamoDBClient();
+    expect(await client.config.region()).to.equal('ca-central-1');
+  });
+
+  it('bounds retries with maxAttempts', async () => {
+    const client = createDalDynamoDBClient();
+    expect(await client.config.maxAttempts()).to.equal(2);
+  });
+
+  it('uses the adaptive retry strategy', async () => {
+    const client = createDalDynamoDBClient();
+    const strategy = (await client.config.retryStrategy()) as {mode?: string};
+    expect(strategy.mode).to.equal('adaptive');
+  });
+
+  it('applies bounded connection and request timeouts to the request handler', async () => {
+    const client = createDalDynamoDBClient();
+    const config = await (
+      client.config.requestHandler as unknown as {
+        configProvider: Promise<{connectionTimeout?: number; requestTimeout?: number}>;
+      }
+    ).configProvider;
+    expect(config.connectionTimeout).to.equal(300);
+    expect(config.requestTimeout).to.equal(500);
   });
 });
