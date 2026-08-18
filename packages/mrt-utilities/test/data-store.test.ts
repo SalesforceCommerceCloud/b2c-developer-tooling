@@ -8,12 +8,112 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import type {DynamoDBDocumentClient} from '@aws-sdk/lib-dynamodb';
 import {
+  type Attributes,
+  type Exception,
+  type Span,
+  type SpanStatus,
+  SpanStatusCode,
+  trace,
+  type Tracer,
+  type TracerProvider,
+} from '@opentelemetry/api';
+import {
   createDalDynamoDBClient,
   DataStore,
   DataStoreNotFoundError,
   DataStoreServiceError,
   DataStoreUnavailableError,
 } from '@salesforce/mrt-utilities';
+
+/**
+ * A minimal recording span that captures the calls `getEntry` makes on it, so tests can
+ * assert on the emitted telemetry without pulling in the full OpenTelemetry SDK. Only the
+ * methods the instrumentation actually uses are implemented; the rest are no-ops.
+ */
+class RecordingSpan {
+  attributes: Attributes = {};
+  status: SpanStatus | undefined;
+  exceptions: Exception[] = [];
+  ended = false;
+
+  setAttribute(key: string, value: unknown): this {
+    this.attributes[key] = value as Attributes[string];
+    return this;
+  }
+  setStatus(status: SpanStatus): this {
+    this.status = status;
+    return this;
+  }
+  recordException(exception: Exception): void {
+    this.exceptions.push(exception);
+  }
+  end(): void {
+    this.ended = true;
+  }
+  // Unused Span surface — no-ops to satisfy the interface.
+  setAttributes(): this {
+    return this;
+  }
+  addEvent(): this {
+    return this;
+  }
+  addLink(): this {
+    return this;
+  }
+  addLinks(): this {
+    return this;
+  }
+  updateName(): this {
+    return this;
+  }
+  isRecording(): boolean {
+    return true;
+  }
+  spanContext() {
+    return {traceId: '0'.repeat(32), spanId: '0'.repeat(16), traceFlags: 1};
+  }
+}
+
+// Shared list of spans started via the fake global tracer. The module-level
+// `trace.getTracer(...)` in the data store returns a ProxyTracer bound to the global proxy
+// provider; setting a delegate on that provider (once) is resolved lazily by the proxy, so
+// a provider registered after import is picked up. We must NOT call `trace.disable()` — it
+// swaps the global proxy provider for a fresh one, severing the module tracer's binding.
+const recordedSpans: RecordingSpan[] = [];
+let recordingTracerRegistered = false;
+
+/**
+ * Ensure a fake global tracer provider (whose spans are {@link RecordingSpan}s) is
+ * registered, clear any previously recorded spans, and return the shared recording list.
+ */
+function installRecordingTracer(): RecordingSpan[] {
+  recordedSpans.length = 0;
+  if (!recordingTracerRegistered) {
+    const tracer = {
+      startActiveSpan(_name: string, ...rest: unknown[]) {
+        // Supports the (name, options, fn) form the data store uses. Real OTel applies
+        // options.attributes at span creation, so mirror that here.
+        const fn = rest[rest.length - 1] as (span: Span) => unknown;
+        const options = rest.length > 1 ? (rest[0] as {attributes?: Attributes}) : undefined;
+        const span = new RecordingSpan();
+        if (options?.attributes) {
+          span.attributes = {...options.attributes};
+        }
+        recordedSpans.push(span);
+        return fn(span as unknown as Span);
+      },
+      startSpan() {
+        const span = new RecordingSpan();
+        recordedSpans.push(span);
+        return span as unknown as Span;
+      },
+    } as unknown as Tracer;
+    const provider: TracerProvider = {getTracer: () => tracer};
+    trace.setGlobalTracerProvider(provider);
+    recordingTracerRegistered = true;
+  }
+  return recordedSpans;
+}
 
 describe('DataStore', () => {
   let mockSend: sinon.SinonStub;
@@ -351,6 +451,112 @@ describe('DataStore', () => {
           expect(mockSend.firstCall.args[0].input.Key.projectEnvironment).to.equal(legacyKey);
         });
       }
+    });
+
+    describe('tracing', () => {
+      it('emits a successful span with db and found attributes on a hit', async () => {
+        const spans = installRecordingTracer();
+        mockSend.resolves({Item: {value: {theme: 'dark'}}});
+
+        await DataStore.getDataStore().getEntry('my-key');
+
+        expect(spans).to.have.lengthOf(1);
+        const [span] = spans;
+        expect(span.ended).to.equal(true);
+        // A successful fetch leaves the span status unset (defaults to UNSET, not ERROR).
+        expect(span.status).to.equal(undefined);
+        expect(span.exceptions).to.have.lengthOf(0);
+        expect(span.attributes).to.include({
+          'db.system': 'dynamodb',
+          'db.operation': 'GetItem',
+          'aws.dynamodb.table_names': 'DataAccessLayer-ca-central-1',
+          'mrt.data_store.found': true,
+        });
+      });
+
+      it('emits a span marking found=false on a miss, without an error status', async () => {
+        const spans = installRecordingTracer();
+        mockSend.resolves({}); // miss
+
+        try {
+          await DataStore.getDataStore().getEntry('my-key');
+          expect.fail('should have thrown');
+        } catch (e) {
+          expect(e).to.be.an.instanceOf(DataStoreNotFoundError);
+        }
+
+        expect(spans).to.have.lengthOf(1);
+        const [span] = spans;
+        expect(span.ended).to.equal(true);
+        // A miss is an expected outcome, not a service error: no ERROR status, no exception.
+        expect(span.status).to.equal(undefined);
+        expect(span.exceptions).to.have.lengthOf(0);
+        expect(span.attributes['mrt.data_store.found']).to.equal(false);
+      });
+
+      it('records the exception and an error status when the send throws', async () => {
+        const spans = installRecordingTracer();
+        const dynamoError = new Error('boom');
+        mockSend.rejects(dynamoError);
+        DataStore._testLogMRTError = sinon.stub();
+
+        try {
+          await DataStore.getDataStore().getEntry('my-key');
+          expect.fail('should have thrown');
+        } catch (e) {
+          expect(e).to.be.an.instanceOf(DataStoreServiceError);
+        }
+
+        expect(spans).to.have.lengthOf(1);
+        const [span] = spans;
+        expect(span.ended).to.equal(true);
+        expect(span.status?.code).to.equal(SpanStatusCode.ERROR);
+        expect(span.exceptions).to.deep.equal([dynamoError]);
+        expect(span.attributes).to.include({
+          'mrt.data_store.throttled': false,
+          'error.type': 'Error',
+        });
+        expect(span.attributes).to.not.have.property('mrt.data_store.found');
+      });
+
+      it('marks the span throttled when the send is throttled', async () => {
+        const spans = installRecordingTracer();
+        const dynamoError = new Error('rate exceeded');
+        dynamoError.name = 'ThrottlingException';
+        mockSend.rejects(dynamoError);
+        DataStore._testLogMRTError = sinon.stub();
+
+        try {
+          await DataStore.getDataStore().getEntry('my-key');
+          expect.fail('should have thrown');
+        } catch (e) {
+          expect(e).to.be.an.instanceOf(DataStoreServiceError);
+        }
+
+        const [span] = spans;
+        expect(span.attributes['mrt.data_store.throttled']).to.equal(true);
+        expect(span.attributes['error.type']).to.equal('ThrottlingException');
+      });
+
+      it('does not set error.type for a non-Error rejection but still ends the span', async () => {
+        const spans = installRecordingTracer();
+        mockSend.callsFake(() => Promise.reject('a string failure'));
+        DataStore._testLogMRTError = sinon.stub();
+
+        try {
+          await DataStore.getDataStore().getEntry('my-key');
+          expect.fail('should have thrown');
+        } catch (e) {
+          expect(e).to.be.an.instanceOf(DataStoreServiceError);
+        }
+
+        const [span] = spans;
+        expect(span.ended).to.equal(true);
+        expect(span.status?.code).to.equal(SpanStatusCode.ERROR);
+        // A non-Error rejection carries no name and is not recorded as an exception.
+        expect(span.attributes).to.not.have.property('error.type');
+        expect(span.exceptions).to.have.lengthOf(0);
+      });
     });
   });
 });

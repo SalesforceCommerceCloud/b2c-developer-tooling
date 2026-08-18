@@ -6,6 +6,7 @@
 
 import {DynamoDBClient} from '@aws-sdk/client-dynamodb';
 import {DynamoDBDocumentClient, GetCommand, type GetCommandOutput} from '@aws-sdk/lib-dynamodb';
+import {SpanStatusCode, trace} from '@opentelemetry/api';
 
 import {DataStoreNotFoundError, DataStoreServiceError, DataStoreUnavailableError} from './errors.js';
 import {logMRTError} from '../utils/utils.js';
@@ -20,16 +21,37 @@ export {DataStoreNotFoundError, DataStoreServiceError, DataStoreUnavailableError
  * rate limiter keeps state on the client instance, so it only helps across invocations on
  * a warm container — the memoized client preserves that state.
  */
-const DAL_RETRY_MODE = 'adaptive';
+const DATA_STORE_RETRY_MODE = 'adaptive';
+
+/**
+ * Tracer for data store operations.
+ *
+ * This is a library, so we depend only on `@opentelemetry/api` and never register a
+ * provider ourselves — the host runtime owns that. When no provider is registered (e.g.
+ * local development, or any consumer that has not set up tracing) `getTracer` returns a
+ * no-op tracer, so instrumentation is silent and adds negligible overhead. When the host
+ * has registered a provider (the Managed Runtime storefront registers one that exports
+ * spans to stdout for MRT to ship), the span joins the ambient trace context.
+ */
+const tracer = trace.getTracer('@salesforce/mrt-utilities');
+
+/**
+ * Span name for a single data store fetch.
+ *
+ * Deliberately static and low-cardinality so traces aggregate by operation. The
+ * high-cardinality request detail (the entry key, the resolved partition key) is attached
+ * as span attributes instead of being baked into the name.
+ */
+const GET_ENTRY_SPAN_NAME = 'mrt.data_store.getEntry';
 
 /**
  * Maximum number of attempts (initial request + retries) per data store request.
  *
  * Bounds retry fan-out under sustained throttling. Chosen together with
- * {@link DAL_REQUEST_TIMEOUT_MS} so that `DAL_MAX_ATTEMPTS × DAL_REQUEST_TIMEOUT_MS` stays
+ * {@link DATA_STORE_REQUEST_TIMEOUT_MS} so that `DATA_STORE_MAX_ATTEMPTS × DATA_STORE_REQUEST_TIMEOUT_MS` stays
  * comfortably under the surrounding request/function timeout.
  */
-const DAL_MAX_ATTEMPTS = 2;
+const DATA_STORE_MAX_ATTEMPTS = 2;
 
 /**
  * Maximum time (ms) to wait for a connection to be established per attempt.
@@ -39,19 +61,19 @@ const DAL_MAX_ATTEMPTS = 2;
  * attempts do not open a new connection; a fresh connect exceeding this is already
  * abnormal.
  */
-const DAL_CONNECTION_TIMEOUT_MS = 300;
+const DATA_STORE_CONNECTION_TIMEOUT_MS = 300;
 
 /**
  * Maximum time (ms) to wait for a response per attempt.
  *
  * A hard per-attempt ceiling. A single-key DynamoDB read is typically single-digit ms, so
  * this leaves a large multiple of headroom over p99 while still failing fast on a genuine
- * hang. See {@link DAL_MAX_ATTEMPTS} for the timeout/attempt invariant relative to the
+ * hang. See {@link DATA_STORE_MAX_ATTEMPTS} for the timeout/attempt invariant relative to the
  * surrounding function timeout — with these defaults the worst-case timeout path is
- * roughly `DAL_MAX_ATTEMPTS × DAL_REQUEST_TIMEOUT_MS` (≈1s) plus adaptive-retry backoff
+ * roughly `DATA_STORE_MAX_ATTEMPTS × DATA_STORE_REQUEST_TIMEOUT_MS` (≈1s) plus adaptive-retry backoff
  * between attempts.
  */
-const DAL_REQUEST_TIMEOUT_MS = 500;
+const DATA_STORE_REQUEST_TIMEOUT_MS = 500;
 
 /**
  * Error names that indicate the request was throttled.
@@ -103,16 +125,16 @@ function isThrottlingError(error: unknown): boolean {
 export function createDalDynamoDBClient(): DynamoDBClient {
   return new DynamoDBClient({
     region: process.env.AWS_REGION,
-    retryMode: DAL_RETRY_MODE,
-    maxAttempts: DAL_MAX_ATTEMPTS,
+    retryMode: DATA_STORE_RETRY_MODE,
+    maxAttempts: DATA_STORE_MAX_ATTEMPTS,
     // Passing a plain object lets the SDK construct its default NodeHttpHandler with these
     // bounds — no direct dependency on the handler package required. `throwOnRequestTimeout`
     // is required for `requestTimeout` to actually abort a hung request: without it the
-    // handler only logs a warning and lets the request run on. Safe here because a DAL read
+    // handler only logs a warning and lets the request run on. Safe here because a data store read
     // is a simple request/response, not a long-lived stream.
     requestHandler: {
-      connectionTimeout: DAL_CONNECTION_TIMEOUT_MS,
-      requestTimeout: DAL_REQUEST_TIMEOUT_MS,
+      connectionTimeout: DATA_STORE_CONNECTION_TIMEOUT_MS,
+      requestTimeout: DATA_STORE_REQUEST_TIMEOUT_MS,
       throwOnRequestTimeout: true,
     },
   });
@@ -229,29 +251,63 @@ export class DataStore {
 
     const ddb = this.getClient();
     const projectEnvironment = this.resolveShardPartitionKey();
-    let response: GetCommandOutput;
-    try {
-      response = await ddb.send(
-        new GetCommand({
-          TableName: this._tableName,
-          Key: {
-            projectEnvironment,
-            key,
-          },
-        }),
-      );
-    } catch (error) {
-      const errorName = error instanceof Error ? error.name : undefined;
-      const throttled = isThrottlingError(error);
-      const logFn = DataStore._testLogMRTError ?? logMRTError;
-      logFn('data_store', error, {key, projectEnvironment, tableName: this._tableName, errorName, throttled});
-      throw new DataStoreServiceError('Data store request failed.');
-    }
 
-    if (!response.Item?.value) {
-      throw new DataStoreNotFoundError(`Data store entry '${key}' not found.`);
-    }
+    // Trace the fetch as a client span. Semantic-convention DynamoDB attributes describe
+    // the operation; the outcome (found/throttled/error) is recorded on the span below.
+    return tracer.startActiveSpan(
+      GET_ENTRY_SPAN_NAME,
+      {
+        attributes: {
+          'db.system': 'dynamodb',
+          'db.operation': 'GetItem',
+          'aws.dynamodb.table_names': this._tableName,
+        },
+      },
+      async (span) => {
+        // End the span exactly once, after all attributes/status are set on every path
+        // (success, miss, and error). Attributes set after end() are dropped by OTel, so we
+        // cannot end in a `finally` that runs before the found/not-found branch below.
+        try {
+          let response: GetCommandOutput;
+          try {
+            response = await ddb.send(
+              new GetCommand({
+                TableName: this._tableName,
+                Key: {
+                  projectEnvironment,
+                  key,
+                },
+              }),
+            );
+          } catch (error) {
+            const errorName = error instanceof Error ? error.name : undefined;
+            const throttled = isThrottlingError(error);
+            span.setAttribute('mrt.data_store.throttled', throttled);
+            if (errorName) {
+              span.setAttribute('error.type', errorName);
+            }
+            if (error instanceof Error) {
+              span.recordException(error);
+            }
+            span.setStatus({code: SpanStatusCode.ERROR, message: 'Data store request failed.'});
+            const logFn = DataStore._testLogMRTError ?? logMRTError;
+            logFn('data_store', error, {key, projectEnvironment, tableName: this._tableName, errorName, throttled});
+            throw new DataStoreServiceError('Data store request failed.');
+          }
 
-    return {key, value: response.Item.value};
+          if (!response.Item?.value) {
+            // A miss is an expected outcome, not a service error — record it as an attribute
+            // and leave the span status unset (successful fetch that found nothing).
+            span.setAttribute('mrt.data_store.found', false);
+            throw new DataStoreNotFoundError(`Data store entry '${key}' not found.`);
+          }
+
+          span.setAttribute('mrt.data_store.found', true);
+          return {key, value: response.Item.value};
+        } finally {
+          span.end();
+        }
+      },
+    );
   }
 }
