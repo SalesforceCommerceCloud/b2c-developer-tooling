@@ -130,6 +130,12 @@ describe('config/EnvSource', () => {
   });
 
   describe('array parsing', () => {
+    it('parses import-set directory exclusions', () => {
+      const source = new EnvSource({SFCC_IMPORT_SET_EXCLUDE: 'fixtures, test/integration'});
+      const result = source.load({});
+      expect(result?.config.importSetExclude).to.deep.equal(['fixtures', 'test/integration']);
+    });
+
     it('parses SFCC_OAUTH_SCOPES as comma-separated array', () => {
       const source = new EnvSource({SFCC_OAUTH_SCOPES: 'mail,roles,openid'});
       const result = source.load({});

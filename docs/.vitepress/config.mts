@@ -112,6 +112,7 @@ const guidesSidebar = [
       {text: 'Storefront Next', link: '/guide/storefront-next'},
       {text: 'MRT Utilities', link: '/guide/mrt-utilities'},
       {text: 'Commerce Apps (CAPs)', link: '/guide/commerce-apps'},
+      {text: 'Import Sets', link: '/guide/import-sets'},
     ],
   },
   {

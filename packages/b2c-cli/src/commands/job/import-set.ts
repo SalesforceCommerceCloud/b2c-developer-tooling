@@ -5,10 +5,12 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import path from 'node:path';
 import {
   siteArchiveImportSet,
   JobExecutionError,
   type ImportSetEvent,
+  type ImportSetItem,
   type ImportSetResult,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import {t, withDocs} from '../../i18n/index.js';
@@ -27,7 +29,7 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
   static description = withDocs(
     t(
       'commands.job.importSet.description',
-      'Apply an ordered set of site archives, skipping items already recorded on the instance',
+      'Apply an ordered set of site import/export archives, skipping archives already recorded on the instance',
     ),
     '/cli/jobs.html#b2c-job-import-set',
   );
@@ -37,6 +39,7 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
   static examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --dry-run',
+    '<%= config.bin %> <%= command.id %> --no-cartridge-metadata',
     '<%= config.bin %> <%= command.id %> ./release-data',
     '<%= config.bin %> <%= command.id %> --break-lock',
   ];
@@ -44,10 +47,10 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
   static flags = {
     ...JobCommand.baseFlags,
     'set-id': Flags.string({
-      description: 'Remote receipt and lock namespace for an independent migration history',
+      description: 'Name for an independent import history',
     }),
     'dry-run': Flags.boolean({
-      description: 'Show pending and applied items without locking, importing, or writing state',
+      description: 'Preview pending and applied archives without importing or changing history',
       default: false,
     }),
     'keep-archive': Flags.boolean({
@@ -55,17 +58,29 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
       description: 'Keep each uploaded archive on the instance after import',
       default: false,
     }),
+    'cartridge-metadata': Flags.boolean({
+      description: 'Include archives from metadata directories in discovered cartridges before other imports',
+      allowNo: true,
+      default: true,
+    }),
+    'import-set-exclude': Flags.string({
+      description: 'Exclude a project-relative directory recursively from import-set source discovery',
+      env: 'SFCC_IMPORT_SET_EXCLUDE',
+      multiple: true,
+      multipleNonGreedy: true,
+      delimiter: ',',
+    }),
     'break-lock': Flags.boolean({
-      description: 'Remove an existing import-set lock before acquiring it',
+      description: 'Recover an import set after confirming its previous runner has stopped',
       default: false,
     }),
     'stale-lock-seconds': Flags.integer({
-      description: 'Take over a lock whose heartbeat is older than this many seconds',
+      description: 'Consider an inactive import-set run stale after this many seconds',
       default: 1800,
       min: 1,
     }),
     'lock-poll-interval': Flags.integer({
-      description: 'Seconds between checks while another runner holds the set lock',
+      description: 'Seconds between checks while waiting for another import-set run',
       default: 3,
       min: 1,
     }),
@@ -96,6 +111,7 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
       'set-id': setId,
       'dry-run': dryRun,
       'keep-archive': keepArchive,
+      'cartridge-metadata': includeCartridgeMetadata = true,
       'break-lock': breakLock,
       'stale-lock-seconds': staleLockSeconds,
       'lock-poll-interval': lockPollIntervalSeconds,
@@ -103,6 +119,8 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
       'poll-interval': pollIntervalSeconds,
       'show-log': showLog = true,
     } = this.flags;
+    const cartridgeRoot = this.flags['project-directory'];
+    const excludeDirectories = this.resolvedConfig.values.importSetExclude;
 
     if (!dryRun) {
       const jobEvaluation = this.safetyGuard.evaluate({type: 'job', jobId: 'sfcc-site-archive-import'});
@@ -116,6 +134,9 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
       setId: effectiveSetId,
       dryRun,
       keepArchive,
+      includeCartridgeMetadata,
+      cartridgeRoot,
+      excludeDirectories,
       staleLockSeconds,
     });
     const beforeResult = await this.runBeforeHooks(context);
@@ -149,6 +170,9 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
         setId: effectiveSetId,
         dryRun,
         keepArchive,
+        includeCartridgeMetadata,
+        cartridgeRoot,
+        excludeDirectories,
         breakLock,
         staleLockSeconds,
         lockPollIntervalSeconds,
@@ -171,7 +195,7 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
 
       if (dryRun && !this.jsonEnabled()) {
         for (const item of result.items) {
-          this.log(`  ${item.status === 'skipped' ? 'applied' : 'pending'}  ${item.id}`);
+          this.log(`  ${item.status === 'skipped' ? 'applied' : 'pending'}  ${this.formatItemSource(item)}`);
         }
       }
 
@@ -215,20 +239,26 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
     }
   }
 
+  private formatItemSource(item: ImportSetItem): string {
+    const displayRoot = path.resolve(this.flags['project-directory'] ?? process.cwd());
+    const relativePath = path.relative(displayRoot, item.target);
+    return (relativePath || path.basename(item.target)).split(path.sep).join('/');
+  }
+
   private handleEvent(event: ImportSetEvent): void {
     if (this.jsonEnabled()) return;
 
     switch (event.type) {
       case 'item-imported': {
-        this.log(`  ${event.index}/${event.total} imported   ${event.item.id}`);
+        this.log(`  ${event.index}/${event.total} imported   ${this.formatItemSource(event.item)}`);
         break;
       }
       case 'item-importing': {
-        this.log(`  ${event.index}/${event.total} importing  ${event.item.id}`);
+        this.log(`  ${event.index}/${event.total} importing  ${this.formatItemSource(event.item)}`);
         break;
       }
       case 'item-skipped': {
-        this.log(`  ${event.index}/${event.total} skipped    ${event.item.id}`);
+        this.log(`  ${event.index}/${event.total} skipped    ${this.formatItemSource(event.item)}`);
         break;
       }
       case 'lock-acquired': {
@@ -249,13 +279,23 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
         break;
       }
       case 'plan': {
+        const archiveCount = t(
+          event.total === 1 ? 'commands.job.importSet.archiveCountOne' : 'commands.job.importSet.archiveCountMany',
+          event.total === 1 ? '{{total}} archive' : '{{total}} archives',
+          {total: String(event.total)},
+        );
+        this.log(
+          t('commands.job.importSet.plan', 'Import set {{setId}} on {{hostname}}:', {
+            setId: event.setId,
+            hostname: this.instance.config.hostname,
+          }),
+        );
         this.log(
           t(
-            'commands.job.importSet.plan',
-            'Import set {{setId}}: {{total}} item(s), {{pending}} pending, {{skipped}} already applied',
+            'commands.job.importSet.planCounts',
+            '  {{archiveCount}}, {{pending}} pending, {{skipped}} already applied',
             {
-              setId: event.setId,
-              total: String(event.total),
+              archiveCount,
               pending: String(event.pending),
               skipped: String(event.skipped),
             },
@@ -267,8 +307,8 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
         this.warn(
           t(
             'commands.job.importSet.invalidReceipt',
-            'Receipt marker for {{item}} is invalid; the item will be imported again.',
-            {item: event.item.id},
+            'The recorded import history for {{archive}} is invalid; the archive will be imported again.',
+            {archive: this.formatItemSource(event.item)},
           ),
         );
         break;
@@ -294,7 +334,7 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
     );
     for (const item of withNotes) {
       this.log('');
-      this.log(`  ${item.id}`);
+      this.log(`  ${this.formatItemSource(item)}`);
       for (const line of item.note!.split('\n')) {
         this.log(line.length > 0 ? `    ${line}` : '');
       }

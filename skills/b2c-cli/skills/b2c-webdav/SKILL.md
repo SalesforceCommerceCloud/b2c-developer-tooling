@@ -18,6 +18,7 @@ Run `b2c setup inspect` to see the resolved configuration and which source provi
 ## WebDAV Roots
 
 The `--root` flag specifies the WebDAV directory:
+
 - `impex` (default) - Import/Export directory
 - `temp` - Temporary files
 - `cartridges` - Code cartridges
@@ -122,13 +123,26 @@ b2c webdav unzip src/instance/archive.zip
 
 ### Import-Set Managed State
 
-Do not manually script marker files when the goal is to apply a local set of site archives once. Use the higher-level command:
+Do not manually script marker files when the goal is to apply a local set of site import/export archives once. Use the higher-level command:
 
 ```bash
 b2c job import-set
 ```
 
-The command manages its own receipt directories so routine file cleanup does not remove applied state and reruns work across machines. Do not edit or delete that managed state unless deliberately resetting an import history: removing a receipt makes the corresponding archive eligible to run again.
+To start over without deleting the previous history, use a new set ID and keep using it on subsequent runs:
+
+```bash
+b2c job import-set --set-id migrations-reset-20260818
+```
+
+To reset the default history in place, remove it and rerun the import set:
+
+```bash
+b2c webdav rm --root=impex b2c-cli/import-sets/migrations
+b2c job import-set
+```
+
+For a custom set ID, replace the final `migrations` path segment with that ID. Resetting in place permanently forgets which archives succeeded and makes every current archive pending again, so only use it when every archive is safe to reapply. `--break-lock` is for recovery and does not reset history.
 
 For the canonical workflow, naming convention, retry behavior, and recovery rules, use the `b2c-cli:b2c-site-import-export` skill's **Apply an Ordered, Idempotent Import Set** section.
 
