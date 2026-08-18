@@ -1057,6 +1057,12 @@
         "category": "B2C DX"
       },
       {
+        "command": "b2c-dx.content.revealBlock",
+        "title": "Reveal Content Block",
+        "icon": "$(references)",
+        "category": "B2C DX"
+      },
+      {
         "command": "b2c-dx.scaffold.generate",
         "title": "New from Scaffold...",
         "icon": "$(file-code)",
@@ -1664,17 +1670,17 @@
         },
         {
           "command": "b2c-dx.content.export",
-          "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component)$/",
+          "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component|fragment)$/",
           "group": "1_export@1"
         },
         {
           "command": "b2c-dx.content.exportNoAssets",
-          "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component)$/",
+          "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component|fragment)$/",
           "group": "1_export@2"
         },
         {
           "command": "b2c-dx.content.exportAssets",
-          "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component)$/",
+          "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component|fragment)$/",
           "group": "1_export@3"
         },
         {
@@ -2194,6 +2200,10 @@
         },
         {
           "command": "b2c-dx.content.removeLibrary",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.content.revealBlock",
           "when": "false"
         },
         {

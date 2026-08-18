@@ -12,6 +12,7 @@ import {
   WILDCARD_ASSET_LIBRARY_XML,
   MISSING_LINK_LIBRARY_XML,
   POSITION_LIBRARY_XML,
+  FRAGMENT_LIBRARY_XML,
 } from './fixtures.js';
 
 describe('operations/content/library', () => {
@@ -452,6 +453,122 @@ describe('operations/content/library', () => {
       // The missing component should be skipped
       const componentChildren = brokenPage!.children.filter((n) => n.type === 'COMPONENT');
       expect(componentChildren).to.have.lengthOf(0);
+    });
+  });
+
+  describe('content blocks (fragments)', () => {
+    let library: Library;
+
+    beforeEach(async () => {
+      library = await Library.parse(FRAGMENT_LIBRARY_XML);
+    });
+
+    it('should classify fragment.* content as FRAGMENT (not COMPONENT)', () => {
+      const homePage = library.tree.children.find((n) => n.id === 'home-page');
+      expect(homePage).to.exist;
+      const gridBlock = homePage!.children.find((n) => n.id === 'grid-block');
+      expect(gridBlock, 'grid-block should be linked under home-page').to.exist;
+      expect(gridBlock!.type).to.equal('FRAGMENT');
+      expect(gridBlock!.typeId).to.equal('fragment.Layout.grid');
+    });
+
+    it('should parse the x-default display-name for content blocks', () => {
+      const homePage = library.tree.children.find((n) => n.id === 'home-page');
+      const gridBlock = homePage!.children.find((n) => n.id === 'grid-block');
+      expect(gridBlock!.displayName).to.equal('GridBlock');
+
+      // A nested leaf block also carries its display-name
+      const discover = gridBlock!.children.find((n) => n.id === 'discover-block');
+      expect(discover).to.exist;
+      expect(discover!.type).to.equal('FRAGMENT');
+      expect(discover!.displayName).to.equal('DiscoverBlock');
+    });
+
+    it('should leave a content block region child as COMPONENT (children are not converted)', () => {
+      const homePage = library.tree.children.find((n) => n.id === 'home-page');
+      const gridBlock = homePage!.children.find((n) => n.id === 'grid-block');
+      const plainCard = gridBlock!.children.find((n) => n.id === 'plain-card');
+      expect(plainCard).to.exist;
+      expect(plainCard!.type).to.equal('COMPONENT');
+      expect(plainCard!.displayName).to.be.null;
+    });
+
+    it('should render a shared content block identically wherever it is linked', () => {
+      // grid-block is linked from BOTH home-page and promo-page; both must show
+      // the same children (it is a single shared object).
+      const homeGrid = library.tree.children
+        .find((n) => n.id === 'home-page')!
+        .children.find((n) => n.id === 'grid-block');
+      const promoGrid = library.tree.children
+        .find((n) => n.id === 'promo-page')!
+        .children.find((n) => n.id === 'grid-block');
+      expect(homeGrid, 'home-page links grid-block').to.exist;
+      expect(promoGrid, 'promo-page links grid-block').to.exist;
+      const homeChildIds = homeGrid!.children.map((n) => n.id).sort();
+      const promoChildIds = promoGrid!.children.map((n) => n.id).sort();
+      expect(homeChildIds).to.deep.equal(['discover-block', 'plain-card']);
+      expect(promoChildIds).to.deep.equal(homeChildIds);
+    });
+
+    describe('getContentBlocks()', () => {
+      it('should return one source node per content block, deduplicated', () => {
+        const blocks = library.getContentBlocks();
+        const ids = blocks.map((b) => b.id).sort();
+        // grid-block + discover-block + lonely-block — each exactly once,
+        // even though grid-block is linked twice and discover-block is nested.
+        expect(ids).to.deep.equal(['discover-block', 'grid-block', 'lonely-block']);
+      });
+
+      it('should include UNLINKED content blocks (full content scan, not just the tree)', () => {
+        const blocks = library.getContentBlocks();
+        const lonely = blocks.find((b) => b.id === 'lonely-block');
+        expect(lonely, 'unlinked block should be surfaced').to.exist;
+        expect(lonely!.type).to.equal('FRAGMENT');
+        expect(lonely!.displayName).to.equal('LonelyBlock');
+      });
+
+      it('should attach the child subtree to a Layout content block source node', () => {
+        const grid = library.getContentBlocks().find((b) => b.id === 'grid-block');
+        expect(grid).to.exist;
+        const childIds = grid!.children.map((n) => n.id).sort();
+        expect(childIds).to.deep.equal(['discover-block', 'plain-card']);
+      });
+
+      it('should classify every returned node as FRAGMENT with a displayName', () => {
+        for (const block of library.getContentBlocks()) {
+          expect(block.type).to.equal('FRAGMENT');
+          expect(block.displayName, `block ${block.id} should have a display-name`).to.be.a('string');
+        }
+      });
+    });
+
+    it('should parse position-less and position-bearing content-links equivalently', () => {
+      // grid-block's links omit <position>; home-page's link carries one. Both
+      // must parse without error and produce a stable child ordering.
+      const grid = library.getContentBlocks().find((b) => b.id === 'grid-block')!;
+      // column_1 (plain-card) before column_2 (discover-block): document order preserved
+      // when positions are absent (both default to Infinity → stable sort).
+      expect(grid.children.map((n) => n.id)).to.deep.equal(['plain-card', 'discover-block']);
+    });
+
+    it('should render content blocks distinctly in getTreeString', () => {
+      const tree = library.getTreeString({traverseHidden: false});
+      // The display-name and a CONTENT BLOCK annotation (with typeId) are shown.
+      expect(tree).to.include('GridBlock (CONTENT BLOCK: fragment.Layout.grid)');
+      expect(tree).to.include('DiscoverBlock (CONTENT BLOCK: fragment.Content.contentCard)');
+    });
+
+    it('should apply the magenta color to content blocks when colorized', () => {
+      const colorize = (color: string, text: string) => `[${color}]${text}[/${color}]`;
+      const tree = library.getTreeString({colorize});
+      expect(tree).to.include('[magenta]GridBlock[/magenta]');
+      expect(tree).to.include('[dim](CONTENT BLOCK: fragment.Layout.grid)[/dim]');
+    });
+
+    it('should include displayName in toJSON output', () => {
+      const grid = library.getContentBlocks().find((b) => b.id === 'grid-block')!;
+      const json = grid.toJSON();
+      expect(json).to.have.property('displayName', 'GridBlock');
     });
   });
 });

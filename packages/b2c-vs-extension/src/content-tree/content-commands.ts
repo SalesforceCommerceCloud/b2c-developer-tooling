@@ -33,6 +33,7 @@ export function registerContentCommands(
   configProvider: ContentConfigProvider,
   treeProvider: ContentTreeDataProvider,
   _fsProvider: ContentFileSystemProvider,
+  treeView: vscode.TreeView<ContentTreeItem>,
 ): vscode.Disposable[] {
   const refresh = registerSafeCommand('b2c-dx.content.refresh', () => {
     configProvider.clearCache();
@@ -248,6 +249,34 @@ export function registerContentCommands(
     vscode.window.showInformationMessage('Site archive imported successfully.');
   });
 
+  // Reveal the canonical source of a shared content block under the "Content
+  // Blocks" group. Triggered when a user clicks a reference node, enforcing that
+  // a block is only ever viewed/edited in one place.
+  const revealBlock = registerSafeCommand('b2c-dx.content.revealBlock', async (node: ContentTreeItem) => {
+    if (!node || node.nodeType !== 'fragmentRef') return;
+    const source = treeProvider.getContentBlockSource(node.libraryId, node.isSiteLibrary, node.contentId);
+    if (!source) {
+      vscode.window.showWarningMessage(`Content block "${node.contentId}" was not found in the library.`);
+      return;
+    }
+    try {
+      await treeView.reveal(source, {select: true, focus: true, expand: true});
+    } catch {
+      // reveal can throw if the tree isn't ready; non-fatal.
+    }
+    // Open the block's XML so the reference click still lands somewhere useful.
+    await vscode.commands.executeCommand('vscode.open', ...(source.command?.arguments ?? []));
+  });
+
+  // NOTE: "Convert to Content Block" was intentionally NOT shipped. Reproducing
+  // Page Designer's in-place conversion via site-archive import is unsafe: a plain
+  // merge import applies the component.* -> fragment.* type change but silently
+  // DROPS the element's own region content-links, orphaning a Layout block's
+  // children (verified live, cross-instance). The only reliable workaround is a
+  // delete+recreate archive, which is risky enough (deep subtree delete + referrer
+  // re-import) that we defer conversion to Business Manager / Page Designer, which
+  // does it correctly. Content blocks are still surfaced read-only in the tree.
+
   const browseWebdav = registerSafeCommand('b2c-dx.content.browseWebdav', async (node: ContentTreeItem) => {
     if (!node) return;
 
@@ -271,6 +300,7 @@ export function registerContentCommands(
     filter,
     clearFilter,
     importCmd,
+    revealBlock,
     browseWebdav,
   ];
 }

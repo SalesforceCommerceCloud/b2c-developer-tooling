@@ -28,6 +28,22 @@ function createMockLibrary() {
         {id: 'footer', type: 'CONTENT', typeId: null, hidden: false, children: []},
       ],
     },
+    getContentBlocks: sinon.stub().returns([
+      {
+        id: 'discover-block',
+        type: 'FRAGMENT',
+        typeId: 'fragment.Content.contentCard',
+        displayName: 'Discover',
+        children: [],
+      },
+      {
+        id: 'grid-block',
+        type: 'FRAGMENT',
+        typeId: 'fragment.Layout.grid',
+        displayName: 'Grid',
+        children: [{id: 'card', type: 'COMPONENT'}],
+      },
+    ]),
     getTreeString: sinon.stub().returns('homepage (typeId: page.storePage)\nabout-us (typeId: page.storePage)'),
   };
 }
@@ -77,6 +93,23 @@ describe('content list', () => {
 
     expect(result.data).to.have.lengthOf(2);
     expect(result.data.every((item: any) => item.type === 'PAGE')).to.equal(true);
+  });
+
+  it('lists content blocks via type=fragment using getContentBlocks', async () => {
+    const command: any = await createCommand({library: 'TestLib', type: 'fragment'});
+    stubCommon(command);
+    sinon.stub(command, 'jsonEnabled').returns(true);
+
+    const mockLibrary = createMockLibrary();
+    sinon.stub(command.operations, 'fetchContentLibrary').resolves({library: mockLibrary});
+
+    const result = await command.run();
+
+    expect(mockLibrary.getContentBlocks.calledOnce).to.equal(true);
+    expect(result.data).to.have.lengthOf(2);
+    expect(result.data.every((item: any) => item.type === 'FRAGMENT')).to.equal(true);
+    const grid = result.data.find((item: any) => item.id === 'grid-block');
+    expect(grid.children).to.equal(1);
   });
 
   it('shows tree structure when --tree is set', async () => {

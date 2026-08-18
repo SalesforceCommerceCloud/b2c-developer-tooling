@@ -43,7 +43,7 @@ b2c content export [PAGES...] --library <library-id>
 
 | Argument | Description | Required |
 |----------|-------------|----------|
-| `PAGES` | One or more content IDs to export (pages, content assets, or components) | Yes |
+| `PAGES` | One or more content IDs to export (pages, content assets, components, or content blocks) | Yes |
 
 ### Flags
 
@@ -140,9 +140,9 @@ b2c content export homepage --library SiteGenesis --no-site-library
 
 The command displays:
 
-1. A tree visualization of the exported content (pages, components, and assets)
+1. A tree visualization of the exported content (pages, components, content blocks, and assets)
 2. Asset download progress with success/failure indicators
-3. A summary line listing counts by type, e.g.: `Exported: 2 pages, 1 content asset, 5 components, 3 static assets to ./export`
+3. A summary line listing counts by type, e.g.: `Exported: 2 pages, 1 content asset, 5 components, 1 content block, 3 static assets to ./export`
 
 With `--json`, returns a structured result including the library tree, output path, downloaded/failed asset lists, and counts.
 
@@ -150,7 +150,8 @@ With `--json`, returns a structured result including the library tree, output pa
 
 - The `--library` flag can be set in `dw.json` as `content-library` or in `package.json` under `b2c.contentLibrary` to avoid passing it every time. You can also list libraries under `b2c.libraries` (mixed strings or `{id, siteLibrary?}` objects); when the resolved library matches an entry marked `siteLibrary: true`, `--site-library` defaults to true automatically. The CLI flag still wins when passed explicitly
 - Use `b2c content list` to discover available page IDs before exporting
-- You can export pages, content assets, or individual components by their content ID. When a component ID is specified, it is promoted to the root of the export with its full child tree
+- You can export pages, content assets, individual components, or content blocks by their content ID. When a component or content-block ID is specified, it is promoted to the root of the export with its full child tree
+- **Content blocks** are Page Designer "content blocks" — reusable `fragment.*`-typed content shared across pages. They are listed distinctly in the tree as `(CONTENT BLOCK)` and counted separately in the summary. A content block can be exported by its ID just like a component; a Layout content block retains its region children
 - The `--asset-query` flag specifies JSON dot-notation paths within component data to extract static asset references. The default `image.path` covers the common Page Designer image component pattern
 - Use `*` in asset query paths to traverse arrays (e.g., `slides.*.image.path`)
 
@@ -175,7 +176,7 @@ In addition to [global flags](./index#global-flags):
 | `--library` | Library ID or site ID. Also configurable via `content-library` in dw.json. | |
 | `--site-library` / `--no-site-library` | Treat the library as a site-private library. Defaults from a matching `libraries` config entry, otherwise `false` | from config |
 | `--library-file` | Use a local library XML file instead of fetching from instance | |
-| `--type` | Filter by node type: `page`, `content`, or `component` | |
+| `--type` | Filter by node type: `page`, `content`, `component`, or `fragment` (content blocks) | |
 | `--components` | Include components in table output | `false` |
 | `--tree` | Show tree structure instead of table | `false` |
 | `--timeout` | Job timeout in seconds | |
@@ -190,6 +191,9 @@ b2c content list --library SharedLibrary --server my-sandbox.demandware.net
 
 # List only pages
 b2c content list --library SharedLibrary --type page
+
+# List only content blocks (the deduplicated catalog, including unlinked blocks)
+b2c content list --library SharedLibrary --type fragment
 
 # List including components
 b2c content list --library SharedLibrary --components
@@ -238,7 +242,9 @@ about-us (typeId: page.storePage)
 footer-content (CONTENT ASSET)
 ```
 
-Pages show `id (typeId: type)`, components show `typeId (id)`, content assets show `id (CONTENT ASSET)`, and static assets show `path (STATIC ASSET)`. The tree uses color when output to a terminal: page names are bold, component type IDs are cyan, asset paths are green, and tree connectors are dim.
+Pages show `id (typeId: type)`, components show `typeId (id)`, content blocks show `displayName (CONTENT BLOCK: typeId)`, content assets show `id (CONTENT ASSET)`, and static assets show `path (STATIC ASSET)`. The tree uses color when output to a terminal: page names are bold, component type IDs are cyan, content-block names are magenta, asset paths are green, and tree connectors are dim.
+
+> **Content blocks** (`fragment.*`-typed content) are reusable, shared singletons. `--type fragment` lists the deduplicated catalog of all content blocks in the library (including blocks not currently linked to any page), since they are not root-level content items.
 
 With `--json`, returns `{ data: [...] }` with each item containing `id`, `type`, `typeId`, and `children` count.
 
