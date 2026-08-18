@@ -1,5 +1,25 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.8.0
+
+### Minor Changes
+
+- [#613](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/613) [`c0ec3f6`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c0ec3f6202ca8ee69676ae2361e8b276cd69385c) - Package the plugins to the open Agent Plugins standard (agent-plugins.org v1.0.0). Each plugin now has a root `plugin.json` manifest with its Codex display metadata under `extensions."com.openai"`, and the MCP server plugin ships a standard `mcp.json`. This lets Codex, Cursor, GitHub Copilot, VS Code, and Kiro consume the plugins directly; Claude Code continues to install from its marketplace as before. The legacy `.codex-plugin/plugin.json` manifests are retained during the transition so existing Codex users on older CLI versions are unaffected. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#615](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/615) [`1f553b3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f553b3e26c57909ce654b61e25f4db537111312) - Added ordered, idempotent site archive import sets with verified WebDAV receipts, retry-until-receipted behavior, and serialized concurrent runners. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#500](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/500) [`35f2960`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/35f296036a0659d115617bb2770327cca250bad7) - Add support for Page Designer "content blocks" (reusable `fragment.*`-typed content). (Thanks [@clavery](https://github.com/clavery)!)
+
+  Content blocks are now a first-class node type: the SDK classifies them as `FRAGMENT` (instead of mislabeling them as components), parses their display name, and exposes `Library.getContentBlocks()` to list a library's blocks (including unlinked ones). The CLI renders them distinctly in `content export`/`content list` (as `CONTENT BLOCK`), counts them in export summaries, and supports `content list --type fragment`. In the VS Code extension, each library gains a **Content Blocks** group that is the single source of truth for a block; because blocks are shared singletons, every page/component that links a block shows a reference that reveals the canonical block in the group rather than an editable copy. (Converting a component into a content block is done in Business Manager / Page Designer — it is not offered here because reproducing it via site-archive import can silently drop a Layout block's child links.)
+
+- [#609](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/609) [`af06784`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/af0678464059c66748ab9bd20075dab5c5707842) - Fix six cross-pack skill links in `b2c-scapi-admin` and `b2c-scapi-shopper` that were one directory level short and resolved to paths that do not exist. (Thanks [@dkatashev](https://github.com/dkatashev)!)
+
+- [#624](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/624) [`02ccc2a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/02ccc2a1656c4895c2aca7ef2064fd2ff138e9a2) - Import discovered cartridge metadata before migration-directory items, supporting single-archive and ordered-child layouts, an opt-out, and project-configurable recursive source exclusions. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#619](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/619) [`591f886`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/591f886f29cc76484b42afe27f6b28f568f1373e) - `job import-set` now prints a consolidated post-import notes summary from a `README.md` (or `README`) file at the top of each applied item's directory — the idiomatic place to document manual, instance-specific follow-up steps for a migration. Notes are shown for items applied in the run and previewed for pending items during `--dry-run`. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.7.0
 
 ### Minor Changes

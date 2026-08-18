@@ -1,5 +1,16 @@
 # @salesforce/b2c-dx-mcp
 
+## 1.10.0
+
+### Minor Changes
+
+- [#613](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/613) [`c0ec3f6`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c0ec3f6202ca8ee69676ae2361e8b276cd69385c) - Add a `config_inspect` MCP tool that reports the resolved configuration (instance, auth, SCAPI/MRT settings) with the source of each value and the effective project directory — secrets are redacted by default. Filesystem tools now resolve the project directory with explicit precedence (per-call argument, then `--project-directory`/`SFCC_PROJECT_DIRECTORY`, then the process working directory) and echo the resolved directory back in their output, so agents can override it per call and see which directory was used across MCP clients that spawn the server from inconsistent working directories. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`02ccc2a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/02ccc2a1656c4895c2aca7ef2064fd2ff138e9a2), [`1f553b3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f553b3e26c57909ce654b61e25f4db537111312), [`02ccc2a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/02ccc2a1656c4895c2aca7ef2064fd2ff138e9a2), [`35f2960`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/35f296036a0659d115617bb2770327cca250bad7), [`d5551f3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d5551f351836f12d2c167459441093671bcad9bc), [`02ccc2a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/02ccc2a1656c4895c2aca7ef2064fd2ff138e9a2), [`591f886`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/591f886f29cc76484b42afe27f6b28f568f1373e), [`c0ec3f6`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c0ec3f6202ca8ee69676ae2361e8b276cd69385c), [`62db97f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/62db97fefb40e56c12f41d54803db7315ec8c33a), [`8d096d0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d096d01a2f70eb979f1b6b246fd196b77f2acd0), [`9382697`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9382697c2715d16577fa298465a3d2dbcbef0ca9), [`2de9046`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2de904636dad1b1f23a80da8b640dc8acd6e97f3)]:
+  - @salesforce/b2c-tooling-sdk@1.22.0
+
 ## 1.9.3
 
 ### Patch Changes

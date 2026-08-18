@@ -1,5 +1,17 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.18
+
+### Patch Changes
+
+- [#615](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/615) [`1f553b3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f553b3e26c57909ce654b61e25f4db537111312) - Added ordered, idempotent site archive import sets with verified WebDAV receipts, retry-until-receipted behavior, and serialized concurrent runners. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#615](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/615) [`1f553b3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f553b3e26c57909ce654b61e25f4db537111312) - Added the data migrations plugin to the third-party plugins guide so users can discover idempotent, version-controlled IMPEX and scripted deployments. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#624](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/624) [`02ccc2a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/02ccc2a1656c4895c2aca7ef2064fd2ff138e9a2) - Import discovered cartridge metadata before migration-directory items, supporting single-archive and ordered-child layouts, an opt-out, and project-configurable recursive source exclusions. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#618](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/618) [`abec39f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/abec39fbc4843b00c426c6fc2ac26492e67df11d) - Update the embedded B2C Commerce Script API TypeScript definitions from version 26.7 to 26.9 so IDE IntelliSense reflects the latest platform APIs. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.17
 
 ### Patch Changes
