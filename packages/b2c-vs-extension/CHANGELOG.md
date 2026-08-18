@@ -1,5 +1,44 @@
 # Change Log
 
+## 1.1.0
+
+### Minor Changes
+
+- [#500](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/500) [`35f2960`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/35f296036a0659d115617bb2770327cca250bad7) - Add support for Page Designer "content blocks" (reusable `fragment.*`-typed content). (Thanks [@clavery](https://github.com/clavery)!)
+
+  Content blocks are now a first-class node type: the SDK classifies them as `FRAGMENT` (instead of mislabeling them as components), parses their display name, and exposes `Library.getContentBlocks()` to list a library's blocks (including unlinked ones). The CLI renders them distinctly in `content export`/`content list` (as `CONTENT BLOCK`), counts them in export summaries, and supports `content list --type fragment`. In the VS Code extension, each library gains a **Content Blocks** group that is the single source of truth for a block; because blocks are shared singletons, every page/component that links a block shows a reference that reveals the canonical block in the group rather than an editable copy. (Converting a component into a content block is done in Business Manager / Page Designer — it is not offered here because reproducing it via site-archive import can silently drop a Layout block's child links.)
+
+- [#611](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/611) [`62db97f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/62db97fefb40e56c12f41d54803db7315ec8c33a) - Add support for creating multiple sandbox clones from a single source in one request (1 to many cloning). (Thanks [@charithaT07](https://github.com/charithaT07)!)
+  - `b2c sandbox clone create` now accepts `--target-count <1-5>` to create a batch of clones sharing the same source, TTL, profile, and notification emails. `--wait` polls every clone in the batch until each reaches a terminal state.
+  - `b2c sandbox clone list` supports `--batch-id` to filter clones belonging to a specific batch.
+  - `b2c sandbox clone get` and the VS Code extension's clone details view now show the batch ID and sibling clone IDs when a clone was created as part of a batch.
+  - The VS Code extension's "Clone Sandbox" command prompts for the number of clones to create and reports aggregate progress across the batch.
+
+- [#617](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/617) [`bee72c2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bee72c26e3427f177bee6a28374821164eb9cdbb) - Start, stop, and restart the active sandbox from the Command Palette (Realm Explorer context menus still target the selected sandbox) (Thanks [@clstopher](https://github.com/clstopher)!)
+
+### Patch Changes
+
+- [#574](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/574) [`8d096d0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d096d01a2f70eb979f1b6b246fd196b77f2acd0) - Add Authorization Code + PKCE support for browser-based OAuth (public clients) and make it the default for the `user` auth method, replacing the legacy `implicit` flow in the default chain. The default auth-method order is now `client-credentials`, `jwt`, `user`. The implicit flow is still selectable via `--auth-methods implicit` (or in dw.json) for backwards compatibility but emits a deprecation warning — OAuth 2.1 deprecates implicit for public clients. (Thanks [@clavery](https://github.com/clavery)!)
+
+  `b2c auth login` now uses Authorization Code + PKCE by default and persists a refresh token alongside the access token, so subsequent commands silently refresh without re-opening the browser. The new `--auth-methods` flag on `b2c auth login` lets you opt back into the legacy implicit flow (`--auth-methods implicit`). The POC `b2c auth pkce` command has been removed; use `b2c auth login` instead.
+
+  dw.json gains a `"user-auth": true` shorthand for `"auth-methods": ["user"]`. It is mutually exclusive with `"auth-methods"` — setting both is rejected during config mapping.
+
+  To smooth the migration, the `user` flow includes a transitional safety net: if the configured Account Manager client is not a PKCE-capable public client, it automatically falls back to the implicit flow for that client and logs a deprecation warning recommending you create a new public (PKCE) client and use it. (An AM client's type cannot be changed after creation, so a legacy implicit-only client must be replaced, not converted.) Set `SFCC_DISABLE_PKCE_FALLBACK=1` to disable the fallback and surface PKCE failures directly. This fallback is temporary and will be removed once public clients have migrated.
+
+  Persisted browser-auth sessions (which now hold long-lived PKCE refresh tokens) are written `0o600` in a `0o700` directory, so they are no longer world-readable.
+
+  The VS Code extension persists PKCE refresh tokens via OS-keychain-backed `SecretStorage` (with a sync-snapshot/async-write-through cache), keeping behavior compatible with the unified `AuthSessionBackend` used by the CLI.
+
+- [#614](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/614) [`9382697`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9382697c2715d16577fa298465a3d2dbcbef0ca9) - Fix sandbox creation in the VS Code extension not granting default OCAPI/WebDAV permissions. New sandboxes created from the extension now grant the configured client ID the same default permissions as the CLI's `sandbox create`, so code deployment and job execution work without manual permission setup. The shared defaults are now provided by the SDK via `buildSandboxSettings`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#618](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/618) [`abec39f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/abec39fbc4843b00c426c6fc2ac26492e67df11d) - Update the embedded B2C Commerce Script API TypeScript definitions from version 26.7 to 26.9 so IDE IntelliSense reflects the latest platform APIs. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#621](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/621) [`fc8d762`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/fc8d76238c4f39fe61287217fff833e846590881) - Honor the `SFCC_CONFIG` environment variable when resolving instance configuration. Previously the extension only looked for a `dw.json` in the workspace folder and ignored a global `dw.json` referenced by `SFCC_CONFIG`, so projects that relied on that env var (e.g. alongside a project `.env`) resolved to "No B2C Commerce instance configured". The extension now threads `SFCC_CONFIG` through as the explicit config path, matching the CLI's `--config` flag. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`02ccc2a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/02ccc2a1656c4895c2aca7ef2064fd2ff138e9a2), [`1f553b3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f553b3e26c57909ce654b61e25f4db537111312), [`02ccc2a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/02ccc2a1656c4895c2aca7ef2064fd2ff138e9a2), [`35f2960`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/35f296036a0659d115617bb2770327cca250bad7), [`d5551f3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d5551f351836f12d2c167459441093671bcad9bc), [`02ccc2a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/02ccc2a1656c4895c2aca7ef2064fd2ff138e9a2), [`591f886`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/591f886f29cc76484b42afe27f6b28f568f1373e), [`c0ec3f6`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c0ec3f6202ca8ee69676ae2361e8b276cd69385c), [`62db97f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/62db97fefb40e56c12f41d54803db7315ec8c33a), [`8d096d0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d096d01a2f70eb979f1b6b246fd196b77f2acd0), [`9382697`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9382697c2715d16577fa298465a3d2dbcbef0ca9), [`2de9046`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2de904636dad1b1f23a80da8b640dc8acd6e97f3)]:
+  - @salesforce/b2c-tooling-sdk@1.22.0
+
 ## 1.0.6
 
 ### Patch Changes

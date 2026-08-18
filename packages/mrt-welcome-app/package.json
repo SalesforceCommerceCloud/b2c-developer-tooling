@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/mrt-welcome-app",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Welcome application deployed to new MRT environments",
   "type": "module",
   "author": "Salesforce",

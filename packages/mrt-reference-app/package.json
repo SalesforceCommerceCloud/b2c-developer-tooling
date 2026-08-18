@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/mrt-reference-app",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Reference application demonstrating MRT features",
   "type": "module",
   "author": "Salesforce",
