@@ -1,7 +1,250 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-08-03T18:28:01.841Z",
+  "generatedAt": "2026-08-18T18:32:20.478Z",
   "entries": [
+    {
+      "id": "cli-account-manager",
+      "title": "Account Manager Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/account-manager.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/account-manager.md",
+      "headings": "Global Flags • Authentication • Required Roles by Subtopic • Configuration • User Management • b2c am users list • Usage • Flags • Default Columns • Extended Columns • Examples • Notes • b2c am users get • Usage • Arguments • Flags • Examples • Output • Notes • b2c am users create • Usage • Required Flags • Optional Flags • Examples • Notes • b2c am users update • Usage • Arguments • Flags • Examples • Notes • b2c am users reset • Usage • Arguments • Examples • Notes • b2c am users delete • Usage • Arguments • Flags • Examples • Notes • Role Management • b2c am roles list • Usage • Flags • Default Columns • Extended Columns • Examples • Notes • b2c am roles get • Usage • Arguments • Flags • Examples • Output • Notes • b2c am roles grant • Usage • Arguments • Required Flags • Optional Flags • Examples • Notes • b2c am roles revoke • Usage • Arguments • Required Flags • Optional Flags • Examples • Notes • Organization Management • b2c am orgs list • Usage • Flags • Default Columns • Extended Columns • Examples • Notes • b2c am orgs get • Usage • Arguments • Flags • Examples • Output • Notes • API Client Management • b2c am clients list • Usage • Flags • Default Columns • Extended Columns • Examples • Notes • b2c am clients get • Usage • Arguments • Flags • Examples • Output • Notes • b2c am clients create • Usage • Required Flags • Optional Flags • Examples • Notes • b2c am clients update • Usage • Arguments • Flags • Examples • Notes • b2c am clients delete • Usage • Arguments • Examples • b2c am clients password • Usage • Arguments • Flags • Examples • Notes",
+      "preview": "Commands for managing Account Manager resources including users, roles, organizations, and API clients."
+    },
+    {
+      "id": "cli-auth",
+      "title": "Auth Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/auth.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/auth.md",
+      "headings": "Stateful vs stateless auth • b2c auth login • Usage • Flags • Choosing a flow • Account Manager prerequisites • b2c auth logout • b2c auth client • Usage • Flags • Grant type auto-detection • Examples • b2c auth client token • Usage • Output • b2c auth token • Usage • Flags • Examples • Output • Use Cases • Scripting • CI/CD Pipelines • Testing API Calls • Authentication Overview • Quick Reference",
+      "preview": "Authentication commands for obtaining OAuth tokens and configuring Account Manager API clients, OCAPI, and WebDAV access."
+    },
+    {
+      "id": "cli-bm",
+      "title": "Business Manager Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/bm.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/bm.md",
+      "headings": "Authentication • Required OCAPI Permissions • Required BM Functional Permission • Configuration Examples • Roles • b2c bm roles list • b2c bm roles get • b2c bm roles create • b2c bm roles delete • b2c bm roles grant • b2c bm roles revoke • b2c bm roles permissions get • b2c bm roles permissions set • Permissions JSON Structure • Users • b2c bm users list • b2c bm users get • b2c bm users search • b2c bm users update • b2c bm users delete • Whoami • Access Keys • Scopes • b2c bm access-key get • b2c bm access-key create • b2c bm access-key set • b2c bm access-key delete • Common Workflows • Rotate my own WebDAV password • Audit role assignments • Find inactive users • Provision a custom role and assign one user • Cycle access keys for a user (admin)",
+      "preview": "Commands for administering Business Manager resources on a B2C Commerce instance — access roles, users, access keys, and identity (whoami)."
+    },
+    {
+      "id": "cli-cap",
+      "title": "Commerce App (CAP) Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/cap.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/cap.md",
+      "headings": "Overview • Authentication • Required OCAPI Permissions • WebDAV Access • b2c cap validate • Usage • Arguments • Flags • Validation Checks • Examples • b2c cap package • Usage • Arguments • Flags • Examples • b2c cap install • Usage • Arguments • Flags • Install Process • Examples • Creating a Storefront Pull Request • b2c cap uninstall • Usage • Arguments • Flags • Examples • b2c cap list • Usage • Flags • Table Columns • JSON Output • Examples • b2c cap tasks • Usage • Arguments • Flags • Examples • b2c cap pull • Usage • Arguments • Flags • Examples",
+      "preview": "Commands for validating, packaging, installing, uninstalling, and listing Commerce App Packages (CAPs) and commerce features."
+    },
+    {
+      "id": "cli-cip",
+      "title": "CIP Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/cip.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/cip.md",
+      "headings": "Command Overview • Authentication • Connection and Output Flags • Query and Report Date Flags • b2c cip tables • Usage • Flags • Examples • b2c cip describe • Usage • Flags • Examples • b2c cip query • Usage • SQL Input Sources • Query-Specific Flags • Placeholders • Examples • b2c cip report • Usage • Shared Report Flags • Discovering Reports • Report Commands • Site ID Format • Examples • Output Formats",
+      "preview": "Run raw SQL and curated analytics reports against Commerce Intelligence Platform (CIP)."
+    },
+    {
+      "id": "cli-code",
+      "title": "Code Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/code.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/code.md",
+      "headings": "Authentication • WebDAV Operations (deploy, download, watch) • OCAPI Operations (list, activate, delete) • b2c code list • Usage • Flags • Examples • Output • b2c code deploy • Usage • Arguments • Flags • Examples • Cartridge Discovery • b2c code download • Usage • Arguments • Flags • Examples • Mirror Mode • Notes • b2c code activate • Usage • Arguments • Flags • Examples • Reload vs Activate • b2c code delete • Usage • Arguments • Flags • Examples • Notes • b2c code watch • Usage • Arguments • Flags • Examples • Behavior • Environment Variables",
+      "preview": "Commands for deploying, downloading, activating code versions, and watching for file changes on B2C Commerce instances."
+    },
+    {
+      "id": "cli-content",
+      "title": "Content Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/content.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/content.md",
+      "headings": "Authentication • b2c content export • Usage • Arguments • Flags • Examples • Configuring multiple libraries • Output • Notes • b2c content list • Usage • Flags • Examples • Output • b2c content validate • Usage • Arguments • Flags • Examples • Output • Notes",
+      "preview": "Commands for exporting, listing, and validating Page Designer content from B2C Commerce content libraries."
+    },
+    {
+      "id": "cli-custom-apis",
+      "title": "Custom APIs",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/custom-apis.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/custom-apis.md",
+      "headings": "Global Custom APIs Flags • Authentication • Required Scopes • Configuration • b2c scapi custom status • Usage • Flags • Available Columns • API Types • Examples • Output • Notes",
+      "preview": "Commands for managing SCAPI Custom API endpoints, checking registration status, and debugging endpoint configurations."
+    },
+    {
+      "id": "cli-debug",
+      "title": "Debug Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/debug.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/debug.md",
+      "headings": "Authentication • b2c debug • Usage • Flags • Examples • IDE Integration • Notes • b2c debug cli • Usage • Flags • REPL Commands • Examples • Interactive Session Example • RPC Mode • Protocol • Request Format • Response Format • Event Format • Available Commands • Events • Example Session (Python) • See Also",
+      "preview": "DAP debug adapter, interactive REPL, and JSONL RPC mode for B2C Commerce server-side script debugging."
+    },
+    {
+      "id": "cli-docs",
+      "title": "Docs Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/docs.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/docs.md",
+      "headings": "Authentication • b2c docs search • Usage • Arguments • Flags • Examples • Restricting available topics (`--topics`) • Workspace-Aware Search • Output • b2c docs read • Usage • Arguments • Flags • Examples • Output • b2c docs cache • Usage • Flags • Examples • Output • b2c docs schema • Usage • Arguments • Flags • Examples • Output • Validating XML with xmllint • b2c docs download • Usage • Arguments • Flags • Examples • Output",
+      "preview": "Search, read, and download B2C Commerce documentation including Script API reference, Developer Center guides, Salesforce Help, XSD schemas, and job steps."
+    },
+    {
+      "id": "cli-ecdn",
+      "title": "eCDN Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/ecdn.md",
+      "headings": "Global Flags • Zone Selection • Authentication • Zone Management • b2c ecdn zones list • Output • b2c ecdn zones create • Flags • Cache Management • b2c ecdn cache purge • Flags • Rate Limiting • b2c ecdn rate-limit list • b2c ecdn rate-limit get • b2c ecdn rate-limit create • Flags • b2c ecdn rate-limit update • b2c ecdn rate-limit delete • Custom Firewall Rules • b2c ecdn firewall list • Flags • b2c ecdn firewall get • b2c ecdn firewall create • Flags • b2c ecdn firewall update • b2c ecdn firewall delete • b2c ecdn firewall reorder • Certificate Management • b2c ecdn certificates list • b2c ecdn certificates add • Flags • b2c ecdn certificates update • Flags • b2c ecdn certificates delete • Flags • b2c ecdn certificates validate • Security Settings • b2c ecdn security get • Output • b2c ecdn security update • Flags • Speed Settings • b2c ecdn speed get • b2c ecdn speed update • Flags • WAF (Web Application Firewall) • WAF v1 Commands • b2c ecdn waf groups list • b2c ecdn waf groups update • b2c ecdn waf rules list • b2c ecdn waf rules get • b2c ecdn waf rules update • Flags • WAF v2 Commands • b2c ecdn waf rulesets list • b2c ecdn waf rulesets update • b2c ecdn waf managed-rules list • b2c ecdn waf managed-rules update • OWASP Settings • b2c ecdn waf owasp get • b2c ecdn waf owasp update • Flags • WAF Migration • b2c ecdn waf migrate • Logpush • b2c ecdn logpush ownership • b2c ecdn logpush jobs list • b2c ecdn logpush jobs create • Flags • b2c ecdn logpush jobs get • b2c ecdn logpush jobs update • b2c ecdn logpush jobs delete • Page Shield • Notifications (Organization Level) • b2c ecdn page-shield notifications list • b2c ecdn page-shield notifications create • b2c ecdn page-shield notifications delete • Policies (Zone Level) • b2c ecdn page-shield policies list • b2c ecdn page-shield policies create • Flags • b2c ecdn page-shield policies get • b2c ecdn page-shield policies update • b2c ecdn page-shield policies delete • Scripts (Zone Level) • b2c ecdn page-shield scripts list • b2c ecdn page-shield scripts get • MRT Rules • b2c ecdn mrt-rules get • b2c ecdn mrt-rules create • Flags • b2c ecdn mrt-rules update • b2c ecdn mrt-rules delete • Individual MRT Rules • b2c ecdn mrt-rules rules update • b2c ecdn mrt-rules rules delete • mTLS Certificates (Organization Level) • b2c ecdn mtls list • b2c ecdn mtls create • Flags • b2c ecdn mtls get • b2c ecdn mtls delete • Cipher Suites • b2c ecdn cipher-suites get • b2c ecdn cipher-suites update • Flags • Origin Headers • b2c ecdn origin-headers get • b2c ecdn origin-headers set • Flags • b2c ecdn origin-headers delete",
+      "preview": "Commands for managing eCDN (embedded Content Delivery Network) zones, certificates, security, WAF, and more."
+    },
+    {
+      "id": "cli-index",
+      "title": "CLI Reference",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/index.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/index.md",
+      "headings": "Global Flags • Instance Flags • Authentication Flags • Safety Mode • Other Environment Variables • Command Topics • Instance Operations • Services • Development • Account Management • Setup & Utilities • Getting Help",
+      "preview": "B2C CLI command reference with global flags and authentication options for managing Salesforce Commerce Cloud instances."
+    },
+    {
+      "id": "cli-jobs",
+      "title": "Job Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/jobs.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/jobs.md",
+      "headings": "Authentication • Required OCAPI Permissions • WebDAV Access • Configuration • b2c job run • Usage • Arguments • Flags • Examples • System Jobs with Custom Request Bodies • Standard (system) job steps • In-flow system step vs. the CLI equivalent • b2c job wait • Usage • Arguments • Flags • Examples • b2c job search • Usage • Flags • Examples • Output • b2c job log • Usage • Arguments • Flags • Examples • Notes • b2c job import • Usage • Arguments • Flags • Examples • Notes • Importing archives larger than the instance limit • b2c job import-set • Usage • Arguments • Flags • Examples • Post-import notes • Repeat runs • Resetting import history • Concurrent runs and recovery • b2c job export • Usage • Flags • Examples • Data Units • Site Data Types • Global Data Types",
+      "preview": "Commands for executing jobs, importing and exporting site archives, and monitoring job execution status."
+    },
+    {
+      "id": "cli-logging",
+      "title": "Logging",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/logging.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/logging.md",
+      "headings": "Output Modes • Pretty Print (Default) • JSON Lines (`--jsonl`) • Log Levels • Flags • Environment Variables • CLI Framework Debugging • Output Streams • Secret Redaction • CI/CD Usage",
+      "preview": "Configure CLI logging with log levels, JSON output for CI/CD, and environment variables for debugging."
+    },
+    {
+      "id": "cli-logs",
+      "title": "Logs Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/logs.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/logs.md",
+      "headings": "Authentication • b2c logs get • Usage • Flags • Examples • Output • Path Normalization • b2c logs list • Usage • Flags • Examples • Output • b2c logs tail • Usage • Flags • Examples • Notes • Log File Types • Custom Logs (Script-Generated) • System Logs • Downloading Full Log Files • See Also",
+      "preview": "Commands for retrieving and monitoring log files on B2C Commerce instances."
+    },
+    {
+      "id": "cli-metrics",
+      "title": "Metrics Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/metrics.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/metrics.md",
+      "headings": "Command Overview • Global Metrics Flags • Tenant Flags • Authentication Flags • Common Flags • Output Flags • Authentication • Required Scopes • Configuration • b2c metrics list • Usage • Flags • Available Categories • Examples • Output • Common Flags (All Metrics Commands) • Flags • Time Windows • b2c metrics overall • Usage • Examples • b2c metrics sales • Usage • b2c metrics ecdn • Usage • b2c metrics third-party • Usage • Additional Flags • Examples • b2c metrics scapi • Usage • Additional Flags • Examples • b2c metrics scapi-hooks • Usage • b2c metrics mrt • Usage • b2c metrics controller • Usage • b2c metrics ocapi • Usage • Additional Flags • Examples • Response Format (All Category Commands) • Series Tags • Output • Error Responses • Notes",
+      "preview": "Commands for querying observability metrics from SCAPI Metrics API."
+    },
+    {
+      "id": "cli-mrt",
+      "title": "MRT Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.md",
+      "headings": "Command Overview • Global MRT Flags • Configuration Sources • Authentication • Getting an API Key • Configuration • Organization Commands • b2c mrt org list • b2c mrt org b2c • Project Commands • b2c mrt project list • b2c mrt project create • b2c mrt project get • b2c mrt project update • b2c mrt project delete • Project Member Commands • b2c mrt project member list • b2c mrt project member add • b2c mrt project member get • b2c mrt project member update • b2c mrt project member remove • Project Notification Commands • b2c mrt project notification list • b2c mrt project notification create • b2c mrt project notification get • b2c mrt project notification update • b2c mrt project notification delete • Environment Commands • b2c mrt env list • b2c mrt env create • b2c mrt env get • b2c mrt env update • b2c mrt env delete • b2c mrt env clone • b2c mrt env invalidate • b2c mrt env b2c • Environment Variable Commands • b2c mrt env var list • b2c mrt env var set • b2c mrt env var push • b2c mrt env var delete • URL Redirect Commands • b2c mrt env redirect list • b2c mrt env redirect create • b2c mrt env redirect delete • b2c mrt env redirect clone • Access Control Commands • b2c mrt env access-control list • Bundle Commands • b2c mrt bundle deploy • b2c mrt bundle list • b2c mrt bundle history • b2c mrt bundle download • b2c mrt bundle delete • Organization Member Commands • b2c mrt org member list • b2c mrt org member add • b2c mrt org member get • b2c mrt org member update • b2c mrt org member remove • Organization Certificate Commands • b2c mrt org cert list • b2c mrt org cert get • b2c mrt org cert create • b2c mrt org cert delete • b2c mrt org cert restart-validation • Tail Logs • b2c mrt tail-logs • Save Credentials • b2c mrt save-credentials • User Commands • b2c mrt user profile • b2c mrt user api-key • b2c mrt user email-prefs • Common Workflows • Deploy to Production • Set Up a New Environment • Invalidate Cache After Content Update",
+      "preview": "Commands for managing Managed Runtime projects, environments, bundles, and deployments."
+    },
+    {
+      "id": "cli-preferences",
+      "title": "Preferences",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/preferences.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/preferences.md",
+      "headings": "Global Preferences Flags • Authentication • Required Scopes • Configuration • Instance Type • Custom Attributes • Assignment Grammar (write commands) • b2c preferences global list {#list-global} • Usage • Flags • Examples • b2c preferences global get {#get-global} • Usage • Arguments • Flags • Examples • b2c preferences global update {#update-global} • Usage • Arguments • Flags • Body Shape • Examples • b2c preferences site list {#list-site} • Usage • Flags • Examples • b2c preferences site get {#get-site} • Usage • Arguments • Flags • Examples • b2c preferences site update {#update-site} • Usage • Arguments • Flags • Examples • b2c preferences site search {#search-site} • Usage • Arguments • Flags • Examples • b2c preferences site preference get {#get-site-preference} • Usage • Arguments • Flags • Examples • b2c preferences site preference update {#update-site-preference} • Usage • Arguments • Flags • Body Shape • Examples",
+      "preview": "Commands for reading, updating, and searching custom global and site preferences."
+    },
+    {
+      "id": "cli-replications",
+      "title": "Granular Replications Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/replications.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/replications.md",
+      "headings": "Authentication • Required Scopes • Configuration • Available Flags • Prerequisites • b2c scapi replications list • Usage • Flags • Available Columns • Examples • Output • b2c scapi replications get • Usage • Arguments • Flags • Examples • Output • b2c scapi replications publish • Usage • Flags • Entity Types • Examples • Output • b2c scapi replications wait • Usage • Arguments • Flags • Examples • Output • Common Workflows • Complete Product Publishing Workflow • Publishing Multiple Content Assets • Error Handling",
+      "preview": "Commands for publishing individual items from staging to production using Granular Replications API."
+    },
+    {
+      "id": "cli-sandbox",
+      "title": "Sandbox Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sandbox.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sandbox.md",
+      "headings": "Sandbox ID Formats • Global Sandbox Flags • Authentication • Required Roles • Configuration • b2c sandbox list • Usage • Flags • Available Columns • Examples • Output • b2c sandbox create • Usage • Flags • Examples • Notes • b2c sandbox get • Usage • Arguments • Flags • Examples • Output • b2c sandbox info • Usage • Examples • Output • b2c sandbox ips • Usage • Flags • Examples • Output • b2c sandbox start • Usage • Arguments • Examples • b2c sandbox stop • Usage • Arguments • Examples • b2c sandbox restart • Usage • Arguments • Examples • b2c sandbox operations list {#b2c-sandbox-operations-list} • Usage • Arguments • Flags • Available columns • Examples • Output • b2c sandbox operations get {#b2c-sandbox-operations-get} • Usage • Arguments • Examples • Output • b2c sandbox delete • Usage • Arguments • Flags • Examples • Notes • b2c sandbox reset • Usage • Arguments • Flags • Examples • Notes • b2c sandbox update • Usage • Arguments • Flags • Examples • Notes • b2c sandbox usage • Usage • Arguments • Flags • Examples • Output • b2c sandbox settings • Usage • Arguments • Examples • Output • b2c sandbox storage • Usage • Arguments • Examples • Output • Sandbox Aliases • b2c sandbox alias create • Usage • Arguments • Flags • Examples • Behavior • b2c sandbox alias list • Usage • Arguments • Flags • Examples • b2c sandbox alias get {#b2c-sandbox-alias-get} • Usage • Arguments • Examples • Output • b2c sandbox alias delete • Usage • Arguments • Flags • Examples • Sandbox Cloning • Clone ID Format • b2c sandbox clone list • Usage • Arguments • Flags • Available Columns • Examples • Output • b2c sandbox clone create • Usage • Arguments • Flags • Examples • Output • Notes • b2c sandbox clone get • Usage • Arguments • Examples • Output • Clone Status Values • Realm-Level Commands • Required Access for Realm Commands • b2c sandbox realm list • Usage • Arguments • Examples • b2c sandbox realm configuration • Usage • Arguments • Examples • b2c sandbox realm get • Usage • Arguments • Examples • Output • b2c sandbox realm update • Usage • Arguments • Flags • Examples • b2c sandbox realm usage • Usage • Arguments • Flags • Examples • b2c sandbox realm usages • Usage • Flags • Examples",
+      "preview": "Commands for creating, managing, starting, stopping, and deleting On-Demand Sandboxes for development."
+    },
+    {
+      "id": "cli-scaffold",
+      "title": "Scaffold Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scaffold.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scaffold.md",
+      "headings": "Commands Overview • b2c scaffold list • Usage • Flags • Output • Examples • b2c scaffold generate • Usage • Arguments • Flags • Examples • b2c scaffold info • Usage • Arguments • Output • Examples • b2c scaffold search • Usage • Arguments • Flags • Output • Examples • b2c scaffold init • Usage • Arguments • Flags • Examples • b2c scaffold validate • Usage • Arguments • Flags • Validation Checks • Examples • Built-in Scaffolds",
+      "preview": "B2C CLI scaffold commands for generating cartridges, controllers, hooks, custom APIs, and other B2C Commerce components from templates."
+    },
+    {
+      "id": "cli-scapi-schemas",
+      "title": "SCAPI Schemas",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scapi-schemas.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scapi-schemas.md",
+      "headings": "Global SCAPI Schemas Flags • Tenant Flags • Authentication Flags • Common Flags • Output Flags • Authentication • Required Scopes • Configuration • b2c scapi schemas list • Usage • Flags • Available Columns • Examples • Output • b2c scapi schemas get • Usage • Arguments • Flags • Schema Collapsing • Examples • Output Formats • Notes",
+      "preview": "Commands for listing and retrieving Salesforce Commerce API (SCAPI) OpenAPI schemas, with selective path, schema, and example expansion for LLM context."
+    },
+    {
+      "id": "cli-setup",
+      "title": "Setup Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/setup.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/setup.md",
+      "headings": "b2c setup inspect • Usage • Flags • Examples • Output • Sensitive Values • See Also • b2c setup ide • Usage • Examples • b2c setup ide vscode-types • Usage • Flags • Examples • Output • b2c setup ide tsserver-plugin • Usage • Flags • Examples • Output • b2c setup instance list • Usage • Flags • Examples • Output • b2c setup instance create • Usage • Arguments • Flags • Examples • Interactive Mode • b2c setup instance remove • Usage • Arguments • Flags • Examples • b2c setup instance set-active • Usage • Arguments • Flags • Examples • How Active Instance Works • b2c setup skills • Usage • Arguments • Flags • Supported IDEs • Examples • Interactive Mode • Claude Code Recommendation • Skill Sets • Output • Environment • See Also",
+      "preview": "Commands for viewing configuration, managing instances, installing AI agent skills, and generating IDE integration scripts."
+    },
+    {
+      "id": "cli-sfnext",
+      "title": "Storefront Next Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sfnext.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sfnext.md",
+      "headings": "Bootstrap a New Project • In-Project Commands • Topics",
+      "preview": "Build, run, and deploy Storefront Next (SFNext) projects with B2C CLI plugin commands for scaffolding new storefronts, generating cartridges, managing extensions, and pushing bundles to Managed Runtime."
+    },
+    {
+      "id": "cli-sites",
+      "title": "Sites Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sites.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sites.md",
+      "headings": "Authentication • Required OCAPI Permissions • Configuration • b2c sites list • Usage • Flags • Examples • Output • Cartridge Commands • b2c sites cartridges list • Usage • Flags • Examples • b2c sites cartridges add • Usage • Arguments • Flags • Examples • b2c sites cartridges remove • Usage • Arguments • Flags • Examples • b2c sites cartridges set • Usage • Arguments • Flags • Examples",
+      "preview": "Commands for listing and managing storefront sites on B2C Commerce instances."
+    },
+    {
+      "id": "cli-slas",
+      "title": "SLAS Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.md",
+      "headings": "Global SLAS Flags • Authentication • Required Roles • Configuration • b2c slas token • Usage • Flags • Flows • Examples • Output • Configuration • b2c slas client list • Usage • Flags • Examples • Output • b2c slas client create • Usage • Arguments • Flags • Examples • Notes • b2c slas client get • Usage • Arguments • Examples • Output • b2c slas client update • Usage • Arguments • Flags • Examples • Notes • b2c slas client delete • Usage • Arguments • Examples • Notes • b2c slas client open • Usage • Arguments • Flags • Examples • Notes",
+      "preview": "Commands for creating, updating, and managing Shopper Login and API Access Service (SLAS) clients."
+    },
+    {
+      "id": "cli-webdav",
+      "title": "WebDAV Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/webdav.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/webdav.md",
+      "headings": "Global WebDAV Flags • Root Directory • Authentication • Basic Auth (Recommended) • OAuth • Mixed Authentication • b2c webdav ls • Usage • Arguments • Flags • Examples • Output • b2c webdav get • Usage • Arguments • Flags • Examples • b2c webdav put • Usage • Arguments • Examples • Notes • b2c webdav mkdir • Usage • Arguments • Examples • b2c webdav rm • Usage • Arguments • Flags • Examples • Notes • b2c webdav zip • Usage • Arguments • Examples • Notes • b2c webdav unzip • Usage • Arguments • Examples • Notes",
+      "preview": "Commands for WebDAV file operations including listing, uploading, downloading, and managing files on B2C Commerce instances."
+    },
     {
       "id": "guide-account-manager",
       "title": "Account Manager Guide",
@@ -35,7 +278,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.md",
-      "headings": "Overview • Account Manager API Client • Authentication Methods • Creating an API Client • Assigning Roles • Understanding Roles and Tenant Filters • For Client Credentials (Roles on API Client) • For User Authentication (roles on User) • Configuring Scopes • Configuring Tenant Filter • Redirect URLs • JWT Authentication (Certificate-Based) • How It Works • Benefits • Setup Instructions • Step 1: Generate Certificate Pair • Step 2: Register Certificate in Account Manager • Step 3: Configure CLI • Authentication Priority • Troubleshooting • Security Best Practices • OCAPI Configuration • Configuring OCAPI in Business Manager • Example OCAPI Configuration • Minimal Configuration by Feature • SCAPI Authentication • Required Setup • Scopes by Command • Configuration • WebDAV Access • Option A: Basic Authentication (user access) • Option B: OAuth-based WebDAV (API client access) • Managed Runtime API Key • Getting an MRT API Key • Configuring the API Key • Quick Start Example • 1. Create API Client in Account Manager • 2. Configure OCAPI (for code list/activate/delete, jobs, sites) • 3. Configure WebDAV Access (for code deploy/watch, webdav commands) • 4. Set Environment Variables • 5. Test the Configuration • Troubleshooting • \"Unauthorized\" errors • \"Forbidden\" on WebDAV operations • \"Invalid scope\" errors • Next Steps",
+      "headings": "Overview • Account Manager API Client • Authentication Methods • Creating an API Client • Assigning Roles • Understanding Roles and Tenant Filters • For Client Credentials (Roles on API Client) • For User Authentication (roles on User) • Configuring Scopes • Configuring Tenant Filter • Redirect URLs • JWT Authentication (Certificate-Based) • How It Works • Benefits • Setup Instructions • Step 1: Generate Certificate Pair • Step 2: Register Certificate in Account Manager • Step 3: Configure CLI • Authentication Priority • Troubleshooting • Security Best Practices • OCAPI Configuration • Configuring OCAPI in Business Manager • Example OCAPI Configuration • Minimal Configuration by Feature • SCAPI Authentication • Required Setup • Scopes by Command • Configuration • WebDAV Access • Option A: Basic Authentication (user access) • Option B: OAuth-based WebDAV (API client access) • Managed Runtime API Key • Getting an MRT API Key • Configuring the API Key • Quick Start Example • 1. Create API Client in Account Manager • 2. Configure OCAPI (for code list/activate/delete, jobs, sites) • 3. Configure WebDAV Access (for code deploy/watch, webdav commands) • 4. Set Environment Variables • 5. Test the Configuration • Troubleshooting • \"Unauthorized\" errors • \"Forbidden\" on WebDAV operations • \"Invalid scope\" errors • Implicit Flow Deprecation (PKCE Migration) {#implicit-flow-deprecation} • What changed • You must use a public client • Transitional automatic fallback • Next Steps",
       "preview": "Set up authentication for the B2C CLI including Account Manager API clients, OCAPI permissions, and WebDAV access keys."
     },
     {
@@ -62,7 +305,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.md",
-      "headings": "CLI Flags • OAuth (SCAPI/OCAPI) • Client Credentials • JWT Bearer • Implicit Flow • Basic Authentication (WebDAV) • Environment Variables • .env File • Configuration File • Single Instance • Multiple Instances • Managing Instances with the CLI • Quick Setup • Switching Instances • Listing and Removing • Supported Fields • Two-Factor Authentication (mTLS) • Project Configuration (package.json) • Allowed Fields • Content Libraries Example • Resolution Priority • Credential Grouping • MRT API Key • Overriding Authentication Behavior • Available Auth Methods • Specifying Auth Methods • Debugging Configuration • Next Steps",
+      "headings": "CLI Flags • OAuth (SCAPI/OCAPI) • Client Credentials • JWT Bearer • User Authentication (Browser) • Basic Authentication (WebDAV) • Environment Variables • .env File • Configuration File • Single Instance • Multiple Instances • Managing Instances with the CLI • Quick Setup • Switching Instances • Listing and Removing • Supported Fields • Two-Factor Authentication (mTLS) • Project Configuration (package.json) • Allowed Fields • Content Libraries Example • Resolution Priority • Credential Grouping • MRT API Key • Overriding Authentication Behavior • Available Auth Methods • Specifying Auth Methods • Debugging Configuration • Next Steps",
       "preview": "Configure the B2C CLI with environment variables, dw.json files, and multi-instance setups for different environments."
     },
     {
@@ -84,6 +327,24 @@
       "preview": "Configure IDE tooling like the IntelliJ SFCC plugin to consume resolved B2C CLI configuration, plus enable Script API IntelliSense via TypeScript definitions."
     },
     {
+      "id": "guide-import-sets",
+      "title": "Import Sets",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/import-sets.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/import-sets.md",
+      "headings": "Before You Start • Import Sources and Order • Cartridge Metadata • One Archive • An Ordered Collection • Project Migrations • Naming Archives • Preview and Apply • Post-Import Notes • Excluding Source Directories • How Repeat Runs Behave • Teams and CI/CD • Resetting Import History • Start a Fresh History • Clear the Current History • Recovering an Interrupted Run",
+      "preview": "Deploy B2C Commerce metadata as an ordered, repeatable import history from cartridges and project migrations."
+    },
+    {
+      "id": "guide-index",
+      "title": "Introduction",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/index.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/index.md",
+      "headings": "Quick CLI Install • Quick MCP Install • Claude Code (Project Scope) • Cursor (Project Scope) • GitHub Copilot (Project Scope) • Quick VS Code Extension Install • Next Steps",
+      "preview": "Introduction to the Agentic B2C Developer Toolkit — CLI, Agent Skills, MCP Server, VS Code extension, and SDK for Salesforce Agentforce Commerce."
+    },
+    {
       "id": "guide-installation",
       "title": "Installation",
       "category": "tooling",
@@ -91,6 +352,15 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/installation.md",
       "headings": "Prerequisites • Install via npm (Recommended) • Verify Installation • Install the SDK (Optional) • Next Steps",
       "preview": "Install the B2C CLI via npm or GitHub releases, and optionally install the SDK for programmatic use."
+    },
+    {
+      "id": "guide-metrics",
+      "title": "Metrics",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/metrics.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/metrics.md",
+      "headings": "What is the Metrics API? • Authentication • Commands • Listing Metric Categories • Fetching Metrics • Time Windows • Category-Specific Filters • Response Format • Series Tags • SDK Usage • Common Flags",
+      "preview": "Query observability metrics from SCAPI Metrics API to monitor SCAPI, OCAPI, MRT, SFRA controllers, and overall system performance."
     },
     {
       "id": "guide-mrt-utilities",
@@ -170,8 +440,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/third-party-plugins.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/third-party-plugins.md",
-      "headings": "Installing Plugins • Available Plugins • IntelliJ SFCC Config Plugin • Installation • Features • Environment Variables • Usage • Password Store Plugin • Installation • Features • Storing Credentials • Environment Variables • Usage • macOS Keychain Plugin • Installation • Features • Storing Credentials • Environment Variables • Usage • Docs Viewer Plugin • Installation • Features • Usage • Catalog Reducer Plugin • Installation • Features • Usage • Pipeline Visualizer Plugin • Installation • Features • Usage • Creating Your Own Plugin • Submitting Plugins",
-      "preview": "Community plugins for the B2C CLI including IntelliJ SFCC config integration, credential storage, docs search, catalog reduction, and pipeline visualization."
+      "headings": "Installing Plugins • Available Plugins • Data Migrations Plugin • Installation • Features • Usage • IntelliJ SFCC Config Plugin • Installation • Features • Environment Variables • Usage • Password Store Plugin • Installation • Features • Storing Credentials • Environment Variables • Usage • macOS Keychain Plugin • Installation • Features • Storing Credentials • Environment Variables • Usage • Docs Viewer Plugin • Installation • Features • Usage • Catalog Reducer Plugin • Installation • Features • Usage • Pipeline Visualizer Plugin • Installation • Features • Usage • Creating Your Own Plugin • Submitting Plugins",
+      "preview": "Community plugins for the B2C CLI including data migrations, IntelliJ SFCC config integration, credential storage, docs search, catalog reduction, and pipeline visualization."
     },
     {
       "id": "mcp-configuration",
@@ -179,7 +449,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.md",
-      "headings": "Credentials • `dw.json` (Recommended) {#dw-json} • `.env` File {#env-file} • MRT Credentials (`~/.mobify`) {#mrt-credentials} • Configuration Priority • Toolset Selection • Auto-Discovery (Default) • Manual Selection • Individual Tool Selection • Logging • Telemetry • MCP Server Flags Reference {#mcp-server-flags} • Documentation Tools Restriction • Environment Variables Reference {#environment-variables-reference} • MCP Server Environment Variables {#mcp-server-environment-variables} • Next Steps",
+      "headings": "Credentials • `dw.json` (Recommended) {#dw-json} • `.env` File {#env-file} • MRT Credentials (`~/.mobify`) {#mrt-credentials} • Project Directory {#project-directory} • Configuration Priority • Toolset Selection • Auto-Discovery (Default) • Manual Selection • Individual Tool Selection • Logging • Telemetry • MCP Server Flags Reference {#mcp-server-flags} • Documentation Tools Restriction • Environment Variables Reference {#environment-variables-reference} • MCP Server Environment Variables {#mcp-server-environment-variables} • Next Steps",
       "preview": "Configure the B2C DX MCP Server with credentials, flags, environment variables, and toolset selection."
     },
     {
@@ -206,8 +476,134 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/installation.md",
-      "headings": "Prerequisites • Claude Code • Plugin Marketplace • CLI • Cursor • Project-Level Configuration (Recommended) • Quick Install (User-Level) • GitHub Copilot • After Installation • Troubleshooting • Server Not Starting • `spawn npx ENOENT` Error • \"Could not determine executable to run\" Error (Windows) • Tools Not Available • Configuration Not Loading • Next Steps",
+      "headings": "Prerequisites • Claude Code • Plugin Marketplace • CLI • Codex • Plugin Marketplace • Cursor • Project-Level Configuration (Recommended) • Quick Install (User-Level) • GitHub Copilot • After Installation • Troubleshooting • Server Not Starting • `spawn npx ENOENT` Error • \"Could not determine executable to run\" Error (Windows) • Tools Not Available • Configuration Not Loading • Next Steps",
       "preview": "Install and configure the B2C DX MCP Server for Claude Code, Cursor, GitHub Copilot, and other MCP clients."
+    },
+    {
+      "id": "mcp-tools-cartridge-deploy",
+      "title": "Cartridge Deployment",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/cartridge-deploy.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/cartridge-deploy.md",
+      "headings": "cartridge_deploy • Authentication • Parameters • Usage • See Also",
+      "preview": "Deploy cartridges to a B2C Commerce instance via WebDAV with automatic code version reload."
+    },
+    {
+      "id": "mcp-tools-diagnostics",
+      "title": "Script Debugger",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/diagnostics.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/diagnostics.md",
+      "headings": "Authentication • Recovery from broken or orphaned sessions • Session Lifecycle • debug_start_session • debug_end_session • debug_list_sessions • Server affinity (hitting breakpoints) • Breakpoints • debug_set_breakpoints • Execution Control • debug_wait_for_stop • debug_continue • debug_step_over • debug_step_into • debug_step_out • Inspection • debug_get_stack • debug_get_variables • debug_evaluate • Higher-Level Tools • debug_capture_at_breakpoint • See Also",
+      "preview": "MCP tools for script debugging on B2C Commerce instances via the Script Debugger API (SDAPI)."
+    },
+    {
+      "id": "mcp-tools-docs",
+      "title": "Documentation Tools",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/docs.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/docs.md",
+      "headings": "Documentation (Multi-Corpus) • docs_search • docs_read • docs_list • XSD Schemas • docs_schema_search • docs_schema_read • docs_schema_list • See also",
+      "preview": "MCP tools for searching B2C Commerce documentation including Script API reference, Developer Center guides, Salesforce Help, tooling docs, job steps, and XSD schemas."
+    },
+    {
+      "id": "mcp-tools-logs",
+      "title": "Log Tools",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/logs.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/logs.md",
+      "headings": "Instance logs • Authentication • logs_list_files • logs_get_recent • logs_watch_start • logs_watch_poll • logs_watch_stop • logs_watch_list • MRT logs • Authentication • mrt_logs_watch_start • mrt_logs_watch_poll • mrt_logs_watch_stop • mrt_logs_watch_list • See also",
+      "preview": "MCP tools for fetching and tailing B2C Commerce instance logs and Managed Runtime (MRT) application logs."
+    },
+    {
+      "id": "mcp-tools-mrt-bundle-push",
+      "title": "Bundle Deployment",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/mrt-bundle-push.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/mrt-bundle-push.md",
+      "headings": "mrt_bundle_push • Authentication • Parameters • Default values by project type • Usage • See also",
+      "preview": "Build and push bundles to Managed Runtime for PWA Kit and Storefront Next deployments."
+    },
+    {
+      "id": "mcp-tools-pwakit-get-guidelines",
+      "title": "PWA Kit Development Guidelines",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/pwakit-get-guidelines.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/pwakit-get-guidelines.md",
+      "headings": "pwakit_get_guidelines • Authentication • Parameters • Available Sections • Usage • Default (Comprehensive Guidelines) • Single or Multiple Sections • See Also",
+      "preview": "Get PWA Kit v3 development guidelines and best practices for React, Chakra UI, and Commerce API."
+    },
+    {
+      "id": "mcp-tools-scapi-custom-apis",
+      "title": "SCAPI Custom APIs",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/scapi-custom-apis.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/scapi-custom-apis.md",
+      "headings": "scapi_custom_api_generate_scaffold • Authentication • Parameters • Usage • Next steps after scaffolding • scapi_custom_apis_get_status • Authentication • Parameters • Usage • See Also",
+      "preview": "MCP tools for scaffolding custom SCAPI endpoints and checking their registration status."
+    },
+    {
+      "id": "mcp-tools-scapi-schemas-list",
+      "title": "SCAPI Schemas",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/scapi-schemas-list.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/scapi-schemas-list.md",
+      "headings": "scapi_schemas_list • Authentication • Parameters • Usage • See Also",
+      "preview": "List or fetch SCAPI schema metadata and OpenAPI specs for standard and custom APIs."
+    },
+    {
+      "id": "mcp-tools-sfnext-add-page-designer-decorator",
+      "title": "sfnext_add_page_designer_decorator",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-add-page-designer-decorator.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-add-page-designer-decorator.md",
+      "headings": "Overview • Prerequisites • Parameters • Conversation Context (Interactive Mode) • Operation Modes • Component Discovery • Usage Examples • Output • Related Tools • See Also",
+      "preview": "Add Page Designer decorators to React components for Storefront Next to make them available in Page Designer."
+    },
+    {
+      "id": "mcp-tools-sfnext-analyze-component",
+      "title": "sfnext_analyze_component",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-analyze-component.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-analyze-component.md",
+      "headings": "Overview • Prerequisites • Parameters • Discovered Component Schema • Usage Examples • With Figma design URL • With design code already fetched • Agent workflow note • Output • Related Tools • See Also",
+      "preview": "Analyze design and discovered components to recommend REUSE, EXTEND, or CREATE strategy."
+    },
+    {
+      "id": "mcp-tools-sfnext-configure-theme",
+      "title": "sfnext_configure_theme",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-configure-theme.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-configure-theme.md",
+      "headings": "Overview • Prerequisites • Custom Theming Files • Parameters • Conversation Context • Workflow • Usage Examples • Output • Related Tools • See Also",
+      "preview": "Get theming guidelines, guided questions, and WCAG color contrast validation for Storefront Next."
+    },
+    {
+      "id": "mcp-tools-sfnext-get-guidelines",
+      "title": "sfnext_get_guidelines",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-get-guidelines.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-get-guidelines.md",
+      "headings": "Overview • Parameters • Available Sections • Usage Examples • Default (Comprehensive Guidelines) • Single Section • Multiple Related Sections • All Sections • Output • Related Tools • See Also",
+      "preview": "Get Storefront Next development guidelines and best practices for React Server Components, data loading, and framework constraints."
+    },
+    {
+      "id": "mcp-tools-sfnext-match-tokens-to-theme",
+      "title": "sfnext_match_tokens_to_theme",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-match-tokens-to-theme.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-match-tokens-to-theme.md",
+      "headings": "Overview • Prerequisites • Parameters • Figma Token Schema • Usage Examples • Output • Related Tools • See Also",
+      "preview": "Match Figma design tokens to existing theme tokens in app.css with confidence scores and suggestions."
+    },
+    {
+      "id": "mcp-tools-sfnext-start-figma-workflow",
+      "title": "sfnext_start_figma_workflow",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-start-figma-workflow.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-start-figma-workflow.md",
+      "headings": "Overview • Prerequisites • Parameters • Supported Figma URL Formats • Usage Examples • Basic Workflow Start • Custom Workflow File • Full Homepage Implementation • Output • Related Tools • See Also",
+      "preview": "Workflow orchestrator for Figma-to-component conversion. Parses your Figma URL and guides you through design-to-component conversion."
     },
     {
       "id": "mcp-toolsets",
@@ -217,6 +613,33 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.md",
       "headings": "CARTRIDGES • DIAGNOSTICS • MRT • PWAV3 • SCAPI • STOREFRONTNEXT • STOREFRONTNEXT_DEPRECATED • Next Steps",
       "preview": "Available toolsets and tools in the B2C DX MCP Server for SCAPI, CARTRIDGES, DIAGNOSTICS, MRT, PWAV3, and STOREFRONTNEXT development."
+    },
+    {
+      "id": "vscode-extension-configuration",
+      "title": "Configuration",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.md",
+      "headings": "Connecting to a B2C Instance • Per-feature requirements • Example `dw.json` • How the Extension Chooses a Project • Switching the Active Instance • Settings Reference • Feature toggles • Verbosity, polling, telemetry • XML schema validation • Complete defaults (copy-paste) • Next Steps",
+      "preview": "Connect the Salesforce B2C Commerce VS Code Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference."
+    },
+    {
+      "id": "vscode-extension-index",
+      "title": "Salesforce B2C Commerce VS Code Extension",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/index.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/index.md",
+      "headings": "Highlights • ISML and Script API Editor Support • B2C Script Debugger • Scaffolding • Sandbox Realm Explorer • Library Explorer • Cartridge Management and Code Watch/Upload • SCAPI API Explorer • WebDAV Browser • Log Tailing • Active Instance Status Bar • B2C CLI Plugin Support • Next Steps",
+      "preview": "The official Salesforce B2C Commerce VS Code Extension — sandbox management, cartridge code sync, WebDAV browser, content libraries, SCAPI API browser, script debugger, and project scaffolding."
+    },
+    {
+      "id": "vscode-extension-installation",
+      "title": "Installation",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/installation.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/installation.md",
+      "headings": "Install from your editor • Install from the command line • Install from a VSIX • Get the latest build • Install it • Before you start • Connect to your sandbox • Next Steps",
+      "preview": "Install the official Salesforce B2C Commerce VS Code Extension from the Visual Studio Marketplace, the Open VSX Registry, or a .vsix release artifact."
     }
   ]
 }
