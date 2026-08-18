@@ -29,7 +29,7 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
   static description = withDocs(
     t(
       'commands.job.importSet.description',
-      'Apply an ordered set of site archives, skipping items already recorded on the instance',
+      'Apply an ordered set of site import/export archives, skipping archives already recorded on the instance',
     ),
     '/cli/jobs.html#b2c-job-import-set',
   );
@@ -50,7 +50,7 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
       description: 'Name for an independent import history',
     }),
     'dry-run': Flags.boolean({
-      description: 'Preview pending and applied items without importing or changing history',
+      description: 'Preview pending and applied archives without importing or changing history',
       default: false,
     }),
     'keep-archive': Flags.boolean({
@@ -59,7 +59,7 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
       default: false,
     }),
     'cartridge-metadata': Flags.boolean({
-      description: 'Include items from metadata directories in discovered cartridges before other imports',
+      description: 'Include archives from metadata directories in discovered cartridges before other imports',
       allowNo: true,
       default: true,
     }),
@@ -279,6 +279,11 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
         break;
       }
       case 'plan': {
+        const archiveCount = t(
+          event.total === 1 ? 'commands.job.importSet.archiveCountOne' : 'commands.job.importSet.archiveCountMany',
+          event.total === 1 ? '{{total}} archive' : '{{total}} archives',
+          {total: String(event.total)},
+        );
         this.log(
           t('commands.job.importSet.plan', 'Import set {{setId}} on {{hostname}}:', {
             setId: event.setId,
@@ -288,9 +293,9 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
         this.log(
           t(
             'commands.job.importSet.planCounts',
-            '  {{total}} item(s), {{pending}} pending, {{skipped}} already applied',
+            '  {{archiveCount}}, {{pending}} pending, {{skipped}} already applied',
             {
-              total: String(event.total),
+              archiveCount,
               pending: String(event.pending),
               skipped: String(event.skipped),
             },
@@ -302,8 +307,8 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
         this.warn(
           t(
             'commands.job.importSet.invalidReceipt',
-            'Receipt marker for {{item}} is invalid; the item will be imported again.',
-            {item: this.formatItemSource(event.item)},
+            'The recorded import history for {{archive}} is invalid; the archive will be imported again.',
+            {archive: this.formatItemSource(event.item)},
           ),
         );
         break;

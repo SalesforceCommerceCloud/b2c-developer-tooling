@@ -275,6 +275,16 @@ describe('job import-set', () => {
     command.handleEvent({type: 'plan', setId: 'migrations', total: 2, pending: 1, skipped: 1, dryRun: false});
 
     expect(command.log.firstCall.calledWithExactly('Import set migrations on example.com:')).to.equal(true);
-    expect(command.log.secondCall.calledWithExactly('  2 item(s), 1 pending, 1 already applied')).to.equal(true);
+    expect(command.log.secondCall.calledWithExactly('  2 archives, 1 pending, 1 already applied')).to.equal(true);
+  });
+
+  it('uses the singular archive label for a one-archive plan', async () => {
+    const command: any = await createCommand({}, {directory: './impex'});
+    stubCommon(command);
+    sinon.stub(command, 'jsonEnabled').returns(false);
+
+    command.handleEvent({type: 'plan', setId: 'migrations', total: 1, pending: 1, skipped: 0, dryRun: false});
+
+    expect(command.log.secondCall.calledWithExactly('  1 archive, 1 pending, 0 already applied')).to.equal(true);
   });
 });

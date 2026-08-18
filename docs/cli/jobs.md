@@ -372,7 +372,7 @@ When you run a normal (non-`--split`) directory import and the assembled archive
 
 ## b2c job import-set
 
-Apply a version-controlled sequence of site archives and skip items already applied to the target instance. See [Import Sets](../guide/import-sets) for setup and workflow guidance.
+Apply a version-controlled sequence of site import/export archives and skip archives already applied to the target instance. See [Import Sets](../guide/import-sets) for setup and workflow guidance.
 
 ### Usage
 
@@ -386,44 +386,44 @@ b2c job import-set [DIRECTORY]
 | ----------- | ------------------------------------------------------------------------------------- | -------- | -------------- |
 | `DIRECTORY` | Directory whose immediate child directories and zip files form the ordered import set | No       | `./migrations` |
 
-Import items come from these sources, in order:
+Archives come from these import sources, in order:
 
 1. `metadata/` directories in cartridges discovered from the current working directory or `--project-directory`.
 2. Immediate child directories and `.zip` files in `DIRECTORY`.
 
-Cartridge metadata can be either one standard site archive or an ordered collection of child archives. Use one layout consistently within a cartridge. Cartridge sources are ordered by cartridge name, and child items within each source are ordered lexically. Hidden entries and other loose files are ignored. A directory item must contain at least one file; empty directory trees are rejected before upload.
+Cartridge metadata can be either one standard site import/export archive or an ordered collection of archives. Use one layout consistently within a cartridge. Cartridge sources are ordered by cartridge name, and archives within each source are ordered lexically. Hidden entries and other loose files are ignored. A directory-based archive must contain at least one file; empty directory trees are rejected before upload.
 
 For example, the explicit import-set directory can contain:
 
 ```text
 migrations/
 ├── 20260801T140000-add-preferences/
-│   ├── README.md                   # post-import note for this item (see below)
+│   ├── README.md                   # post-import note for this archive (see below)
 │   ├── meta/
 │   └── sites/
 ├── 20260802T091500-seed-content.zip
-└── README.md                       # top-level README is ignored as an item
+└── README.md                       # top-level README is not an archive
 ```
 
-Name ordered child items `YYYYMMDDTHHmmss-description`, using UTC so teams get consistent ordering. The default `./migrations` directory may be absent when cartridge metadata supplies at least one item.
+Name ordered child archives `YYYYMMDDTHHmmss-description`, using UTC so teams get consistent ordering. The default `./migrations` directory may be absent when cartridge metadata supplies at least one archive.
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag                        | Description                                                             | Default      |
-| --------------------------- | ----------------------------------------------------------------------- | ------------ |
-| `--set-id`                  | Advanced: name for an independent import history                        | `migrations` |
-| `--dry-run`                 | Preview pending and applied items without importing or changing history | `false`      |
-| `--keep-archive`, `-k`      | Keep each uploaded archive on the instance after import                 | `false`      |
-| `--[no-]cartridge-metadata` | Include imports from discovered cartridge `metadata/` directories       | `true`       |
-| `--import-set-exclude`      | Exclude a project-relative directory recursively from source discovery  |              |
-| `--break-lock`              | Recover an import set after confirming its previous runner has stopped  | `false`      |
-| `--stale-lock-seconds`      | Consider an inactive import-set run stale after this many seconds       | `1800`       |
-| `--lock-poll-interval`      | Seconds between checks while waiting for another import-set run         | `3`          |
-| `--timeout`, `-t`           | Timeout in seconds for each import job                                  | No timeout   |
-| `--poll-interval`           | Job polling interval in seconds                                         | `3`          |
-| `--show-log`                | Show the job log when an import fails                                   | `true`       |
+| Flag                        | Description                                                            | Default      |
+| --------------------------- | ---------------------------------------------------------------------- | ------------ |
+| `--set-id`                  | Advanced: name for an independent import history                       | `migrations` |
+| `--dry-run`                 | Preview pending and applied archives without changing import history   | `false`      |
+| `--keep-archive`, `-k`      | Keep each uploaded archive on the instance after import                | `false`      |
+| `--[no-]cartridge-metadata` | Include imports from discovered cartridge `metadata/` directories      | `true`       |
+| `--import-set-exclude`      | Exclude a project-relative directory recursively from source discovery |              |
+| `--break-lock`              | Recover an import set after confirming its previous runner has stopped | `false`      |
+| `--stale-lock-seconds`      | Consider an inactive import-set run stale after this many seconds      | `1800`       |
+| `--lock-poll-interval`      | Seconds between checks while waiting for another import-set run        | `3`          |
+| `--timeout`, `-t`           | Timeout in seconds for each import job                                 | No timeout   |
+| `--poll-interval`           | Job polling interval in seconds                                        | `3`          |
+| `--show-log`                | Show the job log when an import fails                                  | `true`       |
 
 ### Examples
 
@@ -434,7 +434,7 @@ b2c job import-set --dry-run
 # Apply ./migrations; repeat this command safely in local setup or CI
 b2c job import-set
 
-# Import only items from ./migrations
+# Import only archives from ./migrations
 b2c job import-set --no-cartridge-metadata
 
 # Ignore fixture and integration-test source trees
@@ -451,9 +451,9 @@ b2c job import-set ./legacy-migrations --set-id legacy-storefront-data
 
 ### Post-import notes
 
-Some migrations require **manual follow-up** that cannot live in a site archive — enabling an instance-specific site preference, wiring a service credential in Business Manager, or flipping a feature toggle after data lands. Document these steps in a `README.md` (or `README`) file at the top of that item's directory.
+Some migrations require **manual follow-up** that cannot live in an archive — enabling an instance-specific site preference, wiring a service credential in Business Manager, or flipping a feature toggle after data lands. Document these steps in a `README.md` (or `README`) file at the top of that archive's directory.
 
-After a run, the CLI prints the README contents of every item it applied in a consolidated **Post-import notes** summary, so the operator sees what still needs doing and for which migration:
+After a run, the CLI prints the README contents of every archive it applied in a consolidated **Post-import notes** summary, so the operator sees what still needs doing and for which migration:
 
 ```text
 Import set complete: 1 imported, 3 skipped
@@ -465,18 +465,18 @@ Post-import notes:
     Set the Feature X API endpoint in Business Manager (differs per environment).
 ```
 
-- Notes are shown only for items **applied in this run**; items already applied on the instance (skipped) do not repeat their notes.
-- `--dry-run` previews the notes for **pending** items so you can review manual steps before importing.
-- Only directory items are scanned; `.zip` items are not. `README.md` takes precedence over `README`, and an empty README produces no note. The top-level README of the set directory is never printed.
-- With `--json`, notes are not printed; each item's note text is available on the item in the JSON result.
+- Notes are shown only for archives **applied in this run**; archives already applied on the instance (skipped) do not repeat their notes.
+- `--dry-run` previews the notes for **pending** archives so you can review manual steps before importing.
+- Only directory-based archives are scanned; `.zip` archives are not. `README.md` takes precedence over `README`, and an empty README produces no note. The top-level README of the set directory is never printed.
+- With `--json`, notes are not printed; each archive's note text is available in the JSON result.
 
 ### Repeat runs
 
-After an item succeeds, later runs against the same instance skip it. An item's name identifies it; changing its contents does not cause it to run again.
+After an archive succeeds, later runs against the same instance skip it. An archive's name identifies it; changing its contents does not cause it to run again.
 
-Never edit an applied item. Add a new, later-sorting directory or zip file for every change so all instances converge on the same history.
+Never edit an applied archive. Add a new, later-sorting directory or zip file for every change so all instances converge on the same history.
 
-An interrupted run can retry its current item, so every archive must be safe to apply more than once. A failed run stops at the failing item; fix the problem and rerun the command to continue.
+An interrupted run can retry its current archive, so every archive must be safe to apply more than once. A failed run stops at the failing archive; fix the problem and rerun the command to continue.
 
 The default history name is `migrations` and is shared by all runs against the target instance, regardless of checkout path. Most projects should omit `--set-id`; use it only when intentionally maintaining an independent history.
 
@@ -495,11 +495,11 @@ b2c webdav rm --root=impex b2c-cli/import-sets/migrations
 b2c job import-set
 ```
 
-For a custom set ID, replace the final `migrations` path segment with that ID. Clearing a history makes every current item pending again. See [Resetting Import History](/guide/import-sets#resetting-import-history) for guidance on choosing an approach.
+For a custom set ID, replace the final `migrations` path segment with that ID. Clearing a history makes every current archive pending again. See [Resetting Import History](/guide/import-sets#resetting-import-history) for guidance on choosing an approach.
 
 ### Concurrent runs and recovery
 
-Only one runner applies an import history at a time. Other runners wait and then skip items completed while they were waiting.
+Only one runner applies an import history at a time. Other runners wait and then skip archives completed while they were waiting.
 
 An interrupted run becomes recoverable after 30 minutes by default; tune this with `--stale-lock-seconds`. Use `--break-lock` only after confirming the previous runner has stopped.
 

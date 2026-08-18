@@ -45,14 +45,14 @@ b2c job import existing-archive.zip --remote
 
 ### Apply an Ordered, Idempotent Import Set
 
-Use `job import-set` when site archives must be applied in order and skipped after the instance records their successful import. By default, the command reads discovered cartridge metadata first and the migrations directory second. This section is a summary; for the full migration workflow — source exclusions, post-import README notes, receipt/lock internals, set IDs, CI/CD patterns, and recovery — use the dedicated `b2c-cli:b2c-import-set-migrations` skill.
+Use `job import-set` when site import/export archives must be applied in order and skipped after the instance records their successful import. By default, the command reads discovered cartridge metadata first and the migrations directory second. This section is a summary; for the full migration workflow — source exclusions, post-import README notes, import history, set IDs, CI/CD patterns, and recovery — use the dedicated `b2c-cli:b2c-import-set-migrations` skill.
 
 Cartridge metadata supports two project layouts:
 
-- A standard site archive directly inside `metadata/`, applied as one item.
-- An ordered collection of immediate child directories or `.zip` files inside `metadata/`, with each child applied as one item.
+- A standard site import/export archive directly inside `metadata/`, applied as one archive.
+- An ordered collection of immediate child directories or `.zip` files inside `metadata/`, with each child applied as one archive.
 
-Use one layout consistently within a cartridge. Cartridges are ordered by name, their child items are ordered lexically, and every cartridge item is considered before the explicit import-set directory. Every directory item must contain at least one file; empty directory trees are rejected before upload. The explicit directory uses the ordered-child layout:
+Use one layout consistently within a cartridge. Cartridges are ordered by name, their archives are ordered lexically, and every cartridge archive is considered before the explicit import-set directory. Every directory-based archive must contain at least one file; empty directory trees are rejected before upload. The explicit directory uses the ordered-child layout:
 
 ```text
 migrations/
@@ -63,10 +63,10 @@ migrations/
 └── README.md                       # ignored
 ```
 
-Name every item `YYYYMMDDTHHmmss-description`, using UTC for cross-time-zone teams. The timestamp supplies ordering and helps keep item names unique across projects.
+Name every archive `YYYYMMDDTHHmmss-description`, using UTC for cross-time-zone teams. The timestamp supplies ordering and helps keep archive names unique across projects.
 
 ```bash
-# Show pending and already-applied items without writing anything
+# Show pending and already-applied archives without writing anything
 b2c job import-set --dry-run
 
 # Apply the default ./migrations directory
@@ -87,15 +87,15 @@ b2c job import-set --keep-archive
 
 Important semantics:
 
-- After an item succeeds, later runs against the same instance skip it, including runs from other machines.
-- The item name determines whether it has run; changing its contents does not cause another import. Never edit an applied item—add a new, later-sorting item for each change.
-- An interrupted run can retry its current item. Make every archive safe to apply more than once.
+- After an archive succeeds, later runs against the same instance skip it, including runs from other machines.
+- The archive name determines whether it has run; changing its contents does not cause another import. Never edit an applied archive—add a new, later-sorting archive for each change.
+- An interrupted run can retry its current archive. Make every archive safe to apply more than once.
 - Only one runner applies a history at a time. Other runners wait and then skip work completed while they were waiting.
 - An inactive run becomes recoverable after 30 minutes by default. Adjust this with `--stale-lock-seconds`; use `--break-lock` only after confirming the previous runner has stopped.
 - `--timeout` applies to each archive import, `--poll-interval` controls job polling, and `--lock-poll-interval` controls waiting for another runner.
 - `--import-set-exclude` can be repeated or comma-separated. Paths are relative to the project directory and exclude the named source directory and all descendants. Configure the same project default with `b2c.importSetExclude` in `package.json`, `import-set-exclude` in `dw.json`, or `SFCC_IMPORT_SET_EXCLUDE`.
 
-The default directory is `./migrations`; it may be absent if discovered cartridges supply at least one metadata item. The default history name is `migrations` and is shared across runs against the target instance, regardless of local path. Most users should omit `--set-id`; use it only when intentionally creating an independent history. Cartridge discovery is enabled by default; use `--no-cartridge-metadata` to opt out.
+The default directory is `./migrations`; it may be absent if discovered cartridges supply at least one metadata archive. The default history name is `migrations` and is shared across runs against the target instance, regardless of local path. Most users should omit `--set-id`; use it only when intentionally creating an independent history. Cartridge discovery is enabled by default; use `--no-cartridge-metadata` to opt out.
 
 To start over without deleting the previous history, use a new set ID and keep using it on subsequent runs:
 
@@ -110,7 +110,7 @@ b2c webdav rm --root=impex b2c-cli/import-sets/migrations
 b2c job import-set
 ```
 
-For a custom set ID, replace the final `migrations` path segment with that ID. Resetting in place permanently forgets which items succeeded and makes every current item pending again, so only use it when every archive is safe to reapply. `--break-lock` is for recovery and does not reset history.
+For a custom set ID, replace the final `migrations` path segment with that ID. Resetting in place permanently forgets which archives succeeded and makes every current archive pending again, so only use it when every archive is safe to reapply. `--break-lock` is for recovery and does not reset history.
 
 ### Import Archives Larger Than the Instance Limit
 

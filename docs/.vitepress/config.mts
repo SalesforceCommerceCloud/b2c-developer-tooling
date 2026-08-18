@@ -98,7 +98,6 @@ const guidesSidebar = [
     text: 'How-To',
     items: [
       {text: 'Authentication Setup', link: '/guide/authentication'},
-      {text: 'Import Sets', link: '/guide/import-sets'},
       {text: 'CI/CD with GitHub Actions', link: '/guide/ci-cd'},
       {text: 'sfcc-ci Migration', link: '/guide/sfcc-ci-migration'},
       {text: 'sfcc-ci SDK Migration', link: '/guide/sdk-migration'},
@@ -113,6 +112,7 @@ const guidesSidebar = [
       {text: 'Storefront Next', link: '/guide/storefront-next'},
       {text: 'MRT Utilities', link: '/guide/mrt-utilities'},
       {text: 'Commerce Apps (CAPs)', link: '/guide/commerce-apps'},
+      {text: 'Import Sets', link: '/guide/import-sets'},
     ],
   },
   {

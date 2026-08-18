@@ -100,7 +100,7 @@ b2c job import ./my-site-data 'libraries/**'
 
 ### Import Sets
 
-`job import-set` first applies imports from discovered cartridge `metadata/` sources, then applies archives in `./migrations`, and skips imports already recorded on the target instance:
+`job import-set` first applies site import/export archives from discovered cartridge `metadata/` sources, then applies archives in `./migrations`, and skips archives already recorded on the target instance:
 
 ```bash
 b2c job import-set --dry-run
@@ -109,7 +109,7 @@ b2c job import-set --no-cartridge-metadata # only use ./migrations
 b2c job import-set --import-set-exclude fixtures # ignore this project subtree
 ```
 
-`--import-set-exclude` can be repeated or comma-separated and can also be configured as `b2c.importSetExclude` in `package.json`, `import-set-exclude` in `dw.json`, or `SFCC_IMPORT_SET_EXCLUDE`. For the full migration workflow — archive layouts, timestamp naming, post-import README notes, receipt and retry behavior, reset options, concurrency, and recovery — use the `b2c-cli:b2c-import-set-migrations` skill.
+`--import-set-exclude` can be repeated or comma-separated and can also be configured as `b2c.importSetExclude` in `package.json`, `import-set-exclude` in `dw.json`, or `SFCC_IMPORT_SET_EXCLUDE`. For the full migration workflow — archive layouts, timestamp naming, post-import README notes, retry behavior, reset options, concurrency, and recovery — use the `b2c-cli:b2c-import-set-migrations` skill.
 
 ### Export Site Archives
 
