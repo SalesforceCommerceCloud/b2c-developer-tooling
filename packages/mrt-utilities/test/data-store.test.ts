@@ -454,7 +454,25 @@ describe('DataStore', () => {
     });
 
     describe('tracing', () => {
-      it('emits a successful span with db and found attributes on a hit', async () => {
+      // Attributes/events that would leak the DynamoDB backend to customer-visible traces.
+      // The span must never carry any of these.
+      const assertNoBackendLeak = (span: RecordingSpan) => {
+        expect(span.attributes).to.not.have.property('db.system');
+        expect(span.attributes).to.not.have.property('db.operation');
+        expect(span.attributes).to.not.have.property('aws.dynamodb.table_names');
+        expect(span.attributes).to.not.have.property('error.type');
+        // No raw SDK error (message/stack) recorded as a span event.
+        expect(span.exceptions).to.have.lengthOf(0);
+        // No attribute value should mention the backend or the internal table name.
+        for (const value of Object.values(span.attributes)) {
+          if (typeof value === 'string') {
+            expect(value.toLowerCase()).to.not.contain('dynamo');
+            expect(value).to.not.contain('DataAccessLayer');
+          }
+        }
+      };
+
+      it('emits a successful span marking found=true on a hit, with no backend detail', async () => {
         const spans = installRecordingTracer();
         mockSend.resolves({Item: {value: {theme: 'dark'}}});
 
@@ -465,13 +483,8 @@ describe('DataStore', () => {
         expect(span.ended).to.equal(true);
         // A successful fetch leaves the span status unset (defaults to UNSET, not ERROR).
         expect(span.status).to.equal(undefined);
-        expect(span.exceptions).to.have.lengthOf(0);
-        expect(span.attributes).to.include({
-          'db.system': 'dynamodb',
-          'db.operation': 'GetItem',
-          'aws.dynamodb.table_names': 'DataAccessLayer-ca-central-1',
-          'mrt.data_store.found': true,
-        });
+        expect(span.attributes['mrt.data_store.found']).to.equal(true);
+        assertNoBackendLeak(span);
       });
 
       it('emits a span marking found=false on a miss, without an error status', async () => {
@@ -488,13 +501,13 @@ describe('DataStore', () => {
         expect(spans).to.have.lengthOf(1);
         const [span] = spans;
         expect(span.ended).to.equal(true);
-        // A miss is an expected outcome, not a service error: no ERROR status, no exception.
+        // A miss is an expected outcome, not a service error: no ERROR status.
         expect(span.status).to.equal(undefined);
-        expect(span.exceptions).to.have.lengthOf(0);
         expect(span.attributes['mrt.data_store.found']).to.equal(false);
+        assertNoBackendLeak(span);
       });
 
-      it('records the exception and an error status when the send throws', async () => {
+      it('sets a generic error status when the send throws, without leaking the backend error', async () => {
         const spans = installRecordingTracer();
         const dynamoError = new Error('boom');
         mockSend.rejects(dynamoError);
@@ -511,15 +524,14 @@ describe('DataStore', () => {
         const [span] = spans;
         expect(span.ended).to.equal(true);
         expect(span.status?.code).to.equal(SpanStatusCode.ERROR);
-        expect(span.exceptions).to.deep.equal([dynamoError]);
-        expect(span.attributes).to.include({
-          'mrt.data_store.throttled': false,
-          'error.type': 'Error',
-        });
+        // Generic message only — no raw SDK error name/message/stack on the span.
+        expect(span.status?.message).to.equal('Data store request failed.');
+        expect(span.attributes['mrt.data_store.throttled']).to.equal(false);
         expect(span.attributes).to.not.have.property('mrt.data_store.found');
+        assertNoBackendLeak(span);
       });
 
-      it('marks the span throttled when the send is throttled', async () => {
+      it('marks the span throttled when the send is throttled, without naming the backend error', async () => {
         const spans = installRecordingTracer();
         const dynamoError = new Error('rate exceeded');
         dynamoError.name = 'ThrottlingException';
@@ -535,10 +547,11 @@ describe('DataStore', () => {
 
         const [span] = spans;
         expect(span.attributes['mrt.data_store.throttled']).to.equal(true);
-        expect(span.attributes['error.type']).to.equal('ThrottlingException');
+        // The DynamoDB-specific error name must not appear anywhere on the span.
+        assertNoBackendLeak(span);
       });
 
-      it('does not set error.type for a non-Error rejection but still ends the span', async () => {
+      it('still ends the span with an error status for a non-Error rejection', async () => {
         const spans = installRecordingTracer();
         mockSend.callsFake(() => Promise.reject('a string failure'));
         DataStore._testLogMRTError = sinon.stub();
@@ -553,9 +566,8 @@ describe('DataStore', () => {
         const [span] = spans;
         expect(span.ended).to.equal(true);
         expect(span.status?.code).to.equal(SpanStatusCode.ERROR);
-        // A non-Error rejection carries no name and is not recorded as an exception.
-        expect(span.attributes).to.not.have.property('error.type');
-        expect(span.exceptions).to.have.lengthOf(0);
+        expect(span.attributes['mrt.data_store.throttled']).to.equal(false);
+        assertNoBackendLeak(span);
       });
     });
   });

@@ -38,9 +38,12 @@ const tracer = trace.getTracer('@salesforce/mrt-utilities');
 /**
  * Span name for a single data store fetch.
  *
- * Deliberately static and low-cardinality so traces aggregate by operation. The
- * high-cardinality request detail (the entry key, the resolved partition key) is attached
- * as span attributes instead of being baked into the name.
+ * Deliberately static and low-cardinality so traces aggregate by operation.
+ *
+ * The span intentionally exposes NO backend-implementation detail — no `db.system`,
+ * DynamoDB operation name, table name, or raw AWS SDK error. Traces on this span may be
+ * visible to customers, so it reveals only the abstract "data store" concept and
+ * backend-neutral outcome signals (found / throttled). See {@link getEntry}.
  */
 const GET_ENTRY_SPAN_NAME = 'mrt.data_store.getEntry';
 
@@ -252,62 +255,50 @@ export class DataStore {
     const ddb = this.getClient();
     const projectEnvironment = this.resolveShardPartitionKey();
 
-    // Trace the fetch as a client span. Semantic-convention DynamoDB attributes describe
-    // the operation; the outcome (found/throttled/error) is recorded on the span below.
-    return tracer.startActiveSpan(
-      GET_ENTRY_SPAN_NAME,
-      {
-        attributes: {
-          'db.system': 'dynamodb',
-          'db.operation': 'GetItem',
-          'aws.dynamodb.table_names': this._tableName,
-        },
-      },
-      async (span) => {
-        // End the span exactly once, after all attributes/status are set on every path
-        // (success, miss, and error). Attributes set after end() are dropped by OTel, so we
-        // cannot end in a `finally` that runs before the found/not-found branch below.
+    // Trace the fetch as a client span. The span deliberately carries no backend detail
+    // (no db.system, table name, DynamoDB operation, or raw SDK error) since traces may be
+    // customer-visible — only the backend-neutral outcome (found/throttled) is recorded.
+    // The detailed backend context is still captured in the internal error log below.
+    return tracer.startActiveSpan(GET_ENTRY_SPAN_NAME, async (span) => {
+      // End the span exactly once, after all attributes/status are set on every path
+      // (success, miss, and error). Attributes set after end() are dropped by OTel, so we
+      // cannot end in a `finally` that runs before the found/not-found branch below.
+      try {
+        let response: GetCommandOutput;
         try {
-          let response: GetCommandOutput;
-          try {
-            response = await ddb.send(
-              new GetCommand({
-                TableName: this._tableName,
-                Key: {
-                  projectEnvironment,
-                  key,
-                },
-              }),
-            );
-          } catch (error) {
-            const errorName = error instanceof Error ? error.name : undefined;
-            const throttled = isThrottlingError(error);
-            span.setAttribute('mrt.data_store.throttled', throttled);
-            if (errorName) {
-              span.setAttribute('error.type', errorName);
-            }
-            if (error instanceof Error) {
-              span.recordException(error);
-            }
-            span.setStatus({code: SpanStatusCode.ERROR, message: 'Data store request failed.'});
-            const logFn = DataStore._testLogMRTError ?? logMRTError;
-            logFn('data_store', error, {key, projectEnvironment, tableName: this._tableName, errorName, throttled});
-            throw new DataStoreServiceError('Data store request failed.');
-          }
-
-          if (!response.Item?.value) {
-            // A miss is an expected outcome, not a service error — record it as an attribute
-            // and leave the span status unset (successful fetch that found nothing).
-            span.setAttribute('mrt.data_store.found', false);
-            throw new DataStoreNotFoundError(`Data store entry '${key}' not found.`);
-          }
-
-          span.setAttribute('mrt.data_store.found', true);
-          return {key, value: response.Item.value};
-        } finally {
-          span.end();
+          response = await ddb.send(
+            new GetCommand({
+              TableName: this._tableName,
+              Key: {
+                projectEnvironment,
+                key,
+              },
+            }),
+          );
+        } catch (error) {
+          const errorName = error instanceof Error ? error.name : undefined;
+          const throttled = isThrottlingError(error);
+          span.setAttribute('mrt.data_store.throttled', throttled);
+          // A generic status message only — no SDK error name/message/stack on the span,
+          // which would reveal the DynamoDB backend. The specifics go to the log below.
+          span.setStatus({code: SpanStatusCode.ERROR, message: 'Data store request failed.'});
+          const logFn = DataStore._testLogMRTError ?? logMRTError;
+          logFn('data_store', error, {key, projectEnvironment, tableName: this._tableName, errorName, throttled});
+          throw new DataStoreServiceError('Data store request failed.');
         }
-      },
-    );
+
+        if (!response.Item?.value) {
+          // A miss is an expected outcome, not a service error — record it as an attribute
+          // and leave the span status unset (successful fetch that found nothing).
+          span.setAttribute('mrt.data_store.found', false);
+          throw new DataStoreNotFoundError(`Data store entry '${key}' not found.`);
+        }
+
+        span.setAttribute('mrt.data_store.found', true);
+        return {key, value: response.Item.value};
+      } finally {
+        span.end();
+      }
+    });
   }
 }
