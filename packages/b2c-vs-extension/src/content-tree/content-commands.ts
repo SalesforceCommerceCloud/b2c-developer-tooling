@@ -11,7 +11,6 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
 import type {ContentFileSystemProvider} from './content-fs-provider.js';
-import {importLibraryXML} from './content-fs-provider.js';
 import type {ContentTreeDataProvider, ContentTreeItem} from './content-tree-provider.js';
 import {openJobLog} from '../job-log-viewer.js';
 import {registerSafeCommand} from '../safety.js';
@@ -269,64 +268,14 @@ export function registerContentCommands(
     await vscode.commands.executeCommand('vscode.open', ...(source.command?.arguments ?? []));
   });
 
-  // Convert a component (assigned inline to a page/region) into a shared content
-  // block. Reproduces Page Designer's in-place conversion: the SDK builds a
-  // delete+recreate archive that re-types the element to fragment.*, recreates
-  // its descendants, and re-imports every referrer so existing content-links
-  // survive. A plain merge import is NOT sufficient: while it now applies the
-  // component.* -> fragment.* type change, it DROPS the element's own region
-  // content-links (verified live — a converted Layout grid loses its column
-  // links and orphans its children). Delete+recreate preserves them; a bare
-  // delete alone would orphan the element from its pages. Verified byte-for-byte
-  // against a manual conversion.
-  const convertToBlock = registerSafeCommand('b2c-dx.content.convertToBlock', async (node: ContentTreeItem) => {
-    if (!node || node.nodeType !== 'component' || !node.libraryNode) {
-      return;
-    }
-    const instance = configProvider.getInstance();
-    if (!instance) {
-      vscode.window.showErrorMessage('No B2C Commerce instance configured.');
-      return;
-    }
-    const library = configProvider.getCachedLibrary(node.libraryId);
-    if (!library) {
-      vscode.window.showErrorMessage(`Library "${node.libraryId}" is not loaded. Expand it first.`);
-      return;
-    }
-
-    if (node.libraryNode.type !== 'COMPONENT') {
-      vscode.window.showErrorMessage('Only a component can be converted to a content block.');
-      return;
-    }
-
-    const displayName = await vscode.window.showInputBox({
-      title: 'Convert to Content Block',
-      prompt: 'Enter a display name for the new content block',
-      value: node.libraryNode.displayName ?? node.contentId,
-      validateInput: (value: string) => (value.trim() ? null : 'Enter a display name'),
-    });
-    if (displayName === undefined) return; // cancelled
-
-    try {
-      // The SDK builds the full delete+recreate+relink archive for this conversion.
-      const contentXML = await library.buildContentBlockConversionXML(node.contentId, displayName.trim());
-      await vscode.window.withProgress(
-        {location: vscode.ProgressLocation.Notification, title: `Converting ${node.contentId} to a content block...`},
-        async () => {
-          await importLibraryXML(instance, node.libraryId, node.isSiteLibrary, contentXML);
-        },
-      );
-    } catch (err) {
-      await showJobError(err, instance, 'Convert to content block failed');
-      return;
-    } finally {
-      // Re-fetch fresh state from the instance on the next expand.
-      configProvider.invalidateLibrary(node.libraryId);
-    }
-
-    treeProvider.refresh();
-    vscode.window.showInformationMessage(`Converted "${node.contentId}" to content block "${displayName.trim()}".`);
-  });
+  // NOTE: "Convert to Content Block" was intentionally NOT shipped. Reproducing
+  // Page Designer's in-place conversion via site-archive import is unsafe: a plain
+  // merge import applies the component.* -> fragment.* type change but silently
+  // DROPS the element's own region content-links, orphaning a Layout block's
+  // children (verified live, cross-instance). The only reliable workaround is a
+  // delete+recreate archive, which is risky enough (deep subtree delete + referrer
+  // re-import) that we defer conversion to Business Manager / Page Designer, which
+  // does it correctly. Content blocks are still surfaced read-only in the tree.
 
   const browseWebdav = registerSafeCommand('b2c-dx.content.browseWebdav', async (node: ContentTreeItem) => {
     if (!node) return;
@@ -352,7 +301,6 @@ export function registerContentCommands(
     clearFilter,
     importCmd,
     revealBlock,
-    convertToBlock,
     browseWebdav,
   ];
 }

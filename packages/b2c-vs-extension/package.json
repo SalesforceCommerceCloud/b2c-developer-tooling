@@ -1057,12 +1057,6 @@
         "category": "B2C DX"
       },
       {
-        "command": "b2c-dx.content.convertToBlock",
-        "title": "Convert to Content Block",
-        "icon": "$(symbol-field)",
-        "category": "B2C DX"
-      },
-      {
         "command": "b2c-dx.content.revealBlock",
         "title": "Reveal Content Block",
         "icon": "$(references)",
@@ -1690,11 +1684,6 @@
           "group": "1_export@3"
         },
         {
-          "command": "b2c-dx.content.convertToBlock",
-          "when": "view == b2cContentExplorer && viewItem == component",
-          "group": "2_manage@1"
-        },
-        {
           "command": "b2c-dx.content.removeLibrary",
           "when": "view == b2cContentExplorer && viewItem == library",
           "group": "2_manage@1"
@@ -2211,10 +2200,6 @@
         },
         {
           "command": "b2c-dx.content.removeLibrary",
-          "when": "false"
-        },
-        {
-          "command": "b2c-dx.content.convertToBlock",
           "when": "false"
         },
         {
