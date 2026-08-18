@@ -163,7 +163,7 @@ export const MISSING_LINK_LIBRARY_XML = `<?xml version="1.0" encoding="UTF-8"?>
 /**
  * Library XML exercising Page Designer "content blocks" (fragment.* typed content).
  *
- * Mirrors the real shapes observed on a live instance (MarketStreet site library):
+ * Mirrors the real shapes observed in a Page Designer site content library:
  * - A leaf content block: discover-block (fragment.Content.contentCard) with a display-name.
  * - A Layout content block: grid-block (fragment.Layout.grid) that keeps its regions;
  *   its region children stay plain components (converting a block does NOT convert children).
