@@ -1,5 +1,17 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.8.1
+
+### Patch Changes
+
+- [`a90f173`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a90f1730e6ccd366e50a35d8ee91a320fc5301ec) - Make unified configuration inspection recognize all CLI configuration environment variables and aliases, and show resolved authentication, project, service, and safety settings only when configured. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`e563174`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e563174bc941eb762e1a49fa4f511ed6eec31098) - Clarify how to export B2C data directly into ordered import-set migrations for in-place review and trimming. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`ada3072`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ada3072e5331c2da5199f3074001aaa509ca0317) - Update the documentation search skill to cover the expanded internal tooling corpus, including CLI reference, MCP, and VS Code extension pages. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`a90f173`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a90f1730e6ccd366e50a35d8ee91a320fc5301ec) - Allow projects to configure a non-sensitive default `siteId` under the package.json `b2c` key for site-aware commands. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.8.0
 
 ### Minor Changes

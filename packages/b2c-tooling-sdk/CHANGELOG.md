@@ -1,5 +1,17 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.23.0
+
+### Minor Changes
+
+- [`ada3072`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ada3072e5331c2da5199f3074001aaa509ca0317) - Automatically include internal guides, CLI reference pages, MCP docs, and VS Code extension docs in the tooling search corpus, with CI and release checks that prevent stale indexes. The Developer Center corpus is also refreshed through August 18, 2026. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`a90f173`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a90f1730e6ccd366e50a35d8ee91a320fc5301ec) - Allow projects to configure a non-sensitive default `siteId` under the package.json `b2c` key for site-aware commands. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [`a90f173`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a90f1730e6ccd366e50a35d8ee91a320fc5301ec) - Make unified configuration inspection recognize all CLI configuration environment variables and aliases, and show resolved authentication, project, service, and safety settings only when configured. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.22.0
 
 ### Minor Changes
