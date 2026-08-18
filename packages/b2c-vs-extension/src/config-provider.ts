@@ -326,7 +326,17 @@ export class B2CExtensionConfig implements vscode.Disposable {
         }
       }
 
-      const config = await resolveConfig({}, {workingDirectory, sourcesBefore: [new EnvSource()]});
+      // Honor SFCC_CONFIG (an explicit dw.json path), the same env var the CLI
+      // exposes via its `--config` flag. This is a file *path*, not a config
+      // field, so EnvSource can't carry it — it must be threaded through as
+      // `configPath`. Read it after the .env load so a project .env can set or
+      // override it, matching CLI precedence. Falls back to workingDirectory/dw.json.
+      const configPath = process.env.SFCC_CONFIG || undefined;
+      if (configPath) {
+        this.log.appendLine(`[Config] Using explicit config path from SFCC_CONFIG: ${configPath}`);
+      }
+
+      const config = await resolveConfig({}, {workingDirectory, configPath, sourcesBefore: [new EnvSource()]});
       this.config = config;
 
       if (!config.hasB2CInstanceConfig()) {
