@@ -60,6 +60,19 @@ b2c content export homepage --library SharedLibrary -q "image.path" -q "video.ur
 b2c content export homepage --library SharedLibrary --keep-orphans
 ```
 
+### Export Directly into an Import-Set Migration
+
+The focused content exporter writes standard archive-relative `libraries/` or site-library files directly into the directory passed to `--output`; unlike `b2c job export`, it does not add a generated `*_export` wrapper. Preview first, then use the final timestamped migration directory and review the exported XML and assets in place:
+
+```bash
+b2c content export homepage --library SharedLibrary --dry-run --show-tree
+b2c content export homepage \
+  --library SharedLibrary \
+  --output migrations/20260815T120000-update-homepage
+```
+
+For a site-private library, configure or pass `--site-library`. Do not require a temporary directory and copy step. Never write into an existing or applied migration. See `b2c-cli:b2c-import-set-migrations` for archive identity, trimming, and deployment rules.
+
 ### List Content
 
 ```bash
@@ -155,6 +168,7 @@ See `b2c content --help` for a full list of available commands and options in th
 
 ## Related Skills
 
+- `b2c-cli:b2c-import-set-migrations` - Ordered, idempotent migrations built from focused content exports
 - `b2c-cli:b2c-site-import-export` - Site archive import/export operations
 - `b2c-cli:b2c-webdav` - Low-level file operations on content libraries
 - `b2c-cli:b2c-config` - Configuration and credential management

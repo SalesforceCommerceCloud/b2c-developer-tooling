@@ -140,7 +140,17 @@ b2c job export --global-data meta_data
 
 # Export a site with specific data units
 b2c job export --site RefArch --site-data content,site_preferences
+
+# Export only the site descriptor (includes the cartridge path)
+b2c job export --site RefArch --site-data site_descriptor
+
+# Build an import-set archive directly under its migrations source
+b2c job export --site RefArch --site-data site_preferences --output migrations
 ```
+
+Directory output preserves the platform export's generated top-level `*_export` directory. When building an ordered migration, rename that newly generated directory once to the permanent timestamped archive name, then review and trim it in place. Do not routinely export to a temporary directory and copy the result. Never export over an existing or applied archive.
+
+Exports can include unrelated defaults, generated `version.txt`, environment-specific values, and secrets such as encrypted storefront passwords. Remove them before committing, but keep fields required by the relevant XSD. Use `b2c-cli:b2c-import-set-migrations` for the complete direct-to-migration workflow and `b2c-cli:b2c-job` for all export data units and output options.
 
 ## Common Workflows
 

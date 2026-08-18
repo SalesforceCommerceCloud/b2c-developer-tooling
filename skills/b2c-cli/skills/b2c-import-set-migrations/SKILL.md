@@ -1,6 +1,6 @@
 ---
 name: b2c-import-set-migrations
-description: Apply ordered, idempotent B2C Commerce site import/export archives from discovered cartridge metadata and project migrations using `b2c job import-set`. Use this opt-in project workflow for repeatable setup, onboarding, and CI/CD imports that apply once per instance. Also covers source exclusions, post-import README notes, resetting history, and recovering an interrupted run.
+description: Create and apply ordered, idempotent B2C Commerce site import/export archives from discovered cartridge metadata and project migrations using `b2c job import-set`. Use this opt-in project workflow for migrations built from focused instance exports, repeatable setup, onboarding, and CI/CD imports that apply once per instance. Also covers source exclusions, post-import README notes, resetting history, and recovering an interrupted run.
 ---
 
 # Import Set Migrations Skill
@@ -183,10 +183,57 @@ Concurrent pipeline runs coordinate automatically.
 
 ### Adding a new migration
 
-1. Create a new directory named with the current UTC timestamp: `20260815T120000-add-loyalty-attrs/`.
-2. Put the site archive contents inside (`meta/`, `sites/`, etc.).
+1. Reserve a new name with the current UTC timestamp: `20260815T120000-add-loyalty-attrs/`.
+2. For hand-authored data, create that directory and put the site archive contents inside (`meta/`, `sites/`, etc.). For instance-owned data, use the direct export workflow below.
 3. If manual follow-up is needed, add a `README.md` describing it.
-4. Commit. The next `b2c job import-set` applies only this archive.
+4. Run `b2c job import-set --dry-run`, review the pending archive, and commit. The next apply run imports only unapplied archives.
+
+### Building a migration from an instance export
+
+When the desired state already exists on an instance, export it instead of reconstructing XML from memory. Load these related skills before acting:
+
+- `b2c-cli:b2c-config` to confirm the source instance.
+- `b2c-cli:b2c-job` for export data units and `--output` behavior.
+- `b2c-cli:b2c-site-import-export` for archive layout, XML patterns, and schema-valid trimming.
+- `b2c-cli:b2c-content` for selected Page Designer pages, components, content blocks, and assets.
+- `b2c:b2c-metadata` when editing system attributes, custom object definitions, or site preferences.
+
+Export directly into the import-set source tree and edit the resulting archive in place. A temporary review directory followed by a copy is optional, not the default.
+
+`b2c job export --output migrations` extracts the platform archive under a newly generated `*_export` directory. Rename that one new directory immediately to the reserved permanent migration name, before previewing or applying the import set:
+
+```bash
+b2c setup inspect -i <SOURCE_INSTANCE>
+
+# Site descriptor, including a site's cartridge path
+b2c job export \
+  --site <SITE_ID> \
+  --site-data site_descriptor \
+  --output migrations \
+  -i <SOURCE_INSTANCE>
+
+# Other focused examples
+b2c job export --site <SITE_ID> --site-data site_preferences --output migrations -i <SOURCE_INSTANCE>
+b2c job export --global-data meta_data --output migrations -i <SOURCE_INSTANCE>
+b2c job export --library <LIBRARY_ID> --output migrations -i <SOURCE_INSTANCE>
+
+# Rename the one newly generated archive root once, then edit it in place.
+mv migrations/<GENERATED_EXPORT_DIR> migrations/<YYYYMMDDTHHmmss>-<description>
+```
+
+For selected Page Designer/content items, preview the match set and point the focused exporter directly at the final migration directory; it writes archive-relative `libraries/` or site-library content without a generated wrapper:
+
+```bash
+b2c content export <CONTENT_ID> --library <LIBRARY_ID> --dry-run --show-tree -i <SOURCE_INSTANCE>
+b2c content export <CONTENT_ID> \
+  --library <LIBRARY_ID> \
+  --output migrations/<YYYYMMDDTHHmmss>-<description> \
+  -i <SOURCE_INSTANCE>
+```
+
+Add `--site-library` for a site-private library. After any export, inspect every file and remove unrelated data, generated `version.txt`, environment-specific values, and secrets—including encrypted or hashed password values. Preserve the standard archive-relative layout and keep schema-required companion fields; validate trimmed XML against the matching B2C XSD rather than assuming a partial document is valid.
+
+Never export over an existing or applied archive. Use a temporary directory only intentionally, such as when comparing multiple exploratory exports or when a tool cannot isolate a new archive safely under the import-set directory.
 
 ## Resetting Import History
 

@@ -166,6 +166,20 @@ b2c job export --global-data meta_data --keep-archive
 b2c job export --global-data meta_data --timeout 600
 ```
 
+#### Output Directory Semantics
+
+When `--output` names a directory, the CLI extracts the downloaded platform zip as-is. Platform exports contain a generated top-level directory such as `<timestamp>_export`, so `--output migrations` creates `migrations/<generated>_export/...`; it does not merge data units directly into `migrations/`. If `--output` ends in `.zip`, the CLI writes that exact zip path instead.
+
+For an ordered import-set migration, export to the import-set directory, rename the one newly generated archive root once to its permanent ordered name, and then review and trim it in place:
+
+```bash
+b2c job export --site RefArch --site-data site_descriptor --output migrations
+mv migrations/<GENERATED_EXPORT_DIR> migrations/20260815T120000-update-site-descriptor
+b2c job import-set --dry-run
+```
+
+Do not require a temporary directory and copy step for export-based migrations. Never export over an existing or applied archive. See `b2c-cli:b2c-import-set-migrations` for naming, trimming, retry, and deployment rules, and `b2c-cli:b2c-site-import-export` for valid archive structure.
+
 #### Available Data Units
 
 **Top-level categories** (each takes one or more IDs via flags):
