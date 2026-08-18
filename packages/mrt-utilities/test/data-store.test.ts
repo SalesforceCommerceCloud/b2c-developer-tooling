@@ -25,6 +25,7 @@ describe('DataStore', () => {
     (DataStore as unknown as {_instance: DataStore | null})._instance = null;
     DataStore._testDocumentClient = null;
     DataStore._testLogMRTError = null;
+    DataStore._testRandom = null;
 
     mockSend = sinon.stub();
     mockDocumentClient = {send: mockSend} as unknown as DynamoDBDocumentClient;
@@ -40,6 +41,7 @@ describe('DataStore', () => {
     (DataStore as unknown as {_instance: DataStore | null})._instance = null;
     DataStore._testDocumentClient = null;
     DataStore._testLogMRTError = null;
+    DataStore._testRandom = null;
     sinon.restore();
   });
 
@@ -148,6 +150,7 @@ describe('DataStore', () => {
       expect(
         logStub.calledOnceWith('data_store', dynamoError, {
           key: 'my-key',
+          projectEnvironment: 'my-project my-target',
           tableName: 'DataAccessLayer-ca-central-1',
           errorName: 'Error',
           throttled: false,
@@ -180,6 +183,7 @@ describe('DataStore', () => {
         expect(
           logStub.calledOnceWith('data_store', dynamoError, {
             key: 'my-key',
+            projectEnvironment: 'my-project my-target',
             tableName: 'DataAccessLayer-ca-central-1',
             errorName: throttleName,
             throttled: true,
@@ -250,6 +254,103 @@ describe('DataStore', () => {
       const context = logStub.firstCall.args[2] as {errorName: unknown; throttled: boolean};
       expect(context.errorName).to.equal(undefined);
       expect(context.throttled).to.equal(false);
+    });
+
+    describe('sharding (MRT_NUM_SHARDS)', () => {
+      const legacyKey = 'my-project my-target';
+
+      it('reads the legacy unsuffixed key when MRT_NUM_SHARDS is unset', async () => {
+        delete process.env.MRT_NUM_SHARDS;
+        mockSend.resolves({Item: {value: {theme: 'dark'}}});
+
+        await DataStore.getDataStore().getEntry('my-key');
+
+        expect(mockSend.callCount).to.equal(1);
+        expect(mockSend.firstCall.args[0].input.Key.projectEnvironment).to.equal(legacyKey);
+      });
+
+      it('reads the legacy unsuffixed key when MRT_NUM_SHARDS is 1', async () => {
+        process.env.MRT_NUM_SHARDS = '1';
+        mockSend.resolves({Item: {value: {theme: 'dark'}}});
+
+        await DataStore.getDataStore().getEntry('my-key');
+
+        expect(mockSend.callCount).to.equal(1);
+        expect(mockSend.firstCall.args[0].input.Key.projectEnvironment).to.equal(legacyKey);
+      });
+
+      it('reads the legacy unsuffixed key when the random pick is shard 0', async () => {
+        process.env.MRT_NUM_SHARDS = '4';
+        DataStore._testRandom = () => 0; // floor(0 * 4) = 0
+        mockSend.resolves({Item: {value: {theme: 'dark'}}});
+
+        await DataStore.getDataStore().getEntry('my-key');
+
+        expect(mockSend.callCount).to.equal(1);
+        expect(mockSend.firstCall.args[0].input.Key.projectEnvironment).to.equal(legacyKey);
+      });
+
+      it('reads a suffixed shard key when the random pick is a non-zero shard', async () => {
+        process.env.MRT_NUM_SHARDS = '4';
+        DataStore._testRandom = () => 0.5; // floor(0.5 * 4) = 2
+        mockSend.resolves({Item: {value: {theme: 'dark'}}});
+
+        await DataStore.getDataStore().getEntry('my-key');
+
+        expect(mockSend.callCount).to.equal(1);
+        expect(mockSend.firstCall.args[0].input.Key.projectEnvironment).to.equal(`${legacyKey} 2`);
+      });
+
+      it('reads the highest shard when random approaches 1', async () => {
+        process.env.MRT_NUM_SHARDS = '4';
+        DataStore._testRandom = () => 0.999; // floor(0.999 * 4) = 3
+        mockSend.resolves({Item: {value: {theme: 'dark'}}});
+
+        await DataStore.getDataStore().getEntry('my-key');
+
+        expect(mockSend.firstCall.args[0].input.Key.projectEnvironment).to.equal(`${legacyKey} 3`);
+      });
+
+      it('honors a large shard count', async () => {
+        process.env.MRT_NUM_SHARDS = '64';
+        DataStore._testRandom = () => 0.5; // floor(0.5 * 64) = 32
+        mockSend.resolves({Item: {value: {theme: 'dark'}}});
+
+        await DataStore.getDataStore().getEntry('my-key');
+
+        expect(mockSend.callCount).to.equal(1);
+        expect(mockSend.firstCall.args[0].input.Key.projectEnvironment).to.equal(`${legacyKey} 32`);
+      });
+
+      it('surfaces a miss on the picked shard as DataStoreNotFoundError with no fallback', async () => {
+        process.env.MRT_NUM_SHARDS = '4';
+        DataStore._testRandom = () => 0.5; // shard 2
+        mockSend.resolves({}); // miss
+
+        try {
+          await DataStore.getDataStore().getEntry('my-key');
+          expect.fail('should have thrown');
+        } catch (e) {
+          expect(e).to.be.an.instanceOf(DataStoreNotFoundError);
+        }
+        // no runtime fallback: exactly one read of the picked shard
+        expect(mockSend.callCount).to.equal(1);
+        expect(mockSend.firstCall.args[0].input.Key.projectEnvironment).to.equal(`${legacyKey} 2`);
+      });
+
+      const invalidCases = ['0', '-1', 'abc', '1.5', ''];
+      for (const value of invalidCases) {
+        it(`defaults to the legacy key when MRT_NUM_SHARDS is invalid (${JSON.stringify(value)})`, async () => {
+          process.env.MRT_NUM_SHARDS = value;
+          DataStore._testRandom = () => 0.999; // would pick a high shard if honored
+          mockSend.resolves({Item: {value: {theme: 'dark'}}});
+
+          await DataStore.getDataStore().getEntry('my-key');
+
+          expect(mockSend.callCount).to.equal(1);
+          expect(mockSend.firstCall.args[0].input.Key.projectEnvironment).to.equal(legacyKey);
+        });
+      }
     });
   });
 });
