@@ -49,10 +49,16 @@ The command displays configuration organized by category:
 
 - **Instance**: hostname, webdavHostname, codeVersion
 - **Authentication (Basic)**: username, password
-- **Authentication (OAuth)**: clientId, clientSecret, scopes, authMethods, accountManagerHost
-- **SCAPI**: shortCode
+- **Authentication (OAuth)**: clientId, clientSecret, and configured OAuth options
+- **Authentication (JWT Bearer)**: JWT certificate, key, and passphrase settings (when configured)
+- **Authentication (SLAS)**: SLAS client settings (when configured)
+- **SCAPI**: shortCode and tenantId
+- **On-Demand Sandbox (ODS)**: sandbox API host and realm (when configured)
+- **Commerce Intelligence (CIP)**: CIP host override (when configured)
 - **Managed Runtime (MRT)**: mrtProject, mrtEnvironment, mrtApiKey, mrtOrigin
-- **Metadata**: instanceName
+- **Project**: configured deployment, content, and documentation defaults
+- **Metadata**: siteId, instanceName, and projectDirectory (when configured)
+- **Safety**: safety configuration (when configured)
 - **Sources**: List of configuration sources that contributed values
 
 Each value shows its source in brackets (e.g., `[dw.json]`, `[SFCC_CLIENT_ID]`, `[~/.mobify]`).
@@ -75,8 +81,6 @@ Authentication (Basic)
 Authentication (OAuth)
   clientId              my-client-id                                 [password-store]
   clientSecret          my-c...REDACTED                              [password-store]
-  scopes                -
-  authMethods           -
   accountManagerHost    -
 
 SCAPI
@@ -99,6 +103,8 @@ By default, sensitive fields are masked to prevent accidental exposure:
 
 - `password` - Basic auth access key
 - `clientSecret` - OAuth client secret
+- `jwtPassphrase` - JWT private key passphrase
+- `slasClientSecret` - SLAS private client secret
 - `mrtApiKey` - MRT API key
 
 Use `--unmask` to reveal the actual values when needed for debugging.

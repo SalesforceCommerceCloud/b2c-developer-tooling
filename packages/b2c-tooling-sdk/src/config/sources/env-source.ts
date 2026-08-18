@@ -6,7 +6,7 @@
 /**
  * Environment variable configuration source.
  *
- * Maps SFCC_* environment variables to NormalizedConfig fields.
+ * Maps CLI configuration environment variables to NormalizedConfig fields.
  * Not included in default sources — opt-in only via `sourcesBefore`.
  *
  * @internal This module is internal to the SDK. Use ConfigResolver instead.
@@ -17,7 +17,7 @@ import type {ConfigSource, ConfigLoadResult, NormalizedConfig, ResolveConfigOpti
 import {getLogger} from '../../logging/logger.js';
 
 /**
- * Mapping of SFCC_* environment variable names to NormalizedConfig field names.
+ * Mapping of CLI environment variable names and aliases to NormalizedConfig fields.
  */
 const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   // sfcc-ci legacy aliases — listed first so canonical names below take precedence
@@ -38,6 +38,9 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_SHORT_CODE: 'shortCode',
   SFCC_SHORTCODE: 'shortCode',
   SFCC_TENANT_ID: 'tenantId',
+  SFCC_SLAS_CLIENT_ID: 'slasClientId',
+  SFCC_SLAS_CLIENT_SECRET: 'slasClientSecret',
+  SFCC_SITE_ID: 'siteId',
   SFCC_CARTRIDGES: 'cartridges',
   SFCC_IMPORT_SET_EXCLUDE: 'importSetExclude',
   SFCC_CATALOGS: 'catalogs',
@@ -47,19 +50,21 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_AUTH_METHODS: 'authMethods',
   SFCC_ACCOUNT_MANAGER_HOST: 'accountManagerHost',
   SFCC_SANDBOX_API_HOST: 'sandboxApiHost',
+  SFCC_CIP_HOST: 'cipHost',
   // JWT Bearer auth env vars
   SFCC_JWT_CERT: 'jwtCertPath',
   SFCC_JWT_KEY: 'jwtKeyPath',
   SFCC_JWT_PASSPHRASE: 'jwtPassphrase',
-  // MRT env vars — MRT_* listed first as fallback, SFCC_MRT_* listed second to take precedence
-  MRT_API_KEY: 'mrtApiKey',
+  // MRT aliases — listed from lowest to highest precedence to match MrtCommand flags
   SFCC_MRT_API_KEY: 'mrtApiKey',
-  MRT_PROJECT: 'mrtProject',
+  MRT_API_KEY: 'mrtApiKey',
   SFCC_MRT_PROJECT: 'mrtProject',
-  MRT_ENVIRONMENT: 'mrtEnvironment',
+  MRT_PROJECT: 'mrtProject',
+  MRT_TARGET: 'mrtEnvironment',
   SFCC_MRT_ENVIRONMENT: 'mrtEnvironment',
-  MRT_CLOUD_ORIGIN: 'mrtOrigin',
+  MRT_ENVIRONMENT: 'mrtEnvironment',
   SFCC_MRT_CLOUD_ORIGIN: 'mrtOrigin',
+  MRT_CLOUD_ORIGIN: 'mrtOrigin',
 };
 
 /** Fields that should be parsed as comma-separated arrays. */
@@ -78,7 +83,7 @@ const ARRAY_FIELDS = new Set<keyof NormalizedConfig>([
 const BOOLEAN_FIELDS = new Set<keyof NormalizedConfig>(['selfSigned']);
 
 /**
- * Configuration source that reads SFCC_* environment variables.
+ * Configuration source that reads CLI configuration environment variables.
  *
  * Priority -10 (higher than dw.json at 0), matching CLI behavior where
  * env vars override file-based config.

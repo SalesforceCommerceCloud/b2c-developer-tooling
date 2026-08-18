@@ -6,6 +6,7 @@
 
 import {expect} from 'chai';
 import sinon from 'sinon';
+import {ux} from '@oclif/core';
 
 import SetupInspect from '../../../src/commands/setup/inspect.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
@@ -325,6 +326,67 @@ describe('setup inspect', () => {
   });
 
   describe('human-readable output', () => {
+    it('should display optional configuration when configured', async () => {
+      const command = new SetupInspect([], {} as any);
+      (command as any).flags = {unmask: false};
+      stubJsonEnabled(command, false);
+      stubCommandConfigAndLogger(command);
+      const stdoutStub = sinon.stub(ux, 'stdout');
+      stubResolvedConfig(command, {
+        scopes: ['mail'],
+        authMethods: ['client-credentials'],
+        shortCode: 'abc123',
+        siteId: 'RefArch',
+        jwtCertPath: '/cert.pem',
+        slasClientId: 'slas-client',
+        sandboxApiHost: 'admin.example.com',
+        realm: 'abcd',
+        cipHost: 'cip.example.com',
+        cartridges: ['app_storefront'],
+        projectDirectory: '/project',
+        safety: {level: 'NO_DELETE'},
+      });
+
+      await command.run();
+
+      const output = stdoutStub.firstCall.args[0] as string;
+      expect(output).to.include('scopes');
+      expect(output).to.include('authMethods');
+      expect(output).to.include('siteId');
+      expect(output).to.include('RefArch');
+      expect(output.indexOf('siteId')).to.be.greaterThan(output.indexOf('\nMetadata\n'));
+      expect(output).to.include('Authentication (JWT Bearer)');
+      expect(output).to.include('Authentication (SLAS)');
+      expect(output).to.include('On-Demand Sandbox (ODS)');
+      expect(output).to.include('Commerce Intelligence (CIP)');
+      expect(output).to.include('\nProject\n');
+      expect(output).to.include('Metadata');
+      expect(output).to.include('Safety');
+    });
+
+    it('should omit optional configuration when undefined', async () => {
+      const command = new SetupInspect([], {} as any);
+      (command as any).flags = {unmask: false};
+      stubJsonEnabled(command, false);
+      stubCommandConfigAndLogger(command);
+      const stdoutStub = sinon.stub(ux, 'stdout');
+      stubResolvedConfig(command, {shortCode: 'abc123'});
+
+      await command.run();
+
+      const output = stdoutStub.firstCall.args[0] as string;
+      expect(output).to.not.include('scopes');
+      expect(output).to.not.include('authMethods');
+      expect(output).to.not.include('siteId');
+      expect(output).to.not.include('Authentication (JWT Bearer)');
+      expect(output).to.not.include('Authentication (SLAS)');
+      expect(output).to.not.include('On-Demand Sandbox (ODS)');
+      expect(output).to.not.include('Commerce Intelligence (CIP)');
+      expect(output).to.not.include('\nProject\n');
+      expect(output).to.not.include('Metadata');
+      expect(output).to.not.include('Safety');
+    });
+
     it('should display formatted info in non-JSON mode', async () => {
       const command = new SetupInspect([], {} as any);
       (command as any).flags = {unmask: false};

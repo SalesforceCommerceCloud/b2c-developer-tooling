@@ -35,7 +35,13 @@ function getDisplayValue(field: string, value: unknown, unmask: boolean): string
   }
 
   if (Array.isArray(value)) {
-    return value.length > 0 ? value.join(', ') : '-';
+    return value.length > 0
+      ? value.map((item) => (typeof item === 'object' ? JSON.stringify(item) : String(item))).join(', ')
+      : '-';
+  }
+
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
   }
 
   const strValue = String(value);
@@ -200,10 +206,32 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       [
         ['clientId', config.clientId],
         ['clientSecret', config.clientSecret],
-        ['scopes', config.scopes],
-        ['authMethods', config.authMethods],
+        ...(config.scopes ? [['scopes', config.scopes] as [string, unknown]] : []),
+        ...(config.authMethods ? [['authMethods', config.authMethods] as [string, unknown]] : []),
         ...(config.accountManagerHost ? [['accountManagerHost', config.accountManagerHost] as [string, unknown]] : []),
-        ...(config.sandboxApiHost ? [['sandboxApiHost', config.sandboxApiHost] as [string, unknown]] : []),
+      ],
+      fieldSources,
+      unmask,
+    );
+
+    this.renderOptionalSection(
+      ui,
+      'Authentication (JWT Bearer)',
+      [
+        ['jwtCertPath', config.jwtCertPath],
+        ['jwtKeyPath', config.jwtKeyPath],
+        ['jwtPassphrase', config.jwtPassphrase],
+      ],
+      fieldSources,
+      unmask,
+    );
+
+    this.renderOptionalSection(
+      ui,
+      'Authentication (SLAS)',
+      [
+        ['slasClientId', config.slasClientId],
+        ['slasClientSecret', config.slasClientSecret],
       ],
       fieldSources,
       unmask,
@@ -236,6 +264,19 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       unmask,
     );
 
+    this.renderOptionalSection(
+      ui,
+      'On-Demand Sandbox (ODS)',
+      [
+        ['sandboxApiHost', config.sandboxApiHost],
+        ['realm', config.realm],
+      ],
+      fieldSources,
+      unmask,
+    );
+
+    this.renderOptionalSection(ui, 'Commerce Intelligence (CIP)', [['cipHost', config.cipHost]], fieldSources, unmask);
+
     // MRT section
     this.renderSection(
       ui,
@@ -250,8 +291,36 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       unmask,
     );
 
-    // Metadata section
-    this.renderSection(ui, 'Metadata', [['instanceName', config.instanceName]], fieldSources, unmask);
+    this.renderOptionalSection(
+      ui,
+      'Project',
+      [
+        ['autoUpload', config.autoUpload],
+        ['cartridges', config.cartridges],
+        ['importSetExclude', config.importSetExclude],
+        ['contentLibrary', config.contentLibrary],
+        ['catalogs', config.catalogs],
+        ['libraries', config.libraries],
+        ['assetQuery', config.assetQuery],
+        ['docsCategories', config.docsCategories],
+      ],
+      fieldSources,
+      unmask,
+    );
+
+    this.renderOptionalSection(
+      ui,
+      'Metadata',
+      [
+        ['siteId', config.siteId],
+        ['instanceName', config.instanceName],
+        ['projectDirectory', config.projectDirectory],
+      ],
+      fieldSources,
+      unmask,
+    );
+
+    this.renderOptionalSection(ui, 'Safety', [['safety', config.safety]], fieldSources, unmask);
 
     // Sources section
     if (sources.length > 0) {
@@ -265,6 +334,22 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
     }
 
     ux.stdout(ui.toString());
+  }
+
+  /**
+   * Render a section only when at least one field is configured.
+   */
+  private renderOptionalSection(
+    ui: ReturnType<typeof cliui>,
+    title: string,
+    fields: [string, unknown][],
+    fieldSources: Map<string, string>,
+    unmask: boolean,
+  ): void {
+    const configuredFields = fields.filter(([, value]) => value !== undefined && value !== null);
+    if (configuredFields.length > 0) {
+      this.renderSection(ui, title, configuredFields, fieldSources, unmask);
+    }
   }
 
   /**

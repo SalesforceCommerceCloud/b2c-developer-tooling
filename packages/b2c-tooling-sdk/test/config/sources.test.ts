@@ -400,6 +400,7 @@ describe('config/sources', () => {
           b2c: {
             shortCode: 'abc123',
             clientId: 'test-client-id',
+            siteId: 'RefArch',
             mrtProject: 'my-project',
             mrtOrigin: 'https://custom.cloud.com',
             accountManagerHost: 'account.demandware.com',
@@ -413,6 +414,7 @@ describe('config/sources', () => {
 
       expect(config.shortCode).to.equal('abc123');
       expect(config.clientId).to.equal('test-client-id');
+      expect(config.siteId).to.equal('RefArch');
       expect(config.mrtProject).to.equal('my-project');
       expect(config.mrtOrigin).to.equal('https://custom.cloud.com');
       expect(config.accountManagerHost).to.equal('account.demandware.com');
@@ -594,6 +596,7 @@ describe('config/sources', () => {
           b2c: {
             'short-code': 'abc123',
             'client-id': 'test-client-id',
+            'site-id': 'RefArch',
             'mrt-project': 'my-project',
             'account-manager-host': 'account.demandware.com',
             'sandbox-api-host': 'admin.dx.commercecloud.salesforce.com',
@@ -607,6 +610,7 @@ describe('config/sources', () => {
       expect(result).to.not.be.undefined;
       expect(result!.config.shortCode).to.equal('abc123');
       expect(result!.config.clientId).to.equal('test-client-id');
+      expect(result!.config.siteId).to.equal('RefArch');
       expect(result!.config.mrtProject).to.equal('my-project');
       expect(result!.config.accountManagerHost).to.equal('account.demandware.com');
       expect(result!.config.sandboxApiHost).to.equal('admin.dx.commercecloud.salesforce.com');

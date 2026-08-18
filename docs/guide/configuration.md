@@ -88,6 +88,9 @@ You can configure the CLI using environment variables:
 | `SFCC_AUTH_METHODS`           | Comma-separated list of allowed auth methods                                                            |
 | `SFCC_SHORTCODE`              | SCAPI short code                                                                                        |
 | `SFCC_TENANT_ID`              | Organization/tenant ID for SCAPI                                                                        |
+| `SFCC_SLAS_CLIENT_ID`         | SLAS shopper client ID                                                                                  |
+| `SFCC_SLAS_CLIENT_SECRET`     | SLAS private shopper client secret                                                                      |
+| `SFCC_SITE_ID`                | Site/channel ID                                                                                         |
 | `SFCC_ACCOUNT_MANAGER_HOST`   | Account Manager hostname for OAuth                                                                      |
 | `SFCC_REDIRECT_URI`           | Override redirect URI for browser-based OAuth flows (e.g., when behind a proxy)                         |
 | `SFCC_OAUTH_LOCAL_PORT`       | Local port for the browser-based OAuth redirect server (default: `8080`)                                |
@@ -324,6 +327,9 @@ You can store project-level defaults in your `package.json` file under the `b2c`
   "b2c": {
     "shortCode": "abc123",
     "clientId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "siteId": "RefArch",
+    "contentLibrary": "RefArch",
+    "libraries": [{"id": "RefArch", "siteLibrary": true}],
     "importSetExclude": ["fixtures", "test/integration"],
     "mrtProject": "my-project",
     "accountManagerHost": "account.demandware.com"
@@ -339,6 +345,7 @@ Only non-sensitive, project-level fields can be configured in `package.json`. Bo
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `shortCode`          | SCAPI short code                                                                                                                   |
 | `clientId`           | OAuth client ID (for browser login discovery)                                                                                      |
+| `siteId`             | Default site/channel ID for commands that operate on one site                                                                      |
 | `contentLibrary`     | Default content library ID for `content export` and `content list` commands                                                        |
 | `libraries`          | Library IDs for the WebDAV browser and Content Libraries tree. Accepts `string[]` or `[{id, siteLibrary?}]`; elements may be mixed |
 | `assetQuery`         | JSON dot-paths used to extract static asset URLs during content library parsing (default `["image.path"]`)                         |
