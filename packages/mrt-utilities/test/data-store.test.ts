@@ -501,7 +501,7 @@ describe('DataStore', () => {
         expect(spans).to.have.lengthOf(1);
         const [span] = spans;
         expect(span.ended).to.equal(true);
-        // A miss is an expected outcome, not a service error: no ERROR status.
+        // A miss does not set an ERROR status (that is reserved for a failed read).
         expect(span.status).to.equal(undefined);
         expect(span.attributes['mrt.data_store.found']).to.equal(false);
         assertNoBackendLeak(span);

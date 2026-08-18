@@ -288,8 +288,6 @@ export class DataStore {
         }
 
         if (!response.Item?.value) {
-          // A miss is an expected outcome, not a service error — record it as an attribute
-          // and leave the span status unset (successful fetch that found nothing).
           span.setAttribute('mrt.data_store.found', false);
           throw new DataStoreNotFoundError(`Data store entry '${key}' not found.`);
         }
