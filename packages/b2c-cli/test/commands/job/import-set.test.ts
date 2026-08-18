@@ -5,6 +5,9 @@
  */
 import {expect} from 'chai';
 import {afterEach, beforeEach} from 'mocha';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import sinon from 'sinon';
 import {JobExecutionError} from '@salesforce/b2c-tooling-sdk/operations/jobs';
 import JobImportSet from '../../../src/commands/job/import-set.js';
@@ -59,9 +62,12 @@ describe('job import-set', () => {
         json: true,
         'set-id': 'storefront-data',
         'keep-archive': true,
+        'cartridge-metadata': false,
+        'import-set-exclude': ['fixtures', 'test/integration'],
         'break-lock': true,
         'stale-lock-seconds': 900,
         'lock-poll-interval': 5,
+        'project-directory': './workspace',
         timeout: 600,
         'poll-interval': 2,
       },
@@ -83,10 +89,13 @@ describe('job import-set', () => {
     expect(options).to.include({
       setId: 'storefront-data',
       keepArchive: true,
+      includeCartridgeMetadata: false,
+      cartridgeRoot: './workspace',
       breakLock: true,
       staleLockSeconds: 900,
       lockPollIntervalSeconds: 5,
     });
+    expect(options.excludeDirectories).to.deep.equal(['fixtures', 'test/integration']);
     expect(options.waitOptions).to.include({timeoutSeconds: 600, pollIntervalSeconds: 2});
   });
 
@@ -102,6 +111,31 @@ describe('job import-set', () => {
 
     expect(importSetStub.calledOnceWith(instance, './migrations', sinon.match.object)).to.equal(true);
     expect(importSetStub.firstCall.args[2].setId).to.equal('migrations');
+    expect(importSetStub.firstCall.args[2].includeCartridgeMetadata).to.equal(true);
+  });
+
+  it('uses project import-set exclusions from package.json', async () => {
+    const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-import-set-config-'));
+    fs.writeFileSync(
+      path.join(projectRoot, 'package.json'),
+      JSON.stringify({b2c: {importSetExclude: ['fixtures', 'test/integration']}}),
+    );
+
+    try {
+      const command: any = await createCommand({json: true, 'project-directory': projectRoot}, {});
+      const instance = stubCommon(command);
+      sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+      sinon.stub(command, 'runAfterHooks').resolves(void 0);
+      const importSetStub = sinon.stub().resolves(result({directory: './migrations'}));
+      command.operations = {siteArchiveImportSet: importSetStub};
+
+      await command.run();
+
+      expect(importSetStub.firstCall.args[0]).to.equal(instance);
+      expect(importSetStub.firstCall.args[2].excludeDirectories).to.deep.equal(['fixtures', 'test/integration']);
+    } finally {
+      fs.rmSync(projectRoot, {recursive: true, force: true});
+    }
   });
 
   it('returns without importing when a lifecycle hook skips the operation', async () => {
@@ -119,6 +153,7 @@ describe('job import-set', () => {
 
   it('prints post-import notes for imported items after a run', async () => {
     const command: any = await createCommand({}, {directory: './impex'});
+    const importedTarget = path.join(process.cwd(), 'cartridges', 'app_example', 'metadata');
     stubCommon(command);
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
@@ -126,9 +161,26 @@ describe('job import-set', () => {
       siteArchiveImportSet: sinon.stub().resolves(
         result({
           items: [
-            {id: 'a-metadata', status: 'imported', note: 'Enable the preference in BM.'},
-            {id: 'b-sites', status: 'skipped', note: 'Should not be shown.'},
-            {id: 'c-catalog', status: 'imported'},
+            {
+              id: 'cartridge-metadata/app_example',
+              target: importedTarget,
+              kind: 'directory',
+              status: 'imported',
+              note: 'Enable the preference in BM.',
+            },
+            {
+              id: 'b-sites',
+              target: path.join(process.cwd(), 'impex', 'b-sites'),
+              kind: 'directory',
+              status: 'skipped',
+              note: 'Should not be shown.',
+            },
+            {
+              id: 'c-catalog',
+              target: path.join(process.cwd(), 'impex', 'c-catalog'),
+              kind: 'directory',
+              status: 'imported',
+            },
           ],
         }),
       ),
@@ -138,13 +190,15 @@ describe('job import-set', () => {
 
     const logged = command.log.getCalls().map((call: any) => call.args[0]);
     expect(logged.some((line: string) => line?.includes('Post-import notes:'))).to.equal(true);
-    expect(logged.some((line: string) => line?.includes('a-metadata'))).to.equal(true);
+    expect(logged.some((line: string) => line?.includes('cartridges/app_example/metadata'))).to.equal(true);
+    expect(logged.some((line: string) => line?.includes('cartridge-metadata/app_example'))).to.equal(false);
     expect(logged.some((line: string) => line?.includes('Enable the preference in BM.'))).to.equal(true);
     expect(logged.some((line: string) => line?.includes('Should not be shown.'))).to.equal(false);
   });
 
   it('previews notes for pending items during a dry run', async () => {
     const command: any = await createCommand({'dry-run': true}, {directory: './impex'});
+    const pendingTarget = path.join(process.cwd(), 'impex', 'a-metadata');
     stubCommon(command);
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
@@ -155,7 +209,15 @@ describe('job import-set', () => {
           imported: 0,
           skipped: 0,
           pending: 1,
-          items: [{id: 'a-metadata', status: 'pending', note: 'Manual follow-up here.'}],
+          items: [
+            {
+              id: 'a-metadata',
+              target: pendingTarget,
+              kind: 'directory',
+              status: 'pending',
+              note: 'Manual follow-up here.',
+            },
+          ],
         }),
       ),
     };
@@ -187,5 +249,32 @@ describe('job import-set', () => {
     }
 
     expect(showLogStub.calledOnceWith(execution)).to.equal(true);
+  });
+
+  it('shows the filesystem source instead of the internal item ID', async () => {
+    const command: any = await createCommand({}, {directory: './impex'});
+    stubCommon(command);
+    sinon.stub(command, 'jsonEnabled').returns(false);
+    const source = path.join(process.cwd(), 'cartridges', 'int_example', 'metadata', 'seed-data');
+
+    command.handleEvent({
+      type: 'item-importing',
+      item: {id: 'cartridge-metadata/int_example/seed-data', target: source, kind: 'directory'},
+      index: 1,
+      total: 1,
+    });
+
+    expect(command.log.calledOnceWith('  1/1 importing  cartridges/int_example/metadata/seed-data')).to.equal(true);
+  });
+
+  it('shows the target hostname in the import plan', async () => {
+    const command: any = await createCommand({}, {directory: './impex'});
+    stubCommon(command);
+    sinon.stub(command, 'jsonEnabled').returns(false);
+
+    command.handleEvent({type: 'plan', setId: 'migrations', total: 2, pending: 1, skipped: 1, dryRun: false});
+
+    expect(command.log.firstCall.calledWithExactly('Import set migrations on example.com:')).to.equal(true);
+    expect(command.log.secondCall.calledWithExactly('  2 item(s), 1 pending, 1 already applied')).to.equal(true);
   });
 });

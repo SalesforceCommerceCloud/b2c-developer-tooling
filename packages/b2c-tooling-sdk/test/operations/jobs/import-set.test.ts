@@ -9,18 +9,30 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import {HTTPError} from '@salesforce/b2c-tooling-sdk/errors';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
+import {configureLogger, resetLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {
   discoverImportSet,
   siteArchiveImportSet,
   type ImportSetEvent,
   type SiteArchiveImportSetOptions,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
+import {CapturingStream} from '../../helpers/null-stream.js';
 
 class FakeWebDav {
   readonly directories = new Set(['Impex']);
   readonly files = new Map<string, string>();
   readonly requests: Array<{method: string; path: string}> = [];
   failNextReceiptCreation = false;
+
+  async delete(remotePath: string): Promise<void> {
+    this.requests.push({method: 'DELETE', path: remotePath});
+    this.files.delete(remotePath);
+  }
+
+  async put(remotePath: string, content: Buffer): Promise<void> {
+    this.requests.push({method: 'PUT', path: remotePath});
+    this.files.set(remotePath, content.toString('base64'));
+  }
 
   async request(remotePath: string, init: RequestInit = {}): Promise<Response> {
     const method = init.method ?? 'GET';
@@ -96,6 +108,21 @@ function createImportDirectory(): string {
   return root;
 }
 
+function createCartridgeMetadata(root: string, cartridgeName: string): string {
+  const cartridge = path.join(root, 'cartridges', cartridgeName);
+  const metadata = path.join(cartridge, 'metadata');
+  fs.mkdirSync(metadata, {recursive: true});
+  fs.writeFileSync(path.join(cartridge, '.project'), '<projectDescription/>');
+  return metadata;
+}
+
+function createArchiveDirectory(parent: string, itemName: string): string {
+  const item = path.join(parent, itemName);
+  fs.mkdirSync(path.join(item, 'meta'), {recursive: true});
+  fs.writeFileSync(path.join(item, 'meta', 'system-objecttype-extensions.xml'), '<metadata/>');
+  return item;
+}
+
 function createHarness(): {
   instance: B2CInstance;
   webdav: FakeWebDav;
@@ -106,6 +133,7 @@ function createHarness(): {
   const imported: string[] = [];
   const instance = {webdav, config: {hostname: 'test.demandware.net'}} as unknown as B2CInstance;
   const options: SiteArchiveImportSetOptions = {
+    includeCartridgeMetadata: false,
     sleep: () => Promise.resolve(),
     importArchive: async (_instance, target) => {
       imported.push(path.basename(target));
@@ -123,22 +151,24 @@ describe('operations/jobs/import-set', () => {
   let importDirectory: string;
 
   beforeEach(() => {
+    resetLogger();
     importDirectory = createImportDirectory();
   });
 
   afterEach(() => {
+    resetLogger();
     fs.rmSync(importDirectory, {recursive: true, force: true});
   });
 
   it('discovers immediate directories and zip archives in filename order', async () => {
-    const items = await discoverImportSet(importDirectory);
+    const items = await discoverImportSet(importDirectory, {includeCartridgeMetadata: false});
 
     expect(items.map((item) => item.id)).to.deep.equal(['20260101T000000-metadata', '20260102T000000-sites.zip']);
     expect(items.map((item) => item.kind)).to.deep.equal(['directory', 'zip']);
   });
 
   it('reads a README note from directory items and ignores it for zip items', async () => {
-    const items = await discoverImportSet(importDirectory);
+    const items = await discoverImportSet(importDirectory, {includeCartridgeMetadata: false});
 
     expect(items[0].note).to.equal('# Manual step\n\nEnable the feature preference in Business Manager.');
     expect(items[1].note).to.equal(undefined);
@@ -152,7 +182,7 @@ describe('operations/jobs/import-set', () => {
     fs.mkdirSync(withEmptyReadme, {recursive: true});
     fs.writeFileSync(path.join(withEmptyReadme, 'README.md'), '   \n  \n');
 
-    const items = await discoverImportSet(importDirectory);
+    const items = await discoverImportSet(importDirectory, {includeCartridgeMetadata: false});
     const byId = new Map(items.map((item) => [item.id, item]));
 
     expect(byId.get('20260103T000000-plain')?.note).to.equal('plain readme body');
@@ -169,6 +199,124 @@ describe('operations/jobs/import-set', () => {
     expect(metadataItem?.note).to.equal('# Manual step\n\nEnable the feature preference in Business Manager.');
   });
 
+  it('discovers cartridge metadata sources before the migrations directory', async () => {
+    const cartridgeRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-cartridge-metadata-'));
+    const itemMetadata = createCartridgeMetadata(cartridgeRoot, 'app_items');
+    createArchiveDirectory(itemMetadata, '20251202T000000-second');
+    createArchiveDirectory(itemMetadata, '20251201T000000-first');
+    fs.writeFileSync(path.join(itemMetadata, '20251203T000000-third.zip'), 'zip-content');
+    fs.writeFileSync(path.join(itemMetadata, 'README.md'), 'ignored');
+
+    const archiveMetadata = createCartridgeMetadata(cartridgeRoot, 'int_single_archive');
+    fs.mkdirSync(path.join(archiveMetadata, 'sites', 'RefArch'), {recursive: true});
+    fs.writeFileSync(path.join(archiveMetadata, 'sites', 'RefArch', 'site.xml'), '<site/>');
+    fs.writeFileSync(path.join(archiveMetadata, 'README.md'), 'Configure the cartridge after import.');
+
+    const directXmlMetadata = createCartridgeMetadata(cartridgeRoot, 'int_single_xml');
+    fs.writeFileSync(path.join(directXmlMetadata, 'preferences.xml'), '<preferences/>');
+
+    try {
+      const items = await discoverImportSet(importDirectory, {cartridgeRoot});
+
+      expect(items.map((item) => item.id)).to.deep.equal([
+        'cartridge-metadata/app_items/20251201T000000-first',
+        'cartridge-metadata/app_items/20251202T000000-second',
+        'cartridge-metadata/app_items/20251203T000000-third.zip',
+        'cartridge-metadata/int_single_archive',
+        'cartridge-metadata/int_single_xml',
+        '20260101T000000-metadata',
+        '20260102T000000-sites.zip',
+      ]);
+      expect(items[3].target).to.equal(archiveMetadata);
+      expect(items[3].note).to.equal('Configure the cartridge after import.');
+    } finally {
+      fs.rmSync(cartridgeRoot, {recursive: true, force: true});
+    }
+  });
+
+  it('treats mixed cartridge metadata as one archive when an archive marker is present', async () => {
+    const cartridgeRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-cartridge-metadata-'));
+    const metadata = createCartridgeMetadata(cartridgeRoot, 'app_mixed');
+    fs.mkdirSync(path.join(metadata, 'meta'), {recursive: true});
+    fs.writeFileSync(path.join(metadata, 'later.zip'), 'zip-content');
+
+    try {
+      const items = await discoverImportSet(importDirectory, {cartridgeRoot});
+
+      expect(items[0]).to.deep.include({
+        id: 'cartridge-metadata/app_mixed',
+        target: metadata,
+        kind: 'directory',
+      });
+      expect(items.some((item) => item.id === 'cartridge-metadata/app_mixed/later.zip')).to.equal(false);
+    } finally {
+      fs.rmSync(cartridgeRoot, {recursive: true, force: true});
+    }
+  });
+
+  it('can exclude discovered cartridge metadata', async () => {
+    const cartridgeRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-cartridge-metadata-'));
+    createArchiveDirectory(createCartridgeMetadata(cartridgeRoot, 'app_ignored'), '20251201T000000-base');
+
+    try {
+      const items = await discoverImportSet(importDirectory, {
+        cartridgeRoot,
+        includeCartridgeMetadata: false,
+      });
+
+      expect(items.map((item) => item.id)).to.deep.equal(['20260101T000000-metadata', '20260102T000000-sites.zip']);
+    } finally {
+      fs.rmSync(cartridgeRoot, {recursive: true, force: true});
+    }
+  });
+
+  it('excludes configured source directories recursively', async () => {
+    const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-import-set-exclude-'));
+    const migrations = path.join(projectRoot, 'migrations');
+    createArchiveDirectory(migrations, '20260101T000000-keep');
+    createArchiveDirectory(migrations, '20260102T000000-skip');
+
+    const includedMetadata = createCartridgeMetadata(projectRoot, 'app_included');
+    createArchiveDirectory(includedMetadata, '20251201T000000-base');
+    const excludedMetadata = createCartridgeMetadata(path.join(projectRoot, 'fixtures', 'nested'), 'app_fixture');
+    createArchiveDirectory(excludedMetadata, '20251101T000000-fixture');
+
+    try {
+      const items = await discoverImportSet(migrations, {
+        cartridgeRoot: projectRoot,
+        excludeDirectories: ['', 'fixtures', 'migrations/20260102T000000-skip'],
+      });
+
+      expect(items.map((item) => item.id)).to.deep.equal([
+        'cartridge-metadata/app_included/20251201T000000-base',
+        '20260101T000000-keep',
+      ]);
+    } finally {
+      fs.rmSync(projectRoot, {recursive: true, force: true});
+    }
+  });
+
+  it('imports cartridge metadata without a migrations directory and receipts it idempotently', async () => {
+    const cartridgeRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-cartridge-metadata-'));
+    createArchiveDirectory(createCartridgeMetadata(cartridgeRoot, 'app_base'), '20251201T000000-base');
+    const missingDirectory = path.join(cartridgeRoot, 'migrations');
+    const {instance, imported, options} = createHarness();
+    options.includeCartridgeMetadata = true;
+    options.cartridgeRoot = cartridgeRoot;
+
+    try {
+      const first = await siteArchiveImportSet(instance, missingDirectory, options);
+      const second = await siteArchiveImportSet(instance, missingDirectory, options);
+
+      expect(imported).to.deep.equal(['20251201T000000-base']);
+      expect(first.items.map((item) => item.id)).to.deep.equal(['cartridge-metadata/app_base/20251201T000000-base']);
+      expect(first.imported).to.equal(1);
+      expect(second.skipped).to.equal(1);
+    } finally {
+      fs.rmSync(cartridgeRoot, {recursive: true, force: true});
+    }
+  });
+
   it('imports pending items, verifies receipts, and skips them on the next run', async () => {
     const {instance, webdav, imported, options} = createHarness();
 
@@ -182,6 +330,46 @@ describe('operations/jobs/import-set', () => {
     expect(second.skipped).to.equal(2);
     expect([...webdav.directories].filter((entry) => entry.includes('/receipts/'))).to.have.lengthOf(2);
     expect([...webdav.files.keys()].some((entry) => entry.includes('/receipts/'))).to.equal(false);
+  });
+
+  it('reports lifecycle events without logging from the SDK', async () => {
+    const output = new CapturingStream();
+    configureLogger({level: 'trace', json: true, destination: output});
+    const webdav = new FakeWebDav();
+    let executionNumber = 0;
+    const instance = {
+      webdav,
+      ocapi: {
+        async POST() {
+          executionNumber++;
+          return {
+            data: {id: `execution-${executionNumber}`, execution_status: 'running'},
+            response: response(201),
+          };
+        },
+        async GET() {
+          return {
+            data: {
+              id: `execution-${executionNumber}`,
+              execution_status: 'finished',
+              exit_status: {code: 'OK'},
+            },
+          };
+        },
+      },
+    } as unknown as B2CInstance;
+    const events: ImportSetEvent[] = [];
+
+    const result = await siteArchiveImportSet(instance, importDirectory, {
+      includeCartridgeMetadata: false,
+      sleep: () => Promise.resolve(),
+      waitOptions: {sleep: () => Promise.resolve()},
+      onEvent: (event) => events.push(event),
+    });
+
+    expect(result.imported).to.equal(2);
+    expect(events.filter((event) => event.type === 'item-imported')).to.have.lengthOf(2);
+    expect(output.getOutput()).to.equal('');
   });
 
   it('uses the same default receipt namespace for equivalent directories at different local paths', async () => {

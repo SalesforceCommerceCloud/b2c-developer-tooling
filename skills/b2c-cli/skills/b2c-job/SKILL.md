@@ -9,7 +9,7 @@ Use the `b2c` CLI plugin to **run existing jobs** and import/export site archive
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli job run`).
 
-> **Creating a new job?** If you need to write custom job step *code* (batch processing, scheduled tasks, data sync) **or author the `jobs.xml` job definition** that makes a job exist (so it can be run/scheduled), use the `b2c:b2c-custom-job-steps` skill — see its [jobs.xml Reference](../../../b2c/skills/b2c-custom-job-steps/references/JOBS-XML.md). `b2c job run` only executes jobs that already exist on the instance.
+> **Creating a new job?** If you need to write custom job step _code_ (batch processing, scheduled tasks, data sync) **or author the `jobs.xml` job definition** that makes a job exist (so it can be run/scheduled), use the `b2c:b2c-custom-job-steps` skill — see its [jobs.xml Reference](../../../b2c/skills/b2c-custom-job-steps/references/JOBS-XML.md). `b2c job run` only executes jobs that already exist on the instance.
 
 ## Configuration & Authentication
 
@@ -100,14 +100,16 @@ b2c job import ./my-site-data 'libraries/**'
 
 ### Import Sets
 
-`job import-set` applies the archives in `./migrations` in order and skips imports already recorded on the target instance:
+`job import-set` first applies imports from discovered cartridge `metadata/` sources, then applies archives in `./migrations`, and skips imports already recorded on the target instance:
 
 ```bash
 b2c job import-set --dry-run
 b2c job import-set
+b2c job import-set --no-cartridge-metadata # only use ./migrations
+b2c job import-set --import-set-exclude fixtures # ignore this project subtree
 ```
 
-For the full migration workflow — archive layout, timestamp naming convention, post-import README notes, receipt and retry behavior, concurrency, and recovery — use the `b2c-cli:b2c-import-set-migrations` skill.
+`--import-set-exclude` can be repeated or comma-separated and can also be configured as `b2c.importSetExclude` in `package.json`, `import-set-exclude` in `dw.json`, or `SFCC_IMPORT_SET_EXCLUDE`. For the full migration workflow — archive layouts, timestamp naming, post-import README notes, receipt and retry behavior, reset options, concurrency, and recovery — use the `b2c-cli:b2c-import-set-migrations` skill.
 
 ### Export Site Archives
 
@@ -168,14 +170,14 @@ b2c job export --global-data meta_data --timeout 600
 
 **Top-level categories** (each takes one or more IDs via flags):
 
-| Flag | Description |
-|---|---|
-| `--site` | Site IDs to export (use `--site-data` to pick specific units, defaults to all) |
-| `--catalog` | Catalog IDs |
-| `--library` | Library IDs |
-| `--inventory-list` | Inventory list IDs |
-| `--price-book` | Price book IDs |
-| `--global-data` | Global data units (comma-separated names from the list below) |
+| Flag               | Description                                                                    |
+| ------------------ | ------------------------------------------------------------------------------ |
+| `--site`           | Site IDs to export (use `--site-data` to pick specific units, defaults to all) |
+| `--catalog`        | Catalog IDs                                                                    |
+| `--library`        | Library IDs                                                                    |
+| `--inventory-list` | Inventory list IDs                                                             |
+| `--price-book`     | Price book IDs                                                                 |
+| `--global-data`    | Global data units (comma-separated names from the list below)                  |
 
 **Site data units** (use with `--site-data`):
 

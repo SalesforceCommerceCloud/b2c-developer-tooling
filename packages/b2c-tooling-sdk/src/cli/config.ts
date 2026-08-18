@@ -112,6 +112,7 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
     cipHost: flags['cip-host'] as string | undefined,
     username: flags.username as string | undefined,
     password: flags.password as string | undefined,
+    importSetExclude: flags['import-set-exclude'] as string[] | undefined,
     // TLS/mTLS options
     certificate: flags.certificate as string | undefined,
     certificatePassphrase: flags.passphrase as string | undefined,

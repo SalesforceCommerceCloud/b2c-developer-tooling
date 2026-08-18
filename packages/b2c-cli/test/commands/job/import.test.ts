@@ -208,7 +208,7 @@ describe('job import', () => {
 
     sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
     sinon.stub(command, 'runAfterHooks').resolves(void 0);
-    sinon.stub(command, 'showJobLog').resolves(void 0);
+    const showLogStub = sinon.stub(command, 'showJobLog').resolves(void 0);
 
     const exec: any = {execution_status: 'finished', exit_status: {code: 'ERROR'}};
     const error = new JobExecutionError('failed', exec);
@@ -225,6 +225,7 @@ describe('job import', () => {
     }
 
     expect(errorStub.called).to.equal(true);
+    expect(showLogStub.calledOnceWith(exec)).to.equal(true);
   });
 
   it('calls siteArchiveImportSplit with parsed max-size when --split is set', async () => {

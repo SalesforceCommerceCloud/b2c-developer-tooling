@@ -103,6 +103,22 @@ describe('config/sources', () => {
       expect(config.tenantId).to.equal('abcd_prd');
     });
 
+    it('loads import-set directory exclusions from dw.json', async () => {
+      const dwJsonPath = path.join(tempDir, 'dw.json');
+      fs.writeFileSync(
+        dwJsonPath,
+        JSON.stringify({
+          hostname: 'test.demandware.net',
+          'import-set-exclude': ['fixtures', 'test/integration'],
+        }),
+      );
+
+      const resolver = new ConfigResolver();
+      const {config} = await resolver.resolve();
+
+      expect(config.importSetExclude).to.deep.equal(['fixtures', 'test/integration']);
+    });
+
     it('returns undefined when dw.json does not exist', async () => {
       const resolver = new ConfigResolver();
       const {config} = await resolver.resolve();
@@ -387,6 +403,7 @@ describe('config/sources', () => {
             mrtProject: 'my-project',
             mrtOrigin: 'https://custom.cloud.com',
             accountManagerHost: 'account.demandware.com',
+            importSetExclude: ['fixtures', 'test/integration'],
           },
         }),
       );
@@ -399,6 +416,7 @@ describe('config/sources', () => {
       expect(config.mrtProject).to.equal('my-project');
       expect(config.mrtOrigin).to.equal('https://custom.cloud.com');
       expect(config.accountManagerHost).to.equal('account.demandware.com');
+      expect(config.importSetExclude).to.deep.equal(['fixtures', 'test/integration']);
     });
 
     it('loads libraries as a string array', async () => {

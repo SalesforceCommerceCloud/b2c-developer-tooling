@@ -105,6 +105,7 @@ export {
 export {discoverImportSet, siteArchiveImportSet, ImportSetStateError} from './import-set.js';
 
 export type {
+  DiscoverImportSetOptions,
   ImportSetItem,
   ImportSetReceipt,
   ImportSetItemResult,

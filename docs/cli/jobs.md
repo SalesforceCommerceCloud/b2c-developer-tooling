@@ -14,15 +14,15 @@ Job commands require OAuth authentication with OCAPI permissions.
 
 Configure these resources in Business Manager under **Administration** > **Site Development** > **Open Commerce API Settings**:
 
-| Resource | Methods | Commands |
-|----------|---------|----------|
-| `/jobs/*/executions` | POST | `job run` |
-| `/jobs/*/executions/*` | GET | `job run --wait`, `job wait`, `job log` |
-| `/job_execution_search` | POST | `job search`, `job log` |
+| Resource                | Methods | Commands                                |
+| ----------------------- | ------- | --------------------------------------- |
+| `/jobs/*/executions`    | POST    | `job run`                               |
+| `/jobs/*/executions/*`  | GET     | `job run --wait`, `job wait`, `job log` |
+| `/job_execution_search` | POST    | `job search`, `job log`                 |
 
 ### WebDAV Access
 
-The `job import`, `job import-set`, `job export`, and `job log` commands also require WebDAV access for file transfer and import-set state.
+The `job import`, `job import-set`, `job export`, and `job log` commands also require WebDAV access for file transfer and import history.
 
 ### Configuration
 
@@ -52,23 +52,23 @@ b2c job run JOBID
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `JOBID` | Job ID to execute | Yes |
+| Argument | Description       | Required |
+| -------- | ----------------- | -------- |
+| `JOBID`  | Job ID to execute | Yes      |
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--wait`, `-w` | Wait for job to complete | `false` |
-| `--timeout`, `-t` | Timeout in seconds when waiting | No timeout |
-| `--poll-interval` | Polling interval in seconds when using `--wait` | `3` |
-| `--param`, `-P` | Job parameter in format "name=value" (repeatable) | |
-| `--body`, `-B` | Raw JSON request body (for system jobs with non-standard schemas) | |
-| `--no-wait-running` | Do not wait for running job to finish before starting | `false` |
-| `--show-log` | Show job log on failure | `true` |
+| Flag                | Description                                                       | Default    |
+| ------------------- | ----------------------------------------------------------------- | ---------- |
+| `--wait`, `-w`      | Wait for job to complete                                          | `false`    |
+| `--timeout`, `-t`   | Timeout in seconds when waiting                                   | No timeout |
+| `--poll-interval`   | Polling interval in seconds when using `--wait`                   | `3`        |
+| `--param`, `-P`     | Job parameter in format "name=value" (repeatable)                 |            |
+| `--body`, `-B`      | Raw JSON request body (for system jobs with non-standard schemas) |            |
+| `--no-wait-running` | Do not wait for running job to finish before starting             | `false`    |
+| `--show-log`        | Show job log on failure                                           | `true`     |
 
 Note: `--param` and `--body` are mutually exclusive.
 
@@ -143,20 +143,20 @@ b2c job wait JOBID EXECUTIONID
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `JOBID` | Job ID | Yes |
-| `EXECUTIONID` | Execution ID to wait for | Yes |
+| Argument      | Description              | Required |
+| ------------- | ------------------------ | -------- |
+| `JOBID`       | Job ID                   | Yes      |
+| `EXECUTIONID` | Execution ID to wait for | Yes      |
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--timeout`, `-t` | Timeout in seconds | No timeout |
-| `--poll-interval` | Polling interval in seconds | `3` |
-| `--show-log` | Show job log on failure | `true` |
+| Flag              | Description                 | Default    |
+| ----------------- | --------------------------- | ---------- |
+| `--timeout`, `-t` | Timeout in seconds          | No timeout |
+| `--poll-interval` | Polling interval in seconds | `3`        |
+| `--show-log`      | Show job log on failure     | `true`     |
 
 ### Examples
 
@@ -187,16 +187,16 @@ b2c job search
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--job-id`, `-j` | Filter by job ID | |
-| `--status` | Filter by status (comma-separated: RUNNING,PENDING,OK,ERROR) | |
-| `--count`, `-n` | Maximum number of results | `25` |
-| `--start` | Starting index for pagination | `0` |
-| `--sort-by` | Sort by field (start_time, end_time, job_id, status) | `start_time` |
-| `--sort-order` | Sort order (asc, desc) | `desc` |
-| `--columns`, `-c` | Columns to display (comma-separated): id, jobId, status, startTime | |
-| `--extended`, `-x` | Show all columns including extended fields | `false` |
+| Flag               | Description                                                        | Default      |
+| ------------------ | ------------------------------------------------------------------ | ------------ |
+| `--job-id`, `-j`   | Filter by job ID                                                   |              |
+| `--status`         | Filter by status (comma-separated: RUNNING,PENDING,OK,ERROR)       |              |
+| `--count`, `-n`    | Maximum number of results                                          | `25`         |
+| `--start`          | Starting index for pagination                                      | `0`          |
+| `--sort-by`        | Sort by field (start_time, end_time, job_id, status)               | `start_time` |
+| `--sort-order`     | Sort order (asc, desc)                                             | `desc`       |
+| `--columns`, `-c`  | Columns to display (comma-separated): id, jobId, status, startTime |              |
+| `--extended`, `-x` | Show all columns including extended fields                         | `false`      |
 
 ### Examples
 
@@ -240,17 +240,17 @@ b2c job log JOBID [EXECUTIONID]
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `JOBID` | Job ID | Yes |
-| `EXECUTIONID` | Execution ID (if omitted, finds the most recent execution with a log) | No |
+| Argument      | Description                                                           | Required |
+| ------------- | --------------------------------------------------------------------- | -------- |
+| `JOBID`       | Job ID                                                                | Yes      |
+| `EXECUTIONID` | Execution ID (if omitted, finds the most recent execution with a log) | No       |
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
+| Flag       | Description                                      | Default |
+| ---------- | ------------------------------------------------ | ------- |
 | `--failed` | Find the most recent failed execution with a log | `false` |
 
 ### Examples
@@ -293,24 +293,24 @@ b2c job import TARGET [PATHS...]
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `TARGET` | Directory, zip file, or remote filename to import | Yes |
-| `PATHS...` | Optional subset of files, directories, or glob patterns under `TARGET` to include in the archive. When omitted, the entire directory is archived. Only valid when `TARGET` is a directory. | No |
+| Argument   | Description                                                                                                                                                                                | Required |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| `TARGET`   | Directory, zip file, or remote filename to import                                                                                                                                          | Yes      |
+| `PATHS...` | Optional subset of files, directories, or glob patterns under `TARGET` to include in the archive. When omitted, the entire directory is archived. Only valid when `TARGET` is a directory. | No       |
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--keep-archive`, `-k` | Keep archive on instance after import | `false` |
-| `--remote`, `-r` | Target is a filename already on the instance (in Impex/src/instance/) | `false` |
-| `--split`, `-s` | Split a large directory import into multiple archive parts to stay under the instance size limit | `false` |
-| `--max-size` | Per-archive size limit for `--split` (e.g. `190`, `190mb`, `512kb`; a bare number is MiB) | `190mb` |
-| `--timeout`, `-t` | Timeout in seconds | No timeout |
-| `--wait`, `-w` | Wait for import job to complete | `true` |
-| `--show-log` | Show job log on failure | `true` |
+| Flag                   | Description                                                                                      | Default    |
+| ---------------------- | ------------------------------------------------------------------------------------------------ | ---------- |
+| `--keep-archive`, `-k` | Keep archive on instance after import                                                            | `false`    |
+| `--remote`, `-r`       | Target is a filename already on the instance (in Impex/src/instance/)                            | `false`    |
+| `--split`, `-s`        | Split a large directory import into multiple archive parts to stay under the instance size limit | `false`    |
+| `--max-size`           | Per-archive size limit for `--split` (e.g. `190`, `190mb`, `512kb`; a bare number is MiB)        | `190mb`    |
+| `--timeout`, `-t`      | Timeout in seconds                                                                               | No timeout |
+| `--wait`, `-w`         | Wait for import job to complete                                                                  | `true`     |
+| `--show-log`           | Show job log on failure                                                                          | `true`     |
 
 ### Examples
 
@@ -372,7 +372,7 @@ When you run a normal (non-`--split`) directory import and the assembled archive
 
 ## b2c job import-set
 
-Apply an ordered directory of site archives idempotently. Each immediate child directory or `.zip` file is one import item; other files and hidden entries are ignored.
+Apply a version-controlled sequence of site archives and skip items already applied to the target instance. See [Import Sets](../guide/import-sets) for setup and workflow guidance.
 
 ### Usage
 
@@ -382,11 +382,18 @@ b2c job import-set [DIRECTORY]
 
 ### Arguments
 
-| Argument | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `DIRECTORY` | Directory whose immediate child directories and zip files form the ordered import set | No | `./migrations` |
+| Argument    | Description                                                                           | Required | Default        |
+| ----------- | ------------------------------------------------------------------------------------- | -------- | -------------- |
+| `DIRECTORY` | Directory whose immediate child directories and zip files form the ordered import set | No       | `./migrations` |
 
-For example:
+Import items come from these sources, in order:
+
+1. `metadata/` directories in cartridges discovered from the current working directory or `--project-directory`.
+2. Immediate child directories and `.zip` files in `DIRECTORY`.
+
+Cartridge metadata can be either one standard site archive or an ordered collection of child archives. Use one layout consistently within a cartridge. Cartridge sources are ordered by cartridge name, and child items within each source are ordered lexically. Hidden entries and other loose files are ignored. A directory item must contain at least one file; empty directory trees are rejected before upload.
+
+For example, the explicit import-set directory can contain:
 
 ```text
 migrations/
@@ -398,23 +405,25 @@ migrations/
 └── README.md                       # top-level README is ignored as an item
 ```
 
-The CLI imports `20260801T140000-add-preferences/` and then `20260802T091500-seed-content.zip` in lexical filename order. Name every item `YYYYMMDDTHHmmss-description` so the filename is both its ordering key and its stable, practically unique receipt identity across projects. Use UTC when teams work across time zones.
+Name ordered child items `YYYYMMDDTHHmmss-description`, using UTC so teams get consistent ordering. The default `./migrations` directory may be absent when cartridge metadata supplies at least one item.
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--set-id` | Advanced: remote receipt and lock namespace for an independent migration history | `migrations` |
-| `--dry-run` | Show pending and applied items without locking, importing, or writing state | `false` |
-| `--keep-archive`, `-k` | Keep each uploaded archive on the instance after import | `false` |
-| `--break-lock` | Remove an existing import-set lock before acquiring it | `false` |
-| `--stale-lock-seconds` | Take over a lock whose heartbeat is older than this many seconds | `1800` |
-| `--lock-poll-interval` | Seconds between checks while another runner holds the set lock | `3` |
-| `--timeout`, `-t` | Timeout in seconds for each import job | No timeout |
-| `--poll-interval` | Job polling interval in seconds | `3` |
-| `--show-log` | Show the job log when an import fails | `true` |
+| Flag                        | Description                                                             | Default      |
+| --------------------------- | ----------------------------------------------------------------------- | ------------ |
+| `--set-id`                  | Advanced: name for an independent import history                        | `migrations` |
+| `--dry-run`                 | Preview pending and applied items without importing or changing history | `false`      |
+| `--keep-archive`, `-k`      | Keep each uploaded archive on the instance after import                 | `false`      |
+| `--[no-]cartridge-metadata` | Include imports from discovered cartridge `metadata/` directories       | `true`       |
+| `--import-set-exclude`      | Exclude a project-relative directory recursively from source discovery  |              |
+| `--break-lock`              | Recover an import set after confirming its previous runner has stopped  | `false`      |
+| `--stale-lock-seconds`      | Consider an inactive import-set run stale after this many seconds       | `1800`       |
+| `--lock-poll-interval`      | Seconds between checks while waiting for another import-set run         | `3`          |
+| `--timeout`, `-t`           | Timeout in seconds for each import job                                  | No timeout   |
+| `--poll-interval`           | Job polling interval in seconds                                         | `3`          |
+| `--show-log`                | Show the job log when an import fails                                   | `true`       |
 
 ### Examples
 
@@ -425,12 +434,20 @@ b2c job import-set --dry-run
 # Apply ./migrations; repeat this command safely in local setup or CI
 b2c job import-set
 
-# Explicitly replace a lock after confirming its owner is no longer running
+# Import only items from ./migrations
+b2c job import-set --no-cartridge-metadata
+
+# Ignore fixture and integration-test source trees
+b2c job import-set --import-set-exclude fixtures --import-set-exclude test/integration
+
+# Recover after confirming the previous runner has stopped
 b2c job import-set --break-lock
 
 # Advanced: isolate a legacy migration history that cannot use unique timestamped names
 b2c job import-set ./legacy-migrations --set-id legacy-storefront-data
 ```
+
+`--import-set-exclude` can be repeated or provided as a comma-separated list. Paths are resolved from `--project-directory` or the current project directory. The same setting is available as `import-set-exclude` in `dw.json`, `importSetExclude` under the `b2c` key in `package.json`, and the comma-separated `SFCC_IMPORT_SET_EXCLUDE` environment variable.
 
 ### Post-import notes
 
@@ -453,21 +470,38 @@ Post-import notes:
 - Only directory items are scanned; `.zip` items are not. `README.md` takes precedence over `README`, and an empty README produces no note. The top-level README of the set directory is never printed.
 - With `--json`, notes are not printed; each item's note text is available on the item in the JSON result.
 
-### Receipts and retry behavior
+### Repeat runs
 
-The CLI creates and verifies a directory receipt on the target instance after each successful import. Receipt identity is based only on the item's directory or zip filename. An item whose name already has a receipt is skipped; its contents are not compared.
+After an item succeeds, later runs against the same instance skip it. An item's name identifies it; changing its contents does not cause it to run again.
 
-This deliberately provides **at-least-once retry behavior until the receipt is durable**. If an import succeeds but the process crashes or WebDAV fails before the receipt is verified, the next invocation imports that item again. Site archive contents should therefore be safe to apply more than once.
+Never edit an applied item. Add a new, later-sorting directory or zip file for every change so all instances converge on the same history.
 
-Never edit an applied item: instances that already have its name receipt continue to skip it, while a new instance would import the edited contents. Add a new, later-sorting directory or zip file for every change. Two projects using the same receipt namespace must also use distinct item names; the timestamp-and-description convention makes accidental collisions unlikely.
+An interrupted run can retry its current item, so every archive must be safe to apply more than once. A failed run stops at the failing item; fix the problem and rerun the command to continue.
 
-Receipts and the concurrency lock use the fixed instance-wide `migrations` namespace by default, regardless of the local directory path. Most projects should not set `--set-id`; it exists only for intentionally independent histories or legacy item names that cannot follow the timestamp convention.
+The default history name is `migrations` and is shared by all runs against the target instance, regardless of checkout path. Most projects should omit `--set-id`; use it only when intentionally maintaining an independent history.
 
-### Concurrent runners and stale locks
+### Resetting import history
 
-Only one runner applies a set at a time. The CLI atomically creates a WebDAV collection as the set lock, writes owner metadata, and refreshes a heartbeat while imports run. Other runners wait and re-check receipts after acquiring the lock.
+There is no dedicated reset command. To preserve the existing history and start fresh, choose a new set ID and continue using it on later runs:
 
-A lock is automatically treated as stale after 30 minutes by default; tune this with `--stale-lock-seconds`. Use `--break-lock` only after confirming the recorded runner is gone. B2C Commerce WebDAV does not enforce conditional deletes, so stale or forced takeover is best-effort and is always reported in command output.
+```bash
+b2c job import-set --set-id migrations-reset-20260818
+```
+
+To clear the default history in place, remove it through WebDAV and rerun the import set:
+
+```bash
+b2c webdav rm --root=impex b2c-cli/import-sets/migrations
+b2c job import-set
+```
+
+For a custom set ID, replace the final `migrations` path segment with that ID. Clearing a history makes every current item pending again. See [Resetting Import History](/guide/import-sets#resetting-import-history) for guidance on choosing an approach.
+
+### Concurrent runs and recovery
+
+Only one runner applies an import history at a time. Other runners wait and then skip items completed while they were waiting.
+
+An interrupted run becomes recoverable after 30 minutes by default; tune this with `--stale-lock-seconds`. Use `--break-lock` only after confirming the previous runner has stopped.
 
 ---
 
@@ -485,22 +519,22 @@ b2c job export
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--output`, `-o` | Output path for the export | `./export` |
-| `--data-units` | Data units JSON configuration | |
-| `--site` | Site ID(s) to export (comma-separated, repeatable) | |
-| `--site-data` | Site data types to export (comma-separated) | |
-| `--global-data` | Global data types to export (comma-separated) | |
-| `--catalog` | Catalog ID(s) to export (comma-separated) | |
-| `--price-book` | Pricebook ID(s) to export (comma-separated) | |
-| `--library` | Library ID(s) to export (comma-separated) | |
-| `--inventory-list` | Inventory list ID(s) to export (comma-separated) | |
-| `--keep-archive`, `-k` | Keep archive on instance after download | `false` |
-| `--no-download` | Do not download archive (implies --keep-archive) | `false` |
-| `--zip-only` | Save as zip file without extracting | `false` |
-| `--timeout`, `-t` | Timeout in seconds | No timeout |
-| `--show-log` | Show job log on failure | `true` |
+| Flag                   | Description                                        | Default    |
+| ---------------------- | -------------------------------------------------- | ---------- |
+| `--output`, `-o`       | Output path for the export                         | `./export` |
+| `--data-units`         | Data units JSON configuration                      |            |
+| `--site`               | Site ID(s) to export (comma-separated, repeatable) |            |
+| `--site-data`          | Site data types to export (comma-separated)        |            |
+| `--global-data`        | Global data types to export (comma-separated)      |            |
+| `--catalog`            | Catalog ID(s) to export (comma-separated)          |            |
+| `--price-book`         | Pricebook ID(s) to export (comma-separated)        |            |
+| `--library`            | Library ID(s) to export (comma-separated)          |            |
+| `--inventory-list`     | Inventory list ID(s) to export (comma-separated)   |            |
+| `--keep-archive`, `-k` | Keep archive on instance after download            | `false`    |
+| `--no-download`        | Do not download archive (implies --keep-archive)   | `false`    |
+| `--zip-only`           | Save as zip file without extracting                | `false`    |
+| `--timeout`, `-t`      | Timeout in seconds                                 | No timeout |
+| `--show-log`           | Show job log on failure                            | `true`     |
 
 ### Examples
 
@@ -534,6 +568,7 @@ The export is configured using "data units" which specify what data to export. Y
 #### Site Data Types
 
 When using `--site-data`, available types include:
+
 - `all` - Export all site data
 - `content` - Content assets and slots
 - `site_preferences` - Site preferences
@@ -545,6 +580,7 @@ When using `--site-data`, available types include:
 #### Global Data Types
 
 When using `--global-data`, available types include:
+
 - `all` - Export all global data
 - `meta_data` - System and custom object metadata
 - `custom_types` - Custom object type definitions

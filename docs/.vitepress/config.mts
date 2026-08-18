@@ -98,6 +98,7 @@ const guidesSidebar = [
     text: 'How-To',
     items: [
       {text: 'Authentication Setup', link: '/guide/authentication'},
+      {text: 'Import Sets', link: '/guide/import-sets'},
       {text: 'CI/CD with GitHub Actions', link: '/guide/ci-cd'},
       {text: 'sfcc-ci Migration', link: '/guide/sfcc-ci-migration'},
       {text: 'sfcc-ci SDK Migration', link: '/guide/sdk-migration'},

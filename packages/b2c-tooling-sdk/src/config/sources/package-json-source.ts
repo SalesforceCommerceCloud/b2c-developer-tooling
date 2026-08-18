@@ -32,6 +32,7 @@ const ALLOWED_FIELDS: (keyof NormalizedConfig)[] = [
   'accountManagerHost',
   'sandboxApiHost',
   'realm',
+  'importSetExclude',
 ];
 
 /**
@@ -48,6 +49,7 @@ interface PackageJsonB2CConfig {
   accountManagerHost?: string;
   sandboxApiHost?: string;
   realm?: string;
+  importSetExclude?: string[];
   [key: string]: unknown;
 }
 

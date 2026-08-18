@@ -117,6 +117,8 @@ export interface NormalizedConfig {
   // Cartridges
   /** Cartridge names to include in deploy/watch operations */
   cartridges?: string[];
+  /** Project-relative directory paths to exclude recursively from import-set source discovery */
+  importSetExclude?: string[];
 
   // Content
   /** Default content library ID for content export/list commands */
