@@ -117,6 +117,56 @@ describe('job import-set', () => {
     expect(output.runId).to.equal('skipped');
   });
 
+  it('prints post-import notes for imported items after a run', async () => {
+    const command: any = await createCommand({}, {directory: './impex'});
+    stubCommon(command);
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+    command.operations = {
+      siteArchiveImportSet: sinon.stub().resolves(
+        result({
+          items: [
+            {id: 'a-metadata', status: 'imported', note: 'Enable the preference in BM.'},
+            {id: 'b-sites', status: 'skipped', note: 'Should not be shown.'},
+            {id: 'c-catalog', status: 'imported'},
+          ],
+        }),
+      ),
+    };
+
+    await command.run();
+
+    const logged = command.log.getCalls().map((call: any) => call.args[0]);
+    expect(logged.some((line: string) => line?.includes('Post-import notes:'))).to.equal(true);
+    expect(logged.some((line: string) => line?.includes('a-metadata'))).to.equal(true);
+    expect(logged.some((line: string) => line?.includes('Enable the preference in BM.'))).to.equal(true);
+    expect(logged.some((line: string) => line?.includes('Should not be shown.'))).to.equal(false);
+  });
+
+  it('previews notes for pending items during a dry run', async () => {
+    const command: any = await createCommand({'dry-run': true}, {directory: './impex'});
+    stubCommon(command);
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+    command.operations = {
+      siteArchiveImportSet: sinon.stub().resolves(
+        result({
+          dryRun: true,
+          imported: 0,
+          skipped: 0,
+          pending: 1,
+          items: [{id: 'a-metadata', status: 'pending', note: 'Manual follow-up here.'}],
+        }),
+      ),
+    };
+
+    await command.run();
+
+    const logged = command.log.getCalls().map((call: any) => call.args[0]);
+    expect(logged.some((line: string) => line?.includes('Post-import notes (preview):'))).to.equal(true);
+    expect(logged.some((line: string) => line?.includes('Manual follow-up here.'))).to.equal(true);
+  });
+
   it('shows the platform job log when an item import fails', async () => {
     const command: any = await createCommand({json: true, 'show-log': true}, {directory: './impex'});
     stubCommon(command);

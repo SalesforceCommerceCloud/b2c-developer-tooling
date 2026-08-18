@@ -307,6 +307,9 @@ export {
   ClonePollingTimeoutError,
   ClonePollingError,
   CloneFailedError,
+  buildSandboxSettings,
+  DEFAULT_OCAPI_RESOURCES,
+  DEFAULT_WEBDAV_PERMISSIONS,
   waitForClones,
   CloneBatchPollingTimeoutError,
   CloneBatchPollingError,
@@ -315,6 +318,7 @@ export {
 
 export type {SandboxState, WaitForSandboxOptions, WaitForSandboxPollInfo} from './operations/ods/index.js';
 export type {CloneState, WaitForCloneOptions, WaitForClonePollInfo} from './operations/ods/index.js';
+export type {BuildSandboxSettingsOptions} from './operations/ods/index.js';
 export type {CloneBatchMemberStatus, WaitForClonesOptions, WaitForClonesPollInfo} from './operations/ods/index.js';
 
 // Operations - CIP
