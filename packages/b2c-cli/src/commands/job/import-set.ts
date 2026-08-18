@@ -187,6 +187,7 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
                 skipped: String(result.skipped),
               }),
         );
+        this.logNotes(result, dryRun);
       }
 
       await this.runAfterHooks(context, {
@@ -271,6 +272,31 @@ export default class JobImportSet extends JobCommand<typeof JobImportSet> {
           ),
         );
         break;
+      }
+    }
+  }
+
+  /**
+   * Prints post-import notes: the README contents of each item that was just
+   * imported (or, during a dry run, each pending item). Notes for items already
+   * applied on the instance are omitted so the summary reflects only this run.
+   */
+  private logNotes(result: ImportSetResult, dryRun: boolean): void {
+    const relevantStatus = dryRun ? 'pending' : 'imported';
+    const withNotes = result.items.filter((item) => item.status === relevantStatus && item.note);
+    if (withNotes.length === 0) return;
+
+    this.log('');
+    this.log(
+      dryRun
+        ? t('commands.job.importSet.notesHeadingDryRun', 'Post-import notes (preview):')
+        : t('commands.job.importSet.notesHeading', 'Post-import notes:'),
+    );
+    for (const item of withNotes) {
+      this.log('');
+      this.log(`  ${item.id}`);
+      for (const line of item.note!.split('\n')) {
+        this.log(line.length > 0 ? `    ${line}` : '');
       }
     }
   }

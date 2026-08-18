@@ -45,7 +45,7 @@ b2c job import existing-archive.zip --remote
 
 ### Apply an Ordered, Idempotent Import Set
 
-Use `job import-set` when a directory contains multiple site archives that must be applied in order and skipped after the instance records their successful import. This section is the canonical import-set workflow.
+Use `job import-set` when a directory contains multiple site archives that must be applied in order and skipped after the instance records their successful import. This section is a summary; for the full migration workflow — post-import README notes, receipt/lock internals, set IDs, CI/CD patterns, and recovery — use the dedicated `b2c-cli:b2c-import-set-migrations` skill.
 
 Each immediate child directory or `.zip` file is one item. Hidden entries and other files are ignored, and item names are sorted lexically:
 
@@ -331,6 +331,7 @@ Where `services-folder/services.xml` follows the patterns in the `b2c:b2c-webser
 
 ## Related Skills
 
+- `b2c-cli:b2c-import-set-migrations` - Ordered, idempotent, repeatable site-import migrations (`job import-set`) with post-import notes
 - `b2c:b2c-webservices` - Service configurations (HTTP, FTP, SOAP), services.xml format
 - `b2c:b2c-metadata` - System object extensions and custom object definitions
 - `b2c-cli:b2c-job` - Running and monitoring jobs, including individual archive imports

@@ -87,6 +87,10 @@ function createImportDirectory(): string {
   const first = path.join(root, '20260101T000000-metadata');
   fs.mkdirSync(path.join(first, 'meta'), {recursive: true});
   fs.writeFileSync(path.join(first, 'meta', 'system-objecttype-extensions.xml'), '<metadata/>');
+  fs.writeFileSync(
+    path.join(first, 'README.md'),
+    '# Manual step\n\nEnable the feature preference in Business Manager.\n',
+  );
   fs.writeFileSync(path.join(root, '20260102T000000-sites.zip'), 'zip-content');
   fs.writeFileSync(path.join(root, 'README.md'), 'ignored');
   return root;
@@ -131,6 +135,38 @@ describe('operations/jobs/import-set', () => {
 
     expect(items.map((item) => item.id)).to.deep.equal(['20260101T000000-metadata', '20260102T000000-sites.zip']);
     expect(items.map((item) => item.kind)).to.deep.equal(['directory', 'zip']);
+  });
+
+  it('reads a README note from directory items and ignores it for zip items', async () => {
+    const items = await discoverImportSet(importDirectory);
+
+    expect(items[0].note).to.equal('# Manual step\n\nEnable the feature preference in Business Manager.');
+    expect(items[1].note).to.equal(undefined);
+  });
+
+  it('prefers README.md over README and treats an empty README as no note', async () => {
+    const withPlainReadme = path.join(importDirectory, '20260103T000000-plain');
+    fs.mkdirSync(withPlainReadme, {recursive: true});
+    fs.writeFileSync(path.join(withPlainReadme, 'README'), 'plain readme body');
+    const withEmptyReadme = path.join(importDirectory, '20260104T000000-empty');
+    fs.mkdirSync(withEmptyReadme, {recursive: true});
+    fs.writeFileSync(path.join(withEmptyReadme, 'README.md'), '   \n  \n');
+
+    const items = await discoverImportSet(importDirectory);
+    const byId = new Map(items.map((item) => [item.id, item]));
+
+    expect(byId.get('20260103T000000-plain')?.note).to.equal('plain readme body');
+    expect(byId.get('20260104T000000-empty')?.note).to.equal(undefined);
+  });
+
+  it('carries item notes through to the applied result', async () => {
+    const {instance, options} = createHarness();
+
+    const result = await siteArchiveImportSet(instance, importDirectory, options);
+    const metadataItem = result.items.find((item) => item.id === '20260101T000000-metadata');
+
+    expect(metadataItem?.status).to.equal('imported');
+    expect(metadataItem?.note).to.equal('# Manual step\n\nEnable the feature preference in Business Manager.');
   });
 
   it('imports pending items, verifies receipts, and skips them on the next run', async () => {

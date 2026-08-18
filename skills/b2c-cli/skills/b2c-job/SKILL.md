@@ -107,7 +107,7 @@ b2c job import-set --dry-run
 b2c job import-set
 ```
 
-For the canonical archive layout, timestamp naming convention, receipt and retry behavior, concurrency, and recovery flags, use the `b2c-cli:b2c-site-import-export` skill's **Apply an Ordered, Idempotent Import Set** section.
+For the full migration workflow — archive layout, timestamp naming convention, post-import README notes, receipt and retry behavior, concurrency, and recovery — use the `b2c-cli:b2c-import-set-migrations` skill.
 
 ### Export Site Archives
 
