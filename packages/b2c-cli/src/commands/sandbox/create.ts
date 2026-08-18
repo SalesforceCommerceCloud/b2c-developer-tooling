@@ -7,6 +7,7 @@ import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {OdsCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
+  buildSandboxSettings,
   getApiErrorMessage,
   SandboxPollingError,
   SandboxPollingTimeoutError,
@@ -21,29 +22,6 @@ type SandboxResourceProfile = OdsComponents['schemas']['SandboxResourceProfile']
 type OcapiSettings = OdsComponents['schemas']['OcapiSettings'];
 type WebDavSettings = OdsComponents['schemas']['WebDavSettings'];
 type SandboxSettings = OdsComponents['schemas']['SandboxSettings'];
-
-/**
- * Default OCAPI resources to grant the client ID access to.
- * These enable common CI/CD operations like code deployment and job execution.
- */
-
-const DEFAULT_OCAPI_RESOURCES: NonNullable<OcapiSettings[number]['resources']> = [
-  {resource_id: '/code_versions', methods: ['get'], read_attributes: '(**)', write_attributes: '(**)'},
-  {resource_id: '/code_versions/*', methods: ['patch', 'delete'], read_attributes: '(**)', write_attributes: '(**)'},
-  {resource_id: '/jobs/*/executions', methods: ['post'], read_attributes: '(**)', write_attributes: '(**)'},
-  {resource_id: '/jobs/*/executions/*', methods: ['get'], read_attributes: '(**)', write_attributes: '(**)'},
-  {resource_id: '/sites/*/cartridges', methods: ['post'], read_attributes: '(**)', write_attributes: '(**)'},
-];
-
-/**
- * Default WebDAV permissions to grant the client ID.
- * These enable common operations like code upload and data import/export.
- */
-const DEFAULT_WEBDAV_PERMISSIONS: WebDavSettings[number]['permissions'] = [
-  {path: '/impex', operations: ['read_write']},
-  {path: '/cartridges', operations: ['read_write']},
-  {path: '/static', operations: ['read_write']},
-];
 
 /**
  * Command to create a new on-demand sandbox.
@@ -286,29 +264,17 @@ export default class SandboxCreate extends OdsCommand<typeof SandboxCreate> {
       return undefined;
     }
 
-    const hasCustomOcapi = options.ocapiSettings !== undefined;
-    const hasCustomWebdav = options.webdavSettings !== undefined;
-
-    const clientId = options.permissionsClientId || this.resolvedConfig.values.clientId;
-
-    // If no custom settings and no client ID, we can't build defaults
-    if (!hasCustomOcapi && !hasCustomWebdav && !clientId) {
-      return undefined;
-    }
-
-    const ocapi: OcapiSettings = hasCustomOcapi
-      ? this.parseJsonFlag('ocapi-settings', options.ocapiSettings!)
-      : clientId
-        ? [{client_id: clientId, resources: DEFAULT_OCAPI_RESOURCES}]
-        : [];
-
-    const webdav: WebDavSettings = hasCustomWebdav
-      ? this.parseJsonFlag('webdav-settings', options.webdavSettings!)
-      : clientId
-        ? [{client_id: clientId, permissions: DEFAULT_WEBDAV_PERMISSIONS}]
-        : [];
-
-    return {ocapi, webdav};
+    return buildSandboxSettings({
+      clientId: options.permissionsClientId || this.resolvedConfig.values.clientId,
+      ocapiSettings:
+        options.ocapiSettings === undefined
+          ? undefined
+          : this.parseJsonFlag<OcapiSettings>('ocapi-settings', options.ocapiSettings),
+      webdavSettings:
+        options.webdavSettings === undefined
+          ? undefined
+          : this.parseJsonFlag<WebDavSettings>('webdav-settings', options.webdavSettings),
+    });
   }
 
   private parseJsonFlag<T>(flagName: string, value: string): T {
