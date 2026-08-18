@@ -133,6 +133,8 @@ export class DataStore {
   static _testDocumentClient: DynamoDBDocumentClient | null = null;
   /** @internal Test hook: inject logMRTError for unit tests */
   static _testLogMRTError: ((namespace: string, err: unknown, context?: Record<string, unknown>) => void) | null = null;
+  /** @internal Test hook: inject a deterministic random source (returns [0, 1)) for unit tests */
+  static _testRandom: (() => number) | null = null;
 
   private constructor() {
     // Private constructor for singleton; use DataStore.getDataStore() instead.
@@ -161,6 +163,33 @@ export class DataStore {
     }
 
     return this._ddb;
+  }
+
+  /**
+   * Resolve the DynamoDB partition key for a read, applying shard selection.
+   *
+   * Reads the shard count from `MRT_NUM_SHARDS` (default 1) and picks a random
+   * shard `i` in `[0, N)`. Shard 0 is the legacy unsuffixed partition key, so
+   * when `MRT_NUM_SHARDS` is unset or 1 this is identical to today's behavior.
+   * There is no runtime fallback: writers fan out to every shard, so every shard
+   * a reader can pick is guaranteed to exist.
+   *
+   * @private
+   * @returns The `projectEnvironment` partition key value to read
+   */
+  private resolveShardPartitionKey(): string {
+    const base = `${process.env.MOBIFY_PROPERTY_ID} ${process.env.DEPLOY_TARGET}`;
+
+    const parsed = Number(process.env.MRT_NUM_SHARDS);
+    const numShards = Number.isInteger(parsed) && parsed > 1 ? parsed : 1;
+    if (numShards === 1) {
+      return base;
+    }
+
+    const random = DataStore._testRandom ?? Math.random;
+    const shard = Math.floor(random() * numShards);
+    // shard 0 is the legacy unsuffixed partition; shards 1..N-1 carry a suffix.
+    return shard === 0 ? base : `${base} ${shard}`;
   }
 
   /**
@@ -199,13 +228,14 @@ export class DataStore {
     }
 
     const ddb = this.getClient();
+    const projectEnvironment = this.resolveShardPartitionKey();
     let response: GetCommandOutput;
     try {
       response = await ddb.send(
         new GetCommand({
           TableName: this._tableName,
           Key: {
-            projectEnvironment: `${process.env.MOBIFY_PROPERTY_ID} ${process.env.DEPLOY_TARGET}`,
+            projectEnvironment,
             key,
           },
         }),
@@ -214,7 +244,7 @@ export class DataStore {
       const errorName = error instanceof Error ? error.name : undefined;
       const throttled = isThrottlingError(error);
       const logFn = DataStore._testLogMRTError ?? logMRTError;
-      logFn('data_store', error, {key, tableName: this._tableName, errorName, throttled});
+      logFn('data_store', error, {key, projectEnvironment, tableName: this._tableName, errorName, throttled});
       throw new DataStoreServiceError('Data store request failed.');
     }
 
