@@ -203,7 +203,7 @@ export class ConfigResolver {
         continue;
       }
       if (result && result.config) {
-        const {config: sourceConfig, location} = result;
+        const {config: sourceConfig, location, scope} = result;
         const fields = getPopulatedFields(sourceConfig);
         if (fields.length > 0) {
           // Early hostname mismatch detection: if this source provides a hostname
@@ -227,6 +227,7 @@ export class ConfigResolver {
 
             sourceInfos.push({
               name: source.name,
+              scope,
               location,
               fields: [],
               fieldsIgnored: fields,
@@ -275,6 +276,7 @@ export class ConfigResolver {
 
           sourceInfos.push({
             name: source.name,
+            scope,
             location,
             fields,
             fieldsIgnored: fieldsIgnored.length > 0 ? fieldsIgnored : undefined,
@@ -284,6 +286,7 @@ export class ConfigResolver {
           logger.trace(
             {
               source: source.name,
+              scope,
               location,
               fields,
               fieldsIgnored: fieldsIgnored.length > 0 ? fieldsIgnored : undefined,

@@ -134,9 +134,10 @@ describe('config/sources', () => {
       fs.writeFileSync(defaultConfigPath, JSON.stringify({hostname: 'global-default.demandware.net'}));
 
       const resolver = new ConfigResolver();
-      const {config} = await resolver.resolve({}, {projectDirectory, defaultConfigPath});
+      const {config, sources} = await resolver.resolve({}, {projectDirectory, defaultConfigPath});
 
       expect(config.hostname).to.equal('global-default.demandware.net');
+      expect(sources.find((source) => source.name === 'DwJsonSource')?.scope).to.equal('global');
     });
 
     it('prefers the project dw.json over the global default config', async () => {
@@ -147,9 +148,10 @@ describe('config/sources', () => {
       fs.writeFileSync(path.join(projectDirectory, 'dw.json'), JSON.stringify({hostname: 'project.demandware.net'}));
 
       const resolver = new ConfigResolver();
-      const {config} = await resolver.resolve({}, {projectDirectory, defaultConfigPath});
+      const {config, sources} = await resolver.resolve({}, {projectDirectory, defaultConfigPath});
 
       expect(config.hostname).to.equal('project.demandware.net');
+      expect(sources.find((source) => source.name === 'DwJsonSource')?.scope).to.be.undefined;
     });
 
     it('prefers an explicit config path over project and global defaults', async () => {

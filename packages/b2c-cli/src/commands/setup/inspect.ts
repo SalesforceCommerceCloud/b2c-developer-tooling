@@ -53,6 +53,16 @@ function getDisplayValue(field: string, value: unknown, unmask: boolean): string
   return strValue;
 }
 
+/** Format source provenance for human-readable output. */
+function getSourceDisplayName(source: ConfigSourceInfo): string {
+  return source.scope === 'global' ? `${source.name} (global dw.json)` : source.name;
+}
+
+/** Format compact field-level provenance. */
+function getFieldSourceDisplayName(source: ConfigSourceInfo): string {
+  return source.scope === 'global' ? 'global dw.json' : source.name;
+}
+
 /**
  * Command to display resolved configuration.
  */
@@ -155,7 +165,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
     for (const source of sources) {
       for (const field of source.fields) {
         if (!source.fieldsIgnored?.includes(field) && !resultMap.has(field)) {
-          resultMap.set(field, source.name);
+          resultMap.set(field, getFieldSourceDisplayName(source));
         }
       }
     }
@@ -329,7 +339,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       ui.div({text: '─'.repeat(60), padding: [0, 0, 0, 0]});
 
       for (const [index, source] of sources.entries()) {
-        ui.div({text: `  ${index + 1}. ${source.name}`, width: 24}, {text: source.location || '-'});
+        ui.div({text: `  ${index + 1}. ${getSourceDisplayName(source)}`, width: 34}, {text: source.location || '-'});
       }
     }
 

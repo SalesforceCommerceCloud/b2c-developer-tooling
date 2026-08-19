@@ -109,6 +109,8 @@ By default, sensitive fields are masked to prevent accidental exposure:
 
 Use `--unmask` to reveal the actual values when needed for debugging.
 
+When the shared global `dw.json` supplies values, fields are annotated with `[global dw.json]` and the Sources table labels it as `DwJsonSource (global dw.json)`. JSON output retains the source name and path and includes `"scope": "global"`.
+
 ### See Also
 
 - [Configuration Guide](/guide/configuration) - How to configure the CLI

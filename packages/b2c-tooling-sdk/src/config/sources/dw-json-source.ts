@@ -46,6 +46,17 @@ function selectConfigPaths(options: ResolveConfigOptions): string[] {
   return paths;
 }
 
+/** Whether a resolved file came from the shared global setting rather than the primary path. */
+function isGlobalConfigPath(configPath: string, options: ResolveConfigOptions): boolean {
+  if (!options.defaultConfigPath) return false;
+
+  const primaryPath = path.resolve(
+    options.configPath ?? path.join(options.projectDirectory ?? options.workingDirectory ?? process.cwd(), 'dw.json'),
+  );
+  const resolvedPath = path.resolve(configPath);
+  return resolvedPath !== primaryPath && resolvedPath === path.resolve(options.defaultConfigPath);
+}
+
 async function listInstancesFromPath(sourceName: string, configPath: string): Promise<InstanceInfo[]> {
   let result: Awaited<ReturnType<typeof loadFullDwJson>>;
   try {
@@ -150,10 +161,11 @@ export class DwJsonSource implements ConfigSource {
 
     const config = mapDwJsonToNormalizedConfig(result.config);
     const fields = getPopulatedFields(config);
+    const scope = isGlobalConfigPath(result.path, options) ? 'global' : undefined;
 
-    logger.trace({location: result.path, fields}, '[DwJsonSource] Loaded config');
+    logger.trace({location: result.path, scope, fields}, '[DwJsonSource] Loaded config');
 
-    return {config, location: result.path};
+    return {config, location: result.path, scope};
   }
 
   /**

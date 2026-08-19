@@ -223,6 +223,8 @@ export interface ConfigWarning {
 export interface ConfigSourceInfo {
   /** Human-readable name of the source */
   name: string;
+  /** Logical scope of the source when it differs from the primary project configuration. */
+  scope?: 'global';
   /** Location of the source (file path, keychain entry, URL, etc.) */
   location?: string;
   /** All fields that this source provided values for */
@@ -296,6 +298,8 @@ export interface ResolveConfigOptions {
 export interface ConfigLoadResult {
   /** The loaded configuration */
   config: NormalizedConfig;
+  /** Logical scope of the source when it differs from the primary project configuration. */
+  scope?: 'global';
   /**
    * Location of the source (for diagnostics).
    * May be a file path, keychain entry, URL, or other identifier.
