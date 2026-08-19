@@ -76,6 +76,7 @@ import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {McpTool, ToolResult, Toolset} from '../utils/index.js';
 import type {Services, MrtConfig} from '../services.js';
 import type {ServerContext} from '../server-context.js';
+import {projectContextInputSchema, type ProjectContextInput} from './project-context.js';
 
 /**
  * Context provided to tool execute functions.
@@ -143,6 +144,13 @@ export interface ToolAdapterOptions<TInput, TOutput> {
    * Defaults to false.
    */
   requiresMrtAuth?: boolean;
+
+  /**
+   * Whether this tool resolves configuration or files relative to a project.
+   * Project-aware tools automatically expose a per-call `projectDirectory`
+   * input and use it while loading Services.
+   */
+  usesProjectContext?: boolean;
 
   /**
    * Execute function that performs the tool's operation.
@@ -261,7 +269,7 @@ function formatZodErrors(error: z.ZodError): string {
  */
 export function createToolAdapter<TInput, TOutput>(
   options: ToolAdapterOptions<TInput, TOutput>,
-  loadServices: () => Promise<Services> | Services,
+  loadServices: (projectContext?: ProjectContextInput) => Promise<Services> | Services,
   serverContext?: ServerContext,
 ): McpTool {
   const {
@@ -272,17 +280,23 @@ export function createToolAdapter<TInput, TOutput>(
     isGA = true,
     requiresInstance = false,
     requiresMrtAuth = false,
+    usesProjectContext = false,
     execute,
     formatOutput,
   } = options;
 
+  const effectiveUsesProjectContext = usesProjectContext || requiresInstance || requiresMrtAuth;
+  const effectiveInputSchema = effectiveUsesProjectContext
+    ? {...projectContextInputSchema, ...inputSchema}
+    : inputSchema;
+
   // Create Zod schema from inputSchema definition
-  const zodSchema = z.object(inputSchema) as ZodObject<ZodRawShape, 'strip', ZodType, TInput>;
+  const zodSchema = z.object(effectiveInputSchema) as ZodObject<ZodRawShape, 'strip', ZodType, TInput>;
 
   return {
     name,
     description,
-    inputSchema,
+    inputSchema: effectiveInputSchema,
     toolsets,
     isGA,
 
@@ -296,7 +310,8 @@ export function createToolAdapter<TInput, TOutput>(
 
       try {
         // 2. Load Services to get fresh configuration (re-reads config files)
-        const services = await loadServices();
+        const projectContext = effectiveUsesProjectContext ? (args as ProjectContextInput) : undefined;
+        const services = await loadServices(projectContext);
 
         // 3. Get B2CInstance if required (loaded on each call)
         let b2cInstance: B2CInstance | undefined;

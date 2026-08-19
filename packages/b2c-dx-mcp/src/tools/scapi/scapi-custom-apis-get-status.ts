@@ -144,6 +144,7 @@ CLI: b2c scapi custom status`,
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       isGA: true,
       requiresInstance: false,
+      usesProjectContext: true,
       inputSchema: {
         status: z.enum(['active', 'not_registered']).optional().describe('Filter by status. Omit for all.'),
         groupBy: z.enum(['site', 'type']).optional().describe('Group by siteId or type (Admin/Shopper).'),

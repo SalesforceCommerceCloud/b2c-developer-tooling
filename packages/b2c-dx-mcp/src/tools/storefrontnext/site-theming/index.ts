@@ -17,6 +17,7 @@ import {z} from 'zod';
 import type {McpTool} from '../../../utils/index.js';
 import type {Services} from '../../../services.js';
 import {createToolAdapter, textResult, errorResult, type ToolExecutionContext} from '../../adapter.js';
+import {projectDirectoryInput} from '../../project-context.js';
 import {siteThemingStore, type ThemingGuidance} from './theming-store.js';
 import {mergeGuidance} from './guidance-merger.js';
 import {generateResponse} from './response-builder.js';
@@ -59,7 +60,9 @@ export function createSiteThemingTool(loadServices: () => Promise<Services> | Se
       toolsets: ['STOREFRONTNEXT_DEPRECATED'],
       isGA: false,
       requiresInstance: false,
+      usesProjectContext: true,
       inputSchema: {
+        projectDirectory: projectDirectoryInput,
         fileKeys: z
           .array(z.string())
           .optional()
@@ -82,7 +85,9 @@ export function createSiteThemingTool(loadServices: () => Promise<Services> | Se
           .describe('Context from previous conversation rounds'),
       },
       async execute(args: SiteThemingInput, context: ToolExecutionContext) {
-        siteThemingStore.initialize(context.services.resolveWithProjectDirectory());
+        siteThemingStore.initialize(context.services.resolveWithProjectDirectory(undefined, args.projectDirectory), {
+          themingFiles: context.services.getEnvironmentVariable('THEMING_FILES'),
+        });
 
         const defaultFileKeys = ['theming-questions', 'theming-validation', 'theming-accessibility'];
         let fileKeys: string[];

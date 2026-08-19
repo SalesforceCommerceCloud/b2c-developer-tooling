@@ -34,11 +34,13 @@ See [Figma-to-Component Tools Setup](../figma-tools-setup) for complete prerequi
 
 | Parameter              | Type   | Required | Description                                                                                                        |
 | ---------------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------ |
+| `projectDirectory`     | string | No       | Project root used for project configuration and relative workspace paths.                                          |
+| `configPath`           | string | No       | Explicit `dw.json`-format configuration file; relative paths resolve from `projectDirectory`.                      |
 | `figmaMetadata`        | string | Yes      | JSON string containing design metadata (from Figma MCP or empty). Can be empty string if metadata was not fetched. |
 | `figmaCode`            | string | Yes      | React code from design (e.g., from Figma `mcp__figma__get_design_context`, or design handoff).                     |
 | `componentName`        | string | Yes      | Suggested name for the component extracted from the design.                                                        |
 | `discoveredComponents` | array  | Yes      | Array of similar components discovered using Glob/Grep/Read. Pass empty array if no similar components found.      |
-| `workspacePath`        | string | No       | Optional workspace root path. Defaults to the MCP server project directory.                                        |
+| `workspacePath`        | string | No       | Optional workspace path, resolved from `projectDirectory` when relative.                                           |
 
 ### Discovered Component Schema
 

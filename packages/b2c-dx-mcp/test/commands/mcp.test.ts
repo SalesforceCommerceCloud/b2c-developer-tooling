@@ -5,8 +5,16 @@
  */
 
 import {expect} from 'chai';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {createSandbox, type SinonStub, type SinonSandbox} from 'sinon';
 import {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
+import {
+  globalConfigSourceRegistry,
+  type ConfigSource,
+  type ResolveConfigOptions,
+} from '@salesforce/b2c-tooling-sdk/config';
 import McpServerCommand from '../../src/commands/mcp.js';
 import {B2CDxMcpServer} from '../../src/server.js';
 import {Services} from '../../src/services.js';
@@ -511,6 +519,213 @@ describe('McpServerCommand', () => {
       expect(config.values.username).to.equal('test-user');
       expect(config.values.mrtApiKey).to.equal('test-mrt-key');
     });
+
+    it('should use a per-call project directory while loading configuration', async () => {
+      (command as unknown as {flags: Record<string, unknown>}).flags = {};
+      sandbox.stub(command as unknown as Record<string, unknown>, 'getBaseConfigOptions').returns({
+        projectDirectory: '/startup/project',
+        workingDirectory: '/startup/project',
+      });
+
+      const config = await (
+        command as unknown as {
+          loadConfiguration(projectContext?: {projectDirectory?: string}): Promise<{values: Record<string, unknown>}>;
+        }
+      ).loadConfiguration({projectDirectory: '/per-call/project'});
+
+      expect(config.values.projectDirectory).to.equal('/per-call/project');
+      expect(config.values.workingDirectory).to.equal('/per-call/project');
+    });
+
+    it('should load SFCC_CONFIG from the per-call project .env', async () => {
+      const projectDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-project-config-'));
+      const configDirectory = path.join(projectDirectory, 'config');
+      const configPath = path.join(configDirectory, 'shared.dw.json');
+      fs.mkdirSync(configDirectory);
+      fs.writeFileSync(
+        configPath,
+        JSON.stringify({hostname: 'project-env.invalid', username: 'user', password: 'password'}),
+      );
+      fs.writeFileSync(
+        path.join(projectDirectory, '.env'),
+        'SFCC_CONFIG=./config/shared.dw.json\nSFCC_CODE_VERSION=from-project-env\n',
+      );
+
+      try {
+        (command as unknown as {flags: Record<string, unknown>}).flags = {};
+        sandbox.stub(command as unknown as Record<string, unknown>, 'getBaseConfigOptions').returns({});
+
+        const config = await (
+          command as unknown as {
+            loadConfiguration(projectContext?: {projectDirectory?: string}): Promise<{
+              values: Record<string, unknown>;
+              sources: Array<{location?: string; name: string}>;
+            }>;
+          }
+        ).loadConfiguration({projectDirectory});
+
+        expect(config.values.hostname).to.equal('project-env.invalid');
+        expect(config.values.codeVersion).to.equal('from-project-env');
+        expect(config.values.projectDirectory).to.equal(projectDirectory);
+        expect(config.sources.some((source) => source.name === 'DwJsonSource' && source.location === configPath)).to.be
+          .true;
+      } finally {
+        fs.rmSync(projectDirectory, {recursive: true, force: true});
+      }
+    });
+
+    it('should prefer per-call configPath over startup config and project .env', async () => {
+      const projectDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-config-precedence-'));
+      const perCallConfig = path.join(projectDirectory, 'per-call.dw.json');
+      const startupConfig = path.join(projectDirectory, 'startup.dw.json');
+      const envConfig = path.join(projectDirectory, 'env.dw.json');
+      fs.writeFileSync(perCallConfig, JSON.stringify({hostname: 'per-call.invalid'}));
+      fs.writeFileSync(startupConfig, JSON.stringify({hostname: 'startup.invalid'}));
+      fs.writeFileSync(envConfig, JSON.stringify({hostname: 'env.invalid'}));
+      fs.writeFileSync(path.join(projectDirectory, 'dw.json'), JSON.stringify({hostname: 'default.invalid'}));
+      fs.writeFileSync(path.join(projectDirectory, '.env'), 'SFCC_CONFIG=./env.dw.json\n');
+
+      try {
+        (command as unknown as {flags: Record<string, unknown>}).flags = {};
+        sandbox.stub(command as unknown as Record<string, unknown>, 'getBaseConfigOptions').returns({
+          configPath: startupConfig,
+        });
+
+        const config = await (
+          command as unknown as {
+            loadConfiguration(projectContext?: {
+              projectDirectory?: string;
+              configPath?: string;
+            }): Promise<{values: Record<string, unknown>; sources: Array<{location?: string; name: string}>}>;
+          }
+        ).loadConfiguration({projectDirectory, configPath: './per-call.dw.json'});
+
+        expect(config.values.hostname).to.equal('per-call.invalid');
+        expect(config.sources.some((source) => source.name === 'DwJsonSource' && source.location === perCallConfig)).to
+          .be.true;
+      } finally {
+        fs.rmSync(projectDirectory, {recursive: true, force: true});
+      }
+    });
+
+    it('should prefer startup config over project .env SFCC_CONFIG', async () => {
+      const projectDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-startup-config-'));
+      const startupConfig = path.join(projectDirectory, 'startup.dw.json');
+      fs.writeFileSync(startupConfig, JSON.stringify({hostname: 'startup.invalid'}));
+      fs.writeFileSync(path.join(projectDirectory, 'env.dw.json'), JSON.stringify({hostname: 'env.invalid'}));
+      fs.writeFileSync(path.join(projectDirectory, '.env'), 'SFCC_CONFIG=./env.dw.json\n');
+
+      try {
+        (command as unknown as {flags: Record<string, unknown>}).flags = {};
+        sandbox.stub(command as unknown as Record<string, unknown>, 'getBaseConfigOptions').returns({
+          configPath: startupConfig,
+        });
+
+        const config = await (
+          command as unknown as {
+            loadConfiguration(projectContext?: {projectDirectory?: string}): Promise<{values: Record<string, unknown>}>;
+          }
+        ).loadConfiguration({projectDirectory});
+
+        expect(config.values.hostname).to.equal('startup.invalid');
+      } finally {
+        fs.rmSync(projectDirectory, {recursive: true, force: true});
+      }
+    });
+
+    it('should discover dw.json from projectDirectory when no config path is selected', async () => {
+      const projectDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-default-config-'));
+      const configPath = path.join(projectDirectory, 'dw.json');
+      fs.writeFileSync(configPath, JSON.stringify({hostname: 'default.invalid'}));
+
+      try {
+        (command as unknown as {flags: Record<string, unknown>}).flags = {};
+        sandbox.stub(command as unknown as Record<string, unknown>, 'getBaseConfigOptions').returns({});
+
+        const config = await (
+          command as unknown as {
+            loadConfiguration(projectContext?: {projectDirectory?: string}): Promise<{
+              values: Record<string, unknown>;
+              sources: Array<{location?: string; name: string}>;
+            }>;
+          }
+        ).loadConfiguration({projectDirectory});
+
+        expect(config.values.hostname).to.equal('default.invalid');
+        expect(config.sources.some((source) => source.name === 'DwJsonSource' && source.location === configPath)).to.be
+          .true;
+      } finally {
+        fs.rmSync(projectDirectory, {recursive: true, force: true});
+      }
+    });
+
+    it('should use the shared global default after project-local discovery', async () => {
+      const rootDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-global-default-'));
+      const projectDirectory = path.join(rootDirectory, 'project');
+      const defaultConfigPath = path.join(rootDirectory, 'shared.dw.json');
+      fs.mkdirSync(projectDirectory);
+      fs.writeFileSync(defaultConfigPath, JSON.stringify({hostname: 'global-default.invalid'}));
+
+      try {
+        (command as unknown as {flags: Record<string, unknown>}).flags = {};
+        sandbox.stub(command as unknown as Record<string, unknown>, 'getBaseConfigOptions').returns({
+          defaultConfigPath,
+        });
+
+        const config = await (
+          command as unknown as {
+            loadConfiguration(projectContext?: {projectDirectory?: string}): Promise<{
+              values: Record<string, unknown>;
+              sources: Array<{location?: string; name: string}>;
+            }>;
+          }
+        ).loadConfiguration({projectDirectory});
+
+        expect(config.values.hostname).to.equal('global-default.invalid');
+        expect(config.sources.some((source) => source.name === 'DwJsonSource' && source.location === defaultConfigPath))
+          .to.be.true;
+      } finally {
+        fs.rmSync(rootDirectory, {recursive: true, force: true});
+      }
+    });
+
+    it('should keep registered CLI plugin sources in the per-call resolver pipeline', async () => {
+      const projectDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-plugin-config-'));
+      const configPath = path.join(projectDirectory, 'selected.dw.json');
+      fs.writeFileSync(configPath, JSON.stringify({hostname: 'selected.invalid'}));
+      let receivedOptions: ResolveConfigOptions | undefined;
+      const pluginSource: ConfigSource = {
+        name: 'test-cli-plugin-source',
+        priority: 10,
+        load(options) {
+          receivedOptions = options;
+          return {config: {shortCode: 'plugin-short-code'}, location: 'test-plugin'};
+        },
+      };
+      globalConfigSourceRegistry.register(pluginSource);
+
+      try {
+        (command as unknown as {flags: Record<string, unknown>}).flags = {};
+        sandbox.stub(command as unknown as Record<string, unknown>, 'getBaseConfigOptions').returns({});
+
+        const config = await (
+          command as unknown as {
+            loadConfiguration(projectContext?: {
+              projectDirectory?: string;
+              configPath?: string;
+            }): Promise<{values: Record<string, unknown>; sources: Array<{name: string}>}>;
+          }
+        ).loadConfiguration({projectDirectory, configPath});
+
+        expect(config.values.hostname).to.equal('selected.invalid');
+        expect(config.values.shortCode).to.equal('plugin-short-code');
+        expect(config.sources.some((source) => source.name === 'test-cli-plugin-source')).to.be.true;
+        expect(receivedOptions?.projectDirectory).to.equal(projectDirectory);
+        expect(receivedOptions?.configPath).to.equal(configPath);
+      } finally {
+        fs.rmSync(projectDirectory, {recursive: true, force: true});
+      }
+    });
   });
 
   describe('loadServices', () => {
@@ -559,6 +774,46 @@ describe('McpServerCommand', () => {
 
       // Verify the returned services instance
       expect(services).to.equal(mockServices);
+    });
+
+    it('should pass the per-call project directory to configuration loading', async () => {
+      const mockConfig = createMockResolvedConfig({projectDirectory: '/per-call/project'});
+      const mockServices = new Services({resolvedConfig: mockConfig});
+      loadConfigurationStub = sandbox
+        .stub(command as unknown as Record<string, unknown>, 'loadConfiguration')
+        .resolves(mockConfig);
+      sandbox.stub(Services, 'fromResolvedConfig').returns(mockServices);
+
+      await (
+        command as unknown as {
+          loadServices(projectContext?: {projectDirectory?: string; configPath?: string}): Promise<Services>;
+        }
+      ).loadServices({projectDirectory: '/per-call/project', configPath: '/per-call/dw.json'});
+
+      expect(
+        loadConfigurationStub.calledOnceWithExactly({
+          projectDirectory: '/per-call/project',
+          configPath: '/per-call/dw.json',
+        }),
+      ).to.be.true;
+    });
+
+    it('should retain arbitrary project .env values in Services', async () => {
+      const projectDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-project-env-'));
+      fs.writeFileSync(path.join(projectDirectory, '.env'), 'CUSTOM_STOREFRONT_SETTING=enabled\n');
+      const mockConfig = createMockResolvedConfig({projectDirectory});
+      sandbox.stub(command as unknown as Record<string, unknown>, 'loadConfiguration').resolves(mockConfig);
+
+      try {
+        (command as unknown as {flags: Record<string, unknown>}).flags = {};
+        const services = await (
+          command as unknown as {loadServices(projectContext?: {projectDirectory?: string}): Promise<Services>}
+        ).loadServices({projectDirectory});
+
+        expect(services.getEnvironmentVariable('CUSTOM_STOREFRONT_SETTING')).to.equal('enabled');
+      } finally {
+        fs.rmSync(projectDirectory, {recursive: true, force: true});
+      }
     });
 
     it('should return Services instance created from resolved config', async () => {

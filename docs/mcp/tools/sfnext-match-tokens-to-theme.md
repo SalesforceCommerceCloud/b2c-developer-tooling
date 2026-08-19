@@ -27,10 +27,12 @@ See [Figma-to-Component Tools Setup](../figma-tools-setup) for complete prerequi
 
 ## Parameters
 
-| Parameter       | Type   | Required | Description                                                                                            |
-| --------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------ |
-| `figmaTokens`   | array  | Yes      | Array of design tokens (e.g., from Figma, design system, or style guide).                              |
-| `themeFilePath` | string | No       | Optional absolute path to theme CSS file. If not provided, searches for `app.css` in common locations. |
+| Parameter          | Type   | Required | Description                                                                                                  |
+| ------------------ | ------ | -------- | ------------------------------------------------------------------------------------------------------------ |
+| `projectDirectory` | string | No       | Project root used for project configuration, theme discovery, and relative theme paths.                      |
+| `configPath`       | string | No       | Explicit `dw.json`-format configuration file; relative paths resolve from `projectDirectory`.                |
+| `figmaTokens`      | array  | Yes      | Array of design tokens (e.g., from Figma, design system, or style guide).                                    |
+| `themeFilePath`    | string | No       | Optional theme CSS path, resolved from `projectDirectory` when relative. If omitted, searches for `app.css`. |
 
 ### Figma Token Schema
 

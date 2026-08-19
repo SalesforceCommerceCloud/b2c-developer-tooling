@@ -129,7 +129,44 @@ Add `.env` to your `.gitignore` to avoid committing credentials.
 
 ## Configuration File
 
-You can create a `dw.json` file to store instance settings. The CLI searches for this file starting from the current directory and walking up the directory tree.
+You can create a `dw.json` file to store instance settings. By default, the CLI uses `dw.json` in the selected project directory.
+
+### Configuration File Selection
+
+The CLI, MCP server, and VS Code extension select a primary configuration path in this order, then add the global `dw.json` to the available instances:
+
+1. `--config` (or an MCP tool's `configPath`)
+2. `SFCC_CONFIG` from the process environment
+3. `SFCC_CONFIG` from the selected project's `.env`
+4. `dw.json` in the selected project directory
+5. The [global default configuration](#global-default-configuration)
+
+A relative `SFCC_CONFIG` in a project `.env` is resolved from that project directory.
+
+### Global Default Configuration
+
+If you use one `dw.json` across projects, set it once as the global `dw.json`:
+
+```bash
+b2c setup default-config set /Users/you/code/dw.json
+b2c setup default-config get
+```
+
+The CLI, MCP server, and B2C DX VS Code extension add its instances after those from the primary file. A project's own `dw.json` therefore continues to take priority when both files contain the same instance name.
+
+The primary and global `dw.json` files form one instance catalog. `--instance` / `-i` looks in the primary file first and then the global file; a same-name primary instance shadows the global one. Each instance remains a complete configuration entry—fields are never merged between files.
+
+Without `-i`, the primary file's active instance or default entry wins. The global file's active instance or default entry is used only when the primary file does not provide one. Instance-management commands use the same catalog: list shows both files, create writes to the primary file when present (otherwise the global `dw.json`), and remove or set-active finds the primary instance before the global one.
+
+To remove the global `dw.json` setting:
+
+```bash
+b2c setup default-config unset
+```
+
+The setting is shared in the B2C user configuration directory (`~/.config/b2c/settings.json` on macOS and Linux; the platform configuration directory on Windows). Use the commands above instead of editing that file directly.
+
+If the configuration file is stored beside `settings.json`, the setting can use a relative path such as `"./dw.json"`; relative paths are resolved from the settings directory. The `set` command writes this relative form automatically for files kept there.
 
 ::: tip Flexible Field Names
 Both camelCase and kebab-case are accepted for all field names in `dw.json`. For example, `client-id` and `clientId` are equivalent, as are `code-version` and `codeVersion`. Legacy aliases like `server` (for `hostname`) and `passphrase` (for `certificatePassphrase`) are also still supported.

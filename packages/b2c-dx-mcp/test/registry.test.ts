@@ -151,6 +151,42 @@ describe('registry', () => {
       }
     });
 
+    it('should expose projectDirectory and configPath on every project-aware tool', () => {
+      const registry = createToolRegistry(createMockLoadServicesWrapper());
+      const toolsByName = new Map(
+        Object.values(registry)
+          .flat()
+          .map((tool) => [tool.name, tool]),
+      );
+      const projectAwareTools = [
+        'cartridge_deploy',
+        'config_inspect',
+        'debug_start_session',
+        'logs_get_recent',
+        'logs_list_files',
+        'logs_watch_start',
+        'metrics_get',
+        'mrt_bundle_push',
+        'mrt_logs_watch_start',
+        'scapi_custom_api_generate_scaffold',
+        'scapi_custom_apis_get_status',
+        'sfnext_add_page_designer_decorator',
+        'sfnext_analyze_component',
+        'sfnext_configure_theme',
+        'sfnext_match_tokens_to_theme',
+        'sfnext_start_figma_workflow',
+      ];
+
+      for (const name of projectAwareTools) {
+        const tool = toolsByName.get(name);
+        expect(tool, `${name} should be registered`).to.not.be.undefined;
+        expect(tool!.inputSchema, `${name} should accept projectDirectory`).to.have.property('projectDirectory');
+        expect(tool!.inputSchema, `${name} should accept configPath`).to.have.property('configPath');
+      }
+
+      expect(toolsByName.get('debug_start_session')!.inputSchema).to.have.property('cartridgeDirectory');
+    });
+
     it('registered tool handlers are invokable end-to-end', async () => {
       // Smoke test that verifies tools aren't just registered by name — the
       // handler can actually be invoked and produce a tool-call response.

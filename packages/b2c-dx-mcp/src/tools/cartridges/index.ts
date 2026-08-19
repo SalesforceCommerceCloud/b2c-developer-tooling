@@ -16,6 +16,7 @@ import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import type {ProjectContextInput, ProjectDirectoryInfo} from '../project-context.js';
 import {findAndDeployCartridges, getActiveCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import type {DeployResult, DeployOptions, CodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
@@ -29,7 +30,7 @@ const CARTRIDGE_PATH_REMINDER =
 /**
  * Input type for cartridge_deploy tool.
  */
-interface CartridgeDeployInput {
+interface CartridgeDeployInput extends ProjectContextInput {
   /** Path to directory containing cartridges (default: current directory) */
   directory?: string;
   /** Only deploy these cartridge names */
@@ -42,6 +43,8 @@ interface CartridgeDeployInput {
 
 /** Output type: deploy result plus reminder to update site cartridge path. */
 interface CartridgeDeployOutput extends DeployResult {
+  /** Effective project directory for configuration and relative path resolution. */
+  projectDirectory: ProjectDirectoryInfo;
   /**
    * The absolute directory that was searched for cartridges. Reflected back so
    * the agent can confirm which location was used when `directory` was omitted
@@ -94,6 +97,7 @@ function createCartridgeDeployTool(
       toolsets: ['CARTRIDGES'],
       isGA: true,
       requiresInstance: true,
+      usesProjectContext: true,
       inputSchema: {
         directory: z
           .string()
@@ -149,7 +153,8 @@ function createCartridgeDeployTool(
           }
 
           // Resolve directory path: relative paths are resolved relative to project directory, absolute paths are used as-is
-          const directory = context.services.resolveWithProjectDirectory(args.directory);
+          const projectDirectory = context.services.resolveProjectDirectory(args.projectDirectory);
+          const directory = context.services.resolveWithProjectDirectory(args.directory, args.projectDirectory);
 
           // Parse options
           const options: DeployOptions = {
@@ -175,6 +180,7 @@ function createCartridgeDeployTool(
 
           return {
             ...result,
+            projectDirectory,
             resolvedDirectory: directory,
             postInstructions: CARTRIDGE_PATH_REMINDER,
           };

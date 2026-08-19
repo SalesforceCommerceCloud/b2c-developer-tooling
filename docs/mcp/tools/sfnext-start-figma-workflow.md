@@ -34,10 +34,12 @@ See [Figma-to-Component Tools Setup](../figma-tools-setup) for complete prerequi
 
 ## Parameters
 
-| Parameter          | Type   | Required | Description                                                                                                  |
-| ------------------ | ------ | -------- | ------------------------------------------------------------------------------------------------------------ |
-| `figmaUrl`         | string | Yes      | The Figma design URL to convert. Must be a valid URL and include the `node-id` query parameter.              |
-| `workflowFilePath` | string | No       | Optional absolute path to a custom workflow `.md` file. If not provided, uses the default built-in workflow. |
+| Parameter          | Type   | Required | Description                                                                                     |
+| ------------------ | ------ | -------- | ----------------------------------------------------------------------------------------------- |
+| `projectDirectory` | string | No       | Project root used for project configuration and relative workflow paths.                        |
+| `configPath`       | string | No       | Explicit `dw.json`-format configuration file; relative paths resolve from `projectDirectory`.   |
+| `figmaUrl`         | string | Yes      | The Figma design URL to convert. Must be a valid URL and include the `node-id` query parameter. |
+| `workflowFilePath` | string | No       | Optional path to a custom workflow `.md` file, resolved from `projectDirectory` when relative.  |
 
 ## Supported Figma URL Formats
 

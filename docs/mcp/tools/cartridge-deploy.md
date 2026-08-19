@@ -25,12 +25,14 @@ See [Configuration](../configuration) for complete credential setup details incl
 
 ### Parameters
 
-| Parameter    | Type     | Required | Default                                                         | Description                                                                                                                                                                                                                                     |
-| ------------ | -------- | -------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `directory`  | string   | No       | Project directory (from `--project-directory` or auto-detected) | Path to directory to search for cartridges. The tool recursively searches for `.project` files to identify cartridges.                                                                                                                          |
-| `cartridges` | string[] | No       | All found cartridges                                            | Array of cartridge names to include in the deployment. Use this to selectively deploy specific cartridges when you have multiple cartridges but only want to update some. If not specified, all cartridges found in the directory are deployed. |
-| `exclude`    | string[] | No       | None                                                            | Array of cartridge names to exclude from the deployment. Use this to skip deploying certain cartridges, such as third-party or unchanged cartridges. Applied after the include filter.                                                          |
-| `reload`     | boolean  | No       | `false`                                                         | Whether to reload the code version after deployment. When `true`, the tool triggers a code version reload on the instance.                                                                                                                      |
+| Parameter          | Type     | Required | Default                                                         | Description                                                                                                                                                                                                                                     |
+| ------------------ | -------- | -------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `projectDirectory` | string   | No       | Configured project directory                                    | Project root used for configuration discovery and relative path resolution. Overrides the MCP process working directory.                                                                                                                        |
+| `configPath`       | string   | No       | Resolved from project context                                   | Explicit `dw.json`-format configuration file. Relative paths resolve from `projectDirectory`.                                                                                                                                                   |
+| `directory`        | string   | No       | Project directory (from `--project-directory` or auto-detected) | Path to directory to search for cartridges. The tool recursively searches for `.project` files to identify cartridges.                                                                                                                          |
+| `cartridges`       | string[] | No       | All found cartridges                                            | Array of cartridge names to include in the deployment. Use this to selectively deploy specific cartridges when you have multiple cartridges but only want to update some. If not specified, all cartridges found in the directory are deployed. |
+| `exclude`          | string[] | No       | None                                                            | Array of cartridge names to exclude from the deployment. Use this to skip deploying certain cartridges, such as third-party or unchanged cartridges. Applied after the include filter.                                                          |
+| `reload`           | boolean  | No       | `false`                                                         | Whether to reload the code version after deployment. When `true`, the tool triggers a code version reload on the instance.                                                                                                                      |
 
 ### Usage
 
@@ -46,7 +48,7 @@ Deploy specific cartridges and reload the code version:
 Deploy app_storefront_base and reload the code version.
 ```
 
-**Returns:** `{cartridges, codeVersion, reloaded}` — array of deployed cartridge mappings, code version name, and whether the code version was reloaded.
+**Returns:** `{cartridges, codeVersion, reloaded, projectDirectory, resolvedDirectory}` — deployed cartridge mappings, code version, reload status, and the effective paths used.
 
 ## See Also
 

@@ -42,7 +42,8 @@ export default class SetupInstanceSetActive extends BaseCommand<typeof SetupInst
 
   async run(): Promise<InstanceSetActiveResponse> {
     const source = new DwJsonSource();
-    const instances = await source.listInstances({configPath: this.flags.config});
+    const configOptions = this.getBaseConfigOptions();
+    const instances = await source.listInstances(configOptions);
 
     let name = this.args.name;
 
@@ -77,6 +78,8 @@ export default class SetupInstanceSetActive extends BaseCommand<typeof SetupInst
 
     // Check if already active
     if (instance.active) {
+      // Re-apply the selection so any active marker in the other catalog file is cleared.
+      await source.setActiveInstance(name, configOptions);
       if (!this.jsonEnabled()) {
         ux.stdout(`Instance "${name}" is already the active instance.`);
       }
@@ -87,7 +90,7 @@ export default class SetupInstanceSetActive extends BaseCommand<typeof SetupInst
     }
 
     // Set as active
-    await source.setActiveInstance(name, {configPath: this.flags.config});
+    await source.setActiveInstance(name, configOptions);
 
     const result: InstanceSetActiveResponse = {
       name,

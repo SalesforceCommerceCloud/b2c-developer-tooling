@@ -18,6 +18,7 @@ import {readFileSync, existsSync} from 'node:fs';
 import type {McpTool} from '../../../../utils/index.js';
 import type {Services} from '../../../../services.js';
 import {createToolAdapter, textResult} from '../../../adapter.js';
+import {projectDirectoryInput} from '../../../project-context.js';
 import {parseFigmaUrl, type FigmaParams} from './figma-url-parser.js';
 
 // prettier-ignore
@@ -175,7 +176,10 @@ export const figmaToComponentSchema = z
     workflowFilePath: z
       .string()
       .optional()
-      .describe('Optional absolute path to custom workflow .md file. If not provided, uses default built-in workflow.'),
+      .describe(
+        'Optional path to a custom workflow .md file, resolved relative to projectDirectory when needed. If omitted, uses the default built-in workflow.',
+      ),
+    projectDirectory: projectDirectoryInput,
   })
   .strict();
 
@@ -350,9 +354,13 @@ export function createFigmaToComponentTool(loadServices: () => Promise<Services>
       toolsets: ['STOREFRONTNEXT_DEPRECATED'],
       isGA: false,
       requiresInstance: false,
+      usesProjectContext: true,
       inputSchema: figmaToComponentSchema.shape,
-      async execute(args) {
-        return generateWorkflowResponse(args.figmaUrl, args.workflowFilePath);
+      async execute(args, context) {
+        const workflowFilePath = args.workflowFilePath
+          ? context.services.resolveWithProjectDirectory(args.workflowFilePath, args.projectDirectory)
+          : undefined;
+        return generateWorkflowResponse(args.figmaUrl, workflowFilePath);
       },
       formatOutput: (output) => textResult(output),
     },

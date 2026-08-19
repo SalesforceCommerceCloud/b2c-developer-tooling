@@ -300,6 +300,41 @@ describe('tools/adapter', () => {
       expect(receivedServices).to.equal(services);
     });
 
+    it('should inject and pass per-call project context to the services loader', async () => {
+      const services = createMockServices();
+      let receivedProjectContext: undefined | {projectDirectory?: string; configPath?: string};
+      const loadServices = (projectContext?: {projectDirectory?: string; configPath?: string}) => {
+        receivedProjectContext = projectContext;
+        return services;
+      };
+
+      const tool = createToolAdapter<{projectDirectory?: string; configPath?: string}, string>(
+        {
+          name: 'project_tool',
+          description: 'Uses project context',
+          toolsets: ['CARTRIDGES'],
+          usesProjectContext: true,
+          inputSchema: {},
+          execute: async () => 'done',
+          formatOutput: (output) => textResult(output),
+        },
+        loadServices,
+      );
+
+      expect(tool.inputSchema).to.have.property('projectDirectory');
+      expect(tool.inputSchema).to.have.property('configPath');
+      const result = await tool.handler({
+        projectDirectory: '/workspace/storefront',
+        configPath: '/workspace/config/dw.json',
+      });
+
+      expect(result.isError).to.be.undefined;
+      expect(receivedProjectContext).to.deep.equal({
+        projectDirectory: '/workspace/storefront',
+        configPath: '/workspace/config/dw.json',
+      });
+    });
+
     it('should support tools that do not require instance', async () => {
       const loadServices = createMockLoadServices();
       let contextReceived: ToolExecutionContext | undefined;

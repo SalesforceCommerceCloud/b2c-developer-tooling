@@ -113,6 +113,42 @@ Use `--unmask` to reveal the actual values when needed for debugging.
 
 - [Configuration Guide](/guide/configuration) - How to configure the CLI
 
+## Global Default Configuration
+
+Use a global `dw.json` when you want the CLI, MCP server, and B2C DX VS Code extension to share instances across projects. An explicit `--config`, `SFCC_CONFIG`, project `.env` selection, or project-local `dw.json` remains the primary file.
+
+Instances from the primary and global files are shown as one catalog. `--instance` / `-i` searches the primary file first, so a same-name primary instance shadows the global one. Instance fields are not combined across files.
+
+`b2c setup instance create` writes to the primary file when it exists and otherwise uses the global `dw.json`. List, remove, and set-active operate across both files, checking the primary file first.
+
+### b2c setup default-config set
+
+Set the shared global `dw.json`. The file must exist and use the `dw.json` format.
+
+Paths are normally stored as absolute paths. When the configuration file is inside the shared B2C settings directory, the command stores a relative path such as `./dw.json`, making it easy to keep the files together.
+
+```bash
+b2c setup default-config set /Users/you/code/dw.json
+b2c setup default-config set ./shared.dw.json --json
+```
+
+### b2c setup default-config get
+
+Show the configured path and report if the file is missing.
+
+```bash
+b2c setup default-config get
+b2c setup default-config get --json
+```
+
+### b2c setup default-config unset
+
+Remove the global `dw.json` setting without changing or deleting the file itself.
+
+```bash
+b2c setup default-config unset
+```
+
 ## b2c setup ide
 
 Show help for IDE integration setup commands.

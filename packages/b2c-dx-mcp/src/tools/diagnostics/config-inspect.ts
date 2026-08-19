@@ -9,18 +9,10 @@ import {redactConfigValues, type ConfigSourceInfo} from '@salesforce/b2c-tooling
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import type {ProjectContextInput, ProjectDirectoryInfo} from '../project-context.js';
 
-interface ConfigInspectInput {
+interface ConfigInspectInput extends ProjectContextInput {
   unmask?: boolean;
-}
-
-/**
- * The project directory the server resolved, and which source it came from.
- * Mirrors {@link Services.resolveProjectDirectory}.
- */
-interface ProjectDirectoryInfo {
-  path: string;
-  source: 'argument' | 'config' | 'cwd';
 }
 
 interface ConfigInspectOutput {
@@ -50,11 +42,12 @@ export function createConfigInspectTool(loadServices: () => Promise<Services> | 
       description:
         'Inspect the resolved B2C Commerce configuration the MCP server is using — instance hostname, auth, SCAPI, MRT, and other settings — along with which source (dw.json, environment variables, flags) provided each value. ' +
         'Secrets (passwords, client secrets, API keys) are redacted by default. ' +
-        'The output includes the effective projectDirectory and how it was resolved (explicit --project-directory / SFCC_PROJECT_DIRECTORY vs. the process working directory), which is useful for diagnosing why the server targets the wrong instance or cannot find a project. ' +
+        'Pass projectDirectory and/or configPath to inspect the same project and dw.json-format file a CLI command would use. The output includes the effective projectDirectory and source provenance, which is useful for diagnosing why the server targets the wrong instance or cannot find a project. ' +
         'Use this first when configuration seems wrong, auth is failing, or the server appears to be operating in the wrong directory.',
       toolsets: ['DIAGNOSTICS'],
       isGA: true,
       requiresInstance: false,
+      usesProjectContext: true,
       inputSchema: {
         unmask: z
           .boolean()
@@ -65,7 +58,7 @@ export function createConfigInspectTool(loadServices: () => Promise<Services> | 
       },
       async execute(args, {services}) {
         const resolved = services.getResolvedConfig();
-        const projectDirectory = services.resolveProjectDirectory();
+        const projectDirectory = services.resolveProjectDirectory(args.projectDirectory);
 
         return {
           config: redactConfigValues(resolved.values, {unmask: args.unmask ?? false}),

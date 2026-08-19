@@ -85,7 +85,7 @@ describe('DebugSessionRegistry', () => {
           sourceMapper: createMockSourceMapper(),
           cartridges: [],
         });
-      }).to.throw(/already exists.*client-1/);
+      }).to.throw(/already exists.*End it with debug_end_session/);
     });
 
     it('should allow different client IDs on same host', () => {

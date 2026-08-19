@@ -8,7 +8,9 @@
  *
  * @internal This module is internal to the SDK. Use ConfigResolver instead.
  */
-import {loadDwJson, loadFullDwJson, addInstance, removeInstance, setActiveInstance} from '../dw-json.js';
+import {existsSync} from 'node:fs';
+import path from 'node:path';
+import {loadDwJson, loadFullDwJson, addInstance, removeInstance, saveDwJson, setActiveInstance} from '../dw-json.js';
 import {getPopulatedFields, mapDwJsonToNormalizedConfig, mapNormalizedConfigToDwJson} from '../mapping.js';
 import type {
   ConfigSource,
@@ -18,6 +20,90 @@ import type {
   CreateInstanceOptions,
 } from '../types.js';
 import {getLogger} from '../../logging/logger.js';
+
+/** Select the explicit, project-local, or global-default dw.json path. */
+function selectConfigPath(options: ResolveConfigOptions): string | undefined {
+  if (options.configPath) return options.configPath;
+
+  const projectConfigPath = path.join(options.projectDirectory ?? options.workingDirectory ?? process.cwd(), 'dw.json');
+  if (existsSync(projectConfigPath)) return projectConfigPath;
+
+  return options.defaultConfigPath;
+}
+
+/** Select the ordered files that contribute instances to the effective catalog. */
+function selectConfigPaths(options: ResolveConfigOptions): string[] {
+  const paths: string[] = [];
+  const primaryPath = path.resolve(
+    options.configPath ?? path.join(options.projectDirectory ?? options.workingDirectory ?? process.cwd(), 'dw.json'),
+  );
+
+  if (existsSync(primaryPath)) paths.push(primaryPath);
+  const defaultConfigPath = options.defaultConfigPath ? path.resolve(options.defaultConfigPath) : undefined;
+  if (defaultConfigPath && existsSync(defaultConfigPath) && !paths.includes(defaultConfigPath)) {
+    paths.push(defaultConfigPath);
+  }
+  return paths;
+}
+
+async function listInstancesFromPath(sourceName: string, configPath: string): Promise<InstanceInfo[]> {
+  let result: Awaited<ReturnType<typeof loadFullDwJson>>;
+  try {
+    result = await loadFullDwJson({path: configPath});
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    getLogger().warn({error: message}, '[DwJsonSource] Failed to read dw.json while listing instances');
+    return [];
+  }
+
+  if (!result) return [];
+
+  const instances: InstanceInfo[] = [];
+  const {config, path: dwJsonPath} = result;
+  if (config.name) {
+    instances.push({
+      name: config.name,
+      hostname: config.hostname,
+      active: config.active,
+      source: sourceName,
+      location: dwJsonPath,
+    });
+  }
+
+  for (const item of config.configs ?? []) {
+    if (item.name) {
+      instances.push({
+        name: item.name,
+        hostname: item.hostname,
+        active: item.active,
+        source: sourceName,
+        location: dwJsonPath,
+      });
+    }
+  }
+  return instances;
+}
+
+async function loadActiveConfig(configPath: string): Promise<Awaited<ReturnType<typeof loadDwJson>>> {
+  const full = await loadFullDwJson({path: configPath});
+  if (!full) return undefined;
+
+  const active = full.config.configs?.find((item) => item.active === true);
+  if (active?.name) return loadDwJson({path: configPath, instance: active.name});
+  if (full.config.active === true) {
+    return loadDwJson({path: configPath, instance: full.config.name});
+  }
+  return undefined;
+}
+
+/** Load a file's root/default entry only when it contains configuration fields. */
+async function loadDefaultConfig(configPath: string): Promise<Awaited<ReturnType<typeof loadDwJson>>> {
+  const result = await loadDwJson({path: configPath});
+  if (!result) return undefined;
+
+  const config = mapDwJsonToNormalizedConfig(result.config);
+  return getPopulatedFields(config).length > 0 ? result : undefined;
+}
 
 /**
  * Configuration source that loads from dw.json files.
@@ -41,11 +127,22 @@ export class DwJsonSource implements ConfigSource {
   async load(options: ResolveConfigOptions): Promise<ConfigLoadResult | undefined> {
     const logger = getLogger();
 
-    const result = await loadDwJson({
-      instance: options.instance,
-      path: options.configPath,
-      projectDirectory: options.projectDirectory ?? options.workingDirectory,
-    });
+    const configPaths = selectConfigPaths(options);
+    let result: Awaited<ReturnType<typeof loadDwJson>>;
+    if (options.instance) {
+      for (const configPath of configPaths) {
+        result = await loadDwJson({instance: options.instance, path: configPath});
+        if (result) break;
+      }
+    } else {
+      for (const configPath of configPaths) {
+        result = await loadActiveConfig(configPath);
+        if (!result) {
+          result = await loadDefaultConfig(configPath);
+        }
+        if (result) break;
+      }
+    }
 
     if (!result) {
       return undefined;
@@ -63,56 +160,17 @@ export class DwJsonSource implements ConfigSource {
    * List all instances from dw.json.
    */
   async listInstances(options?: ResolveConfigOptions): Promise<InstanceInfo[]> {
-    let result: Awaited<ReturnType<typeof loadFullDwJson>>;
-    try {
-      result = await loadFullDwJson({
-        path: options?.configPath,
-        projectDirectory: options?.projectDirectory ?? options?.workingDirectory,
-      });
-    } catch (error) {
-      // A malformed dw.json (loadFullDwJson re-throws on JSON.parse failure)
-      // must not crash callers that only want to enumerate instances. Mirror
-      // the resolver's tolerance — log a warning and report no instances —
-      // so an unparseable file degrades gracefully (e.g. the VS Code status
-      // bar / instance switcher) instead of throwing.
-      const message = error instanceof Error ? error.message : String(error);
-      getLogger().warn({error: message}, '[DwJsonSource] Failed to read dw.json while listing instances');
-      return [];
-    }
-
-    if (!result) {
-      return [];
-    }
-
+    const configPaths = options ? selectConfigPaths(options) : [path.join(process.cwd(), 'dw.json')];
     const instances: InstanceInfo[] = [];
-    const {config, path: dwJsonPath} = result;
-
-    // Add root config if it has a name
-    if (config.name) {
-      instances.push({
-        name: config.name,
-        hostname: config.hostname,
-        active: config.active,
-        source: this.name,
-        location: dwJsonPath,
-      });
-    }
-
-    // Add configs array entries
-    if (config.configs) {
-      for (const c of config.configs) {
-        if (c.name) {
-          instances.push({
-            name: c.name,
-            hostname: c.hostname,
-            active: c.active,
-            source: this.name,
-            location: dwJsonPath,
-          });
+    const names = new Set<string>();
+    for (const configPath of configPaths) {
+      for (const instance of await listInstancesFromPath(this.name, configPath)) {
+        if (!names.has(instance.name)) {
+          names.add(instance.name);
+          instances.push(instance);
         }
       }
     }
-
     return instances;
   }
 
@@ -122,29 +180,63 @@ export class DwJsonSource implements ConfigSource {
   async createInstance(options: CreateInstanceOptions & ResolveConfigOptions): Promise<void> {
     const dwJsonConfig = mapNormalizedConfigToDwJson(options.config, options.name);
     await addInstance(dwJsonConfig, {
-      path: options.configPath,
+      path: selectConfigPath(options),
       projectDirectory: options.projectDirectory ?? options.workingDirectory,
       setActive: options.setActive,
     });
+    if (options.setActive) await this.setActiveInstance(options.name, options);
   }
 
   /**
    * Remove an instance from dw.json.
    */
   async removeInstance(name: string, options?: ResolveConfigOptions): Promise<void> {
-    await removeInstance(name, {
-      path: options?.configPath,
-      projectDirectory: options?.projectDirectory ?? options?.workingDirectory,
-    });
+    if (!options) return removeInstance(name);
+
+    for (const configPath of selectConfigPaths(options)) {
+      const instances = await listInstancesFromPath(this.name, configPath);
+      if (instances.some((instance) => instance.name === name)) {
+        return removeInstance(name, {path: configPath});
+      }
+    }
+    throw new Error(`Instance "${name}" not found`);
   }
 
   /**
    * Set an instance as active in dw.json.
    */
   async setActiveInstance(name: string, options?: ResolveConfigOptions): Promise<void> {
-    await setActiveInstance(name, {
-      path: options?.configPath,
-      projectDirectory: options?.projectDirectory ?? options?.workingDirectory,
-    });
+    if (!options) return setActiveInstance(name);
+
+    const configPaths = selectConfigPaths(options);
+    let targetPath: string | undefined;
+    for (const configPath of configPaths) {
+      const instances = await listInstancesFromPath(this.name, configPath);
+      if (instances.some((instance) => instance.name === name)) {
+        targetPath = configPath;
+        break;
+      }
+    }
+    if (!targetPath) throw new Error(`Instance "${name}" not found`);
+
+    await setActiveInstance(name, {path: targetPath});
+    for (const configPath of configPaths) {
+      if (configPath === targetPath) continue;
+      const result = await loadFullDwJson({path: configPath});
+      if (!result) continue;
+
+      let changed = false;
+      if (result.config.active === true) {
+        result.config.active = false;
+        changed = true;
+      }
+      for (const instance of result.config.configs ?? []) {
+        if (instance.active === true) {
+          instance.active = false;
+          changed = true;
+        }
+      }
+      if (changed) await saveDwJson(result.config, configPath);
+    }
   }
 }

@@ -123,6 +123,7 @@ Retrieve observability metrics time-series for a B2C Commerce tenant. Returns me
       toolsets: ['SCAPI'],
       isGA: false,
       requiresInstance: false, // SCAPI uses OAuth directly
+      usesProjectContext: true,
       inputSchema: {
         category: z
           .enum(['overall', 'sales', 'ecdn', 'third-party', 'scapi', 'scapi-hooks', 'mrt', 'controller', 'ocapi'])

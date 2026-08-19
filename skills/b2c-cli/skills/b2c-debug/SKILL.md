@@ -19,6 +19,8 @@ The CLI auto-discovers the target instance and credentials from `SFCC_*` environ
 
 Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
+For MCP debugging, pass `projectDirectory` to `debug_start_session` whenever the MCP server may have been launched outside the project. The tool uses that root to load the project's `.env` and default `dw.json`; pass `configPath` to select a different `dw.json`-format file. Cartridge discovery and local/server source mapping default to `projectDirectory`; pass `cartridgeDirectory` only when the cartridges live under a different root. The MCP server controls its SDAPI client identity internally, so callers do not pass a debugger client ID.
+
 ## Prerequisites
 
 - Basic Auth credentials for a BM user with `WebDAV_Manage_Customization`: a username and either the account password or a `WebDAV File Access and UX Studio` access key
@@ -104,20 +106,20 @@ b2c debug cli --rpc
 
 ### Available RPC Commands
 
-| Command | Key Args | Description |
-|---------|----------|-------------|
-| `set_breakpoints` | `breakpoints: [{file, line, condition?}]` | Replace all breakpoints |
-| `list_breakpoints` | | List current breakpoints |
-| `continue` | `thread_id?` | Resume halted thread |
-| `step_over` | `thread_id?` | Step to next line |
-| `step_into` | `thread_id?` | Step into function |
-| `step_out` | `thread_id?` | Step out of function |
-| `get_stack` | `thread_id?` | Get call stack |
-| `get_variables` | `thread_id?, frame_index?, scope?, object_path?` | Get variables |
-| `evaluate` | `expression, thread_id?, frame_index?` | Evaluate expression |
-| `list_threads` | | List threads |
-| `select_thread` | `thread_id` | Switch thread |
-| `select_frame` | `index` | Switch frame |
+| Command            | Key Args                                         | Description              |
+| ------------------ | ------------------------------------------------ | ------------------------ |
+| `set_breakpoints`  | `breakpoints: [{file, line, condition?}]`        | Replace all breakpoints  |
+| `list_breakpoints` |                                                  | List current breakpoints |
+| `continue`         | `thread_id?`                                     | Resume halted thread     |
+| `step_over`        | `thread_id?`                                     | Step to next line        |
+| `step_into`        | `thread_id?`                                     | Step into function       |
+| `step_out`         | `thread_id?`                                     | Step out of function     |
+| `get_stack`        | `thread_id?`                                     | Get call stack           |
+| `get_variables`    | `thread_id?, frame_index?, scope?, object_path?` | Get variables            |
+| `evaluate`         | `expression, thread_id?, frame_index?`           | Evaluate expression      |
+| `list_threads`     |                                                  | List threads             |
+| `select_thread`    | `thread_id`                                      | Switch thread            |
+| `select_frame`     | `index`                                          | Switch frame             |
 
 ## DAP Mode (IDE Integration)
 

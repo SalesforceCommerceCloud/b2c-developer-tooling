@@ -251,6 +251,8 @@ export interface ResolveConfigOptions {
   instance?: string;
   /** Explicit path to config file (defaults to auto-discover) */
   configPath?: string;
+  /** Global instance-catalog fallback used after an explicit or project-local dw.json */
+  defaultConfigPath?: string;
   /** Starting directory for config file search */
   projectDirectory?: string;
   /** @deprecated Use projectDirectory instead */

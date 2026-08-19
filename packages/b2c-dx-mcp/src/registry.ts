@@ -14,6 +14,7 @@ import {ALL_TOOLSETS, DEPRECATED_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES} from '
 import type {B2CDxMcpServer} from './server.js';
 import type {Services} from './services.js';
 import type {ServerContext} from './server-context.js';
+import type {ProjectContextInput} from './tools/project-context.js';
 import {createCartridgesTools} from './tools/cartridges/index.js';
 import {createDiagnosticsTools} from './tools/diagnostics/index.js';
 import {createDocsTools} from './tools/docs/index.js';
@@ -96,7 +97,7 @@ export type ToolRegistry = Record<Toolset, McpTool[]>;
  * @returns Complete tool registry
  */
 export function createToolRegistry(
-  loadServices: () => Promise<Services> | Services,
+  loadServices: (projectContext?: ProjectContextInput) => Promise<Services> | Services,
   serverContext?: ServerContext,
   detectedWorkspaces: readonly ProjectType[] = [],
   enabledDocCategories?: readonly DocCategory[],
@@ -236,7 +237,7 @@ const REGISTERED_SERVERS = new WeakSet<B2CDxMcpServer>();
 export async function registerToolsets(
   flags: StartupFlags,
   server: B2CDxMcpServer,
-  loadServices: () => Promise<Services> | Services,
+  loadServices: (projectContext?: ProjectContextInput) => Promise<Services> | Services,
   serverContext?: ServerContext,
 ): Promise<void> {
   if (REGISTERED_SERVERS.has(server)) {

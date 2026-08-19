@@ -15,7 +15,6 @@ interface ListSessionsOutput {
   sessions: Array<{
     session_id: string;
     hostname: string;
-    client_id: string;
     halted_threads: number[];
     breakpoints: MappedBreakpoint[];
     session_cookie: null | {name: string; value: string};
@@ -45,7 +44,6 @@ export function createDebugListSessionsTool(
             return {
               session_id: entry.sessionId,
               hostname: entry.hostname,
-              client_id: entry.clientId,
               halted_threads: entry.manager
                 .getKnownThreads()
                 .filter((t) => t.status === 'halted')
