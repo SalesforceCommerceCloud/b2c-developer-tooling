@@ -55,26 +55,26 @@ function getDisplayValue(field: string, value: unknown, unmask: boolean): string
 
 /** Format source provenance for human-readable output. */
 function getSourceDisplayName(source: ConfigSourceInfo): string {
-  return source.scope === 'global' ? `${source.name} (global dw.json)` : source.name;
+  return source.scope === 'global' ? `${source.name} (default)` : source.name;
 }
 
 /** Format compact field-level provenance. */
 function getFieldSourceDisplayName(source: ConfigSourceInfo): string {
-  return source.scope === 'global' ? 'global dw.json' : source.name;
+  return source.scope === 'global' ? 'default' : source.name;
 }
 
 /** Expand configuration sources into human-readable rows. */
-function getSourceRows(sources: ConfigSourceInfo[]): Array<{location: string; name: string; selected?: boolean}> {
+function getSourceRows(sources: ConfigSourceInfo[]): Array<{location: string; name: string}> {
   return sources.flatMap((source) => {
     if (!source.instanceCatalog || source.instanceCatalog.length === 0) {
       return [{location: source.location || '-', name: getSourceDisplayName(source)}];
     }
 
     return source.instanceCatalog.map((file) => {
+      const name = file.scope === 'global' ? `${source.name} (default)` : source.name;
       return {
         location: file.location,
-        name: file.scope === 'global' ? `${source.name} (global dw.json)` : source.name,
-        selected: file.selected,
+        name: file.selected ? `${name}*` : name,
       };
     });
   });
@@ -355,8 +355,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       ui.div({text: '─'.repeat(60), padding: [0, 0, 0, 0]});
 
       for (const [index, source] of getSourceRows(sources).entries()) {
-        const selectionMarker = source.selected ? '→' : ' ';
-        ui.div({text: `  ${index + 1}. ${selectionMarker} ${source.name}`, width: 38}, {text: source.location});
+        ui.div({text: `  ${index + 1}. ${source.name}`, width: 34}, {text: source.location});
       }
     }
 

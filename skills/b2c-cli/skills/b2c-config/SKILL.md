@@ -250,7 +250,7 @@ The `setup inspect` command displays configuration organized by category:
 Each value shows its source in brackets:
 
 - `[DwJsonSource]` — Value from the primary `dw.json` file
-- `[global dw.json]` — Value from the shared global `dw.json` (shown as `DwJsonSource (global dw.json)` in the Sources table)
+- `[default]` — Value from the shared default `dw.json` (shown as `DwJsonSource (default)` in the Sources table)
 - `[EnvSource]` — Value from an SFCC\_\* environment variable
 - `[MobifySource]` — Value from ~/.mobify file
 - `[PackageJsonSource]` — Value from package.json `b2c` key

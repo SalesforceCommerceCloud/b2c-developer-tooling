@@ -109,7 +109,7 @@ By default, sensitive fields are masked to prevent accidental exposure:
 
 Use `--unmask` to reveal the actual values when needed for debugging.
 
-The Sources section shows both the primary and global `dw.json` files and marks the file that supplied the selected instance with `→`. When the shared global `dw.json` supplies values, fields are annotated with `[global dw.json]` and its source row is labeled as a global `dw.json`. JSON output includes the same file provenance plus `"scope": "global"` on a selected global source.
+The Sources section shows both the primary and default `dw.json` files and marks the file that supplied the selected instance with `*`. When the shared default `dw.json` supplies values, fields are annotated with `[default]` and its source row is labeled `(default)`. JSON output includes the same file provenance plus `"scope": "global"` on a selected default source.
 
 ### See Also
 
