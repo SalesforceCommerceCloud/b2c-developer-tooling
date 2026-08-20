@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.22
+
+### Patch Changes
+
+- [#631](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/631) [`b0b24b8`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b0b24b8fae8c57186b94a7dab3a27dfcf85f49f1) - Made MCP project resolution provenance consistent and tool guidance more concise, kept local paths out of tool descriptions, and clarified startup documentation workspace detection. Updated MCP protocol libraries and made tool input schemas reject unknown arguments. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.21
 
 ### Patch Changes
