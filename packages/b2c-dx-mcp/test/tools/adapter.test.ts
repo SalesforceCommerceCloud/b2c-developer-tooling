@@ -11,7 +11,7 @@ import {Services} from '../../src/services.js';
 import type {ToolExecutionContext} from '../../src/tools/adapter.js';
 import type {ToolResult} from '../../src/utils/types.js';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
-import {resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {resolveConfig, type ConfigSourceInfo} from '@salesforce/b2c-tooling-sdk/config';
 import {createMockResolvedConfig} from '../test-helpers.js';
 
 // Create a mock services instance for testing
@@ -302,18 +302,22 @@ describe('tools/adapter', () => {
 
     it('should inject and pass per-call project context to the services loader', async () => {
       const services = createMockServices();
-      let receivedProjectContext: undefined | {projectDirectory?: string; configPath?: string};
-      const loadServices = (projectContext?: {projectDirectory?: string; configPath?: string}) => {
+      let receivedProjectContext: undefined | {projectDirectory?: string; configPath?: string; instanceName?: string};
+      const loadServices = (projectContext?: {
+        projectDirectory?: string;
+        configPath?: string;
+        instanceName?: string;
+      }) => {
         receivedProjectContext = projectContext;
         return services;
       };
 
-      const tool = createToolAdapter<{projectDirectory?: string; configPath?: string}, string>(
+      const tool = createToolAdapter<{projectDirectory?: string; configPath?: string; instanceName?: string}, string>(
         {
           name: 'project_tool',
           description: 'Uses project context',
           toolsets: ['CARTRIDGES'],
-          usesProjectContext: true,
+          usesConfigurationContext: true,
           inputSchema: {},
           execute: async () => 'done',
           formatOutput: (output) => textResult(output),
@@ -323,16 +327,75 @@ describe('tools/adapter', () => {
 
       expect(tool.inputSchema).to.have.property('projectDirectory');
       expect(tool.inputSchema).to.have.property('configPath');
+      expect(tool.inputSchema).to.have.property('instanceName');
       const result = await tool.handler({
         projectDirectory: '/workspace/storefront',
         configPath: '/workspace/config/dw.json',
+        instanceName: 'sandbox',
       });
 
       expect(result.isError).to.be.undefined;
       expect(receivedProjectContext).to.deep.equal({
         projectDirectory: '/workspace/storefront',
         configPath: '/workspace/config/dw.json',
+        instanceName: 'sandbox',
       });
+    });
+
+    it('should describe the actual server fallback and attach compact resolution provenance', async () => {
+      const sources: ConfigSourceInfo[] = [
+        {
+          fields: ['hostname', 'instanceName'],
+          location: '/shared/dw.json',
+          name: 'DwJsonSource',
+          scope: 'global',
+        },
+      ];
+      const config = {
+        ...createMockResolvedConfig({
+          hostname: 'sandbox.invalid',
+          instanceName: 'sandbox',
+          projectDirectory: '/server/project',
+        }),
+        sources,
+      };
+      const services = new Services({
+        resolvedConfig: config,
+        resolution: {
+          projectDirectory: {path: '/server/project', source: 'config'},
+          primaryConfiguration: {path: '/server/project/dw.json', source: 'projectDirectory'},
+        },
+      });
+      const loadServices = () => services;
+      loadServices.projectContextDefaults = {
+        projectDirectory: {path: '/server/project', source: 'config' as const},
+      };
+      const tool = createToolAdapter<Record<string, never>, {ok: boolean}>(
+        {
+          name: 'resolved_tool',
+          description: 'Resolved tool',
+          toolsets: ['DIAGNOSTICS'],
+          usesConfigurationContext: true,
+          inputSchema: {},
+          execute: async () => ({ok: true}),
+          formatOutput: (output) => jsonResult(output),
+        },
+        loadServices,
+      );
+
+      expect(tool.inputSchema.projectDirectory.description).to.include('/server/project');
+      const result = await tool.handler({});
+      const output = JSON.parse(getResultText(result)) as Record<string, unknown>;
+      expect(output.resolution).to.deep.equal({
+        configuration: {
+          hostname: 'sandbox.invalid',
+          instanceName: 'sandbox',
+          path: '/shared/dw.json',
+          source: 'globalDefault',
+        },
+        projectDirectory: {path: '/server/project', source: 'config'},
+      });
+      expect(result.structuredContent?.resolution).to.deep.equal(output.resolution);
     });
 
     it('should support tools that do not require instance', async () => {

@@ -533,8 +533,9 @@ describe('McpServerCommand', () => {
         }
       ).loadConfiguration({projectDirectory: '/per-call/project'});
 
-      expect(config.values.projectDirectory).to.equal('/per-call/project');
-      expect(config.values.workingDirectory).to.equal('/per-call/project');
+      const expectedProjectDirectory = path.resolve('/per-call/project');
+      expect(config.values.projectDirectory).to.equal(expectedProjectDirectory);
+      expect(config.values.workingDirectory).to.equal(expectedProjectDirectory);
     });
 
     it('should load SFCC_CONFIG from the per-call project .env', async () => {
@@ -719,6 +720,45 @@ describe('McpServerCommand', () => {
         expect(config.values.hostname).to.equal('global-default.invalid');
         expect(config.sources.some((source) => source.name === 'DwJsonSource' && source.location === defaultConfigPath))
           .to.be.true;
+      } finally {
+        fs.rmSync(rootDirectory, {recursive: true, force: true});
+      }
+    });
+
+    it('should select a named instance across the primary and shared default files', async () => {
+      const rootDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-named-instance-'));
+      const projectDirectory = path.join(rootDirectory, 'project');
+      const configPath = path.join(projectDirectory, 'dw.json');
+      const defaultConfigPath = path.join(rootDirectory, 'shared.dw.json');
+      fs.mkdirSync(projectDirectory);
+      fs.writeFileSync(configPath, JSON.stringify({configs: [{hostname: 'local.invalid', name: 'local'}]}));
+      fs.writeFileSync(defaultConfigPath, JSON.stringify({configs: [{hostname: 'shared.invalid', name: 'shared'}]}));
+
+      try {
+        (command as unknown as {flags: Record<string, unknown>}).flags = {};
+        sandbox.stub(command as unknown as Record<string, unknown>, 'getBaseConfigOptions').returns({
+          defaultConfigPath,
+        });
+        const load = (instanceName: string) =>
+          (
+            command as unknown as {
+              loadConfiguration(projectContext: {
+                instanceName: string;
+                projectDirectory: string;
+              }): Promise<{values: Record<string, unknown>; sources: Array<{location?: string; scope?: string}>}>;
+            }
+          ).loadConfiguration({instanceName, projectDirectory});
+
+        const local = await load('local');
+        expect(local.values.hostname).to.equal('local.invalid');
+        expect(local.values.instanceName).to.equal('local');
+        expect(local.sources.some((source) => source.location === configPath && source.scope !== 'global')).to.be.true;
+
+        const shared = await load('shared');
+        expect(shared.values.hostname).to.equal('shared.invalid');
+        expect(shared.values.instanceName).to.equal('shared');
+        expect(shared.sources.some((source) => source.location === defaultConfigPath && source.scope === 'global')).to
+          .be.true;
       } finally {
         fs.rmSync(rootDirectory, {recursive: true, force: true});
       }

@@ -39,7 +39,8 @@ List log files on the instance via WebDAV.
 | Parameter          | Type                         | Required | Default            | Description                                                                                                                          |
 | ------------------ | ---------------------------- | -------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `projectDirectory` | string                       | No       | configured project | Project root used for `.env` and default `dw.json` resolution.                                                                       |
-| `configPath`       | string                       | No       | project config     | Explicit `dw.json`-format configuration file; relative paths resolve from `projectDirectory`.                                        |
+| `configPath`       | string                       | No       | project config     | Primary `dw.json`-format configuration file; relative paths resolve from `projectDirectory`.                                         |
+| `instanceName`     | string                       | No       | active/default     | Named instance selected from the primary configuration first, then the shared default `dw.json`.                                     |
 | `prefixes`         | string[]                     | No       | all                | Filter by log prefix (e.g., `["error", "customerror"]`). A path-like value such as `"internal/server"` lists logs in a subdirectory. |
 | `sort_by`          | `"date" \| "name" \| "size"` | No       | `date`             | Sort field                                                                                                                           |
 | `sort_order`       | `"asc" \| "desc"`            | No       | `desc`             | Sort order                                                                                                                           |
@@ -53,7 +54,8 @@ Fetch recent log entries in a single request/response. Filters (`since`, `level`
 | Parameter          | Type     | Required | Default                    | Description                                                                                         |
 | ------------------ | -------- | -------- | -------------------------- | --------------------------------------------------------------------------------------------------- |
 | `projectDirectory` | string   | No       | configured project         | Project root used for `.env` and default `dw.json` resolution.                                      |
-| `configPath`       | string   | No       | project config             | Explicit `dw.json`-format configuration file; relative paths resolve from `projectDirectory`.       |
+| `configPath`       | string   | No       | project config             | Primary `dw.json`-format configuration file; relative paths resolve from `projectDirectory`.        |
+| `instanceName`     | string   | No       | active/default             | Named instance selected from the primary configuration first, then the shared default `dw.json`.    |
 | `prefixes`         | string[] | No       | `["error", "customerror"]` | Log prefixes to read. A path-like value such as `"internal/server"` reads logs from a subdirectory. |
 | `count`            | number   | No       | `50`                       | Maximum entries to return                                                                           |
 | `since`            | string   | No       |                            | Relative time (`"5m"`, `"1h"`, `"2d"`) or ISO 8601                                                  |
@@ -71,7 +73,8 @@ Start a background log watch. Returns a `watch_id` immediately. Buffers entries 
 | Parameter          | Type     | Required | Default                    | Description                                                                                                           |
 | ------------------ | -------- | -------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `projectDirectory` | string   | No       | configured project         | Project root used for `.env` and default `dw.json` resolution.                                                        |
-| `configPath`       | string   | No       | project config             | Explicit `dw.json`-format configuration file; relative paths resolve from `projectDirectory`.                         |
+| `configPath`       | string   | No       | project config             | Primary `dw.json`-format configuration file; relative paths resolve from `projectDirectory`.                          |
+| `instanceName`     | string   | No       | active/default             | Named instance selected from the primary configuration first, then the shared default `dw.json`.                      |
 | `prefixes`         | string[] | No       | `["error", "customerror"]` | Log prefixes to watch. A path-like value such as `"internal/server"` watches logs in a subdirectory.                  |
 | `last_entries`     | number   | No       | `0`                        | Pre-existing entries per file to emit on startup. `0` (default) captures only new entries; set >0 for recent context. |
 | `poll_interval_ms` | number   | No       | `3000`                     | How often the underlying tail polls WebDAV                                                                            |
@@ -115,7 +118,7 @@ No parameters.
 
 **Returns:** `{watches: [{watch_id, hostname, prefixes, buffered_entries, total_entries_seen, dropped_entries, files_discovered, stopped, created_at, last_activity_at}]}`.
 
-> **Recovering orphaned watches:** watches live in the MCP server process and only one is allowed per hostname. Call `logs_watch_list` to find a lost watch, then `logs_watch_stop` with its `watch_id`. Idle watches are destroyed after 30 minutes; restarting the MCP server clears all watch state.
+> **Recovering orphaned watches:** watches live in the MCP server process and only one is allowed per hostname. Call `logs_watch_list` to find a lost watch and its captured `resolution`, then `logs_watch_stop` with its `watch_id`. Idle watches are destroyed after 30 minutes; restarting the MCP server clears all watch state.
 
 ---
 
@@ -152,7 +155,8 @@ Start a background tail of the configured MRT environment's logs. Returns a `wat
 | Parameter          | Type     | Required | Default            | Description                                                                                                |
 | ------------------ | -------- | -------- | ------------------ | ---------------------------------------------------------------------------------------------------------- |
 | `projectDirectory` | string   | No       | configured project | Project root used for `.env` and default `dw.json` resolution.                                             |
-| `configPath`       | string   | No       | project config     | Explicit `dw.json`-format configuration file; relative paths resolve from `projectDirectory`.              |
+| `configPath`       | string   | No       | project config     | Primary `dw.json`-format configuration file; relative paths resolve from `projectDirectory`.               |
+| `instanceName`     | string   | No       | active/default     | Named instance selected from the primary configuration first, then the shared default `dw.json`.           |
 | `level`            | string[] | No       |                    | Drop entries not matching these levels (ERROR, WARN, INFO, DEBUG, ...) before buffering. Case-insensitive. |
 | `search`           | string   | No       |                    | Drop entries not matching this case-insensitive substring (against message and raw) before buffering.      |
 
@@ -195,7 +199,7 @@ No parameters.
 
 **Returns:** `{watches: [{watch_id, project, environment, origin, buffered_entries, total_entries_seen, dropped_entries, stopped, created_at, last_activity_at}]}`.
 
-> **Recovering orphaned watches:** watches live in the MCP server process and only one is allowed per project/environment/origin. Call `mrt_logs_watch_list` to find a lost watch, then `mrt_logs_watch_stop` with its `watch_id`. Idle watches are destroyed after 30 minutes; restarting the MCP server clears all watch state.
+> **Recovering orphaned watches:** watches live in the MCP server process and only one is allowed per project/environment/origin. Call `mrt_logs_watch_list` to find a lost watch and its captured `resolution`, then `mrt_logs_watch_stop` with its `watch_id`. Idle watches are destroyed after 30 minutes; restarting the MCP server clears all watch state.
 
 ---
 

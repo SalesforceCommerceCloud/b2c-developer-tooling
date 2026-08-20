@@ -41,10 +41,11 @@ Start a new script debugger session. Connects to the SDAPI, discovers cartridge 
 | Parameter            | Type   | Required | Default                       | Description                                                                                                                                   |
 | -------------------- | ------ | -------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `projectDirectory`   | string | No       | Configured project directory  | Project root used to load `.env`/`dw.json` and resolve relative paths. Overrides the MCP process working directory.                           |
-| `configPath`         | string | No       | Resolved from project context | Explicit `dw.json`-format configuration file. Overrides startup/project config selection; relative paths resolve from `projectDirectory`.     |
+| `configPath`         | string | No       | Resolved from project context | Primary `dw.json`-format configuration file. Relative paths resolve from `projectDirectory`; the shared default remains available.            |
+| `instanceName`       | string | No       | Active/default instance       | Named instance selected from the primary configuration first, then the shared default `dw.json`.                                              |
 | `cartridgeDirectory` | string | No       | `projectDirectory`            | Cartridge discovery and source-mapping root only. Use when cartridges are outside the project root; relative paths resolve from project root. |
 
-**Returns:** `session_id`, `hostname`, discovered `cartridges`, resolved `projectDirectory`, resolved `cartridgeDirectory`, `session_cookie` (see [Server affinity](#server-affinity-hitting-breakpoints)), and `warnings`.
+**Returns:** `session_id`, `hostname`, discovered `cartridges`, `resolution`, `session_cookie` (see [Server affinity](#server-affinity-hitting-breakpoints)), and `warnings`. The session retains its resolution context; `debug_list_sessions` returns it for later follow-up calls.
 
 ### debug_end_session
 

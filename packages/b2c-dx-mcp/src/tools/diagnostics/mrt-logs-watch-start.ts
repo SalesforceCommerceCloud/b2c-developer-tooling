@@ -159,7 +159,13 @@ export function createMrtLogsWatchStartTool(
         // exit).
         let entry;
         try {
-          entry = registry.registerWatch({project, environment, origin, tailResult});
+          entry = registry.registerWatch({
+            project,
+            environment,
+            origin,
+            tailResult,
+            resolution: structuredClone(context.resolution),
+          });
         } catch (error) {
           tailResult.stop();
           throw error;

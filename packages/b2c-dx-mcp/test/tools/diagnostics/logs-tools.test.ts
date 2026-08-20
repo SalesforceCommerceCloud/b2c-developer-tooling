@@ -380,11 +380,17 @@ describe('tools/diagnostics/logs', () => {
       const listTool = createLogsWatchListTool(loadServices, serverContext);
       const result = await listTool.handler({});
       const json = getResultJson<{
-        watches: Array<{hostname: string; prefixes: string[]; watch_id: string}>;
+        watches: Array<{
+          hostname: string;
+          prefixes: string[];
+          resolution?: {projectDirectory: {source: string}};
+          watch_id: string;
+        }>;
       }>(result);
       expect(json.watches).to.have.lengthOf(1);
       expect(json.watches[0].hostname).to.equal('test.example.com');
       expect(json.watches[0].prefixes).to.deep.equal(['error']);
+      expect(json.watches[0].resolution?.projectDirectory.source).to.equal('cwd');
     });
 
     it('errors when registry is missing', async () => {

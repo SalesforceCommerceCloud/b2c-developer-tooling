@@ -42,12 +42,12 @@ export function createConfigInspectTool(loadServices: () => Promise<Services> | 
       description:
         'Inspect the resolved B2C Commerce configuration the MCP server is using — instance hostname, auth, SCAPI, MRT, and other settings — along with which source (dw.json, environment variables, flags) provided each value. ' +
         'Secrets (passwords, client secrets, API keys) are redacted by default. ' +
-        'Pass projectDirectory and/or configPath to inspect the same project and dw.json-format file a CLI command would use. The output includes the effective projectDirectory and source provenance, which is useful for diagnosing why the server targets the wrong instance or cannot find a project. ' +
+        'Pass projectDirectory, configPath, and/or instanceName to inspect the same project, configuration catalog, and named instance another tool would use. The detailed source graph is supplemented by the same compact resolution provenance returned by other configuration-aware tools. ' +
         'Use this first when configuration seems wrong, auth is failing, or the server appears to be operating in the wrong directory.',
       toolsets: ['DIAGNOSTICS'],
       isGA: true,
       requiresInstance: false,
-      usesProjectContext: true,
+      usesConfigurationContext: true,
       inputSchema: {
         unmask: z
           .boolean()

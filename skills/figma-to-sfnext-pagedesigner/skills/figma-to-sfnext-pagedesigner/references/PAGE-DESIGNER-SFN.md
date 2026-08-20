@@ -18,8 +18,6 @@ claude plugin install b2c-dx-mcp        # MCP server (SCAPI schema discovery, MR
 claude plugin install storefront-next-figma  # Figma design-kit sync workflows
 ```
 
-⚠️ **Do NOT use the deprecated `sfnext_*` MCP tools** (e.g. `sfnext_add_page_designer_decorator`). They predate Storefront Next 1.0 GA and are superseded by the `storefront-next` plugin above.
-
 When uncertain about anything below, fetch the official docs (Section 7) — this feature area is young and moving.
 
 ---
@@ -36,31 +34,38 @@ Page Designer (PD) is the visual editor in Business Manager where merchants buil
 4. At runtime, the storefront renders PD pages via **prebuilt page manifests** served from the **MRT Data Store** (not assembled per shopper request), and/or the **`shopperExperience`** SCAPI client for page/content lookups.
 
 So there are two sync loops to keep straight:
-- **Dev-time loop (you):** decorated components → generated metadata cartridge → deployed to B2C. Keeps the *palette of available components* in PD current.
-- **Merchant-time loop (automatic):** merchant edits pages in PD → system job prebuilds manifests → pushed to MRT Data Store → storefront reads them. Keeps the *page content* current.
+
+- **Dev-time loop (you):** decorated components → generated metadata cartridge → deployed to B2C. Keeps the _palette of available components_ in PD current.
+- **Merchant-time loop (automatic):** merchant edits pages in PD → system job prebuilds manifests → pushed to MRT Data Store → storefront reads them. Keeps the _page content_ current.
 
 ---
 
 ## 3. Developer workflow
 
 ### Author
+
 Create/modify a React component, annotate with the PD decorators (`@Component` for component types, `@PageType` for page layouts with regions, `@Aspect` for dynamic page types like PDP/PLP templates). The `storefront-next` plugin skill has the current decorator API — follow it rather than guessing attribute schemas.
 
 ### Generate + deploy metadata
+
 ```bash
 pnpm sfnext generate-cartridge   # scans src/ decorators → JSON metadata in cartridge/cartridge/experience/
 pnpm sfnext deploy-cartridge     # uploads cartridge to B2C Commerce (reads dw.json / SDK config)
 ```
+
 Requires valid B2C credentials resolvable by the tooling SDK (`dw.json`, env vars, or CLI flags).
 
 ### Keep metadata in sync automatically (recommended once stable)
+
 ```ts
 // config.ts
 export const GENERATE_AND_DEPLOY_CARTRIDGE_ON_MRT_PUSH = true; // default: false
 ```
+
 With this on, every `pnpm sfnext push` (MRT deploy) first regenerates and redeploys the cartridge metadata — code on MRT and component palette in PD can't drift.
 
 ### Deploy the storefront itself
+
 ```bash
 pnpm sfnext push -e <mrt-environment> -w
 ```
@@ -90,17 +95,17 @@ pnpm sfnext push -e <mrt-environment> -w
 
 ## 6. Vocabulary quick reference
 
-| Term | Meaning |
-|---|---|
-| Page type | Layout definition with named regions merchants fill with components |
-| Component type | Reusable building block with merchant-editable attributes |
-| Region | Named slot in a page/component that accepts child components |
-| Aspect / dynamic page | Template page driven by runtime attributes (e.g. PDP/PLP templates) |
-| Decorators (`@Component`, `@PageType`, `@Aspect`) | TS annotations on React components that the CLI compiles into PD metadata |
-| Generated cartridge | `cartridge/cartridge/experience/` JSON produced by `generate-cartridge` — never hand-edit; regenerate |
-| Page manifest | Prebuilt PD page description stored in the MRT Data Store, read at render time |
-| MRT Data Store | MRT-side storage syncing site preferences + PD manifests from B2C |
-| `shopperExperience` | SCAPI client namespace for fetching PD pages/content in loaders |
+| Term                                              | Meaning                                                                                               |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Page type                                         | Layout definition with named regions merchants fill with components                                   |
+| Component type                                    | Reusable building block with merchant-editable attributes                                             |
+| Region                                            | Named slot in a page/component that accepts child components                                          |
+| Aspect / dynamic page                             | Template page driven by runtime attributes (e.g. PDP/PLP templates)                                   |
+| Decorators (`@Component`, `@PageType`, `@Aspect`) | TS annotations on React components that the CLI compiles into PD metadata                             |
+| Generated cartridge                               | `cartridge/cartridge/experience/` JSON produced by `generate-cartridge` — never hand-edit; regenerate |
+| Page manifest                                     | Prebuilt PD page description stored in the MRT Data Store, read at render time                        |
+| MRT Data Store                                    | MRT-side storage syncing site preferences + PD manifests from B2C                                     |
+| `shopperExperience`                               | SCAPI client namespace for fetching PD pages/content in loaders                                       |
 
 ---
 

@@ -49,6 +49,7 @@ import os from 'node:os';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
+import type {ConfigurationResolutionSource, ProjectDirectoryInfo, ToolResolution} from './tools/project-context.js';
 import {
   createCustomApisClient,
   createMetricsClient,
@@ -87,6 +88,44 @@ export interface ServicesOptions {
   resolvedConfig: ResolvedB2CConfig;
   /** Project-scoped environment parsed from the effective project's .env file. */
   projectEnvironment?: Readonly<Record<string, string | undefined>>;
+  /** Inputs needed to attribute project and primary-configuration selection. */
+  resolution?: ServicesResolutionInputs;
+}
+
+/** Resolution inputs captured centrally by the MCP command for one tool call. */
+export interface ServicesResolutionInputs {
+  /** Effective project directory and its selection source. */
+  projectDirectory: ProjectDirectoryInfo;
+  /** Primary configuration candidate selected before the SDK resolver runs. */
+  primaryConfiguration?: {
+    path: string;
+    source: Exclude<ConfigurationResolutionSource, 'globalDefault' | 'none'>;
+  };
+}
+
+function createToolResolution(config: ResolvedB2CConfig, inputs?: ServicesResolutionInputs): ToolResolution {
+  const configuredProjectDirectory = config.values.projectDirectory;
+  const projectDirectory =
+    inputs?.projectDirectory ??
+    (configuredProjectDirectory
+      ? {path: configuredProjectDirectory, source: 'config' as const}
+      : {path: process.cwd(), source: 'cwd' as const});
+  const dwJsonSource = config.sources.find((source) => source.name === 'DwJsonSource' && source.location);
+  const configurationSource: ConfigurationResolutionSource = dwJsonSource
+    ? dwJsonSource.scope === 'global'
+      ? 'globalDefault'
+      : (inputs?.primaryConfiguration?.source ?? 'projectDirectory')
+    : 'none';
+
+  return {
+    projectDirectory,
+    configuration: {
+      ...(dwJsonSource?.location ? {path: dwJsonSource.location} : {}),
+      source: configurationSource,
+      ...(config.values.instanceName ? {instanceName: config.values.instanceName} : {}),
+      ...(config.values.hostname ? {hostname: config.values.hostname} : {}),
+    },
+  };
 }
 
 /**
@@ -126,6 +165,7 @@ export class Services {
    * @private
    */
   private readonly projectEnvironment: Readonly<Record<string, string | undefined>>;
+  private readonly resolution: ToolResolution;
   private readonly resolvedConfig: ResolvedB2CConfig;
 
   public constructor(opts: ServicesOptions) {
@@ -133,6 +173,7 @@ export class Services {
     this.mrtConfig = opts.mrtConfig ?? {};
     this.resolvedConfig = opts.resolvedConfig;
     this.projectEnvironment = opts.projectEnvironment ?? {};
+    this.resolution = createToolResolution(opts.resolvedConfig, opts.resolution);
   }
 
   /**
@@ -150,6 +191,7 @@ export class Services {
   public static fromResolvedConfig(
     config: ResolvedB2CConfig,
     projectEnvironment?: Readonly<Record<string, string | undefined>>,
+    resolution?: ServicesResolutionInputs,
   ): Services {
     // Build MRT config using factory methods
     const mrtConfig: MrtConfig = {
@@ -167,6 +209,7 @@ export class Services {
       mrtConfig,
       resolvedConfig: config,
       projectEnvironment,
+      resolution,
     });
   }
 
@@ -297,6 +340,19 @@ export class Services {
    */
   public getPlatform(): NodeJS.Platform {
     return os.platform();
+  }
+
+  /**
+   * Get compact project and selected-configuration provenance for MCP results.
+   * Detailed source graphs remain available through {@link getResolvedConfig}
+   * for the config_inspect tool.
+   */
+  public getResolution(): ToolResolution {
+    return {
+      projectDirectory: {...this.resolution.projectDirectory},
+      ...(this.resolution.configuration ? {configuration: {...this.resolution.configuration}} : {}),
+      ...(this.resolution.directories ? {directories: {...this.resolution.directories}} : {}),
+    };
   }
 
   /**

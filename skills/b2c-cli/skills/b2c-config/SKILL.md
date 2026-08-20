@@ -42,18 +42,19 @@ Without `-i`, an active primary instance wins. A root-level primary configuratio
 
 ### MCP Project Context
 
-MCP tools that resolve project files or B2C/MRT configuration accept per-call `projectDirectory` and `configPath` arguments. This override is especially important for plugin installs, where the MCP process working directory may be the plugin directory rather than the open project. For each project-aware call, the MCP server:
+Local MCP project tools accept `projectDirectory`. Tools that resolve B2C/MRT configuration accept the same flat `projectDirectory`, `configPath`, and `instanceName` arguments. This override is especially important for plugin installs, where the MCP process working directory may be the plugin directory rather than the open project. For each configuration-aware call, the MCP server:
 
 1. Parses `.env` from `projectDirectory`.
 2. Applies all supported B2C/MRT environment variables from that file.
 3. Selects a `dw.json`-format configuration file in this order: per-call `configPath`; startup `--config` / `SFCC_CONFIG`; project `.env` `SFCC_CONFIG`; `${projectDirectory}/dw.json`; shared global default.
 4. Resolves relative per-call `configPath` and project `.env` `SFCC_CONFIG` values from `projectDirectory`.
-5. Continues through the normal CLI configuration sources, including registered plugin sources, MRT credentials, and `package.json`.
-6. Resolves project-relative filesystem paths from the same root.
+5. Selects `instanceName`, when supplied, from the primary file first and then the shared global `dw.json`, without changing either file.
+6. Continues through the normal tooling configuration sources, including registered plugin sources, MRT credentials, and `package.json`.
+7. Resolves specialized paths such as `cartridgeDirectory`, `buildDirectory`, and `outputDirectory` from the same root when relative.
 
 Project `.env` values are scoped to that MCP call so one project's environment does not leak into another.
 
-The MCP `config_inspect` tool uses the same SDK resolver and registered CLI plugin configuration sources as `b2c setup inspect`. Use `projectDirectory` and/or `configPath` on the MCP call to make the comparison against the intended project and configuration file.
+Each project/config-aware result includes compact `resolution` provenance. Session and watch start calls retain it, and their list tools expose it for later follow-up calls. The MCP `config_inspect` tool additionally returns the full source graph and uses the same SDK resolver and registered CLI plugin configuration sources as `b2c setup inspect`. Use `projectDirectory`, `configPath`, and/or `instanceName` to compare the intended project, file, and instance.
 
 ### `dw.json` Key Casing
 

@@ -32,7 +32,8 @@ Defaults for `buildDirectory`, `ssrOnly`, and `ssrShared` are chosen by detected
 | Parameter          | Type    | Required | Default                       | Description                                                                                                                                |
 | ------------------ | ------- | -------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `projectDirectory` | string  | No       | Configured project directory  | Project root used for `.env`/`dw.json`, project-type detection, and relative build paths.                                                  |
-| `configPath`       | string  | No       | Resolved from project context | Explicit `dw.json`-format configuration file. Relative paths resolve from `projectDirectory`.                                              |
+| `configPath`       | string  | No       | Resolved from project context | Primary `dw.json`-format configuration file. Relative paths resolve from `projectDirectory`; the shared default remains available.         |
+| `instanceName`     | string  | No       | Active/default instance       | Named instance selected from the primary configuration first, then the shared default `dw.json`.                                           |
 | `buildDirectory`   | string  | No       | `build`                       | Path to build directory containing the built project files. Can be absolute or relative to the project directory.                          |
 | `message`          | string  | No       | None                          | Deployment message to include with the bundle push. Useful for tracking deployments.                                                       |
 | `ssrOnly`          | string  | No       | Varies by project type        | Glob patterns for server-only files (SSR), comma-separated or JSON array. These files are only included in the server bundle.              |
@@ -75,7 +76,7 @@ Push a bundle and deploy to staging with a deployment message:
 Build and push my Storefront Next bundle to staging with a deployment message.
 ```
 
-**Returns:** `{bundleId, projectSlug, target, deployed, message, projectDirectory, resolvedBuildDirectory}`
+**Returns:** bundle details plus a `resolution` block identifying the project, selected configuration/instance, target hostname when available, and build directory.
 
 ## See also
 

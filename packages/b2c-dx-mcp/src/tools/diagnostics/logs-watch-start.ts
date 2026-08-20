@@ -142,7 +142,12 @@ export function createLogsWatchStartTool(
         // it isn't orphaned (it would otherwise poll WebDAV until process exit).
         let entry;
         try {
-          entry = registry.registerWatch({hostname, prefixes, tailResult});
+          entry = registry.registerWatch({
+            hostname,
+            prefixes,
+            tailResult,
+            resolution: structuredClone(context.resolution),
+          });
         } catch (error) {
           await tailResult.stop().catch(() => {});
           throw error;

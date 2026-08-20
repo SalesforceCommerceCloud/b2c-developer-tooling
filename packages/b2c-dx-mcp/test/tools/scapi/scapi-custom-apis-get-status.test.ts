@@ -110,6 +110,7 @@ describe('tools/scapi/scapi-custom-apis-get-status', () => {
       expect(Object.keys(tool.inputSchema as object)).to.have.members([
         'projectDirectory',
         'configPath',
+        'instanceName',
         'status',
         'groupBy',
         'columns',
