@@ -533,8 +533,9 @@ describe('McpServerCommand', () => {
         }
       ).loadConfiguration({projectDirectory: '/per-call/project'});
 
-      expect(config.values.projectDirectory).to.equal('/per-call/project');
-      expect(config.values.workingDirectory).to.equal('/per-call/project');
+      const expectedProjectDirectory = path.resolve('/per-call/project');
+      expect(config.values.projectDirectory).to.equal(expectedProjectDirectory);
+      expect(config.values.workingDirectory).to.equal(expectedProjectDirectory);
     });
 
     it('should load SFCC_CONFIG from the per-call project .env', async () => {
