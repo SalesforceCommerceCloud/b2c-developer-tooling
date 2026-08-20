@@ -89,8 +89,8 @@ const guidesSidebar = [
     text: 'Getting Started',
     items: [
       {text: 'Introduction', link: '/guide/'},
-      {text: 'CLI Installation', link: '/guide/installation'},
-      {text: 'CLI Configuration', link: '/guide/configuration'},
+      {text: 'Installation', link: '/guide/installation'},
+      {text: 'Configuration', link: '/guide/configuration'},
       {text: 'Agent Skills & Plugins', link: '/guide/agent-skills'},
     ],
   },

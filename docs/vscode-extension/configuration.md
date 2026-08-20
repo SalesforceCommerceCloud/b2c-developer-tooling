@@ -15,7 +15,7 @@ This page covers:
 
 ## Connecting to a B2C Instance
 
-The extension uses the same configuration resolver as the B2C CLI. Environment variables, a project `.env`, `dw.json`, supported settings under `package.json#b2c`, shared CLI credential storage, and configuration sources added by installed B2C CLI plugins are all honored. The [CLI Configuration guide](../guide/configuration) is the reference for available fields and precedence.
+The extension uses the same configuration resolver as the B2C CLI. Environment variables, a project `.env`, `dw.json`, supported settings under `package.json#b2c`, shared CLI credential storage, and configuration sources added by installed B2C CLI plugins are all honored. The shared [Configuration guide](../guide/configuration) is the reference for available fields and precedence.
 
 **A `dw.json` at your project root is the conventional setup** and is the easiest way for the extension to locate a B2C project nested inside a larger workspace. It is not required when another configuration source provides what you need.
 
@@ -166,4 +166,4 @@ To opt out of the Red Hat XML dependency entirely, uninstall this extension or p
 
 - [Overview](./) — what the extension can do.
 - [Authentication Setup](../guide/authentication) — Account Manager API clients, WebDAV access keys, OAuth scopes.
-- [CLI Configuration](../guide/configuration) — full `dw.json` reference and precedence rules.
+- [Configuration](../guide/configuration) — full `dw.json` reference and precedence rules.

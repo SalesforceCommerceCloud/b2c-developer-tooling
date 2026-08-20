@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-08-18T18:32:20.478Z",
+  "generatedAt": "2026-08-20T00:18:13.543Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -206,7 +206,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/setup.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/setup.md",
-      "headings": "b2c setup inspect • Usage • Flags • Examples • Output • Sensitive Values • See Also • b2c setup ide • Usage • Examples • b2c setup ide vscode-types • Usage • Flags • Examples • Output • b2c setup ide tsserver-plugin • Usage • Flags • Examples • Output • b2c setup instance list • Usage • Flags • Examples • Output • b2c setup instance create • Usage • Arguments • Flags • Examples • Interactive Mode • b2c setup instance remove • Usage • Arguments • Flags • Examples • b2c setup instance set-active • Usage • Arguments • Flags • Examples • How Active Instance Works • b2c setup skills • Usage • Arguments • Flags • Supported IDEs • Examples • Interactive Mode • Claude Code Recommendation • Skill Sets • Output • Environment • See Also",
+      "headings": "b2c setup inspect • Usage • Flags • Examples • Output • Sensitive Values • See Also • Global Default Configuration • b2c setup default-config set • b2c setup default-config get • b2c setup default-config unset • b2c setup ide • Usage • Examples • b2c setup ide vscode-types • Usage • Flags • Examples • Output • b2c setup ide tsserver-plugin • Usage • Flags • Examples • Output • b2c setup instance list • Usage • Flags • Examples • Output • b2c setup instance create • Usage • Arguments • Flags • Examples • Interactive Mode • b2c setup instance remove • Usage • Arguments • Flags • Examples • b2c setup instance set-active • Usage • Arguments • Flags • Examples • How Active Instance Works • b2c setup skills • Usage • Arguments • Flags • Supported IDEs • Examples • Interactive Mode • Claude Code Recommendation • Skill Sets • Output • Environment • See Also",
       "preview": "Commands for viewing configuration, managing instances, installing AI agent skills, and generating IDE integration scripts."
     },
     {
@@ -305,8 +305,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.md",
-      "headings": "CLI Flags • OAuth (SCAPI/OCAPI) • Client Credentials • JWT Bearer • User Authentication (Browser) • Basic Authentication (WebDAV) • Environment Variables • .env File • Configuration File • Single Instance • Multiple Instances • Managing Instances with the CLI • Quick Setup • Switching Instances • Listing and Removing • Supported Fields • Two-Factor Authentication (mTLS) • Project Configuration (package.json) • Allowed Fields • Content Libraries Example • Resolution Priority • Credential Grouping • MRT API Key • Overriding Authentication Behavior • Available Auth Methods • Specifying Auth Methods • Debugging Configuration • Next Steps",
-      "preview": "Configure the B2C CLI with environment variables, dw.json files, and multi-instance setups for different environments."
+      "headings": "CLI Flags • OAuth (SCAPI/OCAPI) • Client Credentials • JWT Bearer • User Authentication (Browser) • Basic Authentication (WebDAV) • Environment Variables • .env File • Configuration File • Configuration File Selection • Global Default Configuration • Single Instance • Multiple Instances • Managing Instances with the CLI • Quick Setup • Switching Instances • Listing and Removing • Supported Fields • Two-Factor Authentication (mTLS) • Project Configuration (package.json) • Allowed Fields • Content Libraries Example • Resolution Priority • Credential Grouping • MRT API Key • Overriding Authentication Behavior • Available Auth Methods • Specifying Auth Methods • Debugging Configuration • Next Steps",
+      "preview": "Configure the B2C developer tooling with environment variables, dw.json files, and multi-instance setups."
     },
     {
       "id": "guide-extending",
@@ -350,8 +350,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/installation.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/installation.md",
-      "headings": "Prerequisites • Install via npm (Recommended) • Verify Installation • Install the SDK (Optional) • Next Steps",
-      "preview": "Install the B2C CLI via npm or GitHub releases, and optionally install the SDK for programmatic use."
+      "headings": "Prerequisites • Install via npm (Recommended) • Verify Installation • Next Steps",
+      "preview": "Install the B2C CLI using your preferred JavaScript package manager."
     },
     {
       "id": "guide-metrics",
@@ -449,7 +449,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.md",
-      "headings": "Credentials • `dw.json` (Recommended) {#dw-json} • `.env` File {#env-file} • MRT Credentials (`~/.mobify`) {#mrt-credentials} • Project Directory {#project-directory} • Configuration Priority • Toolset Selection • Auto-Discovery (Default) • Manual Selection • Individual Tool Selection • Logging • Telemetry • MCP Server Flags Reference {#mcp-server-flags} • Documentation Tools Restriction • Environment Variables Reference {#environment-variables-reference} • MCP Server Environment Variables {#mcp-server-environment-variables} • Next Steps",
+      "headings": "Credentials • `dw.json` (Recommended) {#dw-json} • `.env` File {#env-file} • MRT Credentials (`~/.mobify`) {#mrt-credentials} • Per-call Project Context {#project-directory} • Configuration Priority • Toolset Selection • Auto-Discovery (Default) • Manual Selection • Individual Tool Selection • Logging • Telemetry • MCP Server Flags Reference {#mcp-server-flags} • Documentation Tools Restriction • Environment Variables Reference {#environment-variables-reference} • MCP Server Environment Variables {#mcp-server-environment-variables} • Next Steps",
       "preview": "Configure the B2C DX MCP Server with credentials, flags, environment variables, and toolset selection."
     },
     {

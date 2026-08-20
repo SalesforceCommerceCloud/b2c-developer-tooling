@@ -6,7 +6,7 @@ description: Configure the B2C DX MCP Server with credentials, flags, environmen
 
 The B2C DX MCP Server uses the same configuration system as the B2C CLI.
 
-See the [CLI Configuration guide](../guide/configuration) and [Authentication Setup guide](../guide/authentication) for credential formats and setup details.
+See the shared [Configuration guide](../guide/configuration) and [Authentication Setup guide](../guide/authentication) for credential formats and setup details.
 
 ## Credentials
 
@@ -28,7 +28,7 @@ Create a [`dw.json`](../guide/configuration#configuration-file) file in your pro
 
 With user-level Cursor configuration, add `--project-directory "${workspaceFolder}"` to the args array so the server can find `dw.json`. Claude Code and GitHub Copilot automatically detect the project location.
 
-See the [CLI Configuration guide](../guide/configuration#configuration-file) for the complete `dw.json` format, supported fields, and multi-instance configuration.
+See the [Configuration guide](../guide/configuration#configuration-file) for the complete `dw.json` format, supported fields, and multi-instance configuration.
 
 **Required fields per toolset:**
 
@@ -200,7 +200,7 @@ To disable, set either variable in your `.env` file or MCP client `env` object:
 
 ## MCP Server Flags Reference {#mcp-server-flags}
 
-Flags specific to the MCP server (in addition to the shared CLI flags in the [CLI Configuration guide](../guide/configuration)):
+Flags specific to the MCP server (in addition to the shared CLI flags in the [Configuration guide](../guide/configuration)):
 
 | Flag                   | Type    | Default     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | ---------------------- | ------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -272,12 +272,12 @@ MCP-specific environment variables (flag equivalents):
 | `SFCC_LOG_LEVEL`         | Logging level                                               |
 | `SFCC_DEBUG`             | Enable debug logging                                        |
 
-See the [CLI Configuration guide](../guide/configuration#environment-variables) for the complete list including OAuth and advanced options.
+See the [Configuration guide](../guide/configuration#environment-variables) for the complete list including OAuth and advanced options.
 
 ## Next Steps
 
 - [Installation](./installation) - Set up the MCP server
-- [CLI Configuration](../guide/configuration) - Learn about `dw.json`, environment variables, and credential resolution
+- [Configuration](../guide/configuration) - Learn about `dw.json`, environment variables, and credential resolution
 - [Authentication Setup](../guide/authentication) - Set up API clients, WebDAV access, and MRT API keys
 - [Toolsets & Tools](./toolsets) - Explore available toolsets and tools
 - [MCP Server Overview](./) - Learn more about the MCP server
