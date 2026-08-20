@@ -133,6 +133,59 @@ describe('MCP Server E2E', function () {
       expect(result.tools[0].inputSchema).to.be.an('object');
       await client.stop();
     });
+
+    it('publishes a deterministic, well-described tool corpus with strict schemas', async () => {
+      const client = new McpE2EClient({args: ['--toolsets', 'all', '--allow-non-ga-tools']});
+      await client.start();
+      type WireSchema = {
+        type?: string;
+        description?: string;
+        properties?: Record<string, WireSchema>;
+        additionalProperties?: boolean;
+        items?: WireSchema;
+        anyOf?: WireSchema[];
+        oneOf?: WireSchema[];
+        allOf?: WireSchema[];
+      };
+      const first = (await client.call('tools/list')) as {
+        tools: Array<{
+          name: string;
+          description: string;
+          inputSchema: WireSchema;
+        }>;
+      };
+      const second = (await client.call('tools/list')) as typeof first;
+      const checkSchema = (schema: WireSchema, path: string): void => {
+        if (schema.type === 'object') {
+          expect(schema.additionalProperties, `${path} must reject unknown fields`).to.be.false;
+        }
+        for (const [field, property] of Object.entries(schema.properties ?? {})) {
+          const propertyPath = `${path}.${field}`;
+          expect(property.description, `${propertyPath} should have a description`).to.be.a('string').and.not.be.empty;
+          checkSchema(property, propertyPath);
+        }
+        if (schema.items) checkSchema(schema.items, `${path}[]`);
+        for (const [index, variant] of [
+          ...(schema.anyOf ?? []),
+          ...(schema.oneOf ?? []),
+          ...(schema.allOf ?? []),
+        ].entries()) {
+          checkSchema(variant, `${path}[${index}]`);
+        }
+      };
+
+      expect(second.tools.map((tool) => tool.name)).to.deep.equal(first.tools.map((tool) => tool.name));
+      expect(new Set(first.tools.map((tool) => tool.name)).size).to.equal(first.tools.length);
+      for (const tool of first.tools) {
+        expect(tool.name).to.match(/^[A-Za-z0-9_.-]{1,128}$/);
+        expect(tool.description).to.be.a('string').and.not.empty;
+        expect(tool.description.length, `${tool.name} description too long`).to.be.at.most(400);
+        expect(tool.inputSchema.type, `${tool.name} input schema must accept an object`).to.equal('object');
+        checkSchema(tool.inputSchema, tool.name);
+      }
+
+      await client.stop();
+    });
   });
 
   describe('3. MCP Protocol (tools/call)', () => {

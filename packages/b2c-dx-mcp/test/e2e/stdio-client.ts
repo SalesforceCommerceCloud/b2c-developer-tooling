@@ -13,11 +13,12 @@ import {spawn, type ChildProcess} from 'node:child_process';
 import {dirname, join, resolve} from 'node:path';
 import {createInterface} from 'node:readline';
 import {fileURLToPath} from 'node:url';
+import {LATEST_PROTOCOL_VERSION} from '@modelcontextprotocol/sdk/types.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const DEFAULT_INIT_PARAMS = {
-  protocolVersion: '2024-11-05',
+  protocolVersion: LATEST_PROTOCOL_VERSION,
   capabilities: {},
   clientInfo: {name: 'e2e-test', version: '1.0.0'},
 };
@@ -153,7 +154,7 @@ export class McpE2EClient {
     this.proc.on('exit', (code, signal) => {
       this.readline?.close();
       this.readline = null;
-      if (this.pending.size > 0 && code !== 0 && signal !== null) {
+      if (this.pending.size > 0 && (code !== 0 || signal !== null)) {
         const err = new Error(`Server exited with code=${code} signal=${signal}. stderr: ${stderr.slice(-500)}`);
         for (const [, {reject}] of this.pending) {
           reject(err);

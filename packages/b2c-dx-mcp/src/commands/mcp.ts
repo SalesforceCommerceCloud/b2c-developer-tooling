@@ -147,6 +147,7 @@ import {
 import type {LoadConfigOptions} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {EnvSource, readProjectEnvironment} from '@salesforce/b2c-tooling-sdk/config';
+// eslint-disable-next-line import/no-unresolved -- SDK 1.30's types export misresolves runtime .js subpaths.
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {B2CDxMcpServer} from '../server.js';
 import {Services, type ServicesResolutionInputs} from '../services.js';

@@ -4,4 +4,4 @@
 '@salesforce/b2c-agent-plugins': patch
 ---
 
-Made MCP project resolution provenance consistent and tool guidance more concise, kept local paths out of tool descriptions, and clarified startup documentation workspace detection.
+Made MCP project resolution provenance consistent and tool guidance more concise, kept local paths out of tool descriptions, and clarified startup documentation workspace detection. Updated MCP protocol libraries and made tool input schemas reject unknown arguments.
