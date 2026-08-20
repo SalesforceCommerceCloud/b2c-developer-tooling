@@ -17,12 +17,43 @@ Sources, in resolution order (highest priority first):
 
 1. **CLI flags and environment variables** — explicit values always win. Includes `.env` files in the current project directory (auto-loaded).
 2. **Plugin sources (high priority)** — custom configuration plugins (e.g., secret managers).
-3. **`dw.json`** — searched starting at the current directory and walking up the directory tree. Supports a single instance or a `configs[]` array with `active: true` / `-i <name>` selection.
+3. **`dw.json`** — selected by `--config` / `SFCC_CONFIG`, the project's `.env`, the project-local file, or the shared global `dw.json`. Supports a single instance or a `configs[]` array with `active: true` / `-i <name>` selection.
 4. **`~/.mobify`** — home-directory file (MRT API key only).
 5. **Plugin sources (low priority)**.
 6. **`package.json`** under the `b2c` key — non-sensitive project defaults (e.g., `shortCode`, `clientId`, `mrtProject`). Sensitive fields like `clientSecret`/`password` are intentionally **not** allowed here.
 
 When in doubt, **always run `b2c setup inspect` first** — it shows the resolved value and the source for every field. This is the single most useful command for setup confusion.
+
+### Shared Global Default
+
+Use a shared fallback when the same `dw.json`-format file should work across the CLI, MCP server, and B2C DX VS Code extension:
+
+```bash
+b2c setup default-config set /path/to/dw.json
+b2c setup default-config get
+b2c setup default-config unset
+```
+
+The configuration-file selection order is: explicit `--config`; process `SFCC_CONFIG`; project `.env` `SFCC_CONFIG`; project-local `dw.json`; global default. The global file never replaces an explicit or project-local choice.
+
+The primary and global `dw.json` files form one instance catalog. `-i <name>` searches the primary file first and then the global file, with same-name primary entries shadowing global entries. Each selected instance is complete—its fields are not merged with a matching entry in the other file. Instance list/remove/set-active operate across both files; create writes to the primary file when present and otherwise to the global `dw.json`.
+
+Without `-i`, an active primary instance wins. A root-level primary configuration with no `active` field is its implicit default; set its root to `active: false` to opt it out and allow an active/default global instance to be selected. `b2c setup inspect` shows both files in its Sources section and marks the selected file.
+
+### MCP Project Context
+
+MCP tools that resolve project files or B2C/MRT configuration accept per-call `projectDirectory` and `configPath` arguments. This override is especially important for plugin installs, where the MCP process working directory may be the plugin directory rather than the open project. For each project-aware call, the MCP server:
+
+1. Parses `.env` from `projectDirectory`.
+2. Applies all supported B2C/MRT environment variables from that file.
+3. Selects a `dw.json`-format configuration file in this order: per-call `configPath`; startup `--config` / `SFCC_CONFIG`; project `.env` `SFCC_CONFIG`; `${projectDirectory}/dw.json`; shared global default.
+4. Resolves relative per-call `configPath` and project `.env` `SFCC_CONFIG` values from `projectDirectory`.
+5. Continues through the normal CLI configuration sources, including registered plugin sources, MRT credentials, and `package.json`.
+6. Resolves project-relative filesystem paths from the same root.
+
+Project `.env` values are scoped to that MCP call so one project's environment does not leak into another.
+
+The MCP `config_inspect` tool uses the same SDK resolver and registered CLI plugin configuration sources as `b2c setup inspect`. Use `projectDirectory` and/or `configPath` on the MCP call to make the comparison against the intended project and configuration file.
 
 ### `dw.json` Key Casing
 
@@ -218,7 +249,8 @@ The `setup inspect` command displays configuration organized by category:
 
 Each value shows its source in brackets:
 
-- `[DwJsonSource]` — Value from dw.json file
+- `[DwJsonSource]` — Value from the primary `dw.json` file
+- `[default]` — Value from the shared default `dw.json` (shown as `DwJsonSource (default)` in the Sources table)
 - `[EnvSource]` — Value from an SFCC\_\* environment variable
 - `[MobifySource]` — Value from ~/.mobify file
 - `[PackageJsonSource]` — Value from package.json `b2c` key

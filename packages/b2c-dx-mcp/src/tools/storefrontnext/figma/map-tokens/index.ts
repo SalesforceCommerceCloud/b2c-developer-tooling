@@ -16,6 +16,7 @@ import {z} from 'zod';
 import type {McpTool} from '../../../../utils/index.js';
 import type {Services} from '../../../../services.js';
 import {createToolAdapter, textResult} from '../../../adapter.js';
+import {projectDirectoryInput} from '../../../project-context.js';
 import {parseThemeFile} from './css-parser.js';
 import {matchTokens, type FigmaToken} from './token-matcher.js';
 
@@ -37,8 +38,9 @@ export const mapTokensToThemeSchema = z
       .string()
       .optional()
       .describe(
-        'Optional absolute path to theme CSS file. If not provided, will search for app.css in common locations.',
+        'Optional path to the theme CSS file, resolved relative to projectDirectory when needed. If omitted, searches for app.css in common locations.',
       ),
+    projectDirectory: projectDirectoryInput,
   })
   .strict();
 
@@ -271,9 +273,14 @@ export function createMapTokensToThemeTool(loadServices: () => Promise<Services>
       toolsets: ['STOREFRONTNEXT_DEPRECATED'],
       isGA: false,
       requiresInstance: false,
+      usesProjectContext: true,
       inputSchema: mapTokensToThemeSchema.shape,
       async execute(args, context) {
-        return mapFigmaTokensToTheme(args, context.services.resolveWithProjectDirectory());
+        const workspaceRoot = context.services.resolveWithProjectDirectory(undefined, args.projectDirectory);
+        const themeFilePath = args.themeFilePath
+          ? context.services.resolveWithProjectDirectory(args.themeFilePath, args.projectDirectory)
+          : undefined;
+        return mapFigmaTokensToTheme({...args, themeFilePath}, workspaceRoot);
       },
       formatOutput: (output) => textResult(output),
     },

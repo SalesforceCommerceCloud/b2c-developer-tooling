@@ -16,6 +16,7 @@ import {z} from 'zod';
 import type {McpTool} from '../../../../utils/index.js';
 import type {Services} from '../../../../services.js';
 import {createToolAdapter, textResult} from '../../../adapter.js';
+import {projectDirectoryInput} from '../../../project-context.js';
 import {analyzeComponentDifferences, determineAction} from './decision.js';
 import {formatRecommendation} from './formatter.js';
 
@@ -58,6 +59,7 @@ export const generateComponentSchema = z
       .string()
       .optional()
       .describe('Optional workspace root path. Defaults to the MCP server project directory.'),
+    projectDirectory: projectDirectoryInput,
   })
   .strict();
 
@@ -146,11 +148,12 @@ export function createGenerateComponentTool(loadServices: () => Promise<Services
       toolsets: ['STOREFRONTNEXT_DEPRECATED'],
       isGA: false,
       requiresInstance: false,
+      usesProjectContext: true,
       inputSchema: generateComponentSchema.shape,
       async execute(args, context) {
         return generateComponentRecommendation({
           ...args,
-          workspacePath: args.workspacePath ?? context.services.resolveWithProjectDirectory(),
+          workspacePath: context.services.resolveWithProjectDirectory(args.workspacePath, args.projectDirectory),
         });
       },
       formatOutput: (output) => textResult(output),

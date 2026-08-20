@@ -462,6 +462,8 @@ function parseThemingMDC(content: string, filePath: string): ThemingGuidance {
 export interface InitializeOptions {
   /** Override content directory for default files (used in tests). */
   contentDirOverride?: string;
+  /** Project-scoped THEMING_FILES value. */
+  themingFiles?: string;
 }
 
 class ThemingStore {
@@ -518,7 +520,7 @@ class ThemingStore {
       }
     }
 
-    const themingFilesEnv = process.env.THEMING_FILES;
+    const themingFilesEnv = options?.themingFiles ?? process.env.THEMING_FILES;
     if (themingFilesEnv) {
       try {
         this.loadThemingFilesFromEnv(themingFilesEnv, root);

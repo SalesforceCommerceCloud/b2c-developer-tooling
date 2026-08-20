@@ -10,6 +10,7 @@ import {generateDecoratorCode, type AttributeContext, type MetadataContext} from
 import {pageDesignerDecoratorRules} from './rules.js';
 import type {McpTool} from '../../../utils/index.js';
 import type {Services} from '../../../services.js';
+import {projectContextInputSchema, type ProjectContextInput} from '../../project-context.js';
 
 // ============================================================================
 // SCHEMA DEFINITION
@@ -121,6 +122,8 @@ export const pageDesignerDecoratorSchema = z
       })
       .optional()
       .describe('Conversation state for multi-turn interaction'),
+
+    ...projectContextInputSchema,
   })
   .strict();
 
@@ -627,7 +630,9 @@ function handleAutoMode(args: PageDesignerDecoratorInput, workspaceRoot: string)
  * @param loadServices - Function that loads configuration and returns Services instance
  * @returns The configured MCP tool
  */
-export function createPageDesignerDecoratorTool(loadServices: () => Promise<Services> | Services): McpTool {
+export function createPageDesignerDecoratorTool(
+  loadServices: (projectContext?: ProjectContextInput) => Promise<Services> | Services,
+): McpTool {
   return {
     name: 'sfnext_add_page_designer_decorator',
 
@@ -649,8 +654,11 @@ export function createPageDesignerDecoratorTool(loadServices: () => Promise<Serv
         const validatedArgs = pageDesignerDecoratorSchema.parse(args) as PageDesignerDecoratorInput;
         // Use projectDirectory from services to ensure we search in the correct project directory
         // This prevents searches in the home folder when MCP clients spawn servers from ~
-        const services = await loadServices();
-        const workspaceRoot = services.resolveWithProjectDirectory();
+        const services = await loadServices({
+          projectDirectory: validatedArgs.projectDirectory,
+          configPath: validatedArgs.configPath,
+        });
+        const workspaceRoot = services.resolveWithProjectDirectory(undefined, validatedArgs.projectDirectory);
 
         if (validatedArgs.autoMode === undefined && !validatedArgs.conversationContext) {
           const fullPath = resolveComponent(validatedArgs.component, workspaceRoot, validatedArgs.searchPaths);

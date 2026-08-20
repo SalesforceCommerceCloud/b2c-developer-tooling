@@ -134,6 +134,7 @@
  * ```
  */
 
+import path from 'node:path';
 import {Flags} from '@oclif/core';
 import {
   BaseCommand,
@@ -145,12 +146,14 @@ import {
 } from '@salesforce/b2c-tooling-sdk/cli';
 import type {LoadConfigOptions} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {EnvSource, readProjectEnvironment} from '@salesforce/b2c-tooling-sdk/config';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {B2CDxMcpServer} from '../server.js';
 import {Services} from '../services.js';
 import {ServerContext} from '../server-context.js';
 import {registerToolsets} from '../registry.js';
 import {TOOLSETS, type StartupFlags} from '../utils/index.js';
+import type {ProjectContextInput} from '../tools/project-context.js';
 
 /**
  * oclif Command that starts the B2C DX MCP server.
@@ -267,17 +270,40 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * - extractInstanceFlags() - B2C instance flags (--server, --username, etc.)
    * - extractMrtFlags() - MRT flags (--api-key, --project, etc.) and loading options
    *
-   * Priority (highest to lowest):
-   * 1. CLI flags (--server, --username, --api-key, etc.)
-   * 2. Environment variables (SFCC_SERVER, SFCC_USERNAME, MRT_API_KEY, etc.)
-   * 3. dw.json file (via --config flag or auto-discovered from --project-directory)
-   * 4. ~/.mobify file (for MRT API key)
+   * Configuration file selection (highest to lowest):
+   * 1. Per-call configPath
+   * 2. Startup --config / SFCC_CONFIG
+   * 3. SFCC_CONFIG from the selected project's .env
+   * 4. dw.json in the selected project directory
+   *
+   * Values are then merged through the normal CLI resolver, including
+   * environment, plugin, dw.json, ~/.mobify, and package.json sources.
    */
-  protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
+  protected override async loadConfiguration(projectContext?: ProjectContextInput): Promise<ResolvedB2CConfig> {
     const mrt = extractMrtFlags(this.flags as Record<string, unknown>);
+    const baseOptions = this.getBaseConfigOptions();
+    const effectiveProjectDirectory = projectContext?.projectDirectory ?? baseOptions.projectDirectory;
+    const projectEnvironment = this.loadProjectEnvironment(effectiveProjectDirectory);
+
+    const projectConfigPath = projectEnvironment?.SFCC_CONFIG;
+    const configPath =
+      (projectContext?.configPath
+        ? path.resolve(effectiveProjectDirectory ?? process.cwd(), projectContext.configPath)
+        : undefined) ??
+      baseOptions.configPath ??
+      (projectConfigPath && effectiveProjectDirectory
+        ? path.isAbsolute(projectConfigPath)
+          ? projectConfigPath
+          : path.resolve(effectiveProjectDirectory, projectConfigPath)
+        : undefined);
     const options: LoadConfigOptions = {
-      ...this.getBaseConfigOptions(),
+      ...baseOptions,
       ...mrt.options,
+      configPath,
+      ...(projectContext?.projectDirectory && {
+        projectDirectory: projectContext.projectDirectory,
+        workingDirectory: projectContext.projectDirectory,
+      }),
     };
 
     // Combine B2C instance flags and MRT config flags
@@ -286,7 +312,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       ...mrt.config,
     };
 
-    return loadConfig(flagConfig, options);
+    return loadConfig(flagConfig, options, {
+      before: projectEnvironment ? [new EnvSource(projectEnvironment)] : undefined,
+    });
   }
 
   /**
@@ -298,9 +326,11 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    *
    * @returns A new Services instance with loaded configuration
    */
-  protected async loadServices(): Promise<Services> {
-    const config = await this.loadConfiguration();
-    return Services.fromResolvedConfig(config);
+  protected async loadServices(projectContext?: ProjectContextInput): Promise<Services> {
+    const config = await this.loadConfiguration(projectContext);
+    const effectiveProjectDirectory = projectContext?.projectDirectory ?? this.flags?.['project-directory'];
+    const projectEnvironment = this.loadProjectEnvironment(effectiveProjectDirectory);
+    return Services.fromResolvedConfig(config, projectEnvironment);
   }
 
   /**
@@ -405,5 +435,19 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     });
 
     this.logger.info({version: this.config.version}, 'MCP Server running on stdio');
+  }
+
+  /** Parse a project's .env without mutating the long-lived MCP process environment. */
+  private loadProjectEnvironment(projectDirectory?: string): Record<string, string | undefined> | undefined {
+    if (!projectDirectory) return undefined;
+
+    const envPath = path.join(projectDirectory, '.env');
+    try {
+      return readProjectEnvironment(projectDirectory);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger?.warn({envPath, error: message}, '[Config] Failed to load project .env file');
+    }
+    return undefined;
   }
 }

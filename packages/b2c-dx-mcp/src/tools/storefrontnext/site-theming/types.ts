@@ -44,4 +44,5 @@ export interface ConversationContext {
 export interface SiteThemingInput {
   fileKeys?: string[];
   conversationContext?: ConversationContext;
+  projectDirectory?: string;
 }

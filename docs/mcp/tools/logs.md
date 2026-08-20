@@ -36,11 +36,13 @@ See [Configuration](../configuration) for credential setup.
 
 List log files on the instance via WebDAV.
 
-| Parameter    | Type                         | Required | Default | Description                                                                                                                          |
-| ------------ | ---------------------------- | -------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `prefixes`   | string[]                     | No       | all     | Filter by log prefix (e.g., `["error", "customerror"]`). A path-like value such as `"internal/server"` lists logs in a subdirectory. |
-| `sort_by`    | `"date" \| "name" \| "size"` | No       | `date`  | Sort field                                                                                                                         |
-| `sort_order` | `"asc" \| "desc"`            | No       | `desc`  | Sort order                                                                                                                         |
+| Parameter          | Type                         | Required | Default            | Description                                                                                                                          |
+| ------------------ | ---------------------------- | -------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `projectDirectory` | string                       | No       | configured project | Project root used for `.env` and default `dw.json` resolution.                                                                       |
+| `configPath`       | string                       | No       | project config     | Explicit `dw.json`-format configuration file; relative paths resolve from `projectDirectory`.                                        |
+| `prefixes`         | string[]                     | No       | all                | Filter by log prefix (e.g., `["error", "customerror"]`). A path-like value such as `"internal/server"` lists logs in a subdirectory. |
+| `sort_by`          | `"date" \| "name" \| "size"` | No       | `date`             | Sort field                                                                                                                           |
+| `sort_order`       | `"asc" \| "desc"`            | No       | `desc`             | Sort order                                                                                                                           |
 
 **Returns:** `{count, files: [{name, prefix, size, lastModified, path}]}`.
 
@@ -48,13 +50,15 @@ List log files on the instance via WebDAV.
 
 Fetch recent log entries in a single request/response. Filters (`since`, `level`, `search`) are applied client-side after fetching.
 
-| Parameter  | Type     | Required | Default                    | Description                                                                                          |
-| ---------- | -------- | -------- | -------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `prefixes` | string[] | No       | `["error", "customerror"]` | Log prefixes to read. A path-like value such as `"internal/server"` reads logs from a subdirectory.  |
-| `count`    | number   | No       | `50`                       | Maximum entries to return                                                                            |
-| `since`    | string   | No       |                            | Relative time (`"5m"`, `"1h"`, `"2d"`) or ISO 8601                                                   |
-| `level`    | string[] | No       |                            | Filter by level (ERROR, WARN, INFO, DEBUG, FATAL, TRACE)                                             |
-| `search`   | string   | No       |                            | Case-insensitive substring filter                                                                    |
+| Parameter          | Type     | Required | Default                    | Description                                                                                         |
+| ------------------ | -------- | -------- | -------------------------- | --------------------------------------------------------------------------------------------------- |
+| `projectDirectory` | string   | No       | configured project         | Project root used for `.env` and default `dw.json` resolution.                                      |
+| `configPath`       | string   | No       | project config             | Explicit `dw.json`-format configuration file; relative paths resolve from `projectDirectory`.       |
+| `prefixes`         | string[] | No       | `["error", "customerror"]` | Log prefixes to read. A path-like value such as `"internal/server"` reads logs from a subdirectory. |
+| `count`            | number   | No       | `50`                       | Maximum entries to return                                                                           |
+| `since`            | string   | No       |                            | Relative time (`"5m"`, `"1h"`, `"2d"`) or ISO 8601                                                  |
+| `level`            | string[] | No       |                            | Filter by level (ERROR, WARN, INFO, DEBUG, FATAL, TRACE)                                            |
+| `search`           | string   | No       |                            | Case-insensitive substring filter                                                                   |
 
 **Returns:** `{count, entries: [{file, level, timestamp, message, raw}]}`.
 
@@ -66,6 +70,8 @@ Start a background log watch. Returns a `watch_id` immediately. Buffers entries 
 
 | Parameter          | Type     | Required | Default                    | Description                                                                                                           |
 | ------------------ | -------- | -------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `projectDirectory` | string   | No       | configured project         | Project root used for `.env` and default `dw.json` resolution.                                                        |
+| `configPath`       | string   | No       | project config             | Explicit `dw.json`-format configuration file; relative paths resolve from `projectDirectory`.                         |
 | `prefixes`         | string[] | No       | `["error", "customerror"]` | Log prefixes to watch. A path-like value such as `"internal/server"` watches logs in a subdirectory.                  |
 | `last_entries`     | number   | No       | `0`                        | Pre-existing entries per file to emit on startup. `0` (default) captures only new entries; set >0 for recent context. |
 | `poll_interval_ms` | number   | No       | `3000`                     | How often the underlying tail polls WebDAV                                                                            |
@@ -143,10 +149,12 @@ Start a background tail of the configured MRT environment's logs. Returns a `wat
 
 > **Workflow:** call `mrt_logs_watch_start` **before** triggering the request or SSR action you want to capture. Because MRT logs are a live stream, anything emitted before the watch connects is not captured.
 
-| Parameter | Type     | Required | Default | Description                                                                                                |
-| --------- | -------- | -------- | ------- | ---------------------------------------------------------------------------------------------------------- |
-| `level`   | string[] | No       |         | Drop entries not matching these levels (ERROR, WARN, INFO, DEBUG, ...) before buffering. Case-insensitive. |
-| `search`  | string   | No       |         | Drop entries not matching this case-insensitive substring (against message and raw) before buffering.      |
+| Parameter          | Type     | Required | Default            | Description                                                                                                |
+| ------------------ | -------- | -------- | ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `projectDirectory` | string   | No       | configured project | Project root used for `.env` and default `dw.json` resolution.                                             |
+| `configPath`       | string   | No       | project config     | Explicit `dw.json`-format configuration file; relative paths resolve from `projectDirectory`.              |
+| `level`            | string[] | No       |                    | Drop entries not matching these levels (ERROR, WARN, INFO, DEBUG, ...) before buffering. Case-insensitive. |
+| `search`           | string   | No       |                    | Drop entries not matching this case-insensitive substring (against message and raw) before buffering.      |
 
 **Returns:** `{watch_id, project, environment, started_at}`.
 

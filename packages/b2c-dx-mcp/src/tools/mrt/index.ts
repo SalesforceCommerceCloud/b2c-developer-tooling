@@ -16,6 +16,7 @@ import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import type {ProjectContextInput, ProjectDirectoryInfo} from '../project-context.js';
 import {pushBundle} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import type {PushResult, PushOptions} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
@@ -122,7 +123,7 @@ function getDefaultsForProjectTypes(projectTypes: ProjectType[]): MrtDefaults {
 /**
  * Input type for mrt_bundle_push tool.
  */
-interface MrtBundlePushInput {
+interface MrtBundlePushInput extends ProjectContextInput {
   /** Path to build directory (default: ./build) */
   buildDirectory?: string;
   /** Deployment message */
@@ -133,6 +134,11 @@ interface MrtBundlePushInput {
   ssrShared?: string;
   /** Whether to deploy to an environment after push (default: false) */
   deploy?: boolean;
+}
+
+interface MrtBundlePushOutput extends PushResult {
+  projectDirectory: ProjectDirectoryInfo;
+  resolvedBuildDirectory: string;
 }
 
 /**
@@ -163,7 +169,7 @@ function createMrtBundlePushTool(
 ): McpTool {
   const pushBundleFn = injections?.pushBundle || pushBundle;
   const detectWorkspaceTypeFn = injections?.detectWorkspaceType ?? detectWorkspaceType;
-  return createToolAdapter<MrtBundlePushInput, PushResult>(
+  return createToolAdapter<MrtBundlePushInput, MrtBundlePushOutput>(
     {
       name: 'mrt_bundle_push',
       description:
@@ -172,6 +178,7 @@ function createMrtBundlePushTool(
       isGA: true,
       // MRT operations use ApiKeyStrategy from MRT_API_KEY or ~/.mobify
       requiresMrtAuth: true,
+      usesProjectContext: true,
       inputSchema: {
         buildDirectory: z
           .string()
@@ -225,7 +232,8 @@ function createMrtBundlePushTool(
         const origin = context.mrtConfig?.origin;
 
         // Detect project type and get project-type-aware defaults
-        const projectDir = context.services.resolveWithProjectDirectory();
+        const projectDirectory = context.services.resolveProjectDirectory(args.projectDirectory);
+        const projectDir = projectDirectory.path;
         const {projectTypes} = await detectWorkspaceTypeFn(projectDir);
         const defaults = getDefaultsForProjectTypes(projectTypes);
 
@@ -233,6 +241,7 @@ function createMrtBundlePushTool(
         const ssrShared = args.ssrShared ? parseGlobPatterns(args.ssrShared) : defaults.ssrShared;
         const buildDirectory = context.services.resolveWithProjectDirectory(
           args.buildDirectory ?? defaults.buildDirectory,
+          args.projectDirectory,
         );
 
         // Log all computed variables before pushing bundle
@@ -266,7 +275,11 @@ function createMrtBundlePushTool(
           context.mrtConfig!.auth!,
         );
 
-        return result;
+        return {
+          ...result,
+          projectDirectory,
+          resolvedBuildDirectory: buildDirectory,
+        };
       },
       formatOutput: (output) => jsonResult(output),
     },

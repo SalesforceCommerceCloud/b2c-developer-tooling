@@ -6,7 +6,7 @@ description: Configure the B2C DX MCP Server with credentials, flags, environmen
 
 The B2C DX MCP Server uses the same configuration system as the B2C CLI.
 
-See the [CLI Configuration guide](../guide/configuration) and [Authentication Setup guide](../guide/authentication) for credential formats and setup details.
+See the shared [Configuration guide](../guide/configuration) and [Authentication Setup guide](../guide/authentication) for credential formats and setup details.
 
 ## Credentials
 
@@ -28,7 +28,7 @@ Create a [`dw.json`](../guide/configuration#configuration-file) file in your pro
 
 With user-level Cursor configuration, add `--project-directory "${workspaceFolder}"` to the args array so the server can find `dw.json`. Claude Code and GitHub Copilot automatically detect the project location.
 
-See the [CLI Configuration guide](../guide/configuration#configuration-file) for the complete `dw.json` format, supported fields, and multi-instance configuration.
+See the [Configuration guide](../guide/configuration#configuration-file) for the complete `dw.json` format, supported fields, and multi-instance configuration.
 
 **Required fields per toolset:**
 
@@ -44,7 +44,7 @@ See the [CLI Configuration guide](../guide/configuration#configuration-file) for
 
 ### `.env` File {#env-file}
 
-As an alternative to `dw.json`, you can place a `.env` file in your project root. The server loads it automatically at startup via Node.js native `process.loadEnvFile()`.
+As an alternative to `dw.json`, you can place a `.env` file in your project root. For project-aware tool calls, the server parses the `.env` from the effective `projectDirectory` and applies all supported B2C/MRT variables during configuration resolution. Arbitrary project variables are also retained for tools that consume them, such as `THEMING_FILES`.
 
 ```bash
 SFCC_SERVER=xxx.demandware.net
@@ -54,7 +54,13 @@ SFCC_SHORTCODE=...
 SFCC_TENANT_ID=...
 ```
 
-> **Note:** The `.env` file is loaded from the process working directory. Claude Code and GitHub Copilot set cwd to the project root regardless of scope, so `.env` works in all cases. Cursor user-level config (`~/.cursor/mcp.json`) sets cwd to `~`, so `.env` in the project root **will not be found** — use `dw.json` or system environment variables instead. Cursor project-level config (`.cursor/mcp.json`) works as expected.
+The project `.env` can also point to a shared `dw.json`. Relative `SFCC_CONFIG` paths are resolved from `projectDirectory`:
+
+```bash
+SFCC_CONFIG=./config/shared.dw.json
+```
+
+Project `.env` values are scoped to the tool call instead of being copied permanently into the long-lived MCP process, preventing one project's environment from leaking into another project.
 
 See the [Environment Variables Reference](#environment-variables-reference) for the complete list of supported variables.
 
@@ -76,21 +82,43 @@ MRT tools require an API key. You can include `mrtApiKey`, `mrtProject`, and `mr
 
 If both `dw.json` and `~/.mobify` contain an API key, `dw.json` takes precedence. For complete setup instructions, see the [Authentication Guide](../guide/authentication#managed-runtime-api-key).
 
-## Project Directory {#project-directory}
+## Per-call Project Context {#project-directory}
 
-Several tools operate on files in your project — for example, `cartridge_deploy` searches for cartridges and `scapi_custom_api_generate_scaffold` writes generated files. These tools need to know which directory is your project root.
+Tools that resolve project files or B2C/MRT configuration expose two common per-call arguments:
+
+- `projectDirectory` selects the project root used for `.env`, `dw.json`, `package.json`, and relative project files.
+- `configPath` explicitly selects a configuration file in `dw.json` format. Relative paths resolve from the effective `projectDirectory`.
+
+Configuration-dependent tools receive these fields automatically. Pure documentation tools and follow-up calls that operate only on existing server-side state do not expose them.
 
 The server resolves the project directory in this order:
 
-1. **Per-call tool argument** (highest) — tools that touch the filesystem accept an explicit `projectDirectory` (or an equivalent like `directory` / `projectRoot`). This is the reliable outlet when the agent knows the project path.
+1. **Per-call tool argument** (highest) — every tool that needs project context accepts an explicit `projectDirectory`. This is the reliable outlet when the agent knows the project path.
 2. **`--project-directory` flag / `SFCC_PROJECT_DIRECTORY` env var** — set once in `mcp.json` for the whole server.
 3. **Process working directory** (`cwd`) — the fallback, but **MCP clients disagree on what the working directory is**. Claude Code and GitHub Copilot set it to the project root; Cursor user-level config (`~/.cursor/mcp.json`) sets it to your home directory. Because it's inconsistent, don't rely on it alone.
 
-For reliable behavior, either set `--project-directory "${workspaceFolder}"` (or your client's project-path variable) in `mcp.json`, or let the agent pass `projectDirectory` per call. Tools echo the resolved directory back in their output, so you can confirm which path was used when none was passed explicitly.
+For reliable behavior, either set `--project-directory "${workspaceFolder}"` (or your client's project-path variable) in `mcp.json`, or let the agent pass `projectDirectory` per call. A per-call override controls both project-local configuration discovery (`.env`, `SFCC_CONFIG`, and `dw.json`) and relative filesystem paths. Use `configPath` when the desired `dw.json`-format file is not the project default. JSON-returning filesystem tools echo the resolved directory back in their output so you can confirm which path was used.
+
+Each project-aware call selects its primary configuration path in this order, then adds the global `dw.json` to the available instances:
+
+1. Per-call `configPath`
+2. Server startup `--config` / `SFCC_CONFIG`
+3. `SFCC_CONFIG` from `${projectDirectory}/.env`
+4. `${projectDirectory}/dw.json`
+5. The shared global `dw.json` set with `b2c setup default-config set <path>`
+6. Other normal configuration sources
+
+This list selects the primary `dw.json`-format file. Individual configuration values are still merged according to the normal CLI source priority (explicit flags/environment, plugin sources, `dw.json`, MRT credentials, and `package.json`).
+
+The global `dw.json` is shared with the CLI and B2C DX VS Code extension. It is useful when an MCP client starts the server outside your project or when you want its instances available alongside project instances.
+
+The primary and global `dw.json` files form one instance catalog. An instance named by `--instance` / `SFCC_INSTANCE` is searched in the primary file first and then the global file; same-name primary entries shadow global entries. The selected instance's fields are not merged across files.
 
 ::: tip Diagnosing configuration
 Run the `config_inspect` tool (ask your agent to "inspect the B2C MCP configuration") to see the resolved configuration — instance, auth, SCAPI/MRT settings, and which source provided each value — along with the effective project directory and how it was resolved. Secrets are redacted by default.
 :::
+
+`config_inspect` uses the same SDK `loadConfig` resolver and globally registered CLI plugin configuration sources as `b2c setup inspect`. Given the same installed plugins, environment, `projectDirectory`, and `configPath`, its resolved values and source provenance follow the same pipeline; MCP adds the effective project-directory context to its response.
 
 This is the [Agent Plugins](https://agent-plugins.org/plugin-authors/mcp-servers) `cwd` model: when a plugin declares an MCP server without an explicit `cwd`, the working directory defaults to the plugin root rather than your open project — which is exactly why the explicit outlets above matter.
 
@@ -172,14 +200,14 @@ To disable, set either variable in your `.env` file or MCP client `env` object:
 
 ## MCP Server Flags Reference {#mcp-server-flags}
 
-Flags specific to the MCP server (in addition to the shared CLI flags in the [CLI Configuration guide](../guide/configuration)):
+Flags specific to the MCP server (in addition to the shared CLI flags in the [Configuration guide](../guide/configuration)):
 
-| Flag                   | Type    | Default     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ---------------------- | ------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--toolsets`           | string  | Auto-detect | Toolsets to enable (comma-separated)                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `--tools`              | string  | -           | Individual tools to enable (comma-separated)                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Flag                   | Type    | Default     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------------- | ------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--toolsets`           | string  | Auto-detect | Toolsets to enable (comma-separated)                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `--tools`              | string  | -           | Individual tools to enable (comma-separated)                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `--docs-topics`        | string  | All         | Hard configuration allowlist bounding the docs tools' corpus to these categories (comma-separated): `script-api`, `job-step`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `help-admin`, `help-merchant`. Per-call `category` hard-filters within the allowlist; `workspace` (comma-separated multi-value allowed, e.g. `sfra,pwa-kit-v3`) boosts relevant categories and de-boosts competing storefront frameworks within the allowlist |
-| `--allow-non-ga-tools` | boolean | `false`     | Enable non-GA (experimental) tools                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `--allow-non-ga-tools` | boolean | `false`     | Enable non-GA (experimental) tools                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 Environment variable equivalents for these flags are listed in [MCP Server Environment Variables](#mcp-server-environment-variables).
 
@@ -204,12 +232,12 @@ These can be set in a `.env` file, the MCP client `env` object, or as system env
 
 MCP-specific environment variables (flag equivalents):
 
-| Env Variable              | Equivalent Flag        | Type    | Default     | Description                                                                                                                                                                                                                                                                                                                                                                            |
-| ------------------------- | ---------------------- | ------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SFCC_TOOLSETS`           | `--toolsets`           | string  | Auto-detect | Toolsets to enable (comma-separated)                                                                                                                                                                                                                                                                                                                                                   |
-| `SFCC_TOOLS`              | `--tools`              | string  | -           | Individual tools to enable (comma-separated)                                                                                                                                                                                                                                                                                                                                           |
+| Env Variable              | Equivalent Flag        | Type    | Default     | Description                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------- | ---------------------- | ------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SFCC_TOOLSETS`           | `--toolsets`           | string  | Auto-detect | Toolsets to enable (comma-separated)                                                                                                                                                                                                                                                                                                                                                                                  |
+| `SFCC_TOOLS`              | `--tools`              | string  | -           | Individual tools to enable (comma-separated)                                                                                                                                                                                                                                                                                                                                                                          |
 | `SFCC_DOCS_TOPICS`        | `--docs-topics`        | string  | All         | Hard configuration allowlist bounding the docs tools' corpus to these categories (comma-separated): `script-api`, `job-step`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `help-admin`, `help-merchant`. Per-call `category` hard-filters within the allowlist; `workspace` boosts relevant categories and de-boosts competing storefront frameworks within the allowlist |
-| `SFCC_ALLOW_NON_GA_TOOLS` | `--allow-non-ga-tools` | boolean | `false`     | Enable non-GA (experimental) tools                                                                                                                                                                                                                                                                                                                                                     |
+| `SFCC_ALLOW_NON_GA_TOOLS` | `--allow-non-ga-tools` | boolean | `false`     | Enable non-GA (experimental) tools                                                                                                                                                                                                                                                                                                                                                                                    |
 
 **B2C instance:**
 
@@ -244,12 +272,12 @@ MCP-specific environment variables (flag equivalents):
 | `SFCC_LOG_LEVEL`         | Logging level                                               |
 | `SFCC_DEBUG`             | Enable debug logging                                        |
 
-See the [CLI Configuration guide](../guide/configuration#environment-variables) for the complete list including OAuth and advanced options.
+See the [Configuration guide](../guide/configuration#environment-variables) for the complete list including OAuth and advanced options.
 
 ## Next Steps
 
 - [Installation](./installation) - Set up the MCP server
-- [CLI Configuration](../guide/configuration) - Learn about `dw.json`, environment variables, and credential resolution
+- [Configuration](../guide/configuration) - Learn about `dw.json`, environment variables, and credential resolution
 - [Authentication Setup](../guide/authentication) - Set up API clients, WebDAV access, and MRT API keys
 - [Toolsets & Tools](./toolsets) - Explore available toolsets and tools
 - [MCP Server Overview](./) - Learn more about the MCP server

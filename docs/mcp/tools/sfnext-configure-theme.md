@@ -50,6 +50,8 @@ THEMING_FILES='[{"key":"brand-guidelines","path":"docs/brand-guidelines.md"}]'
 
 | Parameter             | Type     | Required | Description                                                                                                                                    |
 | --------------------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `projectDirectory`    | string   | No       | Project root used to load project `.env` values such as `THEMING_FILES` and resolve relative theming paths.                                    |
+| `configPath`          | string   | No       | Explicit `dw.json`-format configuration file; relative paths resolve from `projectDirectory`.                                                  |
 | `fileKeys`            | string[] | No       | File keys to add to the default set. Custom keys are merged with defaults: `theming-questions`, `theming-validation`, `theming-accessibility`. |
 | `conversationContext` | object   | No       | Context from previous rounds. Omit to list available files. See [Conversation Context](#conversation-context) for details.                     |
 

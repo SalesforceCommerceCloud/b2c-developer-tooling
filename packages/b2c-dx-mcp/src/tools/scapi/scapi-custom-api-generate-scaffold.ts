@@ -17,6 +17,7 @@ import {z} from 'zod';
 import {createToolAdapter, jsonResult, errorResult} from '../adapter.js';
 import type {Services} from '../../services.js';
 import type {McpTool} from '../../utils/index.js';
+import type {ProjectContextInput, ProjectDirectoryInfo} from '../project-context.js';
 import {
   createScaffoldRegistry,
   generateFromScaffold,
@@ -38,7 +39,7 @@ export interface ScaffoldCustomApiExecuteOverrides {
  * Input schema for scapi_custom_api_generate_scaffold tool.
  * Parameters match the custom-api scaffold: apiName, apiType, cartridgeName, etc.
  */
-interface ScaffoldCustomApiInput {
+interface ScaffoldCustomApiInput extends ProjectContextInput {
   /** API name (kebab-case, e.g. my-products). Required. */
   apiName: string;
   /** Cartridge name that will contain the API. Optional; defaults to first cartridge found in project. */
@@ -67,6 +68,8 @@ interface ScaffoldCustomApiOutput {
   }>;
   postInstructions?: string;
   error?: string;
+  projectDirectory: ProjectDirectoryInfo;
+  projectRoot: string;
 }
 
 /**
@@ -78,7 +81,8 @@ export async function executeScaffoldCustomApi(
   services: Services,
   overrides?: ScaffoldCustomApiExecuteOverrides,
 ): Promise<ScaffoldCustomApiOutput> {
-  const projectRoot = services.resolveWithProjectDirectory(args.projectRoot);
+  const projectDirectory = services.resolveProjectDirectory(args.projectDirectory);
+  const projectRoot = services.resolveWithProjectDirectory(args.projectRoot, args.projectDirectory);
 
   const getScaffold =
     overrides?.getScaffold ??
@@ -94,6 +98,8 @@ export async function executeScaffoldCustomApi(
       outputDir: projectRoot,
       dryRun: false,
       files: [],
+      projectDirectory,
+      projectRoot,
       error: `Scaffold not found: ${CUSTOM_API_SCAFFOLD_ID}. Ensure @salesforce/b2c-tooling-sdk is installed.`,
     };
   }
@@ -105,6 +111,8 @@ export async function executeScaffoldCustomApi(
       outputDir: projectRoot,
       dryRun: false,
       files: [],
+      projectDirectory,
+      projectRoot,
       error:
         'No cartridges found in project. Custom API scaffold requires an existing cartridge. Create a cartridge first: use `b2c scaffold cartridge --name app_custom`, or manually create a directory with a `.project` file (e.g., cartridges/app_custom/.project).',
     };
@@ -137,6 +145,8 @@ export async function executeScaffoldCustomApi(
       outputDir: projectRoot,
       dryRun: false,
       files: [],
+      projectDirectory,
+      projectRoot,
       error: `Parameter validation failed: ${message}`,
     };
   }
@@ -148,6 +158,8 @@ export async function executeScaffoldCustomApi(
       outputDir: projectRoot,
       dryRun: false,
       files: [],
+      projectDirectory,
+      projectRoot,
       error: `Missing required parameter: ${missingRequired[0].name}. For cartridgeName, ensure the cartridge exists in the project (under projectRoot).`,
     };
   }
@@ -176,6 +188,8 @@ export async function executeScaffoldCustomApi(
         skipReason: f.skipReason,
       })),
       postInstructions: result.postInstructions,
+      projectDirectory,
+      projectRoot,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -184,6 +198,8 @@ export async function executeScaffoldCustomApi(
       outputDir,
       dryRun: false,
       files: [],
+      projectDirectory,
+      projectRoot,
       error: `Scaffold generation failed: ${message}`,
     };
   }
@@ -212,6 +228,7 @@ apiDescription, projectRoot, outputDir.`,
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       isGA: true,
       requiresInstance: false,
+      usesProjectContext: true,
       inputSchema: {
         apiName: z
           .string()
@@ -235,7 +252,7 @@ apiDescription, projectRoot, outputDir.`,
           .string()
           .nullish()
           .describe(
-            'Project root for cartridge discovery. Default: project directory. Set to override the project directory.',
+            'Optional cartridge discovery/output root, resolved relative to projectDirectory. Defaults to projectDirectory.',
           ),
         outputDir: z.string().optional().describe('Output directory override. Default: project root'),
       },

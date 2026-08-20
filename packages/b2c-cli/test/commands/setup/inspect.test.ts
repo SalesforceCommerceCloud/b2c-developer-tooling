@@ -387,6 +387,37 @@ describe('setup inspect', () => {
       expect(output).to.not.include('Safety');
     });
 
+    it('should identify the default dw.json in field and source provenance', async () => {
+      const command = new SetupInspect([], {} as any);
+      (command as any).flags = {unmask: false};
+      stubJsonEnabled(command, false);
+      stubCommandConfigAndLogger(command);
+      const stdoutStub = sinon.stub(ux, 'stdout');
+      stubResolvedConfig(command, {hostname: 'global.example.com'}, [
+        {
+          name: 'DwJsonSource',
+          scope: 'global',
+          location: '/home/user/.config/b2c/dw.json',
+          fields: ['hostname'],
+          instanceCatalog: [
+            {location: '/project/dw.json', scope: 'primary', selected: false},
+            {location: '/home/user/.config/b2c/dw.json', scope: 'global', selected: true},
+          ],
+        },
+      ]);
+
+      await command.run();
+
+      const output = stdoutStub.firstCall.args[0] as string;
+      expect(output).to.include('[default]');
+      expect(output).to.include('DwJsonSource (default)*');
+      expect(output).to.not.include('global dw.json, selected');
+      expect(output).to.include('/home/user/.config/b2c/dw.json');
+      expect(output).to.not.include('Instance Catalog');
+      expect(output).to.include('DwJsonSource');
+      expect(output).to.include('/project/dw.json');
+    });
+
     it('should display formatted info in non-JSON mode', async () => {
       const command = new SetupInspect([], {} as any);
       (command as any).flags = {unmask: false};

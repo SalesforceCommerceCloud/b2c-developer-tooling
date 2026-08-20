@@ -53,6 +53,33 @@ function getDisplayValue(field: string, value: unknown, unmask: boolean): string
   return strValue;
 }
 
+/** Format source provenance for human-readable output. */
+function getSourceDisplayName(source: ConfigSourceInfo): string {
+  return source.scope === 'global' ? `${source.name} (default)` : source.name;
+}
+
+/** Format compact field-level provenance. */
+function getFieldSourceDisplayName(source: ConfigSourceInfo): string {
+  return source.scope === 'global' ? 'default' : source.name;
+}
+
+/** Expand configuration sources into human-readable rows. */
+function getSourceRows(sources: ConfigSourceInfo[]): Array<{location: string; name: string}> {
+  return sources.flatMap((source) => {
+    if (!source.instanceCatalog || source.instanceCatalog.length === 0) {
+      return [{location: source.location || '-', name: getSourceDisplayName(source)}];
+    }
+
+    return source.instanceCatalog.map((file) => {
+      const name = file.scope === 'global' ? `${source.name} (default)` : source.name;
+      return {
+        location: file.location,
+        name: file.selected ? `${name}*` : name,
+      };
+    });
+  });
+}
+
 /**
  * Command to display resolved configuration.
  */
@@ -118,7 +145,6 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
 
     // Build output config with masking applied
     const outputConfig = redactConfigValues(values, {unmask});
-
     const result: SetupInspectResponse = {
       config: outputConfig,
       sources,
@@ -155,7 +181,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
     for (const source of sources) {
       for (const field of source.fields) {
         if (!source.fieldsIgnored?.includes(field) && !resultMap.has(field)) {
-          resultMap.set(field, source.name);
+          resultMap.set(field, getFieldSourceDisplayName(source));
         }
       }
     }
@@ -328,8 +354,8 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       ui.div({text: 'Sources', padding: [1, 0, 0, 0]});
       ui.div({text: '─'.repeat(60), padding: [0, 0, 0, 0]});
 
-      for (const [index, source] of sources.entries()) {
-        ui.div({text: `  ${index + 1}. ${source.name}`, width: 24}, {text: source.location || '-'});
+      for (const [index, source] of getSourceRows(sources).entries()) {
+        ui.div({text: `  ${index + 1}. ${source.name}`, width: 34}, {text: source.location});
       }
     }
 

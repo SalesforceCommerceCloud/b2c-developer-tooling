@@ -116,9 +116,9 @@ export class DebugSessionRegistry {
     const existing = this.findByHostAndClientId(hostname, clientId);
     if (existing) {
       throw new Error(
-        `A debug session already exists for ${hostname} with client ID "${clientId}" ` +
+        `A debug session already exists for ${hostname} ` +
           `(session_id: "${existing.sessionId}"). ` +
-          `End it with debug_end_session first, or use a different client_id.`,
+          `End it with debug_end_session first.`,
       );
     }
 

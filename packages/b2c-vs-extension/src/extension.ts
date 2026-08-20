@@ -595,6 +595,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   // --- Active instance status bar ---
   const dwJsonSource = new DwJsonSource();
   const getWorkingDirectory = () => configProvider.getWorkingDirectory();
+  const getInstanceCatalogOptions = () => configProvider.getInstanceCatalogOptions();
 
   const instanceStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
   instanceStatusBar.command = 'b2c-dx.instance.switch';
@@ -614,7 +615,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
       // of the clearer "Not configured" state.
       if (config?.hasB2CInstanceConfig()) {
         // Find active instance name from dw.json
-        const instances = await dwJsonSource.listInstances({workingDirectory: getWorkingDirectory()});
+        const instances = await dwJsonSource.listInstances(getInstanceCatalogOptions());
         const active = instances.find((i) => i.active);
         const name = active?.name;
         const host = config.values.hostname ?? '';
@@ -688,8 +689,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   });
 
   const switchInstanceDisposable = registerSafeCommand('b2c-dx.instance.switch', async () => {
-    const workingDirectory = getWorkingDirectory();
-    const instances = await dwJsonSource.listInstances({workingDirectory});
+    const instances = await dwJsonSource.listInstances(getInstanceCatalogOptions());
 
     if (instances.length === 0) {
       vscode.window.showWarningMessage('No instances configured in dw.json.');
@@ -721,7 +721,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     }
 
     try {
-      await dwJsonSource.setActiveInstance(picked.instance.name, {workingDirectory});
+      await dwJsonSource.setActiveInstance(picked.instance.name, getInstanceCatalogOptions());
       // The FileSystemWatcher will detect the dw.json change and trigger reset,
       // but fire manually in case the watcher is slow
       configProvider.reset();

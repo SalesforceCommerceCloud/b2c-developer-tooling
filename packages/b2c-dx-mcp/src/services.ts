@@ -85,6 +85,8 @@ export interface ServicesOptions {
   mrtConfig?: MrtConfig;
   /** Resolved configuration for access to SCAPI settings */
   resolvedConfig: ResolvedB2CConfig;
+  /** Project-scoped environment parsed from the effective project's .env file. */
+  projectEnvironment?: Readonly<Record<string, string | undefined>>;
 }
 
 /**
@@ -123,12 +125,14 @@ export class Services {
    * Provides access to shortCode, tenantId, and OAuth credentials.
    * @private
    */
+  private readonly projectEnvironment: Readonly<Record<string, string | undefined>>;
   private readonly resolvedConfig: ResolvedB2CConfig;
 
   public constructor(opts: ServicesOptions) {
     this.b2cInstance = opts.b2cInstance;
     this.mrtConfig = opts.mrtConfig ?? {};
     this.resolvedConfig = opts.resolvedConfig;
+    this.projectEnvironment = opts.projectEnvironment ?? {};
   }
 
   /**
@@ -143,7 +147,10 @@ export class Services {
    * const services = Services.fromResolvedConfig(this.resolvedConfig);
    * ```
    */
-  public static fromResolvedConfig(config: ResolvedB2CConfig): Services {
+  public static fromResolvedConfig(
+    config: ResolvedB2CConfig,
+    projectEnvironment?: Readonly<Record<string, string | undefined>>,
+  ): Services {
     // Build MRT config using factory methods
     const mrtConfig: MrtConfig = {
       auth: config.hasMrtConfig() ? config.createMrtAuth() : undefined,
@@ -159,6 +166,7 @@ export class Services {
       b2cInstance,
       mrtConfig,
       resolvedConfig: config,
+      projectEnvironment,
     });
   }
 
@@ -220,6 +228,14 @@ export class Services {
    */
   public getCwd(): string {
     return process.cwd();
+  }
+
+  /**
+   * Read an environment variable with the ambient process environment taking
+   * precedence over the project-scoped .env value.
+   */
+  public getEnvironmentVariable(name: string): string | undefined {
+    return process.env[name] ?? this.projectEnvironment[name];
   }
 
   /**

@@ -15,9 +15,20 @@ This page covers:
 
 ## Connecting to a B2C Instance
 
-The extension uses the same configuration resolver as the B2C CLI. Environment variables, a project `.env`, `dw.json`, supported settings under `package.json#b2c`, shared CLI credential storage, and configuration sources added by installed B2C CLI plugins are all honored. The [CLI Configuration guide](../guide/configuration) is the reference for available fields and precedence.
+The extension uses the same configuration resolver as the B2C CLI. Environment variables, a project `.env`, `dw.json`, supported settings under `package.json#b2c`, shared CLI credential storage, and configuration sources added by installed B2C CLI plugins are all honored. The shared [Configuration guide](../guide/configuration) is the reference for available fields and precedence.
 
 **A `dw.json` at your project root is the conventional setup** and is the easiest way for the extension to locate a B2C project nested inside a larger workspace. It is not required when another configuration source provides what you need.
+
+For the selected project, the extension loads all variables from its `.env` and supports a relative `.env` `SFCC_CONFIG` path. Process environment variables take priority over project `.env` values. Configuration files are selected in this order:
+
+1. Process `SFCC_CONFIG`
+2. Project `.env` `SFCC_CONFIG`
+3. Project-local `dw.json`
+4. The shared global default set with `b2c setup default-config set <path>`
+
+The global default is the same fallback used by the CLI and MCP server. The extension automatically refreshes when that shared setting changes.
+
+The extension's instance picker combines instances from the primary and global files. Same-name primary entries shadow global entries, and each instance remains a complete entry rather than having fields merged across files. Switching an instance updates the file that owns it and clears the previous active selection across the catalog.
 
 ### Per-feature requirements
 
@@ -155,4 +166,4 @@ To opt out of the Red Hat XML dependency entirely, uninstall this extension or p
 
 - [Overview](./) — what the extension can do.
 - [Authentication Setup](../guide/authentication) — Account Manager API clients, WebDAV access keys, OAuth scopes.
-- [CLI Configuration](../guide/configuration) — full `dw.json` reference and precedence rules.
+- [Configuration](../guide/configuration) — full `dw.json` reference and precedence rules.

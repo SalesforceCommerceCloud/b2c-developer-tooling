@@ -104,10 +104,16 @@ describe('tools/scapi/scapi-custom-apis-get-status', () => {
       expect(tool.isGA).to.be.true;
     });
 
-    it('should have optional input params: status, groupBy, columns', () => {
+    it('should have project context and optional operation inputs', () => {
       const tool = createScapiCustomApisStatusTool(() => services);
 
-      expect(Object.keys(tool.inputSchema as object)).to.have.members(['status', 'groupBy', 'columns']);
+      expect(Object.keys(tool.inputSchema as object)).to.have.members([
+        'projectDirectory',
+        'configPath',
+        'status',
+        'groupBy',
+        'columns',
+      ]);
     });
   });
 

@@ -701,5 +701,5 @@ To resolve the warning, create a new public client as described above and use it
 
 ## Next Steps
 
-- [Configuration](./configuration) - Learn about CLI configuration options
+- [Configuration](./configuration) - Learn how configuration is shared across the CLI, MCP server, and VS Code extension
 - [CLI Reference](/cli/) - Browse available commands
