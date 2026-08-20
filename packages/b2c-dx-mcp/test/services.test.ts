@@ -289,6 +289,19 @@ describe('services', () => {
         source: 'cwd',
       });
     });
+
+    it('uses canonical resolution provenance when normalized config contains the implicit cwd', () => {
+      const config = createMockResolvedConfig({projectDirectory: process.cwd(), workingDirectory: process.cwd()});
+      const services = new Services({
+        resolvedConfig: config,
+        resolution: {projectDirectory: {path: process.cwd(), source: 'cwd'}},
+      });
+
+      expect(services.resolveProjectDirectory()).to.deep.equal({
+        path: process.cwd(),
+        source: 'cwd',
+      });
+    });
   });
 
   describe('getHomeDir', () => {

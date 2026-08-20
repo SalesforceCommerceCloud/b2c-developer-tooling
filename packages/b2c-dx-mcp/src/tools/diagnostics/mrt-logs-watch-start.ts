@@ -57,13 +57,8 @@ export function createMrtLogsWatchStartTool(
     {
       name: 'mrt_logs_watch_start',
       description:
-        "Start a background tail of a Managed Runtime (MRT) environment's application logs over a WebSocket. " +
-        'Returns a watch_id immediately. MRT logs are always a live stream — there is no historical fetch — so ' +
-        'call mrt_logs_watch_start BEFORE triggering the request/SSR action you want to capture, then call ' +
-        'mrt_logs_watch_poll to drain buffered entries (it blocks up to timeout_ms). Always call ' +
-        'mrt_logs_watch_stop when done. Requires MRT project + environment (from --project/--environment flags, ' +
-        'MRT_PROJECT/MRT_ENVIRONMENT env vars, or dw.json). Only one active watch per project/environment/origin ' +
-        '— use mrt_logs_watch_list to find an existing one.',
+        'Start a live MRT application-log stream and return watch_id. Start before the target action, poll with ' +
+        'mrt_logs_watch_poll, and always stop with mrt_logs_watch_stop. Requires MRT project and environment.',
       toolsets: ['DIAGNOSTICS', 'PWAV3', 'STOREFRONTNEXT'],
       requiresMrtAuth: true,
       inputSchema: {

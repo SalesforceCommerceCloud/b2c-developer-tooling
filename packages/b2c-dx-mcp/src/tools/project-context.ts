@@ -53,64 +53,31 @@ export interface ToolResolution {
   projectDirectory: ProjectDirectoryInfo;
 }
 
-/** Defaults known when MCP tool schemas are registered. */
-export interface ProjectContextDefaults {
-  projectDirectory: ProjectDirectoryInfo;
-}
-
 /** Whether a tool needs only a project root or full configuration selection. */
 export type ProjectContextKind = 'configuration' | 'project';
 
-function defaultProjectContext(): ProjectContextDefaults {
-  return {projectDirectory: {path: process.cwd(), source: 'cwd'}};
-}
-
-/** Build the canonical project-directory field with the effective fallback embedded in its description. */
-export function createProjectDirectoryInput(defaults: ProjectContextDefaults = defaultProjectContext()) {
-  const fallback = defaults.projectDirectory;
-  const sourceDescription =
-    fallback.source === 'cwd'
-      ? 'the MCP process working directory'
-      : 'the server-level --project-directory / SFCC_PROJECT_DIRECTORY value';
-
+/** Build the canonical project-directory field. */
+export function createProjectDirectoryInput() {
   return z
     .string()
     .refine((value) => path.isAbsolute(value), 'projectDirectory must be an absolute path')
     .optional()
-    .describe(
-      `Optional absolute project root for this call. Overrides the server-level project directory. ` +
-        `When omitted, uses ${sourceDescription}: ${fallback.path}`,
-    );
+    .describe('Absolute project root; overrides server default. See config_inspect for resolved paths.');
 }
 
 /** Build the canonical explicit primary dw.json field. */
 export function createConfigPathInput() {
-  return z
-    .string()
-    .optional()
-    .describe(
-      'Optional path to a dw.json-format configuration file. Relative paths resolve from projectDirectory. ' +
-        'Selects the primary file ahead of server and project automatic selection; the shared default dw.json remains available as a fallback and for named-instance lookup.',
-    );
+  return z.string().optional().describe('Path to dw.json-format config; relative to projectDirectory.');
 }
 
 /** Build the canonical named-instance selection field. */
 export function createInstanceNameInput() {
-  return z
-    .string()
-    .min(1)
-    .optional()
-    .describe(
-      'Optional named instance to select from the resolved primary and default dw.json files. The primary file is searched first. When omitted, the active/default instance is used.',
-    );
+  return z.string().min(1).optional().describe('Named instance from dw.json.');
 }
 
 /** Build flat canonical schema fields for a local-project or configuration-aware tool. */
-export function createProjectContextInputSchema(
-  kind: ProjectContextKind,
-  defaults: ProjectContextDefaults = defaultProjectContext(),
-): ZodRawShape {
-  const project = {projectDirectory: createProjectDirectoryInput(defaults)};
+export function createProjectContextInputSchema(kind: ProjectContextKind): ZodRawShape {
+  const project = {projectDirectory: createProjectDirectoryInput()};
   if (kind === 'project') return project;
 
   return {

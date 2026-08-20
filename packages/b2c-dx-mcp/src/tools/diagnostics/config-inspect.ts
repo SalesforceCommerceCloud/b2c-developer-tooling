@@ -9,7 +9,7 @@ import {redactConfigValues, type ConfigSourceInfo} from '@salesforce/b2c-tooling
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
-import type {ProjectContextInput, ProjectDirectoryInfo} from '../project-context.js';
+import type {ProjectContextInput} from '../project-context.js';
 
 interface ConfigInspectInput extends ProjectContextInput {
   unmask?: boolean;
@@ -18,8 +18,6 @@ interface ConfigInspectInput extends ProjectContextInput {
 interface ConfigInspectOutput {
   /** Resolved configuration values (secrets masked unless `unmask` was set). */
   config: Record<string, unknown>;
-  /** The effective project directory and how it was resolved. */
-  projectDirectory: ProjectDirectoryInfo;
   /** Configuration sources that contributed, in precedence order. */
   sources: ConfigSourceInfo[];
   /** Resolution warnings, if any. */
@@ -40,10 +38,8 @@ export function createConfigInspectTool(loadServices: () => Promise<Services> | 
     {
       name: 'config_inspect',
       description:
-        'Inspect the resolved B2C Commerce configuration the MCP server is using — instance hostname, auth, SCAPI, MRT, and other settings — along with which source (dw.json, environment variables, flags) provided each value. ' +
-        'Secrets (passwords, client secrets, API keys) are redacted by default. ' +
-        'Pass projectDirectory, configPath, and/or instanceName to inspect the same project, configuration catalog, and named instance another tool would use. The detailed source graph is supplemented by the same compact resolution provenance returned by other configuration-aware tools. ' +
-        'Use this first when configuration seems wrong, auth is failing, or the server appears to be operating in the wrong directory.',
+        'Inspect resolved B2C configuration, source provenance, warnings, and paths. Secrets are redacted unless unmask=true. ' +
+        'Use to diagnose configuration, authentication, or project-context issues.',
       toolsets: ['DIAGNOSTICS'],
       isGA: true,
       requiresInstance: false,
@@ -52,17 +48,13 @@ export function createConfigInspectTool(loadServices: () => Promise<Services> | 
         unmask: z
           .boolean()
           .optional()
-          .describe(
-            'Show sensitive values (passwords, secrets, API keys) unmasked. Defaults to false — secrets are redacted. Only set this when the user explicitly needs the raw secret values.',
-          ),
+          .describe('Return secrets unmasked. Default: false; use only when explicitly requested.'),
       },
       async execute(args, {services}) {
         const resolved = services.getResolvedConfig();
-        const projectDirectory = services.resolveProjectDirectory(args.projectDirectory);
 
         return {
           config: redactConfigValues(resolved.values, {unmask: args.unmask ?? false}),
-          projectDirectory,
           sources: resolved.sources,
           warnings: resolved.warnings.length > 0 ? resolved.warnings.map((w) => w.message) : undefined,
         };

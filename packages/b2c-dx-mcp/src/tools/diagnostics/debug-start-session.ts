@@ -10,7 +10,7 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import type {ServerContext} from '../../server-context.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
-import type {ProjectContextInput, ProjectDirectoryInfo} from '../project-context.js';
+import type {ProjectContextInput} from '../project-context.js';
 import {
   DebugSessionManager,
   createSourceMapper,
@@ -32,7 +32,6 @@ interface StartSessionOutput {
   cartridge_mappings: Record<string, string>;
   session_cookie: null | {name: string; value: string};
   warnings: string[];
-  projectDirectory: ProjectDirectoryInfo;
   cartridgeDirectory: string;
 }
 
@@ -44,18 +43,14 @@ export function createDebugStartSessionTool(
     {
       name: 'debug_start_session',
       description:
-        'Start a script debugger session on a B2C Commerce instance to debug SFRA controllers, custom API scripts, hooks, jobs, or any server-side script. ' +
-        'Uses projectDirectory to load project configuration and discover cartridges. cartridgeDirectory may override only the cartridge discovery/source-mapping root. ' +
-        'Returns a session_id for use with other debug tools, plus discovered cartridge mappings. ' +
-        'WARNING: Debug sessions halt remote request threads on the instance. Always call debug_end_session when finished.',
+        'Start a B2C script debugger session and discover cartridge mappings. Returns session_id for follow-up tools. ' +
+        'Debugging halts remote request threads; always call debug_end_session.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         cartridgeDirectory: z
           .string()
           .optional()
-          .describe(
-            'Optional cartridge discovery and debugger source-mapping root. Relative paths resolve from projectDirectory. Defaults to projectDirectory.',
-          ),
+          .describe('Cartridge discovery and source-mapping root; relative to projectDirectory.'),
       },
       usesConfigurationContext: true,
       async execute(args, context) {
@@ -71,7 +66,6 @@ export function createDebugStartSessionTool(
 
         const {hostname, username, password} = credentials;
         const clientId = `b2c-dx-mcp-${randomUUID()}`;
-        const projectDirectory = context.services.resolveProjectDirectory(args.projectDirectory);
         const cartridgeDir = context.services.resolveWithProjectDirectory(
           args.cartridgeDirectory,
           args.projectDirectory,
@@ -134,7 +128,6 @@ export function createDebugStartSessionTool(
           cartridge_mappings: cartridgeMappings,
           session_cookie: dwsid ? {name: 'dwsid', value: dwsid} : null,
           warnings,
-          projectDirectory,
           cartridgeDirectory: cartridgeDir,
         };
       },

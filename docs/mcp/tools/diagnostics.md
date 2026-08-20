@@ -38,12 +38,12 @@ Start a new script debugger session. Connects to the SDAPI, discovers cartridge 
 
 > **Warning:** Debug sessions can halt remote request threads on the instance. Use `debug_end_session` to cleanly disconnect when done.
 
-| Parameter            | Type   | Required | Default                       | Description                                                                                                                                   |
-| -------------------- | ------ | -------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `projectDirectory`   | string | No       | Configured project directory  | Project root used to load `.env`/`dw.json` and resolve relative paths. Overrides the MCP process working directory.                           |
-| `configPath`         | string | No       | Resolved from project context | Primary `dw.json`-format configuration file. Relative paths resolve from `projectDirectory`; the shared default remains available.            |
-| `instanceName`       | string | No       | Active/default instance       | Named instance selected from the primary configuration first, then the shared default `dw.json`.                                              |
-| `cartridgeDirectory` | string | No       | `projectDirectory`            | Cartridge discovery and source-mapping root only. Use when cartridges are outside the project root; relative paths resolve from project root. |
+| Parameter            | Type   | Required | Default                       | Description                                                                                                                                                  |
+| -------------------- | ------ | -------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `projectDirectory`   | string | No       | Server project directory/cwd  | Project root used to load `.env`/`dw.json` and resolve relative paths. Overrides the server-level directory; run `config_inspect` to see the resolved paths. |
+| `configPath`         | string | No       | Resolved from project context | Primary `dw.json`-format configuration file. Relative paths resolve from `projectDirectory`; the shared default remains available.                           |
+| `instanceName`       | string | No       | Active/default instance       | Named instance selected from the primary configuration first, then the shared default `dw.json`.                                                             |
+| `cartridgeDirectory` | string | No       | `projectDirectory`            | Cartridge discovery and source-mapping root only. Use when cartridges are outside the project root; relative paths resolve from project root.                |
 
 **Returns:** `session_id`, `hostname`, discovered `cartridges`, `resolution`, `session_cookie` (see [Server affinity](#server-affinity-hitting-breakpoints)), and `warnings`. The session retains its resolution context; `debug_list_sessions` returns it for later follow-up calls.
 

@@ -147,6 +147,7 @@ import {
 import type {LoadConfigOptions} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {EnvSource, readProjectEnvironment} from '@salesforce/b2c-tooling-sdk/config';
+// eslint-disable-next-line import/no-unresolved -- SDK 1.30's types export misresolves runtime .js subpaths.
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {B2CDxMcpServer} from '../server.js';
 import {Services, type ServicesResolutionInputs} from '../services.js';
@@ -435,13 +436,6 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     // Register toolsets with loader function that loads config and creates Services on each tool call
     // This allows tools to pick up changes to config files (dw.json, ~/.mobify) between invocations
     const loadServices = this.loadServices.bind(this) as ServicesLoader;
-    const configuredProjectDirectory = this.flags['project-directory'];
-    loadServices.projectContextDefaults = {
-      projectDirectory: {
-        path: path.resolve(configuredProjectDirectory ?? process.cwd()),
-        source: configuredProjectDirectory ? 'config' : 'cwd',
-      },
-    };
     await registerToolsets(startupFlags, server, loadServices, this.serverContext);
 
     // Connect to stdio transport

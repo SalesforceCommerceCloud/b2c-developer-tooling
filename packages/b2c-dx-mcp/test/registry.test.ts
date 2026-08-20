@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {stub, restore} from 'sinon';
+import {DOC_CATEGORIES} from '@salesforce/b2c-tooling-sdk/docs';
 import {createToolRegistry, registerToolsets} from '../src/registry.js';
 import {Services} from '../src/services.js';
 import {B2CDxMcpServer} from '../src/server.js';
@@ -167,6 +168,31 @@ describe('registry', () => {
       }
 
       expect(toolsByName.get('debug_start_session')!.inputSchema).to.have.property('cartridgeDirectory');
+    });
+
+    it('keeps tool and input descriptions concise', () => {
+      const registry = createToolRegistry(
+        createMockLoadServicesWrapper(),
+        undefined,
+        ['cartridges', 'sfra', 'pwa-kit-v3', 'storefront-next'],
+        DOC_CATEGORIES,
+      );
+      const tools = [
+        ...new Map(
+          Object.values(registry)
+            .flat()
+            .map((tool) => [tool.name, tool]),
+        ).values(),
+      ];
+
+      for (const tool of tools) {
+        expect(tool.description.length, `${tool.name} description too long`).to.be.at.most(400);
+        for (const [field, schema] of Object.entries(tool.inputSchema)) {
+          expect(schema.description, `${tool.name}.${field} should have a description`).to.be.a('string').and.not.be
+            .empty;
+          expect(schema.description!.length, `${tool.name}.${field} description too long`).to.be.at.most(120);
+        }
+      }
     });
 
     it('registered tool handlers are invokable end-to-end', async () => {

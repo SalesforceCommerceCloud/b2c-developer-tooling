@@ -44,6 +44,14 @@ function buildScapiApiUrl(shortCode: string, apiFamily: string, apiName: string,
   return `https://${shortCode}.api.commercecloud.salesforce.com/${apiFamily}/${apiName}/${apiVersion}`;
 }
 
+function getSchemasApiError(error: unknown, response: Response): string {
+  const message = getApiErrorMessage(error, response);
+  if (response.status === 401 || response.status === 403) {
+    return `${message}. Verify OAuth credentials include the sfcc.scapi-schemas scope.`;
+  }
+  return message;
+}
+
 /**
  * Input parameters for scapi_schemas_list tool.
  */
@@ -147,7 +155,7 @@ async function fetchSpecificSchema(params: {
 
   if (error) {
     throw new Error(
-      `Failed to fetch schema for ${apiFamily}/${apiName}/${apiVersion}: ${getApiErrorMessage(error, response)}`,
+      `Failed to fetch schema for ${apiFamily}/${apiName}/${apiVersion}: ${getSchemasApiError(error, response)}`,
     );
   }
 
@@ -205,7 +213,7 @@ async function fetchSchemasList(params: {
   });
 
   if (error) {
-    throw new Error(`Failed to fetch SCAPI schemas: ${getApiErrorMessage(error, response)}`);
+    throw new Error(`Failed to fetch SCAPI schemas: ${getSchemasApiError(error, response)}`);
   }
 
   const schemas = data?.data ?? [];
@@ -296,15 +304,8 @@ export function createScapiSchemasListTool(loadServices: () => Promise<Services>
   return createToolAdapter<SchemasListInput, SchemaGetOutput | SchemasListOutput>(
     {
       name: 'scapi_schemas_list',
-      description: `List or fetch SCAPI schema metadata and OpenAPI specs for standard SCAPI (Shop/Admin/Shopper) and custom APIs (apiFamily: "custom"). For endpoint registration status, use scapi_custom_apis_get_status.
-
-**Modes:**
-- **List (discovery):** Omit includeSchemas or any identifier. Returns metadata: schemas[], total, availableApiFamilies/Names/Versions.
-- **Fetch:** Set includeSchemas=true + all three: apiFamily, apiName, apiVersion. Returns full OpenAPI schema (collapsed by default; set expandAll=true for full).
-
-**Rules:** includeSchemas requires all three identifiers. status only works in list mode (use "current" for active schemas, "deprecated" for phased-out schemas). Custom APIs use apiFamily: "custom".
-
-**Requirements:** OAuth with sfcc.scapi-schemas scope.`,
+      description:
+        'List SCAPI schema metadata or fetch an OpenAPI schema. Fetch requires includeSchemas, apiFamily, apiName, and apiVersion. Use scapi_custom_apis_get_status for endpoint status.',
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       isGA: true,
       requiresInstance: false, // SCAPI uses OAuth directly, doesn't need B2CInstance (hostname)

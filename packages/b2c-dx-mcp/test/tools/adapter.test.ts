@@ -342,7 +342,7 @@ describe('tools/adapter', () => {
       });
     });
 
-    it('should describe the actual server fallback and attach compact resolution provenance', async () => {
+    it('should describe fallback precedence without exposing a path and attach compact resolution provenance', async () => {
       const sources: ConfigSourceInfo[] = [
         {
           fields: ['hostname', 'instanceName'],
@@ -367,9 +367,6 @@ describe('tools/adapter', () => {
         },
       });
       const loadServices = () => services;
-      loadServices.projectContextDefaults = {
-        projectDirectory: {path: '/server/project', source: 'config' as const},
-      };
       const tool = createToolAdapter<Record<string, never>, {ok: boolean}>(
         {
           name: 'resolved_tool',
@@ -383,7 +380,14 @@ describe('tools/adapter', () => {
         loadServices,
       );
 
-      expect(tool.inputSchema.projectDirectory.description).to.include('/server/project');
+      expect(tool.inputSchema.projectDirectory.description).to.include('server default');
+      expect(tool.inputSchema.projectDirectory.description).to.include('config_inspect');
+      expect(tool.inputSchema.projectDirectory.description).to.not.include('/server/project');
+      for (const field of ['projectDirectory', 'configPath', 'instanceName']) {
+        const fieldDescription = tool.inputSchema[field].description ?? '';
+        expect(fieldDescription, `${field} description`).to.not.equal('');
+        expect(fieldDescription.length, `${field} description length`).to.be.at.most(120);
+      }
       const result = await tool.handler({});
       const output = JSON.parse(getResultText(result)) as Record<string, unknown>;
       expect(output.resolution).to.deep.equal({
