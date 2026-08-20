@@ -97,7 +97,7 @@ export function createDocsSearchTool(
           .enum(WORKSPACE_VALUES)
           .optional()
           .describe(
-            'Workspace context. "auto" (default) favors the auto-detected workspace\'s docs; ' +
+            'Workspace context. "auto" (default) favors the workspace detected at server startup; ' +
               '"all" disables the preference; or name a type (cartridges, sfra, pwa-kit-v3, storefront-next).',
           ),
         limit: z

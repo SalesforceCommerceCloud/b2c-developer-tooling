@@ -160,11 +160,12 @@ describe('MCP Server E2E', function () {
           arguments: {projectDirectory},
         })) as {content: Array<{text: string; type: string}>};
         const inspected = JSON.parse(result.content[0].text) as {
-          projectDirectory: {path: string; source: string};
+          resolution: {projectDirectory: {path: string; source: string}};
           sources: Array<{location?: string; name: string}>;
         };
 
-        expect(inspected.projectDirectory).to.deep.equal({path: projectDirectory, source: 'argument'});
+        expect(inspected.resolution.projectDirectory).to.deep.equal({path: projectDirectory, source: 'argument'});
+        expect(inspected).to.not.have.own.property('projectDirectory');
         expect(inspected.sources.some((source) => source.name === 'DwJsonSource' && source.location === configPath)).to
           .be.true;
 

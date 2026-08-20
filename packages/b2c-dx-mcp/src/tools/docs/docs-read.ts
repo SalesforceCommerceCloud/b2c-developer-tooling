@@ -41,7 +41,7 @@ export function createDocsReadTool(
       description:
         'Read B2C Commerce documentation (markdown) for a class, module, job step, guide, or Help article. ' +
         'Accepts an exact id (e.g. "dw.catalog.ProductMgr", "sfnext/sfnext-get-started") or a fuzzy ' +
-        'query — best match wins (a fuzzy query favors the detected workspace, matching docs_search). ' +
+        'query — best match wins (a fuzzy query favors the workspace detected at server startup, matching docs_search). ' +
         'Job-step content is bundled; Script API, Developer Center guide, and Salesforce Help content is ' +
         'fetched from its published URL on demand and cached locally (with a summary/headings fallback if ' +
         'the network is unavailable). If you do not know the id, call docs_search first. Long docs are ' +

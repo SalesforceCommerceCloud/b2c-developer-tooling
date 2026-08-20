@@ -79,7 +79,6 @@ import type {ServerContext} from '../server-context.js';
 import {
   createProjectContextInputSchema,
   type DirectoryResolutionInfo,
-  type ProjectContextDefaults,
   type ProjectContextInput,
   type ProjectContextKind,
   type ToolResolution,
@@ -88,7 +87,6 @@ import {
 /** Services loader enriched with registration-time project fallback provenance. */
 export interface ServicesLoader {
   (projectContext?: ProjectContextInput): Promise<Services> | Services;
-  projectContextDefaults?: ProjectContextDefaults;
 }
 
 /**
@@ -341,7 +339,7 @@ export function createToolAdapter<TInput, TOutput>(
         : undefined;
   const effectiveInputSchema = projectContextKind
     ? {
-        ...createProjectContextInputSchema(projectContextKind, loadServices.projectContextDefaults),
+        ...createProjectContextInputSchema(projectContextKind),
         ...inputSchema,
       }
     : inputSchema;

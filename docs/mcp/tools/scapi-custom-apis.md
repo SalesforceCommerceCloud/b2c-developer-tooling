@@ -29,7 +29,7 @@ No authentication or instance required. This tool writes files locally into your
 | `cartridgeName`      | string                   | No       | Cartridge that will contain the API. Omit to use the first cartridge found under `cartridgeDirectory`.                      |
 | `apiType`            | `"admin"` \| `"shopper"` | No       | **shopper** (siteId, customer-facing) or **admin** (no siteId). Default: `shopper`.                                         |
 | `apiDescription`     | string                   | No       | Short description of the API.                                                                                               |
-| `projectDirectory`   | string                   | No       | Absolute project root used for project `.env` and relative path resolution. The schema shows the exact server/cwd fallback. |
+| `projectDirectory`   | string                   | No       | Absolute project root used for project `.env` and relative path resolution. Run `config_inspect` to see the resolved paths. |
 | `cartridgeDirectory` | string                   | No       | Cartridge discovery root. Relative paths resolve from `projectDirectory`.                                                   |
 | `outputDirectory`    | string                   | No       | Output directory override. Relative paths resolve from the cartridge directory.                                             |
 | `projectRoot`        | string                   | No       | Deprecated alias for `cartridgeDirectory`.                                                                                  |

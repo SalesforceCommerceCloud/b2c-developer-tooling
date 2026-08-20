@@ -80,7 +80,7 @@ export function createDocsListTool(
           .enum(WORKSPACE_VALUES)
           .optional()
           .describe(
-            'Limit to a workspace\'s relevant categories. "auto" uses the auto-detected workspace; ' +
+            'Limit to a workspace\'s relevant categories. "auto" uses the workspace detected at server startup; ' +
               'or name a type. Omit for the category directory.',
           ),
         limit: z.number().int().positive().optional().describe(`Max entries per page. Defaults to ${DEFAULT_LIMIT}.`),

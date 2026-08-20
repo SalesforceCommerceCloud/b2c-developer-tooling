@@ -54,7 +54,7 @@ Local MCP project tools accept `projectDirectory`. Tools that resolve B2C/MRT co
 
 Project `.env` values are scoped to that MCP call so one project's environment does not leak into another.
 
-Each project/config-aware result includes compact `resolution` provenance. Session and watch start calls retain it, and their list tools expose it for later follow-up calls. The MCP `config_inspect` tool additionally returns the full source graph and uses the same SDK resolver and registered CLI plugin configuration sources as `b2c setup inspect`. Use `projectDirectory`, `configPath`, and/or `instanceName` to compare the intended project, file, and instance.
+Each project/config-aware result includes an authoritative, compact `resolution` block. It reports the selected project, configuration file, instance, hostname, and specialized directories without relying on paths embedded in tool descriptions. Session and watch start calls retain it, and their list tools expose it for later follow-up calls. The MCP `config_inspect` tool additionally returns the full source graph and uses the same SDK resolver and registered CLI plugin configuration sources as `b2c setup inspect`. Use `projectDirectory`, `configPath`, and/or `instanceName` to compare the intended project, file, and instance.
 
 ### `dw.json` Key Casing
 

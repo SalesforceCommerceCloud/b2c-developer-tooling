@@ -435,13 +435,6 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     // Register toolsets with loader function that loads config and creates Services on each tool call
     // This allows tools to pick up changes to config files (dw.json, ~/.mobify) between invocations
     const loadServices = this.loadServices.bind(this) as ServicesLoader;
-    const configuredProjectDirectory = this.flags['project-directory'];
-    loadServices.projectContextDefaults = {
-      projectDirectory: {
-        path: path.resolve(configuredProjectDirectory ?? process.cwd()),
-        source: configuredProjectDirectory ? 'config' : 'cwd',
-      },
-    };
     await registerToolsets(startupFlags, server, loadServices, this.serverContext);
 
     // Connect to stdio transport

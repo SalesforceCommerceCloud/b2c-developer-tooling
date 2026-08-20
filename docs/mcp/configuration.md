@@ -86,7 +86,7 @@ If both `dw.json` and `~/.mobify` contain an API key, `dw.json` takes precedence
 
 Tools expose only the context they consume. Local project tools accept `projectDirectory`. Tools that resolve B2C/MRT configuration use the same three flat, optional arguments:
 
-- `projectDirectory` is an absolute project root for the call. It overrides the server-level project directory; the tool schema shows the exact server-level or `cwd` fallback it will use when omitted.
+- `projectDirectory` is an absolute project root for the call. It overrides the server-level project directory. When omitted, the server-level directory is used if configured; otherwise the MCP process working directory is used. Run `config_inspect` to see the resolved paths.
 - `configPath` selects the primary configuration file in `dw.json` format. Relative paths resolve from `projectDirectory`. The shared default `dw.json` remains available for fallback and named-instance lookup.
 - `instanceName` selects a named instance from the primary and shared default files without changing either file. The primary file is searched first. When omitted, the active/default instance is used.
 
@@ -115,7 +115,7 @@ The global `dw.json` is shared with the CLI and B2C DX VS Code extension. It is 
 
 The primary and global `dw.json` files form one instance catalog. An instance named by the MCP `instanceName` argument, CLI `--instance`, or `SFCC_INSTANCE` is searched in the primary file first and then the global file; same-name primary entries shadow global entries. The selected instance's fields are not merged across files.
 
-Configuration- and project-aware tools return a compact `resolution` block showing the effective project directory, selected configuration file, instance name, target hostname, and any specialized directories, together with the source of each choice. Session and watch start tools capture this block; their corresponding list tools return it so callers do not need to repeat context on follow-up calls.
+Configuration- and project-aware tools return an authoritative, compact `resolution` block showing the effective project directory, selected configuration file, instance name, target hostname, and any specialized directories, together with the source of each choice. Session and watch start tools capture this block; their corresponding list tools return it so callers do not need to repeat context on follow-up calls.
 
 ::: tip Diagnosing configuration
 Run the `config_inspect` tool (ask your agent to "inspect the B2C MCP configuration") to see the resolved configuration — instance, auth, SCAPI/MRT settings, the complete source graph, and the same compact `resolution` block returned by ordinary tools. Secrets are redacted by default.

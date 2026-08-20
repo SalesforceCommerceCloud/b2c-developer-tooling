@@ -9,7 +9,7 @@ import {redactConfigValues, type ConfigSourceInfo} from '@salesforce/b2c-tooling
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
-import type {ProjectContextInput, ProjectDirectoryInfo} from '../project-context.js';
+import type {ProjectContextInput} from '../project-context.js';
 
 interface ConfigInspectInput extends ProjectContextInput {
   unmask?: boolean;
@@ -18,8 +18,6 @@ interface ConfigInspectInput extends ProjectContextInput {
 interface ConfigInspectOutput {
   /** Resolved configuration values (secrets masked unless `unmask` was set). */
   config: Record<string, unknown>;
-  /** The effective project directory and how it was resolved. */
-  projectDirectory: ProjectDirectoryInfo;
   /** Configuration sources that contributed, in precedence order. */
   sources: ConfigSourceInfo[];
   /** Resolution warnings, if any. */
@@ -58,11 +56,9 @@ export function createConfigInspectTool(loadServices: () => Promise<Services> | 
       },
       async execute(args, {services}) {
         const resolved = services.getResolvedConfig();
-        const projectDirectory = services.resolveProjectDirectory(args.projectDirectory);
 
         return {
           config: redactConfigValues(resolved.values, {unmask: args.unmask ?? false}),
-          projectDirectory,
           sources: resolved.sources,
           warnings: resolved.warnings.length > 0 ? resolved.warnings.map((w) => w.message) : undefined,
         };

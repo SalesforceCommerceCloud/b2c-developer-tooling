@@ -80,9 +80,9 @@ describe('tools/docs', () => {
       }
     });
 
-    it('surfaces the detected workspace in the search tool description', () => {
+    it('surfaces the startup-detected workspace in the search tool description', () => {
       const [search] = createDocsTools(loadServices, {detectedWorkspaces: ['storefront-next']});
-      expect(search.description).to.contain('Detected workspace');
+      expect(search.description).to.contain('Workspace detected at server startup');
       expect(search.description).to.contain('Storefront Next');
     });
   });

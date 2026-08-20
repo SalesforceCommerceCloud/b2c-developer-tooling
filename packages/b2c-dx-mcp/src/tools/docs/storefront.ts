@@ -50,5 +50,5 @@ export function resolveWorkspace(
 export function detectedWorkspaceNote(detected: readonly ProjectType[]): string {
   if (detected.length === 0) return '';
   const labels = detected.map((t) => PROJECT_TYPE_LABELS[t] ?? t).join(' + ');
-  return ` Detected workspace: ${labels} — by default results favor this workspace's docs (pass workspace="all" to disable).`;
+  return ` Workspace detected at server startup: ${labels} — by default results favor this workspace's docs (pass workspace="all" to disable).`;
 }

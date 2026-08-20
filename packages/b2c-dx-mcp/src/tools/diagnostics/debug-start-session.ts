@@ -10,7 +10,7 @@ import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import type {ServerContext} from '../../server-context.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
-import type {ProjectContextInput, ProjectDirectoryInfo} from '../project-context.js';
+import type {ProjectContextInput} from '../project-context.js';
 import {
   DebugSessionManager,
   createSourceMapper,
@@ -32,7 +32,6 @@ interface StartSessionOutput {
   cartridge_mappings: Record<string, string>;
   session_cookie: null | {name: string; value: string};
   warnings: string[];
-  projectDirectory: ProjectDirectoryInfo;
   cartridgeDirectory: string;
 }
 
@@ -71,7 +70,6 @@ export function createDebugStartSessionTool(
 
         const {hostname, username, password} = credentials;
         const clientId = `b2c-dx-mcp-${randomUUID()}`;
-        const projectDirectory = context.services.resolveProjectDirectory(args.projectDirectory);
         const cartridgeDir = context.services.resolveWithProjectDirectory(
           args.cartridgeDirectory,
           args.projectDirectory,
@@ -134,7 +132,6 @@ export function createDebugStartSessionTool(
           cartridge_mappings: cartridgeMappings,
           session_cookie: dwsid ? {name: 'dwsid', value: dwsid} : null,
           warnings,
-          projectDirectory,
           cartridgeDirectory: cartridgeDir,
         };
       },

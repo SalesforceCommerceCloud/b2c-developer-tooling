@@ -510,11 +510,7 @@ export class Services {
     if (override) {
       return {path: override, source: 'argument'};
     }
-    const configured = this.resolvedConfig.values.projectDirectory;
-    if (configured) {
-      return {path: configured, source: 'config'};
-    }
-    return {path: process.cwd(), source: 'cwd'};
+    return {...this.resolution.projectDirectory};
   }
 
   /**
