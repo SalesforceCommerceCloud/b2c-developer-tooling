@@ -1,5 +1,16 @@
 # @salesforce/b2c-dx-mcp
 
+## 2.1.0
+
+### Minor Changes
+
+- [#629](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/629) [`1f25b1e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f25b1ed3bf5c778b30ec2de8dff1e26071db5d1) - Added per-call named-instance selection and consistent resolution provenance to project-aware MCP tools, including persisted context for debugger sessions and log watches. Removed the retired Storefront Next MCP toolset in favor of the current Storefront Next agent skills. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`1f25b1e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f25b1ed3bf5c778b30ec2de8dff1e26071db5d1)]:
+  - @salesforce/b2c-tooling-sdk@1.24.1
+
 ## 2.0.0
 
 ### Major Changes
