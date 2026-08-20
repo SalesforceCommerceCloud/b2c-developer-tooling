@@ -158,6 +158,8 @@ The primary and global `dw.json` files form one instance catalog. `--instance` /
 
 Without `-i`, the primary file's active instance or default entry wins. The global file's active instance or default entry is used only when the primary file does not provide one. Instance-management commands use the same catalog: list shows both files, create writes to the primary file when present (otherwise the global `dw.json`), and remove or set-active finds the primary instance before the global one.
 
+For a root-level configuration, omitting `active` makes it the file's implicit default. Setting the root to `"active": false` explicitly opts it out of default selection; if no child instance in that file is active, selection continues to the global `dw.json`. Run `b2c setup inspect` to see both catalog files and which one supplied the selected instance.
+
 To remove the global `dw.json` setting:
 
 ```bash

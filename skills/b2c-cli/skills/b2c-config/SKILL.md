@@ -38,6 +38,8 @@ The configuration-file selection order is: explicit `--config`; process `SFCC_CO
 
 The primary and global `dw.json` files form one instance catalog. `-i <name>` searches the primary file first and then the global file, with same-name primary entries shadowing global entries. Each selected instance is complete—its fields are not merged with a matching entry in the other file. Instance list/remove/set-active operate across both files; create writes to the primary file when present and otherwise to the global `dw.json`.
 
+Without `-i`, an active primary instance wins. A root-level primary configuration with no `active` field is its implicit default; set its root to `active: false` to opt it out and allow an active/default global instance to be selected. `b2c setup inspect` shows both files in its Sources section and marks the selected file.
+
 ### MCP Project Context
 
 MCP tools that resolve project files or B2C/MRT configuration accept per-call `projectDirectory` and `configPath` arguments. This override is especially important for plugin installs, where the MCP process working directory may be the plugin directory rather than the open project. For each project-aware call, the MCP server:

@@ -399,6 +399,10 @@ describe('setup inspect', () => {
           scope: 'global',
           location: '/home/user/.config/b2c/dw.json',
           fields: ['hostname'],
+          instanceCatalog: [
+            {location: '/project/dw.json', scope: 'primary', selected: false},
+            {location: '/home/user/.config/b2c/dw.json', scope: 'global', selected: true},
+          ],
         },
       ]);
 
@@ -406,8 +410,12 @@ describe('setup inspect', () => {
 
       const output = stdoutStub.firstCall.args[0] as string;
       expect(output).to.include('[global dw.json]');
-      expect(output).to.include('DwJsonSource (global dw.json)');
+      expect(output).to.include('→ DwJsonSource (global dw.json)');
+      expect(output).to.not.include('global dw.json, selected');
       expect(output).to.include('/home/user/.config/b2c/dw.json');
+      expect(output).to.not.include('Instance Catalog');
+      expect(output).to.include('DwJsonSource');
+      expect(output).to.include('/project/dw.json');
     });
 
     it('should display formatted info in non-JSON mode', async () => {

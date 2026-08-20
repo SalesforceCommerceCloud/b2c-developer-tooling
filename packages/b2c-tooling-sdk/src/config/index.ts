@@ -106,6 +106,7 @@ export type {
   ConfigSource,
   ConfigLoadResult,
   ConfigSourceInfo,
+  ConfigCatalogFile,
   ConfigResolutionResult,
   ConfigWarning,
   ConfigWarningCode,

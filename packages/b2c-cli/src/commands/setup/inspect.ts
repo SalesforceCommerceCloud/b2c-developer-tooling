@@ -63,6 +63,23 @@ function getFieldSourceDisplayName(source: ConfigSourceInfo): string {
   return source.scope === 'global' ? 'global dw.json' : source.name;
 }
 
+/** Expand configuration sources into human-readable rows. */
+function getSourceRows(sources: ConfigSourceInfo[]): Array<{location: string; name: string; selected?: boolean}> {
+  return sources.flatMap((source) => {
+    if (!source.instanceCatalog || source.instanceCatalog.length === 0) {
+      return [{location: source.location || '-', name: getSourceDisplayName(source)}];
+    }
+
+    return source.instanceCatalog.map((file) => {
+      return {
+        location: file.location,
+        name: file.scope === 'global' ? `${source.name} (global dw.json)` : source.name,
+        selected: file.selected,
+      };
+    });
+  });
+}
+
 /**
  * Command to display resolved configuration.
  */
@@ -128,7 +145,6 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
 
     // Build output config with masking applied
     const outputConfig = redactConfigValues(values, {unmask});
-
     const result: SetupInspectResponse = {
       config: outputConfig,
       sources,
@@ -338,8 +354,9 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       ui.div({text: 'Sources', padding: [1, 0, 0, 0]});
       ui.div({text: '─'.repeat(60), padding: [0, 0, 0, 0]});
 
-      for (const [index, source] of sources.entries()) {
-        ui.div({text: `  ${index + 1}. ${getSourceDisplayName(source)}`, width: 34}, {text: source.location || '-'});
+      for (const [index, source] of getSourceRows(sources).entries()) {
+        const selectionMarker = source.selected ? '→' : ' ';
+        ui.div({text: `  ${index + 1}. ${selectionMarker} ${source.name}`, width: 38}, {text: source.location});
       }
     }
 

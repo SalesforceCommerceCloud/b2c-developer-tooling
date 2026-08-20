@@ -18,6 +18,7 @@ import type {
   ResolveConfigOptions,
   InstanceInfo,
   CreateInstanceOptions,
+  ConfigCatalogFile,
 } from '../types.js';
 import {getLogger} from '../../logging/logger.js';
 
@@ -55,6 +56,20 @@ function isGlobalConfigPath(configPath: string, options: ResolveConfigOptions): 
   );
   const resolvedPath = path.resolve(configPath);
   return resolvedPath !== primaryPath && resolvedPath === path.resolve(options.defaultConfigPath);
+}
+
+/** Describe all files participating in instance selection. */
+function createInstanceCatalog(
+  configPaths: string[],
+  selectedPath: string | undefined,
+  options: ResolveConfigOptions,
+): ConfigCatalogFile[] {
+  const normalizedSelectedPath = selectedPath ? path.resolve(selectedPath) : undefined;
+  return configPaths.map((configPath) => ({
+    location: configPath,
+    scope: isGlobalConfigPath(configPath, options) ? 'global' : 'primary',
+    selected: path.resolve(configPath) === normalizedSelectedPath,
+  }));
 }
 
 async function listInstancesFromPath(sourceName: string, configPath: string): Promise<InstanceInfo[]> {
@@ -111,6 +126,7 @@ async function loadActiveConfig(configPath: string): Promise<Awaited<ReturnType<
 async function loadDefaultConfig(configPath: string): Promise<Awaited<ReturnType<typeof loadDwJson>>> {
   const result = await loadDwJson({path: configPath});
   if (!result) return undefined;
+  if (result.config.active === false) return undefined;
 
   const config = mapDwJsonToNormalizedConfig(result.config);
   return getPopulatedFields(config).length > 0 ? result : undefined;
@@ -155,7 +171,12 @@ export class DwJsonSource implements ConfigSource {
       }
     }
 
+    const instanceCatalog = createInstanceCatalog(configPaths, result?.path, options);
     if (!result) {
+      if (instanceCatalog.length > 0) {
+        logger.trace({instanceCatalog}, '[DwJsonSource] No matching/default instance; catalog retained');
+        return {config: {}, instanceCatalog};
+      }
       return undefined;
     }
 
@@ -165,7 +186,7 @@ export class DwJsonSource implements ConfigSource {
 
     logger.trace({location: result.path, scope, fields}, '[DwJsonSource] Loaded config');
 
-    return {config, location: result.path, scope};
+    return {config, location: result.path, scope, instanceCatalog};
   }
 
   /**

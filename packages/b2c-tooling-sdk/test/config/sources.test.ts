@@ -187,6 +187,53 @@ describe('config/sources', () => {
       expect(config.hostname).to.equal('explicit.demandware.net');
     });
 
+    it('lets an active global instance win when the primary root is explicitly inactive', async () => {
+      const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+      fs.writeFileSync(
+        path.join(tempDir, 'dw.json'),
+        JSON.stringify({hostname: 'local.demandware.net', active: false}),
+      );
+      fs.writeFileSync(
+        defaultConfigPath,
+        JSON.stringify({configs: [{name: 'global', hostname: 'global.demandware.net', active: true}]}),
+      );
+
+      const resolver = new ConfigResolver();
+      const {config, sources} = await resolver.resolve({}, {defaultConfigPath});
+
+      expect(config.hostname).to.equal('global.demandware.net');
+      const dwJsonSource = sources.find((source) => source.name === 'DwJsonSource');
+      expect(dwJsonSource?.scope).to.equal('global');
+      expect(
+        dwJsonSource?.instanceCatalog?.map((file) => ({...file, location: fs.realpathSync(file.location)})),
+      ).to.deep.equal([
+        {location: fs.realpathSync(path.join(tempDir, 'dw.json')), scope: 'primary', selected: false},
+        {location: fs.realpathSync(defaultConfigPath), scope: 'global', selected: true},
+      ]);
+    });
+
+    it('prefers an active primary child over an active global instance', async () => {
+      const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+      fs.writeFileSync(
+        path.join(tempDir, 'dw.json'),
+        JSON.stringify({
+          hostname: 'inactive-root.demandware.net',
+          active: false,
+          configs: [{name: 'local', hostname: 'local.demandware.net', active: true}],
+        }),
+      );
+      fs.writeFileSync(
+        defaultConfigPath,
+        JSON.stringify({configs: [{name: 'global', hostname: 'global.demandware.net', active: true}]}),
+      );
+
+      const resolver = new ConfigResolver();
+      const {config} = await resolver.resolve({}, {defaultConfigPath});
+
+      expect(config.hostname).to.equal('local.demandware.net');
+      expect(config.instanceName).to.equal('local');
+    });
+
     it('handles named instance from multi-config', async () => {
       const dwJsonPath = path.join(tempDir, 'dw.json');
       fs.writeFileSync(

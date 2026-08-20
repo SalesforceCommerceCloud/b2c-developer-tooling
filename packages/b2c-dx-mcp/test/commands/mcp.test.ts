@@ -689,6 +689,41 @@ describe('McpServerCommand', () => {
       }
     });
 
+    it('should retain the shared global fallback with a per-call configPath', async () => {
+      const rootDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-explicit-config-global-'));
+      const projectDirectory = path.join(rootDirectory, 'project');
+      const configPath = path.join(projectDirectory, 'selected.dw.json');
+      const defaultConfigPath = path.join(rootDirectory, 'shared.dw.json');
+      fs.mkdirSync(projectDirectory);
+      fs.writeFileSync(configPath, JSON.stringify({active: false, hostname: 'primary.invalid'}));
+      fs.writeFileSync(
+        defaultConfigPath,
+        JSON.stringify({configs: [{active: true, hostname: 'global-default.invalid', name: 'global'}]}),
+      );
+
+      try {
+        (command as unknown as {flags: Record<string, unknown>}).flags = {};
+        sandbox.stub(command as unknown as Record<string, unknown>, 'getBaseConfigOptions').returns({
+          defaultConfigPath,
+        });
+
+        const config = await (
+          command as unknown as {
+            loadConfiguration(projectContext?: {configPath?: string; projectDirectory?: string}): Promise<{
+              values: Record<string, unknown>;
+              sources: Array<{location?: string; name: string}>;
+            }>;
+          }
+        ).loadConfiguration({configPath, projectDirectory});
+
+        expect(config.values.hostname).to.equal('global-default.invalid');
+        expect(config.sources.some((source) => source.name === 'DwJsonSource' && source.location === defaultConfigPath))
+          .to.be.true;
+      } finally {
+        fs.rmSync(rootDirectory, {recursive: true, force: true});
+      }
+    });
+
     it('should keep registered CLI plugin sources in the per-call resolver pipeline', async () => {
       const projectDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-plugin-config-'));
       const configPath = path.join(projectDirectory, 'selected.dw.json');

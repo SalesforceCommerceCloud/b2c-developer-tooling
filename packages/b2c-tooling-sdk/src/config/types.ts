@@ -217,8 +217,18 @@ export interface ConfigWarning {
   details?: Record<string, unknown>;
 }
 
+/** A dw.json file participating in the effective instance catalog. */
+export interface ConfigCatalogFile {
+  /** File path. */
+  location: string;
+  /** Whether this is the primary project file or the shared global file. */
+  scope: 'global' | 'primary';
+  /** Whether this file supplied the selected instance. */
+  selected: boolean;
+}
+
 /**
- * Information about a configuration source that contributed to resolution.
+ * Information about a configuration source that participated in resolution.
  */
 export interface ConfigSourceInfo {
   /** Human-readable name of the source */
@@ -231,6 +241,8 @@ export interface ConfigSourceInfo {
   fields: (keyof NormalizedConfig)[];
   /** Fields that were not used because a higher priority source already provided them */
   fieldsIgnored?: (keyof NormalizedConfig)[];
+  /** dw.json files available to this source for named/default instance selection. */
+  instanceCatalog?: ConfigCatalogFile[];
 }
 
 /**
@@ -241,7 +253,7 @@ export interface ConfigResolutionResult {
   config: NormalizedConfig;
   /** Warnings generated during resolution */
   warnings: ConfigWarning[];
-  /** Information about which sources contributed to the config */
+  /** Information about sources that contributed values or instance-catalog context */
   sources: ConfigSourceInfo[];
 }
 
@@ -300,6 +312,8 @@ export interface ConfigLoadResult {
   config: NormalizedConfig;
   /** Logical scope of the source when it differs from the primary project configuration. */
   scope?: 'global';
+  /** dw.json files available for named/default instance selection. */
+  instanceCatalog?: ConfigCatalogFile[];
   /**
    * Location of the source (for diagnostics).
    * May be a file path, keychain entry, URL, or other identifier.
@@ -492,7 +506,7 @@ export interface ResolvedB2CConfig {
   /** Warnings generated during resolution */
   readonly warnings: ConfigWarning[];
 
-  /** Information about which sources contributed to the config */
+  /** Information about sources that contributed values or instance-catalog context */
   readonly sources: ConfigSourceInfo[];
 
   // Validation methods
