@@ -63,32 +63,18 @@ export function createProjectDirectoryInput() {
     .refine((value) => path.isAbsolute(value), 'projectDirectory must be an absolute path')
     .optional()
     .describe(
-      `Optional absolute project root for this call. Overrides the server-level project directory. ` +
-        `When omitted, uses the server-level project directory if configured; otherwise uses the MCP process working directory. ` +
-        `Use config_inspect to see the resolved paths.`,
+      'Absolute project root. Overrides server default; otherwise uses it or MCP cwd. See config_inspect for resolved paths.',
     );
 }
 
 /** Build the canonical explicit primary dw.json field. */
 export function createConfigPathInput() {
-  return z
-    .string()
-    .optional()
-    .describe(
-      'Optional path to a dw.json-format configuration file. Relative paths resolve from projectDirectory. ' +
-        'Selects the primary file ahead of server and project automatic selection; the shared default dw.json remains available as a fallback and for named-instance lookup.',
-    );
+  return z.string().optional().describe('Path to dw.json-format config; relative to projectDirectory.');
 }
 
 /** Build the canonical named-instance selection field. */
 export function createInstanceNameInput() {
-  return z
-    .string()
-    .min(1)
-    .optional()
-    .describe(
-      'Optional named instance to select from the resolved primary and default dw.json files. The primary file is searched first. When omitted, the active/default instance is used.',
-    );
+  return z.string().min(1).optional().describe('Named instance from dw.json.');
 }
 
 /** Build flat canonical schema fields for a local-project or configuration-aware tool. */

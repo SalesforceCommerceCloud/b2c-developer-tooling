@@ -380,9 +380,14 @@ describe('tools/adapter', () => {
         loadServices,
       );
 
-      expect(tool.inputSchema.projectDirectory.description).to.include('server-level project directory if configured');
+      expect(tool.inputSchema.projectDirectory.description).to.include('server default');
       expect(tool.inputSchema.projectDirectory.description).to.include('config_inspect');
       expect(tool.inputSchema.projectDirectory.description).to.not.include('/server/project');
+      for (const field of ['projectDirectory', 'configPath', 'instanceName']) {
+        const fieldDescription = tool.inputSchema[field].description ?? '';
+        expect(fieldDescription, `${field} description`).to.not.equal('');
+        expect(fieldDescription.length, `${field} description length`).to.be.at.most(120);
+      }
       const result = await tool.handler({});
       const output = JSON.parse(getResultText(result)) as Record<string, unknown>;
       expect(output.resolution).to.deep.equal({
