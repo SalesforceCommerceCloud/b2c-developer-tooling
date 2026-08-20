@@ -43,18 +43,14 @@ export function createDebugStartSessionTool(
     {
       name: 'debug_start_session',
       description:
-        'Start a script debugger session on a B2C Commerce instance to debug SFRA controllers, custom API scripts, hooks, jobs, or any server-side script. ' +
-        'Uses projectDirectory to load project configuration and discover cartridges. cartridgeDirectory may override only the cartridge discovery/source-mapping root. ' +
-        'Returns a session_id for use with other debug tools, plus discovered cartridge mappings. ' +
-        'WARNING: Debug sessions halt remote request threads on the instance. Always call debug_end_session when finished.',
+        'Start a B2C script debugger session and discover cartridge mappings. Returns session_id for follow-up tools. ' +
+        'Debugging halts remote request threads; always call debug_end_session.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         cartridgeDirectory: z
           .string()
           .optional()
-          .describe(
-            'Optional cartridge discovery and debugger source-mapping root. Relative paths resolve from projectDirectory. Defaults to projectDirectory.',
-          ),
+          .describe('Cartridge discovery and source-mapping root; relative to projectDirectory.'),
       },
       usesConfigurationContext: true,
       async execute(args, context) {

@@ -90,12 +90,8 @@ function createCartridgeDeployTool(
     {
       name: 'cartridge_deploy',
       description:
-        'Finds and deploys cartridges to a B2C Commerce instance via WebDAV. ' +
-        'Searches the directory for cartridges (by .project files), applies include/exclude filters, ' +
-        'creates a zip archive, uploads via WebDAV, and optionally reloads the code version. ' +
-        'Use this tool to deploy custom code cartridges for SFRA or other B2C Commerce code. ' +
-        'Requires the instance to have a code version configured. ' +
-        "After deploy, add new cartridges to your site's cartridge path in Business Manager: Sites → Manage Sites → [site] → Settings tab → Cartridges.",
+        'Find and deploy cartridges to B2C Commerce via WebDAV. Supports include/exclude filters and code-version reload. ' +
+        "After deployment, add new cartridges to the site's cartridge path in Business Manager: Sites → Manage Sites → Settings tab → Cartridges.",
       toolsets: ['CARTRIDGES'],
       isGA: true,
       requiresInstance: true,
@@ -116,25 +112,9 @@ function createCartridgeDeployTool(
         cartridges: z
           .array(z.string())
           .optional()
-          .describe(
-            'Array of cartridge names to include in the deployment. If not specified, all cartridges found in the directory are deployed. ' +
-              'Use this to selectively deploy specific cartridges when you have multiple cartridges but only want to update some.',
-          ),
-        exclude: z
-          .array(z.string())
-          .optional()
-          .describe(
-            'Array of cartridge names to exclude from the deployment. Use this to skip deploying certain cartridges, ' +
-              'such as third-party or unchanged cartridges. Applied after the include filter.',
-          ),
-        reload: z
-          .boolean()
-          .optional()
-          .describe(
-            'Whether to reload (re-activate) the code version after deployment. ' +
-              'Set to true to make the deployed code immediately active on the instance. ' +
-              'Defaults to false. Use this when you want changes to take effect right away.',
-          ),
+          .describe('Cartridge names to deploy; omit for all discovered cartridges.'),
+        exclude: z.array(z.string()).optional().describe('Cartridge names to exclude after the include filter.'),
+        reload: z.boolean().optional().describe('Reload the code version after deployment. Default: false.'),
       },
       async execute(args, context) {
         // Get instance from context (guaranteed by adapter when requiresInstance is true)

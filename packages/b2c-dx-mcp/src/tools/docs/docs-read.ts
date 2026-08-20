@@ -39,15 +39,8 @@ export function createDocsReadTool(
     {
       name: 'docs_read',
       description:
-        'Read B2C Commerce documentation (markdown) for a class, module, job step, guide, or Help article. ' +
-        'Accepts an exact id (e.g. "dw.catalog.ProductMgr", "sfnext/sfnext-get-started") or a fuzzy ' +
-        'query — best match wins (a fuzzy query favors the workspace detected at server startup, matching docs_search). ' +
-        'Job-step content is bundled; Script API, Developer Center guide, and Salesforce Help content is ' +
-        'fetched from its published URL on demand and cached locally (with a summary/headings fallback if ' +
-        'the network is unavailable). If you do not know the id, call docs_search first. Long docs are ' +
-        'truncated to maxLength chars; page with offset when truncated=true. The returned entry ' +
-        'includes the canonical url for citation and relatedEntries ids for directly connected Help or ' +
-        'Developer Center articles.' +
+        'Read a B2C Commerce (SFCC/Demandware) Script API reference, job step, developer guide, admin/merchant help article, or tooling doc by ID or fuzzy query. ' +
+        'Use docs_search to find IDs.' +
         enabledCategoriesNote(enabledCategories),
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {

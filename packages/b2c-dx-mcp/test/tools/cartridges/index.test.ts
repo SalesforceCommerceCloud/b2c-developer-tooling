@@ -119,7 +119,7 @@ describe('tools/cartridges', () => {
 
     it('should have correct description', () => {
       const desc = tool.description;
-      expect(desc).to.include('Finds and deploys cartridges');
+      expect(desc).to.include('Find and deploy cartridges');
       expect(desc).to.include('B2C Commerce');
       expect(desc).to.include('WebDAV');
       expect(desc).to.include('Sites → Manage Sites');

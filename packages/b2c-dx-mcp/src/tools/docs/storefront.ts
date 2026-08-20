@@ -12,8 +12,8 @@ import type {ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
  */
 export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
   cartridges: 'Cartridges',
-  sfra: 'SFRA (cartridges)',
-  'pwa-kit-v3': 'PWA Kit (Composable Storefront)',
+  sfra: 'SFRA',
+  'pwa-kit-v3': 'PWA Kit',
   'storefront-next': 'Storefront Next',
 };
 
@@ -50,5 +50,5 @@ export function resolveWorkspace(
 export function detectedWorkspaceNote(detected: readonly ProjectType[]): string {
   if (detected.length === 0) return '';
   const labels = detected.map((t) => PROJECT_TYPE_LABELS[t] ?? t).join(' + ');
-  return ` Workspace detected at server startup: ${labels} — by default results favor this workspace's docs (pass workspace="all" to disable).`;
+  return ` Workspace at startup: ${labels}.`;
 }

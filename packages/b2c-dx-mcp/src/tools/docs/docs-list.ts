@@ -64,10 +64,9 @@ export function createDocsListTool(
     {
       name: 'docs_list',
       description:
-        'Enumerate B2C Commerce documentation entries (id + title + category only) for a category or workspace. ' +
-        'Prefer docs_search for questions — this tool is for browsing a known category. Without a category or ' +
-        'workspace it returns just a category directory (counts), not the full corpus. Results are a table of ' +
-        'contents; paginated via limit/offset. Use docs_read for content.' +
+        'List IDs and titles for B2C Commerce (SFCC/Demandware) Script API, job steps, developer guides, admin/merchant help, and tooling docs. ' +
+        'Without a filter, returns category counts. ' +
+        'Use docs_search for questions and docs_read for content.' +
         enabledCategoriesNote(enabledCategories) +
         detectedWorkspaceNote(detectedWorkspaces),
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
@@ -79,10 +78,7 @@ export function createDocsListTool(
         workspace: z
           .enum(WORKSPACE_VALUES)
           .optional()
-          .describe(
-            'Limit to a workspace\'s relevant categories. "auto" uses the workspace detected at server startup; ' +
-              'or name a type. Omit for the category directory.',
-          ),
+          .describe('Workspace filter. "auto" uses startup workspace; omit for category directory.'),
         limit: z.number().int().positive().optional().describe(`Max entries per page. Defaults to ${DEFAULT_LIMIT}.`),
         offset: z.number().int().nonnegative().optional().describe('Number of entries to skip (for pagination).'),
       },

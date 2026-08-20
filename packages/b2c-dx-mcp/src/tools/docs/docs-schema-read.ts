@@ -25,9 +25,8 @@ export function createDocsSchemaReadTool(loadServices: () => Promise<Services> |
     {
       name: 'docs_schema_read',
       description:
-        'Read the contents of a bundled B2C Commerce XSD schema (raw XML). ' +
-        'Accepts an exact id or fuzzy query. Returns the schema body plus the on-disk path. ' +
-        'Schemas can be large; if you do not know the id, call docs_schema_search first.',
+        'Read a bundled B2C Commerce (SFCC/Demandware) XSD schema as XML by ID or fuzzy query. ' +
+        'Use docs_schema_search to find IDs.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {
         query: z.string().min(1).describe('Schema name or partial match.'),

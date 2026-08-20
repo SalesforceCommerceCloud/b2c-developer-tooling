@@ -190,15 +190,11 @@ function createMrtBundlePushTool(
         ssrOnly: z
           .string()
           .optional()
-          .describe(
-            'Glob patterns for server-only files (comma-separated or JSON array). Defaults vary by project type: Storefront Next, PWA Kit v3, or generic.',
-          ),
+          .describe('Server-only globs; comma-separated or JSON array. Defaults by project type.'),
         ssrShared: z
           .string()
           .optional()
-          .describe(
-            'Glob patterns for shared files (comma-separated or JSON array). Defaults vary by project type: Storefront Next, PWA Kit v3, or generic.',
-          ),
+          .describe('Shared-file globs; comma-separated or JSON array. Defaults by project type.'),
         deploy: z
           .boolean()
           .optional()

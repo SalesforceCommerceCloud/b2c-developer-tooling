@@ -39,11 +39,8 @@ export function createMrtLogsWatchPollTool(
     {
       name: 'mrt_logs_watch_poll',
       description:
-        'Drain buffered entries from an MRT log watch. If the buffer is empty, blocks up to timeout_ms waiting for ' +
-        'new entries. Returns immediately if entries are already buffered or the stream has stopped. Set ' +
-        'truncated=true if there are more entries beyond max_entries — call again to get the rest. When ' +
-        'stopped=true the underlying WebSocket has closed (stopped, idle-timed-out, or connection lost); check ' +
-        'errors for the reason.',
+        'Drain buffered MRT logs, blocking up to timeout_ms when empty. Repeat if truncated=true. ' +
+        'stopped=true means the stream closed; inspect errors.',
       toolsets: ['DIAGNOSTICS', 'PWAV3', 'STOREFRONTNEXT'],
       inputSchema: {
         watch_id: z.string().describe('Watch id from mrt_logs_watch_start.'),

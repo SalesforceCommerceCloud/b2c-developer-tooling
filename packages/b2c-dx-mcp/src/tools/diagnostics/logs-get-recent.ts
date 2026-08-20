@@ -50,19 +50,14 @@ export function createLogsGetRecentTool(
     {
       name: 'logs_get_recent',
       description:
-        'Fetch recent log entries from the configured B2C Commerce instance in a single request/response. ' +
-        'Best for quick lookups of the most recent errors. For monitoring across an action you trigger, ' +
-        'use logs_watch_start + logs_watch_poll instead so entries are not missed between calls. ' +
-        'Filters (since, level, search) are applied client-side after fetching.',
+        'Fetch recent B2C instance logs. Use for quick lookups; start a log watch before actions whose entries must not be missed.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       requiresInstance: true,
       inputSchema: {
         prefixes: z
           .array(z.string())
           .optional()
-          .describe(
-            'Log prefixes to read. Defaults to ["error", "customerror"]. Use a path like "internal/server" to read logs from a subdirectory.',
-          ),
+          .describe('Log prefixes. Default: ["error", "customerror"]; paths may include subdirectories.'),
         count: z.number().int().positive().optional().describe('Maximum number of entries to return. Defaults to 50.'),
         since: z
           .string()

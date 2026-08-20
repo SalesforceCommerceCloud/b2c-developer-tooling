@@ -229,27 +229,19 @@ export function createScaffoldCustomApiTool(
   return createToolAdapter<ScaffoldCustomApiInput, ScaffoldCustomApiOutput>(
     {
       name: 'scapi_custom_api_generate_scaffold',
-      description: `Generate a new custom SCAPI endpoint (OAS 3.0 schema, api.json, script.js) in an existing cartridge. \
-Required: apiName (kebab-case). Optional: cartridgeName (defaults to first cartridge found in project), apiType (shopper|admin) default to shopper, \
-apiDescription, cartridgeDirectory, outputDirectory.`,
+      description:
+        'Generate a custom SCAPI endpoint scaffold in an existing cartridge: OpenAPI schema, api.json, and script.js. apiName must be kebab-case.',
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       isGA: true,
       requiresInstance: false,
       usesProjectContext: true,
       inputSchema: {
-        apiName: z
-          .string()
-          .min(1)
-          .describe(
-            'API name in kebab-case (e.g. my-products). Must start with lowercase letter, only letters, numbers, hyphens.',
-          ),
+        apiName: z.string().min(1).describe('Kebab-case API name starting with a lowercase letter.'),
         cartridgeName: z
           .string()
           .min(1)
           .nullish()
-          .describe(
-            'Cartridge name that will contain the API. Optional; omit to use the first cartridge found under project root).',
-          ),
+          .describe('Target cartridge; defaults to the first discovered cartridge.'),
         apiType: z
           .enum(['admin', 'shopper'])
           .optional()

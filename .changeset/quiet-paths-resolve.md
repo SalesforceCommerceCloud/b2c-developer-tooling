@@ -4,4 +4,4 @@
 '@salesforce/b2c-agent-plugins': patch
 ---
 
-Made MCP project resolution provenance consistent, kept local paths out of tool descriptions, and clarified that automatic documentation workspace detection occurs at server startup.
+Made MCP project resolution provenance consistent and tool guidance more concise, kept local paths out of tool descriptions, and clarified startup documentation workspace detection.
