@@ -11,7 +11,7 @@ import {Services} from '../../src/services.js';
 import type {ToolExecutionContext} from '../../src/tools/adapter.js';
 import type {ToolResult} from '../../src/utils/types.js';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
-import {resolveConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {resolveConfig, type ConfigSourceInfo} from '@salesforce/b2c-tooling-sdk/config';
 import {createMockResolvedConfig} from '../test-helpers.js';
 
 // Create a mock services instance for testing
@@ -343,12 +343,7 @@ describe('tools/adapter', () => {
     });
 
     it('should describe the actual server fallback and attach compact resolution provenance', async () => {
-      const config = createMockResolvedConfig({
-        hostname: 'sandbox.invalid',
-        instanceName: 'sandbox',
-        projectDirectory: '/server/project',
-      });
-      config.sources = [
+      const sources: ConfigSourceInfo[] = [
         {
           fields: ['hostname', 'instanceName'],
           location: '/shared/dw.json',
@@ -356,6 +351,14 @@ describe('tools/adapter', () => {
           scope: 'global',
         },
       ];
+      const config = {
+        ...createMockResolvedConfig({
+          hostname: 'sandbox.invalid',
+          instanceName: 'sandbox',
+          projectDirectory: '/server/project',
+        }),
+        sources,
+      };
       const services = new Services({
         resolvedConfig: config,
         resolution: {
