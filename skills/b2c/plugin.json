@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "b2c",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "description": "B2C Commerce development skills including Custom API development guides.",
   "author": {
     "name": "Salesforce"
