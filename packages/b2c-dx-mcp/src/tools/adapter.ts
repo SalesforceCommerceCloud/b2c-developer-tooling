@@ -76,7 +76,20 @@ import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {McpTool, ToolResult, Toolset} from '../utils/index.js';
 import type {Services, MrtConfig} from '../services.js';
 import type {ServerContext} from '../server-context.js';
-import {projectContextInputSchema, type ProjectContextInput} from './project-context.js';
+import {
+  createProjectContextInputSchema,
+  type DirectoryResolutionInfo,
+  type ProjectContextDefaults,
+  type ProjectContextInput,
+  type ProjectContextKind,
+  type ToolResolution,
+} from './project-context.js';
+
+/** Services loader enriched with registration-time project fallback provenance. */
+export interface ServicesLoader {
+  (projectContext?: ProjectContextInput): Promise<Services> | Services;
+  projectContextDefaults?: ProjectContextDefaults;
+}
 
 /**
  * Context provided to tool execute functions.
@@ -107,6 +120,12 @@ export interface ToolExecutionContext {
    * Created once at server startup and shared across all tool invocations.
    */
   serverContext?: ServerContext;
+
+  /** Compact resolution provenance that will be attached to this tool result. */
+  resolution: ToolResolution;
+
+  /** Record a specialized directory resolved by the tool. */
+  setResolvedDirectory: (name: string, value: DirectoryResolutionInfo) => void;
 }
 
 /**
@@ -151,6 +170,13 @@ export interface ToolAdapterOptions<TInput, TOutput> {
    * input and use it while loading Services.
    */
   usesProjectContext?: boolean;
+
+  /**
+   * Whether this tool selects project configuration without requiring a
+   * B2CInstance or MRT auth object (for example config_inspect or SCAPI clients).
+   * Adds projectDirectory, configPath, and instanceName to the public schema.
+   */
+  usesConfigurationContext?: boolean;
 
   /**
    * Execute function that performs the tool's operation.
@@ -218,6 +244,27 @@ export function jsonResult(data: unknown, indent = 2): ToolResult {
   };
 }
 
+/** Attach compact resolution provenance while preserving existing tool output. */
+export function attachResolution(result: ToolResult, resolution: ToolResolution): ToolResult {
+  let content = result.content;
+  let structuredContent: Record<string, unknown> = {...result.structuredContent, resolution};
+
+  if (content.length === 1 && content[0]?.type === 'text') {
+    try {
+      const parsed = JSON.parse(content[0].text) as unknown;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        const output = {...(parsed as Record<string, unknown>), resolution};
+        content = [{...content[0], text: JSON.stringify(output, null, 2)}];
+        structuredContent = {...output, ...result.structuredContent, resolution};
+      }
+    } catch {
+      // Plain-text tools expose resolution through structuredContent only.
+    }
+  }
+
+  return {...result, content, structuredContent};
+}
+
 /**
  * Formats Zod validation errors into a human-readable string.
  *
@@ -269,7 +316,7 @@ function formatZodErrors(error: z.ZodError): string {
  */
 export function createToolAdapter<TInput, TOutput>(
   options: ToolAdapterOptions<TInput, TOutput>,
-  loadServices: (projectContext?: ProjectContextInput) => Promise<Services> | Services,
+  loadServices: ServicesLoader,
   serverContext?: ServerContext,
 ): McpTool {
   const {
@@ -281,13 +328,22 @@ export function createToolAdapter<TInput, TOutput>(
     requiresInstance = false,
     requiresMrtAuth = false,
     usesProjectContext = false,
+    usesConfigurationContext = false,
     execute,
     formatOutput,
   } = options;
 
-  const effectiveUsesProjectContext = usesProjectContext || requiresInstance || requiresMrtAuth;
-  const effectiveInputSchema = effectiveUsesProjectContext
-    ? {...projectContextInputSchema, ...inputSchema}
+  const projectContextKind: ProjectContextKind | undefined =
+    requiresInstance || requiresMrtAuth || usesConfigurationContext
+      ? 'configuration'
+      : usesProjectContext
+        ? 'project'
+        : undefined;
+  const effectiveInputSchema = projectContextKind
+    ? {
+        ...createProjectContextInputSchema(projectContextKind, loadServices.projectContextDefaults),
+        ...inputSchema,
+      }
     : inputSchema;
 
   // Create Zod schema from inputSchema definition
@@ -307,18 +363,27 @@ export function createToolAdapter<TInput, TOutput>(
         return errorResult(`Invalid input: ${formatZodErrors(parseResult.error)}`);
       }
       const args = parseResult.data as TInput;
+      let resolution: ToolResolution | undefined;
 
       try {
         // 2. Load Services to get fresh configuration (re-reads config files)
-        const projectContext = effectiveUsesProjectContext ? (args as ProjectContextInput) : undefined;
+        const projectContext = projectContextKind ? (args as ProjectContextInput) : undefined;
         const services = await loadServices(projectContext);
+        const executionResolution = services.getResolution();
+        if (projectContextKind === 'project') {
+          delete executionResolution.configuration;
+        }
+        resolution = projectContextKind ? executionResolution : undefined;
 
         // 3. Get B2CInstance if required (loaded on each call)
         let b2cInstance: B2CInstance | undefined;
         if (requiresInstance) {
           if (!services.b2cInstance) {
-            return errorResult(
-              'B2C instance error: Instance configuration required. Provide --server flag, set SFCC_SERVER environment variable, or configure dw.json',
+            return attachResolution(
+              errorResult(
+                'B2C instance error: Instance configuration required. Provide --server flag, set SFCC_SERVER environment variable, or configure dw.json',
+              ),
+              executionResolution,
             );
           }
           b2cInstance = services.b2cInstance;
@@ -328,8 +393,11 @@ export function createToolAdapter<TInput, TOutput>(
         let mrtConfig: ToolExecutionContext['mrtConfig'];
         if (requiresMrtAuth) {
           if (!services.mrtConfig.auth) {
-            return errorResult(
-              'MRT auth error: MRT API key required. Provide --api-key, set MRT_API_KEY environment variable, or configure ~/.mobify',
+            return attachResolution(
+              errorResult(
+                'MRT auth error: MRT API key required. Provide --api-key, set MRT_API_KEY environment variable, or configure ~/.mobify',
+              ),
+              executionResolution,
             );
           }
           mrtConfig = {
@@ -346,15 +414,22 @@ export function createToolAdapter<TInput, TOutput>(
           mrtConfig,
           services,
           serverContext,
+          resolution: executionResolution,
+          setResolvedDirectory(name, value) {
+            executionResolution.directories ??= {};
+            executionResolution.directories[name] = value;
+          },
         };
         const output = await execute(args, context);
 
         // 6. Format output
-        return formatOutput(output);
+        const result = formatOutput(output);
+        return resolution ? attachResolution(result, executionResolution) : result;
       } catch (error) {
         // Handle execution errors
         const message = error instanceof Error ? error.message : String(error);
-        return errorResult(`Execution error: ${message}`);
+        const result = errorResult(`Execution error: ${message}`);
+        return resolution ? attachResolution(result, resolution) : result;
       }
     },
   };

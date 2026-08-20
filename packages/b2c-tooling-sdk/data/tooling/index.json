@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-08-20T00:18:13.543Z",
+  "generatedAt": "2026-08-20T01:15:39.329Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -453,15 +453,6 @@
       "preview": "Configure the B2C DX MCP Server with credentials, flags, environment variables, and toolset selection."
     },
     {
-      "id": "mcp-figma-tools-setup",
-      "title": "Figma-to-Component Tools Setup",
-      "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/figma-tools-setup.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/figma-tools-setup.md",
-      "headings": "Overview • Figma MCP Setup • Figma Design File • Verification • Related Documentation",
-      "preview": "Prerequisites and setup for Figma-to-component tools (workflow orchestrator, generate component, map tokens)."
-    },
-    {
       "id": "mcp-index",
       "title": "MCP Server",
       "category": "tooling",
@@ -552,66 +543,12 @@
       "preview": "List or fetch SCAPI schema metadata and OpenAPI specs for standard and custom APIs."
     },
     {
-      "id": "mcp-tools-sfnext-add-page-designer-decorator",
-      "title": "sfnext_add_page_designer_decorator",
-      "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-add-page-designer-decorator.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-add-page-designer-decorator.md",
-      "headings": "Overview • Prerequisites • Parameters • Conversation Context (Interactive Mode) • Operation Modes • Component Discovery • Usage Examples • Output • Related Tools • See Also",
-      "preview": "Add Page Designer decorators to React components for Storefront Next to make them available in Page Designer."
-    },
-    {
-      "id": "mcp-tools-sfnext-analyze-component",
-      "title": "sfnext_analyze_component",
-      "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-analyze-component.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-analyze-component.md",
-      "headings": "Overview • Prerequisites • Parameters • Discovered Component Schema • Usage Examples • With Figma design URL • With design code already fetched • Agent workflow note • Output • Related Tools • See Also",
-      "preview": "Analyze design and discovered components to recommend REUSE, EXTEND, or CREATE strategy."
-    },
-    {
-      "id": "mcp-tools-sfnext-configure-theme",
-      "title": "sfnext_configure_theme",
-      "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-configure-theme.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-configure-theme.md",
-      "headings": "Overview • Prerequisites • Custom Theming Files • Parameters • Conversation Context • Workflow • Usage Examples • Output • Related Tools • See Also",
-      "preview": "Get theming guidelines, guided questions, and WCAG color contrast validation for Storefront Next."
-    },
-    {
-      "id": "mcp-tools-sfnext-get-guidelines",
-      "title": "sfnext_get_guidelines",
-      "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-get-guidelines.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-get-guidelines.md",
-      "headings": "Overview • Parameters • Available Sections • Usage Examples • Default (Comprehensive Guidelines) • Single Section • Multiple Related Sections • All Sections • Output • Related Tools • See Also",
-      "preview": "Get Storefront Next development guidelines and best practices for React Server Components, data loading, and framework constraints."
-    },
-    {
-      "id": "mcp-tools-sfnext-match-tokens-to-theme",
-      "title": "sfnext_match_tokens_to_theme",
-      "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-match-tokens-to-theme.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-match-tokens-to-theme.md",
-      "headings": "Overview • Prerequisites • Parameters • Figma Token Schema • Usage Examples • Output • Related Tools • See Also",
-      "preview": "Match Figma design tokens to existing theme tokens in app.css with confidence scores and suggestions."
-    },
-    {
-      "id": "mcp-tools-sfnext-start-figma-workflow",
-      "title": "sfnext_start_figma_workflow",
-      "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-start-figma-workflow.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-start-figma-workflow.md",
-      "headings": "Overview • Prerequisites • Parameters • Supported Figma URL Formats • Usage Examples • Basic Workflow Start • Custom Workflow File • Full Homepage Implementation • Output • Related Tools • See Also",
-      "preview": "Workflow orchestrator for Figma-to-component conversion. Parses your Figma URL and guides you through design-to-component conversion."
-    },
-    {
       "id": "mcp-toolsets",
       "title": "Toolsets & Tools",
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.md",
-      "headings": "CARTRIDGES • DIAGNOSTICS • MRT • PWAV3 • SCAPI • STOREFRONTNEXT • STOREFRONTNEXT_DEPRECATED • Next Steps",
+      "headings": "CARTRIDGES • DIAGNOSTICS • MRT • PWAV3 • SCAPI • STOREFRONTNEXT • Next Steps",
       "preview": "Available toolsets and tools in the B2C DX MCP Server for SCAPI, CARTRIDGES, DIAGNOSTICS, MRT, PWAV3, and STOREFRONTNEXT development."
     },
     {

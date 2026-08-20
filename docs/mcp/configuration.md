@@ -84,12 +84,13 @@ If both `dw.json` and `~/.mobify` contain an API key, `dw.json` takes precedence
 
 ## Per-call Project Context {#project-directory}
 
-Tools that resolve project files or B2C/MRT configuration expose two common per-call arguments:
+Tools expose only the context they consume. Local project tools accept `projectDirectory`. Tools that resolve B2C/MRT configuration use the same three flat, optional arguments:
 
-- `projectDirectory` selects the project root used for `.env`, `dw.json`, `package.json`, and relative project files.
-- `configPath` explicitly selects a configuration file in `dw.json` format. Relative paths resolve from the effective `projectDirectory`.
+- `projectDirectory` is an absolute project root for the call. It overrides the server-level project directory; the tool schema shows the exact server-level or `cwd` fallback it will use when omitted.
+- `configPath` selects the primary configuration file in `dw.json` format. Relative paths resolve from `projectDirectory`. The shared default `dw.json` remains available for fallback and named-instance lookup.
+- `instanceName` selects a named instance from the primary and shared default files without changing either file. The primary file is searched first. When omitted, the active/default instance is used.
 
-Configuration-dependent tools receive these fields automatically. Pure documentation tools and follow-up calls that operate only on existing server-side state do not expose them.
+Specialized roots such as `cartridgeDirectory`, `buildDirectory`, and `outputDirectory` remain separate and resolve from `projectDirectory` when relative. Pure documentation tools and follow-up calls that operate only on existing server-side state do not expose project or configuration fields.
 
 The server resolves the project directory in this order:
 
@@ -99,7 +100,7 @@ The server resolves the project directory in this order:
 
 For reliable behavior, either set `--project-directory "${workspaceFolder}"` (or your client's project-path variable) in `mcp.json`, or let the agent pass `projectDirectory` per call. A per-call override controls both project-local configuration discovery (`.env`, `SFCC_CONFIG`, and `dw.json`) and relative filesystem paths. Use `configPath` when the desired `dw.json`-format file is not the project default. JSON-returning filesystem tools echo the resolved directory back in their output so you can confirm which path was used.
 
-Each project-aware call selects its primary configuration path in this order, then adds the global `dw.json` to the available instances:
+Each configuration-aware call selects its primary configuration path in this order, then adds the global `dw.json` to the available instances:
 
 1. Per-call `configPath`
 2. Server startup `--config` / `SFCC_CONFIG`
@@ -112,13 +113,15 @@ This list selects the primary `dw.json`-format file. Individual configuration va
 
 The global `dw.json` is shared with the CLI and B2C DX VS Code extension. It is useful when an MCP client starts the server outside your project or when you want its instances available alongside project instances.
 
-The primary and global `dw.json` files form one instance catalog. An instance named by `--instance` / `SFCC_INSTANCE` is searched in the primary file first and then the global file; same-name primary entries shadow global entries. The selected instance's fields are not merged across files.
+The primary and global `dw.json` files form one instance catalog. An instance named by the MCP `instanceName` argument, CLI `--instance`, or `SFCC_INSTANCE` is searched in the primary file first and then the global file; same-name primary entries shadow global entries. The selected instance's fields are not merged across files.
+
+Configuration- and project-aware tools return a compact `resolution` block showing the effective project directory, selected configuration file, instance name, target hostname, and any specialized directories, together with the source of each choice. Session and watch start tools capture this block; their corresponding list tools return it so callers do not need to repeat context on follow-up calls.
 
 ::: tip Diagnosing configuration
-Run the `config_inspect` tool (ask your agent to "inspect the B2C MCP configuration") to see the resolved configuration — instance, auth, SCAPI/MRT settings, and which source provided each value — along with the effective project directory and how it was resolved. Secrets are redacted by default.
+Run the `config_inspect` tool (ask your agent to "inspect the B2C MCP configuration") to see the resolved configuration — instance, auth, SCAPI/MRT settings, the complete source graph, and the same compact `resolution` block returned by ordinary tools. Secrets are redacted by default.
 :::
 
-`config_inspect` uses the same SDK `loadConfig` resolver and globally registered CLI plugin configuration sources as `b2c setup inspect`. Given the same installed plugins, environment, `projectDirectory`, and `configPath`, its resolved values and source provenance follow the same pipeline; MCP adds the effective project-directory context to its response.
+`config_inspect` uses the same SDK `loadConfig` resolver and globally registered CLI plugin configuration sources as `b2c setup inspect`. Given the same installed plugins, environment, `projectDirectory`, `configPath`, and `instanceName`, its resolved values and source provenance follow the same pipeline; MCP adds compact call-resolution context to its response.
 
 This is the [Agent Plugins](https://agent-plugins.org/plugin-authors/mcp-servers) `cwd` model: when a plugin declares an MCP server without an explicit `cwd`, the working directory defaults to the plugin root rather than your open project — which is exactly why the explicit outlets above matter.
 
@@ -154,8 +157,6 @@ Override auto-discovery with `--toolsets` or `SFCC_TOOLSETS`:
 ```
 
 **Available toolsets:** `CARTRIDGES`, `MRT`, `PWAV3`, `SCAPI`, `STOREFRONTNEXT`, `all`
-
-**Deprecated toolset:** `STOREFRONTNEXT_DEPRECATED` holds the legacy `sfnext_*` tools, which are not compatible with the Storefront Next 1.0 GA release and are superseded by the [`storefront-next`/`storefront-next-figma` agent-skills plugins](../guide/agent-skills). It is **never auto-enabled** and **not included in `all`** — request it explicitly with `--toolsets STOREFRONTNEXT_DEPRECATED --allow-non-ga-tools`. See [Toolsets](./toolsets#storefrontnext-deprecated).
 
 With auto-discovery, the `SCAPI` toolset is always included. When using `--toolsets` or `--tools`, only the specified toolsets/tools are enabled.
 

@@ -61,30 +61,27 @@ See the [Installation Guide](https://salesforcecommercecloud.github.io/b2c-devel
 
 **Project-level configuration** (recommended for Cursor and GitHub Copilot) automatically detects your project location. For **user-level configuration** or when using explicit paths, set `--project-directory` (or `SFCC_PROJECT_DIRECTORY`). MCP clients spawn from the home directory (`~`), not your project.
 
-| Environment Variable | Description |
-|---------------------|-------------|
+| Environment Variable     | Description                                                   |
+| ------------------------ | ------------------------------------------------------------- |
 | `SFCC_PROJECT_DIRECTORY` | Project directory (enables auto-discovery and config loading) |
-| `SFCC_SERVER` | B2C instance hostname |
-| `SFCC_USERNAME` | Username for WebDAV |
-| `SFCC_PASSWORD` | Password/access key for WebDAV |
-| `SFCC_CLIENT_ID` | OAuth client ID |
-| `SFCC_CLIENT_SECRET` | OAuth client secret |
-| `MRT_API_KEY` | MRT API key (`SFCC_MRT_API_KEY` also supported) |
+| `SFCC_SERVER`            | B2C instance hostname                                         |
+| `SFCC_USERNAME`          | Username for WebDAV                                           |
+| `SFCC_PASSWORD`          | Password/access key for WebDAV                                |
+| `SFCC_CLIENT_ID`         | OAuth client ID                                               |
+| `SFCC_CLIENT_SECRET`     | OAuth client secret                                           |
+| `MRT_API_KEY`            | MRT API key (`SFCC_MRT_API_KEY` also supported)               |
 
 See the [Configuration Guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration) for credentials, flags, and toolset selection.
 
 ## Tools
 
-| Toolset | Tools | Docs |
-|---------|-------|------|
-| CARTRIDGES | `cartridge_deploy` | [toolsets#cartridges](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#cartridges) |
-| MRT | `mrt_bundle_push` | [toolsets#mrt](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#mrt) |
-| SCAPI | `scapi_schemas_list`, `scapi_custom_apis_get_status`, `scapi_custom_api_generate_scaffold` | [toolsets#scapi](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#scapi) |
-| STOREFRONTNEXT | `mrt_bundle_push` + SCAPI tools (auto-enabled for Storefront Next projects) | [toolsets#storefrontnext](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#storefrontnext) |
-| STOREFRONTNEXT_DEPRECATED ⛔ | `sfnext_get_guidelines`, `sfnext_add_page_designer_decorator`, `sfnext_configure_theme`, `sfnext_start_figma_workflow`, `sfnext_analyze_component`, `sfnext_match_tokens_to_theme` — **deprecated, see note below** | [toolsets#storefrontnext-deprecated](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#storefrontnext-deprecated) |
-| PWAV3 | `pwakit_get_guidelines` + SCAPI tools | [toolsets#pwav3](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#pwav3) |
-
-> **⛔ `sfnext_*` tools are deprecated.** The Storefront Next MCP tools are **not compatible with the Storefront Next 1.0 GA release** and have been superseded by the [`storefront-next` and `storefront-next-figma` agent-skills plugins](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills), which stay current with the GA release. They have moved to the `STOREFRONTNEXT_DEPRECATED` toolset, which is **never auto-enabled** and **excluded from `--toolsets all`**; to use them you must request the toolset explicitly (`--toolsets STOREFRONTNEXT_DEPRECATED --allow-non-ga-tools`). They will be removed in a future release.
+| Toolset        | Tools                                                                                      | Docs                                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| CARTRIDGES     | `cartridge_deploy`                                                                         | [toolsets#cartridges](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#cartridges)         |
+| MRT            | `mrt_bundle_push`                                                                          | [toolsets#mrt](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#mrt)                       |
+| SCAPI          | `scapi_schemas_list`, `scapi_custom_apis_get_status`, `scapi_custom_api_generate_scaffold` | [toolsets#scapi](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#scapi)                   |
+| STOREFRONTNEXT | `mrt_bundle_push` + SCAPI tools (auto-enabled for Storefront Next projects)                | [toolsets#storefrontnext](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#storefrontnext) |
+| PWAV3          | `pwakit_get_guidelines` + SCAPI tools                                                      | [toolsets#pwav3](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets#pwav3)                   |
 
 ### cartridge_deploy
 
@@ -121,49 +118,6 @@ Generate new custom SCAPI endpoint in a cartridge. [Details](https://salesforcec
 - "Use the MCP tool to scaffold a new custom API named my-products."
 - "Use the MCP tool to create a custom admin API called customer-trips."
 
-## Deprecated: Storefront Next (`sfnext_*`) tools
-
-> **⛔ Deprecated and not compatible with the Storefront Next 1.0 GA release.** The tools below have been superseded by the [`storefront-next` and `storefront-next-figma` agent-skills plugins](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills) and will be removed in a future release. They no longer auto-enable for Storefront Next projects and are excluded from `--toolsets all`; to use them, request `--toolsets STOREFRONTNEXT_DEPRECATED --allow-non-ga-tools`. Migrate to the skills plugins.
-
-### sfnext_get_guidelines
-
-Get Storefront Next guidelines and best practices. [Details](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-get-guidelines)
-
-- "Use the MCP tool to show me critical Storefront Next rules."
-- "Use the MCP tool to get data-fetching and component patterns."
-
-### sfnext_add_page_designer_decorator
-
-Add Page Designer decorators to components. [Details](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-add-page-designer-decorator)
-
-- "Use the MCP tool to add Page Designer decorators to my component."
-
-### sfnext_configure_theme
-
-Get theming guidelines, questions, and WCAG color validation for Storefront Next. [Details](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-configure-theme)
-
-- "Use the MCP tool to help me apply my brand colors to my Storefront Next site."
-- "Use the MCP tool to validate my color combinations for accessibility."
-
-### sfnext_start_figma_workflow
-
-Workflow orchestrator for Figma-to-component conversion. Parses Figma URL, returns step-by-step instructions for subsequent tool calls. Requires external Figma MCP server. [Details](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-start-figma-workflow) — [Figma Setup](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/figma-tools-setup)
-
-- "Use the MCP tool to convert this Figma design to a Storefront Next component: [Figma URL with node-id]"
-- "Use the MCP tool to create this homepage from the Figma design: [Figma URL with node-id]"
-
-### sfnext_analyze_component
-
-Analyze design and discovered components to recommend REUSE, EXTEND, or CREATE strategy. [Details](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-analyze-component)
-
-- "Use the MCP tool to analyze the Figma design and recommend whether to reuse, extend, or create a component."
-
-### sfnext_match_tokens_to_theme
-
-Map design tokens to existing theme tokens in app.css with confidence scores and suggestions. [Details](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/sfnext-match-tokens-to-theme)
-
-- "Use the MCP tool to map these Figma design tokens to my theme."
-
 ### pwakit_get_guidelines
 
 Get PWA Kit v3 guidelines. [Details](https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/pwakit-get-guidelines)
@@ -187,4 +141,3 @@ For MCP development, testing, and local setup, see [CONTRIBUTING.md](./CONTRIBUT
 ## License
 
 This project is licensed under the Apache License 2.0. See [LICENSE.txt](../../LICENSE.txt) for full details.
-

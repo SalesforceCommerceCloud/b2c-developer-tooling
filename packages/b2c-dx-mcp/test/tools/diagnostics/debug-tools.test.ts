@@ -146,6 +146,15 @@ describe('tools/diagnostics', () => {
         manager,
         sourceMapper,
         cartridges: [],
+        resolution: {
+          projectDirectory: {path: '/workspace/storefront', source: 'argument'},
+          configuration: {
+            hostname: 'host.example.com',
+            instanceName: 'sandbox',
+            path: '/workspace/storefront/dw.json',
+            source: 'projectDirectory',
+          },
+        },
       });
       entry.breakpoints = [{id: 1, line_number: 42, script_path: '/app_test/cartridge/controllers/Cart.js'}];
 
@@ -157,6 +166,7 @@ describe('tools/diagnostics', () => {
           halted_threads: number[];
           breakpoints: unknown[];
           session_cookie: null | {name: string; value: string};
+          resolution?: {configuration?: {instanceName?: string}};
         }>;
       }>(result);
 
@@ -165,6 +175,7 @@ describe('tools/diagnostics', () => {
       expect(json.sessions[0].halted_threads).to.deep.equal([5]);
       expect(json.sessions[0].breakpoints).to.have.lengthOf(1);
       expect(json.sessions[0].session_cookie).to.deep.equal({name: 'dwsid', value: 'dwsid-value-123'});
+      expect(json.sessions[0].resolution?.configuration?.instanceName).to.equal('sandbox');
     });
 
     it('should report session_cookie as null when no dwsid is set', async () => {

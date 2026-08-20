@@ -49,8 +49,12 @@ interface ScaffoldCustomApiInput extends ProjectContextInput {
   /** Short description of the API. Default: "A custom B2C Commerce API" */
   apiDescription?: string;
   /** Project root for cartridge discovery and output. Default: MCP project directory */
+  cartridgeDirectory?: string;
+  /** @deprecated Use cartridgeDirectory. */
   projectRoot?: string;
   /** Output directory override. Default: scaffold default or project root */
+  outputDirectory?: string;
+  /** @deprecated Use outputDirectory. */
   outputDir?: string;
 }
 
@@ -82,7 +86,10 @@ export async function executeScaffoldCustomApi(
   overrides?: ScaffoldCustomApiExecuteOverrides,
 ): Promise<ScaffoldCustomApiOutput> {
   const projectDirectory = services.resolveProjectDirectory(args.projectDirectory);
-  const projectRoot = services.resolveWithProjectDirectory(args.projectRoot, args.projectDirectory);
+  const projectRoot = services.resolveWithProjectDirectory(
+    args.cartridgeDirectory ?? args.projectRoot,
+    args.projectDirectory,
+  );
 
   const getScaffold =
     overrides?.getScaffold ??
@@ -165,7 +172,7 @@ export async function executeScaffoldCustomApi(
   }
 
   const outputDir = resolveOutputDirectory({
-    outputDir: args.outputDir,
+    outputDir: args.outputDirectory ?? args.outputDir,
     scaffold,
     projectRoot,
   });
@@ -224,7 +231,7 @@ export function createScaffoldCustomApiTool(
       name: 'scapi_custom_api_generate_scaffold',
       description: `Generate a new custom SCAPI endpoint (OAS 3.0 schema, api.json, script.js) in an existing cartridge. \
 Required: apiName (kebab-case). Optional: cartridgeName (defaults to first cartridge found in project), apiType (shopper|admin) default to shopper, \
-apiDescription, projectRoot, outputDir.`,
+apiDescription, cartridgeDirectory, outputDirectory.`,
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       isGA: true,
       requiresInstance: false,
@@ -248,16 +255,36 @@ apiDescription, projectRoot, outputDir.`,
           .optional()
           .describe('Admin (no siteId) or shopper (siteId, customer-facing). Default: shopper'),
         apiDescription: z.string().optional().describe('Short description of the API.'),
-        projectRoot: z
+        cartridgeDirectory: z
           .string()
           .nullish()
           .describe(
-            'Optional cartridge discovery/output root, resolved relative to projectDirectory. Defaults to projectDirectory.',
+            'Optional cartridge discovery root, resolved relative to projectDirectory. Defaults to projectDirectory.',
           ),
-        outputDir: z.string().optional().describe('Output directory override. Default: project root'),
+        projectRoot: z
+          .string()
+          .nullish()
+          .describe('Deprecated alias for cartridgeDirectory. cartridgeDirectory takes precedence.'),
+        outputDirectory: z
+          .string()
+          .optional()
+          .describe('Optional output directory. Relative paths resolve from cartridgeDirectory.'),
+        outputDir: z
+          .string()
+          .optional()
+          .describe('Deprecated alias for outputDirectory. outputDirectory takes precedence.'),
       },
-      async execute(args, {services}) {
-        return executeScaffoldCustomApi(args, services, executeOverrides);
+      async execute(args, context) {
+        const output = await executeScaffoldCustomApi(args, context.services, executeOverrides);
+        context.setResolvedDirectory('cartridgeDirectory', {
+          path: output.projectRoot,
+          source: args.cartridgeDirectory || args.projectRoot ? 'argument' : 'projectDirectory',
+        });
+        context.setResolvedDirectory('outputDirectory', {
+          path: output.outputDir,
+          source: args.outputDirectory || args.outputDir ? 'argument' : 'projectDirectory',
+        });
+        return output;
       },
       formatOutput(output) {
         if (output.error) {

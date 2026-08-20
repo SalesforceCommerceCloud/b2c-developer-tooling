@@ -149,11 +149,12 @@ import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {EnvSource, readProjectEnvironment} from '@salesforce/b2c-tooling-sdk/config';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {B2CDxMcpServer} from '../server.js';
-import {Services} from '../services.js';
+import {Services, type ServicesResolutionInputs} from '../services.js';
 import {ServerContext} from '../server-context.js';
 import {registerToolsets} from '../registry.js';
 import {TOOLSETS, type StartupFlags} from '../utils/index.js';
 import type {ProjectContextInput} from '../tools/project-context.js';
+import type {ServicesLoader} from '../tools/adapter.js';
 
 /**
  * oclif Command that starts the B2C DX MCP server.
@@ -275,14 +276,17 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    * 2. Startup --config / SFCC_CONFIG
    * 3. SFCC_CONFIG from the selected project's .env
    * 4. dw.json in the selected project directory
+   * 5. Shared default dw.json from the tooling settings
    *
    * Values are then merged through the normal CLI resolver, including
    * environment, plugin, dw.json, ~/.mobify, and package.json sources.
    */
   protected override async loadConfiguration(projectContext?: ProjectContextInput): Promise<ResolvedB2CConfig> {
     const mrt = extractMrtFlags(this.flags as Record<string, unknown>);
-    const baseOptions = this.getBaseConfigOptions();
-    const effectiveProjectDirectory = projectContext?.projectDirectory ?? baseOptions.projectDirectory;
+    const baseOptions = this.flags ? this.getBaseConfigOptions() : {};
+    const effectiveProjectDirectory = path.resolve(
+      projectContext?.projectDirectory ?? baseOptions.projectDirectory ?? process.cwd(),
+    );
     const projectEnvironment = this.loadProjectEnvironment(effectiveProjectDirectory);
 
     const projectConfigPath = projectEnvironment?.SFCC_CONFIG;
@@ -300,10 +304,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       ...baseOptions,
       ...mrt.options,
       configPath,
-      ...(projectContext?.projectDirectory && {
-        projectDirectory: projectContext.projectDirectory,
-        workingDirectory: projectContext.projectDirectory,
-      }),
+      instance: projectContext?.instanceName ?? baseOptions.instance,
+      projectDirectory: effectiveProjectDirectory,
+      workingDirectory: effectiveProjectDirectory,
     };
 
     // Combine B2C instance flags and MRT config flags
@@ -328,9 +331,39 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
    */
   protected async loadServices(projectContext?: ProjectContextInput): Promise<Services> {
     const config = await this.loadConfiguration(projectContext);
-    const effectiveProjectDirectory = projectContext?.projectDirectory ?? this.flags?.['project-directory'];
+    const baseOptions = this.flags ? this.getBaseConfigOptions() : {};
+    const configuredProjectDirectory = baseOptions.projectDirectory;
+    const effectiveProjectDirectory = path.resolve(
+      projectContext?.projectDirectory ?? configuredProjectDirectory ?? process.cwd(),
+    );
     const projectEnvironment = this.loadProjectEnvironment(effectiveProjectDirectory);
-    return Services.fromResolvedConfig(config, projectEnvironment);
+    const projectConfigPath = projectEnvironment?.SFCC_CONFIG;
+    let primaryConfiguration: ServicesResolutionInputs['primaryConfiguration'];
+    if (projectContext?.configPath) {
+      primaryConfiguration = {
+        path: path.resolve(effectiveProjectDirectory, projectContext.configPath),
+        source: 'argument',
+      };
+    } else if (baseOptions.configPath) {
+      primaryConfiguration = {path: path.resolve(baseOptions.configPath), source: 'server'};
+    } else if (projectConfigPath) {
+      primaryConfiguration = {
+        path: path.isAbsolute(projectConfigPath)
+          ? projectConfigPath
+          : path.resolve(effectiveProjectDirectory, projectConfigPath),
+        source: 'projectEnvironment',
+      };
+    } else {
+      primaryConfiguration = {path: path.join(effectiveProjectDirectory, 'dw.json'), source: 'projectDirectory'};
+    }
+
+    return Services.fromResolvedConfig(config, projectEnvironment, {
+      projectDirectory: {
+        path: effectiveProjectDirectory,
+        source: projectContext?.projectDirectory ? 'argument' : configuredProjectDirectory ? 'config' : 'cwd',
+      },
+      primaryConfiguration,
+    });
   }
 
   /**
@@ -401,7 +434,15 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
 
     // Register toolsets with loader function that loads config and creates Services on each tool call
     // This allows tools to pick up changes to config files (dw.json, ~/.mobify) between invocations
-    await registerToolsets(startupFlags, server, this.loadServices.bind(this), this.serverContext);
+    const loadServices = this.loadServices.bind(this) as ServicesLoader;
+    const configuredProjectDirectory = this.flags['project-directory'];
+    loadServices.projectContextDefaults = {
+      projectDirectory: {
+        path: path.resolve(configuredProjectDirectory ?? process.cwd()),
+        source: configuredProjectDirectory ? 'config' : 'cwd',
+      },
+    };
+    await registerToolsets(startupFlags, server, loadServices, this.serverContext);
 
     // Connect to stdio transport
     const transport = new StdioServerTransport();

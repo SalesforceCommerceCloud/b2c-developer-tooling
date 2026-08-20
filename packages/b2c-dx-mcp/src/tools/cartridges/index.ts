@@ -31,7 +31,9 @@ const CARTRIDGE_PATH_REMINDER =
  * Input type for cartridge_deploy tool.
  */
 interface CartridgeDeployInput extends ProjectContextInput {
-  /** Path to directory containing cartridges (default: current directory) */
+  /** Path to directory containing cartridges. */
+  cartridgeDirectory?: string;
+  /** @deprecated Use cartridgeDirectory. */
   directory?: string;
   /** Only deploy these cartridge names */
   cartridges?: string[];
@@ -99,12 +101,17 @@ function createCartridgeDeployTool(
       requiresInstance: true,
       usesProjectContext: true,
       inputSchema: {
+        cartridgeDirectory: z
+          .string()
+          .optional()
+          .describe(
+            'Optional cartridge discovery root. Relative paths resolve from projectDirectory. Defaults to projectDirectory.',
+          ),
         directory: z
           .string()
           .optional()
           .describe(
-            'Path to directory to search for cartridges. Defaults to current project directory if not specified. ' +
-              'The tool will recursively search this directory for .project files to identify cartridges.',
+            'Deprecated alias for cartridgeDirectory. cartridgeDirectory takes precedence when both are supplied.',
           ),
         cartridges: z
           .array(z.string())
@@ -154,7 +161,12 @@ function createCartridgeDeployTool(
 
           // Resolve directory path: relative paths are resolved relative to project directory, absolute paths are used as-is
           const projectDirectory = context.services.resolveProjectDirectory(args.projectDirectory);
-          const directory = context.services.resolveWithProjectDirectory(args.directory, args.projectDirectory);
+          const directoryArgument = args.cartridgeDirectory ?? args.directory;
+          const directory = context.services.resolveWithProjectDirectory(directoryArgument, args.projectDirectory);
+          context.setResolvedDirectory('cartridgeDirectory', {
+            path: directory,
+            source: directoryArgument ? 'argument' : 'projectDirectory',
+          });
 
           // Parse options
           const options: DeployOptions = {

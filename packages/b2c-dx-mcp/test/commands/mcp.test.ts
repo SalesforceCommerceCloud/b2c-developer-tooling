@@ -724,6 +724,45 @@ describe('McpServerCommand', () => {
       }
     });
 
+    it('should select a named instance across the primary and shared default files', async () => {
+      const rootDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-named-instance-'));
+      const projectDirectory = path.join(rootDirectory, 'project');
+      const configPath = path.join(projectDirectory, 'dw.json');
+      const defaultConfigPath = path.join(rootDirectory, 'shared.dw.json');
+      fs.mkdirSync(projectDirectory);
+      fs.writeFileSync(configPath, JSON.stringify({configs: [{hostname: 'local.invalid', name: 'local'}]}));
+      fs.writeFileSync(defaultConfigPath, JSON.stringify({configs: [{hostname: 'shared.invalid', name: 'shared'}]}));
+
+      try {
+        (command as unknown as {flags: Record<string, unknown>}).flags = {};
+        sandbox.stub(command as unknown as Record<string, unknown>, 'getBaseConfigOptions').returns({
+          defaultConfigPath,
+        });
+        const load = (instanceName: string) =>
+          (
+            command as unknown as {
+              loadConfiguration(projectContext: {
+                instanceName: string;
+                projectDirectory: string;
+              }): Promise<{values: Record<string, unknown>; sources: Array<{location?: string; scope?: string}>}>;
+            }
+          ).loadConfiguration({instanceName, projectDirectory});
+
+        const local = await load('local');
+        expect(local.values.hostname).to.equal('local.invalid');
+        expect(local.values.instanceName).to.equal('local');
+        expect(local.sources.some((source) => source.location === configPath && source.scope !== 'global')).to.be.true;
+
+        const shared = await load('shared');
+        expect(shared.values.hostname).to.equal('shared.invalid');
+        expect(shared.values.instanceName).to.equal('shared');
+        expect(shared.sources.some((source) => source.location === defaultConfigPath && source.scope === 'global')).to
+          .be.true;
+      } finally {
+        fs.rmSync(rootDirectory, {recursive: true, force: true});
+      }
+    });
+
     it('should keep registered CLI plugin sources in the per-call resolver pipeline', async () => {
       const projectDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-plugin-config-'));
       const configPath = path.join(projectDirectory, 'selected.dw.json');

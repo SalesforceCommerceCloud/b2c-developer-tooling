@@ -10,6 +10,7 @@ import type {ServerContext} from '../../server-context.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import {projectBreakpoint, type MappedBreakpoint} from '@salesforce/b2c-tooling-sdk/operations/debug';
 import {getRegistry} from './session-registry.js';
+import type {ToolResolution} from '../project-context.js';
 
 interface ListSessionsOutput {
   sessions: Array<{
@@ -20,6 +21,7 @@ interface ListSessionsOutput {
     session_cookie: null | {name: string; value: string};
     created_at: string;
     last_activity_at: string;
+    resolution?: ToolResolution;
   }>;
 }
 
@@ -52,6 +54,7 @@ export function createDebugListSessionsTool(
               session_cookie: dwsid ? {name: 'dwsid', value: dwsid} : null,
               created_at: new Date(entry.createdAt).toISOString(),
               last_activity_at: new Date(entry.lastActivityAt).toISOString(),
+              resolution: entry.resolution,
             };
           }),
         };

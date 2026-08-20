@@ -12,8 +12,6 @@ This guide covers installing and configuring the B2C DX MCP Server for various M
 - A B2C Commerce project (for project-specific toolsets)
 - MCP client (Claude Code, Cursor, GitHub Copilot, or compatible client)
 
-> **Note:** For Figma-to-component tools, you also need an external Figma MCP server enabled. See [Figma-to-Component Tools Setup](./figma-tools-setup) for details.
-
 The MCP server is installed via `npx`, which downloads and runs the latest version on demand. For project type detection details, see [MCP Server Overview](./#project-type-detection).
 
 ## Claude Code

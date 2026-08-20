@@ -243,6 +243,10 @@ function createMrtBundlePushTool(
           args.buildDirectory ?? defaults.buildDirectory,
           args.projectDirectory,
         );
+        context.setResolvedDirectory('buildDirectory', {
+          path: buildDirectory,
+          source: args.buildDirectory ? 'argument' : 'projectDirectory',
+        });
 
         // Log all computed variables before pushing bundle
         const logger = getLogger();

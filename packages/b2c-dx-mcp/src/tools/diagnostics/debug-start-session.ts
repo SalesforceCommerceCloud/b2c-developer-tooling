@@ -57,7 +57,7 @@ export function createDebugStartSessionTool(
             'Optional cartridge discovery and debugger source-mapping root. Relative paths resolve from projectDirectory. Defaults to projectDirectory.',
           ),
       },
-      usesProjectContext: true,
+      usesConfigurationContext: true,
       async execute(args, context) {
         const registry = getRegistry(context);
 
@@ -76,6 +76,10 @@ export function createDebugStartSessionTool(
           args.cartridgeDirectory,
           args.projectDirectory,
         );
+        context.setResolvedDirectory('cartridgeDirectory', {
+          path: cartridgeDir,
+          source: args.cartridgeDirectory ? 'argument' : 'projectDirectory',
+        });
         const cartridges = findCartridges(cartridgeDir);
         const warnings: string[] = [];
 
@@ -104,7 +108,14 @@ export function createDebugStartSessionTool(
 
         await manager.connect();
 
-        const entry = registry.registerSession({hostname, clientId, manager, sourceMapper, cartridges});
+        const entry = registry.registerSession({
+          hostname,
+          clientId,
+          manager,
+          sourceMapper,
+          cartridges,
+          resolution: structuredClone(context.resolution),
+        });
 
         const cartridgeMappings: Record<string, string> = {};
         for (const c of cartridges) cartridgeMappings[c.name] = c.src;

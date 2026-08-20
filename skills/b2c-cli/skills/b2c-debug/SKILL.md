@@ -19,7 +19,7 @@ The CLI auto-discovers the target instance and credentials from `SFCC_*` environ
 
 Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
-For MCP debugging, pass `projectDirectory` to `debug_start_session` whenever the MCP server may have been launched outside the project. The tool uses that root to load the project's `.env` and default `dw.json`; pass `configPath` to select a different `dw.json`-format file. Cartridge discovery and local/server source mapping default to `projectDirectory`; pass `cartridgeDirectory` only when the cartridges live under a different root. The MCP server controls its SDAPI client identity internally, so callers do not pass a debugger client ID.
+For MCP debugging, pass `projectDirectory` to `debug_start_session` whenever the MCP server may have been launched outside the project. The tool uses that root to load the project's `.env` and default `dw.json`; pass `configPath` to select a different primary `dw.json`-format file and `instanceName` to select a named instance from the primary or shared default file. Cartridge discovery and local/server source mapping default to `projectDirectory`; pass `cartridgeDirectory` only when the cartridges live under a different root. The start call captures this information in `resolution`, which `debug_list_sessions` returns without requiring the caller to repeat it. The MCP server controls its SDAPI client identity internally, so callers do not pass a debugger client ID.
 
 ## Prerequisites
 
