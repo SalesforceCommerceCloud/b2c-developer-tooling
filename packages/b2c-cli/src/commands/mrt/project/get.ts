@@ -18,7 +18,7 @@ function printProjectDetails(project: MrtProjectUpdate): void {
 
   ui.div('');
   ui.div({text: 'Name:', width: labelWidth}, {text: project.name});
-  ui.div({text: 'Slug:', width: labelWidth}, {text: project.slug ?? ''});
+  ui.div({text: 'ID:', width: labelWidth}, {text: project.slug ?? ''});
   ui.div({text: 'Organization:', width: labelWidth}, {text: project.organization ?? ''});
   ui.div({text: 'Type:', width: labelWidth}, {text: project.project_type ?? '-'});
   ui.div({text: 'Status:', width: labelWidth}, {text: project.deletion_status ?? 'active'});

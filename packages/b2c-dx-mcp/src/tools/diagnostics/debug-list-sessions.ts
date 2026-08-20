@@ -10,17 +10,18 @@ import type {ServerContext} from '../../server-context.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import {projectBreakpoint, type MappedBreakpoint} from '@salesforce/b2c-tooling-sdk/operations/debug';
 import {getRegistry} from './session-registry.js';
+import type {ToolResolution} from '../project-context.js';
 
 interface ListSessionsOutput {
   sessions: Array<{
     session_id: string;
     hostname: string;
-    client_id: string;
     halted_threads: number[];
     breakpoints: MappedBreakpoint[];
     session_cookie: null | {name: string; value: string};
     created_at: string;
     last_activity_at: string;
+    resolution?: ToolResolution;
   }>;
 }
 
@@ -45,7 +46,6 @@ export function createDebugListSessionsTool(
             return {
               session_id: entry.sessionId,
               hostname: entry.hostname,
-              client_id: entry.clientId,
               halted_threads: entry.manager
                 .getKnownThreads()
                 .filter((t) => t.status === 'halted')
@@ -54,6 +54,7 @@ export function createDebugListSessionsTool(
               session_cookie: dwsid ? {name: 'dwsid', value: dwsid} : null,
               created_at: new Date(entry.createdAt).toISOString(),
               last_activity_at: new Date(entry.lastActivityAt).toISOString(),
+              resolution: entry.resolution,
             };
           }),
         };

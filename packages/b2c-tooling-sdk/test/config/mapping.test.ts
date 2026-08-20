@@ -6,6 +6,7 @@
 import {expect} from 'chai';
 import {
   kebabToCamelCase,
+  mapDwJsonToNormalizedConfig,
   normalizeConfigKeys,
   normalizeOriginUrl,
   resolveLibraryEntries,
@@ -206,6 +207,27 @@ describe('config/mapping', () => {
     it('strips trailing slashes', () => {
       expect(normalizeOriginUrl('https://cloud.mobify.com/')).to.equal('https://cloud.mobify.com');
       expect(normalizeOriginUrl('cloud.mobify.com/')).to.equal('https://cloud.mobify.com');
+    });
+  });
+
+  describe('mapDwJsonToNormalizedConfig - userAuth shorthand', () => {
+    it('collapses userAuth=true to authMethods=["user"]', () => {
+      const result = mapDwJsonToNormalizedConfig({userAuth: true});
+      expect(result.authMethods).to.deep.equal(['user']);
+    });
+
+    it('passes through authMethods when userAuth is unset', () => {
+      const result = mapDwJsonToNormalizedConfig({authMethods: ['client-credentials', 'jwt']});
+      expect(result.authMethods).to.deep.equal(['client-credentials', 'jwt']);
+    });
+
+    it('does not set authMethods when userAuth=false (no opinion)', () => {
+      const result = mapDwJsonToNormalizedConfig({userAuth: false});
+      expect(result.authMethods).to.equal(undefined);
+    });
+
+    it('throws when both userAuth and authMethods are set', () => {
+      expect(() => mapDwJsonToNormalizedConfig({userAuth: true, authMethods: ['user']})).to.throw(/mutually exclusive/);
     });
   });
 

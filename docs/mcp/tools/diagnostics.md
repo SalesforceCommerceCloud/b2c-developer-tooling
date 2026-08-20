@@ -24,9 +24,9 @@ Debug sessions are stateful and live in the MCP server process. If the agent los
 
 1. **List active sessions** — call `debug_list_sessions` (no args). It returns all sessions known to the server with their `session_id`, `hostname`, halted threads, and currently armed breakpoints.
 2. **End orphaned sessions** — call `debug_end_session` with the `session_id` to free the debugger slot on the instance.
-3. **SDAPI single-client guarantee** — the script debugger only supports one client per `client_id` per host. Calling `debug_start_session` with the same `client_id` against the same host implicitly takes over (replaces) any prior client. This is the safety net when a session is lost without a clean shutdown.
+3. **MCP-owned debugger identity** — the MCP server assigns the debugger client identity internally; callers do not configure or track it.
 4. **Idle cleanup** — sessions inactive for 30 minutes are automatically cleaned up by the server.
-5. **Restart the MCP server** — as a last resort, restarting the MCP server destroys all session state. The orphaned debugger slot on the instance will be freed by SDAPI's own 60-second halt-timeout or by the next `debug_start_session` with the same client ID.
+5. **Restart the MCP server** — as a last resort, restarting the MCP server destroys all local session state. Any orphaned debugger slot on the instance is freed by SDAPI's own timeout.
 
 ---
 
@@ -38,12 +38,14 @@ Start a new script debugger session. Connects to the SDAPI, discovers cartridge 
 
 > **Warning:** Debug sessions can halt remote request threads on the instance. Use `debug_end_session` to cleanly disconnect when done.
 
-| Parameter             | Type   | Required | Default           | Description                                                                                  |
-| --------------------- | ------ | -------- | ----------------- | -------------------------------------------------------------------------------------------- |
-| `cartridge_directory` | string | No       | Project directory | Path to directory containing cartridges                                                      |
-| `client_id`           | string | No       | `b2c-cli`         | Client ID for the debugger API. Use a different ID for concurrent sessions on the same host. |
+| Parameter            | Type   | Required | Default                       | Description                                                                                                                                                  |
+| -------------------- | ------ | -------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `projectDirectory`   | string | No       | Server project directory/cwd  | Project root used to load `.env`/`dw.json` and resolve relative paths. Overrides the server-level directory; run `config_inspect` to see the resolved paths. |
+| `configPath`         | string | No       | Resolved from project context | Primary `dw.json`-format configuration file. Relative paths resolve from `projectDirectory`; the shared default remains available.                           |
+| `instanceName`       | string | No       | Active/default instance       | Named instance selected from the primary configuration first, then the shared default `dw.json`.                                                             |
+| `cartridgeDirectory` | string | No       | `projectDirectory`            | Cartridge discovery and source-mapping root only. Use when cartridges are outside the project root; relative paths resolve from project root.                |
 
-**Returns:** `session_id`, `hostname`, discovered `cartridges`, `session_cookie` (see [Server affinity](#server-affinity-hitting-breakpoints)), and `warnings`.
+**Returns:** `session_id`, `hostname`, discovered `cartridges`, `resolution`, `session_cookie` (see [Server affinity](#server-affinity-hitting-breakpoints)), and `warnings`. The session retains its resolution context; `debug_list_sessions` returns it for later follow-up calls.
 
 ### debug_end_session
 

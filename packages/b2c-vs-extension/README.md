@@ -26,7 +26,7 @@ Set breakpoints and log points, inspect variables, and step through cartridge co
 
 ### Manage sandbox realms
 
-Create, start, stop, restart, clone, extend, and delete on-demand sandboxes from the Sandbox Realm Explorer. Context menus adapt to each sandbox's current state.
+Create, start, stop, restart, clone, extend, and delete on-demand sandboxes from the Sandbox Realm Explorer. Context menus adapt to each sandbox's current state. From the Command Palette, **Start/Stop/Restart Sandbox** acts on the active status-bar instance.
 
 [![Sandbox Realm Explorer](https://raw.githubusercontent.com/SalesforceCommerceCloud/b2c-developer-tooling/main/docs/vscode-extension/images/sandbox-explorer.png)](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/)
 

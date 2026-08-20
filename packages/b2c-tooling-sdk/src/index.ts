@@ -31,6 +31,7 @@ export {
   BasicAuthStrategy,
   OAuthStrategy,
   ImplicitOAuthStrategy,
+  PkceOAuthStrategy,
   JwtOAuthStrategy,
   ApiKeyStrategy,
   decodeJWT,
@@ -44,6 +45,7 @@ export type {
   DecodedJWT,
   OAuthConfig,
   ImplicitOAuthConfig,
+  PkceOAuthConfig,
   JwtOAuthConfig,
   AuthConfig,
   BasicAuthConfig,
@@ -305,10 +307,19 @@ export {
   ClonePollingTimeoutError,
   ClonePollingError,
   CloneFailedError,
+  buildSandboxSettings,
+  DEFAULT_OCAPI_RESOURCES,
+  DEFAULT_WEBDAV_PERMISSIONS,
+  waitForClones,
+  CloneBatchPollingTimeoutError,
+  CloneBatchPollingError,
+  CloneBatchFailedError,
 } from './operations/ods/index.js';
 
 export type {SandboxState, WaitForSandboxOptions, WaitForSandboxPollInfo} from './operations/ods/index.js';
 export type {CloneState, WaitForCloneOptions, WaitForClonePollInfo} from './operations/ods/index.js';
+export type {BuildSandboxSettingsOptions} from './operations/ods/index.js';
+export type {CloneBatchMemberStatus, WaitForClonesOptions, WaitForClonesPollInfo} from './operations/ods/index.js';
 
 // Operations - CIP
 export {
@@ -457,7 +468,9 @@ export {
   DEFAULT_ACCOUNT_MANAGER_HOST,
   DEFAULT_ODS_HOST,
   DEFAULT_PUBLIC_CLIENT_ID,
+  LEGACY_IMPLICIT_PUBLIC_CLIENT_ID,
   getDefaultPublicClientId,
+  getLegacyImplicitPublicClientId,
 } from './defaults.js';
 
 // Version info

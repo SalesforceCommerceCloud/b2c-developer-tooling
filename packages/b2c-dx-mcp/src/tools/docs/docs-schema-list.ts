@@ -18,8 +18,7 @@ export function createDocsSchemaListTool(loadServices: () => Promise<Services> |
   return createToolAdapter<Record<string, never>, ListOutput>(
     {
       name: 'docs_schema_list',
-      description:
-        'List every available B2C Commerce XSD schema id. Use to discover schema names for docs_schema_read.',
+      description: 'List bundled B2C Commerce (SFCC/Demandware) XSD schema IDs for docs_schema_read.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {},
       async execute() {

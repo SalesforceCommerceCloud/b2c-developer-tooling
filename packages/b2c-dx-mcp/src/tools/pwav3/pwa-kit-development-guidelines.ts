@@ -72,17 +72,6 @@ const _SECTIONS = SECTIONS_METADATA.map((s) => s.key);
 type SectionKey = (typeof SECTIONS_METADATA)[number]['key'];
 
 /**
- * Generates the topics list for the tool description.
- * Excludes meta-sections (like quick-reference) that don't have descriptions.
- * @returns Comma-separated list of topics
- */
-function generateTopicsList(): string {
-  return SECTIONS_METADATA.filter((s) => s.description !== null)
-    .map((s) => s.description)
-    .join(', ');
-}
-
-/**
  * Input schema for the developer guidelines tool.
  */
 interface DeveloperGuidelinesInput {
@@ -120,12 +109,7 @@ export function createDeveloperGuidelinesTool(loadServices: () => Promise<Servic
     {
       name: 'pwakit_get_guidelines',
       description:
-        'ESSENTIAL FIRST STEP for PWA Kit v3 development. Returns critical architecture rules, coding standards, and best practices. ' +
-        'Use this tool FIRST before writing any PWA Kit code to understand non-negotiable patterns for React components, ' +
-        'data fetching, routing, configuration, and framework constraints. Returns comprehensive guidelines by default (quick-reference + key sections); ' +
-        'supports retrieving specific topic sections. ' +
-        'CRITICAL INSTRUCTION: ALWAYS present ALL returned content in FULL - DO NOT SUMMARIZE, DO NOT ADD SUMMARIES, ' +
-        'DO NOT ADD OVERVIEWS. The returned content IS the complete answer - display it exactly as provided.',
+        'Get PWA Kit v3 architecture and implementation guidelines. Returns core sections by default; use sections to narrow the result.',
       toolsets: ['PWAV3'],
       isGA: true,
       requiresInstance: false,
@@ -133,15 +117,7 @@ export function createDeveloperGuidelinesTool(loadServices: () => Promise<Servic
         sections: z
           .array(z.enum([..._SECTIONS] as [string, ...string[]]))
           .optional()
-          .describe(
-            'Optional array of specific sections to retrieve. If not specified, returns comprehensive guidelines ' +
-              '(quick-reference, components, data-fetching, routing). ' +
-              'CRITICAL: Present ALL returned content in FULL - DO NOT SUMMARIZE. ' +
-              'Available sections: quick-reference, components, data-fetching, routing, config, state-management, ' +
-              'extensibility, testing, i18n, styling. ' +
-              `Topics covered: ${generateTopicsList()}. ` +
-              'Content is complete - present exactly as provided, no summaries.',
-          ),
+          .describe('Guideline sections to return; defaults to core sections.'),
       },
       async execute(args) {
         // Handle empty array case explicitly
@@ -152,31 +128,7 @@ export function createDeveloperGuidelinesTool(loadServices: () => Promise<Servic
         // Default to comprehensive set of key sections if no sections specified
         const sections = args.sections || DEFAULT_SECTIONS;
 
-        // Multiple sections: combine with separators
-        const combinedContent = sections.map((section) => SECTION_CONTENT[section]).join('\n\n---\n\n');
-
-        // Apply instructions for all multi-section responses to ensure full content display
-        const isMultiSection = sections.length > 1;
-
-        // Prepend explicit instruction to present full content (not summarized)
-        const fullContentInstruction = isMultiSection
-          ? '⚠️ CRITICAL: Display the FULL content below. DO NOT summarize, condense, or add overviews.\n\n' +
-            '📋 PWA KIT DEVELOPMENT GUIDELINES\n\n' +
-            '---\n\n'
-          : '';
-
-        // Add footer instruction to reinforce the message for multi-section responses
-        const footerInstruction = isMultiSection
-          ? '\n\n---\n\n⚠️ END OF CONTENT - Full content displayed above. Do not add summaries.\n'
-          : '';
-
-        // For single sections, return directly (backward compatible)
-        // For multiple sections, wrap with instructions
-        if (sections.length === 1) {
-          return SECTION_CONTENT[sections[0]];
-        }
-
-        return fullContentInstruction + combinedContent + footerInstruction;
+        return sections.map((section) => SECTION_CONTENT[section]).join('\n\n---\n\n');
       },
       formatOutput: (output) => textResult(output),
     },

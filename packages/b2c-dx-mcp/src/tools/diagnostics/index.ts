@@ -7,6 +7,7 @@
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import type {ServerContext} from '../../server-context.js';
+import {createConfigInspectTool} from './config-inspect.js';
 import {createDebugListSessionsTool} from './debug-list-sessions.js';
 import {createDebugStartSessionTool} from './debug-start-session.js';
 import {createDebugEndSessionTool} from './debug-end-session.js';
@@ -38,6 +39,7 @@ export function createDiagnosticsTools(
   injections?: DiagnosticsToolInjections,
 ): McpTool[] {
   return [
+    createConfigInspectTool(loadServices),
     createDebugListSessionsTool(loadServices, serverContext),
     createDebugStartSessionTool(loadServices, serverContext),
     createDebugEndSessionTool(loadServices, serverContext),

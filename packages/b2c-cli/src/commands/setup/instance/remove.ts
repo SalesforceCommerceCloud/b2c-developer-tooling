@@ -51,9 +51,10 @@ export default class SetupInstanceRemove extends BaseCommand<typeof SetupInstanc
   async run(): Promise<InstanceRemoveResponse> {
     const source = new DwJsonSource();
     const name = this.args.name;
+    const configOptions = this.getBaseConfigOptions();
 
     // Check if instance exists
-    const instances = await source.listInstances({configPath: this.flags.config});
+    const instances = await source.listInstances(configOptions);
     const instance = instances.find((i) => i.name === name);
 
     if (!instance) {
@@ -79,7 +80,7 @@ export default class SetupInstanceRemove extends BaseCommand<typeof SetupInstanc
     }
 
     // Remove the instance
-    await source.removeInstance(name, {configPath: this.flags.config});
+    await source.removeInstance(name, configOptions);
 
     const result: InstanceRemoveResponse = {
       name,

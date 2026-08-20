@@ -1,5 +1,67 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.8.4
+
+### Patch Changes
+
+- [#631](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/631) [`b0b24b8`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b0b24b8fae8c57186b94a7dab3a27dfcf85f49f1) - Made MCP project resolution provenance consistent and tool guidance more concise, kept local paths out of tool descriptions, and clarified startup documentation workspace detection. Updated MCP protocol libraries and made tool input schemas reject unknown arguments. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.8.3
+
+### Patch Changes
+
+- [#629](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/629) [`1f25b1e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f25b1ed3bf5c778b30ec2de8dff1e26071db5d1) - Added per-call named-instance selection and consistent resolution provenance to project-aware MCP tools, including persisted context for debugger sessions and log watches. Removed the retired Storefront Next MCP toolset in favor of the current Storefront Next agent skills. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.8.2
+
+### Patch Changes
+
+- [#627](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/627) [`5f7bff4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5f7bff40b53c54ba3f0d9d245bab7c4d5f94c227) - Add a shared global `dw.json` for the CLI, MCP server, and VS Code extension, managed with `b2c setup default-config set|get|unset`; primary and global instances are available together without merging their fields. MCP tools now accept per-call `projectDirectory` and `configPath`; debugger callers must rename `cartridge_directory` to `cartridgeDirectory` and remove `client_id`. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.8.1
+
+### Patch Changes
+
+- [`a90f173`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a90f1730e6ccd366e50a35d8ee91a320fc5301ec) - Make unified configuration inspection recognize all CLI configuration environment variables and aliases, and show resolved authentication, project, service, and safety settings only when configured. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`e563174`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e563174bc941eb762e1a49fa4f511ed6eec31098) - Clarify how to export B2C data directly into ordered import-set migrations for in-place review and trimming. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`ada3072`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ada3072e5331c2da5199f3074001aaa509ca0317) - Update the documentation search skill to cover the expanded internal tooling corpus, including CLI reference, MCP, and VS Code extension pages. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`a90f173`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a90f1730e6ccd366e50a35d8ee91a320fc5301ec) - Allow projects to configure a non-sensitive default `siteId` under the package.json `b2c` key for site-aware commands. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.8.0
+
+### Minor Changes
+
+- [#613](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/613) [`c0ec3f6`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c0ec3f6202ca8ee69676ae2361e8b276cd69385c) - Package the plugins to the open Agent Plugins standard (agent-plugins.org v1.0.0). Each plugin now has a root `plugin.json` manifest with its Codex display metadata under `extensions."com.openai"`, and the MCP server plugin ships a standard `mcp.json`. This lets Codex, Cursor, GitHub Copilot, VS Code, and Kiro consume the plugins directly; Claude Code continues to install from its marketplace as before. The legacy `.codex-plugin/plugin.json` manifests are retained during the transition so existing Codex users on older CLI versions are unaffected. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#615](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/615) [`1f553b3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f553b3e26c57909ce654b61e25f4db537111312) - Added ordered, idempotent site archive import sets with verified WebDAV receipts, retry-until-receipted behavior, and serialized concurrent runners. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#500](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/500) [`35f2960`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/35f296036a0659d115617bb2770327cca250bad7) - Add support for Page Designer "content blocks" (reusable `fragment.*`-typed content). (Thanks [@clavery](https://github.com/clavery)!)
+
+  Content blocks are now a first-class node type: the SDK classifies them as `FRAGMENT` (instead of mislabeling them as components), parses their display name, and exposes `Library.getContentBlocks()` to list a library's blocks (including unlinked ones). The CLI renders them distinctly in `content export`/`content list` (as `CONTENT BLOCK`), counts them in export summaries, and supports `content list --type fragment`. In the VS Code extension, each library gains a **Content Blocks** group that is the single source of truth for a block; because blocks are shared singletons, every page/component that links a block shows a reference that reveals the canonical block in the group rather than an editable copy. (Converting a component into a content block is done in Business Manager / Page Designer — it is not offered here because reproducing it via site-archive import can silently drop a Layout block's child links.)
+
+- [#609](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/609) [`af06784`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/af0678464059c66748ab9bd20075dab5c5707842) - Fix six cross-pack skill links in `b2c-scapi-admin` and `b2c-scapi-shopper` that were one directory level short and resolved to paths that do not exist. (Thanks [@dkatashev](https://github.com/dkatashev)!)
+
+- [#624](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/624) [`02ccc2a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/02ccc2a1656c4895c2aca7ef2064fd2ff138e9a2) - Import discovered cartridge metadata before migration-directory items, supporting single-archive and ordered-child layouts, an opt-out, and project-configurable recursive source exclusions. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#619](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/619) [`591f886`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/591f886f29cc76484b42afe27f6b28f568f1373e) - `job import-set` now prints a consolidated post-import notes summary from a `README.md` (or `README`) file at the top of each applied item's directory — the idiomatic place to document manual, instance-specific follow-up steps for a migration. Notes are shown for items applied in the run and previewed for pending items during `--dry-run`. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.7.0
+
+### Minor Changes
+
+- [#603](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/603) [`94c7ba9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/94c7ba979716e8401234f48178f488a4e5b29ac3) - Add Codex plugin packaging for the B2C DX MCP server so Codex CLI and Codex in the ChatGPT desktop app can install and load the MCP server directly through the B2C Developer Tooling plugin marketplace. Claude Code marketplace installation remains supported by the same plugin. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#603](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/603) [`94c7ba9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/94c7ba979716e8401234f48178f488a4e5b29ac3) - Fix skill installation output so mixed-source downloads do not show an unresolved version placeholder, repair the `b2c-hooks` skill frontmatter, and identify the affected skill path in future parsing warnings. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#601](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/601) [`332f0a4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/332f0a4f12c627031b01e1fb1b04559efa13354b) - Correct B2C agent skill examples to use supported Script APIs, hook extension points, OCAPI contracts, and schema-valid metadata. Generated implementations no longer rely on nonexistent APIs or invalid request and response shapes. (Thanks [@dkatashev](https://github.com/dkatashev)!)
+
 ## 1.6.2
 
 ### Patch Changes

@@ -268,6 +268,23 @@ Developer Center guides corpus, only lightweight metadata is bundled
 and child relationships derived from the published TOCs; the page content
 itself is fetched live from developer.salesforce.com at read time.
 
+### Internal tooling corpus (`tooling`)
+
+The internal tooling corpus is generated from every Markdown page under
+`docs/guide/`, `docs/cli/`, `docs/mcp/`, and `docs/vscode-extension/`. Do not
+maintain a per-page allowlist for these repository-owned docs. The generator
+discovers new pages automatically and skips only asset-folder `README.md` files
+and frontmatter redirects:
+
+```bash
+pnpm --filter @salesforce/b2c-tooling-sdk run generate:tooling-index
+```
+
+CI runs `check:tooling-index` and fails when the committed index is stale. The
+release workflow and SDK `prepack` regenerate the index as defense in depth.
+Because `data/tooling/index.json` ships in `@salesforce/b2c-tooling-sdk`, changes
+to the generated corpus require an SDK changeset.
+
 Regenerate the index from a local clone of the `commerce-cloud-docs` content
 repo (defaults to `~/code/commerce-cloud-docs`):
 
@@ -281,6 +298,60 @@ skips any `.md` file not linked from a guide table-of-contents YAML (e.g.
 `b2c-commerce/guides/index.yml`). Orphan files (old pages consolidated elsewhere,
 drafts) are not published by the docs site, so indexing them would yield dead
 404 URLs.
+
+### Salesforce Help corpus (`help-admin` / `help-merchant`)
+
+A second prose corpus covers help.salesforce.com Business Manager administration
+and merchandising content, sourced from a local clone of the
+`content-commerce-cloud` DITA repo (defaults to `~/code/content-commerce-cloud`,
+override with `CONTENT_COMMERCE_CLOUD_REPO`). Unlike the guides, Help content is
+JS-rendered with no fetchable source, so the DITA is converted to Markdown and
+packed into the committed `docs/help-content.tar.gz` (extracted into the docs
+site at build time), with the lightweight index at
+`packages/b2c-tooling-sdk/data/help/index.json`:
+
+```bash
+CONTENT_COMMERCE_CLOUD_REPO=/path/to/content-commerce-cloud \
+  pnpm --filter @salesforce/b2c-tooling-sdk run generate:help-corpus
+```
+
+### Source provenance (delta tracking)
+
+Both prose indexes record the upstream git commit they were generated from in a
+`source` block at the top of `index.json`:
+
+```json
+"source": { "sha": "<full-sha>", "committedAt": "<ISO date>", "ref": "<branch>" }
+```
+
+Only these opaque values are stored — deliberately **no repository URL** — so no
+internal host name or maintainer credential lands in the published package
+(captured by `scripts/source-provenance.ts`).
+
+Corpora sourced from the **DWAPP archive** (Script API, XSD schemas, job steps)
+are not git-backed, so instead of `source` they record the platform release:
+`data/script-api/index.json` and `data/xsd/index.json` carry a
+`platformDocVersion` (e.g. `"DWAPP 26.8"`), and `data/job-steps/job-steps.json`
+records the same under `provenance.platformDocVersion`. The version is parsed
+from the archive by `refresh:docs-data` and forwarded to
+`generate:docs-index <version>`; running that generator manually with no arg
+preserves whatever version is already committed (it never silently drops it).
+
+Use the recorded SHA to see exactly what changed upstream before a refresh. In
+the relevant local clone:
+
+```bash
+# What guide content changed since the committed guides index was generated?
+git -C ~/code/commerce-cloud-docs log --oneline <sha>..HEAD -- content/en-us
+
+# What Help content changed since the committed help index was generated?
+git -C ~/code/content-commerce-cloud log --oneline <sha>..HEAD -- content/ht/en-us
+```
+
+An empty log means the corpus is already current with that clone; otherwise the
+listed commits are the delta a regeneration will pick up. Always re-run
+`enrich:docs` (missing-only) after a guides refresh so new pages get
+summaries/keywords, then re-run `generate:guides-index` to merge them.
 
 ### Verifying links (local only)
 

@@ -6,7 +6,12 @@
 import {
   resolveConfig,
   EnvSource,
+  getB2CSettingsPath,
+  mergeProjectEnvironment,
+  readB2CSettings,
+  readProjectEnvironment,
   type NormalizedConfig,
+  type ResolveConfigOptions,
   type ResolvedB2CConfig,
   type CreateOAuthOptions,
 } from '@salesforce/b2c-tooling-sdk/config';
@@ -112,6 +117,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
   private resolved = false;
   private detectedDirectory = '';
   private pinned = false;
+  private resolvedEnvironment: Record<string, string | undefined>;
 
   private readonly _onDidReset = new vscode.EventEmitter<void>();
   readonly onDidReset = this._onDidReset.event;
@@ -121,7 +127,9 @@ export class B2CExtensionConfig implements vscode.Disposable {
   constructor(
     private readonly log: vscode.OutputChannel,
     private readonly workspaceState?: vscode.Memento,
+    private readonly ambientEnvironment: NodeJS.ProcessEnv = process.env,
   ) {
+    this.resolvedEnvironment = ambientEnvironment;
     // Watch for dw.json and .env saves made within VS Code (most reliable for in-editor edits)
     this.disposables.push(
       vscode.workspace.onDidSaveTextDocument((doc) => {
@@ -155,6 +163,19 @@ export class B2CExtensionConfig implements vscode.Disposable {
         this.log.appendLine(`[Config] File watcher registered for ${folder.uri.fsPath}/**/${filename}`);
       }
     }
+
+    const settingsPath = getB2CSettingsPath({environment: this.ambientEnvironment});
+    const settingsWatcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(vscode.Uri.file(path.dirname(settingsPath)), path.basename(settingsPath)),
+    );
+    const resetForSettingsChange = (): void => {
+      this.log.appendLine(`[Config] Shared settings changed: ${settingsPath}`);
+      this.reset();
+    };
+    settingsWatcher.onDidChange(resetForSettingsChange);
+    settingsWatcher.onDidCreate(resetForSettingsChange);
+    settingsWatcher.onDidDelete(resetForSettingsChange);
+    this.disposables.push(settingsWatcher);
   }
 
   getConfig(): ResolvedB2CConfig | null {
@@ -175,6 +196,29 @@ export class B2CExtensionConfig implements vscode.Disposable {
    */
   getWorkingDirectory(): string {
     return this.detectedDirectory;
+  }
+
+  /** Return the ordered primary and global files used by instance-management features. */
+  getInstanceCatalogOptions(): ResolveConfigOptions {
+    const workingDirectory = this.detectedDirectory;
+    let projectConfigPath: string | undefined;
+    try {
+      projectConfigPath = readProjectEnvironment(workingDirectory)?.SFCC_CONFIG;
+    } catch {
+      // Configuration resolution reports malformed project environments separately.
+    }
+    const configPath =
+      this.ambientEnvironment.SFCC_CONFIG ||
+      (projectConfigPath && workingDirectory
+        ? path.isAbsolute(projectConfigPath)
+          ? projectConfigPath
+          : path.resolve(workingDirectory, projectConfigPath)
+        : undefined);
+    return {
+      workingDirectory,
+      configPath,
+      defaultConfigPath: readB2CSettings({environment: this.ambientEnvironment}).defaultConfigPath,
+    };
   }
 
   /**
@@ -222,6 +266,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
     this.resolved = false;
     this.detectedDirectory = '';
     this.pinned = false;
+    this.resolvedEnvironment = this.ambientEnvironment;
     // Re-resolve asynchronously, then fire the event so listeners get fresh data
     void this.resolveAsync().then(() => {
       this._onDidReset.fire();
@@ -236,27 +281,40 @@ export class B2CExtensionConfig implements vscode.Disposable {
     workingDirectory: string,
     overrides: Partial<NormalizedConfig> = {},
   ): Promise<ResolvedB2CConfig> {
-    return resolveConfig(overrides, {workingDirectory});
+    const {config} = await this.resolveProjectConfiguration(workingDirectory, overrides);
+    return config;
   }
 
   /**
-   * Returns CreateOAuthOptions with VS Code-specific overrides for implicit auth:
+   * Returns CreateOAuthOptions with VS Code-specific overrides for browser-based
+   * user authentication (PKCE — and the legacy implicit flow):
    * - Uses `vscode.env.openExternal` to open the browser on the client (works in Codespaces/remote)
    * - Uses `vscode.env.asExternalUri` to resolve the redirect URI for port forwarding
    *
-   * Merge with any additional options before passing to `config.createOAuth()`.
+   * Merge with any additional options before passing to `config.createOAuth()`
+   * or `config.createB2CInstance()`.
    */
-  async getImplicitAuthOptions(): Promise<CreateOAuthOptions> {
-    const localPort = parseInt(process.env.SFCC_OAUTH_LOCAL_PORT || '', 10) || 8080;
+  async getUserAuthOptions(): Promise<CreateOAuthOptions> {
+    const localPort = parseInt(this.resolvedEnvironment.SFCC_OAUTH_LOCAL_PORT || '', 10) || 8080;
     const localUri = vscode.Uri.parse(`http://localhost:${localPort}`);
     const externalUri = await vscode.env.asExternalUri(localUri);
 
     return {
-      redirectUri: (process.env.SFCC_REDIRECT_URI || externalUri.toString(/* skipEncoding */ true)).replace(/\/$/, ''),
+      redirectUri: (
+        this.resolvedEnvironment.SFCC_REDIRECT_URI || externalUri.toString(/* skipEncoding */ true)
+      ).replace(/\/$/, ''),
       openBrowser: async (url: string) => {
         await vscode.env.openExternal(vscode.Uri.parse(url));
       },
     };
+  }
+
+  /**
+   * @deprecated Use {@link getUserAuthOptions}. Retained for callsite stability;
+   * the returned options work for both PKCE and legacy implicit flows.
+   */
+  async getImplicitAuthOptions(): Promise<CreateOAuthOptions> {
+    return this.getUserAuthOptions();
   }
 
   dispose(): void {
@@ -300,24 +358,9 @@ export class B2CExtensionConfig implements vscode.Disposable {
       this.detectedDirectory = workingDirectory;
       this.log.appendLine(`[Config] Resolving config from ${workingDirectory || '(no working directory)'}`);
 
-      // Load .env file if present (same as CLI's bin/run.js).
-      // process.loadEnvFile is intentionally synchronous (Node API); we just gate
-      // it on an async existence check so we don't hit the disk twice on the hot path.
-      if (workingDirectory) {
-        const envFilePath = path.join(workingDirectory, DOT_ENV);
-        try {
-          if (typeof process.loadEnvFile === 'function' && (await pathExists(envFilePath))) {
-            process.loadEnvFile(envFilePath);
-            this.log.appendLine(`[Config] Loaded .env file: ${envFilePath}`);
-          }
-        } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
-          this.log.appendLine(`[Config] Failed to load .env file: ${message}`);
-        }
-      }
-
-      const config = await resolveConfig({}, {workingDirectory, sourcesBefore: [new EnvSource()]});
+      const {config, environment} = await this.resolveProjectConfiguration(workingDirectory);
       this.config = config;
+      this.resolvedEnvironment = environment;
 
       if (!config.hasB2CInstanceConfig()) {
         this.configError = 'No B2C Commerce instance configured.';
@@ -337,5 +380,47 @@ export class B2CExtensionConfig implements vscode.Disposable {
       this.instance = null;
       this.log.appendLine(`[Config] Resolution failed: ${message}`);
     }
+  }
+
+  private async resolveProjectConfiguration(
+    workingDirectory: string,
+    overrides: Partial<NormalizedConfig> = {},
+  ): Promise<{config: ResolvedB2CConfig; environment: Record<string, string | undefined>}> {
+    let projectEnvironment: Record<string, string | undefined> | undefined;
+    if (workingDirectory) {
+      const environmentPath = path.join(workingDirectory, DOT_ENV);
+      try {
+        projectEnvironment = readProjectEnvironment(workingDirectory);
+        if (projectEnvironment) this.log.appendLine(`[Config] Loaded project environment: ${environmentPath}`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        this.log.appendLine(`[Config] Failed to load project environment: ${message}`);
+      }
+    }
+
+    const environment = mergeProjectEnvironment(projectEnvironment, this.ambientEnvironment);
+    const processConfigPath = this.ambientEnvironment.SFCC_CONFIG || undefined;
+    const projectConfigPath = projectEnvironment?.SFCC_CONFIG;
+    const configPath =
+      processConfigPath ??
+      (projectConfigPath && workingDirectory
+        ? path.isAbsolute(projectConfigPath)
+          ? projectConfigPath
+          : path.resolve(workingDirectory, projectConfigPath)
+        : undefined);
+    if (configPath) this.log.appendLine(`[Config] Using explicit config path: ${configPath}`);
+
+    const {defaultConfigPath} = readB2CSettings({environment: this.ambientEnvironment});
+    if (defaultConfigPath) {
+      this.log.appendLine(`[Config] Global dw.json: ${defaultConfigPath}`);
+    }
+
+    const config = await resolveConfig(overrides, {
+      workingDirectory,
+      configPath,
+      defaultConfigPath,
+      sourcesBefore: [new EnvSource(environment)],
+    });
+    return {config, environment};
   }
 }

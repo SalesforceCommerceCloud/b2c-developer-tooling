@@ -13,6 +13,112 @@ import {logMRTError} from '../utils/utils.js';
 export {DataStoreNotFoundError, DataStoreServiceError, DataStoreUnavailableError} from './errors.js';
 
 /**
+ * Retry mode for the data store DynamoDB client.
+ *
+ * `'adaptive'` adds a client-side rate limiter that backs off proactively when the table
+ * signals throttling, instead of retrying blindly into an already-saturated table. The
+ * rate limiter keeps state on the client instance, so it only helps across invocations on
+ * a warm container — the memoized client preserves that state.
+ */
+const DAL_RETRY_MODE = 'adaptive';
+
+/**
+ * Maximum number of attempts (initial request + retries) per data store request.
+ *
+ * Bounds retry fan-out under sustained throttling. Chosen together with
+ * {@link DAL_REQUEST_TIMEOUT_MS} so that `DAL_MAX_ATTEMPTS × DAL_REQUEST_TIMEOUT_MS` stays
+ * comfortably under the surrounding request/function timeout.
+ */
+const DAL_MAX_ATTEMPTS = 2;
+
+/**
+ * Maximum time (ms) to wait for a connection to be established per attempt.
+ *
+ * A hard per-attempt ceiling so a slow/hung connection cannot consume the whole budget.
+ * The client is memoized on a warm container and reuses keep-alive connections, so most
+ * attempts do not open a new connection; a fresh connect exceeding this is already
+ * abnormal.
+ */
+const DAL_CONNECTION_TIMEOUT_MS = 300;
+
+/**
+ * Maximum time (ms) to wait for a response per attempt.
+ *
+ * A hard per-attempt ceiling. A single-key DynamoDB read is typically single-digit ms, so
+ * this leaves a large multiple of headroom over p99 while still failing fast on a genuine
+ * hang. See {@link DAL_MAX_ATTEMPTS} for the timeout/attempt invariant relative to the
+ * surrounding function timeout — with these defaults the worst-case timeout path is
+ * roughly `DAL_MAX_ATTEMPTS × DAL_REQUEST_TIMEOUT_MS` (≈1s) plus adaptive-retry backoff
+ * between attempts.
+ */
+const DAL_REQUEST_TIMEOUT_MS = 500;
+
+/**
+ * Error names that indicate the request was throttled.
+ *
+ * Mirrors the AWS SDK's own throttling classification so the telemetry flag agrees with
+ * what actually drove adaptive backoff, rather than a hand-maintained subset.
+ */
+const THROTTLING_ERROR_NAMES = new Set([
+  'ThrottlingException',
+  'ProvisionedThroughputExceededException',
+  'RequestLimitExceeded',
+  'RequestThrottled',
+  'RequestThrottledException',
+  'TooManyRequestsException',
+  'ThrottledException',
+  'Throttling',
+]);
+
+/**
+ * Whether an error represents a throttling response.
+ *
+ * Checks the SDK's retryable-throttling trait and an HTTP 429 status in addition to the
+ * known throttling error names, so throttles surfaced only via metadata are still flagged.
+ */
+function isThrottlingError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) {
+    return false;
+  }
+  const candidate = error as {
+    name?: unknown;
+    $retryable?: {throttling?: unknown};
+    $metadata?: {httpStatusCode?: unknown};
+  };
+  if (candidate.$retryable?.throttling === true) {
+    return true;
+  }
+  if (candidate.$metadata?.httpStatusCode === 429) {
+    return true;
+  }
+  return typeof candidate.name === 'string' && THROTTLING_ERROR_NAMES.has(candidate.name);
+}
+
+/**
+ * Create the DynamoDB client used by the data store, configured for resilient reads under
+ * throttling: adaptive retries, bounded attempts, and hard per-attempt timeouts.
+ *
+ * @returns A configured DynamoDB client
+ */
+export function createDalDynamoDBClient(): DynamoDBClient {
+  return new DynamoDBClient({
+    region: process.env.AWS_REGION,
+    retryMode: DAL_RETRY_MODE,
+    maxAttempts: DAL_MAX_ATTEMPTS,
+    // Passing a plain object lets the SDK construct its default NodeHttpHandler with these
+    // bounds — no direct dependency on the handler package required. `throwOnRequestTimeout`
+    // is required for `requestTimeout` to actually abort a hung request: without it the
+    // handler only logs a warning and lets the request run on. Safe here because a DAL read
+    // is a simple request/response, not a long-lived stream.
+    requestHandler: {
+      connectionTimeout: DAL_CONNECTION_TIMEOUT_MS,
+      requestTimeout: DAL_REQUEST_TIMEOUT_MS,
+      throwOnRequestTimeout: true,
+    },
+  });
+}
+
+/**
  * A class for reading entries from the data store.
  *
  * This class uses a singleton pattern.
@@ -27,6 +133,8 @@ export class DataStore {
   static _testDocumentClient: DynamoDBDocumentClient | null = null;
   /** @internal Test hook: inject logMRTError for unit tests */
   static _testLogMRTError: ((namespace: string, err: unknown, context?: Record<string, unknown>) => void) | null = null;
+  /** @internal Test hook: inject a deterministic random source (returns [0, 1)) for unit tests */
+  static _testRandom: (() => number) | null = null;
 
   private constructor() {
     // Private constructor for singleton; use DataStore.getDataStore() instead.
@@ -51,14 +159,37 @@ export class DataStore {
 
     if (!this._ddb) {
       this._tableName = `DataAccessLayer-${process.env.AWS_REGION}`;
-      this._ddb = DynamoDBDocumentClient.from(
-        new DynamoDBClient({
-          region: process.env.AWS_REGION,
-        }),
-      );
+      this._ddb = DynamoDBDocumentClient.from(createDalDynamoDBClient());
     }
 
     return this._ddb;
+  }
+
+  /**
+   * Resolve the DynamoDB partition key for a read, applying shard selection.
+   *
+   * Reads the shard count from `MRT_NUM_SHARDS` (default 1) and picks a random
+   * shard `i` in `[0, N)`. Shard 0 is the legacy unsuffixed partition key, so
+   * when `MRT_NUM_SHARDS` is unset or 1 this is identical to today's behavior.
+   * There is no runtime fallback: writers fan out to every shard, so every shard
+   * a reader can pick is guaranteed to exist.
+   *
+   * @private
+   * @returns The `projectEnvironment` partition key value to read
+   */
+  private resolveShardPartitionKey(): string {
+    const base = `${process.env.MOBIFY_PROPERTY_ID} ${process.env.DEPLOY_TARGET}`;
+
+    const parsed = Number(process.env.MRT_NUM_SHARDS);
+    const numShards = Number.isInteger(parsed) && parsed > 1 ? parsed : 1;
+    if (numShards === 1) {
+      return base;
+    }
+
+    const random = DataStore._testRandom ?? Math.random;
+    const shard = Math.floor(random() * numShards);
+    // shard 0 is the legacy unsuffixed partition; shards 1..N-1 carry a suffix.
+    return shard === 0 ? base : `${base} ${shard}`;
   }
 
   /**
@@ -97,20 +228,23 @@ export class DataStore {
     }
 
     const ddb = this.getClient();
+    const projectEnvironment = this.resolveShardPartitionKey();
     let response: GetCommandOutput;
     try {
       response = await ddb.send(
         new GetCommand({
           TableName: this._tableName,
           Key: {
-            projectEnvironment: `${process.env.MOBIFY_PROPERTY_ID} ${process.env.DEPLOY_TARGET}`,
+            projectEnvironment,
             key,
           },
         }),
       );
     } catch (error) {
+      const errorName = error instanceof Error ? error.name : undefined;
+      const throttled = isThrottlingError(error);
       const logFn = DataStore._testLogMRTError ?? logMRTError;
-      logFn('data_store', error, {key, tableName: this._tableName});
+      logFn('data_store', error, {key, projectEnvironment, tableName: this._tableName, errorName, throttled});
       throw new DataStoreServiceError('Data store request failed.');
     }
 

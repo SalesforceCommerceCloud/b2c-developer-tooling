@@ -26,6 +26,8 @@ export class LibraryNode {
   id: string;
   type: LibraryNodeType;
   typeId: string | null;
+  /** Localized display name (x-default), when present. Content blocks (fragments) always have one. */
+  displayName: string | null;
   data: Record<string, unknown> | null;
   parent: LibraryNode | null;
   children: LibraryNode[];
@@ -37,6 +39,7 @@ export class LibraryNode {
     id: string;
     type: LibraryNodeType;
     typeId: string | null;
+    displayName?: string | null;
     data: Record<string, unknown> | null;
     parent: LibraryNode | null;
     children: LibraryNode[];
@@ -46,6 +49,7 @@ export class LibraryNode {
     this.id = values.id;
     this.type = values.type;
     this.typeId = values.typeId;
+    this.displayName = values.displayName ?? null;
     this.data = values.data;
     this.parent = values.parent;
     this.children = values.children;
@@ -58,11 +62,41 @@ export class LibraryNode {
       id: this.id,
       type: this.type,
       typeId: this.typeId,
+      displayName: this.displayName,
       data: this.data,
       children: this.children,
       hidden: this.hidden,
     };
   }
+}
+
+/**
+ * Classify a content element's `<type>` value into a {@link LibraryNodeType}.
+ *
+ * - `page.*`     → `PAGE`
+ * - `fragment.*` → `FRAGMENT` (a Page Designer "content block": a shared/reusable singleton)
+ * - any other typed value → `COMPONENT`
+ * - no type      → `CONTENT` (a content asset)
+ */
+function classifyContentType(contentType: string | null): LibraryNodeType {
+  if (!contentType) {
+    return 'CONTENT';
+  }
+  if (contentType.startsWith('page.')) {
+    return 'PAGE';
+  }
+  if (contentType.startsWith('fragment.')) {
+    return 'FRAGMENT';
+  }
+  return 'COMPONENT';
+}
+
+/**
+ * Extract the x-default `<display-name>` text from a content XML element, if present.
+ */
+function extractDisplayName(content: Record<string, unknown>): string | null {
+  const displayNames = content['display-name'] as Array<Record<string, string>> | undefined;
+  return displayNames?.[0]?.['_'] ?? null;
 }
 
 /**
@@ -80,11 +114,13 @@ function processContent(
   const contentId = attrs['content-id'];
   const contentType = (content['type'] as string[] | undefined)?.[0] ?? null;
   const dataElements = content['data'] as Array<Record<string, string>> | undefined;
+  const displayName = extractDisplayName(content);
 
   const node = new LibraryNode({
     id: contentId,
-    type: contentType ? (contentType.startsWith('page.') ? 'PAGE' : 'COMPONENT') : 'CONTENT',
+    type: classifyContentType(contentType),
     typeId: contentType,
+    displayName,
     data: null,
     children: [],
     xml: content,
@@ -174,6 +210,8 @@ export class Library {
   tree!: LibraryNode;
   /** @internal Raw xml2js parsed object */
   xml!: Record<string, unknown>;
+  /** @internal Index of every content element by content-id (built during parse, reused by getContentBlocks) */
+  private contentById: Record<string, Record<string, unknown>> = {};
 
   /** @internal */
   constructor(guard: symbol) {
@@ -213,12 +251,13 @@ export class Library {
       xml: null,
     });
 
-    // Index all content by ID
+    // Index all content by ID (retained on the instance for getContentBlocks)
     const contentById: Record<string, Record<string, unknown>> = {};
     for (const c of contentArray) {
       const cAttrs = c['$'] as Record<string, string>;
       contentById[cAttrs['content-id']] = c;
     }
+    library.contentById = contentById;
 
     // Process pages and root-level content (no type = content asset)
     for (const c of contentArray) {
@@ -256,6 +295,48 @@ export class Library {
     delete libraryElement['folder'];
 
     return library;
+  }
+
+  /**
+   * Returns the library's content blocks (fragments) as a deduplicated catalog.
+   *
+   * A content block is a `<content>` element typed `fragment.*`. Unlike pages or
+   * content assets, fragments are not root-level tree children — they surface
+   * wherever a page/component/other-fragment links them. This method scans the
+   * full content set (not just the linked tree) so that **unlinked** blocks are
+   * included too, and returns one source-of-truth {@link LibraryNode} per block,
+   * with its child subtree attached (Layout fragments keep their region children).
+   *
+   * @returns One LibraryNode per content block, deduplicated by content-id.
+   *
+   * @example
+   * ```typescript
+   * const library = await Library.parse(xml);
+   * for (const block of library.getContentBlocks()) {
+   *   console.log(block.displayName ?? block.id, block.typeId);
+   * }
+   * ```
+   */
+  getContentBlocks(): LibraryNode[] {
+    const libraryElement = this.xml['library'] as Record<string, unknown> | undefined;
+    const contentArray = (libraryElement?.['content'] as Array<Record<string, unknown>> | undefined) ?? [];
+
+    const blocks: LibraryNode[] = [];
+    const seen = new Set<string>();
+    for (const c of contentArray) {
+      const cType = (c['type'] as string[] | undefined)?.[0];
+      if (!cType || !cType.startsWith('fragment.')) {
+        continue;
+      }
+      const cId = (c['$'] as Record<string, string>)['content-id'];
+      if (seen.has(cId)) {
+        continue;
+      }
+      seen.add(cId);
+      const node = processContent(c, this.contentById, this.assetQuery);
+      blocks.push(node);
+    }
+    return blocks;
   }
 
   /**
@@ -426,6 +507,11 @@ export class Library {
       switch (node.type) {
         case 'COMPONENT': {
           return node.typeId ? `${c('cyan', node.typeId)} ${c('dim', `(${node.id})`)}` : node.id;
+        }
+        case 'FRAGMENT': {
+          const name = c('magenta', node.displayName ?? node.id);
+          const annotation = node.typeId ? `(CONTENT BLOCK: ${node.typeId})` : '(CONTENT BLOCK)';
+          return `${name} ${c('dim', annotation)}`;
         }
         case 'CONTENT': {
           return `${c('bold', node.id)} ${c('dim', '(CONTENT ASSET)')}`;

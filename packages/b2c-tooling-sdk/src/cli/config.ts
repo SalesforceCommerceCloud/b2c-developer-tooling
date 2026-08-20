@@ -50,7 +50,7 @@ export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig>
   const authMethodValues = flags['auth-methods'] as string[] | undefined;
   let authMethods: AuthMethod[] | undefined;
   if (flags['user-auth']) {
-    authMethods = ['implicit'];
+    authMethods = ['user'];
   } else if (authMethodValues && authMethodValues.length > 0) {
     const methods = authMethodValues
       .map((s) => s.trim())
@@ -112,6 +112,7 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
     cipHost: flags['cip-host'] as string | undefined,
     username: flags.username as string | undefined,
     password: flags.password as string | undefined,
+    importSetExclude: flags['import-set-exclude'] as string[] | undefined,
     // TLS/mTLS options
     certificate: flags.certificate as string | undefined,
     certificatePassphrase: flags.passphrase as string | undefined,
@@ -178,6 +179,8 @@ export interface LoadConfigOptions {
   instance?: string;
   /** Explicit path to config file (skips searching if provided) */
   configPath?: string;
+  /** Fallback config file used when no explicit or project-local dw.json exists */
+  defaultConfigPath?: string;
   /** Starting directory for config file search (default: current project directory) */
   projectDirectory?: string;
   /** @deprecated Use projectDirectory instead */
@@ -255,9 +258,11 @@ export async function loadConfig(
   const resolved = await resolveConfig(effectiveFlags, {
     instance: options.instance,
     configPath: options.configPath,
+    defaultConfigPath: options.defaultConfigPath,
     projectDirectory: options.projectDirectory,
     workingDirectory: options.workingDirectory,
     hostnameProtection: true,
+    clientIdProtection: true,
     cloudOrigin: options.cloudOrigin,
     credentialsFile: options.credentialsFile,
     accountManagerHost: options.accountManagerHost,

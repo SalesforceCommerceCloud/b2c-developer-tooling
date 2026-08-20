@@ -100,8 +100,9 @@ claude plugin install storefront-next-figma
 
 ```bash [Codex]
 codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
-# Then in Codex, run /plugins, select the "B2C Developer Tooling"
-# marketplace, and select and install the desired plugins.
+codex plugin add b2c-cli@b2c-developer-tooling
+codex plugin add b2c@b2c-developer-tooling
+codex plugin add b2c-dx-mcp@b2c-developer-tooling
 ```
 
 ```bash [Cursor]

@@ -203,8 +203,17 @@ export class ConfigResolver {
         continue;
       }
       if (result && result.config) {
-        const {config: sourceConfig, location} = result;
+        const {config: sourceConfig, instanceCatalog, location, scope} = result;
         const fields = getPopulatedFields(sourceConfig);
+        if (fields.length === 0 && instanceCatalog?.length) {
+          sourceInfos.push({
+            name: source.name,
+            scope,
+            location,
+            fields: [],
+            instanceCatalog,
+          });
+        }
         if (fields.length > 0) {
           // Early hostname mismatch detection: if this source provides a hostname
           // that conflicts with the override, skip this source entirely.
@@ -227,9 +236,11 @@ export class ConfigResolver {
 
             sourceInfos.push({
               name: source.name,
+              scope,
               location,
               fields: [],
               fieldsIgnored: fields,
+              instanceCatalog,
             });
 
             const logger = getLogger();
@@ -275,15 +286,18 @@ export class ConfigResolver {
 
           sourceInfos.push({
             name: source.name,
+            scope,
             location,
             fields,
             fieldsIgnored: fieldsIgnored.length > 0 ? fieldsIgnored : undefined,
+            instanceCatalog,
           });
 
           const logger = getLogger();
           logger.trace(
             {
               source: source.name,
+              scope,
               location,
               fields,
               fieldsIgnored: fieldsIgnored.length > 0 ? fieldsIgnored : undefined,
@@ -309,6 +323,7 @@ export class ConfigResolver {
     // the case where no source provided a hostname (no mismatch to detect).
     const {config, warnings: mergeWarnings} = mergeConfigsWithProtection(overrides, baseConfig, {
       hostnameProtection: options.hostnameProtection,
+      clientIdProtection: options.clientIdProtection,
     });
 
     // Normalize mrtOrigin to ensure it always has an https:// prefix.

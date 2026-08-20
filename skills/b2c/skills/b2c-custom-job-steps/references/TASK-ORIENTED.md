@@ -44,10 +44,10 @@ exports.execute = function (parameters, stepExecution) {
     // Access job information
     var jobId = stepExecution.jobExecution.jobID;
     var stepId = stepExecution.stepID;
-    var startTime = stepExecution.startTime;
+    var stepTypeId = stepExecution.stepTypeID;
 
-    // Access custom exit status if set
-    var exitStatus = stepExecution.exitStatus;
+    // Read a declared step parameter by name
+    var batchSize = stepExecution.getParameterValue('BatchSize');
 };
 ```
 

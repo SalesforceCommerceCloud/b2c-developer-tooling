@@ -5,6 +5,7 @@
  */
 import {B2CScriptDebugAdapter} from '@salesforce/b2c-tooling-sdk/operations/debug';
 import type {DebugSessionConfig} from '@salesforce/b2c-tooling-sdk/operations/debug';
+import * as path from 'path';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {markFeatureUsed} from '../telemetry.js';
@@ -15,7 +16,7 @@ const DEBUG_TYPE = 'b2c-script';
 class B2CDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
   constructor(private readonly configProvider: B2CExtensionConfig) {}
 
-  createDebugAdapterDescriptor(_session: vscode.DebugSession): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+  createDebugAdapterDescriptor(session: vscode.DebugSession): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
     markFeatureUsed('debugger');
     const config = this.configProvider.getConfig();
     if (!config || !config.hasB2CInstanceConfig()) {
@@ -43,12 +44,18 @@ class B2CDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
     }
 
     const workingDirectory = this.configProvider.getWorkingDirectory();
-    const cartridges = findCartridgesSafe(workingDirectory);
+    const configuredCartridgePath = session.configuration.cartridgePath;
+    const cartridgeDirectory =
+      typeof configuredCartridgePath === 'string' && configuredCartridgePath.length > 0
+        ? path.resolve(workingDirectory, configuredCartridgePath)
+        : workingDirectory;
+    const cartridges = findCartridgesSafe(cartridgeDirectory);
 
     const sessionConfig: DebugSessionConfig = {
       hostname: values.hostname,
       username: values.username,
       password: values.password,
+      clientId: 'b2c-vs-extension',
       cartridgeRoots: cartridges,
     };
 

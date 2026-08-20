@@ -49,6 +49,7 @@ const TYPE_MAP: Record<string, string> = {
   page: 'PAGE',
   content: 'CONTENT',
   component: 'COMPONENT',
+  fragment: 'FRAGMENT',
 };
 
 export default class ContentList extends JobCommand<typeof ContentList> {
@@ -60,6 +61,7 @@ export default class ContentList extends JobCommand<typeof ContentList> {
     '<%= config.bin %> <%= command.id %> --library SharedLibrary',
     '<%= config.bin %> <%= command.id %> --library SharedLibrary --tree',
     '<%= config.bin %> <%= command.id %> --library RefArch --site-library --type page',
+    '<%= config.bin %> <%= command.id %> --library RefArch --site-library --type fragment',
   ];
 
   static flags = {
@@ -76,7 +78,7 @@ export default class ContentList extends JobCommand<typeof ContentList> {
     }),
     type: Flags.string({
       description: 'Filter by node type',
-      options: ['page', 'content', 'component'],
+      options: ['page', 'content', 'component', 'fragment'],
     }),
     components: Flags.boolean({
       description: 'Include components in output',
@@ -128,37 +130,50 @@ export default class ContentList extends JobCommand<typeof ContentList> {
 
     const items: ContentListItem[] = [];
 
-    function collectItems(nodes: typeof library.tree.children, includeComponents: boolean): void {
-      for (const child of nodes) {
-        // Skip static asset nodes in table view
-        if (child.type === 'STATIC') {
-          continue;
-        }
-
-        // Skip components unless --components is set
-        if (child.type === 'COMPONENT' && !includeComponents) {
-          continue;
-        }
-
-        // Apply type filter
-        const matchesType = !typeFilter || child.type === typeFilter;
-        if (matchesType) {
-          items.push({
-            id: child.id,
-            type: child.type,
-            typeId: child.typeId ?? '',
-            children: child.children.length,
-          });
-        }
-
-        // Recurse into children when --components is set
-        if (includeComponents && child.children.length > 0) {
-          collectItems(child.children, true);
-        }
+    if (typeFilter === 'FRAGMENT') {
+      // Content blocks are not root-level tree children; they surface wherever
+      // they are linked. List the deduplicated catalog (incl. unlinked blocks).
+      for (const block of library.getContentBlocks()) {
+        items.push({
+          id: block.id,
+          type: block.type,
+          typeId: block.typeId ?? '',
+          children: block.children.length,
+        });
       }
-    }
+    } else {
+      const collectItems = (nodes: typeof library.tree.children, includeComponents: boolean): void => {
+        for (const child of nodes) {
+          // Skip static asset nodes in table view
+          if (child.type === 'STATIC') {
+            continue;
+          }
 
-    collectItems(library.tree.children, flags.components);
+          // Skip components unless --components is set
+          if (child.type === 'COMPONENT' && !includeComponents) {
+            continue;
+          }
+
+          // Apply type filter
+          const matchesType = !typeFilter || child.type === typeFilter;
+          if (matchesType) {
+            items.push({
+              id: child.id,
+              type: child.type,
+              typeId: child.typeId ?? '',
+              children: child.children.length,
+            });
+          }
+
+          // Recurse into children when --components is set
+          if (includeComponents && child.children.length > 0) {
+            collectItems(child.children, true);
+          }
+        }
+      };
+
+      collectItems(library.tree.children, flags.components);
+    }
 
     if (flags.tree) {
       ux.stdout(library.getTreeString({colorize: ux.colorize}));

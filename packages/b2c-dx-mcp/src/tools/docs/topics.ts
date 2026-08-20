@@ -36,5 +36,6 @@ export function categoryEnumValues(enabledCategories?: readonly DocCategory[]): 
  */
 export function enabledCategoriesNote(enabledCategories?: readonly DocCategory[]): string {
   if (!enabledCategories || enabledCategories.length === 0) return '';
-  return ` Documentation is restricted at startup to: ${enabledCategories.join(', ')}.`;
+  if (DOC_CATEGORIES.every((category) => enabledCategories.includes(category))) return '';
+  return ` Topics: ${enabledCategories.join(', ')}.`;
 }

@@ -12,8 +12,6 @@ This guide covers installing and configuring the B2C DX MCP Server for various M
 - A B2C Commerce project (for project-specific toolsets)
 - MCP client (Claude Code, Cursor, GitHub Copilot, or compatible client)
 
-> **Note:** For Figma-to-component tools, you also need an external Figma MCP server enabled. See [Figma-to-Component Tools Setup](./figma-tools-setup) for details.
-
 The MCP server is installed via `npx`, which downloads and runs the latest version on demand. For project type detection details, see [MCP Server Overview](./#project-type-detection).
 
 ## Claude Code
@@ -48,6 +46,25 @@ claude mcp add --transport stdio --scope user b2c-dx-mcp -- npx -y @salesforce/b
 :::
 
 See the [Claude Code MCP documentation](https://docs.claude.com/en/docs/claude-code/mcp) for details on scope options and configuration.
+
+## Codex
+
+### Plugin Marketplace
+
+Install the MCP server as a Codex plugin:
+
+```bash
+codex plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+codex plugin add b2c-dx-mcp@b2c-developer-tooling
+```
+
+Start a new Codex session after installation so the bundled MCP server is loaded. You can also install it interactively from `/plugins` under the **B2C Developer Tooling** marketplace.
+
+Codex plugins are supported in Codex CLI and Codex in the ChatGPT desktop app. For the Codex IDE extension, add the MCP server directly:
+
+```bash
+codex mcp add b2c-dx-mcp -- npx -y @salesforce/b2c-dx-mcp@latest --allow-non-ga-tools
+```
 
 ## Cursor
 

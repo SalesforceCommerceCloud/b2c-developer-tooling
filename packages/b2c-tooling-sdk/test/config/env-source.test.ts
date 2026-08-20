@@ -10,6 +10,44 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 
 describe('config/EnvSource', () => {
+  describe('CLI environment aliases', () => {
+    const aliases: Array<{
+      alias: string;
+      canonical: string;
+      field: string;
+    }> = [
+      {alias: 'SFCC_OAUTH_CLIENT_ID', canonical: 'SFCC_CLIENT_ID', field: 'clientId'},
+      {alias: 'SFCC_OAUTH_CLIENT_SECRET', canonical: 'SFCC_CLIENT_SECRET', field: 'clientSecret'},
+      {alias: 'SFCC_LOGIN_URL', canonical: 'SFCC_ACCOUNT_MANAGER_HOST', field: 'accountManagerHost'},
+      {alias: 'SFCC_SHORT_CODE', canonical: 'SFCC_SHORTCODE', field: 'shortCode'},
+      {alias: 'SFCC_MRT_API_KEY', canonical: 'MRT_API_KEY', field: 'mrtApiKey'},
+      {alias: 'SFCC_MRT_PROJECT', canonical: 'MRT_PROJECT', field: 'mrtProject'},
+      {alias: 'SFCC_MRT_ENVIRONMENT', canonical: 'MRT_ENVIRONMENT', field: 'mrtEnvironment'},
+      {alias: 'MRT_TARGET', canonical: 'MRT_ENVIRONMENT', field: 'mrtEnvironment'},
+      {alias: 'SFCC_MRT_CLOUD_ORIGIN', canonical: 'MRT_CLOUD_ORIGIN', field: 'mrtOrigin'},
+    ];
+
+    for (const {alias, canonical, field} of aliases) {
+      it(`maps ${alias} to ${field}`, () => {
+        const source = new EnvSource({[alias]: 'alias-value'});
+        const result = source.load({});
+        expect(result?.config).to.have.property(field, 'alias-value');
+      });
+
+      it(`${canonical} takes precedence over ${alias}`, () => {
+        const source = new EnvSource({[alias]: 'alias-value', [canonical]: 'canonical-value'});
+        const result = source.load({});
+        expect(result?.config).to.have.property(field, 'canonical-value');
+      });
+    }
+
+    it('SFCC_MRT_ENVIRONMENT takes precedence over MRT_TARGET', () => {
+      const source = new EnvSource({MRT_TARGET: 'legacy-target', SFCC_MRT_ENVIRONMENT: 'sfcc-environment'});
+      const result = source.load({});
+      expect(result?.config.mrtEnvironment).to.equal('sfcc-environment');
+    });
+  });
+
   describe('string mapping', () => {
     it('maps SFCC_SERVER to hostname', () => {
       const source = new EnvSource({SFCC_SERVER: 'test.demandware.net'});
@@ -90,6 +128,24 @@ describe('config/EnvSource', () => {
       expect(result!.config.tenantId).to.equal('abcd_prd');
     });
 
+    it('maps SFCC_SITE_ID to siteId', () => {
+      const source = new EnvSource({SFCC_SITE_ID: 'RefArch'});
+      const result = source.load({});
+      expect(result!.config.siteId).to.equal('RefArch');
+    });
+
+    it('maps SFCC_SLAS_CLIENT_ID to slasClientId', () => {
+      const source = new EnvSource({SFCC_SLAS_CLIENT_ID: 'slas-client'});
+      const result = source.load({});
+      expect(result!.config.slasClientId).to.equal('slas-client');
+    });
+
+    it('maps SFCC_SLAS_CLIENT_SECRET to slasClientSecret', () => {
+      const source = new EnvSource({SFCC_SLAS_CLIENT_SECRET: 'slas-secret'});
+      const result = source.load({});
+      expect(result!.config.slasClientSecret).to.equal('slas-secret');
+    });
+
     it('maps SFCC_ACCOUNT_MANAGER_HOST to accountManagerHost', () => {
       const source = new EnvSource({SFCC_ACCOUNT_MANAGER_HOST: 'account.demandware.com'});
       const result = source.load({});
@@ -100,6 +156,12 @@ describe('config/EnvSource', () => {
       const source = new EnvSource({SFCC_SANDBOX_API_HOST: 'admin.dx.commercecloud.salesforce.com'});
       const result = source.load({});
       expect(result!.config.sandboxApiHost).to.equal('admin.dx.commercecloud.salesforce.com');
+    });
+
+    it('maps SFCC_CIP_HOST to cipHost', () => {
+      const source = new EnvSource({SFCC_CIP_HOST: 'cip.example.com'});
+      const result = source.load({});
+      expect(result!.config.cipHost).to.equal('cip.example.com');
     });
   });
 
@@ -130,6 +192,12 @@ describe('config/EnvSource', () => {
   });
 
   describe('array parsing', () => {
+    it('parses import-set directory exclusions', () => {
+      const source = new EnvSource({SFCC_IMPORT_SET_EXCLUDE: 'fixtures, test/integration'});
+      const result = source.load({});
+      expect(result?.config.importSetExclude).to.deep.equal(['fixtures', 'test/integration']);
+    });
+
     it('parses SFCC_OAUTH_SCOPES as comma-separated array', () => {
       const source = new EnvSource({SFCC_OAUTH_SCOPES: 'mail,roles,openid'});
       const result = source.load({});
@@ -156,7 +224,7 @@ describe('config/EnvSource', () => {
   });
 
   describe('empty/undefined handling', () => {
-    it('returns undefined when no SFCC_* vars are set', () => {
+    it('returns undefined when no supported environment variables are set', () => {
       const source = new EnvSource({});
       const result = source.load({});
       expect(result).to.be.undefined;

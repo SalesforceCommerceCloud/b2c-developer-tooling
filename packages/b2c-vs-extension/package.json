@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "Salesforce B2C Commerce",
   "description": "Tools for developing on Salesforce B2C Commerce, including cartridge deployment, script debugging and IntelliSense, and sandbox management.",
-  "version": "1.0.5",
+  "version": "1.1.3",
   "publisher": "Salesforce",
   "icon": "media/icon.png",
   "license": "Apache-2.0",
@@ -1067,6 +1067,12 @@
         "category": "B2C DX"
       },
       {
+        "command": "b2c-dx.content.revealBlock",
+        "title": "Reveal Content Block",
+        "icon": "$(references)",
+        "category": "B2C DX"
+      },
+      {
         "command": "b2c-dx.scaffold.generate",
         "title": "New from Scaffold...",
         "icon": "$(file-code)",
@@ -1674,17 +1680,17 @@
         },
         {
           "command": "b2c-dx.content.export",
-          "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component)$/",
+          "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component|fragment)$/",
           "group": "1_export@1"
         },
         {
           "command": "b2c-dx.content.exportNoAssets",
-          "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component)$/",
+          "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component|fragment)$/",
           "group": "1_export@2"
         },
         {
           "command": "b2c-dx.content.exportAssets",
-          "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component)$/",
+          "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component|fragment)$/",
           "group": "1_export@3"
         },
         {
@@ -2103,18 +2109,6 @@
           "when": "false"
         },
         {
-          "command": "b2c-dx.sandbox.start",
-          "when": "false"
-        },
-        {
-          "command": "b2c-dx.sandbox.stop",
-          "when": "false"
-        },
-        {
-          "command": "b2c-dx.sandbox.restart",
-          "when": "false"
-        },
-        {
           "command": "b2c-dx.sandbox.viewDetails",
           "when": "false"
         },
@@ -2219,6 +2213,10 @@
           "when": "false"
         },
         {
+          "command": "b2c-dx.content.revealBlock",
+          "when": "false"
+        },
+        {
           "command": "b2c-dx.content.export",
           "when": "false"
         },
@@ -2300,7 +2298,7 @@
     "@types/react-dom": "18.3.1",
     "@types/vscode": "^1.105.1",
     "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2",
+    "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^3.9.1",
     "c8": "catalog:",
     "esbuild": "^0.24.0",

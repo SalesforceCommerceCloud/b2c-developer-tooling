@@ -59,8 +59,8 @@ describe('tools/scapi/scapi-schemas-list', () => {
       expect(tool).to.exist;
       expect(tool.name).to.equal('scapi_schemas_list');
       expect(tool.description).to.include('SCAPI');
-      expect(tool.description).to.include('List');
-      expect(tool.description).to.include('Fetch');
+      expect(tool.description).to.match(/list/i);
+      expect(tool.description).to.match(/fetch/i);
       expect(tool.description).to.include('scapi_custom_apis_get_status');
       expect(tool.inputSchema).to.exist;
       expect(tool.handler).to.be.a('function');
@@ -224,6 +224,7 @@ describe('tools/scapi/scapi-schemas-list', () => {
       const first = result.content?.[0] as {text?: string};
       expect(first?.text).to.include('Execution error');
       expect(first?.text).to.include('Failed to fetch SCAPI schemas');
+      expect(first?.text).to.include('sfcc.scapi-schemas');
     });
   });
 

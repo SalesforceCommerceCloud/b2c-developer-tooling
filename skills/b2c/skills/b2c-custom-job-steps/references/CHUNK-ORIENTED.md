@@ -65,8 +65,10 @@ exports.beforeStep = function (parameters, stepExecution) {
     var outputPath = parameters.OutputFile || '/export/products.csv';
     var outputFile = new File(File.IMPEX + outputPath);
 
-    // Ensure parent directory exists
-    outputFile.parentFile.mkdirs();
+    // Ensure the directory exists. dw.io.File has no parent accessor, so
+    // derive the directory from the path and create it directly.
+    var dirPath = outputPath.substring(0, outputPath.lastIndexOf('/'));
+    new File(File.IMPEX + dirPath).mkdirs();
 
     writer = new FileWriter(outputFile, 'UTF-8');
     writer.writeLine('ID,Name,Brand,Price,Online');

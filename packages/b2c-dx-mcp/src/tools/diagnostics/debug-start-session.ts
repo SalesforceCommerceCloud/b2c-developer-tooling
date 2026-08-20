@@ -4,11 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {randomUUID} from 'node:crypto';
 import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import type {ServerContext} from '../../server-context.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import type {ProjectContextInput} from '../project-context.js';
 import {
   DebugSessionManager,
   createSourceMapper,
@@ -18,9 +20,9 @@ import {
 import {findCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {getRegistry} from './session-registry.js';
 
-interface StartSessionInput {
-  cartridge_directory?: string;
-  client_id?: string;
+interface StartSessionInput extends ProjectContextInput {
+  /** Optional source-mapping root when cartridges are outside the project directory. */
+  cartridgeDirectory?: string;
 }
 
 interface StartSessionOutput {
@@ -30,6 +32,7 @@ interface StartSessionOutput {
   cartridge_mappings: Record<string, string>;
   session_cookie: null | {name: string; value: string};
   warnings: string[];
+  cartridgeDirectory: string;
 }
 
 export function createDebugStartSessionTool(
@@ -40,22 +43,16 @@ export function createDebugStartSessionTool(
     {
       name: 'debug_start_session',
       description:
-        'Start a script debugger session on a B2C Commerce instance to debug SFRA controllers, custom API scripts, hooks, jobs, or any server-side script. ' +
-        'Returns a session_id for use with other debug tools, plus discovered cartridge mappings. ' +
-        'WARNING: Debug sessions halt remote request threads on the instance. Always call debug_end_session when finished.',
+        'Start a B2C script debugger session and discover cartridge mappings. Returns session_id for follow-up tools. ' +
+        'Debugging halts remote request threads; always call debug_end_session.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
-        cartridge_directory: z
+        cartridgeDirectory: z
           .string()
           .optional()
-          .describe('Path to directory containing cartridges. Defaults to project directory.'),
-        client_id: z
-          .string()
-          .optional()
-          .describe(
-            'Client ID for the debugger API. Defaults to "b2c-cli". Use a different ID to run concurrent sessions on the same host.',
-          ),
+          .describe('Cartridge discovery and source-mapping root; relative to projectDirectory.'),
       },
+      usesConfigurationContext: true,
       async execute(args, context) {
         const registry = getRegistry(context);
 
@@ -68,8 +65,15 @@ export function createDebugStartSessionTool(
         }
 
         const {hostname, username, password} = credentials;
-        const clientId = args.client_id ?? 'b2c-cli';
-        const cartridgeDir = context.services.resolveWithProjectDirectory(args.cartridge_directory);
+        const clientId = `b2c-dx-mcp-${randomUUID()}`;
+        const cartridgeDir = context.services.resolveWithProjectDirectory(
+          args.cartridgeDirectory,
+          args.projectDirectory,
+        );
+        context.setResolvedDirectory('cartridgeDirectory', {
+          path: cartridgeDir,
+          source: args.cartridgeDirectory ? 'argument' : 'projectDirectory',
+        });
         const cartridges = findCartridges(cartridgeDir);
         const warnings: string[] = [];
 
@@ -98,7 +102,14 @@ export function createDebugStartSessionTool(
 
         await manager.connect();
 
-        const entry = registry.registerSession({hostname, clientId, manager, sourceMapper, cartridges});
+        const entry = registry.registerSession({
+          hostname,
+          clientId,
+          manager,
+          sourceMapper,
+          cartridges,
+          resolution: structuredClone(context.resolution),
+        });
 
         const cartridgeMappings: Record<string, string> = {};
         for (const c of cartridges) cartridgeMappings[c.name] = c.src;
@@ -117,6 +128,7 @@ export function createDebugStartSessionTool(
           cartridge_mappings: cartridgeMappings,
           session_cookie: dwsid ? {name: 'dwsid', value: dwsid} : null,
           warnings,
+          cartridgeDirectory: cartridgeDir,
         };
       },
       formatOutput: (output) => jsonResult(output),

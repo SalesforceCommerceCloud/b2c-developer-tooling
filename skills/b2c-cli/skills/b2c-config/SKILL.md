@@ -1,6 +1,6 @@
 ---
 name: b2c-config
-description: Inspect, configure, and troubleshoot the B2C CLI's setup, authentication, and instance connections. Use this skill as the **fallback whenever CLI setup, configuration, or authentication is unclear or failing** — including "command can't find my instance/credentials", auth errors (401/403, "client credentials required"), wrong sandbox being targeted, env var vs dw.json precedence, hostname mismatch warnings, missing tenantId/shortCode, OAuth scope errors, multi-instance switching, retrieving access tokens for scripts, and IDE integration. Also use when the user needs to check what `dw.json` looks like, what fields it accepts (camelCase or kebab-case keys), or where the CLI is reading config from. Triggers include "why is the CLI connecting to the wrong instance", "auth keeps failing", "what config does the CLI see", "I need an OAuth token", "my dw.json isn't being picked up", or any general "how do I configure the CLI" question.
+description: Inspect, configure, and troubleshoot the B2C CLI's setup, authentication, instance connections, and project-level `package.json` defaults. Use this skill as the **fallback whenever CLI setup, configuration, or authentication is unclear or failing** — including "command can't find my instance/credentials", auth errors (401/403, "client credentials required"), wrong sandbox being targeted, env var vs dw.json precedence, hostname mismatch warnings, missing tenantId/shortCode, OAuth scope errors, multi-instance switching, retrieving access tokens for scripts, and IDE integration. Also use when the user needs to configure the `package.json` `b2c` key, check what `dw.json` looks like, understand accepted fields or key casing, or identify where the CLI reads config. Triggers include "why is the CLI connecting to the wrong instance", "auth keeps failing", "what config does the CLI see", "I need an OAuth token", "my dw.json isn't being picked up", or any general "how do I configure the CLI" question.
 ---
 
 # B2C Config Skill
@@ -17,26 +17,58 @@ Sources, in resolution order (highest priority first):
 
 1. **CLI flags and environment variables** — explicit values always win. Includes `.env` files in the current project directory (auto-loaded).
 2. **Plugin sources (high priority)** — custom configuration plugins (e.g., secret managers).
-3. **`dw.json`** — searched starting at the current directory and walking up the directory tree. Supports a single instance or a `configs[]` array with `active: true` / `-i <name>` selection.
+3. **`dw.json`** — selected by `--config` / `SFCC_CONFIG`, the project's `.env`, the project-local file, or the shared global `dw.json`. Supports a single instance or a `configs[]` array with `active: true` / `-i <name>` selection.
 4. **`~/.mobify`** — home-directory file (MRT API key only).
 5. **Plugin sources (low priority)**.
 6. **`package.json`** under the `b2c` key — non-sensitive project defaults (e.g., `shortCode`, `clientId`, `mrtProject`). Sensitive fields like `clientSecret`/`password` are intentionally **not** allowed here.
 
 When in doubt, **always run `b2c setup inspect` first** — it shows the resolved value and the source for every field. This is the single most useful command for setup confusion.
 
+### Shared Global Default
+
+Use a shared fallback when the same `dw.json`-format file should work across the CLI, MCP server, and B2C DX VS Code extension:
+
+```bash
+b2c setup default-config set /path/to/dw.json
+b2c setup default-config get
+b2c setup default-config unset
+```
+
+The configuration-file selection order is: explicit `--config`; process `SFCC_CONFIG`; project `.env` `SFCC_CONFIG`; project-local `dw.json`; global default. The global file never replaces an explicit or project-local choice.
+
+The primary and global `dw.json` files form one instance catalog. `-i <name>` searches the primary file first and then the global file, with same-name primary entries shadowing global entries. Each selected instance is complete—its fields are not merged with a matching entry in the other file. Instance list/remove/set-active operate across both files; create writes to the primary file when present and otherwise to the global `dw.json`.
+
+Without `-i`, an active primary instance wins. A root-level primary configuration with no `active` field is its implicit default; set its root to `active: false` to opt it out and allow an active/default global instance to be selected. `b2c setup inspect` shows both files in its Sources section and marks the selected file.
+
+### MCP Project Context
+
+Local MCP project tools accept `projectDirectory`. Tools that resolve B2C/MRT configuration accept the same flat `projectDirectory`, `configPath`, and `instanceName` arguments. This override is especially important for plugin installs, where the MCP process working directory may be the plugin directory rather than the open project. For each configuration-aware call, the MCP server:
+
+1. Parses `.env` from `projectDirectory`.
+2. Applies all supported B2C/MRT environment variables from that file.
+3. Selects a `dw.json`-format configuration file in this order: per-call `configPath`; startup `--config` / `SFCC_CONFIG`; project `.env` `SFCC_CONFIG`; `${projectDirectory}/dw.json`; shared global default.
+4. Resolves relative per-call `configPath` and project `.env` `SFCC_CONFIG` values from `projectDirectory`.
+5. Selects `instanceName`, when supplied, from the primary file first and then the shared global `dw.json`, without changing either file.
+6. Continues through the normal tooling configuration sources, including registered plugin sources, MRT credentials, and `package.json`.
+7. Resolves specialized paths such as `cartridgeDirectory`, `buildDirectory`, and `outputDirectory` from the same root when relative.
+
+Project `.env` values are scoped to that MCP call so one project's environment does not leak into another.
+
+Each project/config-aware result includes an authoritative, compact `resolution` block. It reports the selected project, configuration file, instance, hostname, and specialized directories without relying on paths embedded in tool descriptions. Session and watch start calls retain it, and their list tools expose it for later follow-up calls. The MCP `config_inspect` tool additionally returns the full source graph and uses the same SDK resolver and registered CLI plugin configuration sources as `b2c setup inspect`. Use `projectDirectory`, `configPath`, and/or `instanceName` to compare the intended project, file, and instance.
+
 ### `dw.json` Key Casing
 
 Field names in `dw.json` accept **both camelCase and kebab-case** — they're equivalent. For example:
 
-| Either form works |
-|---|
-| `clientId` ≡ `client-id` |
-| `clientSecret` ≡ `client-secret` |
-| `codeVersion` ≡ `code-version` |
-| `tenantId` ≡ `tenant-id` |
-| `shortCode` ≡ `short-code` ≡ `scapi-shortcode` |
+| Either form works                                                         |
+| ------------------------------------------------------------------------- |
+| `clientId` ≡ `client-id`                                                  |
+| `clientSecret` ≡ `client-secret`                                          |
+| `codeVersion` ≡ `code-version`                                            |
+| `tenantId` ≡ `tenant-id`                                                  |
+| `shortCode` ≡ `short-code` ≡ `scapi-shortcode`                            |
 | `webdavHostname` ≡ `webdav-hostname` ≡ `webdav-server` ≡ `secureHostname` |
-| `certificatePassphrase` ≡ `certificate-passphrase` ≡ `passphrase` |
+| `certificatePassphrase` ≡ `certificate-passphrase` ≡ `passphrase`         |
 
 Legacy aliases like `server` (for `hostname`) are also still supported. If a value isn't being picked up, casing is rarely the cause — check spelling, then run `b2c setup inspect` to see what the CLI actually parsed.
 
@@ -203,17 +235,24 @@ The `setup inspect` command displays configuration organized by category:
 
 - **Instance**: hostname, webdavHostname (if set), codeVersion
 - **Authentication (Basic)**: username, password (for WebDAV)
-- **Authentication (OAuth)**: clientId, clientSecret, scopes, authMethods, accountManagerHost (if set), sandboxApiHost (if set)
+- **Authentication (OAuth)**: clientId, clientSecret, scopes and authMethods (if set), accountManagerHost (if set)
+- **Authentication (JWT Bearer)**: jwtCertPath, jwtKeyPath, jwtPassphrase (only shown when configured)
+- **Authentication (SLAS)**: slasClientId, slasClientSecret (only shown when configured)
 - **TLS/mTLS**: certificate, certificatePassphrase, selfSigned (only shown when configured)
 - **SCAPI**: shortCode, tenantId
+- **Commerce Intelligence (CIP)**: cipHost (only shown when configured)
+- **On-Demand Sandbox (ODS)**: sandboxApiHost, realm (only shown when configured)
 - **Managed Runtime (MRT)**: mrtProject, mrtEnvironment, mrtApiKey, mrtOrigin (if set)
-- **Metadata**: instanceName (from multi-instance configs)
+- **Project**: configured deployment, content, and documentation defaults
+- **Metadata**: siteId, instanceName, and projectDirectory (only shown when configured)
+- **Safety**: safety configuration (only shown when configured)
 - **Sources**: List of all configuration sources that were loaded
 
 Each value shows its source in brackets:
 
-- `[DwJsonSource]` — Value from dw.json file
-- `[EnvSource]` — Value from an SFCC_* environment variable
+- `[DwJsonSource]` — Value from the primary `dw.json` file
+- `[default]` — Value from the shared default `dw.json` (shown as `DwJsonSource (default)` in the Sources table)
+- `[EnvSource]` — Value from an SFCC\_\* environment variable
 - `[MobifySource]` — Value from ~/.mobify file
 - `[PackageJsonSource]` — Value from package.json `b2c` key
 - Plugin-provided source names (e.g., a credential plugin)
@@ -231,6 +270,22 @@ Values are resolved with this priority (highest to lowest):
 
 When troubleshooting, check the source column to understand which configuration is taking precedence.
 
+## Project Defaults in package.json
+
+Put non-sensitive defaults shared by the project under the `b2c` key. `siteId` supplies the default site/channel for commands that accept configured site context. For content commands, set `contentLibrary` and list the same ID with `siteLibrary: true` when it is the site's private library:
+
+```json
+{
+  "b2c": {
+    "siteId": "RefArch",
+    "contentLibrary": "RefArch",
+    "libraries": [{"id": "RefArch", "siteLibrary": true}]
+  }
+}
+```
+
+With this configuration, `b2c content list` and `b2c content export homepage` default to the `RefArch` site-private library without `--library` or `--site-library`. CLI flags, environment variables, and `dw.json` remain higher-priority overrides. Keep credentials, passwords, secrets, hostnames, and other environment-specific connection data out of `package.json`.
+
 ## Troubleshooting
 
 **Always start with `b2c setup inspect`** — it shows resolved values and their sources. Add `--unmask` to see full secrets, `--json` for scripting. If a value isn't where you expect, the source column will tell you which file/env var/plugin won.
@@ -239,7 +294,7 @@ When troubleshooting, check the source column to understand which configuration 
 
 - The CLI is not finding `clientId`/`clientSecret`. Run `b2c setup inspect` and check the OAuth section.
 - Confirm `dw.json` exists in the current directory or a parent (the CLI walks up from `cwd`).
-- Confirm `SFCC_CLIENT_ID`/`SFCC_CLIENT_SECRET` env vars are exported in *this* shell, not just defined elsewhere.
+- Confirm `SFCC_CLIENT_ID`/`SFCC_CLIENT_SECRET` env vars are exported in _this_ shell, not just defined elsewhere.
 - Credential groups are **atomic**: if `clientId` comes from one source and `clientSecret` from a lower-priority one, the lower-priority secret is discarded. Provide both from the same source, or use a higher-priority override.
 
 ### Command targets the wrong instance
@@ -258,7 +313,7 @@ When troubleshooting, check the source column to understand which configuration 
 
 ### 401/403 errors on SCAPI/OCAPI calls
 
-- Confirm the resolved `clientId`/`clientSecret` belong to the *target* instance (Account Manager scopes the API client per tenant).
+- Confirm the resolved `clientId`/`clientSecret` belong to the _target_ instance (Account Manager scopes the API client per tenant).
 - Check OAuth scopes: required scopes vary by command (e.g., `sfcc.cdn-zones`, `sfcc.orders`). Pass `--auth-scope` or set `SFCC_OAUTH_SCOPES`.
 - For SCAPI commands, verify `tenantId` is correct — tenant IDs use underscores (`zzxy_001`), hostnames use hyphens (`zzxy-001`). The CLI normalizes between them, but a wrong tenant ID will produce 403s.
 

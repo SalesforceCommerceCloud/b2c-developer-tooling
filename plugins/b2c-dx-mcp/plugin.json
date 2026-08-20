@@ -1,0 +1,32 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "b2c-dx-mcp",
+  "version": "2.1.1",
+  "description": "MCP server for AI-assisted Salesforce B2C Commerce development with project-aware tooling for common workflows.",
+  "author": {
+    "name": "Salesforce"
+  },
+  "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/",
+  "repository": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling",
+  "license": "Apache-2.0",
+  "keywords": [
+    "salesforce",
+    "b2c-commerce",
+    "commerce-cloud",
+    "mcp",
+    "scapi",
+    "ocapi"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "B2C DX MCP",
+        "shortDescription": "Project-aware MCP server for Salesforce B2C Commerce development.",
+        "longDescription": "MCP server for AI-assisted Salesforce B2C Commerce development — deploy cartridges, inspect SCAPI schemas, stream logs, debug server-side scripts, and search docs, with automatic project detection.",
+        "developerName": "Salesforce",
+        "category": "Productivity",
+        "websiteURL": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/"
+      }
+    }
+  }
+}

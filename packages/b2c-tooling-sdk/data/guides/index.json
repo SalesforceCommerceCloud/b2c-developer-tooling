@@ -1,6 +1,11 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-07-17T15:02:44.783Z",
+  "generatedAt": "2026-08-18T18:41:48.278Z",
+  "source": {
+    "sha": "e003a95229356e47a4bda63d838b1a912f58fb31",
+    "committedAt": "2026-08-18T12:07:50-04:00",
+    "ref": "main"
+  },
   "entries": [
     {
       "id": "b2c-commerce/agentic-mcp-shopper-tools-quick-start",
@@ -714,7 +719,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-business-objects.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-business-objects.md",
-      "headings": "System Objects • Creating System Object Attribute Definitions • Editing Custom Object Attribute Properties • Grouping Business Object Attributes • System Objects Custom Attribute Tutorial • Custom Objects • Creating Custom Object Types • Creating Custom Objects • Deleting Custom Objects • Making a Custom Attribute Editable or Uneditable • Editing Custom Object Attribute Properties • Creating Custom Attributes for Business Objects",
+      "headings": "System Objects • Creating System Object Attribute Definitions • Editing Custom Object Attribute Properties • Grouping Business Object Attributes • System Objects Custom Attribute Tutorial • Custom Objects • Creating Custom Object Types • Creating Custom Objects • Deleting Custom Objects • Making a Custom Attribute Editable or Uneditable • Editing Custom Object Attribute Properties • Creating Custom Attributes for Business Objects • Custom Attribute Definition Limits",
       "summary": "Create and customize business object definitions and attributes in B2C Commerce to extend system objects and add custom data structures for your ecommerce implementation.",
       "keywords": [
         "custom object definitions",
@@ -1576,7 +1581,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dev-best-practices.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dev-best-practices.md",
-      "headings": "Instance Naming • .zip Files in Code Repository • Development Guidelines and Limitations • Video Support • Email Support • Template Support • Quotas • B2C Commerce Script Timeout • Tax Classes and Jurisdictions Limit",
+      "headings": "Instance Naming • .zip Files in Code Repository • Development Guidelines and Limitations • Video Support • Email Support • Template Support • Page Designer Page Size • Quotas • B2C Commerce Script Timeout • Tax Classes and Jurisdictions Limit",
       "summary": "Guidelines for B2C Commerce development covering instance naming, code repository management, and technical limitations for video, email, and other resources.",
       "keywords": [
         "development best practices",
@@ -4309,7 +4314,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/building-your-app.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/building-your-app.md",
-      "headings": "Getting Started with Claude Code • Backend-Only Apps • Extension Points • Example: non-blocking error (returning `Status.ERROR`) • Example: blocking error (throwing an exception) • Implementation best practices • Optional: delivering Storefront Next components • UI-Only and Fullstack Apps • Building your Storefront Next extension • target-config.json • How UITarget replacement works at build time • Extension routes • Extension localization • Extension installation • Injecting External SDK Scripts • How script injection works in Storefront Next • Choosing the right mechanism • Example: Global SDK via contextProvider • Example: Checkout-scoped SDK via components • Handling SPA re-initialization • Script placement decision guide • Storefront Action Hooks • Available action hooks • Declaring and writing action hooks • Listing available extension points • Building the back-end • Extension Points • Custom SCAPI • Backend Development Notes • Example Apps in the Registry • Anti-patterns to avoid",
+      "headings": "Getting Started with Claude Code • Backend-Only Apps • Extension Points • Example: non-blocking error (returning `Status.ERROR`) • Example: blocking error (throwing an exception) • Implementation best practices • Optional: delivering Storefront Next components • Connection Health Check • Registering the hook • Implementing the hook • Status codes • Status details • Localizing health check messages • Best practices • Apps without a health check • UI-Only and Fullstack Apps • Building your Storefront Next extension • target-config.json • How UITarget replacement works at build time • Extension routes • Extension localization • Extension installation • Injecting External SDK Scripts • How script injection works in Storefront Next • Choosing the right mechanism • Example: Global SDK via contextProvider • Example: Checkout-scoped SDK via components • Handling SPA re-initialization • Script placement decision guide • Storefront Action Hooks • Available action hooks • Declaring and writing action hooks • Listing available extension points • Building the back-end • Extension Points • Custom SCAPI • Backend Development Notes • Example Apps in the Registry • Anti-patterns to avoid",
       "summary": "Build a Commerce App by choosing an architecture (UI-only, Backend-only, or Fullstack) and using Claude Code skills to scaffold and generate app structure with extension points.",
       "keywords": [
         "build commerce app",
@@ -4585,6 +4590,21 @@
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-environment-matrix.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-environment-matrix.md",
       "headings": "Setup Guide by Architecture and Environment • Configuration by Environment • Route Ownership • Canonical Routing Rules • Notes",
+      "summary": "Set up Hybrid Auth routing across B2C Commerce environments (PIG, ODS, localhost) for Storefront Next and PWA Kit architectures.",
+      "keywords": [
+        "Hybrid Auth",
+        "routing",
+        "PIG",
+        "ODS",
+        "Storefront Next",
+        "PWA Kit",
+        "Composable Storefront",
+        "environment setup",
+        "eCDN",
+        "localhost",
+        "hybrid implementation",
+        "traffic routing"
+      ],
       "relatedEntries": [
         "commerce-api/hybrid-authentication"
       ]
@@ -4596,6 +4616,21 @@
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-manual-setup.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-manual-setup.md",
       "headings": "Are You Starting Fresh or Coming from an Existing Setup? • Fresh Setup • Existing Setup • Set Up by Instance Type • PIG (Primary Instance Group) • ODS (On-Demand Sandbox) • Localhost (Local Development) • SFRA/SiteGenesis Proper + Hybrid Auth (Session Extension and SLAS Setup) • Scope • High-Level Steps • Validate the Setup • Migration Recommendation • Headless Storefronts + SFRA/SiteGenesis • When to Use This Path • Supported Scenario • Before You Begin • Step-by-Step Setup • Step 1: Authenticate Shoppers with SLAS • Step 2: Respect SLAS Set-Cookie Responses • Step 3: Send the `sfdc_dwsid` Header on SCAPI Calls • Step 4: Configure Route Ownership Between Headless and SFRA • Step 5: (Optional) Basket Merge and Shopper Context • Step 6: Validate Cross-Runtime Navigation • Next Steps",
+      "summary": "Set up hybrid authentication manually for PWA Kit, SFRA, SiteGenesis, or headless storefronts by configuring MRT, SLAS, and eCDN.",
+      "keywords": [
+        "hybrid auth setup",
+        "manual hybrid authentication",
+        "PWA Kit",
+        "SFRA",
+        "SiteGenesis",
+        "Managed Runtime MRT",
+        "SLAS",
+        "headless storefront",
+        "session bridging",
+        "eCDN",
+        "Composable Storefront",
+        "hybrid storefront configuration"
+      ],
       "relatedEntries": [
         "commerce-api/hybrid-authentication"
       ]
@@ -4607,6 +4642,20 @@
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-quick-start.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-quick-start.md",
       "headings": "Before You Begin • Set Up by Instance Type • PIG (Primary Instance Group) • ODS (On-Demand Sandbox) • Localhost (Local Development) • Next Steps",
+      "summary": "Quickly set up a Storefront Next hybrid storefront with automated provisioning of MRT environment and eCDN through Business Manager.",
+      "keywords": [
+        "Storefront Next setup",
+        "automated setup",
+        "hybrid storefront",
+        "Managed Runtime",
+        "MRT environment",
+        "eCDN",
+        "hybrid auth",
+        "Business Manager provisioning",
+        "Storefront Next configuration",
+        "quick setup",
+        "hybrid authentication"
+      ],
       "relatedEntries": [
         "commerce-api/hybrid-authentication"
       ]
@@ -4617,6 +4666,20 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-select-storefront.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-select-storefront.md",
+      "summary": "Choose and set up your storefront architecture (Storefront Next, PWA Kit, or SFRA/SiteGenesis) with appropriate hybrid authentication configuration.",
+      "keywords": [
+        "storefront selection",
+        "storefront architecture",
+        "PWA Kit setup",
+        "Storefront Next",
+        "SFRA SiteGenesis",
+        "hybrid implementation",
+        "hybrid auth",
+        "composable storefront",
+        "storefront configuration",
+        "headless commerce",
+        "implementation guide"
+      ],
       "relatedEntries": [
         "commerce-api/hybrid-authentication"
       ]
@@ -4628,6 +4691,21 @@
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-troubleshooting.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/hybrid-auth-troubleshooting.md",
       "headings": "Hybrid Auth Not Applying • Token or Session Drift Across Runtimes • eCDN Routing Mismatch • Localhost and Sandbox Differences • Missing SCAPI Short Code on On-Demand Sandboxes (ODS)",
+      "summary": "Diagnose and resolve common Hybrid Auth implementation issues including token drift, routing mismatches, and SLAS configuration problems.",
+      "keywords": [
+        "Hybrid Auth troubleshooting",
+        "SLAS client ID",
+        "session bridge",
+        "eCDN routing",
+        "token drift",
+        "SCAPI short code",
+        "Hybrid Auth not applying",
+        "session-bridge authentication",
+        "hybrid routing matrix",
+        "localhost hybrid proxy",
+        "ODS sandbox",
+        "auth loops"
+      ],
       "relatedEntries": [
         "commerce-api/hybrid-authentication"
       ]
@@ -6433,7 +6511,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/reference.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/reference.md",
-      "headings": "commerce-app.json Schema • adminComponents.json Schema • Component Object Fields • `storefrontComponentVisibility` Attributes • Example • CI Validation • App-shipped string localization • Stable keys: `taskKey` and `componentKey` • `app-configuration/translations/<locale>.json` • Fallback chain • Locale rollout • Supported locales • CI validation • APIs • Install/Uninstall Jobs (OCAPI Data API) • Required OCAPI Permissions • Install Job Parameters • Uninstall Job Parameters • Job Execution Response • CommerceFeatureState Data Model • FeatureType Values • Multi-Site Behavior • Feature Toggles • Tax Domain Toggles • Install and Uninstall Flow Details • Install Flow • Uninstall Flow • App Registry Manifest • Manifest Entry Fields • Entry Types • Hub Display • Manifest and Catalog Cache TTL • Known Limitations • Storefront compatibility • Extension points • Installation and upgrades • Multi-site • Storefront Next extensions • External Documentation Links • Glossary",
+      "headings": "commerce-app.json Schema • adminComponents.json Schema • Component Object Fields • `storefrontComponentVisibility` Attributes • Example • CI Validation • App-shipped string localization • Stable keys: `taskKey` and `componentKey` • `app-configuration/translations/<locale>.json` • Fallback chain • Locale rollout • Supported locales • CI validation • adminComponents.json Schema • Component Object Fields • `storefrontComponentVisibility` Attributes • Example • CI Validation • App-shipped string localization • Stable keys: `taskKey` and `componentKey` • `app-configuration/translations/<locale>.json` • Fallback chain • Locale rollout • Supported locales • CI validation • APIs • Install/Uninstall Jobs (OCAPI Data API) • Required OCAPI Permissions • Install Job Parameters • Uninstall Job Parameters • Job Execution Response • CommerceFeatureState Data Model • FeatureType Values • Multi-Site Behavior • Feature Toggles • Tax Domain Toggles • Install and Uninstall Flow Details • Install Flow • Uninstall Flow • App Registry Manifest • Manifest Entry Fields • Entry Types • Hub Display • Manifest and Catalog Cache TTL • Manifest and Catalog Cache TTL • Known Limitations • Storefront compatibility • Extension points • Installation and upgrades • Multi-site • Storefront Next extensions • Connection Health Check • Extension Point • Status Interpretation • Status Detail Keys • Localization • Timeout Behavior • Availability • External Documentation Links • Glossary",
       "summary": "Define Commerce App package identity, metadata, and publisher details using the required commerce-app.json schema file.",
       "keywords": [
         "commerce-app.json",
@@ -6924,6 +7002,32 @@
       ]
     },
     {
+      "id": "commerce-api/cdn-caching",
+      "title": "SCAPI CDN Caching",
+      "category": "commerce-api",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-caching.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-caching.md",
+      "headings": "How It Works • Enablement • Time-to-Live • Invalidation • Cache Tags • The personalized=none Query Parameter • Applicable APIs • The cf-cache-status Response Header • Example: How a Request Travels Through Both Cache Tiers • Troubleshooting • Custom APIs",
+      "summary": "Implement CDN caching for non-personalized SCAPI GET responses to reduce latency and improve headless storefront performance using the personalized=none parameter.",
+      "keywords": [
+        "SCAPI CDN caching",
+        "personalized=none",
+        "CDN edge cache",
+        "content delivery network",
+        "web-tier caching",
+        "non-personalized responses",
+        "latency reduction",
+        "headless storefront",
+        "cache hit",
+        "TTL",
+        "SCAPI performance",
+        "commerce API caching"
+      ],
+      "relatedEntries": [
+        "commerce-api/performance"
+      ]
+    },
+    {
       "id": "commerce-api/cdn-pci-4-compliance",
       "title": "eCDN PCI 4.0 Compliance Tools",
       "category": "commerce-api",
@@ -6957,7 +7061,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-rate-limiting-rules.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-rate-limiting-rules.md",
-      "headings": "Build a Rate Limiting Rule • Rate Limiting Parameters • Description • Rule Expression • Characteristics • Action • Period • Requests Per Period • Mitigation Timeout • Counting Expression (optional) • Enabled (optional) • Position (optional) • Best Practices • Enforce Granular Access Control • Protect Against Credential Stuffing • Limiting The Number of Operations • API Usage • Create a Rate Limiting Rule • Get All Rate Limiting Rules • Get a Rate Limiting Rule • Update a Rate Limiting Rule • Delete a Rate Limiting Rule • Rate Limiting Rules FAQ",
+      "headings": "Build a Rate Limiting Rule • Rate Limiting Parameters • Description • Rule Expression • Characteristics • Action • Period • Requests Per Period • Mitigation Timeout • Counting Expression (optional) • Enabled (optional) • Position (optional) • Best Practices • Enforce Granular Access Control • Protect Against Credential Stuffing • Limiting The Number of Operations • Allow Verified Search Crawlers and Detect Leaked Credentials • API Usage • Create a Rate Limiting Rule • Get All Rate Limiting Rules • Get a Rate Limiting Rule • Update a Rate Limiting Rule • Delete a Rate Limiting Rule • Rate Limiting Rules FAQ",
       "summary": "Configure rate limiting rules to control request traffic, prevent bot attacks, and improve storefront availability using CDN-API parameters and expressions.",
       "keywords": [
         "rate limiting",
@@ -7096,7 +7200,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-zones-custom-rules.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-zones-custom-rules.md",
-      "headings": "Validation Overview • Rule Expression • Rule Actions • Rule Order • Position • Create a Custom Rule • Sample Success Response - 201 HttpStatus Code • Get All Custom Rules • Sample Success Response - 200 HttpStatus Code • Get a Custom Rule • Sample Success Response - 200 HttpStatus Code • Update a Custom Rule • Sample Success Response - 200 HttpStatus Code • Update the Order of All Custom Rules • Sample Success Response - 200 HttpStatus Code • Delete a Custom Rule • Sample Success Response - 204 HttpStatus Code (No Content) • Transition From Firewall Rules to Custom Rules • Manage Block All Rule Information • Create an Allowlist Using Custom Rules • Create a Blocklist Using Custom Rules • Custom Rules FAQ",
+      "headings": "Validation Overview • Rule Expression • Rule Actions • Rule Order • Position • Examples • Create a Custom Rule • Sample Success Response - 201 HttpStatus Code • Get All Custom Rules • Sample Success Response - 200 HttpStatus Code • Get a Custom Rule • Sample Success Response - 200 HttpStatus Code • Update a Custom Rule • Sample Success Response - 200 HttpStatus Code • Update the Order of All Custom Rules • Sample Success Response - 200 HttpStatus Code • Delete a Custom Rule • Sample Success Response - 204 HttpStatus Code (No Content) • Custom Rules FAQ",
       "summary": "Create and manage eCDN custom firewall rules to control incoming traffic using expressions, request parameters, and rule actions like block or js_challenge.",
       "keywords": [
         "eCDN custom rules",
@@ -7370,6 +7474,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/custom-api-caching.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/custom-api-caching.md",
+      "headings": "CDN Caching",
       "summary": "Enable and configure response caching for Custom API endpoints using setExpires() and setVaryBy() methods to improve performance.",
       "keywords": [
         "caching custom API",
@@ -7578,7 +7683,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/develop.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/develop.md",
-      "headings": "Prerequisites • Next Steps",
+      "headings": "API Categories Overview • Start Here: Common Task Paths • Building a Storefront • Automating Backend Operations • Building with Storefront Next • Building with PWA Kit • Prerequisites • Next Steps",
       "summary": "Build applications using B2C Commerce APIs with resources for Shopper and Admin APIs, including prerequisites and best practices.",
       "keywords": [
         "B2C Commerce API",
@@ -7760,6 +7865,32 @@
       ]
     },
     {
+      "id": "commerce-api/guest-order-access-code",
+      "title": "Guest Order Access with an Access Code (OTP)",
+      "category": "commerce-api",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/guest-order-access-code.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/guest-order-access-code.md",
+      "headings": "What the Platform Does vs. What You Do • Capabilities With and Without OMS • Reach Orders No Longer in B2C Commerce • Flow Overview • Lookup Only (No OMS) • Full Self-Service (with Integrated OMS) • Implement the Delivery Hook • Register the Extension Point • Implement the Script • Hook Parameters • Return Values • Deliver Through a Non-Email Channel • Call the Shopper Orders Endpoints • Request an Access Code • Look Up the Order • Without Integrated OMS • With Integrated OMS (`expand=oms`) • Cancel an Order (Requires Integrated OMS) • Return Items (Requires Integrated OMS) • Access Code Rules • Limitations • Best Practices • See Also",
+      "summary": "Enable guest shoppers to securely access and manage their orders after losing session via email-based one-time password (OTP) access codes.",
+      "keywords": [
+        "guest order access",
+        "OTP",
+        "one-time password",
+        "access code",
+        "order lookup",
+        "Shopper Orders API",
+        "guest checkout",
+        "order self-service",
+        "email hook",
+        "order management",
+        "guest authentication",
+        "session recovery"
+      ],
+      "relatedEntries": [
+        "commerce-api/use-shopper-api"
+      ]
+    },
+    {
       "id": "commerce-api/hook-method-details",
       "title": "Hook Method Details",
       "category": "commerce-api",
@@ -7817,6 +7948,21 @@
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/hybrid-auth-shared-setup.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/hybrid-auth-shared-setup.md",
       "headings": "Step 1: Set Up a SLAS Client • Step 2: Enable Session Bridging • Step 3: (Optional) Configure Third-Party IDP and Social Login • Step 4: Configure Business Manager • Step 5: Remove Plugin SLAS (If Migrating) • Step 6: Remove OCAPI Permissions (If Migrating from Plugin SLAS) • Step 7: (Optional) Set Shopper Context • Step 8: (Optional) Enable or Disable Do-Not-Track Synchronization • DNT Cookie Expiration • Next Steps",
+      "summary": "Configure shared Hybrid Auth setup across all storefront architectures including SLAS client, session bridging, and platform dependencies.",
+      "keywords": [
+        "hybrid auth setup",
+        "SLAS client configuration",
+        "session bridging",
+        "commerce API authentication",
+        "third-party IDP",
+        "social login",
+        "business manager",
+        "Storefront Next",
+        "PWA Kit",
+        "SFRA",
+        "shopper APIs",
+        "hybrid authentication"
+      ],
       "relatedEntries": [
         "commerce-api/hybrid-authentication"
       ]
@@ -8006,7 +8152,8 @@
       ],
       "relatedEntries": [
         "commerce-api/scapi-get-started",
-        "commerce-api/server-side-web-tier-caching"
+        "commerce-api/server-side-web-tier-caching",
+        "commerce-api/cdn-caching"
       ]
     },
     {
@@ -8479,7 +8626,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/slas-best-practices.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/slas-best-practices.md",
-      "headings": "Strict Client Auth • Mitigate Guest Token Reuse • Recommended Guest Token Flow • Session Rotation Step 1: Get a Fresh Guest Token • Session Rotation Step 2: Swap Tokens in the Storefront • Result: Empty Order List Following Account Registration • Edge Cases to Consider",
+      "headings": "Strict Client Auth • Handle the Audience (`aud`) Claim • Mitigate Guest Token Reuse • Recommended Guest Token Flow • Session Rotation Step 1: Get a Fresh Guest Token • Session Rotation Step 2: Swap Tokens in the Storefront • Result: Empty Order List Following Account Registration • Edge Cases to Consider",
       "summary": "Implement SLAS security best practices including Strict Client Auth for private clients and guest session rotation to enhance authentication and prevent token reuse.",
       "keywords": [
         "SLAS best practices",
@@ -8710,7 +8857,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/slas-passwordless-login-overview.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/slas-passwordless-login-overview.md",
-      "headings": "Passwordless Login Feature Support",
+      "headings": "Choosing a Passwordless Method • Decision Guidance • Passwordless Login Feature Support",
       "summary": "Implement secure passwordless authentication for shoppers using OTPs, SMS, or passkeys via SLAS.",
       "keywords": [
         "passwordless login",
@@ -9210,6 +9357,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/troubleshoot.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/troubleshoot.md",
+      "headings": "Quick Triage: Find Your Solution • Troubleshooting Resources • Step-by-Step Troubleshooting Process • 1. Identify the Request • 2. Check the Response • 3. Review Logs • 4. Monitor Performance • 5. Verify Configuration • 6. Test and Validate",
       "summary": "Debug and resolve B2C Commerce API issues using error codes, response analysis, rate limits, timeouts, and performance monitoring tools.",
       "keywords": [
         "API troubleshooting",
@@ -9292,7 +9440,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/use-admin-api.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/use-admin-api.md",
-      "headings": "Next Steps",
+      "headings": "Admin API Overview • Authentication Prerequisites • Common Automation Scenarios • Scenario 1: Automated Inventory Synchronization • Scenario 2: CDN Configuration Management • Scenario 3: Product Catalog Updates • Scenario 4: Customer Data Integration • Scenario 5: Multi-Site Configuration Deployment • Additional Resources • Next Steps",
       "summary": "Configure and manage SCAPI Admin APIs for CDN zones, inventory, WAF rules, certificates, and authentication settings.",
       "keywords": [
         "SCAPI Admin API",
@@ -9343,7 +9491,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/use-shopper-api.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/use-shopper-api.md",
-      "headings": "Next Steps",
+      "headings": "Common Use Case Mappings • Building a Product Listing Page (PLP) • Building a Product Detail Page (PDP) • Building a Checkout Flow • Implementing Personalization • Additional Resources • Next Steps",
       "summary": "Access Shopper APIs for authentication, context management, and SEO to build B2C Commerce storefronts.",
       "keywords": [
         "Shopper APIs",
@@ -9364,6 +9512,7 @@
         "commerce-api/slas",
         "commerce-api/shopper-context-api",
         "commerce-api/work-with-baskets-orders",
+        "commerce-api/guest-order-access-code",
         "commerce-api/promotion-details",
         "commerce-api/mcp-shopper-tools",
         "commerce-api/url-resolution"
@@ -9540,6 +9689,7 @@
         "pwa-kit-managed-runtime/address-autocomplete",
         "pwa-kit-managed-runtime/one-click-checkout",
         "pwa-kit-managed-runtime/tracking-consent",
+        "pwa-kit-managed-runtime/protect-storefront",
         "pwa-kit-managed-runtime/maximizing-your-cache-hit-ratio",
         "pwa-kit-managed-runtime/create-a-sitemap"
       ]
@@ -10021,6 +10171,20 @@
       "url": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/hybrid-routing-matrix.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/hybrid-routing-matrix.md",
       "headings": "Use the Right Rule Syntax by Setup Type • Architectural Foundations • Matrix Configurations • Matrix-01: Modern Core (Home, PDP, PLP on PWA Kit) • Matrix-02: Modern Checkout (Cart and Checkout on PWA Kit) • Matrix-03: Modern Entry Only (Home on PWA Kit) • Matrix-04: Legacy Entry Only (Home on SFRA) • Matrix-05: Catalog-Only Migration (PLP/PDP on PWA Kit) • Matrix-06: Account and Auth Only (Identity Flows on PWA Kit) • Global Framework Requirements",
+      "summary": "Configure routing between PWA Kit and SFRA/SiteGenesis using eCDN rules and app/routes.jsx filtering for hybrid storefronts.",
+      "keywords": [
+        "hybrid storefront routing",
+        "PWA Kit routing matrix",
+        "eCDN routing rules",
+        "app/routes.jsx",
+        "Composable Storefront",
+        "SFRA SiteGenesis",
+        "Managed Runtime MRT",
+        "Cloudflare rule expression",
+        "hybrid proxy local development",
+        "phased headless rollout",
+        "React Router navigation"
+      ],
       "relatedEntries": [
         "pwa-kit-managed-runtime/hybrid-implementation"
       ]
@@ -10915,6 +11079,32 @@
         "pwa-kit-managed-runtime/phased-headless-rollouts",
         "pwa-kit-managed-runtime/hybrid-upgrade-v3.x",
         "pwa-kit-managed-runtime/hybrid-upgrade-v2.x"
+      ]
+    },
+    {
+      "id": "pwa-kit-managed-runtime/protect-storefront",
+      "title": "Limit Access to a Storefront Under Development",
+      "category": "pwa-kit-managed-runtime",
+      "url": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/protect-storefront.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/protect-storefront.md",
+      "headings": "Enable a Protected Storefront • Limitations",
+      "summary": "Enable Protected Storefronts in Business Manager to restrict storefront access during development to only authorized organization users via basic authentication.",
+      "keywords": [
+        "protected storefront",
+        "limit access",
+        "development environment",
+        "basic auth",
+        "site status",
+        "shared password",
+        "restrict access",
+        "storefront under development",
+        "Business Manager",
+        "access control",
+        "authentication",
+        "online protected"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -12007,7 +12197,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-analytics.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-analytics.md",
-      "headings": "How It Works • Tracking Consent • Configure Consent Categories • Require a Consent Category per Adapter • Set Up Einstein Activities • Set Up Active Data • Prerequisites • Step 1: Enable Data Collection • Step 2: Confirm That Sites Are Online • Step 3: Confirm that Tracking (Default for New Storefront Session) Is Enabled • Step 4: Configure Active Data • Analytics Events • Adding More Event Types • Engagement Adapters • Adding More Adapters • See Also",
+      "headings": "How It Works • Tracking Consent • Configure Consent Categories • Require a Consent Category per Adapter • Set Up Einstein Activities • Set Up Active Data • Prerequisites • Step 1: Enable Data Collection • Step 2: Confirm That Sites Are Online • Step 3: Confirm that Tracking (Default for New Storefront Session) Is Enabled • Step 4: Configure Active Data • Set Up Data 360 • Analytics Events • Adding More Event Types • Engagement Adapters • Adding More Adapters • See Also",
       "summary": "Collect and track storefront activity using Storefront Next analytics hooks, events, and consent management integrated with Einstein and third-party systems.",
       "keywords": [
         "analytics tracking",
@@ -12024,7 +12214,7 @@
         "event tracking"
       ],
       "relatedEntries": [
-        "sfnext/sfnext-get-started"
+        "sfnext/sfnext-data-analytics-section"
       ]
     },
     {
@@ -12254,11 +12444,11 @@
     },
     {
       "id": "sfnext/sfnext-component-extend-upgrade",
-      "title": "Upgrade Customized Components",
+      "title": "Customization Best Practices and Upgrades",
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-component-extend-upgrade.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-component-extend-upgrade.md",
-      "headings": "Method 1: Merge Updates Directly • When to Use This Method • Trade-offs • Method 2: Maintain Separate Component Copies • When to Use This Method • Implementation Steps • Vite Configuration Example • Trade-offs • Note About UI Extensions",
+      "headings": "Customizing Existing Components and Code • Minor Updates: Merge Updates in Storefront Code • When to Use This Method • Trade-offs • Major Updates: Maintain Separate Code Copies • When to Use This Method • Implementation Steps • Vite Configuration Example • Trade-offs • Adding Net New Custom Components • Single-Use Component: Import the Component • When to Use This Method • Trade-offs • Multi-Use Component: Use the Extension Model • When to Use This Method • Trade-offs",
       "summary": "Manage customized React components by merging updates directly or maintaining separate copies with Vite aliasing to balance improvements with preserving customizations.",
       "keywords": [
         "customize components",
@@ -12351,28 +12541,44 @@
       ],
       "relatedEntries": [
         "sfnext/sfnext-get-started",
+        "sfnext/sfnext-component-extend-upgrade",
         "sfnext/sfnext-mcp-server",
         "sfnext/sfnext-mrt-data-store",
         "sfnext/sfnext-customize",
+        "sfnext/sfnext-manage-sites",
+        "sfnext/sfnext-pd-deploy-cartridge",
         "sfnext/sfnext-push-mrt-auto",
         "sfnext/sfnext-modern-exp",
         "sfnext/sfnext-instore-pickup",
+        "sfnext/sfnext-order-mgmt",
         "sfnext/sfnext-shopping-agent",
         "sfnext/sfnext-page-designer",
-        "sfnext/sfnext-address-autocomplete",
         "sfnext/sfnext-one-click-checkout",
+        "sfnext/sfnext-address-autocomplete",
+        "sfnext/sfnext-salesforce-payments",
         "sfnext/sfnext-passwordless-login",
         "sfnext/sfnext-email-verification",
         "sfnext/sfnext-social-login",
         "sfnext/sfnext-password-reset",
         "sfnext/sfnext-protect-storefront",
         "sfnext/sfnext-extend",
-        "sfnext/sfnext-component-extend-upgrade",
         "sfnext/sfnext-base-path",
         "sfnext/sfnext-domain-cookie",
         "sfnext/sfnext-hybrid",
         "sfnext/sfnext-login-support",
         "sfnext/sfnext-login-support-hybrid"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-data-analytics-section",
+      "title": "Integrate Storefront Next with Analytics and Data Platforms",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-data-analytics-section.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-data-analytics-section.md",
+      "relatedEntries": [
+        "sfnext/sfnext-get-started",
+        "sfnext/sfnext-analytics",
+        "sfnext/sfnext-data360"
       ]
     },
     {
@@ -12399,6 +12605,17 @@
       ],
       "relatedEntries": [
         "sfnext/sfnext-architecture"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-data360",
+      "title": "Send Storefront Next Analytics Events to Data 360",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-data360.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-data360.md",
+      "headings": "Prerequisites • Set Up Storefront Next Events for Data 360 • Verify Event Retrieval",
+      "relatedEntries": [
+        "sfnext/sfnext-data-analytics-section"
       ]
     },
     {
@@ -12610,7 +12827,7 @@
         "sfnext/sfnext-mrt-section",
         "sfnext/sfnext-test-debug-section",
         "sfnext/sfnext-perf-section",
-        "sfnext/sfnext-analytics",
+        "sfnext/sfnext-data-analytics-section",
         "sfnext/sfnext-pwa-overview",
         "sfnext/sfnext-cli"
       ]
@@ -12639,6 +12856,7 @@
       "relatedEntries": [
         "sfnext/sfnext-get-started",
         "sfnext/sfnext-release-notes",
+        "sfnext/sfnext-mrt-release-notes",
         "sfnext/sfnext-architecture",
         "sfnext/sfnext-browser-comp",
         "sfnext/sfnext-quick-start-choice",
@@ -12828,6 +13046,32 @@
       ]
     },
     {
+      "id": "sfnext/sfnext-load-more",
+      "title": "Keep Shoppers Browsing with Load More Pagination",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-load-more.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-load-more.md",
+      "headings": "Configure Pagination",
+      "summary": "Configure load-more pagination on product listing pages to keep shoppers browsing without page reloads or scroll loss.",
+      "keywords": [
+        "load more pagination",
+        "product listing pages",
+        "pagination configuration",
+        "uiConfig.pages.category.pagination",
+        "load more button",
+        "numbered pagination",
+        "traditional pagination",
+        "infinite scroll",
+        "category page pagination",
+        "sfnext pagination",
+        "progress indicator",
+        "ui config"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-modern-exp"
+      ]
+    },
+    {
       "id": "sfnext/sfnext-logging",
       "title": "Logging in Storefront Next",
       "category": "sfnext",
@@ -12906,6 +13150,17 @@
       ]
     },
     {
+      "id": "sfnext/sfnext-manage-sites",
+      "title": "Manage Sites for Storefront Next in Business Manager",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-manage-sites.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-manage-sites.md",
+      "headings": "Prerequisites • Assign or Remove Sites from a Storefront",
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
+      ]
+    },
+    {
       "id": "sfnext/sfnext-mcp-server",
       "title": "Build Storefront Next Faster with Agent Skills and the B2C DX MCP Server",
       "category": "sfnext",
@@ -12954,7 +13209,8 @@
       ],
       "relatedEntries": [
         "sfnext/sfnext-customize-sf",
-        "sfnext/sfnext-prototyped-cmp"
+        "sfnext/sfnext-prototyped-cmp",
+        "sfnext/sfnext-load-more"
       ]
     },
     {
@@ -13145,7 +13401,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-launch-storefront.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-launch-storefront.md",
-      "headings": "Before You Begin • Launching an Environment • 1. Import the Storefront to the Staging or Production Instance • 2. Perform the Cutover • Default Domain • Vanity Domain or New Zone • Set the MRT Access Control Header • Send the Access Control Header from eCDN to the MRT Origin • 3. Monitor the Site",
+      "headings": "Before You Begin • Launching an Environment • 1. Import the Storefront to the Staging or Production Instance • 2. Update the SLAS Client Redirect URI • 3. Perform the Cutover • Default Domain • Vanity Domain or New Zone • Send the Access Control Header from eCDN to the MRT Origin • 4. Finalize the Environment • 5. Monitor the Site",
       "summary": "Deploy and publish your Storefront Next to a public web address with proper DNS and Managed Runtime configuration.",
       "keywords": [
         "launch storefront",
@@ -13160,6 +13416,30 @@
         "go live",
         "publish storefront",
         "environment launch"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-mrt-section"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-mrt-node-version",
+      "title": "Node Version Support",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-node-version.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-node-version.md",
+      "headings": "Supported Node Versions • Opt Out of Email Notifications",
+      "summary": "Manage Node.js versions for Storefront Next Managed Runtime environments, understanding support lifecycles and upgrade requirements.",
+      "keywords": [
+        "Node.js version support",
+        "Node version upgrade",
+        "Managed Runtime Node",
+        "Storefront Next Node",
+        "Node.js deprecation",
+        "Node.js end of life",
+        "Runtime environment Node",
+        "Node version lifecycle",
+        "Node.js deployment",
+        "Runtime Admin notifications"
       ],
       "relatedEntries": [
         "sfnext/sfnext-mrt-section"
@@ -13189,6 +13469,30 @@
       ],
       "relatedEntries": [
         "sfnext/sfnext-mrt-section"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-mrt-release-notes",
+      "title": "Managed Runtime Release Notes",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-release-notes.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-release-notes.md",
+      "headings": "<Date> - vx.y.z • <Release note title> • 7/28/2026 • SSR Bundle Size Limit Lowered to 247 MB",
+      "summary": "Track Managed Runtime feature updates, changes, and new capabilities across releases.",
+      "keywords": [
+        "Managed Runtime release notes",
+        "MRT releases",
+        "sfnext updates",
+        "SSR bundle size limit",
+        "release changelog",
+        "feature updates",
+        "MRT changelog",
+        "version history",
+        "Managed Runtime changes",
+        "deployment updates"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started-section"
       ]
     },
     {
@@ -13241,6 +13545,7 @@
         "sfnext/sfnext-get-started",
         "sfnext/sfnext-mrt-overview",
         "sfnext/sfnext-mrt-administration",
+        "sfnext/sfnext-mrt-node-version",
         "sfnext/sfnext-mrt-api",
         "sfnext/sfnext-mrt-environment-vars",
         "sfnext/sfnext-mrt-env-vars-api",
@@ -13255,7 +13560,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-multi-site.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-multi-site.md",
-      "headings": "How Multisite URLs Work • Default Template Behavior • Define Your Sites • Configure URL Patterns • Use Alias Maps for Clean URLs • Configure Site and Locale Detection • Configure Site-Context Cookies • URL Pattern Use Cases • Site and Locale in the Path (Default) • Locale Only in the Path • Site in the Path, Locale in Query Params • Everything in Query Params • Locale Only in Query Params • No Prefix (Single Site) • Access Site Context in Components • Important Considerations • See Also",
+      "headings": "How Multisite URLs Work • Default Template Behavior • Define Your Sites • MRT Data Store Sites • Configure URL Patterns • Use Alias Maps for Clean URLs • Configure Site and Locale Detection • Configure Site-Context Cookies • URL Pattern Use Cases • Site and Locale in the Path (Default) • Locale Only in the Path • Site in the Path, Locale in Query Params • Everything in Query Params • Locale Only in Query Params • No Prefix (Single Site) • Access Site Context in Components • Important Considerations • See Also",
       "summary": "Configure how site and locale identifiers appear in Storefront Next URLs using path prefixes, query parameters, or cookies for single/multiple site deployments.",
       "keywords": [
         "multisite URLs",
@@ -13301,12 +13606,37 @@
       ]
     },
     {
+      "id": "sfnext/sfnext-order-mgmt",
+      "title": "Integrate Storefront Next with Salesforce Order Management",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-order-mgmt.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-order-mgmt.md",
+      "headings": "Prerequisite: Connect Your B2C Commerce Instance and the Order Management Organization • Step 1: Connect a B2C Commerce Instance to the SOM organization • Step 2: Verify the Connection by Placing an Order • Storefront Next-SOM Integration Considerations • Getting Orders from SOM • Placing Orders in SOM • Managing Orders in SOM • Prerequisites • Accessing the Order Detail Page • Tracking Order Shipments • Canceling an Order • Returning Eligible Items • Order Refunds • Status Badge",
+      "summary": "Connect Storefront Next with Salesforce Order Management to display and sync orders, enabling shoppers to track shipments and manage returns from the storefront.",
+      "keywords": [
+        "Storefront Next Order Management integration",
+        "SOM integration",
+        "order history page",
+        "order tracking",
+        "order synchronization",
+        "B2C Commerce Order Management",
+        "order status",
+        "return management",
+        "self-service order management",
+        "order detail page",
+        "connect B2C Commerce SOM"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
+      ]
+    },
+    {
       "id": "sfnext/sfnext-page-designer",
       "title": "Page Designer Integration with Storefront Next",
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-page-designer.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-page-designer.md",
-      "headings": "How It Works for Developers • Core Architecture • Prerequisites • Implement Page Designer Components • Component Structure • Metadata Decorators • Basic Component Example • Attribute Types • Component Patterns: Fallbacks and Loaders • Fallback Components • Data Loaders • Components with Regions • Region Definition Options • Implement Page Designer Pages • Page Structure • Page Metadata Options • Supported Aspect Types • Region Usage in Pages • Generate Cartridges • Automatic Generation on Build • Manual Generation • Generated Output Structure • Generated Metadata Format • Key Notes • Deploy Cartridges • Prerequisites • Deploy the Cartridge with the `push` Command • Manual Cartridge Deployment • Deployment Process • Business Manager Setup • Prerequisites • Using Page Designer • Page Assignment • Live Preview • Shopper Context Preview • Known Limitations • Local Development • Setup Steps • Troubleshooting • Merchant Storefront Next Customization • Content Slot Migration from SFRA",
+      "headings": "How It Works for Developers • Core Architecture • Implement Page Designer Components • Component Structure • Metadata Decorators • Basic Component Example • Attribute Types • Component Patterns: Fallbacks and Loaders • Fallback Components • Data Loaders • Components with Regions • Region Definition Options • Implement Page Designer Pages • Page Structure • Page Metadata Options • Supported Aspect Types • Region Usage in Pages • Generate Cartridges • Automatic Generation on Build • Manual Generation • Generated Output Structure • Generated Metadata Format • Key Notes • Deploy Cartridges • Prerequisites • Deploy the Cartridge with the `push` Command • Manual Cartridge Deployment • Deployment Process • Business Manager Setup • Prerequisites • Using Page Designer • Page Assignment • Live Preview • Shopper Context Preview • Known Limitations • Local Development • Setup Steps • Troubleshooting • Merchant Storefront Next Customization • Content Slot Migration from SFRA",
       "summary": "Build reusable React components for Page Designer in Storefront Next to enable merchants to create personalized pages without developer intervention.",
       "keywords": [
         "Page Designer",
@@ -13404,6 +13734,17 @@
       ]
     },
     {
+      "id": "sfnext/sfnext-passkey-login",
+      "title": "Passwordless Login with Passkeys for Storefront Next",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-passkey-login.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-passkey-login.md",
+      "headings": "Prerequisites • Configure Settings • How Passkeys Work in Storefront Next • Register a Passkey • Sign In with a Passkey • Manage Passkeys • Best Practices • Troubleshoot Passkeys • See Also",
+      "relatedEntries": [
+        "sfnext/sfnext-passwordless-login"
+      ]
+    },
+    {
       "id": "sfnext/sfnext-password-reset",
       "title": "Implement Password Reset for Storefront Next",
       "category": "sfnext",
@@ -13449,6 +13790,33 @@
         "Storefront Next",
         "config.server.ts",
         "shopper authentication"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf",
+        "sfnext/sfnext-passkey-login"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-pd-deploy-cartridge",
+      "title": "Deploy the Storefront Next Cartridge for Page Designer",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-pd-deploy-cartridge.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-pd-deploy-cartridge.md",
+      "headings": "Prerequisites: • Automatic Cartridge Sync with the VS Code Extension",
+      "summary": "Deploy the Storefront Next cartridge to upload Page Designer metadata and components to your B2C Commerce instance after setup or modifications.",
+      "keywords": [
+        "deploy Storefront Next cartridge",
+        "Page Designer metadata",
+        "Page Designer components",
+        "dw.json configuration",
+        "B2C DX CLI deploy",
+        "cartridge deployment",
+        "Page Designer pages",
+        "Storefront Next setup",
+        "Business Manager deployment",
+        "upload Page Designer",
+        "code version deployment",
+        "sfnext cartridge"
       ],
       "relatedEntries": [
         "sfnext/sfnext-customize-sf"
@@ -14202,7 +14570,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-bm.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-bm.md",
-      "headings": "Prerequisites • Constraints • Steps",
+      "headings": "Prerequisites • Constraints • Steps • Next Steps",
       "summary": "Create a Storefront Next in Business Manager and generate its code locally using Salesforce CLI.",
       "keywords": [
         "Storefront Next",
@@ -14228,7 +14596,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-bm-github.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-bm-github.md",
-      "headings": "Prerequisites • Constraints • Steps",
+      "headings": "Prerequisites • Constraints • Steps • Next Steps",
       "summary": "Set up a Storefront Next instance in Business Manager by connecting a GitHub repository to create storefront code and dependent API and Managed Runtime resources.",
       "keywords": [
         "Storefront Next",
@@ -14280,9 +14648,48 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-release-notes.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-release-notes.md",
-      "headings": "<Date> - vx.y.z • <Date> - B2C Commerce 26.x • <Release note title> • July 9, 2026 - v1.1.0 • Maintain Shopper Sessions Across Subdomains in Storefront Next • Secure Your Storefront and Stabilize APIs by Upgrading to React Router 7.18",
+      "headings": "<Date> - vx.y.z • <Date> - B2C Commerce 26.x • <Release note title> • August 4, 2026 - Storefront Next 1.2.0 • Streamline Sign-In with Passkeys • Manage Sites for Storefront Next in Business Manager • Send Storefront Next Analytics Events to Data 360 • Integrate Storefront Next with Salesforce Order Management • Keep Shoppers Browsing with Load More Pagination • July 21, 2026 - B2C Commerce 26.8 • Speed Up Storefront Next Development with the Beauty Street Template • July 9, 2026 - Storefront Next 1.1.0 • Process Payments Natively in Storefront Next with Salesforce Payments • Maintain Shopper Sessions Across Subdomains in Storefront Next • Secure Your Storefront and Stabilize APIs by Upgrading to React Router 7.18",
+      "summary": "Track new features and changes in Storefront Next monthly releases with links to detailed GitHub release information.",
+      "keywords": [
+        "Storefront Next release notes",
+        "sfnext releases",
+        "Storefront Next features",
+        "monthly releases",
+        "version updates",
+        "changelog",
+        "GitHub releases",
+        "Storefront Next v1.0.0",
+        "template updates",
+        "B2C Commerce releases"
+      ],
       "relatedEntries": [
         "sfnext/sfnext-get-started-section"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-salesforce-payments",
+      "title": "Configure Salesforce Payments for Storefront Next",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-salesforce-payments.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-salesforce-payments.md",
+      "headings": "Set Up Salesforce Payments for Storefront Next • Prerequisites • Steps",
+      "summary": "Set up Salesforce Payments for Storefront Next by configuring payment gateways, defining types, and updating configuration URLs.",
+      "keywords": [
+        "Salesforce Payments",
+        "Storefront Next",
+        "payment gateway configuration",
+        "Adyen",
+        "Stripe",
+        "PayPal",
+        "checkout",
+        "B2C Commerce payments",
+        "config.server.ts",
+        "payment methods",
+        "sdkUrl",
+        "metadataUrl"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
       ]
     },
     {

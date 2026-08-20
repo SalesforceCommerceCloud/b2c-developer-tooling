@@ -35,7 +35,12 @@ For local development or testing, use the development build directly:
   "mcpServers": {
     "b2c-dx-mcp": {
       "command": "node",
-      "args": ["/path/to/packages/b2c-dx-mcp/bin/dev.js", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+      "args": [
+        "/path/to/packages/b2c-dx-mcp/bin/dev.js",
+        "--project-directory",
+        "${workspaceFolder}",
+        "--allow-non-ga-tools"
+      ]
     }
   }
 }
@@ -67,11 +72,6 @@ npx mcp-inspector --cli node bin/dev.js --toolsets all --allow-non-ga-tools \
   --method tools/call \
   --tool-name cartridge_deploy
 
-# Deprecated sfnext_* tools are excluded from `--toolsets all`; request the
-# deprecated toolset explicitly to exercise them
-npx mcp-inspector --cli node bin/dev.js --toolsets STOREFRONTNEXT_DEPRECATED --allow-non-ga-tools \
-  --method tools/call \
-  --tool-name sfnext_add_page_designer_decorator
 ```
 
 ### JSON-RPC via stdin
@@ -95,11 +95,7 @@ Configure your IDE to use the local MCP server. Add this to your IDE's MCP confi
   "mcpServers": {
     "b2c-dx-local": {
       "command": "node",
-      "args": [
-        "/full/path/to/packages/b2c-dx-mcp/bin/dev.js",
-        "--toolsets", "all",
-        "--allow-non-ga-tools"
-      ]
+      "args": ["/full/path/to/packages/b2c-dx-mcp/bin/dev.js", "--toolsets", "all", "--allow-non-ga-tools"]
     }
   }
 }
@@ -118,6 +114,7 @@ When updating MCP documentation, you may need to create or update the "Add to Cu
 ### Link Format
 
 The deep link follows this format:
+
 ```
 cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx-mcp&config=<base64-encoded-config>
 ```
@@ -127,16 +124,24 @@ cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx-mcp&config=<base64-en
 1. **Create the configuration object** with `command` and `args`:
 
    The "Add to Cursor" link uses **user-level configuration** with `--project-directory`:
+
    ```json
    {
      "command": "npx",
-     "args": ["-y", "@salesforce/b2c-dx-mcp@latest", "--project-directory", "${workspaceFolder}", "--allow-non-ga-tools"]
+     "args": [
+       "-y",
+       "@salesforce/b2c-dx-mcp@latest",
+       "--project-directory",
+       "${workspaceFolder}",
+       "--allow-non-ga-tools"
+     ]
    }
    ```
 
    The `${workspaceFolder}` variable automatically expands to the current workspace directory in Cursor.
 
 2. **Encode to Base64** using Node.js:
+
    ```bash
    node -e "console.log(Buffer.from(JSON.stringify({command: 'npx', args: ['-y', '@salesforce/b2c-dx-mcp@latest', '--project-directory', '\${workspaceFolder}', '--allow-non-ga-tools']})).toString('base64'))"
    ```
@@ -149,6 +154,7 @@ cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx-mcp&config=<base64-en
 ### Example
 
 **User-level link (used in documentation):**
+
 ```markdown
 [Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx-mcp&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBzYWxlc2ZvcmNlL2IyYy1keC1tY3AiLCItLXByb2plY3QtZGlyZWN0b3J5IiwiJHt3b3Jrc3BhY2VGb2xkZXJ9IiwiLS1hbGxvdy1ub24tZ2EtdG9vbHMiXX0=)
 ```
@@ -156,6 +162,7 @@ cursor://anysphere.cursor-deeplink/mcp/install?name=b2c-dx-mcp&config=<base64-en
 ### Where to Update
 
 Update the "Add to Cursor" links in:
+
 - `docs/guide/index.md` - Quick MCP Install section
 - `docs/mcp/index.md` - Quick Start section
 - `docs/mcp/installation.md` - Cursor installation section

@@ -46,17 +46,11 @@ describe('tools/pwav3/pwa-kit-development-guidelines', () => {
       const tool = createDeveloperGuidelinesTool(() => services);
       const desc = tool.description;
 
-      expect(desc).to.include('ESSENTIAL FIRST STEP');
-      expect(desc).to.include('Use this tool FIRST');
       expect(desc).to.include('PWA Kit');
-      expect(desc).to.include('architecture rules');
-      expect(desc).to.include('coding standards');
-      expect(desc).to.include('best practices');
-      expect(desc).to.include('React components');
-      expect(desc).to.include('data fetching');
-      expect(desc).to.include('routing');
-      expect(desc).to.match(/comprehensive|quick reference/i);
-      expect(desc.length).to.be.lessThan(700);
+      expect(desc).to.include('architecture');
+      expect(desc).to.include('implementation');
+      expect(desc).to.not.match(/CRITICAL|ALWAYS|DO NOT/i);
+      expect(desc.length).to.be.at.most(400);
     });
 
     it('should list all sections in inputSchema description', () => {
@@ -316,7 +310,7 @@ describe('tools/pwav3/pwa-kit-development-guidelines', () => {
       expect(text).to.not.be.empty;
 
       const separators = text.match(/\n\n---\n\n/g);
-      expect(separators).to.have.lengthOf(4);
+      expect(separators).to.have.lengthOf(2);
     });
 
     it('should maintain order of sections as requested', async () => {

@@ -120,6 +120,9 @@ describe('operations/jobs/site-archive', () => {
       expect(result.archiveKept).to.be.false;
       expect(uploadedZip).to.not.be.null;
       expect(uploadedZip!.length).to.be.greaterThan(0);
+      const archive = await JSZip.loadAsync(uploadedZip!);
+      expect(Object.keys(archive.files)).to.include('test-import/catalogs/catalog.xml');
+      expect(Object.keys(archive.files).every((entry) => entry.startsWith('test-import/'))).to.equal(true);
       expect(jobExecuted).to.be.true;
     });
 
@@ -547,12 +550,26 @@ describe('operations/jobs/site-archive', () => {
       expect(deleteRequested).to.be.false;
     });
 
+    it('rejects a directory containing no files before upload', async () => {
+      const emptySiteDir = path.join(tempDir, 'empty-site-data');
+      fs.mkdirSync(path.join(emptySiteDir, 'meta'), {recursive: true});
+
+      try {
+        await siteArchiveImport(mockInstance, emptySiteDir, {waitOptions: FAST_WAIT_OPTIONS});
+        expect.fail('Should have rejected an empty import source');
+      } catch (error) {
+        expect((error as Error).message).to.equal(`No files found to import under: ${emptySiteDir}`);
+      }
+    });
+
     it('should throw JobExecutionError when import fails', async () => {
       const zipPath = path.join(tempDir, 'test.zip');
       fs.writeFileSync(zipPath, Buffer.from('PK\x03\x04'));
+      let logRequested = false;
 
       server.use(
-        http.all(`${WEBDAV_BASE}/*`, () => {
+        http.all(`${WEBDAV_BASE}/*`, ({request}) => {
+          if (request.method === 'GET') logRequested = true;
           return new HttpResponse(null, {status: 201});
         }),
         http.post(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions`, () => {
@@ -567,7 +584,8 @@ describe('operations/jobs/site-archive', () => {
             id: 'exec-fail',
             execution_status: 'finished',
             exit_status: {code: 'ERROR', message: 'Import failed'},
-            is_log_file_existing: false,
+            is_log_file_existing: true,
+            log_file_path: '/Sites/Impex/log/import-fail.log',
           });
         }),
       );
@@ -582,6 +600,8 @@ describe('operations/jobs/site-archive', () => {
         // The error message includes the job ID
         expect(error.message).to.include('failed');
       }
+
+      expect(logRequested).to.equal(false);
     });
   });
 
@@ -1019,8 +1039,13 @@ describe('operations/jobs/site-archive', () => {
 
     it('should throw JobExecutionError when export fails', async () => {
       const exportPath = path.join(tempDir, 'export-fail.zip');
+      let logRequested = false;
 
       server.use(
+        http.get(`${WEBDAV_BASE}/*`, () => {
+          logRequested = true;
+          return new HttpResponse('export log', {status: 200});
+        }),
         http.post(`${OCAPI_BASE}/jobs/sfcc-site-archive-export/executions`, () => {
           return HttpResponse.json({
             id: 'export-fail',
@@ -1033,7 +1058,8 @@ describe('operations/jobs/site-archive', () => {
             id: 'export-fail',
             execution_status: 'finished',
             exit_status: {code: 'ERROR', message: 'Export failed'},
-            is_log_file_existing: false,
+            is_log_file_existing: true,
+            log_file_path: '/Sites/Impex/log/export-fail.log',
           });
         }),
       );
@@ -1048,6 +1074,8 @@ describe('operations/jobs/site-archive', () => {
         // The error message includes the job ID
         expect(error.message).to.include('failed');
       }
+
+      expect(logRequested).to.equal(false);
     });
 
     it('should use default archive name when not provided', async () => {

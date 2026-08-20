@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce B2C Commerce CLI",
-  "version": "1.21.3",
+  "version": "1.23.1",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -352,6 +352,9 @@
       "setup": {
         "description": "Setup commands for development environment\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/setup.html",
         "subtopics": {
+          "default-config": {
+            "description": "Manage the shared global dw.json\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/setup.html#global-default-configuration"
+          },
           "ide": {
             "description": "Set up IDE integrations for B2C CLI configuration\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ide-integration.html"
           }

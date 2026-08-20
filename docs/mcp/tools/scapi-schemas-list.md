@@ -18,14 +18,17 @@ Requires OAuth credentials with `sfcc.scapi-schemas` scope. See [B2C Credentials
 
 ### Parameters
 
-| Parameter        | Type                          | Required | Description                                                                                                  |
-| ---------------- | ----------------------------- | -------- | ------------------------------------------------------------------------------------------------------------ |
-| `apiFamily`      | string                        | No       | Filter by API family (e.g., `"shopper"`, `"product"`, `"checkout"`, `"custom"`). Custom APIs use `"custom"`. |
-| `apiName`        | string                        | No       | Filter by API name (e.g., `"shopper-products"`, `"shopper-baskets"`).                                        |
-| `apiVersion`     | string                        | No       | Filter by API version (e.g., `"v1"`, `"v2"`).                                                                |
-| `status`         | `"current"` \| `"deprecated"` | No       | Filter by schema status. Only works in list mode.                                                            |
-| `includeSchemas` | boolean                       | No       | Fetch full OpenAPI schema. Requires all three: `apiFamily`, `apiName`, and `apiVersion`.                     |
-| `expandAll`      | boolean                       | No       | Return the full schema without collapsing. Requires `includeSchemas: true`.                                  |
+| Parameter          | Type                          | Required | Description                                                                                                                  |
+| ------------------ | ----------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `projectDirectory` | string                        | No       | Absolute project root used for `.env`, `dw.json`, and package configuration. Run `config_inspect` to see the resolved paths. |
+| `configPath`       | string                        | No       | Primary `dw.json`-format file; relative paths resolve from `projectDirectory`, with the shared default retained.             |
+| `instanceName`     | string                        | No       | Named instance selected from the primary configuration first, then the shared default `dw.json`.                             |
+| `apiFamily`        | string                        | No       | Filter by API family (e.g., `"shopper"`, `"product"`, `"checkout"`, `"custom"`). Custom APIs use `"custom"`.                 |
+| `apiName`          | string                        | No       | Filter by API name (e.g., `"shopper-products"`, `"shopper-baskets"`).                                                        |
+| `apiVersion`       | string                        | No       | Filter by API version (e.g., `"v1"`, `"v2"`).                                                                                |
+| `status`           | `"current"` \| `"deprecated"` | No       | Filter by schema status. Only works in list mode.                                                                            |
+| `includeSchemas`   | boolean                       | No       | Fetch full OpenAPI schema. Requires all three: `apiFamily`, `apiName`, and `apiVersion`.                                     |
+| `expandAll`        | boolean                       | No       | Return the full schema without collapsing. Requires `includeSchemas: true`.                                                  |
 
 **List mode:** omit `includeSchemas` or any identifier to browse available schemas.  
 **Fetch mode:** set `includeSchemas: true` and provide all three identifiers (`apiFamily`, `apiName`, `apiVersion`).

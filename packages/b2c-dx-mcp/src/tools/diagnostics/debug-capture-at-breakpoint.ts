@@ -63,10 +63,8 @@ export function createDebugCaptureAtBreakpointTool(
     {
       name: 'debug_capture_at_breakpoint',
       description:
-        'Set a breakpoint, optionally trigger an HTTP request, wait for the breakpoint to be hit, and capture a diagnostic snapshot (stack, variables, expression results). ' +
-        'Use trigger_url to have the tool fire the request itself (recommended) — this avoids needing to coordinate a separate request while the tool blocks. ' +
-        'Without trigger_url, the tool BLOCKS until the breakpoint is hit or timeout expires and requires the user to trigger a request externally. ' +
-        'For more control, use the non-blocking workflow: debug_set_breakpoints → trigger request → debug_list_sessions (check halted_threads) → debug_get_variables.',
+        'Set a breakpoint, optionally GET trigger_url, wait for a halt, and return stack, variables, and expressions. ' +
+        'Without trigger_url, blocks until an external request hits the breakpoint or timeout expires.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         session_id: z.string().describe('Session ID returned by debug_start_session.'),
@@ -87,13 +85,7 @@ export function createDebugCaptureAtBreakpointTool(
           .boolean()
           .optional()
           .describe('If true, resume the thread after capturing the snapshot. Defaults to false.'),
-        trigger_url: z
-          .string()
-          .optional()
-          .describe(
-            'URL to request after arming the breakpoint. The tool fires this HTTP GET in the background, then waits for the breakpoint to halt. ' +
-              'This is the recommended approach — it avoids needing to coordinate a separate request while the tool blocks.',
-          ),
+        trigger_url: z.string().optional().describe('HTTP GET URL to invoke after arming the breakpoint.'),
       },
       async execute(args, context) {
         const entry = getSessionEntry(context, args.session_id);

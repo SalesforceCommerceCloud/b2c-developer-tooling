@@ -117,6 +117,8 @@ export interface NormalizedConfig {
   // Cartridges
   /** Cartridge names to include in deploy/watch operations */
   cartridges?: string[];
+  /** Project-relative directory paths to exclude recursively from import-set source discovery */
+  importSetExclude?: string[];
 
   // Content
   /** Default content library ID for content export/list commands */
@@ -195,7 +197,13 @@ export interface NormalizedConfig {
 /**
  * Warning codes for configuration resolution.
  */
-export type ConfigWarningCode = 'HOSTNAME_MISMATCH' | 'DEPRECATED_FIELD' | 'MISSING_REQUIRED' | 'SOURCE_ERROR';
+export type ConfigWarningCode =
+  | 'HOSTNAME_MISMATCH'
+  | 'CLIENT_ID_MISMATCH'
+  | 'SLAS_CLIENT_ID_MISMATCH'
+  | 'DEPRECATED_FIELD'
+  | 'MISSING_REQUIRED'
+  | 'SOURCE_ERROR';
 
 /**
  * A warning generated during configuration resolution.
@@ -209,18 +217,32 @@ export interface ConfigWarning {
   details?: Record<string, unknown>;
 }
 
+/** A dw.json file participating in the effective instance catalog. */
+export interface ConfigCatalogFile {
+  /** File path. */
+  location: string;
+  /** Whether this is the primary project file or the shared global file. */
+  scope: 'global' | 'primary';
+  /** Whether this file supplied the selected instance. */
+  selected: boolean;
+}
+
 /**
- * Information about a configuration source that contributed to resolution.
+ * Information about a configuration source that participated in resolution.
  */
 export interface ConfigSourceInfo {
   /** Human-readable name of the source */
   name: string;
+  /** Logical scope of the source when it differs from the primary project configuration. */
+  scope?: 'global';
   /** Location of the source (file path, keychain entry, URL, etc.) */
   location?: string;
   /** All fields that this source provided values for */
   fields: (keyof NormalizedConfig)[];
   /** Fields that were not used because a higher priority source already provided them */
   fieldsIgnored?: (keyof NormalizedConfig)[];
+  /** dw.json files available to this source for named/default instance selection. */
+  instanceCatalog?: ConfigCatalogFile[];
 }
 
 /**
@@ -231,7 +253,7 @@ export interface ConfigResolutionResult {
   config: NormalizedConfig;
   /** Warnings generated during resolution */
   warnings: ConfigWarning[];
-  /** Information about which sources contributed to the config */
+  /** Information about sources that contributed values or instance-catalog context */
   sources: ConfigSourceInfo[];
 }
 
@@ -243,12 +265,22 @@ export interface ResolveConfigOptions {
   instance?: string;
   /** Explicit path to config file (defaults to auto-discover) */
   configPath?: string;
+  /** Global instance-catalog fallback used after an explicit or project-local dw.json */
+  defaultConfigPath?: string;
   /** Starting directory for config file search */
   projectDirectory?: string;
   /** @deprecated Use projectDirectory instead */
   workingDirectory?: string;
   /** Whether to apply hostname mismatch protection (default: true) */
   hostnameProtection?: boolean;
+  /**
+   * Whether to apply OAuth clientId mismatch protection (default: true).
+   * When the override clientId differs from the base config's clientId, the
+   * stored clientSecret is dropped — a secret bound to a different client
+   * would silently steer auth into client-credentials with credentials that
+   * never validate. Same protection applies to slasClientId / slasClientSecret.
+   */
+  clientIdProtection?: boolean;
   /** Cloud origin for ~/.mobify lookup (MRT) */
   cloudOrigin?: string;
   /** Path to custom MRT credentials file (overrides default ~/.mobify) */
@@ -278,6 +310,10 @@ export interface ResolveConfigOptions {
 export interface ConfigLoadResult {
   /** The loaded configuration */
   config: NormalizedConfig;
+  /** Logical scope of the source when it differs from the primary project configuration. */
+  scope?: 'global';
+  /** dw.json files available for named/default instance selection. */
+  instanceCatalog?: ConfigCatalogFile[];
   /**
    * Location of the source (for diagnostics).
    * May be a file path, keychain entry, URL, or other identifier.
@@ -398,13 +434,13 @@ export interface ConfigSource {
  * Options for creating OAuth auth strategy.
  */
 export interface CreateOAuthOptions {
-  /** Allowed OAuth methods (default: ['client-credentials', 'implicit']) */
+  /** Allowed OAuth methods (default: client credentials, then PKCE user auth, then deprecated implicit auth) */
   allowedMethods?: AuthMethod[];
   /** Additional OAuth scopes to request beyond those in config */
   scopes?: string[];
-  /** Override redirect URI for implicit OAuth flow (e.g., for port forwarding in remote environments) */
+  /** Override redirect URI for browser OAuth flows (e.g., for port forwarding in remote environments) */
   redirectUri?: string;
-  /** Custom browser opener for implicit OAuth flow. Receives the authorization URL. */
+  /** Custom browser opener for browser OAuth flows. Receives the authorization URL. */
   openBrowser?: (url: string) => Promise<void>;
 }
 
@@ -470,7 +506,7 @@ export interface ResolvedB2CConfig {
   /** Warnings generated during resolution */
   readonly warnings: ConfigWarning[];
 
-  /** Information about which sources contributed to the config */
+  /** Information about sources that contributed values or instance-catalog context */
   readonly sources: ConfigSourceInfo[];
 
   // Validation methods

@@ -1,6 +1,6 @@
 ---
 name: b2c-job
-description: Run and monitor jobs on B2C Commerce instances using the b2c CLI, including site archive import/export and search indexing. Use this skill whenever the user needs to trigger a job, import a site archive, export site data, rebuild search indexes, check job status, or troubleshoot failed job executions — even if they just say "import this folder" or "rebuild the search index".
+description: Run and monitor jobs on B2C Commerce instances using the b2c CLI, including individual site archive imports and exports and search indexing. Use this skill whenever the user needs to trigger an existing job, import a single site archive, export site data, rebuild search indexes, check job status, or troubleshoot a failed job execution — even if they just say "run this job", "import this archive", or "rebuild the search index".
 ---
 
 # B2C Job Skill
@@ -9,7 +9,7 @@ Use the `b2c` CLI plugin to **run existing jobs** and import/export site archive
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli job run`).
 
-> **Creating a new job?** If you need to write custom job step *code* (batch processing, scheduled tasks, data sync) **or author the `jobs.xml` job definition** that makes a job exist (so it can be run/scheduled), use the `b2c:b2c-custom-job-steps` skill — see its [jobs.xml Reference](../../../b2c/skills/b2c-custom-job-steps/references/JOBS-XML.md). `b2c job run` only executes jobs that already exist on the instance.
+> **Creating a new job?** If you need to write custom job step _code_ (batch processing, scheduled tasks, data sync) **or author the `jobs.xml` job definition** that makes a job exist (so it can be run/scheduled), use the `b2c:b2c-custom-job-steps` skill — see its [jobs.xml Reference](../../../b2c/skills/b2c-custom-job-steps/references/JOBS-XML.md). `b2c job run` only executes jobs that already exist on the instance.
 
 ## Configuration & Authentication
 
@@ -98,6 +98,19 @@ b2c job import ./my-site-data sites/RefArch libraries/mylib
 b2c job import ./my-site-data 'libraries/**'
 ```
 
+### Import Sets
+
+`job import-set` first applies site import/export archives from discovered cartridge `metadata/` sources, then applies archives in `./migrations`, and skips archives already recorded on the target instance:
+
+```bash
+b2c job import-set --dry-run
+b2c job import-set
+b2c job import-set --no-cartridge-metadata # only use ./migrations
+b2c job import-set --import-set-exclude fixtures # ignore this project subtree
+```
+
+`--import-set-exclude` can be repeated or comma-separated and can also be configured as `b2c.importSetExclude` in `package.json`, `import-set-exclude` in `dw.json`, or `SFCC_IMPORT_SET_EXCLUDE`. For the full migration workflow — archive layouts, timestamp naming, post-import README notes, retry behavior, reset options, concurrency, and recovery — use the `b2c-cli:b2c-import-set-migrations` skill.
+
 ### Export Site Archives
 
 The `job export` command exports data from a B2C Commerce instance as a site archive. You must specify at least one data unit to export.
@@ -153,18 +166,32 @@ b2c job export --global-data meta_data --keep-archive
 b2c job export --global-data meta_data --timeout 600
 ```
 
+#### Output Directory Semantics
+
+When `--output` names a directory, the CLI extracts the downloaded platform zip as-is. Platform exports contain a generated top-level directory such as `<timestamp>_export`, so `--output migrations` creates `migrations/<generated>_export/...`; it does not merge data units directly into `migrations/`. If `--output` ends in `.zip`, the CLI writes that exact zip path instead.
+
+For an ordered import-set migration, export to the import-set directory, rename the one newly generated archive root once to its permanent ordered name, and then review and trim it in place:
+
+```bash
+b2c job export --site RefArch --site-data site_descriptor --output migrations
+mv migrations/<GENERATED_EXPORT_DIR> migrations/20260815T120000-update-site-descriptor
+b2c job import-set --dry-run
+```
+
+Do not require a temporary directory and copy step for export-based migrations. Never export over an existing or applied archive. See `b2c-cli:b2c-import-set-migrations` for naming, trimming, retry, and deployment rules, and `b2c-cli:b2c-site-import-export` for valid archive structure.
+
 #### Available Data Units
 
 **Top-level categories** (each takes one or more IDs via flags):
 
-| Flag | Description |
-|---|---|
-| `--site` | Site IDs to export (use `--site-data` to pick specific units, defaults to all) |
-| `--catalog` | Catalog IDs |
-| `--library` | Library IDs |
-| `--inventory-list` | Inventory list IDs |
-| `--price-book` | Price book IDs |
-| `--global-data` | Global data units (comma-separated names from the list below) |
+| Flag               | Description                                                                    |
+| ------------------ | ------------------------------------------------------------------------------ |
+| `--site`           | Site IDs to export (use `--site-data` to pick specific units, defaults to all) |
+| `--catalog`        | Catalog IDs                                                                    |
+| `--library`        | Library IDs                                                                    |
+| `--inventory-list` | Inventory list IDs                                                             |
+| `--price-book`     | Price book IDs                                                                 |
+| `--global-data`    | Global data units (comma-separated names from the list below)                  |
 
 **Site data units** (use with `--site-data`):
 
@@ -229,4 +256,4 @@ b2c job wait <job-id> <execution-id> --poll-interval 5
 
 - `b2c:b2c-custom-job-steps` - For **creating** new custom job steps and **chaining them with standard steps** (includes the standard step catalog, IMPEX hand-off, and in-flow-vs-CLI guidance)
 - `b2c-cli:b2c-docs` - To look up standard job step type IDs and their parameters (`b2c docs read job-steps`)
-- `b2c-cli:b2c-site-import-export` - For site archive structure and metadata XML patterns
+- `b2c-cli:b2c-site-import-export` - Canonical site archive and idempotent import-set guidance

@@ -69,20 +69,20 @@ describe('tools/docs', () => {
       expect(search.toolsets).to.have.members(['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT']);
     });
 
-    it('keeps every tool description within the 1024-char MCP limit (even with all workspaces detected)', () => {
+    it('keeps every tool description concise even with all workspaces detected', () => {
       // Worst case: every workspace detected + a full topic allowlist → longest appended notes.
       const tools = createDocsTools(loadServices, {
         detectedWorkspaces: ['cartridges', 'sfra', 'pwa-kit-v3', 'storefront-next'],
         enabledCategories: ['script-api', 'job-step', 'commerce-api', 'pwa-kit-managed-runtime', 'sfnext', 'sfra'],
       });
       for (const tool of tools) {
-        expect(tool.description.length, `${tool.name} description too long`).to.be.at.most(1024);
+        expect(tool.description.length, `${tool.name} description too long`).to.be.at.most(400);
       }
     });
 
-    it('surfaces the detected workspace in the search tool description', () => {
+    it('surfaces the startup-detected workspace in the search tool description', () => {
       const [search] = createDocsTools(loadServices, {detectedWorkspaces: ['storefront-next']});
-      expect(search.description).to.contain('Detected workspace');
+      expect(search.description).to.contain('Workspace at startup');
       expect(search.description).to.contain('Storefront Next');
     });
   });
@@ -91,7 +91,7 @@ describe('tools/docs', () => {
     it('bounds search/list/read to the enabled categories and notes it in descriptions', async () => {
       const [search, read, list] = createDocsTools(loadServices, {enabledCategories: ['sfnext', 'commerce-api']});
       for (const tool of [search, read, list]) {
-        expect(tool.description, `${tool.name} should note the restriction`).to.contain('restricted at startup');
+        expect(tool.description, `${tool.name} should note the restriction`).to.contain('Topics');
         expect(tool.description).to.contain('sfnext');
       }
 

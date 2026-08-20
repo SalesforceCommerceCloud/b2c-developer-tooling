@@ -6,21 +6,21 @@
 
 import os from 'node:os';
 import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {detectWorkspaceType, type ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
 import {DOC_CATEGORIES, resolveEnabledCategories, type DocCategory} from '@salesforce/b2c-tooling-sdk/docs';
 import type {McpTool, Toolset, StartupFlags} from './utils/index.js';
-import {ALL_TOOLSETS, DEPRECATED_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES} from './utils/index.js';
+import {ALL_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES} from './utils/index.js';
 import type {B2CDxMcpServer} from './server.js';
-import type {Services} from './services.js';
 import type {ServerContext} from './server-context.js';
+import type {ServicesLoader} from './tools/adapter.js';
 import {createCartridgesTools} from './tools/cartridges/index.js';
 import {createDiagnosticsTools} from './tools/diagnostics/index.js';
 import {createDocsTools} from './tools/docs/index.js';
 import {createMrtTools} from './tools/mrt/index.js';
 import {createPwav3Tools} from './tools/pwav3/index.js';
 import {createScapiTools} from './tools/scapi/index.js';
-import {createStorefrontNextTools} from './tools/storefrontnext/index.js';
 
 /**
  * Base toolsets that are always enabled regardless of detected project type.
@@ -40,9 +40,6 @@ const PROJECT_TYPE_TOOLSETS: Record<ProjectType, Toolset[]> = {
   // (A SFRA workspace also matches the `cartridges` marker; the union dedupes.)
   sfra: ['CARTRIDGES'],
   'pwa-kit-v3': ['PWAV3', 'MRT'],
-  // Note: STOREFRONTNEXT_DEPRECATED is intentionally NOT auto-activated. The
-  // legacy sfnext_* tools are superseded by the storefront-next agent-skills
-  // plugins and must be explicitly requested via --toolsets.
   'storefront-next': ['STOREFRONTNEXT', 'MRT', 'CARTRIDGES'],
 };
 
@@ -96,7 +93,7 @@ export type ToolRegistry = Record<Toolset, McpTool[]>;
  * @returns Complete tool registry
  */
 export function createToolRegistry(
-  loadServices: () => Promise<Services> | Services,
+  loadServices: ServicesLoader,
   serverContext?: ServerContext,
   detectedWorkspaces: readonly ProjectType[] = [],
   enabledDocCategories?: readonly DocCategory[],
@@ -108,7 +105,6 @@ export function createToolRegistry(
     PWAV3: [],
     SCAPI: [],
     STOREFRONTNEXT: [],
-    STOREFRONTNEXT_DEPRECATED: [],
   };
 
   // Collect all tools from all factories
@@ -119,7 +115,6 @@ export function createToolRegistry(
     ...createMrtTools(loadServices),
     ...createPwav3Tools(loadServices),
     ...createScapiTools(loadServices),
-    ...createStorefrontNextTools(loadServices),
   ];
 
   // Organize tools by their declared toolsets (supports multi-toolset)
@@ -145,6 +140,7 @@ export function createToolRegistry(
  * without descending into unrelated deep trees.
  */
 const DISCOVERY_MAX_DEPTH = 5;
+const MCP_PACKAGE_DIRECTORY = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
  * Returns true when `dir` is a location that should never be recursively
@@ -159,7 +155,7 @@ function isUnscannableRoot(dir: string): boolean {
     return true;
   }
   const home = os.homedir();
-  return Boolean(home) && path.resolve(home) === resolved;
+  return (Boolean(home) && path.resolve(home) === resolved) || resolved === MCP_PACKAGE_DIRECTORY;
 }
 
 /**
@@ -195,7 +191,7 @@ async function detectProjectTypes(flags: StartupFlags): Promise<ProjectType[]> {
   if (isUnscannableRoot(projectDirectory)) {
     logger.warn(
       {projectDirectory},
-      'Project directory is a home or root directory; skipping workspace auto-discovery. ' +
+      'Project directory is a home, filesystem root, or MCP installation directory; skipping workspace auto-discovery. ' +
         'Set --project-directory or SFCC_PROJECT_DIRECTORY to the project path to enable it.',
     );
     return [];
@@ -236,7 +232,7 @@ const REGISTERED_SERVERS = new WeakSet<B2CDxMcpServer>();
 export async function registerToolsets(
   flags: StartupFlags,
   server: B2CDxMcpServer,
-  loadServices: () => Promise<Services> | Services,
+  loadServices: ServicesLoader,
   serverContext?: ServerContext,
 ): Promise<void> {
   if (REGISTERED_SERVERS.has(server)) {
@@ -298,14 +294,9 @@ export async function registerToolsets(
     );
   }
 
-  // Determine which toolsets to enable.
-  // `ALL` expands to every toolset EXCEPT deprecated ones — deprecated toolsets
-  // must always be named explicitly.
+  // Determine which toolsets to enable. `ALL` expands to every toolset.
   const validToolsets = toolsets.filter((t): t is Toolset => TOOLSETS.includes(t as Toolset));
-  const allNonDeprecatedToolsets = TOOLSETS.filter(
-    (t) => !DEPRECATED_TOOLSETS.includes(t as (typeof DEPRECATED_TOOLSETS)[number]),
-  );
-  const toolsetsToEnable = new Set<Toolset>(toolsets.includes(ALL_TOOLSETS) ? allNonDeprecatedToolsets : validToolsets);
+  const toolsetsToEnable = new Set<Toolset>(toolsets.includes(ALL_TOOLSETS) ? TOOLSETS : validToolsets);
 
   // Auto-discovery: only when no valid toolsets AND no valid individual tools
   // were provided. This handles both (1) no flags provided, and (2) all

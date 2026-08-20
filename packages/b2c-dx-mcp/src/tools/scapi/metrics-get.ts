@@ -100,35 +100,17 @@ export function createMetricsGetTool(loadServices: () => Promise<Services> | Ser
   return createToolAdapter<MetricsGetInput, MetricsGetOutput>(
     {
       name: 'metrics_get',
-      description: `CLOSED BETA: the Metrics API must be enabled for your organization, and its behavior, output, and OAuth scopes may change without notice.
-
-Retrieve observability metrics time-series for a B2C Commerce tenant. Returns metrics data grouped by category with time-series data points.
-
-**Categories:**
-- overall: Aggregate site metrics (requests, response times, errors)
-- sales: Sales and order metrics
-- ecdn: Edge CDN performance metrics
-- third-party: External service metrics (use thirdPartyServiceId filter)
-- scapi: SCAPI endpoint metrics (use apiFamily/apiName filters)
-- scapi-hooks: SCAPI hooks execution metrics
-- mrt: Managed Runtime (PWA Kit) metrics
-- controller: Controller execution metrics
-- ocapi: OCAPI endpoint metrics (use ocapiCategory/ocapiApi filters)
-
-**Time window:** Provide "from" and/or "to" as a relative duration ("1h", "7d" — interpreted as ago) or an ISO 8601 timestamp, and/or "window" as a duration ("1h", "30m"). The tool always sends an explicit from+to range, defaulting to a 24-hour window: from + window → to = from + window; to + window → from = to - window; window alone → the last <window>; from alone → 24h forward from it (capped at now); to alone → 24h back from it; nothing → the last 24h. Do not supply from, to, and window together. The API caps a window at 24h and retains 30 days; an explicit range wider than 24h is sent as-is and the API returns a clear error.
-
-**Response:** { query, data } — "query" echoes the resolved from/to (ISO + epoch seconds), filters, and defaultedWindow/clampedFrom flags; "data[]" contains metricId, title, description, unit, and dataSeries[] with time-series points (timestamp in epoch milliseconds, value). Each series also carries a structured "tags" object (realm, environment, any applied filters, and per-series dimensions like apiFamily/host/cacheStatus) parsed client-side from the packed series id — use these to group/filter rather than parsing the series id string.
-
-**Requirements:** OAuth with sfcc.metrics scope.`,
+      description:
+        'CLOSED BETA. Retrieve B2C observability metric time series by category and time range. ' +
+        'Defaults to the last 24 hours. Requires Metrics API access and OAuth scope sfcc.metrics.',
       toolsets: ['SCAPI'],
       isGA: false,
       requiresInstance: false, // SCAPI uses OAuth directly
+      usesConfigurationContext: true,
       inputSchema: {
         category: z
           .enum(['overall', 'sales', 'ecdn', 'third-party', 'scapi', 'scapi-hooks', 'mrt', 'controller', 'ocapi'])
-          .describe(
-            'Metrics category: overall (aggregate), sales, ecdn (CDN), third-party (external), scapi (SCAPI APIs), scapi-hooks, mrt (PWA Kit), controller, ocapi',
-          ),
+          .describe('Metrics category.'),
         from: z
           .string()
           .optional()
@@ -142,9 +124,7 @@ Retrieve observability metrics time-series for a B2C Commerce tenant. Returns me
         window: z
           .string()
           .optional()
-          .describe(
-            'Window duration ("1h", "30m", "2d"). With from → to=from+window; with to → from=to-window; alone → the last <window>. Defaults to 24h.',
-          ),
+          .describe('Duration combined with from or to; alone selects the latest window. Default: 24h.'),
         thirdPartyServiceId: z
           .string()
           .optional()

@@ -37,7 +37,7 @@ These flags are available on all sandbox commands:
 
 ## Authentication
 
-Sandbox commands work out of the box using the CLI's built-in public client, which authenticates via browser login (implicit flow). No API client configuration is required for interactive use.
+Sandbox commands work out of the box using the CLI's built-in public client, which authenticates via browser login (Authorization Code + PKCE flow). No API client configuration is required for interactive use.
 
 For automation or CI/CD, you can provide your own API client credentials.
 
@@ -1013,6 +1013,8 @@ With a single API call, you can provision a fully isolated replica of your sandb
 
 Each cloned sandbox is fully isolated, with dedicated compute, storage, and database resources.
 
+You can also create multiple clones upto 5 from a single source in one request (1 to many cloning) using `--target-count`. All clones in the batch share a `batchId`, and each clone's response/details list the other clones in the batch as `siblingCloneIds`.
+
 Clone commands are available both under the `sandbox` topic and the legacy `ods` aliases:
 
 - `b2c sandbox clone list`
@@ -1049,12 +1051,13 @@ b2c sandbox clone list <SANDBOXID>
 | `--from` | Filter clones created on or after this date (ISO 8601 date format, e.g., `2024-01-01`) |
 | `--to` | Filter clones created on or before this date (ISO 8601 date format, e.g., `2024-12-31`) |
 | `--status` | Filter clones by status (`Pending`, `InProgress`, `Failed`, `Completed`) |
+| `--batch-id` | Filter clones belonging to a specific 1 to many cloning batch |
 | `--columns`, `-c` | Columns to display (comma-separated) |
 | `--extended`, `-x` | Show all columns |
 
 #### Available Columns
 
-`cloneId`, `sourceInstance`, `targetInstance`, `status`, `progressPercentage`, `createdAt`, `lastUpdated`, `elapsedTimeInSec`, `customCodeVersion`
+`cloneId`, `sourceInstance`, `targetInstance`, `status`, `progressPercentage`, `createdAt`, `lastUpdated`, `elapsedTimeInSec`, `customCodeVersion`, `batchId`
 
 **Default columns:** `cloneId`, `sourceInstance`, `targetInstance`, `status`, `progressPercentage`, `createdAt`
 
@@ -1075,6 +1078,9 @@ b2c sandbox clone list zzzv-123 --extended
 
 # Custom columns
 b2c sandbox clone list zzzv-123 --columns cloneId,status,progressPercentage
+
+# List clones belonging to a specific 1 to many cloning batch
+b2c sandbox clone list zzzv-123 --batch-id batch-abcd-002-1700000000000-a1b2c3d4
 
 # Output as JSON
 b2c sandbox clone list zzzv-123 --json
@@ -1114,6 +1120,10 @@ b2c sandbox clone create <SANDBOXID>
 | `--target-profile` | Resource profile for the cloned sandbox (`medium`, `large`, `xlarge`, `xxlarge`). Optional. | Source sandbox profile |
 | `--ttl` | Time to live in hours (0 or negative = infinite, minimum 24 hours). Values between 1-23 are not allowed. | `24` |
 | `--emails` | Comma-separated list of notification email addresses | |
+| `--target-count` | Number of clones to create from this source (1 to many cloning). Valid values are 1 to 5. | `1` |
+| `--wait`, `-w` | Wait for the clone (or all clones in the batch) to complete before returning | `false` |
+| `--poll-interval` | Polling interval in seconds when using `--wait` | `10` |
+| `--timeout` | Maximum time to wait in seconds when using `--wait` (0 for no timeout) | `1800` |
 
 #### Examples
 
@@ -1136,6 +1146,12 @@ b2c sandbox clone create zzzv-123 --emails dev@example.com,qa@example.com
 # Create a clone with infinite TTL
 b2c sandbox clone create zzzv-123 --ttl 0
 
+# Create 3 clones from the same source in one request (1 to many cloning)
+b2c sandbox clone create zzzv-123 --target-count 3
+
+# Create 3 clones and wait for all of them to complete
+b2c sandbox clone create zzzv-123 --target-count 3 --wait
+
 # Output as JSON
 b2c sandbox clone create zzzv-123 --json
 ```
@@ -1150,6 +1166,14 @@ To check the clone status, run:
   b2c sandbox clone get zzzv-123 aaaa-002-1642780893121
 ```
 
+When `--target-count` is greater than 1, the output includes the batch ID and the clone IDs of every clone in the batch instead of a single clone ID:
+
+```
+✓ Sandbox clone batch creation started successfully (3 clones)
+Batch ID: batch-abcd-002-1700000000000-a1b2c3d4
+Clone IDs: aaaa-002-1642780893121, aaaa-003-1642780893122, aaaa-004-1642780893123
+```
+
 #### Notes
 
 - **Source sandbox will be stopped:** The source sandbox is automatically placed in a **Stopped** state during cloning to ensure data integrity and configuration consistency. It resumes normal operation once cloning is complete.
@@ -1158,6 +1182,7 @@ To check the clone status, run:
 - When `--target-profile` is not specified, the API automatically uses the source sandbox's resource profile (no additional API call is made)
 - The TTL must be 0 or negative (infinite), or 24 hours or greater. Values between 1-23 are rejected
 - The clone will be created as a new sandbox instance in the same realm
+- With `--target-count` greater than 1, all clones in the batch share the same source, TTL, profile, and notification emails. Use `--wait` to poll every clone in the batch until each reaches a terminal state, or `b2c sandbox clone list --batch-id <batchId>` to check on them later
 
 ### b2c sandbox clone get
 
@@ -1207,6 +1232,13 @@ Custom Code Version:      version1
 Storefront Count:         0
 Filesystem Usage Size:    1073741824
 Database Transfer Size:   2147483648
+```
+
+If the clone was created as part of a 1 to many cloning batch (`--target-count` greater than 1), the output also includes the batch ID and the clone IDs of the other clones in the batch:
+
+```
+Batch ID:                 batch-abcd-002-1700000000000-a1b2c3d4
+Sibling Clone IDs:        aaaa-003-1642780893122, aaaa-004-1642780893123
 ```
 
 For the complete response including all metadata, use the `--json` flag.

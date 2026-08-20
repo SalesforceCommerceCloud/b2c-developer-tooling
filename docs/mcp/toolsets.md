@@ -18,6 +18,7 @@ Cartridge deployment and code version management. **Auto-enabled for** cartridge
 
 Script debugger, runtime log inspection, and multi-corpus documentation search. **Always enabled.** The debugger and log tools also appear in `CARTRIDGES` and `SCAPI`; the documentation tools appear in every toolset.
 
+- `config_inspect` — show the resolved configuration (instance, auth, SCAPI/MRT settings) with the contributing source for each value, plus the effective [project directory](./configuration#project-directory) and how it was resolved. Secrets are redacted by default. Use it first when configuration seems wrong or the server appears to target the wrong instance or directory.
 - [Script Debugger](./tools/diagnostics) — `debug_*` tools: manage SDAPI sessions, set breakpoints, step execution, inspect stack/variables, and capture at a breakpoint
 - [Instance logs](./tools/logs#instance-logs) — `logs_*` tools: list files, fetch recent entries, and run buffered watches
 - [MRT logs](./tools/logs#mrt-logs) — `mrt_logs_*` tools: buffered tail of Managed Runtime application logs over a WebSocket
@@ -50,32 +51,12 @@ Salesforce Commerce API discovery and exploration. **Always enabled.**
 
 ## STOREFRONTNEXT
 
-Storefront Next development support. **Auto-enabled for** Storefront Next projects; enables the `MRT` and `CARTRIDGES` toolsets alongside the base `SCAPI` and `DIAGNOSTICS`. The legacy `sfnext_*` tools are deprecated — use the [`storefront-next` / `storefront-next-figma` agent-skills plugins](../guide/agent-skills) instead.
+Storefront Next deployment and instance support. **Auto-enabled for** Storefront Next projects; enables the `MRT` and `CARTRIDGES` toolsets alongside the base `SCAPI` and `DIAGNOSTICS`. For coding guidance and project workflows, use the [`storefront-next` agent-skills plugin](../guide/agent-skills).
 
 - [`mrt_bundle_push`](./tools/mrt-bundle-push) — build and push a bundle
 - [MRT logs](./tools/logs#mrt-logs) — `mrt_logs_*` tools
 - [`scapi_schemas_list`](./tools/scapi-schemas-list) — list or fetch SCAPI schemas (standard and custom)
 - [Custom APIs](./tools/scapi-custom-apis) — scaffold custom endpoints and check their registration status
-
-## STOREFRONTNEXT_DEPRECATED
-
-::: warning DEPRECATED — use the agent-skills plugins instead
-The `sfnext_*` MCP tools are **deprecated** and **not compatible with the Storefront Next 1.0 GA release**. They have been superseded by the [`storefront-next`](../guide/agent-skills) and [`storefront-next-figma`](../guide/agent-skills) agent-skills plugins, which stay current with the GA release. **These tools will be removed in a future release.**
-
-This toolset is **never auto-enabled** and is **excluded from `--toolsets ALL`**; to use it you must request it explicitly _and_ pass `--allow-non-ga-tools`:
-
-```json
-{"args": ["--toolsets", "STOREFRONTNEXT_DEPRECATED", "--allow-non-ga-tools"]}
-```
-
-:::
-
-- [`sfnext_get_guidelines`](./tools/sfnext-get-guidelines)
-- [`sfnext_start_figma_workflow`](./tools/sfnext-start-figma-workflow)
-- [`sfnext_analyze_component`](./tools/sfnext-analyze-component)
-- [`sfnext_match_tokens_to_theme`](./tools/sfnext-match-tokens-to-theme)
-- [`sfnext_add_page_designer_decorator`](./tools/sfnext-add-page-designer-decorator)
-- [`sfnext_configure_theme`](./tools/sfnext-configure-theme)
 
 ## Next Steps
 

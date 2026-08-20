@@ -1,6 +1,6 @@
 {
   "name": "@salesforce/b2c-script-types",
-  "version": "26.7.0",
+  "version": "26.9.0",
   "private": true,
   "description": "TypeScript definitions for the B2C Commerce Script API (dw/*) plus a TypeScript Language Service plugin that resolves cartridge require() calls.",
   "license": "Apache-2.0",

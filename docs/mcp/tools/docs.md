@@ -18,18 +18,18 @@ By default the tools return compact results — `docs_search` returns a short re
 
 Content-aware search across all corpora using BM25-style ranking. Results include the key fields by default (id, title, category, summary, score); pass `verbose=true` for `keywords` and `url`. The MCP server auto-detects the workspace's storefront framework at startup and uses it to weight results. Results are paginated by ranked position.
 
-| Parameter   | Type    | Required | Default | Description                                                                                                                                                             |
-| ----------- | ------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `query`     | string  | Yes      |         | Search query (keywords, class name, or topic)                                                                                                                           |
-| `limit`     | number  | No       | `5`     | Maximum number of results                                                                                                                                               |
-| `offset`    | number  | No       | `0`     | Number of ranked results to skip (for pagination)                                                                                                                       |
-| `verbose`   | boolean | No       | `false` | Include `keywords`, `url`, and `sourceUrl` on each result (larger payload)                                                                                              |
-| `category`  | string  | No       | (all)   | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step`, `help-admin`, `help-merchant`     |
-| `workspace` | string  | No       | `auto`  | Workspace awareness: `auto` (auto-detected), `all` (no preference), or specify one or more types comma-separated: `cartridges`, `sfra`, `pwa-kit-v3`, `storefront-next` |
+| Parameter   | Type    | Required | Default | Description                                                                                                                                                         |
+| ----------- | ------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `query`     | string  | Yes      |         | Search query (keywords, class name, or topic)                                                                                                                       |
+| `limit`     | number  | No       | `5`     | Maximum number of results                                                                                                                                           |
+| `offset`    | number  | No       | `0`     | Number of ranked results to skip (for pagination)                                                                                                                   |
+| `verbose`   | boolean | No       | `false` | Include `keywords`, `url`, and `sourceUrl` on each result (larger payload)                                                                                          |
+| `category`  | string  | No       | (all)   | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step`, `help-admin`, `help-merchant` |
+| `workspace` | string  | No       | `auto`  | Workspace awareness: `auto` (detected at server startup), `all` (no preference), or an explicit type: `cartridges`, `sfra`, `pwa-kit-v3`, `storefront-next`         |
 
 **Returns:** `{query, category?, workspace?, total, offset, results: [{id, title, category, summary?, score, keywords?, url?, sourceUrl?}], truncated?, nextOffset?}`. Higher `score` = better match (results are pre-sorted best-first). Follow `nextOffset` while `truncated` is true to page through the ranked matches. `keywords`, `url`, and `sourceUrl` appear only when `verbose=true`. The `url` field is the .html page for opening in a browser, while `sourceUrl` is the raw .md source. Use `summary` to identify the right entry, then read it with `docs_read`.
 
-**Workspace awareness:** By default, the tool uses the auto-detected workspace (shown in the tool description) to boost relevant documentation. A detected or specified workspace boosts relevant categories (x1.4) and de-boosts competing storefront framework guides (sfra/pwa-kit-managed-runtime/sfnext that are not the current workspace) by x0.3. It never hides/filters — only reweights. To hard-scope results to a category, use the `category` parameter.
+**Workspace awareness:** By default, the tool uses the workspace detected when the MCP server starts (shown in the tool description) to boost relevant documentation. This startup-scoped value does not change between calls; pass an explicit `workspace` for another project in a multi-root session. A detected or specified workspace boosts relevant categories (x1.4) and de-boosts competing storefront framework guides (sfra/pwa-kit-managed-runtime/sfnext that are not the current workspace) by x0.3. It never hides/filters — only reweights. To hard-scope results to a category, use the `category` parameter.
 
 **Category boost mapping:**
 
@@ -73,12 +73,12 @@ Read documentation for a specific entry. Script API, Developer Center guides, Sa
 
 Enumerate documentation entries for browsing a known category. Use `docs_search` to answer a question; use this tool to list the contents of a category you already know. Results are a table of contents (id + title + category only) and are paginated.
 
-| Parameter   | Type   | Required | Default     | Description                                                                                                                                                                      |
-| ----------- | ------ | -------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `category`  | string | No       | (directory) | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step`, `help-admin`, `help-merchant`              |
-| `workspace` | string | No       | (directory) | Workspace awareness: `auto` (auto-detected) or specify one or more types comma-separated: `cartridges`, `sfra`, `pwa-kit-v3`, `storefront-next`. Omit for the category directory |
-| `limit`     | number | No       | `100`       | Maximum entries per page                                                                                                                                                         |
-| `offset`    | number | No       | `0`         | Number of entries to skip (for pagination)                                                                                                                                       |
+| Parameter   | Type   | Required | Default     | Description                                                                                                                                                          |
+| ----------- | ------ | -------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `category`  | string | No       | (directory) | Filter by category: `script-api`, `commerce-api`, `pwa-kit-managed-runtime`, `sfnext`, `sfra`, `b2c-commerce`, `tooling`, `job-step`, `help-admin`, `help-merchant`  |
+| `workspace` | string | No       | (directory) | Workspace awareness: `auto` (detected at server startup) or an explicit type: `cartridges`, `sfra`, `pwa-kit-v3`, `storefront-next`. Omit for the category directory |
+| `limit`     | number | No       | `100`       | Maximum entries per page                                                                                                                                             |
+| `offset`    | number | No       | `0`         | Number of entries to skip (for pagination)                                                                                                                           |
 
 **Returns (filtered):** `{category, total, offset, count, entries: [{id, title, category}], truncated?, nextOffset?}`.
 

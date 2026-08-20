@@ -86,6 +86,191 @@ describe('sandbox clone create', () => {
       expect(CloneCreate.flags).to.have.property('ttl');
       expect(CloneCreate.flags.ttl.default).to.equal(24);
     });
+
+    it('should have target-count flag with default of 1', () => {
+      expect(CloneCreate.flags).to.have.property('target-count');
+      expect(CloneCreate.flags['target-count'].default).to.equal(1);
+    });
+  });
+
+  describe('target-count validation', () => {
+    it('should reject target-count below 1', async () => {
+      const command = new CloneCreate(['test-sandbox-id'], {} as any);
+      (command as any).args = {sandboxId: 'test-sandbox-id'};
+      (command as any).flags = {ttl: 24, 'target-count': 0};
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
+      stubResolveSandboxId(command, async (id) => id);
+
+      try {
+        await command.run();
+        expect.fail('Should have thrown');
+      } catch (error: unknown) {
+        expect((error as Error).message).to.match(/target-count must be between/);
+      }
+    });
+
+    it('should reject target-count above 5', async () => {
+      const command = new CloneCreate(['test-sandbox-id'], {} as any);
+      (command as any).args = {sandboxId: 'test-sandbox-id'};
+      (command as any).flags = {ttl: 24, 'target-count': 6};
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
+      stubResolveSandboxId(command, async (id) => id);
+
+      try {
+        await command.run();
+        expect.fail('Should have thrown');
+      } catch (error: unknown) {
+        expect((error as Error).message).to.match(/target-count must be between/);
+      }
+    });
+
+    it('should include targetCount in request body', async () => {
+      const command = new CloneCreate(['test-sandbox-id'], {} as any);
+      (command as any).args = {sandboxId: 'test-sandbox-id'};
+      (command as any).flags = {ttl: 24, 'target-count': 3};
+      stubJsonEnabled(command, true);
+      stubCommandConfigAndLogger(command);
+      stubResolveSandboxId(command, async (id) => id);
+
+      let capturedBody: any;
+
+      stubOdsClientPost(command, async (path: string, options?: any) => {
+        capturedBody = options?.body;
+        return {
+          data: {data: {cloneId: 'test-clone-id', batchId: 'batch-1', siblingCloneIds: ['test-clone-id']}},
+          response: new Response(),
+        };
+      });
+
+      await command.run();
+
+      expect(capturedBody.targetCount).to.equal(3);
+    });
+  });
+
+  describe('batch response handling', () => {
+    it('should return batchId and siblingCloneIds when creating a batch', async () => {
+      const command = new CloneCreate(['test-sandbox-id'], {} as any);
+      (command as any).args = {sandboxId: 'test-sandbox-id'};
+      (command as any).flags = {ttl: 24, 'target-count': 3};
+      stubJsonEnabled(command, true);
+      stubCommandConfigAndLogger(command);
+      stubResolveSandboxId(command, async (id) => id);
+
+      const siblingCloneIds = ['clone-1', 'clone-2', 'clone-3'];
+
+      stubOdsClientPost(command, async () => ({
+        data: {data: {cloneId: 'clone-1', batchId: 'batch-abc', siblingCloneIds}},
+        response: new Response(),
+      }));
+
+      const result = await command.run();
+
+      expect(result.batchId).to.equal('batch-abc');
+      expect(result.siblingCloneIds).to.deep.equal(siblingCloneIds);
+    });
+
+    it('should display batch info in non-JSON mode', async () => {
+      const command = new CloneCreate(['test-sandbox-id'], {} as any);
+      (command as any).args = {sandboxId: 'test-sandbox-id'};
+      (command as any).flags = {ttl: 24, 'target-count': 3, wait: false, 'poll-interval': 10, timeout: 1800};
+      stubJsonEnabled(command, false);
+      stubCommandConfigAndLogger(command);
+      stubResolveSandboxId(command, async (id) => id);
+
+      const logs: string[] = [];
+      command.log = (msg?: string) => {
+        if (msg !== undefined) logs.push(msg);
+      };
+
+      stubOdsClientPost(command, async () => ({
+        data: {data: {cloneId: 'clone-1', batchId: 'batch-abc', siblingCloneIds: ['clone-1', 'clone-2', 'clone-3']}},
+        response: new Response(),
+      }));
+
+      await runSilent(() => command.run());
+
+      const combinedLogs = logs.join('\n');
+      expect(combinedLogs).to.include('batch');
+      expect(combinedLogs).to.include('batch-abc');
+      expect(combinedLogs).to.include('clone-1, clone-2, clone-3');
+    });
+
+    it('should poll all siblings and aggregate progress when --wait is used with a batch', async () => {
+      const command = new CloneCreate(['test-sandbox-id'], {} as any);
+      (command as any).args = {sandboxId: 'test-sandbox-id'};
+      (command as any).flags = {ttl: 24, 'target-count': 2, wait: true, 'poll-interval': 0, timeout: 5};
+      stubJsonEnabled(command, true);
+      stubCommandConfigAndLogger(command);
+      stubResolveSandboxId(command, async (id) => id);
+
+      const siblingCloneIds = ['clone-1', 'clone-2'];
+      const getCallsByCloneId: Record<string, number> = {};
+
+      Object.defineProperty(command, 'odsClient', {
+        value: {
+          POST: async () => ({
+            data: {data: {cloneId: 'clone-1', batchId: 'batch-abc', siblingCloneIds}},
+            response: new Response(),
+          }),
+          async GET(_path: string, options?: any) {
+            const cloneId = options?.params?.path?.cloneId;
+            getCallsByCloneId[cloneId] = (getCallsByCloneId[cloneId] ?? 0) + 1;
+            const status = getCallsByCloneId[cloneId] >= 2 ? 'COMPLETED' : 'IN_PROGRESS';
+            return {
+              data: {data: {status, cloneId, progressPercentage: status === 'COMPLETED' ? 100 : 50}},
+              response: new Response(),
+            };
+          },
+        },
+        configurable: true,
+      });
+
+      const result = await command.run();
+
+      expect(result.batchId).to.equal('batch-abc');
+      expect(getCallsByCloneId['clone-1']).to.be.greaterThanOrEqual(2);
+      expect(getCallsByCloneId['clone-2']).to.be.greaterThanOrEqual(2);
+    });
+
+    it('should error when a clone in the batch fails during wait', async () => {
+      const command = new CloneCreate(['test-sandbox-id'], {} as any);
+      (command as any).args = {sandboxId: 'test-sandbox-id'};
+      (command as any).flags = {ttl: 24, 'target-count': 2, wait: true, 'poll-interval': 0, timeout: 5};
+      stubJsonEnabled(command, true);
+      stubCommandConfigAndLogger(command);
+      makeCommandThrowOnError(command);
+      stubResolveSandboxId(command, async (id) => id);
+
+      const siblingCloneIds = ['clone-1', 'clone-2'];
+
+      Object.defineProperty(command, 'odsClient', {
+        value: {
+          POST: async () => ({
+            data: {data: {cloneId: 'clone-1', batchId: 'batch-abc', siblingCloneIds}},
+            response: new Response(),
+          }),
+          async GET(_path: string, options?: any) {
+            const cloneId = options?.params?.path?.cloneId;
+            const status = cloneId === 'clone-2' ? 'FAILED' : 'COMPLETED';
+            return {
+              data: {data: {status, cloneId}},
+              response: new Response(),
+            };
+          },
+        },
+        configurable: true,
+      });
+
+      try {
+        await command.run();
+        expect.fail('Should have thrown');
+      } catch (error: unknown) {
+        expect((error as Error).message).to.match(/clones? failed/);
+      }
+    });
   });
 
   describe('TTL validation', () => {

@@ -50,30 +50,21 @@ export function createLogsWatchStartTool(
     {
       name: 'logs_watch_start',
       description:
-        'Start a background log watch on the configured B2C Commerce instance. Returns a watch_id immediately. ' +
-        'Recommended workflow: call logs_watch_start BEFORE triggering the action that should produce logs ' +
-        '(e.g., a storefront request, a job, a debug session). Then call logs_watch_poll to drain buffered ' +
-        'entries (it blocks up to timeout_ms). Always call logs_watch_stop when done. ' +
-        'Only one active watch per hostname at a time — use logs_watch_list to find an existing one.',
+        'Start a B2C log watch and return watch_id. Start before the target action, poll with logs_watch_poll, ' +
+        'and always stop with logs_watch_stop. One active watch per hostname.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       requiresInstance: true,
       inputSchema: {
         prefixes: z
           .array(z.string())
           .optional()
-          .describe(
-            'Log prefixes to watch. Defaults to ["error", "customerror"]. Use a path like "internal/server" to watch logs in a subdirectory.',
-          ),
+          .describe('Log prefixes. Default: ["error", "customerror"]; paths may include subdirectories.'),
         last_entries: z
           .number()
           .int()
           .min(0)
           .optional()
-          .describe(
-            'Number of pre-existing entries per file to emit on startup. Defaults to 0 so a fresh ' +
-              'watch only captures NEW entries (matches the recommended "start before triggering" workflow). ' +
-              'Set >0 to include recent context.',
-          ),
+          .describe('Existing entries per file to emit at startup. Default: 0.'),
         poll_interval_ms: z
           .number()
           .int()
@@ -142,7 +133,12 @@ export function createLogsWatchStartTool(
         // it isn't orphaned (it would otherwise poll WebDAV until process exit).
         let entry;
         try {
-          entry = registry.registerWatch({hostname, prefixes, tailResult});
+          entry = registry.registerWatch({
+            hostname,
+            prefixes,
+            tailResult,
+            resolution: structuredClone(context.resolution),
+          });
         } catch (error) {
           await tailResult.stop().catch(() => {});
           throw error;

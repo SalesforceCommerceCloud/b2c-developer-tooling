@@ -132,27 +132,16 @@ export function createScapiCustomApisStatusTool(loadServices: () => Promise<Serv
   return createToolAdapter<CustomListInput, CustomListOutput>(
     {
       name: 'scapi_custom_apis_get_status',
-      description: `List Custom SCAPI endpoint registration status (active/not_registered). Returns one row per endpoint per site. For schemas, use scapi_schemas_list with apiFamily: "custom".
-
-Use cases: Check endpoint status, verify deployment, get per-site details. Use status: "active" to filter, groupBy: "site" to group, columns: "field1,field2" for specific fields, or omit columns for defaults.
-
-Output: Default (7 fields): type,apiName,cartridgeName,endpointPath,httpMethod,status,siteId. All fields: type,apiName,apiVersion,cartridgeName,endpointPath,httpMethod,status,siteId,securityScheme,operationId,schemaFile,implementationScript,errorReason,id.
-
-Requires OAuth (sfcc.custom-apis scope) and instance config (shortCode, tenantId). Returns remoteError on failure.
-
-CLI: b2c scapi custom status`,
+      description:
+        'List Custom SCAPI endpoint registration status per site. Supports filtering, grouping, and selected columns. Requires shortCode, tenantId, and sfcc.custom-apis scope. Use scapi_schemas_list for schemas.',
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       isGA: true,
       requiresInstance: false,
+      usesConfigurationContext: true,
       inputSchema: {
         status: z.enum(['active', 'not_registered']).optional().describe('Filter by status. Omit for all.'),
         groupBy: z.enum(['site', 'type']).optional().describe('Group by siteId or type (Admin/Shopper).'),
-        columns: z
-          .string()
-          .optional()
-          .describe(
-            'Comma-separated fields. Omit for defaults (7 fields). All fields: type,apiName,apiVersion,cartridgeName,endpointPath,httpMethod,status,siteId,securityScheme,operationId,schemaFile,implementationScript,errorReason,id',
-          ),
+        columns: z.string().optional().describe('Comma-separated output fields; omit for defaults.'),
       },
       async execute(args, {services: svc}) {
         let endpoints: CustomApiEndpoint[] = [];

@@ -15,7 +15,7 @@ Use the `b2c` CLI to search and read B2C Commerce documentation spanning multipl
 
 ## Key Features
 
-- **Multi-corpus search** — Search across Script API, Developer Center guides, Salesforce Help (admin + merchandising), tooling docs, job steps, and schemas in a unified index
+- **Multi-corpus search** — Search across Script API, Developer Center guides, Salesforce Help (admin + merchandising), internal tooling docs (guides, CLI reference, MCP, and VS Code extension), job steps, and schemas in a unified index
 - **Workspace-aware search** — Auto-detects project type (cartridges, SFRA, PWA Kit, Storefront Next) and boosts relevant documentation while de-boosting competing storefront frameworks
 - **Category filtering** — Use `--category` to narrow results to a specific corpus (e.g., `commerce-api`, `pwa-kit-managed-runtime`, `sfra`, `script-api`, `help-admin`, `help-merchant`)
 - **Triage metadata** — Search results include `category`, `summary`, `keywords`, and `url` to help identify the right match without reading full content
@@ -56,6 +56,7 @@ b2c docs search "price book assignment" --category help-merchant
 
 # Search tooling documentation
 b2c docs search "authentication setup" --category tooling
+b2c docs search "import set" --category tooling
 
 # Limit results (CLI default is 20, MCP default is 5)
 b2c docs search authentication --limit 5
@@ -232,9 +233,9 @@ xmllint --schema "$(b2c docs schema catalog --path)" my-catalog.xml --noout
 | `commerce-api`            | Commerce API (SCAPI/OCAPI) conceptual and how-to guides                                                                          | `commerce-api/slas-passwordless-login-registration` |
 | `pwa-kit-managed-runtime` | PWA Kit and Managed Runtime (MRT) guides                                                                                         | `pwa-kit-managed-runtime/getting-started`           |
 | `sfra`                    | Storefront Reference Architecture (SFRA) guides                                                                                  | `sfra/controllers-and-routes`                       |
-| `sfnext`                  | Storefront Next (deprecated) guides                                                                                              | `sfnext/sfnext-get-started`                         |
+| `sfnext`                  | Storefront Next guides                                                                                                           | `sfnext/sfnext-get-started`                         |
 | `b2c-commerce`            | General B2C Commerce platform guides                                                                                             | `b2c-commerce/business-manager-overview`            |
-| `tooling`                 | B2C CLI, MCP, SDK, and VS Code extension guides                                                                                  | `guide-authentication`, `guide-configuration`       |
+| `tooling`                 | B2C CLI reference, guides, MCP docs, SDK guidance, and VS Code extension docs                                                    | `guide-authentication`, `cli-jobs`                  |
 | `job-step`                | Standard (system) job step catalog                                                                                               | `ImportCatalog`, `ExportCatalog`, `job-steps`       |
 | `help-admin`              | Salesforce Help — administration/ops (import/export, jobs, replication, security, Account Manager, permissions, logs, inventory) | `help-admin/b2c_site_import_export`                 |
 | `help-merchant`           | Salesforce Help — merchandising (catalogs, products, promotions, search, content, analytics, SEO)                                | `help-merchant/b2c_creating_price_books`            |

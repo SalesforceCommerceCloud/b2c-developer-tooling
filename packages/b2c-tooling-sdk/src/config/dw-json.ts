@@ -60,6 +60,14 @@ export interface DwJsonConfig {
   webdavHostname?: string;
   /** Allowed authentication methods in priority order */
   authMethods?: AuthMethod[];
+  /**
+   * Shorthand for `"auth-methods": ["user"]`. When `true`, browser-based
+   * Authorization Code + PKCE is the only OAuth method tried.
+   *
+   * Mutually exclusive with `authMethods` — setting both in the same dw.json
+   * is rejected during config mapping.
+   */
+  userAuth?: boolean;
   /** Account Manager hostname for OAuth */
   accountManagerHost?: string;
   /** MRT project slug */
@@ -80,6 +88,8 @@ export interface DwJsonConfig {
   autoUpload?: boolean;
   /** Cartridge names to include in deploy/watch (string with colon/comma separators, or array) */
   cartridges?: string | string[];
+  /** Directory paths to exclude recursively from import-set source discovery */
+  importSetExclude?: string[];
   /** Default content library ID for content export/list commands */
   contentLibrary?: string;
   /** Catalog IDs for WebDAV browsing */

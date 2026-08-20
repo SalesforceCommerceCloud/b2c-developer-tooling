@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+// eslint-disable-next-line import/no-unresolved -- SDK 1.30's types export misresolves runtime .js subpaths.
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import type {
   CallToolResult,
@@ -14,7 +15,7 @@ import type {
 import type {ServerOptions} from '@modelcontextprotocol/sdk/server/index.js';
 import type {RequestHandlerExtra} from '@modelcontextprotocol/sdk/shared/protocol.js';
 import type {Transport} from '@modelcontextprotocol/sdk/shared/transport.js';
-import type {ZodRawShape} from 'zod';
+import {z, type ZodRawShape} from 'zod';
 import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
@@ -119,7 +120,7 @@ export class B2CDxMcpServer extends McpServer {
     };
 
     // Use the new registerTool API (tool() is deprecated)
-    this.registerTool(name, {description, inputSchema}, wrappedHandler);
+    this.registerTool(name, {description, inputSchema: z.object(inputSchema).strict()}, wrappedHandler);
   }
 
   /**

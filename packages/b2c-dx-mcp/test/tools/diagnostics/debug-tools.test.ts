@@ -26,6 +26,7 @@ import {createDebugStartSessionTool} from '../../../src/tools/diagnostics/debug-
 import {DebugSessionManager} from '@salesforce/b2c-tooling-sdk/operations/debug';
 import type {SourceMapper} from '@salesforce/b2c-tooling-sdk/operations/debug';
 import type {ToolResult} from '../../../src/utils/index.js';
+import type {ProjectContextInput} from '../../../src/tools/project-context.js';
 
 function getResultJson<T>(result: ToolResult): T {
   const text = result.content[0];
@@ -101,19 +102,29 @@ function createMockSourceMapper(): SourceMapper {
   };
 }
 
-function createServices(): Services {
+function createServices(projectContext?: ProjectContextInput): Services {
+  const projectDirectory = projectContext?.projectDirectory ?? process.cwd();
   return new Services({
-    resolvedConfig: createMockResolvedConfig({hostname: 'test.example.com', username: 'user', password: 'pass'}),
+    resolvedConfig: createMockResolvedConfig({
+      hostname: 'test.example.com',
+      username: 'user',
+      password: 'pass',
+      projectDirectory,
+      workingDirectory: projectDirectory,
+    }),
+    resolution: {
+      projectDirectory: {path: projectDirectory, source: projectContext?.projectDirectory ? 'argument' : 'cwd'},
+    },
   });
 }
 
 describe('tools/diagnostics', () => {
   let serverContext: ServerContext;
-  let loadServices: () => Services;
+  let loadServices: (projectContext?: ProjectContextInput) => Services;
 
   beforeEach(() => {
     serverContext = new ServerContext();
-    loadServices = () => createServices();
+    loadServices = (projectContext) => createServices(projectContext);
   });
 
   afterEach(async () => {
@@ -146,6 +157,15 @@ describe('tools/diagnostics', () => {
         manager,
         sourceMapper,
         cartridges: [],
+        resolution: {
+          projectDirectory: {path: '/workspace/storefront', source: 'argument'},
+          configuration: {
+            hostname: 'host.example.com',
+            instanceName: 'sandbox',
+            path: '/workspace/storefront/dw.json',
+            source: 'projectDirectory',
+          },
+        },
       });
       entry.breakpoints = [{id: 1, line_number: 42, script_path: '/app_test/cartridge/controllers/Cart.js'}];
 
@@ -157,6 +177,7 @@ describe('tools/diagnostics', () => {
           halted_threads: number[];
           breakpoints: unknown[];
           session_cookie: null | {name: string; value: string};
+          resolution?: {configuration?: {instanceName?: string}};
         }>;
       }>(result);
 
@@ -165,6 +186,7 @@ describe('tools/diagnostics', () => {
       expect(json.sessions[0].halted_threads).to.deep.equal([5]);
       expect(json.sessions[0].breakpoints).to.have.lengthOf(1);
       expect(json.sessions[0].session_cookie).to.deep.equal({name: 'dwsid', value: 'dwsid-value-123'});
+      expect(json.sessions[0].resolution?.configuration?.instanceName).to.equal('sandbox');
     });
 
     it('should report session_cookie as null when no dwsid is set', async () => {
@@ -1060,7 +1082,7 @@ describe('tools/diagnostics', () => {
 
     it('should start a session and return session_id, hostname, cartridges, and mappings', async () => {
       const tool = createDebugStartSessionTool(loadServices, serverContext);
-      const result = await tool.handler({cartridge_directory: tmpDir});
+      const result = await tool.handler({projectDirectory: tmpDir});
 
       expect(result.isError).to.be.undefined;
       const json = getResultJson<{
@@ -1070,6 +1092,8 @@ describe('tools/diagnostics', () => {
         cartridge_mappings: Record<string, string>;
         session_cookie: null | {name: string; value: string};
         warnings: string[];
+        cartridgeDirectory: string;
+        resolution: {projectDirectory: {path: string; source: string}};
       }>(result);
 
       expect(json.session_id).to.be.a('string');
@@ -1077,13 +1101,47 @@ describe('tools/diagnostics', () => {
       expect(json.cartridges).to.deep.equal(['app_test']);
       expect(json.cartridge_mappings).to.have.property('app_test');
       expect(json.session_cookie).to.deep.equal({name: 'dwsid', value: 'dwsid-abc'});
+      expect(json.resolution.projectDirectory).to.deep.equal({path: tmpDir, source: 'argument'});
+      expect(json).to.not.have.own.property('projectDirectory');
+      expect(json.cartridgeDirectory).to.equal(tmpDir);
       expect(connectStub.calledOnce).to.be.true;
+    });
+
+    it('should use cartridgeDirectory only for cartridge discovery and source mapping', async () => {
+      const projectDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'debug-project-'));
+      try {
+        const tool = createDebugStartSessionTool(loadServices, serverContext);
+        const result = await tool.handler({projectDirectory, cartridgeDirectory: tmpDir});
+        const json = getResultJson<{
+          cartridges: string[];
+          cartridgeDirectory: string;
+          resolution: {projectDirectory: {path: string; source: string}};
+        }>(result);
+
+        expect(json.resolution.projectDirectory).to.deep.equal({path: projectDirectory, source: 'argument'});
+        expect(json).to.not.have.own.property('projectDirectory');
+        expect(json.cartridgeDirectory).to.equal(tmpDir);
+        expect(json.cartridges).to.deep.equal(['app_test']);
+      } finally {
+        fs.rmSync(projectDirectory, {recursive: true, force: true});
+      }
+    });
+
+    it('keeps cwd provenance when only cartridgeDirectory is supplied', async () => {
+      const tool = createDebugStartSessionTool(loadServices, serverContext);
+      const result = await tool.handler({cartridgeDirectory: tmpDir});
+      const json = getResultJson<{
+        resolution: {projectDirectory: {path: string; source: string}};
+      }>(result);
+
+      expect(json.resolution.projectDirectory).to.deep.equal({path: process.cwd(), source: 'cwd'});
+      expect(json).to.not.have.own.property('projectDirectory');
     });
 
     it('should return null session_cookie and warn when no dwsid is set', async () => {
       (DebugSessionManager.prototype.getSessionCookie as sinon.SinonStub).returns(undefined);
       const tool = createDebugStartSessionTool(loadServices, serverContext);
-      const result = await tool.handler({cartridge_directory: tmpDir});
+      const result = await tool.handler({projectDirectory: tmpDir});
 
       const json = getResultJson<{session_cookie: unknown; warnings: string[]}>(result);
       expect(json.session_cookie).to.be.null;
@@ -1094,7 +1152,7 @@ describe('tools/diagnostics', () => {
       const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'empty-'));
       try {
         const tool = createDebugStartSessionTool(loadServices, serverContext);
-        const result = await tool.handler({cartridge_directory: emptyDir});
+        const result = await tool.handler({projectDirectory: emptyDir});
 
         const json = getResultJson<{warnings: string[]}>(result);
         expect(json.warnings).to.not.be.empty;
@@ -1108,7 +1166,7 @@ describe('tools/diagnostics', () => {
         resolvedConfig: createMockResolvedConfig({}),
       });
       const tool = createDebugStartSessionTool(() => servicesNoAuth, serverContext);
-      const result = await tool.handler({cartridge_directory: tmpDir});
+      const result = await tool.handler({projectDirectory: tmpDir});
 
       expect(result.isError).to.be.true;
       expect(getResultText(result)).to.include('Basic auth credentials');
@@ -1116,21 +1174,27 @@ describe('tools/diagnostics', () => {
 
     it('should error when server context is missing', async () => {
       const tool = createDebugStartSessionTool(loadServices, undefined);
-      const result = await tool.handler({cartridge_directory: tmpDir});
+      const result = await tool.handler({projectDirectory: tmpDir});
       expect(result.isError).to.be.true;
     });
 
-    it('should use custom client_id', async () => {
+    it('should expose project/config/cartridge context and keep the debugger client ID internal', async () => {
       const tool = createDebugStartSessionTool(loadServices, serverContext);
-      await tool.handler({cartridge_directory: tmpDir, client_id: 'custom-client'});
+      expect(tool.inputSchema).to.have.property('projectDirectory');
+      expect(tool.inputSchema).to.have.property('configPath');
+      expect(tool.inputSchema).to.have.property('cartridgeDirectory');
+      expect(tool.inputSchema).to.not.have.property('cartridge_directory');
+      expect(tool.inputSchema).to.not.have.property('client_id');
+
+      await tool.handler({projectDirectory: tmpDir});
 
       const sessions = serverContext.debugSessions.listSessions();
-      expect(sessions[0].clientId).to.equal('custom-client');
+      expect(sessions[0].clientId).to.match(/^b2c-dx-mcp-/);
     });
 
     it('should resolve halt waiters via onThreadStopped callback', async () => {
       const tool = createDebugStartSessionTool(loadServices, serverContext);
-      await tool.handler({cartridge_directory: tmpDir});
+      await tool.handler({projectDirectory: tmpDir});
 
       const entry = serverContext.debugSessions.listSessions()[0];
       // Register a halt waiter

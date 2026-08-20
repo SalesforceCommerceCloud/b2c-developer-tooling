@@ -8,6 +8,7 @@ import {randomUUID} from 'node:crypto';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import type {LogEntry, LogFile, TailLogsResult} from '@salesforce/b2c-tooling-sdk/operations/logs';
 import type {ToolExecutionContext} from '../adapter.js';
+import type {ToolResolution} from '../project-context.js';
 
 const IDLE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
@@ -56,6 +57,7 @@ export interface LogWatchEntry {
   createdAt: number;
   lastActivityAt: number;
   stopped: boolean;
+  resolution?: ToolResolution;
 }
 
 export interface RegisterWatchOptions {
@@ -64,6 +66,7 @@ export interface RegisterWatchOptions {
   tailResult: TailLogsResult;
   bufferCap?: number;
   bufferBytesCap?: number;
+  resolution?: ToolResolution;
 }
 
 /** Approximate in-memory byte cost of a buffered entry. */
@@ -273,6 +276,7 @@ export class LogWatchRegistry {
       stopped: false,
       totalEntriesSeen: 0,
       watchId,
+      resolution: opts.resolution,
     };
     this.watches.set(watchId, entry);
     return entry;

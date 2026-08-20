@@ -4,8 +4,10 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {DwJsonSource} from '@salesforce/b2c-tooling-sdk/config';
+import {setAuthSessionBackend} from '@salesforce/b2c-tooling-sdk/auth';
 import {detectWorkspaceType} from '@salesforce/b2c-tooling-sdk/discovery';
 import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
+import {VsCodeSecretsAuthSessionBackend} from './pkce-secret-store.js';
 
 import * as cp from 'child_process';
 import * as https from 'https';
@@ -43,6 +45,8 @@ import {
   OnboardingStateStore,
   OnboardingPanel,
 } from './walkthrough/index.js';
+
+let authSessionBackend: VsCodeSecretsAuthSessionBackend | undefined;
 
 function applyLogLevel(log: vscode.OutputChannel): void {
   const config = vscode.workspace.getConfiguration('b2c-dx');
@@ -271,6 +275,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 export async function deactivate(): Promise<void> {
   sendEvent('EXTENSION_DEACTIVATED');
+  await authSessionBackend?.flush();
+  authSessionBackend = undefined;
+  setAuthSessionBackend(null);
   await disposeTelemetry();
 }
 
@@ -513,6 +520,14 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
 
   registerJobLogViewer(context);
 
+  // Persist auth sessions via VS Code SecretStorage (OS keychain on
+  // macOS/Windows/Linux, encrypted fallback otherwise — handled by VS Code).
+  // Hydrate the in-memory snapshot before registering, so the SDK's sync
+  // reads see existing sessions on first call.
+  authSessionBackend = new VsCodeSecretsAuthSessionBackend(context);
+  await authSessionBackend.hydrate();
+  setAuthSessionBackend(authSessionBackend);
+
   const configProvider = new B2CExtensionConfig(log, context.workspaceState);
   lateConfigProvider = configProvider;
   context.subscriptions.push(configProvider);
@@ -580,6 +595,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   // --- Active instance status bar ---
   const dwJsonSource = new DwJsonSource();
   const getWorkingDirectory = () => configProvider.getWorkingDirectory();
+  const getInstanceCatalogOptions = () => configProvider.getInstanceCatalogOptions();
 
   const instanceStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
   instanceStatusBar.command = 'b2c-dx.instance.switch';
@@ -599,7 +615,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
       // of the clearer "Not configured" state.
       if (config?.hasB2CInstanceConfig()) {
         // Find active instance name from dw.json
-        const instances = await dwJsonSource.listInstances({workingDirectory: getWorkingDirectory()});
+        const instances = await dwJsonSource.listInstances(getInstanceCatalogOptions());
         const active = instances.find((i) => i.active);
         const name = active?.name;
         const host = config.values.hostname ?? '';
@@ -673,8 +689,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   });
 
   const switchInstanceDisposable = registerSafeCommand('b2c-dx.instance.switch', async () => {
-    const workingDirectory = getWorkingDirectory();
-    const instances = await dwJsonSource.listInstances({workingDirectory});
+    const instances = await dwJsonSource.listInstances(getInstanceCatalogOptions());
 
     if (instances.length === 0) {
       vscode.window.showWarningMessage('No instances configured in dw.json.');
@@ -706,7 +721,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     }
 
     try {
-      await dwJsonSource.setActiveInstance(picked.instance.name, {workingDirectory});
+      await dwJsonSource.setActiveInstance(picked.instance.name, getInstanceCatalogOptions());
       // The FileSystemWatcher will detect the dw.json change and trigger reset,
       // but fire manually in case the watcher is slow
       configProvider.reset();

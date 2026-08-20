@@ -44,7 +44,7 @@ jobs:
       pull-requests: write # For creating merge-back PRs
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || '' }}
           fetch-depth: 0 # Needed for docs tag detection
@@ -150,6 +150,10 @@ jobs:
       - name: Install dependencies
         if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
         run: pnpm install --frozen-lockfile
+
+      - name: Generate tooling documentation index
+        if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
+        run: pnpm --filter @salesforce/b2c-tooling-sdk run generate:tooling-index
 
       - name: Determine packages to publish
         if: steps.release-type.outputs.type == 'stable' && steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true'

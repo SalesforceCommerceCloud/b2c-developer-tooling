@@ -1,5 +1,5 @@
 ---
-description: Install the B2C CLI via npm or GitHub releases, and optionally install the SDK for programmatic use.
+description: Install the B2C CLI using your preferred JavaScript package manager.
 ---
 
 # Installation
@@ -7,7 +7,7 @@ description: Install the B2C CLI via npm or GitHub releases, and optionally inst
 ## Prerequisites
 
 - macOS, Linux, or Windows
-- Node.js 22.16.0 or higher (for npm installation or SDK usage)
+- Node.js 22.16.0 or higher
 
 ## Install via npm (Recommended)
 
@@ -36,26 +36,6 @@ After installation, verify the CLI is available:
 ```bash
 b2c --version
 ```
-
-## Install the SDK (Optional)
-
-If you want to use the SDK library in your own projects:
-
-::: code-group
-
-```bash [npm]
-npm install @salesforce/b2c-tooling-sdk
-```
-
-```bash [pnpm]
-pnpm add @salesforce/b2c-tooling-sdk
-```
-
-```bash [yarn]
-yarn add @salesforce/b2c-tooling-sdk
-```
-
-:::
 
 ## Next Steps
 

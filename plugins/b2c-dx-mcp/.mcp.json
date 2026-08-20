@@ -4,7 +4,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "@salesforce/b2c-dx-mcp@1.9.2",
+        "@salesforce/b2c-dx-mcp@2.1.1",
         "--allow-non-ga-tools"
       ]
     }
