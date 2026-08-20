@@ -62,9 +62,7 @@ export function createProjectDirectoryInput() {
     .string()
     .refine((value) => path.isAbsolute(value), 'projectDirectory must be an absolute path')
     .optional()
-    .describe(
-      'Absolute project root. Overrides server default; otherwise uses it or MCP cwd. See config_inspect for resolved paths.',
-    );
+    .describe('Absolute project root; overrides server default. See config_inspect for resolved paths.');
 }
 
 /** Build the canonical explicit primary dw.json field. */
