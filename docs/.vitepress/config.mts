@@ -212,18 +212,6 @@ const referenceSidebar = [
         collapsed: true,
         items: [{text: 'Documentation Tools', link: '/mcp/tools/docs'}],
       },
-      {
-        text: 'Storefront Next (deprecated)',
-        collapsed: true,
-        items: [
-          {text: 'sfnext_get_guidelines', link: '/mcp/tools/sfnext-get-guidelines'},
-          {text: 'sfnext_start_figma_workflow', link: '/mcp/tools/sfnext-start-figma-workflow'},
-          {text: 'sfnext_analyze_component', link: '/mcp/tools/sfnext-analyze-component'},
-          {text: 'sfnext_match_tokens_to_theme', link: '/mcp/tools/sfnext-match-tokens-to-theme'},
-          {text: 'sfnext_add_page_designer_decorator', link: '/mcp/tools/sfnext-add-page-designer-decorator'},
-          {text: 'sfnext_configure_theme', link: '/mcp/tools/sfnext-configure-theme'},
-        ],
-      },
     ],
   },
 ];
