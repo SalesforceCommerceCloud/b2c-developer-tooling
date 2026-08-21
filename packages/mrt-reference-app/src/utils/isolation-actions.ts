@@ -82,9 +82,7 @@ export const isolationDalTest = async (input: {dalKey?: string; dalProjectEnviro
   const ddbClient = DynamoDBDocumentClient.from(new DynamoDBClient({region: process.env.AWS_REGION}));
   const readIsDenied = async (projectEnvironment: string): Promise<boolean> => {
     try {
-      await ddbClient.send(
-        new GetCommand({TableName: tableName, Key: {projectEnvironment, key: input.dalKey}}),
-      );
+      await ddbClient.send(new GetCommand({TableName: tableName, Key: {projectEnvironment, key: input.dalKey}}));
       return false; // read allowed → NOT isolated
     } catch (e) {
       if (hasErrorName(e, 'AccessDeniedException')) return true;
