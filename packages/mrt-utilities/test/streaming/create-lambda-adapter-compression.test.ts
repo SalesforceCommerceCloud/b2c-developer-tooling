@@ -212,6 +212,57 @@ describe('Compression Streaming', () => {
   });
 
   describe('Brotli compression', () => {
+    it('should default to a streaming-appropriate compression quality', async () => {
+      const stream = createCollectingStream();
+      const event = createMockEvent({headers: {'Accept-Encoding': 'br'}});
+      const context = createMockContext();
+      const request = createExpressRequest(event, context);
+      const createBrotliStub = sinon.stub(zlib, 'createBrotliCompress').callThrough();
+      const response = createExpressResponse(stream, event, context, request);
+
+      response.setHeader('Content-Type', 'text/html');
+      response.end('test data');
+
+      await stream.waitForEnd();
+
+      expect(
+        createBrotliStub.calledWith({
+          params: {
+            [zlib.constants.BROTLI_PARAM_QUALITY]: 6,
+          },
+        }),
+      ).to.be.true;
+      createBrotliStub.restore();
+    });
+
+    it('should emit compressed bytes before the response ends', async () => {
+      const stream = createCollectingStream();
+      const event = createMockEvent({headers: {'Accept-Encoding': 'br'}});
+      const context = createMockContext();
+      const request = createExpressRequest(event, context);
+      const response = createExpressResponse(stream, event, context, request);
+      const firstCompressedChunk = new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Brotli output was not flushed before end()')), 500);
+        stream.once('data', () => {
+          clearTimeout(timeout);
+          resolve();
+        });
+      });
+
+      response.setHeader('Content-Type', 'text/html');
+      response.write('streamed html '.repeat(3_000));
+
+      await firstCompressedChunk;
+      expect(stream.getData().length).to.be.greaterThan(0);
+
+      response.end('final chunk');
+      await stream.waitForEnd();
+
+      expect(zlib.brotliDecompressSync(stream.getData()).toString()).to.equal(
+        `${'streamed html '.repeat(3_000)}final chunk`,
+      );
+    });
+
     it('should compress content with brotli when br is preferred', async () => {
       const stream = createCollectingStream();
       const event = createMockEvent({headers: {'Accept-Encoding': 'br, gzip, deflate'}});
