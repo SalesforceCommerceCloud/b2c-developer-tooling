@@ -12,9 +12,14 @@ import {
   PkceWithImplicitFallbackStrategy,
   PkceGrantUnsupportedError,
   createUserAuthStrategy,
+  findAuthSession,
+  InMemoryAuthSessionBackend,
   isPkceFallbackDisabled,
+  resetAuthSessionStoreForTesting,
+  saveAuthSession,
+  setAuthSessionBackend,
 } from '@salesforce/b2c-tooling-sdk/auth';
-import type {UserAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import type {AccessTokenResponse, UserAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 
 /**
  * Build a fake UserAuthStrategy that records how many times each method is called
@@ -92,7 +97,12 @@ const GRANT_ERROR = new PkceGrantUnsupportedError('unsupported', 'token', 'unaut
 describe('auth/oauth-pkce-fallback', () => {
   const originalEnv = process.env.SFCC_DISABLE_PKCE_FALLBACK;
 
+  beforeEach(() => {
+    setAuthSessionBackend(new InMemoryAuthSessionBackend());
+  });
+
   afterEach(() => {
+    resetAuthSessionStoreForTesting();
     if (originalEnv === undefined) {
       delete process.env.SFCC_DISABLE_PKCE_FALLBACK;
     } else {
@@ -170,6 +180,94 @@ describe('auth/oauth-pkce-fallback', () => {
       expect(implicitCalls.fetch).to.equal(2);
       expect(implicitCalls.getAuthorizationHeader).to.equal(1);
       expect(pkceCalls.getAuthorizationHeader).to.equal(0);
+    });
+
+    it('persists a host-scoped unsupported marker after a successful fallback', async () => {
+      const wrapper = new PkceWithImplicitFallbackStrategy({
+        clientId: 'persisted-fallback',
+        accountManagerHost: 'account-pod5.demandware.net',
+        scopes: ['a'],
+      });
+      const internal = wrapper as unknown as {
+        pkce: UserAuthStrategy;
+        getImplicit: () => ImplicitOAuthStrategy;
+      };
+      internal.pkce.getTokenResponse = async () => {
+        throw GRANT_ERROR;
+      };
+      const implicit = internal.getImplicit();
+      (implicit as unknown as {implicitFlowLogin: () => Promise<AccessTokenResponse>}).implicitFlowLogin =
+        async () => ({
+          accessToken: 'implicit-token',
+          expires: new Date(Date.now() + 60_000),
+          scopes: ['a'],
+        });
+
+      await wrapper.getTokenResponse();
+
+      const stored = findAuthSession('persisted-fallback');
+      expect(stored?.flow).to.equal('implicit');
+      expect(stored?.pkceUnsupported).to.be.true;
+      expect(stored?.accountManagerHost).to.equal('account-pod5.demandware.net');
+    });
+
+    it('starts with implicit when the persisted marker matches the client and host', async () => {
+      saveAuthSession({
+        clientId: 'known-legacy-client',
+        flow: 'implicit',
+        pkceUnsupported: true,
+        accessToken: 'stored-implicit-token',
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+        scopes: ['a'],
+        accountManagerHost: 'ACCOUNT-POD5.DEMANDWARE.NET',
+      });
+      const wrapper = new PkceWithImplicitFallbackStrategy({
+        clientId: 'known-legacy-client',
+        accountManagerHost: 'account-pod5.demandware.net',
+        scopes: ['a'],
+      });
+      const {pkceCalls, implicitCalls} = instrument(wrapper, null);
+
+      await wrapper.getAuthorizationHeader();
+
+      expect(pkceCalls.getAuthorizationHeader).to.equal(0);
+      expect(implicitCalls.getAuthorizationHeader).to.equal(1);
+    });
+
+    it('still tries PKCE when the persisted marker belongs to another host', async () => {
+      saveAuthSession({
+        clientId: 'host-specific-client',
+        flow: 'implicit',
+        pkceUnsupported: true,
+        accessToken: 'stored-implicit-token',
+        accountManagerHost: 'account.demandware.com',
+      });
+      const wrapper = new PkceWithImplicitFallbackStrategy({
+        clientId: 'host-specific-client',
+        accountManagerHost: 'account-pod5.demandware.net',
+      });
+      const {pkceCalls, implicitCalls} = instrument(wrapper, null);
+
+      await wrapper.getAuthorizationHeader();
+
+      expect(pkceCalls.getAuthorizationHeader).to.equal(1);
+      expect(implicitCalls.getAuthorizationHeader).to.equal(0);
+    });
+
+    it('does not treat an explicitly selected implicit session as a PKCE capability marker', async () => {
+      saveAuthSession({
+        clientId: 'explicit-implicit-client',
+        flow: 'implicit',
+        accessToken: 'stored-implicit-token',
+        accountManagerHost: 'account.demandware.com',
+      });
+      const wrapper = new PkceWithImplicitFallbackStrategy({clientId: 'explicit-implicit-client'});
+      const {pkceCalls, implicitCalls} = instrument(wrapper, null);
+
+      await wrapper.getAuthorizationHeader();
+
+      expect(pkceCalls.getAuthorizationHeader).to.equal(1);
+      expect(implicitCalls.getAuthorizationHeader).to.equal(0);
     });
 
     it('propagates non-grant errors without falling back', async () => {

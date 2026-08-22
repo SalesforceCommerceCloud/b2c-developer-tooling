@@ -56,6 +56,12 @@ export interface ImplicitOAuthConfig {
    * Defaults to `true`.
    */
   persistSession?: boolean;
+  /**
+   * Mark persisted implicit sessions as originating from the automatic
+   * PKCE-to-implicit fallback. Used internally by the transitional fallback
+   * strategy so later activations can skip a known-unsupported PKCE attempt.
+   */
+  pkceUnsupported?: boolean;
 }
 
 /**
@@ -199,6 +205,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
     const record: AuthSession = {
       clientId: this.config.clientId,
       flow: 'implicit',
+      pkceUnsupported: this.config.pkceUnsupported || undefined,
       accessToken: tokenResponse.accessToken,
       refreshToken: null,
       sub,
