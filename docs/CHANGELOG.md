@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.23
+
+### Patch Changes
+
+- [#634](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/634) [`4dee938`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4dee938cd4c2d5fd48c6ebc85ee99abf432529ff) - Remember when an Account Manager client rejects PKCE so later CLI and VS Code sessions start directly with the compatible implicit flow, and avoid reporting authentication success before the PKCE token exchange completes. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.22
 
 ### Patch Changes
