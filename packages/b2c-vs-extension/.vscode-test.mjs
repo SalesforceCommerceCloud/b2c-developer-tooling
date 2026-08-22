@@ -50,6 +50,25 @@ export default defineConfig([
     },
   },
   {
+    // Own workspace folder (not empty-workspace) because cartridge discovery
+    // walks the open workspace root for .project markers — the scriptTypes
+    // plugin needs a real cartridge in scope for isCartridgeFile() to let
+    // scriptTypesInferUsage run at all.
+    label: 'infer-usage-workspace',
+    files: 'out/test/integration/script-types-infer-usage.test.js',
+    version: 'stable',
+    workspaceFolder: 'src/test/fixtures/infer-usage-workspace',
+    launchArgs: ['--user-data-dir', shortUserDataDir('infer-usage-workspace')],
+    mocha: {
+      ui: 'tdd',
+      timeout: 30000,
+      // This label names a single compiled file, so running vscode-test
+      // without the pretest compile step would otherwise report
+      // "0 passing" and exit 0 — a green run that executed nothing.
+      failZero: true,
+    },
+  },
+  {
     label: 'nested-dw-json',
     files: 'out/test/config-provider.test.js',
     version: 'stable',
