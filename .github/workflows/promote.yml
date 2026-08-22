@@ -1,0 +1,267 @@
+name: Promote rc to stable
+
+# Promotion is the second half of the build-once model. publish.yml (on merge to
+# main) already built + SLSA-attested EVERY artifact and cut ONE prerelease
+# GitHub release carrying both the rc-prerelease VSIX and the stable VSIX, and an
+# environment-gated job published the npm packages under the 'rc' dist-tag. This
+# workflow performs NO rebuild: it moves the npm dist-tag rc -> latest and flips
+# that SAME release to latest/non-prerelease. b2c-dx observes the flipped release
+# and publishes the stable VSIX (the exact bytes attested at build time).
+#
+# Two ways in, both passing a human gate:
+#   - schedule (soak): once RC_SOAK_HOURS have elapsed since the rc release was
+#     cut, the gate becomes eligible and the promote job runs (behind the
+#     protected `publish` environment = a required reviewer still approves).
+#   - workflow_dispatch (manual): promote now. `force` skips only the soak WAIT;
+#     the do-not-promote marker is ALWAYS honored and can never be forced past.
+on:
+  schedule:
+    - cron: '0 */6 * * *' # every 6h; the gate decides whether the soak has elapsed
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'rc release tag to promote (default: newest b2c-vs-extension@* prerelease)'
+        required: false
+        type: string
+      force:
+        description: 'Skip the soak-time wait (the do-not-promote marker is still enforced).'
+        required: false
+        default: false
+        type: boolean
+      dry_run:
+        description: 'Resolve + run all gates but do NOT move the npm dist-tag or flip the release.'
+        required: false
+        default: false
+        type: boolean
+
+# Never promote the same tag twice concurrently, and never cancel an in-flight
+# promotion (a half-applied rc->latest move would desync npm from the release).
+concurrency:
+  group: promote-${{ github.event.inputs.tag || 'auto' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # --- Gate: resolve the release + run fail-closed eligibility checks ----------
+  # No environment here: this job only READS. It decides `promote=true|false`.
+  # The protected environment (approval #2) lives on the promote job below.
+  gate:
+    name: Eligibility gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      promote: ${{ steps.decide.outputs.promote }}
+      tag: ${{ steps.decide.outputs.tag }}
+    steps:
+      - name: Resolve rc release + evaluate gates
+        id: decide
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          # Untrusted workflow_dispatch inputs — bound to env, never interpolated
+          # into the script (this repo's standing GitHub Actions injection rule).
+          TAG_INPUT: ${{ github.event.inputs.tag }}
+          FORCE: ${{ github.event.inputs.force }}
+          EVENT_NAME: ${{ github.event_name }}
+          # Soak window is operator-configurable; default 72h if the var is unset.
+          SOAK_HOURS: ${{ vars.RC_SOAK_HOURS || '72' }}
+        run: |
+          set -euo pipefail
+
+          # A manual dispatch that is NOT eligible should fail RED (the operator
+          # explicitly asked and deserves a clear reason). A scheduled run that is
+          # not eligible should exit GREEN and try again next cron. This helper
+          # centralizes that split.
+          not_eligible() {
+            local reason="$1"
+            echo "promote=false" >> "$GITHUB_OUTPUT"
+            if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+              echo "::error::not eligible to promote: ${reason}"
+              exit 1
+            fi
+            echo "::notice::not promoting (${reason}); will re-check on the next scheduled run."
+            exit 0
+          }
+
+          # 1) Resolve the target tag. Explicit input wins; otherwise take the
+          #    newest prerelease release whose tag is a b2c-vs-extension@* rc.
+          if [ -n "${TAG_INPUT:-}" ]; then
+            TAG="$TAG_INPUT"
+          else
+            TAG=$(gh release list --limit 100 --json tagName,isPrerelease,createdAt \
+              --jq '[.[] | select(.isPrerelease==true) | select(.tagName|startswith("b2c-vs-extension@"))]
+                    | sort_by(.createdAt) | last | .tagName // empty')
+          fi
+          if [ -z "${TAG:-}" ]; then
+            not_eligible "no rc prerelease release found"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "::notice::candidate release: $TAG"
+
+          # Fetch the release facts once.
+          REL=$(gh release view "$TAG" --json isPrerelease,createdAt,assets)
+          IS_PRERELEASE=$(printf '%s' "$REL" | jq -r '.isPrerelease')
+          CREATED=$(printf '%s' "$REL" | jq -r '.createdAt')
+          HAS_MARKER=$(printf '%s' "$REL" | jq -r '[.assets[].name] | index("DO_NOT_PROMOTE") != null')
+
+          # 2) Already promoted? (idempotent re-run) -> nothing to do, GREEN.
+          if [ "$IS_PRERELEASE" != "true" ]; then
+            not_eligible "release $TAG is already non-prerelease (already promoted)"
+          fi
+
+          # 3) do-not-promote marker (Req 6) — fail closed, NEVER bypassable.
+          if [ "$HAS_MARKER" = "true" ]; then
+            not_eligible "release $TAG carries a DO_NOT_PROMOTE marker"
+          fi
+
+          # 4) Soak window — skippable ONLY via force on a manual dispatch.
+          if [ "$FORCE" = "true" ] && [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "::notice::force=true — skipping the ${SOAK_HOURS}h soak wait."
+          else
+            CREATED_EPOCH=$(date -u -d "$CREATED" +%s)
+            NOW_EPOCH=$(date -u +%s)
+            ELAPSED_H=$(( (NOW_EPOCH - CREATED_EPOCH) / 3600 ))
+            echo "::notice::soak: ${ELAPSED_H}h elapsed of ${SOAK_HOURS}h required (release cut ${CREATED})."
+            if [ "$ELAPSED_H" -lt "$SOAK_HOURS" ]; then
+              not_eligible "soak incomplete (${ELAPSED_H}h < ${SOAK_HOURS}h); use force to override on a manual run"
+            fi
+          fi
+
+          echo "promote=true" >> "$GITHUB_OUTPUT"
+          echo "::notice::release $TAG is eligible for promotion."
+
+  # --- Promote: the protected, approval-gated mutation (approval #2) -----------
+  promote:
+    name: Promote to stable
+    needs: gate
+    if: needs.gate.outputs.promote == 'true'
+    runs-on: ubuntu-latest
+    # Approval #2: a required reviewer on the `publish` environment must approve
+    # before any dist-tag move or release flip happens.
+    environment: publish
+    permissions:
+      contents: write # flip the release (gh release edit)
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ needs.gate.outputs.tag }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          # Promotion never rebuilds; we only need the tree to read the set of
+          # published package names (the dist-tag targets). Default ref is fine —
+          # package identities do not change per release.
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: '24.18.0'
+          registry-url: 'https://registry.npmjs.org' # writes .npmrc that reads NODE_AUTH_TOKEN
+
+      # Re-check the marker at the LAST moment. The `publish` approval can sit for
+      # hours; a maintainer may mark the build do-not-promote during that window.
+      # This makes the gate's check defense-in-depth rather than TOCTOU-racy.
+      - name: Re-verify do-not-promote marker is absent
+        run: |
+          set -euo pipefail
+          HAS_MARKER=$(gh release view "$TAG" --json assets \
+            --jq '[.assets[].name] | index("DO_NOT_PROMOTE") != null')
+          if [ "$HAS_MARKER" = "true" ]; then
+            echo "::error::release $TAG was marked DO_NOT_PROMOTE after the gate passed; aborting."
+            exit 1
+          fi
+          echo "::notice::no DO_NOT_PROMOTE marker on $TAG; proceeding."
+
+      # Move npm dist-tag rc -> latest for each published package. This is the ONLY
+      # npm mutation: the versions were already published under 'rc' by publish.yml.
+      # OIDC trusted publishing authenticates ONLY `npm publish`, so `npm dist-tag`
+      # requires a classic/granular automation token — provisioned in the `publish`
+      # environment as NPM_PROMOTE_TOKEN (least privilege: dist-tag write on these
+      # packages). Fail closed if it is absent: promotion's whole purpose is moving
+      # `latest`, so a silent skip would be wrong.
+      #
+      # npm-first, THEN the release flip (next step): if the token move fails we
+      # abort with the release still marked prerelease, so npm and the release
+      # never disagree about what "latest" is.
+      - name: Move npm dist-tag rc -> latest
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PROMOTE_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "::error::NPM_PROMOTE_TOKEN is not configured in the 'publish' environment; cannot move dist-tags. (OIDC cannot dist-tag.)"
+            exit 1
+          fi
+
+          # The published npm packages (same set publish.yml/publish-npm-rc handle).
+          PKG_DIRS="b2c-tooling-sdk b2c-cli b2c-dx-mcp mrt-utilities"
+          FAILED=""
+          PROMOTED=0
+
+          promote_pkg() {
+            local pkg="$1" rc_ver latest_ver highest
+            rc_ver=$(npm view "$pkg" dist-tags.rc 2>/dev/null || true)
+            if [ -z "$rc_ver" ] || [ "$rc_ver" = "undefined" ]; then
+              echo "::notice::$pkg: no 'rc' dist-tag; not part of this cycle — skipping."
+              return 0
+            fi
+            latest_ver=$(npm view "$pkg" dist-tags.latest 2>/dev/null || true)
+            if [ -n "$latest_ver" ] && [ "$latest_ver" != "undefined" ]; then
+              if [ "$rc_ver" = "$latest_ver" ]; then
+                echo "::notice::$pkg: latest already == rc ($rc_ver); nothing to promote."
+                return 0
+              fi
+              # Never move latest BACKWARD. A stale rc below latest just means this
+              # package was not in the current cycle -> skip (not an error).
+              highest=$(printf '%s\n%s\n' "$rc_ver" "$latest_ver" | sort -V | tail -n1)
+              if [ "$highest" != "$rc_ver" ]; then
+                echo "::notice::$pkg: rc ($rc_ver) is below latest ($latest_ver); stale rc tag — skipping."
+                return 0
+              fi
+            fi
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "::notice::[dry-run] $pkg: would move latest -> $rc_ver (from ${latest_ver:-none})."
+              PROMOTED=$((PROMOTED + 1))
+              return 0
+            fi
+            if npm dist-tag add "${pkg}@${rc_ver}" latest; then
+              echo "::notice::$pkg: latest -> $rc_ver."
+              PROMOTED=$((PROMOTED + 1))
+            else
+              echo "::error::$pkg: failed to move dist-tag latest -> $rc_ver."
+              FAILED="$FAILED $pkg"
+            fi
+          }
+
+          for dir in $PKG_DIRS; do
+            pkg=$(node -p "require('./packages/${dir}/package.json').name")
+            promote_pkg "$pkg"
+          done
+
+          if [ -n "$FAILED" ]; then
+            echo "::error::dist-tag promotion failed for:$FAILED"
+            exit 1
+          fi
+          echo "::notice::npm dist-tag promotion complete (${PROMOTED} package(s) moved)."
+
+      # Flip the SAME prerelease release to latest/non-prerelease. This is the
+      # signal b2c-dx polls: once the release is no longer prerelease, it verifies
+      # + publishes the STABLE VSIX asset. Runs only AFTER npm succeeded above.
+      - name: Flip release to stable (latest)
+        run: |
+          set -euo pipefail
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "::notice::[dry-run] would run: gh release edit $TAG --prerelease=false --latest"
+            exit 0
+          fi
+          gh release edit "$TAG" --prerelease=false --latest
+          echo "::notice::promoted $TAG to stable (prerelease=false, latest=true)."

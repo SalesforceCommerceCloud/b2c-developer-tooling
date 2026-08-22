@@ -10,5 +10,9 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@salesforce/b2c-plugin-example-config"]
+  "ignore": ["@salesforce/b2c-plugin-example-config"],
+  "snapshot": {
+    "useCalculatedVersion": true,
+    "prereleaseTemplate": "{tag}.{datetime}"
+  }
 }

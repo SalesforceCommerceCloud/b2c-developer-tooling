@@ -1,0 +1,92 @@
+name: Mark do-not-promote
+
+# The manual kill-switch for the build-once promotion (Req 6). A maintainer who
+# finds an rc release unsuitable for GA runs this to attach a DO_NOT_PROMOTE
+# marker asset to that release; promote.yml refuses to promote any release
+# carrying it (and re-checks at the last moment before mutating). `unblock`
+# removes the marker again once the release is cleared.
+#
+# The marker is a RELEASE ASSET (not a label/branch) so it is: co-located with
+# the exact release it guards, auditable (its body records who/when/why), and
+# readable by promote.yml with the same GITHUB_TOKEN it already uses — no extra
+# permission surface. This workflow only ever touches the marker asset; it never
+# publishes, flips, or deletes the release itself.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to mark/unmark (e.g. b2c-vs-extension@1.2.3)'
+        required: true
+        type: string
+      action:
+        description: 'block = attach DO_NOT_PROMOTE; unblock = remove it'
+        required: true
+        default: block
+        type: choice
+        options:
+          - block
+          - unblock
+      reason:
+        description: 'Why this rc must not be promoted (recorded in the marker).'
+        required: false
+        type: string
+
+concurrency:
+  # Serialize mark/unmark on the same tag so block/unblock can't interleave.
+  group: mark-dnp-${{ github.event.inputs.tag }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  mark:
+    name: Set/clear do-not-promote marker
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # upload/delete the marker asset on the release
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      # Untrusted inputs -> env only, never interpolated into the run script.
+      TAG: ${{ github.event.inputs.tag }}
+      ACTION: ${{ github.event.inputs.action }}
+      REASON: ${{ github.event.inputs.reason }}
+      ACTOR: ${{ github.actor }}
+    steps:
+      - name: Apply marker
+        run: |
+          set -euo pipefail
+
+          # The release must exist; refuse to mark a tag that isn't a real release.
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::release '$TAG' not found."
+            exit 1
+          fi
+
+          MARKER="DO_NOT_PROMOTE"
+
+          if [ "$ACTION" = "block" ]; then
+            # Build an auditable marker body: who, when, why. The timestamp comes
+            # from the runner (date -u) at mark time.
+            TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            {
+              echo "status: do-not-promote"
+              echo "release: $TAG"
+              echo "marked_by: $ACTOR"
+              echo "marked_at: $TS"
+              echo "reason: ${REASON:-<none provided>}"
+            } > "$MARKER"
+            # --clobber makes re-blocking idempotent (refreshes the reason/actor).
+            gh release upload "$TAG" "$MARKER" --clobber
+            echo "::notice::$TAG marked DO_NOT_PROMOTE by $ACTOR."
+          else
+            # unblock: remove the marker if present; a no-op is fine (idempotent).
+            if gh release view "$TAG" --json assets \
+                 --jq '[.assets[].name] | index("DO_NOT_PROMOTE") != null' | grep -q true; then
+              gh release delete-asset "$TAG" "$MARKER" --yes
+              echo "::notice::$TAG DO_NOT_PROMOTE marker removed by $ACTOR."
+            else
+              echo "::notice::$TAG has no DO_NOT_PROMOTE marker; nothing to remove."
+            fi
+          fi
