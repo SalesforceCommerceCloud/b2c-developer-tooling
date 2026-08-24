@@ -43,7 +43,6 @@ const DEFAULT_BROTLI_FLUSH_THRESHOLD_BYTES = 32 * 1024;
 function resolveBrotliQuality(): number {
   const raw = process.env.MRT_BROTLI_COMPRESSION_QUALITY;
   if (raw === undefined || raw.trim() === '') {
-    console.log('Using default Brotli quality:', DEFAULT_BROTLI_QUALITY);
     return DEFAULT_BROTLI_QUALITY;
   }
 
@@ -53,11 +52,9 @@ function resolveBrotliQuality(): number {
     parsed >= zlib.constants.BROTLI_MIN_QUALITY &&
     parsed <= zlib.constants.BROTLI_MAX_QUALITY
   ) {
-    console.log('Resolved Brotli quality:', parsed);
     return parsed;
   }
 
-  console.log('Default Brotli quality:', DEFAULT_BROTLI_QUALITY);
   return DEFAULT_BROTLI_QUALITY;
 }
 
@@ -71,17 +68,14 @@ function resolveBrotliQuality(): number {
 function resolveBrotliFlushThresholdBytes(): number {
   const raw = process.env.MRT_BROTLI_FLUSH_THRESHOLD_BYTES;
   if (raw === undefined || raw.trim() === '') {
-    console.log('Using default Brotli flush threshold bytes:', DEFAULT_BROTLI_FLUSH_THRESHOLD_BYTES);
     return DEFAULT_BROTLI_FLUSH_THRESHOLD_BYTES;
   }
 
   const parsed = Number(raw);
   if (Number.isInteger(parsed) && parsed > 0) {
-    console.log('Resolved Brotli flush threshold bytes:', parsed);
     return parsed;
   }
 
-  console.log('Default Brotli flush threshold bytes:', DEFAULT_BROTLI_FLUSH_THRESHOLD_BYTES);
   return DEFAULT_BROTLI_FLUSH_THRESHOLD_BYTES;
 }
 
@@ -94,11 +88,9 @@ function resolveBrotliFlushThresholdBytes(): number {
  */
 function isBrotliChunkingEnabled(): boolean {
   const raw = process.env.MRT_BROTLI_CHUNKING_ENABLED;
-  console.log('Brotli chunking enabled?:', raw);
   if (!raw) {
     return true;
   }
-  console.log('Using Brotli chunking:', raw);
   return raw.toLowerCase() !== 'false';
 }
 
