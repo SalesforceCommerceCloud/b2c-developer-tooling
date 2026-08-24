@@ -37,8 +37,10 @@
  */
 import type {UserAuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
 import {getLogger} from '../logging/logger.js';
+import {findAuthSession} from './session-store.js';
 import {PkceOAuthStrategy, PkceGrantUnsupportedError, type PkceOAuthConfig} from './oauth-pkce.js';
 import {ImplicitOAuthStrategy, type ImplicitOAuthConfig} from './oauth-implicit.js';
+import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 
 /**
  * Returns true when the automatic PKCE→implicit fallback is disabled via the
@@ -64,6 +66,15 @@ export class PkceWithImplicitFallbackStrategy implements UserAuthStrategy {
 
   constructor(private readonly config: PkceOAuthConfig) {
     this.pkce = new PkceOAuthStrategy(config);
+    this.useImplicit = this.hasPersistedUnsupportedMarker();
+    if (this.useImplicit) {
+      getLogger().warn(
+        {clientId: this.config.clientId, accountManagerHost: this.accountManagerHost},
+        `[Auth] Skipping Authorization Code + PKCE for client ${this.config.clientId} because Account Manager ` +
+          'previously rejected that grant. Using the deprecated implicit flow. Recommend creating a new public ' +
+          '(PKCE) client in Account Manager and using it to remove this warning.',
+      );
+    }
   }
 
   async fetch(url: string, init: FetchInit = {}): Promise<Response> {
@@ -152,10 +163,30 @@ export class PkceWithImplicitFallbackStrategy implements UserAuthStrategy {
         redirectUri: this.config.redirectUri,
         openBrowser: this.config.openBrowser,
         persistSession: this.config.persistSession,
+        pkceUnsupported: true,
       };
       this.implicit = new ImplicitOAuthStrategy(implicitConfig);
     }
     return this.implicit;
+  }
+
+  private get accountManagerHost(): string {
+    return (this.config.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST).toLowerCase();
+  }
+
+  private hasPersistedUnsupportedMarker(): boolean {
+    if (this.config.persistSession === false) return false;
+    try {
+      const stored = findAuthSession(this.config.clientId);
+      return (
+        stored?.flow === 'implicit' &&
+        stored.pkceUnsupported === true &&
+        stored.accountManagerHost?.toLowerCase() === this.accountManagerHost
+      );
+    } catch (error) {
+      getLogger().debug({err: error}, '[Auth] Failed to inspect persisted PKCE fallback marker');
+      return false;
+    }
   }
 }
 

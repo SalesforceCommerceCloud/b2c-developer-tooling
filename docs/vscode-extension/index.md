@@ -20,8 +20,6 @@ Step through anything that runs server-side: cartridge controllers, jobs, custom
 
 [![B2C Script Debugger](./images/script-debugger.png)](./images/script-debugger.png)
 
-On multi-app-server environments, a breakpoint only fires when the triggering request reaches the app server the debugger is attached to. While a debug session is active, run **Copy Debugger Session ID (dwsid)** from the Command Palette to copy the session cookie, then send your triggering request (e.g. in the browser) with `Cookie: dwsid=<value>`. See the [Script Debugger guide](../guide/script-debugger#server-affinity-hitting-breakpoints) for details.
-
 ### Scaffolding
 
 Generate new cartridges, controllers, hooks, jobs, and other boilerplate from a curated set of templates. Available from **File → New File...** or by right-clicking a folder in the Explorer.

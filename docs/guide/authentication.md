@@ -697,6 +697,8 @@ Manager and using it to remove this warning.
 
 The fallback triggers **only** for OAuth errors that indicate the client is not a public/PKCE client — `invalid_client` (Account Manager requires client authentication at the token exchange; the most common case for legacy implicit clients), `unauthorized_client`, `unsupported_response_type`, and `unsupported_grant_type`. Other failures (for example `invalid_scope` from requesting scopes the client can't have, or a cancelled login) surface directly without falling back, because they would fail identically under the implicit flow.
 
+The first fallback can require two browser authorization prompts while the tooling switches to the compatible flow. After a successful fallback, later CLI and VS Code sign-ins use that flow directly and avoid the extra prompt. The first browser callback reports that authorization was received instead of reporting a successful sign-in before the fallback completes.
+
 To resolve the warning, create a new public client as described above and use its client ID. To disable the fallback entirely and surface PKCE failures directly, set `SFCC_DISABLE_PKCE_FALLBACK=1`. The fallback is temporary and will be removed once public clients have migrated.
 
 ## Next Steps
