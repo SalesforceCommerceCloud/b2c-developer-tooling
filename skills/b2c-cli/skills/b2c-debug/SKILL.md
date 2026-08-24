@@ -131,20 +131,6 @@ b2c debug
 
 This starts a DAP debug adapter over stdio, used by IDE launch configurations.
 
-## Server Affinity (Hitting Breakpoints)
-
-A breakpoint only fires when the triggering code runs on the **same application server** the debugger is attached to. Some **Production Instance Group (PIG)** environments run **multiple application servers** behind a load balancer, so a request that should hit your breakpoint may land on a different app server and the breakpoint never fires.
-
-> **Sandboxes (ODS) are single-app-server and are not affected.** This only matters on certain multi-app-server PIG environments. If breakpoints are not hitting on a sandbox, the cause is something else (wrong path mapping, code version, or the code simply not running).
-
-To pin a triggering request to the correct app server, send it with the debugger's session cookie (`dwsid`):
-
-- **MCP:** `debug_start_session` and `debug_list_sessions` return a `session_cookie` (`{name, value}`). Send the request that triggers your code (storefront page load, SCAPI/OCAPI call) with `Cookie: dwsid=<value>`.
-- **Any trigger:** whatever issues the request — a browser, `curl`, an integration test — must carry the same `dwsid` value.
-- **Headless requests (hooks, custom APIs, server-to-server SCAPI/OCAPI):** instead of a cookie, pass the value as the `sfdc_dwsid` request header (`sfdc_dwsid: <value>`).
-
-If the cookie or header cannot be set on the triggering request, retry until the load balancer routes to the attached app server.
-
 ## Related Skills
 
 - `b2c-cli:b2c-logs` - Retrieve server logs for investigating errors found during debugging
