@@ -263,6 +263,152 @@ describe('Compression Streaming', () => {
       );
     });
 
+    describe('environment variable overrides', () => {
+      const originalQuality = process.env.MRT_BROTLI_COMPRESSION_QUALITY;
+      const originalFlushThreshold = process.env.MRT_BROTLI_FLUSH_THRESHOLD_BYTES;
+      const originalChunkingEnabled = process.env.MRT_BROTLI_CHUNKING_ENABLED;
+
+      afterEach(() => {
+        sinon.restore();
+        if (originalQuality === undefined) {
+          delete process.env.MRT_BROTLI_COMPRESSION_QUALITY;
+        } else {
+          process.env.MRT_BROTLI_COMPRESSION_QUALITY = originalQuality;
+        }
+        if (originalFlushThreshold === undefined) {
+          delete process.env.MRT_BROTLI_FLUSH_THRESHOLD_BYTES;
+        } else {
+          process.env.MRT_BROTLI_FLUSH_THRESHOLD_BYTES = originalFlushThreshold;
+        }
+        if (originalChunkingEnabled === undefined) {
+          delete process.env.MRT_BROTLI_CHUNKING_ENABLED;
+        } else {
+          process.env.MRT_BROTLI_CHUNKING_ENABLED = originalChunkingEnabled;
+        }
+      });
+
+      it('should use MRT_BROTLI_COMPRESSION_QUALITY when set to a valid value', async () => {
+        process.env.MRT_BROTLI_COMPRESSION_QUALITY = '11';
+        const stream = createCollectingStream();
+        const event = createMockEvent({headers: {'Accept-Encoding': 'br'}});
+        const context = createMockContext();
+        const request = createExpressRequest(event, context);
+        const createBrotliStub = sinon.stub(zlib, 'createBrotliCompress').callThrough();
+        const response = createExpressResponse(stream, event, context, request);
+
+        response.setHeader('Content-Type', 'text/html');
+        response.end('test data');
+
+        await stream.waitForEnd();
+
+        expect(
+          createBrotliStub.calledWith({
+            params: {
+              [zlib.constants.BROTLI_PARAM_QUALITY]: 11,
+            },
+          }),
+        ).to.be.true;
+      });
+
+      it('should ignore an out-of-range MRT_BROTLI_COMPRESSION_QUALITY and fall back to the default', async () => {
+        process.env.MRT_BROTLI_COMPRESSION_QUALITY = '99';
+        const stream = createCollectingStream();
+        const event = createMockEvent({headers: {'Accept-Encoding': 'br'}});
+        const context = createMockContext();
+        const request = createExpressRequest(event, context);
+        const createBrotliStub = sinon.stub(zlib, 'createBrotliCompress').callThrough();
+        const response = createExpressResponse(stream, event, context, request);
+
+        response.setHeader('Content-Type', 'text/html');
+        response.end('test data');
+
+        await stream.waitForEnd();
+
+        expect(
+          createBrotliStub.calledWith({
+            params: {
+              [zlib.constants.BROTLI_PARAM_QUALITY]: 6,
+            },
+          }),
+        ).to.be.true;
+      });
+
+      it('should flush Brotli output sooner when MRT_BROTLI_FLUSH_THRESHOLD_BYTES is small', async () => {
+        process.env.MRT_BROTLI_FLUSH_THRESHOLD_BYTES = '16';
+        const stream = createCollectingStream();
+        const event = createMockEvent({headers: {'Accept-Encoding': 'br'}});
+        const context = createMockContext();
+        const request = createExpressRequest(event, context);
+        const response = createExpressResponse(stream, event, context, request);
+        const firstCompressedChunk = new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Brotli output was not flushed before end()')), 500);
+          stream.once('data', () => {
+            clearTimeout(timeout);
+            resolve();
+          });
+        });
+
+        response.setHeader('Content-Type', 'text/html');
+        // Well above the 16-byte threshold, so the write forces an early flush
+        response.write('x'.repeat(200));
+
+        await firstCompressedChunk;
+        expect(stream.getData().length).to.be.greaterThan(0);
+
+        response.end('done');
+        await stream.waitForEnd();
+
+        expect(zlib.brotliDecompressSync(stream.getData()).toString()).to.equal(`${'x'.repeat(200)}done`);
+      });
+
+      it('should not flush Brotli output early when MRT_BROTLI_FLUSH_THRESHOLD_BYTES is large', async () => {
+        // 10 MiB threshold is well above the default 32 KiB, so a 40 KiB write should
+        // not trigger an early flush the way it would under the default threshold.
+        process.env.MRT_BROTLI_FLUSH_THRESHOLD_BYTES = String(10 * 1024 * 1024);
+        const stream = createCollectingStream();
+        const event = createMockEvent({headers: {'Accept-Encoding': 'br'}});
+        const context = createMockContext();
+        const request = createExpressRequest(event, context);
+        const response = createExpressResponse(stream, event, context, request);
+
+        response.setHeader('Content-Type', 'text/html');
+        response.write('x'.repeat(40 * 1024));
+
+        // Give any asynchronous flush a chance to emit before asserting nothing was written yet
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        expect(stream.getData().length).to.equal(0);
+
+        response.end();
+        await stream.waitForEnd();
+
+        expect(zlib.brotliDecompressSync(stream.getData()).toString()).to.equal('x'.repeat(40 * 1024));
+      });
+
+      it('should not flush Brotli output early when MRT_BROTLI_CHUNKING_ENABLED is false', async () => {
+        // Chunking disabled: even a write that exceeds the (small) flush threshold must not
+        // force an early flush, so no compressed bytes are emitted until the response ends.
+        process.env.MRT_BROTLI_CHUNKING_ENABLED = 'false';
+        process.env.MRT_BROTLI_FLUSH_THRESHOLD_BYTES = '16';
+        const stream = createCollectingStream();
+        const event = createMockEvent({headers: {'Accept-Encoding': 'br'}});
+        const context = createMockContext();
+        const request = createExpressRequest(event, context);
+        const response = createExpressResponse(stream, event, context, request);
+
+        response.setHeader('Content-Type', 'text/html');
+        response.write('x'.repeat(200));
+
+        // Give any asynchronous flush a chance to emit before asserting nothing was written yet
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        expect(stream.getData().length).to.equal(0);
+
+        response.end('done');
+        await stream.waitForEnd();
+
+        expect(zlib.brotliDecompressSync(stream.getData()).toString()).to.equal(`${'x'.repeat(200)}done`);
+      });
+    });
+
     it('should compress content with brotli when br is preferred', async () => {
       const stream = createCollectingStream();
       const event = createMockEvent({headers: {'Accept-Encoding': 'br, gzip, deflate'}});

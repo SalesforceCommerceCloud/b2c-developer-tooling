@@ -31,7 +31,76 @@ const REQUEST_HEADERS_TO_COPY = ['x-correlation-id'] as const;
 // Node's Brotli default is quality 11, which is optimized for offline compression
 // and can consume seconds of Lambda CPU for large streamed HTML responses.
 const DEFAULT_BROTLI_QUALITY = 6;
-const BROTLI_FLUSH_THRESHOLD_BYTES = 32 * 1024;
+const DEFAULT_BROTLI_FLUSH_THRESHOLD_BYTES = 32 * 1024;
+
+/**
+ * Resolves the Brotli compression quality from the MRT_BROTLI_COMPRESSION_QUALITY
+ * environment variable, falling back to DEFAULT_BROTLI_QUALITY. Values that are not
+ * integers within the valid Brotli quality range (0-11) are ignored.
+ *
+ * @returns The Brotli quality level to use.
+ */
+function resolveBrotliQuality(): number {
+  const raw = process.env.MRT_BROTLI_COMPRESSION_QUALITY;
+  if (raw === undefined || raw.trim() === '') {
+    console.log('Using default Brotli quality:', DEFAULT_BROTLI_QUALITY);
+    return DEFAULT_BROTLI_QUALITY;
+  }
+
+  const parsed = Number(raw);
+  if (
+    Number.isInteger(parsed) &&
+    parsed >= zlib.constants.BROTLI_MIN_QUALITY &&
+    parsed <= zlib.constants.BROTLI_MAX_QUALITY
+  ) {
+    console.log('Resolved Brotli quality:', parsed);
+    return parsed;
+  }
+
+  console.log('Default Brotli quality:', DEFAULT_BROTLI_QUALITY);
+  return DEFAULT_BROTLI_QUALITY;
+}
+
+/**
+ * Resolves the Brotli flush threshold (in bytes) from the MRT_BROTLI_FLUSH_THRESHOLD_BYTES
+ * environment variable, falling back to DEFAULT_BROTLI_FLUSH_THRESHOLD_BYTES.
+ * Values that are not positive integers are ignored.
+ *
+ * @returns The number of uncompressed bytes to buffer before forcing a Brotli flush.
+ */
+function resolveBrotliFlushThresholdBytes(): number {
+  const raw = process.env.MRT_BROTLI_FLUSH_THRESHOLD_BYTES;
+  if (raw === undefined || raw.trim() === '') {
+    console.log('Using default Brotli flush threshold bytes:', DEFAULT_BROTLI_FLUSH_THRESHOLD_BYTES);
+    return DEFAULT_BROTLI_FLUSH_THRESHOLD_BYTES;
+  }
+
+  const parsed = Number(raw);
+  if (Number.isInteger(parsed) && parsed > 0) {
+    console.log('Resolved Brotli flush threshold bytes:', parsed);
+    return parsed;
+  }
+
+  console.log('Default Brotli flush threshold bytes:', DEFAULT_BROTLI_FLUSH_THRESHOLD_BYTES);
+  return DEFAULT_BROTLI_FLUSH_THRESHOLD_BYTES;
+}
+
+/**
+ * Resolves whether periodic Brotli flushing ("chunking") is enabled from the
+ * MRT_BROTLI_CHUNKING_ENABLED environment variable. Defaults to enabled; set the
+ * variable to "false" to disable it and let Brotli buffer output until the response ends.
+ *
+ * @returns true if periodic Brotli flushing should be performed.
+ */
+function isBrotliChunkingEnabled(): boolean {
+  const raw = process.env.MRT_BROTLI_CHUNKING_ENABLED;
+  console.log('Brotli chunking enabled?:', raw);
+  if (!raw) {
+    return true;
+  }
+  console.log('Using Brotli chunking:', raw);
+  return raw.toLowerCase() !== 'false';
+}
 
 // Check if zstd compression is available (Node.js v22.15.0+)
 let createZstdCompress: ((options?: ZstdOptions) => ZstdCompress) | undefined;
@@ -374,7 +443,7 @@ function createCompressionStream(encoding: string, compressionConfig?: Compressi
         ...brotliOptions,
         params: {
           ...brotliOptions?.params,
-          [qualityParameter]: DEFAULT_BROTLI_QUALITY,
+          [qualityParameter]: resolveBrotliQuality(),
         },
       });
     }
@@ -434,6 +503,8 @@ export function createExpressResponse(
   let shouldCompress = false;
   let compressionInitialized = false;
   let uncompressedBytesSinceBrotliFlush = 0;
+  const brotliFlushThresholdBytes = resolveBrotliFlushThresholdBytes();
+  const brotliChunkingEnabled = isBrotliChunkingEnabled();
 
   // Helper function to check if stream is still writable
   const isStreamOpen = (): boolean => {
@@ -492,10 +563,10 @@ export function createExpressResponse(
       if (shouldCompress && compressionStream && compressionStream.writable) {
         // Write to compression stream, which will compress and pipe to httpResponseStream
         const accepted = compressionStream.write(chunk);
-        if (selectedEncoding === 'br' && typeof compressionStream.flush === 'function') {
+        if (brotliChunkingEnabled && selectedEncoding === 'br' && typeof compressionStream.flush === 'function') {
           uncompressedBytesSinceBrotliFlush += typeof chunk === 'string' ? Buffer.byteLength(chunk) : chunk.byteLength;
 
-          if (uncompressedBytesSinceBrotliFlush >= BROTLI_FLUSH_THRESHOLD_BYTES) {
+          if (uncompressedBytesSinceBrotliFlush >= brotliFlushThresholdBytes) {
             compressionStream.flush(zlib.constants.BROTLI_OPERATION_FLUSH);
             uncompressedBytesSinceBrotliFlush = 0;
           }
