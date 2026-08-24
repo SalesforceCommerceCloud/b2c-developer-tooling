@@ -115,11 +115,6 @@ export function createDebugStartSessionTool(
         for (const c of cartridges) cartridgeMappings[c.name] = c.src;
 
         const dwsid = manager.getSessionCookie();
-        if (!dwsid) {
-          warnings.push(
-            'No session cookie (dwsid) was returned by the debugger. Requests cannot be pinned to this app server; breakpoints may not be hit on multi-app-server instances.',
-          );
-        }
 
         return {
           session_id: entry.sessionId,

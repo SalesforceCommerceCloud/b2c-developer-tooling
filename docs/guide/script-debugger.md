@@ -24,31 +24,7 @@ The **VS Code extension is the recommended interface** for interactive debugging
 
 They all share the same workflow: connect a session, set breakpoints (by local file path, cartridge-prefixed path, or server path), trigger the code on the instance, then inspect the halted thread.
 
-## Server affinity (hitting breakpoints)
-
-A breakpoint only fires when the code runs on the **same application server** the debugger is attached to. On a single-app-server environment this is automatic. But some **Production Instance Group (PIG)** environments run **multiple application servers** behind a load balancer — there, a request that triggers your code may land on a different app server than the debugger, and the breakpoint never fires.
-
-> **Sandboxes (ODS) are single-app-server and are not affected.** This only matters on certain multi-app-server PIG environments.
-
-To pin a triggering request to the correct app server, send it with the debugger's session cookie (`dwsid`). How you obtain the value depends on the interface:
-
-- **MCP:** `debug_start_session` and `debug_list_sessions` return a `session_cookie` (`{name, value}`). See [Script Debugger → Server affinity](/mcp/tools/diagnostics#server-affinity-hitting-breakpoints).
-- **VS Code:** the cookie is logged to the extension output channel when the session connects, and the **Copy Debugger Session ID (dwsid)** command copies it to your clipboard.
-- **CLI:** the cookie is logged when the session connects (`Debug session cookie: dwsid=…`).
-
-Send the request that triggers your code — a browser session, `curl`, an integration test — with that cookie:
-
-```
-Cookie: dwsid=<value>
-```
-
-For headless requests where you can't (or don't want to) set a cookie — server-to-server calls that trigger hooks, custom APIs, or SCAPI/OCAPI endpoints — pass the same value as the `sfdc_dwsid` request header instead:
-
-```
-sfdc_dwsid: <value>
-```
-
-If you cannot set the cookie or header on the triggering request, you may need to retry until the load balancer happens to route to the attached app server.
+> **Rare PIG-only troubleshooting:** If a breakpoint is never hit after confirming the request exercises the expected code and the source mapping is correct, the request may be reaching a different app server on a multi-app-server Production Instance Group. In that case, use **Copy Debugger Session ID (dwsid)** in VS Code or the MCP session's `session_cookie`, then send the triggering request with `Cookie: dwsid=<value>` (or `sfdc_dwsid: <value>` for a headless request). Sandboxes are single-app-server and never need this.
 
 ## See Also
 

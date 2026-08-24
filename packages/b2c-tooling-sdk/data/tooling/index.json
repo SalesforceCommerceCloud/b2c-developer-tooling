@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-08-20T01:15:39.329Z",
+  "generatedAt": "2026-08-24T03:39:37.510Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -395,7 +395,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/script-debugger.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/script-debugger.md",
-      "headings": "Requirements • Choosing an interface • Server affinity (hitting breakpoints) • See Also",
+      "headings": "Requirements • Choosing an interface • See Also",
       "preview": "Debug server-side B2C Commerce scripts (controllers, hooks, jobs, custom APIs) with the Script Debugger — via the VS Code extension, the CLI DAP debug adapter, or the MCP diagnostics tools."
     },
     {
@@ -485,7 +485,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/diagnostics.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/tools/diagnostics.md",
-      "headings": "Authentication • Recovery from broken or orphaned sessions • Session Lifecycle • debug_start_session • debug_end_session • debug_list_sessions • Server affinity (hitting breakpoints) • Breakpoints • debug_set_breakpoints • Execution Control • debug_wait_for_stop • debug_continue • debug_step_over • debug_step_into • debug_step_out • Inspection • debug_get_stack • debug_get_variables • debug_evaluate • Higher-Level Tools • debug_capture_at_breakpoint • See Also",
+      "headings": "Authentication • Recovery from broken or orphaned sessions • Session Lifecycle • debug_start_session • debug_end_session • debug_list_sessions • Breakpoints • debug_set_breakpoints • Execution Control • debug_wait_for_stop • debug_continue • debug_step_over • debug_step_into • debug_step_out • Inspection • debug_get_stack • debug_get_variables • debug_evaluate • Higher-Level Tools • debug_capture_at_breakpoint • See Also",
       "preview": "MCP tools for script debugging on B2C Commerce instances via the Script Debugger API (SDAPI)."
     },
     {

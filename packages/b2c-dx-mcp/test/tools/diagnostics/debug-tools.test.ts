@@ -715,6 +715,7 @@ describe('tools/diagnostics', () => {
       const json = getResultJson<{halted: boolean; timed_out?: boolean}>(result);
       expect(json.halted).to.be.false;
       expect(json.timed_out).to.be.true;
+      expect(json).not.to.have.property('hint');
     });
 
     it('should resolve when onThreadStopped callback fires', async () => {
@@ -875,6 +876,7 @@ describe('tools/diagnostics', () => {
       const json = getResultJson<{halted: boolean; timed_out?: boolean}>(result);
       expect(json.halted).to.be.false;
       expect(json.timed_out).to.be.true;
+      expect(json).not.to.have.property('hint');
     });
 
     it('should fire trigger_url in background', async () => {
@@ -1138,14 +1140,14 @@ describe('tools/diagnostics', () => {
       expect(json).to.not.have.own.property('projectDirectory');
     });
 
-    it('should return null session_cookie and warn when no dwsid is set', async () => {
+    it('should return null session_cookie without warning when no dwsid is set', async () => {
       (DebugSessionManager.prototype.getSessionCookie as sinon.SinonStub).returns(undefined);
       const tool = createDebugStartSessionTool(loadServices, serverContext);
       const result = await tool.handler({projectDirectory: tmpDir});
 
       const json = getResultJson<{session_cookie: unknown; warnings: string[]}>(result);
       expect(json.session_cookie).to.be.null;
-      expect(json.warnings.some((w) => w.includes('dwsid'))).to.be.true;
+      expect(json.warnings).to.be.empty;
     });
 
     it('should warn when no cartridges found', async () => {
