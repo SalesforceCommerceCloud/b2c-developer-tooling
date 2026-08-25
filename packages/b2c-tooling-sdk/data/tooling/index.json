@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-08-24T03:39:37.510Z",
+  "generatedAt": "2026-08-25T15:18:34.802Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -368,7 +368,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/mrt-utilities.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/mrt-utilities.md",
-      "headings": "When to use • Prerequisites • Installation • Package exports • Basic setup • Middleware • createMRTCommonMiddleware() • createMRTRequestProcessorMiddleware(requestProcessorPath, proxyConfigs) • createMRTProxyMiddlewares(proxyConfigs) • createMRTStaticAssetServingMiddleware(staticAssetDir) • createMRTCleanUpMiddleware() • Environment detection • Streaming (Lambda) • Metrics • Data Store In Development • Related",
+      "headings": "When to use • Prerequisites • Installation • Package exports • Basic setup • Middleware • createMRTCommonMiddleware() • createMRTRequestProcessorMiddleware(requestProcessorPath, proxyConfigs) • createMRTProxyMiddlewares(proxyConfigs) • createMRTStaticAssetServingMiddleware(staticAssetDir) • createMRTCleanUpMiddleware() • Environment detection • Streaming (Lambda) • Tuning Brotli compression • Metrics • Data Store In Development • Related",
       "preview": "Use the mrt-utilities package to simulate a deployed Managed Runtime environment locally with Express middleware and streaming adapters."
     },
     {
