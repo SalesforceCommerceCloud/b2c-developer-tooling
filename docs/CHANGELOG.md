@@ -1,5 +1,13 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.23
+
+### Patch Changes
+
+- [#638](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/638) [`5d48cfc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5d48cfc0122158625d24dd039d8066e1fa1c37f2) - Keep debugger server-affinity guidance as a rare PIG-only troubleshooting note instead of prompting users and agents to use `dwsid` during routine debugging. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#634](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/634) [`4dee938`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4dee938cd4c2d5fd48c6ebc85ee99abf432529ff) - Remember when an Account Manager client rejects PKCE so later CLI and VS Code sessions start directly with the compatible implicit flow, and avoid reporting authentication success before the PKCE token exchange completes. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.22
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @salesforce/b2c-dx-mcp
 
+## 2.1.2
+
+### Patch Changes
+
+- [#638](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/638) [`5d48cfc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5d48cfc0122158625d24dd039d8066e1fa1c37f2) - Keep debugger server-affinity guidance as a rare PIG-only troubleshooting note instead of prompting users and agents to use `dwsid` during routine debugging. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`5d48cfc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5d48cfc0122158625d24dd039d8066e1fa1c37f2), [`4dee938`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4dee938cd4c2d5fd48c6ebc85ee99abf432529ff)]:
+  - @salesforce/b2c-tooling-sdk@1.24.2
+
 ## 2.1.1
 
 ### Patch Changes
