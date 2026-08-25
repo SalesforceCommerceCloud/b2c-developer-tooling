@@ -1,5 +1,11 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.8.5
+
+### Patch Changes
+
+- [#638](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/638) [`5d48cfc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5d48cfc0122158625d24dd039d8066e1fa1c37f2) - Keep debugger server-affinity guidance as a rare PIG-only troubleshooting note instead of prompting users and agents to use `dwsid` during routine debugging. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.8.4
 
 ### Patch Changes
