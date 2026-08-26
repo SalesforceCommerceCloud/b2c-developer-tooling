@@ -98,6 +98,7 @@ const guidesSidebar = [
     text: 'How-To',
     items: [
       {text: 'Authentication Setup', link: '/guide/authentication'},
+      {text: 'Client Credentials Setup (Internal)', link: '/guide/client-credentials-setup'},
       {text: 'CI/CD with GitHub Actions', link: '/guide/ci-cd'},
       {text: 'sfcc-ci Migration', link: '/guide/sfcc-ci-migration'},
       {text: 'sfcc-ci SDK Migration', link: '/guide/sdk-migration'},
