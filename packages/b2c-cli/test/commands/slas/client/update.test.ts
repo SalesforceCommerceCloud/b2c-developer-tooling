@@ -176,14 +176,17 @@ describe('slas client update', () => {
     expect(options.body.redirectUri).to.deep.equal(['http://r1', 'http://r2']);
   });
 
-  it('includes secret in update body when provided', async () => {
-    const command: any = await createCommand({'tenant-id': 'abcd_123', secret: 'new-secret'}, {clientId: 'my-client'});
+  it('uses the configured client ID and includes the secret when provided', async () => {
+    const command: any = await createCommand(
+      {'tenant-id': 'abcd_123', 'slas-client-id': 'configured-client', secret: 'new-secret'},
+      {},
+    );
 
     stubAuthAndJson(command);
 
     const getStub = sinon.stub().resolves({
       data: {
-        clientId: 'my-client',
+        clientId: 'configured-client',
         name: 'Existing',
         channels: ['Site1'],
         scopes: 'a',
@@ -195,7 +198,7 @@ describe('slas client update', () => {
 
     const putStub = sinon.stub().resolves({
       data: {
-        clientId: 'my-client',
+        clientId: 'configured-client',
         name: 'Existing',
         channels: ['Site1'],
         scopes: 'a',
@@ -211,6 +214,8 @@ describe('slas client update', () => {
     await command.run();
 
     const [, options] = putStub.firstCall.args as [string, any];
+    expect(options.params.path.clientId).to.equal('configured-client');
+    expect(options.body.clientId).to.equal('configured-client');
     expect(options.body.secret).to.equal('new-secret');
   });
 });

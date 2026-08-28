@@ -5,7 +5,7 @@
  */
 import {Args} from '@oclif/core';
 import {
-  SlasClientCommand,
+  ExistingSlasClientCommand,
   type Client,
   type ClientOutput,
   normalizeClientResponse,
@@ -14,11 +14,11 @@ import {
 } from '../../../utils/slas/client.js';
 import {t, withDocs} from '../../../i18n/index.js';
 
-export default class SlasClientGet extends SlasClientCommand<typeof SlasClientGet> {
+export default class SlasClientGet extends ExistingSlasClientCommand<typeof SlasClientGet> {
   static args = {
     clientId: Args.string({
-      description: 'SLAS client ID to retrieve',
-      required: true,
+      description: 'SLAS client ID to retrieve (defaults to configured slasClientId)',
+      required: false,
     }),
   };
 
@@ -30,19 +30,20 @@ export default class SlasClientGet extends SlasClientCommand<typeof SlasClientGe
   static enableJsonFlag = true;
 
   static examples = [
+    '<%= config.bin %> <%= command.id %> --tenant-id abcd_123',
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123',
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123 --json',
   ];
 
   static flags = {
-    ...SlasClientCommand.baseFlags,
+    ...ExistingSlasClientCommand.baseFlags,
   };
 
   async run(): Promise<ClientOutput> {
     this.requireOAuthCredentials();
 
     const tenantId = this.requireTenantId();
-    const {clientId} = this.args;
+    const clientId = this.requireSlasClientId(this.args.clientId);
 
     if (!this.jsonEnabled()) {
       this.log(t('commands.slas.client.get.fetching', 'Fetching SLAS client {{clientId}}...', {clientId}));

@@ -5,7 +5,7 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {
-  SlasClientCommand,
+  ExistingSlasClientCommand,
   type Client,
   type ClientRequest,
   type ClientOutput,
@@ -16,11 +16,11 @@ import {
 } from '../../../utils/slas/client.js';
 import {t, withDocs} from '../../../i18n/index.js';
 
-export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClientUpdate> {
+export default class SlasClientUpdate extends ExistingSlasClientCommand<typeof SlasClientUpdate> {
   static args = {
     clientId: Args.string({
-      description: 'SLAS client ID to update',
-      required: true,
+      description: 'SLAS client ID to update (defaults to configured slasClientId)',
+      required: false,
     }),
   };
 
@@ -32,6 +32,7 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
   static enableJsonFlag = true;
 
   static examples = [
+    '<%= config.bin %> <%= command.id %> --tenant-id abcd_123 --name "New Name"',
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123 --name "New Name"',
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123 --secret new-secret-value',
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123 --scopes sfcc.shopper-baskets',
@@ -40,7 +41,7 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
   ];
 
   static flags = {
-    ...SlasClientCommand.baseFlags,
+    ...ExistingSlasClientCommand.baseFlags,
     name: Flags.string({
       description: 'Display name for the client',
     }),
@@ -89,7 +90,7 @@ export default class SlasClientUpdate extends SlasClientCommand<typeof SlasClien
       'callback-uri': callbackUri,
       replace,
     } = this.flags;
-    const {clientId} = this.args;
+    const clientId = this.requireSlasClientId(this.args.clientId);
     const tenantId = this.requireTenantId();
 
     if (!this.jsonEnabled()) {

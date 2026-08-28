@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args} from '@oclif/core';
-import {SlasClientCommand, formatApiError} from '../../../utils/slas/client.js';
+import {ExistingSlasClientCommand, formatApiError} from '../../../utils/slas/client.js';
 import {t, withDocs} from '../../../i18n/index.js';
 
 interface DeleteOutput {
@@ -12,11 +12,11 @@ interface DeleteOutput {
   deleted: boolean;
 }
 
-export default class SlasClientDelete extends SlasClientCommand<typeof SlasClientDelete> {
+export default class SlasClientDelete extends ExistingSlasClientCommand<typeof SlasClientDelete> {
   static args = {
     clientId: Args.string({
-      description: 'SLAS client ID to delete',
-      required: true,
+      description: 'SLAS client ID to delete (defaults to configured slasClientId)',
+      required: false,
     }),
   };
 
@@ -28,12 +28,13 @@ export default class SlasClientDelete extends SlasClientCommand<typeof SlasClien
   static enableJsonFlag = true;
 
   static examples = [
+    '<%= config.bin %> <%= command.id %> --tenant-id abcd_123',
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123',
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123 --json',
   ];
 
   static flags = {
-    ...SlasClientCommand.baseFlags,
+    ...ExistingSlasClientCommand.baseFlags,
   };
 
   async run(): Promise<DeleteOutput> {
@@ -43,7 +44,7 @@ export default class SlasClientDelete extends SlasClientCommand<typeof SlasClien
     this.requireOAuthCredentials();
 
     const tenantId = this.requireTenantId();
-    const {clientId} = this.args;
+    const clientId = this.requireSlasClientId(this.args.clientId);
 
     if (!this.jsonEnabled()) {
       this.log(t('commands.slas.client.delete.deleting', 'Deleting SLAS client {{clientId}}...', {clientId}));

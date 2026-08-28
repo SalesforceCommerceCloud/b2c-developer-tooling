@@ -24,6 +24,8 @@ Relevant overrides:
 - `--slas-client-id` / `SFCC_SLAS_CLIENT_ID` / `slasClientId`
 - `--slas-client-secret` / `SFCC_SLAS_CLIENT_SECRET` / `slasClientSecret`
 
+Commands that target an existing client (`get`, `update`, `delete`, and `open`) use the configured `slasClientId` when their positional client ID is omitted. A positional client ID takes precedence over configuration.
+
 ## When to Use
 
 Common scenarios requiring SLAS client management:
@@ -50,7 +52,10 @@ b2c slas client list --tenant-id abcd_123
 ### Get SLAS Client Details
 
 ```bash
-# get details for a specific SLAS client
+# get details for the configured SLAS client
+b2c slas client get
+
+# override the configured client ID
 b2c slas client get my-client-id
 ```
 
@@ -126,10 +131,10 @@ b2c slas token --site-id RefArch --slas-client-id my-client --slas-client-secret
 ### Update SLAS Client
 
 ```bash
-# update the display name
-b2c slas client update my-client-id --name "New Name"
+# update the configured client's display name
+b2c slas client update --name "New Name"
 
-# rotate the client secret
+# override the configured client ID and rotate its secret
 b2c slas client update my-client-id --secret new-secret-value
 
 # add scopes (appends to existing by default)
@@ -145,8 +150,21 @@ b2c slas client update my-client-id --channels RefArch,SiteGenesis --replace
 ### Delete SLAS Client
 
 ```bash
-# delete a SLAS client
+# delete the configured SLAS client
+b2c slas client delete
+
+# override the configured client ID
 b2c slas client delete my-client-id
+```
+
+### Open SLAS Client
+
+```bash
+# open the configured SLAS client in the Admin UI
+b2c slas client open
+
+# override the configured client ID
+b2c slas client open my-client-id
 ```
 
 ### More Commands
