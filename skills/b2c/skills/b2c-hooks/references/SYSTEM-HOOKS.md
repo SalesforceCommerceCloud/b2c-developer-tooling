@@ -138,24 +138,36 @@ Payment hooks handle authorization, capture, and refund operations.
 
 ### Authorization Flow
 
+The Shopper Orders payment-instrument `POST`/`PATCH` invokes these hooks inside platform request
+processing. Do not add a nested `Transaction.wrap` around order-PI mutations in that path.
+
+The `paymentDetails` argument depends on the request:
+
+- With a customer payment-instrument ID, Commerce copies the matching customer PI for authorization;
+  request amount and CVN are still propagated.
+- Otherwise Commerce populates the authorization details from request payment-card, bank-account, or
+  other payment data.
+
+Do not assume `paymentDetails` is the same object instance as the persistent PI already on `order`.
+Resolve the persistent PI when the integration stored provider state there.
+
 ```javascript
 // payment.js
 var Status = require('dw/system/Status');
 var Transaction = require('dw/system/Transaction');
 
-exports.authorize = function(order, paymentInstrument) {
+exports.authorize = function(order, paymentDetails) {
+    var paymentInstrument = resolvePersistentPaymentInstrument(order, paymentDetails);
     var paymentMethod = paymentInstrument.paymentMethod;
 
     // Call payment processor
     var result = callPaymentProcessor(order, paymentInstrument);
 
     if (result.success) {
-        // Store authorization info
-        Transaction.wrap(function() {
-            paymentInstrument.paymentTransaction.setTransactionID(result.transactionId);
-            paymentInstrument.paymentTransaction.custom.authCode = result.authCode;
-            paymentInstrument.paymentTransaction.custom.authTimestamp = new Date();
-        });
+        // SCAPI order-PI authorization already runs in a platform transaction.
+        paymentInstrument.paymentTransaction.setTransactionID(result.transactionId);
+        paymentInstrument.paymentTransaction.custom.authCode = result.authCode;
+        paymentInstrument.paymentTransaction.custom.authTimestamp = new Date();
         return new Status(Status.OK);
     }
 
@@ -406,13 +418,16 @@ When multiple cartridges register the same hook:
 ### Payment Hooks
 
 - Always handle partial failures
-- Log transaction IDs for debugging
+- Log provider transaction IDs and order numbers for debugging, but no payment tokens or PII
 - Implement idempotency where possible
 - Store auth timestamps for validation
+- Return `Status.OK` only for successful authorization and `Status.ERROR` for failure
+- Let order-PI `afterPATCH` return `undefined` on success so default coverage-based placement runs
 
 ### General
 
 - Return appropriate Status objects
 - Handle exceptions gracefully
-- Use Transaction.wrap() for data changes (except SCAPI calculate)
+- Use `Transaction.wrap()` only when the caller does not already provide a transaction; do not nest it
+  in SCAPI calculate, order `afterPOST`, or order-PI authorization hooks
 - Log errors with context for debugging

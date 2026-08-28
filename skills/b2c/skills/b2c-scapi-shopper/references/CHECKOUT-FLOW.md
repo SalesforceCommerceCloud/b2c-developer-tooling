@@ -11,7 +11,9 @@ Complete basket-to-order workflow using Shopper APIs.
 4. Set Shipping Address
 5. Select Shipping Method
 6. Add Payment Instrument
-7. Submit Order
+7. Submit Order (creates `CREATED` order)
+8. Authorize Order Payment Instrument (places when fully covered)
+9. On deterministic failure, fail order and optionally reopen basket
 ```
 
 ## Prerequisites
@@ -237,13 +239,75 @@ const order = await fetch(
     }
 ).then(r => r.json());
 
-// order.orderNo contains the order confirmation number.
-// NOTE: the order is in CREATED status here — it is NOT yet placed.
-// Server-side payment authorization and the CREATED -> NEW / FAILED transition
-// are owned by the dw.ocapi.shop.order.afterPOST hook (see b2c-hooks). Without
-// that hook the order stays stranded in CREATED.
+// The order is committed in CREATED status. It is not yet placed.
 console.log(`Order created (status CREATED): ${order.orderNo}`);
 ```
+
+## Step 8: Authorize the Order Payment Instrument
+
+Build the request from the committed order state and provider result, not unchecked browser fields.
+The exact provider properties vary; inspect the current Shopper Orders schema and the payment
+integration contract.
+
+```javascript
+const paymentInstrument = order.paymentInstruments[0];
+const authorizationRequest = buildProviderOrderPaymentInstrumentRequest({
+    order,
+    paymentInstrument
+});
+
+const authorizationResponse = await fetch(
+    `https://${shortCode}.api.commercecloud.salesforce.com/checkout/shopper-orders/v1/organizations/${orgId}/orders/${order.orderNo}/payment-instruments/${paymentInstrument.paymentInstrumentId}?siteId=${siteId}`,
+    {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(authorizationRequest)
+    }
+);
+
+if (authorizationResponse.ok) {
+    const authorizedOrder = await authorizationResponse.json();
+    if (authorizedOrder.status === 'new') {
+        console.log(`Order placed: ${authorizedOrder.orderNo}`);
+    } else {
+        // CREATED can be expected until every PI is authorized in a multi-PI flow.
+        console.log(`Order not yet placed: ${authorizedOrder.orderNo}`);
+    }
+}
+```
+
+The endpoint calls `dw.order.payment.authorizeCreditCard` when the request contains payment-card
+data or the PI has a credit-card type; otherwise it calls `dw.order.payment.authorize`. Its
+`afterPATCH` hook receives `successfullyAuthorized`. Return no value after successful custom
+validation so the platform's default implementation can place the order when authorized payment
+coverage equals or exceeds the order total. For a saved payment method, use the documented customer
+payment-instrument reference so Commerce copies the owned customer PI for authorization. Request
+amount and card security code are still propagated when using that reference.
+
+## Step 9: Fail a Deterministically Declined Order
+
+When authorization definitely failed and retry is safe, use the Shopper Orders fail action instead
+of failing the order inside the order-creation hook:
+
+```javascript
+await fetch(
+    `https://${shortCode}.api.commercecloud.salesforce.com/checkout/shopper-orders/v1/organizations/${orgId}/orders/${order.orderNo}/actions/fail?siteId=${siteId}&reopenBasket=true`,
+    {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reasonCode: 'payment_auth_failure' })
+    }
+);
+```
+
+Do not automatically fail/reopen after a timeout or indeterminate gateway response. Preserve the
+`CREATED` order for reconciliation so a retry cannot create a duplicate authorization.
 
 ## Single-Request Basket Creation
 

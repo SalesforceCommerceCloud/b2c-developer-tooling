@@ -209,7 +209,17 @@ const order = await fetch(
 ).then(r => r.json());
 ```
 
-> **The POST does not finish the order.** SCAPI creates the order in **`CREATED`** status — payment is *not* authorized and the order is *not* placed by this call. A server-side **`dw.ocapi.shop.order.afterPOST` hook** is responsible for authorizing payment and advancing the order to `NEW` (`OrderMgr.placeOrder`) or `FAILED` (`OrderMgr.failOrder`). Without that hook the order is stranded in `CREATED`. If your headless checkout "succeeds" but the order never appears as placed (or never fails visibly), this is almost always the missing piece — see the canonical example in [b2c-hooks › Order afterPOST](../b2c-hooks/SKILL.md#order-afterpost-headless-order-placement) and the order lifecycle in [b2c-ordering](../b2c-ordering/SKILL.md). Confirm current hook details with `b2c docs read commerce-api/hook-method-details`.
+> **The order POST is the first phase.** It commits an order in `CREATED`; it does not authorize or
+> place it. Next, update each required order payment instrument with
+> `PATCH /orders/{orderNo}/payment-instruments/{paymentInstrumentId}`. That endpoint invokes
+> `dw.order.payment.authorizeCreditCard` or `dw.order.payment.authorize`, then the default order-PI
+> `afterPATCH` implementation places the order after authorized coverage reaches the order total.
+> Treat the returned `NEW` order as success. On a deterministic payment failure, call
+> `POST /orders/{orderNo}/actions/fail?reopenBasket=true` with an appropriate reason code. Preserve a
+> `CREATED` order when provider state is indeterminate. See
+> [b2c-hooks](../b2c-hooks/SKILL.md#headless-order-payment-use-the-order-pi-authorization-seam) and
+> [b2c-ordering](../b2c-ordering/SKILL.md). Confirm version-specific request fields with the Shopper
+> Orders schema and hook signatures with `b2c docs read commerce-api/hook-method-details`.
 
 ### Shopper Customers
 
@@ -352,7 +362,7 @@ Find logs in Log Center under `scapi.verbose` category.
 - [b2c-slas-auth-patterns](../b2c-slas-auth-patterns/SKILL.md) - Advanced auth: OTP, passkeys, session bridge
 - [b2c-scapi-schemas](../../../b2c-cli/skills/b2c-scapi-schemas/SKILL.md) - Browse OpenAPI schemas
 - [b2c-custom-api-development](../b2c-custom-api-development/SKILL.md) - Create custom endpoints
-- [b2c-hooks](../b2c-hooks/SKILL.md) - The `order.afterPOST` hook that authorizes payment and places/fails a headless order
+- [b2c-hooks](../b2c-hooks/SKILL.md) - Order-PI authorization hooks, default placement, and the single-phase `order.afterPOST` alternative
 - [b2c-ordering](../b2c-ordering/SKILL.md) - Order lifecycle, status transitions, and failure handling
 
 ## Reference Documentation
