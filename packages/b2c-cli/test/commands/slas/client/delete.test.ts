@@ -35,8 +35,8 @@ describe('slas client delete', () => {
     restoreConfig();
   });
 
-  it('deletes a client via SLAS API', async () => {
-    const command: any = await createCommand({'tenant-id': 'abcd_123'}, {clientId: 'my-client'});
+  it('deletes the configured client via SLAS API when the positional argument is omitted', async () => {
+    const command: any = await createCommand({'tenant-id': 'abcd_123', 'slas-client-id': 'configured-client'}, {});
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
 
@@ -49,9 +49,9 @@ describe('slas client delete', () => {
     expect(delStub.calledOnce).to.equal(true);
     const [, options] = delStub.firstCall.args as [string, any];
     expect(options.params.path.tenantId).to.equal('abcd_123');
-    expect(options.params.path.clientId).to.equal('my-client');
+    expect(options.params.path.clientId).to.equal('configured-client');
 
-    expect(result.clientId).to.equal('my-client');
+    expect(result.clientId).to.equal('configured-client');
     expect(result.deleted).to.equal(true);
   });
 

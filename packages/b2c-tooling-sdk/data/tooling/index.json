@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-08-25T15:18:34.802Z",
+  "generatedAt": "2026-08-28T16:41:03.775Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -233,7 +233,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.md",
-      "headings": "Global SLAS Flags • Authentication • Required Roles • Configuration • b2c slas token • Usage • Flags • Flows • Examples • Output • Configuration • b2c slas client list • Usage • Flags • Examples • Output • b2c slas client create • Usage • Arguments • Flags • Examples • Notes • b2c slas client get • Usage • Arguments • Examples • Output • b2c slas client update • Usage • Arguments • Flags • Examples • Notes • b2c slas client delete • Usage • Arguments • Examples • Notes • b2c slas client open • Usage • Arguments • Flags • Examples • Notes",
+      "headings": "Global SLAS Flags • Authentication • Required Roles • Configuration • b2c slas token • Usage • Flags • Flows • Examples • Output • Configuration • Existing Client Selection • b2c slas client list • Usage • Flags • Examples • Output • b2c slas client create • Usage • Arguments • Flags • Examples • Notes • b2c slas client get • Usage • Arguments • Examples • Output • b2c slas client update • Usage • Arguments • Flags • Examples • Notes • b2c slas client delete • Usage • Arguments • Examples • Notes • b2c slas client open • Usage • Arguments • Flags • Examples • Notes",
       "preview": "Commands for creating, updating, and managing Shopper Login and API Access Service (SLAS) clients."
     },
     {
