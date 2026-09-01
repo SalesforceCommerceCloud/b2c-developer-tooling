@@ -10,7 +10,7 @@ This page covers:
 
 - [Connecting to a B2C Instance](#connecting-to-a-b2c-instance) — credentials per feature.
 - [How the Extension Chooses a Project](#how-the-extension-chooses-a-project) — parent folders and multi-root workspaces.
-- [Switching the Active Instance](#switching-the-active-instance) — single-workspace, multi-instance.
+- [Selecting an Instance](#selecting-an-instance) — workspace-specific and shared defaults.
 - [Settings Reference](#settings-reference) — the `b2c-dx.*` toggles and verbosity controls.
 
 ## Connecting to a B2C Instance
@@ -87,11 +87,13 @@ If one workspace folder contains more than one B2C project, the project closest 
 
 To keep a particular project directory selected, right-click that folder in Explorer and choose **B2C DX > Use as B2C Commerce Root**. This works for nested folders such as `sfra/` as well as top-level folders in a multi-root workspace. Run **B2C DX: Reset B2C Commerce Root to Auto-Detect** from the Command Palette to return to automatic selection.
 
-## Switching the Active Instance
+## Selecting an Instance
 
-When `dw.json` defines multiple named instances (the recommended pattern for working across dev / staging / sandbox), click the cloud icon in the status bar to open a quick pick of the configured instances. Selecting a new one updates the underlying `dw.json` active-instance pointer and refreshes every view.
+When your configuration defines multiple named instances (the recommended pattern for working across dev / staging / sandbox), click the cloud icon in the status bar to open a quick pick. Selecting an instance applies it only to the current VS Code workspace and refreshes every extension view. Other VS Code workspaces, the CLI, and MCP continue using their own selection or the shared default.
 
-The same pointer is shared with the CLI: switching here is equivalent to running `b2c setup instance set-active <name>`.
+The picker distinguishes the instance **selected for this workspace** with a check mark and the shared **default instance** with a star. Use the star action on a row—or run **B2C DX: Set Default Instance**—to intentionally change the default used by other consumers. Run **B2C DX: Follow Default Instance** to remove the workspace-specific selection.
+
+For named entries, setting the default writes `active: true`; a root configuration without an explicit `active` value remains an implicit default. This is equivalent to running `b2c setup instance set-active <name>` and is separate from selecting an instance only for VS Code.
 
 ## Settings Reference
 
