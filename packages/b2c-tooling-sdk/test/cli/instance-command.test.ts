@@ -8,6 +8,7 @@ import sinon from 'sinon';
 import {Config} from '@oclif/core';
 import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {B2COperationContext, B2COperationResult, B2COperationType} from '@salesforce/b2c-tooling-sdk/cli';
+import {PkceWithImplicitFallbackStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../helpers/stub-parse.js';
 
@@ -15,6 +16,8 @@ import {stubParse} from '../helpers/stub-parse.js';
 class TestInstanceCommand extends InstanceCommand<typeof TestInstanceCommand> {
   static id = 'test:instance';
   static description = 'Test instance command';
+
+  public oauthStrategyCalls = 0;
 
   async run(): Promise<void> {
     // Test implementation
@@ -47,6 +50,11 @@ class TestInstanceCommand extends InstanceCommand<typeof TestInstanceCommand> {
 
   public testRunAfterHooks(context: B2COperationContext, result: B2COperationResult) {
     return this.runAfterHooks(context, result);
+  }
+
+  protected override getOAuthStrategy(): PkceWithImplicitFallbackStrategy {
+    this.oauthStrategyCalls++;
+    return new PkceWithImplicitFallbackStrategy({clientId: 'pkce-client', persistSession: false});
   }
 }
 
@@ -172,6 +180,20 @@ describe('cli/instance-command', () => {
       const instance2 = command.testInstance();
       // Should return same instance
       expect(instance1).to.equal(instance2);
+    });
+
+    it('injects the command PKCE resolver lazily for OCAPI', async () => {
+      stubParse(command, {server: 'test.demandware.net', 'client-id': 'test-client', 'user-auth': true});
+
+      await command.init();
+      const instance = command.testInstance();
+      expect(command.oauthStrategyCalls).to.equal(0);
+
+      void instance.ocapi;
+      expect(command.oauthStrategyCalls).to.equal(1);
+
+      void instance.ocapi;
+      expect(command.oauthStrategyCalls).to.equal(1);
     });
   });
 

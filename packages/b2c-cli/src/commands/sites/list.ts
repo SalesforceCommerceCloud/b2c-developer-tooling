@@ -11,31 +11,33 @@ import {
   selectColumns,
   type ColumnDef,
 } from '@salesforce/b2c-tooling-sdk/cli';
-import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk/clients';
-import type {OcapiComponents} from '@salesforce/b2c-tooling-sdk';
+import {createSitesBackend, type SiteInfo} from '@salesforce/b2c-tooling-sdk/operations/sites';
 import {t, withDocs} from '../../i18n/index.js';
 
-type Sites = OcapiComponents['schemas']['sites'];
-type Site = OcapiComponents['schemas']['site'];
-
-const COLUMNS: Record<string, ColumnDef<Site>> = {
+const COLUMNS: Record<string, ColumnDef<SiteInfo>> = {
   id: {
     header: 'ID',
     get: (s) => s.id || '-',
   },
   displayName: {
     header: 'Display Name',
-    get: (s) => s.display_name?.default || s.id || '-',
+    get: (s) => s.displayName || s.id || '-',
   },
   status: {
     header: 'Status',
-    get: (s) => s.storefront_status || 'unknown',
+    get: (s) => s.storefrontStatus || 'unknown',
   },
 };
 
 const DEFAULT_COLUMNS = ['id', 'displayName', 'status'];
 
 const tableRenderer = new TableRenderer(COLUMNS);
+
+interface SitesListResult {
+  count: number;
+  data: SiteInfo[];
+  total: number;
+}
 
 export default class SitesList extends InstanceCommand<typeof SitesList> {
   static description = withDocs(
@@ -57,43 +59,32 @@ export default class SitesList extends InstanceCommand<typeof SitesList> {
     ...columnFlagsFor(COLUMNS),
   };
 
-  async run(): Promise<Sites> {
+  async run(): Promise<SitesListResult> {
     this.requireOAuthCredentials();
 
     const hostname = this.resolvedConfig.values.hostname!;
+    const backend = createSitesBackend({instance: this.instance});
+    this.logger.debug(`Using ${backend.name} backend for sites list`);
 
     this.log(t('commands.sites.list.fetching', 'Fetching sites from {{hostname}}...', {hostname}));
 
-    const {data, error, response} = await this.instance.ocapi.GET('/sites', {
-      params: {query: {select: '(**)'}},
-    });
+    const sites = await backend.listSites();
 
-    if (error) {
-      this.error(
-        t('commands.sites.list.error', 'Failed to fetch sites: {{message}}', {
-          message: getApiErrorMessage(error, response),
-        }),
-      );
-    }
-
-    const sites = data as Sites;
+    const result: SitesListResult = {count: sites.length, data: sites, total: sites.length};
 
     // In JSON mode, just return the data - oclif handles output to stdout
     if (this.jsonEnabled()) {
-      return sites;
+      return result;
     }
 
     // Human-readable table output to stdout
-    if (!sites || sites.count === 0) {
+    if (sites.length === 0) {
       ux.stdout(t('commands.sites.list.noSites', 'No sites found.'));
-      return sites;
+      return result;
     }
 
-    tableRenderer.render(
-      sites.data ?? [],
-      selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
-    );
+    tableRenderer.render(sites, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
-    return sites;
+    return result;
   }
 }

@@ -4,8 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {revokeBmRole} from '@salesforce/b2c-tooling-sdk/operations/bm-roles';
+import {BmCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {t} from '../../../i18n/index.js';
 
 interface RevokeResult {
@@ -15,7 +14,7 @@ interface RevokeResult {
   hostname: string;
 }
 
-export default class BmRolesRevoke extends InstanceCommand<typeof BmRolesRevoke> {
+export default class BmRolesRevoke extends BmCommand<typeof BmRolesRevoke> {
   static args = {
     login: Args.string({
       description: 'User login (email)',
@@ -50,6 +49,9 @@ export default class BmRolesRevoke extends InstanceCommand<typeof BmRolesRevoke>
     const {role} = this.flags;
     const hostname = this.resolvedConfig.values.hostname!;
 
+    const backend = this.createRolesBackend();
+    this.logger.debug(`Using ${backend.name} backend for roles revoke`);
+
     this.log(
       t('commands.bm.roles.revoke.revoking', 'Revoking role {{role}} from {{login}} on {{hostname}}...', {
         role,
@@ -58,7 +60,7 @@ export default class BmRolesRevoke extends InstanceCommand<typeof BmRolesRevoke>
       }),
     );
 
-    await revokeBmRole(this.instance, role, login);
+    await backend.revokeRole(role, login);
 
     const result = {success: true, role, login, hostname};
 

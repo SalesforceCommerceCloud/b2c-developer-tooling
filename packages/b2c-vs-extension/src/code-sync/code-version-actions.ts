@@ -3,7 +3,12 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import type {CodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
+/** Minimal shape needed to decide activation candidacy — satisfied by both the
+ * raw OCAPI `CodeVersion` and the canonical `CodeVersionInfo`. */
+interface CodeVersionLike {
+  id?: string;
+  active?: boolean;
+}
 
 export type PostDeployAction = 'none' | 'activate' | 'reload';
 
@@ -22,6 +27,6 @@ export function getPostDeployActions(targetIsActive: boolean): PostDeployActionI
   return actions;
 }
 
-export function getActivationCandidates(versions: CodeVersion[]): CodeVersion[] {
+export function getActivationCandidates<T extends CodeVersionLike>(versions: T[]): T[] {
   return versions.filter((version) => !version.active && typeof version.id === 'string');
 }

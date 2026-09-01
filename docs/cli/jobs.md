@@ -6,11 +6,44 @@ description: Commands for executing jobs, importing and exporting site archives,
 
 Commands for executing and monitoring jobs on B2C Commerce instances.
 
+## API Backend
+
+Job commands run over SCAPI (the `operation/jobs` API). Configure `shortCode`, `tenantId`, and the `sfcc.jobs` / `sfcc.jobs.rw` scopes on your API client and `job run`, `job search`, `job wait`, and `job log` work out of the box.
+
+```bash
+# Default — uses SCAPI
+b2c job run my-job
+```
+
+::: details Legacy OCAPI backend (deprecated)
+OCAPI is deprecated and disabled on newer instances. The CLI defaults to `--api-backend auto`, which falls back to the OCAPI Data API on safe SCAPI capability/auth/request rejections. Force a backend if needed:
+
+```bash
+b2c job run my-job --api-backend scapi   # force SCAPI
+b2c job run my-job --api-backend ocapi   # force the legacy OCAPI backend
+```
+
+Or set `"api-backend": "scapi"` in `dw.json`, or `SFCC_API_BACKEND=scapi`.
+:::
+
+::: tip
+The `job import` and `job export` commands trigger the `sfcc-site-archive-import`/`-export` system jobs and transfer archive files over WebDAV. The job-execution trigger honors `--api-backend`: in `auto` mode it starts the system job over SCAPI (requires the `sfcc.jobs.rw` scope) and falls back to OCAPI only if the SCAPI start is rejected. WebDAV is always used for the archive transfer itself regardless of backend.
+:::
+
 ## Authentication
 
-Job commands require OAuth authentication with OCAPI permissions.
+### SCAPI (recommended)
 
-### Required OCAPI Permissions
+When using SCAPI, your API client needs the appropriate scopes in Account Manager:
+
+| Scope          | Operations                                                    |
+| -------------- | ------------------------------------------------------------- |
+| `sfcc.jobs.rw` | Execute, delete, search, and get job executions (recommended) |
+| `sfcc.jobs`    | Search and get job executions (read-only)                     |
+
+You also need `shortCode` and `tenantId` configured (in `dw.json` or via flags).
+
+### OCAPI
 
 Configure these resources in Business Manager under **Administration** > **Site Development** > **Open Commerce API Settings**:
 
@@ -278,6 +311,37 @@ b2c job log my-custom-job > job.log
 - Log content is written to stdout, making it easy to pipe to a file or other tools.
 - Status messages are written to stderr so they don't interfere with piped output.
 - The `job log` command requires WebDAV access to retrieve log files.
+
+---
+
+## b2c job execution delete
+
+Delete a job execution record. This command requires the SCAPI backend (`sfcc.jobs.rw` scope).
+
+### Usage
+
+```bash
+b2c job execution delete JOBID EXECUTIONID
+```
+
+### Arguments
+
+| Argument      | Description            | Required |
+| ------------- | ---------------------- | -------- |
+| `JOBID`       | Job ID                 | Yes      |
+| `EXECUTIONID` | Execution ID to delete | Yes      |
+
+### Examples
+
+```bash
+# Delete a specific execution
+b2c job execution delete my-job abc123-def456
+```
+
+### Notes
+
+- Requires SCAPI backend — not available via OCAPI.
+- Requires the `sfcc.jobs.rw` scope on your API client.
 
 ---
 

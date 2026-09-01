@@ -20,6 +20,7 @@ import type {
   ConfigSourceInfo,
   ResolvedB2CConfig,
   CreateOAuthOptions,
+  CreateB2CInstanceOptions,
 } from './types.js';
 
 /**
@@ -55,7 +56,7 @@ export class ResolvedConfigImpl implements ResolvedB2CConfig {
 
   // Factory methods
 
-  createB2CInstance(options?: Pick<CreateOAuthOptions, 'redirectUri' | 'openBrowser'>): B2CInstance {
+  createB2CInstance(options?: CreateB2CInstanceOptions): B2CInstance {
     if (!this.hasB2CInstanceConfig()) {
       throw new Error('B2C instance requires hostname');
     }

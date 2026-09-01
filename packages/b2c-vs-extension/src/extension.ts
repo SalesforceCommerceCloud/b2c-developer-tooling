@@ -788,7 +788,7 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
     });
   }
   if (settings.get<boolean>('features.exportExplorer', false)) {
-    registerExportTree(context, configProvider);
+    registerExportTree(context, configProvider, log);
   }
   if (settings.get<boolean>('features.cap', true)) {
     runActivationStep(log, 'CAP registration', () => {

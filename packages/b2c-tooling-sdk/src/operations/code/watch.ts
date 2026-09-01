@@ -9,7 +9,8 @@ import type {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
 import {findCartridges, type CartridgeMapping, type FindCartridgesOptions} from './cartridges.js';
 import {fileToCartridgePath, uploadFiles} from './upload-files.js';
-import {getActiveCodeVersion} from './versions.js';
+import {OcapiScriptsBackend} from './ocapi-scripts-backend.js';
+import type {ScriptsBackend} from './scripts-types.js';
 
 /** Default debounce time in ms for batching file uploads */
 const DEFAULT_DEBOUNCE_TIME = parseInt(process.env.SFCC_UPLOAD_DEBOUNCE_TIME ?? '100', 10);
@@ -18,6 +19,8 @@ const DEFAULT_DEBOUNCE_TIME = parseInt(process.env.SFCC_UPLOAD_DEBOUNCE_TIME ?? 
  * Options for watching cartridges.
  */
 export interface WatchOptions extends FindCartridgesOptions {
+  /** Explicit code-version backend. Defaults to OCAPI for SDK compatibility. */
+  scriptsBackend?: ScriptsBackend;
   /** Debounce time in ms for batching file changes */
   debounceTime?: number;
   /** Callback when files are uploaded */
@@ -96,11 +99,12 @@ export async function watchCartridges(
   const logger = getLogger();
   let codeVersion = instance.config.codeVersion;
   const debounceTime = options.debounceTime ?? DEFAULT_DEBOUNCE_TIME;
+  const scriptsBackend = options.scriptsBackend ?? new OcapiScriptsBackend(instance);
 
   // If no code version specified, get the active one
   if (!codeVersion) {
     logger.debug('No code version specified, getting active version...');
-    const active = await getActiveCodeVersion(instance);
+    const active = await scriptsBackend.getActiveCodeVersion();
     if (!active?.id) {
       throw new Error('No code version specified and no active code version found');
     }

@@ -4,14 +4,17 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {grantBmRole} from '@salesforce/b2c-tooling-sdk/operations/bm-roles';
-import type {OcapiComponents} from '@salesforce/b2c-tooling-sdk';
+import {BmCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {t} from '../../../i18n/index.js';
 
-type OcapiUser = OcapiComponents['schemas']['user'];
+interface GrantResult {
+  success: boolean;
+  role: string;
+  login: string;
+  hostname: string;
+}
 
-export default class BmRolesGrant extends InstanceCommand<typeof BmRolesGrant> {
+export default class BmRolesGrant extends BmCommand<typeof BmRolesGrant> {
   static args = {
     login: Args.string({
       description: 'User login (email)',
@@ -39,12 +42,15 @@ export default class BmRolesGrant extends InstanceCommand<typeof BmRolesGrant> {
     }),
   };
 
-  async run(): Promise<OcapiUser> {
+  async run(): Promise<GrantResult> {
     this.requireOAuthCredentials();
 
     const {login} = this.args;
     const {role} = this.flags;
     const hostname = this.resolvedConfig.values.hostname!;
+
+    const backend = this.createRolesBackend();
+    this.logger.debug(`Using ${backend.name} backend for roles grant`);
 
     this.log(
       t('commands.bm.roles.grant.granting', 'Granting role {{role}} to {{login}} on {{hostname}}...', {
@@ -54,10 +60,12 @@ export default class BmRolesGrant extends InstanceCommand<typeof BmRolesGrant> {
       }),
     );
 
-    const user = await grantBmRole(this.instance, role, login);
+    await backend.grantRole(role, login);
+
+    const result: GrantResult = {success: true, role, login, hostname};
 
     if (this.jsonEnabled()) {
-      return user;
+      return result;
     }
 
     this.log(
@@ -68,6 +76,6 @@ export default class BmRolesGrant extends InstanceCommand<typeof BmRolesGrant> {
       }),
     );
 
-    return user;
+    return result;
   }
 }

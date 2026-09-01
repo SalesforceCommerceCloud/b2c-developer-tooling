@@ -194,7 +194,6 @@ suite('jobs menu contributions (package.json)', () => {
       'b2c-dx.jobs.run',
       'b2c-dx.jobs.createScaffold',
       'b2c-dx.jobs.rerun',
-      'b2c-dx.jobs.stop',
       'b2c-dx.jobs.viewExecutionDetails',
       'b2c-dx.jobs.openExecutionInBM',
       'b2c-dx.jobs.openExecutionLog',
@@ -235,7 +234,6 @@ suite('jobs menu contributions (package.json)', () => {
     );
     for (const command of [
       'b2c-dx.jobs.rerun',
-      'b2c-dx.jobs.stop',
       'b2c-dx.jobs.viewExecutionDetails',
       'b2c-dx.jobs.openExecutionLog',
       'b2c-dx.jobs.openFailureLog',
@@ -365,10 +363,6 @@ suite('jobs menu contributions (package.json)', () => {
       !contextEntries['b2c-dx.jobs.createScaffold'],
       'createScaffold should not be in the Job History context menu',
     );
-
-    assert.ok(anyEntryMatches('b2c-dx.jobs.stop', 'jobExecution-running'));
-    assert.ok(!anyEntryMatches('b2c-dx.jobs.stop', 'jobExecution-completed'));
-    assert.ok(!anyEntryMatches('b2c-dx.jobs.stop', 'jobExecution-failed'));
 
     assert.ok(anyEntryMatches('b2c-dx.jobs.openFailureLog', 'jobExecution-failed'));
     assert.ok(!anyEntryMatches('b2c-dx.jobs.openFailureLog', 'jobExecution-running'));
