@@ -1,9 +1,9 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-08-03T18:22:28.428Z",
+  "generatedAt": "2026-08-18T18:41:48.278Z",
   "source": {
-    "sha": "2e8f2f4e0b521c1aa3dc8e97e0c1db05b2f9975a",
-    "committedAt": "2026-07-31T14:49:45-07:00",
+    "sha": "e003a95229356e47a4bda63d838b1a912f58fb31",
+    "committedAt": "2026-08-18T12:07:50-04:00",
     "ref": "main"
   },
   "entries": [
@@ -719,7 +719,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-business-objects.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-business-objects.md",
-      "headings": "System Objects • Creating System Object Attribute Definitions • Editing Custom Object Attribute Properties • Grouping Business Object Attributes • System Objects Custom Attribute Tutorial • Custom Objects • Creating Custom Object Types • Creating Custom Objects • Deleting Custom Objects • Making a Custom Attribute Editable or Uneditable • Editing Custom Object Attribute Properties • Creating Custom Attributes for Business Objects",
+      "headings": "System Objects • Creating System Object Attribute Definitions • Editing Custom Object Attribute Properties • Grouping Business Object Attributes • System Objects Custom Attribute Tutorial • Custom Objects • Creating Custom Object Types • Creating Custom Objects • Deleting Custom Objects • Making a Custom Attribute Editable or Uneditable • Editing Custom Object Attribute Properties • Creating Custom Attributes for Business Objects • Custom Attribute Definition Limits",
       "summary": "Create and customize business object definitions and attributes in B2C Commerce to extend system objects and add custom data structures for your ecommerce implementation.",
       "keywords": [
         "custom object definitions",
@@ -1581,7 +1581,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dev-best-practices.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dev-best-practices.md",
-      "headings": "Instance Naming • .zip Files in Code Repository • Development Guidelines and Limitations • Video Support • Email Support • Template Support • Quotas • B2C Commerce Script Timeout • Tax Classes and Jurisdictions Limit",
+      "headings": "Instance Naming • .zip Files in Code Repository • Development Guidelines and Limitations • Video Support • Email Support • Template Support • Page Designer Page Size • Quotas • B2C Commerce Script Timeout • Tax Classes and Jurisdictions Limit",
       "summary": "Guidelines for B2C Commerce development covering instance naming, code repository management, and technical limitations for video, email, and other resources.",
       "keywords": [
         "development best practices",
@@ -7061,7 +7061,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-rate-limiting-rules.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-rate-limiting-rules.md",
-      "headings": "Build a Rate Limiting Rule • Rate Limiting Parameters • Description • Rule Expression • Characteristics • Action • Period • Requests Per Period • Mitigation Timeout • Counting Expression (optional) • Enabled (optional) • Position (optional) • Best Practices • Enforce Granular Access Control • Protect Against Credential Stuffing • Limiting The Number of Operations • API Usage • Create a Rate Limiting Rule • Get All Rate Limiting Rules • Get a Rate Limiting Rule • Update a Rate Limiting Rule • Delete a Rate Limiting Rule • Rate Limiting Rules FAQ",
+      "headings": "Build a Rate Limiting Rule • Rate Limiting Parameters • Description • Rule Expression • Characteristics • Action • Period • Requests Per Period • Mitigation Timeout • Counting Expression (optional) • Enabled (optional) • Position (optional) • Best Practices • Enforce Granular Access Control • Protect Against Credential Stuffing • Limiting The Number of Operations • Allow Verified Search Crawlers and Detect Leaked Credentials • API Usage • Create a Rate Limiting Rule • Get All Rate Limiting Rules • Get a Rate Limiting Rule • Update a Rate Limiting Rule • Delete a Rate Limiting Rule • Rate Limiting Rules FAQ",
       "summary": "Configure rate limiting rules to control request traffic, prevent bot attacks, and improve storefront availability using CDN-API parameters and expressions.",
       "keywords": [
         "rate limiting",
@@ -7200,7 +7200,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-zones-custom-rules.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-zones-custom-rules.md",
-      "headings": "Validation Overview • Rule Expression • Rule Actions • Rule Order • Position • Create a Custom Rule • Sample Success Response - 201 HttpStatus Code • Get All Custom Rules • Sample Success Response - 200 HttpStatus Code • Get a Custom Rule • Sample Success Response - 200 HttpStatus Code • Update a Custom Rule • Sample Success Response - 200 HttpStatus Code • Update the Order of All Custom Rules • Sample Success Response - 200 HttpStatus Code • Delete a Custom Rule • Sample Success Response - 204 HttpStatus Code (No Content) • Custom Rules FAQ",
+      "headings": "Validation Overview • Rule Expression • Rule Actions • Rule Order • Position • Examples • Create a Custom Rule • Sample Success Response - 201 HttpStatus Code • Get All Custom Rules • Sample Success Response - 200 HttpStatus Code • Get a Custom Rule • Sample Success Response - 200 HttpStatus Code • Update a Custom Rule • Sample Success Response - 200 HttpStatus Code • Update the Order of All Custom Rules • Sample Success Response - 200 HttpStatus Code • Delete a Custom Rule • Sample Success Response - 204 HttpStatus Code (No Content) • Custom Rules FAQ",
       "summary": "Create and manage eCDN custom firewall rules to control incoming traffic using expressions, request parameters, and rule actions like block or js_challenge.",
       "keywords": [
         "eCDN custom rules",
@@ -8626,7 +8626,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/slas-best-practices.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/slas-best-practices.md",
-      "headings": "Strict Client Auth • Mitigate Guest Token Reuse • Recommended Guest Token Flow • Session Rotation Step 1: Get a Fresh Guest Token • Session Rotation Step 2: Swap Tokens in the Storefront • Result: Empty Order List Following Account Registration • Edge Cases to Consider",
+      "headings": "Strict Client Auth • Handle the Audience (`aud`) Claim • Mitigate Guest Token Reuse • Recommended Guest Token Flow • Session Rotation Step 1: Get a Fresh Guest Token • Session Rotation Step 2: Swap Tokens in the Storefront • Result: Empty Order List Following Account Registration • Edge Cases to Consider",
       "summary": "Implement SLAS security best practices including Strict Client Auth for private clients and guest session rotation to enhance authentication and prevent token reuse.",
       "keywords": [
         "SLAS best practices",
@@ -12197,7 +12197,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-analytics.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-analytics.md",
-      "headings": "How It Works • Tracking Consent • Configure Consent Categories • Require a Consent Category per Adapter • Set Up Einstein Activities • Set Up Active Data • Prerequisites • Step 1: Enable Data Collection • Step 2: Confirm That Sites Are Online • Step 3: Confirm that Tracking (Default for New Storefront Session) Is Enabled • Step 4: Configure Active Data • Analytics Events • Adding More Event Types • Engagement Adapters • Adding More Adapters • See Also",
+      "headings": "How It Works • Tracking Consent • Configure Consent Categories • Require a Consent Category per Adapter • Set Up Einstein Activities • Set Up Active Data • Prerequisites • Step 1: Enable Data Collection • Step 2: Confirm That Sites Are Online • Step 3: Confirm that Tracking (Default for New Storefront Session) Is Enabled • Step 4: Configure Active Data • Set Up Data 360 • Analytics Events • Adding More Event Types • Engagement Adapters • Adding More Adapters • See Also",
       "summary": "Collect and track storefront activity using Storefront Next analytics hooks, events, and consent management integrated with Einstein and third-party systems.",
       "keywords": [
         "analytics tracking",
@@ -12214,7 +12214,7 @@
         "event tracking"
       ],
       "relatedEntries": [
-        "sfnext/sfnext-get-started"
+        "sfnext/sfnext-data-analytics-section"
       ]
     },
     {
@@ -12444,11 +12444,11 @@
     },
     {
       "id": "sfnext/sfnext-component-extend-upgrade",
-      "title": "Upgrade Customized Components",
+      "title": "Customization Best Practices and Upgrades",
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-component-extend-upgrade.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-component-extend-upgrade.md",
-      "headings": "Method 1: Merge Updates Directly • When to Use This Method • Trade-offs • Method 2: Maintain Separate Component Copies • When to Use This Method • Implementation Steps • Vite Configuration Example • Trade-offs • Note About UI Extensions",
+      "headings": "Customizing Existing Components and Code • Minor Updates: Merge Updates in Storefront Code • When to Use This Method • Trade-offs • Major Updates: Maintain Separate Code Copies • When to Use This Method • Implementation Steps • Vite Configuration Example • Trade-offs • Adding Net New Custom Components • Single-Use Component: Import the Component • When to Use This Method • Trade-offs • Multi-Use Component: Use the Extension Model • When to Use This Method • Trade-offs",
       "summary": "Manage customized React components by merging updates directly or maintaining separate copies with Vite aliasing to balance improvements with preserving customizations.",
       "keywords": [
         "customize components",
@@ -12541,9 +12541,11 @@
       ],
       "relatedEntries": [
         "sfnext/sfnext-get-started",
+        "sfnext/sfnext-component-extend-upgrade",
         "sfnext/sfnext-mcp-server",
         "sfnext/sfnext-mrt-data-store",
         "sfnext/sfnext-customize",
+        "sfnext/sfnext-manage-sites",
         "sfnext/sfnext-pd-deploy-cartridge",
         "sfnext/sfnext-push-mrt-auto",
         "sfnext/sfnext-modern-exp",
@@ -12560,12 +12562,23 @@
         "sfnext/sfnext-password-reset",
         "sfnext/sfnext-protect-storefront",
         "sfnext/sfnext-extend",
-        "sfnext/sfnext-component-extend-upgrade",
         "sfnext/sfnext-base-path",
         "sfnext/sfnext-domain-cookie",
         "sfnext/sfnext-hybrid",
         "sfnext/sfnext-login-support",
         "sfnext/sfnext-login-support-hybrid"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-data-analytics-section",
+      "title": "Integrate Storefront Next with Analytics and Data Platforms",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-data-analytics-section.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-data-analytics-section.md",
+      "relatedEntries": [
+        "sfnext/sfnext-get-started",
+        "sfnext/sfnext-analytics",
+        "sfnext/sfnext-data360"
       ]
     },
     {
@@ -12592,6 +12605,17 @@
       ],
       "relatedEntries": [
         "sfnext/sfnext-architecture"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-data360",
+      "title": "Send Storefront Next Analytics Events to Data 360",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-data360.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-data360.md",
+      "headings": "Prerequisites • Set Up Storefront Next Events for Data 360 • Verify Event Retrieval",
+      "relatedEntries": [
+        "sfnext/sfnext-data-analytics-section"
       ]
     },
     {
@@ -12803,7 +12827,7 @@
         "sfnext/sfnext-mrt-section",
         "sfnext/sfnext-test-debug-section",
         "sfnext/sfnext-perf-section",
-        "sfnext/sfnext-analytics",
+        "sfnext/sfnext-data-analytics-section",
         "sfnext/sfnext-pwa-overview",
         "sfnext/sfnext-cli"
       ]
@@ -13121,6 +13145,17 @@
         "shopper authentication",
         "multi-storefront"
       ],
+      "relatedEntries": [
+        "sfnext/sfnext-customize-sf"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-manage-sites",
+      "title": "Manage Sites for Storefront Next in Business Manager",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-manage-sites.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-manage-sites.md",
+      "headings": "Prerequisites • Assign or Remove Sites from a Storefront",
       "relatedEntries": [
         "sfnext/sfnext-customize-sf"
       ]
@@ -13525,7 +13560,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-multi-site.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-multi-site.md",
-      "headings": "How Multisite URLs Work • Default Template Behavior • Define Your Sites • Configure URL Patterns • Use Alias Maps for Clean URLs • Configure Site and Locale Detection • Configure Site-Context Cookies • URL Pattern Use Cases • Site and Locale in the Path (Default) • Locale Only in the Path • Site in the Path, Locale in Query Params • Everything in Query Params • Locale Only in Query Params • No Prefix (Single Site) • Access Site Context in Components • Important Considerations • See Also",
+      "headings": "How Multisite URLs Work • Default Template Behavior • Define Your Sites • MRT Data Store Sites • Configure URL Patterns • Use Alias Maps for Clean URLs • Configure Site and Locale Detection • Configure Site-Context Cookies • URL Pattern Use Cases • Site and Locale in the Path (Default) • Locale Only in the Path • Site in the Path, Locale in Query Params • Everything in Query Params • Locale Only in Query Params • No Prefix (Single Site) • Access Site Context in Components • Important Considerations • See Also",
       "summary": "Configure how site and locale identifiers appear in Storefront Next URLs using path prefixes, query parameters, or cookies for single/multiple site deployments.",
       "keywords": [
         "multisite URLs",
@@ -13699,6 +13734,17 @@
       ]
     },
     {
+      "id": "sfnext/sfnext-passkey-login",
+      "title": "Passwordless Login with Passkeys for Storefront Next",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-passkey-login.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-passkey-login.md",
+      "headings": "Prerequisites • Configure Settings • How Passkeys Work in Storefront Next • Register a Passkey • Sign In with a Passkey • Manage Passkeys • Best Practices • Troubleshoot Passkeys • See Also",
+      "relatedEntries": [
+        "sfnext/sfnext-passwordless-login"
+      ]
+    },
+    {
       "id": "sfnext/sfnext-password-reset",
       "title": "Implement Password Reset for Storefront Next",
       "category": "sfnext",
@@ -13746,7 +13792,8 @@
         "shopper authentication"
       ],
       "relatedEntries": [
-        "sfnext/sfnext-customize-sf"
+        "sfnext/sfnext-customize-sf",
+        "sfnext/sfnext-passkey-login"
       ]
     },
     {
@@ -14601,7 +14648,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-release-notes.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-release-notes.md",
-      "headings": "<Date> - vx.y.z • <Date> - B2C Commerce 26.x • <Release note title> • August 4, 2026 - Storefront Next 1.2.0 • Integrate Storefront Next with Salesforce Order Management • Keep Shoppers Browsing with Load More Pagination • July 21, 2026 - B2C Commerce 26.8 • Speed Up Storefront Next Development with the Beauty Street Template • July 9, 2026 - Storefront Next 1.1.0 • Process Payments Natively in Storefront Next with Salesforce Payments • Maintain Shopper Sessions Across Subdomains in Storefront Next • Secure Your Storefront and Stabilize APIs by Upgrading to React Router 7.18",
+      "headings": "<Date> - vx.y.z • <Date> - B2C Commerce 26.x • <Release note title> • August 4, 2026 - Storefront Next 1.2.0 • Streamline Sign-In with Passkeys • Manage Sites for Storefront Next in Business Manager • Send Storefront Next Analytics Events to Data 360 • Integrate Storefront Next with Salesforce Order Management • Keep Shoppers Browsing with Load More Pagination • July 21, 2026 - B2C Commerce 26.8 • Speed Up Storefront Next Development with the Beauty Street Template • July 9, 2026 - Storefront Next 1.1.0 • Process Payments Natively in Storefront Next with Salesforce Payments • Maintain Shopper Sessions Across Subdomains in Storefront Next • Secure Your Storefront and Stabilize APIs by Upgrading to React Router 7.18",
       "summary": "Track new features and changes in Storefront Next monthly releases with links to detailed GitHub release information.",
       "keywords": [
         "Storefront Next release notes",

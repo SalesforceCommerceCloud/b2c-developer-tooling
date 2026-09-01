@@ -58,6 +58,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify tooling documentation index
+        if: matrix.node-version == '24.x'
+        run: pnpm --filter @salesforce/b2c-tooling-sdk run check:tooling-index
+
       - name: Build packages
         run: pnpm -r run build
 

@@ -256,6 +256,47 @@ describe('sandbox clone get', () => {
       expect(combinedOutput).to.include('2147483648');
     });
 
+    it('should display batchId and siblingCloneIds when present', async () => {
+      const command = new CloneGet(['test-sandbox-id', 'aaaa-001-1642780893121'], {} as any);
+      (command as any).args = {sandboxId: 'test-sandbox-id', cloneId: 'aaaa-001-1642780893121'};
+      (command as any).flags = {};
+      stubJsonEnabled(command, false);
+      stubCommandConfigAndLogger(command);
+      stubResolveSandboxId(command, async (id) => id);
+
+      const outputs: string[] = [];
+      const stdoutStub = sinon.stub(ux, 'stdout').callsFake((str?: string | string[], ..._args: string[]) => {
+        if (str) {
+          const output = Array.isArray(str) ? str.join('') : str;
+          outputs.push(output);
+        }
+      });
+
+      const mockClone = {
+        cloneId: 'aaaa-001-1642780893121',
+        status: 'COMPLETED',
+        batchId: 'batch-abc',
+        siblingCloneIds: ['aaaa-001-1642780893121', 'aaaa-002-1642780893122'],
+      };
+
+      stubOdsClientGet(command, async () => {
+        return {
+          data: {data: mockClone},
+          response: new Response(),
+        };
+      });
+
+      await runSilent(() => command.run());
+
+      stdoutStub.restore();
+
+      const combinedOutput = outputs.join('\n');
+      expect(combinedOutput).to.include('Batch ID:');
+      expect(combinedOutput).to.include('batch-abc');
+      expect(combinedOutput).to.include('Sibling Clone IDs:');
+      expect(combinedOutput).to.include('aaaa-001-1642780893121, aaaa-002-1642780893122');
+    });
+
     it('should handle missing optional fields gracefully', async () => {
       const command = new CloneGet(['test-sandbox-id', 'aaaa-001-1642780893121'], {} as any);
       (command as any).args = {sandboxId: 'test-sandbox-id', cloneId: 'aaaa-001-1642780893121'};

@@ -14,6 +14,7 @@ import type {
 } from '@salesforce/b2c-tooling-sdk/operations/debug';
 import type {CartridgeMapping} from '@salesforce/b2c-tooling-sdk/operations/code';
 import type {ToolExecutionContext} from '../adapter.js';
+import type {ToolResolution} from '../project-context.js';
 
 const IDLE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
@@ -35,6 +36,7 @@ export interface DebugSessionEntry {
   haltWaiters: HaltWaiter[];
   createdAt: number;
   lastActivityAt: number;
+  resolution?: ToolResolution;
 }
 
 export interface RegisterSessionOptions {
@@ -43,6 +45,7 @@ export interface RegisterSessionOptions {
   manager: DebugSessionManager;
   sourceMapper: SourceMapper;
   cartridges: CartridgeMapping[];
+  resolution?: ToolResolution;
 }
 
 export class DebugSessionRegistry {
@@ -112,13 +115,13 @@ export class DebugSessionRegistry {
   }
 
   registerSession(opts: RegisterSessionOptions): DebugSessionEntry {
-    const {hostname, clientId, manager, sourceMapper, cartridges} = opts;
+    const {hostname, clientId, manager, sourceMapper, cartridges, resolution} = opts;
     const existing = this.findByHostAndClientId(hostname, clientId);
     if (existing) {
       throw new Error(
-        `A debug session already exists for ${hostname} with client ID "${clientId}" ` +
+        `A debug session already exists for ${hostname} ` +
           `(session_id: "${existing.sessionId}"). ` +
-          `End it with debug_end_session first, or use a different client_id.`,
+          `End it with debug_end_session first.`,
       );
     }
 
@@ -135,6 +138,7 @@ export class DebugSessionRegistry {
       haltWaiters: [],
       createdAt: now,
       lastActivityAt: now,
+      resolution,
     };
     this.sessions.set(sessionId, entry);
     return entry;

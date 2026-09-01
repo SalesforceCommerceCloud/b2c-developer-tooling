@@ -1,3 +1,4 @@
+import Extensible = require('../object/Extensible');
 import Money = require('../value/Money');
 
 /**
@@ -13,7 +14,7 @@ import Money = require('../value/Money');
  * @see LineItem.getTaxes
  * @see LineItem.setTaxes
  */
-declare class LineItemTax {
+declare class LineItemTax extends Extensible {
     /**
      * Gets the tax identifier (e.g. "DE_7").
      */

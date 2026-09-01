@@ -650,7 +650,7 @@ export class PkceOAuthStrategy implements AuthStrategy {
         }
 
         res.writeHead(200, {'Content-Type': 'text/plain'});
-        res.end('Authentication successful! You may close this browser window and return to your terminal.');
+        res.end('Authorization received. Completing authentication in the application...');
         settleAfterClose(() => resolve(code));
       });
 

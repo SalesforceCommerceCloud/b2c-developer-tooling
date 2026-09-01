@@ -29,3 +29,16 @@ export type {SandboxState, WaitForSandboxOptions, WaitForSandboxPollInfo} from '
 export {waitForClone, ClonePollingTimeoutError, ClonePollingError, CloneFailedError} from './wait-for-clone.js';
 
 export type {CloneState, WaitForCloneOptions, WaitForClonePollInfo} from './wait-for-clone.js';
+
+export {buildSandboxSettings, DEFAULT_OCAPI_RESOURCES, DEFAULT_WEBDAV_PERMISSIONS} from './sandbox-settings.js';
+
+export type {BuildSandboxSettingsOptions} from './sandbox-settings.js';
+
+export {
+  waitForClones,
+  CloneBatchPollingTimeoutError,
+  CloneBatchPollingError,
+  CloneBatchFailedError,
+} from './wait-for-clones.js';
+
+export type {CloneBatchMemberStatus, WaitForClonesOptions, WaitForClonesPollInfo} from './wait-for-clones.js';

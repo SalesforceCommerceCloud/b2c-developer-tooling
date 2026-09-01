@@ -7,21 +7,15 @@ import {Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {BaseCommand, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
 import type {NormalizedConfig, ConfigSourceInfo, ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
-import {EnvSource} from '@salesforce/b2c-tooling-sdk/config';
+import {
+  EnvSource,
+  isSensitiveConfigField,
+  maskConfigValue,
+  redactConfigValues,
+} from '@salesforce/b2c-tooling-sdk/config';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
 import {DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
 import {withDocs} from '../../i18n/index.js';
-
-/**
- * Sensitive fields that should be masked by default.
- */
-const SENSITIVE_FIELDS = new Set<keyof NormalizedConfig>([
-  'certificatePassphrase',
-  'clientSecret',
-  'mrtApiKey',
-  'password',
-  'slasClientSecret',
-]);
 
 /**
  * JSON output structure for the inspect command.
@@ -33,24 +27,6 @@ interface SetupInspectResponse {
 }
 
 /**
- * Mask a sensitive value, showing first 4 characters.
- * Matches the pattern used in the logger for consistency.
- */
-function maskValue(value: string): string {
-  if (value.length > 10) {
-    return `${value.slice(0, 4)}...REDACTED`;
-  }
-  return 'REDACTED';
-}
-
-/**
- * Check if a field is sensitive and should be masked.
- */
-function isSensitiveField(field: string): boolean {
-  return SENSITIVE_FIELDS.has(field as keyof NormalizedConfig);
-}
-
-/**
  * Get the display value for a config field, applying masking if needed.
  */
 function getDisplayValue(field: string, value: unknown, unmask: boolean): string {
@@ -59,16 +35,49 @@ function getDisplayValue(field: string, value: unknown, unmask: boolean): string
   }
 
   if (Array.isArray(value)) {
-    return value.length > 0 ? value.join(', ') : '-';
+    return value.length > 0
+      ? value.map((item) => (typeof item === 'object' ? JSON.stringify(item) : String(item))).join(', ')
+      : '-';
+  }
+
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
   }
 
   const strValue = String(value);
 
-  if (!unmask && isSensitiveField(field)) {
-    return maskValue(strValue);
+  if (!unmask && isSensitiveConfigField(field)) {
+    return maskConfigValue(strValue);
   }
 
   return strValue;
+}
+
+/** Format source provenance for human-readable output. */
+function getSourceDisplayName(source: ConfigSourceInfo): string {
+  return source.scope === 'global' ? `${source.name} (default)` : source.name;
+}
+
+/** Format compact field-level provenance. */
+function getFieldSourceDisplayName(source: ConfigSourceInfo): string {
+  return source.scope === 'global' ? 'default' : source.name;
+}
+
+/** Expand configuration sources into human-readable rows. */
+function getSourceRows(sources: ConfigSourceInfo[]): Array<{location: string; name: string}> {
+  return sources.flatMap((source) => {
+    if (!source.instanceCatalog || source.instanceCatalog.length === 0) {
+      return [{location: source.location || '-', name: getSourceDisplayName(source)}];
+    }
+
+    return source.instanceCatalog.map((file) => {
+      const name = file.scope === 'global' ? `${source.name} (default)` : source.name;
+      return {
+        location: file.location,
+        name: file.selected ? `${name}*` : name,
+      };
+    });
+  });
 }
 
 /**
@@ -135,13 +144,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
     const unmask = this.flags.unmask;
 
     // Build output config with masking applied
-    const outputConfig: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(values)) {
-      if (value !== undefined) {
-        outputConfig[key] = isSensitiveField(key) && !unmask ? maskValue(String(value)) : value;
-      }
-    }
-
+    const outputConfig = redactConfigValues(values, {unmask});
     const result: SetupInspectResponse = {
       config: outputConfig,
       sources,
@@ -178,7 +181,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
     for (const source of sources) {
       for (const field of source.fields) {
         if (!source.fieldsIgnored?.includes(field) && !resultMap.has(field)) {
-          resultMap.set(field, source.name);
+          resultMap.set(field, getFieldSourceDisplayName(source));
         }
       }
     }
@@ -229,10 +232,32 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       [
         ['clientId', config.clientId],
         ['clientSecret', config.clientSecret],
-        ['scopes', config.scopes],
-        ['authMethods', config.authMethods],
+        ...(config.scopes ? [['scopes', config.scopes] as [string, unknown]] : []),
+        ...(config.authMethods ? [['authMethods', config.authMethods] as [string, unknown]] : []),
         ...(config.accountManagerHost ? [['accountManagerHost', config.accountManagerHost] as [string, unknown]] : []),
-        ...(config.sandboxApiHost ? [['sandboxApiHost', config.sandboxApiHost] as [string, unknown]] : []),
+      ],
+      fieldSources,
+      unmask,
+    );
+
+    this.renderOptionalSection(
+      ui,
+      'Authentication (JWT Bearer)',
+      [
+        ['jwtCertPath', config.jwtCertPath],
+        ['jwtKeyPath', config.jwtKeyPath],
+        ['jwtPassphrase', config.jwtPassphrase],
+      ],
+      fieldSources,
+      unmask,
+    );
+
+    this.renderOptionalSection(
+      ui,
+      'Authentication (SLAS)',
+      [
+        ['slasClientId', config.slasClientId],
+        ['slasClientSecret', config.slasClientSecret],
       ],
       fieldSources,
       unmask,
@@ -265,6 +290,19 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       unmask,
     );
 
+    this.renderOptionalSection(
+      ui,
+      'On-Demand Sandbox (ODS)',
+      [
+        ['sandboxApiHost', config.sandboxApiHost],
+        ['realm', config.realm],
+      ],
+      fieldSources,
+      unmask,
+    );
+
+    this.renderOptionalSection(ui, 'Commerce Intelligence (CIP)', [['cipHost', config.cipHost]], fieldSources, unmask);
+
     // MRT section
     this.renderSection(
       ui,
@@ -279,8 +317,36 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       unmask,
     );
 
-    // Metadata section
-    this.renderSection(ui, 'Metadata', [['instanceName', config.instanceName]], fieldSources, unmask);
+    this.renderOptionalSection(
+      ui,
+      'Project',
+      [
+        ['autoUpload', config.autoUpload],
+        ['cartridges', config.cartridges],
+        ['importSetExclude', config.importSetExclude],
+        ['contentLibrary', config.contentLibrary],
+        ['catalogs', config.catalogs],
+        ['libraries', config.libraries],
+        ['assetQuery', config.assetQuery],
+        ['docsCategories', config.docsCategories],
+      ],
+      fieldSources,
+      unmask,
+    );
+
+    this.renderOptionalSection(
+      ui,
+      'Metadata',
+      [
+        ['siteId', config.siteId],
+        ['instanceName', config.instanceName],
+        ['projectDirectory', config.projectDirectory],
+      ],
+      fieldSources,
+      unmask,
+    );
+
+    this.renderOptionalSection(ui, 'Safety', [['safety', config.safety]], fieldSources, unmask);
 
     // Sources section
     if (sources.length > 0) {
@@ -288,12 +354,28 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       ui.div({text: 'Sources', padding: [1, 0, 0, 0]});
       ui.div({text: '─'.repeat(60), padding: [0, 0, 0, 0]});
 
-      for (const [index, source] of sources.entries()) {
-        ui.div({text: `  ${index + 1}. ${source.name}`, width: 24}, {text: source.location || '-'});
+      for (const [index, source] of getSourceRows(sources).entries()) {
+        ui.div({text: `  ${index + 1}. ${source.name}`, width: 34}, {text: source.location});
       }
     }
 
     ux.stdout(ui.toString());
+  }
+
+  /**
+   * Render a section only when at least one field is configured.
+   */
+  private renderOptionalSection(
+    ui: ReturnType<typeof cliui>,
+    title: string,
+    fields: [string, unknown][],
+    fieldSources: Map<string, string>,
+    unmask: boolean,
+  ): void {
+    const configuredFields = fields.filter(([, value]) => value !== undefined && value !== null);
+    if (configuredFields.length > 0) {
+      this.renderSection(ui, title, configuredFields, fieldSources, unmask);
+    }
   }
 
   /**

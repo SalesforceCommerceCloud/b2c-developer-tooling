@@ -16,6 +16,7 @@ import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import type {ProjectContextInput, ProjectDirectoryInfo} from '../project-context.js';
 import {
   createScriptsBackend,
   findAndDeployCartridges,
@@ -33,8 +34,10 @@ const CARTRIDGE_PATH_REMINDER =
 /**
  * Input type for cartridge_deploy tool.
  */
-interface CartridgeDeployInput {
-  /** Path to directory containing cartridges (default: current directory) */
+interface CartridgeDeployInput extends ProjectContextInput {
+  /** Path to directory containing cartridges. */
+  cartridgeDirectory?: string;
+  /** @deprecated Use cartridgeDirectory. */
   directory?: string;
   /** Only deploy these cartridge names */
   cartridges?: string[];
@@ -46,6 +49,14 @@ interface CartridgeDeployInput {
 
 /** Output type: deploy result plus reminder to update site cartridge path. */
 interface CartridgeDeployOutput extends DeployResult {
+  /** Effective project directory for configuration and relative path resolution. */
+  projectDirectory: ProjectDirectoryInfo;
+  /**
+   * The absolute directory that was searched for cartridges. Reflected back so
+   * the agent can confirm which location was used when `directory` was omitted
+   * and the server fell back to the project directory or process cwd.
+   */
+  resolvedDirectory: string;
   /** Reminder to add deployed cartridges to the site cartridge path in Business Manager. */
   postInstructions?: string;
 }
@@ -83,45 +94,31 @@ function createCartridgeDeployTool(
     {
       name: 'cartridge_deploy',
       description:
-        'Finds and deploys cartridges to a B2C Commerce instance via WebDAV. ' +
-        'Searches the directory for cartridges (by .project files), applies include/exclude filters, ' +
-        'creates a zip archive, uploads via WebDAV, and optionally reloads the code version. ' +
-        'Use this tool to deploy custom code cartridges for SFRA or other B2C Commerce code. ' +
-        'Requires the instance to have a code version configured. ' +
-        "After deploy, add new cartridges to your site's cartridge path in Business Manager: Sites → Manage Sites → [site] → Settings tab → Cartridges.",
+        'Find and deploy cartridges to B2C Commerce via WebDAV. Supports include/exclude filters and code-version reload. ' +
+        "After deployment, add new cartridges to the site's cartridge path in Business Manager: Sites → Manage Sites → Settings tab → Cartridges.",
       toolsets: ['CARTRIDGES'],
       isGA: true,
       requiresInstance: true,
+      usesProjectContext: true,
       inputSchema: {
+        cartridgeDirectory: z
+          .string()
+          .optional()
+          .describe(
+            'Optional cartridge discovery root. Relative paths resolve from projectDirectory. Defaults to projectDirectory.',
+          ),
         directory: z
           .string()
           .optional()
           .describe(
-            'Path to directory to search for cartridges. Defaults to current project directory if not specified. ' +
-              'The tool will recursively search this directory for .project files to identify cartridges.',
+            'Deprecated alias for cartridgeDirectory. cartridgeDirectory takes precedence when both are supplied.',
           ),
         cartridges: z
           .array(z.string())
           .optional()
-          .describe(
-            'Array of cartridge names to include in the deployment. If not specified, all cartridges found in the directory are deployed. ' +
-              'Use this to selectively deploy specific cartridges when you have multiple cartridges but only want to update some.',
-          ),
-        exclude: z
-          .array(z.string())
-          .optional()
-          .describe(
-            'Array of cartridge names to exclude from the deployment. Use this to skip deploying certain cartridges, ' +
-              'such as third-party or unchanged cartridges. Applied after the include filter.',
-          ),
-        reload: z
-          .boolean()
-          .optional()
-          .describe(
-            'Whether to reload (re-activate) the code version after deployment. ' +
-              'Set to true to make the deployed code immediately active on the instance. ' +
-              'Defaults to false. Use this when you want changes to take effect right away.',
-          ),
+          .describe('Cartridge names to deploy; omit for all discovered cartridges.'),
+        exclude: z.array(z.string()).optional().describe('Cartridge names to exclude after the include filter.'),
+        reload: z.boolean().optional().describe('Reload the code version after deployment. Default: false.'),
       },
       async execute(args, context) {
         // Get instance from context (guaranteed by adapter when requiresInstance is true)
@@ -150,7 +147,13 @@ function createCartridgeDeployTool(
           }
 
           // Resolve directory path: relative paths are resolved relative to project directory, absolute paths are used as-is
-          const directory = context.services.resolveWithProjectDirectory(args.directory);
+          const projectDirectory = context.services.resolveProjectDirectory(args.projectDirectory);
+          const directoryArgument = args.cartridgeDirectory ?? args.directory;
+          const directory = context.services.resolveWithProjectDirectory(directoryArgument, args.projectDirectory);
+          context.setResolvedDirectory('cartridgeDirectory', {
+            path: directory,
+            source: directoryArgument ? 'argument' : 'projectDirectory',
+          });
 
           // Parse options
           const options: DeployOptions = {
@@ -177,6 +180,8 @@ function createCartridgeDeployTool(
 
           return {
             ...result,
+            projectDirectory,
+            resolvedDirectory: directory,
             postInstructions: CARTRIDGE_PATH_REMINDER,
           };
         } catch (error) {

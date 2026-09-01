@@ -25,7 +25,7 @@ import {DebugSessionRegistry} from './tools/diagnostics/session-registry.js';
  * client would also share the same context. Tools that mutate registries
  * (like the debug tools) should not assume single-tenant access.
  *
- * The registries dedup on a stable key (host:client_id for debug, hostname for
+ * The registries dedup on an internal stable key (host plus MCP-owned debugger client ID, hostname for
  * SFCC log watches, project/environment/origin for MRT log watches), so
  * multi-agent use is functional but agents may see each other's
  * sessions/watches via list tools.

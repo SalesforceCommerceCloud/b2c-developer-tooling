@@ -80,13 +80,8 @@ export function createDocsSearchTool(
     {
       name: 'docs_search',
       description:
-        'PRIMARY entry point for B2C Commerce docs: Script API reference (e.g. "ProductMgr"), standard job steps, ' +
-        'Developer Center guides (commerce-api, pwa-kit-managed-runtime, sfnext, sfra, b2c-commerce), and this ' +
-        "tooling's own guides. Use for ANY B2C Commerce developer or admin question not already grounded in a " +
-        'loaded skill or the current project. Content-aware ranking — pass a natural-language query (prefer this ' +
-        'over docs_list, which only enumerates). Optionally restrict by category or workspace. Returns id, title, ' +
-        'category, summary, and score for triage; pass verbose=true for keywords+url. Call this BEFORE docs_read ' +
-        'when you do not know the exact id.' +
+        'Search B2C Commerce (SFCC/Demandware) Script API, job steps, developer guides, admin/merchant help, and tooling docs. ' +
+        'Use for natural-language queries or unknown IDs; call docs_read with a result ID.' +
         enabledCategoriesNote(enabledCategories) +
         detectedWorkspaceNote(detectedWorkspaces),
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
@@ -96,10 +91,7 @@ export function createDocsSearchTool(
         workspace: z
           .enum(WORKSPACE_VALUES)
           .optional()
-          .describe(
-            'Workspace context. "auto" (default) favors the auto-detected workspace\'s docs; ' +
-              '"all" disables the preference; or name a type (cartridges, sfra, pwa-kit-v3, storefront-next).',
-          ),
+          .describe('"auto" uses startup workspace; "all" disables weighting; or select a workspace type.'),
         limit: z
           .number()
           .int()

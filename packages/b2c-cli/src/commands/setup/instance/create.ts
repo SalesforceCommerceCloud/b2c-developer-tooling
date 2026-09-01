@@ -108,6 +108,7 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
 
   async run(): Promise<InstanceCreateResponse> {
     const source = new DwJsonSource();
+    const configOptions = this.getBaseConfigOptions();
     const force = this.flags.force;
 
     if (!force) {
@@ -130,7 +131,7 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
     }
 
     // Check if instance already exists
-    const existingInstances = await source.listInstances({configPath: this.flags.config});
+    const existingInstances = await source.listInstances(configOptions);
     if (existingInstances.some((i) => i.name === name)) {
       this.error(`Instance "${name}" already exists. Use a different name.`);
     }
@@ -313,7 +314,7 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
       name,
       config,
       setActive,
-      configPath: this.flags.config,
+      ...configOptions,
     });
 
     const result: InstanceCreateResponse = {

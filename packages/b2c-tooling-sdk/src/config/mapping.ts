@@ -182,6 +182,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     realm: json.realm,
     autoUpload: json.autoUpload,
     cartridges: parseCartridges(json.cartridges),
+    importSetExclude: json.importSetExclude,
     contentLibrary: json.contentLibrary,
     catalogs: json.catalogs,
     libraries: json.libraries,
@@ -312,6 +313,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.cartridges !== undefined) {
     result.cartridges = config.cartridges;
+  }
+  if (config.importSetExclude !== undefined) {
+    result.importSetExclude = config.importSetExclude;
   }
   if (config.catalogs !== undefined) {
     result.catalogs = config.catalogs;
@@ -545,6 +549,7 @@ export function mergeConfigsWithProtection(
       tenantId: overrides.tenantId ?? base.tenantId,
       autoUpload: overrides.autoUpload ?? base.autoUpload,
       cartridges: overrides.cartridges ?? base.cartridges,
+      importSetExclude: overrides.importSetExclude ?? base.importSetExclude,
       contentLibrary: overrides.contentLibrary ?? base.contentLibrary,
       catalogs: overrides.catalogs ?? base.catalogs,
       libraries: overrides.libraries ?? base.libraries,

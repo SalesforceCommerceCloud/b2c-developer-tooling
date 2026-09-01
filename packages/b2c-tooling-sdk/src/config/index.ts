@@ -106,6 +106,7 @@ export type {
   ConfigSource,
   ConfigLoadResult,
   ConfigSourceInfo,
+  ConfigCatalogFile,
   ConfigResolutionResult,
   ConfigWarning,
   ConfigWarningCode,
@@ -143,8 +144,24 @@ export type {
 // Instance management
 export {InstanceManager, createInstanceManager} from './instance-manager.js';
 
+// Redaction helpers for displaying resolved config (CLI inspect, MCP config_inspect)
+export {SENSITIVE_CONFIG_FIELDS, isSensitiveConfigField, maskConfigValue, redactConfigValues} from './redaction.js';
+
 // Config source registry (global, auto-included in resolveConfig)
 export {ConfigSourceRegistry, globalConfigSourceRegistry} from './config-source-registry.js';
+
+// Shared user-level settings
+export {
+  B2C_SETTINGS_FILENAME,
+  getB2CConfigDirectory,
+  getB2CSettingsPath,
+  readB2CSettings,
+  writeB2CSettings,
+} from './settings.js';
+export type {B2CSettings, B2CSettingsPathOptions} from './settings.js';
+
+// Project-scoped environment loading
+export {mergeProjectEnvironment, readProjectEnvironment} from './project-environment.js';
 
 // Config sources (for direct use)
 export {DwJsonSource} from './sources/dw-json-source.js';

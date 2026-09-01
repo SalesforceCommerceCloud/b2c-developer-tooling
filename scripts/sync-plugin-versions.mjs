@@ -42,13 +42,23 @@ for (const plugin of marketplace.plugins) {
 }
 writeJson(marketplacePath, marketplace);
 
-// Codex per-plugin manifests.
-const codexTargets = [
+// Per-plugin manifests. Two layouts ship together during the transition to the
+// Agent Plugins standard (agent-plugins.org):
+//   - `plugin.json` at the plugin root — the standard manifest read by Codex
+//     (CLI >= 0.146.0), Cursor, Copilot, VS Code, and Kiro.
+//   - `.codex-plugin/plugin.json` — the legacy Codex manifest, kept so users on
+//     Codex CLI < 0.146.0 (no root-`plugin.json` support) keep working. Codex
+//     >= 0.146.0 reads the root manifest and treats this as an overlay.
+// Both must stay in version lockstep. (Claude Code uses the marketplace above.)
+const pluginManifestTargets = [
+  'skills/b2c-cli/plugin.json',
   'skills/b2c-cli/.codex-plugin/plugin.json',
+  'skills/b2c/plugin.json',
   'skills/b2c/.codex-plugin/plugin.json',
+  'skills/storefront-next/plugin.json',
   'skills/storefront-next/.codex-plugin/plugin.json',
 ];
-for (const rel of codexTargets) {
+for (const rel of pluginManifestTargets) {
   const path = join(repoRoot, rel);
   const manifest = readJson(path);
   manifest.version = version;
@@ -74,21 +84,32 @@ if (!mcpVersion) {
   process.exit(1);
 }
 
-// (1) Rewrite the pinned version in the plugin's .mcp.json.
-const mcpConfigPath = join(repoRoot, 'plugins/b2c-dx-mcp/.mcp.json');
-const mcpConfig = readJson(mcpConfigPath);
-const mcpArgs = mcpConfig.mcpServers?.['b2c-dx-mcp']?.args;
-if (!Array.isArray(mcpArgs)) {
-  console.error('plugins/b2c-dx-mcp/.mcp.json has no mcpServers["b2c-dx-mcp"].args array');
-  process.exit(1);
+// (1) Rewrite the pinned version in the plugin's MCP config. Two files carry
+//     the same server config: `.mcp.json` (Claude Code marketplace / legacy
+//     Codex native) and `mcp.json` (Agent Plugins standard, read by Codex,
+//     Cursor, Copilot, VS Code, Kiro). Keep both in sync.
+for (const mcpRel of ['plugins/b2c-dx-mcp/.mcp.json', 'plugins/b2c-dx-mcp/mcp.json']) {
+  const mcpConfigPath = join(repoRoot, mcpRel);
+  const mcpConfig = readJson(mcpConfigPath);
+  const mcpArgs = mcpConfig.mcpServers?.['b2c-dx-mcp']?.args;
+  if (!Array.isArray(mcpArgs)) {
+    console.error(`${mcpRel} has no mcpServers["b2c-dx-mcp"].args array`);
+    process.exit(1);
+  }
+  const pkgArgIndex = mcpArgs.findIndex((arg) => typeof arg === 'string' && arg.startsWith('@salesforce/b2c-dx-mcp@'));
+  if (pkgArgIndex === -1) {
+    console.error(`${mcpRel} args do not reference @salesforce/b2c-dx-mcp`);
+    process.exit(1);
+  }
+  mcpArgs[pkgArgIndex] = `@salesforce/b2c-dx-mcp@${mcpVersion}`;
+  writeJson(mcpConfigPath, mcpConfig);
 }
-const pkgArgIndex = mcpArgs.findIndex((arg) => typeof arg === 'string' && arg.startsWith('@salesforce/b2c-dx-mcp@'));
-if (pkgArgIndex === -1) {
-  console.error('plugins/b2c-dx-mcp/.mcp.json args do not reference @salesforce/b2c-dx-mcp');
-  process.exit(1);
-}
-mcpArgs[pkgArgIndex] = `@salesforce/b2c-dx-mcp@${mcpVersion}`;
-writeJson(mcpConfigPath, mcpConfig);
+
+// Stamp the MCP version onto the plugin's Agent Plugins root manifest.
+const mcpPluginManifestPath = join(repoRoot, 'plugins/b2c-dx-mcp/plugin.json');
+const mcpPluginManifest = readJson(mcpPluginManifestPath);
+mcpPluginManifest.version = mcpVersion;
+writeJson(mcpPluginManifestPath, mcpPluginManifest);
 
 // (2) Stamp the MCP version onto its Claude marketplace entry so Claude Code
 // re-pulls the updated server pin.

@@ -1,6 +1,6 @@
 ---
 name: b2c-content
-description: Export, list, and validate Page Designer content from B2C Commerce libraries. Use this skill whenever the user needs to export Page Designer pages or components, list pages in a content library, validate page JSON or metadefinitions, discover page IDs, migrate content between instances, or work with library XML offline. Also use when extracting content for review or building content deployment pipelines -- even if they just say 'export the homepage' or 'what pages are in the shared library'.
+description: Export, list, and validate Page Designer content from B2C Commerce libraries. Use this skill whenever the user needs to export Page Designer pages, components, or content blocks, list pages in a content library, validate page JSON or metadefinitions, discover page IDs, migrate content between instances, or work with library XML offline. Also use when extracting content for review or building content deployment pipelines -- even if they just say 'export the homepage' or 'what pages are in the shared library'.
 ---
 
 # B2C Content Skill
@@ -35,6 +35,9 @@ b2c content export homepage --library SharedLibrary -o ./my-export
 # export a specific component by ID
 b2c content export hero-banner --library SharedLibrary
 
+# export a content block (reusable fragment) by ID
+b2c content export DiscoverContentBlock --library RefArch --site-library
+
 # export from a site-private library
 b2c content export homepage --library RefArch --site-library
 
@@ -57,6 +60,19 @@ b2c content export homepage --library SharedLibrary -q "image.path" -q "video.ur
 b2c content export homepage --library SharedLibrary --keep-orphans
 ```
 
+### Export Directly into an Import-Set Migration
+
+The focused content exporter writes standard archive-relative `libraries/` or site-library files directly into the directory passed to `--output`; unlike `b2c job export`, it does not add a generated `*_export` wrapper. Preview first, then use the final timestamped migration directory and review the exported XML and assets in place:
+
+```bash
+b2c content export homepage --library SharedLibrary --dry-run --show-tree
+b2c content export homepage \
+  --library SharedLibrary \
+  --output migrations/20260815T120000-update-homepage
+```
+
+For a site-private library, configure or pass `--site-library`. Do not require a temporary directory and copy step. Never write into an existing or applied migration. See `b2c-cli:b2c-import-set-migrations` for archive identity, trimming, and deployment rules.
+
 ### List Content
 
 ```bash
@@ -65,6 +81,9 @@ b2c content list --library SharedLibrary
 
 # list only pages
 b2c content list --library SharedLibrary --type page
+
+# list content blocks (reusable fragments; includes unlinked blocks)
+b2c content list --library SharedLibrary --type fragment
 
 # list including components
 b2c content list --library SharedLibrary --components
@@ -81,6 +100,10 @@ b2c content list --library SharedLibrary --library-file ./library.xml
 # JSON output
 b2c content list --library SharedLibrary --json
 ```
+
+### Content Blocks
+
+Content blocks are Page Designer "content blocks" — reusable `fragment.*`-typed content that is **shared** across pages (one definition, linked from many places). They are listed distinctly in the tree as `(CONTENT BLOCK)`, counted separately in export summaries, and can be exported by ID like a component (a Layout content block keeps its region children). `b2c content list --type fragment` shows the deduplicated catalog of every content block in a library, including blocks not currently linked to any page.
 
 ### Configuration
 
@@ -145,6 +168,7 @@ See `b2c content --help` for a full list of available commands and options in th
 
 ## Related Skills
 
+- `b2c-cli:b2c-import-set-migrations` - Ordered, idempotent migrations built from focused content exports
 - `b2c-cli:b2c-site-import-export` - Site archive import/export operations
 - `b2c-cli:b2c-webdav` - Low-level file operations on content libraries
 - `b2c-cli:b2c-config` - Configuration and credential management

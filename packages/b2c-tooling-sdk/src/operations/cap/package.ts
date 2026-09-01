@@ -13,9 +13,13 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import JSZip from 'jszip';
 import {getLogger} from '../../logging/logger.js';
+import {type Logger} from '../../logging/types.js';
 import {addDirectoryToZip} from '../util/zip.js';
 import {readManifest} from './install.js';
 import {type CommerceAppManifest} from './validate.js';
+
+/** Cartridge group directories, relative to `cartridges/`, that CAPs may contain. */
+const CARTRIDGE_GROUP_DIRS = ['site_cartridges', 'bm_cartridges'] as const;
 
 /**
  * Options for CAP packaging.
@@ -94,6 +98,8 @@ export async function commerceAppPackage(
   // Ensure output directory exists
   await fs.promises.mkdir(path.dirname(outputZipPath), {recursive: true});
 
+  ensureCartridgeProjectFiles(sourceDir, logger);
+
   logger.debug({sourceDir, outputPath: outputZipPath}, `Packaging CAP: ${archiveDirName}`);
 
   const zip = new JSZip();
@@ -110,4 +116,36 @@ export async function commerceAppPackage(
   logger.debug({outputPath: outputZipPath}, `CAP packaged to: ${outputZipPath}`);
 
   return {outputPath: outputZipPath, manifest};
+}
+
+/**
+ * Ensures every cartridge directory under `cartridges/site_cartridges/` and
+ * `cartridges/bm_cartridges/` has a `.project` file, auto-creating an empty
+ * one when missing. Existing `.project` files (empty or full Eclipse XML)
+ * are left untouched.
+ */
+function ensureCartridgeProjectFiles(sourceDir: string, logger: Logger): void {
+  const cartridgesDir = path.join(sourceDir, 'cartridges');
+  if (!fs.existsSync(cartridgesDir)) return;
+
+  for (const groupDir of CARTRIDGE_GROUP_DIRS) {
+    const groupPath = path.join(cartridgesDir, groupDir);
+    if (!fs.existsSync(groupPath)) continue;
+
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(groupPath, {withFileTypes: true});
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const projectFile = path.join(groupPath, entry.name, '.project');
+      if (!fs.existsSync(projectFile)) {
+        fs.writeFileSync(projectFile, '');
+        logger.debug({projectFile}, `Auto-created empty .project for cartridge: ${groupDir}/${entry.name}`);
+      }
+    }
+  }
 }

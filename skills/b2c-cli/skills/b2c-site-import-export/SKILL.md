@@ -45,9 +45,14 @@ b2c job import existing-archive.zip --remote
 
 ### Apply an Ordered, Idempotent Import Set
 
-Use `job import-set` when a directory contains multiple site archives that must be applied in order and skipped after the instance records their successful import. This section is the canonical import-set workflow.
+Use `job import-set` when site import/export archives must be applied in order and skipped after the instance records their successful import. By default, the command reads discovered cartridge metadata first and the migrations directory second. This section is a summary; for the full migration workflow — source exclusions, post-import README notes, import history, set IDs, CI/CD patterns, and recovery — use the dedicated `b2c-cli:b2c-import-set-migrations` skill.
 
-Each immediate child directory or `.zip` file is one item. Hidden entries and other files are ignored, and item names are sorted lexically:
+Cartridge metadata supports two project layouts:
+
+- A standard site import/export archive directly inside `metadata/`, applied as one archive.
+- An ordered collection of immediate child directories or `.zip` files inside `metadata/`, with each child applied as one archive.
+
+Use one layout consistently within a cartridge. Cartridges are ordered by name, their archives are ordered lexically, and every cartridge archive is considered before the explicit import-set directory. Every directory-based archive must contain at least one file; empty directory trees are rejected before upload. The explicit directory uses the ordered-child layout:
 
 ```text
 migrations/
@@ -58,14 +63,20 @@ migrations/
 └── README.md                       # ignored
 ```
 
-Name every item `YYYYMMDDTHHmmss-description`, using UTC for cross-time-zone teams. The timestamp supplies ordering and makes receipt-name collisions across projects extremely unlikely.
+Name every archive `YYYYMMDDTHHmmss-description`, using UTC for cross-time-zone teams. The timestamp supplies ordering and helps keep archive names unique across projects.
 
 ```bash
-# Show pending and already-applied items without writing anything
+# Show pending and already-applied archives without writing anything
 b2c job import-set --dry-run
 
 # Apply the default ./migrations directory
 b2c job import-set
+
+# Ignore discovered cartridge metadata and apply only ./migrations
+b2c job import-set --no-cartridge-metadata
+
+# Ignore project directories recursively during source discovery
+b2c job import-set --import-set-exclude fixtures --import-set-exclude test/integration
 
 # Apply a different directory
 b2c job import-set ./data-migrations
@@ -76,15 +87,30 @@ b2c job import-set --keep-archive
 
 Important semantics:
 
-- The CLI writes a durable receipt on the target instance after each successful import. Receipt identity is based only on the item name, so that name is skipped on later runs, including runs from other machines.
-- A missing or invalid receipt always causes another import. If the import succeeds and the process crashes before its receipt is written and verified, the next run imports that item again. Make archives safe to reapply.
-- Never edit an item after it has a valid receipt. Instances that already applied that name continue to skip it; add a new, later-sorting item for the next change.
-- Projects sharing an instance-wide receipt namespace must use distinct item names. UTC timestamps plus descriptive suffixes make accidental cross-project collisions unlikely.
-- Only one runner applies a given history at a time. Waiting runners re-check receipts after acquiring the lock.
-- A lock becomes stale after 30 minutes by default. Adjust this with `--stale-lock-seconds`; use `--break-lock` only after confirming the old owner has stopped.
-- `--timeout` applies to each archive import, `--poll-interval` controls job polling, and `--lock-poll-interval` controls lock waiting.
+- After an archive succeeds, later runs against the same instance skip it, including runs from other machines.
+- The archive name determines whether it has run; changing its contents does not cause another import. Never edit an applied archive—add a new, later-sorting archive for each change.
+- An interrupted run can retry its current archive. Make every archive safe to apply more than once.
+- Only one runner applies a history at a time. Other runners wait and then skip work completed while they were waiting.
+- An inactive run becomes recoverable after 30 minutes by default. Adjust this with `--stale-lock-seconds`; use `--break-lock` only after confirming the previous runner has stopped.
+- `--timeout` applies to each archive import, `--poll-interval` controls job polling, and `--lock-poll-interval` controls waiting for another runner.
+- `--import-set-exclude` can be repeated or comma-separated. Paths are relative to the project directory and exclude the named source directory and all descendants. Configure the same project default with `b2c.importSetExclude` in `package.json`, `import-set-exclude` in `dw.json`, or `SFCC_IMPORT_SET_EXCLUDE`.
 
-The default directory is `./migrations`. Receipt and lock identity use the fixed instance-wide `migrations` namespace, regardless of the local path. Most users should omit `--set-id`; use it only when intentionally creating an independent history or preserving a legacy namespace.
+The default directory is `./migrations`; it may be absent if discovered cartridges supply at least one metadata archive. The default history name is `migrations` and is shared across runs against the target instance, regardless of local path. Most users should omit `--set-id`; use it only when intentionally creating an independent history. Cartridge discovery is enabled by default; use `--no-cartridge-metadata` to opt out.
+
+To start over without deleting the previous history, use a new set ID and keep using it on subsequent runs:
+
+```bash
+b2c job import-set --set-id migrations-reset-20260818
+```
+
+To reset the default history in place, remove it and rerun the import set:
+
+```bash
+b2c webdav rm --root=impex b2c-cli/import-sets/migrations
+b2c job import-set
+```
+
+For a custom set ID, replace the final `migrations` path segment with that ID. Resetting in place permanently forgets which archives succeeded and makes every current archive pending again, so only use it when every archive is safe to reapply. `--break-lock` is for recovery and does not reset history.
 
 ### Import Archives Larger Than the Instance Limit
 
@@ -114,7 +140,17 @@ b2c job export --global-data meta_data
 
 # Export a site with specific data units
 b2c job export --site RefArch --site-data content,site_preferences
+
+# Export only the site descriptor (includes the cartridge path)
+b2c job export --site RefArch --site-data site_descriptor
+
+# Build an import-set archive directly under its migrations source
+b2c job export --site RefArch --site-data site_preferences --output migrations
 ```
+
+Directory output preserves the platform export's generated top-level `*_export` directory. When building an ordered migration, rename that newly generated directory once to the permanent timestamped archive name, then review and trim it in place. Do not routinely export to a temporary directory and copy the result. Never export over an existing or applied archive.
+
+Exports can include unrelated defaults, generated `version.txt`, environment-specific values, and secrets such as encrypted storefront passwords. Remove them before committing, but keep fields required by the relevant XSD. Use `b2c-cli:b2c-import-set-migrations` for the complete direct-to-migration workflow and `b2c-cli:b2c-job` for all export data units and output options.
 
 ## Common Workflows
 
@@ -123,6 +159,7 @@ b2c job export --site RefArch --site-data content,site_preferences
 1. Create the metadata XML file:
 
 **meta/system-objecttype-extensions.xml:**
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <metadata xmlns="http://www.demandware.com/xml/impex/metadata/2006-10-31">
@@ -146,6 +183,7 @@ b2c job export --site RefArch --site-data content,site_preferences
 ```
 
 2. Create the directory structure:
+
 ```
 my-import/
 └── meta/
@@ -153,6 +191,7 @@ my-import/
 ```
 
 3. Import:
+
 ```bash
 b2c job import ./my-import
 ```
@@ -162,6 +201,7 @@ b2c job import ./my-import
 1. Create metadata for the preference:
 
 **meta/system-objecttype-extensions.xml:**
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <metadata xmlns="http://www.demandware.com/xml/impex/metadata/2006-10-31">
@@ -180,6 +220,7 @@ b2c job import ./my-import
 2. Create preference values:
 
 **sites/MySite/preferences.xml:**
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <preferences xmlns="http://www.demandware.com/xml/impex/preferences/2007-03-31">
@@ -192,6 +233,7 @@ b2c job import ./my-import
 ```
 
 3. Directory structure:
+
 ```
 my-import/
 ├── meta/
@@ -202,6 +244,7 @@ my-import/
 ```
 
 4. Import:
+
 ```bash
 b2c job import ./my-import
 ```
@@ -211,6 +254,7 @@ b2c job import ./my-import
 1. Define the custom object:
 
 **meta/custom-objecttype-definitions.xml:**
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <metadata xmlns="http://www.demandware.com/xml/impex/metadata/2006-10-31">
@@ -243,6 +287,7 @@ b2c job import ./my-import
 ```
 
 2. Import:
+
 ```bash
 b2c job import ./my-import
 ```
@@ -250,6 +295,7 @@ b2c job import ./my-import
 ### Importing Custom Object Data
 
 **customobjects/APIConfiguration.xml:**
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <custom-objects xmlns="http://www.demandware.com/xml/impex/customobject/2006-10-31">
@@ -313,11 +359,13 @@ b2c job import ./my-data --show-log
 ### Configuring External Services
 
 For service configurations (HTTP, FTP, SOAP services), see the `b2c:b2c-webservices` skill which includes:
+
 - Complete services.xml examples
 - Credential, profile, and service element patterns
 - Import/export workflows
 
 Quick example:
+
 ```bash
 # Import service configuration
 b2c job import ./services-folder
@@ -331,6 +379,7 @@ Where `services-folder/services.xml` follows the patterns in the `b2c:b2c-webser
 
 ## Related Skills
 
+- `b2c-cli:b2c-import-set-migrations` - Ordered, idempotent, repeatable site-import migrations (`job import-set`) with post-import notes
 - `b2c:b2c-webservices` - Service configurations (HTTP, FTP, SOAP), services.xml format
 - `b2c:b2c-metadata` - System object extensions and custom object definitions
 - `b2c-cli:b2c-job` - Running and monitoring jobs, including individual archive imports

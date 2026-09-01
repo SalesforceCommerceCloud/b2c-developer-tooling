@@ -201,10 +201,11 @@ describe('B2CDxMcpServer', () => {
       const entry = captured.get('parameterized_tool');
       expect(entry, 'parameterized_tool should be registered').to.exist;
       expect(entry!.config.description).to.equal('A tool with parameters');
-      // Schema must be the exact ZodRawShape we passed (same keys, same instances).
-      expect(entry!.config.inputSchema).to.equal(inputSchema);
-      const schema = entry!.config.inputSchema as Record<string, unknown>;
-      expect(Object.keys(schema)).to.have.members(['name', 'count']);
+      const schema = entry!.config.inputSchema as z.ZodObject<typeof inputSchema>;
+      expect(schema).to.be.instanceOf(z.ZodObject);
+      expect(schema.shape.name).to.equal(inputSchema.name);
+      expect(schema.shape.count).to.equal(inputSchema.count);
+      expect(schema._def.unknownKeys).to.equal('strict');
     });
   });
 

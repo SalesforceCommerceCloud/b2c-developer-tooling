@@ -234,14 +234,12 @@ export async function waitForJob(
   executionId: string,
   options: WaitForJobOptions = {},
 ): Promise<JobExecution> {
-  const logger = getLogger();
   const {pollIntervalSeconds = 3, timeoutSeconds = 0, onPoll} = options;
 
   const sleepFn = options.sleep ?? defaultSleep;
   const startTime = Date.now();
   const pollIntervalMs = pollIntervalSeconds * 1000;
   const timeoutMs = timeoutSeconds * 1000;
-  let ticks = 0;
 
   await sleepFn(pollIntervalMs);
 
@@ -255,33 +253,16 @@ export async function waitForJob(
     const execution = await getJobExecution(instance, jobId, executionId);
     const currentStatus = execution.execution_status ?? 'unknown';
 
-    logger.trace({jobId, executionId, elapsedSeconds, status: currentStatus}, '[Jobs] Job poll');
     onPoll?.({jobId, executionId, elapsedSeconds, status: currentStatus});
 
     // Check for terminal states
     if (execution.execution_status === 'aborted' || execution.exit_status?.code === 'ERROR') {
-      logger.debug({jobId, executionId, execution}, `Job ${jobId} failed`);
       throw new JobExecutionError(`Job ${jobId} failed`, execution);
     }
 
     if (execution.execution_status === 'finished') {
-      const durationSec = (execution.duration ?? 0) / 1000;
-      logger.debug(
-        {jobId, executionId, status: execution.exit_status?.code, duration: durationSec},
-        `Job ${jobId} finished. Status: ${execution.exit_status?.code} (duration: ${durationSec}s)`,
-      );
       return execution;
     }
-
-    // Log periodic updates
-    if (ticks % 5 === 0) {
-      logger.debug(
-        {jobId, executionId, status: currentStatus, elapsed: elapsedSeconds},
-        `Waiting for job ${jobId} to finish (${elapsedSeconds}s elapsed)...`,
-      );
-    }
-
-    ticks++;
     await sleepFn(pollIntervalMs);
   }
 }

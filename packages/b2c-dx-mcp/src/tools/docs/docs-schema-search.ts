@@ -25,8 +25,8 @@ export function createDocsSchemaSearchTool(loadServices: () => Promise<Services>
     {
       name: 'docs_schema_search',
       description:
-        'Fuzzy-search bundled B2C Commerce XSD schemas by id (e.g., "catalog", "order", "system-objecttype"). ' +
-        'Returns matching schema ids + relevance score. Use BEFORE docs_schema_read when the exact id is unknown.',
+        'Search bundled B2C Commerce (SFCC/Demandware) XSD schemas by ID. ' +
+        'Returns matching IDs and scores; use docs_schema_read for content.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'MRT', 'PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       inputSchema: {
         query: z.string().min(1).describe('Schema name or partial match (e.g., "catalog", "order").'),

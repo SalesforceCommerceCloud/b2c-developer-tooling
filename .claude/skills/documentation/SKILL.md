@@ -268,6 +268,23 @@ Developer Center guides corpus, only lightweight metadata is bundled
 and child relationships derived from the published TOCs; the page content
 itself is fetched live from developer.salesforce.com at read time.
 
+### Internal tooling corpus (`tooling`)
+
+The internal tooling corpus is generated from every Markdown page under
+`docs/guide/`, `docs/cli/`, `docs/mcp/`, and `docs/vscode-extension/`. Do not
+maintain a per-page allowlist for these repository-owned docs. The generator
+discovers new pages automatically and skips only asset-folder `README.md` files
+and frontmatter redirects:
+
+```bash
+pnpm --filter @salesforce/b2c-tooling-sdk run generate:tooling-index
+```
+
+CI runs `check:tooling-index` and fails when the committed index is stale. The
+release workflow and SDK `prepack` regenerate the index as defense in depth.
+Because `data/tooling/index.json` ships in `@salesforce/b2c-tooling-sdk`, changes
+to the generated corpus require an SDK changeset.
+
 Regenerate the index from a local clone of the `commerce-cloud-docs` content
 repo (defaults to `~/code/commerce-cloud-docs`):
 

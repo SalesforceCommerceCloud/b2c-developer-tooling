@@ -245,6 +245,63 @@ describe('services', () => {
       // rooted POSIX-style path produces a drive-prefixed, backslash-separated path).
       expect(services.resolveWithProjectDirectory('subdir')).to.equal(path.resolve(projectDir, 'subdir'));
     });
+
+    it('should honor an explicit project-directory override argument', () => {
+      const config = createMockResolvedConfig({projectDirectory: '/path/to/project'});
+      const services = new Services({resolvedConfig: config});
+
+      // Override wins over the configured project directory for path resolution.
+      expect(services.resolveWithProjectDirectory('subdir', '/other/root')).to.equal(
+        path.resolve('/other/root', 'subdir'),
+      );
+    });
+  });
+
+  describe('resolveProjectDirectory', () => {
+    it('reports source "argument" when an override is provided', () => {
+      const config = createMockResolvedConfig({projectDirectory: '/path/to/project'});
+      const services = new Services({resolvedConfig: config});
+
+      // Returned as-supplied (not re-resolved against cwd) so a POSIX-style
+      // absolute path is not drive-prefixed on Windows.
+      expect(services.resolveProjectDirectory('/override/root')).to.deep.equal({
+        path: '/override/root',
+        source: 'argument',
+      });
+    });
+
+    it('reports source "config" when only the configured project directory is set', () => {
+      const config = createMockResolvedConfig({projectDirectory: '/path/to/project'});
+      const services = new Services({resolvedConfig: config});
+
+      expect(services.resolveProjectDirectory()).to.deep.equal({
+        path: '/path/to/project',
+        source: 'config',
+      });
+    });
+
+    it('reports source "cwd" when nothing is configured', () => {
+      const config = createMockResolvedConfig();
+      const services = new Services({resolvedConfig: config});
+
+      expect(services.resolveProjectDirectory()).to.deep.equal({
+        path: process.cwd(),
+        source: 'cwd',
+      });
+    });
+
+    it('uses canonical resolution provenance when normalized config contains the implicit cwd', () => {
+      const config = createMockResolvedConfig({projectDirectory: process.cwd(), workingDirectory: process.cwd()});
+      const services = new Services({
+        resolvedConfig: config,
+        resolution: {projectDirectory: {path: process.cwd(), source: 'cwd'}},
+      });
+
+      expect(services.resolveProjectDirectory()).to.deep.equal({
+        path: process.cwd(),
+        source: 'cwd',
+      });
+    });
   });
 
   describe('getHomeDir', () => {

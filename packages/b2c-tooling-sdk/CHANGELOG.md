@@ -1,5 +1,93 @@
 # @salesforce/b2c-tooling-sdk
 
+## 1.24.2
+
+### Patch Changes
+
+- [#638](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/638) [`5d48cfc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5d48cfc0122158625d24dd039d8066e1fa1c37f2) - Keep debugger server-affinity guidance as a rare PIG-only troubleshooting note instead of prompting users and agents to use `dwsid` during routine debugging. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#634](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/634) [`4dee938`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4dee938cd4c2d5fd48c6ebc85ee99abf432529ff) - Remember when an Account Manager client rejects PKCE so later CLI and VS Code sessions start directly with the compatible implicit flow, and avoid reporting authentication success before the PKCE token exchange completes. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.24.1
+
+### Patch Changes
+
+- [#629](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/629) [`1f25b1e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f25b1ed3bf5c778b30ec2de8dff1e26071db5d1) - Added per-call named-instance selection and consistent resolution provenance to project-aware MCP tools, including persisted context for debugger sessions and log watches. Removed the retired Storefront Next MCP toolset in favor of the current Storefront Next agent skills. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.24.0
+
+### Minor Changes
+
+- [#627](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/627) [`5f7bff4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5f7bff40b53c54ba3f0d9d245bab7c4d5f94c227) - Add a shared global `dw.json` for the CLI, MCP server, and VS Code extension, managed with `b2c setup default-config set|get|unset`; primary and global instances are available together without merging their fields. MCP tools now accept per-call `projectDirectory` and `configPath`; debugger callers must rename `cartridge_directory` to `cartridgeDirectory` and remove `client_id`. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.23.0
+
+### Minor Changes
+
+- [`ada3072`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ada3072e5331c2da5199f3074001aaa509ca0317) - Automatically include internal guides, CLI reference pages, MCP docs, and VS Code extension docs in the tooling search corpus, with CI and release checks that prevent stale indexes. The Developer Center corpus is also refreshed through August 18, 2026. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`a90f173`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a90f1730e6ccd366e50a35d8ee91a320fc5301ec) - Allow projects to configure a non-sensitive default `siteId` under the package.json `b2c` key for site-aware commands. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [`a90f173`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a90f1730e6ccd366e50a35d8ee91a320fc5301ec) - Make unified configuration inspection recognize all CLI configuration environment variables and aliases, and show resolved authentication, project, service, and safety settings only when configured. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.22.0
+
+### Minor Changes
+
+- [#615](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/615) [`1f553b3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f553b3e26c57909ce654b61e25f4db537111312) - Added ordered, idempotent site archive import sets with verified WebDAV receipts, retry-until-receipted behavior, and serialized concurrent runners. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#500](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/500) [`35f2960`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/35f296036a0659d115617bb2770327cca250bad7) - Add support for Page Designer "content blocks" (reusable `fragment.*`-typed content). (Thanks [@clavery](https://github.com/clavery)!)
+
+  Content blocks are now a first-class node type: the SDK classifies them as `FRAGMENT` (instead of mislabeling them as components), parses their display name, and exposes `Library.getContentBlocks()` to list a library's blocks (including unlinked ones). The CLI renders them distinctly in `content export`/`content list` (as `CONTENT BLOCK`), counts them in export summaries, and supports `content list --type fragment`. In the VS Code extension, each library gains a **Content Blocks** group that is the single source of truth for a block; because blocks are shared singletons, every page/component that links a block shows a reference that reveals the canonical block in the group rather than an editable copy. (Converting a component into a content block is done in Business Manager / Page Designer — it is not offered here because reproducing it via site-archive import can silently drop a Layout block's child links.)
+
+- [#624](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/624) [`02ccc2a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/02ccc2a1656c4895c2aca7ef2064fd2ff138e9a2) - Import discovered cartridge metadata before migration-directory items, supporting single-archive and ordered-child layouts, an opt-out, and project-configurable recursive source exclusions. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#619](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/619) [`591f886`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/591f886f29cc76484b42afe27f6b28f568f1373e) - `job import-set` now prints a consolidated post-import notes summary from a `README.md` (or `README`) file at the top of each applied item's directory — the idiomatic place to document manual, instance-specific follow-up steps for a migration. Notes are shown for items applied in the run and previewed for pending items during `--dry-run`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#613](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/613) [`c0ec3f6`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c0ec3f6202ca8ee69676ae2361e8b276cd69385c) - Add a `config_inspect` MCP tool that reports the resolved configuration (instance, auth, SCAPI/MRT settings) with the source of each value and the effective project directory — secrets are redacted by default. Filesystem tools now resolve the project directory with explicit precedence (per-call argument, then `--project-directory`/`SFCC_PROJECT_DIRECTORY`, then the process working directory) and echo the resolved directory back in their output, so agents can override it per call and see which directory was used across MCP clients that spawn the server from inconsistent working directories. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#611](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/611) [`62db97f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/62db97fefb40e56c12f41d54803db7315ec8c33a) - Add support for creating multiple sandbox clones from a single source in one request (1 to many cloning). (Thanks [@charithaT07](https://github.com/charithaT07)!)
+  - `b2c sandbox clone create` now accepts `--target-count <1-5>` to create a batch of clones sharing the same source, TTL, profile, and notification emails. `--wait` polls every clone in the batch until each reaches a terminal state.
+  - `b2c sandbox clone list` supports `--batch-id` to filter clones belonging to a specific batch.
+  - `b2c sandbox clone get` and the VS Code extension's clone details view now show the batch ID and sibling clone IDs when a clone was created as part of a batch.
+  - The VS Code extension's "Clone Sandbox" command prompts for the number of clones to create and reports aggregate progress across the batch.
+
+- [#574](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/574) [`8d096d0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d096d01a2f70eb979f1b6b246fd196b77f2acd0) - Add Authorization Code + PKCE support for browser-based OAuth (public clients) and make it the default for the `user` auth method, replacing the legacy `implicit` flow in the default chain. The default auth-method order is now `client-credentials`, `jwt`, `user`. The implicit flow is still selectable via `--auth-methods implicit` (or in dw.json) for backwards compatibility but emits a deprecation warning — OAuth 2.1 deprecates implicit for public clients. (Thanks [@clavery](https://github.com/clavery)!)
+
+  `b2c auth login` now uses Authorization Code + PKCE by default and persists a refresh token alongside the access token, so subsequent commands silently refresh without re-opening the browser. The new `--auth-methods` flag on `b2c auth login` lets you opt back into the legacy implicit flow (`--auth-methods implicit`). The POC `b2c auth pkce` command has been removed; use `b2c auth login` instead.
+
+  dw.json gains a `"user-auth": true` shorthand for `"auth-methods": ["user"]`. It is mutually exclusive with `"auth-methods"` — setting both is rejected during config mapping.
+
+  To smooth the migration, the `user` flow includes a transitional safety net: if the configured Account Manager client is not a PKCE-capable public client, it automatically falls back to the implicit flow for that client and logs a deprecation warning recommending you create a new public (PKCE) client and use it. (An AM client's type cannot be changed after creation, so a legacy implicit-only client must be replaced, not converted.) Set `SFCC_DISABLE_PKCE_FALLBACK=1` to disable the fallback and surface PKCE failures directly. This fallback is temporary and will be removed once public clients have migrated.
+
+  Persisted browser-auth sessions (which now hold long-lived PKCE refresh tokens) are written `0o600` in a `0o700` directory, so they are no longer world-readable.
+
+  The VS Code extension persists PKCE refresh tokens via OS-keychain-backed `SecretStorage` (with a sync-snapshot/async-write-through cache), keeping behavior compatible with the unified `AuthSessionBackend` used by the CLI.
+
+### Patch Changes
+
+- [#624](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/624) [`02ccc2a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/02ccc2a1656c4895c2aca7ef2064fd2ff138e9a2) - Show the target hostname and real local source for each import-set item, and reject empty site archive directories before upload with a clear error. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#624](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/624) [`02ccc2a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/02ccc2a1656c4895c2aca7ef2064fd2ff138e9a2) - Keep site archive and import-set SDK operations silent so CLI consumers exclusively control progress and job-log output. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#605](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/605) [`d5551f3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d5551f351836f12d2c167459441093671bcad9bc) - Refresh the bundled documentation corpora to the 26.8 release so `b2c docs (Thanks [@clavery](https://github.com/clavery)!)
+search`/`docs read` and the MCP `docs_*` tools surface the latest content:
+  - Script API reference and XSD schemas updated to DWAPP 26.8 (adds the
+    `dw.commerceapps` package, connection-health hooks, and `ShippingHooks`).
+  - Developer Center guides refreshed (adds newly published guides such as SCAPI
+    CDN caching, guest order access codes, and several Storefront Next topics).
+
+  Each corpus index now records where it came from so maintainers can spot the
+  delta before a refresh: git-sourced prose corpora store the upstream commit
+  (`source` block) and DWAPP-sourced corpora store the platform release
+  (`platformDocVersion`, e.g. "DWAPP 26.8").
+
+- [#614](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/614) [`9382697`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/9382697c2715d16577fa298465a3d2dbcbef0ca9) - Fix sandbox creation in the VS Code extension not granting default OCAPI/WebDAV permissions. New sandboxes created from the extension now grant the configured client ID the same default permissions as the CLI's `sandbox create`, so code deployment and job execution work without manual permission setup. The shared defaults are now provided by the SDK via `buildSandboxSettings`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#604](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/604) [`2de9046`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2de904636dad1b1f23a80da8b640dc8acd6e97f3) - `cap:install` now warns and prompts for confirmation before installing a Commerce App from a non-Salesforce provider. Use `--force` to skip the prompt (e.g. in CI or scripted installs); the prompt is also skipped automatically in `--json` mode. (Thanks [@jbisaSF](https://github.com/jbisaSF)!)
+
 ## 1.21.3
 
 ### Patch Changes

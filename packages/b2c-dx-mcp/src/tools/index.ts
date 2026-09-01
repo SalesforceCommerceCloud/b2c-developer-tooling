@@ -24,4 +24,3 @@ export * from './docs/index.js';
 export * from './mrt/index.js';
 export * from './pwav3/index.js';
 export * from './scapi/index.js';
-export * from './storefrontnext/index.js';

@@ -31,6 +31,31 @@ const hasGuides = fs.existsSync(GUIDES_INDEX);
 const hasTooling = fs.existsSync(TOOLING_INDEX);
 const hasHelp = fs.existsSync(HELP_INDEX);
 
+const INTERNAL_TOOLING_DOC_ROOTS = ['guide', 'cli', 'mcp', 'vscode-extension'];
+
+function discoverInternalToolingDocIds(): string[] {
+  const docsRoot = path.resolve(packageRoot, '../..', 'docs');
+  const ids: string[] = [];
+
+  const visit = (directory: string): void => {
+    for (const entry of fs.readdirSync(directory, {withFileTypes: true})) {
+      const absolutePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        visit(absolutePath);
+      } else if (entry.isFile() && entry.name.endsWith('.md') && entry.name.toLowerCase() !== 'readme.md') {
+        const content = fs.readFileSync(absolutePath, 'utf-8');
+        if (/http-equiv['"]?\s*:\s*['"]?refresh/i.test(content)) continue;
+        ids.push(
+          path.relative(docsRoot, absolutePath).split(path.sep).join('/').replace(/\.md$/, '').replace(/\//g, '-'),
+        );
+      }
+    }
+  };
+
+  for (const root of INTERNAL_TOOLING_DOC_ROOTS) visit(path.join(docsRoot, root));
+  return ids.sort();
+}
+
 describe('docs: Developer Center guides corpus', function () {
   before(function () {
     if (!hasGuides) this.skip();
@@ -174,7 +199,7 @@ describe('docs: Developer Center guides corpus', function () {
 
   describe('workspace awareness (search)', () => {
     it('boosts a workspace-relevant category but hides nothing', () => {
-      const pwa = searchDocs('components', {workspace: 'pwa-kit-v3', limit: 20});
+      const pwa = searchDocs('components', {workspace: 'pwa-kit-v3', limit: 100});
       // A PWA Kit guide ranks first for this cross-workspace term...
       expect(pwa[0].entry.category).to.equal('pwa-kit-managed-runtime');
       // ...but other categories are still present (a workspace never filters).
@@ -361,6 +386,13 @@ describe('docs: tooling corpus', function () {
     // tooling content is fetched online (like guides), not bundled on disk
     expect(tooling.every((e) => !e.filePath)).to.equal(true);
     expect(tooling.every((e) => !!e.sourceUrl)).to.equal(true);
+  });
+
+  it('indexes every searchable internal tooling documentation page', () => {
+    const indexedIds = new Set(listDocs('tooling').map((entry) => entry.id));
+    for (const id of discoverInternalToolingDocIds()) {
+      expect(indexedIds.has(id), `missing internal tooling doc ${id}`).to.equal(true);
+    }
   });
 
   it('fetches tooling content online from sourceUrl (the .md)', async () => {

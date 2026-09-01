@@ -84,6 +84,7 @@ See the [VS Code Extension](/vscode-extension/) section for the full overview, [
 ## Next Steps
 
 - [Authentication Setup](./authentication) - Set up Account Manager, OCAPI, and WebDAV
+- [Import Sets](./import-sets) - Apply cartridge metadata and project migrations as a repeatable deployment history
 - [Analytics Reports (CIP/CCAC)](./analytics-reports-cip-ccac) - Run curated analytics reports and SQL queries
 - [Configuration](./configuration) - Configure instances and credentials
 - [IDE Integration](./ide-integration) - Connect third-party IDE tooling to B2C CLI configuration and enable Script API IntelliSense

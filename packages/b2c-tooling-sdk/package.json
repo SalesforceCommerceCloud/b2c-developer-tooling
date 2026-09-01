@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-tooling-sdk",
   "description": "Core tooling library for Salesforce B2C Commerce CLI",
-  "version": "1.21.3",
+  "version": "1.24.2",
   "author": "Charles Lavery",
   "license": "Apache-2.0",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
@@ -246,11 +246,12 @@
     "build:job-steps-dataset": "tsx scripts/build-job-steps-dataset.ts",
     "generate:job-steps-docs": "tsx scripts/generate-job-steps-docs.ts",
     "refresh:docs-data": "tsx scripts/refresh-docs-data.ts",
-    "prepack": "node scripts/strip-dev-exports.cjs",
+    "prepack": "pnpm run generate:tooling-index && node scripts/strip-dev-exports.cjs",
     "postpack": "git checkout package.json",
     "generate:guides-index": "tsx scripts/generate-guides-index.ts",
     "check:guides-links": "tsx scripts/check-guides-links.ts",
     "generate:tooling-index": "tsx scripts/generate-tooling-index.ts",
+    "check:tooling-index": "tsx scripts/generate-tooling-index.ts --check",
     "generate:help-corpus": "tsx scripts/generate-help-corpus.ts",
     "enrich:docs": "tsx scripts/enrich-docs.ts"
   },

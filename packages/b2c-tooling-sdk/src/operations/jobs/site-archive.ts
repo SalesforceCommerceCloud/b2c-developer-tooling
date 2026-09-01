@@ -16,9 +16,8 @@ import {glob, hasMagic} from 'glob';
 import JSZip from 'jszip';
 import {B2CInstance} from '../../instance/index.js';
 import {SCAPI_JOBS_CASCADE} from '../../clients/scapi-jobs.js';
-import {getLogger} from '../../logging/logger.js';
 import {addDirectoryToZip} from '../util/zip.js';
-import {JobExecutionError, getJobLog, type JobExecution, type WaitForJobOptions} from './run.js';
+import {type JobExecution, type WaitForJobOptions} from './run.js';
 import {runSystemJob} from './run-system-job.js';
 
 // Import/export trigger system jobs via the job-execution write surface.
@@ -26,25 +25,6 @@ const JOBS_RW_SCOPES = [...new Set(SCAPI_JOBS_CASCADE.write.flat())];
 
 const IMPORT_JOB_ID = 'sfcc-site-archive-import';
 const EXPORT_JOB_ID = 'sfcc-site-archive-export';
-
-/**
- * On a {@link JobExecutionError}, fetch and log the job log over WebDAV.
- * Shared by import/export; the log lives under `/Sites/LOGS` for both backends,
- * so a single WebDAV-based `getJobLog` works regardless of which served the job.
- * Non-{@link JobExecutionError} errors (timeout, network) are left alone.
- */
-async function logJobFailure(instance: B2CInstance, jobId: string, error: unknown): Promise<void> {
-  if (!(error instanceof JobExecutionError)) {
-    return;
-  }
-  const logger = getLogger();
-  try {
-    const log = await getJobLog(instance, error.execution);
-    logger.error({jobId, logFile: error.execution.log_file_path, log}, `Job log:\n${log}`);
-  } catch {
-    logger.error({jobId}, 'Could not retrieve job log');
-  }
-}
 
 /**
  * Options for site archive import.
@@ -152,7 +132,6 @@ export async function siteArchiveImport(
   target: string | Buffer | {remoteFilename: string; archiveName?: string},
   options: SiteArchiveImportOptions & {archiveName?: string} = {},
 ): Promise<SiteArchiveImportResult> {
-  const logger = getLogger();
   const {keepArchive = false, wait = true, waitOptions, archiveName, paths, maxBytes, onOversize} = options;
 
   let zipFilename: string;
@@ -183,7 +162,7 @@ export async function siteArchiveImport(
       // (e.g. libraries/mylib/library.xml, sites/RefArch/site.xml).
       const archiveDirName = `import-${Date.now()}`;
       zipFilename = `${archiveDirName}.zip`;
-      archiveContent = await wrapArchiveContents(target, archiveDirName, logger);
+      archiveContent = await wrapArchiveContents(target, archiveDirName);
     }
   } else {
     // File path - check if directory or zip file
@@ -210,13 +189,8 @@ export async function siteArchiveImport(
 
       if (paths && paths.length > 0) {
         const resolved = await resolveSubsetPaths(targetPath, paths);
-        logger.debug(
-          {path: targetPath, count: resolved.length},
-          `Creating archive from ${resolved.length} path(s) under: ${targetPath}`,
-        );
         archiveContent = await createArchiveFromPaths(targetPath, resolved, archiveDirName);
       } else {
-        logger.debug({path: targetPath}, `Creating archive from directory: ${targetPath}`);
         archiveContent = await createArchiveFromDirectory(targetPath, archiveDirName);
       }
     } else {
@@ -236,37 +210,23 @@ export async function siteArchiveImport(
   }
 
   if (needsUpload && archiveContent) {
-    logger.debug({path: uploadPath}, `Uploading archive to ${uploadPath}`);
     await instance.webdav.put(uploadPath, archiveContent as Buffer, 'application/zip');
-    logger.debug({path: uploadPath}, `Archive uploaded: ${uploadPath}`);
   }
 
   // Execute the import job (SCAPI when configured, OCAPI fallback in auto).
-  logger.debug(
-    {jobId: IMPORT_JOB_ID, file: zipFilename},
-    `Executing ${IMPORT_JOB_ID} job with file_name: ${zipFilename}`,
-  );
-
-  let execution: JobExecution;
-  try {
-    execution = await runSystemJob(instance, {
-      jobId: IMPORT_JOB_ID,
-      ocapiBody: {file_name: zipFilename},
-      parameters: [{name: 'ImportFile', value: zipFilename}],
-      deprecatedScopes: JOBS_RW_SCOPES,
-      wait,
-      waitOptions,
-      failVerb: 'execute import job',
-    });
-  } catch (error) {
-    await logJobFailure(instance, IMPORT_JOB_ID, error);
-    throw error;
-  }
+  const execution: JobExecution = await runSystemJob(instance, {
+    jobId: IMPORT_JOB_ID,
+    ocapiBody: {file_name: zipFilename},
+    parameters: [{name: 'ImportFile', value: zipFilename}],
+    deprecatedScopes: JOBS_RW_SCOPES,
+    wait,
+    waitOptions,
+    failVerb: 'execute import job',
+  });
 
   // Clean up archive if not keeping (only when we waited for completion)
   if (wait && !keepArchive && needsUpload) {
     await instance.webdav.delete(uploadPath);
-    logger.debug({path: uploadPath}, `Archive deleted: ${uploadPath}`);
   }
 
   return {
@@ -287,23 +247,19 @@ export async function siteArchiveImport(
  * All resolved paths must live under the root directory.
  */
 async function resolveSubsetPaths(rootDir: string, entries: string[]): Promise<string[]> {
-  const logger = getLogger();
   const rootAbs = path.resolve(rootDir);
   const matched = new Set<string>();
 
   for (const entry of entries) {
     const candidates: string[] = [];
-    let resolutionMode: 'literal' | 'root-relative' | 'glob';
 
     // Try literal path resolution first (handles shell-expanded paths)
     const asGiven = path.resolve(entry);
     const asRootRelative = path.resolve(rootAbs, entry);
     if (fs.existsSync(asGiven)) {
       candidates.push(asGiven);
-      resolutionMode = 'literal';
     } else if (asGiven !== asRootRelative && fs.existsSync(asRootRelative)) {
       candidates.push(asRootRelative);
-      resolutionMode = 'root-relative';
     } else if (hasMagic(entry)) {
       // Glob expansion (always relative to root, not cwd)
       const matches = await glob(entry, {cwd: rootAbs, absolute: true, dot: true, nodir: false});
@@ -311,15 +267,9 @@ async function resolveSubsetPaths(rootDir: string, entries: string[]): Promise<s
         throw new Error(`No files matched pattern: ${entry}`);
       }
       candidates.push(...matches);
-      resolutionMode = 'glob';
     } else {
       throw new Error(`Path not found: ${entry}`);
     }
-
-    logger.debug(
-      {entry, mode: resolutionMode, matches: candidates.map((c) => path.relative(rootAbs, c))},
-      `Resolved "${entry}" (${resolutionMode}) → ${candidates.length} match(es)`,
-    );
 
     for (const candidate of candidates) {
       const rel = path.relative(rootAbs, candidate);
@@ -341,7 +291,6 @@ async function resolveSubsetPaths(rootDir: string, entries: string[]): Promise<s
  * as-is.
  */
 async function createArchiveFromPaths(rootDir: string, entries: string[], archiveDirName: string): Promise<Buffer> {
-  const logger = getLogger();
   const zip = new JSZip();
   const rootFolder = zip.folder(archiveDirName)!;
   const rootAbs = path.resolve(rootDir);
@@ -361,11 +310,7 @@ async function createArchiveFromPaths(rootDir: string, entries: string[], archiv
     }
   }
 
-  // After all entries are added, log the final list of files in the archive so
-  // users can verify exactly what was included (especially after directory
-  // recursion, which is otherwise opaque from the path arguments alone).
-  const archivedFiles = Object.keys(zip.files).filter((p) => !zip.files[p].dir);
-  logger.debug({count: archivedFiles.length, files: archivedFiles}, `Archive contains ${archivedFiles.length} file(s)`);
+  assertArchiveHasFiles(zip, rootDir);
 
   return zip.generateAsync({
     type: 'nodebuffer',
@@ -382,6 +327,7 @@ async function createArchiveFromDirectory(dirPath: string, archiveDirName: strin
   const rootFolder = zip.folder(archiveDirName)!;
 
   await addDirectoryToZip(rootFolder, dirPath);
+  assertArchiveHasFiles(zip, dirPath);
 
   return zip.generateAsync({
     type: 'nodebuffer',
@@ -397,14 +343,8 @@ async function createArchiveFromDirectory(dirPath: string, archiveDirName: strin
  * (e.g. `libraries/mylib/library.xml`). The output will have all entries
  * nested under `archiveDirName/` (e.g. `archiveDirName/libraries/mylib/library.xml`).
  */
-async function wrapArchiveContents(
-  buffer: Buffer,
-  archiveDirName: string,
-  logger: ReturnType<typeof getLogger>,
-): Promise<Buffer> {
+async function wrapArchiveContents(buffer: Buffer, archiveDirName: string): Promise<Buffer> {
   const zip = await JSZip.loadAsync(buffer);
-
-  logger.debug({archiveDirName}, `Wrapping archive contents under ${archiveDirName}/`);
 
   const newZip = new JSZip();
   const rootFolder = newZip.folder(archiveDirName)!;
@@ -416,11 +356,19 @@ async function wrapArchiveContents(
     }
   }
 
+  assertArchiveHasFiles(newZip, 'the supplied archive buffer');
+
   return newZip.generateAsync({
     type: 'nodebuffer',
     compression: 'DEFLATE',
     compressionOptions: {level: 9},
   });
+}
+
+function assertArchiveHasFiles(zip: JSZip, source: string): void {
+  if (!Object.values(zip.files).some((entry) => !entry.dir)) {
+    throw new Error(`No files found to import under: ${source}`);
+  }
 }
 
 /**
@@ -759,7 +707,6 @@ export async function siteArchiveImportSplit(
   dir: string,
   options: SiteArchiveImportSplitOptions = {},
 ): Promise<SiteArchiveImportResult[]> {
-  const logger = getLogger();
   const {maxBytes = 190 * 1024 * 1024, keepArchive = false, waitOptions, archiveName, onPlan, onPart} = options;
 
   if (!fs.existsSync(dir)) {
@@ -774,7 +721,6 @@ export async function siteArchiveImportSplit(
   // the real guard against estimation drift.
   const budget = Math.floor(maxBytes * 0.95);
 
-  logger.debug({dir, maxBytes, budget}, `Classifying files under ${dir} for split import`);
   const {xml, assets} = await classifyFiles(dir);
 
   const xmlParts = xml.length > 0 ? packXml(xml, budget) : [];
@@ -807,10 +753,6 @@ export async function siteArchiveImportSplit(
     assetPartCount: assetParts.length,
     maxBytes,
   });
-  logger.debug(
-    {partCount: planned.length, xmlParts: xmlParts.length, assetParts: assetParts.length},
-    `Split plan: ${planned.length} part(s) (${xmlParts.length} xml, ${assetParts.length} asset)`,
-  );
 
   const results: SiteArchiveImportResult[] = [];
   const rootAbs = path.resolve(dir);
@@ -841,10 +783,6 @@ export async function siteArchiveImportSplit(
       fileCount: part.entries.length,
       bytes: buffer.length,
     });
-    logger.debug(
-      {part: part.dirName, kind: part.kind, files: part.entries.length, bytes: buffer.length},
-      `Importing part ${i + 1}/${planned.length}: ${part.dirName} (${formatBytes(buffer.length)})`,
-    );
 
     const result = await siteArchiveImport(instance, buffer, {
       archiveName: part.dirName,
@@ -1000,7 +938,6 @@ export async function siteArchiveExport(
   dataUnits: Partial<ExportDataUnitsConfiguration>,
   options: SiteArchiveExportOptions = {},
 ): Promise<SiteArchiveExportResult> {
-  const logger = getLogger();
   const {waitOptions} = options;
 
   // Generate archive filename
@@ -1008,26 +945,18 @@ export async function siteArchiveExport(
   const archiveDirName = `${timestamp}_export`;
   const zipFilename = `${archiveDirName}.zip`;
 
-  logger.debug({jobId: EXPORT_JOB_ID, dataUnits}, `Executing ${EXPORT_JOB_ID} job`);
-
   // Execute export job (SCAPI when configured, OCAPI fallback in auto).
-  let execution: JobExecution;
-  try {
-    execution = await runSystemJob(instance, {
-      jobId: EXPORT_JOB_ID,
-      ocapiBody: {export_file: zipFilename, data_units: dataUnits},
-      parameters: [
-        {name: 'ExportFile', value: zipFilename},
-        {name: 'DataUnits', value: JSON.stringify(dataUnits)},
-      ],
-      deprecatedScopes: JOBS_RW_SCOPES,
-      waitOptions,
-      failVerb: 'execute export job',
-    });
-  } catch (error) {
-    await logJobFailure(instance, EXPORT_JOB_ID, error);
-    throw error;
-  }
+  const execution: JobExecution = await runSystemJob(instance, {
+    jobId: EXPORT_JOB_ID,
+    ocapiBody: {export_file: zipFilename, data_units: dataUnits},
+    parameters: [
+      {name: 'ExportFile', value: zipFilename},
+      {name: 'DataUnits', value: JSON.stringify(dataUnits)},
+    ],
+    deprecatedScopes: JOBS_RW_SCOPES,
+    waitOptions,
+    failVerb: 'execute export job',
+  });
 
   return {
     execution,
@@ -1059,20 +988,17 @@ export async function siteArchiveExportToBuffer(
   dataUnits: Partial<ExportDataUnitsConfiguration>,
   options: SiteArchiveExportOptions & {keepArchive?: boolean} = {},
 ): Promise<SiteArchiveExportResult & {data: Buffer; archiveKept: boolean}> {
-  const logger = getLogger();
   const {keepArchive = false, ...exportOptions} = options;
 
   const result = await siteArchiveExport(instance, dataUnits, exportOptions);
 
   // Download archive from instance via WebDAV
   const webdavPath = `Impex/src/instance/${result.archiveFilename}`;
-  logger.debug({path: webdavPath}, `Downloading archive: ${webdavPath}`);
   const data = Buffer.from(await instance.webdav.get(webdavPath));
 
   // Clean up from instance if not keeping
   if (!keepArchive) {
     await instance.webdav.delete(webdavPath);
-    logger.debug({path: webdavPath}, `Archive deleted: ${webdavPath}`);
   }
 
   return {
@@ -1109,7 +1035,6 @@ export async function siteArchiveExportToPath(
   outputPath: string,
   options: SiteArchiveExportOptions & {keepArchive?: boolean; extractZip?: boolean} = {},
 ): Promise<SiteArchiveExportResult & {localPath: string; archiveKept: boolean}> {
-  const logger = getLogger();
   const {extractZip = true, ...downloadOptions} = options;
 
   const result = await siteArchiveExportToBuffer(instance, dataUnits, downloadOptions);
@@ -1124,8 +1049,6 @@ export async function siteArchiveExportToPath(
     // Ensure directory exists
     await fs.promises.mkdir(path.dirname(zipPath), {recursive: true});
     await fs.promises.writeFile(zipPath, result.data);
-
-    logger.debug({path: zipPath}, `Archive saved to: ${zipPath}`);
 
     return {
       ...result,
@@ -1149,8 +1072,6 @@ export async function siteArchiveExportToPath(
         await fs.promises.writeFile(fullPath, content);
       }
     }
-
-    logger.debug({path: outputPath}, `Archive extracted to: ${outputPath}`);
 
     return {
       ...result,

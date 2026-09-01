@@ -49,10 +49,16 @@ The command displays configuration organized by category:
 
 - **Instance**: hostname, webdavHostname, codeVersion
 - **Authentication (Basic)**: username, password
-- **Authentication (OAuth)**: clientId, clientSecret, scopes, authMethods, accountManagerHost
-- **SCAPI**: shortCode
+- **Authentication (OAuth)**: clientId, clientSecret, and configured OAuth options
+- **Authentication (JWT Bearer)**: JWT certificate, key, and passphrase settings (when configured)
+- **Authentication (SLAS)**: SLAS client settings (when configured)
+- **SCAPI**: shortCode and tenantId
+- **On-Demand Sandbox (ODS)**: sandbox API host and realm (when configured)
+- **Commerce Intelligence (CIP)**: CIP host override (when configured)
 - **Managed Runtime (MRT)**: mrtProject, mrtEnvironment, mrtApiKey, mrtOrigin
-- **Metadata**: instanceName
+- **Project**: configured deployment, content, and documentation defaults
+- **Metadata**: siteId, instanceName, and projectDirectory (when configured)
+- **Safety**: safety configuration (when configured)
 - **Sources**: List of configuration sources that contributed values
 
 Each value shows its source in brackets (e.g., `[dw.json]`, `[SFCC_CLIENT_ID]`, `[~/.mobify]`).
@@ -75,8 +81,6 @@ Authentication (Basic)
 Authentication (OAuth)
   clientId              my-client-id                                 [password-store]
   clientSecret          my-c...REDACTED                              [password-store]
-  scopes                -
-  authMethods           -
   accountManagerHost    -
 
 SCAPI
@@ -99,13 +103,53 @@ By default, sensitive fields are masked to prevent accidental exposure:
 
 - `password` - Basic auth access key
 - `clientSecret` - OAuth client secret
+- `jwtPassphrase` - JWT private key passphrase
+- `slasClientSecret` - SLAS private client secret
 - `mrtApiKey` - MRT API key
 
 Use `--unmask` to reveal the actual values when needed for debugging.
 
+The Sources section shows both the primary and default `dw.json` files and marks the file that supplied the selected instance with `*`. When the shared default `dw.json` supplies values, fields are annotated with `[default]` and its source row is labeled `(default)`. JSON output includes the same file provenance plus `"scope": "global"` on a selected default source.
+
 ### See Also
 
 - [Configuration Guide](/guide/configuration) - How to configure the CLI
+
+## Global Default Configuration
+
+Use a global `dw.json` when you want the CLI, MCP server, and B2C DX VS Code extension to share instances across projects. An explicit `--config`, `SFCC_CONFIG`, project `.env` selection, or project-local `dw.json` remains the primary file.
+
+Instances from the primary and global files are shown as one catalog. `--instance` / `-i` searches the primary file first, so a same-name primary instance shadows the global one. Instance fields are not combined across files.
+
+`b2c setup instance create` writes to the primary file when it exists and otherwise uses the global `dw.json`. List, remove, and set-active operate across both files, checking the primary file first.
+
+### b2c setup default-config set
+
+Set the shared global `dw.json`. The file must exist and use the `dw.json` format.
+
+Paths are normally stored as absolute paths. When the configuration file is inside the shared B2C settings directory, the command stores a relative path such as `./dw.json`, making it easy to keep the files together.
+
+```bash
+b2c setup default-config set /Users/you/code/dw.json
+b2c setup default-config set ./shared.dw.json --json
+```
+
+### b2c setup default-config get
+
+Show the configured path and report if the file is missing.
+
+```bash
+b2c setup default-config get
+b2c setup default-config get --json
+```
+
+### b2c setup default-config unset
+
+Remove the global `dw.json` setting without changing or deleting the file itself.
+
+```bash
+b2c setup default-config unset
+```
 
 ## b2c setup ide
 
@@ -210,7 +254,7 @@ b2c setup ide tsserver-plugin --json
   "pluginName": "@salesforce/b2c-script-types",
   "pluginPath": "/usr/local/lib/node_modules/@salesforce/b2c-cli/dist/script-types",
   "typesPath": "/usr/local/lib/node_modules/@salesforce/b2c-cli/dist/script-types/types",
-  "version": "26.7.0"
+  "version": "26.9.0"
 }
 ```
 

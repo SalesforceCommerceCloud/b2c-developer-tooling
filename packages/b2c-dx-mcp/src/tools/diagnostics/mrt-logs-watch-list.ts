@@ -9,6 +9,7 @@ import type {Services} from '../../services.js';
 import type {ServerContext} from '../../server-context.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import {getMrtLogWatchRegistry} from './mrt-log-watch-registry.js';
+import type {ToolResolution} from '../project-context.js';
 
 interface ListWatchesOutput {
   watches: Array<{
@@ -22,6 +23,7 @@ interface ListWatchesOutput {
     stopped: boolean;
     total_entries_seen: number;
     watch_id: string;
+    resolution?: ToolResolution;
   }>;
 }
 
@@ -52,6 +54,7 @@ export function createMrtLogsWatchListTool(
             stopped: w.stopped,
             total_entries_seen: w.totalEntriesSeen,
             watch_id: w.watchId,
+            resolution: w.resolution,
           })),
         };
       },

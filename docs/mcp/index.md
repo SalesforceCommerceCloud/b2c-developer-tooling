@@ -30,10 +30,6 @@ The **SCAPI** and **DIAGNOSTICS** toolsets are always enabled. On top of those, 
 
 Every configuration also includes the always-on base toolsets (**SCAPI** + **DIAGNOSTICS**). Hybrid projects (e.g. cartridges + PWA Kit) get the union of the matching rows. You can also [manually select toolsets](./configuration#toolset-selection).
 
-::: warning Storefront Next `sfnext_*` tools are deprecated
-The legacy Storefront Next MCP tools (`sfnext_*`) are **not compatible with the Storefront Next 1.0 GA release** and have been superseded by the [`storefront-next` and `storefront-next-figma` agent-skills plugins](../guide/agent-skills). They no longer auto-enable for Storefront Next projects and have moved to the opt-in [`STOREFRONTNEXT_DEPRECATED`](./toolsets#storefrontnext-deprecated) toolset. Install the skills plugins instead — see the [Agent Skills guide](../guide/agent-skills).
-:::
-
 ## Plugins
 
 The MCP server uses the B2C CLI under the hood, so CLI plugins automatically extend MCP functionality. See the [CLI Plugin documentation](../guide/extending) for details.

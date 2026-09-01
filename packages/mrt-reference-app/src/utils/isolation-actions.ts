@@ -80,17 +80,22 @@ export const isolationDalTest = async (input: {dalKey?: string; dalProjectEnviro
   }
   const tableName = `DataAccessLayer-${process.env.AWS_REGION}`;
   const ddbClient = DynamoDBDocumentClient.from(new DynamoDBClient({region: process.env.AWS_REGION}));
-  try {
-    await ddbClient.send(
-      new GetCommand({
-        TableName: tableName,
-        Key: {projectEnvironment: input.dalProjectEnvironment, key: input.dalKey},
-      }),
-    );
-  } catch (e) {
-    if (hasErrorName(e, 'AccessDeniedException')) return true;
-    console.error(e);
-  }
+  const readIsDenied = async (projectEnvironment: string): Promise<boolean> => {
+    try {
+      await ddbClient.send(new GetCommand({TableName: tableName, Key: {projectEnvironment, key: input.dalKey}}));
+      return false; // read allowed → NOT isolated
+    } catch (e) {
+      if (hasErrorName(e, 'AccessDeniedException')) return true;
+      console.error(e);
+      return false; // unexpected error → do not count as isolated
+    }
+  };
+  // Both the legacy (shard 0) partition and a suffixed shard partition of
+  // Target A must be denied to Target B (W-23735172 widened LeadingKeys to a
+  // space-anchored StringLike wildcard; this proves it can't cross tenants).
+  const legacyDenied = await readIsDenied(input.dalProjectEnvironment);
+  const shardDenied = await readIsDenied(`${input.dalProjectEnvironment} 1`);
+  if (legacyDenied && shardDenied) return true;
   console.error("DAL isolation test failed: Target B accessed Target A's DAL entry");
   return false;
 };

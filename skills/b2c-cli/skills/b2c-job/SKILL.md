@@ -100,14 +100,16 @@ b2c job import ./my-site-data 'libraries/**'
 
 ### Import Sets
 
-`job import-set` applies the archives in `./migrations` in order and skips imports already recorded on the target instance:
+`job import-set` first applies site import/export archives from discovered cartridge `metadata/` sources, then applies archives in `./migrations`, and skips archives already recorded on the target instance:
 
 ```bash
 b2c job import-set --dry-run
 b2c job import-set
+b2c job import-set --no-cartridge-metadata # only use ./migrations
+b2c job import-set --import-set-exclude fixtures # ignore this project subtree
 ```
 
-For the canonical archive layout, timestamp naming convention, receipt and retry behavior, concurrency, and recovery flags, use the `b2c-cli:b2c-site-import-export` skill's **Apply an Ordered, Idempotent Import Set** section.
+`--import-set-exclude` can be repeated or comma-separated and can also be configured as `b2c.importSetExclude` in `package.json`, `import-set-exclude` in `dw.json`, or `SFCC_IMPORT_SET_EXCLUDE`. For the full migration workflow — archive layouts, timestamp naming, post-import README notes, retry behavior, reset options, concurrency, and recovery — use the `b2c-cli:b2c-import-set-migrations` skill.
 
 ### Export Site Archives
 
@@ -163,6 +165,20 @@ b2c job export --global-data meta_data --keep-archive
 # set a timeout (seconds)
 b2c job export --global-data meta_data --timeout 600
 ```
+
+#### Output Directory Semantics
+
+When `--output` names a directory, the CLI extracts the downloaded platform zip as-is. Platform exports contain a generated top-level directory such as `<timestamp>_export`, so `--output migrations` creates `migrations/<generated>_export/...`; it does not merge data units directly into `migrations/`. If `--output` ends in `.zip`, the CLI writes that exact zip path instead.
+
+For an ordered import-set migration, export to the import-set directory, rename the one newly generated archive root once to its permanent ordered name, and then review and trim it in place:
+
+```bash
+b2c job export --site RefArch --site-data site_descriptor --output migrations
+mv migrations/<GENERATED_EXPORT_DIR> migrations/20260815T120000-update-site-descriptor
+b2c job import-set --dry-run
+```
+
+Do not require a temporary directory and copy step for export-based migrations. Never export over an existing or applied archive. See `b2c-cli:b2c-import-set-migrations` for naming, trimming, retry, and deployment rules, and `b2c-cli:b2c-site-import-export` for valid archive structure.
 
 #### Available Data Units
 

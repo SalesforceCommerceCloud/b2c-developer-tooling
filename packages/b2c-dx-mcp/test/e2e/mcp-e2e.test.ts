@@ -9,6 +9,8 @@
  * Run with: pnpm run test:e2e
  */
 
+import fs from 'node:fs';
+import os from 'node:os';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {expect} from 'chai';
@@ -95,27 +97,6 @@ describe('MCP Server E2E', function () {
       await client.stop();
     });
 
-    it('excludes deprecated sfnext_* tools from --toolsets all', async () => {
-      const client = new McpE2EClient({args: ['--toolsets', 'all', '--allow-non-ga-tools']});
-      await client.start();
-      const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
-      const names = result.tools.map((t) => t.name);
-      expect(names.some((n) => n.startsWith('sfnext_'))).to.be.false;
-      await client.stop();
-    });
-
-    it('registers deprecated sfnext_* tools only when STOREFRONTNEXT_DEPRECATED is requested', async () => {
-      const client = new McpE2EClient({
-        args: ['--toolsets', 'STOREFRONTNEXT_DEPRECATED', '--allow-non-ga-tools'],
-      });
-      await client.start();
-      const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
-      const names = result.tools.map((t) => t.name);
-      expect(names).to.include('sfnext_get_guidelines');
-      expect(names).to.include('sfnext_add_page_designer_decorator');
-      await client.stop();
-    });
-
     it('filters tools by individual tool name', async () => {
       const client = new McpE2EClient({
         args: ['--tools', 'scapi_schemas_list,scapi_custom_apis_get_status', '--allow-non-ga-tools'],
@@ -152,9 +133,157 @@ describe('MCP Server E2E', function () {
       expect(result.tools[0].inputSchema).to.be.an('object');
       await client.stop();
     });
+
+    it('publishes a deterministic, well-described tool corpus with strict schemas', async () => {
+      const client = new McpE2EClient({args: ['--toolsets', 'all', '--allow-non-ga-tools']});
+      await client.start();
+      type WireSchema = {
+        type?: string;
+        description?: string;
+        properties?: Record<string, WireSchema>;
+        additionalProperties?: boolean;
+        items?: WireSchema;
+        anyOf?: WireSchema[];
+        oneOf?: WireSchema[];
+        allOf?: WireSchema[];
+      };
+      const first = (await client.call('tools/list')) as {
+        tools: Array<{
+          name: string;
+          description: string;
+          inputSchema: WireSchema;
+        }>;
+      };
+      const second = (await client.call('tools/list')) as typeof first;
+      const checkSchema = (schema: WireSchema, path: string): void => {
+        if (schema.type === 'object') {
+          expect(schema.additionalProperties, `${path} must reject unknown fields`).to.be.false;
+        }
+        for (const [field, property] of Object.entries(schema.properties ?? {})) {
+          const propertyPath = `${path}.${field}`;
+          expect(property.description, `${propertyPath} should have a description`).to.be.a('string').and.not.be.empty;
+          checkSchema(property, propertyPath);
+        }
+        if (schema.items) checkSchema(schema.items, `${path}[]`);
+        for (const [index, variant] of [
+          ...(schema.anyOf ?? []),
+          ...(schema.oneOf ?? []),
+          ...(schema.allOf ?? []),
+        ].entries()) {
+          checkSchema(variant, `${path}[${index}]`);
+        }
+      };
+
+      expect(second.tools.map((tool) => tool.name)).to.deep.equal(first.tools.map((tool) => tool.name));
+      expect(new Set(first.tools.map((tool) => tool.name)).size).to.equal(first.tools.length);
+      for (const tool of first.tools) {
+        expect(tool.name).to.match(/^[A-Za-z0-9_.-]{1,128}$/);
+        expect(tool.description).to.be.a('string').and.not.empty;
+        expect(tool.description.length, `${tool.name} description too long`).to.be.at.most(400);
+        expect(tool.inputSchema.type, `${tool.name} input schema must accept an object`).to.equal('object');
+        checkSchema(tool.inputSchema, tool.name);
+      }
+
+      await client.stop();
+    });
   });
 
   describe('3. MCP Protocol (tools/call)', () => {
+    it('loads project .env and its SFCC_CONFIG when the server cwd is the plugin directory', async () => {
+      const projectDirectory = fs.mkdtempSync(join(os.tmpdir(), 'mcp-plugin-project-'));
+      const configDirectory = join(projectDirectory, 'config');
+      const configPath = join(configDirectory, 'shared.dw.json');
+      const overrideConfigPath = join(configDirectory, 'override.dw.json');
+      fs.mkdirSync(configDirectory);
+      fs.writeFileSync(configPath, JSON.stringify({hostname: 'plugin-project.invalid'}));
+      fs.writeFileSync(overrideConfigPath, JSON.stringify({hostname: 'per-call.invalid'}));
+      fs.writeFileSync(join(projectDirectory, '.env'), 'SFCC_CONFIG=./config/shared.dw.json\n');
+
+      const pluginDirectory = join(__dirname, '../../../../plugins/b2c-dx-mcp');
+      const client = new McpE2EClient({
+        args: ['--tools', 'config_inspect'],
+        cwd: pluginDirectory,
+        env: {SFCC_CONFIG: undefined, SFCC_PROJECT_DIRECTORY: undefined, SFCC_WORKING_DIRECTORY: undefined},
+      });
+
+      try {
+        await client.start();
+        const result = (await client.call('tools/call', {
+          name: 'config_inspect',
+          arguments: {projectDirectory},
+        })) as {content: Array<{text: string; type: string}>};
+        const inspected = JSON.parse(result.content[0].text) as {
+          resolution: {projectDirectory: {path: string; source: string}};
+          sources: Array<{location?: string; name: string}>;
+        };
+
+        expect(inspected.resolution.projectDirectory).to.deep.equal({path: projectDirectory, source: 'argument'});
+        expect(inspected).to.not.have.own.property('projectDirectory');
+        expect(inspected.sources.some((source) => source.name === 'DwJsonSource' && source.location === configPath)).to
+          .be.true;
+
+        const overrideResult = (await client.call('tools/call', {
+          name: 'config_inspect',
+          arguments: {projectDirectory, configPath: './config/override.dw.json'},
+        })) as {content: Array<{text: string; type: string}>};
+        const overrideInspected = JSON.parse(overrideResult.content[0].text) as {
+          config: {hostname?: string};
+          sources: Array<{location?: string; name: string}>;
+        };
+        expect(overrideInspected.config.hostname).to.equal('per-call.invalid');
+        expect(
+          overrideInspected.sources.some(
+            (source) => source.name === 'DwJsonSource' && source.location === overrideConfigPath,
+          ),
+        ).to.be.true;
+      } finally {
+        await client.stop();
+        fs.rmSync(projectDirectory, {recursive: true, force: true});
+      }
+    });
+
+    it('loads the shared global default when the selected project has no dw.json', async () => {
+      const rootDirectory = fs.mkdtempSync(join(os.tmpdir(), 'mcp-global-default-e2e-'));
+      const projectDirectory = join(rootDirectory, 'project');
+      const configRoot = join(rootDirectory, 'user-config');
+      const settingsDirectory = join(configRoot, 'b2c');
+      const defaultConfigPath = join(settingsDirectory, 'dw.json');
+      fs.mkdirSync(projectDirectory);
+      fs.mkdirSync(settingsDirectory, {recursive: true});
+      fs.writeFileSync(defaultConfigPath, JSON.stringify({hostname: 'global-default-e2e.invalid'}));
+      fs.writeFileSync(join(settingsDirectory, 'settings.json'), JSON.stringify({defaultConfigPath: './dw.json'}));
+
+      const client = new McpE2EClient({
+        args: ['--tools', 'config_inspect'],
+        env: {
+          XDG_CONFIG_HOME: configRoot,
+          SFCC_CONFIG: undefined,
+          SFCC_PROJECT_DIRECTORY: undefined,
+          SFCC_WORKING_DIRECTORY: undefined,
+        },
+      });
+
+      try {
+        await client.start();
+        const result = (await client.call('tools/call', {
+          name: 'config_inspect',
+          arguments: {projectDirectory},
+        })) as {content: Array<{text: string; type: string}>};
+        const inspected = JSON.parse(result.content[0].text) as {
+          config: {hostname?: string};
+          sources: Array<{location?: string; name: string}>;
+        };
+
+        expect(inspected.config.hostname).to.equal('global-default-e2e.invalid');
+        expect(
+          inspected.sources.some((source) => source.name === 'DwJsonSource' && source.location === defaultConfigPath),
+        ).to.be.true;
+      } finally {
+        await client.stop();
+        fs.rmSync(rootDirectory, {recursive: true, force: true});
+      }
+    });
+
     it('calls a tool and returns a response (result or structured error)', async () => {
       const client = new McpE2EClient({args: ['--tools', 'scapi_schemas_list', '--allow-non-ga-tools']});
       await client.start();
@@ -195,13 +324,13 @@ describe('MCP Server E2E', function () {
 
     it('returns proper error for invalid input when required param missing', async () => {
       const client = new McpE2EClient({
-        args: ['--tools', 'sfnext_add_page_designer_decorator', '--allow-non-ga-tools'],
+        args: ['--tools', 'scapi_custom_api_generate_scaffold', '--allow-non-ga-tools'],
       });
       await client.start();
       try {
         await client.call('tools/call', {
-          name: 'sfnext_add_page_designer_decorator',
-          arguments: {}, // missing required componentName etc.
+          name: 'scapi_custom_api_generate_scaffold',
+          arguments: {}, // missing required apiName
         });
         // May throw or return content with error
       } catch (error) {
@@ -228,11 +357,9 @@ describe('MCP Server E2E', function () {
       await client.start();
       const result = (await client.call('tools/list')) as {tools: Array<{name: string}>};
       const names = result.tools.map((t) => t.name);
-      // Storefront Next auto-discovery enables the shared GA tools...
+      // Storefront Next auto-discovery enables the shared tools.
       expect(names).to.include('mrt_bundle_push');
       expect(names.some((n) => n.startsWith('scapi_'))).to.be.true;
-      // ...but NOT the deprecated sfnext_* tools, which are opt-in only.
-      expect(names.some((n) => n.startsWith('sfnext_'))).to.be.false;
       await client.stop();
     });
 

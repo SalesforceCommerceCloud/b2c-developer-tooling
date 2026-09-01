@@ -19,6 +19,8 @@ The CLI auto-discovers the target instance and credentials from `SFCC_*` environ
 
 Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting, `--unmask` to reveal secrets). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
+For MCP debugging, pass `projectDirectory` to `debug_start_session` whenever the MCP server may have been launched outside the project. The tool uses that root to load the project's `.env` and default `dw.json`; pass `configPath` to select a different primary `dw.json`-format file and `instanceName` to select a named instance from the primary or shared default file. Cartridge discovery and local/server source mapping default to `projectDirectory`; pass `cartridgeDirectory` only when the cartridges live under a different root. The start call captures this information in `resolution`, which `debug_list_sessions` returns without requiring the caller to repeat it. The MCP server controls its SDAPI client identity internally, so callers do not pass a debugger client ID.
+
 ## Prerequisites
 
 - Basic Auth credentials for a BM user with `WebDAV_Manage_Customization`: a username and either the account password or a `WebDAV File Access and UX Studio` access key
@@ -104,20 +106,20 @@ b2c debug cli --rpc
 
 ### Available RPC Commands
 
-| Command | Key Args | Description |
-|---------|----------|-------------|
-| `set_breakpoints` | `breakpoints: [{file, line, condition?}]` | Replace all breakpoints |
-| `list_breakpoints` | | List current breakpoints |
-| `continue` | `thread_id?` | Resume halted thread |
-| `step_over` | `thread_id?` | Step to next line |
-| `step_into` | `thread_id?` | Step into function |
-| `step_out` | `thread_id?` | Step out of function |
-| `get_stack` | `thread_id?` | Get call stack |
-| `get_variables` | `thread_id?, frame_index?, scope?, object_path?` | Get variables |
-| `evaluate` | `expression, thread_id?, frame_index?` | Evaluate expression |
-| `list_threads` | | List threads |
-| `select_thread` | `thread_id` | Switch thread |
-| `select_frame` | `index` | Switch frame |
+| Command            | Key Args                                         | Description              |
+| ------------------ | ------------------------------------------------ | ------------------------ |
+| `set_breakpoints`  | `breakpoints: [{file, line, condition?}]`        | Replace all breakpoints  |
+| `list_breakpoints` |                                                  | List current breakpoints |
+| `continue`         | `thread_id?`                                     | Resume halted thread     |
+| `step_over`        | `thread_id?`                                     | Step to next line        |
+| `step_into`        | `thread_id?`                                     | Step into function       |
+| `step_out`         | `thread_id?`                                     | Step out of function     |
+| `get_stack`        | `thread_id?`                                     | Get call stack           |
+| `get_variables`    | `thread_id?, frame_index?, scope?, object_path?` | Get variables            |
+| `evaluate`         | `expression, thread_id?, frame_index?`           | Evaluate expression      |
+| `list_threads`     |                                                  | List threads             |
+| `select_thread`    | `thread_id`                                      | Switch thread            |
+| `select_frame`     | `index`                                          | Switch frame             |
 
 ## DAP Mode (IDE Integration)
 
@@ -128,20 +130,6 @@ b2c debug
 ```
 
 This starts a DAP debug adapter over stdio, used by IDE launch configurations.
-
-## Server Affinity (Hitting Breakpoints)
-
-A breakpoint only fires when the triggering code runs on the **same application server** the debugger is attached to. Some **Production Instance Group (PIG)** environments run **multiple application servers** behind a load balancer, so a request that should hit your breakpoint may land on a different app server and the breakpoint never fires.
-
-> **Sandboxes (ODS) are single-app-server and are not affected.** This only matters on certain multi-app-server PIG environments. If breakpoints are not hitting on a sandbox, the cause is something else (wrong path mapping, code version, or the code simply not running).
-
-To pin a triggering request to the correct app server, send it with the debugger's session cookie (`dwsid`):
-
-- **MCP:** `debug_start_session` and `debug_list_sessions` return a `session_cookie` (`{name, value}`). Send the request that triggers your code (storefront page load, SCAPI/OCAPI call) with `Cookie: dwsid=<value>`.
-- **Any trigger:** whatever issues the request — a browser, `curl`, an integration test — must carry the same `dwsid` value.
-- **Headless requests (hooks, custom APIs, server-to-server SCAPI/OCAPI):** instead of a cookie, pass the value as the `sfdc_dwsid` request header (`sfdc_dwsid: <value>`).
-
-If the cookie or header cannot be set on the triggering request, retry until the load balancer routes to the attached app server.
 
 ## Related Skills
 

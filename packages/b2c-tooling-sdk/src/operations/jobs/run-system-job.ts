@@ -173,7 +173,6 @@ async function runScapiSystemJob(
 }
 
 async function startScapiJob(client: ReturnType<typeof createScapiJobsClient>, tenantId: string, spec: SystemJobSpec) {
-  getLogger().debug({jobId: spec.jobId}, `Executing ${spec.jobId} job via SCAPI`);
   return scapiExecuteJob(client, spec.jobId, {parameters: spec.parameters, tenantId});
 }
 
@@ -183,8 +182,6 @@ async function finishScapiJob(
   spec: SystemJobSpec,
   started: Awaited<ReturnType<typeof scapiExecuteJob>>,
 ): Promise<JobExecution> {
-  getLogger().debug({jobId: spec.jobId, executionId: started.id}, `${spec.jobId} job started: ${started.id}`);
-
   if (spec.wait === false) {
     return mapCanonicalToOcapiExecution(started);
   }
@@ -213,9 +210,6 @@ async function finishScapiJob(
  * retry with the parameters body on `UnknownPropertyException`, then wait.
  */
 async function runOcapiSystemJob(instance: B2CInstance, spec: SystemJobSpec): Promise<JobExecution> {
-  const logger = getLogger();
-  logger.debug({jobId: spec.jobId}, `Executing ${spec.jobId} job via OCAPI`);
-
   let execution: JobExecution;
 
   const {data, error} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
@@ -228,8 +222,6 @@ async function runOcapiSystemJob(instance: B2CInstance, spec: SystemJobSpec): Pr
     (error.fault.arguments as Record<string, unknown>)?.document === 'job_execution_request'
   ) {
     // Retry with parameters format (internal/support users)
-    logger.warn('Retrying with parameters format for internal users');
-
     const {data: retryData, error: retryError} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
       params: {path: {job_id: spec.jobId}},
       body: {parameters: spec.parameters} as unknown as string,
@@ -249,8 +241,6 @@ async function runOcapiSystemJob(instance: B2CInstance, spec: SystemJobSpec): Pr
   } else {
     execution = data;
   }
-
-  logger.debug({jobId: spec.jobId, executionId: execution.id}, `${spec.jobId} job started: ${execution.id}`);
 
   if (spec.wait === false) {
     return execution;

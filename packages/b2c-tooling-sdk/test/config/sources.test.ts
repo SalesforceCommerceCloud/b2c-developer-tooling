@@ -103,12 +103,135 @@ describe('config/sources', () => {
       expect(config.tenantId).to.equal('abcd_prd');
     });
 
+    it('loads import-set directory exclusions from dw.json', async () => {
+      const dwJsonPath = path.join(tempDir, 'dw.json');
+      fs.writeFileSync(
+        dwJsonPath,
+        JSON.stringify({
+          hostname: 'test.demandware.net',
+          'import-set-exclude': ['fixtures', 'test/integration'],
+        }),
+      );
+
+      const resolver = new ConfigResolver();
+      const {config} = await resolver.resolve();
+
+      expect(config.importSetExclude).to.deep.equal(['fixtures', 'test/integration']);
+    });
+
     it('returns undefined when dw.json does not exist', async () => {
       const resolver = new ConfigResolver();
       const {config} = await resolver.resolve();
 
       // Should not have hostname from dw.json
       expect(config.hostname).to.be.undefined;
+    });
+
+    it('uses the global default config when the project has no dw.json', async () => {
+      const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+      const projectDirectory = path.join(tempDir, 'project');
+      fs.mkdirSync(projectDirectory);
+      fs.writeFileSync(defaultConfigPath, JSON.stringify({hostname: 'global-default.demandware.net'}));
+
+      const resolver = new ConfigResolver();
+      const {config, sources} = await resolver.resolve({}, {projectDirectory, defaultConfigPath});
+
+      expect(config.hostname).to.equal('global-default.demandware.net');
+      expect(sources.find((source) => source.name === 'DwJsonSource')?.scope).to.equal('global');
+    });
+
+    it('prefers the project dw.json over the global default config', async () => {
+      const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+      const projectDirectory = path.join(tempDir, 'project');
+      fs.mkdirSync(projectDirectory);
+      fs.writeFileSync(defaultConfigPath, JSON.stringify({hostname: 'global-default.demandware.net'}));
+      fs.writeFileSync(path.join(projectDirectory, 'dw.json'), JSON.stringify({hostname: 'project.demandware.net'}));
+
+      const resolver = new ConfigResolver();
+      const {config, sources} = await resolver.resolve({}, {projectDirectory, defaultConfigPath});
+
+      expect(config.hostname).to.equal('project.demandware.net');
+      expect(sources.find((source) => source.name === 'DwJsonSource')?.scope).to.be.undefined;
+    });
+
+    it('prefers an explicit config path over project and global defaults', async () => {
+      const explicitConfigPath = path.join(tempDir, 'explicit.dw.json');
+      const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+      const projectDirectory = path.join(tempDir, 'project');
+      fs.mkdirSync(projectDirectory);
+      fs.writeFileSync(explicitConfigPath, JSON.stringify({hostname: 'explicit.demandware.net'}));
+      fs.writeFileSync(defaultConfigPath, JSON.stringify({hostname: 'global-default.demandware.net'}));
+      fs.writeFileSync(path.join(projectDirectory, 'dw.json'), JSON.stringify({hostname: 'project.demandware.net'}));
+
+      const resolver = new ConfigResolver();
+      const {config} = await resolver.resolve(
+        {},
+        {projectDirectory, configPath: explicitConfigPath, defaultConfigPath},
+      );
+
+      expect(config.hostname).to.equal('explicit.demandware.net');
+    });
+
+    it('prefers the explicit file default over an active global instance', async () => {
+      const explicitConfigPath = path.join(tempDir, 'explicit.dw.json');
+      const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+      fs.writeFileSync(explicitConfigPath, JSON.stringify({hostname: 'explicit.demandware.net'}));
+      fs.writeFileSync(
+        defaultConfigPath,
+        JSON.stringify({configs: [{name: 'global', hostname: 'global.demandware.net', active: true}]}),
+      );
+
+      const resolver = new ConfigResolver();
+      const {config} = await resolver.resolve({}, {configPath: explicitConfigPath, defaultConfigPath});
+
+      expect(config.hostname).to.equal('explicit.demandware.net');
+    });
+
+    it('lets an active global instance win when the primary root is explicitly inactive', async () => {
+      const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+      fs.writeFileSync(
+        path.join(tempDir, 'dw.json'),
+        JSON.stringify({hostname: 'local.demandware.net', active: false}),
+      );
+      fs.writeFileSync(
+        defaultConfigPath,
+        JSON.stringify({configs: [{name: 'global', hostname: 'global.demandware.net', active: true}]}),
+      );
+
+      const resolver = new ConfigResolver();
+      const {config, sources} = await resolver.resolve({}, {defaultConfigPath});
+
+      expect(config.hostname).to.equal('global.demandware.net');
+      const dwJsonSource = sources.find((source) => source.name === 'DwJsonSource');
+      expect(dwJsonSource?.scope).to.equal('global');
+      expect(
+        dwJsonSource?.instanceCatalog?.map((file) => ({...file, location: fs.realpathSync(file.location)})),
+      ).to.deep.equal([
+        {location: fs.realpathSync(path.join(tempDir, 'dw.json')), scope: 'primary', selected: false},
+        {location: fs.realpathSync(defaultConfigPath), scope: 'global', selected: true},
+      ]);
+    });
+
+    it('prefers an active primary child over an active global instance', async () => {
+      const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+      fs.writeFileSync(
+        path.join(tempDir, 'dw.json'),
+        JSON.stringify({
+          hostname: 'inactive-root.demandware.net',
+          active: false,
+          configs: [{name: 'local', hostname: 'local.demandware.net', active: true}],
+        }),
+      );
+      fs.writeFileSync(
+        defaultConfigPath,
+        JSON.stringify({configs: [{name: 'global', hostname: 'global.demandware.net', active: true}]}),
+      );
+
+      const resolver = new ConfigResolver();
+      const {config} = await resolver.resolve({}, {defaultConfigPath});
+
+      expect(config.hostname).to.equal('local.demandware.net');
+      expect(config.instanceName).to.equal('local');
     });
 
     it('handles named instance from multi-config', async () => {
@@ -128,6 +251,41 @@ describe('config/sources', () => {
       const {config} = await resolver.resolve({}, {instance: 'staging'});
 
       expect(config.hostname).to.equal('staging.demandware.net');
+    });
+
+    it('selects a named instance from the global catalog when it is absent locally', async () => {
+      const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+      fs.writeFileSync(
+        path.join(tempDir, 'dw.json'),
+        JSON.stringify({configs: [{name: 'local', hostname: 'local.demandware.net'}]}),
+      );
+      fs.writeFileSync(
+        defaultConfigPath,
+        JSON.stringify({configs: [{name: 'global', hostname: 'global.demandware.net'}]}),
+      );
+
+      const resolver = new ConfigResolver();
+      const {config} = await resolver.resolve({}, {instance: 'global', defaultConfigPath});
+
+      expect(config.hostname).to.equal('global.demandware.net');
+    });
+
+    it('shadows a same-name global instance with the complete local instance', async () => {
+      const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+      fs.writeFileSync(
+        path.join(tempDir, 'dw.json'),
+        JSON.stringify({configs: [{name: 'shared', hostname: 'local.demandware.net'}]}),
+      );
+      fs.writeFileSync(
+        defaultConfigPath,
+        JSON.stringify({configs: [{name: 'shared', hostname: 'global.demandware.net', username: 'global-user'}]}),
+      );
+
+      const resolver = new ConfigResolver();
+      const {config} = await resolver.resolve({}, {instance: 'shared', defaultConfigPath});
+
+      expect(config.hostname).to.equal('local.demandware.net');
+      expect(config.username).to.be.undefined;
     });
 
     it('provides location from load result', async () => {
@@ -211,6 +369,37 @@ describe('config/sources', () => {
 
         expect(instances).to.deep.equal([]);
       });
+
+      it('returns the union of local and global instances with local names taking precedence', async () => {
+        const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+        const localConfigPath = path.join(tempDir, 'dw.json');
+        fs.writeFileSync(
+          localConfigPath,
+          JSON.stringify({
+            configs: [
+              {name: 'local', hostname: 'local.demandware.net'},
+              {name: 'shared', hostname: 'local-shared.demandware.net'},
+            ],
+          }),
+        );
+        fs.writeFileSync(
+          defaultConfigPath,
+          JSON.stringify({
+            configs: [
+              {name: 'global', hostname: 'global.demandware.net'},
+              {name: 'shared', hostname: 'global-shared.demandware.net'},
+            ],
+          }),
+        );
+
+        const source = new DwJsonSource();
+        const instances = await source.listInstances({defaultConfigPath});
+
+        expect(instances.map((instance) => instance.name)).to.deep.equal(['local', 'shared', 'global']);
+        const shared = instances.find((instance) => instance.name === 'shared');
+        expect(shared?.hostname).to.equal('local-shared.demandware.net');
+        expect(shared?.location && fs.realpathSync(shared.location)).to.equal(fs.realpathSync(localConfigPath));
+      });
     });
 
     describe('createInstance', () => {
@@ -238,6 +427,50 @@ describe('config/sources', () => {
         const instances = await source.listInstances();
         expect(instances[0].active).to.be.true;
       });
+
+      it('creates in the primary file when present and otherwise in the global fallback', async () => {
+        const projectDirectory = path.join(tempDir, 'project');
+        const localConfigPath = path.join(projectDirectory, 'dw.json');
+        const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+        fs.mkdirSync(projectDirectory);
+        fs.writeFileSync(localConfigPath, JSON.stringify({configs: []}));
+        fs.writeFileSync(defaultConfigPath, JSON.stringify({configs: []}));
+        const source = new DwJsonSource();
+
+        await source.createInstance({
+          name: 'local',
+          config: {hostname: 'local.demandware.net'},
+          projectDirectory,
+          defaultConfigPath,
+        });
+        fs.rmSync(localConfigPath);
+        await source.createInstance({
+          name: 'global',
+          config: {hostname: 'global.demandware.net'},
+          projectDirectory,
+          defaultConfigPath,
+        });
+
+        expect(JSON.parse(fs.readFileSync(defaultConfigPath, 'utf8')).configs).to.deep.equal([
+          {name: 'global', hostname: 'global.demandware.net'},
+        ]);
+      });
+
+      it('clears the fallback active instance when creating an active primary instance', async () => {
+        const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+        fs.writeFileSync(path.join(tempDir, 'dw.json'), JSON.stringify({configs: []}));
+        fs.writeFileSync(defaultConfigPath, JSON.stringify({configs: [{name: 'global', active: true}]}));
+        const source = new DwJsonSource();
+
+        await source.createInstance({
+          name: 'local',
+          config: {hostname: 'local.demandware.net'},
+          setActive: true,
+          defaultConfigPath,
+        });
+
+        expect(JSON.parse(fs.readFileSync(defaultConfigPath, 'utf8')).configs[0].active).to.equal(false);
+      });
     });
 
     describe('removeInstance', () => {
@@ -260,6 +493,17 @@ describe('config/sources', () => {
         expect(instances).to.have.length(1);
         expect(instances[0].name).to.equal('production');
       });
+
+      it('removes from the fallback when the instance is not in the primary file', async () => {
+        const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+        fs.writeFileSync(path.join(tempDir, 'dw.json'), JSON.stringify({configs: [{name: 'local'}]}));
+        fs.writeFileSync(defaultConfigPath, JSON.stringify({configs: [{name: 'global'}]}));
+        const source = new DwJsonSource();
+
+        await source.removeInstance('global', {defaultConfigPath});
+
+        expect(JSON.parse(fs.readFileSync(defaultConfigPath, 'utf8')).configs).to.deep.equal([]);
+      });
     });
 
     describe('setActiveInstance', () => {
@@ -281,6 +525,26 @@ describe('config/sources', () => {
         const instances = await source.listInstances();
         const staging = instances.find((i) => i.name === 'staging');
         expect(staging?.active).to.be.true;
+      });
+
+      it('sets a fallback instance active and clears active markers in the primary file', async () => {
+        const defaultConfigPath = path.join(tempDir, 'shared.dw.json');
+        fs.writeFileSync(
+          path.join(tempDir, 'dw.json'),
+          JSON.stringify({configs: [{name: 'local', hostname: 'local.demandware.net', active: true}]}),
+        );
+        fs.writeFileSync(
+          defaultConfigPath,
+          JSON.stringify({configs: [{name: 'global', hostname: 'global.demandware.net'}]}),
+        );
+        const source = new DwJsonSource();
+
+        await source.setActiveInstance('global', {defaultConfigPath});
+        const resolver = new ConfigResolver();
+        const {config} = await resolver.resolve({}, {defaultConfigPath});
+
+        expect(JSON.parse(fs.readFileSync(path.join(tempDir, 'dw.json'), 'utf8')).configs[0].active).to.equal(false);
+        expect(config.hostname).to.equal('global.demandware.net');
       });
     });
   });
@@ -384,9 +648,11 @@ describe('config/sources', () => {
           b2c: {
             shortCode: 'abc123',
             clientId: 'test-client-id',
+            siteId: 'RefArch',
             mrtProject: 'my-project',
             mrtOrigin: 'https://custom.cloud.com',
             accountManagerHost: 'account.demandware.com',
+            importSetExclude: ['fixtures', 'test/integration'],
           },
         }),
       );
@@ -396,9 +662,11 @@ describe('config/sources', () => {
 
       expect(config.shortCode).to.equal('abc123');
       expect(config.clientId).to.equal('test-client-id');
+      expect(config.siteId).to.equal('RefArch');
       expect(config.mrtProject).to.equal('my-project');
       expect(config.mrtOrigin).to.equal('https://custom.cloud.com');
       expect(config.accountManagerHost).to.equal('account.demandware.com');
+      expect(config.importSetExclude).to.deep.equal(['fixtures', 'test/integration']);
     });
 
     it('loads libraries as a string array', async () => {
@@ -576,6 +844,7 @@ describe('config/sources', () => {
           b2c: {
             'short-code': 'abc123',
             'client-id': 'test-client-id',
+            'site-id': 'RefArch',
             'mrt-project': 'my-project',
             'account-manager-host': 'account.demandware.com',
             'sandbox-api-host': 'admin.dx.commercecloud.salesforce.com',
@@ -589,6 +858,7 @@ describe('config/sources', () => {
       expect(result).to.not.be.undefined;
       expect(result!.config.shortCode).to.equal('abc123');
       expect(result!.config.clientId).to.equal('test-client-id');
+      expect(result!.config.siteId).to.equal('RefArch');
       expect(result!.config.mrtProject).to.equal('my-project');
       expect(result!.config.accountManagerHost).to.equal('account.demandware.com');
       expect(result!.config.sandboxApiHost).to.equal('admin.dx.commercecloud.salesforce.com');

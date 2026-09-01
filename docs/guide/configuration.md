@@ -1,10 +1,10 @@
 ---
-description: Configure the B2C CLI with environment variables, dw.json files, and multi-instance setups for different environments.
+description: Configure the B2C developer tooling with environment variables, dw.json files, and multi-instance setups.
 ---
 
 # Configuration
 
-The B2C CLI automatically detects and uses available credentials. You can provide credentials via CLI flags, environment variables, or configuration files.
+The B2C CLI, B2C DX MCP server, and Salesforce B2C Commerce VS Code extension share the same configuration model. In this guide, **the tooling** refers to these surfaces collectively. The tooling automatically discovers available credentials and project settings from environment variables and configuration files, while each surface also supports its own explicit overrides.
 
 ::: tip
 For detailed setup instructions including Account Manager API client creation, role configuration, and OCAPI setup, see the [Authentication Setup](./authentication) guide.
@@ -69,7 +69,7 @@ See [Configure WebDAV File Access](https://help.salesforce.com/s/articleView?id=
 
 ## Environment Variables
 
-You can configure the CLI using environment variables:
+You can configure the tooling using environment variables:
 
 | Variable                      | Description                                                                                             |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -88,6 +88,10 @@ You can configure the CLI using environment variables:
 | `SFCC_AUTH_METHODS`           | Comma-separated list of allowed auth methods                                                            |
 | `SFCC_SHORTCODE`              | SCAPI short code                                                                                        |
 | `SFCC_TENANT_ID`              | Organization/tenant ID for SCAPI                                                                        |
+| `SFCC_API_BACKEND`            | API backend for migrated commands: `auto` (default), `scapi`, or `ocapi`                                |
+| `SFCC_SLAS_CLIENT_ID`         | SLAS shopper client ID                                                                                  |
+| `SFCC_SLAS_CLIENT_SECRET`     | SLAS private shopper client secret                                                                      |
+| `SFCC_SITE_ID`                | Site/channel ID                                                                                         |
 | `SFCC_ACCOUNT_MANAGER_HOST`   | Account Manager hostname for OAuth                                                                      |
 | `SFCC_REDIRECT_URI`           | Override redirect URI for browser-based OAuth flows (e.g., when behind a proxy)                         |
 | `SFCC_OAUTH_LOCAL_PORT`       | Local port for the browser-based OAuth redirect server (default: `8080`)                                |
@@ -100,6 +104,7 @@ You can configure the CLI using environment variables:
 | `SFCC_SANDBOX_API_HOST`       | ODS (sandbox) API hostname                                                                              |
 | `SFCC_CIP_HOST`               | CIP analytics host override                                                                             |
 | `SFCC_CIP_STAGING`            | Use staging CIP analytics host (`true`/`false`)                                                         |
+| `SFCC_IMPORT_SET_EXCLUDE`     | Comma-separated project directories excluded from import sets                                           |
 | `MRT_API_KEY`                 | MRT API key (`SFCC_MRT_API_KEY` also supported)                                                         |
 | `MRT_PROJECT`                 | MRT project slug (`SFCC_MRT_PROJECT` also supported)                                                    |
 | `MRT_ENVIRONMENT`             | MRT environment name (`SFCC_MRT_ENVIRONMENT`, `MRT_TARGET` also supported)                              |
@@ -110,7 +115,7 @@ You can configure the CLI using environment variables:
 
 ## .env File
 
-The CLI automatically loads a `.env` file from the current project directory if present. Use the same `SFCC_*` variable names as environment variables.
+The tooling automatically loads a `.env` file from the selected project directory if present. Use the same `SFCC_*` variable names as environment variables.
 
 ```bash
 # .env
@@ -125,11 +130,50 @@ Add `.env` to your `.gitignore` to avoid committing credentials.
 
 ## Configuration File
 
-You can create a `dw.json` file to store instance settings. The CLI searches for this file starting from the current directory and walking up the directory tree.
+You can create a `dw.json` file to store instance settings. By default, the tooling uses `dw.json` in the selected project directory.
 
 ::: tip Flexible Field Names
 Both camelCase and kebab-case are accepted for all field names in `dw.json`. For example, `client-id` and `clientId` are equivalent, as are `code-version` and `codeVersion`. Legacy aliases like `server` (for `hostname`) and `passphrase` (for `certificatePassphrase`) are also still supported.
 :::
+
+### Configuration File Selection
+
+The tooling selects a primary configuration path in this order, then adds the global `dw.json` to the available instances:
+
+1. `--config` (or an MCP tool's `configPath`)
+2. `SFCC_CONFIG` from the process environment
+3. `SFCC_CONFIG` from the selected project's `.env`
+4. `dw.json` in the selected project directory
+5. The [global default configuration](#global-default-configuration)
+
+A relative `SFCC_CONFIG` in a project `.env` is resolved from that project directory.
+
+### Global Default Configuration
+
+If you use one `dw.json` across projects, set it once as the global `dw.json`:
+
+```bash
+b2c setup default-config set /Users/you/code/dw.json
+b2c setup default-config get
+```
+
+The tooling adds its instances after those from the primary file. A project's own `dw.json` therefore continues to take priority when both files contain the same instance name.
+
+The primary and global `dw.json` files form one instance catalog. `--instance` / `-i` looks in the primary file first and then the global file; a same-name primary instance shadows the global one. Each instance remains a complete configuration entry—fields are never merged between files.
+
+Without `-i`, the primary file's active instance or default entry wins. The global file's active instance or default entry is used only when the primary file does not provide one. Instance-management commands use the same catalog: list shows both files, create writes to the primary file when present (otherwise the global `dw.json`), and remove or set-active finds the primary instance before the global one.
+
+For a root-level configuration, omitting `active` makes it the file's implicit default. Setting the root to `"active": false` explicitly opts it out of default selection; if no child instance in that file is active, selection continues to the global `dw.json`. Run `b2c setup inspect` to see both catalog files and which one supplied the selected instance.
+
+To remove the global `dw.json` setting:
+
+```bash
+b2c setup default-config unset
+```
+
+The setting is shared in the B2C user configuration directory (`~/.config/b2c/settings.json` on macOS and Linux; the platform configuration directory on Windows). Use the commands above instead of editing that file directly.
+
+If the configuration file is stored beside `settings.json`, the setting can use a relative path such as `"./dw.json"`; relative paths are resolved from the settings directory. The `set` command writes this relative form automatically for files kept there.
 
 ### Single Instance
 
@@ -212,7 +256,7 @@ b2c setup instance create staging \
   --force
 ```
 
-The interactive mode auto-detects the active code version when OAuth credentials are provided, and the first instance you create is automatically set as active.
+The interactive mode auto-detects the active code version via OCAPI when OAuth credentials are provided, and the first instance you create is automatically set as active.
 
 #### Switching Instances
 
@@ -264,6 +308,7 @@ For the full command reference with all flags, see [Setup Commands](/cli/setup).
 | `content-library`        | Default content library ID for `content export` and `content list` commands                                                                                                                                                                                                                                                                                                                                                            |
 | `libraries`              | Library IDs for the WebDAV browser and Content Libraries tree. Accepts `string[]` or `[{id, siteLibrary?}]`; elements may be mixed                                                                                                                                                                                                                                                                                                     |
 | `asset-query`            | JSON dot-paths used to extract static asset URLs during content library parsing (default `["image.path"]`). Also accepts `assetQuery`                                                                                                                                                                                                                                                                                                  |
+| `import-set-exclude`     | Project-relative directories excluded recursively from import-set source discovery. Also accepts `importSetExclude`                                                                                                                                                                                                                                                                                                                    |
 | `tenant-id`              | Organization/tenant ID for SCAPI                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `sandbox-api-host`       | ODS (sandbox) API hostname                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `realm`                  | Default ODS realm for sandbox operations                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -323,6 +368,10 @@ You can store project-level defaults in your `package.json` file under the `b2c`
   "b2c": {
     "shortCode": "abc123",
     "clientId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "siteId": "RefArch",
+    "contentLibrary": "RefArch",
+    "libraries": [{"id": "RefArch", "siteLibrary": true}],
+    "importSetExclude": ["fixtures", "test/integration"],
     "mrtProject": "my-project",
     "accountManagerHost": "account.demandware.com"
   }
@@ -337,9 +386,11 @@ Only non-sensitive, project-level fields can be configured in `package.json`. Bo
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `shortCode`          | SCAPI short code                                                                                                                   |
 | `clientId`           | OAuth client ID (for browser login discovery)                                                                                      |
+| `siteId`             | Default site/channel ID for commands that operate on one site                                                                      |
 | `contentLibrary`     | Default content library ID for `content export` and `content list` commands                                                        |
 | `libraries`          | Library IDs for the WebDAV browser and Content Libraries tree. Accepts `string[]` or `[{id, siteLibrary?}]`; elements may be mixed |
 | `assetQuery`         | JSON dot-paths used to extract static asset URLs during content library parsing (default `["image.path"]`)                         |
+| `importSetExclude`   | Project-relative directories excluded recursively from import-set source discovery                                                 |
 | `mrtProject`         | MRT project slug                                                                                                                   |
 | `mrtOrigin`          | MRT API origin URL override                                                                                                        |
 | `accountManagerHost` | Account Manager hostname for OAuth                                                                                                 |
@@ -351,7 +402,7 @@ Sensitive fields like `hostname`, `password`, `clientSecret`, `username`, and `m
 :::
 
 ::: tip Lowest Priority
-`package.json` has the lowest priority of all configuration sources. Values from `dw.json`, environment variables, or CLI flags will always override `package.json` settings. This makes it ideal for project defaults that can be overridden per-environment.
+`package.json` has the lowest priority of all configuration sources. Values from `dw.json`, environment variables, or explicit surface overrides such as CLI flags will always override `package.json` settings. This makes it ideal for project defaults that can be overridden per-environment.
 :::
 
 ### Content Libraries Example
@@ -379,7 +430,7 @@ With this config:
 
 Configuration is resolved with the following precedence (highest to lowest):
 
-1. **CLI flags and environment variables** - Explicit values always take priority (includes `.env` file)
+1. **Explicit overrides and environment variables** - Explicit values always take priority (includes CLI flags and the `.env` file)
 2. **Plugin sources (high priority)** - Custom sources with `priority: 'before'` (or priority < 0)
 3. **dw.json** - Project configuration file (priority 0)
 4. **~/.mobify** - Home directory file for MRT API key (priority 0)
@@ -407,7 +458,7 @@ If any field in a group is set by a higher-priority source, all fields in that g
 - Result: Only `clientId` is used; the plugin's `clientSecret` is ignored to prevent mismatched credentials
 
 ::: warning Hostname Mismatch Protection
-When you explicitly specify a hostname that differs from the `dw.json` hostname, the CLI ignores all other values from `dw.json` and only uses your explicit overrides. This prevents accidentally using credentials from one instance with a different server.
+When you explicitly specify a hostname that differs from the `dw.json` hostname, the tooling ignores all other values from `dw.json` and only uses your explicit overrides. This prevents accidentally using credentials from one instance with a different server.
 :::
 
 ## MRT API Key
@@ -430,7 +481,7 @@ When using the `--cloud-origin` flag to specify a different MRT endpoint, the CL
 
 ## Overriding Authentication Behavior
 
-By default, the CLI automatically detects available credentials and tries authentication methods in this order: `client-credentials`, `jwt`, then `user` (Authorization Code + PKCE). You can override this behavior to control which methods are used.
+By default, the tooling automatically detects available credentials and tries authentication methods in this order: `client-credentials`, `jwt`, then `user` (Authorization Code + PKCE). You can override this behavior to control which methods are used.
 
 ::: tip Default Public Client
 For platform-level commands (Sandbox, SLAS, and Account Manager), the CLI includes a built-in public client ID. If no `--client-id` is configured, these commands automatically use the built-in client with Authorization Code + PKCE, opening a browser for authentication. This means you can use these commands with zero configuration.
@@ -460,7 +511,7 @@ b2c code deploy --auth-methods client-credentials --auth-methods user
 SFCC_AUTH_METHODS=client-credentials,user b2c code deploy
 ```
 
-The CLI will try each method in order until one succeeds.
+The tooling tries each method in order until one succeeds.
 
 ## Debugging Configuration
 

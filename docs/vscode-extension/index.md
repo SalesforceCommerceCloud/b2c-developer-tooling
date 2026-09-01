@@ -20,21 +20,21 @@ Step through anything that runs server-side: cartridge controllers, jobs, custom
 
 [![B2C Script Debugger](./images/script-debugger.png)](./images/script-debugger.png)
 
-On multi-app-server environments, a breakpoint only fires when the triggering request reaches the app server the debugger is attached to. While a debug session is active, run **Copy Debugger Session ID (dwsid)** from the Command Palette to copy the session cookie, then send your triggering request (e.g. in the browser) with `Cookie: dwsid=<value>`. See the [Script Debugger guide](../guide/script-debugger#server-affinity-hitting-breakpoints) for details.
-
 ### Scaffolding
 
 Generate new cartridges, controllers, hooks, jobs, and other boilerplate from a curated set of templates. Available from **File → New File...** or by right-clicking a folder in the Explorer.
 
 ### Sandbox Realm Explorer
 
-Spin up, start, stop, clone, and clean up your on-demand sandboxes from a tree view. Cloned sandboxes are clearly marked, and the right-click menu only shows actions that make sense for the sandbox's current state.
+Spin up, start, stop, clone, and clean up your on-demand sandboxes from a tree view. Cloned sandboxes are clearly marked, and the right-click menu only shows actions that make sense for the sandbox's current state. From the Command Palette, **Start/Stop/Restart Sandbox** targets the active status-bar instance (OAuth + ODS sandbox hostname required).
 
 [![Sandbox Realm Explorer](./images/sandbox-explorer.png)](./images/sandbox-explorer.png)
 
 ### Library Explorer
 
 Find Page Designer pages and components fast, with one-click export (with assets, without assets, or assets only), live editing of component XML, and round-trip imports of site archives. The library tree is filterable when you have hundreds of pages.
+
+**Content blocks** (reusable, shared `fragment.*` content) get a dedicated **Content Blocks** group under each library — the single source of truth where a block and its full child tree live. Wherever a page or component links a block, it appears as a reference (↗) that reveals the canonical block in the group when clicked, so a shared block is only ever edited in one place. (Converting a component into a content block is done in Business Manager / Page Designer.)
 
 [![Library Explorer](./images/library-explorer.png)](./images/library-explorer.png)
 
@@ -58,7 +58,7 @@ Stream live `error-*.log`, `warn-*.log`, and `info-*.log` files from your sandbo
 
 ### Active Instance Status Bar
 
-The bottom-left of the window shows your active instance — the name, the hostname, and a pin icon if you've locked a particular folder as the project root. Click it to switch instances; every view updates instantly.
+The bottom-left of the window shows your active instance — the name, the hostname, and a pin icon if you've locked a particular folder as the project root. Click it to switch instances; every view updates instantly. Palette **Start/Stop/Restart Sandbox** commands use this active instance.
 
 ### B2C CLI Plugin Support
 

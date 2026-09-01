@@ -49,6 +49,7 @@ import os from 'node:os';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
+import type {ConfigurationResolutionSource, ProjectDirectoryInfo, ToolResolution} from './tools/project-context.js';
 import {
   createCustomApisClient,
   createMetricsClient,
@@ -85,6 +86,46 @@ export interface ServicesOptions {
   mrtConfig?: MrtConfig;
   /** Resolved configuration for access to SCAPI settings */
   resolvedConfig: ResolvedB2CConfig;
+  /** Project-scoped environment parsed from the effective project's .env file. */
+  projectEnvironment?: Readonly<Record<string, string | undefined>>;
+  /** Inputs needed to attribute project and primary-configuration selection. */
+  resolution?: ServicesResolutionInputs;
+}
+
+/** Resolution inputs captured centrally by the MCP command for one tool call. */
+export interface ServicesResolutionInputs {
+  /** Effective project directory and its selection source. */
+  projectDirectory: ProjectDirectoryInfo;
+  /** Primary configuration candidate selected before the SDK resolver runs. */
+  primaryConfiguration?: {
+    path: string;
+    source: Exclude<ConfigurationResolutionSource, 'globalDefault' | 'none'>;
+  };
+}
+
+function createToolResolution(config: ResolvedB2CConfig, inputs?: ServicesResolutionInputs): ToolResolution {
+  const configuredProjectDirectory = config.values.projectDirectory;
+  const projectDirectory =
+    inputs?.projectDirectory ??
+    (configuredProjectDirectory
+      ? {path: configuredProjectDirectory, source: 'config' as const}
+      : {path: process.cwd(), source: 'cwd' as const});
+  const dwJsonSource = config.sources.find((source) => source.name === 'DwJsonSource' && source.location);
+  const configurationSource: ConfigurationResolutionSource = dwJsonSource
+    ? dwJsonSource.scope === 'global'
+      ? 'globalDefault'
+      : (inputs?.primaryConfiguration?.source ?? 'projectDirectory')
+    : 'none';
+
+  return {
+    projectDirectory,
+    configuration: {
+      ...(dwJsonSource?.location ? {path: dwJsonSource.location} : {}),
+      source: configurationSource,
+      ...(config.values.instanceName ? {instanceName: config.values.instanceName} : {}),
+      ...(config.values.hostname ? {hostname: config.values.hostname} : {}),
+    },
+  };
 }
 
 /**
@@ -123,12 +164,16 @@ export class Services {
    * Provides access to shortCode, tenantId, and OAuth credentials.
    * @private
    */
+  private readonly projectEnvironment: Readonly<Record<string, string | undefined>>;
+  private readonly resolution: ToolResolution;
   private readonly resolvedConfig: ResolvedB2CConfig;
 
   public constructor(opts: ServicesOptions) {
     this.b2cInstance = opts.b2cInstance;
     this.mrtConfig = opts.mrtConfig ?? {};
     this.resolvedConfig = opts.resolvedConfig;
+    this.projectEnvironment = opts.projectEnvironment ?? {};
+    this.resolution = createToolResolution(opts.resolvedConfig, opts.resolution);
   }
 
   /**
@@ -143,7 +188,11 @@ export class Services {
    * const services = Services.fromResolvedConfig(this.resolvedConfig);
    * ```
    */
-  public static fromResolvedConfig(config: ResolvedB2CConfig): Services {
+  public static fromResolvedConfig(
+    config: ResolvedB2CConfig,
+    projectEnvironment?: Readonly<Record<string, string | undefined>>,
+    resolution?: ServicesResolutionInputs,
+  ): Services {
     // Build MRT config using factory methods
     const mrtConfig: MrtConfig = {
       auth: config.hasMrtConfig() ? config.createMrtAuth() : undefined,
@@ -159,6 +208,8 @@ export class Services {
       b2cInstance,
       mrtConfig,
       resolvedConfig: config,
+      projectEnvironment,
+      resolution,
     });
   }
 
@@ -223,6 +274,14 @@ export class Services {
   }
 
   /**
+   * Read an environment variable with the ambient process environment taking
+   * precedence over the project-scoped .env value.
+   */
+  public getEnvironmentVariable(name: string): string | undefined {
+    return process.env[name] ?? this.projectEnvironment[name];
+  }
+
+  /**
    * Get the user's home directory.
    */
   public getHomeDir(): string {
@@ -281,6 +340,32 @@ export class Services {
    */
   public getPlatform(): NodeJS.Platform {
     return os.platform();
+  }
+
+  /**
+   * Get compact project and selected-configuration provenance for MCP results.
+   * Detailed source graphs remain available through {@link getResolvedConfig}
+   * for the config_inspect tool.
+   */
+  public getResolution(): ToolResolution {
+    return {
+      projectDirectory: {...this.resolution.projectDirectory},
+      ...(this.resolution.configuration ? {configuration: {...this.resolution.configuration}} : {}),
+      ...(this.resolution.directories ? {directories: {...this.resolution.directories}} : {}),
+    };
+  }
+
+  /**
+   * Get the resolved configuration (values, sources, warnings).
+   *
+   * Exposed for the `config_inspect` tool so agents can see the effective,
+   * source-attributed configuration the server resolved. Callers displaying
+   * these values must redact secrets (see `redactConfigValues`).
+   *
+   * @returns The resolved B2C configuration
+   */
+  public getResolvedConfig(): ResolvedB2CConfig {
+    return this.resolvedConfig;
   }
 
   /**
@@ -399,16 +484,51 @@ export class Services {
   }
 
   /**
+   * Resolve the effective project directory for a tool call, reporting which
+   * source it came from.
+   *
+   * MCP clients disagree on the working directory a stdio server is spawned
+   * with (Claude Code / Cursor often use the user's home directory rather than
+   * the open project — see https://agent-plugins.org/plugin-authors/mcp-servers),
+   * so the resolved value is deliberately explicit. Precedence:
+   *
+   *   1. `override` — a per-call `projectDirectory` tool argument (highest)
+   *   2. `projectDirectory` from `--project-directory` / `SFCC_PROJECT_DIRECTORY`
+   *   3. `process.cwd()` (fallback; unreliable across clients)
+   *
+   * Tools should surface the returned `{path, source}` in their output so the
+   * agent can see which directory was used when it did not pass one explicitly.
+   *
+   * The `override` and configured values are returned as-supplied (not
+   * re-resolved against cwd); callers pass absolute paths, and `path.resolve`
+   * would otherwise drive-prefix a POSIX-style path on Windows.
+   *
+   * @param override - Optional explicit project directory from a tool argument
+   * @returns The project directory and the source it was resolved from
+   */
+  public resolveProjectDirectory(override?: string): {path: string; source: 'argument' | 'config' | 'cwd'} {
+    if (override) {
+      return {path: override, source: 'argument'};
+    }
+    return {...this.resolution.projectDirectory};
+  }
+
+  /**
    * Resolve a path relative to the project directory.
    * If path is not supplied, returns the project directory.
    * If path is absolute, returns it as-is.
    * If path is relative, resolves it relative to the project directory.
    *
+   * An optional explicit project-directory override (typically a per-call
+   * `projectDirectory` tool argument) takes precedence over the configured
+   * project directory and cwd — see {@link Services.resolveProjectDirectory}.
+   *
    * @param pathArg - Optional path to resolve
+   * @param projectDirectoryOverride - Optional explicit project directory to resolve against
    * @returns Resolved absolute path
    */
-  public resolveWithProjectDirectory(pathArg?: string): string {
-    const projectDir = this.resolvedConfig.values.projectDirectory ?? process.cwd();
+  public resolveWithProjectDirectory(pathArg?: string, projectDirectoryOverride?: string): string {
+    const projectDir = this.resolveProjectDirectory(projectDirectoryOverride).path;
     if (!pathArg) {
       return projectDir;
     }

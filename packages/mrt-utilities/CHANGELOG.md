@@ -1,5 +1,21 @@
 # @salesforce/mrt-utilities
 
+## 0.3.1
+
+### Patch Changes
+
+- [#635](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/635) [`a4a87a9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a4a87a9d60552e6fad01a0d0c074fbc7e5ab6264) - Improve streamed response performance by using a runtime-appropriate Brotli quality and periodically flushing compressed output. The Brotli quality and flush threshold can now be tuned via the `MRT_BROTLI_COMPRESSION_QUALITY` (0-11) and `MRT_BROTLI_FLUSH_THRESHOLD_BYTES` (bytes) environment variables, and the periodic flushing behavior can be disabled by setting `MRT_BROTLI_CHUNKING_ENABLED=false`. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.3.0
+
+### Minor Changes
+
+- [#623](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/623) [`4857c5a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4857c5ae871ce7df95c3b27b0ade197dfa15370f) - Make DataStore.getEntry shard-aware. When the MRT_NUM_SHARDS environment variable is set to a value greater than 1, reads are spread across shard partitions by selecting a random shard, relieving read pressure on a single hot partition. When MRT_NUM_SHARDS is unset or 1, behavior is unchanged. The getEntry signature and return shape are unchanged, so this is backward compatible. (Thanks [@npeternel-sf](https://github.com/npeternel-sf)!)
+
+### Patch Changes
+
+- [#622](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/622) [`b90b736`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b90b73601d4cd734dd833684a4241eb36d27bd49) - Harden the data store's DynamoDB client against throttling: it now uses adaptive retries, a bounded number of attempts, and per-attempt connection/request timeouts so a slow or throttled call can no longer consume the whole request budget. Throttling failures are now distinguishable in error logs. (Thanks [@npeternel-sf](https://github.com/npeternel-sf)!)
+
 ## 0.2.2
 
 ### Patch Changes

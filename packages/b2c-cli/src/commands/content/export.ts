@@ -172,18 +172,19 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
         return true;
       });
 
-      // Promote matching components to root level
+      // Promote matching components and content blocks to root level
       const allNodes = [...library.nodes({traverseHidden: true, callbackHidden: true})];
       for (const node of allNodes) {
-        if (node.type === 'COMPONENT' && matchesId(node.id)) {
+        if ((node.type === 'COMPONENT' || node.type === 'FRAGMENT') && matchesId(node.id)) {
           library.promoteToRoot(node as LibraryNode);
         }
       }
 
-      // Count pages, content, and components
+      // Count pages, content, components, and content blocks
       let pageCount = 0;
       let contentCount = 0;
       let componentCount = 0;
+      let fragmentCount = 0;
       const assetPaths: string[] = [];
 
       library.traverse(
@@ -195,6 +196,10 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
             }
             case 'CONTENT': {
               contentCount++;
+              break;
+            }
+            case 'FRAGMENT': {
+              fragmentCount++;
               break;
             }
             case 'PAGE': {
@@ -214,7 +219,9 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
         ux.stdout(library.getTreeString({colorize: ux.colorize}));
       }
 
-      this.log(formatSummary('Dry run', pageCount, contentCount, componentCount, assetPaths.length, outputPath));
+      this.log(
+        formatSummary('Dry run', pageCount, contentCount, componentCount, fragmentCount, assetPaths.length, outputPath),
+      );
 
       return {
         library,
@@ -224,6 +231,7 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
         pageCount,
         contentCount,
         componentCount,
+        fragmentCount,
       };
     }
 
@@ -251,6 +259,7 @@ export default class ContentExport extends JobCommand<typeof ContentExport> {
         result.pageCount,
         result.contentCount,
         result.componentCount,
+        result.fragmentCount,
         result.downloadedAssets.length,
         result.outputPath,
       ),
@@ -267,6 +276,7 @@ function formatSummary(
   pages: number,
   content: number,
   components: number,
+  fragments: number,
   assets: number,
   outputPath: string,
 ): string {
@@ -274,6 +284,7 @@ function formatSummary(
   if (pages > 0) parts.push(`${pages} page${pluralS(pages)}`);
   if (content > 0) parts.push(`${content} content asset${pluralS(content)}`);
   if (components > 0) parts.push(`${components} component${pluralS(components)}`);
+  if (fragments > 0) parts.push(`${fragments} content block${pluralS(fragments)}`);
   if (assets > 0) parts.push(`${assets} static asset${pluralS(assets)}`);
   const suffix = prefix === 'Dry run' ? `would be exported to ${outputPath}` : `to ${outputPath}`;
   return parts.length > 0 ? `${prefix}: ${parts.join(', ')} ${suffix}` : `${prefix}: nothing to export`;

@@ -24,9 +24,9 @@ Debug sessions are stateful and live in the MCP server process. If the agent los
 
 1. **List active sessions** — call `debug_list_sessions` (no args). It returns all sessions known to the server with their `session_id`, `hostname`, halted threads, and currently armed breakpoints.
 2. **End orphaned sessions** — call `debug_end_session` with the `session_id` to free the debugger slot on the instance.
-3. **SDAPI single-client guarantee** — the script debugger only supports one client per `client_id` per host. Calling `debug_start_session` with the same `client_id` against the same host implicitly takes over (replaces) any prior client. This is the safety net when a session is lost without a clean shutdown.
+3. **MCP-owned debugger identity** — the MCP server assigns the debugger client identity internally; callers do not configure or track it.
 4. **Idle cleanup** — sessions inactive for 30 minutes are automatically cleaned up by the server.
-5. **Restart the MCP server** — as a last resort, restarting the MCP server destroys all session state. The orphaned debugger slot on the instance will be freed by SDAPI's own 60-second halt-timeout or by the next `debug_start_session` with the same client ID.
+5. **Restart the MCP server** — as a last resort, restarting the MCP server destroys all local session state. Any orphaned debugger slot on the instance is freed by SDAPI's own timeout.
 
 ---
 
@@ -38,12 +38,14 @@ Start a new script debugger session. Connects to the SDAPI, discovers cartridge 
 
 > **Warning:** Debug sessions can halt remote request threads on the instance. Use `debug_end_session` to cleanly disconnect when done.
 
-| Parameter             | Type   | Required | Default           | Description                                                                                  |
-| --------------------- | ------ | -------- | ----------------- | -------------------------------------------------------------------------------------------- |
-| `cartridge_directory` | string | No       | Project directory | Path to directory containing cartridges                                                      |
-| `client_id`           | string | No       | `b2c-cli`         | Client ID for the debugger API. Use a different ID for concurrent sessions on the same host. |
+| Parameter            | Type   | Required | Default                       | Description                                                                                                                                                  |
+| -------------------- | ------ | -------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `projectDirectory`   | string | No       | Server project directory/cwd  | Project root used to load `.env`/`dw.json` and resolve relative paths. Overrides the server-level directory; run `config_inspect` to see the resolved paths. |
+| `configPath`         | string | No       | Resolved from project context | Primary `dw.json`-format configuration file. Relative paths resolve from `projectDirectory`; the shared default remains available.                           |
+| `instanceName`       | string | No       | Active/default instance       | Named instance selected from the primary configuration first, then the shared default `dw.json`.                                                             |
+| `cartridgeDirectory` | string | No       | `projectDirectory`            | Cartridge discovery and source-mapping root only. Use when cartridges are outside the project root; relative paths resolve from project root.                |
 
-**Returns:** `session_id`, `hostname`, discovered `cartridges`, `session_cookie` (see [Server affinity](#server-affinity-hitting-breakpoints)), and `warnings`.
+**Returns:** `session_id`, `hostname`, discovered `cartridges`, `resolution`, and `warnings`. The session retains its resolution context; `debug_list_sessions` returns it for later follow-up calls.
 
 ### debug_end_session
 
@@ -56,37 +58,9 @@ End a script debugger session. Disconnects from the SDAPI, stops polling, and cl
 
 ### debug_list_sessions
 
-List all active debug sessions. Returns session IDs, connected hostnames, any currently halted threads, armed breakpoints, and each session's `session_cookie` (see [Server affinity](#server-affinity-hitting-breakpoints)).
+List all active debug sessions. Returns session IDs, connected hostnames, any currently halted threads, and armed breakpoints.
 
 No parameters.
-
----
-
-## Server affinity (hitting breakpoints)
-
-> **Most sessions don't need this.** Set your breakpoint and trigger the request as usual. Only reach for the session cookie when a breakpoint is _never_ hit even though you're sure the request exercises that code — and only in the specific **production instance group** configurations that run multiple app servers. This never applies to sandboxes.
-
-Some production instance group configurations run multiple application servers behind a load balancer. The debugger attaches to **one** app server, and a breakpoint only fires when your code executes on that same server. Sandboxes run a single app server, so this never comes up there.
-
-If a breakpoint won't hit for this reason, pin the triggering request to the correct app server using the `session_cookie` returned by `debug_start_session` and `debug_list_sessions`:
-
-```json
-{"name": "dwsid", "value": "abc123..."}
-```
-
-Send your triggering request — a storefront page load, a SCAPI/OCAPI call, etc. — with this cookie so it lands on the app server holding the debug session:
-
-```
-Cookie: dwsid=abc123...
-```
-
-For headless server-to-server requests that trigger hooks, custom APIs, or SCAPI/OCAPI endpoints — where setting a cookie is awkward — pass the same value as the `sfdc_dwsid` request header instead:
-
-```
-sfdc_dwsid: abc123...
-```
-
-If `session_cookie` is `null`, the debugger did not establish a session cookie; a warning is included and breakpoints may not be reliably hit on multi-app-server instances.
 
 ---
 

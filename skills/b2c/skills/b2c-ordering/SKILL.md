@@ -76,44 +76,37 @@ function createOrder(basket) {
 }
 ```
 
-### Async Flow (SCAPI Pattern)
+### SCAPI Flow: Create, Authorize Through Order PI, Then Place
 
-> **Critical — transaction context depends on *where* this code runs.** The `Transaction.wrap()` calls below are correct when you drive placement from a **controller, job step, or custom endpoint** (code that runs *outside* a platform transaction). But the headless SCAPI Shopper Orders API creates the order in **`CREATED`** status and hands it to the **`dw.ocapi.shop.order.afterPOST` hook**, which **already runs inside a platform transaction**. If you call `OrderMgr.placeOrder()` / `OrderMgr.failOrder()` from `afterPOST`, call them **directly with NO `Transaction.wrap`** — a nested transaction rolls back your change and surfaces an opaque `HTTP 400: An error occurred in ExtensionPoint dw.ocapi.shop.order.afterPOST`. See the canonical `afterPOST` example in [b2c-hooks](../b2c-hooks/SKILL.md).
+Lead with the Shopper Orders state machine instead of manually placing from `order.afterPOST`:
 
-For SCAPI/headless, create the order before payment authorization:
+```text
+POST /checkout/shopper-orders/v1/organizations/{orgId}/orders
+  -> commits order in CREATED
 
-```javascript
-var OrderMgr = require('dw/order/OrderMgr');
-var Transaction = require('dw/system/Transaction');
+PATCH /checkout/shopper-orders/v1/organizations/{orgId}/orders/{orderNo}/payment-instruments/{piId}
+  -> invokes dw.order.payment.authorizeCreditCard or dw.order.payment.authorize
+  -> passes successfullyAuthorized to order.payment_instrument.afterPATCH
+  -> default afterPATCH places when authorized coverage reaches the order total
 
-// Step 1: Create order (before payment)
-function createOrderAsync(basket, orderNo) {
-    var order;
-
-    Transaction.wrap(function() {
-        // Create with specific order number (for idempotency)
-        order = OrderMgr.createOrder(basket, orderNo);
-    });
-
-    return order;
-}
-
-// Step 2: After payment success, place the order
-function placeOrderAfterPayment(order) {
-    Transaction.wrap(function() {
-        OrderMgr.placeOrder(order);
-        order.setConfirmationStatus(order.CONFIRMATION_STATUS_CONFIRMED);
-        order.setExportStatus(order.EXPORT_STATUS_READY);
-    });
-}
-
-// Step 2 (alt): Payment failed, fail the order
-function failOrderAfterPayment(order) {
-    Transaction.wrap(function() {
-        OrderMgr.failOrder(order, false); // Don't reopen basket
-    });
-}
+NEW     -> success
+CREATED -> not fully placed; authorize remaining PIs, fail safely, or reconcile
 ```
+
+Return `undefined` from a successful custom order-PI `afterPATCH` implementation so the platform's
+default coverage-based placement behavior runs. A non-null `Status` ends execution and suppresses
+that implementation.
+
+On a deterministic payment failure, use the Shopper Orders fail action with `reopenBasket=true`.
+On an indeterminate gateway result, retain the `CREATED` order for reconciliation rather than
+risking a duplicate authorization.
+
+Use `dw.ocapi.shop.order.afterPOST` as the alternative when checkout deliberately needs a single
+server-side phase that creates, authorizes, and performs the Commerce-side place-or-fail transition,
+or when the processor cannot participate in order-PI authorization. That hook runs inside order
+creation's transaction: do not add a nested `Transaction.wrap`, and understand that `Status.ERROR`
+rolls back the Commerce order but not an external gateway side effect. See
+[b2c-hooks](../b2c-hooks/SKILL.md#alternative-authorize-and-place-in-orderafterpost).
 
 ## OrderMgr API Reference
 
@@ -271,21 +264,23 @@ function handlePaymentFailure(order) {
 }
 ```
 
-### SCAPI: Fail with Reopen (B2C 24.3+)
+### SCAPI: Fail Order and Reopen Basket
 
-For SCAPI integrations, use the `failed_with_reopen` status to fail an order while reopening the basket:
+For SCAPI integrations, use the Shopper Orders fail action after a deterministic payment failure:
 
 ```http
-PATCH /checkout/orders/v1/organizations/{orgId}/orders/{orderNo}?siteId={siteId}
+POST /checkout/shopper-orders/v1/organizations/{orgId}/orders/{orderNo}/actions/fail?siteId={siteId}&reopenBasket=true
 Authorization: Bearer {token}
 Content-Type: application/json
 
 {
-    "status": "failed_with_reopen"
+    "reasonCode": "payment_auth_failure"
 }
 ```
 
-This is equivalent to `OrderMgr.failOrder(order, true)` in Script API.
+The current payment-oriented reason codes are `payment_auth_failure`, `payment_confirm_failure`, and
+`payment_capture_failure`. The endpoint returns `409` when the order is no longer in a state that can
+be failed. Confirm the current Shopper Orders schema before generating version-specific code.
 
 ### Undo Cancelled Order
 
@@ -366,7 +361,7 @@ exports.createOrderNo = function() {
 
 ### Do
 
-- Always wrap order operations in transactions
+- Wrap Script API order mutations in a transaction only when the caller does not already provide one
 - Check order status before transitions
 - Close order iterators when done
 - Use `failOrder(order, true)` to let customers retry

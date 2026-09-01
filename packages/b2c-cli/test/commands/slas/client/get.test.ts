@@ -35,8 +35,11 @@ describe('slas client get', () => {
     restoreConfig();
   });
 
-  it('fetches a client via SLAS API and returns normalized output in JSON mode', async () => {
-    const command: any = await createCommand({'tenant-id': 'abcd_123'}, {clientId: 'my-client'});
+  it('prefers a positional client ID over the configured client ID', async () => {
+    const command: any = await createCommand(
+      {'tenant-id': 'abcd_123', 'slas-client-id': 'configured-client'},
+      {clientId: 'my-client'},
+    );
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
 
@@ -58,9 +61,60 @@ describe('slas client get', () => {
     const result = await command.run();
 
     expect(getStub.calledOnce).to.equal(true);
+    expect(getStub.firstCall.args[1]).to.deep.equal({
+      params: {
+        path: {tenantId: 'abcd_123', clientId: 'my-client'},
+      },
+    });
     expect(result.clientId).to.equal('my-client');
     expect(result.scopes).to.deep.equal(['a', 'b']);
     expect(result.channels).to.deep.equal(['RefArch']);
+  });
+
+  it('uses the configured client ID when the positional argument is omitted', async () => {
+    const command: any = await createCommand({'tenant-id': 'abcd_123', 'slas-client-id': 'configured-client'}, {});
+
+    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+
+    const getStub = sinon.stub().resolves({
+      data: {
+        clientId: 'configured-client',
+        name: 'Configured Client',
+        scopes: 'a b',
+        channels: ['RefArch'],
+        redirectUri: ['http://localhost/callback'],
+        isPrivateClient: true,
+      },
+      error: undefined,
+    });
+
+    sinon.stub(command, 'getSlasClient').returns({GET: getStub} as any);
+    sinon.stub(command, 'jsonEnabled').returns(true);
+
+    const result = await command.run();
+
+    expect(getStub.calledOnce).to.equal(true);
+    expect(getStub.firstCall.args[1]).to.deep.equal({
+      params: {
+        path: {tenantId: 'abcd_123', clientId: 'configured-client'},
+      },
+    });
+    expect(result.clientId).to.equal('configured-client');
+  });
+
+  it('calls command.error when no client ID is provided or configured', async () => {
+    const command: any = await createCommand({'tenant-id': 'abcd_123'}, {});
+
+    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    const errorStub = stubErrorToThrow(command);
+
+    try {
+      await command.run();
+      expect.fail('Expected error');
+    } catch {
+      expect(errorStub.calledOnce).to.equal(true);
+      expect(errorStub.firstCall.args[0]).to.include('SLAS client ID is required');
+    }
   });
 
   it('calls command.error on API error', async () => {

@@ -1,5 +1,51 @@
 # @salesforce/b2c-dx-docs
 
+## 0.3.23
+
+### Patch Changes
+
+- [#638](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/638) [`5d48cfc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5d48cfc0122158625d24dd039d8066e1fa1c37f2) - Keep debugger server-affinity guidance as a rare PIG-only troubleshooting note instead of prompting users and agents to use `dwsid` during routine debugging. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#634](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/634) [`4dee938`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4dee938cd4c2d5fd48c6ebc85ee99abf432529ff) - Remember when an Account Manager client rejects PKCE so later CLI and VS Code sessions start directly with the compatible implicit flow, and avoid reporting authentication success before the PKCE token exchange completes. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.3.22
+
+### Patch Changes
+
+- [#631](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/631) [`b0b24b8`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b0b24b8fae8c57186b94a7dab3a27dfcf85f49f1) - Made MCP project resolution provenance consistent and tool guidance more concise, kept local paths out of tool descriptions, and clarified startup documentation workspace detection. Updated MCP protocol libraries and made tool input schemas reject unknown arguments. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.3.21
+
+### Patch Changes
+
+- [#629](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/629) [`1f25b1e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f25b1ed3bf5c778b30ec2de8dff1e26071db5d1) - Added per-call named-instance selection and consistent resolution provenance to project-aware MCP tools, including persisted context for debugger sessions and log watches. Removed the retired Storefront Next MCP toolset in favor of the current Storefront Next agent skills. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.3.20
+
+### Patch Changes
+
+- [#627](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/627) [`5f7bff4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5f7bff40b53c54ba3f0d9d245bab7c4d5f94c227) - Add a shared global `dw.json` for the CLI, MCP server, and VS Code extension, managed with `b2c setup default-config set|get|unset`; primary and global instances are available together without merging their fields. MCP tools now accept per-call `projectDirectory` and `configPath`; debugger callers must rename `cartridge_directory` to `cartridgeDirectory` and remove `client_id`. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.3.19
+
+### Patch Changes
+
+- [`a90f173`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a90f1730e6ccd366e50a35d8ee91a320fc5301ec) - Make unified configuration inspection recognize all CLI configuration environment variables and aliases, and show resolved authentication, project, service, and safety settings only when configured. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`a90f173`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a90f1730e6ccd366e50a35d8ee91a320fc5301ec) - Allow projects to configure a non-sensitive default `siteId` under the package.json `b2c` key for site-aware commands. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.3.18
+
+### Patch Changes
+
+- [#615](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/615) [`1f553b3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f553b3e26c57909ce654b61e25f4db537111312) - Added ordered, idempotent site archive import sets with verified WebDAV receipts, retry-until-receipted behavior, and serialized concurrent runners. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#615](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/615) [`1f553b3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1f553b3e26c57909ce654b61e25f4db537111312) - Added the data migrations plugin to the third-party plugins guide so users can discover idempotent, version-controlled IMPEX and scripted deployments. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#624](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/624) [`02ccc2a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/02ccc2a1656c4895c2aca7ef2064fd2ff138e9a2) - Import discovered cartridge metadata before migration-directory items, supporting single-archive and ordered-child layouts, an opt-out, and project-configurable recursive source exclusions. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#618](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/618) [`abec39f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/abec39fbc4843b00c426c6fc2ac26492e67df11d) - Update the embedded B2C Commerce Script API TypeScript definitions from version 26.7 to 26.9 so IDE IntelliSense reflects the latest platform APIs. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.17
 
 ### Patch Changes

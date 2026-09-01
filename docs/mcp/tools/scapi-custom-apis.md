@@ -23,16 +23,19 @@ No authentication or instance required. This tool writes files locally into your
 
 ### Parameters
 
-| Parameter        | Type                     | Required | Description                                                                                                                        |
-| ---------------- | ------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `apiName`        | string                   | Yes      | API name in kebab-case (e.g. `my-products`). Must start with a lowercase letter; only letters, numbers, and hyphens.               |
-| `cartridgeName`  | string                   | No       | Cartridge that will contain the API. Omit to use the first cartridge found under the project (working directory or `projectRoot`). |
-| `apiType`        | `"admin"` \| `"shopper"` | No       | **shopper** (siteId, customer-facing) or **admin** (no siteId). Default: `shopper`.                                                |
-| `apiDescription` | string                   | No       | Short description of the API.                                                                                                      |
-| `projectRoot`    | string                   | No       | Project root for cartridge discovery. Default: MCP working directory (`--project-directory` / `SFCC_PROJECT_DIRECTORY`).           |
-| `outputDir`      | string                   | No       | Output directory override. Default: project root (scaffold writes under cartridge path).                                           |
+| Parameter            | Type                     | Required | Description                                                                                                                 |
+| -------------------- | ------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `apiName`            | string                   | Yes      | API name in kebab-case (e.g. `my-products`). Must start with a lowercase letter; only letters, numbers, and hyphens.        |
+| `cartridgeName`      | string                   | No       | Cartridge that will contain the API. Omit to use the first cartridge found under `cartridgeDirectory`.                      |
+| `apiType`            | `"admin"` \| `"shopper"` | No       | **shopper** (siteId, customer-facing) or **admin** (no siteId). Default: `shopper`.                                         |
+| `apiDescription`     | string                   | No       | Short description of the API.                                                                                               |
+| `projectDirectory`   | string                   | No       | Absolute project root used for project `.env` and relative path resolution. Run `config_inspect` to see the resolved paths. |
+| `cartridgeDirectory` | string                   | No       | Cartridge discovery root. Relative paths resolve from `projectDirectory`.                                                   |
+| `outputDirectory`    | string                   | No       | Output directory override. Relative paths resolve from the cartridge directory.                                             |
+| `projectRoot`        | string                   | No       | Deprecated alias for `cartridgeDirectory`.                                                                                  |
+| `outputDir`          | string                   | No       | Deprecated alias for `outputDirectory`.                                                                                     |
 
-**Returns:** `{scaffold, outputDir, files: [{path, action}], postInstructions}`. Errors if no cartridge is found.
+**Returns:** `{scaffold, outputDir, files: [{path, action}], postInstructions, projectDirectory, projectRoot}`. Errors if no cartridge is found.
 
 ### Usage
 
@@ -71,11 +74,14 @@ Requires OAuth credentials with the `sfcc.custom-apis` scope. See [Configuring S
 
 ### Parameters
 
-| Parameter | Type                             | Required | Description                                                                                                  |
-| --------- | -------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------ |
-| `status`  | `"active"` \| `"not_registered"` | No       | Filter by endpoint status. Omit to return all endpoints.                                                     |
-| `groupBy` | `"site"` \| `"type"`             | No       | Group output by `siteId` or `type` (Admin/Shopper). Omit for flat list.                                      |
-| `columns` | string                           | No       | Comma-separated field names to include. Omit for defaults (7 fields). Use all field names for complete data. |
+| Parameter          | Type                             | Required | Description                                                                                                  |
+| ------------------ | -------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------ |
+| `projectDirectory` | string                           | No       | Project root used for `.env`, default `dw.json`, and project configuration sources.                          |
+| `configPath`       | string                           | No       | Primary `dw.json`-format configuration file. Relative paths resolve from `projectDirectory`.                 |
+| `instanceName`     | string                           | No       | Named instance selected from the primary configuration first, then the shared default `dw.json`.             |
+| `status`           | `"active"` \| `"not_registered"` | No       | Filter by endpoint status. Omit to return all endpoints.                                                     |
+| `groupBy`          | `"site"` \| `"type"`             | No       | Group output by `siteId` or `type` (Admin/Shopper). Omit for flat list.                                      |
+| `columns`          | string                           | No       | Comma-separated field names to include. Omit for defaults (7 fields). Use all field names for complete data. |
 
 Default columns: `type`, `apiName`, `cartridgeName`, `endpointPath`, `httpMethod`, `status`, `siteId`.
 

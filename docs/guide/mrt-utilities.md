@@ -27,12 +27,12 @@ npm install @salesforce/mrt-utilities express
 
 ## Package exports
 
-| Export | Description |
-|--------|-------------|
-| **Main** (`@salesforce/mrt-utilities`) | Middleware factories, `isLocal`, and re-exports from subpaths |
-| **Middleware** (`@salesforce/mrt-utilities/middleware`) | MRT-style Express middleware and `ProxyConfig` type |
-| **Metrics** (`@salesforce/mrt-utilities/metrics`) | Metrics sending for MRT (e.g. CloudWatch) |
-| **Streaming** (`@salesforce/mrt-utilities/streaming`) | Lambda streaming adapter, Express request/response helpers, compression config |
+| Export                                                  | Description                                                                    |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Main** (`@salesforce/mrt-utilities`)                  | Middleware factories, `isLocal`, and re-exports from subpaths                  |
+| **Middleware** (`@salesforce/mrt-utilities/middleware`) | MRT-style Express middleware and `ProxyConfig` type                            |
+| **Metrics** (`@salesforce/mrt-utilities/metrics`)       | Metrics sending for MRT (e.g. CloudWatch)                                      |
+| **Streaming** (`@salesforce/mrt-utilities/streaming`)   | Lambda streaming adapter, Express request/response helpers, compression config |
 
 ## Basic setup
 
@@ -57,19 +57,17 @@ app.use(createMRTCommonMiddleware());
 
 if (isLocal()) {
   const requestProcessorPath = 'path/to/request-processor.js';
-  const proxyConfigs = [
-    { host: 'https://example.com', path: 'api' },
-  ];
+  const proxyConfigs = [{host: 'https://example.com', path: 'api'}];
 
   app.use(createMRTRequestProcessorMiddleware(requestProcessorPath, proxyConfigs));
 
   const mrtProxies = createMRTProxyMiddlewares(proxyConfigs);
-  mrtProxies.forEach(({ path, fn }) => app.use(path, fn));
+  mrtProxies.forEach(({path, fn}) => app.use(path, fn));
 
   const staticAssetDir = 'path/to/static';
   app.use(
     `/mobify/bundle/${process.env.BUNDLE_ID || '1'}/static/`,
-    createMRTStaticAssetServingMiddleware(staticAssetDir)
+    createMRTStaticAssetServingMiddleware(staticAssetDir),
   );
 }
 
@@ -98,8 +96,8 @@ Returns an array of `{ path, fn }` for mounting proxy middleware. Each entry pro
 
 ```typescript
 interface ProxyConfig {
-  host: string;   // e.g. 'https://example.com'
-  path: string;  // e.g. 'api'
+  host: string; // e.g. 'https://example.com'
+  path: string; // e.g. 'api'
 }
 ```
 
@@ -116,7 +114,7 @@ Removes internal MRT headers and sets any remaining response headers. **Use in a
 **isLocal()** returns `true` when not running in AWS Lambda (i.e. when `AWS_LAMBDA_FUNCTION_NAME` is not set). Use it to enable local-only middleware (request processor, proxies, local static assets).
 
 ```typescript
-import { isLocal } from '@salesforce/mrt-utilities';
+import {isLocal} from '@salesforce/mrt-utilities';
 
 if (isLocal()) {
   // Use local request processor, proxies, static assets
@@ -128,10 +126,7 @@ if (isLocal()) {
 For MRT’s Lambda runtime with streaming responses (e.g. SSR), use the **streaming** subpath:
 
 ```typescript
-import {
-  createStreamingLambdaAdapter,
-  type CompressionConfig,
-} from '@salesforce/mrt-utilities/streaming';
+import {createStreamingLambdaAdapter, type CompressionConfig} from '@salesforce/mrt-utilities/streaming';
 ```
 
 - **createStreamingLambdaAdapter**: Wraps your Express app so it can be invoked from Lambda with streaming support.
@@ -139,12 +134,22 @@ import {
 
 See the package source and tests for full adapter usage.
 
+### Tuning Brotli compression
+
+For streamed responses, Brotli defaults to a runtime-appropriate quality (`6`) and periodically flushes compressed output so bytes reach the client sooner. This can be tuned with environment variables:
+
+- `MRT_BROTLI_COMPRESSION_QUALITY`: Brotli quality level, `0`–`11` (defaults to `6`). Higher values compress more but cost more CPU. Values outside the valid range are ignored.
+- `MRT_BROTLI_FLUSH_THRESHOLD_BYTES`: Number of uncompressed bytes to buffer before forcing a Brotli flush (defaults to `32768`). Must be a positive integer; other values are ignored.
+- `MRT_BROTLI_CHUNKING_ENABLED`: Periodic flushing ("chunking") of Brotli output is enabled by default. Set to `false` to disable it and let Brotli buffer output until the response ends.
+
+An explicit Brotli quality set via `CompressionConfig.options.params` takes precedence over `MRT_BROTLI_COMPRESSION_QUALITY`.
+
 ## Metrics
 
 For sending metrics (e.g. to CloudWatch) in an MRT-compatible way:
 
 ```typescript
-import { MetricsSender } from '@salesforce/mrt-utilities/metrics';
+import {MetricsSender} from '@salesforce/mrt-utilities/metrics';
 ```
 
 Use when you need to emit metrics from the same process that serves requests (e.g. custom middleware or request processor).

@@ -438,12 +438,19 @@ describe('tools/diagnostics/mrt-logs', () => {
 
       const listTool = createMrtLogsWatchListTool(loadServices, serverContext);
       const json = getResultJson<{
-        watches: Array<{environment: string; project: string; watch_id: string; stopped: boolean}>;
+        watches: Array<{
+          environment: string;
+          project: string;
+          resolution?: {projectDirectory: {source: string}};
+          watch_id: string;
+          stopped: boolean;
+        }>;
       }>(await listTool.handler({}));
       expect(json.watches).to.have.lengthOf(1);
       expect(json.watches[0].project).to.equal('my-storefront');
       expect(json.watches[0].environment).to.equal('staging');
       expect(json.watches[0].stopped).to.be.false;
+      expect(json.watches[0].resolution?.projectDirectory.source).to.equal('cwd');
     });
 
     it('lists distinct project/environment watches separately', async () => {

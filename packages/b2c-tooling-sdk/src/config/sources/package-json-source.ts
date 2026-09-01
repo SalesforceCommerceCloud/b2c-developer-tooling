@@ -19,11 +19,12 @@ import {getLogger} from '../../logging/logger.js';
 
 /**
  * Fields allowed to be configured in package.json.
- * These are non-sensitive, non-instance-specific configuration.
+ * These are non-sensitive, project-level configuration defaults.
  */
 const ALLOWED_FIELDS: (keyof NormalizedConfig)[] = [
   'shortCode',
   'clientId',
+  'siteId',
   'contentLibrary',
   'libraries',
   'assetQuery',
@@ -32,6 +33,7 @@ const ALLOWED_FIELDS: (keyof NormalizedConfig)[] = [
   'accountManagerHost',
   'sandboxApiHost',
   'realm',
+  'importSetExclude',
 ];
 
 /**
@@ -40,6 +42,7 @@ const ALLOWED_FIELDS: (keyof NormalizedConfig)[] = [
 interface PackageJsonB2CConfig {
   shortCode?: string;
   clientId?: string;
+  siteId?: string;
   contentLibrary?: string;
   libraries?: (string | LibraryEntry)[];
   assetQuery?: string[];
@@ -48,6 +51,7 @@ interface PackageJsonB2CConfig {
   accountManagerHost?: string;
   sandboxApiHost?: string;
   realm?: string;
+  importSetExclude?: string[];
   [key: string]: unknown;
 }
 

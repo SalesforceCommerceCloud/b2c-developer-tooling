@@ -9,10 +9,11 @@
  * SDK: authentication, configuration, CI/CD, safety, scaffolding, etc.).
  *
  * These teach an agent how to drive the tooling itself, which is high-value
- * context alongside the platform docs. Only hand-written conceptual guides are
- * indexed; the auto-generated CLI reference (`docs/cli/*`), the MCP tool
- * reference, the changelog, and landing pages are intentionally excluded (they
- * are redundant with `--help` / MCP introspection or carry no teaching content).
+ * context alongside the platform docs. Because these docs are maintained in
+ * this repository, every searchable Markdown page in the published tooling
+ * sections is discovered automatically. This keeps the search corpus in sync
+ * when a new guide, CLI reference page, MCP page, or VS Code extension page is
+ * added. Asset README files and redirect stubs are ignored.
  *
  * Like the Developer Center guides corpus, tooling *content* is NOT bundled — the
  * index stores only lightweight metadata (title, section headings, preview, and
@@ -29,33 +30,8 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-/** Conceptual guide files to index, relative to the repo `docs/` directory. */
-const INCLUDE: readonly string[] = [
-  'guide/authentication.md',
-  'guide/configuration.md',
-  'guide/installation.md',
-  'guide/ci-cd.md',
-  'guide/account-manager.md',
-  'guide/agent-skills.md',
-  'guide/analytics-reports-cip-ccac.md',
-  'guide/commerce-apps.md',
-  'guide/extending.md',
-  'guide/ide-integration.md',
-  'guide/mrt-utilities.md',
-  'guide/safety.md',
-  'guide/scaffolding.md',
-  'guide/script-debugger.md',
-  'guide/sdk-migration.md',
-  'guide/security.md',
-  'guide/sfcc-ci-migration.md',
-  'guide/storefront-next.md',
-  'guide/third-party-plugins.md',
-  'mcp/index.md',
-  'mcp/installation.md',
-  'mcp/configuration.md',
-  'mcp/toolsets.md',
-  'mcp/figma-tools-setup.md',
-];
+/** Published internal documentation sections, relative to `docs/`. */
+const TOOLING_DOC_ROOTS: readonly string[] = ['guide', 'cli', 'mcp', 'vscode-extension'];
 
 const DOCS_SITE_BASE = 'https://salesforcecommercecloud.github.io/b2c-developer-tooling';
 
@@ -81,13 +57,14 @@ const REPO_ROOT = path.resolve(SDK_ROOT, '../..');
 const DOCS_ROOT = path.join(REPO_ROOT, 'docs');
 const TOOLING_DIR = path.join(SDK_ROOT, 'data', 'tooling');
 
-/** Strips YAML frontmatter and returns {frontmatter, body}. */
-function splitFrontmatter(md: string): {description?: string; body: string} {
+/** Strips YAML frontmatter and returns the searchable metadata and body. */
+function splitFrontmatter(md: string): {description?: string; body: string; isRedirect: boolean} {
   const m = md.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-  if (!m) return {body: md};
+  if (!m) return {body: md, isRedirect: false};
   const descMatch = m[1].match(/^description:\s*(.+)$/m);
   const description = descMatch?.[1]?.trim().replace(/^["']|["']$/g, '');
-  return {description, body: m[2]};
+  const isRedirect = /http-equiv['"]?\s*:\s*['"]?refresh/i.test(m[1]);
+  return {description, body: m[2], isRedirect};
 }
 
 function extractTitle(md: string, fallback: string): string {
@@ -114,6 +91,36 @@ function firstParagraph(body: string): string | undefined {
   return undefined;
 }
 
+/** Recursively discovers published Markdown pages in a documentation section. */
+function discoverMarkdownPages(relativeRoot: string): string[] {
+  const absoluteRoot = path.join(DOCS_ROOT, relativeRoot);
+  if (!fs.existsSync(absoluteRoot)) throw new Error(`Tooling docs root not found: ${relativeRoot}`);
+
+  const pages: string[] = [];
+  const visit = (directory: string): void => {
+    for (const entry of fs.readdirSync(directory, {withFileTypes: true}).sort((a, b) => a.name.localeCompare(b.name))) {
+      const absolutePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        visit(absolutePath);
+      } else if (entry.isFile() && entry.name.endsWith('.md') && entry.name.toLowerCase() !== 'readme.md') {
+        pages.push(path.relative(DOCS_ROOT, absolutePath).split(path.sep).join('/'));
+      }
+    }
+  };
+
+  visit(absoluteRoot);
+  return pages;
+}
+
+function sameIndexContent(left: SearchIndex, right: SearchIndex): boolean {
+  return left.version === right.version && JSON.stringify(left.entries) === JSON.stringify(right.entries);
+}
+
+function readExistingIndex(indexPath: string): SearchIndex | undefined {
+  if (!fs.existsSync(indexPath)) return undefined;
+  return JSON.parse(fs.readFileSync(indexPath, 'utf-8')) as SearchIndex;
+}
+
 function main(): void {
   fs.mkdirSync(TOOLING_DIR, {recursive: true});
   // Remove any previously bundled markdown — tooling content is now fetched
@@ -123,15 +130,13 @@ function main(): void {
   }
 
   const entries: DocEntry[] = [];
+  const pages = TOOLING_DOC_ROOTS.flatMap((root) => discoverMarkdownPages(root));
 
-  for (const rel of INCLUDE) {
+  for (const rel of pages) {
     const srcPath = path.join(DOCS_ROOT, rel);
-    if (!fs.existsSync(srcPath)) {
-      console.warn(`Warning: tooling doc not found, skipping: ${rel}`);
-      continue;
-    }
     const raw = fs.readFileSync(srcPath, 'utf-8');
-    const {description, body} = splitFrontmatter(raw);
+    const {description, body, isRedirect} = splitFrontmatter(raw);
+    if (isRedirect) continue;
 
     // Flat id: "guide/authentication.md" -> "guide-authentication"
     const id = rel.replace(/\.md$/, '').replace(/\//g, '-');
@@ -157,14 +162,33 @@ function main(): void {
 
   entries.sort((a, b) => a.id.localeCompare(b.id));
 
-  const index: SearchIndex = {
+  const indexPath = path.join(TOOLING_DIR, 'index.json');
+  const existing = readExistingIndex(indexPath);
+  const candidate: SearchIndex = {
     version: '2.0.0',
-    generatedAt: new Date().toISOString(),
+    generatedAt: existing?.generatedAt ?? new Date().toISOString(),
     entries,
   };
-  fs.writeFileSync(path.join(TOOLING_DIR, 'index.json'), JSON.stringify(index, null, 2));
 
-  console.log(`Generated tooling index: ${entries.length} entries at ${path.join(TOOLING_DIR, 'index.json')}`);
+  if (process.argv.includes('--check')) {
+    if (!existing || !sameIndexContent(existing, candidate)) {
+      console.error('Tooling documentation index is stale. Run `pnpm generate:tooling-index`.');
+      process.exitCode = 1;
+      return;
+    }
+    console.log(`Tooling documentation index is current (${entries.length} entries).`);
+    return;
+  }
+
+  if (existing && sameIndexContent(existing, candidate)) {
+    console.log(`Tooling documentation index is already current (${entries.length} entries).`);
+    return;
+  }
+
+  candidate.generatedAt = new Date().toISOString();
+  fs.writeFileSync(indexPath, JSON.stringify(candidate, null, 2) + '\n');
+
+  console.log(`Generated tooling index: ${entries.length} entries at ${indexPath}`);
 }
 
 main();

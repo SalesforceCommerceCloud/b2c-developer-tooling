@@ -14,7 +14,9 @@ declare class CatalogMgr {
      */
     static readonly siteCatalog: Catalog | null;
     /**
-     * Returns a list containing the sorting options configured for this site.
+     * Returns a list containing the sorting options configured for this site. On a Cimulate-enabled site, restricts
+     * the result to the Cimulate-managed rule IDs so the storefront "Sort by" dropdown matches what the buyer
+     * actually gets back from Cimulate.
      */
     static readonly sortingOptions: List<SortingOption>;
     /**
@@ -44,7 +46,9 @@ declare class CatalogMgr {
      */
     static getSortingOption(id: string): SortingOption | null;
     /**
-     * Returns a list containing the sorting options configured for this site.
+     * Returns a list containing the sorting options configured for this site. On a Cimulate-enabled site, restricts
+     * the result to the Cimulate-managed rule IDs so the storefront "Sort by" dropdown matches what the buyer
+     * actually gets back from Cimulate.
      */
     static getSortingOptions(): List<SortingOption>;
     /**
