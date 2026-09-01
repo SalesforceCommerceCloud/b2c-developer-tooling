@@ -7,6 +7,7 @@ See the [extension documentation](https://salesforcecommercecloud.github.io/b2c-
 [![Salesforce B2C Commerce activity bar showing the extension's developer tools](https://raw.githubusercontent.com/SalesforceCommerceCloud/b2c-developer-tooling/main/docs/vscode-extension/images/overview.png)](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/)
 
 ## Highlights
+
 > **Marketplace publishing happens out of [`forcedotcom/b2c-dx`](https://github.com/forcedotcom/b2c-dx).** All extension development, issues, and pull requests stay in this monorepo; the `forcedotcom/b2c-dx` repo holds the marketplace landing page, governance files, and the workflows that publish each release to VS Code Marketplace and Open VSX. See [PUBLISHING.md](./PUBLISHING.md) for the publish flow and the manual fallback.
 
 ## Features (overview)
@@ -48,13 +49,13 @@ Browse the SCAPI schemas available to your instance and try requests in an integ
 
 ### Stay in the development flow
 
-Tail sandbox logs into a VS Code output channel, install Commerce App Packages, manage jobs, and keep the active B2C instance visible in the status bar. Preview features such as Job History, site export, analytics, and guided onboarding can be enabled from the `b2c-dx.features.*` settings.
+Tail sandbox logs into a VS Code output channel, install Commerce App Packages, manage jobs, and keep the selected B2C instance visible in the status bar. Preview features such as Job History, site export, analytics, and guided onboarding can be enabled from the `b2c-dx.features.*` settings.
 
 ## Get started
 
 1. Open a B2C Commerce project in VS Code.
 2. Add a `dw.json` file at the project root or use an existing B2C CLI configuration. The project can be nested inside an open workspace folder.
-3. Select the active instance from the cloud icon in the status bar.
+3. Select an instance for the workspace from the cloud icon in the status bar.
 4. Open an extension view from the activity bar or run an extension command from the Command Palette.
 
 Different features require different credentials. WebDAV workflows can use a Business Manager username and access key, while sandbox and API workflows require OAuth configuration. See [Connecting to a B2C instance](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration#connecting-to-a-b2c-instance) for the per-feature requirements and an example `dw.json`.
