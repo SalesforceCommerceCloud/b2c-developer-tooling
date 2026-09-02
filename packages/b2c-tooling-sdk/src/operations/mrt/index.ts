@@ -48,19 +48,43 @@
 // Bundle creation
 export {
   createBundle,
+  createBundleV2,
   createGlobFilter,
   getDefaultMessage,
   DEFAULT_SSR_PARAMETERS,
   DEFAULT_SSR_ONLY,
   DEFAULT_SSR_SHARED,
+  DEFAULT_V2_ROOT_DIR,
+  DEFAULT_V2_CONFIG_PATH,
+  DEFAULT_V2_MATCH_MODE,
 } from './bundle.js';
-export type {CreateBundleOptions, Bundle, MrtServerConfig} from './bundle.js';
+export type {
+  CreateBundleOptions,
+  Bundle,
+  MrtServerConfig,
+  CreateBundleV2Options,
+  BundleV2,
+  BundleV2Config,
+  BundleV2Metadata,
+  BundleV2MatchMode,
+} from './bundle.js';
 
 // Push and bundle operations
-export {pushBundle, uploadBundle, listBundles, downloadBundle, deleteBundle, bulkDeleteBundles} from './push.js';
+export {
+  pushBundle,
+  uploadBundle,
+  pushBundleV2,
+  uploadBundleV2,
+  listBundles,
+  downloadBundle,
+  deleteBundle,
+  bulkDeleteBundles,
+} from './push.js';
 export type {
   PushOptions,
   PushResult,
+  PushV2Options,
+  PushV2Result,
   ListBundlesOptions,
   ListBundlesResult,
   DownloadBundleOptions,

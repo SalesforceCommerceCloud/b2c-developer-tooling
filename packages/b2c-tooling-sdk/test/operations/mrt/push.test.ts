@@ -7,8 +7,14 @@ import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import {createMrtClient, DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
-import {uploadBundle, listBundles, deleteBundle, bulkDeleteBundles} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import type {Bundle} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {
+  uploadBundle,
+  uploadBundleV2,
+  listBundles,
+  deleteBundle,
+  bulkDeleteBundles,
+} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import type {Bundle, BundleV2} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
 
 const DEFAULT_BASE_URL = DEFAULT_MRT_ORIGIN;
@@ -210,6 +216,132 @@ describe('operations/mrt/push', () => {
         expect.fail('Should have thrown');
       } catch (error) {
         expect((error as Error).message).to.include('Failed to push bundle');
+      }
+    });
+  });
+
+  describe('uploadBundleV2', () => {
+    const testBundleV2: BundleV2 = {
+      message: 'v2 message',
+      archive: Buffer.from('fake-gzip-tar-bytes'),
+      rootDir: 'bld',
+      configPath: '.mrt/config.json',
+      matchMode: 'strict',
+      config: {
+        ssrOnly: ['ssr.js'],
+        ssrShared: ['static/**/*'],
+        ssrParameters: {SSRFunctionNodeVersion: '22.x'},
+      },
+    };
+
+    it('uploads a v2 bundle as multipart and maps the response', async () => {
+      let received: {
+        bundleName?: string;
+        bundleSize?: number;
+        message?: string;
+        rootDir?: string;
+        configPath?: string;
+        matchMode?: string;
+      } = {};
+
+      server.use(
+        http.post(`${DEFAULT_BASE_URL}/api/v2/projects/:projectSlug/bundles/`, async ({request, params}) => {
+          expect(params.projectSlug).to.equal('my-project');
+          const form = await request.formData();
+          const bundlePart = form.get('bundle');
+          const isBlob = bundlePart instanceof Blob;
+          received = {
+            bundleName: isBlob ? (bundlePart as {name?: string}).name : undefined,
+            bundleSize: isBlob ? (bundlePart as Blob).size : undefined,
+            message: form.get('message') as string,
+            rootDir: form.get('rootDir') as string,
+            configPath: form.get('configPath') as string,
+            matchMode: form.get('matchMode') as string,
+          };
+          return HttpResponse.json({id: 42, warnings: [], matches: {'ssr.js': 'ssrOnly'}}, {status: 201});
+        }),
+      );
+
+      const client = createMrtClient({}, new MockAuthStrategy());
+      const result = await uploadBundleV2(client, 'my-project', testBundleV2);
+
+      expect(result.bundleId).to.equal(42);
+      expect(result.projectSlug).to.equal('my-project');
+      expect(result.message).to.equal('v2 message');
+      expect(result.warnings).to.deep.equal([]);
+      expect(result.matches).to.deep.equal({'ssr.js': 'ssrOnly'});
+
+      // The multipart request carries the archive plus sibling text fields.
+      expect(received.bundleName).to.equal('bundle.tar.gz');
+      expect(received.bundleSize).to.be.greaterThan(0);
+      expect(received.message).to.equal('v2 message');
+      expect(received.rootDir).to.equal('bld');
+      expect(received.configPath).to.equal('.mrt/config.json');
+      expect(received.matchMode).to.equal('strict');
+    });
+
+    it('surfaces warnings and defaults matches to {} when omitted', async () => {
+      server.use(
+        http.post(`${DEFAULT_BASE_URL}/api/v2/projects/:projectSlug/bundles/`, () => {
+          return HttpResponse.json({id: 7, warnings: ['deprecated runtime']}, {status: 201});
+        }),
+      );
+
+      const client = createMrtClient({}, new MockAuthStrategy());
+      const result = await uploadBundleV2(client, 'my-project', testBundleV2);
+
+      expect(result.bundleId).to.equal(7);
+      expect(result.warnings).to.deep.equal(['deprecated runtime']);
+      expect(result.matches).to.deep.equal({});
+    });
+
+    it('throws on upload failure', async () => {
+      server.use(
+        http.post(`${DEFAULT_BASE_URL}/api/v2/projects/:projectSlug/bundles/`, () => {
+          return HttpResponse.json({detail: 'bundle too large'}, {status: 400});
+        }),
+      );
+
+      const client = createMrtClient({}, new MockAuthStrategy());
+      try {
+        await uploadBundleV2(client, 'my-project', testBundleV2);
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect((error as Error).message).to.include('Failed to push bundle');
+      }
+    });
+
+    it('includes the HTTP status in the error so a keyword-free 403 still triggers the auth hint', async () => {
+      server.use(
+        http.post(`${DEFAULT_BASE_URL}/api/v2/projects/:projectSlug/bundles/`, () => {
+          // A 403 whose body carries no auth keywords (e.g. an empty object).
+          return HttpResponse.json({}, {status: 403});
+        }),
+      );
+
+      const client = createMrtClient({}, new MockAuthStrategy());
+      try {
+        await uploadBundleV2(client, 'my-project', testBundleV2);
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect((error as Error).message).to.include('Failed to push bundle');
+        expect((error as Error).message).to.include('403');
+      }
+    });
+
+    it('throws when the response omits a bundle id', async () => {
+      server.use(
+        http.post(`${DEFAULT_BASE_URL}/api/v2/projects/:projectSlug/bundles/`, () => {
+          return HttpResponse.json({warnings: []}, {status: 201});
+        }),
+      );
+
+      const client = createMrtClient({}, new MockAuthStrategy());
+      try {
+        await uploadBundleV2(client, 'my-project', testBundleV2);
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect((error as Error).message).to.include('omitted a bundle id');
       }
     });
   });
