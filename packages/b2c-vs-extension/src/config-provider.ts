@@ -19,11 +19,13 @@ import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import {readFile} from 'fs/promises';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import type {WorkspaceInstanceSelection} from './instance-selection.js';
 import {findWorkspaceDwJson, isUnscannableRoot} from './workspace-discovery.js';
 
 const DW_JSON = 'dw.json';
 const DOT_ENV = '.env';
 const PROJECT_ROOT_KEY = 'b2c-dx.projectRoot';
+const WORKSPACE_INSTANCE_KEY = 'b2c-dx.workspaceInstance';
 
 /** Async existence check via vscode.workspace.fs (no sync IO on the hot path). */
 async function pathExists(p: string): Promise<boolean> {
@@ -118,6 +120,8 @@ export class B2CExtensionConfig implements vscode.Disposable {
   private detectedDirectory = '';
   private pinned = false;
   private resolvedEnvironment: Record<string, string | undefined>;
+  private workspaceInstanceSelection: WorkspaceInstanceSelection | undefined;
+  private workspaceInstanceWatcher: vscode.FileSystemWatcher | undefined;
 
   private readonly _onDidReset = new vscode.EventEmitter<void>();
   readonly onDidReset = this._onDidReset.event;
@@ -130,6 +134,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
     private readonly ambientEnvironment: NodeJS.ProcessEnv = process.env,
   ) {
     this.resolvedEnvironment = ambientEnvironment;
+    this.workspaceInstanceSelection = workspaceState?.get<WorkspaceInstanceSelection>(WORKSPACE_INSTANCE_KEY);
     // Watch for dw.json and .env saves made within VS Code (most reliable for in-editor edits)
     this.disposables.push(
       vscode.workspace.onDidSaveTextDocument((doc) => {
@@ -176,6 +181,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
     settingsWatcher.onDidCreate(resetForSettingsChange);
     settingsWatcher.onDidDelete(resetForSettingsChange);
     this.disposables.push(settingsWatcher);
+    this.refreshWorkspaceInstanceWatcher();
   }
 
   getConfig(): ResolvedB2CConfig | null {
@@ -196,6 +202,30 @@ export class B2CExtensionConfig implements vscode.Disposable {
    */
   getWorkingDirectory(): string {
     return this.detectedDirectory;
+  }
+
+  /** Return the instance selected only for this VS Code workspace. */
+  getWorkspaceInstanceSelection(): WorkspaceInstanceSelection | undefined {
+    return this.workspaceInstanceSelection ? {...this.workspaceInstanceSelection} : undefined;
+  }
+
+  /** Select an exact instance for this VS Code workspace without changing shared active state. */
+  async selectInstanceForWorkspace(selection: WorkspaceInstanceSelection): Promise<void> {
+    const normalized = {...selection, location: path.resolve(selection.location)};
+    await this.workspaceState?.update(WORKSPACE_INSTANCE_KEY, normalized);
+    this.workspaceInstanceSelection = normalized;
+    this.log.appendLine(`[Config] Selected instance for this workspace: ${normalized.name}`);
+    this.refreshWorkspaceInstanceWatcher();
+    this.reset();
+  }
+
+  /** Clear the workspace override and resume following the shared default. */
+  async followDefaultInstance(): Promise<void> {
+    await this.workspaceState?.update(WORKSPACE_INSTANCE_KEY, undefined);
+    this.workspaceInstanceSelection = undefined;
+    this.log.appendLine('[Config] Following default instance');
+    this.refreshWorkspaceInstanceWatcher();
+    this.reset();
   }
 
   /** Return the ordered primary and global files used by instance-management features. */
@@ -319,9 +349,30 @@ export class B2CExtensionConfig implements vscode.Disposable {
 
   dispose(): void {
     this._onDidReset.dispose();
+    this.workspaceInstanceWatcher?.dispose();
     for (const d of this.disposables) {
       d.dispose();
     }
+  }
+
+  private refreshWorkspaceInstanceWatcher(): void {
+    this.workspaceInstanceWatcher?.dispose();
+    this.workspaceInstanceWatcher = undefined;
+
+    const location = this.workspaceInstanceSelection?.location;
+    if (!location) return;
+
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(vscode.Uri.file(path.dirname(location)), path.basename(location)),
+    );
+    const resetForSelectionChange = (): void => {
+      this.log.appendLine(`[Config] Selected instance configuration changed: ${location}`);
+      this.reset();
+    };
+    watcher.onDidChange(resetForSelectionChange);
+    watcher.onDidCreate(resetForSelectionChange);
+    watcher.onDidDelete(resetForSelectionChange);
+    this.workspaceInstanceWatcher = watcher;
   }
 
   private async resolveAsync(): Promise<void> {
@@ -415,12 +466,26 @@ export class B2CExtensionConfig implements vscode.Disposable {
       this.log.appendLine(`[Config] Global dw.json: ${defaultConfigPath}`);
     }
 
+    const workspaceSelection = this.workspaceInstanceSelection;
+    if (workspaceSelection) {
+      this.log.appendLine(`[Config] Applying workspace instance selection: ${workspaceSelection.name}`);
+    }
+
     const config = await resolveConfig(overrides, {
       workingDirectory,
-      configPath,
-      defaultConfigPath,
+      instance: workspaceSelection?.name,
+      configPath: workspaceSelection?.location ?? configPath,
+      credentialsFile: environment.MRT_CREDENTIALS_FILE || undefined,
+      // An explicit workspace selection identifies an exact file and name. Do
+      // not fall through to a same-name entry in the global fallback.
+      defaultConfigPath: workspaceSelection ? undefined : defaultConfigPath,
       sourcesBefore: [new EnvSource(environment)],
     });
+    if (workspaceSelection && config.values.instanceName !== workspaceSelection.name) {
+      throw new Error(
+        `Selected instance "${workspaceSelection.name}" is no longer available. Choose another instance or follow the default instance.`,
+      );
+    }
     return {config, environment};
   }
 }

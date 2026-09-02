@@ -22,33 +22,47 @@ describe('bm roles get', () => {
     return createTestCommand(BmRolesGet, hooks.getConfig(), flags, args);
   }
 
+  function createMockBackend() {
+    return {
+      name: 'ocapi' as const,
+      listRoles: sinon.stub(),
+      getRole: sinon.stub(),
+      createRole: sinon.stub(),
+      deleteRole: sinon.stub(),
+      getPermissions: sinon.stub(),
+      setPermissions: sinon.stub(),
+      grantRole: sinon.stub(),
+      revokeRole: sinon.stub(),
+    };
+  }
+
   function stubCommon(command: any, {jsonEnabled}: {jsonEnabled: boolean}) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));
     sinon.stub(command, 'jsonEnabled').returns(jsonEnabled);
+    const backend = createMockBackend();
+    sinon.stub(command, 'createRolesBackend').returns(backend);
+    return backend;
   }
 
   it('returns role details in JSON mode', async () => {
     const command: any = await createCommand({}, {role: 'Administrator'});
-    stubCommon(command, {jsonEnabled: true});
+    const backend = stubCommon(command, {jsonEnabled: true});
 
-    const mockRole = {id: 'Administrator', description: 'Admin role', user_count: 5, user_manager: true};
-    const ocapiGet = sinon.stub().resolves({data: mockRole, error: undefined});
-    sinon.stub(command, 'instance').get(() => ({ocapi: {GET: ocapiGet}}));
+    backend.getRole.resolves({id: 'Administrator', description: 'Admin role', userCount: 5, userManager: true});
 
     const result = await command.run();
     expect(result.id).to.equal('Administrator');
-    expect(result.user_count).to.equal(5);
+    expect(result.userCount).to.equal(5);
   });
 
   it('displays role details in non-JSON mode', async () => {
     const command: any = await createCommand({}, {role: 'Administrator'});
-    stubCommon(command, {jsonEnabled: false});
+    const backend = stubCommon(command, {jsonEnabled: false});
     sinon.stub(command, 'log').returns(void 0);
 
-    const mockRole = {id: 'Administrator', description: 'Admin role', user_count: 5};
-    const ocapiGet = sinon.stub().resolves({data: mockRole, error: undefined});
-    sinon.stub(command, 'instance').get(() => ({ocapi: {GET: ocapiGet}}));
+    backend.getRole.resolves({id: 'Administrator', description: 'Admin role', userCount: 5});
 
     const stdoutStub = sinon.stub(ux, 'stdout').returns(void 0 as any);
 
@@ -59,15 +73,10 @@ describe('bm roles get', () => {
 
   it('throws on 404', async () => {
     const command: any = await createCommand({}, {role: 'NonExistent'});
-    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
+    const backend = stubCommon(command, {jsonEnabled: false});
+    sinon.stub(command, 'log').returns(void 0);
 
-    const ocapiGet = sinon.stub().resolves({
-      data: undefined,
-      error: {fault: {message: 'Role not found'}},
-      response: {status: 404, statusText: 'Not Found'},
-    });
-    sinon.stub(command, 'instance').get(() => ({ocapi: {GET: ocapiGet}}));
+    backend.getRole.rejects(new Error('Failed to get role NonExistent: Role not found'));
 
     try {
       await command.run();

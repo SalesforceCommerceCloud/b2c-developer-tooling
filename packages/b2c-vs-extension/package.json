@@ -19,9 +19,9 @@
   "dependencies": {
     "@salesforce/b2c-script-types": "workspace:*",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
-    "swagger-ui-dist": "^5.18.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "swagger-ui-dist": "^5.18.0",
     "vscode-html-languageservice": "catalog:"
   },
   "engines": {
@@ -148,7 +148,7 @@
         "b2c-dx.features.sandboxFilesystem": {
           "type": "boolean",
           "default": false,
-          "description": "Automatically mount the active instance's WebDAV filesystem as a workspace folder on startup. Requires the WebDAV Browser to be enabled."
+          "description": "Automatically mount the selected instance's WebDAV filesystem as a workspace folder on startup. Requires the WebDAV Browser to be enabled."
         },
         "b2c-dx.features.contentLibraries": {
           "type": "boolean",
@@ -453,7 +453,7 @@
       },
       {
         "view": "b2cApiBrowser",
-        "contents": "Browse SCAPI OpenAPI schemas for your Commerce Cloud instance.\n\nRequires OAuth credentials (`client-id`, `client-secret`, `shortCode`) in dw.json.\n\n[Connect & authenticate](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22connect%22%5D)\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
+        "contents": "Browse SCAPI OpenAPI schemas for your Commerce Cloud instance.\n\nRequires OAuth credentials (`client-id`, `client-secret`, `short-code`, `tenant-id`) in dw.json.\n\n[Connect & authenticate](command:workbench.action.openWalkthrough?%5B%22Salesforce.b2c-vs-extension%23b2c-dx.gettingStarted%22%2C%22connect%22%5D)\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
       },
       {
         "view": "b2cSandboxExplorer",
@@ -862,12 +862,6 @@
         "category": "B2C DX - Job History"
       },
       {
-        "command": "b2c-dx.jobs.stop",
-        "title": "Stop Execution",
-        "icon": "$(debug-stop)",
-        "category": "B2C DX - Job History"
-      },
-      {
         "command": "b2c-dx.jobs.viewExecutionDetails",
         "title": "View Execution Details",
         "icon": "$(info)",
@@ -904,7 +898,17 @@
       },
       {
         "command": "b2c-dx.instance.switch",
-        "title": "Switch Active Instance",
+        "title": "Select Instance for This Workspace",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.instance.setDefault",
+        "title": "Set Default Instance",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.instance.followDefault",
+        "title": "Follow Default Instance",
         "category": "B2C DX"
       },
       {
@@ -1362,7 +1366,7 @@
           {
             "id": "connect",
             "title": "Phase 3 · Connect & authenticate",
-            "description": "Verify your config resolves and the extension can reach your instance. The active instance shows in the status bar (bottom-left).\n\nOAuth fields (`client-id`, `client-secret`, `short-code`) unlock the Sandbox Explorer and API Browser; basic auth (`username`, `password`) is enough for WebDAV and cartridge deploys.\n\n[Inspect resolved config](command:b2c-dx.walkthrough.inspectSetup) — runs `b2c setup inspect` and shows where each value came from (file / env / keychain).\n\n[Inspect active instance](command:b2c-dx.instance.inspect) · [Open Realm Explorer](command:workbench.view.extension.b2c-dx-sandboxes)",
+            "description": "Verify your config resolves and the extension can reach your instance. The selected instance shows in the status bar (bottom-left).\n\nOAuth fields (`client-id`, `client-secret`, `short-code`) unlock the Sandbox Explorer and API Browser; basic auth (`username`, `password`) is enough for WebDAV and cartridge deploys.\n\n[Inspect resolved config](command:b2c-dx.walkthrough.inspectSetup) — runs `b2c setup inspect` and shows where each value came from (file / env / keychain).\n\n[Inspect selected instance](command:b2c-dx.instance.inspect) · [Open Realm Explorer](command:workbench.view.extension.b2c-dx-sandboxes)",
             "media": {
               "markdown": "media/walkthrough/oauth-setup.md"
             },
@@ -1779,11 +1783,6 @@
           "group": "1_lifecycle@2"
         },
         {
-          "command": "b2c-dx.jobs.stop",
-          "when": "view == b2cJobsExplorer && viewItem == jobExecution-running",
-          "group": "1_lifecycle@3"
-        },
-        {
           "command": "b2c-dx.jobs.openExecutionLog",
           "when": "view == b2cJobsExplorer && viewItem =~ /^jobExecution-/",
           "group": "2_logs@1"
@@ -2123,10 +2122,6 @@
           "when": "false"
         },
         {
-          "command": "b2c-dx.jobs.stop",
-          "when": "false"
-        },
-        {
           "command": "b2c-dx.jobs.viewExecutionDetails",
           "when": "false"
         },
@@ -2292,11 +2287,11 @@
     "@vscode/vsce": "^3.9.1",
     "c8": "catalog:",
     "esbuild": "^0.24.0",
-    "jszip": "3.10.1",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-header": "catalog:",
     "eslint-plugin-prettier": "catalog:",
+    "jszip": "3.10.1",
     "prettier": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:"

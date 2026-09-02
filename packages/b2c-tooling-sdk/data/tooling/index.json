@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-08-28T16:41:03.775Z",
+  "generatedAt": "2026-09-01T19:50:41.549Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -26,7 +26,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/bm.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/bm.md",
-      "headings": "Authentication • Required OCAPI Permissions • Required BM Functional Permission • Configuration Examples • Roles • b2c bm roles list • b2c bm roles get • b2c bm roles create • b2c bm roles delete • b2c bm roles grant • b2c bm roles revoke • b2c bm roles permissions get • b2c bm roles permissions set • Permissions JSON Structure • Users • b2c bm users list • b2c bm users get • b2c bm users search • b2c bm users update • b2c bm users delete • Whoami • Access Keys • Scopes • b2c bm access-key get • b2c bm access-key create • b2c bm access-key set • b2c bm access-key delete • Common Workflows • Rotate my own WebDAV password • Audit role assignments • Find inactive users • Provision a custom role and assign one user • Cycle access keys for a user (admin)",
+      "headings": "API Backend • Authentication • Required OCAPI Permissions • Required BM Functional Permission • Configuration Examples • Roles • b2c bm roles list • b2c bm roles get • b2c bm roles create • b2c bm roles delete • b2c bm roles grant • b2c bm roles revoke • b2c bm roles permissions get • b2c bm roles permissions set • Permissions JSON Structure • Users • b2c bm users list • b2c bm users get • b2c bm users search • b2c bm users create • b2c bm users update • b2c bm users delete • Whoami • Access Keys • Scopes • b2c bm access-key get • b2c bm access-key create • b2c bm access-key set • b2c bm access-key delete • Common Workflows • Rotate my own WebDAV password • Audit role assignments • Find inactive users • Provision a custom role and assign one user • Cycle access keys for a user (admin)",
       "preview": "Commands for administering Business Manager resources on a B2C Commerce instance — access roles, users, access keys, and identity (whoami)."
     },
     {
@@ -53,7 +53,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/code.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/code.md",
-      "headings": "Authentication • WebDAV Operations (deploy, download, watch) • OCAPI Operations (list, activate, delete) • b2c code list • Usage • Flags • Examples • Output • b2c code deploy • Usage • Arguments • Flags • Examples • Cartridge Discovery • b2c code download • Usage • Arguments • Flags • Examples • Mirror Mode • Notes • b2c code activate • Usage • Arguments • Flags • Examples • Reload vs Activate • b2c code delete • Usage • Arguments • Flags • Examples • Notes • b2c code watch • Usage • Arguments • Flags • Examples • Behavior • Environment Variables",
+      "headings": "API Backend • Authentication • WebDAV Operations (deploy, download, watch) • Code Version Operations (list, activate, delete) • b2c code list • Usage • Flags • Examples • Output • b2c code deploy • Usage • Arguments • Flags • Examples • Cartridge Discovery • b2c code download • Usage • Arguments • Flags • Examples • Mirror Mode • Notes • b2c code activate • Usage • Arguments • Flags • Examples • Reload vs Activate • b2c code delete • Usage • Arguments • Flags • Examples • Notes • b2c code watch • Usage • Arguments • Flags • Examples • Behavior • Environment Variables",
       "preview": "Commands for deploying, downloading, activating code versions, and watching for file changes on B2C Commerce instances."
     },
     {
@@ -116,7 +116,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/jobs.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/jobs.md",
-      "headings": "Authentication • Required OCAPI Permissions • WebDAV Access • Configuration • b2c job run • Usage • Arguments • Flags • Examples • System Jobs with Custom Request Bodies • Standard (system) job steps • In-flow system step vs. the CLI equivalent • b2c job wait • Usage • Arguments • Flags • Examples • b2c job search • Usage • Flags • Examples • Output • b2c job log • Usage • Arguments • Flags • Examples • Notes • b2c job import • Usage • Arguments • Flags • Examples • Notes • Importing archives larger than the instance limit • b2c job import-set • Usage • Arguments • Flags • Examples • Post-import notes • Repeat runs • Resetting import history • Concurrent runs and recovery • b2c job export • Usage • Flags • Examples • Data Units • Site Data Types • Global Data Types",
+      "headings": "API Backend • Authentication • SCAPI (recommended) • OCAPI • WebDAV Access • Configuration • b2c job run • Usage • Arguments • Flags • Examples • System Jobs with Custom Request Bodies • Standard (system) job steps • In-flow system step vs. the CLI equivalent • b2c job wait • Usage • Arguments • Flags • Examples • b2c job search • Usage • Flags • Examples • Output • b2c job log • Usage • Arguments • Flags • Examples • Notes • b2c job execution delete • Usage • Arguments • Examples • Notes • b2c job import • Usage • Arguments • Flags • Examples • Notes • Importing archives larger than the instance limit • b2c job import-set • Usage • Arguments • Flags • Examples • Post-import notes • Repeat runs • Resetting import history • Concurrent runs and recovery • b2c job export • Usage • Flags • Examples • Data Units • Site Data Types • Global Data Types",
       "preview": "Commands for executing jobs, importing and exporting site archives, and monitoring job execution status."
     },
     {
@@ -224,7 +224,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sites.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sites.md",
-      "headings": "Authentication • Required OCAPI Permissions • Configuration • b2c sites list • Usage • Flags • Examples • Output • Cartridge Commands • b2c sites cartridges list • Usage • Flags • Examples • b2c sites cartridges add • Usage • Arguments • Flags • Examples • b2c sites cartridges remove • Usage • Arguments • Flags • Examples • b2c sites cartridges set • Usage • Arguments • Flags • Examples",
+      "headings": "Authentication • b2c sites list • Usage • Flags • Examples • Output • Cartridge Commands • b2c sites cartridges list • Usage • Flags • Examples • b2c sites cartridges add • Usage • Arguments • Flags • Examples • b2c sites cartridges remove • Usage • Arguments • Flags • Examples • b2c sites cartridges set • Usage • Arguments • Flags • Examples",
       "preview": "Commands for listing and managing storefront sites on B2C Commerce instances."
     },
     {
@@ -278,8 +278,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.md",
-      "headings": "Overview • Account Manager API Client • Authentication Methods • Creating an API Client • Assigning Roles • Understanding Roles and Tenant Filters • For Client Credentials (Roles on API Client) • For User Authentication (roles on User) • Configuring Scopes • Configuring Tenant Filter • Redirect URLs • JWT Authentication (Certificate-Based) • How It Works • Benefits • Setup Instructions • Step 1: Generate Certificate Pair • Step 2: Register Certificate in Account Manager • Step 3: Configure CLI • Authentication Priority • Troubleshooting • Security Best Practices • OCAPI Configuration • Configuring OCAPI in Business Manager • Example OCAPI Configuration • Minimal Configuration by Feature • SCAPI Authentication • Required Setup • Scopes by Command • Configuration • WebDAV Access • Option A: Basic Authentication (user access) • Option B: OAuth-based WebDAV (API client access) • Managed Runtime API Key • Getting an MRT API Key • Configuring the API Key • Quick Start Example • 1. Create API Client in Account Manager • 2. Configure OCAPI (for code list/activate/delete, jobs, sites) • 3. Configure WebDAV Access (for code deploy/watch, webdav commands) • 4. Set Environment Variables • 5. Test the Configuration • Troubleshooting • \"Unauthorized\" errors • \"Forbidden\" on WebDAV operations • \"Invalid scope\" errors • Implicit Flow Deprecation (PKCE Migration) {#implicit-flow-deprecation} • What changed • You must use a public client • Transitional automatic fallback • Next Steps",
-      "preview": "Set up authentication for the B2C CLI including Account Manager API clients, OCAPI permissions, and WebDAV access keys."
+      "headings": "Overview • Account Manager API Client • Authentication Methods • Creating an API Client • Assigning Roles • Understanding Roles and Tenant Filters • For Client Credentials (Roles on API Client) • For User Authentication (roles on User) • Configuring Scopes • Configuring Tenant Filter • Redirect URLs • JWT Authentication (Certificate-Based) • How It Works • Benefits • Setup Instructions • Step 1: Generate Certificate Pair • Step 2: Register Certificate in Account Manager • Step 3: Configure CLI • Authentication Priority • Troubleshooting • Security Best Practices • OCAPI Configuration • Configuring OCAPI in Business Manager • Example OCAPI Configuration • Minimal Configuration by Feature • SCAPI Authentication • Required Setup • Scopes by Command • Configuration • WebDAV Access • Option A: Basic Authentication (user access) • Option B: OAuth-based WebDAV (API client access) • Managed Runtime API Key • Getting an MRT API Key • Configuring the API Key • Quick Start Example • 1. Create API Client in Account Manager • 2. (Optional) Configure OCAPI fallback • 3. Configure WebDAV Access (for code deploy/watch, webdav commands) • 4. Set Environment Variables • 5. Test the Configuration • Troubleshooting • \"Unauthorized\" errors • \"Forbidden\" on WebDAV operations • \"Invalid scope\" errors • Implicit Flow Deprecation (PKCE Migration) {#implicit-flow-deprecation} • What changed • You must use a public client • Transitional automatic fallback • Next Steps",
+      "preview": "Set up authentication for the B2C CLI including Account Manager API clients, SCAPI scopes, OCAPI permissions, and WebDAV access keys."
     },
     {
       "id": "guide-ci-cd",
@@ -557,7 +557,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.md",
-      "headings": "Connecting to a B2C Instance • Per-feature requirements • Example `dw.json` • How the Extension Chooses a Project • Switching the Active Instance • Settings Reference • Feature toggles • Verbosity, polling, telemetry • XML schema validation • Complete defaults (copy-paste) • Next Steps",
+      "headings": "Connecting to a B2C Instance • Per-feature requirements • Example `dw.json` • How the Extension Chooses a Project • Selecting an Instance • Settings Reference • Feature toggles • Verbosity, polling, telemetry • XML schema validation • Complete defaults (copy-paste) • Next Steps",
       "preview": "Connect the Salesforce B2C Commerce VS Code Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference."
     },
     {

@@ -21,29 +21,37 @@ describe('code activate', () => {
     return createTestCommand(CodeActivate, hooks.getConfig(), flags, args);
   }
 
-  it('activates when --reload is not set', async () => {
-    const command: any = await createCommand({}, {codeVersion: 'v1'});
+  function createMockBackend() {
+    return {
+      name: 'ocapi' as const,
+      listCodeVersions: sinon.stub(),
+      getActiveCodeVersion: sinon.stub(),
+      // Backend contract returns a CodeVersionActivationResult.
+      activateCodeVersion: sinon.stub().resolves({alreadyActive: false}),
+      deleteCodeVersion: sinon.stub(),
+      createCodeVersion: sinon.stub(),
+    };
+  }
 
+  function stubCommon(command: any) {
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'log').returns(void 0);
-
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
+    sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));
+    const backend = createMockBackend();
+    sinon.stub(command, 'createScriptsBackend').returns(backend);
+    return backend;
+  }
 
-    const patchStub = sinon.stub().resolves({data: {}, error: undefined});
-    sinon.stub(command, 'instance').get(() => ({
-      ocapi: {
-        PATCH: patchStub,
-        GET: sinon.stub().rejects(new Error('Unexpected ocapi.GET')),
-      },
-    }));
+  it('activates when --reload is not set', async () => {
+    const command: any = await createCommand({}, {codeVersion: 'v1'});
+    const backend = stubCommon(command);
+    backend.activateCodeVersion.resolves({alreadyActive: false});
 
     await command.run();
 
-    expect(patchStub.calledOnce).to.be.true;
-    const [path, options] = patchStub.firstCall.args;
-    expect(path).to.equal('/code_versions/{code_version_id}');
-    expect(options?.params?.path).to.deep.equal({code_version_id: 'v1'});
-    expect(options?.body).to.deep.equal({active: true});
+    expect(backend.activateCodeVersion.calledOnce).to.be.true;
+    expect(backend.activateCodeVersion.firstCall.args[0]).to.equal('v1');
   });
 
   it('reports an already-active version without failing', async () => {
@@ -75,7 +83,6 @@ describe('code activate', () => {
 
   it('errors when no code version is provided for activate mode', async () => {
     const command: any = await createCommand({}, {});
-
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
 
@@ -89,67 +96,26 @@ describe('code activate', () => {
 
   it('reloads the active code version when --reload is set and no arg is provided', async () => {
     const command: any = await createCommand({reload: true}, {});
-
-    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'log').returns(void 0);
-
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
-
-    const getStub = sinon.stub().resolves({
-      data: {
-        data: [
-          {id: 'v1', active: true},
-          {id: 'v2', active: false},
-        ],
-      },
-      error: undefined,
-    });
-
-    const patchStub = sinon.stub().resolves({data: {}, error: undefined});
-
-    sinon.stub(command, 'instance').get(() => ({
-      ocapi: {
-        GET: getStub,
-        PATCH: patchStub,
-      },
-    }));
+    const backend = stubCommon(command);
+    // reloadCodeVersion is now backend-agnostic: list+activate(alt)+activate(target)
+    backend.listCodeVersions.resolves([
+      {id: 'v1', active: true},
+      {id: 'v2', active: false},
+    ]);
+    backend.activateCodeVersion.resolves({alreadyActive: false});
 
     await command.run();
 
-    expect(getStub.calledOnce).to.be.true;
-    expect(patchStub.callCount).to.equal(2);
-    // Reload toggles to alternate then back to active.
-    const calledIds = patchStub.getCalls().map((c) => c.args[1]?.params?.path?.code_version_id);
-    expect(calledIds).to.deep.equal(['v2', 'v1']);
+    // Called twice: alternate then target
+    expect(backend.activateCodeVersion.callCount).to.equal(2);
+    expect(backend.activateCodeVersion.getCall(0).args[0]).to.equal('v2');
+    expect(backend.activateCodeVersion.getCall(1).args[0]).to.equal('v1');
   });
 
   it('calls command.error when reload fails with an error message', async () => {
     const command: any = await createCommand({reload: true}, {codeVersion: 'v1'});
-
-    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
-    sinon.stub(command, 'log').returns(void 0);
-
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
-
-    // Reload toggles active → alternate → active, so we need at least two versions.
-    const getStub = sinon.stub().resolves({
-      data: {
-        data: [
-          {id: 'v1', active: true},
-          {id: 'v2', active: false},
-        ],
-      },
-      error: undefined,
-    });
-
-    const patchStub = sinon.stub().resolves({data: {}, error: {message: 'boom'}});
-
-    sinon.stub(command, 'instance').get(() => ({
-      ocapi: {
-        GET: getStub,
-        PATCH: patchStub,
-      },
-    }));
+    const backend = stubCommon(command);
+    backend.listCodeVersions.rejects(new Error('boom'));
 
     const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
@@ -157,6 +123,5 @@ describe('code activate', () => {
 
     expect(errorStub.calledOnce).to.be.true;
     expect(errorStub.firstCall.args[0]).to.include('Failed to reload code version');
-    expect(patchStub.called).to.be.true;
   });
 });

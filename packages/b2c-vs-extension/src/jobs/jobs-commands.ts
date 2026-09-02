@@ -4,18 +4,16 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {
-  executeJob,
   getJobErrorMessage,
   getJobLog,
   siteArchiveExportToPath,
   siteArchiveImport,
-  waitForJob,
   type ExportDataUnitsConfiguration,
   type JobExecution,
   type JobExecutionParameter,
   JobExecutionError,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
-import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
+import {createJobsCompatibilityBackend} from '@salesforce/b2c-tooling-sdk';
 import {createScaffoldRegistry, generateFromScaffold} from '@salesforce/b2c-tooling-sdk/scaffold';
 import {findCartridgesSafe} from '../workspace-discovery.js';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
@@ -776,11 +774,6 @@ async function normalizeStepTypesJson(
   await fs.writeFile(stepTypesPath, `${JSON.stringify({...raw, 'step-types': merged}, null, 2)}\n`, 'utf-8');
 }
 
-function isActiveExecutionStatus(status: string | undefined): boolean {
-  const normalized = (status ?? '').toLowerCase();
-  return normalized === 'running' || normalized === 'pending';
-}
-
 function getConfiguredKnownJobIds(): string[] {
   const configured = vscode.workspace.getConfiguration('b2c-dx').get<string[]>('jobs.knownJobIds', []);
   if (!Array.isArray(configured)) return [];
@@ -963,7 +956,7 @@ function getLogUnavailableMessage(error: unknown): string | undefined {
   const lowered = message.toLowerCase();
 
   if (lowered.includes('no log file path available')) {
-    return 'This execution does not expose a log file path in OCAPI.';
+    return 'This execution does not expose a log file path.';
   }
 
   if (lowered.includes('log file does not exist')) {
@@ -1074,18 +1067,18 @@ export function registerJobsCommands(
       void vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured. Configure dw.json first.');
       return;
     }
-
     const triggerAndWait = async (): Promise<JobExecution> => {
+      const jobsBackend = createJobsCompatibilityBackend(instance);
       return vscode.window.withProgress(
         {location: vscode.ProgressLocation.Notification, title: `Running job ${jobId}...`, cancellable: false},
         async (progress) => {
-          const execution = await executeJob(instance, jobId, {parameters});
+          const execution = await jobsBackend.executeJob(jobId, {parameters});
           const executionId = execution.id;
           if (!executionId) return execution;
 
           progress.report({message: `Execution ${executionId} started`});
           treeProvider.refresh();
-          return waitForJob(instance, jobId, executionId, {
+          return jobsBackend.waitForJob(jobId, executionId, {
             onPoll: (info) => progress.report({message: `${info.status} · ${info.elapsedSeconds}s elapsed`}),
           });
         },
@@ -1511,57 +1504,6 @@ export function registerJobsCommands(
     await runJobAndTail(node.jobId, reusedParameters);
   });
 
-  const stopExecution = registerSafeCommand('b2c-dx.jobs.stop', async (node: JobExecutionTreeItem) => {
-    if (!node) return;
-
-    if (!isActiveExecutionStatus(node.execution.execution_status)) {
-      void vscode.window.showWarningMessage(
-        `Execution ${node.execution.id ?? 'unknown'} is not running. Only running/pending executions can be stopped.`,
-      );
-      return;
-    }
-
-    const executionId = node.execution.id;
-    if (!executionId) {
-      void vscode.window.showErrorMessage(`Cannot stop ${node.jobId}: missing execution ID.`);
-      return;
-    }
-
-    const instance = configProvider.getInstance();
-    if (!instance) {
-      void vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured. Configure dw.json first.');
-      return;
-    }
-
-    // VS Code auto-adds a Cancel button to modal dialogs — passing an explicit
-    // one produces two Cancel-like actions. Keep only the affirmative.
-    const choice = await vscode.window.showWarningMessage(
-      `Stop execution ${executionId} for job ${node.jobId}?`,
-      {modal: true},
-      'Stop',
-    );
-    if (choice !== 'Stop') return;
-
-    try {
-      await vscode.window.withProgress(
-        {location: vscode.ProgressLocation.Notification, title: `Stopping execution ${executionId}...`},
-        async () => {
-          const {error, response} = await instance.ocapi.DELETE('/jobs/{job_id}/executions/{id}', {
-            params: {path: {job_id: node.jobId, id: executionId}},
-          });
-          if (error) {
-            throw new Error(getApiErrorMessage(error, response));
-          }
-        },
-      );
-
-      void vscode.window.showInformationMessage(`Stop request sent for ${node.jobId} (${executionId}).`);
-      treeProvider.refresh();
-    } catch (error) {
-      showScopeAwareError(`Failed to stop execution ${executionId}`, error);
-    }
-  });
-
   const viewExecutionDetails = registerSafeCommand(
     'b2c-dx.jobs.viewExecutionDetails',
     async (node: JobExecutionTreeItem) => {
@@ -1725,7 +1667,6 @@ export function registerJobsCommands(
     createScaffold,
     openBmDefinitions,
     rerunExecution,
-    stopExecution,
     viewExecutionDetails,
     openExecutionInBusinessManager,
     openExecutionLog,

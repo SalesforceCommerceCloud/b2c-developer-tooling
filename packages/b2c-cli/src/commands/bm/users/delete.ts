@@ -4,8 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {deleteBmUser} from '@salesforce/b2c-tooling-sdk/operations/bm-users';
+import {BmCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {confirm} from '@salesforce/b2c-tooling-sdk/ux';
 import {t} from '../../../i18n/index.js';
 
@@ -15,7 +14,7 @@ interface DeleteResult {
   hostname: string;
 }
 
-export default class BmUsersDelete extends InstanceCommand<typeof BmUsersDelete> {
+export default class BmUsersDelete extends BmCommand<typeof BmUsersDelete> {
   static args = {
     login: Args.string({
       description: 'User login (email) to delete',
@@ -57,9 +56,12 @@ export default class BmUsersDelete extends InstanceCommand<typeof BmUsersDelete>
       }
     }
 
+    const backend = this.createUsersBackend();
+    this.logger.debug(`Using ${backend.name} backend for users delete`);
+
     this.log(t('commands.bm.users.delete.deleting', 'Deleting user {{login}} from {{hostname}}...', {login, hostname}));
 
-    await deleteBmUser(this.instance, login);
+    await backend.deleteUser(login);
 
     const result = {success: true, login, hostname};
 

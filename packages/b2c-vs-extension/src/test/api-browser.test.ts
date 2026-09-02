@@ -7,6 +7,7 @@
 import * as assert from 'assert';
 import type {SchemaEntry} from '../api-browser/api-browser-tree-provider.js';
 import {detectApiType, injectCustomApiOrgPathPrefix} from '../api-browser/swagger-webview.js';
+import {resolveApiBrowserTenantId} from '../api-browser/tenant.js';
 
 function entry(apiFamily: string, apiName: string): SchemaEntry {
   return {apiFamily, apiName, apiVersion: 'v1'};
@@ -129,5 +130,22 @@ suite('injectCustomApiOrgPathPrefix', () => {
     const spec: Record<string, unknown> = {};
     injectCustomApiOrgPathPrefix(spec);
     assert.strictEqual(spec.paths, undefined);
+  });
+});
+
+suite('resolveApiBrowserTenantId', () => {
+  test('prefers and normalizes the configured tenant ID', () => {
+    assert.strictEqual(
+      resolveApiBrowserTenantId({tenantId: 'f_ecom_zzxy-prd', hostname: 'wrong-001.demandware.net'}),
+      'zzxy_prd',
+    );
+  });
+
+  test('derives the tenant ID from hostname only when configuration is absent', () => {
+    assert.strictEqual(resolveApiBrowserTenantId({hostname: 'zzpq-013.dx.commercecloud.salesforce.com'}), 'zzpq_013');
+  });
+
+  test('returns an empty value when neither coordinate is available', () => {
+    assert.strictEqual(resolveApiBrowserTenantId({}), '');
   });
 });

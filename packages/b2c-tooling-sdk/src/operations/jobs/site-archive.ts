@@ -15,8 +15,13 @@ import * as zlib from 'node:zlib';
 import {glob, hasMagic} from 'glob';
 import JSZip from 'jszip';
 import {B2CInstance} from '../../instance/index.js';
+import {SCAPI_JOBS_CASCADE} from '../../clients/scapi-jobs.js';
 import {addDirectoryToZip} from '../util/zip.js';
-import {waitForJob, type JobExecution, type WaitForJobOptions} from './run.js';
+import {type JobExecution, type WaitForJobOptions} from './run.js';
+import {runSystemJob} from './run-system-job.js';
+
+// Import/export trigger system jobs via the job-execution write surface.
+const JOBS_RW_SCOPES = [...new Set(SCAPI_JOBS_CASCADE.write.flat())];
 
 const IMPORT_JOB_ID = 'sfcc-site-archive-import';
 const EXPORT_JOB_ID = 'sfcc-site-archive-export';
@@ -208,44 +213,20 @@ export async function siteArchiveImport(
     await instance.webdav.put(uploadPath, archiveContent as Buffer, 'application/zip');
   }
 
-  let execution: JobExecution;
-
-  // Try file_name format first (standard OCAPI format)
-  const {data, error} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
-    params: {path: {job_id: IMPORT_JOB_ID}},
-    body: {file_name: zipFilename} as unknown as string,
+  // Execute the import job (SCAPI when configured, OCAPI fallback in auto).
+  const execution: JobExecution = await runSystemJob(instance, {
+    jobId: IMPORT_JOB_ID,
+    ocapiBody: {file_name: zipFilename},
+    parameters: [{name: 'ImportFile', value: zipFilename}],
+    deprecatedScopes: JOBS_RW_SCOPES,
+    wait,
+    waitOptions,
+    failVerb: 'execute import job',
   });
 
-  if (
-    error?.fault?.type === 'UnknownPropertyException' &&
-    (error.fault.arguments as Record<string, unknown>)?.document === 'job_execution_request'
-  ) {
-    // Retry with parameters format (internal/support users)
-    const {data: retryData, error: retryError} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
-      params: {path: {job_id: IMPORT_JOB_ID}},
-      body: {
-        parameters: [{name: 'ImportFile', value: zipFilename}],
-      } as unknown as string,
-    });
-
-    if (retryError || !retryData) {
-      throw new Error(retryError?.fault?.message ?? 'Failed to execute import job');
-    }
-
-    execution = retryData;
-  } else if (error || !data) {
-    throw new Error(error?.fault?.message ?? 'Failed to execute import job');
-  } else {
-    execution = data;
-  }
-
-  if (wait) {
-    execution = await waitForJob(instance, IMPORT_JOB_ID, execution.id!, waitOptions);
-
-    // Clean up archive if not keeping
-    if (!keepArchive && needsUpload) {
-      await instance.webdav.delete(uploadPath);
-    }
+  // Clean up archive if not keeping (only when we waited for completion)
+  if (wait && !keepArchive && needsUpload) {
+    await instance.webdav.delete(uploadPath);
   }
 
   return {
@@ -964,46 +945,18 @@ export async function siteArchiveExport(
   const archiveDirName = `${timestamp}_export`;
   const zipFilename = `${archiveDirName}.zip`;
 
-  let execution: JobExecution;
-
-  // Execute export job - try export_file format first
-  {
-    const {data, error} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
-      params: {path: {job_id: EXPORT_JOB_ID}},
-      body: {
-        export_file: zipFilename,
-        data_units: dataUnits,
-      } as unknown as string,
-    });
-
-    if (
-      error?.fault?.type === 'UnknownPropertyException' &&
-      (error.fault.arguments as Record<string, unknown>)?.document === 'job_execution_request'
-    ) {
-      // Retry with parameters format (internal/support users)
-      const {data: retryData, error: retryError} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
-        params: {path: {job_id: EXPORT_JOB_ID}},
-        body: {
-          parameters: [
-            {name: 'ExportFile', value: zipFilename},
-            {name: 'DataUnits', value: JSON.stringify(dataUnits)},
-          ],
-        } as unknown as string,
-      });
-
-      if (retryError || !retryData) {
-        throw new Error(retryError?.fault?.message ?? 'Failed to execute export job');
-      }
-
-      execution = retryData;
-    } else if (error || !data) {
-      throw new Error(error?.fault?.message ?? 'Failed to execute export job');
-    } else {
-      execution = data;
-    }
-  }
-
-  execution = await waitForJob(instance, EXPORT_JOB_ID, execution.id!, waitOptions);
+  // Execute export job (SCAPI when configured, OCAPI fallback in auto).
+  const execution: JobExecution = await runSystemJob(instance, {
+    jobId: EXPORT_JOB_ID,
+    ocapiBody: {export_file: zipFilename, data_units: dataUnits},
+    parameters: [
+      {name: 'ExportFile', value: zipFilename},
+      {name: 'DataUnits', value: JSON.stringify(dataUnits)},
+    ],
+    deprecatedScopes: JOBS_RW_SCOPES,
+    waitOptions,
+    failVerb: 'execute export job',
+  });
 
   return {
     execution,

@@ -8,6 +8,7 @@ import {createScapiSchemasClient, toOrganizationId} from '@salesforce/b2c-toolin
 import type {SchemaListItem} from '@salesforce/b2c-tooling-sdk/clients';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
+import {resolveApiBrowserTenantId} from './tenant.js';
 
 export class ApiFamilyTreeItem extends vscode.TreeItem {
   readonly nodeType = 'apiFamily' as const;
@@ -141,9 +142,7 @@ export class ApiBrowserTreeDataProvider implements vscode.TreeDataProvider<ApiBr
     const shortCode = config.values.shortCode;
     if (!shortCode) return null;
 
-    const hostname = config.values.hostname;
-    const firstPart = hostname && typeof hostname === 'string' ? (hostname.split('.')[0] ?? '') : '';
-    const tenantId = firstPart ? firstPart.replace(/-/g, '_') : '';
+    const tenantId = resolveApiBrowserTenantId(config.values);
     if (!tenantId) return null;
 
     try {

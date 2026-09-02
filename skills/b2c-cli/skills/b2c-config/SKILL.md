@@ -85,7 +85,7 @@ Most commands that interact with a B2C Commerce instance require authentication.
 
 ### `--user-auth` Flag
 
-Many commands support `--user-auth` to use browser-based implicit OAuth instead of client credentials. This is useful when:
+Many commands support `--user-auth` to use browser-based OAuth instead of client credentials. As of B2C Commerce release 26.8, SCAPI Admin APIs do not support this flow; migrated commands use OCAPI in `auto` mode, while explicit SCAPI reports an actionable authentication error before making an API request. User auth remains useful when:
 
 - You don't have a `clientSecret` configured
 - You need user-level permissions (e.g., Account Manager admin roles)
@@ -201,6 +201,10 @@ b2c setup instance create staging --hostname staging.example.com
 # Create and set as active
 b2c setup instance create staging --hostname staging.example.com --active
 
+# Optionally save SCAPI coordinates and use SCAPI-first active-version detection
+b2c setup instance create staging --hostname staging.example.com \
+  --short-code kv7kzm78 --tenant-id zzxy_prd --api-backend auto
+
 # Non-interactive mode (for scripts)
 b2c setup instance create staging \
   --hostname staging.example.com \
@@ -208,6 +212,8 @@ b2c setup instance create staging \
   --password secret \
   --force
 ```
+
+`shortCode` and `tenantId` are optional. When present with stateless OAuth, setup tries SCAPI first to detect the active code version; otherwise `auto` uses OCAPI. If detection fails, interactive setup reports the reason and allows manual code-version entry.
 
 ### Switch Active Instance
 

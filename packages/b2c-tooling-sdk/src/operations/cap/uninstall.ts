@@ -10,7 +10,8 @@
  */
 import {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
-import {waitForJob, JobExecutionError, getJobLog, type JobExecution, type WaitForJobOptions} from '../jobs/run.js';
+import {JobExecutionError, getJobLog, type JobExecution, type WaitForJobOptions} from '../jobs/run.js';
+import {runSystemJob} from '../jobs/run-system-job.js';
 import {normalizeSiteId} from './install.js';
 
 const UNINSTALL_JOB_ID = 'sfcc-uninstall-commerce-app';
@@ -67,51 +68,24 @@ export async function commerceAppUninstall(
 
   logger.debug({jobId: UNINSTALL_JOB_ID, appName, siteId}, `Executing ${UNINSTALL_JOB_ID} job`);
 
-  let execution: JobExecution;
-
-  // Try direct body format first (standard OCAPI format)
-  const {data, error} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
-    params: {path: {job_id: UNINSTALL_JOB_ID}},
-    body: {
-      app_name: appName,
-      app_domain: appDomain,
-      site_id: siteId,
-    } as unknown as string,
-  });
-
-  if (
-    error?.fault?.type === 'UnknownPropertyException' &&
-    (error.fault.arguments as Record<string, unknown>)?.document === 'job_execution_request'
-  ) {
-    // Retry with parameters format (internal/support users)
-    logger.warn('Retrying with parameters format for internal users');
-
-    const {data: retryData, error: retryError} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
-      params: {path: {job_id: UNINSTALL_JOB_ID}},
-      body: {
-        parameters: [
-          {name: 'AppName', value: appName},
-          {name: 'AppDomain', value: appDomain},
-          {name: 'SiteId', value: siteId},
-        ],
-      } as unknown as string,
-    });
-
-    if (retryError || !retryData) {
-      throw new Error(retryError?.fault?.message ?? 'Failed to start uninstall job');
-    }
-
-    execution = retryData;
-  } else if (error || !data) {
-    throw new Error(error?.fault?.message ?? 'Failed to start uninstall job');
-  } else {
-    execution = data;
-  }
-  logger.debug({jobId: UNINSTALL_JOB_ID, executionId: execution.id}, `Uninstall job started: ${execution.id}`);
-
+  // Execute the uninstall job (SCAPI when configured, OCAPI fallback in auto).
   let finalExecution: JobExecution;
   try {
-    finalExecution = await waitForJob(instance, UNINSTALL_JOB_ID, execution.id!, waitOptions);
+    finalExecution = await runSystemJob(instance, {
+      jobId: UNINSTALL_JOB_ID,
+      ocapiBody: {
+        app_name: appName,
+        app_domain: appDomain,
+        site_id: siteId,
+      },
+      parameters: [
+        {name: 'AppName', value: appName},
+        {name: 'AppDomain', value: appDomain},
+        {name: 'SiteId', value: siteId},
+      ],
+      waitOptions,
+      failVerb: 'start uninstall job',
+    });
   } catch (err) {
     if (err instanceof JobExecutionError) {
       try {

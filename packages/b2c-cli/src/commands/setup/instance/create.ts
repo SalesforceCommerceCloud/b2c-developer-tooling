@@ -7,7 +7,7 @@ import {Args, Flags, ux} from '@oclif/core';
 import {input, password, confirm, select} from '@inquirer/prompts';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {DwJsonSource, createInstanceFromConfig, type NormalizedConfig} from '@salesforce/b2c-tooling-sdk/config';
-import {getActiveCodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {createScriptsBackend} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {withDocs} from '../../../i18n/index.js';
 
 /**
@@ -80,6 +80,19 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
     'client-secret': Flags.string({
       description: 'OAuth client secret',
     }),
+    'short-code': Flags.string({
+      description: 'SCAPI short code (optional; enables SCAPI-first code-version detection)',
+      env: 'SFCC_SHORTCODE',
+    }),
+    'tenant-id': Flags.string({
+      description: 'SCAPI tenant/organization ID (optional; enables SCAPI-first code-version detection)',
+      env: 'SFCC_TENANT_ID',
+    }),
+    'api-backend': Flags.string({
+      description: 'API backend preference saved for this instance',
+      options: ['auto', 'scapi', 'ocapi'],
+      env: 'SFCC_API_BACKEND',
+    }),
     'code-version': Flags.string({
       description: 'Code version',
     }),
@@ -139,6 +152,9 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
     // Build config
     const config: Partial<NormalizedConfig> = {
       hostname,
+      shortCode: this.flags['short-code'],
+      tenantId: this.flags['tenant-id'],
+      apiBackend: this.flags['api-backend'] as NormalizedConfig['apiBackend'],
     };
 
     // Handle authentication - in non-interactive mode, use provided flags
@@ -210,7 +226,9 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
       }
     }
 
-    // Code version - use flag, or try to detect via OCAPI if OAuth credentials are available
+    // Code version - use flag, or try the configured SCAPI-first backend when
+    // OAuth credentials are available. SCAPI coordinates remain optional;
+    // auto mode selects OCAPI when they are absent.
     if (this.flags['code-version']) {
       config.codeVersion = this.flags['code-version'];
     } else if (!force) {
@@ -222,11 +240,15 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
             hostname,
             clientId: config.clientId,
             clientSecret: config.clientSecret,
+            shortCode: config.shortCode,
+            tenantId: config.tenantId,
+            apiBackend: config.apiBackend,
           });
-          const activeVersion = await getActiveCodeVersion(tempInstance);
+          const activeVersion = await createScriptsBackend({instance: tempInstance}).getActiveCodeVersion();
           detectedVersion = activeVersion?.id;
-        } catch {
-          // Detection failed - continue without a default
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          this.warn(`Could not auto-detect the active code version: ${message}. Enter it manually.`);
         }
       }
 

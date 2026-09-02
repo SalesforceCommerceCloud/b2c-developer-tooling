@@ -126,6 +126,7 @@ async function openBrowserDefault(url: string): Promise<void> {
  * ```
  */
 export class ImplicitOAuthStrategy implements AuthStrategy {
+  readonly authMethod = 'implicit' as const;
   private accountManagerHost: string;
   private localPort: number;
   private redirectUri: string;

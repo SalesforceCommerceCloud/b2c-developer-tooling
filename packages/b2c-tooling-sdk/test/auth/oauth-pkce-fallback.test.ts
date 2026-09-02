@@ -29,6 +29,7 @@ import type {AccessTokenResponse, UserAuthStrategy} from '@salesforce/b2c-toolin
 function fakeStrategy(label: string) {
   const calls = {fetch: 0, getAuthorizationHeader: 0, getJWT: 0, getTokenResponse: 0, invalidateToken: 0};
   const strategy: UserAuthStrategy = {
+    authMethod: 'user',
     async fetch() {
       calls.fetch++;
       return new Response(label, {status: 200});
