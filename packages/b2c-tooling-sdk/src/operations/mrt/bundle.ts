@@ -15,6 +15,7 @@ import {createWriteStream} from 'node:fs';
 import {readFile, stat, mkdtemp, rm} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import {pathToFileURL} from 'node:url';
 import zlib from 'node:zlib';
 import tar from 'tar-fs';
 import {Minimatch} from 'minimatch';
@@ -265,7 +266,11 @@ async function loadServerConfig(buildPath: string): Promise<MrtServerConfig | nu
     return null;
   }
   try {
-    const mod = await import(configPath);
+    // Convert the absolute path to a file:// URL before dynamic import. On
+    // Windows a bare absolute path (e.g. `D:\build\config.server.js`) is parsed
+    // as a URL whose scheme is the drive letter and fails to import; a file://
+    // URL imports correctly on all platforms.
+    const mod = await import(pathToFileURL(configPath).href);
     return pickServerConfig(mod);
   } catch {
     return null;
