@@ -329,6 +329,30 @@ describe('operations/mrt/push', () => {
       }
     });
 
+    it('throws on a non-OK response with a completely empty body instead of reporting success', async () => {
+      // For a non-OK response with no parseable body (e.g. a 403 with no
+      // payload), openapi-fetch leaves `data` undefined and `error` falsy (the
+      // empty string it falls back to when there's no JSON). Guarding on
+      // `response.ok` must catch this so it does not fall through to the
+      // "omitted a bundle id" path and look like a partial success.
+      server.use(
+        http.post(`${DEFAULT_BASE_URL}/api/v2/projects/:projectSlug/bundles/`, () => {
+          return new HttpResponse(null, {status: 403});
+        }),
+      );
+
+      const client = createMrtClient({}, new MockAuthStrategy());
+      try {
+        await uploadBundleV2(client, 'my-project', testBundleV2);
+        expect.fail('Should have thrown');
+      } catch (error) {
+        const message = (error as Error).message;
+        expect(message).to.include('Failed to push bundle (HTTP 403)');
+        expect(message).to.include('empty response body');
+        expect(message).to.not.include('omitted a bundle id');
+      }
+    });
+
     it('throws when the response omits a bundle id', async () => {
       server.use(
         http.post(`${DEFAULT_BASE_URL}/api/v2/projects/:projectSlug/bundles/`, () => {

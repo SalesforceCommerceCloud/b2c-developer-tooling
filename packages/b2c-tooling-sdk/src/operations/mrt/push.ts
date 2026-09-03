@@ -345,13 +345,20 @@ export async function uploadBundleV2(client: MrtClient, projectSlug: string, bun
 
   // Capture the status before the error narrowing: the generated types model no
   // error responses for this path, so `response` is narrowed away inside the
-  // `if (error)` block.
+  // guard below.
   const {status} = response;
 
-  if (error) {
+  // Guard on `response.ok` in addition to `error`: a non-OK response with an
+  // empty body (e.g. a 403 with no payload) leaves `error` empty — undefined, or
+  // the empty string that openapi-fetch falls back to when there's no JSON to
+  // parse. Both are falsy, so `if (error)` alone would let them fall through and
+  // look like a successful upload.
+  if (error || !response.ok) {
     // Include the status code so callers (e.g. the CLI's 403 hint) can react to
     // auth failures even when the error body carries no descriptive text.
-    throw new Error(`Failed to push bundle (HTTP ${status}): ${JSON.stringify(error)}`);
+    const hasDetail = error !== undefined && error !== null && error !== '';
+    const detail = hasDetail ? JSON.stringify(error) : 'empty response body';
+    throw new Error(`Failed to push bundle (HTTP ${status}): ${detail}`);
   }
 
   if (!data || data.id === undefined) {
