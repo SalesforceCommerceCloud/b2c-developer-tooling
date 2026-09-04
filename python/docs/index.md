@@ -31,8 +31,21 @@ story.
 
 ## Installation
 
+> **Note:** installing from GitHub is a **temporary arrangement during
+> development**. The package is not yet published to PyPI; once it is, the
+> install will simply be `pip install salesforce-b2c-tooling-sdk`.
+
+Install the latest version straight from the `python` branch — pip builds it
+from source (pure Python, no compilers needed):
+
 ```bash
-pip install salesforce-b2c-tooling-sdk
+pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python#subdirectory=python"
+```
+
+Pin to a specific tag:
+
+```bash
+pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python-v0.1.0#subdirectory=python"
 ```
 
 The importable package is `b2c_tooling_sdk`; the distribution name is
