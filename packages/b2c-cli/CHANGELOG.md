@@ -1,5 +1,40 @@
 # @salesforce/b2c-cli
 
+## 2.0.0
+
+### Major Changes
+
+- [#413](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/413) [`3773648`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/37736482722f91bca319a1b20887c01571e97663) - Migrate `job`, `code`, `bm users`, `bm roles`, `sites`, and catalog discovery to SCAPI-first operation with a temporary OCAPI compatibility fallback. `auto` tries SCAPI when its coordinates and stateless authentication are available, pins the selected backend for multi-request operations, and falls back only on safe capability/auth/request rejections. Site cartridge-path writes, portable BM user search, disabled-user updates, system-job triggers, SDK/CLI/MCP code-version discovery, and VS Code jobs/code/catalog surfaces now participate. Inventory-list enumeration, BM `whoami`, access-key administration, and raw OCAPI user-search JSON remain temporary OCAPI compatibility operations because the current live SCAPI schemas have no equivalent. Explicit SCAPI mode rejects these operations before contacting OCAPI and identifies B2C Commerce release 26.8 as the current capability baseline. (Thanks [@clavery](https://github.com/clavery)!)
+
+  `setup instance create` accepts optional SCAPI coordinates for SCAPI-first active-code-version detection. They are not required in `auto`; missing coordinates select OCAPI, and failed interactive detection reports the reason before allowing manual entry.
+
+  This is a major release because SCAPI and OCAPI JSON/results intentionally retain their backend-specific shapes. Consumers that require a stable legacy shape must explicitly select OCAPI or use the exported compatibility/fallback primitives during the migration. SDK high-level code helpers accept an explicit scripts backend; dual-backend factories and `JobsCompatibilityBackend` expose reusable fallback without making implicit backend selection an SDK-wide policy.
+
+  SCAPI currently requires client-credentials or JWT Bearer authentication. Browser-based user auth continues through OCAPI/WebDAV and is selected by `auto`; explicit SCAPI with user auth errors clearly until the platform adds support.
+
+  The VS Code extension uses configured tenant IDs consistently in API Browser, keeps partial export discovery warnings in the output log instead of showing notifications, and supports JWT-authenticated OCAPI fallback equivalently to client credentials.
+
+### Minor Changes
+
+- [#413](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/413) [`3773648`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/37736482722f91bca319a1b20887c01571e97663) - Add `b2c bm users create` to create a Business Manager user (create-or-replace), rounding out the `bm users` lifecycle alongside list/get/search/update/delete. Runs over SCAPI with OCAPI fallback like the other `bm users` commands. Flags: `--email` (required), `--first-name`, `--last-name`, `--external-id`, `--password`, `--role` (repeatable), `--disabled`, and preferred locales. Note that most instances use SSO with Account Manager and reject creating _local_ BM users with `LocalUserCreationException` — creation succeeds only when the instance is configured to allow local users. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#646](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/646) [`c9cf71f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c9cf71fad0981e6a580581735062b171c70ba5d6) - Add `b2c mrt bundle upload-v2` for building and uploading v2-format Managed Runtime bundles. The v2 archive is a gzip tar whose files live under a configurable root directory (default `bld/`) with the SSR configuration written inside the archive at `{root-dir}/{config-path}` (default `bld/.mrt/config.json`), uploaded as multipart/form-data. This command is upload-only — deploy the returned bundle ID with `b2c mrt bundle deploy <bundleId> -e <env>`. Every server-side parameter (root dir, config path, match mode, SSR patterns/parameters, dependencies, and CC overrides) is exposed as a flag. The SDK adds matching `createBundleV2`, `pushBundleV2`, and `uploadBundleV2` operations. (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
+  Bundle commands now read SSR configuration (`ssrOnly`/`ssrShared`/`ssrParameters`) from `config.server.ts` in the project directory, loaded straight from source, so it no longer needs to be compiled into the build output. Use `--project-directory` to point at a project other than the current directory (a compiled `config.server.js`/`config.server.mjs` and the legacy `build/config.server.js` are still accepted). For `upload-v2`, an on-disk v2 config file (`{build-dir}/{config-path}`) still takes precedence when present; command flags override the resolved values per key. The SDK's `createBundle`/`createBundleV2` gain a `projectDirectory` option for this.
+
+  Bundles now include the project's declared dependencies as bundle metadata (v1 `bundle_metadata.dependencies`; v2 `bundleMetadata.dependencies` inside the archive config), derived from the project `package.json` (`dependencies` + `devDependencies`) — matching pwa-kit/storefront-next. Explicitly provided dependencies (v2 `--dependencies`) or dependencies already present in the v2 config file take precedence; collection is best-effort and never blocks a bundle if `package.json` is missing or unreadable.
+
+### Patch Changes
+
+- [#413](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/413) [`3773648`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/37736482722f91bca319a1b20887c01571e97663) - Detect deprecated OCAPI instances and guide users to SCAPI. (Thanks [@clavery](https://github.com/clavery)!)
+
+  When an instance has OCAPI disabled, `code`, `job`, `bm`, `sites`, and `cap` commands now fail with an actionable message — naming the exact SCAPI scope the operation needs (e.g. `sfcc.scripts` / `sfcc.scripts.rw`) — instead of an opaque "Failed to ..." error. Documentation and agent skills for `code`, `job`, and `bm` are now SCAPI-first, presenting OCAPI as the deprecated fallback.
+
+- [#642](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/642) [`a0214e4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a0214e43c1d3a6f148634af1741f7cee0785551b) - Allow SLAS client `get`, `update`, `delete`, and `open` commands to use the configured SLAS client ID when their positional client ID is omitted, while keeping the positional value as an explicit override. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`f208d0c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/f208d0c0be40f9b597f8bcba8636feb3be011ff2), [`c9cf71f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c9cf71fad0981e6a580581735062b171c70ba5d6), [`3773648`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/37736482722f91bca319a1b20887c01571e97663), [`3773648`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/37736482722f91bca319a1b20887c01571e97663), [`a0214e4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a0214e43c1d3a6f148634af1741f7cee0785551b)]:
+  - @salesforce/b2c-tooling-sdk@2.0.0
+
 ## 1.23.2
 
 ### Patch Changes
