@@ -1,5 +1,7 @@
 # Salesforce B2C Tooling SDK (Python)
 
+[![Latest release](https://img.shields.io/github/v/tag/priandsf/b2c-developer-tooling?filter=python-v*&label=latest%20release&color=blue)](https://github.com/priandsf/b2c-developer-tooling/tags)
+
 `salesforce-b2c-tooling-sdk` is a Python SDK for Salesforce B2C Commerce tooling —
 authentication, configuration resolution, typed OCAPI/SCAPI clients, WebDAV, and
 higher-level operations for code deployment, jobs, sites, catalogs, Business
