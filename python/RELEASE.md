@@ -10,6 +10,35 @@
 > standard `python -m build` + `twine upload` (or a trusted-publishing workflow),
 > and consumers switch to `pip install salesforce-b2c-tooling-sdk`.
 
+## Quick release (recommended)
+
+Just run the script from the `python/` directory:
+
+```bash
+./release.sh
+```
+
+It does everything for you:
+
+1. Reads the current version and **proposes the next minor version** (press
+   Enter to accept, or type another semver value).
+2. Runs the quality gate (ruff, format, mypy, pytest).
+3. Bumps `pyproject.toml`, commits, tags `python-v<version>`, and pushes the
+   branch + tag to the fork (`origin`).
+
+It shows exactly what it will do and **asks for confirmation before pushing**.
+
+Options:
+
+```bash
+./release.sh --dry-run     # print the steps without changing anything
+./release.sh --skip-gate   # skip the tests/lint gate (not recommended)
+./release.sh --help        # usage
+```
+
+The manual steps below document what the script automates — reach for them only
+if you need to deviate.
+
 ## How consumers install
 
 All installs build from source in the `python/` subdirectory (pure Python, no
@@ -27,7 +56,7 @@ compilers needed).
 The importable package is `b2c_tooling_sdk`; the distribution name is
 `salesforce-b2c-tooling-sdk`.
 
-## Cutting a release
+## Manual release (what `release.sh` automates)
 
 All commands run from the `python/` package directory unless noted. `origin` is
 the fork (`git@github.com:priandsf/b2c-developer-tooling.git`); we release from
