@@ -1,0 +1,72 @@
+name: Python SDK Release
+
+# Builds the Python SDK (in ./python) and publishes a GitHub Release with the
+# wheel + sdist attached, so it can be installed with pip. Triggered by pushing
+# a tag of the form `python-v<version>` (e.g. python-v0.1.0).
+#
+# The tag version MUST match the `version` in python/pyproject.toml, or the job
+# fails fast.
+#
+# Install from a published release:
+#   pip install \
+#     https://github.com/priandsf/b2c-developer-tooling/releases/download/python-v0.1.0/salesforce_b2c_tooling_sdk-0.1.0-py3-none-any.whl
+#
+# Or install straight from the tag without release assets:
+#   pip install "git+https://github.com/priandsf/b2c-developer-tooling.git@python-v0.1.0#subdirectory=python"
+
+on:
+  push:
+    tags:
+      - "python-v*"
+
+permissions:
+  contents: write # required to create the GitHub Release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: python
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify tag matches pyproject version
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          TAG_VERSION="${TAG_NAME#python-v}"
+          PKG_VERSION="$(grep -E '^version\s*=' pyproject.toml | head -1 | sed -E 's/.*"([^"]+)".*/\1/')"
+          echo "Tag version:       $TAG_VERSION"
+          echo "pyproject version: $PKG_VERSION"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag ($TAG_VERSION) does not match python/pyproject.toml version ($PKG_VERSION)."
+            exit 1
+          fi
+
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      - name: Verify artifacts
+        run: |
+          python -m pip install --upgrade twine
+          twine check dist/*
+          # Smoke-test the wheel installs and imports in a clean venv.
+          python -m venv /tmp/verify
+          /tmp/verify/bin/pip install dist/*.whl
+          /tmp/verify/bin/python -c "import b2c_tooling_sdk; print('import OK', b2c_tooling_sdk.SDK_VERSION)"
+
+      - name: Create GitHub Release with artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          files: python/dist/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true

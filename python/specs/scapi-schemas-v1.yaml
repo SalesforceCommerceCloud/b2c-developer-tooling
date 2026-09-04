@@ -1,0 +1,341 @@
+openapi: 3.0.3
+info:
+  x-api-type: Admin
+  x-api-family: DX
+  title: SCAPI Schemas
+  version: 1.0.0
+  description: |-
+    [Download API specification](https://developer.salesforce.com/static/commercecloud/commerce-api/scapi-schemas/scapi-schemas-oas-v1-public.yaml)
+
+    # API Overview
+
+    The SCAPI Schemas API provides access to OpenAPI schema definitions for Salesforce Commerce APIs (SCAPI). This API enables discovery and cataloging of available SCAPI endpoints, schema validation and code generation, version management for migration planning, and integration of schema access into development workflows including CI/CD pipelines and testing automation.
+
+    ## Authentication & Authorization
+
+    The SCAPI Schemas API requires valid authentication and authorization. It uses an Account Manager OAuth 2.0 bearer token for authentication. The necessary scope for accessing the API is:
+
+    * `sfcc.scapi-schemas`: Provides read-only access to schema definitions.
+
+    Access is intended for admin users only.
+
+    ## Use Cases
+
+    ### Schema Discovery
+
+    Developers can use this API to discover available SCAPI schemas, filter by API family (e.g., shopper, admin), and retrieve detailed OpenAPI specifications for code generation or documentation purposes.
+
+    ### Custom Property Expansion
+
+    When retrieving a schema, developers can request expansion of custom properties to see tenant-specific customizations applied to standard SCAPI schemas.
+servers:
+  - url: https://{shortCode}.api.commercecloud.salesforce.com/dx/scapi-schemas/v1
+    variables:
+      shortCode:
+        default: shortCode
+paths:
+  /organizations/{organizationId}/schemas:
+    get:
+      summary: Get a list of available SCAPI schemas.
+      description: List available SCAPI schema definitions with optional filtering by API family, name, version, or status.
+      operationId: getSchemas
+      parameters:
+        - $ref: '#/components/parameters/organizationId'
+        - $ref: '#/components/parameters/apiFamily'
+        - $ref: '#/components/parameters/apiName'
+        - $ref: '#/components/parameters/apiVersion'
+        - $ref: '#/components/parameters/status'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaListResult'
+        '400':
+          description: Invalid or malformed filter parameter
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - invalid or missing authentication
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - insufficient permissions
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.scapi-schemas
+  /organizations/{organizationId}/schemas/{apiFamily}/{apiName}/{apiVersion}:
+    get:
+      summary: Get a specific SCAPI schema.
+      description: Retrieve the detailed OpenAPI schema specification for a specific SCAPI API.
+      operationId: getSchema
+      parameters:
+        - $ref: '#/components/parameters/organizationId'
+        - $ref: '#/components/parameters/apiFamilyPath'
+        - $ref: '#/components/parameters/apiNamePath'
+        - $ref: '#/components/parameters/apiVersionPath'
+        - $ref: '#/components/parameters/expand'
+      responses:
+        '200':
+          description: Successful operation - returns OpenAPI schema
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpenApiSchema'
+        '400':
+          description: Invalid parameter value
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - invalid or missing authentication
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - insufficient permissions
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Schema not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.scapi-schemas
+components:
+  securitySchemes:
+    AmOAuth2:
+      type: oauth2
+      description: AccountManager OAuth 2.0 bearer token Authentication.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes:
+            sfcc.scapi-schemas: SCAPI Schemas READONLY scope
+        authorizationCode:
+          authorizationUrl: https://account.demandware.com/dwsso/oauth2/authorize
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes:
+            sfcc.scapi-schemas: SCAPI Schemas READONLY scope
+  schemas:
+    OrganizationId:
+      description: An identifier for the organization the request is being made by
+      example: f_ecom_zzxy_prd
+      type: string
+      minLength: 1
+      maxLength: 32
+    SchemaStatus:
+      type: string
+      enum:
+        - current
+        - deprecated
+      example: current
+    Limit:
+      default: 10
+      minimum: 1
+      format: int32
+      description: Maximum records to retrieve per request, not to exceed the maximum defined. A limit must be at least 1 so at least one record is returned (if any match the criteria).
+      type: integer
+      example: 10
+    Total:
+      default: 0
+      minimum: 0
+      format: int32
+      description: The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are paginated.
+      type: integer
+      example: 10
+    ResultBase:
+      description: Schema defining generic list result. Each response schema of a resource requiring a list response should extend this schema.
+      type: object
+      required:
+        - limit
+        - total
+      properties:
+        limit:
+          maximum: 200
+          allOf:
+            - $ref: '#/components/schemas/Limit'
+        total:
+          $ref: '#/components/schemas/Total'
+    SchemaListFilter:
+      type: object
+      properties:
+        apiFamily:
+          type: string
+          example: shopper
+        apiName:
+          type: string
+          example: products
+        apiVersion:
+          type: string
+          example: v1
+        status:
+          $ref: '#/components/schemas/SchemaStatus'
+    SchemaListItem:
+      type: object
+      properties:
+        schemaVersion:
+          type: string
+          description: Semantic version of the schema (e.g., "1.0.0")
+          example: '1.0.0'
+        apiFamily:
+          type: string
+          description: The API family (e.g., shopper, admin)
+          example: shopper
+        apiName:
+          type: string
+          description: The API name (e.g., products, orders)
+          example: products
+        apiVersion:
+          type: string
+          description: The API version (e.g., v1)
+          example: v1
+        status:
+          $ref: '#/components/schemas/SchemaStatus'
+        link:
+          type: string
+          description: URL to the schema detail endpoint
+          example: /organizations/f_ecom_zzxy_prd/schemas/shopper/products/v1
+    SchemaListResult:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ResultBase'
+      properties:
+        filter:
+          $ref: '#/components/schemas/SchemaListFilter'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SchemaListItem'
+    OpenApiSchema:
+      type: object
+      description: An OpenAPI 3.0 schema specification
+      additionalProperties: true
+      properties:
+        openapi:
+          type: string
+          description: OpenAPI version
+          example: '3.0.3'
+        info:
+          type: object
+          additionalProperties: true
+          properties:
+            title:
+              type: string
+            version:
+              type: string
+            description:
+              type: string
+        paths:
+          type: object
+          additionalProperties: true
+        components:
+          type: object
+          additionalProperties: true
+    ErrorResponse:
+      type: object
+      additionalProperties: true
+      properties:
+        title:
+          description: A short, human-readable summary of the problem type.
+          type: string
+          maxLength: 256
+          example: Bad Request
+        type:
+          description: A URI reference that identifies the problem type.
+          type: string
+          maxLength: 2048
+          example: https://api.commercecloud.salesforce.com/documentation/error/v1/errors/bad-request
+        detail:
+          description: A human-readable explanation specific to this occurrence of the problem.
+          type: string
+          example: Invalid value for filter parameter.
+        instance:
+          description: A URI reference that identifies the specific occurrence of the problem.
+          type: string
+          maxLength: 2048
+      required:
+        - title
+        - type
+        - detail
+  parameters:
+    organizationId:
+      description: An identifier for the organization the request is being made by
+      name: organizationId
+      in: path
+      required: true
+      example: f_ecom_zzxy_prd
+      schema:
+        $ref: '#/components/schemas/OrganizationId'
+    apiFamily:
+      name: apiFamily
+      in: query
+      required: false
+      description: Filter by API family (e.g., shopper, admin)
+      schema:
+        type: string
+    apiName:
+      name: apiName
+      in: query
+      required: false
+      description: Filter by API name (e.g., products, orders)
+      schema:
+        type: string
+    apiVersion:
+      name: apiVersion
+      in: query
+      required: false
+      description: Filter by API version (e.g., v1)
+      schema:
+        type: string
+    status:
+      name: status
+      in: query
+      required: false
+      description: Filter by schema status
+      schema:
+        $ref: '#/components/schemas/SchemaStatus'
+    apiFamilyPath:
+      name: apiFamily
+      in: path
+      required: true
+      description: The API family (e.g., shopper, admin)
+      schema:
+        type: string
+    apiNamePath:
+      name: apiName
+      in: path
+      required: true
+      description: The API name (e.g., products, orders)
+      schema:
+        type: string
+    apiVersionPath:
+      name: apiVersion
+      in: path
+      required: true
+      description: The API version (e.g., v1)
+      schema:
+        type: string
+    expand:
+      name: expand
+      in: query
+      required: false
+      description: Comma-separated list of sections to expand (e.g., "custom_properties")
+      schema:
+        type: string

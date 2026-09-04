@@ -1,0 +1,657 @@
+openapi: 3.0.0
+info:
+  title: Granular Replications API
+  version: '1.0'
+  description: |-
+    API for publishing individual items (products, price tables, content assets) from staging to production.
+
+    ## Publish Process Status
+    1. `pending`: Publish operation to run.
+    2. `in_progress`: Publish operation is running.
+    3. `completed`: Publish operation completed and the item was successfully published.
+    4. `failed`: The publish operation completed, but an error was detected.
+
+servers:
+  - url: https://{shortCode}.api.commercecloud.salesforce.com/operation/replications/v1
+    variables:
+      shortCode:
+        default: '123456gfp'
+
+paths:
+  /organizations/{organizationId}/granular-processes:
+    parameters:
+      - $ref: '#/components/parameters/organizationId'
+    get:
+      summary: Retrieve a list of all publish processes with pagination support.
+      operationId: listPublishProcesses
+      security:
+        - AmOAuth2:
+            - sfcc.granular-replications
+            - sfcc.granular-replications.rw
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 200
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Retrieved list of publish processes successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishProcessListResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest_GetProcesses'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '422':
+          $ref: '#/components/responses/422UnprocessableContent'
+    post:
+      summary: Queue item for publishing
+      description: |-
+        Queues items, such as products, price tables, and content assets, for the upcoming publish operation. You can have multiple items in the queue, but you must send a separate request for each item.
+
+        Note: The published price table is always the table with the continuously valid period.
+
+        ## Publishing Limit
+        This endpoint is limited to 50 items per publish operation. The HTTP status code 409 (Conflict) is returned if the limit is exceeded.
+      operationId: publishItems
+      security:
+        - AmOAuth2:
+            - sfcc.granular-replications.rw
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishItemRequest'
+            examples:
+              productExample:
+                $ref: '#/components/examples/PostRequestProduct'
+              priceTableExample:
+                $ref: '#/components/examples/PostRequestPriceTable'
+              contentAssetExampleSharedLib:
+                $ref: '#/components/examples/PostRequestContentAssetSharedLib'
+              contentAssetExamplePrivateLib:
+                $ref: '#/components/examples/PostRequestContentAssetPrivateLib'
+      responses:
+        '201':
+          description: Item successfully queued for publishing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishIdResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/PublicationSuccessResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest_CreateProcess'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound_CreateProcess'
+        '409':
+          $ref: '#/components/responses/409Conflict_CreateProcess'
+        '422':
+          $ref: '#/components/responses/422UnprocessableContent_CreateProcess'
+  /organizations/{organizationId}/granular-processes/{id}:
+    parameters:
+      - $ref: '#/components/parameters/organizationId'
+      - $ref: '#/components/parameters/id'
+    get:
+      summary: Retrieve details of a specific publish process using its ID.
+      operationId: getPublishProcess
+      security:
+        - AmOAuth2:
+            - sfcc.granular-replications
+            - sfcc.granular-replications.rw
+      responses:
+        '200':
+          description: Publish process details retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishProcessResponse'
+              examples:
+                productProcess:
+                  $ref: '#/components/examples/ProductProcessResponse'
+                priceTableProcess:
+                  $ref: '#/components/examples/PriceTableProcessResponse'
+                contentAssetProcess:
+                  $ref: '#/components/examples/ContentAssetProcessResponse'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound_GetProcess'
+
+components:
+  securitySchemes:
+    AmOAuth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes:
+            c.example: custom scopes must start with c. used for custom APIs [MAX length of scope 49 characters]
+            sfcc.example: standard salesforce commerce apis scopes must start with "sfcc.". Without suffix ".rw" scopes grants READONLY access. [MAX length of scope 49 characters]
+            sfcc.example.rw: salesforce commerce apis scopes must start with "sfcc.". The suffix ".rw" scopes grants READ and WRITE access. [MAX length of scope 49 characters]
+
+  schemas:
+    OrganizationId:
+      description: An identifier for the organization the request is being made by
+      example: f_ecom_zzxy_prd
+      type: string
+      minLength: 1
+      maxLength: 32
+
+    Total:
+      default: 0
+      minimum: 0
+      format: int32
+      description: The total number of hits that match the search's criteria. This can be greater than the number of results returned as search results are paginated.
+      type: integer
+      example: 10
+
+    Offset:
+      default: 0
+      minimum: 0
+      format: int32
+      description: The offset for the search results (pagination).
+      type: integer
+      example: 0
+
+    ResultBase:
+      description: Base type for results
+      type: object
+      properties:
+        total:
+          $ref: '#/components/schemas/Total'
+        limit:
+          type: integer
+          default: 20
+      required:
+        - total
+        - limit
+
+    PublishProcessListResponse:
+      description: Paginated list of publish processes
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ResultBase'
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublishProcessResponse'
+        offset:
+          $ref: '#/components/schemas/Offset'
+      required:
+        - data
+        - offset
+
+    id:
+      description: Publish process ID of the published item
+      type: string
+      maxLength: 28
+      example: xmRhi7394HymoeRkfwAAAZeg3WiM
+
+    ProductId:
+      minLength: 1
+      maxLength: 100
+      type: string
+      description: The id (SKU) of the product.
+      example: apple-ipod-classic
+
+    ProductItem:
+      description: Details of the published product (only available if a product was published)
+      type: object
+      required:
+        - productId
+      properties:
+        productId:
+          $ref: '#/components/schemas/ProductId'
+
+    PriceTableItem:
+      description: Details of the published price table (only available if a price table was published)
+      type: object
+      required:
+        - priceTableId
+      properties:
+        priceTableId:
+          type: string
+          description: ID of the price table
+          maxLength: 256
+          example: usd-list-prices
+
+    SiteId:
+      type: string
+      description: The site ID
+      maxLength: 256
+      example: RefArch
+
+    ContentAssetItem:
+      oneOf:
+        - $ref: '#/components/schemas/ContentAssetItemPrivate'
+        - $ref: '#/components/schemas/ContentAssetItemShared'
+
+    ContentAssetItemPrivate:
+      description: Details of the published content asset from a private library
+      type: object
+      required:
+        - contentId
+        - type
+        - siteId
+      properties:
+        contentId:
+          type: string
+          description: ID of the content asset
+          maxLength: 256
+          example: homepage-hero-banner
+        type:
+          type: string
+          enum:
+            - private
+          description: The type of library (private) from which the content asset originates.
+          example: private
+        siteId:
+          $ref: '#/components/schemas/SiteId'
+      additionalProperties: false
+
+    ContentAssetItemShared:
+      description: Details of the published content asset from a shared library
+      type: object
+      required:
+        - contentId
+        - type
+        - libraryId
+      properties:
+        contentId:
+          type: string
+          description: ID of the content asset
+          maxLength: 256
+          example: homepage-hero-banner
+        type:
+          type: string
+          enum:
+            - shared
+          description: The type of library (shared) from which the content asset originates.
+          example: shared
+        libraryId:
+          type: string
+          description: ID of the shared library
+          maxLength: 256
+          example: sharedLibrary
+      additionalProperties: false
+
+    PublishProcessResponse:
+      description: Publish process details
+      type: object
+      required:
+        - id
+        - status
+        - startTime
+        - initiatedBy
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        status:
+          type: string
+          enum:
+            - pending
+            - in_progress
+            - completed
+            - failed
+          description: Status of the publish process
+          example: completed
+        startTime:
+          type: string
+          format: date-time
+          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$
+          description: Timestamp at which the publish process was started
+          example: '2024-03-15T10:30:00Z'
+        endTime:
+          type: string
+          format: date-time
+          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$
+          description: Timestamp at which the publish process was completed (only available if the status is "completed" or "failed")
+          example: '2024-03-15T10:30:45Z'
+        initiatedBy:
+          type: string
+          description: User or ID of the client application that initiated the publish process
+          maxLength: 256
+          example: user@example.com
+        productItem:
+          $ref: '#/components/schemas/ProductItem'
+        priceTableItem:
+          $ref: '#/components/schemas/PriceTableItem'
+        contentAssetItem:
+          $ref: '#/components/schemas/ContentAssetItem'
+
+    ProductPublishRequest:
+      type: object
+      required:
+        - product
+      properties:
+        product:
+          $ref: '#/components/schemas/ProductItem'
+      additionalProperties: false
+
+    PriceTablePublishRequest:
+      type: object
+      required:
+        - priceTable
+      properties:
+        priceTable:
+          $ref: '#/components/schemas/PriceTableItem'
+      additionalProperties: false
+
+    ContentAssetPublishRequest:
+      type: object
+      required:
+        - contentAsset
+      properties:
+        contentAsset:
+          oneOf:
+            - $ref: '#/components/schemas/ContentAssetItemPrivate'
+            - $ref: '#/components/schemas/ContentAssetItemShared'
+
+    PublishItemRequest:
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/ProductPublishRequest'
+        - $ref: '#/components/schemas/PriceTablePublishRequest'
+        - $ref: '#/components/schemas/ContentAssetPublishRequest'
+      additionalProperties: false
+
+    PublishIdResponse:
+      description: Item successfully queued for publishing
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+
+    ErrorResponse:
+      description: Standard error response following RFC 7807
+      type: object
+      properties:
+        type:
+          description: A URI reference that identifies the problem type
+          type: string
+          maxLength: 2048
+          example: https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-request-body
+        title:
+          description: A short, human-readable summary of the problem type
+          type: string
+          example: NotEnoughMoney
+        detail:
+          description: A human-readable explanation specific to this occurrence of the problem.
+          type: string
+          example: Your current balance is 30, but that costs 50
+        instance:
+          description: A URI reference that identifies the specific occurrence of the problem
+          type: string
+          maxLength: 2048
+          example: /account/12345/msgs/abc
+      required:
+        - title
+        - type
+
+  parameters:
+    organizationId:
+      description: An identifier for the organization the request is being made by
+      name: organizationId
+      in: path
+      required: true
+      example: f_ecom_zzxy_prd
+      schema:
+        $ref: '#/components/schemas/OrganizationId'
+
+    id:
+      description: Publish process ID
+      name: id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/id'
+
+  responses:
+    400BadRequest_GetProcesses:
+      description: Invalid query parameter
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalidQueryParameter:
+              $ref: '#/components/examples/400BadRequest_GetProcesses_InvalidQueryParameter'
+
+    403Forbidden:
+      description: |-
+        Forbidden. Your access token is valid, but you don't have the required permissions to access the resource,
+        or the Granular Replication feature is disabled.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            featureNotEnabled:
+              $ref: '#/components/examples/403Forbidden_FeatureNotEnabled'
+
+    422UnprocessableContent:
+      description: If the request was not sent to a staging instance
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            notOnStaging:
+              $ref: '#/components/examples/422UnprocessableContent_NotOnStagingInstance'
+
+    400BadRequest_CreateProcess:
+      description: Invalid request body
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalidRequestBody:
+              $ref: '#/components/examples/400BadRequest_CreateProcess_InvalidRequestBody'
+
+    404NotFound_CreateProcess:
+      description: The item was not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            itemNotFound:
+              $ref: '#/components/examples/404NotFound_ItemNotFound'
+
+    409Conflict_CreateProcess:
+      description: Conflict - item already published, limit exceeded, or replication running
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            publishedTwice:
+              $ref: '#/components/examples/409Conflict_CreateProcess_PublishedTwice'
+            limitExceeded:
+              $ref: '#/components/examples/409Conflict_CreateProcess_TooManyQueued'
+            replicationRunning:
+              $ref: '#/components/examples/409Conflict_CreateProcess_ReplicationRunning'
+
+    422UnprocessableContent_CreateProcess:
+      description: The item could not get processed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            feedBasedPriceBookNotSupported:
+              $ref: '#/components/examples/422UnprocessableContent_FeedBasedPriceBookNotSupported'
+            notOnStaging:
+              $ref: '#/components/examples/422UnprocessableContent_NotOnStagingInstance'
+
+    404NotFound_GetProcess:
+      description: The publish process for given ID was not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            processNotFound:
+              $ref: '#/components/examples/404NotFound_ProcessNotFound'
+
+  examples:
+    PostRequestProduct:
+      summary: Publish a product
+      description: Publish a product by ID
+      value:
+        product:
+          productId: PROD-12345
+
+    PostRequestPriceTable:
+      summary: Publish a price table
+      description: Publish a price table by ID
+      value:
+        priceTable:
+          priceTableId: usd-list-prices
+
+    PostRequestContentAssetSharedLib:
+      summary: Publish a content asset from a shared library
+      description: Publish a content asset from a shared library
+      value:
+        contentAsset:
+          contentId: homepage-hero-banner
+          type: shared
+          libraryId: mySharedLibrary
+
+    PostRequestContentAssetPrivateLib:
+      summary: Publish a content asset from a site's private library
+      description: Publish a content asset from a site's private library
+      value:
+        contentAsset:
+          contentId: homepage-hero-banner
+          type: private
+          siteId: mySiteID
+
+    PublicationSuccessResponse:
+      summary: Successfully queued response
+      value:
+        id: xmRhi7394HymoeRkfwAAAZeg3WiM
+
+    400BadRequest_CreateProcess_InvalidRequestBody:
+      summary: Invalid request body error
+      value:
+        type: https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-request-body
+        title: Invalid request body
+        detail: Invalid request body. Must provide valid properties for either a product, price table, or content asset.
+
+    404NotFound_ItemNotFound:
+      summary: Item not found
+      value:
+        type: https://api.commercecloud.salesforce.com/documentation/error/v1/errors/item-not-found
+        title: Item not found
+        detail: The item specified was not found on the staging instance.
+
+    404NotFound_ProcessNotFound:
+      summary: Process not found
+      value:
+        type: https://api.commercecloud.salesforce.com/documentation/error/v1/errors/process-not-found
+        title: Process not found
+        detail: The publish process with the specified ID was not found.
+
+    409Conflict_CreateProcess_PublishedTwice:
+      summary: Item already published in this operation
+      value:
+        type: https://api.commercecloud.salesforce.com/documentation/error/v1/errors/published-twice
+        title: Item already published
+        detail: The item has already been queued for publishing in this operation.
+
+    409Conflict_CreateProcess_TooManyQueued:
+      summary: Publishing limit exceeded
+      value:
+        type: https://api.commercecloud.salesforce.com/documentation/error/v1/errors/too-many-queued
+        title: Publishing limit exceeded
+        detail: Maximum of 50 items can be queued per publish operation.
+
+    409Conflict_CreateProcess_ReplicationRunning:
+      summary: Replication in progress
+      value:
+        type: https://api.commercecloud.salesforce.com/documentation/error/v1/errors/replication-running
+        title: Replication in progress
+        detail: Granular Replication is not possible during a running replication.
+
+    422UnprocessableContent_FeedBasedPriceBookNotSupported:
+      summary: Feed based price book is not supported
+      value:
+        type: https://api.commercecloud.salesforce.com/documentation/error/v1/errors/feed-based-price-book
+        title: Feed based price book is not supported
+        detail: The price table belongs to a feed based price book. Feed based price books are not supported.
+
+    422UnprocessableContent_NotOnStagingInstance:
+      summary: Request was not sent to a staging instance
+      value:
+        type: https://api.commercecloud.salesforce.com/documentation/error/v1/errors/not-on-staging
+        title: Not on staging instance
+        detail: This operation must be performed from a staging instance.
+
+    400BadRequest_GetProcesses_InvalidQueryParameter:
+      summary: Invalid query parameter
+      value:
+        type: https://api.commercecloud.salesforce.com/documentation/error/v1/errors/invalid-query-parameter
+        title: Invalid query parameter
+        detail: Invalid query parameter.
+
+    403Forbidden_FeatureNotEnabled:
+      summary: Granular Replication feature is not enabled
+      value:
+        type: https://api.commercecloud.salesforce.com/documentation/error/v1/errors/granular-replication-feature-not-enabled
+        title: Granular Replication feature is not enabled
+        detail: The Granular Replication feature is not enabled in your staging and production environments.
+
+    ProductProcessResponse:
+      summary: Product publish process
+      value:
+        id: xmRhi7394HymoeRkfwAAAZeg3WiM
+        status: completed
+        startTime: '2024-03-15T10:30:00Z'
+        endTime: '2024-03-15T10:30:45Z'
+        initiatedBy: user@example.com
+        productItem:
+          productId: PROD-12345
+
+    PriceTableProcessResponse:
+      summary: "Price table publish process; \nNote: The published price table is always the one with the continuously valid period."
+      value:
+        id: xmRhi7394HymoeRkfwAAAZeg3WiN
+        status: completed
+        startTime: '2024-03-15T10:35:00Z'
+        endTime: '2024-03-15T10:35:30Z'
+        initiatedBy: api-client-xyz
+        priceTableItem:
+          priceTableId: usd-list-prices
+
+    ContentAssetProcessResponse:
+      summary: Content asset publish process
+      value:
+        id: xmRhi7394HymoeRkfwAAAZeg3WiO
+        status: in_progress
+        startTime: '2024-03-15T10:40:00Z'
+        initiatedBy: api-client-xyz
+        contentAssetItem:
+          contentId: homepage-hero-banner
+          type: shared
+          libraryId: sharedLibrary

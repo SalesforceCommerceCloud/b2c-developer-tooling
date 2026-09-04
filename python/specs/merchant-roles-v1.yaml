@@ -1,0 +1,1085 @@
+openapi: 3.0.3
+info:
+    title: Roles
+    version: 1.0.0
+    x-api-type: Admin
+    x-api-family: Merchant
+servers:
+  -     url: "https://{shortCode}.api.commercecloud.salesforce.com/merchant/roles/v1"
+        variables:
+                shortCode:
+                          default: 123456gf
+paths:
+    /organizations/{organizationId}/roles:
+          get:
+                  operationId: getRoles
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: expand
+                                in: query
+                                required: false
+                                style: form
+                                explode: false
+                                schema:
+                                              type: array
+                                              items:
+                                                              type: string
+                                                              enum: [users, permissions]
+                    -           name: select
+                                in: query
+                                required: false
+                                style: form
+                                explode: true
+                                schema:
+                                              $ref: "#/components/schemas/Select"
+                    -           name: limit
+                                in: query
+                                required: false
+                                style: form
+                                explode: true
+                                schema:
+                                              type: integer
+                                              format: int32
+                                              default: 25
+                                              maximum: 200
+                                              minimum: 1
+                    -           name: offset
+                                in: query
+                                required: false
+                                style: form
+                                explode: true
+                                schema:
+                                              type: integer
+                                              format: int32
+                                              default: 0
+                                              minimum: 0
+                  responses:
+                            200:
+                                        description: Returns the collection of access roles
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/RoleSearch"
+                  security:
+                    -           AmOAuth2: [sfcc.roles, sfcc.roles.rw]
+    /organizations/{organizationId}/roles/{roleId}:
+          get:
+                  operationId: getRole
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: roleId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                    -           name: expand
+                                in: query
+                                required: false
+                                style: form
+                                explode: false
+                                schema:
+                                              type: array
+                                              items:
+                                                              type: string
+                                                              enum: [users, permissions]
+                  responses:
+                            200:
+                                        description: Returns the access role details
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/Role"
+                            404:
+                                        description: Role not found
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.roles, sfcc.roles.rw]
+          put:
+                  operationId: createRole
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: roleId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  requestBody:
+                            content:
+                                        application/json:
+                                                      schema:
+                                                                      $ref: "#/components/schemas/Role"
+                            required: true
+                  responses:
+                            200:
+                                        description: The access role was successfully updated
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/Role"
+                            201:
+                                        description: The access role was successfully created
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/Role"
+                            400:
+                                        description: Bad Request - Invalid role request
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.roles.rw]
+          delete:
+                  operationId: deleteRole
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: roleId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  responses:
+                            204:
+                                        description: The access role was successfully deleted
+                            404:
+                                        description: Role not found
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.roles.rw]
+    /organizations/{organizationId}/roles/{roleId}/permissions:
+          get:
+                  operationId: getRolePermissions
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: roleId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  responses:
+                            200:
+                                        description: Returns the role permissions
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/RolePermissions"
+                            404:
+                                        description: Role not found
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.roles, sfcc.roles.rw]
+          put:
+                  operationId: setRolePermissions
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: roleId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  requestBody:
+                            content:
+                                        application/json:
+                                                      schema:
+                                                                      $ref: "#/components/schemas/RolePermissions"
+                            required: true
+                  responses:
+                            200:
+                                        description: The permissions were successfully updated
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/RolePermissions"
+                            201:
+                                        description: The permissions were successfully assigned
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/RolePermissions"
+                            400:
+                                        description: Bad Request - Invalid permissions request
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            404:
+                                        description: Role not found
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.roles.rw]
+    /organizations/{organizationId}/roles/{roleId}/user-search:
+          post:
+                  operationId: searchRoleUsers
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: roleId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  requestBody:
+                            content:
+                                        application/json:
+                                                      schema:
+                                                                      $ref: "#/components/schemas/RoleUserSearchRequest"
+                            required: true
+                  responses:
+                            200:
+                                        description: Returns role user search results
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/RoleUserSearchResult"
+                            400:
+                                        description: Bad Request - Malformed search query or invalid parameters
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                            404:
+                                        description: Role not found
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.roles, sfcc.roles.rw]
+    /organizations/{organizationId}/roles/{roleId}/users:
+          get:
+                  operationId: getRoleUsers
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: roleId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                    -           name: select
+                                in: query
+                                required: false
+                                style: form
+                                explode: true
+                                schema:
+                                              $ref: "#/components/schemas/Select"
+                    -           name: limit
+                                in: query
+                                required: false
+                                style: form
+                                explode: true
+                                schema:
+                                              type: integer
+                                              format: int32
+                                              default: 25
+                                              maximum: 200
+                                              minimum: 1
+                    -           name: offset
+                                in: query
+                                required: false
+                                style: form
+                                explode: true
+                                schema:
+                                              type: integer
+                                              format: int32
+                                              default: 0
+                                              minimum: 0
+                  responses:
+                            200:
+                                        description: Returns the collection of users assigned to the role
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/UserSearch"
+                            404:
+                                        description: Role not found
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.roles, sfcc.roles.rw]
+    /organizations/{organizationId}/roles/{roleId}/users/{login}:
+          put:
+                  operationId: assignUserToRole
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: roleId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                    -           name: login
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  responses:
+                            200:
+                                        description: The user was successfully re-assigned to the role
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/User"
+                            201:
+                                        description: The user was successfully assigned to the role
+                                        content:
+                                                      application/json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/User"
+                            404:
+                                        description: Role or user not found
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.roles.rw]
+          delete:
+                  operationId: unassignUserFromRole
+                  parameters:
+                    -           name: organizationId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              $ref: "#/components/schemas/OrganizationId"
+                    -           name: roleId
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                    -           name: login
+                                in: path
+                                required: true
+                                style: simple
+                                explode: false
+                                schema:
+                                              type: string
+                                              maxLength: 256
+                                              minLength: 1
+                  responses:
+                            204:
+                                        description: The user was successfully unassigned from the role
+                            404:
+                                        description: Role or user not found
+                                        content:
+                                                      application/problem+json:
+                                                                      schema:
+                                                                                        $ref: "#/components/schemas/ErrorResponse"
+                  security:
+                    -           AmOAuth2: [sfcc.roles.rw]
+components:
+    schemas:
+          OrganizationId:
+                  type: string
+                  maxLength: 32
+                  minLength: 1
+          Select:
+                  type: string
+                  minLength: 1
+                  pattern: ^[(].*[)]$
+          Total:
+                  type: integer
+                  format: int32
+                  default: 0
+                  minimum: 0
+          ResultBase:
+                  type: object
+                  properties:
+                            limit:
+                                        type: integer
+                                        format: int32
+                            total:
+                                        $ref: "#/components/schemas/Total"
+                  required: [limit, total]
+          Offset:
+                  type: integer
+                  format: int32
+                  default: 0
+                  minimum: 0
+          PaginatedResultBase:
+                  allOf:
+                    -           $ref: "#/components/schemas/ResultBase"
+                  properties:
+                            offset:
+                                        $ref: "#/components/schemas/Offset"
+                  required: [limit, offset, total]
+          RoleModulePermission:
+                  type: object
+                  properties:
+                            name:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            type:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            application:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            system:
+                                        type: boolean
+                            value:
+                                        type: string
+                                        maxLength: 256
+                            values:
+                                        type: object
+                                        additionalProperties:
+                                                      type: string
+                                                      maxLength: 256
+                  required: [application, name, type]
+          RoleModulePermissions:
+                  type: object
+                  properties:
+                            organization:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/RoleModulePermission"
+                                                      type: string
+                            site:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/RoleModulePermission"
+                                                      type: string
+          RoleFunctionalPermission:
+                  type: object
+                  properties:
+                            name:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            type:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            value:
+                                        type: string
+                                        maxLength: 256
+                            values:
+                                        type: object
+                                        additionalProperties:
+                                                      type: string
+                                                      maxLength: 256
+                  required: [name, type]
+          RoleFunctionalPermissions:
+                  type: object
+                  properties:
+                            organization:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/RoleFunctionalPermission"
+                                                      type: string
+                            site:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/RoleFunctionalPermission"
+                                                      type: string
+          LanguageCountry:
+                  type: string
+                  pattern: ^[a-z][a-z]-[A-Z][A-Z]$
+          LanguageCode:
+                  type: string
+                  pattern: ^[a-z][a-z]$
+          DefaultFallback:
+                  type: string
+                  default: default
+                  pattern: ^default$
+          LocaleCode:
+                  oneOf:
+                    -           $ref: "#/components/schemas/LanguageCountry"
+                    -           $ref: "#/components/schemas/LanguageCode"
+                    -           $ref: "#/components/schemas/DefaultFallback"
+          RoleLocalePermission:
+                  type: object
+                  properties:
+                            localeId:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/LocaleCode"
+                            type:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            value:
+                                        type: string
+                                        maxLength: 256
+                            values:
+                                        type: object
+                                        additionalProperties:
+                                                      type: string
+                                                      maxLength: 256
+                  required: [localeId, type]
+          RoleLocalePermissions:
+                  type: object
+                  properties:
+                            unscoped:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/RoleLocalePermission"
+                                                      type: string
+          RoleWebdavPermission:
+                  type: object
+                  properties:
+                            folder:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            type:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            value:
+                                        type: string
+                                        maxLength: 256
+                            values:
+                                        type: object
+                                        additionalProperties:
+                                                      type: string
+                                                      maxLength: 256
+                  required: [folder, type]
+          RoleWebdavPermissions:
+                  type: object
+                  properties:
+                            unscoped:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/RoleWebdavPermission"
+                                                      type: string
+          RolePermissions:
+                  type: object
+                  properties:
+                            module:
+                                        $ref: "#/components/schemas/RoleModulePermissions"
+                            functional:
+                                        $ref: "#/components/schemas/RoleFunctionalPermissions"
+                            locale:
+                                        $ref: "#/components/schemas/RoleLocalePermissions"
+                            webdav:
+                                        $ref: "#/components/schemas/RoleWebdavPermissions"
+          User:
+                  type: object
+                  properties:
+                            login:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            password:
+                                        type: string
+                                        maxLength: 256
+                            email:
+                                        type: string
+                                        maxLength: 256
+                            firstName:
+                                        type: string
+                                        maxLength: 256
+                            lastName:
+                                        type: string
+                                        maxLength: 256
+                            externalId:
+                                        type: string
+                                        maxLength: 256
+                            disabled:
+                                        type: boolean
+                            locked:
+                                        type: boolean
+                            lastLoginDate:
+                                        type: string
+                                        format: date
+                            passwordExpirationDate:
+                                        type: string
+                                        format: date-time
+                            passwordModificationDate:
+                                        type: string
+                                        format: date-time
+                            preferredDataLocale:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/LocaleCode"
+                            preferredUiLocale:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/LocaleCode"
+                            roles:
+                                        type: array
+                                        items:
+                                                      type: string
+                                                      maxLength: 256
+                  required: [email, login]
+          Role:
+                  type: object
+                  properties:
+                            id:
+                                        type: string
+                                        maxLength: 256
+                                        minLength: 1
+                            description:
+                                        type: string
+                                        maxLength: 4000
+                            userCount:
+                                        type: integer
+                                        format: int32
+                            userManager:
+                                        type: boolean
+                            permissions:
+                                        $ref: "#/components/schemas/RolePermissions"
+                            users:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/User"
+                                                      type: string
+          RoleSearch:
+                  allOf:
+                    -           $ref: "#/components/schemas/PaginatedResultBase"
+                  properties:
+                            data:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Role"
+                                                      type: string
+                  required: [data]
+          ErrorResponse:
+                  type: object
+                  additionalProperties: true
+                  properties:
+                            title:
+                                        type: string
+                                        maxLength: 256
+                            type:
+                                        type: string
+                                        maxLength: 2048
+                            detail:
+                                        type: string
+                            instance:
+                                        type: string
+                                        maxLength: 2048
+                  required: [detail, title, type]
+          Query:
+                  type: object
+                  additionalProperties: false
+                  maxProperties: 1
+                  minProperties: 1
+                  properties:
+                            boolQuery:
+                                        $ref: "#/components/schemas/BoolQuery"
+                            filteredQuery:
+                                        $ref: "#/components/schemas/FilteredQuery"
+                            matchAllQuery:
+                                        $ref: "#/components/schemas/MatchAllQuery"
+                            nestedQuery:
+                                        $ref: "#/components/schemas/NestedQuery"
+                            termQuery:
+                                        $ref: "#/components/schemas/TermQuery"
+                            textQuery:
+                                        $ref: "#/components/schemas/TextQuery"
+          BoolQuery:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            must:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Query"
+                                                      type: string
+                            mustNot:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Query"
+                                                      type: string
+                            should:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Query"
+                                                      type: string
+          Filter:
+                  type: object
+                  additionalProperties: false
+                  maxProperties: 1
+                  minProperties: 1
+                  properties:
+                            boolFilter:
+                                        $ref: "#/components/schemas/BoolFilter"
+                            queryFilter:
+                                        $ref: "#/components/schemas/QueryFilter"
+                            range2Filter:
+                                        $ref: "#/components/schemas/Range2Filter"
+                            rangeFilter:
+                                        $ref: "#/components/schemas/RangeFilter"
+                            termFilter:
+                                        $ref: "#/components/schemas/TermFilter"
+          BoolFilter:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            filters:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Filter"
+                                                      type: string
+                            operator:
+                                        type: string
+                                        enum: [and, or, not]
+                  required: [operator]
+          QueryFilter:
+                  type: object
+                  properties:
+                            query:
+                                        $ref: "#/components/schemas/Query"
+                  required: [query]
+          Field:
+                  type: string
+                  maxLength: 260
+          Range2Filter:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            filterMode:
+                                        type: string
+                                        default: overlap
+                                        enum: [overlap, containing, contained]
+                            fromField:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/Field"
+                            fromInclusive:
+                                        type: boolean
+                                        default: true
+                            fromValue: {}
+                            toField:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/Field"
+                            toInclusive:
+                                        type: boolean
+                                        default: true
+                            toValue: {}
+                  required: [fromField, toField]
+          RangeFilter:
+                  type: object
+                  properties:
+                            field:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/Field"
+                            from:
+                                        oneOf:
+                                          -               type: string
+                                                          format: date-time
+                                          -               type: integer
+                                          -               type: number
+                            fromInclusive:
+                                        type: boolean
+                                        default: true
+                            to:
+                                        oneOf:
+                                          -               type: string
+                                                          format: date-time
+                                          -               type: integer
+                                          -               type: number
+                            toInclusive:
+                                        type: boolean
+                                        default: true
+                  required: [field]
+          TermFilter:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            field:
+                                        allOf:
+                                          -               $ref: "#/components/schemas/Field"
+                            operator:
+                                        type: string
+                                        enum: [is, one_of, is_null, is_not_null, less, greater, not_in, neq]
+                            values:
+                                        type: array
+                                        items:
+                                                      type: string
+                  required: [field, operator]
+          FilteredQuery:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            filter:
+                                        $ref: "#/components/schemas/Filter"
+                            query:
+                                        $ref: "#/components/schemas/Query"
+                  required: [filter, query]
+          MatchAllQuery:
+                  type: object
+          NestedQuery:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            path:
+                                        type: string
+                                        maxLength: 2048
+                            query:
+                                        $ref: "#/components/schemas/Query"
+                            scoreMode:
+                                        type: string
+                                        enum: [avg, total, max, none]
+                  required: [path, query]
+          TermQuery:
+                  type: object
+                  properties:
+                            fields:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Field"
+                                                      type: string
+                                        minItems: 1
+                            operator:
+                                        type: string
+                                        enum: [is, one_of, is_null, is_not_null, less, greater, not_in, neq]
+                            values:
+                                        type: array
+                                        items:
+                                                      oneOf:
+                                                        -                 type: string
+                                                        -                 type: number
+                                                        -                 type: boolean
+                                                        -                 type: integer
+                                                      type: string
+                  required: [fields, operator]
+          TextQuery:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            fields:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Field"
+                                                      type: string
+                                        minItems: 1
+                            searchPhrase:
+                                        type: string
+                  required: [fields, searchPhrase]
+          Sort:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                            field:
+                                        type: string
+                                        maxLength: 256
+                            sortOrder:
+                                        type: string
+                                        default: asc
+                                        enum: [asc, desc]
+                  required: [field]
+          SearchRequest:
+                  type: object
+                  properties:
+                            limit:
+                                        type: integer
+                                        format: int32
+                                        maximum: 200
+                                        minimum: 1
+                            query:
+                                        $ref: "#/components/schemas/Query"
+                            sorts:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Sort"
+                                                      type: string
+                            offset:
+                                        $ref: "#/components/schemas/Offset"
+                  required: [query]
+          RoleUserSearchRequest:
+                  allOf:
+                    -           $ref: "#/components/schemas/SearchRequest"
+          PaginatedSearchResult:
+                  additionalProperties: false
+                  allOf:
+                    -           $ref: "#/components/schemas/PaginatedResultBase"
+                  properties:
+                            query:
+                                        $ref: "#/components/schemas/Query"
+                            sorts:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/Sort"
+                                                      type: string
+                            hits:
+                                        type: array
+                                        items:
+                                                      type: object
+                  required: [query]
+          RoleUserSearchResult:
+                  allOf:
+                    -           $ref: "#/components/schemas/PaginatedSearchResult"
+                  properties:
+                            hits:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/User"
+                                                      type: string
+                  required: [hits, query]
+          UserSearch:
+                  allOf:
+                    -           $ref: "#/components/schemas/PaginatedResultBase"
+                  properties:
+                            data:
+                                        type: array
+                                        items:
+                                                      $ref: "#/components/schemas/User"
+                                                      type: string
+                  required: [data]
+    parameters:
+          organizationId:
+                  name: organizationId
+                  in: path
+                  required: true
+                  style: simple
+                  explode: false
+                  schema:
+                            $ref: "#/components/schemas/OrganizationId"
+          expand:
+                  name: expand
+                  in: query
+                  required: false
+                  style: form
+                  explode: false
+                  schema:
+                            type: array
+                            items:
+                                        type: string
+                                        enum: [users, permissions]
+          select:
+                  name: select
+                  in: query
+                  required: false
+                  style: form
+                  explode: true
+                  schema:
+                            $ref: "#/components/schemas/Select"
+          roleId:
+                  name: roleId
+                  in: path
+                  required: true
+                  style: simple
+                  explode: false
+                  schema:
+                            type: string
+                            maxLength: 256
+                            minLength: 1
+          login:
+                  name: login
+                  in: path
+                  required: true
+                  style: simple
+                  explode: false
+                  schema:
+                            type: string
+                            maxLength: 256
+                            minLength: 1
+    securitySchemes:
+          AmOAuth2:
+                  type: oauth2
+                  flows:
+                            clientCredentials:
+                                        tokenUrl: "https://account.demandware.com/dw/oauth2/access_token"
+                                        scopes:
+                                                      sfcc.roles: Read access to role resources
+                                                      sfcc.roles.rw: Read and write access to role resources

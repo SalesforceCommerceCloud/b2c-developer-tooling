@@ -1,0 +1,1713 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Metrics",
+    "version": "1.0.0",
+    "x-api-type": "Admin",
+    "x-api-family": "Observability"
+  },
+  "servers": [
+    {
+      "url": "https://{shortCode}.api.commercecloud.salesforce.com/observability/metrics/v1",
+      "variables": {
+        "shortCode": {
+          "default": "shortCode"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/organizations/{organizationId}/metrics/overall": {
+      "get": {
+        "operationId": "getOverallMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved overall application metrics for the requested time window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsDataResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid time parameters",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Metrics category not available for the organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Metrics data temporarily unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsNotAvailableErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/metrics/sales": {
+      "get": {
+        "operationId": "getSalesMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved sales metrics for the requested time window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsDataResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid time parameters",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Metrics category not available for the organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Metrics data temporarily unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsNotAvailableErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/metrics/ecdn": {
+      "get": {
+        "operationId": "getEcdnMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved eCDN metrics for the requested time window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsDataResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid time parameters",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Metrics category not available for the organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Metrics data temporarily unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsNotAvailableErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/metrics/third-party": {
+      "get": {
+        "operationId": "getThirdPartyMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "thirdPartyServiceId",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/ThirdPartyServiceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved third party service metrics for the requested time window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsDataResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid time parameters or third party service filter",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InvalidThirdPartyServiceErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Metrics category not available for the organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Metrics data temporarily unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsNotAvailableErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/metrics/scapi": {
+      "get": {
+        "operationId": "getScapiMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "apiFamily",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "apiName",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved SCAPI metrics for the requested time window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsDataResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid time parameters or SCAPI filter value",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InvalidApiFilterErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Metrics category not available for the organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Metrics data temporarily unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsNotAvailableErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/metrics/scapi-hooks": {
+      "get": {
+        "operationId": "getScapiHooksMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved SCAPI hooks metrics for the requested time window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsDataResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid time parameters",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Metrics category not available for the organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Metrics data temporarily unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsNotAvailableErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/metrics/mrt": {
+      "get": {
+        "operationId": "getMrtMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved Managed Runtime metrics for the requested time window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsDataResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid time parameters",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Metrics category not available for the organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Metrics data temporarily unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsNotAvailableErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/metrics/controller": {
+      "get": {
+        "operationId": "getControllerMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved controller metrics for the requested time window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsDataResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid time parameters",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Metrics category not available for the organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Metrics data temporarily unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsNotAvailableErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    },
+    "/organizations/{organizationId}/metrics/ocapi": {
+      "get": {
+        "operationId": "getOcapiMetrics",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationId"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "ocapiCategory",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "ocapiApi",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved OCAPI metrics for the requested time window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsDataResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid time parameters or OCAPI filter value",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InvalidApiFilterErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Metrics category not available for the organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Metrics data temporarily unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsNotAvailableErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AmOAuth2": [
+              "sfcc.metrics"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrganizationId": {
+        "type": "string",
+        "pattern": "^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$"
+      },
+      "MetricId": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[a-zA-Z0-9_-]+$"
+      },
+      "DataSeriesId": {
+        "type": "string",
+        "maxLength": 200,
+        "minLength": 1
+      },
+      "DataPoint": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "value": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "timestamp",
+          "value"
+        ]
+      },
+      "DataSeries": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/DataSeriesId"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DataPoint"
+            }
+          }
+        },
+        "required": [
+          "data",
+          "id",
+          "name"
+        ]
+      },
+      "Metric": {
+        "type": "object",
+        "properties": {
+          "metricId": {
+            "$ref": "#/components/schemas/MetricId"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1
+          },
+          "unit": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "dataSeries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DataSeries"
+            }
+          }
+        },
+        "required": [
+          "dataSeries",
+          "description",
+          "metricId",
+          "title"
+        ]
+      },
+      "MetricsDataResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Metric"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "detail",
+          "title",
+          "type"
+        ]
+      },
+      "InvalidTimeParameterErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "parameter": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "parameter"
+        ]
+      },
+      "InvalidTimeRangeErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "fromValue": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "toValue": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "fromValue",
+          "toValue"
+        ]
+      },
+      "CategoryNotFoundErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "category": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "organizationId": {
+            "$ref": "#/components/schemas/OrganizationId"
+          }
+        }
+      },
+      "MetricsNotAvailableErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "organizationId": {
+            "$ref": "#/components/schemas/OrganizationId"
+          }
+        }
+      },
+      "ThirdPartyServiceId": {
+        "type": "string",
+        "maxLength": 255,
+        "minLength": 1
+      },
+      "InvalidThirdPartyServiceErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "thirdPartyServiceId": {
+            "$ref": "#/components/schemas/ThirdPartyServiceId"
+          },
+          "organizationId": {
+            "$ref": "#/components/schemas/OrganizationId"
+          }
+        },
+        "required": [
+          "organizationId",
+          "thirdPartyServiceId"
+        ]
+      },
+      "InvalidApiFilterErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        ],
+        "properties": {
+          "filterName": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "filterValue": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "filterName",
+          "filterValue"
+        ]
+      }
+    },
+    "responses": {
+      "OverallMetricsResponse": {
+        "description": "Successfully retrieved overall application metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            }
+          }
+        }
+      },
+      "BadRequestTimeResponse": {
+        "description": "Bad request — invalid time parameters",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "401unauthorized": {
+        "description": "Your access token is invalid or expired and can’t be used to identify a user.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "403forbidden": {
+        "description": "Forbidden. Your access token is valid, but you don’t have the required permissions to access the resource.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "CategoryNotFoundResponse": {
+        "description": "Metrics category not available for the organization",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/CategoryNotFoundErrorResponse"
+            }
+          }
+        }
+      },
+      "ServiceUnavailableResponse": {
+        "description": "Metrics data temporarily unavailable",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsNotAvailableErrorResponse"
+            }
+          }
+        }
+      },
+      "SalesMetricsResponse": {
+        "description": "Successfully retrieved sales metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            }
+          }
+        }
+      },
+      "EcdnMetricsResponse": {
+        "description": "Successfully retrieved eCDN metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            }
+          }
+        }
+      },
+      "ThirdPartyMetricsResponse": {
+        "description": "Successfully retrieved third party service metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            }
+          }
+        }
+      },
+      "BadRequestThirdPartyResponse": {
+        "description": "Bad request — invalid time parameters or third party service filter",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/InvalidThirdPartyServiceErrorResponse"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ScapiMetricsResponse": {
+        "description": "Successfully retrieved SCAPI metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            }
+          }
+        }
+      },
+      "BadRequestScapiResponse": {
+        "description": "Bad request — invalid time parameters or SCAPI filter value",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/InvalidApiFilterErrorResponse"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ScapiHooksMetricsResponse": {
+        "description": "Successfully retrieved SCAPI hooks metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            }
+          }
+        }
+      },
+      "MrtMetricsResponse": {
+        "description": "Successfully retrieved Managed Runtime metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            }
+          }
+        }
+      },
+      "ControllerMetricsResponse": {
+        "description": "Successfully retrieved controller metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            }
+          }
+        }
+      },
+      "OcapiMetricsResponse": {
+        "description": "Successfully retrieved OCAPI metrics for the requested time window",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetricsDataResponse"
+            }
+          }
+        }
+      },
+      "BadRequestOcapiResponse": {
+        "description": "Bad request — invalid time parameters or OCAPI filter value",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/InvalidTimeParameterErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/InvalidTimeRangeErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/InvalidApiFilterErrorResponse"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "organizationId": {
+        "name": "organizationId",
+        "in": "path",
+        "required": true,
+        "style": "simple",
+        "explode": false,
+        "schema": {
+          "$ref": "#/components/schemas/OrganizationId"
+        }
+      },
+      "from": {
+        "name": "from",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1
+        }
+      },
+      "to": {
+        "name": "to",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1
+        }
+      },
+      "thirdPartyServiceId": {
+        "name": "thirdPartyServiceId",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "$ref": "#/components/schemas/ThirdPartyServiceId"
+        }
+      },
+      "apiFamily": {
+        "name": "apiFamily",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 100,
+          "minLength": 1
+        }
+      },
+      "apiName": {
+        "name": "apiName",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 100,
+          "minLength": 1
+        }
+      },
+      "ocapiCategory": {
+        "name": "ocapiCategory",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 100,
+          "minLength": 1
+        }
+      },
+      "ocapiApi": {
+        "name": "ocapiApi",
+        "in": "query",
+        "required": false,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 100,
+          "minLength": 1
+        }
+      }
+    },
+    "securitySchemes": {
+      "AmOAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "c.example": "custom scopes mus start with c. used for custom APIs [MAX length of scope 49 characters]",
+              "sfcc.example": "standard salesforce commerce apis scopes must start with \"sfcc.\". Without suffix \".rw\" scopes grants READONLY access. [MAX length of scope 49 characters]",
+              "sfcc.example.rw": "salesforce commerce apis scopes must start with \"sfcc.\". The suffix \".rw\" scopes grants READ and WRITE access. [MAX length of scope 49 characters]"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "https://account.demandware.com/dwsso/oauth2/authorize",
+            "tokenUrl": "https://account.demandware.com/dwsso/oauth2/access_token",
+            "scopes": {
+              "c.example": "custom scopes mus start with c. used for custom APIs [MAX length of scope 49 characters]",
+              "sfcc.example": "standard salesforce commerce apis scopes must start with \"sfcc.\". Without suffix \".rw\" scopes grants READONLY access. [MAX length of scope 49 characters]",
+              "sfcc.example.rw": "salesforce commerce apis scopes must start with \"sfcc.\". The suffix \".rw\" scopes grants READ and WRITE access. [MAX length of scope 49 characters]"
+            }
+          }
+        }
+      }
+    }
+  }
+}

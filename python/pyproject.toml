@@ -1,0 +1,117 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "salesforce-b2c-tooling-sdk"
+version = "0.1.0"
+description = "Python SDK for Salesforce B2C Commerce tooling (auth, config, OCAPI/SCAPI clients, WebDAV, operations). Interoperates with the @salesforce/b2c-tooling-sdk TypeScript SDK and CLI."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Salesforce, Inc." }]
+keywords = [
+    "salesforce",
+    "commerce-cloud",
+    "sfcc",
+    "b2c",
+    "sdk",
+    "ecommerce",
+    "webdav",
+    "ocapi",
+    "scapi",
+    "developer-tools",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "httpx>=0.27",
+    # pydantic[email] pulls in email-validator (models use EmailStr) and pydantic itself.
+    "pydantic[email]>=2.6",
+    "cryptography>=42.0",
+    "lxml>=5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5.0",
+    "respx>=0.21",
+    "freezegun>=1.4",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "datamodel-code-generator>=0.25",
+    "unasync>=0.6",
+]
+docs = [
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.25",
+    "nbconvert>=7.16",
+    "jupyter>=1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling"
+Repository = "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/b2c_tooling_sdk"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/b2c_tooling_sdk", "specs", "README.md"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"specs" = "b2c_tooling_sdk/specs"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-ra"
+
+[tool.coverage.run]
+source = ["b2c_tooling_sdk"]
+branch = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+src = ["src", "tests"]
+# Generated Pydantic models are produced by datamodel-code-generator (black/isort
+# formatted) and checked in verbatim; exclude them from ruff lint + format so
+# regeneration stays diff-free and codegen output remains authoritative.
+extend-exclude = ["src/b2c_tooling_sdk/clients/models/"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W", "C4", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]
+"src/b2c_tooling_sdk/clients/models/*" = ["ALL"]
+
+[tool.mypy]
+python_version = "3.10"
+packages = ["b2c_tooling_sdk"]
+mypy_path = "src"
+strict = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+exclude = ["src/b2c_tooling_sdk/clients/models/"]
+
+[[tool.mypy.overrides]]
+module = "b2c_tooling_sdk.clients.models.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "lxml.*"
+ignore_missing_imports = true

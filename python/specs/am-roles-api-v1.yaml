@@ -1,0 +1,316 @@
+openapi: 3.0.1
+info:
+  title: Roles
+  description: |
+    # API Overview
+
+    Retrieve information about roles within the Account Manager system. Roles define permissions and access levels that can be assigned to Users and API Clients. Roles can be global (applying across all instances) or instance-specific (applying to particular instances).
+
+    ## Authentication & Authorization
+
+    All requests to the Roles API must be authenticated using OAuth 2.0 bearer token authentication. The API supports two OAuth 2.0 flows: client credentials and authorization code. The token endpoint is available at `https://account.demandware.com/dwsso/oauth2/access_token`.
+
+    ## Use Cases
+
+    ### List Available Roles
+
+    Retrieve a paginated list of all roles available in the system. Use the roleTargetType parameter to filter roles by whether they can be assigned to Users or API Clients.
+
+    ### Get Role Details
+
+    Retrieve detailed information about a specific role, including its permissions, scope, and target type.
+  version: 1.0.0-beta
+servers:
+  - url: https://account.demandware.com
+    description: Account Manager Production Instance
+security:
+  - AmOAuth2: []
+paths:
+  /dw/rest/v1/roles:
+    get:
+      operationId: getRoles
+      summary: List all roles.
+      description: Retrieve a paginated list of all roles. Use the roleTargetType parameter to filter by target type.
+      parameters:
+        - name: pageable
+          in: query
+          schema:
+            $ref: "#/components/schemas/Pageable"
+        - name: roleTargetType
+          in: query
+          schema:
+            type: string
+            enum:
+              - ApiClient
+              - User
+      responses:
+        "400":
+          description: Bad Request
+        "401":
+          description: Access token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorAuthenticationRequired:
+                  $ref: "#/components/examples/ErrorAuthenticationRequired"
+        "429":
+          $ref: "#/components/responses/RateLimitedError"
+        "200":
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleCollection"
+              example:
+                content:
+                  - description: Business Manager User
+                    roleEnumName: ECOM_USER
+                    permissions: []
+                    scope: INSTANCE
+                    targetType: User
+                    id: bm-user
+                  - description: Business Manager Administrator
+                    roleEnumName: ECOM_ADMIN
+                    permissions: []
+                    scope: INSTANCE
+                    targetType: User
+                    id: bm-admin
+  /dw/rest/v1/roles/{roleId}:
+    get:
+      operationId: getRole
+      summary: Get role by ID.
+      description: Retrieve a specific role by ID.
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request
+        "401":
+          description: Access token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                errorAuthenticationRequired:
+                  $ref: "#/components/examples/ErrorAuthenticationRequired"
+        "404":
+          description: A role with this ID was not found.
+        "429":
+          $ref: "#/components/responses/RateLimitedError"
+        "200":
+          description: OK
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+              example:
+                description: Business Manager User
+                roleEnumName: ECOM_USER
+                permissions: []
+                scope: INSTANCE
+                targetType: User
+                id: bm-user
+components:
+  examples:
+    ErrorAuthenticationRequired:
+      summary: 401 Unauthorized
+      description: Response for `401 Unauthorized` status
+      value: >
+        {
+          "message": "Full authentication is required to access this resource",
+          "code": "InsufficientAuthenticationException",
+          "fieldErrors": null
+        }
+  responses:
+    UnauthorizedError:
+      description: Access token is missing or invalid
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                description: The list of errors
+                items:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: Error message
+                    code:
+                      type: string
+                      description: Error code
+                    fieldErrors:
+                      type: array
+                      nullable: true
+                      description: Field-specific errors.
+                      items:
+                        type: object
+                        properties:
+                          field:
+                            type: string
+                            description: The field that contained the erroneous value.
+                          rejectedValue:
+                            type: object
+                            description: The value that was rejected.
+                          bindingFailure:
+                            type: boolean
+                            description: Whether this error was caused by failed binding (e.g. type mismatch).
+          example:
+            errors:
+              - message: "Full authentication is required to access this resource"
+                code: "InsufficientAuthenticationException"
+                fieldErrors: null
+    RateLimitedError:
+      description: Request has been rate-limited. The X-RateLimit-* headers can be used to improve retry behavior.
+      headers:
+        X-RateLimit-Limit:
+          $ref: "#/components/headers/X-RateLimit-Limit"
+        X-RateLimit-Remaining:
+          $ref: "#/components/headers/X-RateLimit-Remaining"
+        X-RateLimit-Reset:
+          $ref: "#/components/headers/X-RateLimit-Reset"
+  securitySchemes:
+    AmOAuth2:
+      type: oauth2
+      description: Account Manager OAuth 2.0 bearer token authentication.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes: {}
+        authorizationCode:
+          authorizationUrl: https://account.demandware.com/dwsso/oauth2/authorize
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes: {}
+  headers:
+    X-RateLimit-Limit:
+      schema:
+        type: integer
+      description: Rate limit per minute.
+    X-RateLimit-Remaining:
+      schema:
+        type: integer
+      description: The number of requests left in the current time window.
+    X-RateLimit-Reset:
+      schema:
+        type: string
+        format: date-time
+      description: The UTC timestamp at which the current rate limit window resets.
+  schemas:
+    Role:
+      type: object
+      description: A role defines permissions and access levels that can be assigned to Users and API Clients.
+      properties:
+        description:
+          type: string
+          description: Description of the role.
+        roleEnumName:
+          maxLength: 50
+          minLength: 0
+          type: string
+          description: Enumeration name of the role.
+        permissions:
+          uniqueItems: true
+          type: array
+          description: List of permissions granted by this role.
+          items:
+            type: string
+        scope:
+          type: string
+          description: Scope level of the role (global or instance-specific).
+          enum:
+            - GLOBAL
+            - INSTANCE
+        targetType:
+          type: string
+          nullable: true
+          description: Type of entity the role can be assigned to.
+          enum:
+            - ApiClient
+            - User
+        twoFAEnabled:
+          type: boolean
+          description: Indicates if two-factor authentication is required for the role.
+        id:
+          type: string
+          description: Unique identifier of the role.
+    RoleCollection:
+      type: object
+      description: A paginated collection of roles.
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/Role"
+    Pageable:
+      type: object
+      description: Pagination parameters for list operations.
+      properties:
+        page:
+          minimum: 0
+          type: integer
+          format: int32
+          description: Zero-based page index.
+        size:
+          minimum: 1
+          default: 20
+          maximum: 4000
+          type: integer
+          format: int32
+          description: Number of items to return per page.
+    ErrorResponse:
+      type: object
+      description: Standard error response format returned when API requests fail.
+      properties:
+        errors:
+          type: array
+          description: The list of errors
+          items:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Error message
+              code:
+                type: string
+                description: Error code
+              fieldErrors:
+                type: array
+                nullable: true
+                description: Field-specific errors
+                items:
+                  type: object
+                  properties:
+                    field:
+                      type: string
+                      description: The field that contained the erroneous value
+                    rejectedValue:
+                      type: object
+                      description: The value that was rejected
+                    bindingFailure:
+                      type: boolean
+                      description: Whether this error was caused by failed binding (e.g. type mismatch)
