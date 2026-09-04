@@ -1,0 +1,12 @@
+# Real connection info with secrets — never commit this.
+# (The repo-root .gitignore already ignores *dw.json*; this is explicit. The
+#  pseudo-value template is named dw.example.json so it is NOT matched by that
+#  rule and stays tracked.)
+dw.json
+
+# Local environments / caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
