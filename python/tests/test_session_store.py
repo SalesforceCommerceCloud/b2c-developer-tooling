@@ -194,10 +194,41 @@ def test_in_memory_backend() -> None:
 # --- Data-dir resolution ------------------------------------------------------
 
 
-def test_default_data_dir_matches_oclif(monkeypatch: pytest.MonkeyPatch) -> None:
-    home = get_default_data_dir()
-    assert home.name == "b2c-cli"
-    assert home.parent.name == "@salesforce"
+def test_default_data_dir_posix_default() -> None:
+    """No env overrides: oclif uses ``~/.local/share/b2c`` on macOS *and* Linux."""
+    for plat in ("darwin", "linux"):
+        result = get_default_data_dir(environment={}, home_directory="/home/tester", platform=plat)
+        assert result == Path("/home/tester/.local/share/b2c")
+
+
+def test_default_data_dir_honors_xdg_data_home() -> None:
+    """``XDG_DATA_HOME`` wins on every platform, with ``/b2c`` appended."""
+    for plat in ("darwin", "linux", "win32"):
+        result = get_default_data_dir(
+            environment={"XDG_DATA_HOME": "/xdg/data"}, home_directory="/home/tester", platform=plat
+        )
+        assert result == Path("/xdg/data/b2c")
+
+
+def test_default_data_dir_windows_uses_localappdata() -> None:
+    result = get_default_data_dir(
+        environment={"LOCALAPPDATA": "/c/AppData/Local"}, home_directory="/home/tester", platform="win32"
+    )
+    assert result == Path("/c/AppData/Local/b2c")
+
+
+def test_default_data_dir_b2c_data_dir_override() -> None:
+    result = get_default_data_dir(
+        environment={"B2C_DATA_DIR": "/custom/base"}, home_directory="/home/tester", platform="darwin"
+    )
+    assert result == Path("/custom/base/b2c")
+
+
+def test_default_data_dir_explicit_argument_wins() -> None:
+    result = get_default_data_dir(
+        data_directory="/explicit/dir", environment={"XDG_DATA_HOME": "/xdg"}, platform="linux"
+    )
+    assert result == Path("/explicit/dir").resolve()
 
 
 # --- Token validity -----------------------------------------------------------

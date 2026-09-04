@@ -37,7 +37,8 @@ _SESSION_FILE = "auth-sessions.json"
 #: Pre-PKCE stateful store; may contain base64-encoded client renewal credentials.
 _LEGACY_SESSION_FILE = "auth-session.json"
 
-_APP_NAME = "@salesforce/b2c-cli"
+#: oclif ``dirname`` for the b2c CLI (see ``packages/b2c-cli/package.json`` ``oclif.dirname``).
+_OCLIF_DIRNAME = "b2c"
 
 #: The auth flow that produced a stored session.
 AuthSessionFlow = Literal["pkce", "implicit", "client-credentials"]
@@ -115,23 +116,38 @@ def _now_iso() -> str:
     return datetime.now(tz=timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def get_default_data_dir() -> Path:
-    """Compute the oclif-compatible *data* directory for ``@salesforce/b2c-cli``.
+def get_default_data_dir(
+    *,
+    data_directory: str | None = None,
+    environment: dict[str, str] | None = None,
+    home_directory: str | None = None,
+    platform: str | None = None,
+) -> Path:
+    """Resolve the shared oclif-compatible B2C *data* directory (the session store).
 
-    Matches ``getDefaultDataDir`` in ``session-store.ts`` exactly:
+    Mirrors ``@oclif/core``'s ``Config.dataDir`` — and the sibling
+    :func:`~b2c_tooling_sdk.config.settings.get_b2c_config_directory` — so the SDK
+    reads the same ``auth-sessions.json`` the ``b2c`` CLI writes:
 
-    - macOS: ``~/Library/Application Support/@salesforce/b2c-cli``
-    - Windows: ``%LOCALAPPDATA%\\@salesforce\\b2c-cli``
-    - Linux/other: ``$XDG_DATA_HOME/@salesforce/b2c-cli`` (fallback ``~/.local/share``)
+    ``$B2C_DATA_DIR | $XDG_DATA_HOME | (win32 %LOCALAPPDATA%) | ~/.local/share`` then ``/b2c``.
+
+    Note: oclif's *data* dir uses the XDG ``~/.local/share`` base on macOS too —
+    *not* ``~/Library/Application Support`` (that path is only oclif's *cache* dir).
     """
-    home = Path.home()
-    if sys.platform == "darwin":
-        return home / "Library" / "Application Support" / _APP_NAME
-    if sys.platform == "win32":
-        base = os.environ.get("LOCALAPPDATA") or str(home / "AppData" / "Local")
-        return Path(base) / _APP_NAME
-    base = os.environ.get("XDG_DATA_HOME") or str(home / ".local" / "share")
-    return Path(base) / _APP_NAME
+    if data_directory:
+        return Path(data_directory).resolve()
+
+    env = environment if environment is not None else dict(os.environ)
+    home = home_directory or str(Path.home())
+    plat = platform or sys.platform
+
+    base_directory = (
+        env.get("B2C_DATA_DIR")
+        or env.get("XDG_DATA_HOME")
+        or (env.get("LOCALAPPDATA") if plat == "win32" else None)
+        or os.path.join(home, ".local", "share")
+    )
+    return Path(base_directory) / _OCLIF_DIRNAME
 
 
 @dataclass
