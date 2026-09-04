@@ -93,8 +93,9 @@ The header is enforced by eslint via `eslint-plugin-header`. The canonical defin
 
 - Update docs in `./docs/` folder and relevant skills in `./skills/b2c-cli/skills/` when updating or adding CLI commands.
 - When adding new SDK modules, update `docs/typedoc.json` entry points to include the new module's barrel file so API docs are generated.
+- **Quickstart guides** (`docs/quickstart/` + `docs/.vitepress/data/adventures/`) are interactive setup wizards. When you change auth, configuration, CLI commands, or doc anchors, sweep the relevant guide(s) — the build-time anchor checker (`pnpm --filter @salesforce/b2c-dx-docs run docs:build`) fails loudly on broken doc links, but renamed commands / flags need manual review. When adding a new CLI surface, evaluate whether a new guide is warranted (see `PLAN_guides.md` for the prioritised backlog). Internal terminology only: `Adventure` / `defineAdventure` lives in `.ts` files; user-visible UI says "Quickstart guide".
 
-See [documentation skill](./.claude/skills/documentation/SKILL.md) for details on updating user guides, CLI reference, and API docs.
+See [documentation skill](./.claude/skills/documentation/SKILL.md) for details on updating user guides, CLI reference, Quickstart guides, and API docs.
 
 ```bash
 # Run docs dev server (from project root)

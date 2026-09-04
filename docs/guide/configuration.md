@@ -6,6 +6,10 @@ description: Configure the B2C developer tooling with environment variables, dw.
 
 The B2C CLI, B2C DX MCP server, and Salesforce B2C Commerce VS Code extension share the same configuration model. In this guide, **the tooling** refers to these surfaces collectively. The tooling automatically discovers available credentials and project settings from environment variables and configuration files, while each surface also supports its own explicit overrides.
 
+::: tip Prefer a guided path?
+The [Quickstart](/quickstart/) walks you through the minimum config for common tasks (deploy code, run jobs, work with Page Designer content, set up an AI coding agent) and synthesises a `dw.json` snippet plus a verify command.
+:::
+
 ::: tip
 For detailed setup instructions including Account Manager API client creation, role configuration, and OCAPI setup, see the [Authentication Setup](./authentication) guide.
 :::
