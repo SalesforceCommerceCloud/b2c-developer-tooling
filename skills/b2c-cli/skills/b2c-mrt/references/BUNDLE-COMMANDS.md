@@ -50,8 +50,50 @@ b2c mrt bundle deploy 12345 -p my-storefront -e staging --json
 | `--build-dir`, `-b` | Path to build directory | `build` |
 | `--ssr-only` | Server-only file patterns | `ssr.js,ssr.mjs,server/**/*` |
 | `--ssr-shared` | Shared file patterns | `static/**/*,client/**/*` |
-| `--node-version`, `-n` | Node.js version for SSR | `22.x` |
+| `--node-version`, `-n` | Node.js version for SSR | `24.x` |
 | `--ssr-param` | SSR parameters (key=value, can repeat) | |
+
+## Bundle Upload (v2)
+
+Build and upload a **v2-format** bundle. This is **upload only** — it does not deploy. Deploy the returned bundle ID separately with `b2c mrt bundle deploy <bundleId> -e <env>`.
+
+Unlike `deploy` (v1), the v2 archive is a gzip tar whose files live under a root directory (default `bld/`), and the SSR configuration is written **inside** the archive at `{root-dir}/{config-path}` (default `bld/.mrt/config.json`) rather than sent as request fields.
+
+The SSR configuration is read from the build's on-disk v2 config file at `{build-dir}/{config-path}` when present. Otherwise it is read from `config.server.ts` in the project directory (`--project-directory`, default the current directory — a compiled `config.server.js`/`config.server.mjs` or the legacy `build/config.server.js` is also accepted), then defaults. Flags override the resolved values per key. If the build already emits the v2 config file, it is excluded from the archive and replaced by the resolved config (no duplicate entry).
+
+`config.server.ts` is evaluated from source (via jiti), so keep type-only imports as `import type`. A `config.server.ts` that exists but fails to import errors the command rather than silently falling back to defaults.
+
+Both `deploy` (v1) and `upload-v2` record the project's `package.json` dependencies (`dependencies` + `devDependencies`) as bundle metadata (v1 `bundle_metadata.dependencies`; v2 `bundleMetadata.dependencies` inside the archive config), matching pwa-kit/storefront-next. An explicit `--dependencies` (v2) or dependencies already in the v2 config file take precedence; collection is best-effort and never blocks a bundle.
+
+```bash
+# Build and upload from ./build
+b2c mrt bundle upload-v2 --project my-storefront
+
+# Upload from a custom build directory
+b2c mrt bundle upload-v2 -p my-storefront --build-dir ./dist
+
+# Allow SSR patterns that match no files
+b2c mrt bundle upload-v2 -p my-storefront --match-mode ignore_missing
+
+# SSR parameters and bundle metadata
+b2c mrt bundle upload-v2 -p my-storefront --ssr-param EnvBasePath=/mobify --node-version 20.x
+b2c mrt bundle upload-v2 -p my-storefront --dependencies @./deps.json --cc-override plugin-a
+```
+
+**Flags:**
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--message`, `-m` | Bundle message/description | |
+| `--build-dir`, `-b` | Path to build directory | `build` |
+| `--root-dir` | Archive path prefix for built files and the config file | `bld` |
+| `--config-path` | In-archive config file path, relative to `--root-dir` | `.mrt/config.json` |
+| `--match-mode` | Handling of SSR patterns matching no files (`strict` or `ignore_missing`) | `strict` |
+| `--ssr-only` | Server-only file patterns | `ssr.js,ssr.mjs,server/**/*` |
+| `--ssr-shared` | Shared file patterns | `static/**/*,client/**/*` |
+| `--node-version`, `-n` | Node.js version for SSR | `24.x` |
+| `--ssr-param` | SSR parameters (key=value, can repeat) | |
+| `--dependencies` | Bundle dependencies as inline JSON or a `@path` to a JSON file | |
+| `--cc-override` | Commerce Cloud override identifier (can repeat) | |
 
 ## Bundle List
 

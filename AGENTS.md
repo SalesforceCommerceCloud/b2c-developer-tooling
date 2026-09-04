@@ -158,6 +158,20 @@ pnpm run lint:agent
 
 This catches prettier formatting, import ordering, class member ordering (`perfectionist/sort-classes`), and other issues that will fail CI.
 
+### Tooling documentation index
+
+When you add/remove/rename a CLI command or change the MRT docs (`docs/cli/`) or user-facing skills (`skills/b2c-cli/`), regenerate the checked-in tooling documentation index (`packages/b2c-tooling-sdk/data/tooling/index.json`) and commit the result:
+
+```bash
+# Regenerate the index (run after doc/command changes)
+pnpm --filter @salesforce/b2c-tooling-sdk run generate:tooling-index
+
+# Verify it is up to date (this is what CI runs)
+pnpm --filter @salesforce/b2c-tooling-sdk run check:tooling-index
+```
+
+A stale index fails CI's "Verify tooling documentation index" step first, which then **skips** the "Build packages" step — surfacing as a cascade of unrelated `import/no-unresolved` errors across packages. If you see that pattern, regenerate the index rather than chasing the import errors.
+
 ## Testing
 
 See [testing skill](./.claude/skills/testing/SKILL.md) for patterns on writing tests with Mocha, Chai, and MSW.

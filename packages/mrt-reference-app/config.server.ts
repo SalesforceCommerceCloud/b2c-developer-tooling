@@ -34,6 +34,6 @@ export const config: MrtServerConfig = {
     '**/*.eot',
   ],
   ssrParameters: {
-    ssrFunctionNodeVersion: '24.x',
+    SSRFunctionNodeVersion: '24.x',
   },
 };
