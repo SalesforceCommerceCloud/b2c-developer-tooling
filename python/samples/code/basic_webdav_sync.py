@@ -5,16 +5,16 @@
 #
 """Basic auth -> WebDAV (synchronous).
 
-The WebDAV client has no top-level operation, so it has no sync twin in
-``b2c_tooling_sdk.sync``. This "sync" sample resolves config with the blocking
-facade, then wraps the WebDAV I/O in a single ``asyncio.run(...)`` block.
+The WebDAV client has no dedicated top-level operation, but the synchronous
+facade proxies the *whole* object graph: because ``resolve_config`` is imported
+from ``b2c_tooling_sdk.sync``, the resolved config, the ``B2CInstance`` it
+builds, and that instance's ``webdav`` client are all blocking proxies. So the
+WebDAV calls here are plain blocking calls -- no ``await``, no ``asyncio``.
 
 Run:  python code/basic_webdav_sync.py
 """
 
 from __future__ import annotations
-
-import asyncio
 
 from b2c_tooling_sdk import ResolveConfigOptions
 from b2c_tooling_sdk.sync import resolve_config
@@ -30,17 +30,16 @@ def main() -> None:
 
     config = resolve_config(options=ResolveConfigOptions(config_path=str(DW_JSON)))  # blocks
     instance = config.create_b2c_instance()
-    webdav = instance.webdav
+    webdav = instance.webdav  # Basic auth is preferred automatically when set.
 
-    async def round_trip() -> None:
-        await webdav.put(TARGET, PAYLOAD, content_type="text/plain")
-        print(f"Uploaded {TARGET}")
-        data = await webdav.get(TARGET)
-        print(f"Read back {len(data)} bytes: {data.decode().strip()!r}")
-        await webdav.delete(TARGET)
-        print(f"Deleted {TARGET}")
+    webdav.put(TARGET, PAYLOAD, content_type="text/plain")
+    print(f"Uploaded {TARGET}")
 
-    asyncio.run(round_trip())
+    data = webdav.get(TARGET)
+    print(f"Read back {len(data)} bytes: {data.decode().strip()!r}")
+
+    webdav.delete(TARGET)
+    print(f"Deleted {TARGET}")
 
 
 if __name__ == "__main__":

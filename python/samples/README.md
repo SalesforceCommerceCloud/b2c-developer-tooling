@@ -77,8 +77,10 @@ python code/cli_session_async.py
 
 - **async** files import from `b2c_tooling_sdk` and use `asyncio.run(main())`.
 - **sync** files import the blocking twins from `b2c_tooling_sdk.sync` and drop
-  `await`. WebDAV has no top-level operation, so `basic_webdav_sync.py` wraps its
-  WebDAV I/O in a single `asyncio.run(...)` block (noted inline).
+  `await`. The sync facade proxies the whole object graph, so even the WebDAV
+  client (which has no dedicated top-level operation) is blocking when the
+  instance is built from `b2c_tooling_sdk.sync.resolve_config` —
+  `basic_webdav_sync.py` just calls `webdav.put/get/delete` directly.
 
 ## 4. Run the notebooks (VS Code)
 
