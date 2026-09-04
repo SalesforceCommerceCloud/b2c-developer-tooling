@@ -46,6 +46,9 @@ b2c mrt bundle deploy -p my-storefront -e production -m "Release v1.0.0"
 
 # Deploy existing bundle by ID
 b2c mrt bundle deploy 12345 -p my-storefront -e production
+
+# Build and upload a v2-format bundle (upload only; deploy the returned ID separately)
+b2c mrt bundle upload-v2 -p my-storefront
 ```
 
 ### Manage Environments

@@ -24,7 +24,9 @@
     "test:watch": "mocha --watch \"src/**/*.test.ts\"",
     "coverage": "c8 report",
     "push": "pnpm build && b2c mrt bundle deploy",
+    "push:v2": "pnpm build && b2c mrt bundle upload-v2",
     "deploy": "pnpm build && b2c mrt bundle deploy",
+    "deploy:v2": "node scripts/deploy-v2.mjs",
     "tail-logs": "b2c mrt tail-logs",
     "save-bundle": "pnpm build && b2c mrt bundle save",
     "save-credentials": "b2c mrt save-credentials"

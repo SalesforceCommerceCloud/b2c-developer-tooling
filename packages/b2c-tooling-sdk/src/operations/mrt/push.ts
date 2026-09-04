@@ -14,8 +14,8 @@ import type {AuthStrategy} from '../../auth/types.js';
 import {createMrtClient, DEFAULT_MRT_ORIGIN} from '../../clients/mrt.js';
 import type {MrtClient, BuildPushResponse, components} from '../../clients/mrt.js';
 import {getLogger} from '../../logging/logger.js';
-import {createBundle} from './bundle.js';
-import type {CreateBundleOptions, Bundle} from './bundle.js';
+import {createBundle, createBundleV2} from './bundle.js';
+import type {CreateBundleOptions, Bundle, BundleV2, CreateBundleV2Options} from './bundle.js';
 
 /**
  * Options for pushing a bundle to MRT.
@@ -160,6 +160,7 @@ export async function uploadBundle(
         ssr_parameters: bundle.ssr_parameters,
         ssr_only: bundle.ssr_only,
         ssr_shared: bundle.ssr_shared,
+        bundle_metadata: bundle.bundle_metadata,
       },
     });
 
@@ -193,6 +194,7 @@ export async function uploadBundle(
         ssr_parameters: bundle.ssr_parameters,
         ssr_only: bundle.ssr_only,
         ssr_shared: bundle.ssr_shared,
+        bundle_metadata: bundle.bundle_metadata,
       },
     });
 
@@ -212,6 +214,164 @@ export async function uploadBundle(
       warnings: buildData.warnings ?? [],
     };
   }
+}
+
+/**
+ * Options for pushing a v2-format bundle to MRT.
+ */
+export interface PushV2Options extends CreateBundleV2Options {
+  /**
+   * The project slug to upload to.
+   */
+  projectSlug: string;
+
+  /**
+   * MRT API origin URL.
+   * @default "https://cloud.mobify.com"
+   */
+  origin?: string;
+}
+
+/**
+ * Result of a v2 push (upload) operation.
+ */
+export interface PushV2Result {
+  /**
+   * The bundle ID assigned by MRT.
+   */
+  bundleId: number;
+
+  /**
+   * The project slug the bundle was uploaded to.
+   */
+  projectSlug: string;
+
+  /**
+   * The bundle message.
+   */
+  message: string;
+
+  /**
+   * Non-blocking warnings returned by MRT (e.g. deprecated runtime).
+   */
+  warnings: string[];
+
+  /**
+   * Server-computed ssrOnly/ssrShared file matches.
+   */
+  matches: Record<string, unknown>;
+}
+
+/**
+ * Builds a v2-format archive from a build directory and uploads it to MRT.
+ *
+ * This is upload-only: it does not deploy the bundle. Deploy separately with
+ * {@link createDeployment} (or the `b2c mrt bundle deploy <bundleId>` command).
+ *
+ * @param options - v2 push configuration options
+ * @param auth - Authentication strategy (ApiKeyStrategy)
+ * @returns Result of the upload operation
+ * @throws Error if the upload fails
+ *
+ * @example
+ * ```typescript
+ * import { ApiKeyStrategy } from '@salesforce/b2c-tooling-sdk/auth';
+ * import { pushBundleV2 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
+ *
+ * const auth = new ApiKeyStrategy(process.env.MRT_API_KEY!, 'Authorization');
+ *
+ * const result = await pushBundleV2({
+ *   projectSlug: 'my-storefront',
+ *   ssrOnly: ['ssr.js'],
+ *   ssrShared: ['static/**\/*'],
+ *   buildDirectory: './build',
+ *   message: 'Release v1.0.0'
+ * }, auth);
+ *
+ * console.log(`Bundle ${result.bundleId} uploaded to ${result.projectSlug}`);
+ * ```
+ */
+export async function pushBundleV2(options: PushV2Options, auth: AuthStrategy): Promise<PushV2Result> {
+  const logger = getLogger();
+  const {projectSlug, origin} = options;
+
+  logger.debug({projectSlug}, '[MRT] Pushing v2 bundle');
+
+  const bundle = await createBundleV2(options);
+  const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, auth);
+  const result = await uploadBundleV2(client, projectSlug, bundle);
+
+  logger.debug({bundleId: result.bundleId}, '[MRT] v2 bundle uploaded successfully');
+
+  return result;
+}
+
+/**
+ * Uploads a pre-built v2 bundle archive to MRT as multipart/form-data.
+ *
+ * Use this if you've already built a v2 bundle with {@link createBundleV2} and
+ * want to upload it separately.
+ *
+ * @param client - MRT client instance
+ * @param projectSlug - Project to upload to
+ * @param bundle - v2 bundle to upload
+ * @returns Result of the upload
+ * @throws Error if the upload fails or the response omits a bundle id
+ */
+export async function uploadBundleV2(client: MrtClient, projectSlug: string, bundle: BundleV2): Promise<PushV2Result> {
+  const logger = getLogger();
+
+  logger.debug({projectSlug, rootDir: bundle.rootDir}, '[MRT] Uploading v2 bundle (no deployment)');
+
+  // Build the multipart body. openapi-fetch passes a FormData body through
+  // unchanged and lets fetch set the multipart Content-Type + boundary.
+  const form = new FormData();
+  form.append('bundle', new Blob([bundle.archive]), 'bundle.tar.gz');
+  form.append('message', bundle.message);
+  form.append('rootDir', bundle.rootDir);
+  form.append('configPath', bundle.configPath);
+  form.append('matchMode', bundle.matchMode);
+
+  const {data, error, response} = await client.POST('/api/v2/projects/{project_slug}/bundles/', {
+    params: {
+      path: {
+        project_slug: projectSlug,
+      },
+    },
+    // The generated body type describes the multipart fields; we pass a real
+    // FormData instance (with the binary archive) instead.
+    body: form as unknown as {bundle: string},
+  });
+
+  // Capture the status before the error narrowing: the generated types model no
+  // error responses for this path, so `response` is narrowed away inside the
+  // guard below.
+  const {status} = response;
+
+  // Guard on `response.ok` in addition to `error`: a non-OK response with an
+  // empty body (e.g. a 403 with no payload) leaves `error` empty — undefined, or
+  // the empty string that openapi-fetch falls back to when there's no JSON to
+  // parse. Both are falsy, so `if (error)` alone would let them fall through and
+  // look like a successful upload.
+  if (error || !response.ok) {
+    // Include the status code so callers (e.g. the CLI's 403 hint) can react to
+    // auth failures even when the error body carries no descriptive text.
+    const hasDetail = error !== undefined && error !== null && error !== '';
+    const detail = hasDetail ? JSON.stringify(error) : 'empty response body';
+    throw new Error(`Failed to push bundle (HTTP ${status}): ${detail}`);
+  }
+
+  if (!data || data.id === undefined) {
+    throw new Error(`v2 bundle upload succeeded but the response omitted a bundle id: ${JSON.stringify(data)}`);
+  }
+
+  return {
+    bundleId: data.id,
+    projectSlug,
+    message: bundle.message,
+    warnings: data.warnings ?? [],
+    matches: data.matches ?? {},
+  };
 }
 
 /**

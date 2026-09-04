@@ -183,6 +183,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/projects/{project_slug}/bundles/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Upload a v2-format bundle archive (uncompressed or gzip-compressed .tar file) as multipart/form-data. */
+        post: operations["projects_bundles_upload_v2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{project_slug}/bundles/": {
         parameters: {
             query?: never;
@@ -2682,6 +2699,66 @@ export interface operations {
                 content: {
                     "application/json": {
                         [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    projects_bundles_upload_v2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project identifier. */
+                project_slug: string;
+            };
+            cookie?: never;
+        };
+        /** @description Request body to upload a bundle, sent as `multipart/form-data`. The archive travels in the `bundle` part, with the remaining request metadata as sibling form fields. */
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description Bundle archive (uncompressed or gzip-compressed .tar file). The uploaded archive must not exceed 400 MB.
+                     */
+                    bundle: string;
+                    /** @description Bundle description (optional metadata). */
+                    message?: string;
+                    /**
+                     * @description Root directory within bundle archive. Files in this directory are used for server-side rendering, published as static assets, or both. Any files in the bundle archive outside of this directory are ignored.
+                     * @default bld
+                     */
+                    rootDir?: string;
+                    /**
+                     * @description Path (relative to root directory) of bundle configuration file.
+                     * @default .mrt/config.json
+                     */
+                    configPath?: string;
+                    /**
+                     * @description Determines how files in the bundle configuration are matched. If `strict`, all files listed in `ssrOnly` and `ssrShared` fields in the bundle configuration must be present. If `ignore_missing`, missing files in the `ssrOnly` and `ssrShared` fields are ignored.
+                     * @default strict
+                     * @enum {string}
+                     */
+                    matchMode?: "strict" | "ignore_missing";
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description The bundle ID assigned by MRT. */
+                        id?: number;
+                        /** @description Non-blocking warnings returned by MRT. */
+                        warnings?: string[];
+                        /** @description Server-computed ssrOnly/ssrShared file matches. */
+                        matches?: {
+                            [key: string]: unknown;
+                        };
                     };
                 };
             };

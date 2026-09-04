@@ -581,15 +581,24 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
 
       logger.debug({method: request.method, url}, `${reqTag} ${request.method} ${url}`);
 
-      // Read body from the request (already serialized by openapi-fetch)
+      // Read body from the request (already serialized by openapi-fetch).
+      // Skip binary/multipart payloads: reading them would buffer the entire
+      // (potentially large) body into memory on every request, and the raw
+      // bytes should never be logged. maskBodyKeys only covers JSON keys, so a
+      // multipart bundle upload would otherwise leak its archive at trace level.
       let body: unknown;
       if (request.body) {
-        const clonedRequest = request.clone();
-        const text = await clonedRequest.text();
-        try {
-          body = JSON.parse(text);
-        } catch {
-          body = text;
+        const contentType = request.headers.get('content-type') ?? '';
+        if (contentType.startsWith('multipart/') || contentType.startsWith('application/octet-stream')) {
+          body = `[${contentType} body omitted]`;
+        } else {
+          const clonedRequest = request.clone();
+          const text = await clonedRequest.text();
+          try {
+            body = JSON.parse(text);
+          } catch {
+            body = text;
+          }
         }
       }
 
