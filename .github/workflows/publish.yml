@@ -134,7 +134,7 @@ jobs:
         if: steps.release-type.outputs.type == 'nightly' || (steps.changesets.outputs.skip != 'true' && steps.quick-check.outputs.skip != 'true')
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
-          node-version: '24.18.0'
+          node-version: '24.20.0'
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
 
@@ -317,7 +317,7 @@ jobs:
       # identical to the hashed and uploaded artifact.
       - name: Attest VSIX build provenance
         if: steps.release-type.outputs.type == 'stable' && steps.packages.outputs.publish_vsx == 'true'
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: packages/b2c-vs-extension/${{ steps.vsix-hash.outputs.vsix_file }}
 
