@@ -11,7 +11,9 @@ Each sample reuses one `dw.json` for connection info and shows a different
 | `oauth_scapi` | OAuth client-credentials | SCAPI (list catalogs) |
 | `basic_webdav` | Basic (WebDAV user/access key) | WebDAV (upload/read/delete) |
 | `cli_session` | Reuse a CLI login session | OCAPI |
+| `browser_login` | Interactive browser login (Auth Code + PKCE) | OCAPI |
 | `slas_shopper` | SLAS guest shopper (public client) | SCAPI Shopper (token) |
+| `multi_env` | — (config only) | Named-environment selection (offline) |
 
 The `notebook/` folder has a Jupyter notebook for each scenario, runnable from
 VS Code.
@@ -71,6 +73,29 @@ the session up by `clientId`):
 ```bash
 b2c auth login <your clientId>
 python code/cli_session_async.py
+```
+
+`browser_login_*` is the SDK equivalent of `b2c auth login` — it opens a real
+browser, runs Authorization Code + PKCE, and saves the session to the same
+shared store (so afterwards `cli_session` and the `b2c` CLI can reuse it). It
+needs only `clientId`, and the client's registered redirect URI must include
+`http://localhost:8080`:
+
+```bash
+python code/browser_login_async.py   # pops a browser; approve the login
+```
+
+`multi_env_*` is **offline** — it needs no `dw.json` and makes no network calls.
+A single dw.json can carry a `configs` array of *named* environments; this
+sample reads the bundled `multi-env.example.json` and shows how
+`ResolveConfigOptions(instance="staging" | "production")` selects one (priority:
+requested name → `active: true` → root config; each named config is
+self-contained). Point `config_path` at your own multi-config file the same way,
+or manage entries with `add_instance` / `remove_instance` / `set_active_instance`
+from `b2c_tooling_sdk.config`.
+
+```bash
+python code/multi_env_async.py
 ```
 
 ### async vs sync
