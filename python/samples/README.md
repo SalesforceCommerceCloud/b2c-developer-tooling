@@ -15,8 +15,41 @@ Each sample reuses one `dw.json` for connection info and shows a different
 | `slas_shopper` | SLAS guest shopper (public client) | SCAPI Shopper (token) |
 | `multi_env` | — (config only) | Named-environment selection (offline) |
 
-The `notebook/` folder has a Jupyter notebook for each scenario, runnable from
-VS Code.
+The `notebook/` folder has a Jupyter notebook for each scenario above, plus a
+few **notebook-only** scenarios. The first two build on the SLAS guest token to
+call the SCAPI Shopper storefront APIs:
+
+| Notebook | Shows |
+| --- | --- |
+| `08-scapi-shopper-products.ipynb` | Shopper Search (`product-search`) + product by ID (`shopper-products`) |
+| `09-scapi-shopper-content.ipynb` | Content asset (`shopper-content`) + content blocks / Page Designer page (`shopper-experience`) |
+
+Both mint a guest token via the SDK, then make plain `httpx` calls to the
+Shopper endpoints (the tooling SDK has no dedicated storefront client). Their
+connection settings come from `dw.json`; the search/product/content/page
+parameters are editable in a **Parameters** cell near the top.
+
+The next three use the **admin Data APIs** with **OAuth client-credentials** to
+read products, content, and catalogs, parsing responses into the SDK's
+**generated Pydantic types**:
+
+| Notebook | API | Shows |
+| --- | --- | --- |
+| `10-scapi-catalogs.ipynb` | SCAPI Data | List catalogs — both `create_catalogs_backend(preference="scapi")` and a typed `product/catalogs/v1` call parsed into the generated `Catalogs` model |
+| `11-ocapi-products.ipynb` | OCAPI Data | Product search (`POST /product_search`) + product by ID (`GET /products/{id}`), parsed into generated `ProductSearchResult` / `Product` |
+| `12-ocapi-content-assets.ipynb` | OCAPI Data | List a folder's content + content asset by ID, parsed into generated `ContentAssetResult` / `ContentAsset` |
+
+> **Why SCAPI for catalogs but OCAPI for products/content?** In this SDK the
+> SCAPI Admin specs cover only *catalog listing* and *sites* — there is no SCAPI
+> Admin operation for product detail, product search, or content assets, so
+> those go through the OCAPI Data API (`instance.ocapi`).
+>
+> **OCAPI Data API allow-list.** The OCAPI Data resources a notebook calls
+> (`product_search`, `products`, `libraries/**`) must be enabled in the
+> instance's **OCAPI Data API** settings (Business Manager → Administration →
+> Site Development → Open Commerce API Settings → Data). If a resource isn't
+> allow-listed the call returns HTTP 403 `ClientAccessForbiddenException`; the
+> notebooks catch this and print a friendly message rather than crashing.
 
 ## 1. Create a virtual environment and install the SDK
 
